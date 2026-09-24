@@ -83,9 +83,9 @@ struct GuidanceCorridor
     int priority = 0;
     bool advisoryOnly = true;
 
-    // Manual docking tunnels are rebuilt at the current guidance epoch. Their
-    // frames are spatial/equidistant gates rather than future-time samples.
-    bool spatialManualTunnel = false;
+    // Spatial advisory gates are fixed along the route; their world positions
+    // are presented in the current Hub epoch instead of flight sample time.
+    bool spatialAdvisoryGates = false;
 
     // EmergencyEscape is still a corridor, not an autopilot command.  The
     // presentation layer may flash a warning while this flag is active.
@@ -200,10 +200,8 @@ public:
         );
     }
 
-    // Map trajectory and cockpit manual guidance are different products.
-    // The map must keep showing the accepted time-parameterized trajectory
-    // while a higher-priority spatial tunnel is regenerated from live ship
-    // and dock poses for the HUD.
+    // The map draws the full advisory route and the cockpit selects spatial
+    // route gates. Neither product grants flight control authority.
     const GuidanceCorridor* activePredictive(
         int systemId,
         double universeTimeSeconds,
@@ -216,12 +214,12 @@ public:
             modules,
             [](const GuidanceCorridor& corridor)
             {
-                return !corridor.spatialManualTunnel;
+                return !corridor.spatialAdvisoryGates;
             }
         );
     }
 
-    const GuidanceCorridor* activeSpatialManualTunnel(
+    const GuidanceCorridor* activeSpatialAdvisoryGates(
         int systemId,
         double universeTimeSeconds,
         const NavigationModuleState* modules = nullptr
@@ -233,7 +231,7 @@ public:
             modules,
             [](const GuidanceCorridor& corridor)
             {
-                return corridor.spatialManualTunnel;
+                return corridor.spatialAdvisoryGates;
             }
         );
     }

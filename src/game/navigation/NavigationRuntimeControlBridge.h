@@ -72,6 +72,11 @@ public:
         const Intent& intent
     ) noexcept;
 
+    [[nodiscard]] double maximumStepSeconds() const noexcept
+    {
+        return executor_.profile().execution.maximumStepSeconds;
+    }
+
 private:
     [[nodiscard]] static PilotExecutor::Command toPilotCommand(
         const Intent& intent

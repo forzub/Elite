@@ -18,6 +18,8 @@ namespace game::diagnostics
     is evaluated directly from synchronized server time on the client.
 */
 inline constexpr bool HubMotionLabEnabled = true;
+// Isolate the station and two docks for the new docking flight experiment.
+inline constexpr bool HubDockingFlightTestScene = true;
 inline constexpr const char* HubMotionLabHubId = "earth_orbital_hub";
 inline constexpr int HubMotionLabSystemId = 0;
 

@@ -4,6 +4,13 @@ Status: **normative target architecture**
 
 Date: 2026-09-22
 
+Implementation note (2026-09-23): B5 now applies an explicit target-point
+capture-radius eligibility check to its sampled candidates and returns a typed
+spatial witness for a miss. This closes the purely ignored-position regression
+only. The B4/B5 chain still needs a typed corridor section, precise capture
+semantics, exact propagated terminal rigid-body state and a solve at every
+corner; sampled progress is not continuous collision or capture proof.
+
 Active migration decision (2026-09-23): legacy physical-authoring code may be
 deleted or bypassed rather than preserved. After the accepted scenario-I/O
 boundary, work proceeds as an M3/M4 vertical replacement. The translation-first

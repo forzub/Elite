@@ -44,14 +44,12 @@ public:
     {
         m_enabled.fill(true);
 
-        // Legacy client-side route/tunnel calculation is retained only as an
-        // isolated reference/presentation path. Navigation v2 authoritative
-        // planning does not use these switches, and the legacy path is OFF by
-        // default so it cannot silently compete with the Stage-12 planner.
+        // Optional local route advice starts off. Explicit dock-card requests
+        // enable the planning and presentation modules.
         setEnabled(NavigationModuleId::RoutePlanning, false);
         setEnabled(NavigationModuleId::LocalGuidance, false);
 
-        // The legacy corridor HUD remains opt-in as well.
+        // The cockpit corridor HUD is opt-in as well.
         setEnabled(NavigationModuleId::HudGuidanceCorridor, false);
     }
 

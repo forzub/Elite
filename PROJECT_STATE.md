@@ -1,5 +1,99 @@
 # PROJECT STATE
 
+## 2026-09-24 — isolated dock route native check
+
+The new advisory route passed a local native test with station and two docks,
+including a yawed far spinning dock; 45-second port position/orientation
+prediction agrees with authored local-Z rotation. Simulation and prediction now
+use the same yaw-aware angular velocity. The diagnostic flight scene excludes
+the unrelated Stage-12 NPC; an NPC pilot-step compile blocker is corrected.
+Target game build and live flight remain open, so neither advice in gameplay
+nor automatic docking is accepted. Automatic docking still needs the separate
+server-owned physical program and dispatcher/capture contracts.
+
+## 2026-09-24 — legacy docking removed from game path
+
+The diagnostic `HubDockingFlightTestScene` now leaves the station, Cobra and
+both docks while removing the stress objects. The far dock is yawed 27 degrees
+and spins at 2 degrees/s around its entrance axis. This is a fixture for a
+future in-game acceptance test, not evidence of successful docking.
+
+The dormant client-side docking route/tunnel pipeline and its planner and
+builder were deleted. A fresh advisory route planner and two dock-card actions
+are added; the automatic action fails closed while server docking authority and
+physical program proof are missing. Native static geometry testing passes. The client build cannot be verified in
+this environment because the `websocketpp` header is missing; live flight
+acceptance is outstanding.
+
+
+## 2026-09-24 — commissioned static navigation scope
+
+A* is retained for a fixed A-to-B static scene of one craft or one group
+envelope. Scheduled corridors/dispatch and online dynamic avoidance have
+independent owners. The full accepted flight program is constructed and
+proved separately; it is executed unchanged or cancelled. The A* polyline
+alone is never a flyable instruction. Route provenance now includes vehicle
+capability revision, and capped support-node search may no longer falsely
+accept a route that intersects an omitted static obstacle. Worker scheduling,
+physical compilation and full program acceptance remain open work.
+
+## 2026-09-24 — throughput and traffic semantics separated
+
+The original 500-request benchmarks are valid for independent route-compute
+load but invalid for simultaneous traffic: starts/goals are distinct yet many
+13 m-radius hull pairs overlap on their narrow shared lines. A new 500-lane
+empty-space control spaces starts and finishes 30 m apart in 3D, with zero
+overlap pairs. All 500 arrive in the final position region with correct body
+orientation; all fail <=2 m/s terminal speed (median 19.214 m/s). This proves
+the tested greedy B5 chain lacks terminal braking even in an adequately posed
+separate-goal control. It does not condemn A* generally or establish any
+alternative planner's runtime.
+
+## 2026-09-24 — first full point-chain diagnostic rejects false B5 success
+
+The 500-request fixture now chains exact B5 terminal samples into each next
+waypoint query and checks sampled clearance over the full scene. Complete
+terminal state (8 m position, <=2 m/s speed, +X hull within 10 degrees):
+**0/500** in empty space, **0/500** in the forced dogleg and **0/500** with 100
+barrels, despite 500/500 unproved first primitives in each case. Empty space
+reaches final position 500/500 but all miss final speed, 448 miss attitude.
+Dogleg/barrel position capture is 25/500 and 13/500; sampled contact rejects
+178 and 406 respectively.
+
+The diagnostic is bounded and greedy; its failures are not proofs of global
+infeasibility. No physical-alternative planner or complete cost comparison
+exists yet. The replacement must own corridor transitions, backward terminal
+admissibility and exact actuator/hull proof before its runtime is compared.
+
+## 2026-09-23 — first scaling measurement separates geometry from physics
+
+Correction: the original 5 m radius/15.33 s result was a fixture error and is
+superseded. The measured Cobra geometric radius is 13 m. Corrected 100-barrel
+scene: 500 routes in 17.075 s; first B5 primitive accepted as **unproved** for
+all 500. The added four-wall dogleg: 1,000 bends above 45 degrees, 153 above
+90 degrees, 500/500 initial unproved candidates. The physical compiler sees
+only the first primitive, so neither result establishes any complete feasible
+flight or compares the proposed physical route search against geometry-first.
+
+The production geometric A* baseline has been measured on a deterministic
+100-obstacle / 500-ship local fixture: 15.33 s sequentially, 30.03 ms per
+route p50 and 57.75 ms p95 with the default 32-obstacle consideration cap.
+All 500 paths were clear against the full fixture; no physical maneuver was
+planned or flown. One all-100-obstacle request took 419.4 ms. The user's
+concern about expensive repeated geometric-first searches is therefore
+measurable, but no alternative is declared faster until it solves this exact
+workload with the same success/safety obligations.
+
+## 2026-09-23 — M4 spatial eligibility introduced
+
+B5 now treats target position as a real eligibility constraint: velocity-only
+progress that misses the requested capture region returns a typed spatial
+witness. The bounded coordinator can negotiate a new terminal point without
+changing mission ownership. Two focused native tests passed; target MinGW and
+visual integration evidence are still needed. This slice is deliberately
+observer-only and does not establish corridor capture, chained state, B6
+continuous proof or accepted-program publication.
+
 ## 2026-09-23 — visual evidence rejects initial-only physical success as route evidence
 
 The target viewer run of remote commit `15f4c6c6f856cc9cf7974ef1527730315807c880`

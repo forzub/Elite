@@ -505,6 +505,8 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "dock_clearance") return textProfile.dockClearance;
     if (key == "dock_max_entry_speed") return textProfile.dockMaxEntrySpeed;
     if (key == "calculate_route") return textProfile.calculateRoute;
+    if (key == "show_docking_route") return textProfile.showDockingRoute;
+    if (key == "start_docking") return textProfile.startDocking;
 
     // Internal semantic keys are never intended as user-facing strings. If a
     // producer introduces a new key without extending the profile, show the

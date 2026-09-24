@@ -35,6 +35,7 @@ public:
     {
         AlternativeIdentity identity {};
         glm::dvec3 targetPositionMapMeters {0.0};
+        double targetCaptureRadiusMeters = 0.0;
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
         double maximumProgramSeconds = 0.0;
     };

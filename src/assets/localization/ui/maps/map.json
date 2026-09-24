@@ -583,6 +583,12 @@
       "es": "Vel. máx. de entrada",
       "ja": "最大進入速度"
     },
+    "map.object_info.show_docking_route": {
+      "en": "SHOW ROUTE", "ru": "ПОКАЗАТЬ МАРШРУТ", "zh-Hans": "显示航路", "es": "MOSTRAR RUTA", "ja": "経路を表示"
+    },
+    "map.object_info.start_docking": {
+      "en": "DOCK", "ru": "СТЫКОВКА", "zh-Hans": "对接", "es": "ACOPLAR", "ja": "ドッキング"
+    },
     "map.object_info.calculate_route": {
       "en": "CALCULATE ROUTE",
       "ru": "РАССЧИТАТЬ ПУТЬ",

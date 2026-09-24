@@ -965,7 +965,7 @@ bool GameSimulation::updateNpcNavigationControl(
     while (lastTime < executionTimeSeconds - 1.0e-9)
     {
         const double dt = std::min(
-            Bridge::PilotExecutor::kMaximumStepSeconds,
+            bridgeIt->second->maximumStepSeconds(),
             executionTimeSeconds - lastTime
         );
         const double nextTime = lastTime + dt;
@@ -4290,16 +4290,19 @@ m_hubVelocityMetersPerSecond[hubId] =
                 glm::dvec3 objectAngularVelocityWorldRadPerSecond {0.0};
                 if (hubFrame && hubFrame->valid)
                 {
+                    const glm::dvec3 currentLocalRotationDeg =
+                        obj.hubLocalRotationDeg +
+                        obj.hubLocalAngularVelocityDegPerSecond *
+                            m_orbitalUniverseTimeSeconds;
                     objectAngularVelocityWorldRadPerSecond =
                         hubFrame->angularVelocityWorldRadPerSecond;
                     objectAngularVelocityWorldRadPerSecond +=
-                        game::navigation::hubVisualLocalToWorldVector(
+                        game::navigation::hubAttachedAngularVelocityWorld(
                             hubFrame->progradeAxis,
                             hubFrame->radialAxis,
                             hubFrame->normalAxis,
-                            glm::radians(
-                                obj.hubLocalAngularVelocityDegPerSecond
-                            )
+                            currentLocalRotationDeg,
+                            obj.hubLocalAngularVelocityDegPerSecond
                         );
                 }
                 obj.angularVelocity =
@@ -7109,15 +7112,18 @@ void GameSimulation::prepareReferenceFramesForSpawn()
 
         if (hubFrame && hubFrame->valid)
         {
+            const glm::dvec3 currentLocalRotationDeg =
+                obj.hubLocalRotationDeg +
+                obj.hubLocalAngularVelocityDegPerSecond *
+                    m_orbitalUniverseTimeSeconds;
             const glm::dvec3 objectAngularVelocityWorldRadPerSecond =
                 hubFrame->angularVelocityWorldRadPerSecond +
-                game::navigation::hubVisualLocalToWorldVector(
+                game::navigation::hubAttachedAngularVelocityWorld(
                     hubFrame->progradeAxis,
                     hubFrame->radialAxis,
                     hubFrame->normalAxis,
-                    glm::radians(
-                        obj.hubLocalAngularVelocityDegPerSecond
-                    )
+                    currentLocalRotationDeg,
+                    obj.hubLocalAngularVelocityDegPerSecond
                 );
             obj.angularVelocity =
                 glm::vec3(objectAngularVelocityWorldRadPerSecond);

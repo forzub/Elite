@@ -55,7 +55,7 @@ Coordinator::Alternative alternative(
     value.identity.terminalAlternativeId = 200 + id;
     value.identity.speedScheduleAlternativeId = 300 + id;
     value.identity.arrivalTimeAlternativeId = 400 + id;
-    value.targetPositionMapMeters = {0.0, 100.0, 0.0};
+    value.targetPositionMapMeters = {150.0, 100.0, 0.0};
     value.desiredVelocityMapMetersPerSecond = desiredVelocity;
     value.maximumProgramSeconds = horizonSeconds;
     return value;
@@ -227,6 +227,31 @@ void testInvalidAlternativeProvenanceFailsBeforeSearch()
             "invalid frontier partially consumed its valid prefix");
 }
 
+void testSpatialRejectionRetriesDifferentTerminalAtSameVelocity()
+{
+    auto request = requestWithTwoHorizons();
+    request.commonPhysicalQuery.state.velocityMapMetersPerSecond =
+        {0.0, 0.0, 0.0};
+    request.commonPhysicalQuery.state.forwardMap = {1.0, 0.0, 0.0};
+    request.commonPhysicalQuery.state.rightMap = {0.0, 0.0, 1.0};
+    request.frontier.alternatives[0] = alternative(1, 3.0, {18.0, 0.0, 0.0});
+    request.frontier.alternatives[0].targetPositionMapMeters =
+        {-100.0, 0.0, 0.0};
+    request.frontier.alternatives[1] = alternative(2, 3.0, {18.0, 0.0, 0.0});
+    request.frontier.alternatives[1].targetPositionMapMeters =
+        {100.0, 0.0, 0.0};
+
+    const auto result = Coordinator::advance(request);
+    require(result.status == Coordinator::Status::CandidateFound,
+            "spatial rejection did not continue to the reachable terminal");
+    require(result.attemptCount == 2 &&
+                result.attempts[0].infeasibility.reason ==
+                    Compiler::InfeasibilityReason::SpatialTargetNotApproached,
+            "spatial rejection did not preserve its typed witness");
+    require(result.selectedAlternativeIndex == 1,
+            "coordinator selected a velocity-only result aimed away from target");
+}
+
 } // namespace
 
 int main()
@@ -240,6 +265,7 @@ int main()
         testStaleCursorFailsBeforeAnyPhysicalAttempt();
         testRebuiltFrontierCannotReuseOldCursor();
         testInvalidAlternativeProvenanceFailsBeforeSearch();
+        testSpatialRejectionRetriesDifferentTerminalAtSameVelocity();
 
         std::cout << "PHYSICAL MANEUVER SEARCH COORDINATOR TESTS: PASS\n";
         std::cout << " - typed rejection advances to the next ranked alternative\n";

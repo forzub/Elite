@@ -37,6 +37,7 @@ Planner::Request baseRequest()
     Planner::Request q;
     q.goalRevision = 10;
     q.staticWorldRevision = 20;
+    q.vehicleCapabilityRevision = 30;
     q.startMapMeters = {0.0, 0.0, 0.0};
     q.goalMapMeters = {300.0, 0.0, 0.0};
     q.navigationEnvelopeRadiusMeters = 5.0;
@@ -51,7 +52,8 @@ void testDirectRouteIsRetainedAsOneNominalProduct()
     require(result.pointsMapMeters.size() == 2,
             "direct route should contain start and finish only");
     require(result.goalRevision == 10 &&
-            result.staticWorldRevision == 20,
+            result.staticWorldRevision == 20 &&
+            result.vehicleCapabilityRevision == 30,
             "nominal route lost source revisions");
 }
 
@@ -135,6 +137,27 @@ void testRequiredWaypointIsPreserved()
     require(found, "nominal route lost required authored waypoint");
 }
 
+void testLimitedSearchNeverPublishesRouteThroughOmittedWall()
+{
+    auto q = baseRequest();
+    q.staticObstacles.push_back(wall());
+    require(Planner::plan(q).valid,
+            "single-wall control cannot find its normal detour");
+    Obstacle second = wall();
+    second.id = "zz_larger_wall";
+    second.entityId = 1002;
+    second.centerMeters = {250.0, 0.0, 0.0};
+    second.halfExtentsMeters = {10.0, 100.0, 100.0};
+    q.staticObstacles.push_back(second);
+    q.geometricPolicy.maxConsideredObstacles = 1;
+
+    const auto result = Planner::plan(q);
+    require(!result.valid,
+            "capped A* published a route through an omitted static wall");
+    require(result.pointsMapMeters.empty(),
+            "failed static route retained unproved points");
+}
+
 void testDynamicRevisionDoesNotInvalidateNominalRoute()
 {
     const auto route = Planner::plan(baseRequest());
@@ -143,6 +166,7 @@ void testDynamicRevisionDoesNotInvalidateNominalRoute()
     Planner::ValidityQuery same;
     same.goalRevision = route.goalRevision;
     same.staticWorldRevision = route.staticWorldRevision;
+    same.vehicleCapabilityRevision = route.vehicleCapabilityRevision;
     same.dynamicWorldRevision = 1;
 
     require(
@@ -166,6 +190,15 @@ void testDynamicRevisionDoesNotInvalidateNominalRoute()
     );
 
     same.staticWorldRevision = route.staticWorldRevision;
+    same.vehicleCapabilityRevision = route.vehicleCapabilityRevision;
+    same.vehicleCapabilityRevision++;
+    require(
+        Planner::invalidationReason(route, same) ==
+            Planner::InvalidationReason::VehicleCapabilityChanged,
+        "changed vehicle capability did not invalidate route"
+    );
+
+    same.vehicleCapabilityRevision = route.vehicleCapabilityRevision;
     same.goalRevision++;
     require(
         Planner::invalidationReason(route, same) ==
@@ -184,6 +217,7 @@ int main()
         testStaticWallProducesDetour();
         testBoxDetourUsesNearestFacePlaneInsteadOfCornerEdge();
         testRequiredWaypointIsPreserved();
+        testLimitedSearchNeverPublishesRouteThroughOmittedWall();
         testDynamicRevisionDoesNotInvalidateNominalRoute();
 
         std::cout << "NOMINAL ROUTE PLANNER TESTS: PASS\n";

@@ -9,7 +9,9 @@ namespace game::navigation
 
 struct DockingRouteRequest
 {
+    enum class Mode : std::uint8_t { Guidance, Automatic };
     std::uint64_t serial = 0;
+    Mode mode = Mode::Guidance;
     RouteTargetRef target;
 
     bool valid() const noexcept
@@ -28,7 +30,10 @@ public:
         return m_pending;
     }
 
-    std::uint64_t request(const RouteTargetRef& target)
+    std::uint64_t request(
+        const RouteTargetRef& target,
+        DockingRouteRequest::Mode mode = DockingRouteRequest::Mode::Guidance
+    )
     {
         if (target.kind != NavigationRouteAnchorKind::SemanticAnchor ||
             !target.valid())
@@ -37,6 +42,7 @@ public:
         }
 
         m_pending.serial = m_nextSerial++;
+        m_pending.mode = mode;
         m_pending.target = target;
         return m_pending.serial;
     }

@@ -85,6 +85,7 @@ public:
         TranslationAuthorityUnavailable,
         AttitudeAuthorityUnavailable,
         ProgramHorizonTooShort,
+        SpatialTargetNotApproached,
         NumericalFailure
     };
 
@@ -102,6 +103,8 @@ public:
         // bounded receding-horizon translation primitive.
         double minimumProgramSeconds = 0.0;
         double availableProgramSeconds = 0.0;
+        double initialTargetDistanceMeters = 0.0;
+        double closestCandidateTargetDistanceMeters = 0.0;
 
         double usableForwardAccelerationMps2 = 0.0;
         double usableAngularAccelerationRadPerSec2 = 0.0;
@@ -151,7 +154,10 @@ public:
         State state {};
         Capability capability {};
 
+        // Center of the next spatial capture region. A short primitive need
+        // not reach it, but must move closer without skipping its capture plane.
         glm::dvec3 geometricTargetPositionMapMeters {0.0};
+        double targetCaptureRadiusMeters = 0.0;
         glm::dvec3 desiredVelocityMapMetersPerSecond {0.0};
 
         // Existing runtime target-velocity controller gain. B5 consumes the

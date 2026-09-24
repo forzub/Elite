@@ -145,6 +145,8 @@ bool validQuery(
         finite(q.state.upMap) &&
         finite(q.state.angularVelocityMapRadPerSecond) &&
         finite(q.geometricTargetPositionMapMeters) &&
+        finite(q.targetCaptureRadiusMeters) &&
+        q.targetCaptureRadiusMeters >= 0.0 &&
         finite(q.desiredVelocityMapMetersPerSecond) &&
         finite(q.velocityResponsePerSecond) &&
         q.velocityResponsePerSecond >= 0.0 &&
@@ -704,6 +706,46 @@ bool compileLeadRotateMainBurn(
             angularSpeedAvailable + 1.0e-6;
 }
 
+// A velocity-only primitive is not a spatial maneuver. It must make actual
+// progress towards the next capture region; crossing the target plane outside
+// that region cannot count as completing this corridor leg.
+bool approachesTarget(
+    const Compiler::Query& query,
+    const Candidate& candidate,
+    double& closestDistance
+) noexcept
+{
+    const glm::dvec3 toTarget =
+        query.geometricTargetPositionMapMeters -
+        query.state.positionMapMeters;
+    const double initialDistance = glm::length(toTarget);
+    closestDistance = initialDistance;
+    if (initialDistance <= kEpsilon || candidate.sampleCount < 2)
+        return false;
+
+    const glm::dvec3 direction = toTarget / initialDistance;
+    for (std::size_t i = 1; i < candidate.sampleCount; ++i)
+    {
+        const glm::dvec3 offset =
+            candidate.samples[i].positionMapMeters -
+            query.state.positionMapMeters;
+        const double distance = glm::length(
+            candidate.samples[i].positionMapMeters -
+            query.geometricTargetPositionMapMeters
+        );
+        closestDistance = std::min(closestDistance, distance);
+        if (!finite(distance) ||
+            (glm::dot(offset, direction) >= initialDistance &&
+             distance > query.targetCaptureRadiusMeters + kEpsilon))
+        {
+            return false;
+        }
+    }
+
+    return closestDistance <= query.targetCaptureRadiusMeters + kEpsilon ||
+        closestDistance < initialDistance - kEpsilon;
+}
+
 } // namespace
 
 OrdinaryPhysicalManeuverCompiler::Result
@@ -762,6 +804,11 @@ OrdinaryPhysicalManeuverCompiler::compile(
         return result;
     }
 
+    double closestDistance = glm::length(
+        query.geometricTargetPositionMapMeters -
+        query.state.positionMapMeters
+    );
+    bool spatiallyRejected = false;
     Candidate direct;
     if (compileDirect(
             query,
@@ -770,8 +817,17 @@ OrdinaryPhysicalManeuverCompiler::compile(
             up,
             direct))
     {
-        result.candidates[result.candidateCount++] = direct;
-        result.directBodyAxisFeasible = true;
+        double distance = closestDistance;
+        if (approachesTarget(query, direct, distance))
+        {
+            result.candidates[result.candidateCount++] = direct;
+            result.directBodyAxisFeasible = true;
+        }
+        else
+        {
+            spatiallyRejected = true;
+            closestDistance = std::min(closestDistance, distance);
+        }
     }
 
     const glm::dvec3 desiredAcceleration =
@@ -805,9 +861,17 @@ OrdinaryPhysicalManeuverCompiler::compile(
             up,
             rotateBurn))
     {
-        result.candidates[result.candidateCount++] =
-            rotateBurn;
-        result.mainEngineCandidateAvailable = true;
+        double distance = closestDistance;
+        if (approachesTarget(query, rotateBurn, distance))
+        {
+            result.candidates[result.candidateCount++] = rotateBurn;
+            result.mainEngineCandidateAvailable = true;
+        }
+        else
+        {
+            spatiallyRejected = true;
+            closestDistance = std::min(closestDistance, distance);
+        }
     }
 
     result.leadRotateRequired = !rawDirectFeasible;
@@ -818,7 +882,20 @@ OrdinaryPhysicalManeuverCompiler::compile(
             : Status::NoPhysicalCandidate;
 
     if (result.status == Status::NoPhysicalCandidate)
+    {
         result.infeasibility = assessInfeasibility(query, forward);
+        if (spatiallyRejected)
+        {
+            result.infeasibility.reason =
+                InfeasibilityReason::SpatialTargetNotApproached;
+            result.infeasibility.initialTargetDistanceMeters = glm::length(
+                query.geometricTargetPositionMapMeters -
+                query.state.positionMapMeters
+            );
+            result.infeasibility.closestCandidateTargetDistanceMeters =
+                closestDistance;
+        }
+    }
 
     return result;
 }

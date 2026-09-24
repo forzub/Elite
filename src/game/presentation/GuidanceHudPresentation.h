@@ -96,7 +96,7 @@ struct GuidanceCorridorHudPresentation
         game::navigation::GuidancePurpose::Transit;
     double confidence = 1.0;
     bool advisoryOnly = true;
-    bool spatialManualTunnel = false;
+    bool spatialAdvisoryGates = false;
     bool noSafePrimarySolution = false;
 
     // Read-only server execution truth for the selected route executor.
@@ -154,7 +154,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     }
 
     const int systemId = player.renderTransform.motion.systemId;
-    const auto* corridor = navigation.guidance().activeSpatialManualTunnel(
+    const auto* corridor = navigation.guidance().activeSpatialAdvisoryGates(
         systemId,
         universeTimeSeconds,
         &navigation.modules()
@@ -175,7 +175,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
 
     std::vector<const game::navigation::GuidanceFrame*> candidates;
     candidates.reserve(corridor->frames.size());
-    const bool spatialTunnel = corridor->spatialManualTunnel;
+    const bool spatialGates = corridor->spatialAdvisoryGates;
     const double maxTime = universeTimeSeconds + std::max(0.5, lookAheadSeconds);
 
     for (const auto& frame : corridor->frames)
@@ -189,16 +189,15 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
             std::max(frame.widthMeters, frame.heightMeters)
         );
 
-        // A spatial manual tunnel is regenerated from the actual ship pose,
-        // so its gates intentionally share the current epoch.  Time filtering
-        // is only meaningful for predictive corridors.  The first gate still
-        // lives on the ship and is suppressed to avoid a giant cockpit blob.
-        const double nearCullMeters = spatialTunnel
+        // Static route gates share the current Hub epoch. Time filtering only
+        // applies to predicted flight samples; gates near the cockpit are
+        // suppressed to avoid an oversized close frame.
+        const double nearCullMeters = spatialGates
             ? 30.0
             : std::max(30.0, frameScaleMeters * 0.75);
         if (frameDistanceMeters < nearCullMeters)
             continue;
-        if (!spatialTunnel &&
+        if (!spatialGates &&
             (timeAheadSeconds < 0.75 || frame.universeTimeSeconds > maxTime))
         {
             continue;
@@ -209,7 +208,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     if (candidates.empty())
         return out;
 
-    const std::size_t frameLimit = spatialTunnel
+    const std::size_t frameLimit = spatialGates
         ? std::max<std::size_t>(maxFrames, 96)
         : std::max<std::size_t>(1, maxFrames);
     const std::size_t stride = std::max<std::size_t>(
@@ -260,7 +259,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
         }
     }
 
-    if (spatialTunnel && !out.frames.empty())
+    if (spatialGates && !out.frames.empty())
     {
         const std::size_t lastIndex = out.frames.size() - 1;
         for (std::size_t i = 0; i < out.frames.size(); ++i)
@@ -281,7 +280,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     out.purpose = corridor->purpose;
     out.confidence = corridor->confidence;
     out.advisoryOnly = corridor->advisoryOnly;
-    out.spatialManualTunnel = corridor->spatialManualTunnel;
+    out.spatialAdvisoryGates = corridor->spatialAdvisoryGates;
     out.noSafePrimarySolution = corridor->noSafePrimarySolution;
     return out;
 }

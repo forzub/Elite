@@ -17,9 +17,10 @@ namespace game::navigation
 // "through which geometric polyline can the vehicle generally reach the goal
 // through the current static world?"
 //
-// Moving actors are not baked into this product.  They belong to the later
-// local/dynamic overlay.  A dynamic-world revision therefore never invalidates
-// a nominal route by itself.
+// This is geometry, NOT an executable flight program. A separate physical
+// compiler must prove the complete program before execution. Moving actors
+// are not search inputs; an execution monitor may cancel an accepted program
+// when a hazard appears, but cannot silently change this retained route.
 class NominalRoutePlanner
 {
 public:
@@ -27,6 +28,7 @@ public:
     {
         std::uint64_t goalRevision = 0;
         std::uint64_t staticWorldRevision = 0;
+        std::uint64_t vehicleCapabilityRevision = 0;
 
         glm::dvec3 startMapMeters {0.0};
         glm::dvec3 goalMapMeters {0.0};
@@ -55,6 +57,7 @@ public:
 
         std::uint64_t goalRevision = 0;
         std::uint64_t staticWorldRevision = 0;
+        std::uint64_t vehicleCapabilityRevision = 0;
 
         double lengthMeters = 0.0;
         std::vector<glm::dvec3> pointsMapMeters;
@@ -66,13 +69,15 @@ public:
         None = 0,
         InvalidPlan,
         GoalChanged,
-        StaticWorldChanged
+        StaticWorldChanged,
+        VehicleCapabilityChanged
     };
 
     struct ValidityQuery
     {
         std::uint64_t goalRevision = 0;
         std::uint64_t staticWorldRevision = 0;
+        std::uint64_t vehicleCapabilityRevision = 0;
 
         // Present intentionally: dynamic changes are observed by the runtime
         // but do not invalidate/rebuild the nominal static route.

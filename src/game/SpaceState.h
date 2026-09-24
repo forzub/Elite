@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <deque>
 #include <mutex>
+#include <memory>
+#include <atomic>
 #include <chrono>
 #include <glm/gtc/quaternion.hpp>
 
@@ -45,7 +47,8 @@
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
-#include "src/game/navigation/ManualDockingGuidancePlan.h"
+#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
@@ -236,8 +239,7 @@ private:
         const Viewport& viewport
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
-    void updateDockingGuidance(float dt);
-    bool refreshActiveManualDockingGuidance(bool forceRebuild = false);
+    void updateDockingAdvisory();
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
@@ -298,7 +300,31 @@ private:
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     std::string m_dockingGuidanceFailureReason;
-    game::navigation::ManualDockingGuidancePlan m_manualDockingGuidancePlan;
+    struct DockAdvice
+    {
+        std::uint64_t serial = 0;
+        int systemId = -1;
+        game::navigation::HubPredictionSource hub;
+        game::navigation::ResolvedHubSemanticAnchor port;
+        std::vector<game::navigation::DockingAdvisoryGate> gates;
+        double standoffMeters = 0.0;
+        double widthMeters = 0.0;
+        double heightMeters = 0.0;
+        double lateralToleranceMeters = 0.0;
+        double verticalToleranceMeters = 0.0;
+        std::size_t nextGate = 0;
+    } m_dockAdvice;
+    struct DockAdviceJob
+    {
+        std::atomic<bool> ready {false};
+        std::uint64_t timelineRevision = 0;
+        double startedServerSeconds = 0.0;
+        DockAdvice context;
+        game::navigation::DockingAdvisoryPlan plan;
+    };
+    std::shared_ptr<DockAdviceJob> m_dockAdviceJob;
+    std::shared_ptr<std::atomic<int>> m_dockWorkerCount =
+        std::make_shared<std::atomic<int>>(0);
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;
@@ -360,9 +386,6 @@ private:
     double m_perfDockingGuidanceMs = 0.0;
     double m_perfScenePrepareMs = 0.0;
     bool m_perfDockingRequestActive = false;
-    bool m_perfManualGuidancePlanActive = false;
-    std::uint32_t m_perfDockingTunnelBuilds = 0;
-    double m_perfDockingTunnelBuildMs = 0.0;
     double m_perfPlayerViewMs = 0.0;
     double m_perfUiRootUpdateMs = 0.0;
     double m_perfHudMs = 0.0;

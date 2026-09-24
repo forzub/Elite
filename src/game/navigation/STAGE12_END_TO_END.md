@@ -1,7 +1,84 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — docking fixture and yawed spin regression
+
+The isolated Hub docking scene now omits the Stage-12 runtime NPC as well as
+stress objects. Native `docking_advisory` checks an unobstructed static path
+around the station to a yawed far port with zero staging speed and compares
+the semantic port's 45-second rotation with its 2 deg/s authored local-Z spin.
+This caught a wrong spin-axis transform after module yaw. Server simulation and
+world prediction now convert Rx*Ry*Rz Euler rates using the current authored
+module pose; the NPC stepping caller uses the configured pilot step maximum.
+These local checks do not constitute target-machine build, game UI inspection,
+physical maneuver proof or automatic docking acceptance.
+
 **Status:** ACTIVE  
 **Started:** 2026-09-18 Europe/Kyiv  
+
+## 2026-09-24 — fixed-scene route commission boundary
+
+A* searches a static scene for one ship/group envelope and yields a geometric
+route only. Scheduled traffic and dynamic actor response are separate systems.
+The eventual accepted program must include physical maneuver/terminal-state
+proof; runtime follows that immutable program or cancels it. A cancelled
+program is not silently edited by A*. Pure route planning is currently
+synchronous; a worker/scheduled commission and program acceptance are open.
+Current geometric changes add vehicle revision to the nominal route and reject
+capped-search candidate paths that collide with omitted static obstacles.
+
+
+## 2026-09-24 — fixture contract corrected: separate throughput from traffic
+
+The first 500-query batches were independent requests with different goals,
+but not 500 valid simultaneous ships: many initial and terminal Cobra hulls
+overlapped. The added `open_separated` control uses 500 independent parallel
+3D lanes, 30 m apart, with no initial or terminal overlap. Under the same
+greedy B5 point-chain diagnostic, every route reaches the finish position
+and orientation, but 0/500 meet <=2 m/s final speed (median 19.214 m/s).
+This isolates missing terminal-speed authoring without blaming crowding or
+obstacles. Concurrent traffic and exact executed hull proof remain untested.
+
+## 2026-09-24 — B5 chained observer fails even empty-space arrival
+
+The stress diagnostic forwards exact final B5 sample position, velocity, body
+axes and angular velocity through every geometric route point. It checks
+sampled center segments against all scene obstacles and reports terminal
+position, speed and attitude separately. A 20 m/s start yields 500/500
+unproved initial candidates in each scene, but 0/500 complete terminal
+captures in empty space, dogleg or barrels. Empty-space position capture is
+500/500; all miss the <=2 m/s terminal speed, 448 miss hull direction.
+This is a blocking M4 finding, not MinGW acceptance and not proof that no
+alternate trajectory could satisfy the same goal. B6 continuous proof has
+not run; point-chain timings must not be sold as complete planner speed.
+
+## 2026-09-23 — geometry-only 500-actor stress baseline
+
+Correction: this initial 5 m radius measurement is superseded. The Cobra
+geometric radius is 13 m. Corrected 100-barrel batch: 17.075 s, 500/500
+geometrically clear, zero bends over 45 degrees, 500/500 first B5 candidates
+still requiring proof. A four-wall dogleg produces 1,000 bends over 45 degrees
+and 153 over 90 degrees in 500 routes but **again** 500/500 initial-only B5
+candidates. First-probe success is therefore useless as an end-to-end corner
+gate. Full terminal-state chaining and continuous proof are still absent.
+
+`benchmarks/navigation_route_stress` generates 100 fixed capsules and 500
+deterministic ship queries. Native g++ -O2 run with 32 considered obstacles
+reports 15,330.817 ms sequential total, 30.025 ms p50, 57.749 ms p95;
+500/500 returned segments clear all 100 static obstacles. A one-ship query
+considering all 100 obstacles took 419.403 ms. This is a reproducible
+geometry-only baseline, not an accepted target-machine performance or physical
+flight gate. Future planners must compare on identical requests and include
+physical feasibility, time of flight and collision proof.
+
+## 2026-09-23 — B5 spatial eligibility regression
+
+The physical compiler now rejects candidates that do not make spatial progress
+to the requested capture point or cross its plane beyond the explicit capture
+radius. It reports `SpatialTargetNotApproached`; coordinator tests cover two
+terminal positions with identical desired velocity. Native focused compiler
+and coordinator tests pass. This is a necessary first filter, not capture or
+continuous sweep proof. The next target gate requires exact terminal-state
+chaining through every route corner in the observer, then MinGW visual evidence.
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/game/navigation/LIVE_NAVIGATION_INTEGRATION.md`
 
 ## 2026-09-23 — first observer visual run exposes high-speed corner infeasibility
@@ -9765,3 +9842,14 @@ corridor/speed/terminal/time and retry. Search failure retains the objective and
 navigation ownership. If collision becomes unavoidable, an explicit
 damage-minimizing contact program remains physical and continuously replanned;
 an infeasible nominal program is never sent to Follower.
+
+
+## 2026-09-24 — replacement docking scope
+
+Earlier descriptions of `DockingPathPlanner`, `GuidanceTunnelBuilder` and the
+rolling `SpaceState` manual tunnel are historical: those runtime files and
+functions have been deleted. The new `DockingAdvisoryPlanner` is a one-shot,
+static, collision-checked advisory guide to a full stop outside the opening;
+its speed bounds do not constitute a ship maneuver. Actual docking still
+requires a separately proved and accepted server program, reservation, spin
+synchronization, ingress and capture. Its action is disabled until then.

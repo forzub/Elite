@@ -69,12 +69,10 @@
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
-#include "src/game/navigation/DockingPathPlanner.h"
+#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/HubFrameBasis.h"
-#include "src/world/navigation/TrajectoryGenerator.h"
-#include "src/world/navigation/GuidanceTunnel.h"
-#include "src/world/navigation/NavigationOrientation.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
 #include <chrono>
@@ -1668,1253 +1666,217 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 }
 
 
-// =====================================================================================
-// Dynamic manual docking tunnel
-// =====================================================================================
-bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
+void SpaceState::updateDockingAdvisory()
 {
-    if (!m_client || !m_manualDockingGuidancePlan.valid)
-        return false;
-
-    const auto playerIt = m_client->world().ships().find(m_playerId.value);
-    if (playerIt == m_client->world().ships().end())
-        return false;
-
-    const ClientShipState& player = playerIt->second;
-    if (player.transform.motion.systemId != m_manualDockingGuidancePlan.systemId)
-        return false;
-
-    // The published generation lives in Hub-local coordinates. Presentation
-    // conversion is cheap and runs every frame, while a low-rate policy below
-    // rebuilds the near tunnel from the current hull pose whenever the ship has
-    // materially departed from that generation. Never translate an old tunnel
-    // rigidly with the ship: a replacement generation must start at the live
-    // pose and reconnect to the accepted physical trajectory.
-    const double presentationUniverseTimeSeconds =
-        m_client->renderUniverseTimeSeconds();
-    const auto hubFrame =
-        game::navigation::NavigationWorldPredictor::predictHubFrameAt(
-            m_manualDockingGuidancePlan.hubPredictionSource,
-            presentationUniverseTimeSeconds
-        );
-    if (!hubFrame.valid)
-        return false;
-
-    const glm::dvec3 playerWorldMeters = world::coordinates::fullMeters(
-        player.renderTransform.worldPosition
-    );
-    const glm::dvec3 playerLocalMeters = hubFrame.worldToLocalPosition(
-        playerWorldMeters
-    );
-    const glm::dmat3 playerWorldBasis(
-        glm::mat3(player.renderTransform.orientation)
-    );
-    const glm::dmat3 playerLocalBasis =
-        glm::transpose(hubFrame.localToWorldBasis) * playerWorldBasis;
-    const glm::dquat playerLocalOrientation = glm::normalize(
-        glm::quat_cast(playerLocalBasis)
-    );
-    const game::navigation::WorldKinematicState playerRenderWorldKinematics {
-        playerWorldMeters,
-        glm::dvec3(player.renderTransform.motion.worldVelocityMps),
-        glm::dvec3(0.0)
-    };
-    const auto playerRenderLocalKinematics =
-        game::navigation::worldToLocalKinematics(
-            hubFrame,
-            playerRenderWorldKinematics
-        );
-    const glm::dvec3 playerLocalVelocityMps =
-        playerRenderLocalKinematics.velocityMps;
-
-    auto& manualPlan = m_manualDockingGuidancePlan;
-    bool rebuild = forceRebuild ||
-        !manualPlan.fixedTunnel.valid ||
-        manualPlan.fixedTunnel.gates.size() < 2;
-
-    const char* replanReason = forceRebuild ? "initial" : "none";
-
-    // Track against one immutable generation. This runs every frame but does
-    // no spline/path work: it only projects one or two points onto nearby gate
-    // segments, retires passed gates, and decides whether a low-rate replan is
-    // warranted. Gate coordinates never slide with the ship inside a
-    // generation.
-    struct TunnelTrack
-    {
-        bool valid = false;
-        double distanceAlongMeters = 0.0;
-        double lateralMeters = 0.0;
-        double verticalMeters = 0.0;
-        glm::dvec3 tangent {0.0, 0.0, -1.0};
-        glm::dvec3 right {1.0, 0.0, 0.0};
-        glm::dvec3 up {0.0, 1.0, 0.0};
-    };
-
-    auto trackPoint = [&](const glm::dvec3& pointMeters) -> TunnelTrack
-    {
-        TunnelTrack track;
-        const auto& gates = manualPlan.fixedTunnel.gates;
-        if (gates.size() < 2)
-            return track;
-
-        const std::size_t first = std::min(
-            manualPlan.firstActiveGateIndex,
-            gates.size() - 1
-        );
-        const std::size_t segBegin = first > 0 ? first - 1 : 0;
-        const std::size_t segEnd = std::min(
-            gates.size() - 1,
-            segBegin + std::size_t(96)
-        );
-        double bestDistance2 = std::numeric_limits<double>::infinity();
-
-        for (std::size_t i = segBegin; i < segEnd; ++i)
-        {
-            const auto& a = gates[i];
-            const auto& b = gates[i + 1];
-            const glm::dvec3 segment = b.positionMeters - a.positionMeters;
-            const double length2 = glm::dot(segment, segment);
-            if (length2 <= 1.0e-12)
-                continue;
-
-            const double u = std::clamp(
-                glm::dot(pointMeters - a.positionMeters, segment) / length2,
-                0.0,
-                1.0
-            );
-            const glm::dvec3 projected = a.positionMeters + segment * u;
-            const glm::dvec3 delta = pointMeters - projected;
-            const double distance2 = glm::dot(delta, delta);
-            if (distance2 >= bestDistance2)
-                continue;
-
-            bestDistance2 = distance2;
-            glm::dquat qa = a.orientation;
-            glm::dquat qb = b.orientation;
-            if (glm::dot(qa, qb) < 0.0)
-                qb = -qb;
-            const glm::dquat orientation = glm::normalize(glm::slerp(
-                qa,
-                qb,
-                u
-            ));
-            const glm::dvec3 right = glm::normalize(
-                orientation * glm::dvec3(1.0, 0.0, 0.0)
-            );
-            const glm::dvec3 up = glm::normalize(
-                orientation * glm::dvec3(0.0, 1.0, 0.0)
-            );
-
-            track.valid = true;
-            track.distanceAlongMeters =
-                a.distanceAlongTunnelMeters +
-                (b.distanceAlongTunnelMeters - a.distanceAlongTunnelMeters) * u;
-            track.lateralMeters = std::abs(glm::dot(delta, right));
-            track.verticalMeters = std::abs(glm::dot(delta, up));
-            track.tangent = glm::normalize(segment);
-            track.right = right;
-            track.up = up;
-        }
-        return track;
-    };
-
-    if (!rebuild)
-    {
-        const auto& gates = manualPlan.fixedTunnel.gates;
-        const TunnelTrack track = trackPoint(playerLocalMeters);
-        if (track.valid)
-        {
-            manualPlan.passedTunnelDistanceMeters = std::max(
-                manualPlan.passedTunnelDistanceMeters,
-                track.distanceAlongMeters
-            );
-
-            // Once a gate is behind the ship it never reappears, even if a
-            // later corridor self-intersects or the pilot backs up.
-            const double retireMargin = manualPlan.gateSpacingMeters * 0.10;
-            while (manualPlan.firstActiveGateIndex + 1 < gates.size() &&
-                   gates[manualPlan.firstActiveGateIndex].distanceAlongTunnelMeters +
-                       retireMargin < manualPlan.passedTunnelDistanceMeters)
-            {
-                ++manualPlan.firstActiveGateIndex;
-            }
-
-            const auto& referenceGate = gates[std::min(
-                manualPlan.firstActiveGateIndex,
-                gates.size() - 1
-            )];
-            const double lateralBase = std::max(
-                1.0,
-                referenceGate.lateralToleranceMeters
-            );
-            const double verticalBase = std::max(
-                1.0,
-                referenceGate.verticalToleranceMeters
-            );
-
-            // Crossing the hard envelope is an immediate event; no 4 Hz wait.
-            const bool outsideHard =
-                track.lateralMeters >
-                    lateralBase * manualPlan.hardToleranceScale ||
-                track.verticalMeters >
-                    verticalBase * manualPlan.hardToleranceScale;
-            if (outsideHard)
-            {
-                rebuild = true;
-                replanReason = "outside";
-            }
-
-            const double serverNow = m_client->estimatedServerTimeSeconds();
-            if (!rebuild &&
-                serverNow >= manualPlan.nextReplanCheckServerTimeSeconds)
-            {
-                manualPlan.nextReplanCheckServerTimeSeconds =
-                    serverNow + manualPlan.replanCheckIntervalSeconds;
-
-                // Replan before leaving the tunnel, but predict only the
-                // cross-track component of momentum. Projecting the full
-                // velocity vector as a straight line would falsely reject a
-                // correctly-followed curved corridor simply because the pilot
-                // has not yet reached the next bend.
-                const double predictedLateral =
-                    track.lateralMeters +
-                    std::abs(glm::dot(playerLocalVelocityMps, track.right)) *
-                        manualPlan.predictedLookAheadSeconds;
-                const double predictedVertical =
-                    track.verticalMeters +
-                    std::abs(glm::dot(playerLocalVelocityMps, track.up)) *
-                        manualPlan.predictedLookAheadSeconds;
-                const bool predictedOutside =
-                    predictedLateral >
-                        lateralBase * manualPlan.preemptiveToleranceScale ||
-                    predictedVertical >
-                        verticalBase * manualPlan.preemptiveToleranceScale;
-
-                double courseError = 0.0;
-                const double speed = glm::length(playerLocalVelocityMps);
-                if (speed > 2.0)
-                {
-                    const glm::dvec3 velocityDirection =
-                        playerLocalVelocityMps / speed;
-                    courseError = std::acos(std::clamp(
-                        glm::dot(velocityDirection, track.tangent),
-                        -1.0,
-                        1.0
-                    ));
-                }
-
-                // Hull attitude is a useful intent signal at low speed and in
-                // Elite-like control laws, while actual velocity remains the
-                // geometric boundary condition for the replanned curve.
-                const glm::dvec3 hullForward = glm::normalize(
-                    playerLocalOrientation * glm::dvec3(0.0, 0.0, -1.0)
-                );
-                const double attitudeError = std::acos(std::clamp(
-                    glm::dot(hullForward, track.tangent),
-                    -1.0,
-                    1.0
-                ));
-
-                // A manual tunnel is rolling guidance, not a frozen railway.
-                // Reconnect while the deviation is still small enough to be a
-                // current-pose correction. Previously a ship could move several
-                // metres inside a wide gate (or rotate while drifting in Newton
-                // flight) without satisfying any rebuild condition.
-                const double poseLateralThreshold = std::clamp(
-                    lateralBase * 0.08,
-                    0.75,
-                    3.0
-                );
-                const double poseVerticalThreshold = std::clamp(
-                    verticalBase * 0.08,
-                    0.75,
-                    3.0
-                );
-                const bool currentPoseChanged =
-                    track.lateralMeters > poseLateralThreshold ||
-                    track.verticalMeters > poseVerticalThreshold ||
-                    attitudeError > manualPlan.courseChangeThresholdRadians;
-
-                bool targetMoved = false;
-                if (manualPlan.targetAttachment.valid)
-                {
-                    const auto targetModule =
-                        game::navigation::NavigationWorldPredictor::
-                            resolveHubAttachmentAt(
-                                hubFrame,
-                                presentationUniverseTimeSeconds,
-                                manualPlan.targetAttachment.localOffsetMeters,
-                                manualPlan.targetAttachment.localRotationDeg,
-                                manualPlan.targetAttachment.
-                                    localAngularVelocityDegPerSecond
-                            );
-                    if (targetModule.valid)
-                    {
-                        const auto targetAnchor =
-                            game::navigation::resolveHubSemanticAnchor(
-                                manualPlan.targetAnchor,
-                                manualPlan.systemId,
-                                presentationUniverseTimeSeconds,
-                                targetModule.positionMeters,
-                                targetModule.velocityMps,
-                                targetModule.orientation,
-                                targetModule.angularVelocityWorldRadPerSecond
-                            );
-                        const glm::dvec3 liveTerminal =
-                            hubFrame.worldToLocalPosition(
-                                targetAnchor.positionMeters
-                            );
-                        const glm::dvec3 liveForward = glm::normalize(
-                            hubFrame.worldToLocalVector(-targetAnchor.forward())
-                        );
-                        const glm::dvec3 liveUp = glm::normalize(
-                            hubFrame.worldToLocalVector(targetAnchor.up())
-                        );
-                        const glm::dquat liveOrientation =
-                            world::navigation::orientationForForwardUp(
-                                liveForward,
-                                liveUp
-                            );
-                        const auto& oldTerminal = gates.back();
-                        const double positionError = glm::length(
-                            liveTerminal - oldTerminal.positionMeters
-                        );
-                        const double qdot = std::clamp(
-                            std::abs(glm::dot(
-                                liveOrientation,
-                                oldTerminal.orientation
-                            )),
-                            0.0,
-                            1.0
-                        );
-                        const double angleError = 2.0 * std::acos(qdot);
-                        targetMoved =
-                            positionError > manualPlan.targetPositionReplanMeters ||
-                            angleError > manualPlan.targetAngleReplanRadians;
-                    }
-                }
-
-                if (currentPoseChanged)
-                {
-                    rebuild = true;
-                    replanReason = "current_pose";
-                }
-                else if (predictedOutside)
-                {
-                    rebuild = true;
-                    replanReason = "predicted_exit";
-                }
-                else if (courseError >
-                         manualPlan.courseChangeThresholdRadians)
-                {
-                    rebuild = true;
-                    replanReason = "course";
-                }
-                else if (speed <= 2.0 && attitudeError >
-                         manualPlan.courseChangeThresholdRadians * 1.5)
-                {
-                    rebuild = true;
-                    replanReason = "attitude";
-                }
-                else if (targetMoved)
-                {
-                    rebuild = true;
-                    replanReason = "target_motion";
-                }
-            }
-        }
-    }
-
-    if (rebuild)
-    {
-        // CALCULATE ROUTE already produced a canonical collision-safe
-        // trajectory. The initial HUD tunnel must sample that accepted
-        // backbone instead of solving a second geometric problem that can
-        // disagree with the route planner. Only an established tunnel that is
-        // being replaced by a rolling deviation/target-motion event may build
-        // a new current-pose reconnect curve.
-        const bool reconnectCurrentPose =
-            manualPlan.fixedTunnel.valid && !forceRebuild;
-
-        glm::dvec3 terminalLocalMeters =
-            manualPlan.trajectory.samples.back().positionMeters;
-        glm::dquat terminalLocalOrientation =
-            manualPlan.trajectory.samples.back().orientation;
-        auto liveObstacles = manualPlan.obstacles;
-
-        if (reconnectCurrentPose)
-        {
-            const auto& attachment = manualPlan.targetAttachment;
-            if (!attachment.valid)
-                return false;
-
-            const auto targetModule =
-                game::navigation::NavigationWorldPredictor::resolveHubAttachmentAt(
-                    hubFrame,
-                    presentationUniverseTimeSeconds,
-                    attachment.localOffsetMeters,
-                    attachment.localRotationDeg,
-                    attachment.localAngularVelocityDegPerSecond
-                );
-            if (!targetModule.valid)
-                return false;
-
-            const auto targetAnchor = game::navigation::resolveHubSemanticAnchor(
-                manualPlan.targetAnchor,
-                manualPlan.systemId,
-                presentationUniverseTimeSeconds,
-                targetModule.positionMeters,
-                targetModule.velocityMps,
-                targetModule.orientation,
-                targetModule.angularVelocityWorldRadPerSecond
-            );
-
-            terminalLocalMeters = hubFrame.worldToLocalPosition(
-                targetAnchor.positionMeters
-            );
-            const glm::dvec3 dockVehicleForwardLocal = glm::normalize(
-                hubFrame.worldToLocalVector(-targetAnchor.forward())
-            );
-            const glm::dvec3 dockVehicleUpLocal = glm::normalize(
-                hubFrame.worldToLocalVector(targetAnchor.up())
-            );
-            terminalLocalOrientation =
-                world::navigation::orientationForForwardUp(
-                    dockVehicleForwardLocal,
-                    dockVehicleUpLocal
-                );
-
-            for (auto& obstacle : liveObstacles)
-            {
-                if (obstacle.id != manualPlan.targetObstacleId)
-                    continue;
-                obstacle.centerMeters = hubFrame.worldToLocalPosition(
-                    targetModule.positionMeters
-                );
-                obstacle.localToWorldBasis =
-                    glm::transpose(hubFrame.localToWorldBasis) *
-                    glm::dmat3(glm::mat3(targetModule.orientation));
-            }
-        }
-
-        world::navigation::GuidanceTunnelRequest tunnelRequest;
-        tunnelRequest.trajectory = &manualPlan.trajectory;
-        tunnelRequest.buildMode = reconnectCurrentPose
-            ? world::navigation::GuidanceTunnelBuildMode::ReconnectCurrentPose
-            : world::navigation::GuidanceTunnelBuildMode::TrajectoryBackbone;
-        tunnelRequest.currentPositionMeters = playerLocalMeters;
-        tunnelRequest.currentOrientation = playerLocalOrientation;
-        tunnelRequest.currentVelocityMps = playerLocalVelocityMps;
-        tunnelRequest.terminalPositionMeters = terminalLocalMeters;
-        tunnelRequest.terminalOrientation = terminalLocalOrientation;
-        tunnelRequest.gateSpacingMeters = manualPlan.gateSpacingMeters;
-        tunnelRequest.gateWidthMeters = manualPlan.gateWidthMeters;
-        tunnelRequest.gateHeightMeters = manualPlan.gateHeightMeters;
-        tunnelRequest.lateralToleranceMeters = manualPlan.lateralToleranceMeters;
-        tunnelRequest.verticalToleranceMeters = manualPlan.verticalToleranceMeters;
-        tunnelRequest.startCaptureDistanceMeters = manualPlan.startCaptureDistanceMeters;
-        tunnelRequest.terminalAlignmentDistanceMeters =
-            manualPlan.terminalAlignmentDistanceMeters;
-        tunnelRequest.obstacles = std::move(liveObstacles);
-        tunnelRequest.vehicle = manualPlan.vehicle;
-        tunnelRequest.terminalAllowedObstacleId = manualPlan.targetObstacleId;
-        tunnelRequest.terminalObstacleEntrySourceProgressMeters =
-            manualPlan.terminalObstacleEntrySourceProgressMeters;
-        tunnelRequest.curveSampleSpacingMeters = 14.0;
-        tunnelRequest.curveChordErrorMeters = 0.15;
-        tunnelRequest.maxSmoothSupportLevel = 1;
-        const double speedMps = glm::length(playerLocalVelocityMps);
-        if (reconnectCurrentPose)
-        {
-            const double lateralAccelerationMps2 = std::max(
-                1.0,
-                manualPlan.vehicle.maxLateralAccelerationMps2
-            );
-            const double dynamicTurnRadiusMeters =
-                speedMps * speedMps / lateralAccelerationMps2;
-            tunnelRequest.minimumTurnRadiusMeters = std::max(
-                manualPlan.minimumVisualTurnRadiusMeters,
-                dynamicTurnRadiusMeters
-            );
-        }
-
-        ++m_perfDockingTunnelBuilds;
-        const double tunnelBuildStartMs = nowMs();
-        auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
-            tunnelRequest
-        );
-        const double tunnelBuildMs = nowMs() - tunnelBuildStartMs;
-        m_perfDockingTunnelBuildMs += tunnelBuildMs;
-        if (!tunnel.valid || tunnel.gates.size() < 2)
-            return false;
-
-        manualPlan.fixedTunnel = std::move(tunnel);
-        manualPlan.firstActiveGateIndex = 0;
-        manualPlan.passedTunnelDistanceMeters = 0.0;
-        manualPlan.lastReplanServerTimeSeconds =
-            m_client->estimatedServerTimeSeconds();
-        manualPlan.nextReplanCheckServerTimeSeconds =
-            manualPlan.lastReplanServerTimeSeconds +
-            manualPlan.replanCheckIntervalSeconds;
-        ++manualPlan.tunnelGeneration;
-        std::cerr
-            << "[GuidanceReplan] request=" << manualPlan.requestSerial
-            << " generation=" << manualPlan.tunnelGeneration
-            << " reason=" << replanReason
-            << " speed_mps=" << speedMps
-            << " min_turn_radius_m="
-                << manualPlan.fixedTunnel.minimumTurnRadiusMeters
-            << " max_curvature_1pm="
-                << manualPlan.fixedTunnel.maxCurvaturePerMeter
-            << " gates=" << manualPlan.fixedTunnel.gates.size()
-            << " build_ms=" << tunnelBuildMs
-            << '\n';
-    }
-
-    const auto& tunnel = manualPlan.fixedTunnel;
-    if (!tunnel.valid || tunnel.gates.empty())
-        return false;
-
-    game::navigation::GuidanceCorridor corridor;
-    corridor.id = manualPlan.corridorId;
-    corridor.systemId = manualPlan.systemId;
-    corridor.source = game::navigation::GuidanceSource::DockingComputer;
-    corridor.purpose = game::navigation::GuidancePurpose::Docking;
-    corridor.generatedAtUniverseTimeSeconds = presentationUniverseTimeSeconds;
-    corridor.validUntilUniverseTimeSeconds = 0.0;
-    corridor.confidence = 1.0;
-    corridor.priority = 70;
-    corridor.advisoryOnly = true;
-    corridor.spatialManualTunnel = true;
-    corridor.noSafePrimarySolution = false;
-    corridor.hasTerminalTarget = true;
-    corridor.terminalTargetMeters = hubFrame.localToWorldPosition(
-        tunnel.gates.back().positionMeters
-    );
-    corridor.terminalPositionErrorMeters = 0.0;
-
-    const std::size_t firstGate = std::min(
-        manualPlan.firstActiveGateIndex,
-        tunnel.gates.size() - 1
-    );
-    corridor.frames.reserve(tunnel.gates.size() - firstGate);
-
-    const double tunnelLength = tunnel.gates.back().distanceAlongTunnelMeters;
-    const double terminalAlignmentStart = std::max(
-        0.0,
-        tunnelLength - manualPlan.terminalAlignmentDistanceMeters
-    );
-
-    for (std::size_t i = firstGate; i < tunnel.gates.size(); ++i)
-    {
-        const auto& gate = tunnel.gates[i];
-        game::navigation::GuidanceFrame frame;
-        frame.universeTimeSeconds = presentationUniverseTimeSeconds;
-        frame.centerMeters = hubFrame.localToWorldPosition(gate.positionMeters);
-        const glm::dmat3 localAttitude = glm::mat3_cast(gate.orientation);
-        frame.orientation = glm::normalize(glm::quat_cast(
-            hubFrame.localToWorldBasis * localAttitude
-        ));
-        frame.requiredVehiclePose = true;
-        frame.widthMeters = gate.widthMeters;
-        frame.heightMeters = gate.heightMeters;
-        frame.lateralToleranceMeters = gate.lateralToleranceMeters;
-        frame.verticalToleranceMeters = gate.verticalToleranceMeters;
-        frame.recommendedSpeedMps = gate.recommendedSpeedMps;
-        frame.maxClosureRateMps =
-            gate.distanceAlongTunnelMeters + 1.0e-7 >= terminalAlignmentStart
-                ? manualPlan.dockingMaxClosureRateMps
-                : manualPlan.transitMaxClosureRateMps;
-        corridor.frames.push_back(std::move(frame));
-    }
-
-    m_navigationWorkspace.guidance().publish(std::move(corridor));
-    return true;
-}
-
-// =====================================================================================
-// Update
-// =====================================================================================
-void SpaceState::updateDockingGuidance(float dt)
-{
-    (void)dt;
-    if (!m_client)
-        return;
-
-    auto& guidanceState = m_navigationWorkspace.guidance();
-    auto& modules = m_navigationWorkspace.modules();
-
-    // Legacy/manual client route stack:
-    // DockingPathPlanner -> GeometricPathPlanner -> TrajectoryGenerator ->
-    // GuidanceTunnel. Retained for regression/reference only. It must not run
-    // while Navigation v2 Stage 12 owns live navigation.
-    constexpr bool LegacyClientRoutePipelineEnabled = false;
-    const bool computationEnabled =
-        LegacyClientRoutePipelineEnabled &&
-        modules.enabled(game::navigation::NavigationModuleId::RoutePlanning) &&
-        modules.enabled(game::navigation::NavigationModuleId::LocalGuidance);
-
-    const auto eraseActiveDockingCorridor = [&]()
+    using namespace game::navigation;
+    if (!m_client) return;
+    auto& workspace = m_navigationWorkspace;
+    auto& requests = workspace.dockingRouteRequests();
+    const auto& pending = requests.pending();
+    auto& guidance = workspace.guidance();
+    const auto clear = [&]()
     {
         if (!m_activeDockingGuidanceCorridorId.empty())
         {
-            guidanceState.erase(m_activeDockingGuidanceCorridorId);
-            guidanceState.erase(
-                m_activeDockingGuidanceCorridorId + ":manual"
-            );
-            m_activeDockingGuidanceCorridorId.clear();
+            guidance.erase(m_activeDockingGuidanceCorridorId);
+            guidance.erase(m_activeDockingGuidanceCorridorId + ":frames");
         }
-        m_manualDockingGuidancePlan = {};
+        m_activeDockingGuidanceCorridorId.clear();
+        m_dockAdvice = {};
+        m_dockAdviceJob.reset();
     };
-
-    if (!computationEnabled)
+    if (!pending.valid() || pending.mode != DockingRouteRequest::Mode::Guidance)
     {
-        eraseActiveDockingCorridor();
+        clear();
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
         m_dockingGuidanceFailureReason.clear();
         return;
     }
-
-    const auto& dockingRequest =
-        m_navigationWorkspace.dockingRouteRequests().pending();
-    if (!dockingRequest.valid())
+    const auto fail = [&](const std::string& reason)
     {
-        // No task means no navigation planning work. Cleanup is performed only
-        // on the transition from active -> inactive; subsequent frames return
-        // after the cheap pending-request check.
-        if (!m_activeDockingGuidanceCorridorId.empty() ||
-            m_manualDockingGuidancePlan.valid ||
-            m_lastDockingPathRequestSerial != 0)
-        {
-            eraseActiveDockingCorridor();
-        }
-        m_lastDockingPathRequestSerial = 0;
-        m_noSafeDockingGuidanceSolution = false;
-        m_dockingGuidanceFailureReason.clear();
-        return;
-    }
-
-    const std::string corridorId =
-        "dock:" + dockingRequest.target.stableObjectId + ":" +
-        dockingRequest.target.semanticAnchorId;
-    if (m_activeDockingGuidanceCorridorId != corridorId)
-    {
-        eraseActiveDockingCorridor();
-        m_activeDockingGuidanceCorridorId = corridorId;
-    }
-
-    // The request serial owns the destination task. The expensive canonical
-    // route/trajectory snapshot is built once per button press; the manual HUD
-    // corridor is a rolling low-rate solution on top of that topology. Each
-    // published gate generation is immutable, but course/predicted-deviation
-    // checks may replace it before the ship leaves the tunnel.
-    if (m_lastDockingPathRequestSerial == dockingRequest.serial)
-    {
-        refreshActiveManualDockingGuidance(false);
-        return;
-    }
-    m_lastDockingPathRequestSerial = dockingRequest.serial;
-
-    // A failed planning snapshot is not automatically a safety failure.
-    // Keep failure cause and safety classification separate so HUD does not
-    // claim "NO SAFE GUIDANCE" for missing metadata, frame/prediction errors
-    // or a presentation-only tunnel failure.
-    const auto failSnapshot = [&](const char* reason, bool safetyFailure)
-    {
-        guidanceState.erase(corridorId);
-        guidanceState.erase(corridorId + ":manual");
-        m_noSafeDockingGuidanceSolution = safetyFailure;
-        m_dockingGuidanceFailureReason = reason ? reason : "unknown";
-        std::cerr << "[GeometricPath] request="
-                  << dockingRequest.serial
-                  << " failed=" << m_dockingGuidanceFailureReason
-                  << " safety_failure=" << (safetyFailure ? 1 : 0)
-                  << '\n';
+        clear();
+        m_dockingGuidanceFailureReason = reason;
+        std::cerr << "[DockAdvisory] request=" << pending.serial
+                  << " failed=" << reason << '\n';
+        requests.clear();
     };
-
-    const auto isGeometricSafetyFailure = [](const std::string& reason)
+    if (m_lastDockingPathRequestSerial != pending.serial)
     {
-        return reason == "geometric path start is inside obstacle" ||
-            reason == "geometric path goal is inside obstacle" ||
-            reason == "no collision-free geometric path" ||
-            reason == "docking alignment leg is blocked" ||
-            reason == "docking ingress is blocked by non-target obstacle";
-    };
-
-    const auto isTrajectorySafetyFailure = [](const std::string& reason)
-    {
-        return reason == "no collision-free globally smooth trajectory path" ||
-            reason ==
-                "initial along-path speed cannot meet downstream constraints";
-    };
-
-    const auto* anchorDefinition = m_hubSemanticAnchorCatalog.find(
-        dockingRequest.target.stableObjectId,
-        dockingRequest.target.semanticAnchorId
-    );
-    if (!anchorDefinition ||
-        !anchorDefinition->enabled ||
-        anchorDefinition->kind !=
-            game::navigation::HubSemanticAnchorKind::DockingPort)
-    {
-        failSnapshot("anchor_definition_unavailable", false);
-        return;
-    }
-
-    // Seed route planning from one canonical authoritative replication epoch,
-    // then resolve the entire problem to one current planning epoch. Render
-    // interpolation is a different timeline and is never a legal producer.
-    const double requestPlanningStartMs = nowMs();
-    const double snapshotStartMs = nowMs();
-    const auto planningSnapshot =
-        game::client::ClientNavigationPlanningSnapshotFactory::
+        clear();
+        m_lastDockingPathRequestSerial = pending.serial;
+        const auto* definition = m_hubSemanticAnchorCatalog.find(
+            pending.target.stableObjectId,pending.target.semanticAnchorId);
+        const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
+            pending.target.stableObjectId,pending.target.semanticAnchorId);
+        const auto player = m_client->world().ships().find(m_playerId.value);
+        if (!definition || !runtime || player == m_client->world().ships().end() ||
+            !player->second.descriptor || !definition->enabled ||
+            definition->kind != HubSemanticAnchorKind::DockingPort)
+        { fail("dock or ship unavailable"); return; }
+        const auto& dim = player->second.descriptor->logicalDimensions();
+        ShipDockingEnvelope hull;
+        hull.valid = dim.enabled && dim.length > 0 && dim.width > 0 && dim.height > 0;
+        hull.lengthMeters = dim.length;
+        hull.widthMeters = dim.width;
+        hull.heightMeters = dim.height;
+        const auto fit = evaluateDockingCompatibility(hull,*definition,*runtime);
+        if (!fit.routeAvailable) { fail("dock unavailable or hull does not fit"); return; }
+        const auto snapshot = game::client::ClientNavigationPlanningSnapshotFactory::
             buildPredictedHubSnapshot(
-                m_client->world(),
-                m_client->lastSimulationMetadata(),
+                m_client->world(),m_client->lastSimulationMetadata(),
                 m_client->estimatedServerTimeSeconds(),
-                m_client->sessionSnapshot().universeTimeScale,
-                m_playerId,
-                dockingRequest.target.systemId,
-                dockingRequest.target.stableObjectId
-            );
-    const double snapshotBuildMs = nowMs() - snapshotStartMs;
-    if (!planningSnapshot.ready())
-    {
-        failSnapshot(
-            game::client::clientNavigationPlanningSnapshotStatusName(
-                planningSnapshot.status
-            ),
-            false
-        );
-        return;
-    }
-
-    const int systemId = planningSnapshot.systemId;
-    const auto& playerSample = planningSnapshot.controlledShip;
-    const auto& targetObject = planningSnapshot.targetObject;
-    const auto& hubFrame = planningSnapshot.planningFrame;
-    const double planningUniverseTime =
-        planningSnapshot.epoch.universeTimeSeconds;
-
-    // Descriptor data is static vehicle metadata.  It may come from live client
-    // state, but no live/presentation transform is allowed into this plan.
-    const auto playerIt = m_client->world().ships().find(m_playerId.value);
-    const ClientShipState* playerDescriptorState =
-        playerIt == m_client->world().ships().end()
-            ? nullptr
-            : &playerIt->second;
-
-    game::navigation::ShipDockingEnvelope dockingEnvelope;
-    game::navigation::VehicleGuidanceEnvelope vehicleEnvelope;
-    if (playerDescriptorState && playerDescriptorState->descriptor)
-    {
-        const auto& dimensions =
-            playerDescriptorState->descriptor->logicalDimensions();
-        if (dimensions.enabled &&
-            dimensions.length > 0.0f &&
-            dimensions.width > 0.0f &&
-            dimensions.height > 0.0f)
+                m_client->sessionSnapshot().universeTimeScale,m_playerId,
+                pending.target.systemId,pending.target.stableObjectId);
+        if (!snapshot.ready()) { fail("planning snapshot unavailable"); return; }
+        const auto& frame = snapshot.planningFrame;
+        const auto& module = snapshot.targetModuleKinematics;
+        const auto port = resolveHubSemanticAnchor(
+            *definition,snapshot.systemId,snapshot.epoch.universeTimeSeconds,
+            module.positionMeters,module.velocityMps,module.orientation,
+            module.angularVelocityWorldRadPerSecond);
+        VehicleGuidanceEnvelope envelope;
+        envelope.lengthMeters = hull.lengthMeters;
+        envelope.widthMeters = hull.widthMeters;
+        envelope.heightMeters = hull.heightMeters;
+        envelope.valid = true;
+        const auto ship = makeNavigationVehicleProfile(
+            player->second.descriptor->physics,envelope);
+        DockingAdvisoryRequest request;
+        request.startMeters = frame.worldToLocalPosition(
+            world::coordinates::fullMeters(snapshot.controlledShip.worldPosition));
+        request.entranceMeters = frame.worldToLocalPosition(port.positionMeters);
+        request.outward = frame.worldToLocalVector(port.forward());
+        request.standoffMeters = std::max(300.0,hull.lengthMeters*10.0+
+            definition->requiredClearanceMeters*4.0);
+        request.hullRadiusMeters = envelope.conservativeSafetyRadiusMeters();
+        request.maxSpeedMps = ship.maxSpeedMps;
+        request.brakingMps2 = ship.maxBrakingAccelerationMps2;
+        request.lateralMps2 = ship.maxLateralAccelerationMps2;
+        request.obstacles = snapshot.navigationObstacles;
+        if (m_dockWorkerCount->load(std::memory_order_acquire)>=2)
+        { fail("planner busy"); return; }
+        auto job = std::make_shared<DockAdviceJob>();
+        job->timelineRevision = snapshot.epoch.universeTimelineRevision;
+        job->startedServerSeconds = snapshot.epoch.serverTimeSeconds;
+        job->context.serial = pending.serial;
+        job->context.systemId = snapshot.systemId;
+        job->context.hub = snapshot.hubPredictionSource;
+        job->context.port = port;
+        job->context.standoffMeters = request.standoffMeters;
+        job->context.widthMeters = fit.openingWidthMeters;
+        job->context.heightMeters = fit.openingHeightMeters;
+        job->context.lateralToleranceMeters = fit.widthMarginMeters*0.5;
+        job->context.verticalToleranceMeters = fit.heightMarginMeters*0.5;
+        m_dockWorkerCount->fetch_add(1,std::memory_order_acq_rel);
+        m_dockAdviceJob = job;
+        std::thread([job, count=m_dockWorkerCount,
+                     request=std::move(request)]() mutable
         {
-            dockingEnvelope.lengthMeters = dimensions.length;
-            dockingEnvelope.widthMeters = dimensions.width;
-            dockingEnvelope.heightMeters = dimensions.height;
-            dockingEnvelope.valid = true;
-
-            vehicleEnvelope.lengthMeters = dimensions.length;
-            vehicleEnvelope.widthMeters = dimensions.width;
-            vehicleEnvelope.heightMeters = dimensions.height;
-            vehicleEnvelope.valid = true;
-        }
-    }
-
-    game::navigation::DockingPortRuntimeState unavailableState;
-    unavailableState.hubModuleId = dockingRequest.target.stableObjectId;
-    unavailableState.anchorId = dockingRequest.target.semanticAnchorId;
-    const auto* runtimeState = m_dockingPortRuntimeStateCatalog.find(
-        dockingRequest.target.stableObjectId,
-        dockingRequest.target.semanticAnchorId
-    );
-    const auto& effectiveRuntime = runtimeState
-        ? *runtimeState
-        : unavailableState;
-    const auto compatibility = game::navigation::evaluateDockingCompatibility(
-        dockingEnvelope,
-        *anchorDefinition,
-        effectiveRuntime
-    );
-    if (!compatibility.routeAvailable)
-    {
-        failSnapshot("docking_compatibility_rejected", false);
+            try { job->plan=DockingAdvisoryPlanner::plan(request); }
+            catch (const std::exception&) { job->plan.failure="planner exception"; }
+            job->ready.store(true,std::memory_order_release);
+            count->fetch_sub(1,std::memory_order_acq_rel);
+        }).detach();
         return;
     }
-
-    // The predicted Hub frame is already part of the immutable planning
-    // snapshot. Do not rebuild it from render-time celestial state or advance
-    // one participant independently inside SpaceState.
-    if (!hubFrame.valid)
+    if (m_dockAdviceJob && m_dockAdviceJob->ready.load(std::memory_order_acquire))
     {
-        failSnapshot("hub_frame_invalid", false);
-        return;
+        auto job=std::move(m_dockAdviceJob);
+        if (m_client->lastSimulationMetadata().universeTimelineRevision !=
+                job->timelineRevision ||
+            m_client->estimatedServerTimeSeconds()-job->startedServerSeconds>2.0)
+        { fail("planning snapshot expired"); return; }
+        if (!job->plan.valid()) {fail(job->plan.failure);return;}
+        m_dockAdvice=std::move(job->context);
+        m_dockAdvice.gates=std::move(job->plan.gates);
+        m_activeDockingGuidanceCorridorId="dock:"+
+            pending.target.stableObjectId+":"+pending.target.semanticAnchorId;
+        m_dockingGuidanceFailureReason.clear();
     }
-
-    // Module pose/velocity is resolved by the prediction layer from the same
-    // Hub frame and planning epoch. SpaceState must not reconstruct attached
-    // infrastructure independently.
-    const auto& targetModule = planningSnapshot.targetModuleKinematics;
-    const auto targetAnchor = game::navigation::resolveHubSemanticAnchor(
-        *anchorDefinition,
-        systemId,
-        planningUniverseTime,
-        targetModule.positionMeters,
-        targetModule.velocityMps,
-        targetModule.orientation,
-        targetModule.angularVelocityWorldRadPerSecond
-    );
-    const glm::dvec3 playerWorld = world::coordinates::fullMeters(
-        playerSample.worldPosition
-    );
-    game::navigation::DockingPathRequest request;
-    request.startPositionMeters =
-        hubFrame.worldToLocalPosition(playerWorld);
-    request.dockCenterMeters =
-        hubFrame.worldToLocalPosition(targetAnchor.positionMeters);
-    request.dockOutward = glm::normalize(
-        hubFrame.worldToLocalVector(targetAnchor.forward())
-    );
-    request.vehicleSafetyRadiusMeters = vehicleEnvelope.valid
-        ? vehicleEnvelope.conservativeSafetyRadiusMeters()
-        : 24.0;
-    request.obstacles = planningSnapshot.navigationObstacles;
-    request.targetObstacleId = planningSnapshot.targetNavigationObstacleId;
-
-    const double distanceToDock = glm::length(
-        request.dockCenterMeters - request.startPositionMeters
-    );
-    const double authoredClearance = std::max(
-        0.0,
-        targetAnchor.requiredClearanceMeters
-    );
-    const double vehicleLength = vehicleEnvelope.valid
-        ? vehicleEnvelope.lengthMeters
-        : 20.0;
-
-    // Keep docking approach semantics here, while obstacle geometry and search
-    // are shared by every vehicle through GeometricPathPlanner.
-    const double desiredApproach = std::max(
-        300.0,
-        vehicleLength * 10.0 + authoredClearance * 4.0
-    );
-    request.approachStandoffMeters = std::clamp(
-        desiredApproach,
-        100.0,
-        std::max(100.0, distanceToDock * 0.35)
-    );
-    // Give the smoother room to turn onto the docking axis before the authored
-    // approach point.  Alignment/approach/terminal are then collinear, so the
-    // final ingress itself never contains a geometric corner.
-    // Stage 5C deliberately buys smoothness with distance.  The outer
-    // alignment point may be kilometres beyond the shortest route so the
-    // global spline can make a broad readable approach instead of shaving a
-    // corner immediately before the aperture.
-    const double preferredTurnRoom = std::max({
-        1800.0,
-        vehicleLength * 80.0,
-        request.approachStandoffMeters * 3.0
-    });
-    request.alignmentStandoffMeters =
-        request.approachStandoffMeters + preferredTurnRoom;
-    request.terminalDepthMeters = vehicleEnvelope.valid
-        ? vehicleEnvelope.terminalCenterDepthMeters(authoredClearance)
-        : std::max(10.0, authoredClearance);
-
-    const glm::dvec3 roundTripWorld = hubFrame.localToWorldPosition(
-        request.startPositionMeters
-    );
-    const double roundTripErrorMeters = glm::length(
-        roundTripWorld - playerWorld
-    );
-    std::cerr
-        << "[GeometricPath] request=" << dockingRequest.serial
-        << " source_server_time="
-        << planningSnapshot.sourceEpoch.serverTimeSeconds
-        << " planning_server_time="
-        << planningSnapshot.epoch.serverTimeSeconds
-        << " prediction_dt_s="
-        << (planningSnapshot.epoch.serverTimeSeconds -
-            planningSnapshot.sourceEpoch.serverTimeSeconds)
-        << " planning_universe_time=" << planningUniverseTime
-        << " timeline_revision="
-        << planningSnapshot.epoch.universeTimelineRevision
-        << " frame=" << hubFrame.frameId
-        << " start_roundtrip_error_m=" << roundTripErrorMeters
-        << '\n';
-
-    const double geometricPlanStartMs = nowMs();
-    const auto plan = game::navigation::DockingPathPlanner::plan(request);
-    const double geometricPlanMs = nowMs() - geometricPlanStartMs;
-    if (!plan.valid)
+    auto& active=m_dockAdvice;
+    if (!active.serial) return;
+    const double time=m_client->universeTimeSeconds();
+    const auto frame=NavigationWorldPredictor::predictHubFrameAt(active.hub,time);
+    if (!frame.valid) {fail("hub frame unavailable");return;}
+    const auto port=predictHubSemanticAnchorAt(active.port,time);
+    if (glm::length(frame.localToWorldPosition(active.gates.back().positionMeters)-
+        (port.positionMeters+port.forward()*active.standoffMeters))>2.0)
+    {fail("dock moved off approach axis");return;}
+    const auto ship=m_client->world().ships().find(m_playerId.value);
+    if (ship==m_client->world().ships().end() ||
+        ship->second.transform.motion.systemId!=active.systemId)
+    {fail("ship left system");return;}
+    const auto position=frame.worldToLocalPosition(
+        world::coordinates::fullMeters(ship->second.transform.worldPosition));
+    const auto& gates=active.gates;
+    if (active.nextGate+1<gates.size())
     {
-        failSnapshot(
-            plan.message.c_str(),
-            isGeometricSafetyFailure(plan.message)
-        );
-        return;
-    }
-
-    world::navigation::NavigationVehicleProfile vehicleProfile;
-    if (playerDescriptorState && playerDescriptorState->descriptor)
-    {
-        vehicleProfile = game::navigation::makeNavigationVehicleProfile(
-            playerDescriptorState->descriptor->physics,
-            vehicleEnvelope
-        );
-    }
-    else
-    {
-        // Descriptor-less fallback keeps the diagnostic route usable without
-        // smuggling a live transform/control object into trajectory planning.
-        vehicleProfile.collisionRadiusMeters = request.vehicleSafetyRadiusMeters;
-        vehicleProfile.maxSpeedMps = 150.0;
-        vehicleProfile.maxForwardAccelerationMps2 = 20.0;
-        vehicleProfile.maxBrakingAccelerationMps2 = 20.0;
-        vehicleProfile.maxLateralAccelerationMps2 = 10.0;
-        vehicleProfile.maxAngularVelocityRadPerSecond = 1.0;
-        vehicleProfile.maxAngularAccelerationRadPerSecond2 = 1.0;
-    }
-    vehicleProfile.collisionRadiusMeters = request.vehicleSafetyRadiusMeters;
-
-    const game::navigation::WorldKinematicState playerWorldKinematics {
-        playerWorld,
-        playerSample.worldVelocityMps,
-        glm::dvec3(0.0)
-    };
-    const auto playerLocalKinematics =
-        game::navigation::worldToLocalKinematics(
-            hubFrame,
-            playerWorldKinematics
-        );
-
-    world::navigation::TrajectoryGenerationRequest trajectoryRequest;
-    trajectoryRequest.systemId = systemId;
-    trajectoryRequest.frameId = hubFrame.frameId;
-    trajectoryRequest.startUniverseTimeSeconds = planningUniverseTime;
-    trajectoryRequest.universeTimeScale =
-        m_client->sessionSnapshot().universeTimeScale;
-    trajectoryRequest.pathPointsMeters = plan.pointsMeters;
-    trajectoryRequest.obstacles = request.obstacles;
-    trajectoryRequest.vehicle = vehicleProfile;
-    trajectoryRequest.initialVelocityMps = playerLocalKinematics.velocityMps;
-    trajectoryRequest.maxSmoothSupportLevel = 5;
-    trajectoryRequest.sampleSpacingMeters = std::clamp(
-        vehicleLength * 0.25,
-        3.0,
-        7.0
-    );
-    trajectoryRequest.maxCurveChordErrorMeters = 0.03;
-
-    // DockingPathPlanner now supplies an outer alignment point followed by a
-    // collinear approach/terminal ingress.  The only turn is therefore at the
-    // alignment point, far enough from the mouth to be rounded and validated
-    // against the target obstacle.  Do not re-introduce a hard approach corner.
-    trajectoryRequest.pointSpeedConstraints.push_back({
-        plan.terminalSourceProgressMeters,
-        0.0
-    });
-
-    const double maxEntrySpeed = targetAnchor.maxEntrySpeedMps > 0.0
-        ? targetAnchor.maxEntrySpeedMps
-        : 18.0;
-    trajectoryRequest.speedLimitRanges.push_back({
-        plan.approachSourceProgressMeters,
-        plan.terminalSourceProgressMeters,
-        maxEntrySpeed
-    });
-    trajectoryRequest.terminalAllowedObstacleId = request.targetObstacleId;
-    trajectoryRequest.terminalObstacleEntrySourceProgressMeters =
-        plan.approachSourceProgressMeters;
-    trajectoryRequest.hasTerminalOrientation = true;
-    trajectoryRequest.terminalForward = -request.dockOutward;
-    trajectoryRequest.terminalUp = glm::normalize(
-        hubFrame.worldToLocalVector(targetAnchor.up())
-    );
-    trajectoryRequest.terminalOrientationBlendDistanceMeters = std::max(
-        100.0,
-        request.alignmentStandoffMeters
-    );
-
-    const double trajectoryPlanStartMs = nowMs();
-    const auto trajectoryPlan =
-        world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
-    const double trajectoryPlanMs = nowMs() - trajectoryPlanStartMs;
-    if (!trajectoryPlan.ready())
-    {
-        failSnapshot(
-            trajectoryPlan.trajectory.message.c_str(),
-            isTrajectorySafetyFailure(trajectoryPlan.trajectory.message)
-        );
-        return;
-    }
-
-    // Publish the accepted physical trajectory as its own immutable product.
-    // Hub/System maps consume this corridor.  The live cockpit tunnel is a
-    // separate higher-priority spatial product and must never deform the map
-    // trajectory underneath the pilot.
-    game::navigation::GuidanceCorridor trajectoryCorridor;
-    trajectoryCorridor.id = corridorId;
-    trajectoryCorridor.systemId = systemId;
-    trajectoryCorridor.source = game::navigation::GuidanceSource::RouteSolver;
-    trajectoryCorridor.purpose = game::navigation::GuidancePurpose::Docking;
-    trajectoryCorridor.generatedAtUniverseTimeSeconds = planningUniverseTime;
-    trajectoryCorridor.validUntilUniverseTimeSeconds = 0.0;
-    trajectoryCorridor.confidence = 1.0;
-    trajectoryCorridor.priority = 60;
-    trajectoryCorridor.advisoryOnly = true;
-    trajectoryCorridor.spatialManualTunnel = false;
-    trajectoryCorridor.noSafePrimarySolution = false;
-    trajectoryCorridor.hasTerminalTarget = true;
-    trajectoryCorridor.terminalPositionErrorMeters = 0.0;
-    trajectoryCorridor.frames.reserve(trajectoryPlan.trajectory.samples.size());
-
-    for (std::size_t i = 0;
-         i < trajectoryPlan.trajectory.samples.size();
-         ++i)
-    {
-        const auto& sample = trajectoryPlan.trajectory.samples[i];
-        const auto sampleFrame =
-            game::navigation::NavigationWorldPredictor::predictHubFrameAt(
-                planningSnapshot.hubPredictionSource,
-                sample.universeTimeSeconds
-            );
-        if (!sampleFrame.valid)
+        const auto a=gates[active.nextGate].positionMeters;
+        const auto b=gates[active.nextGate+1].positionMeters;
+        const auto ab=b-a;
+        const double t=std::clamp(glm::dot(position-a,ab)/glm::dot(ab,ab),0.0,1.0);
+        const auto delta=position-(a+t*ab);
+        const auto forward=glm::normalize(ab);
+        auto up=frame.worldToLocalVector(port.up());
+        up-=forward*glm::dot(up,forward);
+        if (glm::length(up)<0.01)
         {
-            failSnapshot("trajectory_sample_frame_invalid", false);
-            return;
+            const auto fallback=std::abs(forward.y)<0.8
+                ? glm::dvec3(0.0,1.0,0.0) : glm::dvec3(1.0,0.0,0.0);
+            up=fallback-forward*glm::dot(fallback,forward);
         }
-
-        const game::navigation::LocalKinematicState localState {
-            sample.positionMeters,
-            sample.velocityMps,
-            sample.accelerationMps2
-        };
-        const auto worldState = game::navigation::localToWorldKinematics(
-            sampleFrame,
-            localState
-        );
-
-        game::navigation::GuidanceFrame frame;
-        frame.universeTimeSeconds = sample.universeTimeSeconds;
-        frame.centerMeters = worldState.positionMeters;
-        const glm::dmat3 localAttitude = glm::mat3_cast(sample.orientation);
-        frame.orientation = glm::normalize(glm::quat_cast(
-            sampleFrame.localToWorldBasis * localAttitude
-        ));
-        frame.requiredVehiclePose =
-            trajectoryRequest.hasTerminalOrientation &&
-            i + 1 == trajectoryPlan.trajectory.samples.size();
-        frame.widthMeters = std::max(
-            10.0,
-            vehicleEnvelope.valid ? vehicleEnvelope.widthMeters : 20.0
-        );
-        frame.heightMeters = std::max(
-            10.0,
-            vehicleEnvelope.valid ? vehicleEnvelope.heightMeters : 10.0
-        );
-        frame.lateralToleranceMeters = frame.widthMeters * 0.45;
-        frame.verticalToleranceMeters = frame.heightMeters * 0.45;
-        frame.recommendedSpeedMps = sample.speedMps;
-        frame.maxClosureRateMps =
-            sample.sourcePathProgressMeters + 1.0e-7 >=
-                    plan.approachSourceProgressMeters
-                ? maxEntrySpeed
-                : vehicleProfile.maxSpeedMps;
-        trajectoryCorridor.frames.push_back(std::move(frame));
+        up=glm::normalize(up);
+        const auto right=glm::normalize(glm::cross(forward,up));
+        if (std::abs(glm::dot(delta,right))>active.lateralToleranceMeters ||
+            std::abs(glm::dot(delta,up))>active.verticalToleranceMeters ||
+            std::abs(glm::dot(delta,forward))>std::max(5.0,active.widthMeters))
+        {fail("ship left guidance corridor");return;}
+        if (t>=1.0 && glm::dot(position-b,ab)>=0.0 &&
+            active.nextGate+2<gates.size()) ++active.nextGate;
     }
-
-    const auto& terminalSample = trajectoryPlan.trajectory.samples.back();
-    const auto terminalFrame =
-        game::navigation::NavigationWorldPredictor::predictHubFrameAt(
-            planningSnapshot.hubPredictionSource,
-            terminalSample.universeTimeSeconds
-        );
-    if (!terminalFrame.valid)
+    GuidanceCorridor route;
+    route.id=m_activeDockingGuidanceCorridorId;
+    route.systemId=active.systemId;
+    route.source=GuidanceSource::DockingComputer;
+    route.purpose=GuidancePurpose::Approach;
+    route.advisoryOnly=true;
+    route.priority=50;
+    route.generatedAtUniverseTimeSeconds=time;
+    route.frames.reserve(gates.size());
+    for(std::size_t index=0; index<gates.size(); ++index)
     {
-        failSnapshot("trajectory_terminal_frame_invalid", false);
-        return;
-    }
-    trajectoryCorridor.terminalTargetMeters =
-        terminalFrame.localToWorldPosition(plan.terminalPointMeters);
-    guidanceState.publish(std::move(trajectoryCorridor));
-
-    game::navigation::ManualDockingGuidancePlan manualPlan;
-    manualPlan.valid = true;
-    manualPlan.requestSerial = dockingRequest.serial;
-    manualPlan.systemId = systemId;
-    manualPlan.corridorId = corridorId + ":manual";
-    manualPlan.hubPredictionSource = planningSnapshot.hubPredictionSource;
-    manualPlan.targetAttachment = planningSnapshot.targetObject.hubAttachment;
-    manualPlan.targetAnchor = *anchorDefinition;
-    manualPlan.trajectory = trajectoryPlan.trajectory;
-    manualPlan.obstacles = request.obstacles;
-    manualPlan.vehicle = vehicleProfile;
-    manualPlan.targetObstacleId = request.targetObstacleId;
-    manualPlan.terminalObstacleEntrySourceProgressMeters =
-        plan.approachSourceProgressMeters;
-
-    // All gates use one constant rectangle matching the physical dock opening.
-    // Safety is carried separately by the centre tolerances below, so the HUD
-    // shows the hole the pilot is actually trying to thread rather than a
-    // misleading funnel that changes size with distance.
-    manualPlan.gateWidthMeters = std::max(
-        1.0,
-        compatibility.openingWidthMeters > 0.0
-            ? compatibility.openingWidthMeters
-            : compatibility.usableWidthMeters
-    );
-    manualPlan.gateHeightMeters = std::max(
-        1.0,
-        compatibility.openingHeightMeters > 0.0
-            ? compatibility.openingHeightMeters
-            : compatibility.usableHeightMeters
-    );
-    manualPlan.lateralToleranceMeters = std::max(
-        0.0,
-        compatibility.widthMarginMeters * 0.5
-    );
-    manualPlan.verticalToleranceMeters = std::max(
-        0.0,
-        compatibility.heightMarginMeters * 0.5
-    );
-    manualPlan.gateSpacingMeters = std::clamp(
-        vehicleLength * 2.5,
-        50.0,
-        80.0
-    );
-    manualPlan.startCaptureDistanceMeters = std::max(
-        300.0,
-        manualPlan.gateSpacingMeters * 4.0
-    );
-    manualPlan.minimumVisualTurnRadiusMeters = std::max(
-        1500.0,
-        vehicleLength * 60.0
-    );
-    manualPlan.terminalAlignmentDistanceMeters = std::max(
-        request.alignmentStandoffMeters,
-        manualPlan.gateSpacingMeters * 8.0
-    );
-    manualPlan.transitMaxClosureRateMps = vehicleProfile.maxSpeedMps;
-    manualPlan.dockingMaxClosureRateMps = maxEntrySpeed;
-    m_manualDockingGuidancePlan = std::move(manualPlan);
-
-    if (!refreshActiveManualDockingGuidance(true))
-    {
-        // The physical trajectory above is already accepted and published. A
-        // failure to derive the cockpit presentation tunnel must not erase that
-        // route or re-label it as unsafe. Keep the immutable route visible and
-        // expose the presentation failure separately.
-        m_manualDockingGuidancePlan = {};
-        guidanceState.erase(corridorId + ":manual");
-        m_noSafeDockingGuidanceSolution = false;
-        m_dockingGuidanceFailureReason =
-            "manual_guidance_tunnel_unavailable";
-        std::cerr
-            << "[GuidanceTunnel] request=" << dockingRequest.serial
-            << " failed=" << m_dockingGuidanceFailureReason
-            << " physical_trajectory_preserved=1\n";
-        return;
-    }
-    // CALCULATE ROUTE is an explicit request for manual flight guidance.  Keep
-    // the module default opt-in semantics, but make this action enable the HUD
-    // layer so a successfully built tunnel is actually visible.
-    modules.setEnabled(
-        game::navigation::NavigationModuleId::HudGuidanceCorridor,
-        true
-    );
-    m_noSafeDockingGuidanceSolution = false;
-    m_dockingGuidanceFailureReason.clear();
-
-    std::cerr
-        << "[DockingPerf] request=" << dockingRequest.serial
-        << " total_ms=" << (nowMs() - requestPlanningStartMs)
-        << " snapshot_ms=" << snapshotBuildMs
-        << " geometric_ms=" << geometricPlanMs
-        << " trajectory_ms=" << trajectoryPlanMs
-        << " tunnel_ms=" << m_perfDockingTunnelBuildMs
-        << '\n';
-
-    const glm::dvec3 finalDirection = glm::normalize(
-        plan.pointsMeters.back() -
-        plan.pointsMeters[plan.pointsMeters.size() - 2]
-    );
-    std::cerr
-        << "[GeometricPath] request=" << dockingRequest.serial
-        << " points=" << plan.pointsMeters.size()
-        << " detour=" << (plan.obstacleDetourUsed ? 1 : 0)
-        << " obstacles=" << request.obstacles.size()
-        << " start=" << request.startPositionMeters.x << ','
-            << request.startPositionMeters.y << ','
-            << request.startPositionMeters.z
-        << " dock=" << request.dockCenterMeters.x << ','
-            << request.dockCenterMeters.y << ','
-            << request.dockCenterMeters.z
-        << " first_leg_m=" << glm::length(
-            plan.pointsMeters[1] - plan.pointsMeters[0]
-           )
-        << " final_dot_inbound=" << glm::dot(
-            finalDirection,
-            -request.dockOutward
-           )
-        << '\n';
-    std::cerr
-        << "[Trajectory] request=" << dockingRequest.serial
-        << " samples=" << trajectoryPlan.trajectory.samples.size()
-        << " length_m=" << trajectoryPlan.trajectory.lengthMeters
-        << " duration_s=" << trajectoryPlan.trajectory.durationSeconds
-        << " smooth_candidates="
-            << trajectoryPlan.diagnostics.smoothCandidatesEvaluated
-        << " safe_candidates="
-            << trajectoryPlan.diagnostics.smoothSafeCandidates
-        << " support_level="
-            << trajectoryPlan.diagnostics.selectedSmoothSupportLevel
-        << " max_curvature_1pm="
-            << trajectoryPlan.diagnostics.maxCurvaturePerMeter
-        << " max_speed_mps=" << trajectoryPlan.diagnostics.maxSpeedMps
-        << " max_accel_mps2="
-            << trajectoryPlan.diagnostics.maxAccelerationMps2
-        << " initial_cross_track_mps="
-            << trajectoryPlan.diagnostics.initialCrossTrackSpeedMps
-        << " capture_required="
-            << (trajectoryPlan.diagnostics.pathCaptureRequired ? 1 : 0)
-        << '\n';
-    std::size_t liveTunnelGateCount = 0;
-    for (const auto& published : guidanceState.corridors())
-    {
-        if (published.id == m_manualDockingGuidancePlan.corridorId)
+        const auto& gate=gates[index];
+        GuidanceFrame f;
+        f.universeTimeSeconds=time;
+        f.centerMeters=frame.localToWorldPosition(gate.positionMeters);
+        const auto forward=glm::normalize(frame.localToWorldVector(gate.forward));
+        auto up=port.up()-forward*glm::dot(port.up(),forward);
+        if(glm::length(up)<0.01)
         {
-            liveTunnelGateCount = published.frames.size();
-            break;
+            const auto fallback=std::abs(forward.y)<0.8
+                ? glm::dvec3(0.0,1.0,0.0) : glm::dvec3(1.0,0.0,0.0);
+            up=fallback-forward*glm::dot(fallback,forward);
         }
+        up=glm::normalize(up);
+        const auto right=glm::normalize(glm::cross(forward,up));
+        f.orientation=glm::normalize(glm::quat_cast(
+            glm::dmat3(right,glm::normalize(glm::cross(right,forward)),-forward)));
+        f.widthMeters=active.widthMeters;
+        f.heightMeters=active.heightMeters;
+        f.lateralToleranceMeters=active.lateralToleranceMeters;
+        f.verticalToleranceMeters=active.verticalToleranceMeters;
+        f.recommendedSpeedMps=gate.speedMps;
+        f.requiredVehiclePose=(index+1==gates.size());
+        route.frames.push_back(f);
     }
-    std::cerr
-        << "[GuidanceTunnel] request=" << dockingRequest.serial
-        << " gates=" << liveTunnelGateCount
-        << " gate_spacing_m=" << m_manualDockingGuidancePlan.gateSpacingMeters
-        << " gate_w_m=" << m_manualDockingGuidancePlan.gateWidthMeters
-        << " gate_h_m=" << m_manualDockingGuidancePlan.gateHeightMeters
-        << " lateral_center_tol_m="
-            << m_manualDockingGuidancePlan.lateralToleranceMeters
-        << " vertical_center_tol_m="
-            << m_manualDockingGuidancePlan.verticalToleranceMeters
-        << " hud_enabled="
-            << (modules.enabled(
-                    game::navigation::NavigationModuleId::HudGuidanceCorridor
-                ) ? 1 : 0)
-        << " map_product=trajectory"
-        << " fixed=1"
-        << " build_mode=trajectory_backbone"
-        << '\n';
+    guidance.publish(route);
+    route.id+=":frames";
+    route.spatialAdvisoryGates=true;
+    route.frames.erase(route.frames.begin(),
+        route.frames.begin()+static_cast<std::ptrdiff_t>(active.nextGate));
+    guidance.publish(std::move(route));
 }
-
 
 void SpaceState::update(float dt)
 {
@@ -3026,14 +1988,11 @@ void SpaceState::update(float dt)
     }
 
 
-    m_perfDockingTunnelBuilds = 0;
-    m_perfDockingTunnelBuildMs = 0.0;
     const double dockingGuidanceStartMs = nowMs();
-    updateDockingGuidance(clientFrameDt);
+    updateDockingAdvisory();
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;
     m_perfDockingRequestActive =
         m_navigationWorkspace.dockingRouteRequests().pending().valid();
-    m_perfManualGuidancePlanActive = m_manualDockingGuidancePlan.valid;
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
     {
@@ -3561,8 +2520,6 @@ else
                 << " client_ms=" << m_perfClientUpdateMs
                 << " dock_ms=" << m_perfDockingGuidanceMs
                 << " dock_request=" << (m_perfDockingRequestActive ? 1 : 0)
-                << " dock_plan=" << (m_perfManualGuidancePlanActive ? 1 : 0)
-                << " tunnel_builds=" << m_perfDockingTunnelBuilds
                 << " draw_calls=" << m_perfMainStats.drawCalls
                 << " parts=" << m_perfMainStats.partsDrawn
                 << '\n';
@@ -3777,16 +2734,15 @@ m_systemMapRenderer.render(
                     m_client->universeTimeSeconds()
                 );
 
+            TextRenderer::instance().beginFrameForViewport(
+                vp.width,
+                vp.height
+            );
             m_guidanceCorridorRenderer.render(
                 guidance,
                 m_activeMainCamera->viewMatrix(),
                 m_activeMainCamera->projectionMatrix(),
                 vp
-            );
-
-            TextRenderer::instance().beginFrameForViewport(
-                vp.width,
-                vp.height
             );
 
             const bool noSafeGuidance =
@@ -5123,8 +4079,6 @@ void SpaceState::pushDebugControlState()
     perf["clientUpdateMs"] = m_perfClientUpdateMs;
     perf["dockingGuidanceMs"] = m_perfDockingGuidanceMs;
     perf["dockingRequestActive"] = m_perfDockingRequestActive;
-    perf["manualGuidancePlanActive"] = m_perfManualGuidancePlanActive;
-    perf["dockingTunnelBuilds"] = m_perfDockingTunnelBuilds;
     perf["scenePrepareMs"] = m_perfScenePrepareMs;
     perf["playerViewMs"] = m_perfPlayerViewMs;
     perf["uiRootUpdateMs"] = m_perfUiRootUpdateMs;
@@ -6373,6 +5327,8 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.dockClearance = loc.text("map.object_info.dock_clearance");
     mapText.dockMaxEntrySpeed = loc.text("map.object_info.dock_max_entry_speed");
     mapText.calculateRoute = loc.text("map.object_info.calculate_route");
+    mapText.showDockingRoute = loc.text("map.object_info.show_docking_route");
+    mapText.startDocking = loc.text("map.object_info.start_docking");
     mapText.statusAvailable = loc.text("map.status.available");
     mapText.statusUnavailable = loc.text("map.status.unavailable");
     mapText.statusFree = loc.text("map.status.free");

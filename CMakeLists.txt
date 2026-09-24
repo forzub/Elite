@@ -518,7 +518,6 @@ add_executable(EliteGame
     src/world/navigation/NavigationObstacleFactory.cpp
     src/world/navigation/SmoothPathOptimizer.cpp
     src/world/navigation/TrajectoryGenerator.cpp
-    src/world/navigation/GuidanceTunnel.cpp
 
     src/world/navigation/TacticalCollisionMonitor.cpp
     src/world/navigation/NavigationContactAdapters.cpp
@@ -574,7 +573,7 @@ add_executable(EliteGame
     src/game/navigation/TrajectoryPredictor.cpp
     src/game/navigation/TrajectorySafetyEvaluator.cpp
     src/game/navigation/NavigationWorldPredictor.cpp
-    src/game/navigation/DockingPathPlanner.cpp
+    src/game/navigation/DockingAdvisoryPlanner.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
@@ -697,7 +696,6 @@ if(ELITE_BUILD_SERVER)
         src/world/navigation/NavigationObstacleFactory.cpp
         src/world/navigation/SmoothPathOptimizer.cpp
         src/world/navigation/TrajectoryGenerator.cpp
-        src/world/navigation/GuidanceTunnel.cpp
         src/world/navigation/TacticalCollisionMonitor.cpp
         src/world/navigation/NavigationContactAdapters.cpp
         src/world/navigation/NavigationBodyAdapter.cpp
@@ -715,7 +713,7 @@ if(ELITE_BUILD_SERVER)
         src/world/navigation/control/PilotSkillExecutor.cpp
         src/game/navigation/TrajectoryPredictor.cpp
         src/game/navigation/TrajectorySafetyEvaluator.cpp
-        src/game/navigation/DockingPathPlanner.cpp
+        src/game/navigation/DockingAdvisoryPlanner.cpp
         src/game/navigation/LocalGuidancePlanner.cpp
         src/game/navigation/HubSemanticAnchorCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp

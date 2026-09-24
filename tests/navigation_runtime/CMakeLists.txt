@@ -860,6 +860,15 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+add_executable(docking_advisory_tests
+    DockingAdvisoryPlannerTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp")
+target_include_directories(docking_advisory_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(docking_advisory_tests PRIVATE cxx_std_17)
+target_link_libraries(docking_advisory_tests PRIVATE EliteNavigationRuntimeControl)
+add_test(NAME docking_advisory COMMAND docking_advisory_tests)
+
 add_executable(
     nominal_route_planner_tests
     NominalRoutePlannerTests.cpp

@@ -1,6 +1,122 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
-Date: 2026-09-23
+## 2026-09-24 — next docking flight gate
+
+Local native far-dock geometry and 45 s yawed dock-spin checks pass. The
+spinning-module angular velocity is now derived from its authored Euler pose
+in both server simulation and prediction. The isolated diagnostic scene skips
+the unrelated Stage-12 runtime NPC. An unrelated compilation blocker in NPC
+stepping is corrected by reading the profile-owned step limit.
+
+Next target-machine gate: build `docking_advisory_tests` and the game, run the
+test, open the isolated Hub fixture and select the far dock's SHOW ROUTE in the
+map. Inspect the static map trajectory and cockpit gates/speeds; confirm that
+the spinning port does not cancel its approach axis, closing the dock card or
+leaving the corridor cancels the advisory. The automatic DOCKING action is still
+disabled until a proved server-owned execution program, reservation, spin
+alignment, ingress and capture have been implemented and tested in game.
+
+## 2026-09-24 — docking rewrite, advisory first
+
+The diagnostic `HubDockingFlightTestScene` now leaves the station, Cobra and
+both docks while removing the stress objects. The far dock is yawed 27 degrees
+and spins at 2 degrees/s around its entrance axis. This is a fixture for a
+future in-game acceptance test, not evidence of successful docking.
+
+The old disabled client route/tunnel chain is removed. The new advisory mode
+builds a fixed stop-before-port corridor with speed labels and cancellation on
+leaving the corridor or closing the dock card. Its native static test passes; full client build and live Hub fixture remain
+unverified because this environment lacks `websocketpp`. DOCKING stays disabled until a server
+flight program with verified actuator/hull feasibility, reservation, spin
+alignment, ingress and capture can safely execute without changing the ship's
+fixed control law. No dynamic obstacle avoidance belongs in static A*.
+
+
+Date: 2026-09-24
+
+## 2026-09-24 — static route commission, immutable execution program
+
+Scope revised by user: A* plans a static geometric route for one craft or a
+group modeled by a single envelope; scheduled traffic/dispatcher and all
+dynamic behavior are outside this component. After separate physical authoring
+and full proof, execution either follows its accepted program or cancels it.
+New planning following cancellation is a separate scheduled request. Docking,
+salvage and formation capture require a terminal state, not merely a point.
+
+Implemented here: nominal route carries vehicle capability revision and rejects
+stale provenance; capped A* cannot publish a route blocked by an omitted static
+obstacle. No async runner or physical program acceptance is claimed.
+
+Next: design and implement a nonblocking commissioning job with revision checks,
+full-program physical authoring and continuous static hull proof; only then
+allow the resulting accepted program to be executed. The preceding observer
+point-chain direction below is superseded by this static/offline boundary.
+
+## 2026-09-24 — input contract corrected after 500-ship review
+
+The original batch has distinct goals but physically overlapping start/goal
+positions; retain it solely as 500 independent planning-load queries. The
+new parallel-lane empty-space control has 500 unique, 30 m separated starts
+and goals. It still gives 0/500 acceptable final speeds, despite 500/500
+position captures and 500/500 correct body orientations. Diagnose this as
+missing backward terminal-speed authoring in the observer chain, not a traffic
+dispatcher problem or an intrinsic A* property.
+
+Before comparing planners, distinguish independent request throughput,
+simultaneous multi-actor traffic and corridor execution. The latter two have
+not been benchmarked; no global architecture winner is established.
+
+## 2026-09-24 — point-chain measurement completed; authoring correction next
+
+The optional 500-ship diagnostic now chains B5 terminal sample states across
+each geometric waypoint under bounded speed/horizon attempts. Required final
+position, speed and hull attitude: open 0/500, dogleg 0/500, barrels 0/500.
+Empty-space failure isolates missing terminal-state authoring; clutter also
+exposes waypoint chasing and sampled collision. Initial 500/500 candidate
+availability was a misleading local-only signal.
+
+Next implementation: replace exact A* support-point capture with a corridor
+and portal-region contract; propagate admissible terminal position, velocity,
+attitude and angular rate backward; author forward maneuvers that preserve
+that contract. Compare total planner cost only after full-route candidates
+pass actuator and continuous hull proof. The greedy benchmark is not a
+production algorithm to tune until it happens to succeed.
+
+## 2026-09-23 — navigation scaling experiment baseline
+
+Correction: use `benchmarks/navigation_route_stress` with the 13 m Cobra
+radius, not the superseded 5 m result below. The final 100-barrel throughput
+run took 17.075 s for 500 geometric routes and has no turns over 45 degrees.
+The added four-wall dogleg generated 1,000 turns over 45 degrees yet all 500
+initial B5 probes still returned unproved candidates. The next gate must
+propagate state through **every** dogleg corner and report full-route proof or
+typed failure. Initial-candidate counts cannot serve as route success counts.
+
+The deterministic 100-barrel / 500-ship route benchmark is implemented and
+run locally. At the current cap of 32 considered obstacles, geometric search
+alone takes 15.33 s for all 500 sequential requests (p95 57.75 ms per ship).
+All returned paths clear the full 100-barrel fixture, but this does not prove
+physical executability. A single all-100-obstacle query took 419.4 ms.
+
+Next benchmark gate: run the alternative physical/corridor planner on the same
+500 start/goal/obstacle inputs and record total route+physics time, success and
+rejection counts, actual simulated arrival quality and continuous collision
+proof. Only then compare designs; do not infer that post-checking is cheaper.
+
+## 2026-09-23 — spatial eligibility slice implemented locally
+
+The B5 compiler now consumes the target point and an explicit capture radius.
+It rejects primitives that never approach the capture region or cross its
+perpendicular plane outside the region, returning
+`SpatialTargetNotApproached` with distance evidence. The bounded coordinator
+can retry a different terminal at unchanged desired velocity. Focused native
+compiler and coordinator tests pass; MinGW target and viewer gates remain open.
+
+Next: model a typed corridor cross-section and terminal capture condition,
+carry the *exact* terminal position/velocity/attitude/angular velocity into the
+next local solve, then show each leg and rejection in the observer. A mere
+distance decrease is not proof of capture, geometry, actuator execution or
+route completion. Keep B5 observer-only until continuous swept-hull proof.
 
 Status: **VISUAL GATE FAILED USEFULLY — INITIAL-ONLY PHYSICAL PROBE MUST BECOME A CHAIN**
 

@@ -1,5 +1,36 @@
 # Navigation Planning Architecture
 
+> 2026-09-24 docking rewrite: historical `GuidanceTunnelBuilder` and
+> `DockingPathPlanner` examples below are superseded. The live client uses
+> `DockingAdvisoryPlanner` for advisory geometry only; the automatic docking
+> command remains unavailable pending a proved server program.
+
+## 2026-09-24 — commissioned static route and immutable flight program boundary
+
+Regular scheduled traffic, reserved corridors and dispatch queues are a separate
+service. For a single craft or a formation treated as one clearance envelope,
+the geometric A* search receives a fixed start, goal, static scene and explicit
+vehicle/group envelope. Its product is a static route, not flight controls or
+an accepted trajectory. In wide open space a point-like envelope is allowed;
+near docking, salvage or formation capture a route must be compiled against the
+actual vehicle and terminal position, velocity and attitude requirements.
+
+The commissioning pipeline is: static A* route -> physical program authoring ->
+complete actuator and swept-hull proof -> accept immutable program -> execute
+or cancel. A* never predicts moving traffic, replans during execution, changes
+the accepted program, or claims that a polyline alone is executable. Dynamic
+hazards, changing targets and actor coordination may cancel the program;
+subsequent planning is a new, separately scheduled commission. Coarse static
+route planning may run off the simulation thread and publish results only if
+goal, static scene and vehicle revisions still match. The current pure plan()
+call remains synchronous: background execution and end-to-end commissioning
+are REQUIRED future integration, not completed features.
+
+When the support-obstacle cap omits a blocking static obstacle, A* now returns
+failure rather than a falsely valid geometric route. That is not proof that no
+route exists: the commissioning service can retry with a wider static subset.
+
+
 **Updated:** 2026-09-17  
 **Status:** Navigation v2 architecture authority  
 **Current implementation wave:** `NAV-V2-LOCAL-1` — dynamic conflict + local receding horizon

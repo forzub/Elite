@@ -227,11 +227,12 @@ NavigationWorldPredictor::resolveHubAttachmentAt(
         );
 
     const glm::dvec3 localAngularVelocityWorld =
-        hubVisualLocalToWorldVector(
+        hubAttachedAngularVelocityWorld(
             prograde,
             radial,
             normal,
-            glm::radians(localAngularVelocityDegPerSecond)
+            localRotationAtEpoch,
+            localAngularVelocityDegPerSecond
         );
     out.angularVelocityWorldRadPerSecond =
         hubFrame.angularVelocityWorldRadPerSecond +

@@ -42,6 +42,8 @@ struct NavigationMapTextProfile
     std::string dockClearance;
     std::string dockMaxEntrySpeed;
     std::string calculateRoute;
+    std::string showDockingRoute;
+    std::string startDocking;
 
     std::string statusAvailable;
     std::string statusUnavailable;

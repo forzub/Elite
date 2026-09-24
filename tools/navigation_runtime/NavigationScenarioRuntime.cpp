@@ -389,6 +389,8 @@ const char* infeasibilityReasonName(
             return "attitude_authority_unavailable";
         case Reason::ProgramHorizonTooShort:
             return "program_horizon_too_short";
+        case Reason::SpatialTargetNotApproached:
+            return "spatial_target_not_approached";
         case Reason::NumericalFailure: return "numerical_failure";
         default: return "unknown";
     }

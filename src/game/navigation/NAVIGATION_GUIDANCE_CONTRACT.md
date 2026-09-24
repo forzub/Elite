@@ -1,5 +1,10 @@
 # Navigation Guidance Layer Contract
 
+> 2026-09-24 docking rewrite: historical `GuidanceTunnelBuilder` and
+> `DockingPathPlanner` examples below are superseded. The live client uses
+> `DockingAdvisoryPlanner` for advisory geometry only; the automatic docking
+> command remains unavailable pending a proved server program.
+
 Status: Wave 4 foundation, pre-route-solver/autopilot.
 
 ## 1. One stack, separate responsibilities

@@ -1,5 +1,151 @@
 # CURRENT STATE
 
+## 2026-09-24 — docking fixture native gate and rotating-axis correction
+
+The station / near dock / yawed far dock static fixture now has a native
+advisory test: its path clears all three obstacles, approaches along the port
+normal and stops at the staging point. A separate semantic-anchor test verifies
+the far dock's yawed 2 deg/s local-Z spin over 45 s. Both pass locally. The
+isolated flight fixture no longer spawns the unrelated Stage-12 runtime NPC.
+
+The test exposed a kinematics defect: module angular velocity had been mapped
+from raw Euler rates into Hub axes, so a yawed spinning dock predicted rotation
+about the wrong world axis. Simulation and `NavigationWorldPredictor` now share
+the angular-velocity conversion for the authored Rx*Ry*Rz orientation. A
+separate compilation blocker used the removed pilot-step constant; the NPC
+control bridge now reads the configured maximum step from its pilot profile.
+
+The native advisory gate and affected client/predictor/scene syntax checks
+passed. Full game compilation and actual on-screen docking remain **unverified**
+in this Linux checkout: CMake/Ninja, websocketpp headers and a graphical game
+runtime are unavailable. DOCKING remains disabled pending a server-owned,
+physically proved program, reservation and capture. No target-game acceptance
+is claimed.
+
+## 2026-09-24 — docking behavior replacement started
+
+The diagnostic `HubDockingFlightTestScene` now leaves the station, Cobra and
+both docks while removing the stress objects. The far dock is yawed 27 degrees
+and spins at 2 degrees/s around its entrance axis. This is a fixture for a
+future in-game acceptance test, not evidence of successful docking.
+
+Removed the dormant 1200-line client docking computation, rolling manual tunnel,
+`GuidanceTunnelBuilder` and `DockingPathPlanner` from the current checkout. A new
+advisory-only `DockingAdvisoryPlanner` searches fixed geometry to a staging stop
+before the port, rounds turns only if obstacle-clear, assigns backward braking
+and curvature-based speed recommendations, then emits 350 m gates. The Hub map
+shows the route, the cockpit shows spatial gates, and leaving the corridor or
+closing the dock card cancels guidance. The native static route test passed. Static search runs on a copied request
+outside the client frame; stale/timeline-discontinuous results are rejected.
+
+The dock card has SHOW ROUTE and DOCKING. DOCKING remains disabled: the server
+has no accepted physical program, dock reservation, Autopilot authority,
+ingress or capture. This slice is not playable automatic docking; the new game
+path has not passed live gameplay or complete client build validation because
+this environment lacks the `websocketpp` header.
+
+
+## 2026-09-24 — static A* and execution ownership clarified
+
+The commissioned A* scope is one vehicle or group envelope against a fixed
+static scene. Scheduled traffic, dynamic hazards, avoidance and dispatch do
+not belong in A*. A geometric polyline is not an executable program: a later
+separate compiler must author/prove the whole physical flight including final
+state; execution consumes the immutable accepted program or cancels it.
+Background commissioning is required but not yet connected to an executor.
+
+Nominal routes now retain capability revision and reject mismatch. The
+geometric planner checks candidate routes against the complete static request
+even when the support-node search uses a capped obstacle subset; if that subset
+omits a blocker, it reports failure rather than claiming success. This is a
+subset limitation, not a proof of no path in the full scene.
+
+## 2026-09-24 — stress fixture adequacy audited and corrected
+
+The 500 original requests have unique start and unique goal coordinates, but
+all lie on narrow common lines. They cannot represent 500 simultaneously
+present Cobra hulls: the 100-barrel batch has 10,401 overlapping start pairs
+and 10,077 overlapping goal pairs; the dogleg has 41,706 and 41,926. Earlier
+500-query numbers measure independent throughput only, not concurrent traffic.
+
+New `open_separated` control places 500 start/goal pairs on 25 × 20 parallel
+3D lanes with 30 m spacing; no initial or terminal pair overlaps the current
+13 m-radius geometric hull. Here all 500 geometry routes are direct, all 500
+point-chain attempts enter the 8 m finish region, all 500 have correct +X
+body orientation, and **0/500** satisfy terminal speed <=2 m/s. Final median
+speed is 19.214 m/s. This isolates the current diagnostic's failure to plan
+braking from traffic or scene complexity. It is not a failure proof for a
+proper integrated planner and says nothing about A* in other state spaces.
+
+## 2026-09-24 — chained B5 diagnostic fails terminal state in empty space
+
+`benchmarks/navigation_route_stress` now runs a bounded, observer-only chain
+through every visibility-graph point. Each chosen B5 terminal sample state
+(position, velocity, basis and angular velocity) seeds the next query. The
+diagnostic checks sampled center segments against every static obstacle and
+requires 8 m final position, <=2 m/s final speed and +X hull direction within
+10 degrees. All three scenes start at 20 m/s along +X.
+
+All 500 starts received an unproved first B5 candidate, but complete terminal
+capture is **0/500** in open space, **0/500** in the forced dogleg, and **0/500**
+among 100 barrels. In open space, all 500 enter the final position sphere but
+all miss final speed (median 5.110 m/s) and 448 miss attitude. Dogleg has 25
+position reaches and 178 sampled collision rejections; barrels have 13
+position reaches and 406 sampled collision rejections. Chained B5 p95 times:
+0.345/1.047/3.884 ms; none represents successful proved route planning.
+
+The bounded greedy waypoint frontier is diagnostic. Its failures do not prove
+that a physically feasible route does not exist. They expose that the current
+B5 point/capture interface does not author the required terminal state, while
+point chasing at obstacles can drive short candidates into geometry. Replace
+the waypoint with typed corridor/capture regions and backward terminal-state
+admissibility, then prove the exact candidate before publication. These are
+local Linux measurements, not MinGW or live-flight acceptance.
+
+## 2026-09-23 — reproducible 100-obstacle / 500-ship route baseline
+
+Correction and extension: the first baseline mistakenly used 5 m instead of
+the Cobra's current 13 m geometric radius. With the corrected fixture and the
+first B5 physical observer request, the 100-barrel run is 17,074.610 ms total,
+31.941 ms p50, 63.243 ms p95, 500/500 geometrically clear, zero turns over
+45 degrees and 500/500 **unproved initial-only** B5 candidates. A separate
+four-wall dogleg forces 1,000 turns over 45 degrees (153 over 90 degrees) among
+500 routes; geometry took 37.596 ms total, 500/500 clear, and the same
+initial-only B5 probe still reports 500/500 unproved candidates. This is direct
+evidence that initial B5 availability does not assess later route corners.
+Neither fixture measures a complete physically executable route or 500 moving
+actors colliding dynamically. The earlier 5 m and 15.33 s figures below are
+superseded and must not be used for comparison.
+
+The new `benchmarks/navigation_route_stress` fixture contains 100 deterministic
+capsule obstacles and 500 distinct ship start/goal requests. Native Linux
+g++ -O2 measurement of the current `GeometricPathPlanner` with its production
+32-obstacle query cap: 15,330.817 ms sequential wall time, 30.025 ms per-ship
+p50 and 57.749 ms p95. All 500 routes were subsequently checked against all
+100 obstacles and were geometrically clear in this fixture. One identical
+query with all 100 obstacles took 419.403 ms versus 42.002 ms with cap 32.
+
+This measures neither physical feasibility nor actual flight time. It does not
+validate the 32-obstacle cap for arbitrary scenes, and it is not MinGW target
+evidence. Use the same generated requests and full-scene verification for the
+next physically integrated planning candidate; record failure count, solve
+latency, flight time and continuous collision proof before choosing architecture.
+
+## 2026-09-23 — spatial target affects physical candidate eligibility
+
+The first M4 spatial slice makes `geometricTargetPositionMapMeters` operational
+instead of metadata. B5 retains only candidates whose sampled position moves
+closer to the capture region without crossing its target plane outside the
+explicit capture radius. Rejection is typed and carries starting and closest
+distance; the coordinator may try another terminal with the same desired
+velocity. Existing compiler fixtures that described velocity-only turns were
+corrected to provide matching spatial targets.
+
+Native g++/GLM focused tests pass for compiler and coordinator. MinGW E2E and
+viewer were not run here. This local check cannot validate all points of a
+continuous physical path, a corridor, or the next corner. No execution authority
+has moved from the legacy runtime; the high-speed failure remains open.
+
 ## 2026-09-23 — target visual gate exposes the next physical-planner defect
 
 Status: **OBSERVER VISIBLE / ROUTE-WIDE PHYSICAL SOLVE NOT YET PRESENT**

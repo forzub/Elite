@@ -2892,15 +2892,22 @@ void SystemMapRenderer::decorateHubDockingOverlay(
             );
 
             game::system_map::MapObjectPanelAction calculate;
-            calculate.key = "calculate_docking_route";
-            calculate.labelKey = "calculate_route";
+            calculate.key = "show_docking_route";
+            calculate.labelKey = "show_docking_route";
             calculate.enabled = compatibility.routeAvailable;
             const auto& pending =
                 m_navigationWorkspace.dockingRouteRequests().pending();
             const auto target = routeTargetRefForOverlayItem(item);
             calculate.active = pending.valid() &&
+                pending.mode == game::navigation::DockingRouteRequest::Mode::Guidance &&
                 game::navigation::sameRouteTarget(pending.target, target);
             item.panelActions.push_back(std::move(calculate));
+            game::system_map::MapObjectPanelAction automatic;
+            automatic.key = "start_docking";
+            automatic.labelKey = "start_docking";
+            // There is no proved server-owned docking program or reservation.
+            automatic.enabled = false;
+            item.panelActions.push_back(std::move(automatic));
 
             frame.items.push_back(std::move(item));
         }
@@ -2912,8 +2919,10 @@ void SystemMapRenderer::applyDockingAction(
     const std::string& actionKey
 )
 {
-    if (actionKey != "calculate_docking_route")
+    if (actionKey != "show_docking_route" && actionKey != "start_docking")
         return;
+    if (actionKey == "start_docking")
+        return; // Fail closed even if UI dispatch bypasses disabled state.
 
     const auto* item = currentOverlayItem(objectId);
     if (!item ||
@@ -2933,13 +2942,15 @@ void SystemMapRenderer::applyDockingAction(
         m_navigationWorkspace.dockingRouteRequests().request(target);
     if (serial != 0)
     {
-        // CALCULATE ROUTE is an explicit request to see the advisory tunnel.
+        // This command requests advisory geometry only.
         // The pilot may hide the HUD layer afterwards without disabling the
         // planner/safety modules.
         m_navigationWorkspace.modules().setEnabled(
-            game::navigation::NavigationModuleId::HudGuidanceCorridor,
-            true
-        );
+            game::navigation::NavigationModuleId::RoutePlanning, true);
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::LocalGuidance, true);
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
     }
 }
 
@@ -2966,6 +2977,9 @@ void SystemMapRenderer::cancelDockingTaskForClosedCard(
         // SpaceState drops the corridor on the next update and tracking is
         // reconciled from the remaining open cards immediately.
         m_navigationWorkspace.dockingRouteRequests().clear();
+        const auto id = "dock:" + moduleId + ":" + anchorId;
+        m_navigationWorkspace.guidance().erase(id);
+        m_navigationWorkspace.guidance().erase(id + ":frames");
     }
 }
 
@@ -3129,11 +3143,8 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         return false;
     };
 
-    // Map presentation consumes only the accepted predictive trajectory.  A
-    // separate spatialManualTunnel may be regenerated from the live ship/dock
-    // pose for the cockpit, but it must never bend the map trajectory.  Keep
-    // every supplied physical sample here; projection may move samples into the
-    // current map view but must not silently trim the route start.
+    // The map draws the full route while the cockpit may omit passed spatial
+    // gates. Keep every supplied point, including the route start.
     for (const auto& guidanceFrame : corridor->frames)
     {
         game::system_map::MapTrajectoryPoint point;
@@ -4779,7 +4790,8 @@ SystemMapRenderer::handleInput(
 
             if (!overlayPointer.actionObjectId.empty())
             {
-                if (overlayPointer.actionKey == "calculate_docking_route")
+                if (overlayPointer.actionKey == "show_docking_route" ||
+                    overlayPointer.actionKey == "start_docking")
                 {
                     applyDockingAction(
                         overlayPointer.actionObjectId,

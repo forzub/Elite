@@ -24,8 +24,8 @@ namespace game::navigation
     intermediate-waypoint solver.
 
     It does NOT search the obstacle topology and it does NOT render guidance.
-    GeometricPathPlanner owns coarse obstacle bypass; GuidanceTunnel is only a
-    presentation sampler over this accepted trajectory.
+    GeometricPathPlanner owns coarse obstacle bypass. Docking advisory
+    presentation now has a separate bounded, static planner.
 */
 class RuckigRoutePlanner
 {

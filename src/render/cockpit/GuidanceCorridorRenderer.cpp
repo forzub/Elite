@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <sstream>
+#include <iomanip>
+#include "src/render/HUD/TextRenderer.h"
 
 namespace render::cockpit
 {
@@ -113,13 +116,13 @@ void GuidanceCorridorRenderer::render(
         0.15,
         1.0
     ));
-    const bool manualTunnel = presentation.spatialManualTunnel;
+    const bool spatialGates = presentation.spatialAdvisoryGates;
     const glm::vec4 baseFrameColor = presentation.noSafePrimarySolution
         ? glm::vec4(
             1.0f,
             0.38f,
             0.24f,
-            manualTunnel
+            spatialGates
                 ? 0.18f + confidence * 0.42f
                 : 0.08f + confidence * 0.28f
           )
@@ -127,7 +130,7 @@ void GuidanceCorridorRenderer::render(
             0.34f,
             0.92f,
             1.0f,
-            manualTunnel
+            spatialGates
                 ? 0.16f + confidence * 0.40f
                 : 0.06f + confidence * 0.20f
           );
@@ -135,12 +138,13 @@ void GuidanceCorridorRenderer::render(
         baseFrameColor.r,
         baseFrameColor.g,
         baseFrameColor.b,
-        baseFrameColor.a * (manualTunnel ? 0.34f : 0.18f)
+        baseFrameColor.a * (spatialGates ? 0.34f : 0.18f)
     );
-    const float frameWidth = manualTunnel ? 1.25f : 0.85f;
-    const float connectorWidth = manualTunnel ? 0.60f : 0.45f;
+    const float frameWidth = spatialGates ? 1.25f : 0.85f;
+    const float connectorWidth = spatialGates ? 0.60f : 0.45f;
 
     m_batch.begin(viewport.width, viewport.height);
+    std::vector<std::pair<glm::vec2,std::string>> speedLabels;
 
     ProjectedFrame previous;
     bool havePrevious = false;
@@ -155,7 +159,7 @@ void GuidanceCorridorRenderer::render(
         if (!projected.valid)
             continue;
 
-        const float frameOpacity = manualTunnel
+        const float frameOpacity = spatialGates
             ? std::clamp(frame.opacity, 0.02f, 1.0f)
             : 1.0f;
         const glm::vec4 frameColor(
@@ -195,9 +199,28 @@ void GuidanceCorridorRenderer::render(
 
         previous = projected;
         havePrevious = true;
+        if (spatialGates && std::isfinite(frame.recommendedSpeedMps))
+        {
+            std::ostringstream label;
+            label << std::fixed << std::setprecision(
+                frame.recommendedSpeedMps < 10.0 ? 1 : 0)
+                  << frame.recommendedSpeedMps << " m/s";
+            speedLabels.emplace_back(projected.corners[1] +
+                glm::vec2(5.0f,-3.0f),label.str());
+        }
     }
 
     m_batch.flush();
+    if (!speedLabels.empty())
+    {
+        if (!m_speedFont)
+            m_speedFont = std::make_unique<Font>(
+                "assets/fonts/Roboto-Light.ttf",12);
+        for (const auto& [pos,label] : speedLabels)
+            TextRenderer::instance().textDraw(
+                *m_speedFont,label,pos.x,pos.y,
+                glm::vec4(0.62f,0.96f,1.0f,0.78f));
+    }
 }
 
 } // namespace render::cockpit

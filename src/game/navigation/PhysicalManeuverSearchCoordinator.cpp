@@ -28,6 +28,8 @@ bool validAlternative(
         alternative.identity.speedScheduleAlternativeId != 0 &&
         alternative.identity.arrivalTimeAlternativeId != 0 &&
         finite(alternative.targetPositionMapMeters) &&
+        std::isfinite(alternative.targetCaptureRadiusMeters) &&
+        alternative.targetCaptureRadiusMeters >= 0.0 &&
         finite(alternative.desiredVelocityMapMetersPerSecond) &&
         std::isfinite(alternative.maximumProgramSeconds) &&
         alternative.maximumProgramSeconds > 0.0;
@@ -119,6 +121,8 @@ PhysicalManeuverSearchCoordinator::advance(
             request.commonPhysicalQuery;
         physicalQuery.geometricTargetPositionMapMeters =
             alternative.targetPositionMapMeters;
+        physicalQuery.targetCaptureRadiusMeters =
+            alternative.targetCaptureRadiusMeters;
         physicalQuery.desiredVelocityMapMetersPerSecond =
             alternative.desiredVelocityMapMetersPerSecond;
         physicalQuery.maximumProgramSeconds =

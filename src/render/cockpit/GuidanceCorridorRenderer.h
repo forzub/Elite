@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <memory>
+#include "render/Font.h"
 
 #include <glm/glm.hpp>
 
@@ -46,6 +48,7 @@ private:
     ) const;
 
     render::hud::HudPrimitiveBatch m_batch;
+    std::unique_ptr<Font> m_speedFont;
 };
 
 } // namespace render::cockpit

@@ -51,6 +51,7 @@ NominalRoutePlanner::Plan NominalRoutePlanner::plan(
     Plan out;
     out.goalRevision = request.goalRevision;
     out.staticWorldRevision = request.staticWorldRevision;
+    out.vehicleCapabilityRevision = request.vehicleCapabilityRevision;
 
     if (!finite3(request.startMapMeters) ||
         !finite3(request.goalMapMeters))
@@ -139,6 +140,9 @@ NominalRoutePlanner::invalidationReason(
 
     if (plan.staticWorldRevision != current.staticWorldRevision)
         return InvalidationReason::StaticWorldChanged;
+
+    if (plan.vehicleCapabilityRevision != current.vehicleCapabilityRevision)
+        return InvalidationReason::VehicleCapabilityChanged;
 
     return InvalidationReason::None;
 }

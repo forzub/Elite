@@ -565,7 +565,7 @@ void spawnHubGuidanceTestModules(
             "guidance_dock_cube_a",
             "GUIDANCE DOCK CUBE A",
             glm::dvec3(3000.0, 350.0, 0.0),
-            glm::dvec3(0.0),
+            glm::dvec3(0.0, 27.0, 0.0),
             glm::dvec3(0.0, 0.0, 2.0)
         },
         {
@@ -778,8 +778,12 @@ void spawnHubGuidanceTestModules(
         }
     };
 
-    for (const Spec& spec : specs)
+    for (std::size_t specIndex = 0;
+         specIndex < sizeof(specs)/sizeof(specs[0]); ++specIndex)
     {
+        if (game::diagnostics::HubDockingFlightTestScene && specIndex >= 2)
+            break;
+        const Spec& spec = specs[specIndex];
         const EntityId id = sim.spawnStation(
             spec.type,
             systemId,
@@ -1095,7 +1099,8 @@ EntityId buildGameScene(
         }
     }
 
-    if constexpr (game::diagnostics::NavigationRuntimeLabEnabled)
+    if constexpr (game::diagnostics::NavigationRuntimeLabEnabled &&
+                  !game::diagnostics::HubDockingFlightTestScene)
     {
         if (diagnosticHubAvailable)
             spawnNavigationRuntimeLabNpc(

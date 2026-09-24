@@ -108,6 +108,37 @@ inline glm::mat4 hubLocalEulerDegToMatrix(const glm::dvec3& degrees)
     return rotation;
 }
 
+// hubLocalEulerDegToMatrix composes Rx * Ry * Rz. Each authored Euler rate
+// therefore rotates about an axis transformed by the preceding rotations.
+// In particular, a module yawed by 27 degrees and spinning around its own Z
+// does not have angular velocity along the unrotated Hub visual Z axis.
+inline glm::dvec3 hubAttachedAngularVelocityWorld(
+    const glm::dvec3& progradeAxis,
+    const glm::dvec3& radialAxis,
+    const glm::dvec3& normalAxis,
+    const glm::dvec3& localRotationAtEpochDeg,
+    const glm::dvec3& localAngularVelocityDegPerSecond
+)
+{
+    const double x = glm::radians(
+        wrapHubLocalDegrees(localRotationAtEpochDeg.x));
+    const double y = glm::radians(
+        wrapHubLocalDegrees(localRotationAtEpochDeg.y));
+    const glm::dmat4 rx = glm::rotate(
+        glm::dmat4(1.0), x, glm::dvec3(1.0, 0.0, 0.0));
+    const glm::dmat4 ry = glm::rotate(
+        glm::dmat4(1.0), y, glm::dvec3(0.0, 1.0, 0.0));
+    const glm::dvec3 localAngularVelocity =
+        glm::dvec3(1.0, 0.0, 0.0) *
+            glm::radians(localAngularVelocityDegPerSecond.x) +
+        glm::dvec3(rx * glm::dvec4(0.0, 1.0, 0.0, 0.0)) *
+            glm::radians(localAngularVelocityDegPerSecond.y) +
+        glm::dvec3(rx * ry * glm::dvec4(0.0, 0.0, 1.0, 0.0)) *
+            glm::radians(localAngularVelocityDegPerSecond.z);
+    return hubVisualLocalToWorldVector(
+        progradeAxis, radialAxis, normalAxis, localAngularVelocity);
+}
+
 inline glm::mat4 hubAttachedVisualOrientation(
     const glm::dvec3& progradeAxis,
     const glm::dvec3& radialAxis,

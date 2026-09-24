@@ -25,6 +25,9 @@ struct GeometricPathPlannerParams
 
     int sphereRadialSamples = 16;
     int capsuleRadialSamples = 12;
+    // Limits support nodes/search work, not the final static-scene check.
+    // A failed route at this cap does not imply there is no route; retry with
+    // a larger subset (0 means all obstacles) from orchestration if needed.
     std::size_t maxConsideredObstacles = 32;
 
     bool allowStartEscape = false;
@@ -59,6 +62,9 @@ struct GeometricPathRequest
 
 struct GeometricPathResult
 {
+    // valid means geometric segments clear the full supplied static scene
+    // under the spherical agent envelope. It does not mean the ship can
+    // physically execute the route or arrive at a terminal velocity/attitude.
     bool valid = false;
     bool obstacleDetourUsed = false;
     bool startEscaped = false;

@@ -367,6 +367,7 @@ void testMainBurnNeverStartsBeforeRequiredAttitudeIsReached()
 {
     auto q = baseQuery();
     q.desiredVelocityMapMetersPerSecond = {0.0, -54.8, 24.5};
+    q.geometricTargetPositionMapMeters = {0.0, -700.0, 300.0};
 
     const auto result = Compiler::compile(q);
     const Candidate* candidate =
@@ -559,6 +560,24 @@ void testFixtureLikeSeventyFiveDegreeDemandIsNotAcceptedAsOmnidirectional()
     }
 }
 
+void testSpatialTargetChangesEligibilityAtSameDesiredVelocity()
+{
+    auto q = baseQuery();
+    const auto ahead = Compiler::compile(q);
+    require(ahead.status == Compiler::Status::Compiled,
+            "forward target must allow forward physical progress");
+
+    q.geometricTargetPositionMapMeters = {0.0, 0.0, 100.0};
+    const auto behind = Compiler::compile(q);
+    require(behind.status == Compiler::Status::NoPhysicalCandidate,
+            "velocity-only forward primitive cannot approach rear capture region");
+    require(behind.infeasibility.reason ==
+                Compiler::InfeasibilityReason::SpatialTargetNotApproached,
+            "rear capture region must produce a spatial rejection witness");
+    require(behind.infeasibility.initialTargetDistanceMeters > 0.0,
+            "spatial witness lost initial target distance");
+}
+
 } // namespace
 
 int main()
@@ -566,6 +585,7 @@ int main()
     try
     {
         testForwardRequestCompilesAsDirectTrim();
+        testSpatialTargetChangesEligibilityAtSameDesiredVelocity();
         testLargeLateralDeltaVRequiresLeadRotateMainBurn();
         testRcsFeasibleLateralChangeStillExposesMainEngineOption();
         testNoAngularAuthorityDoesNotFallBackToImpossibleLateralDemand();

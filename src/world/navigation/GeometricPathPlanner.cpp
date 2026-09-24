@@ -432,6 +432,29 @@ double pathLength(const std::vector<glm::dvec3>& points) noexcept
         total += glm::length(points[i] - points[i - 1]);
     return total;
 }
+
+// The search may cap its support-node obstacles for cost, but a successful
+// route must never silently ignore an obstacle outside that cap.
+bool clearsFullStaticScene(
+    const std::vector<glm::dvec3>& points,
+    const GeometricPathRequest& request,
+    bool startEscaped,
+    bool goalEscaped
+) noexcept
+{
+    for (std::size_t i = 1; i < points.size(); ++i)
+    {
+        if ((i == 1 && startEscaped) ||
+            (i + 1 == points.size() && goalEscaped))
+            continue; // Explicit endpoint escape has separate caller semantics.
+        if (!segmentClearOfNavigationObstacles(
+                points[i - 1], points[i], request.obstacles,
+                request.params.agentRadiusMeters,
+                request.params.additionalClearanceMeters))
+            return false;
+    }
+    return true;
+}
 }
 
 GeometricPathResult GeometricPathPlanner::plan(const GeometricPathRequest& request)
@@ -484,7 +507,7 @@ GeometricPathResult GeometricPathPlanner::plan(const GeometricPathRequest& reque
     if (segmentClearOfNavigationObstacles(
             safeStart,
             safeGoal,
-            obstacles,
+            request.obstacles,
             request.params.agentRadiusMeters,
             request.params.additionalClearanceMeters))
     {
@@ -493,6 +516,14 @@ GeometricPathResult GeometricPathPlanner::plan(const GeometricPathRequest& reque
         out.valid = out.pointsMeters.size() >= 2;
         out.obstacleDetourUsed = out.startEscaped || out.goalEscaped;
         out.lengthMeters = pathLength(out.pointsMeters);
+        if (!clearsFullStaticScene(out.pointsMeters, request,
+                                   out.startEscaped, out.goalEscaped))
+        {
+            out.valid = false;
+            out.message = "geometric path endpoint escape crosses static obstacle";
+            out.pointsMeters.clear();
+            return out;
+        }
         out.message = out.valid ? "direct geometric path" : "geometric path has too few points";
         return out;
     }
@@ -632,6 +663,14 @@ GeometricPathResult GeometricPathPlanner::plan(const GeometricPathRequest& reque
     out.valid = out.pointsMeters.size() >= 2;
     out.obstacleDetourUsed = true;
     out.lengthMeters = pathLength(out.pointsMeters);
+    if (!clearsFullStaticScene(out.pointsMeters, request,
+                               out.startEscaped, out.goalEscaped))
+    {
+        out.valid = false;
+        out.message = "geometric path blocked by obstacle outside search subset";
+        out.pointsMeters.clear();
+        return out;
+    }
     out.message = out.valid
         ? "visibility A* geometric path"
         : "geometric path has too few points";

@@ -1,5 +1,18 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — terminal guidance density boundary corrected
+
+The first Windows test of circular/final-density guidance failed with a single
+490 m interval counted inside the final 2 km. The curve itself was not yet
+implicated; the defect was the cadence transition. Compression switched based
+on a candidate endpoint, allowing the last 500 m sparse chord to cross the
+2 km threshold.
+
+Terminal cadence now begins one 250 m interval early, so the nominal 2 km
+boundary is already bracketed by dense frames. Native regression remains strict:
+<=250 m throughout the final band and a transition anchor within one terminal
+spacing of 2 km.
+
 ## 2026-09-25 — live corridor exits isolate turn readability; circular fillets added
 
 The latest live manual runs no longer show the historical dock-axis failure.

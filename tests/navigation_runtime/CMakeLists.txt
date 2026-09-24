@@ -860,6 +860,50 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+add_executable(
+    geometric_path_planner_tests
+    GeometricPathPlannerTests.cpp
+)
+
+target_include_directories(
+    geometric_path_planner_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    geometric_path_planner_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    geometric_path_planner_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        geometric_path_planner_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        geometric_path_planner_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME geometric_path_planner
+    COMMAND geometric_path_planner_tests
+)
+
+set_tests_properties(
+    geometric_path_planner
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
 add_executable(docking_advisory_tests
     DockingAdvisoryPlannerTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp")

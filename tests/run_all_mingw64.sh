@@ -52,9 +52,10 @@ run_suite \
     "SHARED TRAJECTORY PREDICTOR" \
     "tests/trajectory_prediction/run_mingw64.sh"
 
-run_suite \
-    "NAVIGATION GUIDANCE LAYER" \
-    "tests/navigation_guidance/run_mingw64.sh"
+# The pre-Stage-12 tests/navigation_guidance all-in-one suite was retired.
+# Current navigation contracts live in architecture_contracts and the focused
+# navigation_* suites; do not resurrect the deleted DockingPathPlanner/
+# GuidanceTunnel build here.
 
 run_suite \
     "NAVIGATION SENSOR + IDEAL RADAR" \

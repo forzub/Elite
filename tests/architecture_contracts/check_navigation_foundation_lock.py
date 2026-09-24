@@ -95,41 +95,34 @@ try:
         "TrajectoryGenerator",
     )
 
-    # The pre-Stage-12 client docking route/tunnel stack is retained only as
-    # isolated reference/presentation code. It must be hard-disabled and may
-    # never enter authoritative GameSimulation or NavigationRuntimePlanner.
-    require(
-        "src/game/navigation/NavigationModuleState.h",
-        "setEnabled(NavigationModuleId::RoutePlanning, false)",
-        "setEnabled(NavigationModuleId::LocalGuidance, false)",
-    )
+    # The retired client docking route/tunnel implementation must stay gone.
+    # Current SHOW ROUTE is the static DockingAdvisory product and may not
+    # resurrect the old rolling LocalGuidance/GuidanceTunnel stack.
+    for retired in (
+        "src/game/navigation/DockingPathPlanner.h",
+        "src/game/navigation/DockingPathPlanner.cpp",
+        "src/world/navigation/GuidanceTunnel.h",
+        "src/world/navigation/GuidanceTunnel.cpp",
+        "src/game/navigation/ManualDockingGuidancePlan.h",
+    ):
+        if (ROOT / retired).exists():
+            raise AssertionError(f"retired docking guidance file returned: {retired}")
+
     require(
         "src/game/SpaceState.cpp",
-        "constexpr bool LegacyClientRoutePipelineEnabled = false",
-        "LegacyClientRoutePipelineEnabled &&",
-        "DockingPathPlanner::plan",
-        "TrajectoryGenerator::generate",
-        "GuidanceTunnelBuilder::build",
+        "void SpaceState::updateDockingAdvisory()",
+        "buildAuthoritativeHubSnapshot",
+        "DockingAdvisoryPlanner::plan",
+        "request.gateSpacingMeters = 500.0",
+        "GuidanceSource::DockingComputer",
+        "spatialAdvisoryGates = true",
     )
-    for path in (
-        "src/game/simulation/GameSimulation.cpp",
-        "src/game/navigation/NavigationRuntimePlanner.h",
-        "src/game/navigation/NavigationRuntimePlanner.cpp",
-    ):
-        forbid(
-            path,
-            "DockingPathPlanner",
-            "GeometricPathPlanner",
-            "TrajectoryGenerator",
-            "GuidanceTunnelBuilder",
-            "LocalGuidancePlanner",
-            "TrajectoryPredictor",
-            "TrajectorySafetyEvaluator",
-            "SmallCraftNavigation",
-            "TacticalCollisionMonitor",
-            "RuckigRoutePlanner",
-            "RuckigTrajectorySolver",
-        )
+    require(
+        "src/game/navigation/DockingAdvisoryPlanner.cpp",
+        "GeometricPathPlanner::plan",
+        "segmentClearOfNavigationObstacles",
+        "dock alignment blocked",
+    )
 
     # The abandoned LocalGuidance/Ruckig route stack may remain compiled for
     # regression tests, but it has no live runtime owner. Pin the known runtime
@@ -182,7 +175,7 @@ try:
     # It must not write simulation, cloud, map-resource or replicated transforms.
     guidance = function_body(
         "src/game/SpaceState.cpp",
-        "void SpaceState::updateDockingGuidance(float dt)",
+        "void SpaceState::updateDockingAdvisory()",
     )
     for forbidden in (
         "renderTransform",
@@ -258,7 +251,7 @@ try:
     ):
         forbid(
             path,
-            "DockingPathPlanner",
+            "DockingAdvisoryPlanner",
             "GeometricPathPlanner",
             "TrajectoryGenerator",
             "NavigationWorldPredictor",
@@ -280,12 +273,21 @@ try:
     # complete frame round-trips, large-epoch attachment continuity and route
     # determinism/input purity rather than only grepping implementation text.
     require(
-        "tests/navigation_guidance/NavigationGuidanceTests.cpp",
-        "testPlanningFrameRoundTripsCompleteKinematicState",
-        "testHubAttachmentPredictionIsContinuousAtLargeUniverseEpoch",
-        "testGeometricPlannerIsDeterministicAndInputPure",
-        "8.73398e8",
-        "static Hub cylinder orientation drifted",
+        "tests/navigation_runtime/NavigationScenarioRuntimeE2ETests.cpp",
+        "testNonIdentityMovingRotatingFramePreservesNavLocalExecution",
+        "translated/rotated/moving frame preserves NavLocal execution",
+    )
+    require(
+        "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
+        "spinning dock pose inconsistent",
+        "corridor entry/exit semantics failed",
+        "r.gateSpacingMeters=500.0",
+    )
+    require(
+        "tests/navigation_runtime/GeometricPathPlannerTests.cpp",
+        "testDeterministicInputPure",
+        "testRotatedObbDetour",
+        "testSphereBoxCapsuleKernel",
     )
     require(
         "tests/system_map/SystemMapBehaviorTests.cpp",

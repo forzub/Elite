@@ -1,5 +1,20 @@
 # PROJECT STATE
 
+## 2026-09-24 — test ownership normalized to current navigation architecture
+
+Navigation testing is no longer allowed to compile or assert the deleted
+DockingPathPlanner/GuidanceTunnel stack. Current test ownership is split across:
+- architecture contracts for boundaries/absence of retired code;
+- navigation_runtime for current geometric, docking advisory, maneuver and
+  planner/follower behavior;
+- dedicated navigation_map/local/space/trajectory/ruckig suites for their
+  respective kernels.
+
+The former `tests/navigation_guidance` all-in-one suite is retired. Its useful
+GeometricPathPlanner behavior coverage is preserved as a focused runtime test.
+A repository-level test-source integrity check now guards CMake/runner paths.
+
+
 ## 2026-09-24 — local flight parameter ownership remains centralized
 
 The target gate exposed a stale architecture assertion, not a physics defect.

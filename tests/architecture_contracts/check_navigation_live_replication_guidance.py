@@ -15,7 +15,7 @@ WORKSPACE = (ROOT / "src/game/navigation/ClientNavigationWorkspace.h").read_text
 SPACE = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")
 GUIDANCE = (ROOT / "src/game/presentation/GuidanceHudPresentation.h").read_text(encoding="utf-8")
 LOCAL_PLANNER = (ROOT / "src/game/navigation/LocalGuidancePlanner.cpp").read_text(encoding="utf-8")
-DOCK_PLANNER = (ROOT / "src/game/navigation/DockingPathPlanner.cpp").read_text(encoding="utf-8")
+DOCK_PLANNER = (ROOT / "src/game/navigation/DockingAdvisoryPlanner.cpp").read_text(encoding="utf-8")
 RUNTIME_CMAKE = (ROOT / "tests/navigation_runtime/CMakeLists.txt").read_text(encoding="utf-8")
 WIRE_TEST = (ROOT / "tests/architecture_contracts/WireDataPlaneContractTests.cpp").read_text(encoding="utf-8")
 
@@ -61,7 +61,7 @@ for marker in (
     require(marker in WIRE_SCHEMA, f"wire schema missing replicated execution: {marker}")
 
 require(
-    "SimulationSnapshotWireSchemaVersion = 8u" in WIRE_CODEC,
+    "SimulationSnapshotWireSchemaVersion = 9u" in WIRE_CODEC,
     "snapshot wire schema version was not bumped for navigation execution",
 )
 require(
@@ -136,7 +136,7 @@ TRAJECTORY_SAFETY = (ROOT / "src/game/navigation/TrajectorySafetyEvaluator.cpp")
 
 for planner, label in (
     (LOCAL_PLANNER, "LocalGuidancePlanner"),
-    (DOCK_PLANNER, "DockingPathPlanner"),
+    (DOCK_PLANNER, "DockingAdvisoryPlanner"),
     (PLANNING_FACTORY, "ClientNavigationPlanningSnapshotFactory"),
     (TRAJECTORY_PREDICTOR, "TrajectoryPredictor"),
     (TRAJECTORY_SAFETY, "TrajectorySafetyEvaluator"),
@@ -169,4 +169,4 @@ print(" - binary wire schema is explicitly versioned and absent execution costs 
 print(" - ClientWorldState retains the payload and workspace mirrors it read-only")
 print(" - stable ShipInstanceId resolves the current runtime entity execution truth")
 print(" - GuidanceHudPresentation exposes the selected executor's authoritative execution")
-print(" - local guidance/docking planners do not consume or rewrite replicated execution")
+print(" - local guidance/advisory planners do not consume or rewrite replicated execution")

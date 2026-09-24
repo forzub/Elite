@@ -1,5 +1,44 @@
 # CURRENT STATE
 
+## 2026-09-24 — navigation test layer audited and legacy guidance suite retired
+
+Status: **TEST ARCHITECTURE CLEANUP IMPLEMENTED / TARGET RERUN PENDING**
+
+The target architecture gate exposed another stale raw-symbol assertion:
+`angularAccelerationEnvelope`. A full audit then covered:
+- all 91 Python checks invoked by `tests/architecture_contracts/run_mingw64.sh`;
+- all 16 `tests/*/CMakeLists.txt` source registrations;
+- the navigation-focused test directories and their current/retired ownership.
+
+Findings:
+1. `check_local_flight_control.py` still expected the deleted private
+   `angularAccelerationEnvelope/angularRateEnvelope` helpers. Current
+   `ShipController` correctly consumes canonical `ShipDynamics.h` angular
+   accessors. The check now verifies that boundary.
+2. `check_navigation_live_replication_guidance.py` still opened deleted
+   `DockingPathPlanner.cpp` and pinned snapshot wire schema 8. It now checks
+   `DockingAdvisoryPlanner.cpp` and schema 9.
+3. `check_navigation_foundation_lock.py` still required the pre-Stage-12
+   client docking/tunnel stack and old `updateDockingGuidance(float dt)`.
+   The obsolete expectations are removed; it now pins
+   `updateDockingAdvisory()`, current authoritative planning snapshot usage,
+   500 m gates and current runtime evidence.
+4. `check_geometric_path_planner.py` still treated
+   `DockingPathPlanner` as the docking composition layer. It now verifies
+   `DockingAdvisoryPlanner` plus focused current geometric/runtime tests.
+5. `tests/navigation_guidance` is a dead all-in-one legacy suite: its CMake
+   explicitly compiled removed `DockingPathPlanner.cpp` and
+   `GuidanceTunnel.cpp`. The complete directory is retired from the ready
+   harness and removed.
+6. Useful geometric coverage from that old suite is preserved in the new
+   `tests/navigation_runtime/GeometricPathPlannerTests.cpp`.
+7. A new `check_test_suite_source_integrity.py` validates every test CMake
+   source path and runner script path, preventing deleted-source suites from
+   silently surviving future refactors.
+
+No production navigation/flight physics was changed by this cleanup.
+
+
 ## 2026-09-24 — local-flight architecture gate failure is stale static contract
 
 Target architecture run stopped at:

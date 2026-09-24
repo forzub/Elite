@@ -1,5 +1,26 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — rerun cleaned architecture gate, then docking-focused native gates
+
+The next target action is verification from the cleanup HEAD.
+
+First run `tests/architecture_contracts/run_mingw64.sh`. It must now pass the
+local-flight angular policy boundary and the new test-suite source-integrity
+check without touching production physics.
+
+Then build/run focused current navigation targets:
+- `geometric_path_planner`;
+- `docking_advisory`;
+- wire protocol/data-plane authority tests.
+
+Do not run or restore `tests/navigation_guidance`; that directory represented
+the deleted DockingPathPlanner/GuidanceTunnel architecture and has been retired.
+
+If a new architecture failure appears, treat it as a candidate stale contract
+first: compare the check against current ownership/API before changing runtime
+code.
+
+
 ## 2026-09-24 — rerun architecture gate after stale local-flight check repair
 
 The previous target run did not reach docking-specific compilation. It stopped

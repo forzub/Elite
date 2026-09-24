@@ -150,13 +150,24 @@ for token in (
         fail(f"ship profile lost manoeuvre/RCS resource parameter: {token}")
 
 for token in (
-    "angularAccelerationEnvelope",
-    "angularRateEnvelope",
-    "params.maxGs",
-    "params.turnRadius",
+    "game::ship::angularAccelerationLimitRadPerSec2(params)",
+    "game::ship::angularLoadRateLimitRadPerSec(params)",
+    "game::ship::pitchRateLimitRadPerSec(params)",
+    "game::ship::yawRateLimitRadPerSec(params)",
+    "game::ship::rollRateLimitRadPerSec(params)",
 ):
     if token not in controller:
         fail(f"shared angular safety envelope lost: {token}")
+
+for token in (
+    "angularAccelerationLimitRadPerSec2",
+    "angularLoadRateLimitRadPerSec",
+    "params.angularAccel",
+    "params.maxGs",
+    "params.turnRadius",
+):
+    if token not in dynamics:
+        fail(f"central angular dynamics policy lost: {token}")
 
 # Normal-flight limits constrain propulsion/RCS authority, never physical state.
 # External collision/explosion impulses are allowed to create linear and angular

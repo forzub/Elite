@@ -10018,3 +10018,26 @@ authority accessors.
 The check now verifies that integration boundary instead. No local-flight
 physics, tuning, tolerance or docking behavior changed. Target rerun remains
 mandatory.
+
+## 2026-09-24 — navigation test architecture cleanup
+
+A full ready-architecture/CMake audit followed the stale
+`angularAccelerationEnvelope` failure.
+
+The current contract is now explicit:
+- local-flight static checks validate canonical `ShipDynamics` angular and
+  translational accessors instead of deleted private helper names;
+- replicated guidance checks consume `DockingAdvisoryPlanner` and snapshot
+  schema 9;
+- foundation/geometric checks target the current static advisory path, not
+  DockingPathPlanner/GuidanceTunnel;
+- the legacy `tests/navigation_guidance` all-in-one project is removed because
+  its CMake still compiled deleted sources;
+- current geometric regression coverage lives in
+  `tests/navigation_runtime/GeometricPathPlannerTests.cpp`;
+- `check_test_suite_source_integrity.py` scans all test CMake source
+  registrations plus main runners for missing files.
+
+This iteration changes test ownership only. No production motion, planner,
+follower, docking or rendering behavior is modified. Target rerun remains the
+acceptance boundary.

@@ -55,19 +55,20 @@ try:
         "simplifyPath",
     )
 
-    # Docking semantics compose the generic planner; they do not own a second
-    # visibility graph or force the geometric path to follow current velocity.
+    # Current manual docking advisory composes the generic planner; it does
+    # not own a second visibility graph or a separate obstacle geometry model.
     require(
-        "src/game/navigation/DockingPathPlanner.cpp",
+        "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "GeometricPathPlanner::plan",
-        "targetObstacleId",
-        "docking ingress is blocked by non-target obstacle",
+        "segmentClearOfNavigationObstacles",
+        "gateSpacingMeters",
+        "dock alignment blocked",
     )
     forbid(
-        "src/game/navigation/DockingPathPlanner.h",
-        "startVelocityMps",
+        "src/game/navigation/DockingAdvisoryPlanner.h",
         "startLeadSeconds",
         "minimumStartLeadMeters",
+        "targetObstacleId",
     )
 
     # Client planning builds real OBB/capsule geometry once, at the frozen
@@ -85,7 +86,7 @@ try:
         "GuidanceDockCube ? 520.0",
     )
 
-    # Repair drone and docking ship must execute the same path-search engine.
+    # Repair drone and docking advisory must execute the same path-search engine.
     require(
         "src/world/modules/ObjectRepairJobRuntime.cpp",
         "GeometricPathPlanner::plan",
@@ -133,12 +134,17 @@ try:
     )
 
     require(
-        "tests/navigation_guidance/NavigationGuidanceTests.cpp",
-        "testGeometricPlannerKeepsClearDirectPath",
-        "testGeometricPlannerDetoursRotatedObb",
-        "testGeometricPlannerUsesSphereBoxAndCapsuleKernel",
-        "testDockingPathPreservesPhysicalEndpointsAndIngress",
-        "testGeometricPlannerIsDeterministicAndInputPure",
+        "tests/navigation_runtime/GeometricPathPlannerTests.cpp",
+        "testClearDirectPath",
+        "testRotatedObbDetour",
+        "testSphereBoxCapsuleKernel",
+        "testDeterministicInputPure",
+    )
+    require(
+        "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
+        "r.gateSpacingMeters=500.0",
+        "far dock failed:",
+        "corridor entry/exit semantics failed",
     )
 
     print("[PASS] canonical obstacle geometry + shared geometric path planner")

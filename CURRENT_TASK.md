@@ -1,5 +1,26 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-24 — immediate gate: install and prove the published fix
+
+Do not modify docking geometry again from the bare legacy failure. On the
+Windows target, first fast-forward from `84d59f4d`, then run the focused
+numeric-locale and docking tests, rebuild the canonical executable, and verify
+the executable contains `[DockAdvisory] axis request=`. Run SHOW ROUTE with
+combined stdout/stderr captured.
+
+Acceptance evidence:
+- startup reports `[Startup] LC_NUMERIC=C`;
+- preparation reaches planning/publication and then authoritative Human
+  hand-back;
+- the route remains visible for at least 45 seconds while valid;
+- any cancellation includes the new numeric `[DockAdvisory] axis` or
+  `[DockAdvisory] left` record.
+
+If the marker is absent after the build, stop navigation diagnosis and repair
+the checkout/build/run path. If the marker is present and the route still
+vanishes, diagnose the measured local delta/tick/frame rather than widening
+the 2 m guard.
+
 ## 2026-09-24 — pull published code and run Windows gates
 
 Public `origin/main` contains the exact corrected local tree at `512b917c`.

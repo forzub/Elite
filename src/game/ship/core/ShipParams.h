@@ -33,12 +33,18 @@ struct ShipParams
     float fallbackThrottleResponsePerSecond = 1.0f;
 
     // Installed ordinary longitudinal main propulsion.
-    // "Forward" means acceleration along ship forward; "reverse" means a
-    // physically installed fore/nose main engine. These are hardware facts,
-    // not control-law preferences. Zero reverse authority means braking that
-    // needs main-engine force must rotate the hull first.
+    //
+    // "Forward" authority is produced by aft/rear engines and accelerates
+    // along the ship's +travel/forward axis. "Reverse" authority is produced
+    // by fore/nose engines and accelerates opposite the ship forward axis.
+    // Availability is the current effective hardware state; descriptor/runtime
+    // adapters may clear it after damage. Acceleration values are installed
+    // actuator ratings before the shared crew/structure load envelope is
+    // applied. Zero keeps the legacy "use load envelope" compatibility path.
     bool forwardMainEngineAvailable = true;
     bool reverseMainEngineAvailable = false;
+    float forwardMainEngineAccelerationMps2 = 0.0f;
+    float reverseMainEngineAccelerationMps2 = 0.0f;
     
     // --- стабилизация ---
     float autoLevelStrength; // 0 = выкл

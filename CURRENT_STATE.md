@@ -1,5 +1,26 @@
 # CURRENT STATE
 
+## 2026-09-24 — docking start and corridor meaning revised
+
+After the first live cancellation the user clarified that both dock-card
+commands must establish a predictable ship state before planning. For manual
+SHOW ROUTE the chosen target is rest relative to the Hub co-moving frame;
+stabilization runs through bounded authoritative controls, then a fresh
+authoritative pose/velocity/orientation/angular-rate snapshot is the route
+start. Five to ten seconds is an example preparation window, not permission
+to teleport, clamp speed or publish before physical capture. DOCKING uses the
+same preparation before the separate automatic flight program. These
+requirements are **specified, not implemented**: current SHOW ROUTE still
+requests geometry from the moving ship, and server control authority currently
+wires only Human. See the contract in `STAGE12_END_TO_END.md`.
+
+An exit is defined against the physically clear, ordered swept-hull corridor
+after entry and after an accepted start state. Merely being off an initial
+polyline computed from a moving snapshot cannot count as leaving. The current
+60 m transit/700 m taper is a temporary display/tracking policy, not a proof
+of physical corridor clearance; the next implementation must derive permitted
+center-region cross sections from the actual static hull clearance.
+
 ## 2026-09-24 — live dock map gate failed at corridor entry
 
 The first Windows game run reached the new advisory path, but requests 1–6

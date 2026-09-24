@@ -1,5 +1,18 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — prepare start before requesting docking geometry
+
+Contract updated after the user's corridor/start clarification. Next code
+slice: server-owned, physically bounded stabilization for SHOW ROUTE (stop in
+the Hub co-moving frame), explicit control takeover and cancellation on pilot
+input, capture a fresh authoritative state after bounded speed/angular-rate
+settling, then run the existing async static planner from that captured state.
+DOCKING must use the same start-state capture, but remains unavailable until
+the full proved program/dispatch/ingress path exists. Replace the provisional
+60 m/700 m corridor exit rule with a center-region envelope derived from
+swept-hull static clearance and an ordered entry/progress/exit state. Do not
+treat an estimated point on a moving ship's path as an already entered gate.
+
 ## 2026-09-24 — retry Hub docking map after failed live gate
 
 Target result: six SHOW ROUTE attempts reported `ship left guidance corridor`

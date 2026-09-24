@@ -1,5 +1,42 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — docking preparation and corridor exit contract (specified)
+
+Both `SHOW ROUTE` and eventual `DOCKING` first request control takeover by an
+authoritative preparation controller. In manual guidance the target is zero
+translational velocity in the Hub co-moving frame; absolute inertial velocity
+need not vanish. The Newtonian law may turn the hull and brake with the main
+engine. Every impulse and rotation uses the normal ship capability and fixed
+simulation steps. The server holds zero commanded translation long enough to
+confirm small relative velocity and angular rate over a settling interval.
+It then stamps the actual pose, full velocity, attitude, angular rate, control
+law and capability revision as the route start at one authoritative epoch.
+Elapsed 5–10 seconds is an illustrative preparation estimate, not a fixed
+completion timer. If physical settling takes longer, planning waits or fails
+with a reason; no kinematic teleport or silent velocity reset is accepted.
+
+The manual command relinquishes preparation authority after capture and hands
+control back to the pilot; the automatic command would continue into a
+separately proved immutable program, reservation and ingress. Material manual
+control input during preparation cancels takeover and the requested route.
+Closing the dock card cancels the advisory task. The current implementation
+does not yet provide this server control transfer: its `SHOW ROUTE` button
+starts a client-side async geometric query immediately, and `DOCKING` is
+disabled. Existing END autobrake is a physical actuator mode, not itself a
+server-owned docking-preparation protocol.
+
+The planned route's corridor is the ordered, connected set of permitted ship
+center positions after expanding every static obstacle by the ship's actual
+swept-hull envelope and required clearance. A section has center, tangent,
+lateral/up bounds, progress order and a terminal capture condition. The ship
+*enters* after an accepted start state intersects the first permitted section.
+It *leaves* when its measured full-hull state crosses that section's outer
+permitted boundary or skips an ordered gate, with measurement jitter handled
+inside an explicit tolerance; predicted drift before entry is not an exit.
+Contact or loss of proven hull clearance cancels immediately. A stationary
+map line alone does not enforce this. The current fixed 60 m transit width and
+700 m taper are display/tracking estimates, not a clearance-derived envelope.
+
 ## 2026-09-24 — advisory map visibility gate: failed, corrected locally
 
 The Windows Hub test logged six immediate `ship left guidance corridor`

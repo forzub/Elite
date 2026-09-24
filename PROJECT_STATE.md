@@ -1,5 +1,17 @@
 # PROJECT STATE
 
+## 2026-09-24 — docking preparation and corridor contract
+
+The user requires both dock-card modes to stabilize the craft before fixing
+the initial planning state. Manual advice chooses a stop relative to the Hub;
+an authoritative bounded maneuver must capture pose, velocity and angular
+rate before static route search. A corridor exit is meaningful only after
+entry into a published, physically clear swept-hull center envelope. Existing
+client-only SHOW ROUTE does neither; server Autopilot authority and program
+ownership are not yet wired. The 60 m transit width remains provisional and
+must not be presented as collision-proof. No target result is claimed for the
+new contract.
+
 ## 2026-09-24 — first live Hub-map docking gate failed
 
 Windows game logs show advisory requests 1–6 cancelling with `ship left

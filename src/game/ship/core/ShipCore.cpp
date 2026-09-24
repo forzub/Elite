@@ -4,6 +4,7 @@
 
 #include "core/log.h"
 #include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/data/radars.h"
 
@@ -172,6 +173,17 @@ void ShipCore::init(
 // //   ######   ##       ######   #####      ###    #####
 // //           ####
 
+ShipParams ShipCore::effectivePhysics() const
+{
+    if (!m_desc)
+        return ShipParams {};
+
+    return game::ship::effectiveShipPhysics(
+        *m_desc,
+        m_moduleRuntime
+    );
+}
+
 void ShipCore::updatePhysics(float dt, const WorldParams& world)
 {
     updateMotionPhysics(dt, world);
@@ -180,9 +192,10 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
 
 void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
 {
+    const ShipParams physics = effectivePhysics();
     SharedShipPhysics::integrate(
         m_transform,
-        m_desc->physics,
+        physics,
         m_control,
         world,
         dt
@@ -191,9 +204,10 @@ void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
 
 void ShipCore::updateMotionControl(float dt, const WorldParams& world)
 {
+    const ShipParams physics = effectivePhysics();
     SharedShipPhysics::evaluateControl(
         m_transform,
-        m_desc->physics,
+        physics,
         m_control,
         world,
         dt

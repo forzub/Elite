@@ -28,10 +28,10 @@ engine-failure cases exists yet.
 ## 2026-09-24 — manual docking has physical Assisted stop and corridor hysteresis
 
 The manual docking commissioning path no longer assumes that Assisted can stop
-a high-VREL Cobra with precision RCS alone. Vehicle hardware remains
-authoritative: the current Cobra has no fore main engine. When BrakeToStop is
-active and reverse main is absent, Assisted now rotates tail-to-velocity so the
-real aft main can brake. No propulsion capability is invented.
+a high-VREL Cobra with precision RCS alone. Vehicle hardware remains authoritative. The newer dual-main descriptor
+supersedes the aft-only Cobra assumption recorded by this docking slice:
+healthy Assisted now has physical fore-main braking, while the flip-to-aft
+behavior remains the required fallback when reverse main is unavailable.
 
 Manual corridor truth remains the same nominal geometric target, but route
 lifetime now has recovery semantics. Warning starts at 80% of a nominal axis;
@@ -3331,7 +3331,8 @@ pointed along the accepted route.
 
 Architecture is now corrected for navigation execution:
 - propulsion hardware is authoritative and independent of control law;
-- current Cobra main engine is aft-only in Assisted and Newtonian;
+- at the 2026-09-22 baseline the Cobra model was aft-only in both laws
+  (superseded by the 2026-09-24 dual-main descriptor);
 - bounded RCS is the only translation authority available against hull forward
   before a physical hull rotation;
 - Assisted reference-attitude authoring is propulsion-aware, so a substantial
@@ -3365,7 +3366,8 @@ Current architecture:
   precision threshold for that decision;
 - Assisted may still use the full real RCS authority for its own coupled-flight
   doctrine;
-- navigation main engine remains aft-only in both laws.
+- at that baseline navigation main propulsion was aft-only; this is historical
+  and superseded by the descriptor/runtime dual-main model.
 
 Viewer now includes always-visible rear-main / fore-main / manoeuvre-thruster
 lamps driven by physical acceleration channels.
@@ -3457,8 +3459,10 @@ intervals between states.
 Planner-side interval data includes rear-main throttle, explicit fore-main
 channel, manoeuvre/RCS vector and a physical-feasibility witness.
 
-The current Cobra compiler keeps fore main disabled. This prevents reverse
-acceleration from being silently reinterpreted as nonexistent hardware.
+At the 2026-09-22 baseline the Cobra compiler kept fore main disabled because
+the descriptor did not install one. This historical safeguard is superseded by
+the 2026-09-24 descriptor, which installs a real fore bank and requires B5 to
+distinguish its explicit authority from RCS.
 
 B9 samples the command interval; Follower exposes it; trace/viewer show planned
 propulsion separately from actual propulsion.

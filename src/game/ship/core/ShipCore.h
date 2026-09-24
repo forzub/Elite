@@ -223,6 +223,7 @@ public:
 
     const ShipDescriptor&                       desc() const                { return *m_desc; }
     const ShipDescriptor&                       descriptor() const           { return *m_desc; }
+    ShipParams                                   effectivePhysics() const;
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 
     const ReactorSystem&                        reactor() const               { return m_reactor; }  

@@ -719,6 +719,43 @@ set_tests_properties(
 )
 
 add_executable(
+    ship_propulsion_state_tests
+    ShipPropulsionStateTests.cpp
+)
+
+target_include_directories(ship_propulsion_state_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_propulsion_state_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_propulsion_state_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_propulsion_state_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_propulsion_state
+    COMMAND ship_propulsion_state_tests
+)
+
+set_tests_properties(
+    ship_propulsion_state
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     physical_maneuver_search_coordinator_tests
     PhysicalManeuverSearchCoordinatorTests.cpp
 )

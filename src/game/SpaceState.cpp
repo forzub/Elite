@@ -73,6 +73,7 @@
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
+#include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
@@ -1996,8 +1997,13 @@ void SpaceState::updateDockingAdvisory()
         envelope.widthMeters = hull.widthMeters;
         envelope.heightMeters = hull.heightMeters;
         envelope.valid = true;
+        const ShipParams effectivePhysics =
+            game::ship::effectiveShipPhysics(
+                *player->second.descriptor,
+                player->second.modules
+            );
         const auto shipProfile = makeNavigationVehicleProfile(
-            player->second.descriptor->physics,
+            effectivePhysics,
             envelope
         );
 

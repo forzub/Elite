@@ -1,5 +1,27 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — live corridor exits isolate turn readability; circular fillets added
+
+The latest live manual runs no longer show the historical dock-axis failure.
+They cancel at measured release-envelope departures, including lateral
+82.8289/75 m and 77.9429/75 m cases near route turns. The user also observed
+that 500 m frame spacing is too coarse near the station.
+
+Docking guidance now uses real circular fillets instead of quadratic Bezier
+corner smoothing. Open-transit frames remain 500 m apart; inside the final
+2 km they are limited to 250 m by along-route progress. Native regression
+coverage checks both the denser terminal band and several samples lying on the
+analytically expected circle.
+
+Preparation-stop diagnostics now expose initial and settled Hub-relative speed
+and angular rate. Planning still requires <=0.05 m/s (unless a larger ship stop
+epsilon is configured), <=0.01 rad/s angular rate, and a 0.25 s hold.
+
+SHOW ROUTE already exercises server Autopilot ownership for this stop phase.
+Full Automatic docking is not yet wired through SpaceState; when enabled it
+must execute accepted maneuver programs through TrajectoryFollower/control
+bridge rather than treating visual advisory gates as a new waypoint autopilot.
+
 ## 2026-09-25 — full-game Windows build exposed `near` macro collision
 
 The canonical game build progressed into `SpaceState.cpp` and

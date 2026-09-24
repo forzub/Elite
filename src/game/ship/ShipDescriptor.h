@@ -96,6 +96,15 @@ struct SignalProfile
     std::vector<SignalType> supportedSignals;
 };
 
+// Static binding between physical main-engine directions and damageable module
+// identities. Runtime health/state stays in ObjectModuleRuntime / snapshots;
+// the descriptor only says which modules contribute to each thrust bank.
+struct ShipMainPropulsionBinding
+{
+    std::vector<std::string> aftEngineModuleIds;
+    std::vector<std::string> foreEngineModuleIds;
+};
+
 struct CockpitData
 {
     bool enabled = false;
@@ -205,6 +214,7 @@ public:
     ShipStorageCaps     storage;
     ShipSurvivalCaps    survival;
     SignalProfile       signalProfile;
+    ShipMainPropulsionBinding mainPropulsion;
 
     ReactorDescriptor               reactor;
     CoolingDescriptor               cooling;

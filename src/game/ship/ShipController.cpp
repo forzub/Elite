@@ -88,8 +88,14 @@ bool isVelocityAlignmentAttitudeActive(
 
     if (ship.motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
     {
-        // With no main bank alive there is no main-thrust attitude to acquire;
-        // bounded RCS is the only remaining translation authority.
+        // Assisted uses a healthy fore/nose main directly for ordinary braking;
+        // it must rotate only when that reverse authority is unavailable and
+        // the aft main has to take over. Newtonian keeps explicit hull/thrust
+        // attitude ownership and therefore aligns whichever main bank survives.
+        if (ship.motion.localControlLaw == LocalFlightControlLaw::Assisted)
+            return !reverseMainEngineAvailable &&
+                forwardMainEngineAvailable;
+
         return forwardMainEngineAvailable || reverseMainEngineAvailable;
     }
 

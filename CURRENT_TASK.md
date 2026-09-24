@@ -1,5 +1,23 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-24 — verify Assisted commissioning and recoverable corridor warning
+
+Pull current `main`, run the focused local-flight/manual-docking and
+docking-advisory tests, then build the canonical game.
+
+Test SHOW ROUTE repeatedly in Newtonian and Assisted from non-zero Hub-relative
+speed. Every press must produce a new request serial and a fresh
+`phase=stabilizing -> phase=planning -> phase=handoff_wait -> human_control=1`
+cycle. Current aft-main-only Cobra Assisted must physically flip-and-burn to
+settle instead of waiting on RCS.
+
+Then deliberately approach and cross the nominal corridor edge. Frames must
+blink near the limit; a small nominal excursion must remain recoverable; only
+continuous departure beyond the expanded release envelope for 0.35 s may
+cancel. Verify speed labels appear only for frames within 500 m, terminal frame
+extent matches the usable dock aperture, transit frames include the intended
+center allowance, and the bottom marker stays correct under roll.
+
 ## 2026-09-24 — immediate gate: install and prove the published fix
 
 Do not modify docking geometry again from the bare legacy failure. On the

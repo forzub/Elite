@@ -1,5 +1,33 @@
 # CURRENT STATE
 
+## 2026-09-24 — Cobra dual-main propulsion and failure fallback implemented
+
+The authoritative Cobra descriptor now installs both longitudinal main-engine
+banks: aft/rear thrust along ship forward and fore/nose thrust opposite ship
+forward, each rated at the existing 7.5 g linear envelope. The fore bank is
+represented by explicit damageable module identities and both banks are bound
+through `ShipDescriptor::mainPropulsion`.
+
+Runtime propulsion is binary. A bank is either operational at its full
+descriptor authority or failed at zero; health is not converted into partial
+main-engine thrust. Server physics, runtime navigation and client docking
+planning derive effective `ShipParams` from current module state. Residual RCS
+authority remains separate and cannot masquerade as a surviving main engine.
+
+Assisted now uses a healthy fore main for ordinary nose-first braking. If the
+fore bank fails, strong braking falls back to hull flip + aft main. If the aft
+bank fails while the fore bank survives, Assisted reverses its working travel
+direction and B5 may compile the fore bank as the primary main engine, including
+the required hull attitude/time proof. The physical maneuver compiler now
+supports Assisted and keeps explicit forward/reverse main authority separate
+from body-axis/RCS authority.
+
+Focused regressions were added for binary propulsion state, healthy Assisted
+fore-main braking, fore-bank failure fallback and aft-bank failure reverse
+working direction. These changes are published on `main` but have not yet
+been compiled or run on the user's Windows target. Existing untracked trace
+JSON/TXT files must be preserved.
+
 ## 2026-09-24 — live corridor gate isolates policy and Assisted-stop defects
 
 The current Windows run reaches an active manual docking route and reports

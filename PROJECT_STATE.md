@@ -1,5 +1,14 @@
 # PROJECT STATE
 
+## 2026-09-25 — final docking frame density transition is anchored, not endpoint-triggered
+
+The 500 m -> 250 m display transition must not be selected from the next frame's
+endpoint, because that allows one long sparse chord to terminate inside the
+final dense region. Terminal cadence therefore activates one terminal interval
+before the nominal 2 km boundary. This makes the transition continuous and
+ensures all intervals whose downstream region is inside the last 2 km are at
+most 250 m.
+
 ## 2026-09-25 — docking guidance geometry is curvature-aware near the station
 
 Manual docking guidance now distinguishes route truth from display density.

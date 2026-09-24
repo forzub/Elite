@@ -1,5 +1,15 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — pull Windows-safe docking header and rebuild EliteGame
+
+Pull current `main`, rerun `check_manual_docking_advisory.py`, then rebuild
+with `bash build_mingw64.sh`. No navigation math or propulsion change is
+required for the reported compiler failure.
+
+If `EliteGame.exe` links successfully, proceed to live SHOW ROUTE acceptance:
+autopilot takeover, physical stabilization, route/corridor publication, and
+authoritative hand-back to Human. Preserve all untracked trace/log artifacts.
+
 ## 2026-09-25 — verify final Newtonian fore-main runtime completion, then build game
 
 Pull current `main`. Rebuild and run `local_flight_control_contracts`, which

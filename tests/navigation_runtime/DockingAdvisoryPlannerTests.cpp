@@ -258,11 +258,23 @@ int main()
         terminal.lateralToleranceMeters!=34.0 ||
         terminal.verticalToleranceMeters!=21.0)
     { std::cerr << "corridor should narrow only near dock\n"; return 9; }
+    if (dockingAdvisoryFrameExtentMeters(28.0,34.0)!=96.0 ||
+        dockingAdvisoryFrameExtentMeters(12.0,21.0)!=54.0)
+    { std::cerr << "corridor frame extent lost ship+tolerance semantics\n"; return 10; }
+    const auto release=dockingAdvisoryReleaseCrossSection(transit);
+    if (release.lateralToleranceMeters!=75.0 ||
+        release.verticalToleranceMeters!=75.0 ||
+        !dockingAdvisoryNearBoundary(49.0,0.0,0.0,transit,100.0) ||
+        dockingAdvisoryNearBoundary(10.0,10.0,10.0,transit,100.0))
+    { std::cerr << "corridor warning/release bands failed\n"; return 20; }
     DockingAdvisoryCorridorTracker tracking;
-    if (tracking.observe(false)!=DockingAdvisoryTrackingResult::AwaitingEntry ||
-        tracking.observe(true)!=DockingAdvisoryTrackingResult::Inside ||
-        tracking.observe(false)!=DockingAdvisoryTrackingResult::Left)
-    { std::cerr << "corridor entry/exit semantics failed\n"; return 10; }
+    if (tracking.observe(false,false,0.0)!=
+            DockingAdvisoryTrackingResult::AwaitingEntry ||
+        tracking.observe(true,true,0.1)!=DockingAdvisoryTrackingResult::Inside ||
+        tracking.observe(false,true,0.2)!=DockingAdvisoryTrackingResult::Warning ||
+        tracking.observe(false,false,0.3)!=DockingAdvisoryTrackingResult::Warning ||
+        tracking.observe(false,false,0.7)!=DockingAdvisoryTrackingResult::Left)
+    { std::cerr << "corridor warning/hysteresis semantics failed\n"; return 21; }
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';
 }

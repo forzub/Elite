@@ -1,5 +1,27 @@
 # CURRENT STATE
 
+## 2026-09-24 — live corridor gate isolates policy and Assisted-stop defects
+
+The current Windows run reaches an active manual docking route and reports
+`request=8`, then cancels at gate 12 with lateral 27.1992 m and vertical
+60.1343 m against a 60/60 m nominal transit box. The old dock-axis failure is
+not present in the supplied tail. A 0.1343 m nominal-bound excess is too brittle
+as a one-sample route-destruction condition.
+
+The implemented slice addresses the user's seven findings. Assisted
+BrakeToStop now acquires tail-to-velocity attitude when no physical reverse
+main exists, then uses the installed aft main; its stop demand targets the
+fixed-step delta-v but remains actuator-clamped. Manual corridor tracking now
+has nominal, warning/critical and release states: warning begins at 80% nominal,
+release expands each lateral/vertical bound by max(25%,10 m), and cancellation
+requires 0.35 s continuously outside release.
+
+HUD docking frames now blink during warning, speed labels are limited to gates
+within 500 m, displayed extent is explicitly ship extent plus twice the center
+tolerance, and an outward marker on the semantic -up edge identifies dock
+bottom. Native/static regression coverage was updated; Windows compilation and
+live acceptance of this slice are pending.
+
 ## 2026-09-24 — target still runs pre-fix docking guard; retest published Hub-local fix
 
 Latest target evidence is from Windows checkout `D:\\__elite\\work` at

@@ -1,5 +1,30 @@
 # CURRENT STATE
 
+## 2026-09-24 — first dual-main Windows gate found two focused defects
+
+Target MinGW64 evidence:
+- `json_numeric_locale` passed;
+- `local_flight_control_contracts` failed with
+  `Assisted controller exceeded ship maxGs envelope`;
+- `check_local_flight_control.py` passed;
+- `check_manual_docking_advisory.py` failed with
+  `speed label is still tied to arbitrary corner[1]`.
+
+The flight failure was a vector-composition defect, not a reason to derate the
+main engine. Assisted could command a main-engine acceleration already at the
+linear envelope and then add perpendicular RCS, making the total vector slightly
+larger than the allowed envelope. The correction keeps selected main thrust
+authoritative and clips only secondary RCS so `|main + RCS|` remains inside
+the shared linear limit.
+
+The docking Python failure was a checker false positive. The actual speed label
+already uses `projectedUpperLeft(projected.corners)`; the generic substring
+check matched `projected.corners[1]` inside the separate semantic dock-bottom
+marker. The check now inspects only the speed-label placement block and requires
+the stable projected-frame anchor.
+
+These corrections are on public `main`; target rerun is pending.
+
 ## 2026-09-24 — Cobra dual-main propulsion and failure fallback implemented
 
 The authoritative Cobra descriptor now installs both longitudinal main-engine

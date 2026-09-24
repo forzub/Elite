@@ -1,120 +1,70 @@
-# CONTINUE PROMPT — verify the Hub-local manual docking route
+# CONTINUE PROMPT — Elite Navigation v2 / manual docking live gate
 
-Latest: user explicitly authorized public `forzub/Elite` `origin/main`
-publication. Authenticated GitHub integration published the exact verified
-local tree as `512b917c`; remote `main` was read back at that commit. Earlier
-notes about blocked publication are historical. Local branch was aligned to
-that remote commit; the old local commit history is preserved in
-`elite-local-history`. Next: target `git pull --ff-only origin main`, focused
-JSON-locale and docking tests, canonical rebuild, binary marker check, then
-capture SHOW ROUTE for >45 s and confirmed Human control with complete log.
+Work in public repository `forzub/Elite`, canonical branch `main`.
 
+Before changing behavior, read:
+- `AGENTS.md`
+- newest sections of `CURRENT_STATE.md`
+- newest sections of `CURRENT_TASK.md`
+- newest sections of `PROJECT_STATE.md`
+- newest sections of `src/game/navigation/STAGE12_END_TO_END.md`
 
-Latest user instruction: no patch-file delivery; publish code directly to
-GitHub and supply `git pull`/check/build/run commands. Read-only remote check
-found `origin/main=84d59f4d`. Direct `git push origin main` was rejected by
-automatic approval review because the user had not explicitly authorized the
-exact public-main publication. Do not bypass via a different Git/GitHub
-mechanism and do not claim the fixes are remotely available. Seek express
-authorization to publish local commits to public `forzub/Elite` `origin/main`;
-then verify remote HEAD before providing download commands. No new runtime
-docking result has been observed after corrected code installation.
+After every state-affecting result, update those four Markdown files before
+starting the next slice. Regenerate this `CONTINUE_PROMPT.md` from the current
+truth every iteration; do not accumulate obsolete instructions here.
 
+## Current verified state
 
-The Windows target supplied decisive deployment evidence: `HEAD=84d59f4d`
-with `origin/main` equal, `build/EliteGame.exe` lacks the corrected
-`[DockAdvisory] axis request=` literal, and the complete log search has only
-the old bare failure. This is an unpatched runtime, not evidence of a failure
-of the Hub-local fix. Install the complete mailbox patch based on `84d59f4d`
-via `git am` in `D:\\__elite\\work`, rebuild the canonical game, and verify
-the binary marker before flight testing. Preserve the user's untracked trace
-JSON/TXT files. Remote publication remains blocked by automatic approval
-review; do not bypass it without explicit authorization.
+The last Windows target evidence is checkout `D:\\__elite\\work` at
+`84d59f4d`. Its built `EliteGame.exe` does not contain
+`[DockAdvisory] axis request=`. SHOW ROUTE briefly appears and then the old
+runtime logs only:
 
+`[DockAdvisory] request=1 failed=dock moved off approach axis`
 
-Latest target excerpt: route briefly appears, then bare `request=1
-failed=dock moved off approach axis`; no numeric `[DockAdvisory] axis` record
-or startup locale line was included. The corrected guard prints axis delta to
-the same stderr before the failure. The excerpt may be partial. Before any
-more navigation edits, obtain target checkout commit, inspect the built
-`build/EliteGame.exe` for the literal `[DockAdvisory] axis request=`, and read
-the complete combined `build/test-logs/docking-live.log`. The canonical build
-script compiles that executable from its invoking checkout. Do not widen the
-2 m guard to conceal unknown deployment identity.
+Therefore that result is from the pre-fix executable and does not test the
+current Hub-local docking correction.
 
+Verified corrected code baseline: `512b917c8d09bc22b479a1c82203bd6b003b7ccf`.
+Documentation publication was recorded by `046ba6e6`. The correction keeps
+the final advisory gate and the semantic dock/standoff in one tactical
+Hub-local frame. Runtime samples ship/module from one authoritative tick,
+rejects Hub/timeline/attachment changes, and logs numeric local axis delta
+before any `dock moved off approach axis` failure. Cockpit/map world
+projection is presentation-only. The 2 m axis guard remains intentionally
+strict. Focused local docking and JSON numeric-locale regressions passed before
+publication; Windows live acceptance is still open.
 
-New target blocker: Windows startup aborted on nlohmann JSON numeric-lexer
-assertion `endptr == token_buffer.data() + token_buffer.size()`. `main.cpp`
-had selected the user's `LC_ALL`; decimal-comma locales make C `strtod` stop
-at the JSON dot. The local fix sets only `LC_NUMERIC=C` after `LC_ALL` and
-before app/threads, printing `[Startup] LC_NUMERIC=C`. A focused regression
-parses fractional/exponent JSON successfully; Windows rerun is pending.
-The preceding `session-start-update` duration log is not a crash stack.
-Keep the navigation axis test separate until startup is confirmed. Refresh
-the local patch; remote public-main publication was rejected by automatic
-review and must not be bypassed without explicit authorization.
+Manual SHOW ROUTE preparation is server-owned: request temporary Autopilot
+authority, physically brake/settle, capture authoritative start state, plan and
+publish route, send Complete, then wait for a newer session snapshot confirming
+Autopilot=false before restoring local Human prediction. Automatic DOCKING is
+still disabled.
 
+## Immediate task
 
-Latest distribution gate: direct `git push origin main` was rejected by
-automatic approval review because it publishes multiple local commits to the
-public default branch without explicit approval of that exact action. Do not
-attempt indirect publication. The corrected branch is local; remote `main`
-still tracks `84d59f4` here. Provide a refreshed `git am` patch for Windows
-testing. Explain that `tee` shows a full combined game log in the console and
-also writes `build/test-logs/docking-live.log`. Remote publication is pending
-explicit user authorization for that action.
+Do **not** change navigation math from the old bare failure. First prove the
+target is running the published correction:
 
+1. Fast-forward the Windows checkout from `84d59f4d` with
+   `git pull --ff-only origin main`; preserve all untracked trace JSON/TXT.
+2. Verify source contains `[DockAdvisory] axis request=`.
+3. Run focused `json_numeric_locale` and `docking_advisory` tests.
+4. Build using the repository's canonical `bash build_mingw64.sh`.
+5. Verify rebuilt `build/EliteGame.exe` contains the same axis marker.
+6. Run the canonical executable and capture combined stdout/stderr.
+7. Press SHOW ROUTE and keep the route valid for >45 s.
 
-Most recent observation: the target again printed only two
-`failed=dock moved off approach axis` lines. `origin/main` at `84d59f4`
-emits that exact form; the corrected local guard at `81175bb` MUST print
-`[DockAdvisory] axis request=... delta_m=...` to the same stderr immediately
-before the failure. The supplied excerpt may be filtered or partial. First
-verify applied patch/checkout HEAD, rebuilt executable and full merged log.
-If the numeric line appears, diagnose that measured local discrepancy; if
-absent from an unfiltered run, treat the executable as stale. This follow-up
-changes documentation only; the 2 m guard stays intact.
+Expected lifecycle evidence includes startup `LC_NUMERIC=C`,
+`phase=stabilizing`, `phase=planning`, `phase=handoff_wait`, server
+publication/hand-back, and `phase=manual human_control=1`.
 
+If the corrected route still disappears, use the complete numeric
+`[DockAdvisory] axis ... delta_local_m=... delta_m=...` or
+`[DockAdvisory] left ...` line plus tick/time/Hub/module identity to diagnose
+the next defect. Do not widen tolerances or reintroduce old
+DockingPathPlanner/GuidanceTunnel machinery to hide it.
 
-Work in `forzub/Elite` on `main`. First read `AGENTS.md`, the newest dated
-sections of `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and the
-last dated section of `src/game/navigation/STAGE12_END_TO_END.md`. Update all
-four state/stage files and this prompt after each material result.
-
-Latest live observation: SHOW ROUTE briefly appeared, then requests 1 and 2
-failed `dock moved off approach axis`. Visibility proves takeover, physical
-settling, authoritative planning and publication were reached; the supplied
-fragment does not prove server-confirmed Human hand-back. The split world
-prediction of terminal gate and dock was corrected in earlier local commits.
-
-Current correction: every planning decision uses one authoritative snapshot
-universe epoch, one tactical Hub-local coordinate frame for ship start, port,
-obstacles and gates. Runtime samples ship and dock at the same server tick,
-compares the unchanged terminal gate with the local semantic port/standoff and
-tracks the corridor with the sampled local ship position. Timeline and Hub
-identity are checked; the 2 m axis threshold and 500 m gate spacing remain.
-The diagnostic cube's authored local translation is zero. Its 2 deg/s spin is
-around the entrance normal through the entrance center, so that axis is fixed.
-
-Presentation never changes the local route: the cockpit converts all gates
-using the player's render frame/time; the Hub map projects those same local
-points directly with its local camera. Manual-mode blinking uses render time.
-Planning, frame mismatch, axis, corridor and hand-back logs include tick/time,
-Hub identity or measured local error. Native docking and focused architecture
-checks pass locally; the full Windows game build and live flight gate are open.
-The full runner lacks CMake/Ninja/CTest here; separately running its Python
-portion passes 82/91, with nine failures in unrelated areas. Full game syntax
-compilation lacks GLAD. Do not report the full architecture gate as passed.
-
-Direct push to public `main` was rejected by automatic approval review. Local
-commits are not on origin/main; obtain explicit authorization before retrying
-that publication. For target verification use the exported patch locally, then
-run `bash tests/architecture_contracts/run_mingw64.sh`, the
-`docking_advisory_tests` CMake/CTest target, `bash build_mingw64.sh`, and
-`(cd build && ./EliteGame.exe)` from MSYS2 MinGW64. Press SHOW ROUTE while
-moving; verify stabilization, a route for >45 s, manual controls after the
-server acknowledgement, cancellation on card close and corridor exit. Capture
-`phase=stabilizing -> phase=planning -> phase=handoff_wait ->
-[DockPrep] published ... human_restored=1 -> phase=manual human_control=1`.
-If cancelled, capture the complete `[DockAdvisory] axis` or `left` numeric line.
-Automatic DOCKING remains disabled; native tests are not flight acceptance.
+The user's preference is to apply code directly in GitHub, not deliver patch
+files. When implementation is actually required, update the repository and
+then provide exact Windows pull/check/test/build/run commands.

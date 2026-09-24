@@ -42,6 +42,8 @@ inline constexpr double StandardGravityMps2 = 9.80665;
             params.assistedTargetSpeedChangeRateFractionPerSecond
         ) &&
         nonNegativeFinite(params.fallbackThrottleResponsePerSecond) &&
+        nonNegativeFinite(params.forwardMainEngineAccelerationMps2) &&
+        nonNegativeFinite(params.reverseMainEngineAccelerationMps2) &&
         nonNegativeFinite(params.autoLevelStrength) &&
         nonNegativeFinite(params.strafeAccel) &&
         nonNegativeFinite(params.strafeDamping) &&
@@ -80,12 +82,34 @@ inline constexpr double StandardGravityMps2 = 9.80665;
     return effectiveLinearGs(params) * StandardGravityMps2;
 }
 
+[[nodiscard]] inline double installedDirectionalMainAccelerationMps2(
+    float configuredAccelerationMps2,
+    const ShipParams& params
+) noexcept
+{
+    const double loadLimit = mainAccelerationLimitMps2(params);
+    const double installed = std::max(
+        0.0,
+        static_cast<double>(configuredAccelerationMps2)
+    );
+
+    // Existing descriptors that predate explicit directional ratings retain
+    // their old main-engine authority. New descriptors should specify the
+    // installed rating explicitly.
+    return installed > 0.0
+        ? std::min(installed, loadLimit)
+        : loadLimit;
+}
+
 [[nodiscard]] inline double forwardMainAccelerationLimitMps2(
     const ShipParams& params
 ) noexcept
 {
     return params.forwardMainEngineAvailable
-        ? mainAccelerationLimitMps2(params)
+        ? installedDirectionalMainAccelerationMps2(
+              params.forwardMainEngineAccelerationMps2,
+              params
+          )
         : 0.0;
 }
 
@@ -94,7 +118,10 @@ inline constexpr double StandardGravityMps2 = 9.80665;
 ) noexcept
 {
     return params.reverseMainEngineAvailable
-        ? mainAccelerationLimitMps2(params)
+        ? installedDirectionalMainAccelerationMps2(
+              params.reverseMainEngineAccelerationMps2,
+              params
+          )
         : 0.0;
 }
 

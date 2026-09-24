@@ -1,5 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — sparse cadence can no longer jump across terminal-density start
+
+The second Windows test still found one 500 m interval inside the final-density
+contract. Root cause was phase alignment: a sparse frame outside the activation
+band could take one full 500 m step and land well inside it.
+
+Published-frame compression now explicitly clamps any sparse step that would
+cross `terminalDenseDistance + terminalSpacing`, creating a transition anchor
+before the 250 m cadence continues. This is a structural fix to the cadence
+boundary, not a test relaxation. Fresh target rerun remains required.
+
 ## 2026-09-25 — terminal guidance density boundary corrected
 
 The first Windows test of circular/final-density guidance failed with a single

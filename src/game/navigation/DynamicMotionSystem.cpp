@@ -464,6 +464,16 @@ void DynamicMotionSystem::applyLocalFrameInput(
                 params.fallbackThrottleResponsePerSecond
             )
         );
+    const bool brakingToStop =
+        motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop;
+    // Commissioning must converge rather than hover around the settle
+    // threshold. Ask for the delta-v required in this fixed step, then let the
+    // normal installed main/RCS clamps below limit it. Velocity is never set
+    // directly by this controller.
+    const double stabilizationGain =
+        brakingToStop && dtD > 0.0
+            ? 1.0 / dtD
+            : response;
 
     // Assisted changes control doctrine, never installed hardware.
     // Split the requested stabilization acceleration through the SAME physical
@@ -472,7 +482,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const double longitudinalVelocityError =
         glm::dot(velocityError, f);
     const double requestedLongitudinalAcceleration =
-        longitudinalVelocityError * response;
+        longitudinalVelocityError * stabilizationGain;
 
     const double mainLongitudinalAcceleration =
         std::clamp(
@@ -494,7 +504,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
     const glm::dvec3 assistedRcsStabilization =
         clampMagnitude(
-            lateralVelocityError * response +
+            lateralVelocityError * stabilizationGain +
                 unservedLongitudinalAcceleration,
             manoeuvreAccel
         );

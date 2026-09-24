@@ -1,5 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — full-game Windows build exposed `near` macro collision
+
+The canonical game build progressed into `SpaceState.cpp` and
+`Application.cpp` before failing in `DockingAdvisoryCorridor.h` because the
+local lambda name `near` is unsafe under the full Windows header environment.
+Focused docking tests had not included that macro context.
+
+The helper is renamed to `nearBoundary` and the static manual-docking check
+locks the Windows-safe spelling. No route/corridor behavior changed. Rebuild the
+canonical game before live Stage-12 acceptance.
+
 ## 2026-09-25 — target gates passed; surviving fore main now executes in Newtonian runtime
 
 Windows accepted the fresh local-flight contract plus the B5 physical maneuver,

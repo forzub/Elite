@@ -1,5 +1,22 @@
 # CURRENT STATE
 
+## 2026-09-25 — final-2-km density gate exposed one boundary-transition defect
+
+Fresh Windows docking_advisory failed only the new terminal-density assertion:
+`terminal advisory gate spacing too sparse: 490`.
+The static manual-docking architecture check passed.
+
+Root cause: published-frame compression switched to 250 m by inspecting the
+candidate endpoint. A last sparse ~500 m chord could therefore cross the 2 km
+boundary and land inside the dense zone before the shorter cadence activated.
+
+The planner now activates terminal density one terminal interval early:
+`2000 m + 250 m`. This guarantees the 2 km transition is bracketed by frames
+no farther than the terminal spacing and prevents a 500 m chord from entering
+the final zone. The regression keeps the strict <=250 m requirement inside the
+last 2 km and also requires a frame to anchor the transition within one terminal
+spacing. Fresh Windows rerun is pending.
+
 ## 2026-09-25 — live manual guidance works; turn geometry/visibility refined
 
 Fresh Windows live evidence shows repeated guidance requests are active and

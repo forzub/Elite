@@ -1,70 +1,67 @@
-# CONTINUE PROMPT — Elite Navigation v2 / manual docking live gate
+# CONTINUE PROMPT — Elite Navigation v2 / manual docking acceptance
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
-Before changing behavior, read:
-- `AGENTS.md`
-- newest sections of `CURRENT_STATE.md`
-- newest sections of `CURRENT_TASK.md`
-- newest sections of `PROJECT_STATE.md`
-- newest sections of `src/game/navigation/STAGE12_END_TO_END.md`
+Before changing project behavior/state, read `AGENTS.md`, the newest sections
+of `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
+`src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
+result synchronize those four files before the next slice. Regenerate this
+prompt from current truth every iteration.
 
-After every state-affecting result, update those four Markdown files before
-starting the next slice. Regenerate this `CONTINUE_PROMPT.md` from the current
-truth every iteration; do not accumulate obsolete instructions here.
+## Latest live evidence
 
-## Current verified state
+The latest Windows run reached an active manual docking route and ended with:
 
-The last Windows target evidence is checkout `D:\\__elite\\work` at
-`84d59f4d`. Its built `EliteGame.exe` does not contain
-`[DockAdvisory] axis request=`. SHOW ROUTE briefly appears and then the old
-runtime logs only:
+`[DockAdvisory] left request=8 ... gate=12 ... lateral_m=27.1992 vertical_m=60.1343 bounds_m=60,60`
 
-`[DockAdvisory] request=1 failed=dock moved off approach axis`
+The supplied tail does not show the former dock-axis failure. The immediate
+cancellation was triggered by only 0.1343 m beyond the nominal vertical
+corridor. Request serial 8 also proves SHOW ROUTE is not globally one-shot:
+each action creates a new serial.
 
-Therefore that result is from the pre-fix executable and does not test the
-current Hub-local docking correction.
+## Implemented correction awaiting Windows verification
 
-Verified corrected code baseline: `512b917c8d09bc22b479a1c82203bd6b003b7ccf`.
-Documentation publication was recorded by `046ba6e6`. The correction keeps
-the final advisory gate and the semantic dock/standoff in one tactical
-Hub-local frame. Runtime samples ship/module from one authoritative tick,
-rejects Hub/timeline/attachment changes, and logs numeric local axis delta
-before any `dock moved off approach axis` failure. Cockpit/map world
-projection is presentation-only. The 2 m axis guard remains intentionally
-strict. Focused local docking and JSON numeric-locale regressions passed before
-publication; Windows live acceptance is still open.
+Current Cobra remains aft-main-only; Assisted may not invent a fore engine.
+The commissioning defect was that BrakeToStop attitude acquisition ran only in
+Newtonian. Assisted now acquires tail-to-velocity attitude when reverse main is
+absent, allowing the real aft main to perform strong braking. Its stop
+controller asks for the fixed-step delta-v needed to settle but the existing
+main/RCS actuator clamps remain authoritative.
 
-Manual SHOW ROUTE preparation is server-owned: request temporary Autopilot
-authority, physically brake/settle, capture authoritative start state, plan and
-publish route, send Complete, then wait for a newer session snapshot confirming
-Autopilot=false before restoring local Human prediction. Automatic DOCKING is
-still disabled.
+Manual docking corridor policy now has nominal, warning/critical and release
+states. Nominal transit center tolerance remains 60 m and narrows to terminal
+dock fit. Warning begins at 80% of a nominal axis. Crossing nominal no longer
+deletes the route. The release envelope expands lateral/vertical tolerance by
+max(25%,10 m), and cancellation requires 0.35 s continuously beyond release.
 
-## Immediate task
+Warning state is published to the cockpit HUD and makes docking frames blink.
+Displayed frame extent is explicitly ship dimension plus twice the center
+tolerance, so the terminal frame equals the dock usable aperture after required
+wall clearance. Speed labels render only for gates within 500 m. Every docking
+frame marks its semantic bottom (-up edge) with an outward T.
 
-Do **not** change navigation math from the old bare failure. First prove the
-target is running the published correction:
+Automatic DOCKING remains disabled. This slice is manual SHOW ROUTE acceptance.
 
-1. Fast-forward the Windows checkout from `84d59f4d` with
-   `git pull --ff-only origin main`; preserve all untracked trace JSON/TXT.
-2. Verify source contains `[DockAdvisory] axis request=`.
-3. Run focused `json_numeric_locale` and `docking_advisory` tests.
-4. Build using the repository's canonical `bash build_mingw64.sh`.
-5. Verify rebuilt `build/EliteGame.exe` contains the same axis marker.
-6. Run the canonical executable and capture combined stdout/stderr.
-7. Press SHOW ROUTE and keep the route valid for >45 s.
+## Next target gate
 
-Expected lifecycle evidence includes startup `LC_NUMERIC=C`,
-`phase=stabilizing`, `phase=planning`, `phase=handoff_wait`, server
-publication/hand-back, and `phase=manual human_control=1`.
+1. Pull canonical main.
+2. Run the focused local-flight, manual-docking architecture and
+   docking-advisory native tests.
+3. Build canonical `build/EliteGame.exe`.
+4. Test SHOW ROUTE from non-zero VREL in Newtonian.
+5. Test SHOW ROUTE from non-zero VREL in Assisted.
+6. Press SHOW ROUTE repeatedly; every press must produce a new serial and
+   `stabilizing -> planning -> handoff_wait -> human_control=1`.
+7. Fly deliberately near/outside nominal: frames must blink, small nominal
+   excursions must remain recoverable, sustained outside-release motion must
+   cancel after the grace interval.
+8. Verify no speed text beyond 500 m, frame sizes follow corridor semantics,
+   and bottom marker orientation remains correct under roll.
 
-If the corrected route still disappears, use the complete numeric
-`[DockAdvisory] axis ... delta_local_m=... delta_m=...` or
-`[DockAdvisory] left ...` line plus tick/time/Hub/module identity to diagnose
-the next defect. Do not widen tolerances or reintroduce old
-DockingPathPlanner/GuidanceTunnel machinery to hide it.
+Capture complete `[DockPrep]`, `[DockAdvisory]` and
+`[DockAdvisory] corridor-warning` lines on failure. Do not relax hardware
+truth, widen geometry merely to hide a defect, or restore retired
+DockingPathPlanner/GuidanceTunnel code.
 
-The user's preference is to apply code directly in GitHub, not deliver patch
-files. When implementation is actually required, update the repository and
-then provide exact Windows pull/check/test/build/run commands.
+The user wants implementation directly in GitHub followed by exact Windows
+pull/test/build/run commands; do not deliver patch files.

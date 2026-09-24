@@ -28,6 +28,39 @@ inline glm::dvec3 clampMagnitude(
     return value;
 }
 
+// Main propulsion has priority. A combined main+RCS command must still fit the
+// ship linear-load envelope, but satisfying that envelope must never derate the
+// selected main bank. Only the secondary manoeuvre/RCS vector is reduced.
+inline glm::dvec3 clampSecondaryToTotalAccelerationEnvelope(
+    const glm::dvec3& primary,
+    glm::dvec3 secondary,
+    double totalLimit
+)
+{
+    if (totalLimit <= 0.0)
+        return glm::dvec3(0.0);
+
+    const double primaryLength = glm::length(primary);
+    if (primaryLength >= totalLimit - 1.0e-12)
+        return glm::dvec3(0.0);
+
+    if (glm::length(primary + secondary) <= totalLimit + 1.0e-12)
+        return secondary;
+
+    // Solve |primary + s*secondary| = totalLimit for s in [0,1].
+    const double a = glm::dot(secondary, secondary);
+    if (a <= 1.0e-24)
+        return glm::dvec3(0.0);
+
+    const double b = 2.0 * glm::dot(primary, secondary);
+    const double c = glm::dot(primary, primary) - totalLimit * totalLimit;
+    const double discriminant = std::max(0.0, b * b - 4.0 * a * c);
+    const double positiveRoot =
+        (-b + std::sqrt(discriminant)) / (2.0 * a);
+    const double fraction = std::clamp(positiveRoot, 0.0, 1.0);
+    return secondary * fraction;
+}
+
 inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
     const glm::dvec3& currentVelocity,
     const glm::dvec3& requestedAcceleration,
@@ -121,7 +154,11 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
         motion.mainEngineAccelerationMps2;
 
     motion.manoeuvreAccelerationMps2 =
-        clampMagnitude(remainder, manoeuvreAuthority);
+        clampSecondaryToTotalAccelerationEnvelope(
+            motion.mainEngineAccelerationMps2,
+            clampMagnitude(remainder, manoeuvreAuthority),
+            game::ship::mainAccelerationLimitMps2(params)
+        );
 
     motion.engineAccelerationMps2 =
         motion.mainEngineAccelerationMps2 +
@@ -522,10 +559,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
         );
 
     motion.manoeuvreAccelerationMps2 =
-        clampMagnitude(
-            motion.manoeuvreAccelerationMps2 +
-                assistedRcsStabilization,
-            manoeuvreAccel
+        clampSecondaryToTotalAccelerationEnvelope(
+            motion.mainEngineAccelerationMps2,
+            clampMagnitude(
+                motion.manoeuvreAccelerationMps2 +
+                    assistedRcsStabilization,
+                manoeuvreAccel
+            ),
+            game::ship::mainAccelerationLimitMps2(params)
         );
     motion.engineAccelerationMps2 =
         motion.mainEngineAccelerationMps2 +

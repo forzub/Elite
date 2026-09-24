@@ -1,5 +1,23 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — verify circular turns, final 250 m frames, and authoritative zero-speed stop
+
+Pull current main and run the focused docking advisory native/static tests,
+then rebuild EliteGame. In the live SHOW ROUTE run verify:
+- the station/final turn is visibly circular rather than a coarse polyline;
+- published frames are approximately 250 m apart inside the final 2 km and
+  remain 500 m in open transit;
+- console contains DockPrep begin with initial `vrel_mps` and
+  DockAdvisory `phase=settled vrel_mps=...`;
+- the settled number is <=0.05 m/s (or the ship's larger configured stop
+  epsilon) and omega <=0.01 rad/s before planning;
+- Human control is handed back after route publication.
+
+Do not enable full DOCKING by routing the advisory gates through an ad-hoc
+waypoint controller. Automatic mode must consume the accepted physical maneuver
+program / TrajectoryFollower architecture rather than create a second control
+system.
+
 ## 2026-09-25 — pull Windows-safe docking header and rebuild EliteGame
 
 Pull current `main`, rerun `check_manual_docking_advisory.py`, then rebuild

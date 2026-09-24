@@ -98,6 +98,9 @@ struct GuidanceCorridorHudPresentation
     bool advisoryOnly = true;
     bool spatialAdvisoryGates = false;
     bool noSafePrimarySolution = false;
+    bool deviationWarning = false;
+    bool deviationCritical = false;
+    bool deviationBlinkOn = true;
 
     // Read-only server execution truth for the selected route executor.
     // This is diagnostic/presentation metadata only; it is never a client
@@ -282,6 +285,16 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     out.advisoryOnly = corridor->advisoryOnly;
     out.spatialAdvisoryGates = corridor->spatialAdvisoryGates;
     out.noSafePrimarySolution = corridor->noSafePrimarySolution;
+    out.deviationWarning = corridor->deviationWarning;
+    out.deviationCritical = corridor->deviationCritical;
+    if (out.deviationWarning)
+    {
+        const double blinkPhase = std::fmod(
+            std::max(0.0, universeTimeSeconds) * 3.0,
+            1.0
+        );
+        out.deviationBlinkOn = blinkPhase < 0.58;
+    }
     return out;
 }
 

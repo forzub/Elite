@@ -1,7 +1,7 @@
 # Local control-law maneuver model
 
 **Status:** architecture contract / Stage-12 active integration
-**Updated:** 2026-09-18 Europe/Kyiv
+**Updated:** 2026-09-24 Europe/Kyiv
 **Related:** `src/game/MANEUVER_DECISION_TREE.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/game/navigation/LocalFlightControlLaw.h`
 
 ## Purpose
@@ -93,26 +93,43 @@ Navigation may request slow approach, forward turn, roll to fit, go-around, assi
 
 Assisted control is not permission to invent thrust; all linear/angular authority remains physical.
 
-For the current Cobra-class propulsion model this additionally means:
+For the current Cobra-class propulsion model the descriptor now contains two
+real longitudinal main-engine banks:
 
 ~~~text
-main engine = aft-only in BOTH control laws
-negative longitudinal acceleration demand != hidden fore main engine
-if bounded RCS cannot supply the requested braking vector:
-    rotate hull until aft main can contribute
-    then burn
+aft/rear main:
+    full forward authority along ship forward
+
+fore/nose main:
+    full reverse authority opposite ship forward
+
+main-bank runtime state:
+    operational -> full descriptor thrust
+    failed      -> zero main thrust
+    no proportional health-based derating
 ~~~
 
-The difference between Assisted and Newtonian is therefore controller doctrine
-and velocity/attitude coupling, not a different imaginary propulsion set.
+Healthy Assisted braking therefore uses the fore main directly without a
+180-degree hull flip. If the fore bank fails, strong braking falls back to the
+Newtonian-style sequence: rotate the hull and use the aft main. If the aft bank
+fails while the fore bank survives, the controller may adopt `-forward` as the
+working travel direction and the physical maneuver compiler may use the fore
+main as primary propulsion.
+
+The difference between Assisted and Newtonian remains controller doctrine and
+velocity/attitude coupling. Neither law invents engines; both consume the same
+descriptor/runtime propulsion truth.
 
 ### Newtonian
 
 ~~~text
 velocity vector and hull attitude are independent
-main engine is forward-only
+aft main is the preferred ordinary primary engine while operational
 small RCS handles limited lateral/reverse correction
-large braking requires hull rotation then main-engine burn
+large braking normally requires hull rotation then aft-main burn
+if the aft bank fails and the fore bank survives:
+    the fore main may become primary
+    working hull direction is reversed
 ~~~
 
 For a main-engine-dominant craft this is also the default ordinary course-change model. A material lateral delta-v is not requested as if the ship had an omnidirectional main engine.
@@ -137,11 +154,12 @@ RCS is normally precision authority: trim, close formation, docking, parking, po
 
 For the current Cobra Newtonian navigation authoring, the full physical
 `manoeuvreThrusterAccel` is **not** treated as ordinary sustained route
-authority merely because it exists. A small precision slice (currently the
-existing 0.35 m/s^2 correction threshold) is considered when deciding whether
-the hull may stay on the travel tangent. A material requested acceleration above
-that trim level authors a real hull cant/flip so the aft main engine can
-participate. The full physical RCS envelope remains available downstream for
+authority merely because it exists. A small precision slice is considered when
+deciding whether the hull may stay on the travel tangent. A material requested
+acceleration authors a real hull cant/flip so a surviving main-engine bank can
+participate. The aft bank remains preferred while available; after aft-bank
+failure the fore bank is a valid primary engine with reversed hull working
+direction. The full physical RCS envelope remains available downstream for
 transient recovery and fine trim; this distinction is maneuver doctrine, not a
 fake hardware limit.
 
@@ -611,8 +629,10 @@ not only scalar acceleration envelopes:
 Any scalar Planner constraint is derived from this profile for a particular
 state/orientation. It is not an independent source of truth.
 
-For the current Cobra, no subsystem may claim a physical fore main engine
-unless the authoritative descriptor is changed to install one.
+The authoritative Cobra descriptor now installs both aft and fore main-engine
+banks. Subsystems must derive current availability from the descriptor plus
+runtime module state; they may not infer a missing bank from control law or
+retain a failed bank from stale scalar limits.
 
 ## 2026-09-22 — vehicle facts and control doctrine are separate inputs
 

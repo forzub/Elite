@@ -48,6 +48,7 @@
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/orbits/OrbitalMotion.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
@@ -2209,26 +2210,18 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
         0.5 * static_cast<double>(shipDimensions.length)
     };
 
-    const auto& shipPhysics = ship.core().desc().physics;
-    constexpr double StandardGravityMps2 = 9.80665;
-    const double linearGs =
-        shipPhysics.maxLinearGs > 0.0f
-            ? static_cast<double>(shipPhysics.maxLinearGs)
-            : static_cast<double>(shipPhysics.maxGs);
-    const double mainForwardAuthorityMps2 =
-        std::max(0.0, linearGs * StandardGravityMps2);
+    const ShipParams shipPhysics = ship.core().effectivePhysics();
+    const double forwardMainAuthorityMps2 =
+        game::ship::forwardMainAccelerationLimitMps2(shipPhysics);
+    const double reverseMainAuthorityMps2 =
+        game::ship::reverseMainAccelerationLimitMps2(shipPhysics);
     const double manoeuvreAuthorityMps2 =
-        shipPhysics.manoeuvreThrusterAccel > 0.0f
-            ? static_cast<double>(shipPhysics.manoeuvreThrusterAccel)
-            : std::max(
-                  0.0,
-                  static_cast<double>(shipPhysics.strafeAccel)
-              );
+        game::ship::manoeuvreAccelerationLimitMps2(shipPhysics);
 
     agent.linearCapability.maxForwardAccelerationMetersPerSec2 =
-        mainForwardAuthorityMps2;
+        std::max(forwardMainAuthorityMps2, manoeuvreAuthorityMps2);
     agent.linearCapability.maxReverseAccelerationMetersPerSec2 =
-        manoeuvreAuthorityMps2;
+        std::max(reverseMainAuthorityMps2, manoeuvreAuthorityMps2);
     agent.linearCapability.maxLateralAccelerationMetersPerSec2 =
         manoeuvreAuthorityMps2;
     agent.linearCapability.maxVerticalAccelerationMetersPerSec2 =
@@ -2245,7 +2238,10 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
             })
         );
     agent.controlMode =
-        Planner::MovingPassage::ControlMode::Newtonian;
+        transform.motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted
+            ? Planner::MovingPassage::ControlMode::EliteAssisted
+            : Planner::MovingPassage::ControlMode::Newtonian;
 
     Planner::Goal plannerGoal;
     plannerGoal.revision = 1202001;
@@ -4677,13 +4673,16 @@ m_hubVelocityMetersPerSecond[hubId] =
                 std::abs(control.liftInput) > 0.001f ||
                 std::abs(control.strafeInput) > 0.001f;
 
+            const ShipParams effectivePhysics =
+                shipPtr->core().effectivePhysics();
+
             if (control.navigationAccelerationDemandValid &&
                 !manualTranslationOverride)
             {
                 game::navigation::DynamicMotionSystem::
                     applySystemAccelerationDemand(
                         tr.motion,
-                        shipPtr->core().desc().physics,
+                        effectivePhysics,
                         control.navigationLinearAccelerationDemandSystemMps2,
                         tr.forward()
                     );
@@ -4693,7 +4692,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 game::navigation::DynamicMotionSystem::applyLocalFrameInput(
                     tr.motion,
                     tr.motion.travelFrame,
-                    shipPtr->core().desc().physics,
+                    effectivePhysics,
                     motionControlDt,
                     control.targetSpeedRate,
                     control.cruiseActive,
@@ -4746,11 +4745,13 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!tr.motion.travelFrame.valid)
                 continue;
 
+            const ShipParams effectivePhysics =
+                shipPtr->core().effectivePhysics();
             game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
                 tr.motion,
                 tr.worldPosition,
                 tr.motion.travelFrame,
-                shipPtr->core().desc().physics,
+                effectivePhysics,
                 dt
             );
 

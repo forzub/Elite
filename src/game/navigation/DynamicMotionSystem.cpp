@@ -404,12 +404,33 @@ void DynamicMotionSystem::applyLocalFrameInput(
             }
 
             const glm::dvec3 antiVelocity = -relativeWorldVelocity / speed;
+            const glm::dvec3 velocityDirection =
+                relativeWorldVelocity / speed;
 
-            if (glm::dot(f, antiVelocity) >= static_cast<double>(params.brakeAlignmentCosine))
+            if (forwardMainAccel > 1.0e-9)
             {
-                const double brakeAccel =
-                    std::min(forwardMainAccel, speed / dtD);
-                motion.mainEngineAccelerationMps2 = f * brakeAccel;
+                // Normal Newtonian doctrine: turn the nose anti-velocity so the
+                // aft/rear main bank produces the braking acceleration.
+                if (glm::dot(f, antiVelocity) >=
+                    static_cast<double>(params.brakeAlignmentCosine))
+                {
+                    const double brakeAccel =
+                        std::min(forwardMainAccel, speed / dtD);
+                    motion.mainEngineAccelerationMps2 = f * brakeAccel;
+                }
+            }
+            else if (reverseMainAccel > 1.0e-9)
+            {
+                // Aft bank is dead. ShipController points the nose WITH the
+                // velocity vector; the surviving fore/nose bank then thrusts
+                // opposite the nose and supplies the required braking dv.
+                if (glm::dot(f, velocityDirection) >=
+                    static_cast<double>(params.brakeAlignmentCosine))
+                {
+                    const double brakeAccel =
+                        std::min(reverseMainAccel, speed / dtD);
+                    motion.mainEngineAccelerationMps2 = -f * brakeAccel;
+                }
             }
 
             motion.engineAccelerationMps2 =
@@ -419,17 +440,27 @@ void DynamicMotionSystem::applyLocalFrameInput(
             return;
         }
 
-        // Newtonian main propulsion remains one-directional: '+' applies the
-        // main engine and '-' is a no-op. This controlled propulsion is separate
-        // from keypad RCS and retains its ordinary combat-speed envelope.
+        // Newtonian '+' addresses the current PRIMARY longitudinal main bank.
+        // The aft/rear bank remains primary while alive. If it is lost but the
+        // fore/nose bank survives, '+' deliberately drives the ship in the
+        // opposite hull direction (-nose). '-' remains a no-op: it is not a
+        // synthetic bidirectional throttle and does not invent reverse hardware.
         const double mainThrustCommand = std::clamp(
             static_cast<double>(targetSpeedRate),
             0.0,
             1.0
         );
 
-        motion.mainEngineAccelerationMps2 =
-            f * (mainThrustCommand * forwardMainAccel);
+        if (forwardMainAccel > 1.0e-9)
+        {
+            motion.mainEngineAccelerationMps2 =
+                f * (mainThrustCommand * forwardMainAccel);
+        }
+        else if (reverseMainAccel > 1.0e-9)
+        {
+            motion.mainEngineAccelerationMps2 =
+                -f * (mainThrustCommand * reverseMainAccel);
+        }
         motion.engineAccelerationMps2 =
             motion.mainEngineAccelerationMps2 +
             motion.manoeuvreAccelerationMps2;

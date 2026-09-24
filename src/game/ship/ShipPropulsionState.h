@@ -27,23 +27,21 @@ inline bool propulsionModuleOperational(
         module->health > 0.0f;
 }
 
-inline double operationalFraction(
+inline bool propulsionBankOperational(
     const std::vector<std::string>& moduleIds,
     const world::modules::ObjectModuleRuntime& runtime
 ) noexcept
 {
     if (moduleIds.empty())
-        return 1.0;
+        return true;
 
-    std::size_t operational = 0;
     for (const auto& id : moduleIds)
     {
-        if (propulsionModuleOperational(runtime.findModule(id)))
-            ++operational;
+        if (!propulsionModuleOperational(runtime.findModule(id)))
+            return false;
     }
 
-    return static_cast<double>(operational) /
-        static_cast<double>(moduleIds.size());
+    return true;
 }
 
 inline bool propulsionModuleOperational(
@@ -56,15 +54,14 @@ inline bool propulsionModuleOperational(
         module.health > 0.0f;
 }
 
-inline double operationalFraction(
+inline bool propulsionBankOperational(
     const std::vector<std::string>& moduleIds,
     const std::vector<game::simulation::ObjectModuleSnapshot>& modules
 ) noexcept
 {
     if (moduleIds.empty() || modules.empty())
-        return 1.0;
+        return true;
 
-    std::size_t operational = 0;
     for (const auto& id : moduleIds)
     {
         const auto it = std::find_if(
@@ -76,18 +73,17 @@ inline double operationalFraction(
             }
         );
 
-        if (it != modules.end() && propulsionModuleOperational(*it))
-            ++operational;
+        if (it == modules.end() || !propulsionModuleOperational(*it))
+            return false;
     }
 
-    return static_cast<double>(operational) /
-        static_cast<double>(moduleIds.size());
+    return true;
 }
 
-inline ShipParams applyRuntimeMainPropulsionFractions(
+inline ShipParams applyRuntimeMainPropulsionState(
     const ShipDescriptor& descriptor,
-    double aftFraction,
-    double foreFraction
+    bool aftOperational,
+    bool foreOperational
 ) noexcept
 {
     ShipParams effective = descriptor.physics;
@@ -97,28 +93,25 @@ inline ShipParams applyRuntimeMainPropulsionFractions(
     const double staticReverseAuthority =
         game::ship::reverseMainAccelerationLimitMps2(descriptor.physics);
 
-    aftFraction = std::clamp(aftFraction, 0.0, 1.0);
-    foreFraction = std::clamp(foreFraction, 0.0, 1.0);
-
     effective.forwardMainEngineAvailable =
         descriptor.physics.forwardMainEngineAvailable &&
-        aftFraction > 0.0 &&
+        aftOperational &&
         staticForwardAuthority > 0.0;
     effective.reverseMainEngineAvailable =
         descriptor.physics.reverseMainEngineAvailable &&
-        foreFraction > 0.0 &&
+        foreOperational &&
         staticReverseAuthority > 0.0;
 
-    // Store the already damage-scaled rating explicitly. The shared dynamics
-    // helper still applies the crew/structure load cap, so damage can reduce
-    // authority but can never increase it.
+    // Main propulsion is deliberately binary. Damage never synthesizes a
+    // partially derated main engine: an operational bank retains the complete
+    // descriptor rating; a failed bank contributes zero authority.
     effective.forwardMainEngineAccelerationMps2 =
         effective.forwardMainEngineAvailable
-            ? static_cast<float>(staticForwardAuthority * aftFraction)
+            ? static_cast<float>(staticForwardAuthority)
             : 0.0f;
     effective.reverseMainEngineAccelerationMps2 =
         effective.reverseMainEngineAvailable
-            ? static_cast<float>(staticReverseAuthority * foreFraction)
+            ? static_cast<float>(staticReverseAuthority)
             : 0.0f;
 
     return effective;
@@ -133,13 +126,13 @@ inline ShipParams effectiveShipPhysics(
     const world::modules::ObjectModuleRuntime& runtime
 ) noexcept
 {
-    return detail::applyRuntimeMainPropulsionFractions(
+    return detail::applyRuntimeMainPropulsionState(
         descriptor,
-        detail::operationalFraction(
+        detail::propulsionBankOperational(
             descriptor.mainPropulsion.aftEngineModuleIds,
             runtime
         ),
-        detail::operationalFraction(
+        detail::propulsionBankOperational(
             descriptor.mainPropulsion.foreEngineModuleIds,
             runtime
         )
@@ -154,13 +147,13 @@ inline ShipParams effectiveShipPhysics(
     const std::vector<game::simulation::ObjectModuleSnapshot>& modules
 ) noexcept
 {
-    return detail::applyRuntimeMainPropulsionFractions(
+    return detail::applyRuntimeMainPropulsionState(
         descriptor,
-        detail::operationalFraction(
+        detail::propulsionBankOperational(
             descriptor.mainPropulsion.aftEngineModuleIds,
             modules
         ),
-        detail::operationalFraction(
+        detail::propulsionBankOperational(
             descriptor.mainPropulsion.foreEngineModuleIds,
             modules
         )

@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / docking guidance + autopilot boundary
+# CONTINUE PROMPT — Elite Navigation v2 / docking guidance density + autopilot boundary
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
@@ -8,70 +8,73 @@ Before changing project behavior/state, read `AGENTS.md`, newest sections of
 result synchronize those four files before the next implementation slice.
 Regenerate this prompt from current truth every iteration.
 
-## Propulsion and stop contract
+## Accepted propulsion and stop truth
 
-Dual-main Cobra propulsion and binary failure semantics are accepted on Windows:
-healthy aft/fore banks retain full authority, failed banks have zero authority,
-RCS remains separate, and Planner/B5 plus live local-flight contracts pass.
-
-SHOW ROUTE already performs a real temporary server Autopilot takeover for the
-pre-plan stop. Server repeatedly commands BrakeToStop and planning is gated on
-replicated authoritative Hub-relative speed <= max(0.05 m/s, ship stop epsilon)
-and angular rate <=0.01 rad/s for 0.25 s.
+Dual-main Cobra propulsion/failure semantics have passed Windows target gates.
+SHOW ROUTE already performs a real temporary server Autopilot takeover for
+physical BrakeToStop. Planning is gated on authoritative replicated state:
+Hub-relative speed <= max(0.05 m/s, ship stop epsilon), angular rate <=0.01
+rad/s, held for 0.25 s.
 
 New live diagnostics:
 - `[DockPrep] begin ... vrel_mps=... omega_radps=... law=...`
 - `[DockAdvisory] ... phase=settled vrel_mps=... omega_radps=... hold_s=...`
 
-## Live guidance evidence
+## Guidance geometry
 
-Current game no longer exhibits the old dock-axis cancellation. Latest route
-removals are real measured corridor exits, including lateral 82.8289/75 m and
-77.9429/75 m cases near turns.
-
-User requested smoother terminal geometry and denser frames:
-- circular fillets instead of quadratic Bezier corner smoothing;
+User requested:
+- circular final/turn geometry rather than broken-looking polyline;
 - 500 m frames in open transit;
-- 250 m frames inside final 2 km.
+- 250 m frames in the final ~2 km.
 
-Implemented circular fillets use v^2/a desired radius, limited by adjacent
-segment room. Display compression uses along-route progress rather than chord
-distance.
+Implemented:
+- true circular fillets, desired radius from v^2/a and limited by adjacent
+  segment room;
+- display compression by along-route progress, not chord distance;
+- terminal display spacing target 250 m;
+- terminal density nominal distance 2000 m.
 
-## Latest Windows gate result
+## Latest Windows gate evidence
 
-The first fresh `docking_advisory` run after final-density changes failed:
+First density test failed:
 `terminal advisory gate spacing too sparse: 490`.
 
-The static manual-docking architecture check passed.
+A first correction activated terminal cadence one 250 m interval early.
 
-Root cause: the 500->250 transition selected spacing from the candidate endpoint,
-so a final sparse ~500 m chord could cross the 2 km threshold and land inside
-the dense region before the denser cadence activated.
+Second Windows rerun still failed:
+`terminal advisory gate spacing too sparse: 500`.
 
-Fix on current main:
-- compute cadence from the current published frame;
-- activate 250 m cadence one terminal interval early:
-  `terminalDenseDistanceMeters + terminalSpacing` (2000 + 250 m);
-- therefore the 2 km boundary is already bracketed by <=250 m frames;
-- native regression remains strict for every interval inside the final band and
-  requires a transition frame within one terminal spacing of 2 km.
+Static manual docking architecture check passed in both runs.
 
-Fresh Windows rerun is pending.
+Root cause of second failure:
+cadence was still chosen from the current published frame. A frame at e.g.
+2300 m remaining could legally take a full 500 m sparse step to 1800 m, jumping
+across the activation boundary before dense cadence became active.
+
+Current main fixes the class structurally:
+- define terminal activation remaining as
+  `terminalDenseDistanceMeters + terminalSpacing`;
+- if current frame is already inside, use terminal spacing;
+- if current frame is outside but a normal sparse step would cross activation,
+  shorten THIS interval to `distanceToActivation`;
+- this explicitly places a transition frame at/just before the boundary;
+- all following intervals use terminal cadence.
+
+Do not relax the native test. Fresh Windows rerun is pending.
 
 ## Automatic docking boundary
 
-`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState docking
-execution accepts Guidance only.
+`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState active
+docking implementation accepts Guidance only.
 
-Do not create an ad-hoc waypoint autopilot. Full automatic docking must use:
+Do NOT implement a second ad-hoc waypoint autopilot. Full docking must use:
 accepted physical maneuver program
 -> TrajectoryFollower
 -> NavigationRuntimeControlBridge
 -> ShipControlState
--> shared ship physics.
+-> shared physics.
 
-SHOW ROUTE's physical stop is already a limited real Autopilot test.
+SHOW ROUTE's stop phase already tests limited real Autopilot ownership.
 
 ## Next target gate
 
@@ -81,13 +84,12 @@ On Windows `D:\__elite\work`:
 2. Rebuild/run only `docking_advisory_tests`.
 3. Run `python tests/architecture_contracts/check_manual_docking_advisory.py`.
 4. If both pass, rebuild canonical game with `bash build_mingw64.sh`.
-5. Run SHOW ROUTE with combined log.
-6. Inspect circular final turn, 250 m frame density inside final 2 km, and
-   DockPrep begin/phase=settled VREL+omega values.
-7. Confirm Human hand-back after route publication.
+5. Run SHOW ROUTE and inspect circular turn, final 250 m frames, and DockPrep
+   begin/settled VREL+omega diagnostics.
+6. Confirm Human hand-back after route publication.
 
 Preserve all untracked trace/log artifacts. Do not weaken corridor bounds,
-engine truth, or terminal-density tests merely to make a gate pass.
+terminal-density assertions, or propulsion truth merely to make tests pass.
 
-The user wants changes applied directly to GitHub and exact Windows commands.
-Do not provide patch files.
+The user wants implementation directly in GitHub followed by exact Windows
+pull/test/build/run commands. Do not provide patch files.

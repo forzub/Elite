@@ -4146,8 +4146,8 @@ Candidate correction:
 Viewer diagnostic added at the bottom:
 - fixed indicator `МАРШЕВЫЙ`: lights for positive aft-main acceleration;
 - fixed indicator `ПЕРЕДНИЙ МАРШЕВЫЙ`: lights if any negative/fore main
-  acceleration appears (should stay dark for the current Cobra; useful as a
-  physics-bug detector);
+  acceleration appears. The old aft-only baseline expected it dark; with the
+  2026-09-24 physical fore bank it is now legitimate when that bank is used;
 - fixed indicator `МАНЕВРОВЫЙ`: lights whenever manoeuvre/RCS acceleration is
   physically non-zero.
 
@@ -4355,7 +4355,9 @@ ActuatorSegment[i -> i+1]
     propulsion-feasible witness
 ```
 
-Current Cobra planner compilation never invents fore-main hardware.
+At that historical baseline Cobra planner compilation did not invent
+fore-main hardware. The current descriptor now supplies a real fore bank; the
+same invariant remains: Planner may use only descriptor/runtime hardware.
 
 The existing Stage-12 trajectory/reference is now converted into these physical
 actuator intervals in `makeProgramPhase()`:
@@ -4383,7 +4385,7 @@ This is intentional: next target run first verifies whether Planner's new
 physical program itself is sane before making Autopilot obey it literally.
 
 New sampler regression pins that actuator intervals are interpolated directly
-and no fore engine is synthesized.
+and no fore engine is synthesized when absent from the vehicle profile.
 
 Code baseline before documentation commits: `7b60f875193334e20bc5d168d65df351b746754d`.
 Target MinGW64 validation pending.

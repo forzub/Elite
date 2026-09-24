@@ -1,5 +1,21 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — published Hub-local correction awaiting target flight gate
+
+The last Windows observation was produced by the old `84d59f4d` executable:
+the route appeared, then the legacy post-publication axis guard removed it
+without the numeric diagnostic added by the correction. This does not falsify
+the newer Hub-local contract.
+
+The published correction keeps the accepted advisory gates, target attachment,
+semantic port and sampled ship in one tactical Hub-local truth domain for
+planning/validation. World/render frames are adapters only. A regression
+reproduces the old curved-orbit versus linear-anchor drift and verifies the
+replacement at 1 s and 45 s, while an intentionally off-axis dock still trips
+the 2 m guard. Target acceptance now requires a pulled/rebuilt executable,
+positive binary marker, >45 s valid route persistence, and authoritative Human
+hand-back evidence.
+
 ## 2026-09-24 — docking preparation and corridor exit contract (specified)
 
 Both `SHOW ROUTE` and eventual `DOCKING` first request control takeover by an
@@ -19,11 +35,14 @@ The manual command relinquishes preparation authority after capture and hands
 control back to the pilot; the automatic command would continue into a
 separately proved immutable program, reservation and ingress. Material manual
 control input during preparation cancels takeover and the requested route.
-Closing the dock card cancels the advisory task. The current implementation
-does not yet provide this server control transfer: its `SHOW ROUTE` button
-starts a client-side async geometric query immediately, and `DOCKING` is
-disabled. Existing END autobrake is a physical actuator mode, not itself a
-server-owned docking-preparation protocol.
+Closing the dock card cancels the advisory task. The manual SHOW ROUTE slice now implements this server control transfer:
+Human authority is temporarily replaced by Autopilot authority, the server
+physically brakes/settles the ship in the Hub frame, the client plans only
+after replicated takeover/settling evidence, and Human authority is restored
+only after route publication is acknowledged. Automatic `DOCKING` remains
+disabled pending a separately accepted executable maneuver program. Existing
+END autobrake remains a physical actuator mode, not the docking-preparation
+protocol itself.
 
 The planned route's corridor is the ordered, connected set of permitted ship
 center positions after expanding every static obstacle by the ship's actual

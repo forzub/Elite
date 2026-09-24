@@ -1,5 +1,16 @@
 # PROJECT STATE
 
+## 2026-09-25 — docking frame-density boundary is now non-crossable by sparse cadence
+
+The 500 m open-transit cadence may not jump across the start of terminal
+density. Transition is therefore handled as an explicit boundary event:
+- compute remaining route distance at the current published frame;
+- if a normal sparse step would cross the terminal activation distance, shorten
+  that interval to the boundary;
+- after that anchor, use the 250 m terminal cadence.
+
+This makes the final-density guarantee independent of prior sparse-grid phase.
+
 ## 2026-09-25 — final docking frame density transition is anchored, not endpoint-triggered
 
 The 500 m -> 250 m display transition must not be selected from the next frame's

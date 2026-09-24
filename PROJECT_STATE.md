@@ -1,5 +1,26 @@
 # PROJECT STATE
 
+## 2026-09-24 — manual docking has physical Assisted stop and corridor hysteresis
+
+The manual docking commissioning path no longer assumes that Assisted can stop
+a high-VREL Cobra with precision RCS alone. Vehicle hardware remains
+authoritative: the current Cobra has no fore main engine. When BrakeToStop is
+active and reverse main is absent, Assisted now rotates tail-to-velocity so the
+real aft main can brake. No propulsion capability is invented.
+
+Manual corridor truth remains the same nominal geometric target, but route
+lifetime now has recovery semantics. Warning starts at 80% of a nominal axis;
+outside nominal is critical but not immediately fatal. The release envelope is
+nominal plus max(25%,10 m) on lateral/vertical axes, with 0.35 s continuous
+outside-release grace before cancellation.
+
+Displayed frame extent is defined as `ship extent + 2 * center tolerance`.
+Consequently the terminal frame equals the usable dock opening after required
+wall clearance, while transit frames intentionally include maneuvering room.
+Cockpit speed labels are rendered only at <=500 m and docking frames carry a
+semantic bottom marker. Live `request=8` confirms requests are not globally
+one-shot; each button action already owns a fresh serial.
+
 ## 2026-09-24 — current docking blocker is target provenance, not planner construction
 
 The last playable result (brief route followed by bare

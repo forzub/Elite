@@ -1,5 +1,40 @@
 # CURRENT STATE
 
+## 2026-09-25 — live manual guidance works; turn geometry/visibility refined
+
+Fresh Windows live evidence shows repeated guidance requests are active and
+route cancellation now occurs on measured corridor departure rather than the
+old dock-axis defect:
+- request 1, gate 2: lateral -82.8289 m, vertical -59.6895 m against 75/75 m
+  release bounds;
+- request 3, gate 17: lateral 77.9429 m against 75 m release bound;
+- request 4, gate 2: vertical -62.1068 m against a 61.1359 m release bound.
+
+This is consistent with the user's observation that the sparse 500 m display
+frames make the station turn hard to read/follow.
+
+DockingAdvisoryPlanner has therefore been refined:
+- geometric corner smoothing is now a true circular fillet, not a quadratic
+  Bezier approximation;
+- desired turn radius starts from v^2/a lateral capability, shrinks only when
+  adjacent segments cannot contain it, and downstream speed limits remain
+  responsible for a physically feasible smaller-radius turn;
+- ordinary published frame spacing remains 500 m;
+- within the final 2000 m, published frame spacing becomes 250 m;
+- display-gate compression now uses along-route progress rather than straight
+  chord length so curved geometry is not visually collapsed.
+
+The preparation stop remains an authoritative gate: planning cannot start until
+replicated Hub-relative speed is <= max(0.05 m/s, ship stop epsilon), angular
+rate <=0.01 rad/s, continuously for 0.25 s. New diagnostics now print initial
+DockPrep VREL/omega and the accepted settled VREL/omega so the next live run can
+verify this numerically.
+
+Full automatic docking is not yet connected end-to-end. The current
+DockingRouteRequest has Automatic mode, but SpaceState's active docking path
+still accepts Guidance only. SHOW ROUTE does already exercise temporary
+Autopilot ownership for the physical stop phase.
+
 ## 2026-09-25 — canonical Windows game build hit a docking-header macro collision
 
 After the focused navigation/propulsion gates passed, the canonical MinGW64

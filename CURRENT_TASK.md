@@ -1,5 +1,15 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — rerun docking advisory after explicit transition-frame anchoring
+
+Pull current main and rerun only `docking_advisory` plus the static manual
+docking check. The prior exact 500 m failure came from a sparse frame jumping
+across the 2250 m activation boundary. Planner now shortens the crossing step
+itself and places an anchor at/just before that boundary.
+
+If the gate passes, rebuild EliteGame and proceed with live inspection of the
+circular station turn, final 250 m frames, and DockPrep begin/settled VREL logs.
+
 ## 2026-09-25 — rerun docking advisory after 2 km transition anchoring fix
 
 Pull current main and rerun only `docking_advisory` plus

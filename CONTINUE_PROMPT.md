@@ -27,16 +27,15 @@ Failed fore -> flip + aft main.
 Failed aft + live fore -> fore main becomes primary and working travel direction
 becomes `-hullForward`.
 
-Newtonian now follows the same hardware truth all the way through runtime:
-- healthy aft main remains the preferred primary;
-- if aft main fails and fore survives, ordinary '+' burns fore main along
-  `-hullForward`;
+Newtonian consumes the same hardware truth:
+- healthy aft remains primary;
+- if aft fails and fore survives, '+' burns fore main along `-hullForward`;
 - BrakeToStop aligns nose with velocity and burns fore main opposite nose;
-- '-' remains a no-op, not a synthetic reverse throttle.
+- '-' remains a no-op.
 
 ## Verified Windows evidence
 
-On Windows MinGW64, fresh target runs passed:
+Fresh Windows MinGW64 target evidence passed:
 - `local_flight_control_contracts`;
 - `ordinary_physical_maneuver_compiler`;
 - `ship_propulsion_state`;
@@ -45,33 +44,50 @@ On Windows MinGW64, fresh target runs passed:
 - `check_local_flight_control.py`;
 - `check_manual_docking_advisory.py`.
 
-The three navigation-runtime gates were repeated and passed again with
-`ninja: no work to do`.
+The navigation-runtime trio was repeated with no rebuild and passed again.
 
-After those passes, one lower runtime mismatch was corrected: Newtonian
-DynamicMotionSystem previously still burned only aft main even though
-ShipController and B5 could select fore main after aft failure. A native
-regression test and static architecture tokens have been added. This newest
-change still needs fresh Windows verification.
+A later final Newtonian fore-main runtime completion was added and needs fresh
+focused verification if not already run after the latest pull.
+
+## Latest canonical game-build blocker and fix
+
+The full Windows `bash build_mingw64.sh` reached EliteGame translation units
+and failed in `src/game/navigation/DockingAdvisoryCorridor.h` at:
+
+`const auto near = ...`
+
+The full Windows header stack makes `near` unsafe as an identifier. Narrow
+test targets did not reproduce that macro environment.
+
+The helper is now renamed to `nearBoundary`. The manual-docking static check
+explicitly rejects reintroduction of the unsafe declaration. This is a build
+portability fix only; corridor math/semantics are unchanged.
+
+The concurrent winsock2-before-windows.h message is a warning, not the build
+failure.
 
 ## Next gate
 
 On Windows `D:\__elite\work`:
 
 1. Pull current `main`.
-2. Rebuild `local_flight_control_contract_tests`.
-3. Run CTest `local_flight_control_contracts`.
-4. Run `python tests/architecture_contracts/check_local_flight_control.py`.
-5. If both pass, run canonical `bash build_mingw64.sh`.
-6. Launch `build/EliteGame.exe` and perform live manual SHOW ROUTE acceptance:
-   takeover -> physical stop -> plan/publish -> visible route/corridor -> hand
-   control back to player.
-7. Then exercise healthy Assisted behavior and, where practical through debug
-   module-state controls, fore-bank and aft-bank failure cases.
+2. Run:
+   `python tests/architecture_contracts/check_manual_docking_advisory.py`
+   and, if the latest Newtonian fallback has not yet been verified after pull,
+   rebuild/run `local_flight_control_contracts` plus
+   `check_local_flight_control.py`.
+3. Run canonical `bash build_mingw64.sh`.
+4. If `build/EliteGame.exe` links, launch it with combined stdout/stderr log.
+5. Perform live manual SHOW ROUTE acceptance:
+   Human -> Autopilot takeover -> physical Hub-relative stop/settle ->
+   authoritative start snapshot -> plan/publish -> visible route/corridor ->
+   acknowledged Autopilot off -> Human hand-back.
+6. Diagnose any route removal from numeric DockAdvisory axis/left logs; do not
+   widen geometry blindly.
 
-Preserve all untracked trace JSON/TXT files. Do not weaken engine truth, invent
-fore-engine hit geometry, widen navigation geometry to hide propulsion defects,
-or restore retired DockingPathPlanner/GuidanceTunnel.
+Preserve all untracked trace JSON/TXT/log artifacts. Do not weaken engine truth,
+invent fore-engine hit geometry, or restore retired DockingPathPlanner /
+GuidanceTunnel.
 
 The user wants implementation directly in GitHub followed by exact Windows
 pull/test/build/run commands. Do not provide patch files.

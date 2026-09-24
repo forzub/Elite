@@ -1,5 +1,22 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — first target gate: preserve main thrust, trim only secondary RCS
+
+The first Windows dual-main run found Assisted total propulsion could exceed the
+shared linear acceleration envelope by vector-adding RCS to a main-engine
+command already at the limit. This is now corrected with main-engine priority:
+the chosen longitudinal main command is unchanged, while the secondary RCS
+vector is reduced only as much as required for the combined vector to fit the
+linear envelope. This does not reintroduce health-based main-engine derating.
+
+The manual-docking architecture check also had a false positive: it searched
+all renderer uses of `projected.corners[1]` and therefore mistook the new
+semantic dock-bottom T marker for the speed-label anchor. The renderer already
+places labels through `projectedUpperLeft(projected.corners)`; the check now
+scopes itself to the speed-label placement block.
+
+Target rerun of these two focused gates is pending.
+
 ## 2026-09-24 — failure-aware dual-main propulsion enters physical maneuver layer
 
 The Cobra descriptor now installs both aft/rear and fore/nose longitudinal main

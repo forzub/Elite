@@ -87,8 +87,16 @@ try:
             "frameDistanceMeters <= 500.0",
             "bottomCenter",
             "deviationBlinkOn")
-    if "projected.corners[1] +" in read("src/render/cockpit/GuidanceCorridorRenderer.cpp"):
-        raise AssertionError("speed label is still tied to arbitrary corner[1]")
+    renderer = read("src/render/cockpit/GuidanceCorridorRenderer.cpp")
+    label_begin = renderer.find("speedLabels.emplace_back(")
+    label_end = renderer.find("label.str()", label_begin)
+    if label_begin < 0 or label_end < 0:
+        raise AssertionError("speed label placement block missing")
+    label_anchor = renderer[label_begin:label_end]
+    if "projected.corners[" in label_anchor:
+        raise AssertionError("speed label is still tied to an arbitrary projected corner")
+    if "projectedUpperLeft(projected.corners)" not in label_anchor:
+        raise AssertionError("speed label lost stable projected-frame anchor")
 
     flight = json.loads(read("src/assets/localization/ui/cockpit/flight.json"))
     entry = flight["strings"].get("cockpit.docking.manual_mode", {})

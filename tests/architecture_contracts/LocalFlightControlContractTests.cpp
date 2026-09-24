@@ -11,6 +11,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/ShipController.h"
 #include "src/game/ship/physics/ShipImpulseSystem.h"
 #include "src/world/WorldParams.h"

@@ -1,5 +1,30 @@
 # CURRENT STATE
 
+## 2026-09-25 — dual-main target gates PASS; Newtonian runtime fallback completed
+
+Fresh Windows MinGW64 evidence on `bb5ff1f8`:
+- `local_flight_control_contracts`: PASS;
+- `ordinary_physical_maneuver_compiler`: PASS;
+- `ship_propulsion_state`: PASS;
+- `docking_advisory`: PASS.
+The three navigation-runtime gates were repeated and passed again with no rebuild
+work, confirming deterministic native test behavior for this slice.
+
+That acceptance exposed one remaining implementation asymmetry below Planner:
+`ShipController` and B5 already selected the fore/nose main bank when the
+aft/rear bank failed, but Newtonian `DynamicMotionSystem` BrakeToStop still
+burned only the aft bank and ordinary Newtonian '+' still addressed only aft
+main. This is now corrected on `main`:
+- if aft main is alive, Newtonian behavior is unchanged;
+- if aft main is dead and fore main survives, '+' produces fore-main thrust
+  along `-hullForward`;
+- BrakeToStop waits for nose-with-velocity attitude and then burns fore main
+  opposite the nose to decelerate;
+- Newtonian '-' remains a no-op and does not become a synthetic reverse throttle.
+
+A native regression test and static architecture tokens now lock this fallback.
+Fresh Windows verification of this final runtime completion is pending.
+
 ## 2026-09-25 — focused local-flight rerun blocked by test compile include
 
 The next Windows rerun did not execute the updated local-flight contract binary:

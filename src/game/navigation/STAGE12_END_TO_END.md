@@ -9938,3 +9938,31 @@ gate opacity, has no manual-mode localized status, and uses a provisional
 60 m/700 m corridor envelope. The obsolete architecture tests that require the
 deleted rolling GuidanceTunnel path are not valid acceptance gates for this
 replacement and must be rewritten.
+
+## 2026-09-24 — manual docking commissioning implementation
+
+The SHOW ROUTE vertical slice is wired through existing authority and physics
+seams.
+
+- `ClientShipCommand` carries begin/cancel/complete preparation with a stable
+  docking request serial.
+- `ControlRegistry` retains player->entity identity while switching the entity
+  between Human and Autopilot controller kinds.
+- During preparation, GameServer overrides actuation with the existing
+  `VelocityAlignmentMode::BrakeToStop`; queued human samples are acknowledged
+  and discarded rather than replayed after hand-back.
+- GameClient disables only local prediction while external authority owns the
+  ship, avoiding a visual fight between predicted human input and authoritative
+  Autopilot.
+- SpaceState waits for authoritative Hub-relative speed and all three angular
+  rates to settle, then builds an authoritative non-extrapolated Hub planning
+  snapshot and launches the static advisory.
+- Autopilot remains active while the async planner runs and is released only
+  after route + HUD frame publication.
+- Gate spacing is 500 m nominal/max chord and the final remainder is retained.
+- Speed labels use the projected upper-left frame corner.
+- localized blinking `cockpit.docking.manual_mode` marks the manual phase.
+
+The deleted rolling GuidanceTunnel/DockingPathPlanner checks are no longer
+acceptance authorities. The current gate is the focused advisory/authority
+contract plus the real Windows game run.

@@ -298,6 +298,8 @@ private:
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
     std::uint64_t m_lastDockingPathRequestSerial = 0;
+    std::uint64_t m_dockingPreparationSerial = 0;
+    double m_dockingPreparationSettledSinceServerSeconds = -1.0;
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     std::string m_dockingGuidanceFailureReason;

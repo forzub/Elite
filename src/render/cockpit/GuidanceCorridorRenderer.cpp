@@ -59,6 +59,41 @@ bool GuidanceCorridorRenderer::projectPoint(
     return true;
 }
 
+glm::vec2 projectedUpperLeft(
+    const std::array<glm::vec2, 4>& corners
+)
+{
+    glm::vec2 center(0.0f);
+    for (const auto& corner : corners)
+        center += corner;
+    center *= 0.25f;
+
+    int best = -1;
+    for (int i = 0; i < 4; ++i)
+    {
+        if (corners[i].y > center.y)
+            continue;
+        if (best < 0 ||
+            corners[i].x < corners[best].x ||
+            (corners[i].x == corners[best].x &&
+             corners[i].y < corners[best].y))
+            best = i;
+    }
+
+    if (best >= 0)
+        return corners[best];
+
+    return *std::min_element(
+        corners.begin(),
+        corners.end(),
+        [](const glm::vec2& a, const glm::vec2& b)
+        {
+            return a.x < b.x ||
+                (a.x == b.x && a.y < b.y);
+        }
+    );
+}
+
 GuidanceCorridorRenderer::ProjectedFrame
 GuidanceCorridorRenderer::projectFrame(
     const game::presentation::GuidanceHudFramePresentation& frame,
@@ -205,8 +240,11 @@ void GuidanceCorridorRenderer::render(
             label << std::fixed << std::setprecision(
                 frame.recommendedSpeedMps < 10.0 ? 1 : 0)
                   << frame.recommendedSpeedMps << " m/s";
-            speedLabels.emplace_back(projected.corners[1] +
-                glm::vec2(5.0f,-3.0f),label.str());
+            speedLabels.emplace_back(
+                projectedUpperLeft(projected.corners) +
+                    glm::vec2(5.0f, -3.0f),
+                label.str()
+            );
         }
     }
 

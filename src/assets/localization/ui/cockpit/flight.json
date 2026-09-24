@@ -78,6 +78,13 @@
       "zh-Hans": "时间模拟模式",
       "es": "MODO DE SIMULACIÓN TEMPORAL",
       "ja": "時間シミュレーションモード"
+    },
+    "cockpit.docking.manual_mode": {
+      "en": "MANUAL DOCKING MODE",
+      "ru": "РУЧНОЙ РЕЖИМ СТЫКОВКИ",
+      "zh-Hans": "手动对接模式",
+      "es": "MODO DE ATRAQUE MANUAL",
+      "ja": "手動ドッキングモード"
     }
   }
 }

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import json
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def read(rel: str) -> str:
+    path = ROOT / rel
+    if not path.is_file():
+        raise AssertionError(f"missing {rel}")
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def require(rel: str, *tokens: str) -> None:
+    body = read(rel)
+    for token in tokens:
+        if token not in body:
+            raise AssertionError(f"{rel}: missing docking commissioning token {token!r}")
+
+
+try:
+    require("src/game/server/ControlRegistry.h",
+            "ControllerKind::Autopilot", "takeAutopilotControl", "restoreHumanControl")
+    require("src/game/server/GameServer.cpp",
+            "BeginDockingGuidancePreparation",
+            "CancelDockingGuidancePreparation",
+            "CompleteDockingGuidancePreparation",
+            "applyDockingGuidancePreparationControls",
+            "VelocityAlignmentMode::BrakeToStop",
+            "discardPendingAndAcknowledgeNewest")
+    require("src/game/client/GameClient.cpp",
+            "m_externalControlPredictionSuppressed",
+            "setExternalControlPredictionSuppressed",
+            "never replayed locally")
+    require("src/game/SpaceState.cpp",
+            "phase=stabilizing", "buildAuthoritativeHubSnapshot",
+            "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",
+            "request.gateSpacingMeters = 500.0",
+            "phase=manual human_control=1", "cockpit.docking.manual_mode")
+    require("src/render/cockpit/GuidanceCorridorRenderer.cpp", "projectedUpperLeft")
+    if "projected.corners[1] +" in read("src/render/cockpit/GuidanceCorridorRenderer.cpp"):
+        raise AssertionError("speed label is still tied to arbitrary corner[1]")
+
+    flight = json.loads(read("src/assets/localization/ui/cockpit/flight.json"))
+    entry = flight["strings"].get("cockpit.docking.manual_mode", {})
+    for locale in ("en", "ru", "zh-Hans", "es", "ja"):
+        if not entry.get(locale):
+            raise AssertionError(f"cockpit.docking.manual_mode missing locale {locale}")
+
+    for retired in (
+        "src/world/navigation/GuidanceTunnel.cpp",
+        "src/world/navigation/GuidanceTunnel.h",
+        "src/game/navigation/DockingPathPlanner.cpp",
+        "src/game/navigation/DockingPathPlanner.h",
+    ):
+        if (ROOT / retired).exists():
+            raise AssertionError(f"retired docking path returned: {retired}")
+
+    print("[PASS] manual docking prep -> authoritative stop -> 500m guidance -> human hand-back")
+except (AssertionError, KeyError, json.JSONDecodeError) as exc:
+    print(f"[FAIL] {exc}", file=sys.stderr)
+    raise SystemExit(1)

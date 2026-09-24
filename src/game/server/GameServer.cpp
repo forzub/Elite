@@ -666,6 +666,10 @@ void GameServer::update(double dt)
 
 
 
+    // Human inputs remain numbered/acknowledged, but temporary docking
+    // Autopilot owns the physical control sample until guidance is published.
+    applyDockingGuidancePreparationControls();
+
 m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
 );
@@ -896,6 +900,149 @@ void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 
 }
 
+bool GameServer::beginDockingGuidancePreparation(
+    PlayerId playerId,
+    EntityId controlledEntityId,
+    std::uint64_t requestSerial
+)
+{
+    if (!playerId || controlledEntityId.value == 0 || requestSerial == 0)
+        return false;
+
+    Ship* ship = m_simulation.getShip(controlledEntityId);
+    if (!ship)
+        return false;
+
+    const auto& motion = ship->core().transform().motion;
+    const std::string hubId = !motion.matchedReferenceFrameId.empty()
+        ? motion.matchedReferenceFrameId : motion.hubId;
+    const auto* hub = hubId.empty() ? nullptr : m_simulation.hubNavigationFrame(hubId);
+    if (!hub || !hub->valid || hub->systemId != motion.systemId ||
+        !motion.matchedToReferenceFrame ||
+        motion.matchedReferenceFrameId != hubId)
+    {
+        std::cerr << "[DockPrep] rejected entity=" << controlledEntityId.value
+                  << " request=" << requestSerial
+                  << " reason=ship-not-matched-to-hub\n";
+        return false;
+    }
+
+    const auto existing = m_dockingGuidancePreparations.find(controlledEntityId.value);
+    if (existing != m_dockingGuidancePreparations.end())
+    {
+        if (existing->second.playerId == playerId &&
+            existing->second.requestSerial == requestSerial)
+            return true;
+        const auto oldPrep = existing->second;
+        (void)finishDockingGuidancePreparation(
+            oldPrep.playerId, oldPrep.entityId, oldPrep.requestSerial, false);
+    }
+
+    if (!m_controls.takeAutopilotControl(playerId, controlledEntityId))
+        return false;
+
+    if (auto it = m_controlStreams.find(controlledEntityId.value);
+        it != m_controlStreams.end())
+        it->second.discardPendingAndAcknowledgeNewest();
+    m_pendingClientShipCommands.erase(controlledEntityId.value);
+
+    DockingGuidancePreparation prep;
+    prep.requestSerial = requestSerial;
+    prep.playerId = playerId;
+    prep.entityId = controlledEntityId;
+    prep.hubId = hubId;
+    m_dockingGuidancePreparations[controlledEntityId.value] = std::move(prep);
+
+    ShipControlState stop;
+    stop.velocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    ship->setControlState(stop);
+    m_forceSnapshotPublication = true;
+
+    std::cout << "[DockPrep] begin entity=" << controlledEntityId.value
+              << " request=" << requestSerial << " hub=" << hubId << '\n';
+    return true;
+}
+
+bool GameServer::finishDockingGuidancePreparation(
+    PlayerId playerId,
+    EntityId controlledEntityId,
+    std::uint64_t requestSerial,
+    bool routePublished
+)
+{
+    const auto it = m_dockingGuidancePreparations.find(controlledEntityId.value);
+    if (it == m_dockingGuidancePreparations.end())
+        return false;
+    const auto prep = it->second;
+    if (prep.playerId != playerId || prep.requestSerial != requestSerial)
+        return false;
+
+    if (auto streamIt = m_controlStreams.find(controlledEntityId.value);
+        streamIt != m_controlStreams.end())
+        streamIt->second.discardPendingAndAcknowledgeNewest();
+
+    if (Ship* ship = m_simulation.getShip(controlledEntityId))
+        ship->setControlState(ShipControlState {});
+
+    const bool restored = m_controls.restoreHumanControl(
+        playerId, controlledEntityId);
+    m_dockingGuidancePreparations.erase(it);
+    m_forceSnapshotPublication = true;
+
+    std::cout << "[DockPrep] "
+              << (routePublished ? "published" : "cancelled")
+              << " entity=" << controlledEntityId.value
+              << " request=" << requestSerial
+              << " human_restored=" << (restored ? 1 : 0) << '\n';
+    return restored;
+}
+
+void GameServer::applyDockingGuidancePreparationControls()
+{
+    std::vector<DockingGuidancePreparation> invalid;
+    invalid.reserve(m_dockingGuidancePreparations.size());
+
+    for (const auto& [entityValue, prep] : m_dockingGuidancePreparations)
+    {
+        Ship* ship = m_simulation.getShip(prep.entityId);
+        if (!ship)
+        {
+            invalid.push_back(prep);
+            continue;
+        }
+
+        const auto& motion = ship->core().transform().motion;
+        const auto* hub = m_simulation.hubNavigationFrame(prep.hubId);
+        if (!hub || !hub->valid || hub->systemId != motion.systemId ||
+            !motion.matchedToReferenceFrame ||
+            motion.matchedReferenceFrameId != prep.hubId ||
+            m_controls.controllerKind(prep.entityId) !=
+                game::server::ControllerKind::Autopilot)
+        {
+            invalid.push_back(prep);
+            continue;
+        }
+
+        if (auto streamIt = m_controlStreams.find(entityValue);
+            streamIt != m_controlStreams.end())
+            streamIt->second.discardPendingAndAcknowledgeNewest();
+
+        // Reuse the established physical END/autobrake primitive. Newtonian
+        // rotates and uses installed main thrust; Assisted uses installed
+        // propulsion. Neutral attitude axes retain bounded angular damping.
+        ShipControlState stop;
+        stop.velocityAlignmentCommand =
+            game::navigation::VelocityAlignmentMode::BrakeToStop;
+        ship->setControlState(stop);
+    }
+
+    for (const auto& prep : invalid)
+        (void)finishDockingGuidancePreparation(
+            prep.playerId, prep.entityId, prep.requestSerial, false);
+}
+
+
 void GameServer::resetSessionControlState(
     EntityId controlledEntityId,
     const char* reason
@@ -1030,6 +1177,15 @@ bool GameServer::disconnectPlayerSession(
         return false;
     }
 
+    if (const auto prepIt =
+            m_dockingGuidancePreparations.find(controlledEntityId.value);
+        prepIt != m_dockingGuidancePreparations.end())
+    {
+        const auto prep = prepIt->second;
+        (void)finishDockingGuidancePreparation(
+            prep.playerId, prep.entityId, prep.requestSerial, false);
+    }
+
     // Persistent player->ship control identity survives a disconnect, but
     // transport input does not. Once the last live session for this player is
     // gone, discard its numbered-input epoch and neutralize continuous pilot
@@ -1099,17 +1255,18 @@ void GameServer::receiveClientMessage(
     game::network::ServerSessionId sessionId,
     const game::network::ClientMessage& msg)
 {
+    const PlayerId playerId = m_sessions.player(sessionId);
     const EntityId controlledEntityId =
         controlledEntityForSession(sessionId);
 
-    if (controlledEntityId.value == 0)
+    if (!playerId || controlledEntityId.value == 0)
     {
         ++m_queueDiagnostics.rejectedSessionMessages;
         return;
     }
 
     std::visit(
-        [this, controlledEntityId](const auto& payload)
+        [this, controlledEntityId, playerId](const auto& payload)
         {
             using PayloadT = std::decay_t<decltype(payload)>;
 
@@ -1119,6 +1276,25 @@ void GameServer::receiveClientMessage(
             }
             else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
             {
+                if (payload.type == ClientShipCommand::BeginDockingGuidancePreparation)
+                {
+                    (void)beginDockingGuidancePreparation(
+                        playerId, controlledEntityId, payload.requestSerial);
+                    return;
+                }
+                if (payload.type == ClientShipCommand::CancelDockingGuidancePreparation)
+                {
+                    (void)finishDockingGuidancePreparation(
+                        playerId, controlledEntityId, payload.requestSerial, false);
+                    return;
+                }
+                if (payload.type == ClientShipCommand::CompleteDockingGuidancePreparation)
+                {
+                    (void)finishDockingGuidancePreparation(
+                        playerId, controlledEntityId, payload.requestSerial, true);
+                    return;
+                }
+
                 auto& queue =
                     m_pendingClientShipCommands[controlledEntityId.value];
                 if (queue.size() >= MaxShipCommandsPerShip)
@@ -1126,7 +1302,6 @@ void GameServer::receiveClientMessage(
                     ++m_queueDiagnostics.droppedShipCommands;
                     return;
                 }
-
                 queue.push_back(payload);
             }
         },

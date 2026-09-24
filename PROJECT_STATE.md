@@ -1,5 +1,20 @@
 # PROJECT STATE
 
+## 2026-09-24 — playable manual docking preparation wired
+
+The manual docking commissioning seam is now code rather than only a contract:
+Human -> temporary Autopilot -> physical Hub-relative stop/angular settle ->
+authoritative snapshot -> advisory planning/publication -> Human. It reuses the
+existing ship control/physics path and does not introduce a second motion model.
+
+Presentation now uses 500 m nominal spatial gates, per-gate speed at the
+projected upper-left, and a unified-localization blinking manual docking mode
+status. Old rolling-tunnel architecture checks are retired/replaced.
+
+Acceptance remains open until the Windows game demonstrates the complete
+sequence and both reset conditions.
+
+
 ## 2026-09-24 — manual docking commissioning boundary fixed
 
 The next playable docking milestone is manual advisory commissioning, not

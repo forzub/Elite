@@ -19,6 +19,7 @@ int main()
     r.maxSpeedMps=150.0;
     r.brakingMps2=10.0;
     r.lateralMps2=5.0;
+    r.gateSpacingMeters=500.0;
     world::navigation::NavigationObstacle station;
     station.id="station";
     station.shape=world::navigation::NavigationObstacleShape::Box;
@@ -30,13 +31,21 @@ int main()
             (r.entranceMeters+r.standoffMeters*r.outward))>1e-6 ||
         result.gates.back().speedMps!=0.0)
     { std::cerr << "docking advisory failed: " << result.failure << '\n'; return 1; }
+    bool sawNominal500mGate=false;
     for (std::size_t i=1;i<result.gates.size();++i)
     {
+        const double gateDistance=glm::length(
+            result.gates[i].positionMeters-result.gates[i-1].positionMeters);
+        if(gateDistance>r.gateSpacingMeters+1e-5) return 11;
+        if(gateDistance>=490.0 && gateDistance<=500.0+1e-5)
+            sawNominal500mGate=true;
         if(!world::navigation::segmentClearOfNavigationObstacles(
             result.gates[i-1].positionMeters,result.gates[i].positionMeters,
             r.obstacles,r.hullRadiusMeters)) return 2;
         if (!std::isfinite(result.gates[i].speedMps)) return 3;
     }
+    if(!sawNominal500mGate)
+    { std::cerr << "no nominal 500 m advisory gate spacing\n"; return 12; }
     world::navigation::NavigationObstacle blocked;
     blocked.shape=world::navigation::NavigationObstacleShape::Sphere;
     blocked.centerMeters=r.startMeters;

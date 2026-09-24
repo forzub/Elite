@@ -1,5 +1,27 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — verify manual docking commissioning in game
+
+Implementation is present. Next acceptance is target evidence, not more redesign:
+
+1. run the focused architecture and docking-advisory native tests;
+2. rebuild the canonical Windows game;
+3. enter the isolated Hub docking fixture and accelerate/rotate the Cobra;
+4. press SHOW ROUTE;
+5. verify the ship physically turns/brakes to rest relative to the Hub and
+   visibly damps pitch/yaw/roll rather than snapping;
+6. verify route calculation starts only after the stable authoritative state;
+7. verify Hub Map line and fixed cockpit gates appear, with nominal 500 m
+   spacing and speed in each gate's upper-left;
+8. verify localized blinking MANUAL DOCKING MODE appears;
+9. verify manual controls work again only after publication;
+10. verify dock-card close cancels guidance and a post-entry tunnel departure
+    cancels guidance.
+
+Capture `[DockPrep]` and `[DockAdvisory]` lines if any stage fails. Automatic
+DOCKING remains disabled.
+
+
 ## 2026-09-24 — implement playable manual docking commissioning slice
 
 Status: **ACTIVE — AUTOPILOT PREP -> 500 M STATIC GUIDANCE -> HUMAN HAND-BACK**

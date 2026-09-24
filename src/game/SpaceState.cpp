@@ -1669,11 +1669,47 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 void SpaceState::updateDockingAdvisory()
 {
     using namespace game::navigation;
-    if (!m_client) return;
+    if (!m_client)
+        return;
+
     auto& workspace = m_navigationWorkspace;
     auto& requests = workspace.dockingRouteRequests();
     const auto& pending = requests.pending();
     auto& guidance = workspace.guidance();
+
+    const auto sendPreparationCommand = [&](ClientShipCommand::Type type,
+                                            std::uint64_t serial)
+    {
+        if (serial == 0)
+            return;
+
+        ClientShipCommand command;
+        command.type = type;
+        command.requestSerial = serial;
+
+        game::network::ClientMessage message;
+        message.clientTick = 0;
+        message.payload = command;
+        m_client->sendMessage(message);
+    };
+
+    const auto finishLocalPreparation = [&](bool routePublished)
+    {
+        if (m_dockingPreparationSerial != 0)
+        {
+            sendPreparationCommand(
+                routePublished
+                    ? ClientShipCommand::CompleteDockingGuidancePreparation
+                    : ClientShipCommand::CancelDockingGuidancePreparation,
+                m_dockingPreparationSerial
+            );
+        }
+
+        m_dockingPreparationSerial = 0;
+        m_dockingPreparationSettledSinceServerSeconds = -1.0;
+        m_client->setExternalControlPredictionSuppressed(false);
+    };
+
     const auto clear = [&]()
     {
         if (!m_activeDockingGuidanceCorridorId.empty())
@@ -1685,80 +1721,265 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice = {};
         m_dockAdviceJob.reset();
     };
-    if (!pending.valid() || pending.mode != DockingRouteRequest::Mode::Guidance)
+
+    if (!pending.valid() ||
+        pending.mode != DockingRouteRequest::Mode::Guidance)
     {
+        finishLocalPreparation(false);
         clear();
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
         m_dockingGuidanceFailureReason.clear();
         return;
     }
+
     const auto fail = [&](const std::string& reason)
     {
+        finishLocalPreparation(false);
         clear();
         m_dockingGuidanceFailureReason = reason;
         std::cerr << "[DockAdvisory] request=" << pending.serial
                   << " failed=" << reason << '\n';
         requests.clear();
     };
+
     if (m_lastDockingPathRequestSerial != pending.serial)
     {
+        finishLocalPreparation(false);
         clear();
         m_lastDockingPathRequestSerial = pending.serial;
+
         const auto* definition = m_hubSemanticAnchorCatalog.find(
-            pending.target.stableObjectId,pending.target.semanticAnchorId);
+            pending.target.stableObjectId,
+            pending.target.semanticAnchorId
+        );
         const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
-            pending.target.stableObjectId,pending.target.semanticAnchorId);
-        const auto player = m_client->world().ships().find(m_playerId.value);
-        if (!definition || !runtime || player == m_client->world().ships().end() ||
-            !player->second.descriptor || !definition->enabled ||
+            pending.target.stableObjectId,
+            pending.target.semanticAnchorId
+        );
+        const auto player =
+            m_client->world().ships().find(m_playerId.value);
+
+        if (!definition || !runtime ||
+            player == m_client->world().ships().end() ||
+            !player->second.descriptor ||
+            !definition->enabled ||
             definition->kind != HubSemanticAnchorKind::DockingPort)
-        { fail("dock or ship unavailable"); return; }
+        {
+            fail("dock or ship unavailable");
+            return;
+        }
+
         const auto& dim = player->second.descriptor->logicalDimensions();
         ShipDockingEnvelope hull;
-        hull.valid = dim.enabled && dim.length > 0 && dim.width > 0 && dim.height > 0;
+        hull.valid = dim.enabled && dim.length > 0 &&
+            dim.width > 0 && dim.height > 0;
         hull.lengthMeters = dim.length;
         hull.widthMeters = dim.width;
         hull.heightMeters = dim.height;
-        const auto fit = evaluateDockingCompatibility(hull,*definition,*runtime);
-        if (!fit.routeAvailable) { fail("dock unavailable or hull does not fit"); return; }
-        const auto snapshot = game::client::ClientNavigationPlanningSnapshotFactory::
-            buildPredictedHubSnapshot(
-                m_client->world(),m_client->lastSimulationMetadata(),
-                m_client->estimatedServerTimeSeconds(),
-                m_client->sessionSnapshot().universeTimeScale,m_playerId,
-                pending.target.systemId,pending.target.stableObjectId);
-        if (!snapshot.ready()) { fail("planning snapshot unavailable"); return; }
+
+        const auto fit =
+            evaluateDockingCompatibility(hull, *definition, *runtime);
+        if (!fit.routeAvailable)
+        {
+            fail("dock unavailable or hull does not fit");
+            return;
+        }
+
+        const auto& motion = player->second.transform.motion;
+        if (motion.systemId != pending.target.systemId ||
+            !motion.matchedToReferenceFrame ||
+            motion.matchedReferenceFrameId.empty() ||
+            motion.hubId.empty() ||
+            motion.matchedReferenceFrameId != motion.hubId)
+        {
+            fail("ship is not matched to target Hub frame");
+            return;
+        }
+
+        sendPreparationCommand(
+            ClientShipCommand::BeginDockingGuidancePreparation,
+            pending.serial
+        );
+        m_dockingPreparationSerial = pending.serial;
+        m_dockingPreparationSettledSinceServerSeconds = -1.0;
+        m_client->setExternalControlPredictionSuppressed(true);
+
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " phase=stabilizing hub=" << motion.hubId << '\n';
+        return;
+    }
+
+    // Plan only from a canonical accepted snapshot after the temporary
+    // Autopilot has physically stopped the craft in the Hub co-moving frame
+    // and normal bounded angular damping has settled all three body rates.
+    if (m_dockingPreparationSerial == pending.serial &&
+        !m_dockAdviceJob &&
+        m_dockAdvice.serial == 0)
+    {
+        const auto player =
+            m_client->world().ships().find(m_playerId.value);
+        if (player == m_client->world().ships().end() ||
+            !player->second.descriptor)
+        {
+            fail("authoritative ship state unavailable");
+            return;
+        }
+
+        const auto& transform = player->second.transform;
+        const auto& motion = transform.motion;
+        if (motion.systemId != pending.target.systemId ||
+            !motion.matchedToReferenceFrame ||
+            motion.matchedReferenceFrameId.empty() ||
+            motion.matchedReferenceFrameId != motion.hubId)
+        {
+            fail("ship left Hub reference frame during preparation");
+            return;
+        }
+
+        const double relativeSpeedMps =
+            glm::length(motion.localVelocityMps);
+        const double angularRateRadPerSec = std::sqrt(
+            static_cast<double>(transform.pitchRate) *
+                static_cast<double>(transform.pitchRate) +
+            static_cast<double>(transform.yawRate) *
+                static_cast<double>(transform.yawRate) +
+            static_cast<double>(transform.rollRate) *
+                static_cast<double>(transform.rollRate)
+        );
+        const double speedThresholdMps = std::max(
+            0.05,
+            static_cast<double>(
+                player->second.descriptor->physics.stopSpeedEpsilonMps
+            )
+        );
+        constexpr double AngularRateThresholdRadPerSec = 0.01;
+        constexpr double SettleHoldSeconds = 0.25;
+        const double authoritativeServerSeconds =
+            m_client->lastSimulationMetadata().serverTimeSeconds;
+
+        if (relativeSpeedMps > speedThresholdMps ||
+            angularRateRadPerSec > AngularRateThresholdRadPerSec)
+        {
+            m_dockingPreparationSettledSinceServerSeconds = -1.0;
+            return;
+        }
+
+        if (m_dockingPreparationSettledSinceServerSeconds < 0.0)
+        {
+            m_dockingPreparationSettledSinceServerSeconds =
+                authoritativeServerSeconds;
+            return;
+        }
+
+        if (authoritativeServerSeconds -
+                m_dockingPreparationSettledSinceServerSeconds <
+            SettleHoldSeconds)
+        {
+            return;
+        }
+
+        const auto* definition = m_hubSemanticAnchorCatalog.find(
+            pending.target.stableObjectId,
+            pending.target.semanticAnchorId
+        );
+        const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
+            pending.target.stableObjectId,
+            pending.target.semanticAnchorId
+        );
+        if (!definition || !runtime)
+        {
+            fail("dock state unavailable after stabilization");
+            return;
+        }
+
+        const auto& dim = player->second.descriptor->logicalDimensions();
+        ShipDockingEnvelope hull;
+        hull.valid = dim.enabled && dim.length > 0 &&
+            dim.width > 0 && dim.height > 0;
+        hull.lengthMeters = dim.length;
+        hull.widthMeters = dim.width;
+        hull.heightMeters = dim.height;
+        const auto fit =
+            evaluateDockingCompatibility(hull, *definition, *runtime);
+        if (!fit.routeAvailable)
+        {
+            fail("dock unavailable after stabilization");
+            return;
+        }
+
+        const auto snapshot =
+            game::client::ClientNavigationPlanningSnapshotFactory::
+                buildAuthoritativeHubSnapshot(
+                    m_client->world(),
+                    m_client->lastSimulationMetadata(),
+                    m_playerId,
+                    pending.target.systemId,
+                    pending.target.stableObjectId
+                );
+        if (!snapshot.ready())
+        {
+            fail("authoritative planning snapshot unavailable");
+            return;
+        }
+
         const auto& frame = snapshot.planningFrame;
         const auto& module = snapshot.targetModuleKinematics;
         const auto port = resolveHubSemanticAnchor(
-            *definition,snapshot.systemId,snapshot.epoch.universeTimeSeconds,
-            module.positionMeters,module.velocityMps,module.orientation,
-            module.angularVelocityWorldRadPerSecond);
+            *definition,
+            snapshot.systemId,
+            snapshot.epoch.universeTimeSeconds,
+            module.positionMeters,
+            module.velocityMps,
+            module.orientation,
+            module.angularVelocityWorldRadPerSecond
+        );
+
         VehicleGuidanceEnvelope envelope;
         envelope.lengthMeters = hull.lengthMeters;
         envelope.widthMeters = hull.widthMeters;
         envelope.heightMeters = hull.heightMeters;
         envelope.valid = true;
-        const auto ship = makeNavigationVehicleProfile(
-            player->second.descriptor->physics,envelope);
+        const auto shipProfile = makeNavigationVehicleProfile(
+            player->second.descriptor->physics,
+            envelope
+        );
+
         DockingAdvisoryRequest request;
         request.startMeters = frame.worldToLocalPosition(
-            world::coordinates::fullMeters(snapshot.controlledShip.worldPosition));
-        request.entranceMeters = frame.worldToLocalPosition(port.positionMeters);
+            world::coordinates::fullMeters(
+                snapshot.controlledShip.worldPosition
+            )
+        );
+        request.entranceMeters =
+            frame.worldToLocalPosition(port.positionMeters);
         request.outward = frame.worldToLocalVector(port.forward());
-        request.standoffMeters = std::max(300.0,hull.lengthMeters*10.0+
-            definition->requiredClearanceMeters*4.0);
-        request.hullRadiusMeters = envelope.conservativeSafetyRadiusMeters();
-        request.maxSpeedMps = ship.maxSpeedMps;
-        request.brakingMps2 = ship.maxBrakingAccelerationMps2;
-        request.lateralMps2 = ship.maxLateralAccelerationMps2;
+        request.standoffMeters = std::max(
+            300.0,
+            hull.lengthMeters * 10.0 +
+                definition->requiredClearanceMeters * 4.0
+        );
+        request.hullRadiusMeters =
+            envelope.conservativeSafetyRadiusMeters();
+        request.maxSpeedMps = shipProfile.maxSpeedMps;
+        request.brakingMps2 =
+            shipProfile.maxBrakingAccelerationMps2;
+        request.lateralMps2 =
+            shipProfile.maxLateralAccelerationMps2;
+        request.gateSpacingMeters = 500.0;
         request.obstacles = snapshot.navigationObstacles;
-        if (m_dockWorkerCount->load(std::memory_order_acquire)>=2)
-        { fail("planner busy"); return; }
+
+        if (m_dockWorkerCount->load(std::memory_order_acquire) >= 2)
+        {
+            fail("planner busy");
+            return;
+        }
+
         auto job = std::make_shared<DockAdviceJob>();
-        job->timelineRevision = snapshot.epoch.universeTimelineRevision;
-        job->startedServerSeconds = snapshot.epoch.serverTimeSeconds;
+        job->timelineRevision =
+            snapshot.epoch.universeTimelineRevision;
+        job->startedServerSeconds =
+            snapshot.epoch.serverTimeSeconds;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
         job->context.hub = snapshot.hubPredictionSource;
@@ -1768,135 +1989,245 @@ void SpaceState::updateDockingAdvisory()
         job->context.heightMeters = fit.openingHeightMeters;
         job->context.shipWidthMeters = hull.widthMeters;
         job->context.shipHeightMeters = hull.heightMeters;
-        job->context.lateralToleranceMeters = fit.widthMarginMeters*0.5;
-        job->context.verticalToleranceMeters = fit.heightMarginMeters*0.5;
-        m_dockWorkerCount->fetch_add(1,std::memory_order_acq_rel);
+        job->context.lateralToleranceMeters =
+            fit.widthMarginMeters * 0.5;
+        job->context.verticalToleranceMeters =
+            fit.heightMarginMeters * 0.5;
+
+        const glm::dvec3 capturedStart = request.startMeters;
+        m_dockWorkerCount->fetch_add(1, std::memory_order_acq_rel);
         m_dockAdviceJob = job;
-        std::thread([job, count=m_dockWorkerCount,
-                     request=std::move(request)]() mutable
-        {
-            try { job->plan=DockingAdvisoryPlanner::plan(request); }
-            catch (const std::exception&) { job->plan.failure="planner exception"; }
-            job->ready.store(true,std::memory_order_release);
-            count->fetch_sub(1,std::memory_order_acq_rel);
-        }).detach();
+        std::thread(
+            [job, count = m_dockWorkerCount,
+             request = std::move(request)]() mutable
+            {
+                try
+                {
+                    job->plan = DockingAdvisoryPlanner::plan(request);
+                }
+                catch (const std::exception&)
+                {
+                    job->plan.failure = "planner exception";
+                }
+                job->ready.store(true, std::memory_order_release);
+                count->fetch_sub(1, std::memory_order_acq_rel);
+            }
+        ).detach();
+
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " phase=planning vrel_mps=" << relativeSpeedMps
+                  << " omega_radps=" << angularRateRadPerSec
+                  << " start_local=(" << capturedStart.x << ","
+                  << capturedStart.y << "," << capturedStart.z << ")\n";
         return;
     }
-    if (m_dockAdviceJob && m_dockAdviceJob->ready.load(std::memory_order_acquire))
+
+    if (m_dockAdviceJob &&
+        m_dockAdviceJob->ready.load(std::memory_order_acquire))
     {
-        auto job=std::move(m_dockAdviceJob);
+        auto job = std::move(m_dockAdviceJob);
         if (m_client->lastSimulationMetadata().universeTimelineRevision !=
                 job->timelineRevision ||
-            m_client->estimatedServerTimeSeconds()-job->startedServerSeconds>2.0)
-        { fail("planning snapshot expired"); return; }
-        if (!job->plan.valid()) {fail(job->plan.failure);return;}
-        m_dockAdvice=std::move(job->context);
-        m_dockAdvice.gates=std::move(job->plan.gates);
-        m_activeDockingGuidanceCorridorId="dock:"+
-            pending.target.stableObjectId+":"+pending.target.semanticAnchorId;
+            m_client->estimatedServerTimeSeconds() -
+                    job->startedServerSeconds > 2.0)
+        {
+            fail("planning snapshot expired");
+            return;
+        }
+        if (!job->plan.valid())
+        {
+            fail(job->plan.failure);
+            return;
+        }
+
+        m_dockAdvice = std::move(job->context);
+        m_dockAdvice.gates = std::move(job->plan.gates);
+        m_activeDockingGuidanceCorridorId =
+            "dock:" + pending.target.stableObjectId +
+            ":" + pending.target.semanticAnchorId;
         m_dockingGuidanceFailureReason.clear();
     }
-    auto& active=m_dockAdvice;
-    if (!active.serial) return;
-    const double time=m_client->universeTimeSeconds();
-    const auto frame=NavigationWorldPredictor::predictHubFrameAt(active.hub,time);
-    if (!frame.valid) {fail("hub frame unavailable");return;}
-    const auto port=predictHubSemanticAnchorAt(active.port,time);
-    if (glm::length(frame.localToWorldPosition(active.gates.back().positionMeters)-
-        (port.positionMeters+port.forward()*active.standoffMeters))>2.0)
-    {fail("dock moved off approach axis");return;}
-    const auto ship=m_client->world().ships().find(m_playerId.value);
-    if (ship==m_client->world().ships().end() ||
-        ship->second.transform.motion.systemId!=active.systemId)
-    {fail("ship left system");return;}
-    const auto position=frame.worldToLocalPosition(
-        world::coordinates::fullMeters(ship->second.transform.worldPosition));
-    const auto& gates=active.gates;
-    if (active.nextGate+1<gates.size())
+
+    auto& active = m_dockAdvice;
+    if (!active.serial)
+        return;
+
+    const double time = m_client->universeTimeSeconds();
+    const auto frame =
+        NavigationWorldPredictor::predictHubFrameAt(active.hub, time);
+    if (!frame.valid)
     {
-        const auto a=gates[active.nextGate].positionMeters;
-        const auto b=gates[active.nextGate+1].positionMeters;
-        const auto ab=b-a;
-        const double t=std::clamp(glm::dot(position-a,ab)/glm::dot(ab,ab),0.0,1.0);
-        const auto delta=position-(a+t*ab);
-        const auto forward=glm::normalize(ab);
-        auto up=frame.worldToLocalVector(port.up());
-        up-=forward*glm::dot(up,forward);
-        if (glm::length(up)<0.01)
+        fail("hub frame unavailable");
+        return;
+    }
+
+    const auto port = predictHubSemanticAnchorAt(active.port, time);
+    if (glm::length(
+            frame.localToWorldPosition(
+                active.gates.back().positionMeters
+            ) -
+            (port.positionMeters +
+             port.forward() * active.standoffMeters)
+        ) > 2.0)
+    {
+        fail("dock moved off approach axis");
+        return;
+    }
+
+    const auto ship =
+        m_client->world().ships().find(m_playerId.value);
+    if (ship == m_client->world().ships().end() ||
+        ship->second.transform.motion.systemId != active.systemId)
+    {
+        fail("ship left system");
+        return;
+    }
+
+    const auto position = frame.worldToLocalPosition(
+        world::coordinates::fullMeters(
+            ship->second.transform.worldPosition
+        )
+    );
+    const auto& gates = active.gates;
+
+    if (active.nextGate + 1 < gates.size())
+    {
+        const auto a = gates[active.nextGate].positionMeters;
+        const auto b = gates[active.nextGate + 1].positionMeters;
+        const auto ab = b - a;
+        const double t = std::clamp(
+            glm::dot(position - a, ab) / glm::dot(ab, ab),
+            0.0,
+            1.0
+        );
+        const auto delta = position - (a + t * ab);
+        const auto forward = glm::normalize(ab);
+        auto up = frame.worldToLocalVector(port.up());
+        up -= forward * glm::dot(up, forward);
+        if (glm::length(up) < 0.01)
         {
-            const auto fallback=std::abs(forward.y)<0.8
-                ? glm::dvec3(0.0,1.0,0.0) : glm::dvec3(1.0,0.0,0.0);
-            up=fallback-forward*glm::dot(fallback,forward);
+            const auto fallback =
+                std::abs(forward.y) < 0.8
+                    ? glm::dvec3(0.0, 1.0, 0.0)
+                    : glm::dvec3(1.0, 0.0, 0.0);
+            up = fallback - forward * glm::dot(fallback, forward);
         }
-        up=glm::normalize(up);
-        const auto right=glm::normalize(glm::cross(forward,up));
-        const auto section=dockingAdvisoryCrossSection(
-            glm::length(gates.back().positionMeters-(a+t*ab)),
-            active.lateralToleranceMeters,active.verticalToleranceMeters);
+        up = glm::normalize(up);
+        const auto right = glm::normalize(glm::cross(forward, up));
+        const auto section = dockingAdvisoryCrossSection(
+            glm::length(
+                gates.back().positionMeters - (a + t * ab)
+            ),
+            active.lateralToleranceMeters,
+            active.verticalToleranceMeters
+        );
         const bool inside =
-            std::abs(glm::dot(delta,right))<=section.lateralToleranceMeters &&
-            std::abs(glm::dot(delta,up))<=section.verticalToleranceMeters &&
-            std::abs(glm::dot(delta,forward))<=
-                std::max(5.0,active.widthMeters);
-        const auto tracking=active.tracker.observe(inside);
-        if (tracking==DockingAdvisoryTrackingResult::Left)
+            std::abs(glm::dot(delta, right)) <=
+                section.lateralToleranceMeters &&
+            std::abs(glm::dot(delta, up)) <=
+                section.verticalToleranceMeters &&
+            std::abs(glm::dot(delta, forward)) <=
+                std::max(5.0, active.widthMeters);
+
+        const auto tracking = active.tracker.observe(inside);
+        if (tracking == DockingAdvisoryTrackingResult::Left)
         {
             std::cerr << "[DockAdvisory] left gate=" << active.nextGate
-                      << " lateral_m=" << glm::dot(delta,right)
-                      << " vertical_m=" << glm::dot(delta,up)
+                      << " lateral_m=" << glm::dot(delta, right)
+                      << " vertical_m=" << glm::dot(delta, up)
                       << " bounds_m=" << section.lateralToleranceMeters
                       << "," << section.verticalToleranceMeters << '\n';
             fail("ship left guidance corridor");
             return;
         }
-        if (tracking==DockingAdvisoryTrackingResult::Inside &&
-            t>=1.0 && glm::dot(position-b,ab)>=0.0 &&
-            active.nextGate+2<gates.size()) ++active.nextGate;
+
+        if (tracking == DockingAdvisoryTrackingResult::Inside &&
+            t >= 1.0 &&
+            glm::dot(position - b, ab) >= 0.0 &&
+            active.nextGate + 2 < gates.size())
+            ++active.nextGate;
     }
+
     GuidanceCorridor route;
-    route.id=m_activeDockingGuidanceCorridorId;
-    route.systemId=active.systemId;
-    route.source=GuidanceSource::DockingComputer;
-    route.purpose=GuidancePurpose::Approach;
-    route.advisoryOnly=true;
-    route.priority=50;
-    route.generatedAtUniverseTimeSeconds=time;
+    route.id = m_activeDockingGuidanceCorridorId;
+    route.systemId = active.systemId;
+    route.source = GuidanceSource::DockingComputer;
+    route.purpose = GuidancePurpose::Approach;
+    route.advisoryOnly = true;
+    route.priority = 50;
+    route.generatedAtUniverseTimeSeconds = time;
     route.frames.reserve(gates.size());
-    for(std::size_t index=0; index<gates.size(); ++index)
+
+    for (std::size_t index = 0; index < gates.size(); ++index)
     {
-        const auto& gate=gates[index];
+        const auto& gate = gates[index];
         GuidanceFrame f;
-        f.universeTimeSeconds=time;
-        f.centerMeters=frame.localToWorldPosition(gate.positionMeters);
-        const auto forward=glm::normalize(frame.localToWorldVector(gate.forward));
-        auto up=port.up()-forward*glm::dot(port.up(),forward);
-        if(glm::length(up)<0.01)
+        f.universeTimeSeconds = time;
+        f.centerMeters =
+            frame.localToWorldPosition(gate.positionMeters);
+
+        const auto forward = glm::normalize(
+            frame.localToWorldVector(gate.forward)
+        );
+        auto up = port.up() - forward * glm::dot(port.up(), forward);
+        if (glm::length(up) < 0.01)
         {
-            const auto fallback=std::abs(forward.y)<0.8
-                ? glm::dvec3(0.0,1.0,0.0) : glm::dvec3(1.0,0.0,0.0);
-            up=fallback-forward*glm::dot(fallback,forward);
+            const auto fallback =
+                std::abs(forward.y) < 0.8
+                    ? glm::dvec3(0.0, 1.0, 0.0)
+                    : glm::dvec3(1.0, 0.0, 0.0);
+            up = fallback - forward * glm::dot(fallback, forward);
         }
-        up=glm::normalize(up);
-        const auto right=glm::normalize(glm::cross(forward,up));
-        f.orientation=glm::normalize(glm::quat_cast(
-            glm::dmat3(right,glm::normalize(glm::cross(right,forward)),-forward)));
-        const auto section=dockingAdvisoryCrossSection(
-            glm::length(gates.back().positionMeters-gate.positionMeters),
-            active.lateralToleranceMeters,active.verticalToleranceMeters);
-        f.widthMeters=active.shipWidthMeters+2.0*section.lateralToleranceMeters;
-        f.heightMeters=active.shipHeightMeters+2.0*section.verticalToleranceMeters;
-        f.lateralToleranceMeters=section.lateralToleranceMeters;
-        f.verticalToleranceMeters=section.verticalToleranceMeters;
-        f.recommendedSpeedMps=gate.speedMps;
-        f.requiredVehiclePose=(index+1==gates.size());
+        up = glm::normalize(up);
+        const auto right = glm::normalize(glm::cross(forward, up));
+        f.orientation = glm::normalize(
+            glm::quat_cast(
+                glm::dmat3(
+                    right,
+                    glm::normalize(glm::cross(right, forward)),
+                    -forward
+                )
+            )
+        );
+
+        const auto section = dockingAdvisoryCrossSection(
+            glm::length(
+                gates.back().positionMeters - gate.positionMeters
+            ),
+            active.lateralToleranceMeters,
+            active.verticalToleranceMeters
+        );
+        f.widthMeters =
+            active.shipWidthMeters +
+            2.0 * section.lateralToleranceMeters;
+        f.heightMeters =
+            active.shipHeightMeters +
+            2.0 * section.verticalToleranceMeters;
+        f.lateralToleranceMeters = section.lateralToleranceMeters;
+        f.verticalToleranceMeters = section.verticalToleranceMeters;
+        f.recommendedSpeedMps = gate.speedMps;
+        f.requiredVehiclePose = index + 1 == gates.size();
         route.frames.push_back(f);
     }
+
     guidance.publish(route);
-    route.id+=":frames";
-    route.spatialAdvisoryGates=true;
-    route.frames.erase(route.frames.begin(),
-        route.frames.begin()+static_cast<std::ptrdiff_t>(active.nextGate));
+    route.id += ":frames";
+    route.spatialAdvisoryGates = true;
+    route.frames.erase(
+        route.frames.begin(),
+        route.frames.begin() +
+            static_cast<std::ptrdiff_t>(active.nextGate)
+    );
     guidance.publish(std::move(route));
+
+    if (m_dockingPreparationSerial == pending.serial)
+    {
+        // Route + HUD frames now exist in the same client product. Only here
+        // do we release server Autopilot and resume local Human prediction.
+        finishLocalPreparation(true);
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " phase=manual human_control=1\n";
+    }
 }
 
 void SpaceState::update(float dt)
@@ -2765,6 +3096,44 @@ m_systemMapRenderer.render(
                 m_activeMainCamera->projectionMatrix(),
                 vp
             );
+
+            const bool manualDockingMode =
+                guidance.visible &&
+                guidance.spatialAdvisoryGates &&
+                guidance.source ==
+                    game::navigation::GuidanceSource::DockingComputer &&
+                !m_activeDockingGuidanceCorridorId.empty();
+
+            if (manualDockingMode)
+            {
+                const double manualBlinkPhase = std::fmod(
+                    std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
+                    1.0
+                );
+                if (manualBlinkPhase < 0.58)
+                {
+                    const std::string manualText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.manual_mode",
+                        "MANUAL DOCKING MODE"
+                    );
+                    constexpr int manualPx = 20;
+                    auto& text = TextRenderer::instance();
+                    const float width =
+                        text.measureTextPx(manualText, manualPx);
+                    const float x =
+                        static_cast<float>(vp.width) * 0.5f -
+                        width * 0.5f;
+                    const float y = 32.0f;
+                    text.textDrawPx(
+                        manualText,
+                        x,
+                        y,
+                        manualPx,
+                        glm::vec4(0.62f, 0.96f, 1.0f, 1.0f)
+                    );
+                }
+            }
 
             const bool noSafeGuidance =
                 guidance.noSafePrimarySolution ||

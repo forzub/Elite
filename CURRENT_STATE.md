@@ -1,5 +1,42 @@
 # CURRENT STATE
 
+## 2026-09-24 — manual docking preparation vertical slice implemented
+
+Status: **CODE IMPLEMENTED / TARGET GAME GATE PENDING**
+
+SHOW ROUTE now has a real temporary authority hand-off. The client sends an
+authoritative begin-preparation command, suppresses only local human prediction,
+and continues transmitting numbered input. The server changes the same
+player-to-ship authority record from Human to Autopilot, discards queued human
+samples from the preparation interval, and repeatedly drives the existing
+physical `BrakeToStop` control primitive. Newtonian craft therefore rotate and
+brake with installed forward main thrust; Assisted uses installed propulsion.
+Neutral attitude axes retain normal bounded angular damping.
+
+The client does not estimate a future start. It waits until canonical replicated
+ship state has Hub-relative `localVelocityMps` below the descriptor stop
+epsilon and combined pitch/yaw/roll rate below 0.01 rad/s for 0.25 s, then calls
+`buildAuthoritativeHubSnapshot` at that exact accepted snapshot epoch. The
+server continues holding Autopilot during async route calculation. Only after
+Hub Map route and spatial HUD guidance are published does the client send the
+completion command and re-enable local prediction; the server discards
+preparation-era input and restores Human authority.
+
+The advisory default and live request are now 500 m. Gate extraction does not
+choose a chord longer than the configured spacing; the terminal remainder is
+retained. HUD speed text is anchored to the actual projected upper-left gate
+corner rather than a fixed vertex index.
+
+`cockpit.docking.manual_mode` is in the unified localization catalog for
+en/ru/zh-Hans/es/ja and renders as blinking cockpit-top text while manual
+docking spatial guidance is active.
+
+Retired checks that required deleted rolling GuidanceTunnel/DockingPathPlanner
+runtime are removed. The general guidance architecture check is rewritten for
+the active DockingAdvisory path and a focused manual-docking commissioning check
+is added. No Windows/gameplay acceptance is claimed yet.
+
+
 ## 2026-09-24 — exact manual docking route commissioning contract
 
 Status: **CONTRACT PINNED / IMPLEMENTATION INCOMPLETE**

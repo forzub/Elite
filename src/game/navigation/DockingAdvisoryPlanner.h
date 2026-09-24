@@ -17,7 +17,7 @@ struct DockingAdvisoryRequest
     double maxSpeedMps = 100.0;
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;
-    double gateSpacingMeters = 350.0;
+    double gateSpacingMeters = 500.0;
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 struct DockingAdvisoryGate

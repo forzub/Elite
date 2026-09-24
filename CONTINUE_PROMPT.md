@@ -1,86 +1,53 @@
-# CONTINUE PROMPT — playable manual docking SHOW ROUTE
+# CONTINUE PROMPT — verify playable manual docking SHOW ROUTE
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
-The immediate target is the in-game manual docking SHOW ROUTE flow. Do not
-revive the removed rolling `GuidanceTunnelBuilder`, `DockingPathPlanner` or
-client-owned moving-start planning.
+Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`,
+`PROJECT_STATE.md`, the final dated sections of
+`src/game/navigation/STAGE12_END_TO_END.md`, and
+`src/game/navigation/NAVIGATION_GUIDANCE_CONTRACT.md`.
 
-## Read first
-
-1. `AGENTS.md`;
-2. `CURRENT_STATE.md`;
-3. `CURRENT_TASK.md`;
-4. `PROJECT_STATE.md`;
-5. `src/game/navigation/NAVIGATION_GUIDANCE_CONTRACT.md`;
-6. `src/game/navigation/NAVIGATION_LAYER_IMPLEMENTATION_BLUEPRINT.md`;
-7. final dated sections of `src/game/navigation/STAGE12_END_TO_END.md`.
-
-Inspect the active code path:
-
-- `src/game/server/ControlRegistry.h`;
-- `src/game/server/GameServer.{h,cpp}`;
-- `src/game/simulation/GameSimulation.{h,cpp}`;
-- `src/game/ship/core/ShipControlState.h`;
-- `src/game/navigation/NavigationRuntimeControlBridge.*`;
-- `src/game/navigation/DockingRouteRequest.h`;
-- `src/game/navigation/DockingAdvisoryPlanner.{h,cpp}`;
-- `src/game/navigation/DockingAdvisoryCorridor.h`;
-- `src/game/SpaceState.{h,cpp}`;
-- `src/game/system_map/SystemMapRenderer.cpp`;
-- `src/game/presentation/GuidanceHudPresentation.h`;
-- `src/render/cockpit/GuidanceCorridorRenderer.{h,cpp}`;
-- `src/assets/localization/ui/cockpit/flight.json`;
-- docking/localization architecture checks and focused native tests.
-
-## Exact required lifecycle
+The current code implements:
 
 ```text
 SHOW ROUTE
- -> temporary authoritative Autopilot takeover
- -> physically stop relative to Hub + settle angular rate
- -> capture fresh authoritative rigid-body state
- -> calculate static docking advisory
- -> publish Hub Map line + fixed HUD tunnel
- -> return authority to Human
- -> player flies manually
+ -> ClientShipCommand BeginDockingGuidancePreparation
+ -> ControlRegistry Human -> Autopilot (identity retained)
+ -> server repeatedly executes physical BrakeToStop
+ -> client prediction suppressed, numbered human samples still sent
+ -> authoritative vrel + pitch/yaw/roll rates settle
+ -> buildAuthoritativeHubSnapshot at the accepted epoch
+ -> async DockingAdvisoryPlanner
+ -> publish Hub Map line + fixed spatial HUD gates
+ -> ClientShipCommand CompleteDockingGuidancePreparation
+ -> server restores Human
 ```
 
-Rules:
-
-- no teleport/clamp and no change of installed control law;
-- material pilot input during preparation cancels it and returns Human;
-- nominal HUD gate spacing = 500 m; retain terminal gate;
-- gates are fixed spatial cross-sections, not rolling/time-following frames;
-- recommended speed is shown at the projected upper-left of every gate;
-- cockpit top blinks localized MANUAL DOCKING MODE while guidance is active;
-- all text uses the existing unified `LocalizationService`;
-- closing the selected dock card cancels at any stage;
-- after first valid tunnel entry, leaving the permitted corridor cross-section
-  cancels guidance;
-- cancellation during preparation must release Autopilot authority;
+Required UI/product behavior:
+- 500 m nominal gate spacing; final remainder retained;
+- recommended speed at projected upper-left of every spatial gate;
+- blinking localized `cockpit.docking.manual_mode`;
+- card-close cancels the task;
+- after first valid entry, leaving the corridor cancels the task;
 - automatic DOCKING remains disabled.
 
-## Known current gaps
+Inspect first:
+- `src/game/server/ControlRegistry.h`;
+- `src/game/server/GameServer.{h,cpp}`;
+- `src/game/client/GameClient.{h,cpp}`;
+- `src/game/SpaceState.{h,cpp}`;
+- `src/game/navigation/DockingAdvisoryPlanner.{h,cpp}`;
+- `src/render/cockpit/GuidanceCorridorRenderer.cpp`;
+- `src/assets/localization/ui/cockpit/flight.json`;
+- `tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp`;
+- `tests/architecture_contracts/check_manual_docking_advisory.py`.
 
-- `ControllerKind::Autopilot` exists but temporary player takeover/release is
-  not wired;
-- SHOW ROUTE is still a client workspace request;
-- gate spacing is 350 m;
-- speed-label placement is not guaranteed upper-left and `m/s` is formatted
-  inside the renderer;
-- no localized manual docking status exists;
-- gate opacity is distance-faded;
-- exit tracking still uses the provisional 60 m / 700 m envelope;
-- old architecture checks still target deleted rolling-tunnel symbols.
+Next action is verification. Run all locally available focused gates, but do not
+claim Windows/game acceptance without target-machine evidence. For the game
+test, start moving and rotating before pressing SHOW ROUTE and capture
+`[DockPrep]` / `[DockAdvisory]` logs if the sequence fails.
 
-Implement the vertical slice without hiding these gaps. Add/replace focused
-tests. Run all locally available gates, but never claim Windows/gameplay
-acceptance without target evidence.
-
-## Mandatory state protocol
-
-After every state-affecting event synchronize `CURRENT_STATE.md`,
-`CURRENT_TASK.md`, `PROJECT_STATE.md`, the active Stage-12 journal, affected
-contracts and recreate this prompt. Commit/push one coherent iteration to
-`main`. Never record an unrun gate as passed.
+Mandatory state protocol: after every state-affecting result synchronize
+`CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, the active
+Stage-12 journal, affected contracts, and recreate this prompt. Commit/push one
+coherent iteration to `main`. Never record an unrun gate as passed.

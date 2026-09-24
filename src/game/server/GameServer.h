@@ -258,6 +258,19 @@ private:
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
     ) const;
+
+    bool beginDockingGuidancePreparation(
+        PlayerId playerId,
+        EntityId controlledEntityId,
+        std::uint64_t requestSerial
+    );
+    bool finishDockingGuidancePreparation(
+        PlayerId playerId,
+        EntityId controlledEntityId,
+        std::uint64_t requestSerial,
+        bool routePublished
+    );
+    void applyDockingGuidancePreparationControls();
     void resetSessionControlState(
         EntityId controlledEntityId,
         const char* reason
@@ -283,6 +296,17 @@ private:
     static constexpr std::size_t MaxCompletedMapResponses = 64;
 
     ServerQueueDiagnostics m_queueDiagnostics;
+
+    struct DockingGuidancePreparation
+    {
+        std::uint64_t requestSerial = 0;
+        PlayerId playerId {};
+        EntityId entityId {};
+        std::string hubId;
+    };
+
+    std::unordered_map<std::uint32_t, DockingGuidancePreparation>
+        m_dockingGuidancePreparations;
 
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;

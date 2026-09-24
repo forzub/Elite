@@ -60,6 +60,12 @@ public:
 
     void sendMessage(const game::network::ClientMessage& msg);
 
+    void setExternalControlPredictionSuppressed(bool suppressed);
+    bool externalControlPredictionSuppressed() const noexcept
+    {
+        return m_externalControlPredictionSuppressed;
+    }
+
     bool requestGalaxyMapSnapshot(bool forceRefresh = false);
     bool composeSystemMapSnapshot(int systemId);
     bool composeDetailMapSnapshot(
@@ -191,6 +197,7 @@ private:
     std::uint64_t                   m_predictionResyncCount = 0;
     std::uint64_t                   m_lastAcknowledgedControlTick = 0;
     bool                            m_predictionSuspended = false;
+    bool                            m_externalControlPredictionSuppressed = false;
     ShipControlState                m_latestControl;
     bool                            m_hasLatestControl = false;
 

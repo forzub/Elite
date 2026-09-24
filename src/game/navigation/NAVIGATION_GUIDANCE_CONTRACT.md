@@ -555,3 +555,16 @@ current topology/portal branch itself is invalidated.
 
 The fixed-step monitor may run every simulation tick. Planner cadence is not
 fixed-step cadence.
+
+## 2026-09-24 implementation note — preparation authority
+
+Manual SHOW ROUTE preparation is implemented as a temporary controller-kind
+change, not as a client velocity edit. The server continuously executes the
+ordinary physical BrakeToStop behavior while the client suppresses only its
+local prediction. The route start is sampled from an accepted authoritative
+snapshot after both Hub-relative translation and rigid-body angular rates have
+settled. Human authority is restored only after the advisory route and fixed
+spatial gate product are published.
+
+Nominal gate spacing is 500 m and a terminal remainder is legal. Manual mode
+status text is part of the unified localization catalog.

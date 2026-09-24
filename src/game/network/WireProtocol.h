@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 9u;
+inline constexpr std::uint16_t WireProtocolVersion = 10u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -648,6 +648,7 @@ inline bool encodeClientShipCommand(
     writer.u8(static_cast<std::uint8_t>(value.type));
     writer.i32(value.index);
     writer.f64(value.amount);
+    writer.u64(value.requestSerial);
     return true;
 }
 
@@ -660,13 +661,14 @@ inline bool decodeClientShipCommand(
     std::int32_t index = 0;
     if (!reader.u8(type) ||
         !reader.i32(index) ||
-        !reader.f64(outValue.amount))
+        !reader.f64(outValue.amount) ||
+        !reader.u64(outValue.requestSerial))
     {
         return false;
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::StartBestRepairJob))
+            ClientShipCommand::CompleteDockingGuidancePreparation))
     {
         return false;
     }

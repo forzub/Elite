@@ -26,9 +26,9 @@ struct ControlAuthority
 
 /*
     Current control ownership is independent from ship identity and from the
-    transport session carrying commands. Today only Human binding is wired into
-    GameServer; AI/Autopilot are explicit controller classes reserved for the
-    same authority axis rather than being encoded as ShipRole::NPC.
+    transport session carrying commands. Human identity remains bound to the
+    controlled entity while temporary AI/Autopilot authority owns actuation;
+    changing controller kind must never rewrite ship or player identity.
 */
 class ControlRegistry
 {
@@ -60,6 +60,44 @@ public:
         m_byEntity[entityId.value] = authority;
         m_humanEntityByPlayer[playerId.value] = entityId;
         return true;
+    }
+
+    bool takeAutopilotControl(PlayerId playerId, EntityId entityId)
+    {
+        if (!playerId || entityId.value == 0)
+            return false;
+        const auto playerIt = m_humanEntityByPlayer.find(playerId.value);
+        const auto entityIt = m_byEntity.find(entityId.value);
+        if (playerIt == m_humanEntityByPlayer.end() ||
+            playerIt->second != entityId ||
+            entityIt == m_byEntity.end() ||
+            entityIt->second.playerId != playerId ||
+            (entityIt->second.kind != ControllerKind::Human &&
+             entityIt->second.kind != ControllerKind::Autopilot))
+            return false;
+        entityIt->second.kind = ControllerKind::Autopilot;
+        return true;
+    }
+
+    bool restoreHumanControl(PlayerId playerId, EntityId entityId)
+    {
+        if (!playerId || entityId.value == 0)
+            return false;
+        const auto playerIt = m_humanEntityByPlayer.find(playerId.value);
+        const auto entityIt = m_byEntity.find(entityId.value);
+        if (playerIt == m_humanEntityByPlayer.end() ||
+            playerIt->second != entityId ||
+            entityIt == m_byEntity.end() ||
+            entityIt->second.playerId != playerId)
+            return false;
+        entityIt->second.kind = ControllerKind::Human;
+        return true;
+    }
+
+    ControllerKind controllerKind(EntityId entityId) const noexcept
+    {
+        const auto* authority = find(entityId);
+        return authority ? authority->kind : ControllerKind::None;
     }
 
     EntityId controlledEntity(PlayerId playerId) const noexcept

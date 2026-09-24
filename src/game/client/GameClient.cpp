@@ -131,6 +131,7 @@ void GameClient::beginSynchronization()
         game::navigation::VelocityAlignmentMode::None;
     m_hasPendingAssistedMaxSpeedCommand = false;
     m_predictionSuspended = false;
+    m_externalControlPredictionSuppressed = false;
     m_lastAcknowledgedControlTick = 0;
     m_accumulator = 0.0f;
     m_serverClock.reset();
@@ -215,6 +216,17 @@ void GameClient::sendMessage(const game::network::ClientMessage& msg)
 {
     m_transport.sendClientMessage(msg);
 }
+
+void GameClient::setExternalControlPredictionSuppressed(bool suppressed)
+{
+    if (m_externalControlPredictionSuppressed == suppressed)
+        return;
+    m_externalControlPredictionSuppressed = suppressed;
+    m_pendingInputs.clear();
+    m_world.clearLocalPredictedPresentation();
+    m_accumulator = 0.0f;
+}
+
 
 
 bool GameClient::requestGalaxyMapSnapshot(bool forceRefresh)
@@ -857,6 +869,12 @@ void GameClient::updateGameplay(
         m_predictionSuspended = false;
         m_accumulator = 0.0f;
     }
+    else if (m_externalControlPredictionSuppressed)
+    {
+        // External authoritative controller owns actuation. Numbered pilot
+        // samples still cross transport but are never replayed locally.
+        m_pendingInputs.clear();
+    }
     else if (acceptedSnapshot)
     {
         replayPendingInputs(
@@ -879,7 +897,9 @@ void GameClient::updateGameplay(
             m_accumulator -= fixedDt;
         }
 
-        if (m_hasLatestControl && !m_predictionSuspended)
+        if (m_hasLatestControl &&
+            !m_predictionSuspended &&
+            !m_externalControlPredictionSuppressed)
         {
             m_world.prepareLocalPredictedPresentation(
                 m_playerId,
@@ -962,7 +982,9 @@ void GameClient::sendAndPredictFixedStep(
 
     control.controlTick = ++m_clientTick;
 
-    bool predictThisStep = !m_predictionSuspended;
+    bool predictThisStep =
+        !m_predictionSuspended &&
+        !m_externalControlPredictionSuppressed;
     if (predictThisStep && m_pendingInputs.size() >= MaxPendingInputs)
     {
         // Silently dropping only the oldest inputs leaves a non-contiguous

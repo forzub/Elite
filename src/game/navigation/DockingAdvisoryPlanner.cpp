@@ -109,8 +109,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         std::size_t next=previous+1;
         while(next+1<dense.size() &&
-            glm::length(dense[next].positionMeters-dense[previous].positionMeters)
-                < r.gateSpacingMeters) ++next;
+            glm::length(dense[next+1].positionMeters-
+                        dense[previous].positionMeters)
+                <= r.gateSpacingMeters + 1.0e-6) ++next;
         while(next>previous+1 && !clear(dense[previous].positionMeters,dense[next].positionMeters)) --next;
         if(!clear(dense[previous].positionMeters,dense[next].positionMeters))
         {out.failure="display gate chord obstructed";out.gates.clear();return out;}

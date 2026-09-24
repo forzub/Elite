@@ -166,6 +166,10 @@ bool validQuery(
         c.maxLateralAccelerationMps2 >= 0.0 &&
         finite(c.maxVerticalAccelerationMps2) &&
         c.maxVerticalAccelerationMps2 >= 0.0 &&
+        finite(c.maxForwardMainAccelerationMps2) &&
+        c.maxForwardMainAccelerationMps2 >= -1.0 &&
+        finite(c.maxReverseMainAccelerationMps2) &&
+        c.maxReverseMainAccelerationMps2 >= -1.0 &&
         finite(c.maxAngularAccelerationRadPerSec2) &&
         c.maxAngularAccelerationRadPerSec2 >= 0.0 &&
         finite(c.maxAngularSpeedRadPerSec) &&
@@ -194,6 +198,25 @@ double requiredAttitudeChange(
     );
 }
 
+double resolvedMainAuthority(
+    double explicitMain,
+    double totalAxis,
+    double lateral,
+    double vertical
+) noexcept
+{
+    if (explicitMain >= 0.0)
+        return explicitMain;
+
+    // Compatibility for older B5 callers: RCS is the authority common to
+    // lateral/vertical axes. Only excess longitudinal authority is inferred as
+    // a main bank. An explicit zero always wins and represents a known failure.
+    const double manoeuvreProxy = std::max(lateral, vertical);
+    return totalAxis > manoeuvreProxy + kEpsilon
+        ? totalAxis
+        : 0.0;
+}
+
 struct PrimaryMainBurnChoice
 {
     bool valid = false;
@@ -217,11 +240,21 @@ PrimaryMainBurnChoice choosePrimaryMainBurn(
     const glm::dvec3 thrustDirection =
         deltaVelocity / deltaSpeed;
     const double forwardAvailable = usable(
-        q.capability.maxForwardAccelerationMps2,
+        resolvedMainAuthority(
+            q.capability.maxForwardMainAccelerationMps2,
+            q.capability.maxForwardAccelerationMps2,
+            q.capability.maxLateralAccelerationMps2,
+            q.capability.maxVerticalAccelerationMps2
+        ),
         q.linearFeedbackReserveMps2
     );
     const double reverseAvailable = usable(
-        q.capability.maxReverseAccelerationMps2,
+        resolvedMainAuthority(
+            q.capability.maxReverseMainAccelerationMps2,
+            q.capability.maxReverseAccelerationMps2,
+            q.capability.maxLateralAccelerationMps2,
+            q.capability.maxVerticalAccelerationMps2
+        ),
         q.linearFeedbackReserveMps2
     );
 

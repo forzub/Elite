@@ -1,5 +1,24 @@
 # PROJECT STATE
 
+## 2026-09-25 — directional main failure doctrine now reaches live Newtonian motion
+
+The directional-main architecture is now consistent across descriptor/runtime
+health, navigation capability, physical maneuver compilation, hull-attitude
+selection, and low-level Newtonian thrust execution.
+
+When the aft/rear bank is unavailable but the fore/nose bank survives:
+- the physical compiler may select fore main as primary and reverse the working
+  hull direction;
+- ShipController selects the corresponding attitude;
+- DynamicMotionSystem ordinary Newtonian '+' drives the fore bank along
+  `-forward`;
+- Newtonian BrakeToStop uses the fore bank after nose-with-velocity alignment.
+
+Healthy aft-main behavior remains preferred and unchanged. Newtonian '-' does
+not become hardware-independent reverse thrust. This preserves the rule that
+control doctrine consumes installed hardware rather than inventing symmetric
+propulsion.
+
 ## 2026-09-25 — failed build invalidates subsequent stale CTest result
 
 The local-flight contract source now depends explicitly on the canonical

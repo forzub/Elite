@@ -1,5 +1,25 @@
 # CURRENT STATE
 
+## 2026-09-24 — target still runs pre-fix docking guard; retest published Hub-local fix
+
+Latest target evidence is from Windows checkout `D:\\__elite\\work` at
+`84d59f4d`. Its `build/EliteGame.exe` lacks the corrected
+`[DockAdvisory] axis request=` marker and emits only the legacy
+`failed=dock moved off approach axis` line after briefly showing the route.
+That run therefore does **not** test the published Hub-local correction.
+
+The verified corrected code baseline is commit `512b917c`; subsequent
+documentation commit `046ba6e6` records publication. The corrected runtime
+keeps the terminal gate and semantic dock/standoff in one tactical Hub-local
+frame and emits a numeric axis delta before any axis cancellation. No new
+navigation-math change is justified until the Windows target pulls, rebuilds,
+proves the marker is in the executable, and reruns the live gate.
+
+Next evidence must distinguish three outcomes: route persists for at least
+45 s with server-confirmed Human hand-back; numeric axis/corridor diagnostics
+identify a remaining live defect; or deployment/build provenance is still
+stale. Preserve all existing untracked trace JSON/TXT files.
+
 ## 2026-09-24 — docking and JSON startup fixes published on GitHub
 
 User explicitly authorized publication to public `forzub/Elite` `origin/main`.

@@ -868,6 +868,84 @@ void testExternalSpinIsNotHardClampedAndRcsBrakesIt()
             "RCS magically snapped external spin back inside rate envelope");
 }
 
+void testAssistedEndUsesForeMainWithoutHullFlip()
+{
+    const auto frame = makeFrame();
+    auto params = makeParams();
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+
+    WorldParams world;
+    ShipController controller;
+    ShipTransform ship;
+    ship.motion.travelFrame = frame;
+    ship.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    ship.motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    ship.motion.localVelocityMps = glm::dvec3(0.0, 0.0, -40.0);
+
+    const glm::vec3 beforeForward = ship.forward();
+    for (int i = 0; i < 20; ++i)
+        controller.update(0.05f, params, ship, world);
+
+    require(
+        glm::dot(beforeForward, ship.forward()) > 0.999999f,
+        "healthy Assisted fore-main braking rotated the hull"
+    );
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -40.0);
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        motion, frame, params, 0.05f, 0.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    require(
+        glm::dot(
+            motion.mainEngineAccelerationMps2,
+            glm::dvec3(0.0, 0.0, 1.0)
+        ) > 1.0,
+        "healthy Assisted braking did not use the fore main engine"
+    );
+}
+
+void testAssistedAftFailureMakesForeMainPrimary()
+{
+    const auto frame = makeFrame();
+    auto params = makeParams();
+    params.forwardMainEngineAvailable = false;
+    params.reverseMainEngineAvailable = true;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        motion, frame, params, 0.10f, 1.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    const glm::dvec3 hullForward(0.0, 0.0, -1.0);
+    require(
+        glm::dot(motion.desiredTacticalVelocityMps, hullForward) < -0.1,
+        "Assisted aft-main failure did not reverse the working travel direction"
+    );
+    require(
+        glm::dot(motion.mainEngineAccelerationMps2, hullForward) < -1.0,
+        "surviving fore main was not promoted to primary propulsion"
+    );
+}
+
 void testAssistedEndFlipsAndUsesAftMainWithoutForeEngine()
 {
     const auto frame = makeFrame();
@@ -1023,6 +1101,8 @@ int main()
         testAssistedThrottleReleaseCapturesReachedSpeed();
         testLinearAccelerationOverrideAppliesToBothFlightLaws();
         testAssistedExplicitMaxTargetPersistsUntilPilotOverrides();
+        testAssistedEndUsesForeMainWithoutHullFlip();
+        testAssistedAftFailureMakesForeMainPrimary();
         testAssistedEndFlipsAndUsesAftMainWithoutForeEngine();
         testAngularMotionUsesSharedLoadEnvelope();
         testVelocityAlignmentBrakesBeforeTarget();

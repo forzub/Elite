@@ -324,6 +324,8 @@ private:
         double shipHeightMeters = 0.0;
         double lateralToleranceMeters = 0.0;
         double verticalToleranceMeters = 0.0;
+        bool deviationWarning = false;
+        bool deviationCritical = false;
         std::size_t nextGate = 0;
         game::navigation::DockingAdvisoryCorridorTracker tracker;
     } m_dockAdvice;

@@ -1,5 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-24 — advisory map visibility gate: failed, corrected locally
+
+The Windows Hub test logged six immediate `ship left guidance corridor`
+failures. The dock aperture tolerance had been applied to every leg and
+checked before the pilot entered the route; the generated path was removed
+before map display. A 60 m transit cross section now narrows over the final
+700 m, and the route remains visible while awaiting entry. Only departure
+after a valid entry cancels it. Map selection explicitly takes the requested
+dock trajectory. Retry target gameplay; local tests do not count as visual
+acceptance.
+
 ## 2026-09-24 — docking fixture and yawed spin regression
 
 The isolated Hub docking scene now omits the Stage-12 runtime NPC as well as

@@ -1,5 +1,18 @@
 # CURRENT STATE
 
+## 2026-09-24 — live dock map gate failed at corridor entry
+
+The first Windows game run reached the new advisory path, but requests 1–6
+immediately logged `ship left guidance corridor`; no line appeared on the Hub
+map. The existing check applied dock-opening clearance to the entire route and
+cancelled a plan before the ship had entered its first spatial gate. The client
+now shows the planned trajectory while entry is pending, enforces exit only
+after entry, allows a 60 m open-flight deviation, and narrows the corridor to
+the fitted dock opening along the final 700 m. The map resolves the selected
+dock route explicitly when other guidance products are present. Failed exits
+now log signed lateral/vertical offsets and bounds. This correction requires a
+new Windows in-game gate; local native checks alone do not establish visibility.
+
 ## 2026-09-24 — docking fixture native gate and rotating-axis correction
 
 The station / near dock / yawed far dock static fixture now has a native

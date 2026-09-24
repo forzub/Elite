@@ -1,5 +1,15 @@
 # PROJECT STATE
 
+## 2026-09-24 — first live Hub-map docking gate failed
+
+Windows game logs show advisory requests 1–6 cancelling with `ship left
+guidance corridor` before route display. The corridor check mistakenly used
+the tight port-opening margin along the whole flight and enforced exit before
+initial entry. The revised advisory has separate transit/terminal cross
+sections and an entry-before-exit tracking state; the map prefers the selected
+dock route over unrelated guidance. Local checks and target re-test are
+distinct: visibility in game remains unaccepted until the next run.
+
 ## 2026-09-24 — isolated dock route native check
 
 The new advisory route passed a local native test with station and two docks,

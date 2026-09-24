@@ -1,5 +1,17 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — retry Hub docking map after failed live gate
+
+Target result: six SHOW ROUTE attempts reported `ship left guidance corridor`
+before a line could appear. The implementation now keeps guidance visible
+until the ship enters the first gate, uses a broad transit corridor and
+reduces it toward the real opening in the last 700 m. Verify on Windows:
+build and run `docking_advisory`, rebuild the canonical game, request the far
+dock route, confirm the map line appears and persists before entry, then check
+that closing the card and leaving an entered tunnel cancel it. If it still
+fails, capture `[DockAdvisory] left gate=...` measurements and the failure
+reason. Automatic docking remains disabled.
+
 ## 2026-09-24 — next docking flight gate
 
 Local native far-dock geometry and 45 s yawed dock-spin checks pass. The

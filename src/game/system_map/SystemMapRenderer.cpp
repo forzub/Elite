@@ -3034,11 +3034,30 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         overlay->trajectories.end()
     );
 
-    const auto* corridor = m_navigationWorkspace.guidance().activePredictive(
+    const auto& guidance = m_navigationWorkspace.guidance();
+    const auto* corridor = guidance.activePredictive(
         systemId,
         universeTimeSeconds,
         &m_navigationWorkspace.modules()
     );
+    const auto& dockRequest = m_navigationWorkspace.dockingRouteRequests().pending();
+    if (dockRequest.valid() &&
+        dockRequest.mode == game::navigation::DockingRouteRequest::Mode::Guidance &&
+        dockRequest.target.systemId == systemId)
+    {
+        const std::string dockId = "dock:" + dockRequest.target.stableObjectId +
+            ":" + dockRequest.target.semanticAnchorId;
+        const auto it = std::find_if(
+            guidance.corridors().begin(),guidance.corridors().end(),
+            [&](const auto& candidate)
+            {
+                return candidate.id == dockId &&
+                    candidate.validAt(universeTimeSeconds) &&
+                    game::navigation::NavigationGuidanceState::sourceEnabled(
+                        candidate.source,m_navigationWorkspace.modules());
+            });
+        if (it != guidance.corridors().end()) corridor = &*it;
+    }
     if (!corridor || corridor->frames.size() < 2)
         return;
 

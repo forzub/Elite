@@ -48,6 +48,7 @@
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
@@ -310,9 +311,12 @@ private:
         double standoffMeters = 0.0;
         double widthMeters = 0.0;
         double heightMeters = 0.0;
+        double shipWidthMeters = 0.0;
+        double shipHeightMeters = 0.0;
         double lateralToleranceMeters = 0.0;
         double verticalToleranceMeters = 0.0;
         std::size_t nextGate = 0;
+        game::navigation::DockingAdvisoryCorridorTracker tracker;
     } m_dockAdvice;
     struct DockAdviceJob
     {

@@ -1766,6 +1766,8 @@ void SpaceState::updateDockingAdvisory()
         job->context.standoffMeters = request.standoffMeters;
         job->context.widthMeters = fit.openingWidthMeters;
         job->context.heightMeters = fit.openingHeightMeters;
+        job->context.shipWidthMeters = hull.widthMeters;
+        job->context.shipHeightMeters = hull.heightMeters;
         job->context.lateralToleranceMeters = fit.widthMarginMeters*0.5;
         job->context.verticalToleranceMeters = fit.heightMarginMeters*0.5;
         m_dockWorkerCount->fetch_add(1,std::memory_order_acq_rel);
@@ -1828,11 +1830,27 @@ void SpaceState::updateDockingAdvisory()
         }
         up=glm::normalize(up);
         const auto right=glm::normalize(glm::cross(forward,up));
-        if (std::abs(glm::dot(delta,right))>active.lateralToleranceMeters ||
-            std::abs(glm::dot(delta,up))>active.verticalToleranceMeters ||
-            std::abs(glm::dot(delta,forward))>std::max(5.0,active.widthMeters))
-        {fail("ship left guidance corridor");return;}
-        if (t>=1.0 && glm::dot(position-b,ab)>=0.0 &&
+        const auto section=dockingAdvisoryCrossSection(
+            glm::length(gates.back().positionMeters-(a+t*ab)),
+            active.lateralToleranceMeters,active.verticalToleranceMeters);
+        const bool inside =
+            std::abs(glm::dot(delta,right))<=section.lateralToleranceMeters &&
+            std::abs(glm::dot(delta,up))<=section.verticalToleranceMeters &&
+            std::abs(glm::dot(delta,forward))<=
+                std::max(5.0,active.widthMeters);
+        const auto tracking=active.tracker.observe(inside);
+        if (tracking==DockingAdvisoryTrackingResult::Left)
+        {
+            std::cerr << "[DockAdvisory] left gate=" << active.nextGate
+                      << " lateral_m=" << glm::dot(delta,right)
+                      << " vertical_m=" << glm::dot(delta,up)
+                      << " bounds_m=" << section.lateralToleranceMeters
+                      << "," << section.verticalToleranceMeters << '\n';
+            fail("ship left guidance corridor");
+            return;
+        }
+        if (tracking==DockingAdvisoryTrackingResult::Inside &&
+            t>=1.0 && glm::dot(position-b,ab)>=0.0 &&
             active.nextGate+2<gates.size()) ++active.nextGate;
     }
     GuidanceCorridor route;
@@ -1862,10 +1880,13 @@ void SpaceState::updateDockingAdvisory()
         const auto right=glm::normalize(glm::cross(forward,up));
         f.orientation=glm::normalize(glm::quat_cast(
             glm::dmat3(right,glm::normalize(glm::cross(right,forward)),-forward)));
-        f.widthMeters=active.widthMeters;
-        f.heightMeters=active.heightMeters;
-        f.lateralToleranceMeters=active.lateralToleranceMeters;
-        f.verticalToleranceMeters=active.verticalToleranceMeters;
+        const auto section=dockingAdvisoryCrossSection(
+            glm::length(gates.back().positionMeters-gate.positionMeters),
+            active.lateralToleranceMeters,active.verticalToleranceMeters);
+        f.widthMeters=active.shipWidthMeters+2.0*section.lateralToleranceMeters;
+        f.heightMeters=active.shipHeightMeters+2.0*section.verticalToleranceMeters;
+        f.lateralToleranceMeters=section.lateralToleranceMeters;
+        f.verticalToleranceMeters=section.verticalToleranceMeters;
         f.recommendedSpeedMps=gate.speedMps;
         f.requiredVehiclePose=(index+1==gates.size());
         route.frames.push_back(f);

@@ -1,4 +1,5 @@
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include <glm/gtx/quaternion.hpp>
@@ -102,6 +103,25 @@ int main()
         glm::length(port.forward()-later.forward())>1e-6 ||
         glm::dot(port.up(),later.up())>0.1)
     { std::cerr << "spinning dock pose inconsistent\n"; return 8; }
+
+    // A pilot can ask to see a route while still outside its first gate.
+    // The dock opening constrains only the final approach; after entering,
+    // crossing the flight corridor boundary cancels the advisory.
+    const auto transit=dockingAdvisoryCrossSection(8000.0,34.0,21.0);
+    const auto staging=dockingAdvisoryCrossSection(350.0,34.0,21.0);
+    const auto terminal=dockingAdvisoryCrossSection(0.0,34.0,21.0);
+    if (transit.lateralToleranceMeters!=60.0 ||
+        transit.verticalToleranceMeters!=60.0 ||
+        !(staging.lateralToleranceMeters<60.0 &&
+          staging.lateralToleranceMeters>34.0) ||
+        terminal.lateralToleranceMeters!=34.0 ||
+        terminal.verticalToleranceMeters!=21.0)
+    { std::cerr << "corridor should narrow only near dock\n"; return 9; }
+    DockingAdvisoryCorridorTracker tracking;
+    if (tracking.observe(false)!=DockingAdvisoryTrackingResult::AwaitingEntry ||
+        tracking.observe(true)!=DockingAdvisoryTrackingResult::Inside ||
+        tracking.observe(false)!=DockingAdvisoryTrackingResult::Left)
+    { std::cerr << "corridor entry/exit semantics failed\n"; return 10; }
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';
 }

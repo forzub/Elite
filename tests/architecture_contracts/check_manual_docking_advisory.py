@@ -86,7 +86,8 @@ try:
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
             "desiredRadius",
             "tangentDistance/tangentScale",
-            "circle",
+            "arcLength=radius*turnAngle",
+            "center=entry+radius*inwardNormal",
             "remainingMeters<=r.terminalDenseDistanceMeters")
     require("src/game/SpaceState.cpp",
             "phase=settled",

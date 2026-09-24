@@ -116,10 +116,19 @@ struct AcceptedManeuverProgram
     struct CapabilitySnapshot
     {
         std::uint64_t revision = 0;
+
+        // Instantaneous body-axis authority (main + RCS as applicable).
         double maxForwardAccelerationMetersPerSec2 = 0.0;
         double maxReverseAccelerationMetersPerSec2 = 0.0;
         double maxLateralAccelerationMetersPerSec2 = 0.0;
         double maxVerticalAccelerationMetersPerSec2 = 0.0;
+
+        // Physical longitudinal MAIN-engine banks kept separate from RCS so
+        // execution/replan cannot mistake residual manoeuvre authority for a
+        // surviving main engine after damage.
+        double maxForwardMainAccelerationMetersPerSec2 = 0.0;
+        double maxReverseMainAccelerationMetersPerSec2 = 0.0;
+
         double maxAngularAccelerationRadPerSec2 = 0.0;
         double maxAngularSpeedRadPerSec = 0.0;
     };

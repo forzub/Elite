@@ -10051,3 +10051,19 @@ execution.
 
 The guard now resolves only complete C/C++ extensions and repository-owned CMake
 source forms. No navigation/product behavior or prior test cleanup changed.
+
+## 2026-09-24 — live route publication reached; dock-axis guard now blocks persistence
+
+The target game displayed the docking route briefly, then emitted
+`dock moved off approach axis` for repeated requests.
+
+Because this guard is evaluated only after a valid advisory is active, the live
+run has exercised temporary Autopilot takeover, physical stabilization,
+authoritative stopped-state capture, planning and publication. Final hand-back
+is not yet evidenced in the supplied log excerpt.
+
+The next diagnostic must compare the fixed final gate transformed by the
+predicted Hub frame with the independently predicted semantic port/standoff
+state. The likely defect is split kinematic prediction for the yawed/spinning
+Hub-attached module. Preserve the 2 m guard until the two prediction sources are
+made coherent.

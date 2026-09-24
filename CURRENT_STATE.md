@@ -1,5 +1,43 @@
 # CURRENT STATE
 
+## 2026-09-24 — live manual docking reaches publication, then fails dock-axis consistency check
+
+Target game result on current docking slice:
+
+```text
+[DockAdvisory] request=1 failed=dock moved off approach axis
+[DockAdvisory] request=2 failed=dock moved off approach axis
+```
+
+Observed behavior: the Hub-map/HUD route appears briefly and is then removed.
+
+By current code ordering, a visible route proves that the request already passed
+authoritative Autopilot ownership, Hub-relative speed settling, angular-rate
+settling, fresh authoritative start snapshot capture, async
+`DockingAdvisoryPlanner` completion and guidance publication. The failing check
+runs only after a valid plan has become active.
+
+The current blocker is therefore the post-publication terminal consistency
+check. It compares the final fixed Hub-local advisory gate transformed through
+the current predicted Hub frame against a separately predicted semantic dock
+anchor:
+
+`frame.localToWorldPosition(finalGateLocal)` versus
+`predictHubSemanticAnchorAt(active.port, time).position +
+forward * standoff`.
+
+For the yawed/spinning diagnostic dock these two prediction paths are drifting
+apart by more than the hard 2 m threshold. This is likely a prediction-model
+consistency defect, not a planner or stabilization failure. Do not widen the
+2 m tolerance without measuring the two states and unifying ownership.
+
+Route publication sends Complete and begins hand-back, but the provided log
+fragment does not contain the authoritative
+`[DockPrep] published ... human_restored=1` /
+`phase=manual human_control=1` evidence, so final Human restoration is not yet
+recorded as target-proven.
+
+
 ## 2026-09-24 — test-source meta-check parser corrected before target run
 
 Post-commit review found a defect in the newly added

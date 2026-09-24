@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+## 2026-09-24 — docking live gate isolates post-publish dock prediction mismatch
+
+The playable docking slice now reaches route publication in the real game. The
+remaining observed failure is not takeover, braking, angular settling or route
+construction; it is the terminal dock-axis consistency guard evaluated after a
+valid advisory is active.
+
+The fixed advisory endpoint is propagated through the predicted Hub frame while
+the semantic port is independently propagated from a resolved world anchor.
+Those prediction paths must be made identical in ownership/epoch semantics
+before the live route can persist.
+
+
 ## 2026-09-24 — test integrity guard made extension-safe
 
 The test-source integrity guard now distinguishes complete C/C++ extensions and

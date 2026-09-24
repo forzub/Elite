@@ -1,5 +1,24 @@
 # CURRENT TASK — spatially bound receding-horizon physical maneuver chain
 
+## 2026-09-24 — diagnose/fix dock-axis prediction split after successful publication
+
+Current live blocker: route is successfully calculated and published, then
+`dock moved off approach axis` immediately clears it.
+
+Next:
+1. log the final-gate world position, predicted dock standoff point, delta,
+   dock position/forward, source/current universe times and Hub frame identity;
+2. confirm the diagnostic spinning dock is being predicted through two
+   different kinematic paths;
+3. replace the split prediction with one canonical Hub-attached module/anchor
+   prediction source;
+4. keep the fixed 500 m advisory geometry and do not relax the 2 m threshold
+   merely to hide model drift;
+5. rerun and capture the complete hand-back sequence
+   `handoff_wait -> [DockPrep] published human_restored=1 ->
+   phase=manual human_control=1`.
+
+
 ## 2026-09-24 — use corrected meta-check HEAD
 
 Do not use `91f24d13726cd2192d7b240277aa5a659622caf3` as target evidence:

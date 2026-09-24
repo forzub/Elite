@@ -1,32 +1,51 @@
-# CONTINUE PROMPT — verify corrected navigation-test cleanup
+# CONTINUE PROMPT — fix post-publish dock-axis prediction mismatch
 
 Continue in GitHub repository `forzub/Elite`, branch `main`.
 
 Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`,
-`PROJECT_STATE.md`, and the latest section of
+`PROJECT_STATE.md`, and the latest dated section of
 `src/game/navigation/STAGE12_END_TO_END.md`.
 
-The navigation test layer has been cleaned:
-- stale local-flight angular raw-symbol checks now validate canonical
-  ShipDynamics accessors;
-- live replication guidance uses DockingAdvisoryPlanner and wire schema 9;
-- foundation/geometric checks target current advisory ownership;
-- dead `tests/navigation_guidance` all-in-one suite is removed;
-- useful geometric coverage moved to
-  `tests/navigation_runtime/GeometricPathPlannerTests.cpp`.
+Latest target game result:
 
-Important: commit `91f24d13726cd2192d7b240277aa5a659622caf3`
-contains a false-positive bug only in the newly added meta-check regex: it could
-parse `.cpp` as `.c`. Use the corrected HEAD after that commit.
+```text
+route appears briefly
+[DockAdvisory] request=1 failed=dock moved off approach axis
+[DockAdvisory] request=2 failed=dock moved off approach axis
+```
 
-The corrected `check_test_suite_source_integrity.py` accepts only complete
-C/C++ source/header extensions and repository-owned CMake source forms
-(`${ELITE_SOURCE_ROOT}/...` or test-local bare filenames).
+Current code ordering means route visibility already proves:
+- server Autopilot ownership was observed;
+- Hub-relative linear speed settled;
+- pitch/yaw/roll rate settled;
+- a fresh authoritative planning snapshot was captured;
+- DockingAdvisoryPlanner returned a valid plan;
+- Hub/HUD guidance was published.
 
-Next action: rerun `tests/architecture_contracts/run_mingw64.sh`. If green,
-run the focused geometric and docking-advisory native targets, then proceed to
-the in-game SHOW ROUTE commissioning.
+The current failure occurs afterward. SpaceState compares:
+`frame.localToWorldPosition(active.gates.back().positionMeters)`
+against
+`predictHubSemanticAnchorAt(active.port, time).positionMeters +
+ port.forward() * active.standoffMeters`
+with a 2 m tolerance.
 
-Keep state/task/project/Stage-12/prompt synchronized after every
-state-affecting result. Never mark target/game acceptance without target
-evidence.
+The diagnostic far dock is yawed/spinning. Investigate whether the fixed
+Hub-local gate and semantic anchor are being advanced through different
+kinematic models/epochs. First add focused numeric logging for both predicted
+states and delta. Then unify prediction ownership; do not simply widen the
+threshold.
+
+Also capture authoritative hand-back evidence. Publication sends Complete, but
+the supplied fragment did not show:
+`[DockPrep] published ... human_restored=1`
+and
+`[DockAdvisory] ... phase=manual human_control=1`.
+
+Keep current requirements: physical stop, fresh stopped snapshot, fixed nominal
+500 m gates, localized blinking manual docking status, authoritative Human
+hand-back, card-close reset, post-entry corridor reset, automatic DOCKING
+disabled.
+
+Synchronize MD state/task/project/Stage-12/prompt after each state-affecting
+result. Never record hand-back as target-proven without the server/client
+confirmation lines.

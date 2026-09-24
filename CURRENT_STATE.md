@@ -1,5 +1,23 @@
 # CURRENT STATE
 
+## 2026-09-25 — focused local-flight rerun blocked by test compile include
+
+The next Windows rerun did not execute the updated local-flight contract binary:
+compilation stopped because `LocalFlightControlContractTests.cpp` referenced
+`game::ship::mainAccelerationLimitMps2()` without including
+`src/game/ship/core/ShipDynamics.h`.
+
+The subsequent CTest line repeated the old
+`Assisted controller exceeded ship maxGs envelope` result because Ninja had
+failed and the previously built executable remained in the build directory.
+That repeated runtime failure is stale evidence and must not be attributed to
+the current source.
+
+`check_local_flight_control.py` passed and
+`check_manual_docking_advisory.py` passed on this target. The missing include
+is now fixed on public `main`; rebuild the local-flight target before drawing
+any conclusion about the combined main+RCS envelope correction.
+
 ## 2026-09-24 — first dual-main Windows gate found two focused defects
 
 Target MinGW64 evidence:

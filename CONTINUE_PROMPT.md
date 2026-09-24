@@ -8,84 +8,60 @@ Before changing project behavior/state, read `AGENTS.md`, newest sections of
 result synchronize those four files before the next implementation slice.
 Regenerate this prompt from current truth every iteration.
 
-## Propulsion truth
+## Propulsion contract
 
-Cobra has physical aft/rear and fore/nose longitudinal main-engine banks in
-the authoritative descriptor, both using the existing 7.5 g linear rating.
-Static bank membership lives in `ShipDescriptor::mainPropulsion`; current
-availability comes from runtime module state.
+Cobra has physical aft/rear and fore/nose longitudinal main-engine banks.
+Current availability comes from runtime module state.
 
-Main-bank damage semantics are binary:
-- operational bank -> full descriptor authority;
-- failed bank -> zero authority;
+Main-bank damage is binary:
+- operational -> full descriptor authority;
+- failed -> zero;
 - never proportionally derate main thrust from module health.
 
-RCS remains a separate actuator. Planner and physics must never treat residual
-RCS as a surviving main engine.
+RCS is separate. If total main + RCS acceleration would exceed the shared
+linear envelope, preserve the selected main command and trim only the secondary
+RCS vector.
 
-Control-law behavior:
-- healthy Assisted uses the real fore main for strong nose-first braking;
-- failed fore bank -> strong braking requires flip + aft main;
-- failed aft bank with live fore bank -> fore main may become primary and the
-  working travel direction becomes `-forward`;
-- Newtonian and Assisted consume the same hardware truth.
+Healthy Assisted uses fore main for strong nose-first braking. Failed fore bank
+falls back to flip + aft main. Failed aft bank with live fore bank may reverse
+working travel direction and use fore main as primary. B5 distinguishes
+explicit forward/reverse MAIN authority from body-axis/RCS authority.
 
-B5 now supports Assisted and keeps explicit forward/reverse MAIN authority
-separate from total body-axis authority.
+## Latest Windows evidence
 
-## Latest Windows target evidence
-
-The first focused target run reported:
-- `json_numeric_locale`: PASS;
+Latest target run:
 - `check_local_flight_control.py`: PASS;
-- `local_flight_control_contracts`: FAIL:
-  `Assisted controller exceeded ship maxGs envelope`;
-- `check_manual_docking_advisory.py`: FAIL:
-  `speed label is still tied to arbitrary corner[1]`.
+- `check_manual_docking_advisory.py`: PASS;
+- `json_numeric_locale`: PASS;
+- updated `local_flight_control_contract_tests` FAILED TO BUILD because the
+  test referenced `game::ship::mainAccelerationLimitMps2()` without including
+  `src/game/ship/core/ShipDynamics.h`.
 
-Both failures have been diagnosed and corrected on `main`.
+After Ninja failed, CTest executed the old local-flight executable left in the
+build tree and repeated:
+`Assisted controller exceeded ship maxGs envelope`.
 
-### Flight correction
+That repeated failure is stale evidence. Do not diagnose current controller
+physics from it.
 
-The Assisted controller could combine a main-engine vector already at the
-linear envelope with a perpendicular RCS correction, so the magnitude of
-`main + RCS` slightly exceeded the allowed linear envelope.
-
-Main thrust must NOT be derated to solve this. Current code preserves the
-selected main-engine acceleration and trims only the subordinate RCS vector
-until the combined vector fits the total linear acceleration envelope.
-
-This is not health-based power scaling. Main bank health remains full-or-zero.
-
-### Docking checker correction
-
-The speed label already uses
-`projectedUpperLeft(projected.corners)`. The Python test searched globally for
-`projected.corners[1]` and accidentally matched the separate semantic dock
-bottom-marker geometry. The check now inspects only the speed-label placement
-block and requires the stable projected upper-left anchor.
+The missing include is now fixed on public `main`.
 
 ## Next gate
 
 On Windows `D:\__elite\work`:
 
 1. Pull current `main`.
-2. Rebuild/rerun `local_flight_control_contracts`.
-3. Rerun `check_manual_docking_advisory.py`.
-4. If both pass, run:
+2. Rebuild ONLY `local_flight_control_contract_tests`.
+3. Run ONLY CTest `local_flight_control_contracts`.
+4. If the freshly linked test passes, continue with:
    - `ship_propulsion_state`;
    - `ordinary_physical_maneuver_compiler`;
-   - `docking_advisory`;
-   - `check_local_flight_control.py`.
-5. Build canonical `build/EliteGame.exe`.
-6. Test healthy Assisted SHOW ROUTE from non-zero Hub-relative speed.
-7. If practical through debug module controls, test fore-bank and aft-bank
-   failures separately.
-8. Continue corridor-warning/HUD acceptance.
+   - `docking_advisory`.
+5. Then build canonical `build/EliteGame.exe` and run live Assisted/manual
+   docking acceptance.
 
 Preserve all untracked trace JSON/TXT files. Do not weaken engine truth, invent
-hit geometry for the logical fore-engine modules, widen navigation geometry to
-hide propulsion defects, or restore retired DockingPathPlanner/GuidanceTunnel.
+fore-engine hit geometry, or restore retired DockingPathPlanner/GuidanceTunnel.
 
 The user wants implementation directly in GitHub followed by exact Windows
 pull/test/build/run commands. Do not provide patch files.

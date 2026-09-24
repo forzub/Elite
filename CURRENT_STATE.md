@@ -1,5 +1,21 @@
 # CURRENT STATE
 
+## 2026-09-25 — canonical Windows game build hit a docking-header macro collision
+
+After the focused navigation/propulsion gates passed, the canonical MinGW64
+game build reached `EliteGame` compilation and failed in
+`DockingAdvisoryCorridor.h` at `const auto near = ...`. This is a
+Windows-header compatibility defect: `near` is not a safe identifier once the
+Windows include stack has been processed. The same header compiled in narrower
+test targets because that macro environment was absent.
+
+The local helper has been renamed to `nearBoundary`. The manual docking
+architecture check now explicitly rejects reintroduction of
+`const auto near =` in the corridor header.
+
+The winsock2 warning shown in the same build is non-fatal and unrelated to this
+failure. A fresh canonical Windows game build is now the next gate.
+
 ## 2026-09-25 — dual-main target gates PASS; Newtonian runtime fallback completed
 
 Fresh Windows MinGW64 evidence on `bb5ff1f8`:

@@ -307,6 +307,18 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));
     const glm::dvec3 u = glm::normalize(glm::dvec3(shipUp));
 
+    // Assisted normally treats the nose as the travel-forward direction. If
+    // the aft/rear main bank is dead but the fore bank survives, the ship can
+    // continue under full main power by treating -nose as its working travel
+    // direction. This is a controller doctrine choice over real hardware, not
+    // a change to the hull coordinate system.
+    const bool assistedUsesForeMainAsPrimary =
+        motion.localControlLaw == LocalFlightControlLaw::Assisted &&
+        forwardMainAccel <= 1.0e-9 &&
+        reverseMainAccel > 1.0e-9;
+    const glm::dvec3 assistedTravelForward =
+        assistedUsesForeMainAsPrimary ? -f : f;
+
     motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
     motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
 
@@ -429,7 +441,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         // longitudinal cruise setpoint merely because the trim is neutral.
         motion.targetForwardSpeedMps = std::max(
             0.0,
-            glm::dot(relativeWorldVelocity, f)
+            glm::dot(relativeWorldVelocity, assistedTravelForward)
         );
         motion.assistedThrottleTrimWasActive = false;
     }
@@ -441,7 +453,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
     );
 
     const glm::dvec3 desiredWorldVelocity =
-        f * motion.targetForwardSpeedMps;
+        assistedTravelForward * motion.targetForwardSpeedMps;
     motion.desiredTacticalVelocityMps = desiredWorldVelocity;
 
     glm::dvec3 velocityError =

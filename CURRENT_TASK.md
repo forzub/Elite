@@ -1,5 +1,17 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — verify final Newtonian fore-main runtime completion, then build game
+
+Pull current `main`. Rebuild and run `local_flight_control_contracts`, which
+now includes the aft-main-failed Newtonian runtime case. Also rerun
+`check_local_flight_control.py` to lock the implementation structurally.
+
+If both pass, the dual-main propulsion slice is ready for canonical
+`bash build_mingw64.sh` and live SHOW ROUTE acceptance. Existing Planner,
+propulsion-state, and docking-advisory runtime tests already passed on the
+target machine and need not be repeated unless the game build exposes a shared
+compile issue.
+
 ## 2026-09-25 — rebuild local-flight test after header fix
 
 Pull current `main`, rebuild only `local_flight_control_contract_tests`, and

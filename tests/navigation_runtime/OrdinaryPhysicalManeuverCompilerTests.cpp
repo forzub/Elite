@@ -462,6 +462,7 @@ void testAssistedForeMainFailureFallsBackToAftFlipAndBurn()
     q.controlLaw = Law::Assisted;
     q.capability.maxReverseAccelerationMps2 = 2.0;
     q.capability.maxReverseMainAccelerationMps2 = 0.0;
+    q.maximumProgramSeconds = 8.0;
     q.geometricTargetPositionMapMeters = {0.0, 0.0, 1000.0};
     q.desiredVelocityMapMetersPerSecond = {0.0, 0.0, 20.0};
 
@@ -505,6 +506,7 @@ void testAftMainFailureUsesForeMainAsPrimaryReverseWorkingDirection()
     q.controlLaw = Law::Assisted;
     q.capability.maxForwardAccelerationMps2 = 2.0;
     q.capability.maxForwardMainAccelerationMps2 = 0.0;
+    q.maximumProgramSeconds = 8.0;
     q.geometricTargetPositionMapMeters = {0.0, 0.0, -1000.0};
     q.desiredVelocityMapMetersPerSecond = {0.0, 0.0, -20.0};
 

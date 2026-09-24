@@ -1,5 +1,21 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — target gates passed; surviving fore main now executes in Newtonian runtime
+
+Windows accepted the fresh local-flight contract plus the B5 physical maneuver,
+runtime propulsion-state, and docking-advisory gates. The B5 tests prove
+fore-main primary planning under aft-bank failure.
+
+A remaining execution-layer mismatch was then removed: Newtonian low-level
+motion previously knew only how to burn the aft main even though attitude
+control and B5 could select the fore main. Newtonian now uses the fore bank
+when aft is unavailable, both for ordinary '+' thrust in the reversed working
+direction and for BrakeToStop after the corresponding alignment.
+
+The next required evidence is a fresh local-flight native contract plus static
+architecture check, followed by the canonical game build and live manual
+docking/SHOW ROUTE acceptance.
+
 ## 2026-09-25 — local-flight gate must be rebuilt before evaluation
 
 Windows compilation of the updated local-flight contract stopped at a missing

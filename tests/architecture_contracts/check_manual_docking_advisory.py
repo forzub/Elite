@@ -84,12 +84,14 @@ try:
             "terminalGateSpacingMeters = 250.0",
             "terminalDenseDistanceMeters = 2000.0",
             "terminalApproachLengthMeters = 0.0",
-            "terminalTurnSegmentFraction = 0.40")
+            "terminalTurnSegmentFraction = 0.40",
+            "minimumTerminalTurnRadiusMeters = 0.0")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
             "desiredRadius",
             "tangentDistance/tangentScale",
             "arcLength=radius*turnAngle",
             "center=entry+radius*inwardNormal",
+            "manual terminal turn radius unavailable",
             "remainingFromPrevious",
             "r.terminalDenseDistanceMeters+terminalSpacing")
     require("src/game/SpaceState.cpp",
@@ -98,7 +100,8 @@ try:
             "SettleHoldSeconds",
             "manual-assisted",
             "request.terminalApproachLengthMeters = 3000.0",
-            "request.terminalTurnSegmentFraction = 0.75")
+            "request.terminalTurnSegmentFraction = 0.75",
+            "request.minimumTerminalTurnRadiusMeters = 1500.0")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",

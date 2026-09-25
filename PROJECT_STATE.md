@@ -1,5 +1,21 @@
 # PROJECT STATE
 
+## 2026-09-25 — manual docking guidance has control-law-specific terminal geometry
+
+Human-flyable guidance is not required to use the same corner shape for every
+control law.
+
+For manual Assisted:
+- enter the final docking axis approximately 3 km before the stop point;
+- allow the terminal circular fillet to occupy up to 75% of adjacent segments;
+- enforce a minimum 1.5 km turn radius;
+- reject the route if clearance forces the terminal radius below that floor.
+
+For manual Newtonian, the sharper legacy geometry remains permitted because
+velocity and hull attitude are decoupled and the physical maneuver may include a
+large reorientation/braking event. Automatic execution remains separate and
+must use accepted maneuver programs rather than these display-guidance frames.
+
 ## 2026-09-25 — docking frame-density boundary is now non-crossable by sparse cadence
 
 The 500 m open-transit cadence may not jump across the start of terminal

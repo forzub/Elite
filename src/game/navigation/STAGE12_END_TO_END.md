@@ -1,5 +1,26 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — new live acceptance: broader Assisted arc, wider manual release, Assisted default
+
+The live map still shows an unacceptably compact docking bend. Stage-12 manual
+Assisted commissioning therefore raises the preferred geometric scale again.
+This is a presentation/planning preference, not a route-existence floor:
+reroute/alternate ingress remains mandatory before any radius concession.
+
+Manual corridor tracking is also reclassified more clearly. Nominal section
+crossing is a warning/critical presentation event. Cancellation uses a separate,
+substantially wider release envelope and longer grace so guidance survives
+ordinary pilot recovery.
+
+Fresh DynamicMotionState currently defaults to Newtonian. This is now contrary
+to product intent; Assisted becomes the default while Newtonian stays
+explicitly selectable.
+
+For commissioning stop, Assisted END/DockPrep is not a throttle-ramp problem.
+The accepted physical behavior is an immediate zero-VREL target with full
+healthy reverse-main authority and no hull flip. Regression evidence must prove
+that path and live DockPrep logs must identify the active law.
+
 ## 2026-09-25 — docking fallback now changes route before conceding turn radius
 
 Stage-12 docking integration no longer treats a human-flyable terminal radius as

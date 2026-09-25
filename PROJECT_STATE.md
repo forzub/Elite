@@ -1,5 +1,20 @@
 # PROJECT STATE
 
+## 2026-09-25 — navigation-runtime tests are standalone, not targets of canonical game build
+
+Build-layout contract: `docking_advisory_tests` and its CTest registration live
+under the standalone CMake project `tests/navigation_runtime`. They are not
+configured into the canonical graphical `build/` directory.
+
+Use `build/tests/navigation_runtime` as the dedicated test build tree. A
+Ninja `unknown target` from canonical `build/` is a command/layout error,
+not a test failure.
+
+Static commissioning checks must test semantics rather than ban valid probe
+syntax. The long final-axis `clear(align,stop)` probe is legal when it leads to
+soft-axis shortening; only immediate rejection of that preferred lead is
+forbidden.
+
 ## 2026-09-25 — final docking axis has hard ingress plus soft preferred lead
 
 Docking-axis semantics are now explicitly split.

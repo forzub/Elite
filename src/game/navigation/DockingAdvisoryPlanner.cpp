@@ -29,9 +29,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.terminalTurnSegmentFraction) ||
             r.terminalTurnSegmentFraction <= 0.0 ||
             r.terminalTurnSegmentFraction > 0.90 ||
-        !std::isfinite(r.minimumTerminalTurnRadiusMeters) ||
-            r.minimumTerminalTurnRadiusMeters < 0.0)
+        !std::isfinite(r.preferredTerminalTurnRadiusMeters) ||
+            r.preferredTerminalTurnRadiusMeters < 0.0)
     { out.failure = "invalid dock advisory input"; return out; }
+
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
     const double finalApproachLengthMeters=std::max({
@@ -40,157 +41,336 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         r.terminalApproachLengthMeters
     });
     const auto align = stop + outward * finalApproachLengthMeters;
+
+    const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
+    { return world::navigation::segmentClearOfNavigationObstacles(
+        a,b,r.obstacles,r.hullRadiusMeters); };
+
+    // The final docking-axis segment is semantic ingress. If this exact
+    // segment is occupied, no amount of earlier rerouting can make the port
+    // reachable without changing the docking contract itself.
+    if (!clear(align,stop))
+    { out.failure = "dock alignment blocked"; return out; }
+
     world::navigation::GeometricPathRequest search;
     search.startMeters = r.startMeters;
     search.goalMeters = align;
     search.obstacles = r.obstacles;
     search.params.agentRadiusMeters = r.hullRadiusMeters;
     search.params.maxConsideredObstacles = 48;
-    const auto geometry = world::navigation::GeometricPathPlanner::plan(search);
-    if (!geometry.valid || geometry.pointsMeters.size() < 2)
-    { out.failure = geometry.message; return out; }
-    const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
-    { return world::navigation::segmentClearOfNavigationObstacles(
-        a,b,r.obstacles,r.hullRadiusMeters); };
-    if (!clear(align,stop))
-    { out.failure = "dock alignment blocked"; return out; }
-    auto vertices = geometry.pointsMeters;
-    vertices.push_back(stop);
-    std::vector<glm::dvec3> samples {vertices.front()};
-    for (std::size_t i=1;i+1<vertices.size();++i)
+
+    const auto planGeometry = [&](double additionalClearanceMeters,
+                                  std::size_t maxConsideredObstacles)
     {
-        const auto a=vertices[i]-vertices[i-1], b=vertices[i+1]-vertices[i];
-        const double la=glm::length(a), lb=glm::length(b);
-        if (la < 1e-6 || lb < 1e-6) continue;
-        const auto u=a/la,v=b/lb;
-        const double cosTurn=std::clamp(glm::dot(u,v),-1.0,1.0);
-        if (cosTurn>0.9999) continue;
+        auto query = search;
+        query.params.additionalClearanceMeters =
+            std::max(0.0, additionalClearanceMeters);
+        query.params.maxConsideredObstacles = maxConsideredObstacles;
+        return world::navigation::GeometricPathPlanner::plan(query);
+    };
 
-        const double turnAngle=std::acos(cosTurn);
-        const double tangentScale=std::tan(turnAngle*0.5);
-        const auto turnNormalRaw=glm::cross(u,v);
-        const double turnNormalLength=glm::length(turnNormalRaw);
-        if (!std::isfinite(tangentScale) || tangentScale<=1.0e-9 ||
-            turnNormalLength<=1.0e-9)
-        {
-            out.failure="degenerate docking turn";
-            return out;
-        }
-
-        // A physically comfortable turn at max speed wants R=v^2/a. If the
-        // adjacent segments are too short, use the largest circular fillet
-        // that fits and let the downstream speed profile reduce turn speed.
-        const bool terminalTurn=(i+1==vertices.size()-1);
-        const double desiredRadius=std::max({
-            20.0,
-            r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2,
-            terminalTurn ? r.minimumTerminalTurnRadiusMeters : 0.0
-        });
-        const double segmentFraction=
-            terminalTurn
-                ? r.terminalTurnSegmentFraction
-                : 0.40;
-        double tangentDistance=std::min({
-            la*segmentFraction,
-            lb*segmentFraction,
-            desiredRadius*tangentScale
-        });
-
-        if(terminalTurn &&
-           tangentDistance/tangentScale+1.0e-6 <
-               r.minimumTerminalTurnRadiusMeters)
-        {
-            out.failure="manual terminal turn radius unavailable";
-            return out;
-        }
-
-        bool rounded=false;
-        for (int attempt=0;
-             attempt<12 && tangentDistance>=0.25;
-             ++attempt,tangentDistance*=0.5)
-        {
-            const double radius=tangentDistance/tangentScale;
-            if(terminalTurn &&
-               radius+1.0e-6<r.minimumTerminalTurnRadiusMeters)
-                break;
-            const auto entry=vertices[i]-tangentDistance*u;
-            const auto exit=vertices[i]+tangentDistance*v;
-            const auto turnNormal=turnNormalRaw/turnNormalLength;
-            const auto inwardNormal=glm::normalize(
-                glm::cross(turnNormal,u)
-            );
-            const auto center=entry+radius*inwardNormal;
-            const auto startRadial=entry-center;
-
-            const double arcLength=radius*turnAngle;
-            const int arcSegments=std::clamp(
-                static_cast<int>(std::ceil(arcLength/10.0)),
-                4,
-                512
-            );
-
-            std::vector<glm::dvec3> arc;
-            arc.reserve(static_cast<std::size_t>(arcSegments)+1);
-            auto previous=samples.back();
-            bool safe=true;
-            for (int j=0;j<=arcSegments;++j)
-            {
-                const double t=double(j)/double(arcSegments);
-                const double phi=turnAngle*t;
-                const double cp=std::cos(phi);
-                const double sp=std::sin(phi);
-                const auto radial=
-                    startRadial*cp+
-                    glm::cross(turnNormal,startRadial)*sp+
-                    turnNormal*glm::dot(turnNormal,startRadial)*(1.0-cp);
-                const auto point=center+radial;
-                if (!clear(previous,point)) {safe=false;break;}
-                arc.push_back(point);
-                previous=point;
-            }
-            if (safe && glm::length(arc.back()-exit)<=1.0e-5)
-            {
-                samples.insert(samples.end(),arc.begin(),arc.end());
-                rounded=true;
-                break;
-            }
-        }
-        if (!rounded) {out.failure="no clearance for circular route fillet";return out;}
+    auto nominalGeometry = planGeometry(0.0, 48);
+    // The geometric planner's obstacle cap is a work bound, never proof that
+    // the world has no route. Retry against all static obstacles before
+    // declaring even the nominal topology unavailable.
+    if (!nominalGeometry.valid && r.obstacles.size() > 48)
+        nominalGeometry = planGeometry(0.0, 0);
+    if (!nominalGeometry.valid || nominalGeometry.pointsMeters.size() < 2)
+    {
+        out.failure = nominalGeometry.message.empty()
+            ? "no collision-free docking route"
+            : nominalGeometry.message;
+        return out;
     }
-    samples.push_back(stop);
+
+    struct RoundedCandidate
+    {
+        bool valid = false;
+        bool terminalTurnPresent = false;
+        double terminalTurnRadiusMeters = 0.0;
+        double lengthMeters = 0.0;
+        std::string failure;
+        std::vector<glm::dvec3> samples;
+    };
+
+    const auto roundGeometry =
+        [&](const std::vector<glm::dvec3>& geometryPoints,
+            double requiredTerminalRadiusMeters)
+    {
+        RoundedCandidate candidate;
+        if (geometryPoints.size() < 2)
+        {
+            candidate.failure = "geometric route has too few points";
+            return candidate;
+        }
+
+        auto vertices = geometryPoints;
+        vertices.push_back(stop);
+        candidate.samples = {vertices.front()};
+
+        for (std::size_t i=1;i+1<vertices.size();++i)
+        {
+            const auto a=vertices[i]-vertices[i-1];
+            const auto b=vertices[i+1]-vertices[i];
+            const double la=glm::length(a), lb=glm::length(b);
+            if (la < 1e-6 || lb < 1e-6)
+                continue;
+
+            const auto u=a/la,v=b/lb;
+            const double cosTurn=std::clamp(glm::dot(u,v),-1.0,1.0);
+            if (cosTurn>0.9999)
+                continue;
+
+            const double turnAngle=std::acos(cosTurn);
+            const double tangentScale=std::tan(turnAngle*0.5);
+            const auto turnNormalRaw=glm::cross(u,v);
+            const double turnNormalLength=glm::length(turnNormalRaw);
+            if (!std::isfinite(tangentScale) || tangentScale<=1.0e-9 ||
+                turnNormalLength<=1.0e-9)
+            {
+                candidate.failure="degenerate docking turn";
+                return candidate;
+            }
+
+            const bool terminalTurn=(i+1==vertices.size()-1);
+            const double desiredRadius=std::max({
+                20.0,
+                r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2,
+                terminalTurn ? r.preferredTerminalTurnRadiusMeters : 0.0
+            });
+            const double segmentFraction=
+                terminalTurn
+                    ? r.terminalTurnSegmentFraction
+                    : 0.40;
+            double tangentDistance=std::min({
+                la*segmentFraction,
+                lb*segmentFraction,
+                desiredRadius*tangentScale
+            });
+
+            if(terminalTurn &&
+               requiredTerminalRadiusMeters>0.0 &&
+               tangentDistance/tangentScale+1.0e-6 <
+                   requiredTerminalRadiusMeters)
+            {
+                candidate.failure="preferred terminal turn radius unavailable on candidate";
+                return candidate;
+            }
+
+            bool rounded=false;
+            for (int attempt=0;
+                 attempt<12 && tangentDistance>=0.25;
+                 ++attempt,tangentDistance*=0.5)
+            {
+                const double radius=tangentDistance/tangentScale;
+                if(terminalTurn &&
+                   requiredTerminalRadiusMeters>0.0 &&
+                   radius+1.0e-6<requiredTerminalRadiusMeters)
+                    break;
+
+                const auto entry=vertices[i]-tangentDistance*u;
+                const auto exit=vertices[i]+tangentDistance*v;
+                const auto turnNormal=turnNormalRaw/turnNormalLength;
+                const auto inwardNormal=glm::normalize(
+                    glm::cross(turnNormal,u)
+                );
+                const auto center=entry+radius*inwardNormal;
+                const auto startRadial=entry-center;
+
+                const double arcLength=radius*turnAngle;
+                const int arcSegments=std::clamp(
+                    static_cast<int>(std::ceil(arcLength/10.0)),
+                    4,
+                    512
+                );
+
+                std::vector<glm::dvec3> arc;
+                arc.reserve(static_cast<std::size_t>(arcSegments)+1);
+                auto previous=candidate.samples.back();
+                bool safe=true;
+                for (int j=0;j<=arcSegments;++j)
+                {
+                    const double t=double(j)/double(arcSegments);
+                    const double phi=turnAngle*t;
+                    const double cp=std::cos(phi);
+                    const double sp=std::sin(phi);
+                    const auto radial=
+                        startRadial*cp+
+                        glm::cross(turnNormal,startRadial)*sp+
+                        turnNormal*glm::dot(turnNormal,startRadial)*(1.0-cp);
+                    const auto point=center+radial;
+                    if (!clear(previous,point)) {safe=false;break;}
+                    arc.push_back(point);
+                    previous=point;
+                }
+                if (safe && !arc.empty() &&
+                    glm::length(arc.back()-exit)<=1.0e-5)
+                {
+                    candidate.samples.insert(
+                        candidate.samples.end(),arc.begin(),arc.end());
+                    if (terminalTurn)
+                    {
+                        candidate.terminalTurnPresent=true;
+                        candidate.terminalTurnRadiusMeters=radius;
+                    }
+                    rounded=true;
+                    break;
+                }
+            }
+
+            if (!rounded)
+            {
+                candidate.failure =
+                    terminalTurn
+                        ? "no clearance for terminal circular route fillet"
+                        : "no clearance for circular route fillet";
+                return candidate;
+            }
+        }
+
+        candidate.samples.push_back(stop);
+        for (std::size_t i=1;i<candidate.samples.size();++i)
+        {
+            if (!clear(candidate.samples[i-1],candidate.samples[i]))
+            {
+                candidate.failure="rounded route obstructed";
+                candidate.samples.clear();
+                return candidate;
+            }
+            candidate.lengthMeters +=
+                glm::length(candidate.samples[i]-candidate.samples[i-1]);
+        }
+
+        if (candidate.lengthMeters<1.0)
+        {
+            candidate.failure="route too short";
+            candidate.samples.clear();
+            return candidate;
+        }
+
+        candidate.valid=true;
+        return candidate;
+    };
+
+    const double preferredTerminalRadius =
+        r.preferredTerminalTurnRadiusMeters;
+
+    // Phase 1: preserve the human-flyable radius on the nominal route.
+    RoundedCandidate selected =
+        roundGeometry(
+            nominalGeometry.pointsMeters,
+            preferredTerminalRadius
+        );
+    bool detourUsed=false;
+    bool radiusRelaxed=false;
+
+    // Phase 2: if the preferred arc collides or cannot be fitted, change the
+    // route before changing the radius. Inflating obstacle clearance by the
+    // preferred radius pushes visibility/A* support points outward and can
+    // legitimately route around an entire station/structure. The fallback uses
+    // the full obstacle set because a bounded search miss is not impossibility.
+    world::navigation::GeometricPathResult wideGeometry;
+    if (!selected.valid && preferredTerminalRadius>0.0)
+    {
+        wideGeometry = planGeometry(preferredTerminalRadius, 0);
+        if (wideGeometry.valid && wideGeometry.pointsMeters.size()>=2)
+        {
+            auto wide = roundGeometry(
+                wideGeometry.pointsMeters,
+                preferredTerminalRadius
+            );
+            if (wide.valid)
+            {
+                selected=std::move(wide);
+                detourUsed=true;
+            }
+        }
+    }
+
+    // Phase 3: only after reroute has failed may the terminal arc tighten.
+    // Start from the same preferred/dynamic radius and halve only as clearance
+    // forces it, so the accepted fallback remains the widest locally feasible
+    // circular arc rather than cancelling the manual navigation task.
+    if (!selected.valid)
+    {
+        auto relaxed = roundGeometry(nominalGeometry.pointsMeters,0.0);
+        if (!relaxed.valid &&
+            wideGeometry.valid &&
+            wideGeometry.pointsMeters.size()>=2)
+        {
+            relaxed=roundGeometry(wideGeometry.pointsMeters,0.0);
+            if (relaxed.valid)
+                detourUsed=true;
+        }
+
+        if (!relaxed.valid)
+        {
+            out.failure = "no collision-free docking route after reroute/tighten fallback";
+            return out;
+        }
+
+        selected=std::move(relaxed);
+        radiusRelaxed=
+            selected.terminalTurnPresent &&
+            preferredTerminalRadius>0.0 &&
+            selected.terminalTurnRadiusMeters+1.0e-6<
+                preferredTerminalRadius;
+    }
+
+    auto& samples=selected.samples;
+    out.terminalDetourUsed=detourUsed;
+    out.terminalTurnRadiusRelaxed=radiusRelaxed;
+    out.terminalTurnRadiusMeters=selected.terminalTurnRadiusMeters;
+
     std::vector<double> progress(samples.size(),0.0);
     for (std::size_t i=1;i<samples.size();++i)
-    {
-        if (!clear(samples[i-1],samples[i]))
-        {out.failure="rounded route obstructed";return out;}
         progress[i]=progress[i-1]+glm::length(samples[i]-samples[i-1]);
-    }
-    if (progress.back()<1.0) {out.failure="route too short";return out;}
+
     std::vector<DockingAdvisoryGate> dense;
     for (double d=0;d<progress.back();d+=std::min(10.0,r.gateSpacingMeters))
     {
         const auto it=std::upper_bound(progress.begin(),progress.end(),d);
-        const std::size_t j=std::clamp<std::size_t>(it-progress.begin(),1,samples.size()-1);
+        const std::size_t j=std::clamp<std::size_t>(
+            it-progress.begin(),1,samples.size()-1);
         const double t=(d-progress[j-1])/(progress[j]-progress[j-1]);
-        dense.push_back({glm::mix(samples[j-1],samples[j],t),
-            glm::normalize(samples[j]-samples[j-1]),r.maxSpeedMps});
+        dense.push_back({
+            glm::mix(samples[j-1],samples[j],t),
+            glm::normalize(samples[j]-samples[j-1]),
+            r.maxSpeedMps
+        });
     }
-    dense.push_back({stop,glm::normalize(stop-samples[samples.size()-2]),0.0});
+    dense.push_back({
+        stop,
+        glm::normalize(stop-samples[samples.size()-2]),
+        0.0
+    });
+
     for (std::size_t i=1;i+1<dense.size();++i)
     {
         const double angle=std::acos(std::clamp(
             glm::dot(dense[i-1].forward,dense[i+1].forward),-1.0,1.0));
-        const double span=glm::length(dense[i+1].positionMeters-dense[i-1].positionMeters);
+        const double span=glm::length(
+            dense[i+1].positionMeters-dense[i-1].positionMeters);
         if (angle>1e-6)
-            dense[i].speedMps=std::min(dense[i].speedMps,
-                std::sqrt(r.lateralMps2*span/angle));
+            dense[i].speedMps=std::min(
+                dense[i].speedMps,
+                std::sqrt(r.lateralMps2*span/angle)
+            );
     }
+
     for (std::size_t i=dense.size()-1;i>0;--i)
     {
-        const double ds=glm::length(dense[i].positionMeters-dense[i-1].positionMeters);
-        dense[i-1].speedMps=std::min(dense[i-1].speedMps,
-            std::sqrt(dense[i].speedMps*dense[i].speedMps+2*r.brakingMps2*ds));
+        const double ds=glm::length(
+            dense[i].positionMeters-dense[i-1].positionMeters);
+        dense[i-1].speedMps=std::min(
+            dense[i-1].speedMps,
+            std::sqrt(
+                dense[i].speedMps*dense[i].speedMps+
+                2*r.brakingMps2*ds
+            )
+        );
     }
+
     std::vector<double> denseProgress(dense.size(),0.0);
     for(std::size_t i=1;i<dense.size();++i)
         denseProgress[i]=denseProgress[i-1]+glm::length(
@@ -203,12 +383,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         std::size_t next=previous+1;
 
-        // Anchor the cadence transition explicitly. Merely switching to the
-        // terminal spacing after a frame is already inside the activation band
-        // still allows a sparse 500 m step to jump from, e.g., 2300 m to
-        // 1800 m remaining. If a sparse step would cross the activation
-        // boundary, shorten THIS interval so a frame is placed at/just before
-        // that boundary; all following intervals then use terminal spacing.
+        // Anchor the cadence transition explicitly. A sparse 500 m step may
+        // never jump across the terminal-density boundary.
         const double remainingFromPrevious=
             denseProgress.back()-denseProgress[previous];
         const double terminalSpacing=std::min(
@@ -245,13 +421,19 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
               !clear(dense[previous].positionMeters,dense[next].positionMeters))
             --next;
         if(!clear(dense[previous].positionMeters,dense[next].positionMeters))
-        {out.failure="display gate chord obstructed";out.gates.clear();return out;}
+        {
+            out.failure="display gate chord obstructed";
+            out.gates.clear();
+            return out;
+        }
+
         auto gate=dense[next];
         for(std::size_t j=previous+1;j<=next;++j)
             gate.speedMps=std::min(gate.speedMps,dense[j].speedMps);
         out.gates.push_back(gate);
         previous=next;
     }
+
     return out;
 }
 } // namespace game::navigation

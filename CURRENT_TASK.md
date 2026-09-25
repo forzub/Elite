@@ -1,5 +1,24 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — rerun docking after shortened-axis endpoint clearance fix
+
+Fresh native verification reached the planner and failed after successful soft
+axis shortening: the join landed at about 8390 m, effectively on the inflated
+obstacle boundary, and the visibility graph could not connect to it.
+
+Current source backs the join away from that boundary by at least 50 m or four
+hull radii. If geometric routing still cannot reach the shortened join, Planner
+retreats it progressively toward the mandatory ingress and retries.
+
+Run:
+`git pull --ff-only origin main`
+then:
+`bash verify_docking.sh`
+
+Expected result: the far-axis blocker case remains valid with
+`terminalApproachShortened=true`; only a blocker in mandatory close-in ingress
+may hard-fail.
+
 ## 2026-09-25 — use one canonical docking verification command
 
 Do not manually mix the canonical game build tree and navigation-runtime test

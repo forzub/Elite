@@ -4,6 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+CHECK_REVISION = "20260925-soft-axis-v2"
 
 
 def read(rel: str) -> str:
@@ -199,7 +200,7 @@ try:
         if (ROOT / retired).exists():
             raise AssertionError(f"retired docking path returned: {retired}")
 
-    print("[PASS] manual docking prep -> authoritative stop -> 500m guidance -> human hand-back")
+    print(f"[PASS] manual docking contract {CHECK_REVISION}: prep -> authoritative stop -> guidance -> human hand-back")
 except (AssertionError, KeyError, json.JSONDecodeError) as exc:
     print(f"[FAIL] {exc}", file=sys.stderr)
     raise SystemExit(1)

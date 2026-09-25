@@ -30,7 +30,12 @@ struct DockingAdvisoryRequest
     // adjacent segment a circular fillet may consume.
     double terminalApproachLengthMeters = 0.0;
     double terminalTurnSegmentFraction = 0.40;
-    double minimumTerminalTurnRadiusMeters = 0.0;
+
+    // Preferred human-flyable radius, not a task-failure threshold. Planner
+    // must first try another geometric route that preserves it; only after the
+    // reroute search is exhausted may it tighten the terminal arc as far as
+    // collision-free geometry allows.
+    double preferredTerminalTurnRadiusMeters = 0.0;
 
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
@@ -44,6 +49,15 @@ struct DockingAdvisoryPlan
 {
     std::string failure;
     std::vector<DockingAdvisoryGate> gates;
+
+    // Diagnostics for route-selection policy. A detour means Planner changed
+    // coarse geometry before conceding turn radius. relaxed means no route
+    // preserving the preferred radius was found and the widest feasible local
+    // terminal arc was accepted instead.
+    bool terminalDetourUsed = false;
+    bool terminalTurnRadiusRelaxed = false;
+    double terminalTurnRadiusMeters = 0.0;
+
     bool valid() const noexcept { return failure.empty() && gates.size() >= 2; }
 };
 class DockingAdvisoryPlanner

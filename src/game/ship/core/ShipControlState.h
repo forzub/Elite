@@ -35,7 +35,7 @@ struct ShipControlState
     // deterministic even when the same input sample is evaluated twice.
     bool localControlLawCommandValid = false;
     game::navigation::LocalFlightControlLaw requestedLocalControlLaw =
-        game::navigation::LocalFlightControlLaw::Newtonian;
+        game::navigation::LocalFlightControlLaw::Assisted;
 
     // Newtonian HOME / INSERT and both-law END alignment commands. The mode
     // persists in DynamicMotionState after the one-frame command so alignment

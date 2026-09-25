@@ -90,6 +90,10 @@ try:
             "terminalTurnSegmentFraction = 0.40",
             "preferredTerminalTurnRadiusMeters = 0.0")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
+            "mandatoryApproachLengthMeters",
+            "preferredApproachLengthMeters",
+            "dock mandatory ingress blocked",
+            "terminalApproachShortened=true",
             "desiredRadius",
             "tangentDistance/tangentScale",
             "arcLength=radius*turnAngle",
@@ -109,6 +113,8 @@ try:
             "request.preferredTerminalTurnRadiusMeters = 6000.0",
             "longitudinalToleranceMeters + std::max(",
             "30.0,",
+            "final_axis_m=",
+            "final_axis_shortened=",
             "terminal_radius_m=",
             "radius_relaxed=")
     require("src/game/server/GameServer.cpp",
@@ -134,6 +140,10 @@ try:
         )
 
     planner_cpp = read("src/game/navigation/DockingAdvisoryPlanner.cpp")
+    if "if (!clear(align,stop))" in planner_cpp:
+        raise AssertionError(
+            "preferred full docking-axis lead became a hard failure again"
+        )
     if 'out.failure="manual terminal turn radius unavailable"' in planner_cpp:
         raise AssertionError(
             "preferred manual terminal radius became a task-failure threshold again"

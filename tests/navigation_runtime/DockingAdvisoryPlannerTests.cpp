@@ -89,7 +89,7 @@ int main()
     // fillet, not a quadratic Bezier. Use a denser terminal display sample and
     // verify several published gates share the analytically expected radius.
     DockingAdvisoryRequest curved;
-    curved.startMeters={-4000.0,0.0,2500.0};
+    curved.startMeters={-10000.0,0.0,9300.0};
     curved.entranceMeters={0.0,0.0,0.0};
     curved.outward={0.0,0.0,1.0};
     curved.standoffMeters=300.0;
@@ -100,9 +100,9 @@ int main()
     curved.gateSpacingMeters=500.0;
     curved.terminalGateSpacingMeters=100.0;
     curved.terminalDenseDistanceMeters=2000.0;
-    curved.terminalApproachLengthMeters=3000.0;
-    curved.terminalTurnSegmentFraction=0.75;
-    curved.preferredTerminalTurnRadiusMeters=1500.0;
+    curved.terminalApproachLengthMeters=9000.0;
+    curved.terminalTurnSegmentFraction=0.85;
+    curved.preferredTerminalTurnRadiusMeters=6000.0;
     const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
     if(!curvedPlan.valid())
     {
@@ -137,7 +137,7 @@ int main()
         desiredRadius*tangentScale
     });
     const double expectedRadius=tangentDistance/tangentScale;
-    if(expectedRadius<1500.0)
+    if(expectedRadius<6000.0)
     {
         std::cerr << "manual Assisted terminal radius too small: "
                   << expectedRadius << "\n";
@@ -195,7 +195,7 @@ int main()
         return 27;
     }
 
-    // If no topology can physically fit the preferred radius because the
+    // If no topology can physically fit the 6 km preferred radius because the
     // semantic final-axis segment is too short, guidance must still survive.
     // The planner accepts the widest feasible terminal arc rather than
     // treating the preference as a task-failure threshold.
@@ -431,8 +431,8 @@ int main()
         dockingAdvisoryFrameExtentMeters(12.0,21.0)!=54.0)
     { std::cerr << "corridor frame extent lost ship+tolerance semantics\n"; return 10; }
     const auto release=dockingAdvisoryReleaseCrossSection(transit);
-    if (release.lateralToleranceMeters!=75.0 ||
-        release.verticalToleranceMeters!=75.0 ||
+    if (release.lateralToleranceMeters!=120.0 ||
+        release.verticalToleranceMeters!=120.0 ||
         !dockingAdvisoryNearBoundary(49.0,0.0,0.0,transit,100.0) ||
         dockingAdvisoryNearBoundary(10.0,10.0,10.0,transit,100.0))
     { std::cerr << "corridor warning/release bands failed\n"; return 20; }
@@ -442,7 +442,8 @@ int main()
         tracking.observe(true,true,0.1)!=DockingAdvisoryTrackingResult::Inside ||
         tracking.observe(false,true,0.2)!=DockingAdvisoryTrackingResult::Warning ||
         tracking.observe(false,false,0.3)!=DockingAdvisoryTrackingResult::Warning ||
-        tracking.observe(false,false,0.7)!=DockingAdvisoryTrackingResult::Left)
+        tracking.observe(false,false,0.7)!=DockingAdvisoryTrackingResult::Warning ||
+        tracking.observe(false,false,1.31)!=DockingAdvisoryTrackingResult::Left)
     { std::cerr << "corridor warning/hysteresis semantics failed\n"; return 21; }
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';

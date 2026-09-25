@@ -177,11 +177,20 @@ int main()
 
     const auto shortenedAxisPlan=
         DockingAdvisoryPlanner::plan(shortenedAxis);
+    const double farAxisInflatedRadius=
+        farAxisBlocker.radiusMeters+shortenedAxis.hullRadiusMeters;
+    const auto shortenedAxisJoin=
+        curvedStop+
+        curved.outward*shortenedAxisPlan.terminalApproachLengthMeters;
+    const double shortenedAxisJoinClearance=
+        glm::length(shortenedAxisJoin-farAxisBlocker.centerMeters)-
+        farAxisInflatedRadius;
     if(!shortenedAxisPlan.valid() ||
        !shortenedAxisPlan.terminalApproachShortened ||
        shortenedAxisPlan.terminalApproachLengthMeters>=
            shortenedAxis.terminalApproachLengthMeters-1.0 ||
-       shortenedAxisPlan.terminalApproachLengthMeters<=700.0)
+       shortenedAxisPlan.terminalApproachLengthMeters<=700.0 ||
+       shortenedAxisJoinClearance<25.0)
     {
         std::cerr
             << "far preferred-axis blocker cancelled route instead of shortening lead: "
@@ -189,6 +198,8 @@ int main()
             << " shortened=" << shortenedAxisPlan.terminalApproachShortened
             << " final_axis_m="
             << shortenedAxisPlan.terminalApproachLengthMeters
+            << " join_clearance_m="
+            << shortenedAxisJoinClearance
             << "\n";
         return 29;
     }

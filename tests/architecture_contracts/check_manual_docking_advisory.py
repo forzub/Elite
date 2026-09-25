@@ -107,7 +107,8 @@ try:
             "request.terminalApproachLengthMeters = 9000.0",
             "request.terminalTurnSegmentFraction = 0.85",
             "request.preferredTerminalTurnRadiusMeters = 6000.0",
-            "longitudinalToleranceMeters * 1.0" if False else "longitudinalToleranceMeters",
+            "longitudinalToleranceMeters + std::max(",
+            "30.0,",
             "terminal_radius_m=",
             "radius_relaxed=")
     require("src/game/server/GameServer.cpp",
@@ -126,6 +127,12 @@ try:
             "frameDistanceMeters <= 500.0",
             "bottomCenter",
             "deviationBlinkOn")
+    space_cpp = read("src/game/SpaceState.cpp")
+    if "longitudinalToleranceMeters * 0.25" in space_cpp:
+        raise AssertionError(
+            "manual docking longitudinal release reverted to the old 25% margin"
+        )
+
     planner_cpp = read("src/game/navigation/DockingAdvisoryPlanner.cpp")
     if 'out.failure="manual terminal turn radius unavailable"' in planner_cpp:
         raise AssertionError(

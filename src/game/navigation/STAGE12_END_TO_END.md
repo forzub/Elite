@@ -9,9 +9,10 @@ For manual Assisted guidance the current preferred profile remains 3000 m final
 axis, 0.75 terminal fillet fraction and 1500 m terminal radius. Candidate
 selection is now ordered:
 1. nominal geometric route + preferred-radius circular turn;
-2. expanded-clearance geometric reroute using the complete obstacle set +
-   preferred-radius turn;
-3. only if those fail, nominal/wide geometry with the terminal circle tightened
+2. 12 alternate pre-alignment directions around the fixed final docking axis,
+   each with a full-obstacle geometric route search + preferred-radius turn;
+3. expanded-clearance/full-obstacle reroute on the original topology;
+4. only if those fail, nominal/wide geometry with the terminal circle tightened
    from the preferred/dynamic radius until it clears.
 
 Thus an obstacle intersecting the desired arc may cause a long detour around

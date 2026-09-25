@@ -1,5 +1,23 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — verify 3 km / >=1.5 km-radius manual Assisted terminal approach
+
+Pull current main and rerun `docking_advisory` plus
+`check_manual_docking_advisory.py`. The Assisted fixture now requires a
+3000 m final-axis approach, 0.75 terminal segment fraction and at least 1500 m
+terminal circular radius.
+
+If both pass, rebuild EliteGame and confirm in live Assisted SHOW ROUTE:
+- profile log reports `manual-assisted final_axis_m=3000`,
+  `turn_fraction=0.75`, `min_turn_radius_m=1500`;
+- final station turn is visibly broad and remains readable through the corridor;
+- DockPrep begin/settled VREL diagnostics confirm the stop gate;
+- Human hand-back occurs after route publication.
+
+Only after this live geometry gate should the next implementation slice wire
+DockingRouteRequest::Mode::Automatic into the accepted physical maneuver
+program / TrajectoryFollower execution path.
+
 ## 2026-09-25 — rerun docking advisory after explicit transition-frame anchoring
 
 Pull current main and rerun only `docking_advisory` plus the static manual

@@ -11,9 +11,11 @@ Current main changes the semantics:
   fillet fraction and a preferred 1500 m human-flyable terminal radius;
 - the preferred radius is not a task-failure threshold;
 - Planner first tries the nominal route at the preferred radius;
-- if that candidate fails, Planner performs a second geometric search with
-  expanded obstacle clearance and the full obstacle set, so the solution may
-  move far around station/structure geometry;
+- if that candidate fails, Planner samples 12 alternate pre-alignment ingress
+  directions around the final docking axis; each candidate uses the full
+  obstacle set, so it may route far around station/structure geometry;
+- if those terminal-direction candidates still fail, Planner retries the
+  original topology with expanded obstacle clearance and the full obstacle set;
 - only after preferred-radius rerouting is exhausted may the circular terminal
   turn shrink; the fallback starts from the preferred/dynamic radius and
   tightens only as clearance requires;

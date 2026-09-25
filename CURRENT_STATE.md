@@ -1,5 +1,44 @@
 # CURRENT STATE
 
+## 2026-09-25 — broad Assisted docking/default/recovery slice implemented; Windows gate pending
+
+The new live requirement from the station-map screenshot is now implemented on
+public main.
+
+Manual Assisted guidance profile is deliberately much broader:
+- final docking-axis lead: 9000 m;
+- terminal fillet segment fraction: 0.85;
+- preferred terminal turn radius: 6000 m.
+
+These values remain preferences, not route-existence floors. The existing
+reroute-before-tighten sequence remains authoritative: nominal broad arc,
+alternate pre-alignment ingress directions with full obstacle search,
+expanded-clearance/full-obstacle reroute, and only then a tighter collision-free
+arc. The accepted plan still reports detour/radius-relaxation diagnostics.
+
+Manual tunnel lifetime is now materially more forgiving without changing the
+nominal tunnel display:
+- nominal transit tolerance remains 60 m and still drives warning/critical HUD;
+- release cross-section is nominal + max(100% of nominal, 30 m), so the normal
+  60 m transit release bound is 120 m;
+- sustained outside-release grace is 1.00 s instead of 0.35 s;
+- longitudinal release receives the same 100% / 30 m expansion rule.
+
+Fresh flight state now defaults to Assisted across authoritative motion,
+ShipControlState defaults and client discrete-law latches. Newtonian remains
+explicitly selectable.
+
+DockPrep Assisted stop semantics are regression-locked: target VREL becomes zero
+immediately; a healthy fore/reverse main bank is commanded at full physical
+authority without a 180-degree hull flip. The server begin diagnostic now prints
+the active law by name plus forward/reverse main acceleration authority. This is
+needed because the reported slow live stop may have been the previous Newtonian
+default rather than the Assisted stop controller.
+
+Native/static tests were updated for the 6 km curve, 120 m release band,
+1.00 s grace, Assisted default and full-authority Assisted stop. Fresh Windows
+compile/runtime evidence is still pending; no acceptance is claimed yet.
+
 ## 2026-09-25 — live screenshot rejects current arc; Assisted becomes default and stop semantics are tightened
 
 Fresh live visual evidence shows the currently published manual docking turn is

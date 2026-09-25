@@ -30,6 +30,7 @@ struct DockingAdvisoryRequest
     // adjacent segment a circular fillet may consume.
     double terminalApproachLengthMeters = 0.0;
     double terminalTurnSegmentFraction = 0.40;
+    double minimumTerminalTurnRadiusMeters = 0.0;
 
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };

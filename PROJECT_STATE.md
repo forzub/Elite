@@ -1,5 +1,16 @@
 # PROJECT STATE
 
+## 2026-09-25 — shortened-axis join must have real route-search clearance
+
+The final-axis soft-shortening contract now includes endpoint clearance. The
+binary-search boundary itself is not an acceptable join because it can be only
+epsilon-clear and unreachable by the visibility graph.
+
+Current policy backs the join away by at least 50 m or four hull radii, then
+retreats farther toward mandatory ingress if route search still fails. This
+preserves the exact docking axis while preventing a false no-route result at an
+obstacle contact boundary.
+
 ## 2026-09-25 — canonical docking verification entrypoint
 
 Repository now owns a single root verification entrypoint:

@@ -1,93 +1,68 @@
-# CONTINUE PROMPT — Elite Navigation v2 / reroute-before-tighten + Automatic docking executor
+# CONTINUE PROMPT — Elite Navigation v2 / broad manual docking + Assisted default + hard Assisted stop
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
-Before changing project behavior/state, read `AGENTS.md`, newest sections of
+Before changing behavior/state read `AGENTS.md`, newest sections of
 `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
 `src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
-result synchronize those four state documents before starting the next
-implementation slice. Regenerate this prompt from current truth every iteration.
+result synchronize those four state documents before the next slice. Regenerate
+this prompt every iteration.
 
-## Current manual docking truth
+## Current user acceptance
 
-SHOW ROUTE already performs a real temporary server Autopilot takeover and
-physical BrakeToStop. Planning begins only after authoritative Hub-relative
-speed <= max(0.05 m/s, ship stop epsilon), angular rate <=0.01 rad/s, held for
-0.25 s.
+The latest live screenshot rejects the current docking turn as far too sharp.
 
-Manual Assisted profile:
-- final docking-axis approach: 3000 m;
-- terminal fillet fraction: 0.75;
-- preferred human-flyable terminal radius: 1500 m.
+Required behavior:
+- manual Assisted route must use a much broader visible turn at station scale;
+- blocked preferred geometry must reroute/try another ingress first, potentially
+  around the entire station;
+- only after reroute is exhausted may radius tighten as far as needed;
+- nominal tunnel departure warns, but route cancellation must use a much wider
+  release envelope and longer grace;
+- Assisted is the default local flight law for fresh ship motion;
+- Newtonian remains selectable, not removed.
 
-The 1500 m value is NOT a hard route-failure floor.
+## DockPrep stop truth
 
-DockingAdvisoryPlanner now uses ordered fallback:
-1. nominal route at preferred radius;
-2. 12 alternate pre-alignment ingress directions around the fixed docking axis,
-   each routed with the full obstacle set at preferred radius;
-3. expanded-clearance/full-obstacle reroute on the original topology;
-4. only after reroute is exhausted, tighten the terminal circular arc as far as
-   collision-free geometry requires.
+With healthy fore/reverse main authority, Assisted BrakeToStop must:
+- set target VREL to 0 immediately;
+- keep the hull nose-first (no 180-degree flip);
+- use the installed reverse/fore main directly at bounded physical authority;
+- not wait on the ordinary throttle-response gain.
 
-A route may therefore go substantially around station geometry. Planner failure
-is appropriate only when no collision-free rounded route exists, or when the
-mandatory final docking-axis ingress itself is blocked.
+If reverse main is unavailable, Assisted may rotate and use aft main. Newtonian
+retains its explicit hull-alignment/flip semantics.
 
-Plan diagnostics:
-- `terminalDetourUsed`;
-- `terminalTurnRadiusRelaxed`;
-- `terminalTurnRadiusMeters`.
-
-SpaceState logs:
-`[DockAdvisory] ... route=nominal|detour terminal_radius_m=... radius_relaxed=0|1`.
-
-Native regression includes:
-- preferred arc blocked -> valid detour, preferred radius retained;
-- 1500 m impossible from segment room -> valid tighter radius, task retained.
-
-Fresh Windows evidence for these new tests is pending.
+Current production code already contains the immediate Assisted BrakeToStop
+gain and fore-main path, so the live slow-stop report must be validated against
+the actual active law. Default law is currently Newtonian and must be changed to
+Assisted. Add/retain regression evidence and live law/deceleration diagnostics.
 
 ## Automatic docking boundary
 
-`DockingRouteRequest::Mode::Automatic` already exists, but production player
-docking is not yet executable end-to-end:
-- `SystemMapRenderer` keeps START DOCKING disabled;
-- `SpaceState::updateDockingAdvisory()` accepts Guidance only;
-- server docking preparation owns Autopilot only for BrakeToStop and
-  `finishDockingGuidancePreparation()` restores Human authority.
+Do not implement a visual-frame waypoint autopilot. Full automatic docking still
+requires server-owned execution of proved AcceptedManeuverProgram through:
+AcceptedManeuverProgram -> TrajectoryFollower ->
+NavigationRuntimeControlBridge -> ShipControlState -> shared physics.
 
-Do NOT solve this by chasing visual DockingAdvisoryGate frames or by attaching
-the transitional NPC immediate-intent controller to the player.
+START DOCKING stays disabled until that execution owner exists.
 
-The required execution chain is:
-`AcceptedManeuverProgram
- -> TrajectoryFollower
- -> NavigationRuntimeControlBridge
- -> ShipControlState
- -> shared ship physics`.
+## Immediate implementation/gates
 
-The next implementation slice after the focused reroute gate is a server-owned
-player docking execution lifetime that retains Autopilot authority, consumes
-proved accepted programs, replans/stops on invalidation, and only then enables
-START DOCKING.
+Implement broad Assisted route constants, widened release envelope/grace,
+Assisted default, and regression/diagnostic coverage.
 
-## Immediate Windows gate
-
-From `D:\__elite\work`:
+Then on Windows:
 1. `git pull --ff-only origin main`
-2. rebuild `docking_advisory_tests`
-3. run the `docking_advisory` CTest
-4. run `python tests/architecture_contracts/check_manual_docking_advisory.py`
-5. if both pass, `bash build_mingw64.sh`
-6. run `build/EliteGame.exe`
-7. Assisted SHOW ROUTE: capture DockPrep begin/settled plus route/radius log and
-   visually verify that blocked preferred geometry reroutes/tightens instead of
-   cancelling the navigation task.
+2. build/run local-flight contract
+3. `python tests/architecture_contracts/check_local_flight_control.py`
+4. build/run `docking_advisory_tests`
+5. `python tests/architecture_contracts/check_manual_docking_advisory.py`
+6. `bash build_mingw64.sh`
+7. run `build/EliteGame.exe`
+8. verify DockPrep reports Assisted and VREL falls rapidly to settle
+9. inspect SHOW ROUTE: broad arc and route persistence through larger manual
+   tunnel excursions.
 
-Preserve all untracked trace/log artifacts. Do not weaken corridor truth,
-collision checks, propulsion truth, or the server ownership model merely to
-make tests pass.
-
-The user wants implementation directly in GitHub followed by exact Windows
-pull/test/build/run commands. Do not provide patch files.
+Preserve untracked traces/logs. Do not provide patch files; commit directly to
+GitHub and give exact pull/test/build/run commands.

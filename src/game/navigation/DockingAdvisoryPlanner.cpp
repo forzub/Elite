@@ -266,18 +266,80 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     bool radiusRelaxed=false;
 
     // Phase 2: if the preferred arc collides or cannot be fitted, change the
-    // route before changing the radius. Inflating obstacle clearance by the
-    // preferred radius pushes visibility/A* support points outward and can
-    // legitimately route around an entire station/structure. The fallback uses
-    // the full obstacle set because a bounded search miss is not impossibility.
+    // route before changing the radius. First vary the direction from which
+    // the ship reaches the docking-axis alignment point. This is the important
+    // topological fallback: GeometricPathPlanner may route from the current
+    // ship position to any of these pre-alignment points around the entire
+    // station, while the final semantic docking axis remains unchanged.
     world::navigation::GeometricPathResult wideGeometry;
     if (!selected.valid && preferredTerminalRadius>0.0)
     {
-        // Expand conservatively first. A full-radius inflation can itself
-        // swallow a nearby ingress waypoint; half-radius is often enough to
-        // make the visibility graph choose the other side of an obstruction.
-        // If that still cannot preserve the arc, retry with the full preferred
-        // radius before conceding geometry.
+        const glm::dvec3 finalDirection =
+            glm::normalize(stop-align);
+        const glm::dvec3 basisSeed =
+            std::abs(finalDirection.y)<0.90
+                ? glm::dvec3(0.0,1.0,0.0)
+                : glm::dvec3(1.0,0.0,0.0);
+        const glm::dvec3 lateralA =
+            glm::normalize(glm::cross(finalDirection,basisSeed));
+        const glm::dvec3 lateralB =
+            glm::normalize(glm::cross(finalDirection,lateralA));
+
+        const double terminalLeadLength=std::max(
+            finalApproachLengthMeters,
+            preferredTerminalRadius/
+                r.terminalTurnSegmentFraction*1.10
+        );
+        constexpr int terminalIngressSamples=12;
+        constexpr double twoPi=
+            6.283185307179586476925286766559;
+
+        for(int sample=0;
+            sample<terminalIngressSamples && !selected.valid;
+            ++sample)
+        {
+            const double angle=
+                twoPi*double(sample)/double(terminalIngressSamples);
+            const glm::dvec3 incoming=
+                lateralA*std::cos(angle)+
+                lateralB*std::sin(angle);
+            const glm::dvec3 preAlign=
+                align-incoming*terminalLeadLength;
+
+            if(!clear(preAlign,align))
+                continue;
+
+            auto ingressSearch=search;
+            ingressSearch.goalMeters=preAlign;
+            // A route-existence fallback must not turn the normal 48-obstacle
+            // work cap into a false proof of impossibility.
+            ingressSearch.params.maxConsideredObstacles=0;
+            const auto ingressGeometry=
+                world::navigation::GeometricPathPlanner::plan(ingressSearch);
+            if(!ingressGeometry.valid ||
+               ingressGeometry.pointsMeters.size()<2)
+                continue;
+
+            auto points=ingressGeometry.pointsMeters;
+            if(glm::length(points.back()-align)>1.0e-6)
+                points.push_back(align);
+
+            auto detour=roundGeometry(
+                points,
+                preferredTerminalRadius
+            );
+            if(detour.valid)
+            {
+                selected=std::move(detour);
+                detourUsed=true;
+            }
+        }
+
+        // If changing terminal ingress direction still cannot keep the broad
+        // arc, widen obstacle clearance on the original topology. This can
+        // force visibility/A* support nodes onto the far side of a large
+        // station/structure. Try half radius first so a nearby semantic
+        // alignment point is not unnecessarily swallowed by inflated geometry.
         for (int reroutePass=0;
              reroutePass<2 && !selected.valid;
              ++reroutePass)

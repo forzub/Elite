@@ -1,22 +1,37 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
-## 2026-09-25 — verify 3 km / >=1.5 km-radius manual Assisted terminal approach
+## 2026-09-25 — verify reroute-before-tighten, then build the Automatic executor seam
 
-Pull current main and rerun `docking_advisory` plus
-`check_manual_docking_advisory.py`. The Assisted fixture now requires a
-3000 m final-axis approach, 0.75 terminal segment fraction and at least 1500 m
-terminal circular radius.
+First pull current main and prove the corrected manual-planning contract on the
+Windows target:
+- rebuild/run the native `docking_advisory` test;
+- run `python tests/architecture_contracts/check_manual_docking_advisory.py`;
+- if both pass, rebuild the canonical game;
+- run Assisted SHOW ROUTE and inspect the new
+  `route=nominal|detour terminal_radius_m=... radius_relaxed=...` diagnostic;
+- verify the task no longer disappears merely because the preferred 1500 m arc
+  is obstructed or cannot fit; the route may become much longer, including a
+  route around station geometry.
 
-If both pass, rebuild EliteGame and confirm in live Assisted SHOW ROUTE:
-- profile log reports `manual-assisted final_axis_m=3000`,
-  `turn_fraction=0.75`, `min_turn_radius_m=1500`;
-- final station turn is visibly broad and remains readable through the corridor;
-- DockPrep begin/settled VREL diagnostics confirm the stop gate;
-- Human hand-back occurs after route publication.
+Keep the semantic final docking-axis segment strict: if the port ingress itself
+is occupied, that is a real unavailable-dock result rather than a reason to
+invent a different final approach direction.
 
-Only after this live geometry gate should the next implementation slice wire
-DockingRouteRequest::Mode::Automatic into the accepted physical maneuver
-program / TrajectoryFollower execution path.
+After this focused gate, continue Automatic docking at the real ownership
+boundary. Required next implementation slice:
+- introduce a server-owned player docking execution lifetime that can retain
+  Autopilot authority after preparation;
+- its executable input must be an AcceptedManeuverProgram (or the completed
+  proved-program coordinator output), never DockingAdvisoryGate display frames;
+- execute through TrajectoryFollower -> NavigationRuntimeControlBridge ->
+  ShipControlState -> shared physics;
+- cancellation, invalidated proof/capability, or tracking-envelope failure must
+  request replan/stop without disabling the navigation task globally;
+- only enable the START DOCKING UI when that server execution path is actually
+  present.
+
+Do not bolt the existing transitional NPC immediate-intent controller onto the
+player docking button as a shortcut.
 
 ## 2026-09-25 — rerun docking advisory after explicit transition-frame anchoring
 

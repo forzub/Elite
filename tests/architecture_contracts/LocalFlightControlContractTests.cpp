@@ -11,6 +11,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/ShipController.h"
 #include "src/game/ship/physics/ShipImpulseSystem.h"
@@ -140,6 +141,23 @@ void stepRcs(
         frame,
         params,
         static_cast<double>(dt)
+    );
+}
+
+void testFreshFlightStateDefaultsToAssisted()
+{
+    game::navigation::DynamicMotionState motion;
+    ShipControlState control;
+
+    require(
+        motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted,
+        "fresh DynamicMotionState did not default to Assisted"
+    );
+    require(
+        control.requestedLocalControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted,
+        "fresh ShipControlState law request did not default to Assisted"
     );
 }
 
@@ -931,8 +949,11 @@ void testAssistedEndUsesForeMainWithoutHullFlip()
 {
     const auto frame = makeFrame();
     auto params = makeParams();
+    params.maxLinearGs = 7.5f;
     params.forwardMainEngineAvailable = true;
     params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 73.549875f;
+    params.reverseMainEngineAccelerationMps2 = 73.549875f;
 
     WorldParams world;
     ShipController controller;
@@ -967,12 +988,39 @@ void testAssistedEndUsesForeMainWithoutHullFlip()
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
 
+    const double expectedReverseMainMps2 =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+
+    requireNear(
+        motion.targetForwardSpeedMps,
+        0.0,
+        1.0e-12,
+        "Assisted END did not set target VREL to zero immediately"
+    );
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        expectedReverseMainMps2,
+        1.0e-6,
+        "healthy Assisted END did not command full reverse-main braking authority"
+    );
     require(
         glm::dot(
             motion.mainEngineAccelerationMps2,
             glm::dvec3(0.0, 0.0, 1.0)
-        ) > 1.0,
+        ) > expectedReverseMainMps2 - 1.0e-6,
         "healthy Assisted braking did not use the fore main engine"
+    );
+
+    auto position =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+    const double beforeSpeed = glm::length(motion.localVelocityMps);
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        motion, position, frame, params, 0.05
+    );
+    require(
+        glm::length(motion.localVelocityMps) <
+            beforeSpeed - expectedReverseMainMps2 * 0.045,
+        "Assisted END deceleration was throttled instead of using physical reverse-main authority"
     );
 }
 
@@ -1145,6 +1193,7 @@ int main()
 {
     try
     {
+        testFreshFlightStateDefaultsToAssisted();
         testNewtonianRcsCanCreepPastControlledSpeedEnvelope();
         testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease();
         testManoeuvreGasDrainsLocksAndRecharges();

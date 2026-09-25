@@ -1,5 +1,27 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — use one canonical docking verification command
+
+Do not manually mix the canonical game build tree and navigation-runtime test
+tree.
+
+From repository root:
+`git pull --ff-only origin main`
+then:
+`bash verify_docking.sh`
+
+Expected script stages:
+- configure standalone navigation-runtime tests;
+- build `docking_advisory_tests`;
+- run native CTest `docking_advisory`;
+- run static manual-docking checker.
+
+A valid fresh static PASS includes revision
+`20260925-soft-axis-v2`.
+
+Only after this script passes, run `bash build_mingw64.sh` and live
+`build/EliteGame.exe`.
+
 ## 2026-09-25 — rerun docking verification from the standalone runtime-test build tree
 
 Configure the navigation-runtime test project explicitly; do not use the

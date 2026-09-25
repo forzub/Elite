@@ -1,5 +1,37 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — target verification of broad Assisted route and hard stop
+
+Pull current public main and verify the newly implemented slice before changing
+Automatic-docking ownership.
+
+Focused gates:
+1. rebuild/run `local_flight_control_contract_tests`, then CTest
+   `local_flight_control_contracts`;
+2. run `python tests/architecture_contracts/check_local_flight_control.py`;
+3. rebuild/run `docking_advisory_tests`, then CTest `docking_advisory`;
+4. run `python tests/architecture_contracts/check_manual_docking_advisory.py`;
+5. build the canonical game.
+
+Live acceptance:
+- fresh ship reports Assisted without requiring Ctrl+F10;
+- DockPrep begin prints `law=ASSISTED` and non-zero
+  `reverse_main_mps2` for a healthy Cobra;
+- VREL drops quickly to the settle threshold instead of spending a long time in
+  a Newtonian turn/brake sequence;
+- SHOW ROUTE reports preferred radius 6000 m unless geometry forces a
+  `radius_relaxed=1` fallback;
+- the visible station bend is broad enough to fly by eye;
+- crossing the nominal tunnel raises warnings, but the route survives recoverable
+  excursions up to the new 120 m transit release envelope / 1 s grace.
+
+If live Assisted still brakes slowly while the log proves healthy reverse-main
+authority, capture VREL plus engine-acceleration evidence next; do not weaken
+physics or fake velocity assignment.
+
+After this gate, continue the server-owned Automatic docking executor through
+AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge.
+
 ## 2026-09-25 — widen manual curve, relax tunnel release, make Assisted default, verify hard Assisted stop
 
 Implement and then verify four coupled changes:

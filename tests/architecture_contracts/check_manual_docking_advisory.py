@@ -85,13 +85,15 @@ try:
             "terminalDenseDistanceMeters = 2000.0",
             "terminalApproachLengthMeters = 0.0",
             "terminalTurnSegmentFraction = 0.40",
-            "minimumTerminalTurnRadiusMeters = 0.0")
+            "preferredTerminalTurnRadiusMeters = 0.0")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
             "desiredRadius",
             "tangentDistance/tangentScale",
             "arcLength=radius*turnAngle",
             "center=entry+radius*inwardNormal",
-            "manual terminal turn radius unavailable",
+            "preferred terminal turn radius unavailable on candidate",
+            "preferredTerminalRadius*clearanceScale",
+            "no collision-free docking route after reroute/tighten fallback",
             "remainingFromPrevious",
             "r.terminalDenseDistanceMeters+terminalSpacing")
     require("src/game/SpaceState.cpp",
@@ -101,7 +103,9 @@ try:
             "manual-assisted",
             "request.terminalApproachLengthMeters = 3000.0",
             "request.terminalTurnSegmentFraction = 0.75",
-            "request.minimumTerminalTurnRadiusMeters = 1500.0")
+            "request.preferredTerminalTurnRadiusMeters = 1500.0",
+            "terminal_radius_m=",
+            "radius_relaxed=")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",
@@ -115,6 +119,12 @@ try:
             "frameDistanceMeters <= 500.0",
             "bottomCenter",
             "deviationBlinkOn")
+    planner_cpp = read("src/game/navigation/DockingAdvisoryPlanner.cpp")
+    if 'out.failure="manual terminal turn radius unavailable"' in planner_cpp:
+        raise AssertionError(
+            "preferred manual terminal radius became a task-failure threshold again"
+        )
+
     corridor_header = read("src/game/navigation/DockingAdvisoryCorridor.h")
     if "const auto near =" in corridor_header:
         raise AssertionError("Windows-unsafe near identifier returned in docking corridor")

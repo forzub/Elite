@@ -36,22 +36,61 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
-    const double finalApproachLengthMeters=std::max({
-        700.0,
-        3*r.standoffMeters,
-        r.terminalApproachLengthMeters
-    });
-    const auto align = stop + outward * finalApproachLengthMeters;
 
     const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
     { return world::navigation::segmentClearOfNavigationObstacles(
         a,b,r.obstacles,r.hullRadiusMeters); };
 
-    // The final docking-axis segment is semantic ingress. If this exact
-    // segment is occupied, no amount of earlier rerouting can make the port
-    // reachable without changing the docking contract itself.
+    // Only the near-port ingress is semantic hard geometry. The much longer
+    // manual-Assisted lead is a preference used to make the terminal turn
+    // human-flyable. Treating the whole preferred lead as mandatory made any
+    // unrelated obstacle several kilometres in front of the port cancel the
+    // route before rerouting even started.
+    const double mandatoryApproachLengthMeters=std::max(
+        700.0,
+        3*r.standoffMeters
+    );
+    const auto mandatoryAlign =
+        stop + outward * mandatoryApproachLengthMeters;
+    if (!clear(mandatoryAlign,stop))
+    {
+        out.failure = "dock mandatory ingress blocked";
+        return out;
+    }
+
+    const double preferredApproachLengthMeters=std::max(
+        mandatoryApproachLengthMeters,
+        r.terminalApproachLengthMeters
+    );
+
+    double finalApproachLengthMeters=preferredApproachLengthMeters;
+    auto align=stop+outward*finalApproachLengthMeters;
+
     if (!clear(align,stop))
-    { out.failure = "dock alignment blocked"; return out; }
+    {
+        // Segment-clear is monotonic along one ray: once an obstacle is hit,
+        // every longer segment contains the same hit. Find the longest clear
+        // prefix instead of rejecting the navigation task. This preserves as
+        // much room as physically available for the broad terminal fillet.
+        double clearLength=mandatoryApproachLengthMeters;
+        double blockedLength=preferredApproachLengthMeters;
+        for (int i=0;i<24;++i)
+        {
+            const double probeLength=
+                0.5*(clearLength+blockedLength);
+            const auto probeAlign=stop+outward*probeLength;
+            if (clear(probeAlign,stop))
+                clearLength=probeLength;
+            else
+                blockedLength=probeLength;
+        }
+
+        finalApproachLengthMeters=clearLength;
+        align=stop+outward*finalApproachLengthMeters;
+        out.terminalApproachShortened=true;
+    }
+
+    out.terminalApproachLengthMeters=finalApproachLengthMeters;
 
     world::navigation::GeometricPathRequest search;
     search.startMeters = r.startMeters;

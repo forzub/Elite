@@ -1,5 +1,25 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — verify preferred final-axis shortening restores live route calculation
+
+Pull current main and run the focused docking gate.
+
+Expected behavior:
+- the previous `failed=dock alignment blocked` must disappear for obstacles
+  that intersect only the far preferred 9 km final-axis lead;
+- accepted route log must show either
+  `final_axis_shortened=0 final_axis_m=9000` or
+  `final_axis_shortened=1 final_axis_m=<largest clear prefix>`;
+- only an obstacle inside the near-port mandatory ingress may produce
+  `failed=dock mandatory ingress blocked`;
+- reroute-before-tighten remains active after shortening, so a shortened axis
+  may still produce detour geometry and/or `radius_relaxed=1` rather than
+  cancelling navigation.
+
+Run docking_advisory native/static tests first, then canonical build and live
+SHOW ROUTE. Also retain the previously requested Assisted-default / fast-stop
+checks in the same live run if compilation is clean.
+
 ## 2026-09-25 — target verification of broad Assisted route and hard stop
 
 Pull current public main and verify the newly implemented slice before changing

@@ -102,6 +102,7 @@ int main()
     curved.terminalDenseDistanceMeters=2000.0;
     curved.terminalApproachLengthMeters=3000.0;
     curved.terminalTurnSegmentFraction=0.75;
+    curved.minimumTerminalTurnRadiusMeters=1500.0;
     const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
     if(!curvedPlan.valid())
     {

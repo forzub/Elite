@@ -28,7 +28,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             r.terminalApproachLengthMeters < 0 ||
         !std::isfinite(r.terminalTurnSegmentFraction) ||
             r.terminalTurnSegmentFraction <= 0.0 ||
-            r.terminalTurnSegmentFraction > 0.90)
+            r.terminalTurnSegmentFraction > 0.90 ||
+        !std::isfinite(r.minimumTerminalTurnRadiusMeters) ||
+            r.minimumTerminalTurnRadiusMeters < 0.0)
     { out.failure = "invalid dock advisory input"; return out; }
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
@@ -78,11 +80,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         // A physically comfortable turn at max speed wants R=v^2/a. If the
         // adjacent segments are too short, use the largest circular fillet
         // that fits and let the downstream speed profile reduce turn speed.
-        const double desiredRadius=std::max(
-            20.0,
-            r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2
-        );
         const bool terminalTurn=(i+1==vertices.size()-1);
+        const double desiredRadius=std::max({
+            20.0,
+            r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2,
+            terminalTurn ? r.minimumTerminalTurnRadiusMeters : 0.0
+        });
         const double segmentFraction=
             terminalTurn
                 ? r.terminalTurnSegmentFraction
@@ -93,12 +96,23 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             desiredRadius*tangentScale
         });
 
+        if(terminalTurn &&
+           tangentDistance/tangentScale+1.0e-6 <
+               r.minimumTerminalTurnRadiusMeters)
+        {
+            out.failure="manual terminal turn radius unavailable";
+            return out;
+        }
+
         bool rounded=false;
         for (int attempt=0;
              attempt<12 && tangentDistance>=0.25;
              ++attempt,tangentDistance*=0.5)
         {
             const double radius=tangentDistance/tangentScale;
+            if(terminalTurn &&
+               radius+1.0e-6<r.minimumTerminalTurnRadiusMeters)
+                break;
             const auto entry=vertices[i]-tangentDistance*u;
             const auto exit=vertices[i]+tangentDistance*v;
             const auto turnNormal=turnNormalRaw/turnNormalLength;

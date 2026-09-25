@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+## 2026-09-25 — canonical docking verification entrypoint
+
+Repository now owns a single root verification entrypoint:
+`verify_docking.sh`.
+
+This script encodes the build-layout contract so developers cannot accidentally
+request navigation-runtime-only targets from the canonical game `build/` tree.
+Its dedicated test tree is `build/tests/navigation_runtime`.
+
+The manual-docking static checker is revision-stamped
+`20260925-soft-axis-v2` so stale working copies are immediately visible in
+verification output.
+
 ## 2026-09-25 — navigation-runtime tests are standalone, not targets of canonical game build
 
 Build-layout contract: `docking_advisory_tests` and its CTest registration live

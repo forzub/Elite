@@ -2057,6 +2057,20 @@ void SpaceState::updateDockingAdvisory()
         request.lateralMps2 =
             shipProfile.maxLateralAccelerationMps2;
         request.gateSpacingMeters = 500.0;
+
+        // Manual Assisted guidance must be realistically flyable by a human.
+        // Enter the docking axis much earlier and preserve a broad circular
+        // turn. Newtonian guidance intentionally keeps the sharper legacy
+        // geometry because the ship can rotate independently of velocity.
+        const bool manualAssisted =
+            player->second.transform.motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted;
+        if (manualAssisted)
+        {
+            request.terminalApproachLengthMeters = 3000.0;
+            request.terminalTurnSegmentFraction = 0.75;
+        }
+
         request.obstacles = snapshot.navigationObstacles;
 
         if (m_dockWorkerCount->load(std::memory_order_acquire) >= 2)

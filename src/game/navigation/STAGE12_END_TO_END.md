@@ -1,5 +1,24 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — Stage-12 final-axis semantics corrected after live regression
+
+Live commissioning exposed a structural error in the new broad Assisted profile:
+the whole 9 km final docking-axis lead was checked as one mandatory clear
+segment before route search. This produced repeated
+`failed=dock alignment blocked` and prevented Planner from running at all.
+
+Stage-12 now separates:
+- mandatory near-port ingress = `max(700 m, 3 * standoff)`;
+- preferred Assisted final-axis lead = up to 9000 m.
+
+If the preferred portion is blocked, Planner finds the longest clear prefix,
+marks the plan as shortened, and continues nominal/reroute/turn-radius
+selection. Only the mandatory ingress remains a hard rejection.
+
+Plan diagnostics publish the accepted final-axis length and shortening flag so
+the next live run can prove whether the station scene forced the 9 km preference
+to contract.
+
 ## 2026-09-25 — broad manual route / Assisted default slice is in source
 
 Stage-12 source now uses a 9 km final-axis lead and 6 km preferred terminal

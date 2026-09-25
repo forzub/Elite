@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / docking guidance density + autopilot boundary
+# CONTINUE PROMPT — Elite Navigation v2 / wide manual Assisted docking + automatic execution boundary
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
@@ -16,80 +16,84 @@ physical BrakeToStop. Planning is gated on authoritative replicated state:
 Hub-relative speed <= max(0.05 m/s, ship stop epsilon), angular rate <=0.01
 rad/s, held for 0.25 s.
 
-New live diagnostics:
+Live diagnostics:
 - `[DockPrep] begin ... vrel_mps=... omega_radps=... law=...`
 - `[DockAdvisory] ... phase=settled vrel_mps=... omega_radps=... hold_s=...`
 
-## Guidance geometry
+## Live manual guidance evidence
 
-User requested:
-- circular final/turn geometry rather than broken-looking polyline;
-- 500 m frames in open transit;
-- 250 m frames in the final ~2 km.
+The historical dock-axis failure is gone. Recent Windows cancellations are real
+corridor departures, e.g. lateral 77.8971/75 m and 82.4922/75.3754 m near the
+station turn.
 
-Implemented:
-- true circular fillets, desired radius from v^2/a and limited by adjacent
-  segment room;
-- display compression by along-route progress, not chord distance;
-- terminal display spacing target 250 m;
-- terminal density nominal distance 2000 m.
+Frame density was improved:
+- 500 m open transit;
+- 250 m in final 2 km;
+- explicit transition anchor so sparse 500 m cadence cannot jump into the dense
+  region.
 
-## Latest Windows gate evidence
+Circular fillets replaced the old quadratic Bezier smoothing.
 
-First density test failed:
-`terminal advisory gate spacing too sparse: 490`.
+## New manual Assisted terminal policy
 
-A first correction activated terminal cadence one 250 m interval early.
+User confirmed the final Assisted turn is still too tight and visually flattens
+the corridor near the dock.
 
-Second Windows rerun still failed:
-`terminal advisory gate spacing too sparse: 500`.
+Root cause: desired radius was large, but the final axis was only about 900 m
+and fillets could consume only 40% of adjacent segments, constraining a
+90-degree turn toward roughly 360 m radius.
 
-Static manual docking architecture check passed in both runs.
+Current main now applies a human-flyable profile only for manual Assisted:
+- terminal docking-axis approach length = 3000 m;
+- terminal fillet segment fraction = 0.75;
+- minimum terminal turn radius = 1500 m;
+- if obstacle clearance or segment room would force the terminal turn below
+  1500 m, planner rejects the route instead of silently shrinking it.
 
-Root cause of second failure:
-cadence was still chosen from the current published frame. A frame at e.g.
-2300 m remaining could legally take a full 500 m sparse step to 1800 m, jumping
-across the activation boundary before dense cadence became active.
+Manual Newtonian keeps the sharper legacy geometry because hull attitude and
+velocity are decoupled.
 
-Current main fixes the class structurally:
-- define terminal activation remaining as
-  `terminalDenseDistanceMeters + terminalSpacing`;
-- if current frame is already inside, use terminal spacing;
-- if current frame is outside but a normal sparse step would cross activation,
-  shorten THIS interval to `distanceToActivation`;
-- this explicitly places a transition frame at/just before the boundary;
-- all following intervals use terminal cadence.
+SpaceState logs the selected profile:
+`[DockAdvisory] request=... profile=manual-assisted final_axis_m=3000 turn_fraction=0.75 min_turn_radius_m=1500`.
 
-Do not relax the native test. Fresh Windows rerun is pending.
+Native docking regression now configures the same Assisted profile and requires
+the analytically expected terminal radius to be >=1500 m.
+
+Fresh Windows rerun is pending.
 
 ## Automatic docking boundary
 
-`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState active
-docking implementation accepts Guidance only.
+`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState docking
+execution explicitly accepts only `Mode::Guidance`. Therefore full player
+route autopilot is not yet testable end-to-end.
 
-Do NOT implement a second ad-hoc waypoint autopilot. Full docking must use:
+Do NOT implement a second ad-hoc waypoint autopilot that chases visual frames.
+The correct execution chain is:
 accepted physical maneuver program
 -> TrajectoryFollower
 -> NavigationRuntimeControlBridge
 -> ShipControlState
--> shared physics.
+-> shared ship physics.
 
-SHOW ROUTE's stop phase already tests limited real Autopilot ownership.
+SHOW ROUTE's pre-plan BrakeToStop is already a limited real Autopilot test.
 
 ## Next target gate
 
 On Windows `D:\__elite\work`:
 
 1. Pull current main.
-2. Rebuild/run only `docking_advisory_tests`.
+2. Rebuild/run `docking_advisory_tests`.
 3. Run `python tests/architecture_contracts/check_manual_docking_advisory.py`.
 4. If both pass, rebuild canonical game with `bash build_mingw64.sh`.
-5. Run SHOW ROUTE and inspect circular turn, final 250 m frames, and DockPrep
-   begin/settled VREL+omega diagnostics.
-6. Confirm Human hand-back after route publication.
+5. Run Assisted SHOW ROUTE.
+6. Confirm profile log reports 3000 / 0.75 / 1500.
+7. Visually confirm the station turn is broad and readable.
+8. Capture DockPrep begin/settled VREL and Human hand-back.
+9. After this live geometry gate, start the Automatic execution slice using the
+   existing accepted-program/follower/control-bridge architecture.
 
-Preserve all untracked trace/log artifacts. Do not weaken corridor bounds,
-terminal-density assertions, or propulsion truth merely to make tests pass.
+Preserve all untracked trace/log artifacts. Do not weaken the 1.5 km Assisted
+terminal-radius floor or corridor bounds merely to pass a test.
 
 The user wants implementation directly in GitHub followed by exact Windows
 pull/test/build/run commands. Do not provide patch files.

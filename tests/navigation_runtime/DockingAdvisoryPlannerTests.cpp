@@ -100,6 +100,8 @@ int main()
     curved.gateSpacingMeters=500.0;
     curved.terminalGateSpacingMeters=100.0;
     curved.terminalDenseDistanceMeters=2000.0;
+    curved.terminalApproachLengthMeters=3000.0;
+    curved.terminalTurnSegmentFraction=0.75;
     const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
     if(!curvedPlan.valid())
     {
@@ -110,7 +112,11 @@ int main()
     const auto curvedStop=
         curved.entranceMeters+curved.outward*curved.standoffMeters;
     const auto curvedAlign=
-        curvedStop+curved.outward*std::max(700.0,3*curved.standoffMeters);
+        curvedStop+curved.outward*std::max({
+            700.0,
+            3*curved.standoffMeters,
+            curved.terminalApproachLengthMeters
+        });
     const auto incomingRaw=curvedAlign-curved.startMeters;
     const auto outgoingRaw=curvedStop-curvedAlign;
     const double incomingLength=glm::length(incomingRaw);
@@ -125,11 +131,17 @@ int main()
         curved.maxSpeedMps*curved.maxSpeedMps/curved.lateralMps2
     );
     const double tangentDistance=std::min({
-        incomingLength*0.4,
-        outgoingLength*0.4,
+        incomingLength*curved.terminalTurnSegmentFraction,
+        outgoingLength*curved.terminalTurnSegmentFraction,
         desiredRadius*tangentScale
     });
     const double expectedRadius=tangentDistance/tangentScale;
+    if(expectedRadius<1500.0)
+    {
+        std::cerr << "manual Assisted terminal radius too small: "
+                  << expectedRadius << "\n";
+        return 26;
+    }
     const auto entry=curvedAlign-tangentDistance*incoming;
     const auto turnNormal=glm::normalize(glm::cross(incoming,outgoing));
     const auto inwardNormal=glm::normalize(glm::cross(turnNormal,incoming));

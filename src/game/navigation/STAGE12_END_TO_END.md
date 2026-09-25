@@ -1,5 +1,19 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — Stage-12 docking gate now has one canonical verifier
+
+Repeated verification output showed the old build tree/checker still being
+executed. Stage-12 commissioning therefore adds root `verify_docking.sh` as
+the sole focused docking verification entrypoint.
+
+It configures the standalone `tests/navigation_runtime` project under
+`build/tests/navigation_runtime`, builds/runs `docking_advisory_tests`, and
+then runs the static docking contract. The checker PASS carries revision
+`20260925-soft-axis-v2`.
+
+Planner behavior is unchanged by this tooling slice; fresh target evidence is
+still pending.
+
 ## 2026-09-25 — verification layout/checker corrected before rerun
 
 The first post-fix Windows verification did not reach native execution because

@@ -1,5 +1,30 @@
 # CURRENT STATE
 
+## 2026-09-25 — live screenshot rejects current arc; Assisted becomes default and stop semantics are tightened
+
+Fresh live visual evidence shows the currently published manual docking turn is
+still far too sharp to be useful. The accepted requirement changes again:
+- manual Assisted must prefer a substantially broader station/final turn than
+  the current 3000 m / 1500 m profile;
+- if broad geometry is obstructed, Planner must reroute first and then reduce
+  radius only as much as necessary; route existence must not be confused with
+  one preferred arc candidate;
+- manual guidance lifetime must tolerate a materially larger excursion outside
+  the nominal tunnel before the route is cancelled.
+
+The current authoritative default local control law is still Newtonian in
+DynamicMotionState. This explains why a fresh ship/session can enter DockPrep
+with Newtonian END semantics unless the player explicitly switches mode.
+Assisted is now the requested default law.
+
+The existing Assisted BrakeToStop implementation already sets target VREL to
+zero immediately and, with a healthy fore main bank, commands real reverse-main
+braking without a hull flip. Therefore the live report of very slow takeover
+deceleration must be distinguished from the intended Assisted physics. The next
+slice will make Assisted the default and add stronger regression/diagnostics so
+DockPrep proves which law is active and that healthy Assisted braking uses the
+fore main at full physical authority rather than a slow throttle ramp.
+
 ## 2026-09-25 — manual docking now reroutes before tightening the terminal arc
 
 The previous Assisted rule was wrong: a requested 1500 m terminal radius was

@@ -1,5 +1,21 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — verification layout/checker corrected before rerun
+
+The first post-fix Windows verification did not reach native execution because
+the command targeted `docking_advisory_tests` in the canonical game build
+tree. That executable belongs to the independent
+`tests/navigation_runtime` CMake project and must be configured/built under
+`build/tests/navigation_runtime`.
+
+The static docking checker also incorrectly treated the new soft-axis
+`clear(align,stop)` probe as proof of the retired hard failure. It now rejects
+the old `dock alignment blocked` path and requires explicit soft shortening
+plus a distinct hard failure for only the mandatory close-in ingress.
+
+Stage-12 final-axis source behavior itself is unchanged by this verification
+repair. Fresh target evidence remains pending.
+
 ## 2026-09-25 — Stage-12 final-axis semantics corrected after live regression
 
 Live commissioning exposed a structural error in the new broad Assisted profile:

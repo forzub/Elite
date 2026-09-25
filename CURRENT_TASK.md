@@ -9,6 +9,8 @@ Windows target:
 - if both pass, rebuild the canonical game;
 - run Assisted SHOW ROUTE and inspect the new
   `route=nominal|detour terminal_radius_m=... radius_relaxed=...` diagnostic;
+- specifically verify that an arc obstruction can select another pre-alignment
+  direction around the final axis rather than merely shrinking the same turn;
 - verify the task no longer disappears merely because the preferred 1500 m arc
   is obstructed or cannot fit; the route may become much longer, including a
   route around station geometry.

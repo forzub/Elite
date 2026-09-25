@@ -48,8 +48,8 @@ inline double dockingAdvisoryFrameExtentMeters(
 // ignoring centimetre-scale sampling/jitter excursions.
 inline DockingAdvisoryCrossSection dockingAdvisoryReleaseCrossSection(
     const DockingAdvisoryCrossSection& nominal,
-    double marginFraction = 0.25,
-    double minimumMarginMeters = 10.0
+    double marginFraction = 1.00,
+    double minimumMarginMeters = 30.0
 ) noexcept
 {
     const auto expand = [&](double tolerance)
@@ -102,7 +102,7 @@ public:
         bool insideNominal,
         bool insideRelease,
         double serverTimeSeconds,
-        double releaseGraceSeconds = 0.35
+        double releaseGraceSeconds = 1.00
     ) noexcept
     {
         if (insideNominal)

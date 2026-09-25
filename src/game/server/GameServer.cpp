@@ -18,6 +18,7 @@
 #include "src/game/navigation/GalaxyNavigationConfig.h"
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
 #include "src/game/ship/ShipInitData.h"
+#include "src/game/ship/core/ShipDynamics.h"
 
 
 
@@ -968,12 +969,25 @@ bool GameServer::beginDockingGuidancePreparation(
         static_cast<double>(transform.rollRate) *
             static_cast<double>(transform.rollRate)
     );
+    const ShipParams effectivePhysics = ship->core().effectivePhysics();
+    const double forwardMainBrakingAuthorityMps2 =
+        game::ship::forwardMainAccelerationLimitMps2(effectivePhysics);
+    const double reverseMainBrakingAuthorityMps2 =
+        game::ship::reverseMainAccelerationLimitMps2(effectivePhysics);
+
     std::cout << "[DockPrep] begin entity=" << controlledEntityId.value
               << " request=" << requestSerial
               << " hub=" << hubId
               << " vrel_mps=" << glm::length(motion.localVelocityMps)
               << " omega_radps=" << initialAngularRateRadPerSec
-              << " law=" << static_cast<int>(motion.localControlLaw)
+              << " law="
+              << game::navigation::localFlightControlLawName(
+                     motion.localControlLaw
+                 )
+              << " forward_main_mps2="
+              << forwardMainBrakingAuthorityMps2
+              << " reverse_main_mps2="
+              << reverseMainBrakingAuthorityMps2
               << '\n';
     return true;
 }

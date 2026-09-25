@@ -1,5 +1,31 @@
 # CURRENT STATE
 
+## 2026-09-25 — native docking gate exposed boundary-join defect; clearance retreat implemented
+
+Fresh standalone native evidence reached the real planner and failed the
+far-preferred-axis regression:
+`no collision-free geometric path shortened=1 final_axis_m=8390`.
+
+This proves soft-axis shortening itself worked, but the accepted join point was
+the last epsilon-clear point immediately adjacent to the inflated obstacle.
+That endpoint is geometrically legal for the one-dimensional axis-clear probe
+yet is a poor visibility-graph goal: support-node chords can graze/intersect the
+same obstacle and leave the graph unable to connect to the goal.
+
+Current main fixes that boundary mismatch:
+- after binary-searching the longest clear final-axis prefix, the join retreats
+  at least `max(50 m, 4 * hullRadius)` into already-clear space;
+- if nominal geometric search still cannot reach that shortened join, Planner
+  progressively retreats the join farther toward the mandatory ingress
+  (100, 200, 400 ... m) and retries before declaring no route;
+- mandatory close-in ingress remains the lower bound and retains its hard
+  collision check;
+- regression now requires at least 25 m actual clearance between the shortened
+  join and the inflated far-axis blocker.
+
+This is a route-recovery fix, not a relaxation of collision geometry.
+Fresh Windows verification through `bash verify_docking.sh` is pending.
+
 ## 2026-09-25 — repeated stale verification output isolated; canonical verify script added
 
 The repeated user output again showed:

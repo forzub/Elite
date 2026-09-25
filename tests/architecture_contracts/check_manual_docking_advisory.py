@@ -140,10 +140,30 @@ try:
         )
 
     planner_cpp = read("src/game/navigation/DockingAdvisoryPlanner.cpp")
-    if "if (!clear(align,stop))" in planner_cpp:
+
+    # The preferred long axis is allowed to be probed with clear(align, stop);
+    # that probe now shortens the soft lead. What must never return is the old
+    # control flow where the preferred-axis probe immediately rejects the task.
+    retired_hard_axis_failures = (
+        'if (!clear(align,stop))\\n    { out.failure = "dock alignment blocked"; return out; }',
+        'if (!clear(align, stop))\\n    { out.failure = "dock alignment blocked"; return out; }',
+        'out.failure = "dock alignment blocked"',
+    )
+    for retired in retired_hard_axis_failures:
+        if retired in planner_cpp:
+            raise AssertionError(
+                "preferred full docking-axis lead became a hard failure again"
+            )
+
+    if "terminalApproachShortened=true" not in planner_cpp:
         raise AssertionError(
-            "preferred full docking-axis lead became a hard failure again"
+            "preferred-axis obstruction no longer shortens the soft lead"
         )
+    if "dock mandatory ingress blocked" not in planner_cpp:
+        raise AssertionError(
+            "mandatory close-in docking ingress lost its dedicated hard failure"
+        )
+
     if 'out.failure="manual terminal turn radius unavailable"' in planner_cpp:
         raise AssertionError(
             "preferred manual terminal radius became a task-failure threshold again"

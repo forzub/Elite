@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / verify final-axis shortening regression fix
+# CONTINUE PROMPT — Elite Navigation v2 / rerun final-axis fix with correct standalone test build
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
@@ -7,69 +7,81 @@ Before changing behavior/state read `AGENTS.md`, newest sections of
 `src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
 result synchronize those four documents and regenerate this prompt.
 
-## Latest live failure
+## Current source truth
 
-After increasing manual Assisted geometry to a 9 km final lead / 6 km preferred
-turn radius, live SHOW ROUTE stopped producing routes:
+Manual Assisted profile:
+- preferred final-axis lead = 9000 m;
+- preferred terminal radius = 6000 m;
+- terminal fillet fraction = 0.85;
+- fresh flight-law default = Assisted;
+- open-transit nominal corridor = 60 m;
+- release corridor = 120 m;
+- outside-release grace = 1.00 s.
 
-`[DockAdvisory] request=N failed=dock alignment blocked`
+Final-axis semantics:
+- hard mandatory ingress = max(700 m, 3 * standoff);
+- long 9000 m lead is soft;
+- if its far part is obstructed, Planner probes `clear(align,stop)`, finds the
+  longest clear prefix, sets `terminalApproachShortened=true`, and continues;
+- only the close-in ingress may fail as `dock mandatory ingress blocked`;
+- retired `dock alignment blocked` must not exist.
 
-Root cause: DockingAdvisoryPlanner treated the entire preferred 9000 m final
-axis as hard semantic geometry and rejected it with `clear(align, stop)`
-before any geometric reroute search.
+## Latest verification result
 
-## Current source fix
+The attempted native command was invalid:
+`cmake --build build --target docking_advisory_tests`
+returned `unknown target`, and `ctest --test-dir build` found no tests.
 
-Final-axis semantics are split:
-- hard mandatory ingress = `max(700 m, 3 * standoff)`;
-- preferred manual-Assisted lead = requested 9000 m.
+Reason: navigation runtime tests are a standalone CMake project at
+`tests/navigation_runtime`. Their build tree is
+`build/tests/navigation_runtime`.
 
-Only mandatory ingress can produce
-`dock mandatory ingress blocked`.
-
-If the far preferred lead is obstructed:
-- binary-search the longest clear prefix of the exact docking axis;
-- set `terminalApproachShortened=true`;
-- continue normal route planning;
-- try preferred 6000 m turn radius;
-- reroute/alternate ingress before tightening radius.
-
-New route log:
-`route=... final_axis_m=... final_axis_shortened=0|1 terminal_radius_m=... radius_relaxed=0|1`.
-
-Regression cases:
-1. far blocker on preferred 9 km axis -> valid shortened route;
-2. blocker in near mandatory ingress -> hard failure.
-
-## Other current commissioning truth
-
-Fresh local flight defaults to Assisted.
-Manual corridor release is widened to 120 m in ordinary transit with 1.00 s
-outside-release grace.
-Assisted DockPrep sets target VREL=0 immediately and should use full healthy
-reverse/fore main authority without a hull flip.
-Automatic docking executor is still not complete; START DOCKING stays disabled.
+The static manual-docking checker also false-positive matched any
+`if (!clear(align,stop))`. It is corrected to reject only the retired
+immediate hard-failure path and to require soft shortening + dedicated mandatory
+ingress failure.
 
 ## Immediate Windows gate
 
 From `D:\__elite\work`:
 
-1. `git pull --ff-only origin main`
-2. rebuild/run `docking_advisory_tests`
-3. CTest `docking_advisory`
-4. `python tests/architecture_contracts/check_manual_docking_advisory.py`
-5. if green, rebuild/run local-flight contract/static check as needed
-6. `bash build_mingw64.sh`
-7. run `build/EliteGame.exe`
-8. SHOW ROUTE and capture new route/final-axis log plus DockPrep begin/settled.
+```bash
+git pull --ff-only origin main
+
+cmake -S tests/navigation_runtime \
+  -B build/tests/navigation_runtime \
+  -G Ninja
+
+cmake --build build/tests/navigation_runtime \
+  --target docking_advisory_tests \
+  -j 8
+
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^docking_advisory$" \
+  --output-on-failure
+
+python tests/architecture_contracts/check_manual_docking_advisory.py
+```
+
+If both pass:
+```bash
+bash build_mingw64.sh
+build/EliteGame.exe
+```
 
 Live acceptance:
 - route calculation returns;
-- no `dock alignment blocked` for far preferred-axis obstruction;
-- shortening is visible in diagnostics when required;
-- broad curve remains usable or radius relaxation is explicit rather than
-  silent task cancellation;
-- fresh law is ASSISTED and stop is rapid.
+- far obstruction may produce `final_axis_shortened=1`, never retired
+  `dock alignment blocked`;
+- only true close-in obstruction may report
+  `dock mandatory ingress blocked`;
+- broad curve remains usable or radius relaxation is explicit;
+- fresh law is ASSISTED and DockPrep stop is rapid.
 
-Preserve untracked traces/logs. Commit directly to GitHub; do not provide patch
-files.
+Automatic docking executor remains the next implementation milestone after this
+gate:
+AcceptedManeuverProgram -> TrajectoryFollower ->
+NavigationRuntimeControlBridge -> ShipControlState -> shared physics.
+
+Preserve untracked trace/log files. Commit directly to GitHub; do not provide
+patch files.

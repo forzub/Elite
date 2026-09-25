@@ -1,30 +1,44 @@
 # CURRENT STATE
 
-## 2026-09-25 — live route now stable enough to isolate final-turn radius policy
+## 2026-09-25 — manual docking now reroutes before tightening the terminal arc
 
-Fresh live Windows guidance still cancels on real measured release-envelope
-departures near the station turn (for example lateral 77.8971/75 m and
-82.4922/75.3754 m). Frame density is improved, but the user confirms the final
-Assisted turn is still too tight and the corridor visibly compresses through the
-turn.
+The previous Assisted rule was wrong: a requested 1500 m terminal radius was
+treated as a hard route-validity floor. If obstacle clearance or segment room
+forced a smaller circular fillet, the whole manual navigation task was cancelled.
 
-Root cause is geometric: the planner's desired radius is already large, but the
-final docking-axis segment was only max(700 m, 3*standoff), normally about
-900 m, and circular fillets could consume only 40% of adjacent segments. A
-rough 90-degree terminal turn was therefore constrained to about 360 m radius.
+Current main changes the semantics:
+- Assisted still requests a 3000 m final docking-axis approach, 0.75 terminal
+  fillet fraction and a preferred 1500 m human-flyable terminal radius;
+- the preferred radius is not a task-failure threshold;
+- Planner first tries the nominal route at the preferred radius;
+- if that candidate fails, Planner performs a second geometric search with
+  expanded obstacle clearance and the full obstacle set, so the solution may
+  move far around station/structure geometry;
+- only after preferred-radius rerouting is exhausted may the circular terminal
+  turn shrink; the fallback starts from the preferred/dynamic radius and
+  tightens only as clearance requires;
+- failure is now reserved for the case where no collision-free rounded docking
+  route can be produced, or the mandatory final docking-axis ingress itself is
+  blocked.
 
-Manual Assisted guidance now uses a distinct human-flyable terminal profile:
-- final docking-axis approach length: 3000 m;
-- terminal circular fillet may consume up to 75% of adjacent segments;
-- minimum terminal turn radius: 1500 m;
-- if 1500 m cannot be maintained after obstacle clearance, Planner rejects the
-  manual Assisted route instead of silently shrinking it to an impractical arc.
+DockingAdvisoryPlan now reports whether a detour was used, whether terminal
+radius was relaxed and the accepted terminal radius. SpaceState logs these
+values. Native regression coverage now contains both required cases:
+1. an obstacle that blocks the preferred arc must produce a detour while
+   retaining the preferred radius;
+2. a final-axis geometry that physically cannot fit 1500 m must still return a
+   valid tighter arc instead of cancelling the task.
 
-Manual Newtonian guidance retains the sharper legacy terminal geometry, because
-its physical doctrine can rotate the hull independently of velocity. Full
-automatic docking is still not executable end-to-end: SpaceState currently
-accepts only DockingRouteRequest::Mode::Guidance. SHOW ROUTE's temporary
-BrakeToStop ownership remains the only live player Autopilot path.
+Fresh Windows compilation/runtime evidence for this new policy is pending.
+
+Automatic docking remains a separate execution boundary. The repository already
+has DockingRouteRequest::Mode::Automatic, AcceptedManeuverProgram,
+TrajectoryFollower and NavigationRuntimeControlBridge, but the player docking
+production path does not yet own a server-side accepted-program executor.
+SystemMapRenderer therefore still keeps START DOCKING disabled and SpaceState
+still admits Guidance only. The temporary server Autopilot currently performs
+only BrakeToStop preparation and restores Human authority afterwards. Do not
+replace this missing layer with visual-gate chasing.
 
 ## 2026-09-25 — second final-density gate exposed sparse-step boundary crossing
 

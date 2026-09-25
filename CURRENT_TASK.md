@@ -1,5 +1,29 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — widen manual curve, relax tunnel release, make Assisted default, verify hard Assisted stop
+
+Implement and then verify four coupled changes:
+1. Increase the manual Assisted final-axis lead and preferred terminal radius
+   enough that the map trajectory is visibly broad rather than a compact corner.
+2. Preserve reroute-before-tighten semantics: a blocked broad arc searches other
+   ingress geometry and may go around the whole station before radius is reduced.
+3. Increase manual corridor release tolerance/grace substantially while keeping
+   nominal warning/critical presentation unchanged.
+4. Make Assisted the default local flight law for newly initialized motion and
+   default control requests.
+
+For DockPrep, verify the existing Assisted stop path behaves as an immediate
+zero-VREL command: target speed becomes zero at once, healthy reverse/fore main
+is used without hull rotation, and deceleration is limited by installed
+propulsion rather than by the ordinary 5/s throttle response.
+
+Required target-machine gates after code lands:
+- local-flight native contract + static local-flight architecture check;
+- docking_advisory native test + manual-docking architecture check;
+- canonical game build;
+- live log must show DockPrep law=Assisted and a rapid VREL collapse before
+  phase=settled.
+
 ## 2026-09-25 — verify reroute-before-tighten, then build the Automatic executor seam
 
 First pull current main and prove the corrected manual-planning contract on the

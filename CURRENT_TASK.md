@@ -1,5 +1,22 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-25 — rerun docking verification from the standalone runtime-test build tree
+
+Configure the navigation-runtime test project explicitly; do not use the
+canonical game `build/` tree for its test-only targets.
+
+From repository root:
+- configure `tests/navigation_runtime` into
+  `build/tests/navigation_runtime` with Ninja;
+- build target `docking_advisory_tests` there;
+- run CTest `docking_advisory` from that same test build tree;
+- run the corrected
+  `python tests/architecture_contracts/check_manual_docking_advisory.py`.
+
+Only after both native/static docking gates pass should the canonical game be
+rebuilt and live SHOW ROUTE retested. Preserve the final-axis shortening
+diagnostics and Assisted/default fast-stop checks.
+
 ## 2026-09-25 — verify preferred final-axis shortening restores live route calculation
 
 Pull current main and run the focused docking gate.

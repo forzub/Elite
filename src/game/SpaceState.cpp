@@ -2069,7 +2069,7 @@ void SpaceState::updateDockingAdvisory()
         {
             request.terminalApproachLengthMeters = 3000.0;
             request.terminalTurnSegmentFraction = 0.75;
-            request.minimumTerminalTurnRadiusMeters = 1500.0;
+            request.preferredTerminalTurnRadiusMeters = 1500.0;
         }
 
         std::cout << "[DockAdvisory] request=" << pending.serial
@@ -2083,8 +2083,8 @@ void SpaceState::updateDockingAdvisory()
                      })
                   << " turn_fraction="
                   << request.terminalTurnSegmentFraction
-                  << " min_turn_radius_m="
-                  << request.minimumTerminalTurnRadiusMeters
+                  << " preferred_turn_radius_m="
+                  << request.preferredTerminalTurnRadiusMeters
                   << '\n';
 
         request.obstacles = snapshot.navigationObstacles;
@@ -2166,6 +2166,15 @@ void SpaceState::updateDockingAdvisory()
             fail(job->plan.failure);
             return;
         }
+
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " route="
+                  << (job->plan.terminalDetourUsed ? "detour" : "nominal")
+                  << " terminal_radius_m="
+                  << job->plan.terminalTurnRadiusMeters
+                  << " radius_relaxed="
+                  << (job->plan.terminalTurnRadiusRelaxed ? 1 : 0)
+                  << '\n';
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.gates = std::move(job->plan.gates);

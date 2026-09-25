@@ -1,5 +1,27 @@
 # PROJECT STATE
 
+## 2026-09-25 — player local-flight default is Assisted; manual guidance is forgiving, not disposable
+
+Control-law policy: newly initialized ship motion should default to Assisted.
+Newtonian remains a fully supported explicit mode, but must no longer be the
+implicit fresh-session/player default.
+
+Docking guidance policy: the manual tunnel is advisory presentation, not a
+single-strike safety interlock. Crossing the nominal section still drives
+warning/critical HUD state, but route lifetime uses a much wider release
+envelope plus grace. A modest piloting excursion must not erase the navigation
+task.
+
+Manual Assisted route shape must be visibly broad at station scale. The
+preferred curve is allowed to be long and expensive; Planner must first change
+topology/ingress and only then tighten radius. The final semantic docking axis
+remains hard.
+
+DockPrep Assisted stopping semantics are physical but decisive: command target
+VREL=0 immediately, use the installed fore/reverse main bank directly when
+healthy, and reserve hull flip for Newtonian or Assisted fallback when reverse
+main authority is unavailable.
+
 ## 2026-09-25 — terminal radius is a route preference; execution remains program-owned
 
 Manual Assisted docking now distinguishes **preferred geometry** from

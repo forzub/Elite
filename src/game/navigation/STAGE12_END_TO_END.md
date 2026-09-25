@@ -1,5 +1,27 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — broad manual route / Assisted default slice is in source
+
+Stage-12 source now uses a 9 km final-axis lead and 6 km preferred terminal
+radius for manual Assisted docking, with 0.85 fillet segment allocation. The
+existing alternate-ingress/full-obstacle reroute is preserved, so this is a
+preference and may yield a long route around station geometry rather than
+cancelling navigation.
+
+Manual route cancellation is decoupled further from nominal guidance. The
+open-flight nominal 60 m center tolerance still drives HUD warnings; release is
+120 m under the default expansion and requires 1.00 s continuously outside.
+Longitudinal release uses the same widened policy.
+
+Fresh DynamicMotionState / command/latch defaults are now Assisted. DockPrep
+diagnostics expose the law and both directional main acceleration limits.
+Regression coverage requires Assisted BrakeToStop to set target VREL=0
+immediately and command the complete healthy reverse-main acceleration rather
+than the ordinary throttle-response gain.
+
+Windows evidence is pending. Do not mark this Stage-12 slice accepted until the
+focused native/static gates, canonical game build and live map/stop checks pass.
+
 ## 2026-09-25 — new live acceptance: broader Assisted arc, wider manual release, Assisted default
 
 The live map still shows an unacceptably compact docking bend. Stage-12 manual

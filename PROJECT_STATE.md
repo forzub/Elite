@@ -1,20 +1,32 @@
 # PROJECT STATE
 
-## 2026-09-25 — manual docking guidance has control-law-specific terminal geometry
+## 2026-09-25 — terminal radius is a route preference; execution remains program-owned
 
-Human-flyable guidance is not required to use the same corner shape for every
-control law.
+Manual Assisted docking now distinguishes **preferred geometry** from
+**route existence**.
 
-For manual Assisted:
-- enter the final docking axis approximately 3 km before the stop point;
-- allow the terminal circular fillet to occupy up to 75% of adjacent segments;
-- enforce a minimum 1.5 km turn radius;
-- reject the route if clearance forces the terminal radius below that floor.
+The 1500 m terminal turn radius is a human-flyable preference. Planner must try
+to preserve it by changing coarse geometry first. Expanded-clearance/full-scene
+rerouting is allowed to produce a substantially longer path, including going
+around an entire station or structure. If no such route can preserve 1500 m,
+Planner may tighten the terminal circular fillet as far as collision-free
+geometry permits. A single failed arc candidate must never cancel navigation.
 
-For manual Newtonian, the sharper legacy geometry remains permitted because
-velocity and hull attitude are decoupled and the physical maneuver may include a
-large reorientation/braking event. Automatic execution remains separate and
-must use accepted maneuver programs rather than these display-guidance frames.
+The exact final docking-axis ingress remains semantic hard geometry: if that
+segment is blocked, the dock is genuinely unavailable under the current docking
+contract.
+
+The planner now publishes diagnostic route-choice facts
+(`terminalDetourUsed`, `terminalTurnRadiusRelaxed`,
+`terminalTurnRadiusMeters`) so live acceptance can distinguish rerouting from
+radius concession instead of inferring behavior visually.
+
+Automatic docking has a separate invariant: display guidance is not executable
+authority. START DOCKING must eventually retain server Autopilot ownership and
+consume the same physical program that was capability/collision proved:
+AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge
+-> ShipControlState -> shared physics. Current production player docking has
+not yet completed that owner; until it does, the automatic UI remains disabled.
 
 ## 2026-09-25 — docking frame-density boundary is now non-crossable by sparse cadence
 

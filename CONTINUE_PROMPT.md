@@ -1,99 +1,91 @@
-# CONTINUE PROMPT — Elite Navigation v2 / wide manual Assisted docking + automatic execution boundary
+# CONTINUE PROMPT — Elite Navigation v2 / reroute-before-tighten + Automatic docking executor
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
 Before changing project behavior/state, read `AGENTS.md`, newest sections of
 `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
 `src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
-result synchronize those four files before the next implementation slice.
-Regenerate this prompt from current truth every iteration.
+result synchronize those four state documents before starting the next
+implementation slice. Regenerate this prompt from current truth every iteration.
 
-## Accepted propulsion and stop truth
+## Current manual docking truth
 
-Dual-main Cobra propulsion/failure semantics have passed Windows target gates.
-SHOW ROUTE already performs a real temporary server Autopilot takeover for
-physical BrakeToStop. Planning is gated on authoritative replicated state:
-Hub-relative speed <= max(0.05 m/s, ship stop epsilon), angular rate <=0.01
-rad/s, held for 0.25 s.
+SHOW ROUTE already performs a real temporary server Autopilot takeover and
+physical BrakeToStop. Planning begins only after authoritative Hub-relative
+speed <= max(0.05 m/s, ship stop epsilon), angular rate <=0.01 rad/s, held for
+0.25 s.
 
-Live diagnostics:
-- `[DockPrep] begin ... vrel_mps=... omega_radps=... law=...`
-- `[DockAdvisory] ... phase=settled vrel_mps=... omega_radps=... hold_s=...`
+Manual Assisted profile:
+- final docking-axis approach: 3000 m;
+- terminal fillet fraction: 0.75;
+- preferred human-flyable terminal radius: 1500 m.
 
-## Live manual guidance evidence
+The 1500 m value is NOT a hard route-failure floor.
 
-The historical dock-axis failure is gone. Recent Windows cancellations are real
-corridor departures, e.g. lateral 77.8971/75 m and 82.4922/75.3754 m near the
-station turn.
+DockingAdvisoryPlanner now uses ordered fallback:
+1. nominal route at preferred radius;
+2. expanded-clearance/full-obstacle geometric reroute at preferred radius;
+3. only after reroute is exhausted, tighten the terminal circular arc as far as
+   collision-free geometry requires.
 
-Frame density was improved:
-- 500 m open transit;
-- 250 m in final 2 km;
-- explicit transition anchor so sparse 500 m cadence cannot jump into the dense
-  region.
+A route may therefore go substantially around station geometry. Planner failure
+is appropriate only when no collision-free rounded route exists, or when the
+mandatory final docking-axis ingress itself is blocked.
 
-Circular fillets replaced the old quadratic Bezier smoothing.
+Plan diagnostics:
+- `terminalDetourUsed`;
+- `terminalTurnRadiusRelaxed`;
+- `terminalTurnRadiusMeters`.
 
-## New manual Assisted terminal policy
+SpaceState logs:
+`[DockAdvisory] ... route=nominal|detour terminal_radius_m=... radius_relaxed=0|1`.
 
-User confirmed the final Assisted turn is still too tight and visually flattens
-the corridor near the dock.
+Native regression includes:
+- preferred arc blocked -> valid detour, preferred radius retained;
+- 1500 m impossible from segment room -> valid tighter radius, task retained.
 
-Root cause: desired radius was large, but the final axis was only about 900 m
-and fillets could consume only 40% of adjacent segments, constraining a
-90-degree turn toward roughly 360 m radius.
-
-Current main now applies a human-flyable profile only for manual Assisted:
-- terminal docking-axis approach length = 3000 m;
-- terminal fillet segment fraction = 0.75;
-- minimum terminal turn radius = 1500 m;
-- if obstacle clearance or segment room would force the terminal turn below
-  1500 m, planner rejects the route instead of silently shrinking it.
-
-Manual Newtonian keeps the sharper legacy geometry because hull attitude and
-velocity are decoupled.
-
-SpaceState logs the selected profile:
-`[DockAdvisory] request=... profile=manual-assisted final_axis_m=3000 turn_fraction=0.75 min_turn_radius_m=1500`.
-
-Native docking regression now configures the same Assisted profile and requires
-the analytically expected terminal radius to be >=1500 m.
-
-Fresh Windows rerun is pending.
+Fresh Windows evidence for these new tests is pending.
 
 ## Automatic docking boundary
 
-`DockingRouteRequest::Mode::Automatic` exists, but current SpaceState docking
-execution explicitly accepts only `Mode::Guidance`. Therefore full player
-route autopilot is not yet testable end-to-end.
+`DockingRouteRequest::Mode::Automatic` already exists, but production player
+docking is not yet executable end-to-end:
+- `SystemMapRenderer` keeps START DOCKING disabled;
+- `SpaceState::updateDockingAdvisory()` accepts Guidance only;
+- server docking preparation owns Autopilot only for BrakeToStop and
+  `finishDockingGuidancePreparation()` restores Human authority.
 
-Do NOT implement a second ad-hoc waypoint autopilot that chases visual frames.
-The correct execution chain is:
-accepted physical maneuver program
--> TrajectoryFollower
--> NavigationRuntimeControlBridge
--> ShipControlState
--> shared ship physics.
+Do NOT solve this by chasing visual DockingAdvisoryGate frames or by attaching
+the transitional NPC immediate-intent controller to the player.
 
-SHOW ROUTE's pre-plan BrakeToStop is already a limited real Autopilot test.
+The required execution chain is:
+`AcceptedManeuverProgram
+ -> TrajectoryFollower
+ -> NavigationRuntimeControlBridge
+ -> ShipControlState
+ -> shared ship physics`.
 
-## Next target gate
+The next implementation slice after the focused reroute gate is a server-owned
+player docking execution lifetime that retains Autopilot authority, consumes
+proved accepted programs, replans/stops on invalidation, and only then enables
+START DOCKING.
 
-On Windows `D:\__elite\work`:
+## Immediate Windows gate
 
-1. Pull current main.
-2. Rebuild/run `docking_advisory_tests`.
-3. Run `python tests/architecture_contracts/check_manual_docking_advisory.py`.
-4. If both pass, rebuild canonical game with `bash build_mingw64.sh`.
-5. Run Assisted SHOW ROUTE.
-6. Confirm profile log reports 3000 / 0.75 / 1500.
-7. Visually confirm the station turn is broad and readable.
-8. Capture DockPrep begin/settled VREL and Human hand-back.
-9. After this live geometry gate, start the Automatic execution slice using the
-   existing accepted-program/follower/control-bridge architecture.
+From `D:\__elite\work`:
+1. `git pull --ff-only origin main`
+2. rebuild `docking_advisory_tests`
+3. run the `docking_advisory` CTest
+4. run `python tests/architecture_contracts/check_manual_docking_advisory.py`
+5. if both pass, `bash build_mingw64.sh`
+6. run `build/EliteGame.exe`
+7. Assisted SHOW ROUTE: capture DockPrep begin/settled plus route/radius log and
+   visually verify that blocked preferred geometry reroutes/tightens instead of
+   cancelling the navigation task.
 
-Preserve all untracked trace/log artifacts. Do not weaken the 1.5 km Assisted
-terminal-radius floor or corridor bounds merely to pass a test.
+Preserve all untracked trace/log artifacts. Do not weaken corridor truth,
+collision checks, propulsion truth, or the server ownership model merely to
+make tests pass.
 
 The user wants implementation directly in GitHub followed by exact Windows
 pull/test/build/run commands. Do not provide patch files.

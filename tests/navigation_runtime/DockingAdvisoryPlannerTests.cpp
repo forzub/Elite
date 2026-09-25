@@ -162,6 +162,57 @@ int main()
         return 24;
     }
 
+    // An obstacle may block only the far, preferred part of the 9 km
+    // docking-axis lead. That must shorten the available straight lead and
+    // continue planning; it is NOT the same thing as blocking the mandatory
+    // near-port ingress.
+    auto shortenedAxis=curved;
+    world::navigation::NavigationObstacle farAxisBlocker;
+    farAxisBlocker.id="far_axis_blocker";
+    farAxisBlocker.shape=world::navigation::NavigationObstacleShape::Sphere;
+    farAxisBlocker.centerMeters=
+        curvedStop+curved.outward*8500.0;
+    farAxisBlocker.radiusMeters=100.0;
+    shortenedAxis.obstacles={farAxisBlocker};
+
+    const auto shortenedAxisPlan=
+        DockingAdvisoryPlanner::plan(shortenedAxis);
+    if(!shortenedAxisPlan.valid() ||
+       !shortenedAxisPlan.terminalApproachShortened ||
+       shortenedAxisPlan.terminalApproachLengthMeters>=
+           shortenedAxis.terminalApproachLengthMeters-1.0 ||
+       shortenedAxisPlan.terminalApproachLengthMeters<=700.0)
+    {
+        std::cerr
+            << "far preferred-axis blocker cancelled route instead of shortening lead: "
+            << shortenedAxisPlan.failure
+            << " shortened=" << shortenedAxisPlan.terminalApproachShortened
+            << " final_axis_m="
+            << shortenedAxisPlan.terminalApproachLengthMeters
+            << "\n";
+        return 29;
+    }
+
+    // Blocking the actual near-port semantic ingress remains a real failure.
+    auto blockedIngress=curved;
+    world::navigation::NavigationObstacle ingressBlocker;
+    ingressBlocker.id="mandatory_ingress_blocker";
+    ingressBlocker.shape=world::navigation::NavigationObstacleShape::Sphere;
+    ingressBlocker.centerMeters=
+        curvedStop+curved.outward*400.0;
+    ingressBlocker.radiusMeters=120.0;
+    blockedIngress.obstacles={ingressBlocker};
+    const auto blockedIngressPlan=
+        DockingAdvisoryPlanner::plan(blockedIngress);
+    if(blockedIngressPlan.valid() ||
+       blockedIngressPlan.failure!="dock mandatory ingress blocked")
+    {
+        std::cerr
+            << "mandatory ingress blocker was not rejected: "
+            << blockedIngressPlan.failure << "\n";
+        return 30;
+    }
+
     // Blocking only the preferred circular arc must not cancel manual
     // guidance. Planner first changes coarse topology and keeps the preferred
     // radius if a wider collision-free approach exists.

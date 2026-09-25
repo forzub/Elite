@@ -2069,6 +2069,7 @@ void SpaceState::updateDockingAdvisory()
         {
             request.terminalApproachLengthMeters = 3000.0;
             request.terminalTurnSegmentFraction = 0.75;
+            request.minimumTerminalTurnRadiusMeters = 1500.0;
         }
 
         std::cout << "[DockAdvisory] request=" << pending.serial

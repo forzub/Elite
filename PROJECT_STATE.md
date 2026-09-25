@@ -1,5 +1,29 @@
 # PROJECT STATE
 
+## 2026-09-25 — implemented commissioning constants for broad manual Assisted docking
+
+Current product defaults and manual-docking commissioning values are:
+- local flight default: Assisted;
+- manual Assisted final-axis lead: 9000 m;
+- preferred terminal radius: 6000 m;
+- terminal fillet allocation: 0.85 of adjacent segment room;
+- nominal open-transit tunnel center tolerance: 60 m;
+- open-transit release tolerance: 120 m;
+- outside-release grace: 1.00 s.
+
+The nominal tunnel remains the guidance target. The wider release band only
+controls when manual guidance is discarded, so warnings still occur before
+cancellation.
+
+Assisted BrakeToStop semantics are not a slow target-speed ramp. The controller
+sets target VREL to zero immediately and uses installed directional main
+authority. Healthy Cobra reverse/fore main therefore brakes without the
+Newtonian tail-to-velocity maneuver; Newtonian remains a selectable alternate
+law.
+
+These source changes are not yet target-accepted. Windows native/static tests,
+canonical build and live map/stop inspection remain the evidence boundary.
+
 ## 2026-09-25 — player local-flight default is Assisted; manual guidance is forgiving, not disposable
 
 Control-law policy: newly initialized ship motion should default to Assisted.

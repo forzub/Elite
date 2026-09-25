@@ -1,84 +1,75 @@
-# CONTINUE PROMPT — Elite Navigation v2 / verify broad Assisted docking, then Automatic execution
+# CONTINUE PROMPT — Elite Navigation v2 / verify final-axis shortening regression fix
 
 Work in public repository `forzub/Elite`, canonical branch `main`.
 
 Before changing behavior/state read `AGENTS.md`, newest sections of
 `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
 `src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
-result synchronize those four state documents before the next slice. Regenerate
-this prompt every iteration.
+result synchronize those four documents and regenerate this prompt.
 
-## Implemented source truth
+## Latest live failure
 
-Latest user live screenshot rejected the previous docking bend as far too sharp.
+After increasing manual Assisted geometry to a 9 km final lead / 6 km preferred
+turn radius, live SHOW ROUTE stopped producing routes:
 
-Manual Assisted commissioning source now uses:
-- final docking-axis lead = 9000 m;
-- terminal fillet segment fraction = 0.85;
-- preferred terminal radius = 6000 m.
+`[DockAdvisory] request=N failed=dock alignment blocked`
 
-The radius is a preference, not a route failure threshold. Planner order remains:
-1. nominal geometry at preferred radius;
-2. 12 alternate pre-alignment ingress directions with full obstacle search;
-3. expanded-clearance/full-obstacle reroute;
-4. only then tighten radius as much as collision-free geometry requires.
+Root cause: DockingAdvisoryPlanner treated the entire preferred 9000 m final
+axis as hard semantic geometry and rejected it with `clear(align, stop)`
+before any geometric reroute search.
 
-Manual corridor lifetime:
-- nominal open-flight tolerance remains 60 m and still drives HUD warning;
-- release = nominal + max(100% nominal, 30 m), normally 120 m;
-- sustained outside-release grace = 1.00 s;
-- longitudinal release uses the same 100% / 30 m expansion.
+## Current source fix
 
-Fresh local flight now defaults to Assisted in DynamicMotionState,
-ShipControlState and client pending-law/reset state. Newtonian remains selectable.
+Final-axis semantics are split:
+- hard mandatory ingress = `max(700 m, 3 * standoff)`;
+- preferred manual-Assisted lead = requested 9000 m.
 
-## DockPrep stop contract
+Only mandatory ingress can produce
+`dock mandatory ingress blocked`.
 
-Assisted BrakeToStop:
-- sets target VREL to 0 immediately;
-- bypasses ordinary target-speed/throttle response using the fixed-step
-  stop gain;
-- with a healthy fore/reverse main, commands full bounded reverse-main
-  acceleration without a 180-degree hull flip;
-- falls back to hull rotation/aft main only when reverse main is unavailable.
+If the far preferred lead is obstructed:
+- binary-search the longest clear prefix of the exact docking axis;
+- set `terminalApproachShortened=true`;
+- continue normal route planning;
+- try preferred 6000 m turn radius;
+- reroute/alternate ingress before tightening radius.
 
-Server DockPrep begin diagnostic now prints:
-`law=ASSISTED|NEWTONIAN forward_main_mps2=... reverse_main_mps2=...`.
+New route log:
+`route=... final_axis_m=... final_axis_shortened=0|1 terminal_radius_m=... radius_relaxed=0|1`.
 
-Native regression locks Assisted default, immediate zero target and
-full-authority healthy reverse-main braking.
+Regression cases:
+1. far blocker on preferred 9 km axis -> valid shortened route;
+2. blocker in near mandatory ingress -> hard failure.
 
-## Target gate — still pending
+## Other current commissioning truth
 
-On Windows `D:\__elite\work`:
+Fresh local flight defaults to Assisted.
+Manual corridor release is widened to 120 m in ordinary transit with 1.00 s
+outside-release grace.
+Assisted DockPrep sets target VREL=0 immediately and should use full healthy
+reverse/fore main authority without a hull flip.
+Automatic docking executor is still not complete; START DOCKING stays disabled.
+
+## Immediate Windows gate
+
+From `D:\__elite\work`:
+
 1. `git pull --ff-only origin main`
-2. rebuild `local_flight_control_contract_tests`
-3. run CTest `local_flight_control_contracts`
-4. run `python tests/architecture_contracts/check_local_flight_control.py`
-5. rebuild `docking_advisory_tests`
-6. run CTest `docking_advisory`
-7. run `python tests/architecture_contracts/check_manual_docking_advisory.py`
-8. `bash build_mingw64.sh`
-9. run `build/EliteGame.exe`
+2. rebuild/run `docking_advisory_tests`
+3. CTest `docking_advisory`
+4. `python tests/architecture_contracts/check_manual_docking_advisory.py`
+5. if green, rebuild/run local-flight contract/static check as needed
+6. `bash build_mingw64.sh`
+7. run `build/EliteGame.exe`
+8. SHOW ROUTE and capture new route/final-axis log plus DockPrep begin/settled.
 
 Live acceptance:
-- fresh/default law is Assisted;
-- DockPrep begin shows ASSISTED and healthy reverse-main authority;
-- VREL falls rapidly to settle;
-- SHOW ROUTE logs preferred 6000 m radius unless `radius_relaxed=1`;
-- visible station curve is broad;
-- nominal tunnel excursions no longer delete guidance prematurely.
-
-If live braking is still slow despite law=ASSISTED and healthy reverse main,
-capture VREL/applied acceleration; do not fake velocity or weaken physics.
-
-## Automatic docking boundary
-
-After the above gate, continue the real server-owned executor:
-AcceptedManeuverProgram -> TrajectoryFollower ->
-NavigationRuntimeControlBridge -> ShipControlState -> shared physics.
-Do not chase visual DockingAdvisoryGate frames. START DOCKING remains disabled
-until that execution owner exists.
+- route calculation returns;
+- no `dock alignment blocked` for far preferred-axis obstruction;
+- shortening is visible in diagnostics when required;
+- broad curve remains usable or radius relaxation is explicit rather than
+  silent task cancellation;
+- fresh law is ASSISTED and stop is rapid.
 
 Preserve untracked traces/logs. Commit directly to GitHub; do not provide patch
 files.

@@ -85,8 +85,24 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 blockedLength=probeLength;
         }
 
-        finalApproachLengthMeters=clearLength;
+        // Do not place the route endpoint on the exact contact
+        // boundary. The visibility graph needs room to connect a support node
+        // to the docking-axis join without grazing the same inflated
+        // obstacle. Back away into the already-proved clear prefix.
+        const double axisRejoinMarginMeters=std::max(
+            50.0,
+            r.hullRadiusMeters*4.0
+        );
+        finalApproachLengthMeters=std::max(
+            mandatoryApproachLengthMeters,
+            clearLength-axisRejoinMarginMeters
+        );
         align=stop+outward*finalApproachLengthMeters;
+        if(!clear(align,stop))
+        {
+            finalApproachLengthMeters=mandatoryApproachLengthMeters;
+            align=mandatoryAlign;
+        }
         out.terminalApproachShortened=true;
     }
 
@@ -115,6 +131,52 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     // declaring even the nominal topology unavailable.
     if (!nominalGeometry.valid && r.obstacles.size() > 48)
         nominalGeometry = planGeometry(0.0, 0);
+
+    // A shortened docking-axis join can still be too close to the obstacle
+    // that forced the shortening for a discretized visibility graph to reach
+    // it robustly. That is not route impossibility. Retreat the join farther
+    // toward the port and retry before giving up the navigation task.
+    if (!nominalGeometry.valid && out.terminalApproachShortened)
+    {
+        double axisRetreatMeters=100.0;
+        for (int attempt=0; attempt<8 && !nominalGeometry.valid; ++attempt)
+        {
+            const double candidateLength=std::max(
+                mandatoryApproachLengthMeters,
+                finalApproachLengthMeters-axisRetreatMeters
+            );
+            if(candidateLength>=finalApproachLengthMeters-1.0e-6)
+                break;
+
+            const auto candidateAlign=stop+outward*candidateLength;
+            if(!clear(candidateAlign,stop))
+            {
+                axisRetreatMeters*=2.0;
+                continue;
+            }
+
+            search.goalMeters=candidateAlign;
+            auto candidateGeometry=planGeometry(0.0,48);
+            if(!candidateGeometry.valid && r.obstacles.size()>48)
+                candidateGeometry=planGeometry(0.0,0);
+
+            if(candidateGeometry.valid &&
+               candidateGeometry.pointsMeters.size()>=2)
+            {
+                finalApproachLengthMeters=candidateLength;
+                align=candidateAlign;
+                out.terminalApproachLengthMeters=
+                    finalApproachLengthMeters;
+                nominalGeometry=std::move(candidateGeometry);
+                break;
+            }
+
+            if(candidateLength<=mandatoryApproachLengthMeters+1.0e-6)
+                break;
+            axisRetreatMeters*=2.0;
+        }
+    }
+
     if (!nominalGeometry.valid || nominalGeometry.pointsMeters.size() < 2)
     {
         out.failure = nominalGeometry.message.empty()

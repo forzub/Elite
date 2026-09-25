@@ -127,10 +127,11 @@ int main()
     const double turnAngle=std::acos(std::clamp(
         glm::dot(incoming,outgoing),-1.0,1.0));
     const double tangentScale=std::tan(turnAngle*0.5);
-    const double desiredRadius=std::max(
+    const double desiredRadius=std::max({
         20.0,
-        curved.maxSpeedMps*curved.maxSpeedMps/curved.lateralMps2
-    );
+        curved.maxSpeedMps*curved.maxSpeedMps/curved.lateralMps2,
+        curved.preferredTerminalTurnRadiusMeters
+    });
     const double tangentDistance=std::min({
         incomingLength*curved.terminalTurnSegmentFraction,
         outgoingLength*curved.terminalTurnSegmentFraction,

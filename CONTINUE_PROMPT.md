@@ -24,8 +24,10 @@ The 1500 m value is NOT a hard route-failure floor.
 
 DockingAdvisoryPlanner now uses ordered fallback:
 1. nominal route at preferred radius;
-2. expanded-clearance/full-obstacle geometric reroute at preferred radius;
-3. only after reroute is exhausted, tighten the terminal circular arc as far as
+2. 12 alternate pre-alignment ingress directions around the fixed docking axis,
+   each routed with the full obstacle set at preferred radius;
+3. expanded-clearance/full-obstacle reroute on the original topology;
+4. only after reroute is exhausted, tighten the terminal circular arc as far as
    collision-free geometry requires.
 
 A route may therefore go substantially around station geometry. Planner failure

@@ -1,5 +1,31 @@
 # CURRENT STATE
 
+## 2026-09-25 — live route now stable enough to isolate final-turn radius policy
+
+Fresh live Windows guidance still cancels on real measured release-envelope
+departures near the station turn (for example lateral 77.8971/75 m and
+82.4922/75.3754 m). Frame density is improved, but the user confirms the final
+Assisted turn is still too tight and the corridor visibly compresses through the
+turn.
+
+Root cause is geometric: the planner's desired radius is already large, but the
+final docking-axis segment was only max(700 m, 3*standoff), normally about
+900 m, and circular fillets could consume only 40% of adjacent segments. A
+rough 90-degree terminal turn was therefore constrained to about 360 m radius.
+
+Manual Assisted guidance now uses a distinct human-flyable terminal profile:
+- final docking-axis approach length: 3000 m;
+- terminal circular fillet may consume up to 75% of adjacent segments;
+- minimum terminal turn radius: 1500 m;
+- if 1500 m cannot be maintained after obstacle clearance, Planner rejects the
+  manual Assisted route instead of silently shrinking it to an impractical arc.
+
+Manual Newtonian guidance retains the sharper legacy terminal geometry, because
+its physical doctrine can rotate the hull independently of velocity. Full
+automatic docking is still not executable end-to-end: SpaceState currently
+accepts only DockingRouteRequest::Mode::Guidance. SHOW ROUTE's temporary
+BrakeToStop ownership remains the only live player Autopilot path.
+
 ## 2026-09-25 — second final-density gate exposed sparse-step boundary crossing
 
 Fresh Windows `docking_advisory` still failed the terminal density contract,

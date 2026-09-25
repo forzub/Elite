@@ -1,5 +1,30 @@
 # CURRENT STATE
 
+## 2026-09-25 — verification failure was two gate/tooling defects, not evidence that route fix failed
+
+The first verification attempt did not execute the docking native test:
+- `cmake --build build --target docking_advisory_tests` failed because the
+  canonical game build directory does not configure `tests/navigation_runtime`;
+- `ctest --test-dir build` therefore reported no tests.
+
+The target does exist in the standalone navigation-runtime CMake project:
+`tests/navigation_runtime/CMakeLists.txt` defines executable
+`docking_advisory_tests` and CTest name `docking_advisory`.
+The correct build tree is now explicitly
+`build/tests/navigation_runtime`.
+
+The static manual-docking checker also produced a false positive. It rejected
+any source occurrence of `if (!clear(align,stop))`, but current Planner uses
+that probe to detect obstruction of the soft 9 km preference and then shorten
+the accepted lead. The checker now rejects only the retired hard-failure
+control flow / `dock alignment blocked` failure and separately requires both
+`terminalApproachShortened=true` and the dedicated
+`dock mandatory ingress blocked` close-in failure.
+
+No native result from the user's failed command sequence is accepted as evidence
+for or against the planner fix. Fresh standalone test configure/build/run is
+required.
+
 ## 2026-09-25 — live 9 km final-axis regression fixed: preferred lead is no longer hard geometry
 
 Latest live run failed three requests with:

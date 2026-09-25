@@ -1,5 +1,36 @@
 # CURRENT STATE
 
+## 2026-09-25 — live 9 km final-axis regression fixed: preferred lead is no longer hard geometry
+
+Latest live run failed three requests with:
+`[DockAdvisory] ... failed=dock alignment blocked`.
+
+Root cause was introduced by the broad Assisted slice: the planner made the full
+preferred 9000 m docking-axis lead a semantic hard segment and called
+`clear(align, stop)` before any reroute search. Therefore any unrelated
+obstacle anywhere on the 9 km ray cancelled the route before geometric planning
+could begin.
+
+Current main fixes the ownership/semantics:
+- mandatory near-port ingress is only `max(700 m, 3 * standoff)`;
+- that short ingress remains hard geometry and may legitimately reject docking;
+- the requested 9000 m Assisted lead is preferred geometry only;
+- if the preferred lead is obstructed farther out, Planner binary-searches the
+  longest collision-free prefix of the docking axis, records
+  `terminalApproachShortened=true`, and continues route/reroute selection;
+- preferred 6000 m terminal radius is still attempted first; if the shortened
+  available axis cannot fit it, normal reroute-before-tighten policy applies.
+
+Live route diagnostics now add:
+`final_axis_m=<accepted>` and `final_axis_shortened=0|1`.
+
+Regression coverage now distinguishes:
+1. obstacle on far preferred 9 km lead -> valid route, shortened final axis;
+2. obstacle in mandatory near-port ingress -> real
+   `dock mandatory ingress blocked` failure.
+
+Fresh Windows/native/live evidence for this fix is pending.
+
 ## 2026-09-25 — broad Assisted docking/default/recovery slice implemented; Windows gate pending
 
 The new live requirement from the station-map screenshot is now implemented on

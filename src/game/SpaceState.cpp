@@ -2083,6 +2083,8 @@ void SpaceState::updateDockingAdvisory()
                      })
                   << " turn_fraction="
                   << request.terminalTurnSegmentFraction
+                  << " min_turn_radius_m="
+                  << request.minimumTerminalTurnRadiusMeters
                   << '\n';
 
         request.obstacles = snapshot.navigationObstacles;

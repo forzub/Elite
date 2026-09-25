@@ -2071,6 +2071,19 @@ void SpaceState::updateDockingAdvisory()
             request.terminalTurnSegmentFraction = 0.75;
         }
 
+        std::cout << "[DockAdvisory] request=" << pending.serial
+                  << " profile="
+                  << (manualAssisted ? "manual-assisted" : "manual-newtonian")
+                  << " final_axis_m="
+                  << std::max({
+                         700.0,
+                         3*request.standoffMeters,
+                         request.terminalApproachLengthMeters
+                     })
+                  << " turn_fraction="
+                  << request.terminalTurnSegmentFraction
+                  << '\n';
+
         request.obstacles = snapshot.navigationObstacles;
 
         if (m_dockWorkerCount->load(std::memory_order_acquire) >= 2)

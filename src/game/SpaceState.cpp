@@ -2067,9 +2067,9 @@ void SpaceState::updateDockingAdvisory()
                 game::navigation::LocalFlightControlLaw::Assisted;
         if (manualAssisted)
         {
-            request.terminalApproachLengthMeters = 3000.0;
-            request.terminalTurnSegmentFraction = 0.75;
-            request.preferredTerminalTurnRadiusMeters = 1500.0;
+            request.terminalApproachLengthMeters = 9000.0;
+            request.terminalTurnSegmentFraction = 0.85;
+            request.preferredTerminalTurnRadiusMeters = 6000.0;
         }
 
         std::cout << "[DockAdvisory] request=" << pending.serial
@@ -2335,8 +2335,8 @@ void SpaceState::updateDockingAdvisory()
                 dockingAdvisoryReleaseCrossSection(section);
             const double releaseLongitudinalToleranceMeters =
                 longitudinalToleranceMeters + std::max(
-                    10.0,
-                    longitudinalToleranceMeters * 0.25
+                    30.0,
+                    longitudinalToleranceMeters
                 );
             const bool insideNominal =
                 std::abs(lateralOffsetMeters) <=

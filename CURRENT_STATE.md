@@ -1,5 +1,31 @@
 # CURRENT STATE
 
+## 2026-09-25 — repeated stale verification output isolated; canonical verify script added
+
+The repeated user output again showed:
+- Ninja searching for `docking_advisory_tests` in canonical `build/`;
+- CTest running against canonical `build/`;
+- the pre-fix static-check message
+  `preferred full docking-axis lead became a hard failure again`.
+
+That combination proves the executed verification path was still stale; it was
+not the corrected standalone navigation-runtime gate.
+
+To remove command ambiguity, public main now contains root entrypoint
+`verify_docking.sh`. It always:
+1. configures `tests/navigation_runtime` into
+   `build/tests/navigation_runtime`;
+2. builds target `docking_advisory_tests` there;
+3. runs CTest `docking_advisory` from that same tree;
+4. runs the static manual-docking checker.
+
+The static checker now prints revision
+`20260925-soft-axis-v2` on PASS. Seeing that marker proves the working copy is
+new enough to contain the corrected soft-axis semantics.
+
+No new planner acceptance evidence exists yet; rerun through
+`bash verify_docking.sh` after pulling current main.
+
 ## 2026-09-25 — verification failure was two gate/tooling defects, not evidence that route fix failed
 
 The first verification attempt did not execute the docking native test:

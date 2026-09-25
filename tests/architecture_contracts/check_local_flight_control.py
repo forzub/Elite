@@ -32,6 +32,22 @@ cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
 cockpit = read("src/game/ship/descriptors/EliteCobraMk1_Cockpit.cpp")
 player_view = read("src/game/ship/view/PlayerShipView.cpp")
 
+if "LocalFlightControlLaw::Assisted" not in state.split(
+        "LocalFlightControlLaw localControlLaw", 1
+    )[1].split(";", 1)[0]:
+    fail("fresh DynamicMotionState no longer defaults to Assisted")
+
+control_state = read("src/game/ship/core/ShipControlState.h")
+if "requestedLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in control_state:
+    fail("fresh ShipControlState law request no longer defaults to Assisted")
+
+game_client_h = read("src/game/client/GameClient.h")
+game_client_cpp = read("src/game/client/GameClient.cpp")
+if "m_pendingLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in game_client_h:
+    fail("client pending law latch no longer defaults to Assisted")
+if "m_pendingLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in game_client_cpp:
+    fail("client synchronization reset no longer restores Assisted default")
+
 for token in (
     "LocalFlightControlLaw localControlLaw",
     "VelocityAlignmentMode velocityAlignmentMode",

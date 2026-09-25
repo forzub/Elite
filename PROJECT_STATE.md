@@ -1,5 +1,25 @@
 # PROJECT STATE
 
+## 2026-09-25 — final docking axis has hard ingress plus soft preferred lead
+
+Docking-axis semantics are now explicitly split.
+
+Hard semantic geometry:
+- stop point is outside the port by standoff;
+- only the immediate ingress length `max(700 m, 3 * standoff)` must remain
+  collision-free on the exact port axis.
+
+Soft/manual-flyability geometry:
+- Assisted requests up to 9000 m of straight final-axis lead;
+- that long lead exists to support a broad 6000 m terminal turn;
+- obstruction on the far part of this preferred lead does not mean the dock is
+  unreachable;
+- Planner finds the longest clear axis prefix, then continues topology search
+  and radius fallback.
+
+This prevents a planning preference from becoming an early global task
+cancellation while preserving the real port-ingress safety condition.
+
 ## 2026-09-25 — implemented commissioning constants for broad manual Assisted docking
 
 Current product defaults and manual-docking commissioning values are:

@@ -82,7 +82,9 @@ try:
     require("src/game/navigation/DockingAdvisoryPlanner.h",
             "gateSpacingMeters = 500.0",
             "terminalGateSpacingMeters = 250.0",
-            "terminalDenseDistanceMeters = 2000.0")
+            "terminalDenseDistanceMeters = 2000.0",
+            "terminalApproachLengthMeters = 0.0",
+            "terminalTurnSegmentFraction = 0.40")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
             "desiredRadius",
             "tangentDistance/tangentScale",
@@ -93,7 +95,10 @@ try:
     require("src/game/SpaceState.cpp",
             "phase=settled",
             "vrel_mps=",
-            "SettleHoldSeconds")
+            "SettleHoldSeconds",
+            "manual-assisted",
+            "request.terminalApproachLengthMeters = 3000.0",
+            "request.terminalTurnSegmentFraction = 0.75")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",

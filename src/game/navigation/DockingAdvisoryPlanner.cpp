@@ -273,11 +273,27 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     world::navigation::GeometricPathResult wideGeometry;
     if (!selected.valid && preferredTerminalRadius>0.0)
     {
-        wideGeometry = planGeometry(preferredTerminalRadius, 0);
-        if (wideGeometry.valid && wideGeometry.pointsMeters.size()>=2)
+        // Expand conservatively first. A full-radius inflation can itself
+        // swallow a nearby ingress waypoint; half-radius is often enough to
+        // make the visibility graph choose the other side of an obstruction.
+        // If that still cannot preserve the arc, retry with the full preferred
+        // radius before conceding geometry.
+        for (int reroutePass=0;
+             reroutePass<2 && !selected.valid;
+             ++reroutePass)
         {
+            const double clearanceScale =
+                reroutePass==0 ? 0.5 : 1.0;
+            auto rerouted = planGeometry(
+                preferredTerminalRadius*clearanceScale,
+                0
+            );
+            if (!rerouted.valid || rerouted.pointsMeters.size()<2)
+                continue;
+
+            wideGeometry=rerouted;
             auto wide = roundGeometry(
-                wideGeometry.pointsMeters,
+                rerouted.pointsMeters,
                 preferredTerminalRadius
             );
             if (wide.valid)

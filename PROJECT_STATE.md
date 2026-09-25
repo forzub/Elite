@@ -6,9 +6,10 @@ Manual Assisted docking now distinguishes **preferred geometry** from
 **route existence**.
 
 The 1500 m terminal turn radius is a human-flyable preference. Planner must try
-to preserve it by changing coarse geometry first. Expanded-clearance/full-scene
-rerouting is allowed to produce a substantially longer path, including going
-around an entire station or structure. If no such route can preserve 1500 m,
+to preserve it by changing coarse geometry first. It first samples alternate
+pre-alignment ingress directions around the fixed final docking axis, then may
+use expanded-clearance/full-scene rerouting. Either path is allowed to become
+substantially longer, including going around an entire station or structure. If no such route can preserve 1500 m,
 Planner may tighten the terminal circular fillet as far as collision-free
 geometry permits. A single failed arc candidate must never cancel navigation.
 

@@ -1,22 +1,33 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
-## 2026-09-25 — manual Assisted terminal radius is now an explicit acceptance rule
+## 2026-09-25 — docking fallback now changes route before conceding turn radius
 
-Live manual guidance now reaches real corridor tracking near the station, but
-the final Assisted turn remained too tight. The cause was not the desired
-dynamics radius; it was segment-room clipping: roughly 900 m final axis and a
-40% fillet fraction collapsed a 90-degree terminal turn toward ~360 m radius.
+Stage-12 docking integration no longer treats a human-flyable terminal radius as
+a binary route-existence condition.
 
-Manual Assisted guidance now starts the docking axis 3000 m out, allows a 0.75
-terminal segment fraction and enforces >=1500 m terminal radius. Obstacle
-fallback may not shrink below that floor; if it cannot fit, the manual route is
-rejected as unavailable instead of publishing a practically unflyable tunnel.
+For manual Assisted guidance the current preferred profile remains 3000 m final
+axis, 0.75 terminal fillet fraction and 1500 m terminal radius. Candidate
+selection is now ordered:
+1. nominal geometric route + preferred-radius circular turn;
+2. expanded-clearance geometric reroute using the complete obstacle set +
+   preferred-radius turn;
+3. only if those fail, nominal/wide geometry with the terminal circle tightened
+   from the preferred/dynamic radius until it clears.
 
-Manual Newtonian keeps sharper geometry by design. Full player automatic docking
-is still not wired: the active SpaceState docking path rejects requests whose
-mode is not Guidance. The next execution milestone, after live acceptance of
-this wider manual route, is Automatic -> accepted physical maneuver program ->
-TrajectoryFollower -> NavigationRuntimeControlBridge -> ShipControlState.
+Thus an obstacle intersecting the desired arc may cause a long detour around
+station geometry rather than cancellation. The planner rejects only when no
+collision-free rounded route remains or the mandatory final port-axis ingress
+is blocked. Tests explicitly cover both reroute-with-radius-preserved and
+tighten-with-task-preserved cases.
+
+This does not relax the Stage-12 command-ownership rule. Automatic docking may
+not execute `DockingAdvisoryGate` frames. The production player path still
+needs a server-owned accepted-program execution lifetime. The intended chain
+remains:
+`AcceptedManeuverProgram -> TrajectoryFollower ->
+NavigationRuntimeControlBridge -> ShipControlState -> shared physics`.
+Until that owner is wired, START DOCKING remains disabled while SHOW ROUTE may
+use only the existing temporary server BrakeToStop preparation takeover.
 
 ## 2026-09-25 — sparse cadence can no longer jump across terminal-density start
 

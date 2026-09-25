@@ -76,6 +76,9 @@ try:
             "deviationWarning", "deviationCritical")
     require("src/game/navigation/DockingAdvisoryCorridor.h",
             "dockingAdvisoryReleaseCrossSection",
+            "marginFraction = 1.00",
+            "minimumMarginMeters = 30.0",
+            "releaseGraceSeconds = 1.00",
             "dockingAdvisoryFrameExtentMeters",
             "DockingAdvisoryTrackingResult::Warning",
             "nearBoundary")
@@ -101,14 +104,18 @@ try:
             "vrel_mps=",
             "SettleHoldSeconds",
             "manual-assisted",
-            "request.terminalApproachLengthMeters = 3000.0",
-            "request.terminalTurnSegmentFraction = 0.75",
-            "request.preferredTerminalTurnRadiusMeters = 1500.0",
+            "request.terminalApproachLengthMeters = 9000.0",
+            "request.terminalTurnSegmentFraction = 0.85",
+            "request.preferredTerminalTurnRadiusMeters = 6000.0",
+            "longitudinalToleranceMeters * 1.0" if False else "longitudinalToleranceMeters",
             "terminal_radius_m=",
             "radius_relaxed=")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",
+            "localFlightControlLawName",
+            "forward_main_mps2=",
+            "reverse_main_mps2=",
             "VelocityAlignmentMode::BrakeToStop")
     require("src/game/system_map/SystemMapRenderer.cpp",
             "corridor->hubLocalFrameId == hub.hubId",

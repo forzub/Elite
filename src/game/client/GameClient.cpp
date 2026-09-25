@@ -126,7 +126,7 @@ void GameClient::beginSynchronization()
     m_latestControl = ShipControlState{};
     m_hasPendingLocalControlLawCommand = false;
     m_pendingLocalControlLaw =
-        game::navigation::LocalFlightControlLaw::Newtonian;
+        game::navigation::LocalFlightControlLaw::Assisted;
     m_pendingVelocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
     m_hasPendingAssistedMaxSpeedCommand = false;

@@ -1,5 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-25 — Stage-12 shortened-axis endpoint now retreats from contact boundary
+
+Native verification failed after correct soft shortening because the selected
+8390 m join sat effectively on the inflated blocker boundary. Stage-12 now
+requires measurable free-space clearance at the join: initial backoff is at
+least 50 m or four hull radii, followed by progressive inward retreat if the
+visibility graph still cannot reach the point.
+
+Mandatory close-in ingress remains the hard lower bound. Fresh target rerun is
+pending.
+
 ## 2026-09-25 — Stage-12 docking gate now has one canonical verifier
 
 Repeated verification output showed the old build tree/checker still being

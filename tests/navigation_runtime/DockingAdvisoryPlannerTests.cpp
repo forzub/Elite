@@ -102,7 +102,7 @@ int main()
     curved.terminalDenseDistanceMeters=2000.0;
     curved.terminalApproachLengthMeters=3000.0;
     curved.terminalTurnSegmentFraction=0.75;
-    curved.minimumTerminalTurnRadiusMeters=1500.0;
+    curved.preferredTerminalTurnRadiusMeters=1500.0;
     const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
     if(!curvedPlan.valid())
     {
@@ -159,6 +159,63 @@ int main()
         std::cerr << "terminal turn is not sampled as a circular fillet; count="
                   << gatesOnCircle << "\n";
         return 24;
+    }
+
+    // Blocking only the preferred circular arc must not cancel manual
+    // guidance. Planner first changes coarse topology and keeps the preferred
+    // radius if a wider collision-free approach exists.
+    const auto startRadial=entry-circleCenter;
+    const double midPhi=turnAngle*0.5;
+    const auto midRadial=
+        startRadial*std::cos(midPhi)+
+        glm::cross(turnNormal,startRadial)*std::sin(midPhi)+
+        turnNormal*glm::dot(turnNormal,startRadial)*
+            (1.0-std::cos(midPhi));
+    world::navigation::NavigationObstacle arcBlocker;
+    arcBlocker.id="terminal_arc_blocker";
+    arcBlocker.shape=world::navigation::NavigationObstacleShape::Sphere;
+    arcBlocker.centerMeters=circleCenter+midRadial;
+    arcBlocker.radiusMeters=120.0;
+
+    auto rerouted=curved;
+    rerouted.obstacles={arcBlocker};
+    const auto reroutedPlan=DockingAdvisoryPlanner::plan(rerouted);
+    if(!reroutedPlan.valid() ||
+       !reroutedPlan.terminalDetourUsed ||
+       reroutedPlan.terminalTurnRadiusRelaxed ||
+       reroutedPlan.terminalTurnRadiusMeters+1.0e-6<
+           rerouted.preferredTerminalTurnRadiusMeters)
+    {
+        std::cerr << "preferred terminal arc blocker cancelled instead of rerouting: "
+                  << reroutedPlan.failure
+                  << " detour=" << reroutedPlan.terminalDetourUsed
+                  << " relaxed=" << reroutedPlan.terminalTurnRadiusRelaxed
+                  << " radius=" << reroutedPlan.terminalTurnRadiusMeters
+                  << "\n";
+        return 27;
+    }
+
+    // If no topology can physically fit the preferred radius because the
+    // semantic final-axis segment is too short, guidance must still survive.
+    // The planner accepts the widest feasible terminal arc rather than
+    // treating the preference as a task-failure threshold.
+    auto tightened=curved;
+    tightened.startMeters={-4000.0,0.0,1200.0};
+    tightened.terminalApproachLengthMeters=0.0;
+    tightened.obstacles.clear();
+    const auto tightenedPlan=DockingAdvisoryPlanner::plan(tightened);
+    if(!tightenedPlan.valid() ||
+       !tightenedPlan.terminalTurnRadiusRelaxed ||
+       tightenedPlan.terminalTurnRadiusMeters<=0.0 ||
+       tightenedPlan.terminalTurnRadiusMeters+1.0e-6>=
+           tightened.preferredTerminalTurnRadiusMeters)
+    {
+        std::cerr << "unavailable preferred radius cancelled instead of tightening: "
+                  << tightenedPlan.failure
+                  << " relaxed=" << tightenedPlan.terminalTurnRadiusRelaxed
+                  << " radius=" << tightenedPlan.terminalTurnRadiusMeters
+                  << "\n";
+        return 28;
     }
 
     world::navigation::NavigationObstacle blocked;

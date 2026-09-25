@@ -2170,6 +2170,10 @@ void SpaceState::updateDockingAdvisory()
         std::cout << "[DockAdvisory] request=" << pending.serial
                   << " route="
                   << (job->plan.terminalDetourUsed ? "detour" : "nominal")
+                  << " final_axis_m="
+                  << job->plan.terminalApproachLengthMeters
+                  << " final_axis_shortened="
+                  << (job->plan.terminalApproachShortened ? 1 : 0)
                   << " terminal_radius_m="
                   << job->plan.terminalTurnRadiusMeters
                   << " radius_relaxed="

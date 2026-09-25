@@ -58,6 +58,13 @@ struct DockingAdvisoryPlan
     bool terminalTurnRadiusRelaxed = false;
     double terminalTurnRadiusMeters = 0.0;
 
+    // terminalApproachLengthMeters is the actually accepted collision-free
+    // straight docking-axis lead. The request value is preferred geometry, not
+    // a hard semantic requirement; only the minimum ingress immediately in
+    // front of the port is mandatory.
+    bool terminalApproachShortened = false;
+    double terminalApproachLengthMeters = 0.0;
+
     bool valid() const noexcept { return failure.empty() && gates.size() >= 2; }
 };
 class DockingAdvisoryPlanner

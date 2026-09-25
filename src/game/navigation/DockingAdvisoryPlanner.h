@@ -25,6 +25,12 @@ struct DockingAdvisoryRequest
     double terminalGateSpacingMeters = 250.0;
     double terminalDenseDistanceMeters = 2000.0;
 
+    // Optional manual-guidance geometry. Zero keeps the historical minimum
+    // final-axis length. terminalTurnSegmentFraction controls how much of each
+    // adjacent segment a circular fillet may consume.
+    double terminalApproachLengthMeters = 0.0;
+    double terminalTurnSegmentFraction = 0.40;
+
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 struct DockingAdvisoryGate

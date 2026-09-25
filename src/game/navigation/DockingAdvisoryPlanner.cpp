@@ -23,11 +23,21 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.terminalGateSpacingMeters) ||
             r.terminalGateSpacingMeters <= 0 ||
         !std::isfinite(r.terminalDenseDistanceMeters) ||
-            r.terminalDenseDistanceMeters <= 0)
+            r.terminalDenseDistanceMeters <= 0 ||
+        !std::isfinite(r.terminalApproachLengthMeters) ||
+            r.terminalApproachLengthMeters < 0 ||
+        !std::isfinite(r.terminalTurnSegmentFraction) ||
+            r.terminalTurnSegmentFraction <= 0.0 ||
+            r.terminalTurnSegmentFraction > 0.90)
     { out.failure = "invalid dock advisory input"; return out; }
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
-    const auto align = stop + outward * std::max(700.0,3*r.standoffMeters);
+    const double finalApproachLengthMeters=std::max({
+        700.0,
+        3*r.standoffMeters,
+        r.terminalApproachLengthMeters
+    });
+    const auto align = stop + outward * finalApproachLengthMeters;
     world::navigation::GeometricPathRequest search;
     search.startMeters = r.startMeters;
     search.goalMeters = align;
@@ -72,9 +82,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             20.0,
             r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2
         );
+        const bool terminalTurn=(i+1==vertices.size()-1);
+        const double segmentFraction=
+            terminalTurn
+                ? r.terminalTurnSegmentFraction
+                : 0.40;
         double tangentDistance=std::min({
-            la*0.4,
-            lb*0.4,
+            la*segmentFraction,
+            lb*segmentFraction,
             desiredRadius*tangentScale
         });
 

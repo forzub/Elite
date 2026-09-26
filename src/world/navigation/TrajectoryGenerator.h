@@ -207,6 +207,12 @@ struct TrajectoryGenerationRequest
     glm::dvec3 terminalForward {0.0, 0.0, -1.0};
     glm::dvec3 terminalUp {0.0, 1.0, 0.0};
     double terminalOrientationBlendDistanceMeters = 0.0;
+
+    // Optional terminal angular velocity in the same navigation frame.
+    // A rotating capture target is a moving attitude boundary condition, not
+    // a static final quaternion followed by an instantaneous omega jump.
+    bool hasTerminalAngularVelocity = false;
+    glm::dvec3 terminalAngularVelocityRadPerSecond {0.0};
 };
 
 struct TrajectoryGenerationDiagnostics

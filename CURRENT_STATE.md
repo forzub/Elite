@@ -5701,3 +5701,39 @@ The checker now:
 
 No navigation/physics implementation changed after the green native result.
 Full static verify rerun is still required before build/live acceptance.
+
+## 2026-09-27 — automatic static checker made formatting-independent
+
+Fresh target native gates remain green. The next verify failure was again static
+only:
+
+```text
+[FAIL] src/game/server/GameServer.cpp:
+missing automatic-docking token
+'trajectoryRequest.hasTerminalAngularVelocity = true'
+```
+
+Production code was verified and is correct:
+
+```cpp
+trajectoryRequest.
+    hasTerminalAngularVelocity = true;
+trajectoryRequest.
+    terminalAngularVelocityRadPerSecond =
+        terminalAngularVelocityMapRadPerSec;
+```
+
+The same terminal omega is also passed to
+`AcceptedManeuverProgramBuilder::Request`.
+
+Root cause: the checker depended on exact C++ whitespace/line wrapping.
+
+Fix:
+- terminal angular check now uses semantic tokens rather than one exact formatted
+  expression;
+- the automatic-docking checker helper now falls back to whitespace-compacted
+  token matching, so source formatting alone cannot produce another false
+  architecture failure.
+
+No production navigation, physics, Planner, Follower or trajectory code changed
+after the already-green native run.

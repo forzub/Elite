@@ -13,6 +13,11 @@ enum class LocalFlightControlLaw : std::uint8_t
     Assisted = 1
 };
 
+constexpr LocalFlightControlLaw defaultLocalFlightControlLaw() noexcept
+{
+    return LocalFlightControlLaw::Assisted;
+}
+
 // Persistent attitude/autobrake action requested by the pilot. These actions
 // are fulfilled through the normal angular/linear acceleration limits; they
 // are not instantaneous teleports of orientation or velocity.

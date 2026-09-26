@@ -242,6 +242,19 @@ try:
         "自動ドッキングモード",
     )
 
+    require(
+        "tests/navigation_ruckig/CMakeLists.txt",
+        "trajectory_generator_angular_tests",
+        "trajectory_generator_angular",
+        "src/world/navigation/TrajectoryGenerator.cpp",
+    )
+    require(
+        "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
+        "angularKinematicsAuthored",
+        "maxAngularAccelerationRadPerSecond2",
+        "terminalAngularVelocityRadPerSecond",
+    )
+
     cmake = require(
         "CMakeLists.txt",
         "src/game/navigation/DockingPortRuntimeStateCatalog.cpp",

@@ -1290,7 +1290,7 @@ void SystemMapRenderer::ensureTexturedShader()
 
 void SystemMapRenderer::resetView()
 {
-    m_mode = Mode::Galaxy;
+    m_modeState.reset(Mode::Galaxy);
     m_galaxyView.reset();
     m_systemView.reset();
 
@@ -1369,7 +1369,7 @@ void SystemMapRenderer::focusGalaxySystem(
     m_galaxyView.focusSystem(
         systemId,
         galaxy,
-        m_mode == Mode::Galaxy,
+        m_modeState.current() == Mode::Galaxy,
         glfwGetTime()
     );
 }
@@ -1384,7 +1384,7 @@ std::optional<game::system_map::MapIntent>
 SystemMapRenderer::selectedGalaxyEntryIntent(
     const world::celestial::GalaxyMapSnapshot& galaxy) const
 {
-    if (m_mode != Mode::Galaxy)
+    if (m_modeState.current() != Mode::Galaxy)
         return std::nullopt;
 
     const auto& state = m_galaxyView.state();
@@ -1451,10 +1451,10 @@ int SystemMapRenderer::focusedSystemId() const
 
 void SystemMapRenderer::setMode(Mode mode)
 {
-    if (m_mode == mode)
+    if (m_modeState.current() == mode)
         return;
 
-    const Mode previousMode = m_mode;
+    const Mode previousMode = m_modeState.current();
 
     if (previousMode == Mode::Detail)
     {
@@ -1470,7 +1470,7 @@ void SystemMapRenderer::setMode(Mode mode)
             systemState.selectedBodyId.clear();
     }
 
-    m_mode = mode;
+    (void)m_modeState.transition(mode);
 
     m_systemFramePrepared = false;
     m_systemSceneFrameDirty = true;
@@ -1485,14 +1485,14 @@ void SystemMapRenderer::setMode(Mode mode)
         Если пользователь открыл другую карту во время перелёта,
         сохраняем конечную позицию Galaxy-камеры.
     */
-    if (m_mode != Mode::Galaxy)
+    if (m_modeState.current() != Mode::Galaxy)
     {
         m_galaxyView.cancelCameraFlight(
             true
         );
     }
 
-    if (m_mode == Mode::Detail)
+    if (m_modeState.current() == Mode::Detail)
     {
         m_detailView.reset();
         m_detailView.selectHub(
@@ -1503,7 +1503,7 @@ void SystemMapRenderer::setMode(Mode mode)
             game::system_map::DetailMapPresentation{};
     }
 
-    if (m_mode == Mode::Hub)
+    if (m_modeState.current() == Mode::Hub)
     {
         if (previousMode != Mode::Detail)
         {
@@ -1523,7 +1523,7 @@ void SystemMapRenderer::setMode(Mode mode)
 
 SystemMapRenderer::Mode SystemMapRenderer::mode() const
 {
-    return m_mode;
+    return m_modeState.current();
 }
 
 
@@ -2185,7 +2185,7 @@ void SystemMapRenderer::render(
 
 
 
-    if (m_mode == Mode::Detail)
+    if (m_modeState.current() == Mode::Detail)
     {
         if (!m_detailFramePrepared || m_detailFrameDirty)
         {
@@ -2209,7 +2209,7 @@ void SystemMapRenderer::render(
         m_detailFramePrepared = false;
         m_detailFrameDirty = true;
     }
-    else if (m_mode == Mode::Hub)
+    else if (m_modeState.current() == Mode::Hub)
     {
         if (!m_hubFramePrepared || m_hubFrameDirty)
         {
@@ -2234,7 +2234,7 @@ void SystemMapRenderer::render(
         m_hubFramePrepared = false;
         m_hubFrameDirty = true;
     }
-    else if (m_mode == Mode::Galaxy)
+    else if (m_modeState.current() == Mode::Galaxy)
     {
         m_galaxyRenderer.render(
             m_galaxyView,
@@ -2245,7 +2245,7 @@ void SystemMapRenderer::render(
         );
         refreshGalaxyWaypointCandidate(vp, galaxy);
     }
-    else if (m_mode == Mode::System)
+    else if (m_modeState.current() == Mode::System)
     {
         renderSystem(
             vp,
@@ -2261,7 +2261,7 @@ void SystemMapRenderer::render(
     // anything about cameras or render scale.
     decorateActiveGuidanceTrajectory(vp, system, planet, hub);
 
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
     {
         synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
         m_objectOverlayRenderer.render(
@@ -2271,7 +2271,7 @@ void SystemMapRenderer::render(
             m_navigationMapTextProfile
         );
     }
-    else if (m_mode == Mode::System)
+    else if (m_modeState.current() == Mode::System)
     {
         synchronizeNavigationTracking(
             m_systemSceneFrame.interaction.objectOverlay
@@ -2283,7 +2283,7 @@ void SystemMapRenderer::render(
             m_navigationMapTextProfile
         );
     }
-    else if (m_mode == Mode::Detail)
+    else if (m_modeState.current() == Mode::Detail)
     {
         synchronizeNavigationTracking(
             m_detailPresentation.frame.objectOverlay
@@ -2295,7 +2295,7 @@ void SystemMapRenderer::render(
             m_navigationMapTextProfile
         );
     }
-    else if (m_mode == Mode::Hub)
+    else if (m_modeState.current() == Mode::Hub)
     {
         synchronizeNavigationTracking(
             m_hubPresentation.frame.objectOverlay
@@ -2986,7 +2986,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
     int systemId = -1;
     double universeTimeSeconds = 0.0;
 
-    switch (m_mode)
+    switch (m_modeState.current())
     {
         case Mode::System:
             overlay = &m_systemSceneFrame.interaction.objectOverlay;
@@ -3063,7 +3063,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         system.systemPositionLy * world::coordinates::MetersPerLightYear;
 
     game::navigation::HubCoMovingFrameSeed hubFrameSeed;
-    if (m_mode == Mode::Hub)
+    if (m_modeState.current() == Mode::Hub)
     {
         hubFrameSeed = game::navigation::makeHubCoMovingFrameSeed(
             hub.systemId,
@@ -3086,7 +3086,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         glm::dvec2& screenPx
     ) -> bool
     {
-        if (m_mode == Mode::System)
+        if (m_modeState.current() == Mode::System)
         {
             const glm::dvec3 systemRelativeAu =
                 (worldMeters - systemOriginMeters) /
@@ -3116,7 +3116,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
             return true;
         }
 
-        if (m_mode == Mode::Detail)
+        if (m_modeState.current() == Mode::Detail)
         {
             glm::dvec3 detailPoint = worldMeters;
             if (detail.scene.coordinateSpace ==
@@ -3128,7 +3128,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
             return std::isfinite(screenPx.x) && std::isfinite(screenPx.y);
         }
 
-        if (m_mode == Mode::Hub)
+        if (m_modeState.current() == Mode::Hub)
         {
             if (!hubFrameSeed.valid)
                 return false;
@@ -3157,7 +3157,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
     // The map draws the full route while the cockpit may omit passed spatial
     // gates. Keep every supplied point, including the route start.
     const bool localDockRoute =
-        m_mode == Mode::Hub &&
+        m_modeState.current() == Mode::Hub &&
         corridor->source == game::navigation::GuidanceSource::DockingComputer &&
         corridor->hubLocalFrameId == hub.hubId &&
         corridor->hubLocalGatePositionsMeters.size() ==
@@ -3734,13 +3734,13 @@ const game::system_map::MapObjectOverlayItem*
 SystemMapRenderer::currentOverlayItem(const std::string& objectId) const
 {
     const game::system_map::MapObjectOverlayFrame* frame = nullptr;
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
         frame = &m_galaxyInfoOverlayFrame;
-    else if (m_mode == Mode::System)
+    else if (m_modeState.current() == Mode::System)
         frame = &m_systemSceneFrame.interaction.objectOverlay;
-    else if (m_mode == Mode::Detail)
+    else if (m_modeState.current() == Mode::Detail)
         frame = &m_detailPresentation.frame.objectOverlay;
-    else if (m_mode == Mode::Hub)
+    else if (m_modeState.current() == Mode::Hub)
         frame = &m_hubPresentation.frame.objectOverlay;
 
     if (!frame)
@@ -3794,23 +3794,23 @@ void SystemMapRenderer::applyWaypointAction(
         int systemId = item->trackingSystemId;
         std::string bodyId;
         std::string hubId = item->navigationHubId;
-        if (m_mode == Mode::Galaxy)
+        if (m_modeState.current() == Mode::Galaxy)
         {
             context = Context::Galaxy;
         }
-        else if (m_mode == Mode::System)
+        else if (m_modeState.current() == Mode::System)
         {
             context = Context::System;
             systemId = m_systemPresentation.systemId;
             bodyId = m_systemView.state().selectedBodyId;
         }
-        else if (m_mode == Mode::Detail)
+        else if (m_modeState.current() == Mode::Detail)
         {
             context = Context::Detail;
             systemId = m_detailPresentation.systemId;
             bodyId = m_systemView.state().selectedBodyId;
         }
-        else if (m_mode == Mode::Hub)
+        else if (m_modeState.current() == Mode::Hub)
         {
             context = Context::Hub;
             systemId = m_hubPresentation.systemId;
@@ -3915,7 +3915,7 @@ SystemMapRenderer::advancePendingRouteFocus(
     // responsibility and therefore leaves this class as a MapIntent.
     if (waypoint->authoredMap == Context::Galaxy)
     {
-        if (m_mode != Mode::Galaxy)
+        if (m_modeState.current() != Mode::Galaxy)
             return MapIntent::recallRouteMap(Mode::Galaxy);
 
         const glm::dvec3 targetLy =
@@ -3969,7 +3969,7 @@ SystemMapRenderer::advancePendingRouteFocus(
 
     if (waypoint->authoredMap == Context::System)
     {
-        if (m_mode != Mode::System)
+        if (m_modeState.current() != Mode::System)
             return MapIntent::recallRouteMap(Mode::System);
 
         const glm::dvec3 relativeMeters =
@@ -3993,13 +3993,13 @@ SystemMapRenderer::advancePendingRouteFocus(
 
     if (waypoint->authoredMap == Context::Detail)
     {
-        if (m_mode == Mode::Detail)
+        if (m_modeState.current() == Mode::Detail)
         {
             m_pendingRouteFocusContextApplied = true;
             return std::nullopt;
         }
 
-        if (m_mode != Mode::System)
+        if (m_modeState.current() != Mode::System)
             return MapIntent::recallRouteMap(Mode::System);
 
         auto& state = m_systemView.state();
@@ -4041,13 +4041,13 @@ SystemMapRenderer::advancePendingRouteFocus(
 
     if (waypoint->authoredMap == Context::Hub)
     {
-        if (m_mode == Mode::Hub)
+        if (m_modeState.current() == Mode::Hub)
         {
             m_pendingRouteFocusContextApplied = true;
             return std::nullopt;
         }
 
-        if (m_mode != Mode::System && m_mode != Mode::Detail)
+        if (m_modeState.current() != Mode::System && m_modeState.current() != Mode::Detail)
             return MapIntent::recallRouteMap(Mode::System);
 
         if (waypoint->authoredHubId.empty())
@@ -4057,7 +4057,7 @@ SystemMapRenderer::advancePendingRouteFocus(
         state.selectedBodyId.clear();
         state.selectedHubId = waypoint->authoredHubId;
         state.selectedHubParentBodyId = waypoint->authoredBodyId;
-        if (m_mode == Mode::Detail)
+        if (m_modeState.current() == Mode::Detail)
         {
             m_detailView.selectHub(
                 waypoint->authoredHubId,
@@ -4099,17 +4099,17 @@ void SystemMapRenderer::revealPendingRouteFocus(
     if (found == frame.items.end())
         return;
 
-    if (!found->visible && (m_mode == Mode::Detail || m_mode == Mode::Hub))
+    if (!found->visible && (m_modeState.current() == Mode::Detail || m_modeState.current() == Mode::Hub))
     {
         // Local maps pan in screen space. Use the already-projected target as
         // a one-frame correction, then let the normal builder reproject it at
         // the center on the next frame.
         auto& camera =
-            m_mode == Mode::Hub ? m_hubView.camera() : m_detailView.camera();
+            m_modeState.current() == Mode::Hub ? m_hubView.camera() : m_detailView.camera();
         camera.pan +=
             glm::dvec2(viewport.width * 0.5, viewport.height * 0.5) -
             found->screenPx;
-        if (m_mode == Mode::Hub)
+        if (m_modeState.current() == Mode::Hub)
             m_hubFrameDirty = true;
         else
             m_detailFrameDirty = true;
@@ -4173,10 +4173,10 @@ SystemMapRenderer::handleInput(
     const world::celestial::HubMapSnapshot& hub
 )
 {
-    if (m_mode != Mode::Galaxy &&
-        m_mode != Mode::System &&
-        m_mode != Mode::Detail &&
-        m_mode != Mode::Hub)
+    if (m_modeState.current() != Mode::Galaxy &&
+        m_modeState.current() != Mode::System &&
+        m_modeState.current() != Mode::Detail &&
+        m_modeState.current() != Mode::Hub)
     {
         return std::nullopt;
     }
@@ -4184,7 +4184,7 @@ SystemMapRenderer::handleInput(
     const double inputNowSeconds =
         glfwGetTime();
 
-    if (m_mode == Mode::System)
+    if (m_modeState.current() == Mode::System)
     {
         m_systemView.updateCameraFlight(
             inputNowSeconds
@@ -4209,7 +4209,7 @@ SystemMapRenderer::handleInput(
     */
     if (m_mapTransition.blocksInput())
     {
-        if (m_mode == Mode::System)
+        if (m_modeState.current() == Mode::System)
         {
             m_systemView.constrainCameraToNavigationBoundary(
                 vp
@@ -4327,8 +4327,8 @@ SystemMapRenderer::handleInput(
     }
 
     const bool showLevelZeroButton =
-        m_mode == Mode::Galaxy ||
-        m_mode == Mode::System;
+        m_modeState.current() == Mode::Galaxy ||
+        m_modeState.current() == Mode::System;
 
     m_navigationLevelZeroButtonHovered =
         showLevelZeroButton &&
@@ -4344,7 +4344,7 @@ SystemMapRenderer::handleInput(
                 );
 
     const bool showTrackButton =
-        m_mode == Mode::System;
+        m_modeState.current() == Mode::System;
 
     m_navigationTrackButtonHovered =
         showTrackButton &&
@@ -4408,7 +4408,7 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
-    if (m_mode == Mode::System)
+    if (m_modeState.current() == Mode::System)
     {
         m_systemPresentation =
             m_systemPresentationBuilder.build(
@@ -4705,10 +4705,10 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
-    if (m_mode == Mode::Detail ||
-        m_mode == Mode::Hub)
+    if (m_modeState.current() == Mode::Detail ||
+        m_modeState.current() == Mode::Hub)
     {
-        if (m_mode == Mode::Detail)
+        if (m_modeState.current() == Mode::Detail)
         {
             m_detailPresentation =
                 m_localMapPresentationBuilder.buildDetail(
@@ -4733,12 +4733,12 @@ SystemMapRenderer::handleInput(
         }
 
         const auto cameraBefore =
-            m_mode == Mode::Hub
+            m_modeState.current() == Mode::Hub
                 ? m_hubView.camera()
                 : m_detailView.camera();
 
         auto& objectOverlay =
-            m_mode == Mode::Hub
+            m_modeState.current() == Mode::Hub
                 ? m_hubPresentation.frame.objectOverlay
                 : m_detailPresentation.frame.objectOverlay;
         synchronizeNavigationTracking(objectOverlay);
@@ -4760,7 +4760,7 @@ SystemMapRenderer::handleInput(
         // convex proxy.  Dock markers/cards get first refusal above; only an
         // otherwise-unconsumed press is tested against actual assembly
         // triangles.  Empty space remains available to the orbit gesture.
-        if (m_mode == Mode::Hub &&
+        if (m_modeState.current() == Mode::Hub &&
             overlayPointer.primaryPressStarted &&
             !overlayPointer.consumed)
         {
@@ -4840,7 +4840,7 @@ SystemMapRenderer::handleInput(
                 }
             }
 
-            if (m_mode == Mode::Detail &&
+            if (m_modeState.current() == Mode::Detail &&
                 !overlayPointer.activatedObjectId.empty())
             {
                 const auto item = std::find_if(
@@ -4867,14 +4867,14 @@ SystemMapRenderer::handleInput(
                 }
             }
 
-            if (m_mode == Mode::Hub &&
+            if (m_modeState.current() == Mode::Hub &&
                 !overlayPointer.closedObjectId.empty())
             {
                 m_hubFrameDirty = true;
             }
 
             auto& camera =
-                m_mode == Mode::Hub
+                m_modeState.current() == Mode::Hub
                     ? m_hubView.camera()
                     : m_detailView.camera();
             camera.rotating = false;
@@ -4898,7 +4898,7 @@ SystemMapRenderer::handleInput(
         );
 
         const auto& cameraAfter =
-            m_mode == Mode::Hub
+            m_modeState.current() == Mode::Hub
                 ? m_hubView.camera()
                 : m_detailView.camera();
 
@@ -4910,7 +4910,7 @@ SystemMapRenderer::handleInput(
                 cameraBefore.pan - cameraAfter.pan
             ) > 0.0;
 
-        if (m_mode == Mode::Detail)
+        if (m_modeState.current() == Mode::Detail)
             m_detailFrameDirty = projectionChanged;
         else
             m_hubFrameDirty = projectionChanged;
@@ -4918,7 +4918,7 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
     {
         refreshGalaxyWaypointCandidate(vp, galaxy);
         synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);

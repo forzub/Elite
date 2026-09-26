@@ -10845,3 +10845,16 @@ The rotating-terminal regression explicitly checks the penultimate sample:
 its omega error must be removable within `alpha_max * final_dt`.
 This prevents a numerically bounded but physically discontinuous terminal
 handoff from reaching AcceptedManeuverProgram.
+
+## 2026-09-27 — target native Stage-12 angular/docking gates pass
+
+Fresh Windows target evidence now proves:
+- accepted-program builder gate PASS;
+- runtime-control/follower gates PASS;
+- nose-first docking advisory gate PASS;
+- rotating-terminal angular trajectory gate PASS.
+
+The subsequent verify failure was a static-checker location error only and did
+not invalidate these native results. The checker has been corrected to inspect
+production reachability tokens in `TrajectoryGenerator.cpp` and the anti-snap
+assertion in its actual native test file.

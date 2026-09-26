@@ -115,6 +115,7 @@ private:
     void returnSessionToMainMenu();
     void cancelPendingSessionStart();
     void setUiLanguage(const std::string& locale);
+    void cycleCoordinateDisplayFormat();
     void persistClientModeState();
     void updateGameUiPresentation();
     void syncDocumentWebViewBounds();

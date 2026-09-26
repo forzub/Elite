@@ -1,5 +1,22 @@
 # PROJECT STATE
 
+## 2026-09-26 — route presentation is independent from control ownership
+
+Docking route/tunnel presentation and ship-control authority are now explicitly
+separate concerns.
+
+Guidance and Automatic use the same visible advisory corridor. Switching to
+server-owned Autopilot must not erase a route already calculated for the same
+dock, and Human hand-back must not erase it merely because authority changed.
+
+Rotating terminal attitude is also now a first-class trajectory boundary:
+terminal pose plus terminal angular velocity are fed into trajectory generation.
+The trajectory carries the rotating target motion before the final sample;
+AcceptedManeuverProgramBuilder remains a physical feasibility gate rather than
+being relaxed to accept an instantaneous terminal omega discontinuity.
+
+Assisted manual handling is accepted and is not a current change target.
+
 
 ## 2026-09-26 — Assisted is explicitly nose/course-coupled; Automatic plan failure is fail-safe
 

@@ -1,6 +1,45 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
 
+## 2026-09-26 — compile/test the completed Automatic execution seam
+
+Run the canonical target-machine gate from `D:\__elite\work`:
+
+```bash
+cd /d/__elite/work
+
+git status --short
+git pull --ff-only origin main
+git log -1 --oneline
+
+bash verify_modes.sh
+bash verify_docking.sh
+bash build_mingw64.sh
+```
+
+Do not run an old executable if any command above fails.
+
+If all three pass:
+
+```bash
+build/EliteGame.exe
+```
+
+Automatic live acceptance:
+- compatible/free port exposes `START DOCKING`;
+- request produces `[DockAuto] ... phase=stabilizing`;
+- if hull attitude differs materially, expect planned log with `phase=aligning`, then `phase=aligned-replan`, then a fresh plan;
+- otherwise plan may enter `phase=executing` directly;
+- planned log must include pages, trajectory duration, pre-capture depth, terminal omega and initial attitude error;
+- accepted translation must use Planner-owned rear/fore/RCS schedule through `stepProgram`, with Follower correction separate;
+- no direct position/velocity/orientation writes and no target-obstacle bypass;
+- tracking/propulsion/frame failure returns to controlled stabilization/replan;
+- successful current slice ends with `approach-complete ... reason=pre-capture-envelope-complete` and Human authority restored.
+
+Send the first compiler/test failure exactly, or if green send the `[DockAuto]` live log.
+
+
+
 ## 2026-09-26 — Windows gate for Automatic docking + Planner/Follower execution
 
 Pull current main and run the focused gates before changing behavior again:

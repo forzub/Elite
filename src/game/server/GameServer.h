@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <memory>
+#include <string>
 
 
 #include "src/game/simulation/GameSimulation.h"
@@ -32,6 +34,11 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
+#include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/ManeuverTrackingController.h"
+#include "src/game/navigation/HubSemanticAnchorCatalog.h"
+#include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 
 struct ServerQueueDiagnostics
 {
@@ -271,6 +278,28 @@ private:
         bool routePublished
     );
     void applyDockingGuidancePreparationControls();
+
+    bool beginAutomaticDocking(
+        PlayerId playerId,
+        EntityId controlledEntityId,
+        const ClientShipCommand& command
+    );
+    void applyAutomaticDockingControls(
+        const game::server::ServerTimeContext& time
+    );
+    bool planAutomaticDocking(
+        struct DockingAutomaticRuntime& runtime,
+        Ship& ship,
+        double universeTimeSeconds
+    );
+    bool finishAutomaticDocking(
+        PlayerId playerId,
+        EntityId controlledEntityId,
+        std::uint64_t requestSerial,
+        bool completed,
+        const char* reason
+    );
+
     void resetSessionControlState(
         EntityId controlledEntityId,
         const char* reason
@@ -310,6 +339,41 @@ private:
 
     std::unordered_map<std::uint32_t, DockingGuidancePreparation>
         m_dockingGuidancePreparations;
+
+    struct DockingAutomaticRuntime
+    {
+        enum class Phase : std::uint8_t
+        {
+            Stabilizing = 0,
+            Executing
+        };
+
+        std::uint64_t requestSerial = 0;
+        PlayerId playerId {};
+        EntityId entityId {};
+        int systemId = -1;
+        std::string hubId;
+        std::string targetModuleId;
+        std::string targetAnchorId;
+
+        Phase phase = Phase::Stabilizing;
+        double settledSinceUniverseTimeSeconds = -1.0;
+
+        std::vector<game::navigation::AcceptedManeuverProgram> programs;
+        std::size_t currentProgramPage = 0;
+        std::unique_ptr<game::navigation::NavigationRuntimeControlBridge>
+            controlBridge;
+        game::navigation::ManeuverTrackingController::Policy trackingPolicy {};
+        std::uint64_t nextProgramRevision = 1;
+    };
+
+    std::unordered_map<std::uint32_t, DockingAutomaticRuntime>
+        m_dockingAutomaticRuntimes;
+
+    game::navigation::HubSemanticAnchorCatalog
+        m_serverHubSemanticAnchorCatalog;
+    game::navigation::DockingPortRuntimeStateCatalog
+        m_serverDockingPortRuntimeStateCatalog;
 
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;

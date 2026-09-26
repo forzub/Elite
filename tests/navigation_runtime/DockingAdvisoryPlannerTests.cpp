@@ -14,6 +14,43 @@
 int main()
 {
     using namespace game::navigation;
+
+    // Manual guidance must leave a stopped ship through the windshield. The
+    // route may turn later, but its first published segment must preserve the
+    // authored hull-forward axis.
+    DockingAdvisoryRequest forwardLaunch;
+    forwardLaunch.startMeters={0.0,0.0,0.0};
+    forwardLaunch.entranceMeters={5000.0,0.0,5000.0};
+    forwardLaunch.outward={0.0,0.0,1.0};
+    forwardLaunch.standoffMeters=300.0;
+    forwardLaunch.hullRadiusMeters=10.0;
+    forwardLaunch.maxSpeedMps=100.0;
+    forwardLaunch.brakingMps2=10.0;
+    forwardLaunch.lateralMps2=5.0;
+    forwardLaunch.gateSpacingMeters=500.0;
+    forwardLaunch.hasInitialForward=true;
+    forwardLaunch.initialForward={1.0,0.0,0.0};
+    forwardLaunch.initialForwardLeadMeters=500.0;
+
+    const auto forwardLaunchPlan=
+        DockingAdvisoryPlanner::plan(forwardLaunch);
+    if(!forwardLaunchPlan.valid() || forwardLaunchPlan.gates.size()<2)
+    {
+        std::cerr << "forward-launch docking route failed: "
+                  << forwardLaunchPlan.failure << "\\n";
+        return 31;
+    }
+    const auto firstPublishedDirection=glm::normalize(
+        forwardLaunchPlan.gates[1].positionMeters-
+        forwardLaunchPlan.gates[0].positionMeters
+    );
+    if(glm::dot(firstPublishedDirection,
+                glm::normalize(forwardLaunch.initialForward))<0.995)
+    {
+        std::cerr << "manual docking corridor did not start along hull nose\\n";
+        return 32;
+    }
+
     DockingAdvisoryRequest r;
     r.startMeters={-10000.0,2500.0,0.0};
     r.entranceMeters={3000.0,350.0,-450.0};

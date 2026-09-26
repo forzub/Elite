@@ -278,8 +278,31 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         vertices.push_back(stop);
         candidate.samples = {vertices.front()};
 
+        if (!r.roundTurns)
+        {
+            candidate.samples = vertices;
+            candidate.lengthMeters = 0.0;
+            for (std::size_t i = 1; i < candidate.samples.size(); ++i)
+            {
+                candidate.lengthMeters += glm::length(
+                    candidate.samples[i] - candidate.samples[i - 1]
+                );
+            }
+            candidate.valid = candidate.samples.size() >= 2;
+            return candidate;
+        }
+
         for (std::size_t i=1;i+1<vertices.size();++i)
         {
+            // The authored nose-first launch leg is semantic geometry. Do not
+            // let generic filleting eat the very first straight segment; the
+            // turn may begin only after routeSearchStart has been reached.
+            if (initialForwardLeadActive && i == 1)
+            {
+                candidate.samples.push_back(vertices[i]);
+                continue;
+            }
+
             const auto a=vertices[i]-vertices[i-1];
             const auto b=vertices[i+1]-vertices[i];
             const double la=glm::length(a), lb=glm::length(b);

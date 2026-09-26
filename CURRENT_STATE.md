@@ -1,5 +1,59 @@
 # CURRENT STATE
 
+## 2026-09-26 — mode/state ownership refactor implemented; Windows verification pending
+
+The requested mode-switch audit found and corrected several independent hidden
+state paths.
+
+### Local flight
+- Assisted is the single shared default via
+  `defaultLocalFlightControlLaw()`; DynamicMotionState, ShipControlState and
+  the client pending command latch no longer carry copied literal defaults.
+- Persistent flight transitions are owned by
+  `LocalFlightControlStateMachine`.
+- SharedShipPhysics, DynamicMotionSystem and ShipController are forbidden by
+  static contract from directly writing `localControlLaw`,
+  `velocityAlignmentMode`, `assistedTargetSpeedHold` or
+  `assistedThrottleTrimWasActive`.
+- Assisted entry captures longitudinal forward VREL, not total velocity
+  magnitude, so Newtonian side-slip is not reinterpreted as a new forward
+  setpoint.
+- Neutral angular damping is now doctrine-specific: Assisted damps released
+  rotation; Newtonian preserves angular inertia unless an explicit
+  alignment/autobrake state owns attitude.
+- Assisted lateral velocity stabilization now has a separate explicit actuator
+  budget `assistedStabilizationAccelerationMps2`, sourced through central
+  ShipDynamics from `strafeAccel`. Manual keypad RCS remains the separate
+  gas-limited `manoeuvreThrusterAccel` path.
+- The new DynamicMotionState field is replicated; simulation snapshot wire
+  schema was bumped from 9 to 10.
+- Native regression proves identical side-slip is actively cancelled in
+  Assisted but preserved in Newtonian, without consuming keypad RCS gas.
+
+### Global client modes
+`ClientModeState` is authoritative for:
+- UI locale;
+- constellation visibility;
+- sky-culture/constellation type;
+- coordinate display format.
+
+Preferences are storage projections only. Localization, SceneRenderer and
+CoordinateDisplayService are projections/formatters; renderer/services no
+longer own hidden transitions. SystemMapRenderer no longer overwrites the
+coordinate format during init.
+
+### Map submode
+Galaxy/System/Detail/Hub selection is now owned by
+`game::system_map::MapModeState`. SystemMapRenderer keeps `setMode()` only
+as the transition/side-effect API and reads the selected mode from the state.
+The old loose `Mode m_mode` field was removed.
+
+Root `verify_modes.sh` now configures the standalone architecture-contract
+build, runs native local-flight/client-preference contracts and the relevant
+static state/localization checks.
+
+No Windows compile/test result is claimed yet.
+
 ## 2026-09-26 — Automatic docking status: execution components exist, production owner is missing
 
 Current main still does NOT provide working automatic docking.

@@ -45,6 +45,22 @@ public:
         const glm::vec3& shipForward
     );
 
+    // Executes Assisted autopilot translation through the exact same local
+    // flight law as manual Assisted control. The nominal command is a target
+    // forward speed; small Follower correction is folded into the automatic
+    // Assisted stabilizer budget, never into physical keypad/manoeuvre RCS.
+    static void applyNavigationAssistedFlightModel(
+        DynamicMotionState& motion,
+        const KinematicFrame& frame,
+        const ShipParams& params,
+        float dt,
+        double targetForwardSpeedMps,
+        const glm::dvec3& feedbackAccelerationSystemMps2,
+        const glm::vec3& shipForward,
+        const glm::vec3& shipRight,
+        const glm::vec3& shipUp
+    );
+
     // Executes one Planner-owned actuator sample plus bounded Follower
     // correction. The nominal rear/fore main schedule is preserved; only
     // feedback may consume remaining main/RCS authority.

@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/AcceptedManeuverProgram.h"
-#include "src/game/navigation/AcceptedShortSegment.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/NavigationControlIntent.h"
 
@@ -20,8 +19,6 @@ namespace game::navigation
 //     -> ManeuverTrackingController (B10)
 //     -> NavigationLocalControlIntent
 //
-// The old AcceptedShortSegment overload remains temporarily for live
-// compatibility while GameSimulation ACCEPT packing is migrated.
 class TrajectoryFollower final
 {
 public:
@@ -77,13 +74,6 @@ public:
         const ManeuverTrackingController::Policy& trackingPolicy
     ) noexcept;
 
-    // Transitional compatibility overload. This path is intentionally kept
-    // separate so the new B8/B9/B10 contract can be tested without silently
-    // changing the current live Stage-12 fixture.
-    [[nodiscard]] static Result follow(
-        const AcceptedShortSegment& segment,
-        const AgentState& agent
-    ) noexcept;
 };
 
 } // namespace game::navigation

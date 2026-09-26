@@ -347,6 +347,7 @@ private:
         enum class Phase : std::uint8_t
         {
             Stabilizing = 0,
+            Aligning,
             Executing
         };
 
@@ -361,6 +362,14 @@ private:
         Phase phase = Phase::Stabilizing;
         double settledSinceUniverseTimeSeconds = -1.0;
         double nextPlanAttemptUniverseTimeSeconds = 0.0;
+
+        // First accepted-program attitude. If the stabilized hull is outside
+        // the tracking envelope, Autopilot physically aligns to this basis,
+        // then replans from the new real state/time before execution begins.
+        glm::dvec3 alignmentForwardMap {0.0, 0.0, -1.0};
+        glm::dvec3 alignmentRightMap {1.0, 0.0, 0.0};
+        glm::dvec3 alignmentUpMap {0.0, 1.0, 0.0};
+        double alignedSinceUniverseTimeSeconds = -1.0;
 
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;

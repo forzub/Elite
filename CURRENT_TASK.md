@@ -1,6 +1,29 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
 
+## 2026-09-26 — isolate the one remaining runtime-control failure
+
+The full game/server build now passes. Do not rebuild everything first.
+
+Run only:
+
+```bash
+cd /d/__elite/work
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^navigation_runtime_control$" \
+  --output-on-failure
+```
+
+Use the first assertion/error from that output as the next fix target.
+
+Do not claim Automatic docking accepted until:
+1. `navigation_runtime_control` passes;
+2. `verify_docking.sh` is fully green;
+3. live `START DOCKING` demonstrates
+   stabilize -> optional align/replan -> executing -> pre-capture handback.
+
+
+
 ## 2026-09-26 — compile/test the completed Automatic execution seam
 
 Run the canonical target-machine gate from `D:\__elite\work`:

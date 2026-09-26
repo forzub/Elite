@@ -1867,14 +1867,36 @@ void SpaceState::updateDockingAdvisory()
                 pending.serial == completedSerial;
 
             resetAutomaticTracking();
-            clear();
 
             if (samePending)
-                requests.clear();
+            {
+                // If Automatic started from an already calculated tunnel,
+                // return to ordinary Guidance ownership instead of deleting
+                // the route together with the control hand-off. This also
+                // keeps the dock card able to cancel/erase the retained route.
+                if (!m_activeDockingGuidanceCorridorId.empty() &&
+                    m_dockAdvice.serial != 0)
+                {
+                    const auto target = pending.target;
+                    const auto guidanceSerial = requests.request(
+                        target,
+                        DockingRouteRequest::Mode::Guidance
+                    );
+                    m_lastDockingPathRequestSerial = guidanceSerial;
+                    m_dockAdvice.serial = guidanceSerial;
+                }
+                else
+                {
+                    requests.clear();
+                }
+            }
 
             std::cout
                 << "[DockAuto] request=" << completedSerial
-                << " phase=server-handoff human_control=1\n";
+                << " phase=server-handoff human_control=1"
+                << " route_retained="
+                << (!m_activeDockingGuidanceCorridorId.empty() ? 1 : 0)
+                << "\n";
 
             if (samePending)
                 return;
@@ -1944,8 +1966,10 @@ void SpaceState::updateDockingAdvisory()
 
         if (m_automaticDockingSerial == 0)
         {
-            clear();
-            m_lastDockingPathRequestSerial = 0;
+            // Reuse an already published advisory corridor for the same dock.
+            // Automatic owns controls on the server, not presentation on the
+            // client. Clearing here used to make a valid manual tunnel vanish
+            // exactly when START DOCKING was pressed.
             m_noSafeDockingGuidanceSolution = false;
             m_dockingGuidanceFailureReason.clear();
 

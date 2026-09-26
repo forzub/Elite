@@ -215,6 +215,30 @@ public:
         return true;
     }
 
+    static bool requestAssistedTargetSpeed(
+        DynamicMotionState& motion,
+        double targetForwardSpeedMps,
+        double maximumSpeedMps
+    ) noexcept
+    {
+        if (motion.localControlLaw != LocalFlightControlLaw::Assisted ||
+            !std::isfinite(targetForwardSpeedMps) ||
+            !std::isfinite(maximumSpeedMps))
+        {
+            return false;
+        }
+
+        motion.targetForwardSpeedMps = std::clamp(
+            targetForwardSpeedMps,
+            0.0,
+            std::max(0.0, maximumSpeedMps)
+        );
+        motion.assistedTargetSpeedHold = true;
+        motion.assistedThrottleTrimWasActive = false;
+        cancelVelocityAlignment(motion);
+        return true;
+    }
+
     static bool requestAssistedMaximumSpeed(
         DynamicMotionState& motion,
         double maximumSpeedMps

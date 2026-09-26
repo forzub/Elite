@@ -234,6 +234,84 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     );
 }
 
+void testPlannerActuatorProgramReachesPhysicalAllocation()
+{
+    Bridge bridge(expertProfile());
+
+    Bridge::Intent initial;
+    initial.revision = 100;
+    initial.targetRevision = 1001;
+    require(bridge.reset(0.0, initial),
+            "program bridge reset must succeed");
+
+    Bridge::Intent intent;
+    intent.revision = 101;
+    intent.targetRevision = 1002;
+    intent.idealLinearAccelerationSystemMps2 = {1.0, 0.0, -4.0};
+
+    Bridge::ProgramActuatorCommand actuator;
+    actuator.valid = true;
+    actuator.rearMainThrottle01 = 0.5;
+    actuator.foreMainThrottle01 = 0.25;
+    actuator.manoeuvreAccelerationSystemMps2 = {0.5, 0.0, 0.0};
+    actuator.linearFeedbackAccelerationSystemMps2 = {1.0, 0.0, -1.0};
+
+    const auto step =
+        bridge.stepProgram(0.01, 0.01, intent, actuator);
+
+    require(step.snapshot.valid,
+            "program bridge must publish a valid execution snapshot");
+    require(step.control.navigationActuatorProgramValid,
+            "program bridge lost explicit actuator ownership");
+    requireNear(step.control.navigationRearMainThrottle01, 0.5, 0.0,
+                "rear-main schedule changed in bridge");
+    requireNear(step.control.navigationForeMainThrottle01, 0.25, 0.0,
+                "fore-main schedule changed in bridge");
+    requireNear(
+        step.control.navigationManoeuvreAccelerationSystemMps2.x,
+        0.5,
+        0.0,
+        "planner manoeuvre schedule changed in bridge"
+    );
+
+    ShipParams params = capabilityParams();
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 10.0f;
+    params.reverseMainEngineAccelerationMps2 = 8.0f;
+    params.maxLinearGs = 10.0f;
+
+    game::navigation::DynamicMotionState motion;
+    game::navigation::DynamicMotionSystem::applyNavigationActuatorProgram(
+        motion,
+        params,
+        step.control.navigationRearMainThrottle01,
+        step.control.navigationForeMainThrottle01,
+        step.control.navigationManoeuvreAccelerationSystemMps2,
+        step.control.navigationLinearFeedbackAccelerationSystemMps2,
+        glm::vec3(0.0f, 0.0f, -1.0f)
+    );
+
+    // Nominal main = 5 forward - 2 reverse = 3 forward. The bounded
+    // Follower correction asks for one more forward and therefore consumes
+    // unused rear-main authority without rewriting the nominal schedule.
+    requireNear(
+        glm::dot(
+            motion.mainEngineAccelerationMps2,
+            glm::dvec3(0.0, 0.0, -1.0)
+        ),
+        4.0,
+        1.0e-9,
+        "feedback did not use remaining main authority around accepted schedule"
+    );
+    requireNear(
+        motion.manoeuvreAccelerationMps2.x,
+        1.5,
+        1.0e-9,
+        "planner RCS plus lateral feedback did not remain on manoeuvre authority"
+    );
+}
+
 void testAngularDemandUsesExistingCapabilityClamp()
 {
     ShipTransform transform;
@@ -519,6 +597,7 @@ int main()
     {
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
+        testPlannerActuatorProgramReachesPhysicalAllocation();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

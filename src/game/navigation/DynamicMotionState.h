@@ -48,7 +48,7 @@ struct DynamicMotionState
     // motion, while Newtonian may accumulate its tiny delta-v beyond the normal
     // speed envelope. External impulses remain physical in either law.
     LocalFlightControlLaw localControlLaw =
-        LocalFlightControlLaw::Assisted;
+        defaultLocalFlightControlLaw();
 
     // Persistent velocity-vector alignment/autobrake action. HOME/INSERT/END
     // populate this through ShipControlState; ShipController and

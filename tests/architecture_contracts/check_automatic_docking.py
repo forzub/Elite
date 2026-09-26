@@ -69,6 +69,8 @@ try:
 
     trajectory_header = require(
         "src/world/navigation/TrajectoryGenerator.h",
+        "hasInitialOrientation",
+        "hasInitialAngularVelocity",
         "hasTerminalAngularVelocity",
         "terminalAngularVelocityRadPerSecond",
     )
@@ -77,6 +79,13 @@ try:
         "request.hasTerminalAngularVelocity",
         "terminalTimeOffsetSeconds - sampleTimeOffsetSeconds",
         "-omega * remainingSeconds",
+        "compileBoundedAngularKinematics(",
+        "trajectory.angularKinematicsAuthored = true",
+        "maxAngularAccelerationRadPerSecond2",
+    )
+    require(
+        "src/world/navigation/Trajectory.h",
+        "angularKinematicsAuthored",
     )
     if "trajectoryRequest.hasTerminalAngularVelocity = true" not in require(
         "src/game/server/GameServer.cpp",
@@ -115,6 +124,13 @@ try:
         "phase=plan-failed",
         "action=restore-human",
         "lastPlanFailureReason",
+        "phase=planning-async",
+        "std::thread(",
+        "DockingAutomaticRuntime::Phase::Planning",
+        "executionStartUniverseTimeSeconds",
+        "planning-result-missed-execution-epoch",
+        "trajectoryRequest.hasInitialOrientation =",
+        "trajectoryRequest.hasInitialAngularVelocity =",
     )
 
 
@@ -138,6 +154,8 @@ try:
         "std::vector<game::navigation::AcceptedManeuverProgram> programs",
         "NavigationRuntimeControlBridge",
         "m_dockingAutomaticRuntimes",
+        "struct PlanningJob",
+        "std::shared_ptr<PlanningJob> planningJob",
         "m_serverHubSemanticAnchorCatalog",
         "m_serverDockingPortRuntimeStateCatalog",
     )
@@ -170,6 +188,7 @@ try:
         "trajectoryAngularAccelerationAt(",
         "deriveAngularKinematics(",
         "angularKinematicsFeasible(",
+        "trajectory.angularKinematicsAuthored",
         "actuatorProgramFeasible",
         "completionTriggersReplan",
     )
@@ -202,6 +221,27 @@ try:
         "feedbackMainLongitudinal",
     )
 
+    require(
+        "src/game/system_map/MapObjectOverlayRenderer.cpp",
+        "activeGreen",
+        "0.18f, 1.00f, 0.32f",
+    )
+    require(
+        "src/game/SpaceState.cpp",
+        "cockpit.docking.automatic_mode",
+        "DockingRouteRequest::Mode::Automatic",
+        "AUTOMATIC DOCKING MODE",
+    )
+    require(
+        "src/assets/localization/ui/cockpit/flight.json",
+        "cockpit.docking.automatic_mode",
+        "AUTOMATIC DOCKING MODE",
+        "АВТОМАТИЧЕСКИЙ РЕЖИМ СТЫКОВКИ",
+        "自动对接模式",
+        "MODO DE ATRAQUE AUTOMÁTICO",
+        "自動ドッキングモード",
+    )
+
     cmake = require(
         "CMakeLists.txt",
         "src/game/navigation/DockingPortRuntimeStateCatalog.cpp",
@@ -221,6 +261,9 @@ try:
     print("[PASS] automatic docking ownership/execution contract")
     print(" - Automatic reuses the visible advisory corridor instead of hiding it")
     print(" - server owns Autopilot authority and stabilization")
+    print(" - heavy Automatic planning runs outside the fixed-step thread")
+    print(" - angular trajectory starts from the real hull state and remains bounded")
+    print(" - active map-card mode is bright green and cockpit mode text is localized")
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
     print(" - Follower has one executable input type")
     print(" - rotating target omega is part of terminal acceptance")

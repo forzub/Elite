@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / Automatic docking execution gate
+# CONTINUE PROMPT — Elite Navigation v2 / Automatic docking target-machine gate
 
 Work in public repository `forzub/Elite`, branch `main`.
 
@@ -8,87 +8,125 @@ At the start of every iteration read the newest sections of:
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 
-After every state-affecting result update those files and regenerate this prompt from scratch again.
+After every state-affecting result update those files and regenerate this prompt
+from scratch again.
 
-## Non-negotiable architecture
+## Current authoritative architecture
 
-### One executable navigation truth
+### Planner / Follower / physics ownership
 
-Production execution is:
+Production accepted-program execution is:
 
 ```text
-planner / trajectory proof
+trajectory + physical proof
     -> AcceptedManeuverProgram
+       reference state + actuator schedule + explicit feedback reserve
     -> TrajectoryFollower
-    -> NavigationFrameBoundary
-    -> NavigationRuntimeControlBridge
-    -> ShipControlState
-    -> SharedShipPhysics / DynamicMotionSystem
+       sampled nominal rear/fore/RCS + bounded B10 feedback
+    -> NavigationRuntimeControlBridge::stepProgram
+    -> ShipControlState navigationActuatorProgram*
+    -> DynamicMotionSystem::applyNavigationActuatorProgram
+    -> shared fixed-step physics
 ```
 
-`TrajectoryFollower` must NOT regain an `AcceptedShortSegment` overload.
+The nominal propulsion split is Planner-owned. Physics must not reconstruct it
+from one net acceleration vector for accepted-program execution.
 
-`AcceptedShortSegment` remains only as a transitional product inside the old Stage-12 NavigationRuntimeLab. Lab execution must cross
-`NavigationRuntimeLabAcceptedProgramAdapter` first.
+Follower feedback remains separate and may consume only remaining installed
+main authority plus remaining manoeuvre/RCS authority. Controlled-speed,
+linear-load, angular, gas and collision physics remain authoritative.
 
-Do not restore old compatibility paths merely to make tests compile.
+`TrajectoryFollower` has exactly one executable program input:
+`AcceptedManeuverProgram`.
 
-### Automatic docking ownership
+`AcceptedShortSegment` is transitional diagnostics-only output from the old
+NavigationRuntimeLab and may reach Follower only through
+`NavigationRuntimeLabAcceptedProgramAdapter`. Do not restore a Follower
+overload for it.
 
-Automatic docking is server-owned:
-- UI creates `DockingRouteRequest::Automatic`;
-- client sends `ClientShipCommand::BeginAutomaticDocking` with system/module/semantic-anchor identity;
-- wire protocol version is 11;
-- server takes `ControllerKind::Autopilot`;
-- server commands `BrakeToStop` and waits for a stable Hub-relative start;
-- server plans route/trajectory;
-- `AcceptedManeuverProgramBuilder` converts the proved time-parameterized trajectory into immutable execution pages;
-- Follower + bridge produce ordinary `ShipControlState`;
-- no direct position/velocity/orientation write is allowed;
-- tracking/propulsion/page/frame failure returns to controlled stabilization/replan;
-- server restores Human control when the automatic lifetime ends.
+### Automatic docking lifecycle
 
-Manual guidance is separate:
-temporary Autopilot BrakeToStop -> client advisory route publication -> Human hand-back.
+```text
+START DOCKING
+ -> client Automatic request
+ -> ClientShipCommand::BeginAutomaticDocking
+ -> server ControllerKind::Autopilot
+ -> BrakeToStop / stabilization
+ -> plan trajectory + accepted program
+ -> if hull attitude is outside first accepted tolerance:
+      Aligning through normal bounded angular demand
+      discard stale program
+      BrakeToStop / stabilize
+      replan from new real state/time
+ -> execute accepted program
+ -> controlled replan on tracking/propulsion/frame failure
+ -> collision-free pre-capture completion
+ -> restore Human control
+```
 
-Manual and Automatic docking runtimes must be mutually exclusive for one ship.
+Manual guidance remains a separate lifecycle and hands control back after route
+publication.
 
-Client Automatic state is request/ack only. Local prediction is suppressed only after an authoritative session snapshot confirms Autopilot. A rejected request must not freeze human controls.
+### No planner-only collision bypass
 
-### Rotating dock terminal state
+The docking target is still solid shared-physics collision geometry.
 
-The diagnostic cube has authored local spin. Automatic docking must not treat terminal orientation as static-only.
+Automatic navigation must not use `terminalAllowedObstacleId` or
+`terminalObstacleEntrySourceProgressMeters` in `GameServer` to fly into a
+solid target that physics would reject.
 
-`AcceptedManeuverProgramBuilder` now derives angular kinematics, checks angular speed/acceleration against ship capability, and accepts
-`terminalAngularVelocityMapRadPerSec`.
+The current Automatic stage ends at a collision-free pre-capture center outside
+the target hit volume. Client and server use
+`HubNavigationClearancePolicy::DiagnosticHubInfrastructureClearanceMeters`.
 
-The server estimates the moving port's terminal linear velocity and angular velocity at the predicted capture epoch and passes both into the accepted execution product.
+Physical contact/capture/latch is the NEXT separate game-state/physics layer.
+Do not fake it with teleportation, direct velocity writes, or planner-only
+collision exceptions.
 
-### Mode/state ownership
+### Angular correctness
 
-Do not regress the earlier mode cleanup:
+- `ManeuverTrackingController` uses exact shortest-arc quaternion attitude
+  error, not the old cross-product small-angle approximation; exact 180-degree
+  mismatch must still command bounded correction.
+- `AcceptedManeuverProgramBuilder` derives omega/alpha across the complete
+  trajectory so storage-page boundaries do not reset angular state.
+- rotating docking targets supply explicit terminal angular velocity and the
+  builder rejects angular capability violations.
+- the current ship angular velocity is supplied as the accepted-program initial
+  angular state.
+
+### Mode/state ownership still applies
+
+Do not regress:
 - default local law = Assisted;
 - `LocalFlightControlStateMachine` owns persistent flight-law/alignment state;
-- Assisted lateral stabilization is distinct from manual gas-limited RCS;
-- SimulationSnapshot wire schema remains 10;
+- Assisted automatic lateral stabilization is distinct from manual gas-limited
+  RCS;
+- SimulationSnapshot wire schema = 10;
+- Automatic command wire protocol = 11;
 - `ClientModeState` owns locale/constellations/sky culture/coordinate format;
 - `MapModeState` owns Galaxy/System/Detail/Hub;
 - no retired `SystemMapRenderer::m_mode`;
 - no `CoordinateDisplayService::cycle()`.
 
-`check_mode_state.py` now explicitly scans both SystemMapRenderer inline implementation files for retired `m_mode`.
+## Focused gates
 
-## New focused gates
+`verify_modes.sh` includes:
+- local flight native contract;
+- client preferences native contract;
+- wire protocol native round-trip;
+- mode/state and wire-schema static contracts.
 
-`verify_docking.sh` now runs:
+`verify_docking.sh` now includes:
 - native `docking_advisory`;
 - native `accepted_maneuver_program_builder`;
+- native `navigation_runtime_control`;
+- native `maneuver_tracking_controller`;
 - static manual docking contract;
-- static automatic docking ownership/execution contract.
+- static Automatic docking ownership/execution contract;
+- static live navigation control contract.
 
-`verify_modes.sh` now also builds/runs `wire_protocol_contracts` because ClientShipCommand wire data changed.
-
-## Immediate target-machine gate
+## Immediate target-machine commands
 
 From `D:\__elite\work`:
 
@@ -104,40 +142,37 @@ bash verify_docking.sh
 bash build_mingw64.sh
 ```
 
-The canonical build script builds both:
-- `build/EliteGame.exe`
-- `build/headless_server/EliteServer.exe`
+Do not run stale binaries after a failed test/build.
 
-Do not run stale binaries after a failed build.
-
-If all gates/build pass:
+If all commands pass:
 
 ```bash
 build/EliteGame.exe
 ```
 
-## Live acceptance to collect
+## Live evidence to collect
 
-For a compatible free docking port:
+For a compatible/free port:
 
 1. `START DOCKING` is enabled.
-2. Pressing it produces `[DockAuto] begin ... phase=stabilizing`.
-3. Ship visibly brakes/stabilizes before planning.
-4. Then expect `[DockAuto] planned ...` with:
-   - page count;
-   - trajectory duration;
-   - gate count;
-   - terminal approach/radius diagnostics;
-   - `terminal_omega_radps`.
-5. Ship motion must visibly follow the planned route through normal physics.
-6. No direct teleport / direct velocity assignment is acceptable.
-7. If tracking is lost, expect controlled `phase=replan`, not navigation shutdown.
-8. End of automatic lifetime must restore Human authority.
+2. Expect `[DockAuto] ... phase=stabilizing`.
+3. Planned log contains pages, trajectory duration, pre-capture depth,
+   terminal omega and initial attitude error.
+4. If initial attitude is outside tolerance:
+   - planned log says `phase=aligning`;
+   - hull visibly turns under Autopilot;
+   - log reaches `phase=aligned-replan`;
+   - server recalculates before any accepted translation is executed.
+5. Once aligned, expect a fresh plan with `phase=executing`.
+6. Translation must use the accepted rear/fore/RCS schedule through
+   `stepProgram`; no direct transform/velocity mutation.
+7. Tracking/propulsion/frame failure must return to controlled stabilization
+   and replan, never silently disable navigation.
+8. Successful current slice ends with:
+   `approach-complete ... reason=pre-capture-envelope-complete`
+   and Human authority restored.
 
-Capture the complete console output around `[DockAuto]`, plus any first compiler/test failure exactly.
-
-## Current caveat
-
-This slice implements automatic approach execution and terminal navigation envelope. Physical station latch/contact ownership is still a separate docking/game-state layer. Do not fake latch by teleporting or by ignoring physics collision. If live evidence reaches the terminal envelope cleanly, the next slice is authoritative capture/latch transfer.
+If a gate fails, use the FIRST real compiler/test error. Do not restore retired
+compatibility APIs to silence stale tests.
 
 Commit fixes directly to GitHub `main`. Do not provide patch files.

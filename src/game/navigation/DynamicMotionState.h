@@ -96,6 +96,12 @@ struct DynamicMotionState
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 
+    // Assisted-only automatic lateral stabilization. This is distinct from
+    // the pilot's gas-limited keypad RCS command above. Its capability comes
+    // from ShipParams::strafeAccel through the central ShipDynamics adapter;
+    // Newtonian never applies this demand.
+    glm::dvec3 assistedStabilizationAccelerationMps2 {0.0};
+
     // Actual combined propulsion acceleration after gas availability and the
     // active control-law speed envelope have been applied.
     glm::dvec3 engineAccelerationMps2 {0.0};

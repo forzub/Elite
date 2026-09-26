@@ -2,7 +2,7 @@
 
 Work in public repository `forzub/Elite`, branch `main`.
 
-At the start of EVERY iteration read:
+At the start of every iteration read:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
@@ -10,136 +10,96 @@ At the start of EVERY iteration read:
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 - this file
 
-After each state-affecting iteration:
+After every state-affecting iteration:
 1. update the relevant state/task/project/end-to-end MD files;
-2. update CONTROL_LAW_MANEUVER_MODEL if doctrine changes;
+2. update CONTROL_LAW_MANEUVER_MODEL if flight doctrine changes;
 3. REGENERATE THIS FILE FROM SCRATCH;
-4. commit directly to public GitHub `main`.
+4. commit directly to GitHub `main`.
 
-Do not send patch files. Do not claim fresh code accepted without Windows/MSYS2
-verify/build/live evidence.
+Do not send patch files. Do not claim new behavior accepted without fresh
+Windows/MSYS2 verify/build/live evidence.
 
-## Flight-family doctrine
+## Flight doctrine
 
-Manual Assisted is accepted by the user. Do not retune without fresh live
-evidence.
+Manual Assisted is accepted. Do not retune without fresh live evidence.
 
 Assisted:
-- hull nose defines intended travel direction;
-- VREL/course follows nose with finite lag, target <= about 2–3 s;
-- angular rate/acceleration remain physically bounded;
-- forward/reverse main owns longitudinal speed;
+- hull nose defines desired travel direction;
+- VREL/course follows nose with finite lag, target about <=2–3 s;
+- angular rate/acceleration remain bounded;
+- forward/reverse main controls longitudinal speed;
 - automatic velocity-to-nose stabilization is the normal game-flight course
   mechanic;
 - physical manoeuvre/RCS (Cobra currently 2 m/s²) is precision authority, not
   ordinary route curvature authority.
 
-Automatic Assisted now uses the SAME
-`DynamicMotionSystem::applyLocalFrameInput` law as manual Assisted through:
+Automatic Assisted uses the SAME game-flight law as manual Assisted:
 ```text
 AcceptedManeuverProgram(AssistedVelocity)
- -> TrajectoryFollower(target forward speed + bounded feedback)
+ -> TrajectoryFollower
  -> NavigationRuntimeControlBridge
  -> ShipControlState navigationAssistedFlightModel*
  -> DynamicMotionSystem::applyNavigationAssistedFlightModel
- -> applyLocalFrameInput
- -> fixed-step motion
+ -> DynamicMotionSystem::applyLocalFrameInput
+ -> fixed-step physics
 ```
 
-Assisted ordinary accepted programs publish no synthetic RCS actuator segments.
+Ordinary Assisted programs publish zero synthetic RCS actuator segments.
 
-Newtonian/heavy is a separate ship-motion family:
+Newtonian/heavy is a separate motion family:
 - faster, less maneuverable;
-- attitude and velocity independent;
-- ordinary transit doctrine:
-  coast -> rotate -> main burn -> coast -> rotate/flip -> brake;
-- docking should favor long mostly straight legs and large maneuvering space;
+- velocity independent from attitude;
+- ordinary doctrine: coast -> rotate -> main burn -> coast -> rotate/flip ->
+  brake;
+- docking favors long, nearly straight legs and large maneuvering space;
 - final placement may later use stronger class-specific RCS/tugs.
 
-Current Newtonian hard boundary:
-- docking geometry uses `roundTurns = false`;
-- ordinary transit may not spend precision RCS as fake lateral main thrust;
+Current Newtonian boundary:
+- docking geometry sets `roundTurns = false`;
+- ordinary transit cannot spend precision RCS as fake lateral main thrust;
 - invalid lateral route demand fails as
   `newtonian-main-engine-program-infeasible`.
 
-A dedicated Newtonian coast/rotate/burn compiler remains future work.
-
-Ctrl+F10 remains temporarily for development/regression. Architecture no longer
-depends on the player choosing the law; later a ship descriptor may lock the
-family.
+Dedicated Newtonian coast/rotate/burn compiler is future work.
 
 ## Manual docking geometry
 
-CALCULATE TRAJECTORY requests a real hull-forward lead:
+CALCULATE TRAJECTORY requests a hull-forward lead:
 ```text
 max(500 m, 10 * hull length)
 ```
 
 Planner may shorten a blocked lead but may not rotate it.
-If the minimum forward segment is blocked:
+Minimum blocked forward segment fails as:
 `initial forward corridor blocked`.
 
-The semantic launch leg is protected from generic filleting with
+The semantic first leg is protected from generic filleting by
 `initialForwardLeadActive && i == 1`.
 
 Center cockpit boresight is accepted and should remain.
 
-## Automatic docking async invariant
-
-Heavy Automatic planning stays outside fixed-step:
-- server takes Autopilot authority;
-- stop/stabilize;
-- snapshot immutable inputs;
-- worker runs advisory + trajectory + accepted-program construction;
-- fixed-step polls the result.
-
-Never restore:
-- synchronous heavy route/Ruckig work in fixed-step;
-- `phase=plan-retry` retry storms.
-
-Entry alignment remains:
-- first accepted reference owns route-entry attitude;
-- if hull differs, physical `Aligning` rotates it;
-- stale aligned program is discarded;
-- stabilize/replan from actual state;
-- execute only fresh program.
-
-Expected lifecycle:
-```text
-phase=planning-async
-planned ... phase=aligning
-phase=aligned-replan
-phase=planning-async
-planned ... phase=executing
-```
-or direct executing when already aligned.
-
 ## Terminal angular boundary
 
-Rotating terminal pose/omega are real physical boundary conditions.
+Rotating target pose and omega are physical boundary conditions.
 
-The old angular compiler only forced terminal omega on the final sample, which
-could leave too much omega error to remove in one dt and reject a feasible
-trajectory.
-
-Current invariant:
+Current angular invariant:
 ```text
 |omega(t) - omega_terminal| <= alpha_max * (T - t)
 ```
 
-`TrajectoryGenerator.cpp` now:
-- verifies current omega is still terminal-reachable;
-- projects desired omega inside the next sample's terminal-reachable cone;
-- then applies the ordinary per-step angular-acceleration clamp;
-- retains max angular-rate and terminal pose/omega tolerances;
-- performs no final-sample snap.
+`TrajectoryGenerator.cpp`:
+- checks current omega remains terminal-reachable;
+- projects desired omega into the next sample's terminal-reachable cone;
+- applies ordinary per-step angular acceleration clamp;
+- keeps max angular-rate and terminal pose/omega tolerances;
+- never performs a final-sample snap.
 
-Native angular regression additionally proves the penultimate omega can reach
-the requested terminal omega within the last dt.
+Native regression checks the penultimate omega can reach terminal omega within
+the final dt.
 
-## Latest fresh Windows/MSYS2 evidence
+## Latest fresh Windows evidence
 
-Latest `verify_docking.sh` produced:
+The newest target run is GREEN for all native gates:
 
 ```text
 navigation_runtime_control .......... PASS
@@ -150,25 +110,72 @@ trajectory_generator_angular ........ PASS
 manual docking static contract ...... PASS
 ```
 
-This is fresh target evidence that:
-- Assisted shared-flight runtime/native gates are green;
-- nose-first docking advisory regression is green;
-- accepted-program Builder split is green;
-- terminal-angular reachability is green.
+Two subsequent failures were static-checker bugs only.
 
-The verify then failed ONLY in `check_automatic_docking.py` because the static
-checker mistakenly required the test message
-`angular planner deferred terminal omega correction to the final sample`
-inside production `TrajectoryGenerator.cpp`.
+First checker bug:
+- required the anti-snap assertion message inside production
+  `TrajectoryGenerator.cpp`;
+- fixed by checking production reachability tokens in the production file and
+  the assertion in `TrajectoryGeneratorAngularTests.cpp`.
 
-That checker bug is fixed:
-- production file is checked for `remainingBefore`, `remainingAfter`,
-  `maxTerminalDelta`;
-- `TrajectoryGeneratorAngularTests.cpp` is checked for
-  `penultimate.angularVelocityRadPerSecond`, `maxAlpha * terminalDt`, and the
-  anti-snap assertion message.
+Second checker bug:
+```text
+missing token:
+trajectoryRequest.hasTerminalAngularVelocity = true
+```
 
-No production navigation/physics code changed after the green native run.
+Production server code was manually verified correct:
+```cpp
+trajectoryRequest.
+    hasTerminalAngularVelocity = true;
+trajectoryRequest.
+    terminalAngularVelocityRadPerSecond =
+        terminalAngularVelocityMapRadPerSec;
+```
+
+The same terminal omega is passed to
+`AcceptedManeuverProgramBuilder::Request`.
+
+Root cause was exact-whitespace matching in the static checker.
+
+Current checker fix:
+- terminal angular handoff uses semantic tokens;
+- `check_automatic_docking.py::require()` first checks raw text, then a
+  whitespace-compacted representation;
+- source formatting/line wrapping alone can no longer trigger this class of
+  false architecture failure.
+
+No production navigation/physics code changed after the native gates went green.
+
+## Automatic docking async invariant
+
+Heavy Automatic planning stays outside fixed-step:
+- server takes Autopilot authority;
+- stop/stabilize;
+- immutable planning snapshot;
+- worker performs advisory + trajectory + accepted-program construction;
+- fixed-step polls only.
+
+Never restore:
+- synchronous heavy route/Ruckig work in fixed-step;
+- `phase=plan-retry` storms.
+
+Entry alignment remains:
+- first accepted reference owns route-entry attitude;
+- physical Aligning rotates real hull if needed;
+- stale aligned program is discarded;
+- stabilize/replan from actual state;
+- only fresh program executes.
+
+Expected live lifecycle:
+```text
+phase=planning-async
+planned ... phase=aligning
+phase=aligned-replan
+phase=planning-async
+planned ... phase=executing
+```
+or direct executing when already aligned.
 
 ## Immediate target gate
 
@@ -182,27 +189,29 @@ git log -1 --oneline
 bash verify_docking.sh
 ```
 
-Expected result: FULL `[DOCK-VERIFY] PASS`.
+Expected:
+```text
+[DOCK-VERIFY] PASS
+```
 
-If verify passes, immediately:
+If verify passes:
 ```bash
 bash build_mingw64.sh
 build/EliteGame.exe
 ```
 
-If verify fails again, fix the first real failure. Do not weaken accepted native
-gates or angular tolerances merely to satisfy a static token checker.
+Then test live Assisted docking and capture all `[DockAuto]` lines.
 
-## Live Assisted acceptance after full verify/build
+## Live acceptance
 
 CALCULATE TRAJECTORY:
-- temporary Autopilot stop/stabilize;
+- Autopilot stops/stabilizes;
 - route/tunnel remains after Human handback;
 - first tunnel section starts along boresight/nose.
 
 START DOCKING:
 - no old fixed-step freeze;
-- route/tunnel stays visible;
+- tunnel remains visible;
 - async plan completes;
 - optional physical align/replan;
 - fresh plan reaches `phase=executing`;
@@ -210,29 +219,28 @@ START DOCKING:
 
 The former
 `accepted-program-propulsion-program-infeasible`
-must not occur merely because Assisted needs ordinary course change.
+must not occur merely because Assisted needs normal course change.
 
-If Automatic cancels/replans, capture every `[DockAuto]` line and exact reason.
-
-## Non-negotiable invariants
+## Invariants
 
 - Planner owns route/reference/control-law-compatible maneuver program.
-- Follower closes bounded error; it is not a second planner.
-- Manual and Automatic Assisted share the same game-flight law.
+- Follower closes bounded tracking error only.
+- Manual and Automatic Assisted share one game-flight law.
 - Physical RCS is not ordinary Assisted course authority.
-- Newtonian ordinary transit cannot spend precision RCS as fake main thrust.
-- Terminal pose/omega are physical angular boundary conditions.
-- ShipDynamics/descriptor owns real speed/load/angular/propulsion limits.
+- Newtonian ordinary transit cannot use precision RCS as fake main thrust.
+- Terminal pose/omega are real angular boundary conditions.
+- ShipDynamics/descriptor owns speed/load/angular/propulsion limits.
 - No direct authoritative position/velocity/orientation rewrites.
-- No planner-only target collision bypass.
-- No execution of stale program after entry alignment.
+- No planner-only collision bypass.
+- No stale program execution after physical alignment.
 - No hidden corridor during Automatic.
 - No synchronous Automatic planning/retry loop.
-- Current docking scope ends at collision-free pre-capture; contact/latch later.
+- Current docking scope ends at collision-free pre-capture; latch/contact later.
 
 ## Verification status
 
-Native target gates listed above are GREEN.
+Fresh native target gates are GREEN.
 
-The corrected automatic static checker and complete `verify_docking.sh` rerun
-are PENDING. Full MinGW build and live Assisted docking are also PENDING.
+The whitespace-hardened automatic static checker and complete
+`verify_docking.sh` rerun are PENDING.
+Full MinGW build and live Assisted docking are PENDING.

@@ -1,5 +1,24 @@
 # Local control-law maneuver model
 
+
+## 2026-09-26 — Assisted manual-flight course-capture requirement
+
+Assisted manual flight is intentionally direction-coupled.
+
+When the pilot changes hull attitude, the old lateral relative-velocity
+component is not allowed to dominate for many seconds as in Newtonian flight.
+The controller must prioritize cancelling old sideways VREL, then use remaining
+load authority to rebuild/maintain forward speed along the nose.
+
+For the current Cobra regression, a 90-degree hull/course change from 100 m/s
+must bring velocity to within 5 degrees of the new nose course in no more than
+3 seconds, without directly rewriting velocity and without collapsing the
+maneuver into a full stop.
+
+Newtonian semantics are unchanged: hull attitude and inertial velocity remain
+independent unless explicit thrust changes the velocity vector.
+
+
 **Status:** architecture contract / Stage-12 active integration
 **Updated:** 2026-09-24 Europe/Kyiv
 **Related:** `src/game/MANEUVER_DECISION_TREE.md`, `src/world/navigation/TRAJECTORY_CONTROL_MODEL.md`, `src/game/navigation/LocalFlightControlLaw.h`

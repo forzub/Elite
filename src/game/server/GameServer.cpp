@@ -1425,26 +1425,12 @@ bool GameServer::planAutomaticDocking(
                 glm::dvec3(transform.forward())
             )
         );
-    const glm::dvec3 currentRightMap =
-        glm::normalize(
-            hub->worldToLocalVector(
-                glm::dvec3(transform.right())
-            )
-        );
     const glm::dvec3 currentUpMap =
         glm::normalize(
             hub->worldToLocalVector(
                 glm::dvec3(transform.up())
             )
         );
-    const glm::dvec3 currentAngularVelocityMapRadPerSec =
-        currentRightMap *
-            static_cast<double>(transform.pitchRate) +
-        currentUpMap *
-            static_cast<double>(transform.yawRate) +
-        currentForwardMap *
-            static_cast<double>(transform.rollRate);
-
     const bool assisted =
         motion.localControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
@@ -1490,7 +1476,6 @@ bool GameServer::planAutomaticDocking(
          obstacleSources = std::move(obstacleSources),
          currentForwardMap,
          currentUpMap,
-         currentAngularVelocityMapRadPerSec,
          assisted,
          startPositionMeters,
          startVelocityMps,
@@ -1668,17 +1653,6 @@ bool GameServer::planAutomaticDocking(
                         startVelocityMps;
                     trajectoryRequest.initialAccelerationMps2 =
                         glm::dvec3(0.0);
-                    trajectoryRequest.hasInitialOrientation =
-                        true;
-                    trajectoryRequest.initialForward =
-                        currentForwardMap;
-                    trajectoryRequest.initialUp =
-                        currentUpMap;
-                    trajectoryRequest.hasInitialAngularVelocity =
-                        true;
-                    trajectoryRequest.
-                        initialAngularVelocityRadPerSecond =
-                            currentAngularVelocityMapRadPerSec;
 
                     trajectoryRequest.pathPointsMeters.reserve(
                         advisoryPlan.gates.size() + 1
@@ -1697,6 +1671,49 @@ bool GameServer::planAutomaticDocking(
                         );
                         return;
                     }
+
+                    // The accepted program owns a required ENTRY attitude.
+                    // Do not bake the arbitrary stopped hull attitude into the
+                    // maneuver: doing so forces the first translational samples
+                    // to ask tiny RCS jets to accelerate sideways while the hull
+                    // is still turning. The existing Aligning phase physically
+                    // acquires this route attitude, then replans from the real
+                    // aligned state before execution.
+                    glm::dvec3 routeInitialForward =
+                        advisoryPlan.gates.front().forward;
+                    if (glm::length(routeInitialForward) <= 1.0e-9)
+                        routeInitialForward = currentForwardMap;
+                    routeInitialForward =
+                        glm::normalize(routeInitialForward);
+
+                    glm::dvec3 routeInitialUp =
+                        currentUpMap -
+                        routeInitialForward *
+                            glm::dot(
+                                currentUpMap,
+                                routeInitialForward
+                            );
+                    if (glm::length(routeInitialUp) <= 1.0e-6)
+                    {
+                        const glm::dvec3 seed =
+                            std::abs(routeInitialForward.y) < 0.90
+                                ? glm::dvec3(0.0, 1.0, 0.0)
+                                : glm::dvec3(1.0, 0.0, 0.0);
+                        routeInitialUp =
+                            seed -
+                            routeInitialForward *
+                                glm::dot(seed, routeInitialForward);
+                    }
+                    routeInitialUp = glm::normalize(routeInitialUp);
+
+                    trajectoryRequest.hasInitialOrientation = true;
+                    trajectoryRequest.initialForward =
+                        routeInitialForward;
+                    trajectoryRequest.initialUp = routeInitialUp;
+                    trajectoryRequest.hasInitialAngularVelocity = true;
+                    trajectoryRequest.
+                        initialAngularVelocityRadPerSecond =
+                            glm::dvec3(0.0);
 
                     const glm::dvec3 advisoryStopMeters =
                         trajectoryRequest.pathPointsMeters.back();
@@ -2090,7 +2107,7 @@ bool GameServer::planAutomaticDocking(
                 build.minimumClearanceMeters = 0.0;
                 build.hasInitialAngularVelocity = true;
                 build.initialAngularVelocityMapRadPerSec =
-                    currentAngularVelocityMapRadPerSec;
+                    glm::dvec3(0.0);
                 build.hasTerminalAngularVelocity = true;
                 build.terminalAngularVelocityMapRadPerSec =
                     terminalAngularVelocityMapRadPerSec;

@@ -58,6 +58,14 @@ struct ShipControlState
     glm::dvec3 navigationAngularAccelerationDemandSystemRadPerSec2 {0.0};
     std::uint64_t navigationIntentRevision = 0;
 
+    // Server/autopilot Assisted translation channel. This intentionally uses
+    // the same game flight law as manual Assisted control: target speed along
+    // the hull nose plus the automatic velocity-to-nose stabilizer. It does
+    // not reinterpret ordinary route curvature as physical keypad/RCS thrust.
+    bool navigationAssistedFlightModelValid = false;
+    double navigationTargetForwardSpeedMps = 0.0;
+    glm::dvec3 navigationAssistedCorrectionSystemMps2 {0.0};
+
     // Server/autopilot-only nominal actuator program. Human wire controls never
     // populate this channel. When valid, translation executes the Planner-owned
     // actuator schedule instead of re-splitting the same net feed-forward into

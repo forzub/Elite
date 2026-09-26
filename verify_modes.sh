@@ -29,5 +29,6 @@ python "${ROOT_DIR}/tests/architecture_contracts/check_local_flight_control.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_client_mode_state.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_mode_state.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_localization_boundary.py"
+python "${ROOT_DIR}/tests/architecture_contracts/check_wire_data_schema.py"
 
 echo "[MODE-VERIFY] PASS"

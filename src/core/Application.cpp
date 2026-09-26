@@ -550,10 +550,28 @@ void Application::init()
             m_clientPreferences = {};
         }
 
-        m_clientModeState.constellationsEnabled =
-            m_clientPreferences.constellationsEnabled;
-        m_clientModeState.skyCultureId =
-            m_clientPreferences.skyCultureId;
+        (void)m_clientModeState.setConstellationsEnabled(
+            m_clientPreferences.constellationsEnabled
+        );
+        if (!m_clientPreferences.skyCultureId.empty())
+        {
+            (void)m_clientModeState.setSkyCultureId(
+                m_clientPreferences.skyCultureId
+            );
+        }
+
+        const auto persistedCoordinateFormat =
+            game::navigation::coordinateDisplayFormatFromString(
+                m_clientPreferences.coordinateDisplayFormatId
+            );
+        (void)m_clientModeState.setCoordinateDisplayFormatId(
+            game::navigation::coordinateDisplayMode(
+                persistedCoordinateFormat
+            ).id
+        );
+        game::navigation::CoordinateDisplayService::instance().setFormat(
+            persistedCoordinateFormat
+        );
     }
 
 #ifdef _WIN32
@@ -609,8 +627,9 @@ void Application::init()
                     if (m_localization.hasLocale(
                             m_clientPreferences.preferredLocale))
                     {
-                        m_clientModeState.uiLocale =
-                            m_clientPreferences.preferredLocale;
+                        (void)m_clientModeState.setUiLocale(
+                            m_clientPreferences.preferredLocale
+                        );
                     }
                     else
                     {
@@ -621,7 +640,9 @@ void Application::init()
                 }
                 else
                 {
-                    m_clientModeState.uiLocale = m_localization.locale();
+                    (void)m_clientModeState.setUiLocale(
+                        m_localization.locale()
+                    );
                 }
 
                 (void)m_localization.setLocale(
@@ -933,7 +954,7 @@ void Application::mainLoop()
 
                 if (sessionReady && functionKey == 11 && ctrlDown && !altDown)
                 {
-                    game::navigation::CoordinateDisplayService::instance().cycle();
+                    cycleCoordinateDisplayFormat();
                 }
 
                 if (functionKey == 12)
@@ -1654,6 +1675,28 @@ void Application::cycleUiLanguage()
 
     std::cout << "[Localization] UI locale="
               << m_clientModeState.uiLocale << std::endl;
+}
+
+void Application::cycleCoordinateDisplayFormat()
+{
+    const auto current =
+        game::navigation::coordinateDisplayFormatFromString(
+            m_clientModeState.coordinateDisplayFormatId
+        );
+    const auto next =
+        game::navigation::nextCoordinateDisplayFormat(current);
+    const auto& mode =
+        game::navigation::coordinateDisplayMode(next);
+
+    if (!m_clientModeState.setCoordinateDisplayFormatId(mode.id))
+        return;
+
+    // CoordinateDisplayService is now a projection/formatter only. The
+    // authoritative selected mode is ClientModeState.
+    game::navigation::CoordinateDisplayService::instance().setFormat(next);
+    persistClientModeState();
+
+    std::cout << "[Coordinates] display=" << mode.id << std::endl;
 }
 
 bool Application::setConstellationsEnabled(bool enabled)
@@ -2378,6 +2421,8 @@ void Application::persistClientModeState()
         m_clientModeState.constellationsEnabled;
     m_clientPreferences.skyCultureId =
         m_clientModeState.skyCultureId;
+    m_clientPreferences.coordinateDisplayFormatId =
+        m_clientModeState.coordinateDisplayFormatId;
 
     std::string preferencesError;
     if (!ui::platform::ClientPreferencesStore::save(

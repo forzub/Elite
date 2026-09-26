@@ -60,6 +60,7 @@ for token in (
     "VelocityAlignmentMode velocityAlignmentMode",
     "mainEngineAccelerationMps2",
     "manoeuvreAccelerationMps2",
+    "assistedStabilizationAccelerationMps2",
     "manoeuvreGasPressure01",
     "manoeuvreGasDepleted",
 ):
@@ -96,6 +97,7 @@ for token in (
     "params.maxGs",
     "forwardMainAccelerationLimitMps2",
     "reverseMainAccelerationLimitMps2",
+    "assistedLateralStabilizationAccelerationLimitMps2",
 ):
     if token not in dynamics:
         fail(f"central ship-dynamics policy lost: {token}")
@@ -109,6 +111,8 @@ for token in (
     "manoeuvreGasRechargePerSecond",
     "manoeuvreGasRestartFraction",
     "yieldAxisToManualRcs",
+    "assistedLateralStabilizationAccel",
+    "motion.assistedStabilizationAccelerationMps2",
 ):
     if token not in system:
         fail(f"law-independent keypad RCS contract lost: {token}")
@@ -165,6 +169,7 @@ for token in (
     "cancelVelocityAlignment",
     "completeVelocityAlignment",
     "requestAssistedMaximumSpeed",
+    "updateAssistedLongitudinalTarget",
     "longitudinalInputCancelsBrake",
     "neutralAngularDampingEnabled",
     "velocityAlignmentOwnsAttitude",
@@ -204,8 +209,16 @@ for rel, body in (
     ("ShipController.cpp", controller),
 ):
     import re
-    if re.search(r"velocityAlignmentMode\s*=(?!=)", body):
-        fail(f"{rel} writes persistent alignment mode outside state machine")
+    for field in (
+        "localControlLaw",
+        "velocityAlignmentMode",
+        "assistedTargetSpeedHold",
+        "assistedThrottleTrimWasActive",
+    ):
+        if re.search(rf"{field}\\s*=(?!=)", body):
+            fail(
+                f"{rel} writes persistent flight mode state outside state machine: {field}"
+            )
 
 if "glm::length(motion.localVelocityMps)" in flight_state_machine.split(
         "if (requested == LocalFlightControlLaw::Assisted)", 1

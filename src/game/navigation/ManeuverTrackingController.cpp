@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <glm/gtc/quaternion.hpp>
 
 namespace game::navigation
 {
@@ -88,8 +89,11 @@ double angleBetween(
     return std::acos(std::clamp(glm::dot(na, nb), -1.0, 1.0));
 }
 
-// Small-angle SO(3) error using all three body axes. Unlike a forward-only
-// controller this retains roll as part of the accepted attitude program.
+// Exact shortest-arc SO(3) error using the complete body basis. The previous
+// cross-product small-angle approximation becomes exactly zero at 180 degrees,
+// so an antiparallel hull could never acquire an accepted attitude. Quaternion
+// log space retains roll and remains well-defined for every non-degenerate
+// body basis.
 glm::dvec3 attitudeErrorVector(
     const AcceptedManeuverProgram::ReferenceSample& reference,
     const ManeuverTrackingController::AgentState& agent
@@ -115,11 +119,48 @@ glm::dvec3 attitudeErrorVector(
     const glm::dvec3 targetUp =
         normalizedOr(reference.upMap, currentUp);
 
-    return 0.5 * (
-        glm::cross(currentForward, targetForward) +
-        glm::cross(currentRight, targetRight) +
-        glm::cross(currentUp, targetUp)
+    const glm::dquat current = glm::normalize(
+        glm::quat_cast(
+            glm::dmat3(
+                currentRight,
+                currentUp,
+                -currentForward
+            )
+        )
     );
+    const glm::dquat target = glm::normalize(
+        glm::quat_cast(
+            glm::dmat3(
+                targetRight,
+                targetUp,
+                -targetForward
+            )
+        )
+    );
+
+    glm::dquat delta =
+        glm::normalize(target * glm::conjugate(current));
+    if (delta.w < 0.0)
+        delta = -delta;
+
+    const glm::dvec3 vectorPart(
+        delta.x,
+        delta.y,
+        delta.z
+    );
+    const double vectorLength = glm::length(vectorPart);
+    if (!finite(vectorLength) || vectorLength <= kEpsilon)
+        return glm::dvec3(0.0);
+
+    const double angle =
+        2.0 * std::atan2(
+            vectorLength,
+            std::clamp(delta.w, 0.0, 1.0)
+        );
+    if (!finite(angle))
+        return glm::dvec3(0.0);
+
+    return vectorPart * (angle / vectorLength);
 }
 
 bool validPolicy(const ManeuverTrackingController::Policy& policy) noexcept

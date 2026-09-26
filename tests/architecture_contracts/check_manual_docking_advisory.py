@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260926-nose-first-v3"
+CHECK_REVISION = "20260927-nose-first-v4"
 
 
 def read(rel: str) -> str:
@@ -99,6 +99,7 @@ try:
             "routeSearchStart",
             "initial forward corridor blocked",
             "prependInitialForwardLead",
+            "initialForwardLeadActive && i == 1",
             "mandatoryApproachLengthMeters",
             "preferredApproachLengthMeters",
             "dock mandatory ingress blocked",

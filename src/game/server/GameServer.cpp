@@ -1436,7 +1436,8 @@ bool GameServer::planAutomaticDocking(
             return obstacles;
         };
 
-    const auto& motion = ship.core().transform().motion;
+    const auto& transform = ship.core().transform();
+    const auto& motion = transform.motion;
     const bool assisted =
         motion.localControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
@@ -1802,6 +1803,35 @@ bool GameServer::planAutomaticDocking(
     build.spaceRevision = m_serverTick;
     build.spaceSourceRevision = m_serverTick;
     build.minimumClearanceMeters = 0.0;
+
+    const glm::dvec3 currentForwardMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.forward())
+            )
+        );
+    const glm::dvec3 currentRightMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.right())
+            )
+        );
+    const glm::dvec3 currentUpMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.up())
+            )
+        );
+
+    build.hasInitialAngularVelocity = true;
+    build.initialAngularVelocityMapRadPerSec =
+        currentRightMap *
+            static_cast<double>(transform.pitchRate) +
+        currentUpMap *
+            static_cast<double>(transform.yawRate) +
+        currentForwardMap *
+            static_cast<double>(transform.rollRate);
+
     build.hasTerminalAngularVelocity = true;
     build.terminalAngularVelocityMapRadPerSec =
         terminalAngularVelocityMapRadPerSec;
@@ -1837,8 +1867,55 @@ bool GameServer::planAutomaticDocking(
         return false;
     }
 
+    const auto& firstReference =
+        runtime.programs.front().samples[0];
+    runtime.alignmentForwardMap =
+        firstReference.forwardMap;
+    runtime.alignmentRightMap =
+        firstReference.rightMap;
+    runtime.alignmentUpMap =
+        firstReference.upMap;
+    runtime.alignedSinceUniverseTimeSeconds = -1.0;
+
+    const auto angleBetween =
+        [](const glm::dvec3& a, const glm::dvec3& b)
+        {
+            const double dot =
+                std::clamp(
+                    glm::dot(
+                        glm::normalize(a),
+                        glm::normalize(b)
+                    ),
+                    -1.0,
+                    1.0
+                );
+            return std::acos(dot);
+        };
+
+    const double initialForwardErrorRad =
+        angleBetween(
+            currentForwardMap,
+            runtime.alignmentForwardMap
+        );
+    const double initialUpErrorRad =
+        angleBetween(
+            currentUpMap,
+            runtime.alignmentUpMap
+        );
+    const double initialAttitudeErrorRad =
+        std::max(
+            initialForwardErrorRad,
+            initialUpErrorRad
+        );
+    const double executionEntryToleranceRad =
+        runtime.programs.front().
+            terminalTolerance.forwardAngleRad;
+
     runtime.phase =
-        DockingAutomaticRuntime::Phase::Executing;
+        initialAttitudeErrorRad <=
+                executionEntryToleranceRad
+            ? DockingAutomaticRuntime::Phase::Executing
+            : DockingAutomaticRuntime::Phase::Aligning;
 
     std::cout
         << "[DockAuto] planned entity=" << runtime.entityId.value
@@ -1858,6 +1935,13 @@ bool GameServer::planAutomaticDocking(
         << glm::length(
             terminalAngularVelocityMapRadPerSec
         )
+        << " initial_attitude_error_deg="
+        << glm::degrees(initialAttitudeErrorRad)
+        << " phase="
+        << (runtime.phase ==
+                DockingAutomaticRuntime::Phase::Executing
+                ? "executing"
+                : "aligning")
         << "\n";
     return true;
 }

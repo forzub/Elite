@@ -1,3 +1,29 @@
+## 2026-09-26 — live propulsion rejection traced to route-entry attitude
+
+Fresh live Automatic evidence:
+- asynchronous planning removed the visible fixed-step freeze;
+- the next exact rejection became
+  `accepted-program-propulsion-program-infeasible`;
+- server then correctly restored Human authority.
+
+The rejection was physical, not a reason to weaken acceptance. Translation was
+already accelerating along the route while the bounded angular program began at
+the arbitrary stopped hull attitude. AcceptedManeuverProgramBuilder therefore
+saw lateral acceleration beyond the real manoeuvre-thruster authority.
+
+Automatic now authors the first program's body attitude from the first route
+gate. If the real hull differs, the existing bounded Aligning phase rotates the
+ship physically, discards that stale program and replans from the aligned
+authoritative state. This makes main-engine direction part of the maneuver
+boundary instead of pretending RCS can replace it.
+
+Manual advisory geometry also gains a hull-forward launch lead so the first
+tunnel segment appears directly ahead in the cockpit. The cockpit now has a
+fixed center boresight for the nose axis.
+
+Fresh target-machine verification is pending.
+
+
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 ## 2026-09-26 — Automatic planning removed from fixed-step; angular kinematics compiled by Planner

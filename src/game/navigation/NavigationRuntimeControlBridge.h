@@ -51,6 +51,11 @@ public:
     struct ProgramActuatorCommand
     {
         bool valid = false;
+
+        // Assisted programs do not publish synthetic RCS schedules. They
+        // command the canonical game flight law with a target forward speed.
+        bool assistedVelocityModel = false;
+        double assistedTargetForwardSpeedMps = 0.0;
         double rearMainThrottle01 = 0.0;
         double foreMainThrottle01 = 0.0;
         glm::dvec3 manoeuvreAccelerationSystemMps2 {0.0};

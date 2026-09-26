@@ -1,5 +1,37 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — verify mode/state refactor, then return to Automatic docking
+
+Immediate Windows gate:
+
+`git pull --ff-only origin main`
+`bash verify_modes.sh`
+
+If green, rerun the independent docking gate:
+`bash verify_docking.sh`
+
+Then build/run the game:
+`bash build_mingw64.sh`
+`build/EliteGame.exe`
+
+Live flight acceptance:
+- fresh ship reports/behaves as Assisted by default;
+- turning the hull in Assisted actively bends/cancels lateral VREL;
+- released angular rotation damps in Assisted;
+- Newtonian keeps side-slip and angular inertia without explicit alignment;
+- Assisted automatic lateral stabilization does not consume manual RCS gas;
+- Ctrl+F10 changes law through the state-machine path rather than a loose flag.
+
+Client-mode acceptance:
+- locale, constellation visibility, sky-culture and coordinate-display changes
+  survive restart through ClientModeState/preferences;
+- map Galaxy/System/Detail/Hub transitions still behave identically after
+  replacing the renderer flag with MapModeState.
+
+After these gates, resume the already-defined production Automatic docking
+executor milestone. Do not continue broad mode refactoring unless a concrete
+remaining shadow-state is found by tests or live behavior.
+
 ## 2026-09-26 — finish current route gate, then wire real Automatic docking
 
 Do not spend another open-ended cycle only polishing manual guidance after the

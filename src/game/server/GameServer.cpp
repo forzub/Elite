@@ -1445,6 +1445,33 @@ bool GameServer::planAutomaticDocking(
 
     const auto& transform = ship.core().transform();
     const auto& motion = transform.motion;
+
+    const glm::dvec3 currentForwardMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.forward())
+            )
+        );
+    const glm::dvec3 currentRightMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.right())
+            )
+        );
+    const glm::dvec3 currentUpMap =
+        glm::normalize(
+            hub->worldToLocalVector(
+                glm::dvec3(transform.up())
+            )
+        );
+    const glm::dvec3 currentAngularVelocityMapRadPerSec =
+        currentRightMap *
+            static_cast<double>(transform.pitchRate) +
+        currentUpMap *
+            static_cast<double>(transform.yawRate) +
+        currentForwardMap *
+            static_cast<double>(transform.rollRate);
+
     const bool assisted =
         motion.localControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
@@ -1514,6 +1541,12 @@ bool GameServer::planAutomaticDocking(
             motion.localVelocityMps;
         trajectoryRequest.initialAccelerationMps2 =
             glm::dvec3(0.0);
+        trajectoryRequest.hasInitialOrientation = true;
+        trajectoryRequest.initialForward = currentForwardMap;
+        trajectoryRequest.initialUp = currentUpMap;
+        trajectoryRequest.hasInitialAngularVelocity = true;
+        trajectoryRequest.initialAngularVelocityRadPerSecond =
+            currentAngularVelocityMapRadPerSec;
 
         trajectoryRequest.pathPointsMeters.reserve(
             advisoryPlan.gates.size() + 1
@@ -1820,33 +1853,9 @@ bool GameServer::planAutomaticDocking(
     build.spaceSourceRevision = m_serverTick;
     build.minimumClearanceMeters = 0.0;
 
-    const glm::dvec3 currentForwardMap =
-        glm::normalize(
-            hub->worldToLocalVector(
-                glm::dvec3(transform.forward())
-            )
-        );
-    const glm::dvec3 currentRightMap =
-        glm::normalize(
-            hub->worldToLocalVector(
-                glm::dvec3(transform.right())
-            )
-        );
-    const glm::dvec3 currentUpMap =
-        glm::normalize(
-            hub->worldToLocalVector(
-                glm::dvec3(transform.up())
-            )
-        );
-
     build.hasInitialAngularVelocity = true;
     build.initialAngularVelocityMapRadPerSec =
-        currentRightMap *
-            static_cast<double>(transform.pitchRate) +
-        currentUpMap *
-            static_cast<double>(transform.yawRate) +
-        currentForwardMap *
-            static_cast<double>(transform.rollRate);
+        currentAngularVelocityMapRadPerSec;
 
     build.hasTerminalAngularVelocity = true;
     build.terminalAngularVelocityMapRadPerSec =

@@ -471,15 +471,27 @@ void ShipController::updateControlRates(
     glm::vec3 requestedAngularAcceleration =
         angularInput * safeAngularAccel;
 
-    // Manual neutral-axis stabilization remains RCS torque and therefore goes
-    // through the same physical acceleration/rate envelope below.
-    const float dampingGain = std::max(0.0f, params.angularDamping);
-    if (std::abs(ship.pitchInput) < 0.001f)
-        requestedAngularAcceleration.x += -ship.pitchRate * dampingGain;
-    if (std::abs(ship.yawInput) < 0.001f)
-        requestedAngularAcceleration.y += -ship.yawRate * dampingGain;
-    if (std::abs(ship.rollInput) < 0.001f)
-        requestedAngularAcceleration.z += -ship.rollRate * dampingGain;
+    // Neutral-axis angular stabilization is a control-law doctrine, not a
+    // universal hidden helper. Assisted arrests released rotation. Newtonian
+    // preserves angular inertia unless an explicit alignment/autobrake state
+    // owns attitude.
+    const bool neutralAngularDamping =
+        game::navigation::LocalFlightControlStateMachine::
+            neutralAngularDampingEnabled(
+                ship.motion.localControlLaw,
+                ship.motion.velocityAlignmentMode
+            );
+
+    if (neutralAngularDamping)
+    {
+        const float dampingGain = std::max(0.0f, params.angularDamping);
+        if (std::abs(ship.pitchInput) < 0.001f)
+            requestedAngularAcceleration.x += -ship.pitchRate * dampingGain;
+        if (std::abs(ship.yawInput) < 0.001f)
+            requestedAngularAcceleration.y += -ship.yawRate * dampingGain;
+        if (std::abs(ship.rollInput) < 0.001f)
+            requestedAngularAcceleration.z += -ship.rollRate * dampingGain;
+    }
 
     applyRequestedAngularAcceleration(
         ship,

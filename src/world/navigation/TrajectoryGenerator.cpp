@@ -79,6 +79,11 @@ bool validRequest(
         request.pathPointsMeters.size() < 2 ||
         !finite3(request.initialVelocityMps) ||
         !finite3(request.initialAccelerationMps2) ||
+        (request.hasInitialOrientation &&
+            (!finite3(request.initialForward) ||
+             !finite3(request.initialUp))) ||
+        (request.hasInitialAngularVelocity &&
+            !finite3(request.initialAngularVelocityRadPerSecond)) ||
         (request.hasTerminalVelocity &&
             (!finite3(request.terminalVelocityMps) ||
              magnitude(request.terminalVelocityMps) >
@@ -949,6 +954,210 @@ glm::dquat sampleOrientation(
     return glm::normalize(glm::slerp(orientation, target, blend));
 }
 
+
+glm::dvec3 angularVelocityBetweenOrientations(
+    const glm::dquat& from,
+    const glm::dquat& to,
+    double durationSeconds
+) noexcept
+{
+    if (!(durationSeconds > Epsilon))
+        return glm::dvec3(0.0);
+
+    glm::dquat delta = glm::normalize(
+        to * glm::conjugate(from)
+    );
+    if (delta.w < 0.0)
+        delta = -delta;
+
+    const double w = std::clamp(delta.w, -1.0, 1.0);
+    const double angle = 2.0 * std::acos(w);
+    const double sinHalf =
+        std::sqrt(std::max(0.0, 1.0 - w * w));
+    if (!(angle > Epsilon) || !(sinHalf > Epsilon))
+        return glm::dvec3(0.0);
+
+    return glm::dvec3(
+        delta.x / sinHalf,
+        delta.y / sinHalf,
+        delta.z / sinHalf
+    ) * (angle / durationSeconds);
+}
+
+bool compileBoundedAngularKinematics(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    world::navigation::Trajectory& trajectory
+)
+{
+    // Legacy/advisory callers that do not supply the real hull attitude keep
+    // the existing geometric orientation product. Automatic execution supplies
+    // an initial body state and therefore receives a physical angular program.
+    if (!request.hasInitialOrientation)
+        return true;
+
+    if (trajectory.samples.size() < 2)
+        return false;
+
+    const double maxRate =
+        request.vehicle.maxAngularVelocityRadPerSecond;
+    const double maxAlpha =
+        request.vehicle.maxAngularAccelerationRadPerSecond2;
+    if (!(maxRate > Epsilon) || !(maxAlpha > Epsilon))
+        return false;
+
+    std::vector<glm::dquat> desired;
+    desired.reserve(trajectory.samples.size());
+    for (const auto& sample : trajectory.samples)
+        desired.push_back(glm::normalize(sample.orientation));
+
+    glm::dquat current = world::navigation::orientationForForwardUp(
+        request.initialForward,
+        request.initialUp
+    );
+    glm::dvec3 omega =
+        request.hasInitialAngularVelocity
+            ? request.initialAngularVelocityRadPerSecond
+            : glm::dvec3(0.0);
+
+    if (!finite3(omega) ||
+        magnitude(omega) > maxRate + 1.0e-6)
+    {
+        return false;
+    }
+
+    trajectory.samples.front().orientation = current;
+    trajectory.samples.front().angularVelocityRadPerSecond = omega;
+
+    for (std::size_t i = 1; i < trajectory.samples.size(); ++i)
+    {
+        const double dt =
+            trajectory.samples[i].timeOffsetSeconds -
+            trajectory.samples[i - 1].timeOffsetSeconds;
+        if (!(dt > Epsilon) || !finite(dt))
+            return false;
+
+        glm::dquat target = desired[i];
+        if (glm::dot(current, target) < 0.0)
+            target = -target;
+
+        const glm::dvec3 errorVector =
+            angularVelocityBetweenOrientations(
+                current,
+                target,
+                1.0
+            );
+        const double errorAngle = magnitude(errorVector);
+
+        glm::dvec3 feedForward =
+            angularVelocityBetweenOrientations(
+                desired[i - 1],
+                desired[i],
+                dt
+            );
+
+        glm::dvec3 correction(0.0);
+        if (errorAngle > Epsilon)
+        {
+            const double correctionSpeed = std::min(
+                maxRate,
+                std::sqrt(
+                    std::max(
+                        0.0,
+                        2.0 * maxAlpha * errorAngle
+                    )
+                )
+            );
+            correction =
+                (errorVector / errorAngle) * correctionSpeed;
+        }
+
+        glm::dvec3 targetOmega = feedForward + correction;
+
+        // The final rotating-target angular state is an exact boundary
+        // condition. The bounded acceleration step below decides whether it is
+        // physically reachable; if not, trajectory generation fails instead
+        // of handing an impossible jump to AcceptedManeuverProgramBuilder.
+        if (request.hasTerminalAngularVelocity &&
+            i + 1 == trajectory.samples.size())
+        {
+            targetOmega =
+                request.terminalAngularVelocityRadPerSecond;
+        }
+
+        const double targetSpeed = magnitude(targetOmega);
+        if (targetSpeed > maxRate && targetSpeed > Epsilon)
+            targetOmega *= maxRate / targetSpeed;
+
+        glm::dvec3 deltaOmega = targetOmega - omega;
+        const double deltaMagnitude = magnitude(deltaOmega);
+        const double maxDelta = maxAlpha * dt;
+        if (deltaMagnitude > maxDelta && deltaMagnitude > Epsilon)
+            deltaOmega *= maxDelta / deltaMagnitude;
+
+        const glm::dvec3 nextOmega = omega + deltaOmega;
+        const glm::dvec3 averageOmega =
+            0.5 * (omega + nextOmega);
+        const double averageSpeed = magnitude(averageOmega);
+
+        if (averageSpeed > Epsilon)
+        {
+            double stepAngle = averageSpeed * dt;
+            const glm::dvec3 stepAxis =
+                averageOmega / averageSpeed;
+
+            if (errorAngle > Epsilon)
+            {
+                const glm::dvec3 errorAxis =
+                    errorVector / errorAngle;
+                if (glm::dot(stepAxis, errorAxis) > 0.999 &&
+                    stepAngle > errorAngle)
+                {
+                    stepAngle = errorAngle;
+                }
+            }
+
+            current = glm::normalize(
+                glm::angleAxis(stepAngle, stepAxis) * current
+            );
+        }
+
+        omega = nextOmega;
+        trajectory.samples[i].orientation = current;
+        trajectory.samples[i].angularVelocityRadPerSecond = omega;
+    }
+
+    if (request.hasTerminalOrientation)
+    {
+        const glm::dquat terminal =
+            world::navigation::orientationForForwardUp(
+                request.terminalForward,
+                request.terminalUp
+            );
+        const double terminalAngleError =
+            magnitude(
+                angularVelocityBetweenOrientations(
+                    current,
+                    terminal,
+                    1.0
+                )
+            );
+        if (terminalAngleError > 0.08726646259971647)
+            return false;
+    }
+
+    if (request.hasTerminalAngularVelocity &&
+        magnitude(
+            omega -
+            request.terminalAngularVelocityRadPerSecond
+        ) > 0.05)
+    {
+        return false;
+    }
+
+    trajectory.angularKinematicsAuthored = true;
+    return true;
+}
+
 bool validateSweptPrediction(
     const world::navigation::TrajectoryGenerationRequest& request,
     const game::navigation::TrajectoryPredictionResult& prediction,
@@ -1622,6 +1831,17 @@ buildPathProgressTrajectory(
             );
     }
 
+    if (!compileBoundedAngularKinematics(
+            request,
+            out.trajectory))
+    {
+        return failure(
+            request,
+            world::navigation::TrajectoryStatus::InitialStateInfeasible,
+            "angular trajectory cannot reach requested terminal state"
+        );
+    }
+
     std::size_t collisionSegments = 0;
     for (std::size_t i = 1;
          i < out.trajectory.samples.size();
@@ -1926,6 +2146,17 @@ RouteAttempt buildRouteAttempt(
                 request.terminalForward,
                 request.terminalUp
             );
+    }
+
+    if (!compileBoundedAngularKinematics(
+            request,
+            out.trajectory))
+    {
+        attempt.failureStatus =
+            world::navigation::TrajectoryStatus::InitialStateInfeasible;
+        attempt.failureMessage =
+            "angular trajectory cannot reach requested terminal state";
+        return attempt;
     }
 
     out.diagnostics.ruckigLegAttempts =

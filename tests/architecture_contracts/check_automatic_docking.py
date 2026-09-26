@@ -135,6 +135,11 @@ try:
         "advisoryPlan.gates.front().forward",
         "initialAngularVelocityRadPerSecond =\n                            glm::dvec3(0.0)",
         "phase=aligned-replan",
+        "planningControlLaw",
+        "request.roundTurns = assisted",
+        "build.controlLaw = assisted",
+        "followed.assistedVelocityModel",
+        "followed.assistedTargetForwardSpeedMps",
     )
 
 
@@ -195,6 +200,9 @@ try:
         "trajectory.angularKinematicsAuthored",
         "actuatorProgramFeasible",
         "completionTriggersReplan",
+        "TranslationMode::AssistedVelocity",
+        "page.actuatorSegmentCount = 0",
+        "newtonian-main-engine-program-infeasible",
     )
 
     follower_h = read("src/game/navigation/TrajectoryFollower.h")
@@ -216,6 +224,8 @@ try:
         "followAcceptedSegment",
         "control.navigationActuatorProgramValid",
         "applyNavigationActuatorProgram(",
+        "control.navigationAssistedFlightModelValid",
+        "applyNavigationAssistedFlightModel(",
     )
     dynamic = require(
         "src/game/navigation/DynamicMotionSystem.cpp",
@@ -223,6 +233,10 @@ try:
         "nominalForwardMain",
         "availableForwardMain",
         "feedbackMainLongitudinal",
+        "applyNavigationAssistedFlightModel(",
+        "requestAssistedTargetSpeed(",
+        "applyLocalFrameInput(",
+        "motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0)",
     )
 
     require(
@@ -244,6 +258,8 @@ try:
         "initial forward corridor blocked",
         "routeSearchStart",
         "prependInitialForwardLead",
+        "initialForwardLeadActive && i == 1",
+        "!r.roundTurns",
     )
     require(
         "src/render/cockpit/FlightVectorIndicatorRenderer.cpp",
@@ -287,6 +303,8 @@ try:
         "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",
         "testTerminalAngularVelocityIsAcceptedAndPreserved",
         "testStoragePageBoundaryPreservesAngularState",
+        "testAssistedUsesGameFlightLawInsteadOfRcsAllocation",
+        "testNewtonianTransitDoesNotSpendPrecisionRcs",
         "testImpossibleTerminalSpinIsRejected",
     )
 
@@ -297,6 +315,8 @@ try:
     print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")
     print(" - manual docking corridor is nose-first and cockpit HUD has a fixed hull boresight")
     print(" - active map-card mode is bright green and cockpit mode text is localized")
+    print(" - Assisted automatic transit executes the same nose-coupled game flight law as manual control")
+    print(" - Newtonian ordinary transit cannot spend precision RCS as fake lateral route thrust")
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
     print(" - Follower has one executable input type")
     print(" - rotating target omega is part of terminal acceptance")

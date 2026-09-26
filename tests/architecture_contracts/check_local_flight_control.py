@@ -117,6 +117,22 @@ for token in (
     if token not in system:
         fail(f"law-independent keypad RCS contract lost: {token}")
 
+for token in (
+    "const double lateralResponse",
+    "params.strafeDamping",
+    "manualRcsAcceleration +\n                motion.assistedStabilizationAccelerationMps2",
+    "Assisted doctrine is direction-coupled",
+):
+    if token not in system:
+        fail(f"Assisted nose/course coupling regressed: {token}")
+
+local_flight_tests = read(
+    "tests/architecture_contracts/LocalFlightControlContractTests.cpp"
+)
+if "testAssistedCourseRealignsWithinThreeSeconds" not in local_flight_tests:
+    fail("Assisted lost the <=3 second course-realignment regression")
+
+
 # Ordinary/main propulsion retains the ship-profile control envelope. The only
 # deliberate exception is the tiny gas-limited keypad RCS in Newtonian mode; it
 # may accumulate delta-v past maxCombatSpeed without turning the main engine
@@ -336,6 +352,8 @@ if "desc.physics.maxGs                  = 5.0f" not in cobra:
     fail("Cobra angular/load envelope is no longer the accepted 5 g")
 if "desc.physics.maxLinearGs            = 7.5f" not in cobra:
     fail("Cobra linear acceleration envelope is no longer the accepted 7.5 g")
+if "desc.physics.strafeAccel            = 73.549875f" not in cobra:
+    fail("Cobra Assisted automatic lateral authority no longer reaches its 7.5 g linear envelope")
 for token in (
     "desc.physics.manoeuvreThrusterAccel = 2.0f",
     "desc.physics.manoeuvreGasUsePerSecond = 0.20f",

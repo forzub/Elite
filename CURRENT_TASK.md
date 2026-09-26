@@ -1,3 +1,37 @@
+## 2026-09-26 — verify nose-first tunnel + physical Automatic entry alignment
+
+Assisted remains accepted; do not retune it.
+
+Pull current main, run the docking gate, rebuild and launch.
+
+Acceptance:
+1. Manual `CALCULATE TRAJECTORY`:
+   - route/tunnel remains visible;
+   - after returning to the cockpit, its first segment is directly in front of
+     the ship along the center boresight, not immediately off to one side.
+2. Cockpit HUD:
+   - a fixed center boresight is always visible with the cockpit HUD;
+   - it represents hull/nose direction, not VREL/flight path.
+3. Automatic `START DOCKING`:
+   - no old synchronous ~350 ms planning freeze;
+   - expected first planning log is `phase=planning-async`;
+   - if the hull is not already on the route-entry attitude, expect
+     `planned ... phase=aligning`, then `phase=aligned-replan`, then a fresh
+     asynchronous plan;
+   - after physical alignment/replan, expected state is
+     `planned ... phase=executing`.
+4. The previous
+   `accepted-program-propulsion-program-infeasible` must not recur merely
+   because the stopped hull initially points away from the route.
+5. Builder/physics must remain strict about real main/RCS capability. Do not
+   substitute Assisted stabilization authority for physical manoeuvre thrust.
+6. On successful execution the ship must physically move along the retained
+   route/tunnel toward pre-capture.
+7. Any genuine one-shot planning failure still restores Human authority safely.
+
+If Automatic still fails, capture every `[DockAuto]` line and the exact reason.
+
+
 # CURRENT TASK — manual docking advisory flight acceptance
 
 ## 2026-09-26 — Windows gate: no docking freeze + physical Automatic start

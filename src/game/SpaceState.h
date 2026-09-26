@@ -250,6 +250,7 @@ private:
     );
     void openSelectedGalaxyMapTarget();
     void applyClientCatalogLocalization();
+    void applyClientModeState();
 
     // std::vector<Planet>                         m_planets;                  // "world/Planet.h"
     // std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
@@ -342,7 +343,6 @@ private:
         std::make_shared<std::atomic<int>>(0);
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
-    bool m_constellationOverlayEnabled = false;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;

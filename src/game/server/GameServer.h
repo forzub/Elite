@@ -361,7 +361,7 @@ private:
 
         Phase phase = Phase::Stabilizing;
         double settledSinceUniverseTimeSeconds = -1.0;
-        double nextPlanAttemptUniverseTimeSeconds = 0.0;
+        std::string lastPlanFailureReason;
 
         // First accepted-program attitude. If the stabilized hull is outside
         // the tracking envelope, Autopilot physically aligns to this basis,

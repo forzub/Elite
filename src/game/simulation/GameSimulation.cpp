@@ -56,6 +56,7 @@
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
 #include "src/game/navigation/NavigationExecutionSafetyProbeBuilder.h"
 #include "src/game/diagnostics/NavigationRuntimeLab.h"
+#include "src/game/diagnostics/NavigationRuntimeLabAcceptedProgramAdapter.h"
 
 namespace
 {
@@ -2753,6 +2754,33 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     followerAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
     followerAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
 
+    const auto followAcceptedSegment =
+        [&](const AcceptedSegment& accepted)
+        {
+            const auto adapted =
+                game::diagnostics::
+                    NavigationRuntimeLabAcceptedProgramAdapter::adapt(
+                        accepted,
+                        followerAgent
+                    );
+
+            auto result = Follower::follow(
+                adapted.program,
+                navigationTimeSeconds,
+                followerAgent,
+                adapted.trackingPolicy
+            );
+
+            game::diagnostics::
+                NavigationRuntimeLabAcceptedProgramAdapter::
+                    preserveLegacyMonitoring(
+                        accepted,
+                        followerAgent,
+                        result
+                    );
+            return result;
+        };
+
     AcceptedSegment::CapabilitySnapshot currentCapability;
     currentCapability.maxForwardAccelerationMetersPerSec2 =
         agent.linearCapability.maxForwardAccelerationMetersPerSec2;
@@ -2834,9 +2862,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
     if (m_navigationRuntimeLabAcceptedSegment.valid)
     {
         followerResult =
-            Follower::follow(
-                m_navigationRuntimeLabAcceptedSegment,
-                followerAgent
+            followAcceptedSegment(
+                m_navigationRuntimeLabAcceptedSegment
             );
     }
 
@@ -3569,9 +3596,8 @@ bool GameSimulation::buildNavigationRuntimeLabIntent(
                 accepted.emergency;
 
         followerResult =
-            Follower::follow(
-                m_navigationRuntimeLabAcceptedSegment,
-                followerAgent
+            followAcceptedSegment(
+                m_navigationRuntimeLabAcceptedSegment
             );
 
             }

@@ -160,14 +160,6 @@ void CoordinateDisplayService::setFormat(
     m_format = format;
 }
 
-void CoordinateDisplayService::cycle() noexcept
-{
-    m_format =
-        nextCoordinateDisplayFormat(
-            m_format
-        );
-}
-
 std::string CoordinateDisplayService::formatLine(
     std::string coordinateText
 ) const

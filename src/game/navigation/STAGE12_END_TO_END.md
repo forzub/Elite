@@ -1,5 +1,22 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — flight doctrine/state cleanup completed before Automatic executor wiring
+
+Local-flight state transitions are now centralized before Stage-12 automatic
+execution is connected:
+- Assisted is the shared default;
+- Assisted/Newtonian persistent transition state is owned by
+  `LocalFlightControlStateMachine`;
+- Assisted entry captures longitudinal, not total, VREL;
+- Assisted neutral angular damping differs from Newtonian inertial rotation;
+- Assisted lateral stabilization has its own load-bounded capability and state,
+  distinct from manual RCS gas usage;
+- the new state is replicated in snapshot wire schema 10.
+
+This prevents the forthcoming Autopilot/Follower path from inheriting hidden
+manual-mode if/flag behavior. Fresh `verify_modes.sh` Windows evidence is
+pending; Automatic docking remains the next execution milestone after this gate.
+
 ## 2026-09-26 — flight-control state ownership hardened before Automatic execution
 
 Before wiring production Automatic docking, the player local-flight path was

@@ -2272,6 +2272,7 @@ void GameServer::applyAutomaticDockingControls(
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
             runtime.controlBridge.reset();
+            runtime.planningJob.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
 
             ShipControlState stop;
@@ -2355,6 +2356,214 @@ void GameServer::applyAutomaticDockingControls(
                     reason
                 });
             }
+            continue;
+        }
+
+        if (runtime.phase ==
+            DockingAutomaticRuntime::Phase::Planning)
+        {
+            ShipControlState stop;
+            stop.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+            ship->setControlState(stop);
+
+            const auto job = runtime.planningJob;
+            if (!job)
+            {
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    "planning-job-missing"
+                });
+                continue;
+            }
+
+            if (!job->ready.load(std::memory_order_acquire))
+                continue;
+
+            if (!job->success || job->programs.empty())
+            {
+                const std::string reason =
+                    job->failureReason.empty()
+                        ? "plan-failed"
+                        : job->failureReason;
+
+                runtime.lastPlanFailureReason = reason;
+                runtime.planningJob.reset();
+
+                std::cerr
+                    << "[DockAuto] request="
+                    << runtime.requestSerial
+                    << " phase=plan-failed"
+                    << " reason=" << reason
+                    << " action=restore-human"
+                    << "\n";
+
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    reason
+                });
+                continue;
+            }
+
+            // The worker plans against a short future execution epoch. Keep
+            // the real ship stopped until that epoch instead of consuming an
+            // already-running absolute-time maneuver while planning finishes.
+            if (time.universeTimeSeconds + 1.0e-6 <
+                job->executionStartUniverseTimeSeconds)
+            {
+                continue;
+            }
+
+            // A result that missed its scheduled start by a large margin is
+            // stale. Do not execute it late against a moving/rotating dock.
+            if (time.universeTimeSeconds -
+                    job->executionStartUniverseTimeSeconds >
+                0.50)
+            {
+                runtime.planningJob.reset();
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    "planning-result-missed-execution-epoch"
+                });
+                continue;
+            }
+
+            runtime.programs = std::move(job->programs);
+            runtime.currentProgramPage = 0;
+            runtime.nextProgramRevision +=
+                static_cast<std::uint64_t>(
+                    runtime.programs.size()
+                );
+
+            runtime.controlBridge =
+                std::make_unique<
+                    game::navigation::NavigationRuntimeControlBridge
+                >(
+                    game::navigation::
+                        NavigationRuntimeControlBridge::
+                            PilotSkillProfile {}
+                );
+
+            game::navigation::
+                NavigationRuntimeControlBridge::Intent
+                    neutral;
+            neutral.revision = runtime.requestSerial;
+            neutral.targetRevision =
+                runtime.programs.front().revision;
+            if (!runtime.controlBridge->reset(
+                    job->executionStartUniverseTimeSeconds,
+                    neutral))
+            {
+                runtime.controlBridge.reset();
+                runtime.programs.clear();
+                runtime.planningJob.reset();
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    "runtime-control-bridge-reset-failed"
+                });
+                continue;
+            }
+
+            const auto& firstReference =
+                runtime.programs.front().samples[0];
+            runtime.alignmentForwardMap =
+                firstReference.forwardMap;
+            runtime.alignmentRightMap =
+                firstReference.rightMap;
+            runtime.alignmentUpMap =
+                firstReference.upMap;
+            runtime.alignedSinceUniverseTimeSeconds = -1.0;
+
+            const auto currentForwardMap =
+                glm::normalize(
+                    hub->worldToLocalVector(
+                        glm::dvec3(transform.forward())
+                    )
+                );
+            const auto currentUpMap =
+                glm::normalize(
+                    hub->worldToLocalVector(
+                        glm::dvec3(transform.up())
+                    )
+                );
+
+            const auto angleBetween =
+                [](const glm::dvec3& a,
+                   const glm::dvec3& b)
+                {
+                    return std::acos(
+                        std::clamp(
+                            glm::dot(
+                                glm::normalize(a),
+                                glm::normalize(b)
+                            ),
+                            -1.0,
+                            1.0
+                        )
+                    );
+                };
+
+            const double initialAttitudeErrorRad =
+                std::max(
+                    angleBetween(
+                        currentForwardMap,
+                        runtime.alignmentForwardMap
+                    ),
+                    angleBetween(
+                        currentUpMap,
+                        runtime.alignmentUpMap
+                    )
+                );
+            const double executionEntryToleranceRad =
+                runtime.programs.front().
+                    terminalTolerance.forwardAngleRad;
+
+            runtime.phase =
+                initialAttitudeErrorRad <=
+                        executionEntryToleranceRad
+                    ? DockingAutomaticRuntime::Phase::Executing
+                    : DockingAutomaticRuntime::Phase::Aligning;
+
+            std::cout
+                << "[DockAuto] planned entity="
+                << runtime.entityId.value
+                << " request=" << runtime.requestSerial
+                << " pages=" << runtime.programs.size()
+                << " trajectory_s="
+                << job->trajectoryDurationSeconds
+                << " gates=" << job->gateCount
+                << " final_axis_m="
+                << job->finalAxisMeters
+                << " terminal_radius_m="
+                << job->terminalRadiusMeters
+                << " pre_capture_depth_m="
+                << job->preCaptureDepthMeters
+                << " terminal_t="
+                << job->terminalUniverseTimeSeconds
+                << " terminal_omega_radps="
+                << job->terminalAngularVelocityRadPerSec
+                << " initial_attitude_error_deg="
+                << glm::degrees(initialAttitudeErrorRad)
+                << " phase="
+                << (runtime.phase ==
+                        DockingAutomaticRuntime::Phase::Executing
+                        ? "executing"
+                        : "aligning")
+                << "\n";
+
+            runtime.planningJob.reset();
             continue;
         }
 

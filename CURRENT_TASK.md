@@ -1,6 +1,27 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
 
+## 2026-09-26 — live Automatic docking validation
+
+Launch the freshly built game and test `START DOCKING` against a
+compatible/free docking port.
+
+Capture console output containing all `[DockAuto]` lines and report the visible
+ship behavior.
+
+Expected lifecycle:
+- `phase=stabilizing`;
+- either direct `phase=executing`, or `phase=aligning` followed by
+  `phase=aligned-replan` and a fresh plan;
+- no navigation shutdown on recoverable tracking loss;
+- final current-stage success:
+  `approach-complete ... reason=pre-capture-envelope-complete`;
+- Human control restored.
+
+Do not judge physical station latch yet; latch/contact is the next separate layer.
+
+
+
 ## 2026-09-26 — rerun corrected runtime-control gate
 
 Pull current main and rerun the single corrected test first:

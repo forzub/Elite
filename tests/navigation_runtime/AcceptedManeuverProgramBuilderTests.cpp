@@ -201,6 +201,76 @@ void testStoragePageBoundaryPreservesAngularState()
     );
 }
 
+void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
+{
+    ShipParams params = makeParams();
+    params.strafeAccel = 30.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+
+    auto trajectory = makeTrajectory();
+    for (auto& sample : trajectory.samples)
+    {
+        sample.accelerationMps2 = {8.0, 0.0, 0.0};
+    }
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.controlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    request.objectiveRevision = 12;
+    request.firstProgramRevision = 40;
+    request.capabilityRevision = 6;
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+
+    require(result.valid,
+            "Assisted route was incorrectly rejected by precision-RCS limit");
+    require(result.pages.size() == 1,
+            "small Assisted route unexpectedly paged");
+
+    const auto& program = result.pages.front();
+    require(
+        program.translationMode ==
+            game::navigation::AcceptedManeuverProgram::
+                TranslationMode::AssistedVelocity,
+        "Assisted program did not select the game-flight execution mode"
+    );
+    require(program.actuatorSegmentCount == 0,
+            "Assisted route still published a synthetic RCS actuator schedule");
+}
+
+void testNewtonianTransitDoesNotSpendPrecisionRcs()
+{
+    ShipParams params = makeParams();
+    params.manoeuvreThrusterAccel = 20.0f;
+
+    auto trajectory = makeTrajectory();
+    for (auto& sample : trajectory.samples)
+    {
+        sample.accelerationMps2 = {5.0, 0.0, 0.0};
+    }
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.controlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    request.objectiveRevision = 13;
+    request.firstProgramRevision = 50;
+    request.capabilityRevision = 7;
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+
+    require(!result.valid,
+            "Newtonian transit incorrectly used precision RCS as route thrust");
+    require(
+        result.failureReason ==
+            "newtonian-main-engine-program-infeasible",
+        "Newtonian rejection did not identify main-engine alignment failure"
+    );
+}
+
 void testImpossibleTerminalSpinIsRejected()
 {
     const ShipParams params = makeParams();
@@ -234,6 +304,8 @@ int main()
     {
         testTerminalAngularVelocityIsAcceptedAndPreserved();
         testStoragePageBoundaryPreservesAngularState();
+        testAssistedUsesGameFlightLawInsteadOfRcsAllocation();
+        testNewtonianTransitDoesNotSpendPrecisionRcs();
         testImpossibleTerminalSpinIsRejected();
 
         std::cout
@@ -241,6 +313,8 @@ int main()
             << " - trajectory -> immutable accepted program\n"
             << " - rotating terminal angular velocity retained\n"
             << " - storage-page angular state remains continuous\n"
+            << " - Assisted uses game-flight velocity control, not route RCS\n"
+            << " - Newtonian ordinary transit cannot spend precision RCS\n"
             << " - impossible terminal spin rejected before Follower\n";
         return 0;
     }

@@ -1444,6 +1444,7 @@ bool GameServer::planAutomaticDocking(
     world::navigation::TrajectoryGenerationResult trajectoryResult;
     DockingAdvisoryPlan advisoryPlan;
     double captureUniverseTimeSeconds = universeTimeSeconds;
+    glm::dvec3 terminalAngularVelocityMapRadPerSec(0.0);
 
     for (int iteration = 0; iteration < 3; ++iteration)
     {
@@ -1597,6 +1598,58 @@ bool GameServer::planAutomaticDocking(
              portBefore.positionMeters) /
             (2.0 * velocityProbeSeconds);
 
+        const auto portOrientation =
+            [](const DockingAdvisoryLocalPort& value)
+            {
+                const glm::dvec3 right = glm::normalize(
+                    glm::cross(value.forward, value.up)
+                );
+                const glm::dvec3 up = glm::normalize(
+                    glm::cross(right, value.forward)
+                );
+                return glm::normalize(
+                    glm::quat_cast(
+                        glm::dmat3(
+                            right,
+                            up,
+                            -value.forward
+                        )
+                    )
+                );
+            };
+
+        glm::dquat rotationDelta = glm::normalize(
+            portOrientation(portAfter) *
+            glm::conjugate(portOrientation(portBefore))
+        );
+        if (rotationDelta.w < 0.0)
+            rotationDelta = -rotationDelta;
+
+        const double deltaW =
+            std::clamp(rotationDelta.w, -1.0, 1.0);
+        const double deltaAngle =
+            2.0 * std::acos(deltaW);
+        const double deltaSinHalf =
+            std::sqrt(std::max(
+                0.0,
+                1.0 - deltaW * deltaW
+            ));
+
+        terminalAngularVelocityMapRadPerSec =
+            glm::dvec3(0.0);
+        if (deltaAngle > 1.0e-9 &&
+            deltaSinHalf > 1.0e-9)
+        {
+            terminalAngularVelocityMapRadPerSec =
+                glm::dvec3(
+                    rotationDelta.x / deltaSinHalf,
+                    rotationDelta.y / deltaSinHalf,
+                    rotationDelta.z / deltaSinHalf
+                ) *
+                (deltaAngle /
+                 (2.0 * velocityProbeSeconds));
+        }
+
         trajectoryRequest.hasTerminalOrientation = true;
         trajectoryRequest.terminalForward =
             -port.forward;
@@ -1647,6 +1700,9 @@ bool GameServer::planAutomaticDocking(
     build.spaceRevision = m_serverTick;
     build.spaceSourceRevision = m_serverTick;
     build.minimumClearanceMeters = 0.0;
+    build.hasTerminalAngularVelocity = true;
+    build.terminalAngularVelocityMapRadPerSec =
+        terminalAngularVelocityMapRadPerSec;
     build.policy.linearFeedbackReserveMps2 =
         linearReserve;
     build.policy.angularFeedbackReserveRadPerSec2 =
@@ -1694,6 +1750,10 @@ bool GameServer::planAutomaticDocking(
         << " terminal_radius_m="
         << advisoryPlan.terminalTurnRadiusMeters
         << " capture_t=" << captureUniverseTimeSeconds
+        << " terminal_omega_radps="
+        << glm::length(
+            terminalAngularVelocityMapRadPerSec
+        )
         << "\n";
     return true;
 }

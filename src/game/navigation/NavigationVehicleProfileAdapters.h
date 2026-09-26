@@ -75,12 +75,36 @@ makeNavigationVehicleProfile(
     double preferredClearanceMeters
 )
 {
-    return makeNavigationVehicleProfile(
-        params,
-        collisionRadiusMeters,
-        preferredClearanceMeters,
-        defaultLocalFlightControlLaw()
-    );
+    // Compatibility profile for older/generic callers that have not yet
+    // declared a flight law. Preserve their historical hardware-envelope
+    // semantics; production docking/navigation must use the explicit-law
+    // overload above.
+    world::navigation::NavigationVehicleProfile profile;
+    profile.collisionRadiusMeters =
+        std::max(0.0, collisionRadiusMeters);
+    profile.preferredClearanceMeters =
+        std::max(0.0, preferredClearanceMeters);
+    profile.maxSpeedMps =
+        game::ship::controlledSpeedLimitMps(params);
+
+    const double forwardMain =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMain =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvre =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
+
+    profile.maxForwardAccelerationMps2 =
+        std::max(forwardMain, manoeuvre);
+    profile.maxBrakingAccelerationMps2 =
+        std::max(reverseMain, manoeuvre);
+    profile.maxLateralAccelerationMps2 =
+        manoeuvre;
+    profile.maxAngularVelocityRadPerSecond =
+        game::ship::maximumAngularSpeedRadPerSec(params);
+    profile.maxAngularAccelerationRadPerSecond2 =
+        game::ship::angularAccelerationLimitRadPerSec2(params);
+    return profile;
 }
 
 inline world::navigation::NavigationVehicleProfile

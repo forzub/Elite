@@ -1,5 +1,31 @@
 # CURRENT STATE
 
+## 2026-09-26 — Assisted accepted; tunnel/autopilot regression isolated and corrected
+
+Fresh live result:
+- Assisted handling is accepted by the user.
+- manual docking guidance lost the previously successful visible tunnel;
+- pressing START DOCKING removed the route, caused one heavy freeze, produced no
+  ship motion, then logged
+  `phase=plan-failed reason=accepted-program-build-failed action=restore-human`.
+
+Corrections now on main:
+- Automatic enables the same LocalGuidance/HudGuidanceCorridor presentation as
+  manual Guidance;
+- an already calculated docking corridor is retained across Autopilot takeover
+  and Human hand-back instead of being deleted;
+- AcceptedManeuverProgramBuilder exposes the exact rejection class;
+- the rotating dock terminal angular velocity is now part of
+  TrajectoryGenerationRequest;
+- trajectory orientation is time-varying near a rotating terminal: it is
+  propagated backwards from the exact capture pose using terminal omega, so
+  the final AcceptedManeuverProgram no longer receives an instantaneous angular
+  velocity jump at its last sample.
+
+This specifically targets the observed accepted-program construction failure
+without weakening angular feasibility checks. Fresh Windows build/native/live
+verification is still required.
+
 
 ## 2026-09-26 — live test: Assisted course lag + Automatic fixed-step planner freeze fixed
 

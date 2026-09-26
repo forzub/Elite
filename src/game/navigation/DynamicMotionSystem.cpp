@@ -3,6 +3,7 @@
 
 #include "DynamicMotionSystem.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 
 namespace game::navigation
 {
@@ -290,7 +291,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
-        motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+        (void)LocalFlightControlStateMachine::completeVelocityAlignment(motion);
         motion.targetForwardSpeedMps = 0.0;
     }
 
@@ -398,7 +399,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
                 motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
                 motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
                 motion.engineAccelerationMps2 = glm::dvec3(0.0);
-                motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+                (void)LocalFlightControlStateMachine::completeVelocityAlignment(motion);
                 motion.targetForwardSpeedMps = 0.0;
                 return;
             }
@@ -610,7 +611,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
-        motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+        (void)LocalFlightControlStateMachine::completeVelocityAlignment(motion);
     }
 }
 

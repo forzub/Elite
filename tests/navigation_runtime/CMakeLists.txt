@@ -996,3 +996,48 @@ set_tests_properties(
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
         LABELS "navigation_stage1"
 )
+
+
+add_executable(
+    accepted_maneuver_program_builder_tests
+    AcceptedManeuverProgramBuilderTests.cpp
+)
+
+target_include_directories(
+    accepted_maneuver_program_builder_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    accepted_maneuver_program_builder_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    accepted_maneuver_program_builder_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        accepted_maneuver_program_builder_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        accepted_maneuver_program_builder_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME accepted_maneuver_program_builder
+    COMMAND accepted_maneuver_program_builder_tests
+)
+
+set_tests_properties(
+    accepted_maneuver_program_builder
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

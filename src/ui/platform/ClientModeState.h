@@ -15,6 +15,7 @@ struct ClientModeState
     std::string uiLocale = "en";
     bool constellationsEnabled = false;
     std::string skyCultureId;
+    std::string coordinateDisplayFormatId = "hierarchical";
     std::uint64_t revision = 1;
 
     bool setUiLocale(std::string locale)
@@ -45,6 +46,15 @@ struct ClientModeState
         if (id.empty() || id == skyCultureId)
             return false;
         skyCultureId = std::move(id);
+        ++revision;
+        return true;
+    }
+
+    bool setCoordinateDisplayFormatId(std::string id)
+    {
+        if (id.empty() || id == coordinateDisplayFormatId)
+            return false;
+        coordinateDisplayFormatId = std::move(id);
         ++revision;
         return true;
     }

@@ -140,6 +140,25 @@ inline constexpr double StandardGravityMps2 = 9.80665;
     return std::max(0.0, static_cast<double>(params.strafeAccel));
 }
 
+[[nodiscard]] inline double assistedLateralStabilizationAccelerationLimitMps2(
+    const ShipParams& params
+) noexcept
+{
+    // Assisted lateral stabilization is a distinct automatic actuator budget.
+    // The legacy strafeAccel field is the ship-profile aggregate authority for
+    // that controller (e.g. vectoring + automatic translation thrusters).
+    // Manual keypad RCS continues to use manoeuvreThrusterAccel and its gas
+    // accumulator. Both remain bounded by the common linear-load envelope.
+    const double configured = std::max(
+        manoeuvreAccelerationLimitMps2(params),
+        std::max(0.0, static_cast<double>(params.strafeAccel))
+    );
+    return std::min(
+        configured,
+        mainAccelerationLimitMps2(params)
+    );
+}
+
 [[nodiscard]] inline double controlledSpeedLimitMps(
     const ShipParams& params
 ) noexcept

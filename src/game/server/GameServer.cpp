@@ -941,6 +941,22 @@ bool GameServer::beginDockingGuidancePreparation(
     if (!ship)
         return false;
 
+    if (const auto automatic =
+            m_dockingAutomaticRuntimes.find(controlledEntityId.value);
+        automatic != m_dockingAutomaticRuntimes.end())
+    {
+        const PlayerId automaticPlayer = automatic->second.playerId;
+        const std::uint64_t automaticSerial =
+            automatic->second.requestSerial;
+        (void)finishAutomaticDocking(
+            automaticPlayer,
+            controlledEntityId,
+            automaticSerial,
+            false,
+            "manual-guidance-request"
+        );
+    }
+
     const auto& transform = ship->core().transform();
     const auto& motion = transform.motion;
     const std::string hubId = !motion.matchedReferenceFrameId.empty()
@@ -2052,6 +2068,13 @@ void GameServer::resetSessionControlState(
     if (controlledEntityId.value == 0)
         return;
 
+    m_dockingGuidancePreparations.erase(
+        controlledEntityId.value
+    );
+    m_dockingAutomaticRuntimes.erase(
+        controlledEntityId.value
+    );
+
     std::uint64_t previousLastReceived = 0;
     std::uint64_t previousLastProcessed = 0;
     std::size_t previousPendingControls = 0;
@@ -2185,6 +2208,23 @@ bool GameServer::disconnectPlayerSession(
         const auto prep = prepIt->second;
         (void)finishDockingGuidancePreparation(
             prep.playerId, prep.entityId, prep.requestSerial, false);
+    }
+
+    if (const auto automaticIt =
+            m_dockingAutomaticRuntimes.find(controlledEntityId.value);
+        automaticIt != m_dockingAutomaticRuntimes.end())
+    {
+        const PlayerId automaticPlayer =
+            automaticIt->second.playerId;
+        const std::uint64_t automaticSerial =
+            automaticIt->second.requestSerial;
+        (void)finishAutomaticDocking(
+            automaticPlayer,
+            controlledEntityId,
+            automaticSerial,
+            false,
+            "session-disconnect"
+        );
     }
 
     // Persistent player->ship control identity survives a disconnect, but

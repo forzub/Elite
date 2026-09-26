@@ -91,7 +91,8 @@ require(
 )
 
 for marker in (
-    "mainForward",
+    "forwardMainAuthority",
+    "reverseMainAuthority",
     "manoeuvreAuthority",
     "clampMagnitude(remainder, manoeuvreAuthority)",
 ):
@@ -163,7 +164,8 @@ print("NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS")
 print(" - accepted navigation/pilot output reaches ShipControlState through one explicit demand seam")
 print(" - bridge publishes the same executed demand for downstream control and future guidance/debug")
 print(" - angular demand uses existing ShipController acceleration/rate capability limits")
-print(" - linear demand maps onto forward-only main propulsion plus bounded manoeuvre authority")
+print(" - generic net demand maps onto installed rear/fore main banks plus bounded manoeuvre authority")
+print(" - accepted-program execution preserves Planner-owned nominal actuator allocation")
 print(" - manual control materially overrides navigation demand")
 print(" - GameSimulation applies the new channel without replacing legacy controls for other ships")
 print(" - navigation never writes authoritative position/velocity/angular-rate state directly")

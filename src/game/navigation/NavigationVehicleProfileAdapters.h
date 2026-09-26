@@ -132,8 +132,10 @@ makeNavigationVehicleProfile(
 {
     return makeNavigationVehicleProfile(
         params,
-        envelope,
-        defaultLocalFlightControlLaw()
+        envelope.valid
+            ? envelope.conservativeSafetyRadiusMeters()
+            : 0.0,
+        0.0
     );
 }
 

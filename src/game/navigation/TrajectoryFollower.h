@@ -60,6 +60,12 @@ public:
         glm::dvec3 linearFeedbackLocalMps2 {0.0};
         glm::dvec3 angularFeedbackLocalRadPerSec2 {0.0};
 
+        // Assisted programs are game-flight commands, not physical RCS
+        // schedules. The target is the sampled forward component of the
+        // accepted velocity reference; attitude remains owned by B10.
+        bool assistedVelocityModel = false;
+        double assistedTargetForwardSpeedMps = 0.0;
+
         // Planner-owned actuator schedule sampled for the current interval.
         // Autopilot execution will consume these explicitly; exposing them here
         // prevents downstream code from having to re-infer engine choice from

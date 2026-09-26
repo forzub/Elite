@@ -48,6 +48,15 @@ public:
         std::size_t pendingCommandCount = 0;
     };
 
+    struct ProgramActuatorCommand
+    {
+        bool valid = false;
+        double rearMainThrottle01 = 0.0;
+        double foreMainThrottle01 = 0.0;
+        glm::dvec3 manoeuvreAccelerationSystemMps2 {0.0};
+        glm::dvec3 linearFeedbackAccelerationSystemMps2 {0.0};
+    };
+
     struct StepResult
     {
         PilotExecutor::Status status =
@@ -70,6 +79,17 @@ public:
         double timeSeconds,
         double deltaSeconds,
         const Intent& intent
+    ) noexcept;
+
+    // Accepted-program execution path. The ideal/executed net intent still
+    // passes through PilotSkillExecutor for deterministic control behavior,
+    // while the Planner-owned nominal translation actuator schedule remains
+    // explicit and is not re-derived from that net vector downstream.
+    [[nodiscard]] StepResult stepProgram(
+        double timeSeconds,
+        double deltaSeconds,
+        const Intent& intent,
+        const ProgramActuatorCommand& actuator
     ) noexcept;
 
     [[nodiscard]] double maximumStepSeconds() const noexcept

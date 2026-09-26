@@ -133,7 +133,14 @@ void testBridgePublishesOneDirectDemandSample()
 void testLinearDemandUsesRealMainAndManoeuvreAuthority()
 {
     game::navigation::DynamicMotionState motion;
-    const ShipParams params = capabilityParams();
+    ShipParams params = capabilityParams();
+
+    // Keep the installed rear-main rating below the common 1g load envelope
+    // so this fixture can prove simultaneous main + manoeuvre allocation
+    // without asking production physics to violate the total acceleration
+    // envelope.
+    params.forwardMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 5.0f;
 
     const glm::vec3 forward(0.0f, 0.0f, -1.0f);
     const glm::dvec3 demand(10.0, 0.0, -20.0);
@@ -145,12 +152,11 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
         forward
     );
 
-    constexpr double standardGravity = 9.80665;
     requireNear(
         glm::length(motion.mainEngineAccelerationMps2),
-        standardGravity,
-        1.0e-6,
-        "main engine demand must clamp at maxLinearGs authority"
+        5.0,
+        1.0e-9,
+        "main engine demand must respect installed rear-main authority"
     );
     require(
         glm::dot(
@@ -163,7 +169,35 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
         glm::length(motion.manoeuvreAccelerationMps2),
         2.0,
         1.0e-9,
-        "remaining vector must clamp at manoeuvre-thruster authority"
+        "remaining vector must use available manoeuvre-thruster authority"
+    );
+
+    // Separately pin the shared linear-load envelope. If main already consumes
+    // the full 1g budget, secondary RCS must be reduced to zero instead of
+    // producing 1g + 2 m/s^2 total acceleration.
+    ShipParams saturated = capabilityParams();
+    saturated.forwardMainEngineAvailable = true;
+    saturated.forwardMainEngineAccelerationMps2 = 100.0f;
+
+    game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
+        motion,
+        saturated,
+        demand,
+        forward
+    );
+
+    constexpr double standardGravity = 9.80665;
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        standardGravity,
+        1.0e-6,
+        "main engine demand must clamp at maxLinearGs authority"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "secondary manoeuvre demand must yield when main consumes the full load envelope"
     );
 
     const glm::dvec3 reverseDemand(0.0, 0.0, 20.0);

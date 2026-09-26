@@ -194,8 +194,19 @@ void DynamicMotionSystem::updateLocalFrameMotion(
 
     glm::dvec3 actualManoeuvreWorldAcceleration =
         motion.manoeuvreAccelerationMps2;
+    glm::dvec3 actualAssistedStabilizationWorldAcceleration =
+        motion.assistedStabilizationAccelerationMps2;
 
-    const double manoeuvreAuthority = game::ship::manoeuvreAccelerationLimitMps2(params);
+    const double manoeuvreAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
+    const double assistedStabilizationAuthority =
+        game::ship::assistedLateralStabilizationAccelerationLimitMps2(params);
+
+    actualAssistedStabilizationWorldAcceleration =
+        clampMagnitude(
+            actualAssistedStabilizationWorldAcceleration,
+            assistedStabilizationAuthority
+        );
     const double gasUsePerSecond = std::max(
         0.0,
         static_cast<double>(params.manoeuvreGasUsePerSecond)
@@ -256,6 +267,10 @@ void DynamicMotionSystem::updateLocalFrameMotion(
 
     const glm::dvec3 actualManoeuvreLocalAcceleration =
         frame.worldToLocalVector(actualManoeuvreWorldAcceleration);
+    const glm::dvec3 actualAssistedStabilizationLocalAcceleration =
+        frame.worldToLocalVector(
+            actualAssistedStabilizationWorldAcceleration
+        );
 
     glm::dvec3 localAcceleration(0.0);
     if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
@@ -278,7 +293,9 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     {
         localAcceleration = limitPropulsionAccelerationToControlledSpeed(
             motion.localVelocityMps,
-            requestedMainLocalAcceleration + actualManoeuvreLocalAcceleration,
+            requestedMainLocalAcceleration +
+                actualManoeuvreLocalAcceleration +
+                actualAssistedStabilizationLocalAcceleration,
             game::ship::controlledSpeedLimitMps(params),
             dt
         );
@@ -296,9 +313,9 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         motion.localVelocityMps = glm::dvec3(0.0);
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         (void)LocalFlightControlStateMachine::completeVelocityAlignment(motion);
-        motion.targetForwardSpeedMps = 0.0;
     }
 
     motion.localPositionMeters += motion.localVelocityMps * dt;
@@ -365,6 +382,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
     motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
     motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+    motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
 
     if (cruiseActive)
     {

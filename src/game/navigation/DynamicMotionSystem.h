@@ -28,16 +28,18 @@ public:
 
     // Navigation/autopilot direct system-frame acceleration demand.
     //
-    // Newtonian maps longitudinal main thrust to the aft/forward source only;
-    // reverse demand must use bounded RCS unless the accepted maneuver has
-    // physically flipped the hull.
+    // Generic/legacy direct-acceleration seam. This remains available to
+    // non-program callers and diagnostics, but it is NOT the canonical
+    // Assisted autopilot path.
     //
-    // Assisted/aircraft-like maps longitudinal demand to symmetric aft/fore
-    // controlled thrust. Lateral/vertical remainder always uses the bounded
-    // six-direction manoeuvre/RCS authority.
+    // Newtonian direct demand maps longitudinal main thrust to installed main
+    // authority and residual vector demand to bounded physical RCS. A proper
+    // accepted Newtonian transit should instead author hull rotation + main
+    // burn explicitly.
     //
-    // Final controlled-speed and manoeuvre-gas limits are still enforced by
-    // updateLocalFrameMotion().
+    // Assisted accepted programs MUST use applyNavigationAssistedFlightModel()
+    // below so manual and automatic flight share the same nose-coupled game
+    // law. Do not route ordinary Assisted curvature through this generic seam.
     static void applySystemAccelerationDemand(
         DynamicMotionState& motion,
         const ShipParams& params,

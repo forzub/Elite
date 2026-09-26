@@ -1073,20 +1073,60 @@ bool compileBoundedAngularKinematics(
 
         glm::dvec3 targetOmega = feedForward + correction;
 
-        // The final rotating-target angular state is an exact boundary
-        // condition. The bounded acceleration step below decides whether it is
-        // physically reachable; if not, trajectory generation fails instead
-        // of handing an impossible jump to AcceptedManeuverProgramBuilder.
-        if (request.hasTerminalAngularVelocity &&
-            i + 1 == trajectory.samples.size())
-        {
-            targetOmega =
-                request.terminalAngularVelocityRadPerSecond;
-        }
-
         const double targetSpeed = magnitude(targetOmega);
         if (targetSpeed > maxRate && targetSpeed > Epsilon)
             targetOmega *= maxRate / targetSpeed;
+
+        if (request.hasTerminalAngularVelocity)
+        {
+            const glm::dvec3 terminalOmega =
+                request.terminalAngularVelocityRadPerSecond;
+            const double terminalTime =
+                trajectory.samples.back().timeOffsetSeconds;
+            const double previousTime =
+                trajectory.samples[i - 1].timeOffsetSeconds;
+            const double currentTime =
+                trajectory.samples[i].timeOffsetSeconds;
+            const double remainingBefore = std::max(
+                0.0,
+                terminalTime - previousTime
+            );
+            const double remainingAfter = std::max(
+                0.0,
+                terminalTime - currentTime
+            );
+
+            // Terminal omega is a boundary condition, not something to snap
+            // onto in the final sample. At every step the current state must
+            // remain inside the backwards-reachable alpha cone:
+            //
+            //   |omega(t) - omega_terminal| <= alpha_max * (T - t)
+            //
+            // The old implementation only replaced targetOmega on the final
+            // sample, so a perfectly feasible program could arrive there with
+            // too much angular speed to remove in one dt and reject itself.
+            if (magnitude(omega - terminalOmega) >
+                maxAlpha * remainingBefore + 1.0e-6)
+            {
+                return false;
+            }
+
+            glm::dvec3 terminalDelta =
+                targetOmega - terminalOmega;
+            const double terminalDeltaMagnitude =
+                magnitude(terminalDelta);
+            const double maxTerminalDelta =
+                maxAlpha * remainingAfter;
+            if (terminalDeltaMagnitude > maxTerminalDelta &&
+                terminalDeltaMagnitude > Epsilon)
+            {
+                terminalDelta *=
+                    maxTerminalDelta /
+                    terminalDeltaMagnitude;
+                targetOmega =
+                    terminalOmega + terminalDelta;
+            }
+        }
 
         glm::dvec3 deltaOmega = targetOmega - omega;
         const double deltaMagnitude = magnitude(deltaOmega);

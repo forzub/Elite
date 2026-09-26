@@ -78,6 +78,7 @@ public:
     {
         const world::navigation::Trajectory* trajectory = nullptr;
         const ShipParams* shipPhysics = nullptr;
+        LocalFlightControlLaw controlLaw = defaultLocalFlightControlLaw();
 
         std::uint64_t objectiveRevision = 0;
         std::uint64_t firstProgramRevision = 1;
@@ -120,6 +121,8 @@ public:
         if (!request.trajectory ||
             !request.shipPhysics ||
             !request.trajectory->ready() ||
+            (request.controlLaw != LocalFlightControlLaw::Assisted &&
+             request.controlLaw != LocalFlightControlLaw::Newtonian) ||
             request.objectiveRevision == 0 ||
             request.firstProgramRevision == 0 ||
             !request.policy.valid() ||
@@ -147,8 +150,8 @@ public:
             game::ship::forwardMainAccelerationLimitMps2(params);
         const double reverseMain =
             game::ship::reverseMainAccelerationLimitMps2(params);
-        const double manoeuvre =
-            game::ship::manoeuvreAccelerationLimitMps2(params);
+        const double controlledSpeed =
+            game::ship::controlledSpeedLimitMps(params);
 
         std::size_t first = 0;
         std::uint64_t revision = request.firstProgramRevision;
@@ -168,6 +171,11 @@ public:
                 last + 1 == samples.size()
                     ? AcceptedManeuverProgram::ManeuverFamily::PrecisionTransit
                     : AcceptedManeuverProgram::ManeuverFamily::FreeTransit;
+            page.controlLaw = request.controlLaw;
+            page.translationMode =
+                request.controlLaw == LocalFlightControlLaw::Assisted
+                    ? AcceptedManeuverProgram::TranslationMode::AssistedVelocity
+                    : AcceptedManeuverProgram::TranslationMode::NewtonianMainEngine;
             page.acceptedAtUniverseTimeSeconds =
                 trajectory.startUniverseTimeSeconds;
 
@@ -277,63 +285,105 @@ public:
             page.proof.minimumAngularAuthorityReserveRadPerSec2 =
                 request.policy.angularFeedbackReserveRadPerSec2;
 
-            page.actuatorSegmentCount =
-                static_cast<std::uint8_t>(count - 1);
             page.actuatorProgramFeasible = true;
 
-            for (std::size_t i = 0; i + 1 < count; ++i)
+            if (request.controlLaw == LocalFlightControlLaw::Assisted)
             {
-                const auto& a = page.samples[i];
-                const auto& b = page.samples[i + 1];
-                auto& segment = page.actuatorSegments[i];
+                // Assisted route execution is NOT a synthetic propulsion
+                // allocation problem. Manual and automatic flight share the
+                // same nose-coupled game flight law; physical manoeuvre/RCS is
+                // reserved for later precision-placement doctrine.
+                page.actuatorSegmentCount = 0;
 
-                const auto start = compilePropulsion(
-                    a,
-                    forwardMain,
-                    reverseMain,
-                    manoeuvre
-                );
-                const auto finish = compilePropulsion(
-                    b,
-                    forwardMain,
-                    reverseMain,
-                    manoeuvre
-                );
+                for (std::size_t i = 0; i < count; ++i)
+                {
+                    const auto& sample = page.samples[i];
+                    const double speed =
+                        glm::length(sample.velocityMapMetersPerSecond);
+                    if (!std::isfinite(speed) ||
+                        speed > controlledSpeed + 1.0e-6)
+                    {
+                        return fail("assisted-speed-program-infeasible");
+                    }
 
-                segment.durationSeconds =
-                    b.timeOffsetSeconds - a.timeOffsetSeconds;
-                if (!(segment.durationSeconds > 0.0))
-                    return fail("non-positive-actuator-segment-duration");
-
-                segment.rearMainEnabled =
-                    start.rearMainThrottle01 > 1.0e-4 ||
-                    finish.rearMainThrottle01 > 1.0e-4;
-                segment.rearMainThrottleStart01 =
-                    start.rearMainThrottle01;
-                segment.rearMainThrottleEnd01 =
-                    finish.rearMainThrottle01;
-
-                segment.foreMainEnabled =
-                    start.foreMainThrottle01 > 1.0e-4 ||
-                    finish.foreMainThrottle01 > 1.0e-4;
-                segment.foreMainThrottleStart01 =
-                    start.foreMainThrottle01;
-                segment.foreMainThrottleEnd01 =
-                    finish.foreMainThrottle01;
-
-                segment.manoeuvreAccelerationStartMapMps2 =
-                    start.manoeuvreAccelerationMapMps2;
-                segment.manoeuvreAccelerationEndMapMps2 =
-                    finish.manoeuvreAccelerationMapMps2;
-                segment.propulsionFeasible =
-                    start.feasible && finish.feasible;
-                page.actuatorProgramFeasible =
-                    page.actuatorProgramFeasible &&
-                    segment.propulsionFeasible;
+                    const glm::dvec3 forward = normalizedOr(
+                        sample.forwardMap,
+                        glm::dvec3(0.0, 0.0, -1.0)
+                    );
+                    const double forwardSpeed = glm::dot(
+                        sample.velocityMapMetersPerSecond,
+                        forward
+                    );
+                    if (forwardSpeed < -0.05)
+                    {
+                        return fail("assisted-reverse-flight-not-supported");
+                    }
+                }
             }
+            else
+            {
+                // Ordinary Newtonian navigation is rotate + main-engine burn.
+                // Do not let the generic allocator hide an invalid trajectory
+                // by spending precision RCS as sustained lateral route thrust.
+                page.actuatorSegmentCount =
+                    static_cast<std::uint8_t>(count - 1);
 
-            if (!page.actuatorProgramFeasible)
-                return fail("propulsion-program-infeasible");
+                for (std::size_t i = 0; i + 1 < count; ++i)
+                {
+                    const auto& a = page.samples[i];
+                    const auto& b = page.samples[i + 1];
+                    auto& segment = page.actuatorSegments[i];
+
+                    const auto start = compilePropulsion(
+                        a,
+                        forwardMain,
+                        0.0,
+                        0.0
+                    );
+                    const auto finish = compilePropulsion(
+                        b,
+                        forwardMain,
+                        0.0,
+                        0.0
+                    );
+
+                    segment.durationSeconds =
+                        b.timeOffsetSeconds - a.timeOffsetSeconds;
+                    if (!(segment.durationSeconds > 0.0))
+                    {
+                        return fail(
+                            "non-positive-actuator-segment-duration"
+                        );
+                    }
+
+                    segment.rearMainEnabled =
+                        start.rearMainThrottle01 > 1.0e-4 ||
+                        finish.rearMainThrottle01 > 1.0e-4;
+                    segment.rearMainThrottleStart01 =
+                        start.rearMainThrottle01;
+                    segment.rearMainThrottleEnd01 =
+                        finish.rearMainThrottle01;
+                    segment.foreMainEnabled = false;
+                    segment.foreMainThrottleStart01 = 0.0;
+                    segment.foreMainThrottleEnd01 = 0.0;
+                    segment.manoeuvreAccelerationStartMapMps2 =
+                        glm::dvec3(0.0);
+                    segment.manoeuvreAccelerationEndMapMps2 =
+                        glm::dvec3(0.0);
+                    segment.propulsionFeasible =
+                        start.feasible && finish.feasible;
+                    page.actuatorProgramFeasible =
+                        page.actuatorProgramFeasible &&
+                        segment.propulsionFeasible;
+                }
+
+                if (!page.actuatorProgramFeasible)
+                {
+                    return fail(
+                        "newtonian-main-engine-program-infeasible"
+                    );
+                }
+            }
 
             // Storage pages are not semantic phases. Only the final page may
             // complete the accepted objective.

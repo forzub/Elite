@@ -76,7 +76,10 @@ try:
         "Follower::follow(",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
-        "controlBridge->step(",
+        "controlBridge->stepProgram(",
+        "ProgramActuatorCommand actuator",
+        "followed.manoeuvreAccelerationMapMps2",
+        "followed.linearFeedbackLocalMps2",
         "ship->setControlState(step.control)",
         "terminalAngularVelocityMapRadPerSec",
         "minimumPreCaptureDepthMeters",
@@ -150,6 +153,15 @@ try:
         "src/game/simulation/GameSimulation.cpp",
         "NavigationRuntimeLabAcceptedProgramAdapter::adapt",
         "followAcceptedSegment",
+        "control.navigationActuatorProgramValid",
+        "applyNavigationActuatorProgram(",
+    )
+    dynamic = require(
+        "src/game/navigation/DynamicMotionSystem.cpp",
+        "applyNavigationActuatorProgram(",
+        "nominalForwardMain",
+        "availableForwardMain",
+        "feedbackMainLongitudinal",
     )
 
     cmake = require(

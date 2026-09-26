@@ -70,6 +70,7 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
@@ -1621,7 +1622,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     // shadow copy of the flight law: a dropped/retried command or a loaded
     // game that starts in Assisted would otherwise desynchronize the chord.
     auto currentLocalControlLaw =
-        game::navigation::LocalFlightControlLaw::Newtonian;
+        game::navigation::LocalFlightControlStateMachine::defaultLaw();
 
     if (m_client)
     {

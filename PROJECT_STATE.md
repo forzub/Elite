@@ -1,6 +1,17 @@
 # PROJECT STATE
 
 
+## 2026-09-26 — shared linear-load envelope remains authoritative
+
+The runtime-control failure did not justify changing production physics.
+The physical rule remains:
+main propulsion has priority, but `main + manoeuvre/RCS` must fit the shared
+`maxLinearGs/maxGs` linear acceleration envelope. A test may not demand full
+main-envelope acceleration plus additional lateral/RCS acceleration beyond that
+same envelope.
+
+
+
 ## 2026-09-26 — Automatic docking is implemented but not yet accepted
 
 Current distinction:

@@ -1,5 +1,32 @@
 # PROJECT STATE
 
+## 2026-09-26 — state ownership rule generalized across runtime modes
+
+Architecture rule: every persistent selectable mode has one authoritative state
+owner and explicit transition API. UI/input may request a transition; renderers,
+formatters and physics systems consume/projection the resulting state and do not
+silently choose their own mode.
+
+Current owners:
+- local flight law/alignment/Assisted persistent controls:
+  `LocalFlightControlStateMachine` over `DynamicMotionState`;
+- global human-facing client modes:
+  `ui::platform::ClientModeState`;
+- navigation module visibility/enabled state:
+  `NavigationModuleState`;
+- application presentation:
+  `GamePresentationCoordinator`;
+- system-map Galaxy/System/Detail/Hub submode:
+  `MapModeState`.
+
+Projection/storage objects may mirror a selected mode only where necessary, but
+must not expose independent transition logic.
+
+Assisted and Newtonian now also differ materially in physical doctrine:
+Assisted owns automatic lateral stabilization and neutral angular damping;
+Newtonian preserves translational/angular inertia absent explicit thrust or
+alignment commands.
+
 ## 2026-09-26 — automatic docking architecture boundary
 
 Automatic docking must not be implemented as visual gate chasing.

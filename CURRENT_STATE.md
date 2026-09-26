@@ -5673,3 +5673,31 @@ Fix on main:
 The native angular test now additionally asserts that the penultimate omega is
 already reachable from the requested terminal omega within the last dt. Fresh
 Windows rerun is pending.
+
+## 2026-09-27 — native docking/trajectory gates are green; static checker typo fixed
+
+Fresh Windows `verify_docking.sh` results:
+- `navigation_runtime_control`: PASS;
+- `maneuver_tracking_controller`: PASS;
+- `docking_advisory`: PASS;
+- `accepted_maneuver_program_builder`: PASS;
+- `trajectory_generator_angular`: PASS;
+- manual docking static contract: PASS.
+
+This is the first fresh target evidence that the nose-first corridor regression
+and terminal-angular reachability fix both pass natively.
+
+The remaining failure was NOT production behavior. The automatic-docking static
+checker mistakenly required the regression message
+`angular planner deferred terminal omega correction to the final sample`
+inside `TrajectoryGenerator.cpp`, although that message correctly belongs to
+`TrajectoryGeneratorAngularTests.cpp`.
+
+The checker now:
+- pins `remainingBefore`, `remainingAfter`, `maxTerminalDelta` in
+  `TrajectoryGenerator.cpp`;
+- pins the penultimate-sample anti-snap assertion in
+  `TrajectoryGeneratorAngularTests.cpp`.
+
+No navigation/physics implementation changed after the green native result.
+Full static verify rerun is still required before build/live acceptance.

@@ -304,6 +304,14 @@ private:
     double m_dockingPreparationSettledSinceServerSeconds = -1.0;
     bool m_dockingPreparationReleasePending = false;
     bool m_dockingPreparationReleasePublishesRoute = false;
+
+    // Client-side request/ack tracking only. The server owns automatic
+    // execution state and accepted maneuver programs.
+    std::uint64_t m_automaticDockingSerial = 0;
+    double m_automaticDockingRequestedServerSeconds = -1.0;
+    bool m_automaticDockingAuthoritySeen = false;
+    bool m_automaticDockingCancelPending = false;
+
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     std::string m_dockingGuidanceFailureReason;

@@ -1249,3 +1249,44 @@ Add literal actuator phases and consistent rigid-body propagation, including
 non-zero initial angular velocity. Then introduce continuous proof over the
 exact candidate. Only after both layers may the replacement publish an
 `AcceptedManeuverProgram` and displace the legacy translation-first author.
+
+## 2026-09-27 — active gate: shared manual/automatic flight mechanics
+
+Immediate target task is no longer to tune the 2 m/s² RCS allocator.
+
+Run the complete docking gate on Windows/MSYS2. It now includes the local-flight
+architecture contract.
+
+Acceptance requirements:
+
+1. `docking_advisory` must pass the nose-first regression. The first published
+   manual tunnel segment must remain aligned with the stopped hull nose.
+2. `accepted_maneuver_program_builder` must prove:
+   - Assisted ordinary transit uses `TranslationMode::AssistedVelocity` and
+     emits zero synthetic actuator/RCS segments;
+   - Newtonian ordinary transit rejects lateral route thrust rather than using
+     precision RCS.
+3. `navigation_runtime_control` must prove Automatic Assisted runs through the
+   same `applyLocalFrameInput` game law as manual Assisted and reorients VREL
+   to the hull nose within 3 s with ordinary RCS = 0.
+4. Full MinGW client/server build must succeed.
+5. Live START DOCKING in Assisted must no longer fail with
+   `accepted-program-propulsion-program-infeasible` merely because route
+   curvature requires course change.
+6. Expected live sequence is async planning, optional physical alignment/replan,
+   then `phase=executing`; retained corridor remains visible and the ship
+   actually moves.
+7. Preserve the center boresight; user reports it materially improves control.
+
+Do not weaken Builder, angular limits, tracking limits or collision proof to
+make a test green.
+
+Newtonian parking is now a separate algorithmic branch. Its target doctrine is:
+long mostly-straight legs, coast/rotate/main-burn, accelerate then rotate and
+brake, large maneuvering volume, and a later slow precision-placement phase
+using stronger class-specific RCS and/or tugs. Do not force the Assisted curved
+parking algorithm onto Newtonian craft.
+
+Current implementation establishes this separation and refuses fake-RCS
+Newtonian transit. A dedicated Newtonian stop/rotate/burn maneuver compiler is
+still future work and is not claimed complete in this gate.

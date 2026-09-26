@@ -1,5 +1,19 @@
 # PROJECT STATE
 
+## 2026-09-26 — acceptance code must consume authoritative mode state, not resurrect shadow owners
+
+The client-mode ownership rule now explicitly covers diagnostics and acceptance
+harnesses as well as production code.
+
+A harness may drive `ClientModeState` and verify projection into
+`CoordinateDisplayService`, but it must not require a service-owned transition
+API such as the retired `CoordinateDisplayService::cycle()`. Test code is not
+an exception to the one-owner rule.
+
+The canonical build failure caused by that stale API use has been corrected;
+fresh target-machine build evidence is pending.
+
+
 ## 2026-09-26 — selectable-mode ownership rule implemented across active domains
 
 Architecture rule: every persistent selectable mode has exactly one

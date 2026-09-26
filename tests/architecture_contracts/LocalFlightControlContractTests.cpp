@@ -10,6 +10,7 @@
 
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -158,6 +159,78 @@ void testFreshFlightStateDefaultsToAssisted()
         control.requestedLocalControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted,
         "fresh ShipControlState law request did not default to Assisted"
+    );
+}
+
+void testFlightLawTransitionStateMachine()
+{
+    using game::navigation::LocalFlightControlLaw;
+    using game::navigation::LocalFlightControlStateMachine;
+    using game::navigation::VelocityAlignmentMode;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = LocalFlightControlLaw::Newtonian;
+    motion.localVelocityMps = glm::dvec3(3.0, 4.0, 0.0);
+    motion.velocityAlignmentMode = VelocityAlignmentMode::BrakeToStop;
+    motion.assistedTargetSpeedHold = true;
+    motion.assistedThrottleTrimWasActive = true;
+
+    const glm::dvec3 physicalVelocityBefore = motion.localVelocityMps;
+
+    require(
+        LocalFlightControlStateMachine::transition(
+            motion,
+            LocalFlightControlLaw::Assisted
+        ),
+        "Newtonian -> Assisted transition was not accepted"
+    );
+    require(
+        motion.localControlLaw == LocalFlightControlLaw::Assisted,
+        "state machine did not own active Assisted law"
+    );
+    require(
+        motion.velocityAlignmentMode == VelocityAlignmentMode::None,
+        "law transition leaked prior alignment mode"
+    );
+    require(
+        !motion.assistedTargetSpeedHold &&
+        !motion.assistedThrottleTrimWasActive,
+        "law transition leaked Assisted transient flags"
+    );
+    requireNear(
+        motion.targetForwardSpeedMps,
+        5.0,
+        1.0e-9,
+        "Assisted entry did not capture current VREL"
+    );
+    require(
+        glm::length(motion.localVelocityMps-physicalVelocityBefore) < 1.0e-12,
+        "law transition rewrote physical velocity"
+    );
+    require(
+        LocalFlightControlStateMachine::next(LocalFlightControlLaw::Assisted) ==
+            LocalFlightControlLaw::Newtonian &&
+        LocalFlightControlStateMachine::next(LocalFlightControlLaw::Newtonian) ==
+            LocalFlightControlLaw::Assisted,
+        "flight-law toggle is not state-machine deterministic"
+    );
+    require(
+        !LocalFlightControlStateMachine::velocityAlignmentOwnsAttitude(
+            LocalFlightControlLaw::Assisted,
+            VelocityAlignmentMode::BrakeToStop,
+            true,
+            true
+        ),
+        "healthy Assisted BrakeToStop incorrectly owns hull alignment"
+    );
+    require(
+        LocalFlightControlStateMachine::velocityAlignmentOwnsAttitude(
+            LocalFlightControlLaw::Assisted,
+            VelocityAlignmentMode::BrakeToStop,
+            true,
+            false
+        ),
+        "Assisted lost aft-main flip fallback when reverse main is unavailable"
     );
 }
 
@@ -1194,6 +1267,7 @@ int main()
     try
     {
         testFreshFlightStateDefaultsToAssisted();
+        testFlightLawTransitionStateMachine();
         testNewtonianRcsCanCreepPastControlledSpeedEnvelope();
         testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease();
         testManoeuvreGasDrainsLocksAndRecharges();

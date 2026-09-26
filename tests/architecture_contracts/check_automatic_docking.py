@@ -82,6 +82,10 @@ try:
         "compileBoundedAngularKinematics(",
         "trajectory.angularKinematicsAuthored = true",
         "maxAngularAccelerationRadPerSecond2",
+        "remainingBefore",
+        "remainingAfter",
+        "maxTerminalDelta",
+        "angular planner deferred terminal omega correction to the final sample",
     )
     require(
         "src/world/navigation/Trajectory.h",

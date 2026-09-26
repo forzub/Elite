@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "src/game/ship/ShipController.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 
 namespace SharedShipPhysics
 {
@@ -41,26 +42,10 @@ void evaluateControl(
 
     if (control.localControlLawCommandValid)
     {
-        const auto oldLaw = motion.localControlLaw;
-        motion.localControlLaw = control.requestedLocalControlLaw;
-        motion.velocityAlignmentMode =
-            game::navigation::VelocityAlignmentMode::None;
-
-        // Enter Assisted without changing physical velocity. The target is
-        // initialized from the current local speed so the controller does not
-        // create an artificial braking/acceleration impulse on mode switch.
-        if (oldLaw != motion.localControlLaw)
-        {
-            motion.assistedTargetSpeedHold = false;
-            motion.assistedThrottleTrimWasActive = false;
-
-            if (motion.localControlLaw ==
-                    game::navigation::LocalFlightControlLaw::Assisted)
-            {
-                motion.targetForwardSpeedMps =
-                    glm::length(motion.localVelocityMps);
-            }
-        }
+        game::navigation::LocalFlightControlStateMachine::transition(
+            motion,
+            control.requestedLocalControlLaw
+        );
     }
 
     if (control.velocityAlignmentCommand !=

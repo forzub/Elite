@@ -27,6 +27,18 @@ ctest --test-dir "${TEST_BUILD_DIR}" \
     -R "^(docking_advisory|accepted_maneuver_program_builder|navigation_runtime_control|maneuver_tracking_controller)$" \
     --output-on-failure
 
+echo "[DOCK-VERIFY] configure rotating-terminal trajectory gate"
+RUCKIG_BUILD_DIR="${ROOT_DIR}/build/tests/navigation_ruckig"
+cmake -S "${ROOT_DIR}/tests/navigation_ruckig" \
+    -B "${RUCKIG_BUILD_DIR}" \
+    -G Ninja
+cmake --build "${RUCKIG_BUILD_DIR}" \
+    --target trajectory_generator_angular_tests \
+    -j 8
+ctest --test-dir "${RUCKIG_BUILD_DIR}" \
+    -R "^trajectory_generator_angular$" \
+    --output-on-failure
+
 echo "[DOCK-VERIFY] run static manual + automatic + live-control contracts"
 python "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"

@@ -1,5 +1,40 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+
+## 2026-09-26 — Windows gate for Automatic docking + Planner/Follower execution
+
+Pull current main and run the focused gates before changing behavior again:
+
+```bash
+cd /d/__elite/work
+git status --short
+git pull --ff-only origin main
+git log -1 --oneline
+
+bash verify_modes.sh
+bash verify_docking.sh
+bash build_mingw64.sh
+```
+
+Only if all three pass, launch:
+
+```bash
+build/EliteGame.exe
+```
+
+Live Automatic acceptance:
+- `START DOCKING` is enabled for a compatible free/allowed port.
+- after press, server takes Autopilot authority and ship visibly brakes/stabilizes;
+- client does not continue local prediction after authoritative Autopilot ack;
+- server logs `[DockAuto] begin`, then `[DockAuto] planned`;
+- the planned log includes page count, trajectory duration and `terminal_omega_radps`;
+- motion is produced through `AcceptedManeuverProgram -> TrajectoryFollower -> NavigationRuntimeControlBridge -> ShipControlState`, not through direct position/velocity writes;
+- tracking/propulsion failure must return to controlled stabilization/replan, not disable navigation;
+- final completion returns Human authority.
+
+If compilation fails, fix the first real compiler error without restoring any retired `m_mode`, `CoordinateDisplayService::cycle()`, or `TrajectoryFollower(AcceptedShortSegment)` compatibility path.
+
+
 ## 2026-09-26 — rerun mode gate and canonical build after acceptance-harness repair
 
 The canonical game build exposed one stale test harness call:

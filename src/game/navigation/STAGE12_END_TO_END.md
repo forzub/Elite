@@ -1,5 +1,26 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — flight-control state ownership hardened before Automatic execution
+
+Before wiring production Automatic docking, the player local-flight path was
+audited for hidden mode state.
+
+Persistent law/alignment/Assisted setpoint transitions are now centralized in
+`LocalFlightControlStateMachine`. DynamicMotionSystem computes actuator
+demands but does not write those persistent mode fields.
+
+Assisted now has an explicit automatic lateral stabilization actuator budget
+separate from gas-limited manual RCS. This makes the runtime control doctrine
+match the planner/follower distinction: Assisted may automatically cancel
+side-slip within its declared capability; Newtonian retains inertial side-slip
+unless explicit thrust is commanded.
+
+Snapshot wire schema is now version 10 because the separate Assisted
+stabilization demand is replicated.
+
+Fresh Windows verification is required before the Automatic docking executor
+slice proceeds.
+
 ## 2026-09-26 — Stage-12 next milestone is production Automatic execution
 
 Stage-12 currently has all major execution primitives but lacks the production

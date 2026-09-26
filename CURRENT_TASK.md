@@ -1,5 +1,25 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — rerun mode gate and canonical build after acceptance-harness repair
+
+The canonical game build exposed one stale test harness call:
+`ClientAcceptanceHarness.cpp` still used the removed
+`CoordinateDisplayService::cycle()`.
+
+That harness is corrected to exercise the current ownership path without
+reintroducing hidden state:
+`ClientModeState -> nextCoordinateDisplayFormat -> projection setFormat`.
+
+Run from `D:\__elite\work`:
+`git pull --ff-only origin main`
+`bash verify_modes.sh`
+`bash build_mingw64.sh`
+
+If both pass, launch `build/EliteGame.exe` and perform the Assisted/Newtonian
+live acceptance already defined below. Do not change production coordinate mode
+ownership unless fresh evidence shows a real runtime failure.
+
+
 ## 2026-09-26 — rerun one canonical mode-state gate
 
 Mode/state implementation is complete enough for a focused Windows gate. Run:

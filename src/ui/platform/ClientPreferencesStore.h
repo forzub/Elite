@@ -18,6 +18,7 @@ struct ClientPreferences
     std::string preferredLocale;
     bool constellationsEnabled = false;
     std::string skyCultureId;
+    std::string coordinateDisplayFormatId = "hierarchical";
 
     std::string lastSuccessfulAccountFor(
         const std::string& endpoint) const;

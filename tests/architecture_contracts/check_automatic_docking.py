@@ -45,6 +45,8 @@ try:
         "automatic.enabled = compatibility.routeAvailable",
         "DockingRouteRequest::Mode::Automatic",
         "dockingRouteRequests().request(",
+        "NavigationModuleId::LocalGuidance",
+        "NavigationModuleId::HudGuidanceCorridor",
     )
     if "automatic.enabled = false" in renderer:
         raise AssertionError("Start Docking returned to a permanently disabled presentation action")
@@ -61,6 +63,8 @@ try:
         "setExternalControlPredictionSuppressed(false)",
         "phase=requested",
         "phase=server-handoff",
+        "route_retained=",
+        "DockingRouteRequest::Mode::Guidance",
     )
 
     server = require(
@@ -197,7 +201,7 @@ try:
     )
 
     print("[PASS] automatic docking ownership/execution contract")
-    print(" - UI request is distinct from manual guidance")
+    print(" - Automatic reuses the visible advisory corridor instead of hiding it")
     print(" - server owns Autopilot authority and stabilization")
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
     print(" - Follower has one executable input type")

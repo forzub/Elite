@@ -38,6 +38,9 @@ std::string formatCoordinateDisplayLine(
     std::string coordinateText
 );
 
+// Stateless-owner boundary: ClientModeState owns the selected format.
+ // This service is only the navigation formatting projection used by existing
+ // render/presentation code.
 class CoordinateDisplayService
 {
 public:
@@ -48,7 +51,6 @@ public:
     const char* formatName() const noexcept;
 
     void setFormat(CoordinateDisplayFormat format) noexcept;
-    void cycle() noexcept;
 
     std::string formatLine(std::string coordinateText) const;
 

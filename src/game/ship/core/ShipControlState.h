@@ -58,5 +58,19 @@ struct ShipControlState
     glm::dvec3 navigationAngularAccelerationDemandSystemRadPerSec2 {0.0};
     std::uint64_t navigationIntentRevision = 0;
 
+    // Server/autopilot-only nominal actuator program. Human wire controls never
+    // populate this channel. When valid, translation executes the Planner-owned
+    // actuator schedule instead of re-splitting the same net feed-forward into
+    // a second propulsion decision inside DynamicMotionSystem.
+    bool navigationActuatorProgramValid = false;
+    double navigationRearMainThrottle01 = 0.0;
+    double navigationForeMainThrottle01 = 0.0;
+    glm::dvec3 navigationManoeuvreAccelerationSystemMps2 {0.0};
+
+    // Bounded Follower correction is deliberately separate from the nominal
+    // actuator schedule. Physics may allocate only this reserve correction
+    // against remaining physical authority.
+    glm::dvec3 navigationLinearFeedbackAccelerationSystemMps2 {0.0};
+
     std::uint64_t controlTick = 0;
 };

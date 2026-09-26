@@ -744,16 +744,59 @@ void GalaxyStarfieldRenderer::applyActiveSkyCulture()
     m_constellationOverlayRenderer.setCulture(*culture);
 }
 
-bool GalaxyStarfieldRenderer::cycleConstellationCulture()
+bool GalaxyStarfieldRenderer::setConstellationCultureId(
+    const std::string& cultureId
+)
 {
     const auto& cultures = m_skyCultureCatalog.cultures();
-    if (cultures.empty())
+    if (cultures.empty() || cultureId.empty())
         return false;
 
-    m_activeSkyCultureIndex = (m_activeSkyCultureIndex + 1) % cultures.size();
+    const auto it = std::find_if(
+        cultures.begin(),
+        cultures.end(),
+        [&](const SkyCultureCatalog::Culture& culture)
+        {
+            return culture.id == cultureId;
+        }
+    );
+    if (it == cultures.end())
+        return false;
+
+    const std::size_t index =
+        static_cast<std::size_t>(std::distance(cultures.begin(), it));
+    if (index == m_activeSkyCultureIndex)
+        return true;
+
+    m_activeSkyCultureIndex = index;
     applyActiveSkyCulture();
     rebuildConstellationOverlay();
     return true;
+}
+
+std::string GalaxyStarfieldRenderer::nextConstellationCultureId(
+    const std::string& currentCultureId
+) const
+{
+    const auto& cultures = m_skyCultureCatalog.cultures();
+    if (cultures.empty())
+        return {};
+
+    auto it = std::find_if(
+        cultures.begin(),
+        cultures.end(),
+        [&](const SkyCultureCatalog::Culture& culture)
+        {
+            return culture.id == currentCultureId;
+        }
+    );
+
+    if (it == cultures.end())
+        return cultures[m_skyCultureCatalog.defaultCultureIndex()].id;
+
+    const std::size_t index =
+        static_cast<std::size_t>(std::distance(cultures.begin(), it));
+    return cultures[(index + 1) % cultures.size()].id;
 }
 
 std::string GalaxyStarfieldRenderer::constellationCultureId() const

@@ -304,6 +304,10 @@ Do not claim success from GitHub-only/static inspection.
 - Current docking scope ends at a collision-free pre-capture pose; physical
   latch/contact is later.
 
+## Repository checkpoint
+
+Code HEAD immediately before this prompt regeneration: `eb8af0967904a425320e76055551e90788914abc`.
+
 ## Verification status
 
 All changes above are committed to public `main`.

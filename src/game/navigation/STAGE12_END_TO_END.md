@@ -1,5 +1,35 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+
+## 2026-09-26 — production Automatic docking enters the accepted-program chain
+
+The previously missing player-side production owner is now wired.
+
+Request/authority:
+`START DOCKING -> Automatic request -> server ControllerKind::Autopilot`.
+The server first commands `BrakeToStop` and waits for a stable Hub-relative start.
+
+Planning/execution:
+`DockingAdvisoryPlanner -> TrajectoryGenerator -> AcceptedManeuverProgramBuilder -> TrajectoryFollower -> NavigationFrameBoundary -> NavigationRuntimeControlBridge -> ShipControlState -> shared physics`.
+
+The advisory planner remains geometry/speed-doctrine input only; Automatic does not execute display gates directly.
+
+The Follower no longer accepts `AcceptedShortSegment`. The historical RuntimeLab product is isolated through a diagnostics-only adapter so there is no ambiguous executable truth.
+
+The accepted-program builder:
+- preserves trajectory state;
+- records explicit capability/proof provenance;
+- compiles main/fore/RCS feed-forward intervals;
+- reserves bounded feedback authority;
+- derives `omega/alpha`;
+- rejects programs outside angular capability;
+- accepts a terminal angular-velocity target for moving/rotating docks.
+
+Automatic failures do not switch navigation off. Tracking loss, infeasible propulsion, invalid page time or frame loss return the ship to controlled stabilization and a new plan attempt. Human control is restored only when the server ends the automatic lifetime.
+
+Focused gates are now `verify_modes.sh` and `verify_docking.sh`; canonical client+headless-server MinGW build remains pending.
+
+
 ## 2026-09-26 — build gate repaired after stale client acceptance mode API
 
 The post-mode-refactor canonical build failed in client diagnostics, not in the

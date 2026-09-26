@@ -86,6 +86,22 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     result.angularFeedbackLocalRadPerSec2 =
         tracking.angularFeedbackMapRadPerSec2;
 
+    result.assistedVelocityModel =
+        program.translationMode ==
+            AcceptedManeuverProgram::TranslationMode::AssistedVelocity;
+    if (result.assistedVelocityModel)
+    {
+        const glm::dvec3 forward =
+            glm::normalize(sampled.reference.forwardMap);
+        result.assistedTargetForwardSpeedMps = std::max(
+            0.0,
+            glm::dot(
+                sampled.reference.velocityMapMetersPerSecond,
+                forward
+            )
+        );
+    }
+
     result.hasActuatorCommand = sampled.hasActuatorCommand;
     result.actuatorSegmentIndex = sampled.actuatorSegmentIndex;
     result.rearMainThrottle01 = sampled.rearMainThrottle01;

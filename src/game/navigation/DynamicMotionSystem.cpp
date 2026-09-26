@@ -363,6 +363,8 @@ void DynamicMotionSystem::applyLocalFrameInput(
         game::ship::reverseMainAccelerationLimitMps2(params);
     const double manoeuvreAccel =
         game::ship::manoeuvreAccelerationLimitMps2(params);
+    const double assistedLateralStabilizationAccel =
+        game::ship::assistedLateralStabilizationAccelerationLimitMps2(params);
 
     const glm::dvec3 f = glm::normalize(glm::dvec3(shipForward));
     const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));
@@ -510,40 +512,15 @@ void DynamicMotionSystem::applyLocalFrameInput(
                     params.assistedTargetSpeedChangeRateFractionPerSecond
                 )
         );
-    const bool throttleTrimActive =
-        std::abs(static_cast<double>(targetSpeedRate)) > 1.0e-6;
-
-    if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
-    {
-        motion.targetForwardSpeedMps = 0.0;
-        motion.assistedTargetSpeedHold = false;
-        motion.assistedThrottleTrimWasActive = false;
-    }
-    else if (throttleTrimActive)
-    {
-        motion.assistedTargetSpeedHold = false;
-        motion.assistedThrottleTrimWasActive = true;
-        motion.targetForwardSpeedMps +=
-            static_cast<double>(targetSpeedRate) *
-            targetSpeedChangeRate * dtD;
-    }
-    else if (motion.assistedThrottleTrimWasActive)
-    {
-        // Capture exactly once on the +/- release edge. Keypad RCS is a
-        // temporary body-axis translation command and must not become a new
-        // longitudinal cruise setpoint merely because the trim is neutral.
-        motion.targetForwardSpeedMps = std::max(
-            0.0,
-            glm::dot(relativeWorldVelocity, assistedTravelForward)
+    (void)LocalFlightControlStateMachine::
+        updateAssistedLongitudinalTarget(
+            motion,
+            static_cast<double>(targetSpeedRate),
+            targetSpeedChangeRate,
+            dtD,
+            glm::dot(relativeWorldVelocity, assistedTravelForward),
+            maxSpeed
         );
-        motion.assistedThrottleTrimWasActive = false;
-    }
-
-    motion.targetForwardSpeedMps = std::clamp(
-        motion.targetForwardSpeedMps,
-        0.0,
-        maxSpeed
-    );
 
     const glm::dvec3 desiredWorldVelocity =
         assistedTravelForward * motion.targetForwardSpeedMps;
@@ -607,26 +584,38 @@ void DynamicMotionSystem::applyLocalFrameInput(
             mainLongitudinalAcceleration
         );
 
-    const glm::dvec3 assistedRcsStabilization =
-        clampMagnitude(
-            lateralVelocityError * stabilizationGain +
-                unservedLongitudinalAcceleration,
-            manoeuvreAccel
-        );
-
+    // Longitudinal demand that cannot be served by an installed main bank may
+    // still use only the real manual/RCS authority. Assisted does not invent a
+    // second reverse main engine.
     motion.manoeuvreAccelerationMps2 =
         clampSecondaryToTotalAccelerationEnvelope(
             motion.mainEngineAccelerationMps2,
             clampMagnitude(
                 motion.manoeuvreAccelerationMps2 +
-                    assistedRcsStabilization,
+                    unservedLongitudinalAcceleration,
                 manoeuvreAccel
             ),
             game::ship::mainAccelerationLimitMps2(params)
         );
+
+    // Lateral drift cancellation is a separate Assisted actuator budget.
+    // This is what makes FA-on materially different from Newtonian without
+    // turning the pilot's keypad RCS into a 20 m/s^2 thruster.
+    motion.assistedStabilizationAccelerationMps2 =
+        clampSecondaryToTotalAccelerationEnvelope(
+            motion.mainEngineAccelerationMps2 +
+                motion.manoeuvreAccelerationMps2,
+            clampMagnitude(
+                lateralVelocityError * stabilizationGain,
+                assistedLateralStabilizationAccel
+            ),
+            game::ship::mainAccelerationLimitMps2(params)
+        );
+
     motion.engineAccelerationMps2 =
         motion.mainEngineAccelerationMps2 +
-        motion.manoeuvreAccelerationMps2;
+        motion.manoeuvreAccelerationMps2 +
+        motion.assistedStabilizationAccelerationMps2;
 
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&
         glm::length(motion.localVelocityMps) <= static_cast<double>(params.stopSpeedEpsilonMps))

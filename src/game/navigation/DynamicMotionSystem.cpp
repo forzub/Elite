@@ -29,9 +29,10 @@ inline glm::dvec3 clampMagnitude(
     return value;
 }
 
-// Main propulsion has priority. A combined main+RCS command must still fit the
-// ship linear-load envelope, but satisfying that envelope must never derate the
-// selected main bank. Only the secondary manoeuvre/RCS vector is reduced.
+// The caller-selected primary acceleration has priority. A combined command
+// must still fit the ship linear-load envelope; only the secondary vector is
+// reduced. Newtonian/main allocation passes main as primary, while Assisted
+// course coupling may pass the automatic velocity stabilizer as primary.
 inline glm::dvec3 clampSecondaryToTotalAccelerationEnvelope(
     const glm::dvec3& primary,
     glm::dvec3 secondary,

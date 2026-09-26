@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/LocalFlightControlLaw.h"
+
 namespace game::navigation
 {
 
@@ -23,6 +25,26 @@ namespace game::navigation
 struct AcceptedManeuverProgram
 {
     static constexpr std::size_t kMaxSamples = 16;
+
+    enum class TranslationMode : std::uint8_t
+    {
+        Undefined = 0,
+
+        // Assisted is executed as the same game flight law used by manual
+        // control: target forward speed + bounded hull attitude, with the
+        // automatic velocity-to-nose stabilizer. It is NOT decomposed into
+        // physical keypad/manoeuvre RCS.
+        AssistedVelocity,
+
+        // Newtonian transit owns hull rotation + longitudinal main-engine
+        // burns. Ordinary route generation must not spend precision RCS as
+        // fake lateral main thrust.
+        NewtonianMainEngine,
+
+        // Reserved for later close-placement/capture layers where deliberate
+        // low-speed RCS/tug authority is part of the maneuver doctrine.
+        PrecisionRcs
+    };
 
     enum class ManeuverFamily : std::uint8_t
     {
@@ -151,6 +173,8 @@ struct AcceptedManeuverProgram
     std::uint64_t objectiveRevision = 0;
 
     ManeuverFamily family = ManeuverFamily::Undefined;
+    LocalFlightControlLaw controlLaw = defaultLocalFlightControlLaw();
+    TranslationMode translationMode = TranslationMode::Undefined;
 
     // One maneuver may span multiple fixed-capacity storage pages.
     // All pages share acceptedAtUniverseTimeSeconds. Each page keeps local

@@ -2144,6 +2144,193 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
+        if (runtime.phase ==
+            DockingAutomaticRuntime::Phase::Aligning)
+        {
+            using Tracker =
+                game::navigation::ManeuverTrackingController;
+
+            const auto& baseProgram =
+                runtime.programs.front();
+
+            Tracker::AgentState agent;
+            agent.positionMapMeters =
+                motion.localPositionMeters;
+            agent.velocityMapMetersPerSecond =
+                motion.localVelocityMps;
+            agent.forwardMap =
+                hub->worldToLocalVector(
+                    glm::dvec3(transform.forward())
+                );
+            agent.rightMap =
+                hub->worldToLocalVector(
+                    glm::dvec3(transform.right())
+                );
+            agent.upMap =
+                hub->worldToLocalVector(
+                    glm::dvec3(transform.up())
+                );
+            agent.pitchRateRadPerSec =
+                transform.pitchRate;
+            agent.yawRateRadPerSec =
+                transform.yawRate;
+            agent.rollRateRadPerSec =
+                transform.rollRate;
+
+            auto reference =
+                baseProgram.samples[0];
+            reference.positionMapMeters =
+                agent.positionMapMeters;
+            reference.velocityMapMetersPerSecond =
+                agent.velocityMapMetersPerSecond;
+            reference.linearAccelerationFeedForwardMapMps2 =
+                glm::dvec3(0.0);
+            reference.forwardMap =
+                runtime.alignmentForwardMap;
+            reference.rightMap =
+                runtime.alignmentRightMap;
+            reference.upMap =
+                runtime.alignmentUpMap;
+            reference.angularVelocityMapRadPerSecond =
+                glm::dvec3(0.0);
+            reference.angularAccelerationFeedForwardMapRadPerSec2 =
+                glm::dvec3(0.0);
+
+            auto alignmentProgram = baseProgram;
+            alignmentProgram.family =
+                game::navigation::AcceptedManeuverProgram::
+                    ManeuverFamily::PrecisionTransit;
+            alignmentProgram.tracking.positionErrorMeters = 0.0;
+            alignmentProgram.tracking.linearVelocityErrorMps = 0.0;
+            alignmentProgram.tracking.forwardAngleErrorRad = 0.0;
+            alignmentProgram.tracking.angularVelocityErrorRadPerSec = 0.0;
+            alignmentProgram.tracking.linearFeedbackReserveMps2 = 0.0;
+
+            const auto tracking =
+                Tracker::track(
+                    alignmentProgram,
+                    reference,
+                    agent,
+                    runtime.trackingPolicy
+                );
+
+            if (tracking.status == Tracker::Status::InvalidInput)
+            {
+                runtime.phase =
+                    DockingAutomaticRuntime::Phase::Stabilizing;
+                runtime.programs.clear();
+                runtime.controlBridge.reset();
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                continue;
+            }
+
+            const game::navigation::NavigationFrameBoundary boundary(
+                hub->kinematicFrame()
+            );
+            if (!boundary.valid())
+            {
+                runtime.phase =
+                    DockingAutomaticRuntime::Phase::Stabilizing;
+                runtime.programs.clear();
+                runtime.controlBridge.reset();
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                continue;
+            }
+
+            const auto systemIntent =
+                boundary.toSystemControlIntent(
+                    tracking.intent
+                );
+            const auto step =
+                runtime.controlBridge->step(
+                    time.universeTimeSeconds,
+                    std::max(
+                        1.0e-6,
+                        time.gameplayDeltaSeconds
+                    ),
+                    systemIntent
+                );
+
+            if (step.status !=
+                    game::navigation::
+                        NavigationRuntimeControlBridge::
+                            PilotExecutor::Status::Ok ||
+                !step.snapshot.valid)
+            {
+                runtime.phase =
+                    DockingAutomaticRuntime::Phase::Stabilizing;
+                runtime.programs.clear();
+                runtime.controlBridge.reset();
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                continue;
+            }
+
+            ship->setControlState(step.control);
+
+            const auto axisAngle =
+                [](const glm::dvec3& a,
+                   const glm::dvec3& b)
+                {
+                    return std::acos(
+                        std::clamp(
+                            glm::dot(
+                                glm::normalize(a),
+                                glm::normalize(b)
+                            ),
+                            -1.0,
+                            1.0
+                        )
+                    );
+                };
+
+            const double forwardErrorRad =
+                axisAngle(
+                    agent.forwardMap,
+                    runtime.alignmentForwardMap
+                );
+            const double upErrorRad =
+                axisAngle(
+                    agent.upMap,
+                    runtime.alignmentUpMap
+                );
+            const double entryToleranceRad =
+                baseProgram.
+                    terminalTolerance.forwardAngleRad;
+
+            if (std::max(
+                    forwardErrorRad,
+                    upErrorRad) <= entryToleranceRad)
+            {
+                // Alignment changes the physical state and consumes universe
+                // time. Never execute the now-stale program: stabilize again
+                // and replan from the newly aligned authoritative state.
+                runtime.phase =
+                    DockingAutomaticRuntime::Phase::Stabilizing;
+                runtime.programs.clear();
+                runtime.controlBridge.reset();
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                runtime.nextPlanAttemptUniverseTimeSeconds =
+                    time.universeTimeSeconds;
+
+                ShipControlState stop;
+                stop.velocityAlignmentCommand =
+                    game::navigation::
+                        VelocityAlignmentMode::BrakeToStop;
+                ship->setControlState(stop);
+
+                std::cout
+                    << "[DockAuto] request="
+                    << runtime.requestSerial
+                    << " phase=aligned-replan"
+                    << " forward_error_deg="
+                    << glm::degrees(forwardErrorRad)
+                    << " up_error_deg="
+                    << glm::degrees(upErrorRad)
+                    << "\n";
+            }
+            continue;
+        }
+
         const auto selection =
             Timeline::selectActivePage(
                 runtime.programs.data(),

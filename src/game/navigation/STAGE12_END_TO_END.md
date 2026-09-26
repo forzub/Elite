@@ -10834,3 +10834,14 @@ protected from the generic fillet pass. This directly addresses the latest
 target failure `manual docking corridor did not start along hull nose`.
 
 No newest code in this section has target-machine acceptance yet.
+
+## 2026-09-27 — terminal omega cannot be a final-sample snap
+
+Stage-12 angular authoring must reserve angular acceleration before the terminal
+sample. The compiler now constrains each intermediate omega by the exact
+terminal omega and remaining maneuver time.
+
+The rotating-terminal regression explicitly checks the penultimate sample:
+its omega error must be removable within `alpha_max * final_dt`.
+This prevents a numerically bounded but physically discontinuous terminal
+handoff from reaching AcceptedManeuverProgram.

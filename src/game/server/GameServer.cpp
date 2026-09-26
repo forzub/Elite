@@ -19,6 +19,18 @@
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
+#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/DockingCompatibility.h"
+#include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/NavigationFrameBoundary.h"
+#include "src/game/navigation/ManeuverProgramTimeline.h"
+#include "src/game/navigation/TrajectoryFollower.h"
+#include "src/game/navigation/NavigationVehicleProfileAdapters.h"
+#include "src/world/navigation/NavigationObstacleFactory.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 
 
@@ -88,6 +100,18 @@ GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
             );
         m_systemMembershipRadiusAu =
             navigationConfig.systemMembershipRadiusAu;
+
+        if (!m_serverHubSemanticAnchorCatalog.load())
+        {
+            std::cerr
+                << "[GameServer] hub semantic anchor catalog was not loaded\n";
+        }
+
+        if (!m_serverDockingPortRuntimeStateCatalog.load())
+        {
+            std::cerr
+                << "[GameServer] docking runtime catalog was not loaded\n";
+        }
 
         const bool atlasLoaded =
             m_starAtlas.loadFromRuntimeOrSource();

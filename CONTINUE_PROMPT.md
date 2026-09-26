@@ -1,67 +1,58 @@
-# CONTINUE PROMPT — Elite Navigation v2 / rerun docking after shortened-axis endpoint-clearance fix
+# CONTINUE PROMPT — Elite Navigation v2 / finish docking gate, then wire production Automatic docking
 
 Work in public repository `forzub/Elite`, branch `main`.
 
-Before changing behavior/state read `AGENTS.md`, newest sections of
-`CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
-`src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
-result synchronize those files and regenerate this prompt.
-
-## Latest verified failure
-
-Canonical `bash verify_docking.sh` successfully configured and built the
-standalone navigation-runtime test, then native CTest failed:
-
-`far preferred-axis blocker cancelled route instead of shortening lead:
-no collision-free geometric path shortened=1 final_axis_m=8390`.
-
-Meaning:
-- preferred 9 km final axis was correctly treated as soft;
-- the binary search selected the last epsilon-clear point immediately adjacent
-  to the inflated blocker;
-- that point was unsuitable as a visibility-graph goal.
-
-## Current source fix
-
-After finding the longest clear prefix, Planner now:
-- retreats the docking-axis join by at least `max(50 m, 4*hullRadius)`;
-- keeps the join on the exact semantic docking axis;
-- if nominal geometric search still cannot reach it, retreats farther toward
-  the mandatory ingress in increasing steps and retries;
-- never retreats below mandatory ingress = `max(700 m, 3*standoff)`.
-
-Regression additionally requires at least 25 m clearance from the inflated
-far-axis blocker at the accepted shortened join.
-
-Other current truth:
-- Assisted is default;
-- manual preferred final-axis lead = 9000 m;
-- preferred terminal radius = 6000 m;
-- open-transit manual release = 120 m with 1.00 s grace;
-- automatic docking executor is still pending.
+Read newest sections of `CURRENT_STATE.md`, `CURRENT_TASK.md`,
+`PROJECT_STATE.md`, and `src/game/navigation/STAGE12_END_TO_END.md` before
+changing behavior. Synchronize them after every state-affecting result and
+regenerate this prompt every iteration.
 
 ## Immediate gate
 
-From `D:\__elite\work`:
-
+Run:
 ```bash
 git pull --ff-only origin main
-git log -1 --oneline
 bash verify_docking.sh
 ```
 
-If PASS:
+Current planner fix under test: shortened preferred final-axis joins retreat
+away from obstacle contact boundaries and retry routing progressively toward the
+mandatory ingress.
 
-```bash
-bash build_mingw64.sh
-build/EliteGame.exe
-```
+## Automatic docking current truth
 
-Live acceptance:
-- route calculation returns;
-- far preferred-axis obstruction may shorten the axis but must not cancel the
-  task;
-- broad turn remains usable or radius relaxation is explicitly logged;
-- default law is ASSISTED and DockPrep braking is rapid.
+Automatic docking is not yet production-wired.
 
-Do not provide patch files; commit directly to GitHub.
+Exists:
+- DockingRouteRequest::Mode::Automatic;
+- server Autopilot ownership;
+- AcceptedManeuverProgram;
+- TrajectoryFollower;
+- NavigationRuntimeControlBridge;
+- navigation acceleration demand in ShipControlState;
+- shared physical capability enforcement.
+
+Missing:
+- server-owned player accepted-program execution lifetime;
+- fixed-step follower/bridge advancement for the player ship;
+- Automatic request integration in SpaceState;
+- START DOCKING UI enablement;
+- completion/replan/stop/handoff lifecycle.
+
+Do NOT implement gate-frame chasing.
+
+## Next implementation after docking verifier passes
+
+1. retain server Autopilot ownership after preparation for Automatic requests;
+2. create/store accepted proved maneuver program state per controlled player ship;
+3. advance TrajectoryFollower each fixed step;
+4. pass intent through NavigationRuntimeControlBridge into ShipControlState;
+5. keep shared physics authoritative;
+6. complete/replan/controlled-stop on follower outcomes;
+7. integrate DockingRouteRequest::Mode::Automatic;
+8. enable START DOCKING only when end-to-end execution is present;
+9. live-test automatic approach and docking.
+
+Manual guidance remains available independently.
+
+Commit directly to GitHub; do not provide patch files.

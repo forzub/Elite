@@ -2277,6 +2277,16 @@ void SpaceState::updateDockingAdvisory()
             return;
         }
         request.startMeters = snapshot.controlledShip.localPositionMeters;
+        request.hasInitialForward = true;
+        request.initialForward = glm::normalize(
+            frame.worldToLocalVector(
+                glm::dvec3(player->second.transform.forward())
+            )
+        );
+        request.initialForwardLeadMeters = std::max(
+            500.0,
+            hull.lengthMeters * 10.0
+        );
         const auto startFromWorld = frame.worldToLocalPosition(
             world::coordinates::fullMeters(
                 snapshot.controlledShip.worldPosition
@@ -2338,6 +2348,8 @@ void SpaceState::updateDockingAdvisory()
                   << request.terminalTurnSegmentFraction
                   << " preferred_turn_radius_m="
                   << request.preferredTerminalTurnRadiusMeters
+                  << " initial_forward_lead_m="
+                  << request.initialForwardLeadMeters
                   << '\n';
 
         request.obstacles = snapshot.navigationObstacles;

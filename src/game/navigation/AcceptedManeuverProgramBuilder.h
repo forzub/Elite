@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -87,6 +88,13 @@ public:
         std::uint64_t spaceSourceRevision = 0;
 
         double minimumClearanceMeters = 0.0;
+
+        // Optional terminal spin target in the same navigation frame as the
+        // trajectory. Moving/rotating docking targets must supply this so the
+        // accepted program matches both terminal pose and angular velocity.
+        bool hasTerminalAngularVelocity = false;
+        glm::dvec3 terminalAngularVelocityMapRadPerSec {0.0};
+
         Policy policy {};
     };
 
@@ -106,7 +114,11 @@ public:
             request.firstProgramRevision == 0 ||
             !request.policy.valid() ||
             !std::isfinite(request.minimumClearanceMeters) ||
-            request.minimumClearanceMeters < 0.0)
+            request.minimumClearanceMeters < 0.0 ||
+            (request.hasTerminalAngularVelocity &&
+             !finiteVec(
+                 request.terminalAngularVelocityMapRadPerSec
+             )))
         {
             return out;
         }
@@ -179,6 +191,15 @@ public:
                     glm::dvec3(0.0);
             }
 
+            deriveAngularKinematics(
+                page,
+                count,
+                request.hasTerminalAngularVelocity &&
+                    last + 1 == samples.size()
+                    ? &request.terminalAngularVelocityMapRadPerSec
+                    : nullptr
+            );
+
             const double localDuration =
                 page.samples[count - 1].timeOffsetSeconds;
             if (!(localDuration > 0.0) ||
@@ -223,6 +244,9 @@ public:
                 params,
                 request.capabilityRevision
             );
+
+            if (!angularKinematicsFeasible(page))
+                return Result {};
 
             page.proof.mapRevision = request.mapRevision;
             page.proof.mapSourceRevision = request.mapSourceRevision;
@@ -317,6 +341,176 @@ private:
         glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
         bool feasible = true;
     };
+
+    [[nodiscard]] static bool finiteVec(
+        const glm::dvec3& value
+    ) noexcept
+    {
+        return
+            std::isfinite(value.x) &&
+            std::isfinite(value.y) &&
+            std::isfinite(value.z);
+    }
+
+    [[nodiscard]] static glm::dvec3 angularVelocityBetween(
+        const glm::dquat& from,
+        const glm::dquat& to,
+        double durationSeconds
+    ) noexcept
+    {
+        if (!(durationSeconds > 1.0e-9))
+            return glm::dvec3(0.0);
+
+        glm::dquat delta = normalizedOrIdentity(
+            to * glm::conjugate(from)
+        );
+        if (delta.w < 0.0)
+            delta = -delta;
+
+        const double w = std::clamp(delta.w, -1.0, 1.0);
+        const double angle = 2.0 * std::acos(w);
+        const double sinHalf =
+            std::sqrt(std::max(0.0, 1.0 - w * w));
+        if (!(angle > 1.0e-9) || !(sinHalf > 1.0e-9))
+            return glm::dvec3(0.0);
+
+        const glm::dvec3 axis(
+            delta.x / sinHalf,
+            delta.y / sinHalf,
+            delta.z / sinHalf
+        );
+        return axis * (angle / durationSeconds);
+    }
+
+    static void deriveAngularKinematics(
+        AcceptedManeuverProgram& page,
+        std::size_t count,
+        const glm::dvec3* terminalAngularVelocity
+    ) noexcept
+    {
+        if (count < 2)
+            return;
+
+        std::array<glm::dquat, AcceptedManeuverProgram::kMaxSamples>
+            orientations {};
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto& sample = page.samples[i];
+            const glm::dmat3 basis(
+                sample.rightMap,
+                sample.upMap,
+                -sample.forwardMap
+            );
+            orientations[i] =
+                normalizedOrIdentity(glm::quat_cast(basis));
+        }
+
+        page.samples[0].angularVelocityMapRadPerSecond =
+            glm::dvec3(0.0);
+
+        for (std::size_t i = 1; i + 1 < count; ++i)
+        {
+            const double dt =
+                page.samples[i + 1].timeOffsetSeconds -
+                page.samples[i - 1].timeOffsetSeconds;
+            page.samples[i].angularVelocityMapRadPerSecond =
+                angularVelocityBetween(
+                    orientations[i - 1],
+                    orientations[i + 1],
+                    dt
+                );
+        }
+
+        if (terminalAngularVelocity)
+        {
+            page.samples[count - 1].
+                angularVelocityMapRadPerSecond =
+                    *terminalAngularVelocity;
+        }
+        else
+        {
+            const double dt =
+                page.samples[count - 1].timeOffsetSeconds -
+                page.samples[count - 2].timeOffsetSeconds;
+            page.samples[count - 1].
+                angularVelocityMapRadPerSecond =
+                    angularVelocityBetween(
+                        orientations[count - 2],
+                        orientations[count - 1],
+                        dt
+                    );
+        }
+
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            glm::dvec3 alpha(0.0);
+            if (i + 1 < count)
+            {
+                const double dt =
+                    page.samples[i + 1].timeOffsetSeconds -
+                    page.samples[i].timeOffsetSeconds;
+                if (dt > 1.0e-9)
+                {
+                    alpha =
+                        (page.samples[i + 1].
+                            angularVelocityMapRadPerSecond -
+                         page.samples[i].
+                            angularVelocityMapRadPerSecond) /
+                        dt;
+                }
+            }
+            else if (i > 0)
+            {
+                alpha =
+                    page.samples[i - 1].
+                        angularAccelerationFeedForwardMapRadPerSec2;
+            }
+
+            page.samples[i].
+                angularAccelerationFeedForwardMapRadPerSec2 =
+                    alpha;
+        }
+    }
+
+    [[nodiscard]] static bool angularKinematicsFeasible(
+        const AcceptedManeuverProgram& page
+    ) noexcept
+    {
+        const double maxOmega =
+            page.capability.maxAngularSpeedRadPerSec;
+        const double maxAlpha =
+            page.capability.maxAngularAccelerationRadPerSec2;
+
+        for (std::size_t i = 0; i < page.sampleCount; ++i)
+        {
+            const auto& sample = page.samples[i];
+            if (!finiteVec(
+                    sample.angularVelocityMapRadPerSecond) ||
+                !finiteVec(
+                    sample.angularAccelerationFeedForwardMapRadPerSec2))
+            {
+                return false;
+            }
+
+            if (maxOmega > 0.0 &&
+                glm::length(
+                    sample.angularVelocityMapRadPerSecond) >
+                    maxOmega + 1.0e-6)
+            {
+                return false;
+            }
+
+            if (maxAlpha > 0.0 &&
+                glm::length(
+                    sample.angularAccelerationFeedForwardMapRadPerSec2) >
+                    maxAlpha + 1.0e-6)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     [[nodiscard]] static glm::dquat normalizedOrIdentity(
         const glm::dquat& value

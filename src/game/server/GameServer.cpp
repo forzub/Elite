@@ -691,9 +691,12 @@ void GameServer::update(double dt)
 
 
 
-    // Human inputs remain numbered/acknowledged, but temporary docking
-    // Autopilot owns the physical control sample until guidance is published.
+    // Human inputs remain numbered/acknowledged, but docking Autopilot
+    // owns the physical control sample while preparation or accepted automatic
+    // execution is active. Automatic execution always wins through the
+    // AcceptedManeuverProgram -> Follower -> bridge seam.
     applyDockingGuidancePreparationControls();
+    applyAutomaticDockingControls(time);
 
 m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime

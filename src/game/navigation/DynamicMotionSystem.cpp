@@ -119,12 +119,18 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
     {
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         return;
     }
 
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(shipForward));
+
+    // Navigation/program acceleration demand owns the complete acceleration
+    // sample. Never let a previous manual Assisted stabilizer demand leak into
+    // the server/autopilot path.
+    motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
 
     const double forwardMainAuthority =
         game::ship::forwardMainAccelerationLimitMps2(params);

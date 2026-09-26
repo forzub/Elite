@@ -237,6 +237,7 @@ ELITE_WIRE_SCHEMA(
     v.liftSpeedMps,
     v.mainEngineAccelerationMps2,
     v.manoeuvreAccelerationMps2,
+    v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,
     v.manoeuvreGasPressure01,
     v.manoeuvreGasDepleted,

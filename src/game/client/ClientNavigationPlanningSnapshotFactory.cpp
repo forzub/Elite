@@ -5,6 +5,7 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/world/navigation/NavigationObstacleFactory.h"
 
@@ -13,7 +14,6 @@ namespace game::client
 namespace
 {
 constexpr double CoordinateRoundTripToleranceMeters = 1.0e-3;
-constexpr double DiagnosticHubInfrastructureClearanceMeters = 80.0;
 
 bool finiteVec(const glm::dvec3& value) noexcept
 {
@@ -344,7 +344,7 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
                 object.id.value,
                 world::coordinates::fullMeters(object.worldPosition),
                 glm::dmat3(glm::mat3(object.orientation)),
-                DiagnosticHubInfrastructureClearanceMeters
+                game::navigation::DiagnosticHubInfrastructureClearanceMeters
             );
         if (!obstacle)
             continue;

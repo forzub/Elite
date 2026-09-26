@@ -340,6 +340,31 @@ void testClientMessageRoundTrip()
             ClientShipCommand::BeginDockingGuidancePreparation &&
             decodedDockingCommand.requestSerial == 42u,
         "docking preparation command round-trip mismatch");
+
+    ClientMessage automaticDockingMessage;
+    automaticDockingMessage.clientTick = 5680u;
+    ClientShipCommand automaticDocking;
+    automaticDocking.type =
+        ClientShipCommand::BeginAutomaticDocking;
+    automaticDocking.requestSerial = 43u;
+    automaticDocking.dockingTargetSystemId = 7;
+    automaticDocking.dockingTargetModuleId = "dock-module-a";
+    automaticDocking.dockingTargetAnchorId = "port-bottom";
+    automaticDockingMessage.payload = automaticDocking;
+
+    require(encodeClientMessage(automaticDockingMessage, payload),
+        "automatic docking command encode failed");
+    require(decodeClientMessage(payload, decoded),
+        "automatic docking command decode failed");
+    const auto& decodedAutomatic =
+        std::get<ClientShipCommand>(decoded.payload);
+    require(decodedAutomatic.type ==
+            ClientShipCommand::BeginAutomaticDocking &&
+            decodedAutomatic.requestSerial == 43u &&
+            decodedAutomatic.dockingTargetSystemId == 7 &&
+            decodedAutomatic.dockingTargetModuleId == "dock-module-a" &&
+            decodedAutomatic.dockingTargetAnchorId == "port-bottom",
+        "automatic docking target identity round-trip mismatch");
 }
 
 void testTimeSyncRoundTrip()

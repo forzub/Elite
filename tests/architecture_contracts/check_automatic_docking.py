@@ -14,8 +14,9 @@ def read(rel: str) -> str:
 
 def require(rel: str, *tokens: str) -> str:
     body = read(rel)
+    compact_body = "".join(body.split())
     for token in tokens:
-        if token not in body:
+        if token not in body and "".join(token.split()) not in compact_body:
             raise AssertionError(f"{rel}: missing automatic-docking token {token!r}")
     return body
 

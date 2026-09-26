@@ -125,9 +125,19 @@ try:
     )
     map_h = read("src/game/system_map/SystemMapRenderer.h")
     map_cpp = read("src/game/system_map/SystemMapRenderer.cpp")
+    map_system_inl = read(
+        "src/game/system_map/SystemMapRendererSystem.inl"
+    )
+    map_common_inl = read(
+        "src/game/system_map/SystemMapRendererCommon.inl"
+    )
     if "Mode m_mode" in map_h or "m_mode =" in map_cpp:
         raise AssertionError(
             "SystemMapRenderer reintroduced loose persistent map mode state"
+        )
+    if "m_mode" in map_system_inl or "m_mode" in map_common_inl:
+        raise AssertionError(
+            "SystemMapRenderer inline implementation still reads retired m_mode"
         )
 
     # Existing mode systems that are already state-owned must stay that way.

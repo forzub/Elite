@@ -1,6 +1,7 @@
 #include "game/navigation/AcceptedManeuverProgramBuilder.h"
 
 #include <cmath>
+#include <glm/gtc/quaternion.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -113,6 +114,93 @@ void testTerminalAngularVelocityIsAcceptedAndPreserved()
             "accepted terminal angular acceleration exceeded capability");
 }
 
+void testStoragePageBoundaryPreservesAngularState()
+{
+    const ShipParams params = makeParams();
+
+    world::navigation::Trajectory trajectory;
+    trajectory.status = world::navigation::TrajectoryStatus::Ready;
+    trajectory.systemId = 0;
+    trajectory.frameId = "hub";
+    trajectory.startUniverseTimeSeconds = 200.0;
+
+    constexpr std::size_t SampleCount = 20;
+    constexpr double Dt = 0.25;
+    constexpr double AngularRate = 0.08;
+
+    for (std::size_t i = 0; i < SampleCount; ++i)
+    {
+        const double time = Dt * static_cast<double>(i);
+        world::navigation::TrajectorySample sample;
+        sample.universeTimeSeconds =
+            trajectory.startUniverseTimeSeconds + time;
+        sample.timeOffsetSeconds = time;
+        sample.pathProgressMeters = static_cast<double>(i);
+        sample.sourcePathProgressMeters = static_cast<double>(i);
+        sample.positionMeters = {0.0, 0.0, -static_cast<double>(i)};
+        sample.velocityMps = {0.0, 0.0, -4.0};
+        sample.accelerationMps2 = {0.0, 0.0, 0.0};
+        sample.orientation = glm::angleAxis(
+            AngularRate * time,
+            glm::dvec3(0.0, 1.0, 0.0)
+        );
+        sample.speedMps = 4.0;
+        trajectory.samples.push_back(sample);
+    }
+
+    trajectory.durationSeconds =
+        trajectory.samples.back().timeOffsetSeconds;
+    trajectory.lengthMeters =
+        trajectory.samples.back().pathProgressMeters;
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.objectiveRevision = 9;
+    request.firstProgramRevision = 30;
+    request.capabilityRevision = 5;
+    request.hasInitialAngularVelocity = true;
+    request.initialAngularVelocityMapRadPerSec =
+        {0.0, AngularRate, 0.0};
+    request.hasTerminalAngularVelocity = true;
+    request.terminalAngularVelocityMapRadPerSec =
+        {0.0, AngularRate, 0.0};
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+
+    require(result.valid, "builder rejected smooth paged rotation");
+    require(result.pages.size() == 2,
+            "20 samples should require exactly two overlapping storage pages");
+
+    const auto& first = result.pages[0];
+    const auto& second = result.pages[1];
+    const auto& firstBoundary =
+        first.samples[first.sampleCount - 1];
+    const auto& secondBoundary =
+        second.samples[0];
+
+    require(glm::length(
+                firstBoundary.angularVelocityMapRadPerSecond -
+                secondBoundary.angularVelocityMapRadPerSecond) <
+            1.0e-10,
+            "storage page boundary reset or changed angular velocity");
+    require(glm::length(
+                firstBoundary.angularAccelerationFeedForwardMapRadPerSec2 -
+                secondBoundary.angularAccelerationFeedForwardMapRadPerSec2) <
+            1.0e-10,
+            "storage page boundary reset or changed angular acceleration");
+    require(!first.completionTriggersReplan &&
+            second.completionTriggersReplan,
+            "storage page boundary became a semantic maneuver completion");
+    require(
+        second.family ==
+            game::navigation::AcceptedManeuverProgram::
+                ManeuverFamily::PrecisionTransit,
+        "pre-capture final page must remain transit, not physical capture"
+    );
+}
+
 void testImpossibleTerminalSpinIsRejected()
 {
     const ShipParams params = makeParams();
@@ -143,12 +231,14 @@ int main()
     try
     {
         testTerminalAngularVelocityIsAcceptedAndPreserved();
+        testStoragePageBoundaryPreservesAngularState();
         testImpossibleTerminalSpinIsRejected();
 
         std::cout
             << "ACCEPTED MANEUVER PROGRAM BUILDER TESTS: PASS\n"
             << " - trajectory -> immutable accepted program\n"
             << " - rotating terminal angular velocity retained\n"
+            << " - storage-page angular state remains continuous\n"
             << " - impossible terminal spin rejected before Follower\n";
         return 0;
     }

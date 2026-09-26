@@ -1856,7 +1856,13 @@ bool GameServer::planAutomaticDocking(
     const auto accepted =
         AcceptedManeuverProgramBuilder::build(build);
     if (!accepted.valid || accepted.pages.empty())
-        return fail("accepted-program-build-failed");
+    {
+        const std::string reason =
+            accepted.failureReason.empty()
+                ? "accepted-program-build-failed"
+                : "accepted-program-" + accepted.failureReason;
+        return fail(reason);
+    }
 
     runtime.programs = accepted.pages;
     runtime.currentProgramPage = 0;

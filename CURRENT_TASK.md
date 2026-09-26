@@ -1318,3 +1318,14 @@ build/EliteGame.exe
 ```
 
 Then run live Assisted START DOCKING and capture all `[DockAuto]` lines.
+
+## 2026-09-27 — immediate gate after checker hardening
+
+Pull current `main` and rerun `bash verify_docking.sh`.
+
+The production terminal angular handoff has been manually verified in
+`GameServer.cpp`; this iteration changes only the static checker.
+
+Expected result: full `[DOCK-VERIFY] PASS`.
+
+After that, run the canonical MinGW build and live Assisted docking test.

@@ -67,6 +67,24 @@ try:
         "DockingRouteRequest::Mode::Guidance",
     )
 
+    trajectory_header = require(
+        "src/world/navigation/TrajectoryGenerator.h",
+        "hasTerminalAngularVelocity",
+        "terminalAngularVelocityRadPerSecond",
+    )
+    trajectory_impl = require(
+        "src/world/navigation/TrajectoryGenerator.cpp",
+        "request.hasTerminalAngularVelocity",
+        "terminalTimeOffsetSeconds - sampleTimeOffsetSeconds",
+        "-omega * remainingSeconds",
+    )
+    if "trajectoryRequest.hasTerminalAngularVelocity = true" not in require(
+        "src/game/server/GameServer.cpp",
+        "trajectoryRequest.hasTerminalAngularVelocity = true",
+        "trajectoryRequest.terminalAngularVelocityRadPerSecond",
+    ):
+        raise AssertionError("Automatic docking did not feed rotating terminal attitude into trajectory generation")
+
     server = require(
         "src/game/server/GameServer.cpp",
         "beginAutomaticDocking(",

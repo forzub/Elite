@@ -188,6 +188,15 @@ struct TrajectoryGenerationRequest
     glm::dvec3 initialVelocityMps {0.0};
     glm::dvec3 initialAccelerationMps2 {0.0};
 
+    // Optional measured initial body attitude/angular state. Automatic
+    // execution supplies this so orientation is compiled from the real hull
+    // state under the same angular limits that execution will have.
+    bool hasInitialOrientation = false;
+    glm::dvec3 initialForward {0.0, 0.0, -1.0};
+    glm::dvec3 initialUp {0.0, 1.0, 0.0};
+    bool hasInitialAngularVelocity = false;
+    glm::dvec3 initialAngularVelocityRadPerSecond {0.0};
+
     // Optional exact terminal inertial velocity. This is distinct from
     // pointSpeedConstraints, which are upper bounds along the retained route.
     // A moving fly-through finish must not be represented as a fake stop.

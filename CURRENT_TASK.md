@@ -1302,3 +1302,19 @@ or 0.05 rad/s omega thresholds.
 
 Only after the complete docking verify is green proceed to
 `bash build_mingw64.sh` and live Assisted docking.
+
+## 2026-09-27 — immediate gate: complete verify after static-checker correction
+
+Pull current `main` and rerun `bash verify_docking.sh`.
+
+Expected already-proved native results remain green. The corrected automatic
+static contract should now pass without requiring test-only text in production
+source.
+
+If the full verify passes, proceed immediately to:
+```bash
+bash build_mingw64.sh
+build/EliteGame.exe
+```
+
+Then run live Assisted START DOCKING and capture all `[DockAuto]` lines.

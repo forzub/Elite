@@ -1,6 +1,15 @@
 # PROJECT STATE
 
 
+## 2026-09-26 — Automatic docking native acceptance complete; live acceptance pending
+
+Planner/Follower/actuator ownership is now green under the focused native
+suite and canonical build. The next acceptance boundary is live behavior only.
+Current Automatic scope ends at a collision-free pre-capture pose outside the
+solid station target and restores Human control.
+
+
+
 ## 2026-09-26 — shared linear-load envelope remains authoritative
 
 The runtime-control failure did not justify changing production physics.

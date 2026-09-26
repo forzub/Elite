@@ -1,6 +1,38 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 
+## 2026-09-26 — Automatic production chain now preserves actuator truth and physical entry state
+
+The production Automatic path now preserves the exact actuator ownership
+across the full stack:
+
+`AcceptedManeuverProgram -> TrajectoryFollower -> stepProgram ->
+ShipControlState -> applyNavigationActuatorProgram -> fixed-step physics`.
+
+Nominal rear/fore main throttles and manoeuvre/RCS acceleration are not
+reconstructed from a net acceleration vector. B10 tracking feedback is carried
+separately and may consume only residual physical authority.
+
+Two physical correctness fixes were added before live acceptance:
+1. Automatic navigation no longer uses `terminalAllowedObstacleId` to enter a
+   target that shared physics still treats as solid. The current stage stops at
+   a collision-free pre-capture center using the same shared Hub clearance
+   policy as client planning.
+2. A stabilized ship whose hull is not aligned with the first accepted
+   reference enters `Aligning`. The real hull rotates through the ordinary
+   bounded angular-demand path. The stale program is then discarded and a new
+   trajectory/program is calculated from the new authoritative state/time.
+
+The tracking controller now uses exact quaternion shortest-arc attitude error,
+including the 180-degree case. Accepted-program angular state is derived across
+the complete trajectory so storage pages cannot reset omega/alpha.
+
+Current completion means `pre-capture-envelope-complete`, not physical latch.
+Contact/latch is the next separate game-state/physics milestone after this
+Automatic approach passes target-machine tests and live flight.
+
+
+
 ## 2026-09-26 — production Automatic docking enters the accepted-program chain
 
 The previously missing player-side production owner is now wired.

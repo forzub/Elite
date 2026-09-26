@@ -2954,21 +2954,17 @@ void SystemMapRenderer::applyDockingAction(
             true
         );
 
-        // Guidance owns the client advisory corridor. Automatic docking is a
-        // server-owned execution request and deliberately does not create a
-        // second client-side executable route.
-        if (requestMode ==
-            game::navigation::DockingRouteRequest::Mode::Guidance)
-        {
-            m_navigationWorkspace.modules().setEnabled(
-                game::navigation::NavigationModuleId::LocalGuidance,
-                true
-            );
-            m_navigationWorkspace.modules().setEnabled(
-                game::navigation::NavigationModuleId::HudGuidanceCorridor,
-                true
-            );
-        }
+        // Route presentation is independent from control authority. Guidance
+        // and Automatic must use the same visible advisory corridor; Automatic
+        // remains server-owned for execution but must never hide the route.
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::LocalGuidance,
+            true
+        );
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::HudGuidanceCorridor,
+            true
+        );
     }
 }
 
@@ -3060,7 +3056,6 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
     );
     const auto& dockRequest = m_navigationWorkspace.dockingRouteRequests().pending();
     if (dockRequest.valid() &&
-        dockRequest.mode == game::navigation::DockingRouteRequest::Mode::Guidance &&
         dockRequest.target.systemId == systemId)
     {
         const std::string dockId = "dock:" + dockRequest.target.stableObjectId +

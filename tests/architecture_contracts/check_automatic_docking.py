@@ -85,6 +85,10 @@ try:
         "minimumPreCaptureDepthMeters",
         "segmentClearOfNavigationObstacles(",
         "pre_capture_depth_m=",
+        "DockingAutomaticRuntime::Phase::Aligning",
+        "phase=aligned-replan",
+        "ManeuverTrackingController",
+        "controlBridge->stepProgram(",
         "phase=replan",
     )
 
@@ -176,6 +180,7 @@ try:
     builder_test = require(
         "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",
         "testTerminalAngularVelocityIsAcceptedAndPreserved",
+        "testStoragePageBoundaryPreservesAngularState",
         "testImpossibleTerminalSpinIsRejected",
     )
 

@@ -1,5 +1,27 @@
 # CURRENT STATE
 
+## 2026-09-26 — canonical game build exposed stale coordinate acceptance harness; corrected
+
+After the focused mode-state gate, the canonical game build reached
+`ClientAcceptanceHarness.cpp` and failed because
+`testCoordinateDisplayHotkeyContract()` still called the removed
+`CoordinateDisplayService::cycle()` API.
+
+This was stale acceptance code, not a production coordinate-mode regression.
+Production already routes Ctrl+F11 through
+`Application::cycleCoordinateDisplayFormat()`:
+`ClientModeState` owns `coordinateDisplayFormatId`,
+`nextCoordinateDisplayFormat()` selects the next value, and
+`CoordinateDisplayService::setFormat()` only projects that selected state.
+
+The harness now verifies the same ownership rule:
+`ClientModeState transition -> CoordinateDisplayService projection`, including
+three transitions, wraparound, and state revision increments. The removed
+service-owned `cycle()` was not restored.
+
+Fresh Windows verification/build is pending.
+
+
 ## 2026-09-26 — mode-state refactor implemented; first Windows gate found only a test expectation error
 
 Mode/state refactor now present on main:

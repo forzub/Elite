@@ -325,6 +325,120 @@ void testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease()
     );
 }
 
+void testAssistedLateralStabilizerIsDistinctFromNewtonianRcs()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.maxCombatSpeed = 100.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.strafeAccel = 20.0f;
+    params.manoeuvreGasUsePerSecond = 1.0f;
+    params.manoeuvreGasRechargePerSecond = 0.0f;
+
+    auto makeSideways = [&]()
+    {
+        game::navigation::DynamicMotionState motion;
+        motion.localVelocityMps = glm::dvec3(20.0, 0.0, 0.0);
+        motion.targetForwardSpeedMps = 0.0;
+        return motion;
+    };
+
+    auto assisted = makeSideways();
+    assisted.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    auto assistedPosition =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        assisted,
+        frame,
+        params,
+        0.1f,
+        0.0f,
+        false,
+        0.0f,
+        0.0f,
+        0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    requireNear(
+        glm::length(assisted.manoeuvreAccelerationMps2),
+        0.0,
+        1.0e-9,
+        "Assisted automatic drift cancellation leaked into manual RCS"
+    );
+    requireNear(
+        glm::length(assisted.assistedStabilizationAccelerationMps2),
+        20.0,
+        1.0e-6,
+        "Assisted did not use its configured lateral stabilization authority"
+    );
+
+    const double assistedGasBefore = assisted.manoeuvreGasPressure01;
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        assisted,
+        assistedPosition,
+        frame,
+        params,
+        0.1
+    );
+
+    require(
+        std::abs(assisted.localVelocityMps.x) < 19.0,
+        "Assisted did not materially remove sideways VREL"
+    );
+    requireNear(
+        assisted.manoeuvreGasPressure01,
+        assistedGasBefore,
+        1.0e-9,
+        "automatic Assisted stabilization consumed keypad RCS gas"
+    );
+
+    auto newtonian = makeSideways();
+    newtonian.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    auto newtonianPosition =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        newtonian,
+        frame,
+        params,
+        0.1f,
+        0.0f,
+        false,
+        0.0f,
+        0.0f,
+        0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        newtonian,
+        newtonianPosition,
+        frame,
+        params,
+        0.1
+    );
+
+    requireNear(
+        newtonian.localVelocityMps.x,
+        20.0,
+        1.0e-9,
+        "Newtonian neutral flight incorrectly inherited Assisted drift damping"
+    );
+    requireNear(
+        glm::length(newtonian.assistedStabilizationAccelerationMps2),
+        0.0,
+        1.0e-9,
+        "Newtonian produced an Assisted stabilizer demand"
+    );
+}
+
 void testManoeuvreGasDrainsLocksAndRecharges()
 {
     const auto frame = makeFrame();
@@ -1310,6 +1424,7 @@ int main()
         testFlightLawTransitionStateMachine();
         testNewtonianRcsCanCreepPastControlledSpeedEnvelope();
         testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease();
+        testAssistedLateralStabilizerIsDistinctFromNewtonianRcs();
         testManoeuvreGasDrainsLocksAndRecharges();
         testNewtonianCoastsWithoutInput();
         testNewtonianHullDirectionDoesNotRotateVelocity();

@@ -174,6 +174,92 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
 }
 
 
+void DynamicMotionSystem::applyNavigationAssistedFlightModel(
+    DynamicMotionState& motion,
+    const KinematicFrame& frame,
+    const ShipParams& params,
+    float dt,
+    double targetForwardSpeedMps,
+    const glm::dvec3& feedbackAccelerationSystemMps2,
+    const glm::vec3& shipForward,
+    const glm::vec3& shipRight,
+    const glm::vec3& shipUp
+)
+{
+    if (motion.localControlLaw != LocalFlightControlLaw::Assisted ||
+        !frame.valid ||
+        dt <= 0.0f ||
+        !std::isfinite(targetForwardSpeedMps))
+    {
+        motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        return;
+    }
+
+    const double maxSpeed =
+        game::ship::controlledSpeedLimitMps(params);
+    (void)LocalFlightControlStateMachine::requestAssistedTargetSpeed(
+        motion,
+        targetForwardSpeedMps,
+        maxSpeed
+    );
+
+    // Reuse the exact manual Assisted law. With zero keypad inputs this owns
+    // the same nose-coupled velocity response, main-engine allocation and
+    // automatic lateral stabilization accepted for player control.
+    applyLocalFrameInput(
+        motion,
+        frame,
+        params,
+        dt,
+        0.0f,
+        false,
+        0.0f,
+        0.0f,
+        0.0f,
+        shipForward,
+        shipRight,
+        shipUp
+    );
+
+    // Follower correction is a small guidance bias inside the automatic
+    // Assisted stabilizer. It is NOT physical keypad/manoeuvre RCS. Keep only
+    // the component perpendicular to the hull nose; longitudinal tracking is
+    // expressed by the target-forward-speed command above.
+    const glm::dvec3 f =
+        glm::normalize(glm::dvec3(shipForward));
+    glm::dvec3 lateralFeedback =
+        feedbackAccelerationSystemMps2 -
+        f * glm::dot(feedbackAccelerationSystemMps2, f);
+
+    const double assistedAuthority =
+        game::ship::assistedLateralStabilizationAccelerationLimitMps2(params);
+    const double totalLinearEnvelope =
+        game::ship::mainAccelerationLimitMps2(params);
+
+    motion.assistedStabilizationAccelerationMps2 =
+        clampMagnitude(
+            motion.assistedStabilizationAccelerationMps2 + lateralFeedback,
+            assistedAuthority
+        );
+
+    // Assisted doctrine gives velocity-to-nose correction priority. If the
+    // stabilizer needs more of the shared load envelope, reduce main thrust;
+    // never spill the correction into the precision RCS system.
+    motion.mainEngineAccelerationMps2 =
+        clampSecondaryToTotalAccelerationEnvelope(
+            motion.assistedStabilizationAccelerationMps2,
+            motion.mainEngineAccelerationMps2,
+            totalLinearEnvelope
+        );
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+    motion.engineAccelerationMps2 =
+        motion.mainEngineAccelerationMps2 +
+        motion.assistedStabilizationAccelerationMps2;
+}
+
 void DynamicMotionSystem::applyNavigationActuatorProgram(
     DynamicMotionState& motion,
     const ShipParams& params,

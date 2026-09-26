@@ -1,6 +1,20 @@
 # PROJECT STATE
 
 
+## 2026-09-26 — Assisted is explicitly nose/course-coupled; Automatic plan failure is fail-safe
+
+Assisted control doctrine is now explicitly airplane-like in the sense
+that hull direction and travel direction are tightly coupled. A sharp hull turn
+must prioritize removal of old sideways relative velocity before spending the
+whole load envelope rebuilding longitudinal speed.
+
+Automatic docking planning is still synchronous today, so a failed heavy plan
+must never be called repeatedly from fixed-step. Until planning is moved to a
+budgeted/asynchronous job boundary, initial plan failure is one-shot and returns
+Human authority with a diagnostic reason.
+
+
+
 ## 2026-09-26 — Automatic docking native acceptance complete; live acceptance pending
 
 Planner/Follower/actuator ownership is now green under the focused native

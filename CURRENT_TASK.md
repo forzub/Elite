@@ -1,5 +1,33 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — Windows gate: no docking freeze + physical Automatic start
+
+Assisted remains accepted; do not retune it.
+
+Pull current main and run `verify_docking.sh`. The aggregate gate now includes
+the new `trajectory_generator_angular` native test.
+
+Then rebuild/run the game.
+
+Acceptance:
+1. CALCULATE TRAJECTORY still shows line + tunnel.
+2. Selected action in dock/ship map cards is visibly bright green while inactive
+   actions retain the normal style.
+3. Manual guidance shows localized MANUAL DOCKING MODE; START DOCKING switches
+   the blinking mode label to localized AUTOMATIC DOCKING MODE.
+4. START DOCKING must not cause the old ~350 ms map/game freeze. Expected log is
+   `phase=planning-async`; rendering/simulation should remain responsive while
+   the worker plans.
+5. The ship remains stopped during Planning, then receives a `planned ...`
+   line and enters either Executing or Aligning.
+6. The previous `accepted-program-angular-kinematics-infeasible` failure should
+   be gone. If planning still fails, capture the exact new reason.
+7. On successful planning, verify physical movement along the retained visible
+   route/tunnel and continue through optional align/replan to pre-capture.
+8. Any genuine one-shot planning failure must still restore Human authority;
+   never reintroduce a synchronous retry storm.
+
+
 ## 2026-09-26 — verify restored tunnel and Automatic execution after terminal-spin fix
 
 Assisted is accepted; do not change it in this iteration.

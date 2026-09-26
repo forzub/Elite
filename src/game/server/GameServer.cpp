@@ -1095,6 +1095,952 @@ void GameServer::applyDockingGuidancePreparationControls()
 }
 
 
+
+bool GameServer::beginAutomaticDocking(
+    PlayerId playerId,
+    EntityId controlledEntityId,
+    const ClientShipCommand& command
+)
+{
+    if (!playerId ||
+        controlledEntityId.value == 0 ||
+        command.requestSerial == 0 ||
+        command.dockingTargetSystemId < 0 ||
+        command.dockingTargetModuleId.empty() ||
+        command.dockingTargetAnchorId.empty())
+    {
+        return false;
+    }
+
+    Ship* ship = m_simulation.getShip(controlledEntityId);
+    if (!ship)
+        return false;
+
+    const auto& motion = ship->core().transform().motion;
+    const std::string hubId =
+        !motion.matchedReferenceFrameId.empty()
+            ? motion.matchedReferenceFrameId
+            : motion.hubId;
+
+    const auto* hub = hubId.empty()
+        ? nullptr
+        : m_simulation.hubNavigationFrame(hubId);
+
+    if (!hub ||
+        !hub->valid ||
+        hub->systemId != command.dockingTargetSystemId ||
+        motion.systemId != command.dockingTargetSystemId ||
+        !motion.matchedToReferenceFrame ||
+        motion.matchedReferenceFrameId != hubId)
+    {
+        std::cerr
+            << "[DockAuto] rejected entity="
+            << controlledEntityId.value
+            << " request=" << command.requestSerial
+            << " reason=ship-not-matched-to-target-hub\n";
+        return false;
+    }
+
+    if (const auto manual =
+            m_dockingGuidancePreparations.find(controlledEntityId.value);
+        manual != m_dockingGuidancePreparations.end())
+    {
+        const auto prep = manual->second;
+        (void)finishDockingGuidancePreparation(
+            prep.playerId,
+            prep.entityId,
+            prep.requestSerial,
+            false
+        );
+    }
+
+    if (const auto existing =
+            m_dockingAutomaticRuntimes.find(controlledEntityId.value);
+        existing != m_dockingAutomaticRuntimes.end())
+    {
+        if (existing->second.playerId == playerId &&
+            existing->second.requestSerial == command.requestSerial &&
+            existing->second.targetModuleId ==
+                command.dockingTargetModuleId &&
+            existing->second.targetAnchorId ==
+                command.dockingTargetAnchorId)
+        {
+            return true;
+        }
+
+        const auto oldPlayer = existing->second.playerId;
+        const auto oldSerial = existing->second.requestSerial;
+        (void)finishAutomaticDocking(
+            oldPlayer,
+            controlledEntityId,
+            oldSerial,
+            false,
+            "superseded"
+        );
+    }
+
+    if (!m_controls.takeAutopilotControl(playerId, controlledEntityId))
+        return false;
+
+    if (auto it = m_controlStreams.find(controlledEntityId.value);
+        it != m_controlStreams.end())
+    {
+        it->second.discardPendingAndAcknowledgeNewest();
+    }
+    m_pendingClientShipCommands.erase(controlledEntityId.value);
+
+    DockingAutomaticRuntime runtime;
+    runtime.requestSerial = command.requestSerial;
+    runtime.playerId = playerId;
+    runtime.entityId = controlledEntityId;
+    runtime.systemId = command.dockingTargetSystemId;
+    runtime.hubId = hubId;
+    runtime.targetModuleId = command.dockingTargetModuleId;
+    runtime.targetAnchorId = command.dockingTargetAnchorId;
+    runtime.phase = DockingAutomaticRuntime::Phase::Stabilizing;
+    runtime.settledSinceUniverseTimeSeconds = -1.0;
+    runtime.nextPlanAttemptUniverseTimeSeconds = 0.0;
+    runtime.nextProgramRevision = 1;
+
+    m_dockingAutomaticRuntimes[controlledEntityId.value] =
+        std::move(runtime);
+
+    ShipControlState stop;
+    stop.velocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
+    ship->setControlState(stop);
+
+    m_forceSnapshotPublication = true;
+    std::cout
+        << "[DockAuto] begin entity=" << controlledEntityId.value
+        << " request=" << command.requestSerial
+        << " hub=" << hubId
+        << " target=" << command.dockingTargetModuleId
+        << ":" << command.dockingTargetAnchorId
+        << " phase=stabilizing\n";
+    return true;
+}
+
+
+bool GameServer::planAutomaticDocking(
+    DockingAutomaticRuntime& runtime,
+    Ship& ship,
+    double universeTimeSeconds
+)
+{
+    using namespace game::navigation;
+
+    const auto* hub =
+        m_simulation.hubNavigationFrame(runtime.hubId);
+    if (!hub ||
+        !hub->valid ||
+        hub->systemId != runtime.systemId ||
+        !std::isfinite(universeTimeSeconds))
+    {
+        return false;
+    }
+
+    const StaticObject* targetObject = nullptr;
+    for (const auto& [id, object] : m_simulation.staticObjects())
+    {
+        (void)id;
+        if (object.systemId == runtime.systemId &&
+            object.attachedToHub &&
+            object.hubId == runtime.hubId &&
+            object.hubModuleId == runtime.targetModuleId)
+        {
+            targetObject = &object;
+            break;
+        }
+    }
+    if (!targetObject)
+        return false;
+
+    const auto* definition =
+        m_serverHubSemanticAnchorCatalog.find(
+            runtime.targetModuleId,
+            runtime.targetAnchorId
+        );
+    const auto* portRuntime =
+        m_serverDockingPortRuntimeStateCatalog.find(
+            runtime.targetModuleId,
+            runtime.targetAnchorId
+        );
+    if (!definition ||
+        !portRuntime ||
+        !definition->enabled ||
+        definition->kind != HubSemanticAnchorKind::DockingPort)
+    {
+        return false;
+    }
+
+    const auto& dimensions =
+        ship.core().descriptor().logicalDimensions();
+
+    ShipDockingEnvelope hull;
+    hull.valid =
+        dimensions.enabled &&
+        dimensions.length > 0.0f &&
+        dimensions.width > 0.0f &&
+        dimensions.height > 0.0f;
+    hull.lengthMeters = dimensions.length;
+    hull.widthMeters = dimensions.width;
+    hull.heightMeters = dimensions.height;
+
+    const auto compatibility =
+        evaluateDockingCompatibility(
+            hull,
+            *definition,
+            *portRuntime
+        );
+    if (!compatibility.routeAvailable)
+        return false;
+
+    game::simulation::HubAttachmentSnapshot attachment;
+    attachment.systemId = targetObject->systemId;
+    attachment.hubId = targetObject->hubId;
+    attachment.moduleId = targetObject->hubModuleId;
+    attachment.localOffsetMeters =
+        targetObject->hubLocalOffsetMeters;
+    attachment.localRotationDeg =
+        targetObject->hubLocalRotationDeg;
+    attachment.localAngularVelocityDegPerSecond =
+        targetObject->hubLocalAngularVelocityDegPerSecond;
+    attachment.inheritHubOrientation =
+        targetObject->inheritHubOrientation;
+    attachment.valid = targetObject->attachedToHub;
+
+    const auto portAt =
+        [&](double epoch)
+        {
+            return resolveDockingAdvisoryLocalPortAt(
+                attachment,
+                *definition,
+                epoch
+            );
+        };
+
+    const ShipParams physics =
+        ship.core().effectivePhysics();
+
+    VehicleGuidanceEnvelope envelope;
+    envelope.lengthMeters = hull.lengthMeters;
+    envelope.widthMeters = hull.widthMeters;
+    envelope.heightMeters = hull.heightMeters;
+    envelope.valid = hull.valid;
+
+    auto fullVehicle =
+        makeNavigationVehicleProfile(
+            physics,
+            envelope
+        );
+
+    const double linearReserve = std::min(
+        0.5,
+        std::max(
+            0.0,
+            fullVehicle.maxLateralAccelerationMps2 * 0.20
+        )
+    );
+    const double angularReserve = std::min(
+        0.25,
+        std::max(
+            0.0,
+            fullVehicle.maxAngularAccelerationRadPerSecond2 * 0.10
+        )
+    );
+
+    if (fullVehicle.maxForwardAccelerationMps2 <= linearReserve ||
+        fullVehicle.maxBrakingAccelerationMps2 <= linearReserve ||
+        fullVehicle.maxLateralAccelerationMps2 <= linearReserve ||
+        fullVehicle.maxAngularAccelerationRadPerSecond2 <= angularReserve)
+    {
+        return false;
+    }
+
+    auto executionVehicle = fullVehicle;
+    executionVehicle.maxForwardAccelerationMps2 -= linearReserve;
+    executionVehicle.maxBrakingAccelerationMps2 -= linearReserve;
+    executionVehicle.maxLateralAccelerationMps2 -= linearReserve;
+    executionVehicle.maxAngularAccelerationRadPerSecond2 -=
+        angularReserve;
+
+    const auto buildObstaclesAt =
+        [&](double epoch)
+        {
+            std::vector<world::navigation::NavigationObstacle> obstacles;
+            for (const auto& [id, object] : m_simulation.staticObjects())
+            {
+                if (object.systemId != runtime.systemId ||
+                    !object.attachedToHub ||
+                    object.hubId != runtime.hubId)
+                {
+                    continue;
+                }
+
+                const glm::dvec3 angles =
+                    object.hubLocalRotationDeg +
+                    object.hubLocalAngularVelocityDegPerSecond *
+                        epoch;
+                const glm::dmat3 visualBasis(
+                    glm::mat3(
+                        hubLocalEulerDegToMatrix(angles)
+                    )
+                );
+
+                glm::dmat3 tacticalBasis(1.0);
+                for (int axis = 0; axis < 3; ++axis)
+                {
+                    tacticalBasis[axis] =
+                        hubVisualToTacticalVector(
+                            glm::dvec3(visualBasis[axis])
+                        );
+                }
+
+                const auto obstacle =
+                    world::navigation::makeNavigationObstacleForObject(
+                        object.type,
+                        "object:" + std::to_string(id.value),
+                        id.value,
+                        hubVisualToTacticalVector(
+                            object.hubLocalOffsetMeters
+                        ),
+                        tacticalBasis,
+                        80.0
+                    );
+                if (obstacle)
+                    obstacles.push_back(*obstacle);
+            }
+            return obstacles;
+        };
+
+    const std::string targetObstacleId =
+        "object:" + std::to_string(targetObject->id.value);
+
+    const auto& motion = ship.core().transform().motion;
+    const bool assisted =
+        motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted;
+
+    world::navigation::TrajectoryGenerationResult trajectoryResult;
+    DockingAdvisoryPlan advisoryPlan;
+    double captureUniverseTimeSeconds = universeTimeSeconds;
+
+    for (int iteration = 0; iteration < 3; ++iteration)
+    {
+        const auto port =
+            portAt(captureUniverseTimeSeconds);
+        if (!port.valid)
+            return false;
+
+        DockingAdvisoryRequest request;
+        request.startMeters = motion.localPositionMeters;
+        request.entranceMeters = port.positionMeters;
+        request.outward = port.forward;
+        request.standoffMeters = std::max(
+            300.0,
+            hull.lengthMeters * 10.0 +
+                definition->requiredClearanceMeters * 4.0
+        );
+        request.hullRadiusMeters =
+            envelope.conservativeSafetyRadiusMeters();
+        request.maxSpeedMps =
+            executionVehicle.maxSpeedMps;
+        request.brakingMps2 =
+            executionVehicle.maxBrakingAccelerationMps2;
+        request.lateralMps2 =
+            executionVehicle.maxLateralAccelerationMps2;
+        request.gateSpacingMeters = 500.0;
+        request.terminalGateSpacingMeters = 250.0;
+        request.terminalDenseDistanceMeters = 2000.0;
+        if (assisted)
+        {
+            request.terminalApproachLengthMeters = 9000.0;
+            request.terminalTurnSegmentFraction = 0.85;
+            request.preferredTerminalTurnRadiusMeters = 6000.0;
+        }
+        request.obstacles =
+            buildObstaclesAt(captureUniverseTimeSeconds);
+
+        advisoryPlan =
+            DockingAdvisoryPlanner::plan(request);
+        if (!advisoryPlan.valid())
+            return false;
+
+        world::navigation::TrajectoryGenerationRequest trajectoryRequest;
+        trajectoryRequest.systemId = runtime.systemId;
+        trajectoryRequest.frameId = runtime.hubId;
+        trajectoryRequest.startUniverseTimeSeconds =
+            universeTimeSeconds;
+        trajectoryRequest.universeTimeScale = 1.0;
+        trajectoryRequest.obstacles = request.obstacles;
+        trajectoryRequest.vehicle = executionVehicle;
+        trajectoryRequest.initialVelocityMps =
+            motion.localVelocityMps;
+        trajectoryRequest.initialAccelerationMps2 =
+            glm::dvec3(0.0);
+
+        trajectoryRequest.pathPointsMeters.reserve(
+            advisoryPlan.gates.size() + 1
+        );
+        for (const auto& gate : advisoryPlan.gates)
+        {
+            trajectoryRequest.pathPointsMeters.push_back(
+                gate.positionMeters
+            );
+        }
+
+        if (trajectoryRequest.pathPointsMeters.empty())
+            return false;
+
+        const double terminalEntryProgressMeters =
+            [&]()
+            {
+                double progress = 0.0;
+                for (std::size_t i = 1;
+                     i < trajectoryRequest.pathPointsMeters.size();
+                     ++i)
+                {
+                    progress += glm::length(
+                        trajectoryRequest.pathPointsMeters[i] -
+                        trajectoryRequest.pathPointsMeters[i - 1]
+                    );
+                }
+                return progress;
+            }();
+
+        if (glm::length(
+                trajectoryRequest.pathPointsMeters.back() -
+                port.positionMeters) > 1.0e-6)
+        {
+            trajectoryRequest.pathPointsMeters.push_back(
+                port.positionMeters
+            );
+        }
+
+        // Preserve the planner's gate speed doctrine but do not stop at the
+        // advisory standoff. Automatic docking continues through that point
+        // into the authored capture interface and matches the moving port.
+        double sourceProgress = 0.0;
+        for (std::size_t i = 0;
+             i < advisoryPlan.gates.size();
+             ++i)
+        {
+            if (i > 0)
+            {
+                sourceProgress += glm::length(
+                    advisoryPlan.gates[i].positionMeters -
+                    advisoryPlan.gates[i - 1].positionMeters
+                );
+            }
+
+            world::navigation::TrajectoryPointSpeedConstraint constraint;
+            constraint.sourcePathProgressMeters = sourceProgress;
+            if (i + 1 == advisoryPlan.gates.size())
+            {
+                const double authoredEntry =
+                    definition->maxEntrySpeedMps > 0.0
+                        ? definition->maxEntrySpeedMps
+                        : 2.0;
+                constraint.maxSpeedMps = std::min(
+                    executionVehicle.maxSpeedMps,
+                    std::max(0.5, authoredEntry)
+                );
+            }
+            else
+            {
+                constraint.maxSpeedMps = std::min(
+                    executionVehicle.maxSpeedMps,
+                    std::max(
+                        0.5,
+                        advisoryPlan.gates[i].speedMps
+                    )
+                );
+            }
+            trajectoryRequest.pointSpeedConstraints.push_back(
+                constraint
+            );
+        }
+
+        const double velocityProbeSeconds = 0.01;
+        const auto portBefore = portAt(
+            captureUniverseTimeSeconds - velocityProbeSeconds
+        );
+        const auto portAfter = portAt(
+            captureUniverseTimeSeconds + velocityProbeSeconds
+        );
+        if (!portBefore.valid || !portAfter.valid)
+            return false;
+
+        trajectoryRequest.hasTerminalVelocity = true;
+        trajectoryRequest.terminalVelocityMps =
+            (portAfter.positionMeters -
+             portBefore.positionMeters) /
+            (2.0 * velocityProbeSeconds);
+
+        trajectoryRequest.hasTerminalOrientation = true;
+        trajectoryRequest.terminalForward =
+            -port.forward;
+        trajectoryRequest.terminalUp =
+            port.up;
+        trajectoryRequest.terminalOrientationBlendDistanceMeters =
+            std::max(500.0, request.standoffMeters * 2.0);
+
+        trajectoryRequest.terminalAllowedObstacleId =
+            targetObstacleId;
+        trajectoryRequest.
+            terminalObstacleEntrySourceProgressMeters =
+                terminalEntryProgressMeters;
+
+        trajectoryResult =
+            world::navigation::TrajectoryGenerator::generate(
+                trajectoryRequest
+            );
+        if (!trajectoryResult.ready())
+            return false;
+
+        const double predictedCapture =
+            universeTimeSeconds +
+            trajectoryResult.trajectory.durationSeconds;
+
+        if (std::abs(
+                predictedCapture -
+                captureUniverseTimeSeconds) <= 0.05)
+        {
+            captureUniverseTimeSeconds = predictedCapture;
+            break;
+        }
+
+        captureUniverseTimeSeconds = predictedCapture;
+    }
+
+    if (!trajectoryResult.ready())
+        return false;
+
+    AcceptedManeuverProgramBuilder::Request build;
+    build.trajectory = &trajectoryResult.trajectory;
+    build.shipPhysics = &physics;
+    build.objectiveRevision = runtime.requestSerial;
+    build.firstProgramRevision = runtime.nextProgramRevision;
+    build.capabilityRevision = runtime.requestSerial;
+    build.mapRevision = m_serverTick;
+    build.mapSourceRevision = m_serverTick;
+    build.spaceRevision = m_serverTick;
+    build.spaceSourceRevision = m_serverTick;
+    build.minimumClearanceMeters = 0.0;
+    build.policy.linearFeedbackReserveMps2 =
+        linearReserve;
+    build.policy.angularFeedbackReserveRadPerSec2 =
+        angularReserve;
+
+    const auto accepted =
+        AcceptedManeuverProgramBuilder::build(build);
+    if (!accepted.valid || accepted.pages.empty())
+        return false;
+
+    runtime.programs = accepted.pages;
+    runtime.currentProgramPage = 0;
+    runtime.nextProgramRevision +=
+        static_cast<std::uint64_t>(runtime.programs.size());
+
+    runtime.controlBridge =
+        std::make_unique<NavigationRuntimeControlBridge>(
+            NavigationRuntimeControlBridge::PilotSkillProfile {}
+        );
+
+    NavigationRuntimeControlBridge::Intent neutral;
+    neutral.revision = runtime.requestSerial;
+    neutral.targetRevision = runtime.programs.front().revision;
+    if (!runtime.controlBridge->reset(
+            universeTimeSeconds,
+            neutral))
+    {
+        runtime.controlBridge.reset();
+        runtime.programs.clear();
+        return false;
+    }
+
+    runtime.phase =
+        DockingAutomaticRuntime::Phase::Executing;
+
+    std::cout
+        << "[DockAuto] planned entity=" << runtime.entityId.value
+        << " request=" << runtime.requestSerial
+        << " pages=" << runtime.programs.size()
+        << " trajectory_s="
+        << trajectoryResult.trajectory.durationSeconds
+        << " gates=" << advisoryPlan.gates.size()
+        << " final_axis_m="
+        << advisoryPlan.terminalApproachLengthMeters
+        << " terminal_radius_m="
+        << advisoryPlan.terminalTurnRadiusMeters
+        << " capture_t=" << captureUniverseTimeSeconds
+        << "\n";
+    return true;
+}
+
+
+bool GameServer::finishAutomaticDocking(
+    PlayerId playerId,
+    EntityId controlledEntityId,
+    std::uint64_t requestSerial,
+    bool completed,
+    const char* reason
+)
+{
+    const auto it =
+        m_dockingAutomaticRuntimes.find(
+            controlledEntityId.value
+        );
+    if (it == m_dockingAutomaticRuntimes.end())
+        return false;
+
+    if (it->second.playerId != playerId ||
+        it->second.requestSerial != requestSerial)
+    {
+        return false;
+    }
+
+    if (auto streamIt =
+            m_controlStreams.find(controlledEntityId.value);
+        streamIt != m_controlStreams.end())
+    {
+        streamIt->second.discardPendingAndAcknowledgeNewest();
+    }
+
+    if (Ship* ship = m_simulation.getShip(controlledEntityId))
+        ship->setControlState(ShipControlState {});
+
+    const bool restored =
+        m_controls.restoreHumanControl(
+            playerId,
+            controlledEntityId
+        );
+
+    m_dockingAutomaticRuntimes.erase(it);
+    m_forceSnapshotPublication = true;
+
+    std::cout
+        << "[DockAuto] "
+        << (completed ? "capture-ready" : "cancelled")
+        << " entity=" << controlledEntityId.value
+        << " request=" << requestSerial
+        << " reason=" << (reason ? reason : "none")
+        << " human_restored=" << (restored ? 1 : 0)
+        << "\n";
+    return restored;
+}
+
+
+void GameServer::applyAutomaticDockingControls(
+    const game::server::ServerTimeContext& time
+)
+{
+    using Follower = game::navigation::TrajectoryFollower;
+    using Timeline = game::navigation::ManeuverProgramTimeline;
+
+    struct Completion
+    {
+        PlayerId playerId {};
+        EntityId entityId {};
+        std::uint64_t requestSerial = 0;
+    };
+    std::vector<Completion> completed;
+
+    for (auto& [entityValue, runtime] :
+         m_dockingAutomaticRuntimes)
+    {
+        Ship* ship =
+            m_simulation.getShip(runtime.entityId);
+        if (!ship ||
+            m_controls.controllerKind(runtime.entityId) !=
+                game::server::ControllerKind::Autopilot)
+        {
+            completed.push_back({
+                runtime.playerId,
+                runtime.entityId,
+                runtime.requestSerial
+            });
+            continue;
+        }
+
+        if (auto streamIt =
+                m_controlStreams.find(entityValue);
+            streamIt != m_controlStreams.end())
+        {
+            streamIt->second.discardPendingAndAcknowledgeNewest();
+        }
+
+        const auto& transform = ship->core().transform();
+        const auto& motion = transform.motion;
+        const auto* hub =
+            m_simulation.hubNavigationFrame(runtime.hubId);
+
+        if (!hub ||
+            !hub->valid ||
+            hub->systemId != runtime.systemId ||
+            motion.systemId != runtime.systemId ||
+            !motion.matchedToReferenceFrame ||
+            motion.matchedReferenceFrameId != runtime.hubId)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+
+            ShipControlState stop;
+            stop.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+            ship->setControlState(stop);
+            continue;
+        }
+
+        if (runtime.phase ==
+            DockingAutomaticRuntime::Phase::Stabilizing)
+        {
+            ShipControlState stop;
+            stop.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+            ship->setControlState(stop);
+
+            const double speed =
+                glm::length(motion.localVelocityMps);
+            const double angularRate = std::sqrt(
+                static_cast<double>(transform.pitchRate) *
+                    static_cast<double>(transform.pitchRate) +
+                static_cast<double>(transform.yawRate) *
+                    static_cast<double>(transform.yawRate) +
+                static_cast<double>(transform.rollRate) *
+                    static_cast<double>(transform.rollRate)
+            );
+
+            const double speedThreshold = std::max(
+                0.05,
+                static_cast<double>(
+                    ship->core().descriptor().physics.
+                        stopSpeedEpsilonMps
+                )
+            );
+
+            if (speed > speedThreshold ||
+                angularRate > 0.01)
+            {
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                continue;
+            }
+
+            if (runtime.settledSinceUniverseTimeSeconds < 0.0)
+            {
+                runtime.settledSinceUniverseTimeSeconds =
+                    time.universeTimeSeconds;
+                continue;
+            }
+
+            if (time.universeTimeSeconds -
+                    runtime.settledSinceUniverseTimeSeconds <
+                0.25)
+            {
+                continue;
+            }
+
+            if (time.universeTimeSeconds <
+                runtime.nextPlanAttemptUniverseTimeSeconds)
+            {
+                continue;
+            }
+
+            if (!planAutomaticDocking(
+                    runtime,
+                    *ship,
+                    time.universeTimeSeconds))
+            {
+                runtime.nextPlanAttemptUniverseTimeSeconds =
+                    time.universeTimeSeconds + 0.50;
+                std::cerr
+                    << "[DockAuto] request="
+                    << runtime.requestSerial
+                    << " phase=plan-retry"
+                    << " next_t="
+                    << runtime.nextPlanAttemptUniverseTimeSeconds
+                    << "\n";
+            }
+            continue;
+        }
+
+        if (runtime.programs.empty() ||
+            !runtime.controlBridge)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            continue;
+        }
+
+        const auto selection =
+            Timeline::selectActivePage(
+                runtime.programs.data(),
+                runtime.programs.size(),
+                time.universeTimeSeconds,
+                runtime.currentProgramPage
+            );
+
+        if (selection.status !=
+            Timeline::SelectionStatus::Active)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            continue;
+        }
+
+        runtime.currentProgramPage =
+            selection.pageIndex;
+        const auto& program =
+            runtime.programs[runtime.currentProgramPage];
+
+        if (time.universeTimeSeconds >
+            program.validUntilUniverseTimeSeconds)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            continue;
+        }
+
+        Follower::AgentState agent;
+        agent.positionMapMeters =
+            motion.localPositionMeters;
+        agent.velocityMapMetersPerSecond =
+            motion.localVelocityMps;
+        agent.forwardMap =
+            hub->worldToLocalVector(
+                glm::dvec3(transform.forward())
+            );
+        agent.rightMap =
+            hub->worldToLocalVector(
+                glm::dvec3(transform.right())
+            );
+        agent.upMap =
+            hub->worldToLocalVector(
+                glm::dvec3(transform.up())
+            );
+        agent.pitchRateRadPerSec =
+            transform.pitchRate;
+        agent.yawRateRadPerSec =
+            transform.yawRate;
+        agent.rollRateRadPerSec =
+            transform.rollRate;
+
+        const auto followed =
+            Follower::follow(
+                program,
+                time.universeTimeSeconds,
+                agent,
+                runtime.trackingPolicy
+            );
+
+        if (followed.status ==
+                Follower::Status::InvalidInput ||
+            followed.trackingErrorExceeded ||
+            !followed.propulsionFeasible)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+
+            ShipControlState stop;
+            stop.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+            ship->setControlState(stop);
+
+            std::cerr
+                << "[DockAuto] request="
+                << runtime.requestSerial
+                << " phase=replan"
+                << " tracking_error="
+                << (followed.trackingErrorExceeded ? 1 : 0)
+                << " propulsion_ok="
+                << (followed.propulsionFeasible ? 1 : 0)
+                << "\n";
+            continue;
+        }
+
+        const game::navigation::NavigationFrameBoundary boundary(
+            hub->kinematicFrame()
+        );
+        if (!boundary.valid())
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            continue;
+        }
+
+        const auto systemIntent =
+            boundary.toSystemControlIntent(
+                followed.intent
+            );
+
+        const auto step =
+            runtime.controlBridge->step(
+                time.universeTimeSeconds,
+                std::max(1.0e-6, time.gameplayDeltaSeconds),
+                systemIntent
+            );
+
+        if (step.status !=
+                game::navigation::
+                    NavigationRuntimeControlBridge::
+                        PilotExecutor::Status::Ok ||
+            !step.snapshot.valid)
+        {
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            continue;
+        }
+
+        ship->setControlState(step.control);
+
+        const bool finalPage =
+            runtime.currentProgramPage + 1 ==
+                runtime.programs.size();
+        if (finalPage &&
+            followed.status ==
+                Follower::Status::Complete)
+        {
+            completed.push_back({
+                runtime.playerId,
+                runtime.entityId,
+                runtime.requestSerial
+            });
+        }
+    }
+
+    for (const auto& completion : completed)
+    {
+        (void)finishAutomaticDocking(
+            completion.playerId,
+            completion.entityId,
+            completion.requestSerial,
+            true,
+            "terminal-envelope-captured"
+        );
+    }
+}
+
+
 void GameServer::resetSessionControlState(
     EntityId controlledEntityId,
     const char* reason

@@ -5576,3 +5576,66 @@ active pipeline more broadly and pins the narrow helper/API contracts above.
 Code baseline before documentation commits: `efb3999b71a18186c1e3622c6c51d9b0169b52be`.
 
 No target-machine build/E2E has yet validated these new edits.
+
+## 2026-09-27 — Assisted autopilot now uses the manual game-flight law
+
+Latest Windows evidence before this change:
+- `navigation_runtime_control`: PASS;
+- `maneuver_tracking_controller`: PASS;
+- `accepted_maneuver_program_builder`: PASS;
+- `docking_advisory`: FAIL because the published manual corridor did not
+  start along the hull nose;
+- live Automatic returned
+  `accepted-program-propulsion-program-infeasible` and restored Human.
+
+Root cause is now explicit. Manual Assisted and Automatic Assisted were using
+different motion laws:
+- manual `DynamicMotionSystem::applyLocalFrameInput` bends VREL toward the
+  hull nose through the dedicated automatic Assisted stabilizer;
+- the navigation actuator path zeroed that stabilizer and tried to realize the
+  same course change through physical `manoeuvreThrusterAccel` (2 m/s²).
+
+That was the wrong model. The 2 m/s² manoeuvre/RCS system is precision
+translation, not ordinary Assisted course authority.
+
+Implemented replacement:
+- `AcceptedManeuverProgram::TranslationMode` distinguishes
+  `AssistedVelocity`, `NewtonianMainEngine`, and future `PrecisionRcs`;
+- Assisted accepted programs publish no synthetic RCS actuator segments;
+- Follower samples target forward speed from the accepted velocity reference;
+- Bridge publishes `navigationAssistedFlightModel*`;
+- `DynamicMotionSystem::applyNavigationAssistedFlightModel` calls the same
+  `applyLocalFrameInput` used by manual Assisted flight;
+- ordinary Assisted Automatic keeps physical manoeuvre/RCS at zero;
+- small Follower lateral correction consumes the automatic Assisted
+  stabilization budget, not keypad/RCS authority;
+- production docking derives Planner lateral/course authority from
+  `assistedLateralStabilizationAccelerationLimitMps2`, while generic legacy
+  vehicle-profile callers retain their previous hardware-envelope semantics.
+
+Newtonian is now a separate ordinary-transit doctrine:
+- docking geometry requests piecewise-straight turns instead of aircraft-like
+  fillets;
+- ordinary Accepted programs may use hull rotation + primary main engine;
+- they may not rescue a bad trajectory with sustained precision RCS;
+- a trajectory that asks for lateral Newtonian route thrust is rejected as
+  `newtonian-main-engine-program-infeasible`.
+
+This intentionally exposes the remaining Newtonian compiler work: dedicated
+`coast -> rotate -> burn` / `accelerate -> rotate -> brake` sequencing,
+rather than hiding it behind RCS.
+
+Manual nose-first failure was also corrected: the semantic initial-forward
+segment is now protected from generic corner filleting, and the straight
+Newtonian geometry path proves every segment collision-free.
+
+New regressions pin:
+- Assisted Builder accepts route course change independently of the 2 m/s²
+  precision RCS limit;
+- Newtonian ordinary transit cannot spend precision RCS as route thrust;
+- Assisted Automatic uses the canonical game-flight law and realigns VREL to
+  the nose within the accepted 3 s window while ordinary RCS remains zero;
+- manual nose-first lead cannot be removed by filleting.
+
+Fresh Windows `verify_docking.sh`, full MinGW build and live Automatic flight
+are still required before this replacement is accepted.

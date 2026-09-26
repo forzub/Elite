@@ -2897,8 +2897,14 @@ void SystemMapRenderer::decorateHubDockingOverlay(
             game::system_map::MapObjectPanelAction automatic;
             automatic.key = "start_docking";
             automatic.labelKey = "start_docking";
-            // There is no proved server-owned docking program or reservation.
-            automatic.enabled = false;
+            automatic.enabled = compatibility.routeAvailable;
+            automatic.active = pending.valid() &&
+                pending.mode ==
+                    game::navigation::DockingRouteRequest::Mode::Automatic &&
+                game::navigation::sameRouteTarget(
+                    pending.target,
+                    target
+                );
             item.panelActions.push_back(std::move(automatic));
 
             frame.items.push_back(std::move(item));
@@ -2911,10 +2917,11 @@ void SystemMapRenderer::applyDockingAction(
     const std::string& actionKey
 )
 {
-    if (actionKey != "show_docking_route" && actionKey != "start_docking")
+    if (actionKey != "show_docking_route" &&
+        actionKey != "start_docking")
+    {
         return;
-    if (actionKey == "start_docking")
-        return; // Fail closed even if UI dispatch bypasses disabled state.
+    }
 
     const auto* item = currentOverlayItem(objectId);
     if (!item ||
@@ -2930,19 +2937,38 @@ void SystemMapRenderer::applyDockingAction(
         return;
     }
 
+    const auto requestMode =
+        actionKey == "start_docking"
+            ? game::navigation::DockingRouteRequest::Mode::Automatic
+            : game::navigation::DockingRouteRequest::Mode::Guidance;
+
     const auto serial =
-        m_navigationWorkspace.dockingRouteRequests().request(target);
+        m_navigationWorkspace.dockingRouteRequests().request(
+            target,
+            requestMode
+        );
     if (serial != 0)
     {
-        // This command requests advisory geometry only.
-        // The pilot may hide the HUD layer afterwards without disabling the
-        // planner/safety modules.
         m_navigationWorkspace.modules().setEnabled(
-            game::navigation::NavigationModuleId::RoutePlanning, true);
-        m_navigationWorkspace.modules().setEnabled(
-            game::navigation::NavigationModuleId::LocalGuidance, true);
-        m_navigationWorkspace.modules().setEnabled(
-            game::navigation::NavigationModuleId::HudGuidanceCorridor, true);
+            game::navigation::NavigationModuleId::RoutePlanning,
+            true
+        );
+
+        // Guidance owns the client advisory corridor. Automatic docking is a
+        // server-owned execution request and deliberately does not create a
+        // second client-side executable route.
+        if (requestMode ==
+            game::navigation::DockingRouteRequest::Mode::Guidance)
+        {
+            m_navigationWorkspace.modules().setEnabled(
+                game::navigation::NavigationModuleId::LocalGuidance,
+                true
+            );
+            m_navigationWorkspace.modules().setEnabled(
+                game::navigation::NavigationModuleId::HudGuidanceCorridor,
+                true
+            );
+        }
     }
 }
 

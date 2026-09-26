@@ -220,6 +220,8 @@ void testImpossibleTerminalSpinIsRejected()
 
     require(!result.valid,
             "builder accepted terminal angular speed beyond ship capability");
+    require(result.failureReason == "angular-kinematics-infeasible",
+            "builder did not expose the angular rejection reason");
     require(result.pages.empty(),
             "rejected terminal spin leaked executable program pages");
 }

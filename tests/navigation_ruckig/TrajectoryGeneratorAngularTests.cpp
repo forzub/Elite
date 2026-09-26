@@ -120,8 +120,20 @@ void testRotatingTerminalAngularProgramIsPhysicallyBounded()
         );
     }
 
+    const auto& penultimate =
+        result.trajectory.samples[result.trajectory.samples.size() - 2];
     const auto& terminal =
         result.trajectory.samples.back();
+    const double terminalDt =
+        terminal.timeOffsetSeconds -
+        penultimate.timeOffsetSeconds;
+    require(
+        length(
+            penultimate.angularVelocityRadPerSecond -
+            request.terminalAngularVelocityRadPerSecond
+        ) <= maxAlpha * terminalDt + 1.0e-6,
+        "angular planner deferred terminal omega correction to the final sample"
+    );
     const glm::dvec3 terminalForward =
         terminal.orientation *
         glm::dvec3(0.0, 0.0, -1.0);

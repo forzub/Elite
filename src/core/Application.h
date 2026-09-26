@@ -9,6 +9,7 @@
 #include "game/localization/LocalizationService.h"
 #include "game/network/SessionMessage.h"
 #include "src/ui/platform/ClientPreferencesStore.h"
+#include "src/ui/platform/ClientModeState.h"
 #include "src/ui/platform/UiNavigationState.h"
 #include "src/ui/presentation/GamePresentationCoordinator.h"
 #include <string>
@@ -48,6 +49,13 @@ public:
 
     game::localization::LocalizationService& localization() { return m_localization; }
     const game::localization::LocalizationService& localization() const { return m_localization; }
+
+    const ui::platform::ClientModeState& clientModeState() const noexcept
+    {
+        return m_clientModeState;
+    }
+    bool setConstellationsEnabled(bool enabled);
+    bool setSkyCultureId(const std::string& cultureId);
     void cycleUiLanguage();
 
     void updatePendingSessionStart();
@@ -107,6 +115,7 @@ private:
     void returnSessionToMainMenu();
     void cancelPendingSessionStart();
     void setUiLanguage(const std::string& locale);
+    void persistClientModeState();
     void updateGameUiPresentation();
     void syncDocumentWebViewBounds();
     void processDocumentWebViewCommands(int surfaceIndex);
@@ -145,6 +154,7 @@ private:
     std::string m_authenticatedRemoteEndpoint;
     ui::platform::UiNavigationState m_uiNavigationState;
     ui::platform::ClientPreferences m_clientPreferences;
+    ui::platform::ClientModeState m_clientModeState;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

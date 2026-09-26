@@ -2295,6 +2295,26 @@ void GameServer::receiveClientMessage(
                         playerId, controlledEntityId, payload.requestSerial, true);
                     return;
                 }
+                if (payload.type == ClientShipCommand::BeginAutomaticDocking)
+                {
+                    (void)beginAutomaticDocking(
+                        playerId,
+                        controlledEntityId,
+                        payload
+                    );
+                    return;
+                }
+                if (payload.type == ClientShipCommand::CancelAutomaticDocking)
+                {
+                    (void)finishAutomaticDocking(
+                        playerId,
+                        controlledEntityId,
+                        payload.requestSerial,
+                        false,
+                        "client-cancel"
+                    );
+                    return;
+                }
 
                 auto& queue =
                     m_pendingClientShipCommands[controlledEntityId.value];

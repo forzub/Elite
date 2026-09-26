@@ -10789,3 +10789,48 @@ remote check confirmed the ref. Prior publication-blocked sections are
 historical. The Windows checkout can now `git pull --ff-only origin main` from
 `84d59f4d`; verify its rebuilt `EliteGame.exe` contains the numeric axis log
 literal, then capture complete route persistence and Human hand-back evidence.
+
+## 2026-09-27 — Stage 12 execution is flight-law-specific
+
+The former universal actuator interpretation was invalid for Assisted because
+it converted ordinary course change into physical manoeuvre/RCS demand.
+
+Current Assisted chain:
+
+```text
+law-aware trajectory/reference
+ -> AcceptedManeuverProgram
+      controlLaw = Assisted
+      translationMode = AssistedVelocity
+      no synthetic RCS actuator segments
+ -> TrajectoryFollower
+      target forward speed
+      bounded tracking/angular intent
+ -> NavigationRuntimeControlBridge::stepProgram
+ -> ShipControlState
+      navigationAssistedFlightModelValid
+      navigationTargetForwardSpeedMps
+      navigationAssistedCorrectionSystemMps2
+ -> DynamicMotionSystem::applyNavigationAssistedFlightModel
+ -> DynamicMotionSystem::applyLocalFrameInput
+      SAME law used by manual Assisted
+ -> fixed-step motion integration
+```
+
+The 2 m/s² physical manoeuvre thruster is not ordinary Assisted course
+authority. Automatic velocity-to-nose stabilization is the same game mechanic
+already accepted for manual flight.
+
+Current Newtonian ordinary-transit chain keeps explicit physical actuator
+ownership, but its accepted program is constrained to primary-main alignment
+with zero ordinary route RCS. Docking geometry requests piecewise-straight
+segments. If the existing trajectory author asks for lateral Newtonian thrust,
+Builder returns `newtonian-main-engine-program-infeasible`; a future dedicated
+Newtonian maneuver compiler must replace that invalid authoring with
+coast/rotate/burn or stop/rotate/burn sequences.
+
+Manual nose-first corridor geometry is semantic: the initial forward leg is
+protected from the generic fillet pass. This directly addresses the latest
+target failure `manual docking corridor did not start along hull nose`.
+
+No newest code in this section has target-machine acceptance yet.

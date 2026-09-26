@@ -266,6 +266,8 @@ private:
         SimulationSnapshot& snapshot
     ) const;
 
+    struct DockingAutomaticRuntime;
+
     bool beginDockingGuidancePreparation(
         PlayerId playerId,
         EntityId controlledEntityId,
@@ -288,7 +290,7 @@ private:
         const game::server::ServerTimeContext& time
     );
     bool planAutomaticDocking(
-        struct DockingAutomaticRuntime& runtime,
+        DockingAutomaticRuntime& runtime,
         Ship& ship,
         double universeTimeSeconds
     );

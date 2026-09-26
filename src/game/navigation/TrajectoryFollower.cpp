@@ -81,6 +81,10 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     result.trackingErrorExceeded =
         tracking.status ==
         ManeuverTrackingController::Status::EnvelopeExceeded;
+    result.linearFeedbackLocalMps2 =
+        tracking.linearFeedbackMapMps2;
+    result.angularFeedbackLocalRadPerSec2 =
+        tracking.angularFeedbackMapRadPerSec2;
 
     result.hasActuatorCommand = sampled.hasActuatorCommand;
     result.actuatorSegmentIndex = sampled.actuatorSegmentIndex;

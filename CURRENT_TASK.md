@@ -1,5 +1,25 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — finish current route gate, then wire real Automatic docking
+
+Do not spend another open-ended cycle only polishing manual guidance after the
+current `verify_docking.sh` gate is green.
+
+Next implementation sequence:
+1. add a server-owned player navigation execution lifetime that retains
+   Autopilot authority after preparation;
+2. store/advance a proved `AcceptedManeuverProgram`;
+3. each fixed step run
+   `TrajectoryFollower -> NavigationRuntimeControlBridge -> ShipControlState`;
+4. on completion restore Human ownership; on tracking/proof/capability
+   invalidation request replan/controlled stop rather than killing navigation;
+5. let `DockingRouteRequest::Mode::Automatic` enter this path;
+6. only then enable `START DOCKING` in the map UI;
+7. live-test approach, terminal alignment, stop/handoff and replan behavior.
+
+The current manual docking verification remains the immediate gate because
+Automatic must consume a valid route/program rather than hide planner defects.
+
 ## 2026-09-25 — rerun docking after shortened-axis endpoint clearance fix
 
 Fresh native verification reached the planner and failed after successful soft

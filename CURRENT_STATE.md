@@ -1,6 +1,27 @@
 # CURRENT STATE
 
 
+## 2026-09-26 — navigation_runtime_control failure classified as stale test expectation
+
+Fresh Windows failure:
+`navigation_runtime_control: remaining vector must clamp at manoeuvre-thruster authority`.
+
+Root cause is the test fixture, not production physics. The fixture set
+`maxLinearGs = 1g` while also expecting a full 1g main-engine acceleration
+PLUS 2 m/s^2 manoeuvre/RCS. Production correctly gives main priority and then
+reduces secondary RCS so the combined acceleration remains inside the common
+linear-load envelope.
+
+The test is corrected to prove both valid cases separately:
+- installed rear main = 5 m/s^2, leaving load headroom -> manoeuvre authority
+  may reach the configured 2 m/s^2;
+- rear main saturates the full 1g load envelope -> secondary manoeuvre demand
+  must be reduced to zero.
+
+No production DynamicMotionSystem behavior was changed for this failure.
+
+
+
 ## 2026-09-26 — Windows build PASS; automatic execution gate 3/4 PASS
 
 Fresh target-machine evidence:

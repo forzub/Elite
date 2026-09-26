@@ -772,16 +772,41 @@ void MapObjectOverlayRenderer::render(
                 panel.topLeftPx.x + 8.0,
                 actionTop
             );
-            glm::vec4 fill = glm::vec4(0.10f, 0.18f, 0.24f, 0.92f);
+            const glm::vec4 activeGreen(
+                0.18f, 1.00f, 0.32f, 1.0f
+            );
+            glm::vec4 fill =
+                glm::vec4(0.10f, 0.18f, 0.24f, 0.92f);
             glm::vec4 border = it->active
-                ? item->factionColor
-                : glm::vec4(item->factionColor.r, item->factionColor.g, item->factionColor.b, 0.55f);
+                ? activeGreen
+                : glm::vec4(
+                    item->factionColor.r,
+                    item->factionColor.g,
+                    item->factionColor.b,
+                    0.55f
+                );
             glm::vec4 textColor =
                 it->enabled
-                    ? glm::vec4(item->factionColor.r, item->factionColor.g, item->factionColor.b, 1.0f)
-                    : glm::vec4(kPanelMuted.r, kPanelMuted.g, kPanelMuted.b, 0.82f);
+                    ? (it->active
+                        ? activeGreen
+                        : glm::vec4(
+                            item->factionColor.r,
+                            item->factionColor.g,
+                            item->factionColor.b,
+                            1.0f
+                          ))
+                    : glm::vec4(
+                        kPanelMuted.r,
+                        kPanelMuted.g,
+                        kPanelMuted.b,
+                        0.82f
+                      );
             if (it->active)
-                fill = glm::vec4(item->factionColor.r * 0.22f, item->factionColor.g * 0.22f, item->factionColor.b * 0.22f, 0.96f);
+            {
+                fill = glm::vec4(
+                    0.035f, 0.24f, 0.075f, 0.98f
+                );
+            }
             drawRect(actionTopLeft, actionWidth, actionHeight, fill);
             drawRectOutline(actionTopLeft, actionWidth, actionHeight, border, it->active ? 1.4f : 1.0f);
             const std::string actionText = text(textProfile, it->labelKey);

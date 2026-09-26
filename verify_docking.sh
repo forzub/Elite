@@ -14,18 +14,22 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" \
     -B "${TEST_BUILD_DIR}" \
     -G Ninja
 
-echo "[DOCK-VERIFY] build docking + accepted-program native gates"
+echo "[DOCK-VERIFY] build docking + accepted-program + live-control native gates"
 cmake --build "${TEST_BUILD_DIR}" \
-    --target docking_advisory_tests accepted_maneuver_program_builder_tests \
+    --target docking_advisory_tests \
+             accepted_maneuver_program_builder_tests \
+             navigation_runtime_control_tests \
+             maneuver_tracking_controller_tests \
     -j 8
 
-echo "[DOCK-VERIFY] run native docking + accepted-program gates"
+echo "[DOCK-VERIFY] run native docking + execution gates"
 ctest --test-dir "${TEST_BUILD_DIR}" \
-    -R "^(docking_advisory|accepted_maneuver_program_builder)$" \
+    -R "^(docking_advisory|accepted_maneuver_program_builder|navigation_runtime_control|maneuver_tracking_controller)$" \
     --output-on-failure
 
-echo "[DOCK-VERIFY] run static manual + automatic docking contracts"
+echo "[DOCK-VERIFY] run static manual + automatic + live-control contracts"
 python "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"
+python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_runtime_control.py"
 
 echo "[DOCK-VERIFY] PASS"

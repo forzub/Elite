@@ -1,6 +1,39 @@
 # PROJECT STATE
 
 
+## 2026-09-26 — accepted actuator allocation is part of the Planner/Follower contract
+
+The authoritative execution chain is now:
+
+```text
+trajectory / physical proof
+  -> AcceptedManeuverProgram
+      - reference pose/velocity/omega
+      - rear-main / fore-main / manoeuvre feed-forward
+      - explicit feedback reserve
+  -> TrajectoryFollower
+      - samples the same nominal actuator program
+      - computes bounded tracking feedback separately
+  -> NavigationRuntimeControlBridge::stepProgram
+  -> ShipControlState
+  -> DynamicMotionSystem::applyNavigationActuatorProgram
+  -> shared fixed-step physics
+```
+
+This closes the previous second-source-of-truth hole where physics received only
+a net linear acceleration and chose the engine/RCS split again.
+
+Automatic docking currently owns approach execution only. Its terminal point is
+a collision-free pre-capture pose outside the still-solid station hit volume.
+The next docking layer, after live acceptance, is physical capture/contact/latch
+ownership. Navigation must not bypass collision or teleport to simulate latch.
+
+Before accepted-program execution the server may enter a bounded physical hull
+alignment phase. Alignment consumes real time/state, therefore its old program
+is discarded and the route is replanned before execution.
+
+
+
 ## 2026-09-26 — Planner/Follower execution has one authoritative executable product
 
 Navigation execution authority is now explicit:

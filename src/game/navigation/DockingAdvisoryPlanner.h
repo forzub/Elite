@@ -19,6 +19,15 @@ struct DockingAdvisoryRequest
     double lateralMps2 = 3.0;
     double gateSpacingMeters = 500.0;
 
+    // Optional launch-heading contract. Manual docking uses the real hull nose
+    // so the first visible corridor segment leaves the stopped ship straight
+    // through the windshield instead of immediately turning sideways. Planner
+    // may shorten the requested lead when geometry blocks it, but it never
+    // changes the authored initial direction.
+    bool hasInitialForward = false;
+    glm::dvec3 initialForward {0.0, 0.0, -1.0};
+    double initialForwardLeadMeters = 0.0;
+
     // Manual guidance stays sparse in open transit but becomes denser on the
     // final station approach so a curved turn is presented as a usable tunnel
     // rather than a few long chords.

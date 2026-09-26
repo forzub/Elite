@@ -1444,6 +1444,7 @@ bool GameServer::planAutomaticDocking(
     world::navigation::TrajectoryGenerationResult trajectoryResult;
     DockingAdvisoryPlan advisoryPlan;
     double captureUniverseTimeSeconds = universeTimeSeconds;
+    double finalPreCaptureDepthMeters = 0.0;
     glm::dvec3 terminalAngularVelocityMapRadPerSec(0.0);
 
     for (int iteration = 0; iteration < 3; ++iteration)
@@ -1596,6 +1597,8 @@ bool GameServer::planAutomaticDocking(
                 port,
                 preCaptureDepthMeters
             );
+        finalPreCaptureDepthMeters =
+            preCaptureDepthMeters;
 
         if (glm::length(
                 trajectoryRequest.pathPointsMeters.back() -
@@ -1849,7 +1852,7 @@ bool GameServer::planAutomaticDocking(
         << " terminal_radius_m="
         << advisoryPlan.terminalTurnRadiusMeters
         << " pre_capture_depth_m="
-        << preCaptureDepthMeters
+        << finalPreCaptureDepthMeters
         << " terminal_t=" << captureUniverseTimeSeconds
         << " terminal_omega_radps="
         << glm::length(

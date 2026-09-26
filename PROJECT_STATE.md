@@ -1,5 +1,18 @@
 # PROJECT STATE
 
+## 2026-09-26 — automatic docking architecture boundary
+
+Automatic docking must not be implemented as visual gate chasing.
+
+Production execution ownership must be:
+`AcceptedManeuverProgram -> TrajectoryFollower ->
+NavigationRuntimeControlBridge -> ShipControlState -> shared physics`,
+under a server-owned Autopilot lifetime for the player ship.
+
+The current BrakeToStop takeover proves control ownership can move to the
+server, but it is only preparation. Full automatic docking begins when that
+ownership persists while a proved maneuver program is advanced each fixed step.
+
 ## 2026-09-25 — shortened-axis join must have real route-search clearance
 
 The final-axis soft-shortening contract now includes endpoint clearance. The

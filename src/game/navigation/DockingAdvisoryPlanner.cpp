@@ -21,6 +21,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.brakingMps2) || r.brakingMps2 <= 0 ||
         !std::isfinite(r.lateralMps2) || r.lateralMps2 <= 0 ||
         !std::isfinite(r.gateSpacingMeters) || r.gateSpacingMeters <= 0 ||
+        !std::isfinite(r.initialForwardLeadMeters) ||
+            r.initialForwardLeadMeters < 0.0 ||
+        (r.hasInitialForward &&
+            (!finite(r.initialForward) ||
+             glm::length(r.initialForward) < 0.9)) ||
         !std::isfinite(r.terminalGateSpacingMeters) ||
             r.terminalGateSpacingMeters <= 0 ||
         !std::isfinite(r.terminalDenseDistanceMeters) ||
@@ -40,6 +45,50 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
     { return world::navigation::segmentClearOfNavigationObstacles(
         a,b,r.obstacles,r.hullRadiusMeters); };
+
+    glm::dvec3 routeSearchStart=r.startMeters;
+    bool initialForwardLeadActive=false;
+    if(r.hasInitialForward && r.initialForwardLeadMeters>1.0e-6)
+    {
+        const glm::dvec3 initialForward=glm::normalize(r.initialForward);
+        const double desiredLead=r.initialForwardLeadMeters;
+        const double minimumLead=std::min(
+            desiredLead,
+            std::max(25.0,r.hullRadiusMeters*2.0)
+        );
+
+        double acceptedLead=desiredLead;
+        if(!clear(
+                r.startMeters,
+                r.startMeters+initialForward*acceptedLead))
+        {
+            if(!clear(
+                    r.startMeters,
+                    r.startMeters+initialForward*minimumLead))
+            {
+                out.failure="initial forward corridor blocked";
+                return out;
+            }
+
+            double clearLead=minimumLead;
+            double blockedLead=desiredLead;
+            for(int i=0;i<24;++i)
+            {
+                const double probe=0.5*(clearLead+blockedLead);
+                if(clear(
+                        r.startMeters,
+                        r.startMeters+initialForward*probe))
+                    clearLead=probe;
+                else
+                    blockedLead=probe;
+            }
+            acceptedLead=clearLead;
+        }
+
+        routeSearchStart=
+            r.startMeters+initialForward*acceptedLead;
+        initialForwardLeadActive=true;
+    }
 
     // Only the near-port ingress is semantic hard geometry. The much longer
     // manual-Assisted lead is a preference used to make the terminal turn
@@ -109,7 +158,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     out.terminalApproachLengthMeters=finalApproachLengthMeters;
 
     world::navigation::GeometricPathRequest search;
-    search.startMeters = r.startMeters;
+    search.startMeters = routeSearchStart;
     search.goalMeters = align;
     search.obstacles = r.obstacles;
     search.params.agentRadiusMeters = r.hullRadiusMeters;
@@ -184,6 +233,25 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             : nominalGeometry.message;
         return out;
     }
+
+    const auto prependInitialForwardLead =
+        [&](std::vector<glm::dvec3> points)
+        {
+            if(!initialForwardLeadActive)
+                return points;
+
+            if(points.empty() ||
+               glm::length(points.front()-routeSearchStart)>1.0e-6)
+                points.insert(points.begin(),routeSearchStart);
+            if(glm::length(points.front()-r.startMeters)>1.0e-6)
+                points.insert(points.begin(),r.startMeters);
+            return points;
+        };
+
+    nominalGeometry.pointsMeters=
+        prependInitialForwardLead(
+            std::move(nominalGeometry.pointsMeters)
+        );
 
     struct RoundedCandidate
     {
@@ -424,6 +492,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             auto points=ingressGeometry.pointsMeters;
             if(glm::length(points.back()-align)>1.0e-6)
                 points.push_back(align);
+            points=prependInitialForwardLead(std::move(points));
 
             auto detour=roundGeometry(
                 points,
@@ -454,6 +523,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             if (!rerouted.valid || rerouted.pointsMeters.size()<2)
                 continue;
 
+            rerouted.pointsMeters=
+                prependInitialForwardLead(
+                    std::move(rerouted.pointsMeters)
+                );
             wideGeometry=rerouted;
             auto wide = roundGeometry(
                 rerouted.pointsMeters,

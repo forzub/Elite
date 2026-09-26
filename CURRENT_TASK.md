@@ -1,6 +1,25 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
 
+## 2026-09-26 — verify Assisted course capture and non-freezing Automatic failure diagnostics
+
+Pull/build and run the mode + docking gates.
+
+Acceptance:
+1. Assisted manual flight: after a substantial yaw/pitch course change the
+   velocity vector follows the new nose direction quickly; expected practical
+   convergence is within roughly 2–3 seconds for the new 100 m/s regression.
+2. `CALCULATE TRAJECTORY` must remain functional.
+3. `START DOCKING` must never enter the old `phase=plan-retry` fixed-step
+   loop.
+4. If Automatic planning still fails, the game must remain responsive and emit
+   exactly one useful `phase=plan-failed reason=...` followed by Human
+   handback. That reason becomes the next docking fix target.
+5. If Automatic planning succeeds, continue observing stabilize -> optional
+   align/replan -> execute -> pre-capture completion.
+
+
+
 ## 2026-09-26 — live Automatic docking validation
 
 Launch the freshly built game and test `START DOCKING` against a

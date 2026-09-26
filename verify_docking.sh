@@ -42,6 +42,7 @@ ctest --test-dir "${RUCKIG_BUILD_DIR}" \
 echo "[DOCK-VERIFY] run static manual + automatic + live-control contracts"
 python "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"
+python "${ROOT_DIR}/tests/architecture_contracts/check_local_flight_control.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_runtime_control.py"
 
 echo "[DOCK-VERIFY] PASS"

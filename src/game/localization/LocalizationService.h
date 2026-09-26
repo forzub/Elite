@@ -29,8 +29,11 @@ public:
     const std::string& locale() const { return m_locale; }
     const std::vector<std::string>& localeOrder() const { return m_localeOrder; }
 
+    bool hasLocale(const std::string& locale) const;
+    std::string nextLocale(const std::string& currentLocale) const;
+
+    // Projection setter. Application/ClientModeState owns the selected mode.
     bool setLocale(const std::string& locale);
-    const std::string& cycleLocale();
 
     std::string text(
         const std::string& key,

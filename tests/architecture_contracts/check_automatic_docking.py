@@ -85,7 +85,12 @@ try:
         "remainingBefore",
         "remainingAfter",
         "maxTerminalDelta",
+    )
+    require(
+        "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
         "angular planner deferred terminal omega correction to the final sample",
+        "penultimate.angularVelocityRadPerSecond",
+        "maxAlpha * terminalDt",
     )
     require(
         "src/world/navigation/Trajectory.h",

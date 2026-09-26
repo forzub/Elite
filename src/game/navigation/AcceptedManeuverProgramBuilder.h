@@ -89,9 +89,11 @@ public:
 
         double minimumClearanceMeters = 0.0;
 
-        // Optional terminal spin target in the same navigation frame as the
-        // trajectory. Moving/rotating docking targets must supply this so the
-        // accepted program matches both terminal pose and angular velocity.
+        // Optional measured endpoint angular states in the same navigation
+        // frame as the trajectory. Interior omega/alpha are derived from the
+        // one full trajectory, not independently per storage page.
+        bool hasInitialAngularVelocity = false;
+        glm::dvec3 initialAngularVelocityMapRadPerSec {0.0};
         bool hasTerminalAngularVelocity = false;
         glm::dvec3 terminalAngularVelocityMapRadPerSec {0.0};
 
@@ -115,6 +117,10 @@ public:
             !request.policy.valid() ||
             !std::isfinite(request.minimumClearanceMeters) ||
             request.minimumClearanceMeters < 0.0 ||
+            (request.hasInitialAngularVelocity &&
+             !finiteVec(
+                 request.initialAngularVelocityMapRadPerSec
+             )) ||
             (request.hasTerminalAngularVelocity &&
              !finiteVec(
                  request.terminalAngularVelocityMapRadPerSec
@@ -152,7 +158,7 @@ public:
             page.objectiveRevision = request.objectiveRevision;
             page.family =
                 last + 1 == samples.size()
-                    ? AcceptedManeuverProgram::ManeuverFamily::PrecisionCapture
+                    ? AcceptedManeuverProgram::ManeuverFamily::PrecisionTransit
                     : AcceptedManeuverProgram::ManeuverFamily::FreeTransit;
             page.acceptedAtUniverseTimeSeconds =
                 trajectory.startUniverseTimeSeconds;
@@ -193,9 +199,13 @@ public:
 
             deriveAngularKinematics(
                 page,
+                trajectory,
+                first,
                 count,
-                request.hasTerminalAngularVelocity &&
-                    last + 1 == samples.size()
+                request.hasInitialAngularVelocity
+                    ? &request.initialAngularVelocityMapRadPerSec
+                    : nullptr,
+                request.hasTerminalAngularVelocity
                     ? &request.terminalAngularVelocityMapRadPerSec
                     : nullptr
             );
@@ -382,94 +392,139 @@ private:
         return axis * (angle / durationSeconds);
     }
 
-    static void deriveAngularKinematics(
-        AcceptedManeuverProgram& page,
-        std::size_t count,
+    [[nodiscard]] static glm::dquat trajectoryOrientation(
+        const world::navigation::TrajectorySample& sample
+    ) noexcept
+    {
+        return normalizedOrIdentity(sample.orientation);
+    }
+
+    [[nodiscard]] static glm::dvec3 trajectoryAngularVelocityAt(
+        const world::navigation::Trajectory& trajectory,
+        std::size_t index,
+        const glm::dvec3* initialAngularVelocity,
         const glm::dvec3* terminalAngularVelocity
     ) noexcept
     {
-        if (count < 2)
-            return;
+        const auto& samples = trajectory.samples;
+        if (samples.empty() || index >= samples.size())
+            return glm::dvec3(0.0);
 
-        std::array<glm::dquat, AcceptedManeuverProgram::kMaxSamples>
-            orientations {};
+        if (index == 0 && initialAngularVelocity)
+            return *initialAngularVelocity;
 
-        for (std::size_t i = 0; i < count; ++i)
+        if (index + 1 == samples.size() &&
+            terminalAngularVelocity)
         {
-            const auto& sample = page.samples[i];
-            const glm::dmat3 basis(
-                sample.rightMap,
-                sample.upMap,
-                -sample.forwardMap
-            );
-            orientations[i] =
-                normalizedOrIdentity(glm::quat_cast(basis));
+            return *terminalAngularVelocity;
         }
 
-        page.samples[0].angularVelocityMapRadPerSecond =
-            glm::dvec3(0.0);
-
-        for (std::size_t i = 1; i + 1 < count; ++i)
+        std::size_t before = index;
+        std::size_t after = index;
+        if (index == 0)
         {
-            const double dt =
-                page.samples[i + 1].timeOffsetSeconds -
-                page.samples[i - 1].timeOffsetSeconds;
-            page.samples[i].angularVelocityMapRadPerSecond =
-                angularVelocityBetween(
-                    orientations[i - 1],
-                    orientations[i + 1],
-                    dt
-                );
+            after = 1;
         }
-
-        if (terminalAngularVelocity)
+        else if (index + 1 == samples.size())
         {
-            page.samples[count - 1].
-                angularVelocityMapRadPerSecond =
-                    *terminalAngularVelocity;
+            before = index - 1;
         }
         else
         {
-            const double dt =
-                page.samples[count - 1].timeOffsetSeconds -
-                page.samples[count - 2].timeOffsetSeconds;
-            page.samples[count - 1].
-                angularVelocityMapRadPerSecond =
-                    angularVelocityBetween(
-                        orientations[count - 2],
-                        orientations[count - 1],
-                        dt
-                    );
+            before = index - 1;
+            after = index + 1;
         }
 
+        const double dt =
+            samples[after].timeOffsetSeconds -
+            samples[before].timeOffsetSeconds;
+        return angularVelocityBetween(
+            trajectoryOrientation(samples[before]),
+            trajectoryOrientation(samples[after]),
+            dt
+        );
+    }
+
+    [[nodiscard]] static glm::dvec3 trajectoryAngularAccelerationAt(
+        const world::navigation::Trajectory& trajectory,
+        std::size_t index,
+        const glm::dvec3* initialAngularVelocity,
+        const glm::dvec3* terminalAngularVelocity
+    ) noexcept
+    {
+        const auto& samples = trajectory.samples;
+        if (samples.size() < 2 || index >= samples.size())
+            return glm::dvec3(0.0);
+
+        std::size_t before = index;
+        std::size_t after = index;
+        if (index == 0)
+        {
+            after = 1;
+        }
+        else if (index + 1 == samples.size())
+        {
+            before = index - 1;
+        }
+        else
+        {
+            before = index - 1;
+            after = index + 1;
+        }
+
+        const double dt =
+            samples[after].timeOffsetSeconds -
+            samples[before].timeOffsetSeconds;
+        if (!(dt > 1.0e-9))
+            return glm::dvec3(0.0);
+
+        const glm::dvec3 omegaBefore =
+            trajectoryAngularVelocityAt(
+                trajectory,
+                before,
+                initialAngularVelocity,
+                terminalAngularVelocity
+            );
+        const glm::dvec3 omegaAfter =
+            trajectoryAngularVelocityAt(
+                trajectory,
+                after,
+                initialAngularVelocity,
+                terminalAngularVelocity
+            );
+        return (omegaAfter - omegaBefore) / dt;
+    }
+
+    static void deriveAngularKinematics(
+        AcceptedManeuverProgram& page,
+        const world::navigation::Trajectory& trajectory,
+        std::size_t firstSourceIndex,
+        std::size_t count,
+        const glm::dvec3* initialAngularVelocity,
+        const glm::dvec3* terminalAngularVelocity
+    ) noexcept
+    {
         for (std::size_t i = 0; i < count; ++i)
         {
-            glm::dvec3 alpha(0.0);
-            if (i + 1 < count)
-            {
-                const double dt =
-                    page.samples[i + 1].timeOffsetSeconds -
-                    page.samples[i].timeOffsetSeconds;
-                if (dt > 1.0e-9)
-                {
-                    alpha =
-                        (page.samples[i + 1].
-                            angularVelocityMapRadPerSecond -
-                         page.samples[i].
-                            angularVelocityMapRadPerSecond) /
-                        dt;
-                }
-            }
-            else if (i > 0)
-            {
-                alpha =
-                    page.samples[i - 1].
-                        angularAccelerationFeedForwardMapRadPerSec2;
-            }
+            const std::size_t sourceIndex =
+                firstSourceIndex + i;
+
+            page.samples[i].angularVelocityMapRadPerSecond =
+                trajectoryAngularVelocityAt(
+                    trajectory,
+                    sourceIndex,
+                    initialAngularVelocity,
+                    terminalAngularVelocity
+                );
 
             page.samples[i].
                 angularAccelerationFeedForwardMapRadPerSec2 =
-                    alpha;
+                    trajectoryAngularAccelerationAt(
+                        trajectory,
+                        sourceIndex,
+                        initialAngularVelocity,
+                        terminalAngularVelocity
+                    );
         }
     }
 

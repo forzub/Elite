@@ -1,54 +1,50 @@
-# CONTINUE PROMPT — Elite Navigation v2 / verify mode-state refactor, then resume Automatic docking
+# CONTINUE PROMPT — Elite Navigation v2 / verify state-owned modes, then resume Automatic docking
 
 Work in public repository `forzub/Elite`, branch `main`.
 
-Before changing behavior/state read `AGENTS.md`, newest sections of
-`CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, and
-`src/game/navigation/STAGE12_END_TO_END.md`. After every state-affecting
-result synchronize those files and regenerate this prompt.
+Read newest sections of `CURRENT_STATE.md`, `CURRENT_TASK.md`,
+`PROJECT_STATE.md`, and `src/game/navigation/STAGE12_END_TO_END.md` before
+changing behavior. Synchronize those files after every state-affecting result
+and regenerate this prompt every iteration.
 
 ## Current mode/state architecture
 
-Persistent selectable modes have one authoritative owner:
-- local flight law/alignment/Assisted persistent controls:
-  `LocalFlightControlStateMachine` over `DynamicMotionState`;
-- global UI locale / constellation visibility / sky culture / coordinate
-  display format: `ui::platform::ClientModeState`;
-- navigation module state: `NavigationModuleState`;
-- application presentation: `GamePresentationCoordinator`;
-- SystemMap Galaxy/System/Detail/Hub submode: `MapModeState`.
+One authoritative state owner per persistent selectable mode.
 
-Renderers/formatters/services are projections and must not own independent mode
-transitions.
+Flight:
+- default law = Assisted via one shared default function;
+- `LocalFlightControlStateMachine` owns persistent law/alignment/Assisted
+  target transitions;
+- DynamicMotionSystem/SharedShipPhysics/ShipController execute state but do not
+  write those persistent mode fields;
+- Assisted entry captures longitudinal speed, not total |VREL|;
+- Assisted neutral angular damping is automatic; Newtonian neutral rotation is
+  inertial;
+- Assisted automatic lateral stabilization is distinct from manual gas-limited
+  RCS and uses the central load-bounded ship capability;
+- replicated stabilizer state bumped SimulationSnapshot wire schema to 10.
 
-## Flight-control changes awaiting Windows verification
-
-- single shared default law: Assisted;
-- DynamicMotionState / ShipControlState / GameClient latch consume that default;
-- Assisted entry captures forward VREL rather than total |VREL|;
-- Assisted damps released angular motion;
-- Newtonian preserves angular inertia without explicit alignment;
-- Assisted has separate
-  `assistedStabilizationAccelerationMps2`, using central ShipDynamics
-  `strafeAccel` capability;
-- manual keypad RCS remains gas-limited `manoeuvreThrusterAccel`;
-- DynamicMotionSystem/SharedShipPhysics/ShipController may not directly mutate
-  persistent flight mode fields;
-- snapshot wire schema version is 10.
-
-A native regression verifies Assisted cancels side-slip while Newtonian
-preserves it and Assisted stabilization does not consume manual RCS gas.
-
-## Client/map mode changes awaiting verification
-
-- ClientModeState owns locale, constellation visibility, sky-culture and
+Client/UI:
+- `ClientModeState` owns UI locale, constellation visibility, sky culture,
   coordinate display format;
-- preferences are persistence only;
-- CoordinateDisplayService is projection-only and has no hidden cycle;
-- SystemMapRenderer no longer resets coordinate mode during init;
-- SystemMapRenderer no longer stores loose `m_mode`; it uses MapModeState.
+- preferences are persistence projection only;
+- LocalizationService and CoordinateDisplayService are projection/formatting
+  layers, not transition owners;
+- SystemMapRenderer no longer owns a loose `m_mode`; `MapModeState` owns
+  Galaxy/System/Detail/Hub.
 
-## Immediate Windows gate
+## Latest Windows evidence
+
+First `verify_modes.sh` run:
+- client_preferences_store_contracts PASS;
+- local_flight_control_contracts failed because the test expected raw 20.0
+  m/s² while the test fixture maxGs=2 correctly clamps Assisted lateral
+  authority to 19.6133 m/s².
+
+The test is fixed to expect the central production capability accessor.
+Wire schema static contract is also updated for schema 10/new stabilizer field.
+
+## Immediate gate
 
 From `D:\__elite\work`:
 
@@ -61,26 +57,21 @@ bash verify_modes.sh
 If PASS:
 
 ```bash
-bash verify_docking.sh
 bash build_mingw64.sh
 build/EliteGame.exe
 ```
 
-Live acceptance:
-- fresh mode Assisted;
-- Assisted hull turn actively removes/bends lateral VREL;
-- Assisted neutral angular rotation damps;
-- Newtonian side-slip and angular inertia persist without explicit thrust;
-- Ctrl+F10 transitions cleanly between laws;
-- locale/constellation/sky-culture/coordinate modes still switch and persist;
-- Galaxy/System/Detail/Hub map transitions remain unchanged.
+Live flight acceptance:
+- fresh ship is ASSISTED;
+- releasing pitch/yaw/roll damps angular motion in Assisted;
+- Newtonian preserves neutral angular inertia;
+- after turning the hull, Assisted materially bends/removes lateral VREL much
+  faster than the 2 m/s² manual RCS path;
+- Ctrl+F10 changes doctrine through state, not direct physics flags;
+- locale/constellation/culture/coordinate/map modes remain functional.
 
-If compile/test failures appear, fix only the concrete regressions and rerun the
-same gate. Do not start another broad architectural sweep.
-
-After green mode + docking gates, resume production Automatic docking:
-server Autopilot ownership -> accepted proved maneuver program ->
-TrajectoryFollower -> NavigationRuntimeControlBridge -> ShipControlState ->
-shared physics -> completion/replan/controlled-stop -> Human handback.
+After this gate return to the production Automatic docking executor:
+AcceptedManeuverProgram -> TrajectoryFollower ->
+NavigationRuntimeControlBridge -> ShipControlState -> shared physics.
 
 Commit directly to GitHub; do not provide patch files.

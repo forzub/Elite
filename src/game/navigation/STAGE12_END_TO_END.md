@@ -1,5 +1,21 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — Stage-12 next milestone is production Automatic execution
+
+Stage-12 currently has all major execution primitives but lacks the production
+player owner that joins them.
+
+Current product path:
+manual request -> temporary server BrakeToStop -> plan/publish -> Human control.
+
+Required automatic path:
+automatic request -> server Autopilot ownership -> accepted proved program ->
+TrajectoryFollower -> NavigationRuntimeControlBridge -> ShipControlState ->
+shared physics -> complete/replan/controlled-stop -> Human handback.
+
+`START DOCKING` remains disabled until this chain exists. Once the current
+manual route regression gate passes, this is the next implementation slice.
+
 ## 2026-09-25 — Stage-12 shortened-axis endpoint now retreats from contact boundary
 
 Native verification failed after correct soft shortening because the selected

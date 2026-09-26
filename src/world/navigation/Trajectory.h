@@ -58,6 +58,12 @@ struct Trajectory
     double durationSeconds = 0.0;
     double lengthMeters = 0.0;
 
+    // True when orientation + angularVelocityRadPerSecond were compiled as
+    // one physically bounded angular state by the trajectory planner. Accepted
+    // program construction must preserve this authored state instead of
+    // re-deriving omega from geometric quaternion differences.
+    bool angularKinematicsAuthored = false;
+
     std::vector<TrajectorySample> samples;
 
     bool ready() const noexcept

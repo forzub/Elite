@@ -96,12 +96,17 @@ try:
         "src/world/navigation/Trajectory.h",
         "angularKinematicsAuthored",
     )
-    if "trajectoryRequest.hasTerminalAngularVelocity = true" not in require(
+    server_terminal_angular = require(
         "src/game/server/GameServer.cpp",
-        "trajectoryRequest.hasTerminalAngularVelocity = true",
-        "trajectoryRequest.terminalAngularVelocityRadPerSecond",
-    ):
-        raise AssertionError("Automatic docking did not feed rotating terminal attitude into trajectory generation")
+        "hasTerminalAngularVelocity = true",
+        "terminalAngularVelocityRadPerSecond",
+        "terminalAngularVelocityMapRadPerSec",
+        "TrajectoryGenerator::generate(",
+    )
+    if "trajectoryRequest" not in server_terminal_angular:
+        raise AssertionError(
+            "Automatic docking terminal angular state is no longer authored on the trajectory request"
+        )
 
     server = require(
         "src/game/server/GameServer.cpp",

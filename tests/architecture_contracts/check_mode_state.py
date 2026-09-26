@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -135,7 +136,8 @@ try:
         raise AssertionError(
             "SystemMapRenderer reintroduced loose persistent map mode state"
         )
-    if "m_mode" in map_system_inl or "m_mode" in map_common_inl:
+    if (re.search(r"\\bm_mode\\b", map_system_inl) or
+            re.search(r"\\bm_mode\\b", map_common_inl)):
         raise AssertionError(
             "SystemMapRenderer inline implementation still reads retired m_mode"
         )

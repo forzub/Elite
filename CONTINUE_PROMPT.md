@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / rerun corrected runtime-control gate
+# CONTINUE PROMPT — Elite Navigation v2 / live Automatic docking validation
 
 Work in public repository `forzub/Elite`, branch `main`.
 
@@ -11,63 +11,21 @@ At the start of every iteration read the newest sections of:
 After every state-affecting result update those files and regenerate this prompt
 from scratch again.
 
-## Latest Windows evidence
+## Accepted target-machine baseline
 
-Canonical MinGW game/server build: PASS.
+Canonical MinGW build: PASS.
 
-Focused tests:
+Focused Automatic/runtime gates:
+- `navigation_runtime_control` PASS;
 - `maneuver_tracking_controller` PASS;
 - `docking_advisory` PASS;
 - `accepted_maneuver_program_builder` PASS;
-- `navigation_runtime_control` FAIL with:
-  `remaining vector must clamp at manoeuvre-thruster authority`.
+- `verify_docking.sh` fully PASS.
 
-The failure was classified as a stale test expectation, not a production
-physics defect.
+Do not re-open architecture before collecting live evidence unless the live run
+shows a concrete failure.
 
-The fixture had `maxLinearGs = 1g` and demanded:
-- full 1g main acceleration;
-- plus 2 m/s^2 manoeuvre/RCS.
-
-Production correctly enforces one shared linear-load envelope:
-main has priority, but main + secondary acceleration must still fit
-`maxLinearGs/maxGs`.
-
-The test is now corrected:
-- rear main explicitly limited to 5 m/s^2 -> enough headroom exists and RCS may
-  reach 2 m/s^2;
-- a separate saturated-main case uses the full 1g envelope and requires
-  secondary RCS to reduce to zero.
-
-No production `DynamicMotionSystem` behavior was changed for this failure.
-
-## Immediate commands
-
-```bash
-cd /d/__elite/work
-git pull --ff-only origin main
-
-cmake --build build/tests/navigation_runtime \
-  --target navigation_runtime_control_tests \
-  -j 8
-
-ctest --test-dir build/tests/navigation_runtime \
-  -R "^navigation_runtime_control$" \
-  --output-on-failure
-```
-
-If green:
-
-```bash
-bash verify_docking.sh
-```
-
-The previous canonical game/server build already passed. Rebuild the whole game
-only if a source change later requires it or before final live acceptance.
-
-## Architecture that must not regress
-
-Accepted-program execution:
+## Current authoritative execution chain
 
 ```text
 trajectory + proof
@@ -76,25 +34,66 @@ trajectory + proof
  -> NavigationRuntimeControlBridge::stepProgram
  -> ShipControlState navigationActuatorProgram*
  -> DynamicMotionSystem::applyNavigationActuatorProgram
- -> fixed-step physics
+ -> shared fixed-step physics
 ```
 
 Planner owns nominal rear-main / fore-main / manoeuvre feed-forward.
 Follower owns bounded correction only.
 Physics owns installed hardware, shared load envelope, speed, gas and collision.
 
-Automatic docking lifecycle:
-stabilize -> plan -> optional physical Aligning -> discard stale program ->
-stabilize/replan -> execute accepted program -> controlled replan on failure ->
-collision-free pre-capture completion -> Human handback.
+`TrajectoryFollower` must not regain an `AcceptedShortSegment` overload.
 
-Do not restore:
-- `TrajectoryFollower(AcceptedShortSegment)`;
-- retired `SystemMapRenderer::m_mode`;
-- `CoordinateDisplayService::cycle()`;
-- planner-only target collision bypass.
+## Automatic docking lifecycle
 
-Current Automatic success is pre-capture only. Physical latch/contact is the
-next separate docking/game-state layer.
+```text
+START DOCKING
+ -> server takes Autopilot authority
+ -> BrakeToStop / stabilize
+ -> plan trajectory + accepted program
+ -> if hull attitude differs:
+      Aligning via bounded angular control
+      discard stale program
+      stabilize
+      replan from new real state/time
+ -> execute accepted program
+ -> controlled stabilize/replan on tracking/propulsion/frame failure
+ -> collision-free pre-capture completion
+ -> restore Human authority
+```
+
+Current success is PRE-CAPTURE only. Physical station contact/latch remains the
+next separate game-state/physics layer.
+
+No planner-only target collision bypass is allowed.
+
+## Immediate live test
+
+Launch the freshly built game:
+
+```bash
+cd /d/__elite/work
+build/EliteGame.exe
+```
+
+Select a compatible/free docking port and press `START DOCKING`.
+
+Collect every `[DockAuto]` console line plus a short description of visible
+ship behavior.
+
+Expected logs:
+- `phase=stabilizing`;
+- planned log with pages, trajectory duration, pre-capture depth, terminal omega,
+  initial attitude error;
+- either `phase=executing` directly or `phase=aligning`;
+- if aligning: `phase=aligned-replan` followed by a fresh plan;
+- on recoverable execution deviation: controlled `phase=replan`, not
+  navigation shutdown;
+- successful current-stage completion:
+  `approach-complete ... reason=pre-capture-envelope-complete`;
+- Human authority restored.
+
+If live behavior disagrees with the log, trust the actual authoritative motion
+and diagnose from the first divergence. Do not weaken envelopes or restore
+legacy paths to make visuals appear successful.
 
 Commit fixes directly to GitHub `main`. Do not provide patch files.

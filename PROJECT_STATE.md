@@ -4248,3 +4248,18 @@ The current runtime control-law switch is retained temporarily for development
 and regression work. The architecture no longer depends on the switch being a
 player preference; a later descriptor-level ship-family lock can select the
 same two branches without redesigning Planner/Follower.
+
+## 2026-09-27 — angular terminal state is a backwards-reachable boundary
+
+Angular trajectory generation now treats requested terminal angular velocity as
+a true boundary condition throughout the remaining maneuver time, not as a
+value to be imposed on the last sample.
+
+For maximum angular acceleration `alpha_max`, every authored state must remain
+inside:
+```text
+|omega(t) - omega_terminal| <= alpha_max * (T - t)
+```
+
+This is independent of Assisted/Newtonian doctrine. Both ship families require
+physically reachable body attitude and angular velocity programs.

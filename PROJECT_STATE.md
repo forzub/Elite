@@ -1,6 +1,19 @@
 # PROJECT STATE
 
 
+## 2026-09-26 — Automatic docking is implemented but not yet accepted
+
+Current distinction:
+- implementation exists end-to-end and canonical build passes;
+- Planner/docking geometry, accepted-program construction and maneuver tracking
+  native gates pass;
+- the runtime-control native contract still fails.
+
+Thus `START DOCKING` is no longer a stub architecturally, but working autopilot
+status is still pending execution-layer acceptance and live evidence.
+
+
+
 ## 2026-09-26 — accepted actuator allocation is part of the Planner/Follower contract
 
 The authoritative execution chain is now:

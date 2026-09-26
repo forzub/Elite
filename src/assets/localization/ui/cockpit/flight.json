@@ -85,6 +85,13 @@
       "zh-Hans": "手动对接模式",
       "es": "MODO DE ATRAQUE MANUAL",
       "ja": "手動ドッキングモード"
+    },
+    "cockpit.docking.automatic_mode": {
+      "en": "AUTOMATIC DOCKING MODE",
+      "ru": "АВТОМАТИЧЕСКИЙ РЕЖИМ СТЫКОВКИ",
+      "zh-Hans": "自动对接模式",
+      "es": "MODO DE ATRAQUE AUTOMÁTICO",
+      "ja": "自動ドッキングモード"
     }
   }
 }

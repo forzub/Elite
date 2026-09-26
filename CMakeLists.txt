@@ -716,6 +716,7 @@ if(ELITE_BUILD_SERVER)
         src/game/navigation/DockingAdvisoryPlanner.cpp
         src/game/navigation/LocalGuidancePlanner.cpp
         src/game/navigation/HubSemanticAnchorCatalog.cpp
+        src/game/navigation/DockingPortRuntimeStateCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp
         src/game/navigation/PlayerSpatialDomainResolver.cpp
 

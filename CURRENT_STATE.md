@@ -1,6 +1,36 @@
 # CURRENT STATE
 
 
+## 2026-09-26 — Automatic docking execution ownership closed; Windows compile gate pending
+
+The Automatic docking slice has been tightened before target-machine build.
+
+Implemented/fixed:
+- Automatic no longer enters the solid target module under a planner-only collision exemption. Current navigation ends at a collision-free pre-capture center; physical contact/latch remains a separate later authority/state transition.
+- Client and server Hub obstacle inflation now consume one shared `HubNavigationClearancePolicy`.
+- `AcceptedManeuverProgramBuilder` derives angular velocity/acceleration across the full trajectory rather than resetting angular state at storage-page boundaries. Rotating-target terminal omega is explicit and capability-checked.
+- `TrajectoryFollower` has one executable product only: `AcceptedManeuverProgram`; the old RuntimeLab `AcceptedShortSegment` can reach it only through the diagnostics-only adapter.
+- Planner-owned actuator allocation is now carried explicitly:
+  `AcceptedManeuverProgram -> Follower rear/fore/RCS + bounded feedback -> NavigationRuntimeControlBridge::stepProgram -> ShipControlState -> DynamicMotionSystem::applyNavigationActuatorProgram`.
+  Physics no longer re-infers the nominal engine split from one net acceleration vector for accepted-program execution.
+- Bounded Follower feedback may use only remaining main authority plus remaining manoeuvre/RCS authority. Normal speed/load/gas physics remains authoritative.
+- `ManeuverTrackingController` attitude error now uses exact shortest-arc quaternion error, so a 180-degree hull mismatch does not collapse to zero correction.
+- Automatic execution has a physical `Aligning` phase. If the stabilized hull is outside the first accepted attitude tolerance, Autopilot rotates the real ship, discards the now-stale program, stabilizes, and replans from the new state/time. The tracking envelope is not widened to mask the mismatch.
+- Local prediction suppression waits for authoritative Autopilot ownership, so a rejected Automatic request cannot freeze pilot controls.
+- Wire protocol remains version 11 for Automatic docking target identity; SimulationSnapshot schema remains version 10.
+
+New/expanded gates:
+- native `accepted_maneuver_program_builder`;
+- native `navigation_runtime_control`;
+- native `maneuver_tracking_controller`, including exact 180-degree attitude regression;
+- static `check_automatic_docking.py`;
+- static `check_navigation_live_runtime_control.py`;
+- `verify_docking.sh` now builds/runs all of the above plus the manual advisory test.
+
+Static source/token sweeps over current main pass. Full Windows/MinGW compilation is still pending and is the next required evidence.
+
+
+
 ## 2026-09-26 — Automatic docking production execution slice wired; Windows gate pending
 
 Automatic docking is no longer a disabled UI stub.

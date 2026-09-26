@@ -520,30 +520,45 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
     return !m_uiStrings.empty();
 }
 
-bool LocalizationService::setLocale(const std::string& locale)
+bool LocalizationService::hasLocale(
+    const std::string& locale
+) const
 {
-    const auto it = std::find(m_localeOrder.begin(), m_localeOrder.end(), locale);
-    if (it == m_localeOrder.end())
-        return false;
-    m_locale = *it;
-    return true;
+    return std::find(
+        m_localeOrder.begin(),
+        m_localeOrder.end(),
+        locale
+    ) != m_localeOrder.end();
 }
 
-const std::string& LocalizationService::cycleLocale()
+std::string LocalizationService::nextLocale(
+    const std::string& currentLocale
+) const
 {
     if (m_localeOrder.empty())
-        return m_locale;
+        return currentLocale;
 
-    auto it = std::find(m_localeOrder.begin(), m_localeOrder.end(), m_locale);
-    std::size_t index = 0;
-    if (it != m_localeOrder.end())
-    {
-        index = static_cast<std::size_t>(std::distance(m_localeOrder.begin(), it));
-        index = (index + 1) % m_localeOrder.size();
-    }
+    auto it = std::find(
+        m_localeOrder.begin(),
+        m_localeOrder.end(),
+        currentLocale
+    );
+    if (it == m_localeOrder.end())
+        return m_localeOrder.front();
 
-    m_locale = m_localeOrder[index];
-    return m_locale;
+    const std::size_t index =
+        (static_cast<std::size_t>(
+            std::distance(m_localeOrder.begin(), it)
+        ) + 1) % m_localeOrder.size();
+    return m_localeOrder[index];
+}
+
+bool LocalizationService::setLocale(const std::string& locale)
+{
+    if (!hasLocale(locale))
+        return false;
+    m_locale = locale;
+    return true;
 }
 
 std::string LocalizationService::resolve(

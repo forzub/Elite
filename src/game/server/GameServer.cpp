@@ -12,6 +12,7 @@
 #include <functional>
 #include <unordered_map>
 #include <utility>
+#include <thread>
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/world_state/InitialWorldState.h"
@@ -1258,6 +1259,9 @@ bool GameServer::planAutomaticDocking(
             return false;
         };
 
+    if (runtime.planningJob)
+        return fail("planning-job-already-active");
+
     const auto* hub =
         m_simulation.hubNavigationFrame(runtime.hubId);
     if (!hub ||
@@ -1338,16 +1342,6 @@ bool GameServer::planAutomaticDocking(
         targetObject->inheritHubOrientation;
     attachment.valid = targetObject->attachedToHub;
 
-    const auto portAt =
-        [&](double epoch)
-        {
-            return resolveDockingAdvisoryLocalPortAt(
-                attachment,
-                *definition,
-                epoch
-            );
-        };
-
     const ShipParams physics =
         ship.core().effectivePhysics();
 
@@ -1393,55 +1387,34 @@ bool GameServer::planAutomaticDocking(
     executionVehicle.maxAngularAccelerationRadPerSecond2 -=
         angularReserve;
 
-    const auto buildObstaclesAt =
-        [&](double epoch)
+    struct ObstacleSource
+    {
+        ObjectType type {};
+        std::uint32_t id = 0;
+        glm::dvec3 offsetMeters {0.0};
+        glm::dvec3 rotationDeg {0.0};
+        glm::dvec3 angularVelocityDegPerSecond {0.0};
+    };
+
+    std::vector<ObstacleSource> obstacleSources;
+    for (const auto& [id, object] : m_simulation.staticObjects())
+    {
+        if (object.systemId != runtime.systemId ||
+            !object.attachedToHub ||
+            object.hubId != runtime.hubId)
         {
-            std::vector<world::navigation::NavigationObstacle> obstacles;
-            for (const auto& [id, object] : m_simulation.staticObjects())
-            {
-                if (object.systemId != runtime.systemId ||
-                    !object.attachedToHub ||
-                    object.hubId != runtime.hubId)
-                {
-                    continue;
-                }
+            continue;
+        }
 
-                const glm::dvec3 angles =
-                    object.hubLocalRotationDeg +
-                    object.hubLocalAngularVelocityDegPerSecond *
-                        epoch;
-                const glm::dmat3 visualBasis(
-                    glm::mat3(
-                        hubLocalEulerDegToMatrix(angles)
-                    )
-                );
-
-                glm::dmat3 tacticalBasis(1.0);
-                for (int axis = 0; axis < 3; ++axis)
-                {
-                    tacticalBasis[axis] =
-                        hubVisualToTacticalVector(
-                            glm::dvec3(visualBasis[axis])
-                        );
-                }
-
-                const auto obstacle =
-                    world::navigation::makeNavigationObstacleForObject(
-                        object.type,
-                        "object:" + std::to_string(id.value),
-                        id.value,
-                        hubVisualToTacticalVector(
-                            object.hubLocalOffsetMeters
-                        ),
-                        tacticalBasis,
-                        game::navigation::
-                            DiagnosticHubInfrastructureClearanceMeters
-                    );
-                if (obstacle)
-                    obstacles.push_back(*obstacle);
-            }
-            return obstacles;
-        };
+        ObstacleSource source;
+        source.type = object.type;
+        source.id = id.value;
+        source.offsetMeters = object.hubLocalOffsetMeters;
+        source.rotationDeg = object.hubLocalRotationDeg;
+        source.angularVelocityDegPerSecond =
+            object.hubLocalAngularVelocityDegPerSecond;
+        obstacleSources.push_back(source);
+    }
 
     const auto& transform = ship.core().transform();
     const auto& motion = transform.motion;
@@ -1476,507 +1449,717 @@ bool GameServer::planAutomaticDocking(
         motion.localControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
 
-    world::navigation::TrajectoryGenerationResult trajectoryResult;
-    DockingAdvisoryPlan advisoryPlan;
-    double captureUniverseTimeSeconds = universeTimeSeconds;
-    double finalPreCaptureDepthMeters = 0.0;
-    glm::dvec3 terminalAngularVelocityMapRadPerSec(0.0);
+    const glm::dvec3 startPositionMeters =
+        motion.localPositionMeters;
+    const glm::dvec3 startVelocityMps =
+        motion.localVelocityMps;
 
-    for (int iteration = 0; iteration < 3; ++iteration)
-    {
-        const auto port =
-            portAt(captureUniverseTimeSeconds);
-        if (!port.valid)
-            return fail("predicted-port-pose-invalid");
+    const auto definitionCopy = *definition;
+    const int systemId = runtime.systemId;
+    const std::string hubId = runtime.hubId;
+    const std::uint64_t requestSerial = runtime.requestSerial;
+    const std::uint64_t firstProgramRevision =
+        runtime.nextProgramRevision;
+    const std::uint64_t proofRevision = m_serverTick;
 
-        DockingAdvisoryRequest request;
-        request.startMeters = motion.localPositionMeters;
-        request.entranceMeters = port.positionMeters;
-        request.outward = port.forward;
-        request.standoffMeters = std::max(
-            300.0,
-            hull.lengthMeters * 10.0 +
-                definition->requiredClearanceMeters * 4.0
-        );
-        request.hullRadiusMeters =
-            envelope.conservativeSafetyRadiusMeters();
-        request.maxSpeedMps =
-            executionVehicle.maxSpeedMps;
-        request.brakingMps2 =
-            executionVehicle.maxBrakingAccelerationMps2;
-        request.lateralMps2 =
-            executionVehicle.maxLateralAccelerationMps2;
-        request.gateSpacingMeters = 500.0;
-        request.terminalGateSpacingMeters = 250.0;
-        request.terminalDenseDistanceMeters = 2000.0;
-        if (assisted)
+    // The worker normally completes in a few hundred milliseconds. Plan from
+    // one second in the future and hold the ship stopped until that epoch so
+    // the returned absolute-time maneuver is not already stale when installed.
+    constexpr double PlanningLeadSeconds = 1.0;
+    const double executionStartUniverseTimeSeconds =
+        universeTimeSeconds + PlanningLeadSeconds;
+
+    auto job =
+        std::make_shared<DockingAutomaticRuntime::PlanningJob>();
+    job->executionStartUniverseTimeSeconds =
+        executionStartUniverseTimeSeconds;
+
+    runtime.planningJob = job;
+    runtime.phase = DockingAutomaticRuntime::Phase::Planning;
+
+    std::thread(
+        [job,
+         attachment,
+         definitionCopy,
+         hull,
+         envelope,
+         physics,
+         executionVehicle,
+         linearReserve,
+         angularReserve,
+         obstacleSources = std::move(obstacleSources),
+         currentForwardMap,
+         currentUpMap,
+         currentAngularVelocityMapRadPerSec,
+         assisted,
+         startPositionMeters,
+         startVelocityMps,
+         systemId,
+         hubId,
+         requestSerial,
+         firstProgramRevision,
+         proofRevision,
+         executionStartUniverseTimeSeconds]() mutable
         {
-            request.terminalApproachLengthMeters = 9000.0;
-            request.terminalTurnSegmentFraction = 0.85;
-            request.preferredTerminalTurnRadiusMeters = 6000.0;
-        }
-        request.obstacles =
-            buildObstaclesAt(captureUniverseTimeSeconds);
+            using namespace game::navigation;
 
-        advisoryPlan =
-            DockingAdvisoryPlanner::plan(request);
-        if (!advisoryPlan.valid())
-        {
-            return fail(
-                advisoryPlan.failure.empty()
-                    ? "advisory-plan-invalid"
-                    : std::string("advisory:") + advisoryPlan.failure
-            );
-        }
-
-        world::navigation::TrajectoryGenerationRequest trajectoryRequest;
-        trajectoryRequest.systemId = runtime.systemId;
-        trajectoryRequest.frameId = runtime.hubId;
-        trajectoryRequest.startUniverseTimeSeconds =
-            universeTimeSeconds;
-        trajectoryRequest.universeTimeScale = 1.0;
-        trajectoryRequest.obstacles = request.obstacles;
-        trajectoryRequest.vehicle = executionVehicle;
-        trajectoryRequest.initialVelocityMps =
-            motion.localVelocityMps;
-        trajectoryRequest.initialAccelerationMps2 =
-            glm::dvec3(0.0);
-        trajectoryRequest.hasInitialOrientation = true;
-        trajectoryRequest.initialForward = currentForwardMap;
-        trajectoryRequest.initialUp = currentUpMap;
-        trajectoryRequest.hasInitialAngularVelocity = true;
-        trajectoryRequest.initialAngularVelocityRadPerSecond =
-            currentAngularVelocityMapRadPerSec;
-
-        trajectoryRequest.pathPointsMeters.reserve(
-            advisoryPlan.gates.size() + 1
-        );
-        for (const auto& gate : advisoryPlan.gates)
-        {
-            trajectoryRequest.pathPointsMeters.push_back(
-                gate.positionMeters
-            );
-        }
-
-        if (trajectoryRequest.pathPointsMeters.empty())
-            return fail("advisory-produced-no-path-points");
-
-        const glm::dvec3 advisoryStopMeters =
-            trajectoryRequest.pathPointsMeters.back();
-
-        // The target module is still authoritative solid collision geometry.
-        // Automatic navigation therefore terminates this execution slice
-        // OUTSIDE that geometry. Never use a planner-only target-obstacle
-        // collision exemption here: shared physics would still collide with
-        // the same module.
-        const double minimumPreCaptureDepthMeters =
-            request.hullRadiusMeters +
-            game::navigation::
-                DiagnosticHubInfrastructureClearanceMeters +
-            game::navigation::
-                AutomaticDockingPreCaptureReserveMeters;
-
-        double preCaptureDepthMeters = std::min(
-            request.standoffMeters,
-            minimumPreCaptureDepthMeters
-        );
-
-        const auto preCaptureCenterAt =
-            [&](const DockingAdvisoryLocalPort& portState,
-                double depthMeters)
-            {
-                return
-                    portState.positionMeters +
-                    portState.forward * depthMeters;
-            };
-
-        const auto segmentToPreCaptureClear =
-            [&](double depthMeters)
-            {
-                return world::navigation::
-                    segmentClearOfNavigationObstacles(
-                        advisoryStopMeters,
-                        preCaptureCenterAt(port, depthMeters),
-                        request.obstacles,
-                        request.hullRadiusMeters
+            const auto finishFailure =
+                [&](const std::string& reason)
+                {
+                    job->success = false;
+                    job->failureReason = reason;
+                    job->ready.store(
+                        true,
+                        std::memory_order_release
                     );
-            };
+                };
 
-        if (!segmentToPreCaptureClear(preCaptureDepthMeters))
-        {
-            // Back away toward the already-proved advisory stop until the
-            // complete conservative swept-sphere chord is collision-free.
-            double blockedDepthMeters = preCaptureDepthMeters;
-            double safeDepthMeters = request.standoffMeters;
-
-            if (!segmentToPreCaptureClear(safeDepthMeters))
-                return fail("pre-capture-standoff-blocked");
-
-            for (int search = 0; search < 24; ++search)
+            try
             {
-                const double probeDepthMeters =
-                    0.5 * (
-                        blockedDepthMeters +
-                        safeDepthMeters
+                const auto portAt =
+                    [&](double epoch)
+                    {
+                        return resolveDockingAdvisoryLocalPortAt(
+                            attachment,
+                            definitionCopy,
+                            epoch
+                        );
+                    };
+
+                const auto buildObstaclesAt =
+                    [&](double epoch)
+                    {
+                        std::vector<
+                            world::navigation::NavigationObstacle
+                        > obstacles;
+                        obstacles.reserve(obstacleSources.size());
+
+                        for (const auto& source : obstacleSources)
+                        {
+                            const glm::dvec3 angles =
+                                source.rotationDeg +
+                                source.angularVelocityDegPerSecond *
+                                    epoch;
+                            const glm::dmat3 visualBasis(
+                                glm::mat3(
+                                    hubLocalEulerDegToMatrix(angles)
+                                )
+                            );
+
+                            glm::dmat3 tacticalBasis(1.0);
+                            for (int axis = 0; axis < 3; ++axis)
+                            {
+                                tacticalBasis[axis] =
+                                    hubVisualToTacticalVector(
+                                        glm::dvec3(
+                                            visualBasis[axis]
+                                        )
+                                    );
+                            }
+
+                            const auto obstacle =
+                                world::navigation::
+                                    makeNavigationObstacleForObject(
+                                        source.type,
+                                        "object:" +
+                                            std::to_string(source.id),
+                                        source.id,
+                                        hubVisualToTacticalVector(
+                                            source.offsetMeters
+                                        ),
+                                        tacticalBasis,
+                                        game::navigation::
+                                            DiagnosticHubInfrastructureClearanceMeters
+                                    );
+                            if (obstacle)
+                                obstacles.push_back(*obstacle);
+                        }
+                        return obstacles;
+                    };
+
+                world::navigation::TrajectoryGenerationResult
+                    trajectoryResult;
+                DockingAdvisoryPlan advisoryPlan;
+                double captureUniverseTimeSeconds =
+                    executionStartUniverseTimeSeconds;
+                double finalPreCaptureDepthMeters = 0.0;
+                glm::dvec3 terminalAngularVelocityMapRadPerSec(
+                    0.0
+                );
+
+                for (int iteration = 0;
+                     iteration < 3;
+                     ++iteration)
+                {
+                    const auto port =
+                        portAt(captureUniverseTimeSeconds);
+                    if (!port.valid)
+                    {
+                        finishFailure(
+                            "predicted-port-pose-invalid"
+                        );
+                        return;
+                    }
+
+                    DockingAdvisoryRequest request;
+                    request.startMeters = startPositionMeters;
+                    request.entranceMeters =
+                        port.positionMeters;
+                    request.outward = port.forward;
+                    request.standoffMeters = std::max(
+                        300.0,
+                        hull.lengthMeters * 10.0 +
+                            definitionCopy.
+                                requiredClearanceMeters * 4.0
+                    );
+                    request.hullRadiusMeters =
+                        envelope.conservativeSafetyRadiusMeters();
+                    request.maxSpeedMps =
+                        executionVehicle.maxSpeedMps;
+                    request.brakingMps2 =
+                        executionVehicle.
+                            maxBrakingAccelerationMps2;
+                    request.lateralMps2 =
+                        executionVehicle.
+                            maxLateralAccelerationMps2;
+                    request.gateSpacingMeters = 500.0;
+                    request.terminalGateSpacingMeters = 250.0;
+                    request.terminalDenseDistanceMeters = 2000.0;
+                    if (assisted)
+                    {
+                        request.terminalApproachLengthMeters =
+                            9000.0;
+                        request.terminalTurnSegmentFraction =
+                            0.85;
+                        request.preferredTerminalTurnRadiusMeters =
+                            6000.0;
+                    }
+                    request.obstacles =
+                        buildObstaclesAt(
+                            captureUniverseTimeSeconds
+                        );
+
+                    advisoryPlan =
+                        DockingAdvisoryPlanner::plan(request);
+                    if (!advisoryPlan.valid())
+                    {
+                        finishFailure(
+                            advisoryPlan.failure.empty()
+                                ? "advisory-plan-invalid"
+                                : std::string("advisory:") +
+                                    advisoryPlan.failure
+                        );
+                        return;
+                    }
+
+                    world::navigation::
+                        TrajectoryGenerationRequest
+                            trajectoryRequest;
+                    trajectoryRequest.systemId = systemId;
+                    trajectoryRequest.frameId = hubId;
+                    trajectoryRequest.startUniverseTimeSeconds =
+                        executionStartUniverseTimeSeconds;
+                    trajectoryRequest.universeTimeScale = 1.0;
+                    trajectoryRequest.obstacles =
+                        request.obstacles;
+                    trajectoryRequest.vehicle =
+                        executionVehicle;
+                    trajectoryRequest.initialVelocityMps =
+                        startVelocityMps;
+                    trajectoryRequest.initialAccelerationMps2 =
+                        glm::dvec3(0.0);
+                    trajectoryRequest.hasInitialOrientation =
+                        true;
+                    trajectoryRequest.initialForward =
+                        currentForwardMap;
+                    trajectoryRequest.initialUp =
+                        currentUpMap;
+                    trajectoryRequest.hasInitialAngularVelocity =
+                        true;
+                    trajectoryRequest.
+                        initialAngularVelocityRadPerSecond =
+                            currentAngularVelocityMapRadPerSec;
+
+                    trajectoryRequest.pathPointsMeters.reserve(
+                        advisoryPlan.gates.size() + 1
+                    );
+                    for (const auto& gate : advisoryPlan.gates)
+                    {
+                        trajectoryRequest.pathPointsMeters.
+                            push_back(gate.positionMeters);
+                    }
+
+                    if (trajectoryRequest.
+                            pathPointsMeters.empty())
+                    {
+                        finishFailure(
+                            "advisory-produced-no-path-points"
+                        );
+                        return;
+                    }
+
+                    const glm::dvec3 advisoryStopMeters =
+                        trajectoryRequest.pathPointsMeters.back();
+
+                    const double
+                        minimumPreCaptureDepthMeters =
+                            request.hullRadiusMeters +
+                            game::navigation::
+                                DiagnosticHubInfrastructureClearanceMeters +
+                            game::navigation::
+                                AutomaticDockingPreCaptureReserveMeters;
+
+                    double preCaptureDepthMeters = std::min(
+                        request.standoffMeters,
+                        minimumPreCaptureDepthMeters
                     );
 
-                if (segmentToPreCaptureClear(probeDepthMeters))
-                    safeDepthMeters = probeDepthMeters;
-                else
-                    blockedDepthMeters = probeDepthMeters;
-            }
+                    const auto preCaptureCenterAt =
+                        [&](const DockingAdvisoryLocalPort&
+                                portState,
+                            double depthMeters)
+                        {
+                            return
+                                portState.positionMeters +
+                                portState.forward * depthMeters;
+                        };
 
-            preCaptureDepthMeters =
-                safeDepthMeters +
-                game::navigation::
-                    AutomaticDockingPreCaptureReserveMeters;
-            preCaptureDepthMeters = std::min(
-                request.standoffMeters,
-                preCaptureDepthMeters
-            );
+                    const auto segmentToPreCaptureClear =
+                        [&](double depthMeters)
+                        {
+                            return world::navigation::
+                                segmentClearOfNavigationObstacles(
+                                    advisoryStopMeters,
+                                    preCaptureCenterAt(
+                                        port,
+                                        depthMeters
+                                    ),
+                                    request.obstacles,
+                                    request.hullRadiusMeters
+                                );
+                        };
 
-            if (!segmentToPreCaptureClear(preCaptureDepthMeters))
-                return fail("pre-capture-reserve-blocked");
-        }
+                    if (!segmentToPreCaptureClear(
+                            preCaptureDepthMeters))
+                    {
+                        double blockedDepthMeters =
+                            preCaptureDepthMeters;
+                        double safeDepthMeters =
+                            request.standoffMeters;
 
-        const glm::dvec3 preCaptureCenterMeters =
-            preCaptureCenterAt(
-                port,
-                preCaptureDepthMeters
-            );
-        finalPreCaptureDepthMeters =
-            preCaptureDepthMeters;
+                        if (!segmentToPreCaptureClear(
+                                safeDepthMeters))
+                        {
+                            finishFailure(
+                                "pre-capture-standoff-blocked"
+                            );
+                            return;
+                        }
 
-        if (glm::length(
-                trajectoryRequest.pathPointsMeters.back() -
-                preCaptureCenterMeters) > 1.0e-6)
-        {
-            trajectoryRequest.pathPointsMeters.push_back(
-                preCaptureCenterMeters
-            );
-        }
+                        for (int search = 0;
+                             search < 24;
+                             ++search)
+                        {
+                            const double probeDepthMeters =
+                                0.5 * (
+                                    blockedDepthMeters +
+                                    safeDepthMeters
+                                );
 
-        // Preserve the planner's gate speed doctrine and extend it only to a
-        // collision-free pre-capture center pose. Physical contact/latch is a
-        // separate authority transition and is not faked by navigation.
-        double sourceProgress = 0.0;
-        for (std::size_t i = 0;
-             i < advisoryPlan.gates.size();
-             ++i)
-        {
-            if (i > 0)
-            {
-                sourceProgress += glm::length(
-                    advisoryPlan.gates[i].positionMeters -
-                    advisoryPlan.gates[i - 1].positionMeters
+                            if (segmentToPreCaptureClear(
+                                    probeDepthMeters))
+                            {
+                                safeDepthMeters =
+                                    probeDepthMeters;
+                            }
+                            else
+                            {
+                                blockedDepthMeters =
+                                    probeDepthMeters;
+                            }
+                        }
+
+                        preCaptureDepthMeters =
+                            safeDepthMeters +
+                            game::navigation::
+                                AutomaticDockingPreCaptureReserveMeters;
+                        preCaptureDepthMeters = std::min(
+                            request.standoffMeters,
+                            preCaptureDepthMeters
+                        );
+
+                        if (!segmentToPreCaptureClear(
+                                preCaptureDepthMeters))
+                        {
+                            finishFailure(
+                                "pre-capture-reserve-blocked"
+                            );
+                            return;
+                        }
+                    }
+
+                    const glm::dvec3 preCaptureCenterMeters =
+                        preCaptureCenterAt(
+                            port,
+                            preCaptureDepthMeters
+                        );
+                    finalPreCaptureDepthMeters =
+                        preCaptureDepthMeters;
+
+                    if (glm::length(
+                            trajectoryRequest.
+                                pathPointsMeters.back() -
+                            preCaptureCenterMeters) > 1.0e-6)
+                    {
+                        trajectoryRequest.pathPointsMeters.
+                            push_back(
+                                preCaptureCenterMeters
+                            );
+                    }
+
+                    double sourceProgress = 0.0;
+                    for (std::size_t i = 0;
+                         i < advisoryPlan.gates.size();
+                         ++i)
+                    {
+                        if (i > 0)
+                        {
+                            sourceProgress += glm::length(
+                                advisoryPlan.gates[i].
+                                    positionMeters -
+                                advisoryPlan.gates[i - 1].
+                                    positionMeters
+                            );
+                        }
+
+                        world::navigation::
+                            TrajectoryPointSpeedConstraint
+                                constraint;
+                        constraint.sourcePathProgressMeters =
+                            sourceProgress;
+                        if (i + 1 ==
+                            advisoryPlan.gates.size())
+                        {
+                            const double authoredEntry =
+                                definitionCopy.
+                                        maxEntrySpeedMps >
+                                        0.0
+                                    ? definitionCopy.
+                                        maxEntrySpeedMps
+                                    : 2.0;
+                            constraint.maxSpeedMps = std::min(
+                                executionVehicle.maxSpeedMps,
+                                std::max(0.5, authoredEntry)
+                            );
+                        }
+                        else
+                        {
+                            constraint.maxSpeedMps = std::min(
+                                executionVehicle.maxSpeedMps,
+                                std::max(
+                                    0.5,
+                                    advisoryPlan.gates[i].
+                                        speedMps
+                                )
+                            );
+                        }
+                        trajectoryRequest.
+                            pointSpeedConstraints.push_back(
+                                constraint
+                            );
+                    }
+
+                    if (trajectoryRequest.
+                            pathPointsMeters.size() >
+                        advisoryPlan.gates.size())
+                    {
+                        const double
+                            terminalProgressMeters =
+                                sourceProgress +
+                                glm::length(
+                                    preCaptureCenterMeters -
+                                    advisoryStopMeters
+                                );
+
+                        world::navigation::
+                            TrajectoryPointSpeedConstraint
+                                terminal;
+                        terminal.sourcePathProgressMeters =
+                            terminalProgressMeters;
+                        const double authoredEntry =
+                            definitionCopy.maxEntrySpeedMps >
+                                    0.0
+                                ? definitionCopy.
+                                    maxEntrySpeedMps
+                                : 2.0;
+                        terminal.maxSpeedMps = std::min(
+                            executionVehicle.maxSpeedMps,
+                            std::max(0.5, authoredEntry)
+                        );
+                        trajectoryRequest.
+                            pointSpeedConstraints.push_back(
+                                terminal
+                            );
+                    }
+
+                    const double velocityProbeSeconds = 0.01;
+                    const auto portBefore = portAt(
+                        captureUniverseTimeSeconds -
+                        velocityProbeSeconds
+                    );
+                    const auto portAfter = portAt(
+                        captureUniverseTimeSeconds +
+                        velocityProbeSeconds
+                    );
+                    if (!portBefore.valid ||
+                        !portAfter.valid)
+                    {
+                        finishFailure(
+                            "terminal-port-motion-probe-invalid"
+                        );
+                        return;
+                    }
+
+                    const glm::dvec3 preCaptureBefore =
+                        preCaptureCenterAt(
+                            portBefore,
+                            preCaptureDepthMeters
+                        );
+                    const glm::dvec3 preCaptureAfter =
+                        preCaptureCenterAt(
+                            portAfter,
+                            preCaptureDepthMeters
+                        );
+
+                    trajectoryRequest.hasTerminalVelocity =
+                        true;
+                    trajectoryRequest.terminalVelocityMps =
+                        (preCaptureAfter -
+                         preCaptureBefore) /
+                        (2.0 * velocityProbeSeconds);
+
+                    const auto portOrientation =
+                        [](const DockingAdvisoryLocalPort&
+                                value)
+                        {
+                            const glm::dvec3 right =
+                                glm::normalize(
+                                    glm::cross(
+                                        value.forward,
+                                        value.up
+                                    )
+                                );
+                            const glm::dvec3 up =
+                                glm::normalize(
+                                    glm::cross(
+                                        right,
+                                        value.forward
+                                    )
+                                );
+                            return glm::normalize(
+                                glm::quat_cast(
+                                    glm::dmat3(
+                                        right,
+                                        up,
+                                        -value.forward
+                                    )
+                                )
+                            );
+                        };
+
+                    glm::dquat rotationDelta =
+                        glm::normalize(
+                            portOrientation(portAfter) *
+                            glm::conjugate(
+                                portOrientation(portBefore)
+                            )
+                        );
+                    if (rotationDelta.w < 0.0)
+                        rotationDelta = -rotationDelta;
+
+                    const double deltaW =
+                        std::clamp(
+                            rotationDelta.w,
+                            -1.0,
+                            1.0
+                        );
+                    const double deltaAngle =
+                        2.0 * std::acos(deltaW);
+                    const double deltaSinHalf =
+                        std::sqrt(
+                            std::max(
+                                0.0,
+                                1.0 - deltaW * deltaW
+                            )
+                        );
+
+                    terminalAngularVelocityMapRadPerSec =
+                        glm::dvec3(0.0);
+                    if (deltaAngle > 1.0e-9 &&
+                        deltaSinHalf > 1.0e-9)
+                    {
+                        terminalAngularVelocityMapRadPerSec =
+                            glm::dvec3(
+                                rotationDelta.x /
+                                    deltaSinHalf,
+                                rotationDelta.y /
+                                    deltaSinHalf,
+                                rotationDelta.z /
+                                    deltaSinHalf
+                            ) *
+                            (deltaAngle /
+                             (2.0 *
+                              velocityProbeSeconds));
+                    }
+
+                    trajectoryRequest.
+                        hasTerminalOrientation = true;
+                    trajectoryRequest.terminalForward =
+                        -port.forward;
+                    trajectoryRequest.terminalUp =
+                        port.up;
+                    trajectoryRequest.
+                        terminalOrientationBlendDistanceMeters =
+                            std::max(
+                                500.0,
+                                request.standoffMeters * 2.0
+                            );
+                    trajectoryRequest.
+                        hasTerminalAngularVelocity = true;
+                    trajectoryRequest.
+                        terminalAngularVelocityRadPerSecond =
+                            terminalAngularVelocityMapRadPerSec;
+
+                    trajectoryResult =
+                        world::navigation::
+                            TrajectoryGenerator::generate(
+                                trajectoryRequest
+                            );
+                    if (!trajectoryResult.ready())
+                    {
+                        finishFailure(
+                            trajectoryResult.trajectory.
+                                    message.empty()
+                                ? "trajectory-generation-failed"
+                                : std::string("trajectory:") +
+                                    trajectoryResult.trajectory.
+                                        message
+                        );
+                        return;
+                    }
+
+                    const double predictedCapture =
+                        executionStartUniverseTimeSeconds +
+                        trajectoryResult.trajectory.
+                            durationSeconds;
+
+                    if (std::abs(
+                            predictedCapture -
+                            captureUniverseTimeSeconds) <=
+                        0.05)
+                    {
+                        captureUniverseTimeSeconds =
+                            predictedCapture;
+                        break;
+                    }
+
+                    captureUniverseTimeSeconds =
+                        predictedCapture;
+                }
+
+                if (!trajectoryResult.ready())
+                {
+                    finishFailure(
+                        "trajectory-not-ready-after-capture-iteration"
+                    );
+                    return;
+                }
+
+                AcceptedManeuverProgramBuilder::Request build;
+                build.trajectory =
+                    &trajectoryResult.trajectory;
+                build.shipPhysics = &physics;
+                build.objectiveRevision = requestSerial;
+                build.firstProgramRevision =
+                    firstProgramRevision;
+                build.capabilityRevision = requestSerial;
+                build.mapRevision = proofRevision;
+                build.mapSourceRevision = proofRevision;
+                build.spaceRevision = proofRevision;
+                build.spaceSourceRevision = proofRevision;
+                build.minimumClearanceMeters = 0.0;
+                build.hasInitialAngularVelocity = true;
+                build.initialAngularVelocityMapRadPerSec =
+                    currentAngularVelocityMapRadPerSec;
+                build.hasTerminalAngularVelocity = true;
+                build.terminalAngularVelocityMapRadPerSec =
+                    terminalAngularVelocityMapRadPerSec;
+                build.policy.linearFeedbackReserveMps2 =
+                    linearReserve;
+                build.policy.angularFeedbackReserveRadPerSec2 =
+                    angularReserve;
+
+                const auto accepted =
+                    AcceptedManeuverProgramBuilder::build(build);
+                if (!accepted.valid ||
+                    accepted.pages.empty())
+                {
+                    finishFailure(
+                        accepted.failureReason.empty()
+                            ? "accepted-program-build-failed"
+                            : "accepted-program-" +
+                                accepted.failureReason
+                    );
+                    return;
+                }
+
+                job->programs = accepted.pages;
+                job->trajectoryDurationSeconds =
+                    trajectoryResult.trajectory.
+                        durationSeconds;
+                job->gateCount =
+                    advisoryPlan.gates.size();
+                job->finalAxisMeters =
+                    advisoryPlan.
+                        terminalApproachLengthMeters;
+                job->terminalRadiusMeters =
+                    advisoryPlan.terminalTurnRadiusMeters;
+                job->preCaptureDepthMeters =
+                    finalPreCaptureDepthMeters;
+                job->terminalUniverseTimeSeconds =
+                    captureUniverseTimeSeconds;
+                job->terminalAngularVelocityRadPerSec =
+                    glm::length(
+                        terminalAngularVelocityMapRadPerSec
+                    );
+                job->success = true;
+                job->ready.store(
+                    true,
+                    std::memory_order_release
                 );
             }
-
-            world::navigation::TrajectoryPointSpeedConstraint constraint;
-            constraint.sourcePathProgressMeters = sourceProgress;
-            if (i + 1 == advisoryPlan.gates.size())
+            catch (const std::exception& error)
             {
-                const double authoredEntry =
-                    definition->maxEntrySpeedMps > 0.0
-                        ? definition->maxEntrySpeedMps
-                        : 2.0;
-                constraint.maxSpeedMps = std::min(
-                    executionVehicle.maxSpeedMps,
-                    std::max(0.5, authoredEntry)
+                finishFailure(
+                    std::string("planner-exception:") +
+                    error.what()
                 );
             }
-            else
+            catch (...)
             {
-                constraint.maxSpeedMps = std::min(
-                    executionVehicle.maxSpeedMps,
-                    std::max(
-                        0.5,
-                        advisoryPlan.gates[i].speedMps
-                    )
-                );
+                finishFailure("planner-exception:unknown");
             }
-            trajectoryRequest.pointSpeedConstraints.push_back(
-                constraint
-            );
         }
-
-        if (trajectoryRequest.pathPointsMeters.size() >
-            advisoryPlan.gates.size())
-        {
-            const double terminalProgressMeters =
-                sourceProgress +
-                glm::length(
-                    preCaptureCenterMeters -
-                    advisoryStopMeters
-                );
-
-            world::navigation::TrajectoryPointSpeedConstraint terminal;
-            terminal.sourcePathProgressMeters =
-                terminalProgressMeters;
-            const double authoredEntry =
-                definition->maxEntrySpeedMps > 0.0
-                    ? definition->maxEntrySpeedMps
-                    : 2.0;
-            terminal.maxSpeedMps = std::min(
-                executionVehicle.maxSpeedMps,
-                std::max(0.5, authoredEntry)
-            );
-            trajectoryRequest.pointSpeedConstraints.push_back(
-                terminal
-            );
-        }
-
-        const double velocityProbeSeconds = 0.01;
-        const auto portBefore = portAt(
-            captureUniverseTimeSeconds - velocityProbeSeconds
-        );
-        const auto portAfter = portAt(
-            captureUniverseTimeSeconds + velocityProbeSeconds
-        );
-        if (!portBefore.valid || !portAfter.valid)
-            return fail("terminal-port-motion-probe-invalid");
-
-        const glm::dvec3 preCaptureBefore =
-            preCaptureCenterAt(
-                portBefore,
-                preCaptureDepthMeters
-            );
-        const glm::dvec3 preCaptureAfter =
-            preCaptureCenterAt(
-                portAfter,
-                preCaptureDepthMeters
-            );
-
-        trajectoryRequest.hasTerminalVelocity = true;
-        trajectoryRequest.terminalVelocityMps =
-            (preCaptureAfter -
-             preCaptureBefore) /
-            (2.0 * velocityProbeSeconds);
-
-        const auto portOrientation =
-            [](const DockingAdvisoryLocalPort& value)
-            {
-                const glm::dvec3 right = glm::normalize(
-                    glm::cross(value.forward, value.up)
-                );
-                const glm::dvec3 up = glm::normalize(
-                    glm::cross(right, value.forward)
-                );
-                return glm::normalize(
-                    glm::quat_cast(
-                        glm::dmat3(
-                            right,
-                            up,
-                            -value.forward
-                        )
-                    )
-                );
-            };
-
-        glm::dquat rotationDelta = glm::normalize(
-            portOrientation(portAfter) *
-            glm::conjugate(portOrientation(portBefore))
-        );
-        if (rotationDelta.w < 0.0)
-            rotationDelta = -rotationDelta;
-
-        const double deltaW =
-            std::clamp(rotationDelta.w, -1.0, 1.0);
-        const double deltaAngle =
-            2.0 * std::acos(deltaW);
-        const double deltaSinHalf =
-            std::sqrt(std::max(
-                0.0,
-                1.0 - deltaW * deltaW
-            ));
-
-        terminalAngularVelocityMapRadPerSec =
-            glm::dvec3(0.0);
-        if (deltaAngle > 1.0e-9 &&
-            deltaSinHalf > 1.0e-9)
-        {
-            terminalAngularVelocityMapRadPerSec =
-                glm::dvec3(
-                    rotationDelta.x / deltaSinHalf,
-                    rotationDelta.y / deltaSinHalf,
-                    rotationDelta.z / deltaSinHalf
-                ) *
-                (deltaAngle /
-                 (2.0 * velocityProbeSeconds));
-        }
-
-        trajectoryRequest.hasTerminalOrientation = true;
-        trajectoryRequest.terminalForward =
-            -port.forward;
-        trajectoryRequest.terminalUp =
-            port.up;
-        trajectoryRequest.terminalOrientationBlendDistanceMeters =
-            std::max(500.0, request.standoffMeters * 2.0);
-        trajectoryRequest.hasTerminalAngularVelocity = true;
-        trajectoryRequest.terminalAngularVelocityRadPerSecond =
-            terminalAngularVelocityMapRadPerSec;
-
-        trajectoryResult =
-            world::navigation::TrajectoryGenerator::generate(
-                trajectoryRequest
-            );
-        if (!trajectoryResult.ready())
-            return fail("trajectory-generation-failed");
-
-        const double predictedCapture =
-            universeTimeSeconds +
-            trajectoryResult.trajectory.durationSeconds;
-
-        if (std::abs(
-                predictedCapture -
-                captureUniverseTimeSeconds) <= 0.05)
-        {
-            captureUniverseTimeSeconds = predictedCapture;
-            break;
-        }
-
-        captureUniverseTimeSeconds = predictedCapture;
-    }
-
-    if (!trajectoryResult.ready())
-        return fail("trajectory-not-ready-after-capture-iteration");
-
-    AcceptedManeuverProgramBuilder::Request build;
-    build.trajectory = &trajectoryResult.trajectory;
-    build.shipPhysics = &physics;
-    build.objectiveRevision = runtime.requestSerial;
-    build.firstProgramRevision = runtime.nextProgramRevision;
-    build.capabilityRevision = runtime.requestSerial;
-    build.mapRevision = m_serverTick;
-    build.mapSourceRevision = m_serverTick;
-    build.spaceRevision = m_serverTick;
-    build.spaceSourceRevision = m_serverTick;
-    build.minimumClearanceMeters = 0.0;
-
-    build.hasInitialAngularVelocity = true;
-    build.initialAngularVelocityMapRadPerSec =
-        currentAngularVelocityMapRadPerSec;
-
-    build.hasTerminalAngularVelocity = true;
-    build.terminalAngularVelocityMapRadPerSec =
-        terminalAngularVelocityMapRadPerSec;
-    build.policy.linearFeedbackReserveMps2 =
-        linearReserve;
-    build.policy.angularFeedbackReserveRadPerSec2 =
-        angularReserve;
-
-    const auto accepted =
-        AcceptedManeuverProgramBuilder::build(build);
-    if (!accepted.valid || accepted.pages.empty())
-    {
-        const std::string reason =
-            accepted.failureReason.empty()
-                ? "accepted-program-build-failed"
-                : "accepted-program-" + accepted.failureReason;
-        return fail(reason);
-    }
-
-    runtime.programs = accepted.pages;
-    runtime.currentProgramPage = 0;
-    runtime.nextProgramRevision +=
-        static_cast<std::uint64_t>(runtime.programs.size());
-
-    runtime.controlBridge =
-        std::make_unique<NavigationRuntimeControlBridge>(
-            NavigationRuntimeControlBridge::PilotSkillProfile {}
-        );
-
-    NavigationRuntimeControlBridge::Intent neutral;
-    neutral.revision = runtime.requestSerial;
-    neutral.targetRevision = runtime.programs.front().revision;
-    if (!runtime.controlBridge->reset(
-            universeTimeSeconds,
-            neutral))
-    {
-        runtime.controlBridge.reset();
-        runtime.programs.clear();
-        return fail("runtime-control-bridge-reset-failed");
-    }
-
-    const auto& firstReference =
-        runtime.programs.front().samples[0];
-    runtime.alignmentForwardMap =
-        firstReference.forwardMap;
-    runtime.alignmentRightMap =
-        firstReference.rightMap;
-    runtime.alignmentUpMap =
-        firstReference.upMap;
-    runtime.alignedSinceUniverseTimeSeconds = -1.0;
-
-    const auto angleBetween =
-        [](const glm::dvec3& a, const glm::dvec3& b)
-        {
-            const double dot =
-                std::clamp(
-                    glm::dot(
-                        glm::normalize(a),
-                        glm::normalize(b)
-                    ),
-                    -1.0,
-                    1.0
-                );
-            return std::acos(dot);
-        };
-
-    const double initialForwardErrorRad =
-        angleBetween(
-            currentForwardMap,
-            runtime.alignmentForwardMap
-        );
-    const double initialUpErrorRad =
-        angleBetween(
-            currentUpMap,
-            runtime.alignmentUpMap
-        );
-    const double initialAttitudeErrorRad =
-        std::max(
-            initialForwardErrorRad,
-            initialUpErrorRad
-        );
-    const double executionEntryToleranceRad =
-        runtime.programs.front().
-            terminalTolerance.forwardAngleRad;
-
-    runtime.phase =
-        initialAttitudeErrorRad <=
-                executionEntryToleranceRad
-            ? DockingAutomaticRuntime::Phase::Executing
-            : DockingAutomaticRuntime::Phase::Aligning;
+    ).detach();
 
     std::cout
-        << "[DockAuto] planned entity=" << runtime.entityId.value
-        << " request=" << runtime.requestSerial
-        << " pages=" << runtime.programs.size()
-        << " trajectory_s="
-        << trajectoryResult.trajectory.durationSeconds
-        << " gates=" << advisoryPlan.gates.size()
-        << " final_axis_m="
-        << advisoryPlan.terminalApproachLengthMeters
-        << " terminal_radius_m="
-        << advisoryPlan.terminalTurnRadiusMeters
-        << " pre_capture_depth_m="
-        << finalPreCaptureDepthMeters
-        << " terminal_t=" << captureUniverseTimeSeconds
-        << " terminal_omega_radps="
-        << glm::length(
-            terminalAngularVelocityMapRadPerSec
-        )
-        << " initial_attitude_error_deg="
-        << glm::degrees(initialAttitudeErrorRad)
-        << " phase="
-        << (runtime.phase ==
-                DockingAutomaticRuntime::Phase::Executing
-                ? "executing"
-                : "aligning")
+        << "[DockAuto] request=" << runtime.requestSerial
+        << " phase=planning-async"
+        << " execution_t="
+        << executionStartUniverseTimeSeconds
         << "\n";
     return true;
 }
-
 
 bool GameServer::finishAutomaticDocking(
     PlayerId playerId,

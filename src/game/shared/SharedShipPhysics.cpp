@@ -42,9 +42,28 @@ void evaluateControl(
 
     if (control.localControlLawCommandValid)
     {
+        double assistedEntryForwardSpeedMps = motion.forwardSpeedMps;
+        if (motion.travelFrame.valid)
+        {
+            const glm::dvec3 relativeWorldVelocity =
+                motion.travelFrame.localToWorldVector(
+                    motion.localVelocityMps
+                );
+            const glm::dvec3 forward(transform.forward());
+            const double forwardLength = glm::length(forward);
+            if (forwardLength > 1.0e-12)
+            {
+                assistedEntryForwardSpeedMps = glm::dot(
+                    relativeWorldVelocity,
+                    forward / forwardLength
+                );
+            }
+        }
+
         game::navigation::LocalFlightControlStateMachine::transition(
             motion,
-            control.requestedLocalControlLaw
+            control.requestedLocalControlLaw,
+            assistedEntryForwardSpeedMps
         );
     }
 

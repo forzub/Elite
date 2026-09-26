@@ -539,12 +539,7 @@ bool SpaceState::advanceStartupInitialization()
             return false;
 
         case StartupStage::SceneLocale:
-            if (context().app)
-            {
-                m_sceneRenderer.setUiLocale(
-                    context().app->localization().locale()
-                );
-            }
+            applyClientModeState();
             traceStartupStage(
                 "scene-locale",
                 stageBegin,
@@ -698,16 +693,19 @@ bool SpaceState::resolvePlayerGalacticPositionLy(
 
 void SpaceState::toggleConstellationOverlay()
 {
-    m_constellationOverlayEnabled =
-        !m_constellationOverlayEnabled;
+    if (!context().app)
+        return;
 
-    m_sceneRenderer.setConstellationOverlayEnabled(
-        m_constellationOverlayEnabled
-    );
+    const bool next =
+        !context().app->clientModeState().constellationsEnabled;
+    (void)context().app->setConstellationsEnabled(next);
+    applyClientModeState();
 
     std::cout
         << "[Constellations] gameplay layer "
-        << (m_constellationOverlayEnabled ? "enabled" : "disabled")
+        << (context().app->clientModeState().constellationsEnabled
+                ? "enabled"
+                : "disabled")
         << std::endl;
 }
 
@@ -740,30 +738,66 @@ void SpaceState::setAllNavigationHudLayersEnabled(bool enabled) noexcept
 }
 
 
-void SpaceState::cycleSkyCulture()
+void SpaceState::applyClientModeState()
 {
-    if (!m_sceneRenderer.cycleConstellationCulture())
+    if (!context().app)
         return;
 
-    const std::string locale =
-        context().app ? context().app->localization().locale() : "en";
+    const auto& modes = context().app->clientModeState();
+
+    m_sceneRenderer.setUiLocale(modes.uiLocale);
+    m_sceneRenderer.setConstellationOverlayEnabled(
+        modes.constellationsEnabled
+    );
+
+    if (!modes.skyCultureId.empty())
+    {
+        (void)m_sceneRenderer.setConstellationCultureId(
+            modes.skyCultureId
+        );
+    }
+    else
+    {
+        // Renderer catalog default is bootstrap data only. Adopt it once into
+        // authoritative client state; subsequent changes never originate in
+        // the renderer.
+        const std::string initialCulture =
+            m_sceneRenderer.constellationCultureId();
+        if (!initialCulture.empty())
+            (void)context().app->setSkyCultureId(initialCulture);
+    }
+}
+
+void SpaceState::cycleSkyCulture()
+{
+    if (!context().app)
+        return;
+
+    const auto& modes = context().app->clientModeState();
+    const std::string next =
+        m_sceneRenderer.nextConstellationCultureId(
+            modes.skyCultureId
+        );
+    if (next.empty())
+        return;
+
+    (void)context().app->setSkyCultureId(next);
+    applyClientModeState();
 
     std::cout
         << "[Constellations] sky culture="
-        << m_sceneRenderer.constellationCultureId()
+        << context().app->clientModeState().skyCultureId
         << " / "
-        << m_sceneRenderer.constellationCultureDisplayName(locale)
+        << m_sceneRenderer.constellationCultureDisplayName(
+            context().app->clientModeState().uiLocale
+        )
         << std::endl;
 }
 
 void SpaceState::onUiLanguageChanged()
 {
-    if (!context().app)
-        return;
-
-    m_sceneRenderer.setUiLocale(context().app->localization().locale());
+    applyClientModeState();
     applyClientCatalogLocalization();
-
 }
 
 
@@ -1442,8 +1476,6 @@ void SpaceState::prepareFrame(float dt)
     updateLiveMapSnapshots(std::max(0.0f, dt));
     updateLocalMapPresentationSnapshots(std::max(0.0f, dt));
 
-    if (context().app)
-        m_sceneRenderer.setUiLocale(context().app->localization().locale());
     applyClientCatalogLocalization();
 }
 
@@ -3876,7 +3908,7 @@ void SpaceState::renderUiLanguageIndicator(const Viewport& viewport)
     std::string label =
         "UI: " + localization.languageIndicator();
 
-    if (m_constellationOverlayEnabled)
+    if (context().app->clientModeState().constellationsEnabled)
     {
         const std::string cultureName =
             m_sceneRenderer.constellationCultureDisplayName(

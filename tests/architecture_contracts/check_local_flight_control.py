@@ -35,21 +35,25 @@ cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
 cockpit = read("src/game/ship/descriptors/EliteCobraMk1_Cockpit.cpp")
 player_view = read("src/game/ship/view/PlayerShipView.cpp")
 
-if "LocalFlightControlLaw::Assisted" not in state.split(
+law_h = read("src/game/navigation/LocalFlightControlLaw.h")
+if "return LocalFlightControlLaw::Assisted;" not in law_h:
+    fail("shared default local flight law is no longer Assisted")
+
+if "defaultLocalFlightControlLaw()" not in state.split(
         "LocalFlightControlLaw localControlLaw", 1
     )[1].split(";", 1)[0]:
-    fail("fresh DynamicMotionState no longer defaults to Assisted")
+    fail("DynamicMotionState bypassed the shared flight-law default")
 
 control_state = read("src/game/ship/core/ShipControlState.h")
-if "requestedLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in control_state:
-    fail("fresh ShipControlState law request no longer defaults to Assisted")
+if "game::navigation::defaultLocalFlightControlLaw()" not in control_state:
+    fail("ShipControlState bypassed the shared flight-law default")
 
 game_client_h = read("src/game/client/GameClient.h")
 game_client_cpp = read("src/game/client/GameClient.cpp")
-if "m_pendingLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in game_client_h:
-    fail("client pending law latch no longer defaults to Assisted")
-if "m_pendingLocalControlLaw =\n        game::navigation::LocalFlightControlLaw::Assisted" not in game_client_cpp:
-    fail("client synchronization reset no longer restores Assisted default")
+if "m_pendingLocalControlLaw =\n        game::navigation::defaultLocalFlightControlLaw()" not in game_client_h:
+    fail("client pending law latch bypassed the shared flight-law default")
+if "m_pendingLocalControlLaw =\n        game::navigation::defaultLocalFlightControlLaw()" not in game_client_cpp:
+    fail("client synchronization reset bypassed the shared flight-law default")
 
 for token in (
     "LocalFlightControlLaw localControlLaw",
@@ -152,10 +156,17 @@ for token in (
 
 for token in (
     "defaultLaw()",
-    "LocalFlightControlLaw::Assisted",
+    "defaultLocalFlightControlLaw()",
     "next(",
     "transition(",
+    "assistedEntryForwardSpeedMps",
     "motion.localControlLaw = requested",
+    "requestVelocityAlignment",
+    "cancelVelocityAlignment",
+    "completeVelocityAlignment",
+    "requestAssistedMaximumSpeed",
+    "longitudinalInputCancelsBrake",
+    "neutralAngularDampingEnabled",
     "velocityAlignmentOwnsAttitude",
     "motion.targetForwardSpeedMps",
 ):
@@ -167,6 +178,10 @@ for token in (
     "control.requestedLocalControlLaw",
     "LocalFlightControlStateMachine::transition",
     "control.velocityAlignmentCommand",
+    "requestVelocityAlignment",
+    "requestAssistedMaximumSpeed",
+    "cancelVelocityAlignment",
+    "longitudinalInputCancelsBrake",
 ):
     if token not in shared:
         fail(f"shared server/client attitude path lost state transition: {token}")
@@ -179,6 +194,23 @@ if "LocalFlightControlStateMachine::defaultLaw()" not in space:
 
 if "velocityAlignmentOwnsAttitude" not in controller:
     fail("ShipController reopened flight-law attitude ownership outside state machine")
+
+if "neutralAngularDampingEnabled" not in controller:
+    fail("ShipController lost control-law ownership of neutral angular damping")
+
+for rel, body in (
+    ("SharedShipPhysics.cpp", shared),
+    ("DynamicMotionSystem.cpp", system),
+    ("ShipController.cpp", controller),
+):
+    import re
+    if re.search(r"velocityAlignmentMode\s*=(?!=)", body):
+        fail(f"{rel} writes persistent alignment mode outside state machine")
+
+if "glm::length(motion.localVelocityMps)" in flight_state_machine.split(
+        "if (requested == LocalFlightControlLaw::Assisted)", 1
+    )[1].split("return true;", 1)[0]:
+    fail("Assisted transition recaptured total VREL magnitude instead of longitudinal state")
 
 for token in (
     "shipPtr->core().effectivePhysics()",

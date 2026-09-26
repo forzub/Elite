@@ -716,7 +716,7 @@ private:
     std::vector<TexturedBatch> m_texturedBatches;
     game::system_map::SystemMapGpuCircleBatch m_gpuCircleBatch;
 
-    Mode m_mode = Mode::Galaxy;
+    game::system_map::MapModeState m_modeState;
     float m_rightPanelRatio = 0.28f;
 
     double m_pendingScrollY = 0.0;

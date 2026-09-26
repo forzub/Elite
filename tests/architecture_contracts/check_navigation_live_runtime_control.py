@@ -27,6 +27,11 @@ for marker in (
     "navigationLinearAccelerationDemandSystemMps2",
     "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
+    "navigationActuatorProgramValid",
+    "navigationRearMainThrottle01",
+    "navigationForeMainThrottle01",
+    "navigationManoeuvreAccelerationSystemMps2",
+    "navigationLinearFeedbackAccelerationSystemMps2",
 ):
     require(marker in CONTROL, f"ShipControlState direct navigation seam missing: {marker}")
 
@@ -34,6 +39,8 @@ for marker in (
     "class NavigationRuntimeControlBridge final",
     "using PilotExecutor = world::navigation::PilotSkillExecutor",
     "ExecutionSnapshot",
+    "ProgramActuatorCommand",
+    "stepProgram(",
     "idealLinearAccelerationDemandSystemMps2",
     "executedLinearAccelerationDemandSystemMps2",
     "activeTargetRevision",
@@ -46,6 +53,11 @@ for marker in (
     "navigationLinearAccelerationDemandSystemMps2",
     "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
+    "navigationActuatorProgramValid = true",
+    "navigationRearMainThrottle01",
+    "navigationForeMainThrottle01",
+    "navigationManoeuvreAccelerationSystemMps2",
+    "navigationLinearFeedbackAccelerationSystemMps2",
 ):
     require(marker in BRIDGE_CPP, f"runtime bridge implementation missing: {marker}")
 
@@ -73,6 +85,10 @@ require(
     "applySystemAccelerationDemand" in MOTION_H,
     "DynamicMotionSystem direct linear-demand API missing",
 )
+require(
+    "applyNavigationActuatorProgram" in MOTION_H,
+    "DynamicMotionSystem planner-actuator execution API missing",
+)
 
 for marker in (
     "mainForward",
@@ -82,8 +98,23 @@ for marker in (
     require(marker in MOTION_CPP, f"real propulsion split missing: {marker}")
 
 for marker in (
+    "nominalForwardMain",
+    "nominalReverseMain",
+    "availableForwardMain",
+    "availableReverseMain",
+    "feedbackMainLongitudinal",
+    "manoeuvreAccelerationSystemMps2 +",
+):
+    require(
+        marker in MOTION_CPP,
+        f"planner-owned actuator allocation missing: {marker}"
+    )
+
+for marker in (
     "manualTranslationOverride",
     "control.navigationAccelerationDemandValid",
+    "control.navigationActuatorProgramValid",
+    "applyNavigationActuatorProgram",
     "applySystemAccelerationDemand",
     "applyLocalFrameInput",
 ):

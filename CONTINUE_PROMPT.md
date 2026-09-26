@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / live Automatic docking validation
+# CONTINUE PROMPT — Elite Navigation v2 / live Assisted + Automatic docking fixes
 
 Work in public repository `forzub/Elite`, branch `main`.
 
@@ -7,25 +7,125 @@ At the start of every iteration read the newest sections of:
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
+- `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 
 After every state-affecting result update those files and regenerate this prompt
 from scratch again.
 
-## Accepted target-machine baseline
+## Latest live evidence
 
-Canonical MinGW build: PASS.
+Manual `CALCULATE TRAJECTORY`: route appeared successfully.
 
-Focused Automatic/runtime gates:
-- `navigation_runtime_control` PASS;
-- `maneuver_tracking_controller` PASS;
-- `docking_advisory` PASS;
-- `accepted_maneuver_program_builder` PASS;
-- `verify_docking.sh` fully PASS.
+Manual Assisted:
+- user reports course changes are far too slow;
+- requirement: Assisted is almost airplane-like: where the nose points, travel
+  direction should follow with only a short lag, normally no more than ~2–3 s.
 
-Do not re-open architecture before collecting live evidence unless the live run
-shows a concrete failure.
+Automatic `START DOCKING`:
+- hub map began freezing periodically and game field effectively stalled;
+- log showed repeated `[DockAuto] ... phase=plan-retry`;
+- every retry coincided with ~280–300 ms fixed-simulation work;
+- root issue was a synchronous heavy Planner call hammered from fixed-step
+  every ~0.5 s after plan failure.
 
-## Current authoritative execution chain
+## Implemented fixes on main
+
+### Assisted course coupling
+
+Old defect:
+- after a sharp turn, longitudinal main demand was allocated first;
+- it could consume the entire shared linear-load envelope;
+- automatic lateral stabilization then had zero authority to remove old sideways
+  VREL;
+- FA-on therefore behaved too much like Newtonian inertia.
+
+Current rule:
+- manual keypad RCS remains the small gas-limited physical RCS;
+- automatic Assisted lateral stabilization is separate;
+- in a sharp Assisted turn, cancelling old sideways VREL has priority;
+- longitudinal main thrust consumes remaining load authority;
+- total command remains inside the shared linear-load envelope;
+- no direct velocity rewrite.
+
+Current Cobra:
+- automatic Assisted lateral authority = 73.549875 m/s^2 (7.5 g linear envelope);
+- manual RCS remains 2 m/s^2 and gas limited.
+
+New native regression:
+`testAssistedCourseRealignsWithinThreeSeconds`
+- initial VREL = +X 100 m/s;
+- hull/nose = -Z (90-degree change);
+- target forward speed = 100 m/s;
+- after 3 s, course error must be <=5 degrees;
+- ship must not simply stop.
+
+Newtonian behavior is unchanged.
+
+### Automatic docking fixed-step retry storm
+
+Removed:
+- `nextPlanAttemptUniverseTimeSeconds`;
+- `phase=plan-retry`;
+- automatic 0.5-second synchronous retry loop.
+
+Current behavior:
+- stabilize;
+- perform one Automatic plan for the stabilized state;
+- if it fails:
+  - store concrete `lastPlanFailureReason`;
+  - log
+    `[DockAuto] ... phase=plan-failed reason=<...> action=restore-human`;
+  - terminate that Automatic request;
+  - restore Human authority.
+
+This is deliberate because the current Planner is synchronous and expensive.
+Do not reintroduce repeated fixed-step planning.
+
+Recoverable execution tracking failure may still:
+- controlled stop/stabilize;
+- replan once from the new physical state.
+If that plan fails, hand back instead of retry storm.
+
+## Immediate verification
+
+On Windows/MSYS2:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+git log -1 --oneline
+
+bash verify_modes.sh
+bash verify_docking.sh
+bash build_mingw64.sh
+```
+
+If green:
+
+```bash
+build/EliteGame.exe
+```
+
+Live checks:
+1. Assisted: make a substantial pitch/yaw course change while moving. The
+   velocity/course should visibly follow the nose quickly rather than drifting
+   for many seconds.
+2. Confirm `CALCULATE TRAJECTORY` still works.
+3. Press `START DOCKING`.
+4. There must be NO repeating `phase=plan-retry`.
+5. If planning fails, capture the single
+   `phase=plan-failed reason=...` line. That exact reason is the next docking
+   fix target.
+6. If planning succeeds, capture all `[DockAuto]` lines through
+   stabilize -> optional aligning/aligned-replan -> executing -> pre-capture
+   completion.
+
+Current Automatic success remains pre-capture only; physical latch/contact is a
+later docking layer.
+
+## Architecture invariants
+
+Accepted navigation execution remains:
 
 ```text
 trajectory + proof
@@ -37,63 +137,15 @@ trajectory + proof
  -> shared fixed-step physics
 ```
 
-Planner owns nominal rear-main / fore-main / manoeuvre feed-forward.
-Follower owns bounded correction only.
-Physics owns installed hardware, shared load envelope, speed, gas and collision.
+Planner owns nominal actuator schedule.
+Follower owns bounded correction.
+Physics owns installed hardware, load envelope, speed, gas and collision.
 
-`TrajectoryFollower` must not regain an `AcceptedShortSegment` overload.
-
-## Automatic docking lifecycle
-
-```text
-START DOCKING
- -> server takes Autopilot authority
- -> BrakeToStop / stabilize
- -> plan trajectory + accepted program
- -> if hull attitude differs:
-      Aligning via bounded angular control
-      discard stale program
-      stabilize
-      replan from new real state/time
- -> execute accepted program
- -> controlled stabilize/replan on tracking/propulsion/frame failure
- -> collision-free pre-capture completion
- -> restore Human authority
-```
-
-Current success is PRE-CAPTURE only. Physical station contact/latch remains the
-next separate game-state/physics layer.
-
-No planner-only target collision bypass is allowed.
-
-## Immediate live test
-
-Launch the freshly built game:
-
-```bash
-cd /d/__elite/work
-build/EliteGame.exe
-```
-
-Select a compatible/free docking port and press `START DOCKING`.
-
-Collect every `[DockAuto]` console line plus a short description of visible
-ship behavior.
-
-Expected logs:
-- `phase=stabilizing`;
-- planned log with pages, trajectory duration, pre-capture depth, terminal omega,
-  initial attitude error;
-- either `phase=executing` directly or `phase=aligning`;
-- if aligning: `phase=aligned-replan` followed by a fresh plan;
-- on recoverable execution deviation: controlled `phase=replan`, not
-  navigation shutdown;
-- successful current-stage completion:
-  `approach-complete ... reason=pre-capture-envelope-complete`;
-- Human authority restored.
-
-If live behavior disagrees with the log, trust the actual authoritative motion
-and diagnose from the first divergence. Do not weaken envelopes or restore
-legacy paths to make visuals appear successful.
+Do not restore:
+- `TrajectoryFollower(AcceptedShortSegment)`;
+- planner-only target collision bypass;
+- `SystemMapRenderer::m_mode`;
+- `CoordinateDisplayService::cycle()`;
+- Automatic fixed-step `plan-retry` loop.
 
 Commit fixes directly to GitHub `main`. Do not provide patch files.

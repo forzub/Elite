@@ -79,8 +79,21 @@ try:
         "controlBridge->step(",
         "ship->setControlState(step.control)",
         "terminalAngularVelocityMapRadPerSec",
+        "minimumPreCaptureDepthMeters",
+        "segmentClearOfNavigationObstacles(",
+        "pre_capture_depth_m=",
         "phase=replan",
     )
+
+
+    if "terminalAllowedObstacleId" in server:
+        raise AssertionError(
+            "Automatic docking reintroduced planner-only permission to enter solid target geometry"
+        )
+    if "terminalObstacleEntrySourceProgressMeters" in server:
+        raise AssertionError(
+            "Automatic docking reintroduced target-obstacle collision bypass"
+        )
 
     header = require(
         "src/game/server/GameServer.h",
@@ -92,11 +105,28 @@ try:
         "m_serverDockingPortRuntimeStateCatalog",
     )
 
+    require(
+        "src/game/navigation/HubNavigationClearancePolicy.h",
+        "DiagnosticHubInfrastructureClearanceMeters",
+        "AutomaticDockingPreCaptureReserveMeters",
+    )
+    client_snapshot = require(
+        "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
+        "DiagnosticHubInfrastructureClearanceMeters",
+    )
+    if "constexpr double DiagnosticHubInfrastructureClearanceMeters" in client_snapshot:
+        raise AssertionError(
+            "client reintroduced a private Hub infrastructure clearance truth"
+        )
+
     builder = require(
         "src/game/navigation/AcceptedManeuverProgramBuilder.h",
         "class AcceptedManeuverProgramBuilder final",
         "const world::navigation::Trajectory* trajectory",
+        "hasInitialAngularVelocity",
         "hasTerminalAngularVelocity",
+        "trajectoryAngularVelocityAt(",
+        "trajectoryAngularAccelerationAt(",
         "deriveAngularKinematics(",
         "angularKinematicsFeasible(",
         "actuatorProgramFeasible",
@@ -143,6 +173,7 @@ try:
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
     print(" - Follower has one executable input type")
     print(" - rotating target omega is part of terminal acceptance")
+    print(" - current slice ends outside solid target geometry; latch remains separate")
 except AssertionError as exc:
     print(f"[FAIL] {exc}", file=sys.stderr)
     raise SystemExit(1)

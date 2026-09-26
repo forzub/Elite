@@ -1,5 +1,29 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — rerun one canonical mode-state gate
+
+Mode/state implementation is complete enough for a focused Windows gate. Run:
+
+`git pull --ff-only origin main`
+then:
+`bash verify_modes.sh`
+
+The previous 19.6133-vs-20 failure was a bad test expectation: 19.6133 m/s² is
+the correct 2g load-bounded authority in the test fixture. The test now derives
+the expected value from the production capability accessor.
+
+`verify_modes.sh` now checks:
+- native local-flight contract;
+- native client-preferences contract;
+- flight state ownership;
+- global client mode ownership;
+- subsystem mode-state ownership including system-map mode;
+- localization boundary;
+- wire schema consistency for the new replicated Assisted stabilizer state.
+
+If this passes, run the canonical full game build and live-test Assisted versus
+Newtonian. Then resume the Automatic docking executor milestone.
+
 ## 2026-09-26 — verify mode/state refactor, then return to Automatic docking
 
 Immediate Windows gate:

@@ -173,6 +173,113 @@ void DynamicMotionSystem::applySystemAccelerationDemand(
 
 }
 
+
+void DynamicMotionSystem::applyNavigationActuatorProgram(
+    DynamicMotionState& motion,
+    const ShipParams& params,
+    double rearMainThrottle01,
+    double foreMainThrottle01,
+    const glm::dvec3& manoeuvreAccelerationSystemMps2,
+    const glm::dvec3& feedbackAccelerationSystemMps2,
+    const glm::vec3& shipForward
+)
+{
+    const auto finiteVec = [](const glm::dvec3& value) noexcept
+    {
+        return
+            std::isfinite(value.x) &&
+            std::isfinite(value.y) &&
+            std::isfinite(value.z);
+    };
+
+    const glm::dvec3 shipForwardD(shipForward);
+    const bool valid =
+        std::isfinite(rearMainThrottle01) &&
+        std::isfinite(foreMainThrottle01) &&
+        rearMainThrottle01 >= 0.0 &&
+        rearMainThrottle01 <= 1.0 &&
+        foreMainThrottle01 >= 0.0 &&
+        foreMainThrottle01 <= 1.0 &&
+        finiteVec(manoeuvreAccelerationSystemMps2) &&
+        finiteVec(feedbackAccelerationSystemMps2) &&
+        glm::dot(shipForwardD, shipForwardD) > 1.0e-18;
+
+    if (!valid)
+    {
+        motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        return;
+    }
+
+    const glm::dvec3 forward =
+        glm::normalize(shipForwardD);
+
+    motion.assistedStabilizationAccelerationMps2 =
+        glm::dvec3(0.0);
+
+    const double forwardMainAuthority =
+        game::ship::forwardMainAccelerationLimitMps2(params);
+    const double reverseMainAuthority =
+        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double manoeuvreAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
+
+    const double nominalForwardMain =
+        rearMainThrottle01 * forwardMainAuthority;
+    const double nominalReverseMain =
+        foreMainThrottle01 * reverseMainAuthority;
+
+    glm::dvec3 mainAcceleration =
+        forward *
+        (nominalForwardMain - nominalReverseMain);
+
+    // Feedback may use only still-unused main authority. This preserves the
+    // accepted nominal actuator schedule while letting the Follower spend its
+    // explicitly reserved correction budget.
+    const double feedbackForward =
+        glm::dot(feedbackAccelerationSystemMps2, forward);
+    const double availableForwardMain =
+        std::max(0.0, forwardMainAuthority - nominalForwardMain);
+    const double availableReverseMain =
+        std::max(0.0, reverseMainAuthority - nominalReverseMain);
+
+    const double feedbackMainLongitudinal =
+        std::clamp(
+            feedbackForward,
+            -availableReverseMain,
+            availableForwardMain
+        );
+
+    mainAcceleration +=
+        forward * feedbackMainLongitudinal;
+
+    const glm::dvec3 feedbackRemainder =
+        feedbackAccelerationSystemMps2 -
+        forward * feedbackMainLongitudinal;
+
+    const glm::dvec3 requestedManoeuvre =
+        manoeuvreAccelerationSystemMps2 +
+        feedbackRemainder;
+
+    motion.mainEngineAccelerationMps2 =
+        mainAcceleration;
+    motion.manoeuvreAccelerationMps2 =
+        clampSecondaryToTotalAccelerationEnvelope(
+            motion.mainEngineAccelerationMps2,
+            clampMagnitude(
+                requestedManoeuvre,
+                manoeuvreAuthority
+            ),
+            game::ship::mainAccelerationLimitMps2(params)
+        );
+
+    motion.engineAccelerationMps2 =
+        motion.mainEngineAccelerationMps2 +
+        motion.manoeuvreAccelerationMps2;
+}
+
 void DynamicMotionSystem::updateLocalFrameMotion(
     DynamicMotionState& motion,
     world::coordinates::WorldPosition& worldPosition,

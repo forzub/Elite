@@ -32,6 +32,9 @@ int main()
 
     ClientPreferences preferences;
     preferences.preferredLocale = "ru";
+    preferences.constellationsEnabled = true;
+    preferences.skyCultureId = "western";
+    preferences.coordinateDisplayFormatId = "axis";
     preferences.rememberSuccessfulMultiplayer("127.0.0.1:27351", "pilot-a");
     preferences.rememberSuccessfulMultiplayer("example.test:28000", "pilot-b");
 
@@ -51,6 +54,12 @@ int main()
         return fail("per-server remembered account B was not preserved");
     if (loaded.preferredLocale != "ru")
         return fail("preferred locale was not preserved");
+    if (!loaded.constellationsEnabled)
+        return fail("constellation visibility mode was not preserved");
+    if (loaded.skyCultureId != "western")
+        return fail("sky-culture mode was not preserved");
+    if (loaded.coordinateDisplayFormatId != "axis")
+        return fail("coordinate display mode was not preserved");
 
     std::ifstream input(file, std::ios::binary);
     const std::string serialized(

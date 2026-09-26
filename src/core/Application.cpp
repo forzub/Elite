@@ -549,6 +549,11 @@ void Application::init()
                       << preferencesError << "\n";
             m_clientPreferences = {};
         }
+
+        m_clientModeState.constellationsEnabled =
+            m_clientPreferences.constellationsEnabled;
+        m_clientModeState.skyCultureId =
+            m_clientPreferences.skyCultureId;
     }
 
 #ifdef _WIN32
@@ -599,12 +604,29 @@ void Application::init()
                     std::cerr << "[Localization] core tables incomplete; English/key fallback remains active\n";
                 }
 
-                if (!m_clientPreferences.preferredLocale.empty() &&
-                    !m_localization.setLocale(m_clientPreferences.preferredLocale))
+                if (!m_clientPreferences.preferredLocale.empty())
                 {
-                    std::cerr << "[ClientPreferences] preferred locale is not enabled: "
-                              << m_clientPreferences.preferredLocale << "\n";
+                    if (m_localization.hasLocale(
+                            m_clientPreferences.preferredLocale))
+                    {
+                        m_clientModeState.uiLocale =
+                            m_clientPreferences.preferredLocale;
+                    }
+                    else
+                    {
+                        std::cerr
+                            << "[ClientPreferences] preferred locale is not enabled: "
+                            << m_clientPreferences.preferredLocale << "\n";
+                    }
                 }
+                else
+                {
+                    m_clientModeState.uiLocale = m_localization.locale();
+                }
+
+                (void)m_localization.setLocale(
+                    m_clientModeState.uiLocale
+                );
 
                 // WebUI consumes an in-memory bundle generated from the exact
                 // same LocalizationService tables as native OpenGL UI.
@@ -1626,31 +1648,28 @@ void Application::commitPreparedPresentationAfterSwap(SpaceState& space)
 
 void Application::cycleUiLanguage()
 {
-    const std::string locale = m_localization.cycleLocale();
-    m_clientPreferences.preferredLocale = locale;
-    {
-        std::string preferencesError;
-        if (!ui::platform::ClientPreferencesStore::save(
-                m_clientPreferences,
-                &preferencesError))
-        {
-            std::cerr << "[ClientPreferences] cannot persist locale: "
-                      << preferencesError << "\n";
-        }
-    }
+    const std::string next =
+        m_localization.nextLocale(m_clientModeState.uiLocale);
+    setUiLanguage(next);
 
-#ifdef _WIN32
-    const std::string script =
-        "localStorage.setItem('elite.ui.locale','" + locale + "');"
-        "if (window.GameI18n) window.GameI18n.setLocale('" + locale + "');";
-    for (auto& surface : m_documentWebViews)
-        surface.evalScript(script);
-#endif
+    std::cout << "[Localization] UI locale="
+              << m_clientModeState.uiLocale << std::endl;
+}
 
-    if (GameState* state = m_states.current())
-        state->onUiLanguageChanged();
+bool Application::setConstellationsEnabled(bool enabled)
+{
+    if (!m_clientModeState.setConstellationsEnabled(enabled))
+        return false;
+    persistClientModeState();
+    return true;
+}
 
-    std::cout << "[Localization] UI locale=" << locale << std::endl;
+bool Application::setSkyCultureId(const std::string& cultureId)
+{
+    if (!m_clientModeState.setSkyCultureId(cultureId))
+        return false;
+    persistClientModeState();
+    return true;
 }
 
 void Application::requestApplicationQuit()
@@ -2352,23 +2371,39 @@ void Application::setLoadingUiProgress(
 #endif
 }
 
-void Application::setUiLanguage(const std::string& locale)
+void Application::persistClientModeState()
 {
-    if (!m_localization.setLocale(locale))
-        return;
+    m_clientPreferences.preferredLocale = m_clientModeState.uiLocale;
+    m_clientPreferences.constellationsEnabled =
+        m_clientModeState.constellationsEnabled;
+    m_clientPreferences.skyCultureId =
+        m_clientModeState.skyCultureId;
 
-    m_clientPreferences.preferredLocale = m_localization.locale();
     std::string preferencesError;
     if (!ui::platform::ClientPreferencesStore::save(
             m_clientPreferences,
             &preferencesError))
     {
-        std::cerr << "[ClientPreferences] cannot persist locale: "
+        std::cerr << "[ClientPreferences] cannot persist client mode state: "
                   << preferencesError << "\n";
     }
+}
+
+void Application::setUiLanguage(const std::string& locale)
+{
+    if (!m_localization.hasLocale(locale))
+        return;
+
+    const bool changed = m_clientModeState.setUiLocale(locale);
+    (void)m_localization.setLocale(m_clientModeState.uiLocale);
+
+    if (!changed)
+        return;
+
+    persistClientModeState();
 
 #ifdef _WIN32
-    const std::string activeLocale = m_localization.locale();
+    const std::string activeLocale = m_clientModeState.uiLocale;
     const std::string script =
         "localStorage.setItem('elite.ui.locale'," +
         nlohmann::json(activeLocale).dump() + ");"

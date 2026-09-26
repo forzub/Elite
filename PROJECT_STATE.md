@@ -1,5 +1,27 @@
 # PROJECT STATE
 
+
+## 2026-09-26 — Planner/Follower execution has one authoritative executable product
+
+Navigation execution authority is now explicit:
+
+```text
+planner / trajectory proof
+        -> AcceptedManeuverProgram
+        -> TrajectoryFollower
+        -> NavigationFrameBoundary
+        -> NavigationRuntimeControlBridge
+        -> ShipControlState
+        -> shared physics
+```
+
+`AcceptedShortSegment` is no longer a Follower API. It remains only as a transitional Stage-12 runtime-lab planner product and must cross the explicit lab-only adapter before execution.
+
+Automatic docking is a server-owned Autopilot lifetime. The client owns request/presentation state only. Manual docking guidance remains a separate lifecycle that intentionally hands control back after route publication.
+
+Current Automatic implementation proves and executes an approach program and handles controlled stabilization/replan/human hand-back. Physical station latch/contact transfer remains a later docking/game-state layer; navigation must not fake that transition by teleporting or writing authoritative motion directly.
+
+
 ## 2026-09-26 — acceptance code must consume authoritative mode state, not resurrect shadow owners
 
 The client-mode ownership rule now explicitly covers diagnostics and acceptance

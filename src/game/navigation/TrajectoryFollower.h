@@ -55,6 +55,11 @@ public:
         double angularVelocityErrorRadPerSec = 0.0;
         bool trackingErrorExceeded = false;
 
+        // Bounded B10 correction is kept distinct from the Planner-owned
+        // feed-forward actuator schedule all the way to physics.
+        glm::dvec3 linearFeedbackLocalMps2 {0.0};
+        glm::dvec3 angularFeedbackLocalRadPerSec2 {0.0};
+
         // Planner-owned actuator schedule sampled for the current interval.
         // Autopilot execution will consume these explicitly; exposing them here
         // prevents downstream code from having to re-infer engine choice from

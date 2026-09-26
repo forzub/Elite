@@ -43,3 +43,50 @@ set_tests_properties(
     navigation_ruckig
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    trajectory_generator_angular_tests
+    TrajectoryGeneratorAngularTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/navigation/NavigationObstacleGeometry.cpp"
+)
+
+target_include_directories(
+    trajectory_generator_angular_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    trajectory_generator_angular_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    trajectory_generator_angular_tests
+    PRIVATE EliteNavigationRuckig
+)
+
+if(MSVC)
+    target_compile_options(
+        trajectory_generator_angular_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        trajectory_generator_angular_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME trajectory_generator_angular
+    COMMAND trajectory_generator_angular_tests
+)
+
+set_tests_properties(
+    trajectory_generator_angular
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+

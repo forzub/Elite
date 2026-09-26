@@ -100,6 +100,81 @@ public:
             alignmentMode != VelocityAlignmentMode::None;
     }
 
+    static bool requestVelocityAlignment(
+        DynamicMotionState& motion,
+        VelocityAlignmentMode requested
+    ) noexcept
+    {
+        if (requested == VelocityAlignmentMode::None)
+            return cancelVelocityAlignment(motion);
+
+        // HOME/INSERT are Newtonian vector-orientation actions. END is valid in
+        // both laws; Assisted interprets it as a zero-VREL state.
+        if (requested != VelocityAlignmentMode::BrakeToStop &&
+            motion.localControlLaw != LocalFlightControlLaw::Newtonian)
+        {
+            return false;
+        }
+
+        if (motion.velocityAlignmentMode == requested)
+            return false;
+
+        motion.velocityAlignmentMode = requested;
+        if (requested == VelocityAlignmentMode::BrakeToStop)
+        {
+            motion.assistedTargetSpeedHold = false;
+            motion.assistedThrottleTrimWasActive = false;
+        }
+        return true;
+    }
+
+    static bool cancelVelocityAlignment(
+        DynamicMotionState& motion
+    ) noexcept
+    {
+        if (motion.velocityAlignmentMode == VelocityAlignmentMode::None)
+            return false;
+        motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+        return true;
+    }
+
+    static bool completeVelocityAlignment(
+        DynamicMotionState& motion
+    ) noexcept
+    {
+        return cancelVelocityAlignment(motion);
+    }
+
+    static bool requestAssistedMaximumSpeed(
+        DynamicMotionState& motion,
+        double maximumSpeedMps
+    ) noexcept
+    {
+        if (motion.localControlLaw != LocalFlightControlLaw::Assisted ||
+            !std::isfinite(maximumSpeedMps))
+        {
+            return false;
+        }
+
+        motion.targetForwardSpeedMps = std::max(0.0, maximumSpeedMps);
+        motion.assistedTargetSpeedHold = true;
+        motion.assistedThrottleTrimWasActive = false;
+        cancelVelocityAlignment(motion);
+        return true;
+    }
+
+    static constexpr bool longitudinalInputCancelsBrake(
+        LocalFlightControlLaw law,
+        double targetSpeedRate,
+        bool assistedMaxSpeedCommand
+    ) noexcept
+    {
+        return law == LocalFlightControlLaw::Newtonian
+            ? targetSpeedRate > 0.001
+            : std::abs(targetSpeedRate) > 0.001 ||
+                assistedMaxSpeedCommand;
+    }
+
     static constexpr bool velocityAlignmentOwnsAttitude(
         LocalFlightControlLaw law,
         VelocityAlignmentMode mode,

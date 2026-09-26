@@ -1,3 +1,28 @@
+## 2026-09-26 — route heading, entry attitude and boresight ownership
+
+Manual route geometry may carry an explicit launch-heading constraint. For
+docking guidance the start position is not enough: the first visible corridor
+segment is authored from the real hull-forward axis so a human returning to the
+cockpit sees the tunnel through the windshield. Obstacle handling may shorten
+that forward lead, never silently rotate it.
+
+Automatic execution separates **planned entry attitude** from **current hull
+attitude**. A translation program must not assume that tiny RCS jets can provide
+route acceleration while the main-engine axis still points elsewhere. Planner
+therefore authors the route-entry body attitude; Autopilot physically acquires
+it in the bounded Aligning phase; then the consumed/stale program is discarded
+and replanned from authoritative aligned state/time.
+
+AcceptedManeuverProgramBuilder remains a hard physical gate. Its main/RCS split
+uses installed propulsion authority. Assisted automatic velocity stabilization
+is not an executable RCS substitute and must not be used to make an otherwise
+impossible actuator schedule appear feasible.
+
+The cockpit center boresight is presentation only: it is a fixed projection of
+the hull optical/nose axis. It owns no navigation or control state and is
+separate from the velocity/flight-path indicator.
+
+
 # PROJECT STATE
 
 ## 2026-09-26 — heavy Automatic planning no longer belongs to fixed-step

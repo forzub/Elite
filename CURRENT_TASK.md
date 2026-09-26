@@ -1,5 +1,27 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
+## 2026-09-26 — verify restored tunnel and Automatic execution after terminal-spin fix
+
+Assisted is accepted; do not change it in this iteration.
+
+Pull current main and verify:
+1. `CALCULATE TRAJECTORY` shows the docking route AND the previously accepted
+   guidance tunnel/corridor.
+2. With that route visible, `START DOCKING` must keep the same route/tunnel
+   visible while server Autopilot owns the ship.
+3. Automatic may stabilize first, but after planning it must begin physical
+   movement along the route; no route deletion and no retry storm.
+4. The observed generic `accepted-program-build-failed` should be gone.
+   If AcceptedManeuverProgram still rejects the trajectory, capture the new
+   exact reason such as `accepted-program-angular-kinematics-infeasible` or
+   `accepted-program-propulsion-program-infeasible`.
+5. Keep checking that Human authority is restored cleanly on any one-shot plan
+   failure.
+
+The new terminal-spin contract must not be bypassed or weakened: rotating-dock
+omega is authored into the trajectory itself, then independently checked by
+AcceptedManeuverProgramBuilder.
+
 
 ## 2026-09-26 — verify Assisted course capture and non-freezing Automatic failure diagnostics
 

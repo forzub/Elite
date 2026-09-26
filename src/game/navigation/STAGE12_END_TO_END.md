@@ -1,5 +1,47 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — Automatic planning removed from fixed-step; angular kinematics compiled by Planner
+
+Latest live run isolated two remaining defects:
+- one Automatic plan still blocked state-update for ~365–370 ms;
+- plan ended at `accepted-program-angular-kinematics-infeasible`.
+
+The freeze was structural: `applyAutomaticDockingControls` invoked the complete
+advisory -> Ruckig -> accepted-program chain synchronously. Manual docking did
+not freeze because its advisory plan already ran from a captured snapshot on a
+worker.
+
+Automatic now has `Phase::Planning`. After stabilization the server snapshots
+all required immutable values (ship state/physics, target attachment/port
+definition, obstacle source data and revisions), starts worker planning and
+returns immediately to fixed-step. The ship is held stopped until a short
+future execution epoch. The worker owns no live GameSimulation pointers.
+
+The angular failure exposed a Planner/acceptance mismatch. TrajectoryGenerator
+used path-derived quaternion samples, while AcceptedManeuverProgramBuilder
+derived omega/alpha from them and correctly rejected impossible implied turns.
+
+Trajectory generation now supports:
+- real initial forward/up;
+- measured initial angular velocity;
+- bounded angular integration using vehicle max omega/max alpha;
+- time-varying rotating terminal attitude/omega;
+- an `angularKinematicsAuthored` trajectory marker.
+
+AcceptedManeuverProgramBuilder preserves planner-authored omega, derives alpha
+from that bounded state and keeps its normal feasibility gate.
+
+A new native `trajectory_generator_angular` regression is registered under
+`tests/navigation_ruckig` and is now part of `verify_docking.sh`.
+
+Map-card active actions render bright green and cockpit docking mode text now
+selects localized Manual/Automatic labels from request state.
+
+Next gate is the target Windows build and live flight. Expected Automatic log:
+`phase=planning-async` -> `planned ... phase=executing|aligning`, with no
+fixed-step freeze and no angular-kinematics rejection.
+
+
 ## 2026-09-26 — live accepted-program failure traced to rotating terminal attitude boundary
 
 Latest live Automatic attempt no longer entered the old repeated retry loop, but

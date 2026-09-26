@@ -1,5 +1,37 @@
 # CURRENT STATE
 
+
+## 2026-09-26 — Automatic docking production execution slice wired; Windows gate pending
+
+Automatic docking is no longer a disabled UI stub.
+
+Implemented production ownership/execution path:
+`START DOCKING -> DockingRouteRequest::Automatic -> ClientShipCommand::BeginAutomaticDocking -> GameServer Autopilot authority -> BrakeToStop/stabilize -> server-side DockingAdvisory geometry + TrajectoryGenerator -> AcceptedManeuverProgramBuilder -> TrajectoryFollower -> NavigationFrameBoundary -> NavigationRuntimeControlBridge -> ShipControlState -> shared physics`.
+
+Important ownership changes:
+- `TrajectoryFollower` now has exactly one executable input type:
+  `AcceptedManeuverProgram`. The old `AcceptedShortSegment` overload was removed.
+- The old Stage-12 runtime lab may still produce `AcceptedShortSegment`, but that historical product is isolated behind
+  `NavigationRuntimeLabAcceptedProgramAdapter`; it cannot enter Follower directly.
+- Manual docking preparation and Automatic docking are mutually exclusive server control lifetimes.
+- Disconnect/reset clears both docking runtimes.
+- Automatic request identity carries system/module/semantic-anchor across wire protocol version 11.
+- Client only requests/cancels and observes authoritative Autopilot ownership; it does not own an executable automatic route.
+- Local prediction is suppressed only after the server snapshot confirms Autopilot, so a rejected request cannot freeze human input.
+
+Physical additions:
+- `AcceptedManeuverProgramBuilder` converts a collision-checked trajectory into immutable program pages, compiles actuator intervals, reserves explicit tracking authority, derives angular kinematics, and rejects angular capability violations.
+- rotating docking targets supply terminal angular velocity; the current diagnostic cube's local spin therefore cannot be ignored.
+- new native gate: `accepted_maneuver_program_builder`.
+- new static gate: `check_automatic_docking.py`.
+- `verify_docking.sh` now gates manual advisory + automatic accepted-program execution.
+- `verify_modes.sh` now includes the wire protocol round-trip because ClientShipCommand changed.
+
+The earlier SystemMapRenderer `m_mode` compile regression is now guarded by `check_mode_state.py`, which scans both renderer inline implementation files for the retired field.
+
+No Windows/MinGW build has yet validated this Automatic slice.
+
+
 ## 2026-09-26 — canonical game build exposed stale coordinate acceptance harness; corrected
 
 After the focused mode-state gate, the canonical game build reached

@@ -21,6 +21,11 @@ public:
 
     void init();
 
+    // Fixed hull boresight: screen center is the optical projection of
+    // the ship nose axis. This is deliberately distinct from the velocity
+    // vector indicator, which may move away from center in Newtonian flight.
+    void renderBoresight(const Viewport& viewport);
+
     void render(
         const game::presentation::FlightVectorIndicatorPresentation& presentation,
         const Viewport& viewport

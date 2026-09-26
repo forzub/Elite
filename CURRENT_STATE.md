@@ -1,6 +1,24 @@
 # CURRENT STATE
 
 
+## 2026-09-26 — focused Automatic docking gates all PASS
+
+Fresh target-machine evidence after correcting the stale runtime-control
+fixture:
+- canonical MinGW build PASS;
+- `navigation_runtime_control` PASS;
+- `maneuver_tracking_controller` PASS;
+- `docking_advisory` PASS;
+- `accepted_maneuver_program_builder` PASS;
+- `verify_docking.sh` fully green.
+
+The Automatic docking implementation is therefore accepted at the compile/native
+contract level and is ready for live in-game validation. Live evidence is now
+the gating item: stabilize -> optional align/replan -> execute accepted program
+-> collision-free pre-capture completion -> Human handback.
+
+
+
 ## 2026-09-26 — navigation_runtime_control failure classified as stale test expectation
 
 Fresh Windows failure:

@@ -16,12 +16,12 @@ cmake -S "${ROOT_DIR}/tests/architecture_contracts" \
 
 echo "[MODE-VERIFY] build focused native mode/flight contracts"
 cmake --build "${ARCH_BUILD_DIR}" \
-    --target local_flight_control_contract_tests client_preferences_store_contract_tests \
+    --target local_flight_control_contract_tests client_preferences_store_contract_tests wire_protocol_contract_tests \
     -j 8
 
 echo "[MODE-VERIFY] run focused native contracts"
 ctest --test-dir "${ARCH_BUILD_DIR}" \
-    -R "^(local_flight_control_contracts|client_preferences_store_contracts)$" \
+    -R "^(local_flight_control_contracts|client_preferences_store_contracts|wire_protocol_contracts)$" \
     --output-on-failure
 
 echo "[MODE-VERIFY] run static architecture gates"

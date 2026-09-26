@@ -1,5 +1,31 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — live accepted-program failure traced to rotating terminal attitude boundary
+
+Latest live Automatic attempt no longer entered the old repeated retry loop, but
+it still did not execute. The route disappeared, the frame stalled during the
+single heavy plan, and the server reported
+`accepted-program-build-failed` before Human hand-back.
+
+Two presentation regressions are corrected:
+- Automatic enables the same guidance corridor presentation modules as Guidance;
+- an already calculated docking tunnel is retained through Autopilot takeover
+  and hand-back.
+
+The accepted-program failure was traced to a boundary mismatch. The docking
+server supplied a non-zero terminal angular velocity for the rotating port to
+AcceptedManeuverProgramBuilder, while TrajectoryGenerator authored orientation
+toward one static terminal quaternion. The builder therefore could see an
+instantaneous omega jump at the last sample and correctly reject it.
+
+TrajectoryGenerationRequest now carries terminal angular velocity. Near the
+terminal, orientation is evaluated against a time-varying target propagated
+backwards from the exact final pose by that omega. The physical angular
+feasibility check remains intact. An architecture gate pins the server ->
+trajectory terminal-spin handoff.
+
+Next gate is fresh Windows/native/live verification.
+
 
 ## 2026-09-26 — live Automatic attempt exposed fixed-step retry storm
 

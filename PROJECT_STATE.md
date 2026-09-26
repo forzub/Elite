@@ -1,5 +1,37 @@
 # PROJECT STATE
 
+## 2026-09-26 — heavy Automatic planning no longer belongs to fixed-step
+
+The authoritative Automatic docking pipeline now has an explicit Planning phase.
+
+Fixed-step responsibilities:
+- hold the stabilized ship;
+- launch/snapshot planner work;
+- poll completion;
+- validate/install the immutable AcceptedManeuverProgram;
+- execute Follower/control/physics.
+
+Heavy advisory/Ruckig/program construction executes outside fixed-step from
+immutable copied inputs. No worker reads live GameSimulation state.
+
+Angular planning is now a Planner responsibility rather than a builder inference:
+TrajectoryGenerator can consume real initial hull attitude/angular velocity and
+compile a bounded angular state sequence under the vehicle's angular capability.
+The accepted-program layer preserves that authored omega and remains a separate
+feasibility gate.
+
+Presentation remains independent from authority:
+- retained docking tunnel stays visible in Guidance and Automatic;
+- active card action state is rendered bright green;
+- cockpit text reports the actual manual/automatic docking mode from request
+  state, with full current UI language localization.
+
+The existing NavigationWorkScheduler remains the deterministic job-order/budget
+abstraction; the present Automatic fix removes main-thread blocking for live
+docking. A future shared planner worker-pool can consume scheduler dispatch
+without changing the Planner/Follower contract.
+
+
 ## 2026-09-26 — route presentation is independent from control ownership
 
 Docking route/tunnel presentation and ship-control authority are now explicitly

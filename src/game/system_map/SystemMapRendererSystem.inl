@@ -1927,8 +1927,8 @@ void SystemMapRenderer::drawSystemObjectLabels(
 
 const std::string& SystemMapRenderer::selectedBodyId() const
 {
-    if ((m_mode == Mode::Detail ||
-         m_mode == Mode::Hub) &&
+    if ((m_modeState.current() == Mode::Detail ||
+         m_modeState.current() == Mode::Hub) &&
         !m_detailView.state().selectedHubId.empty())
     {
         static const std::string noBodySelection;
@@ -1941,8 +1941,8 @@ const std::string& SystemMapRenderer::selectedBodyId() const
 
 const std::string& SystemMapRenderer::selectedHubId() const
 {
-    if (m_mode == Mode::Detail ||
-        m_mode == Mode::Hub)
+    if (m_modeState.current() == Mode::Detail ||
+        m_modeState.current() == Mode::Hub)
     {
         return m_detailView.state().selectedHubId;
     }
@@ -1954,8 +1954,8 @@ const std::string& SystemMapRenderer::selectedHubId() const
 const std::string&
 SystemMapRenderer::selectedHubParentBodyId() const
 {
-    if (m_mode == Mode::Detail ||
-        m_mode == Mode::Hub)
+    if (m_modeState.current() == Mode::Detail ||
+        m_modeState.current() == Mode::Hub)
     {
         return m_detailView.state().selectedHubParentBodyId;
     }
@@ -1989,7 +1989,7 @@ SystemMapRenderer::selectedTerminalDetailCell() const
     // A free tactical target can provide a local-neighborhood address without
     // pretending the user explicitly selected the cubic-navigation marker.
     // The address remains valid only while that same tactical object is active.
-    if (m_mode == Mode::System &&
+    if (m_modeState.current() == Mode::System &&
         !m_activeTacticalLocalTargetObjectId.empty() &&
         m_objectOverlayState.activeObjectId() ==
             m_activeTacticalLocalTargetObjectId &&
@@ -2004,7 +2004,7 @@ SystemMapRenderer::selectedTerminalDetailCell() const
 
 bool SystemMapRenderer::canOpenSelectedLocalContext() const
 {
-    if (m_mode == Mode::System)
+    if (m_modeState.current() == Mode::System)
     {
         if (!m_systemView.state().selectedHubId.empty())
             return true;
@@ -2015,7 +2015,7 @@ bool SystemMapRenderer::canOpenSelectedLocalContext() const
                m_activeTacticalDetailCell.has_value();
     }
 
-    if (m_mode == Mode::Detail)
+    if (m_modeState.current() == Mode::Detail)
         return !m_detailView.state().selectedHubId.empty();
 
     return false;

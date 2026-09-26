@@ -391,7 +391,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         В Galaxy показываем имя межзвёздного сектора.
         В остальных режимах — имя сектора текущей системы.
     */
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
     {
         playerBlock.regionNames =
             regionNames(
@@ -425,7 +425,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         }
     }
 
-    if (m_mode == Mode::Galaxy ||
+    if (m_modeState.current() == Mode::Galaxy ||
         hasCurrentSystem)
     {
         playerBlock.addressLines.push_back(
@@ -435,7 +435,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         );
     }
 
-    if (m_mode != Mode::Galaxy)
+    if (m_modeState.current() != Mode::Galaxy)
     {
         playerBlock.addressLines.push_back(
             systemAddress(
@@ -454,7 +454,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         Выбранный и hover-куб показываем только
         в режимах, где кубы реально отображаются.
     */
-    if (m_mode == Mode::Galaxy &&
+    if (m_modeState.current() == Mode::Galaxy &&
         m_galaxyView.state().navigationGrid.enabled())
     {
         const GalaxyNavigationCell selected =
@@ -535,7 +535,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         }
     }
     else if (
-        m_mode == Mode::System &&
+        m_modeState.current() == Mode::System &&
         m_systemView.state().navigationGrid.enabled()
     )
     {
@@ -643,7 +643,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
     std::string footerText;
 
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
     {
         const int level =
             m_galaxyView.state().navigationGrid.level();
@@ -676,7 +676,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
         footerText = footer.str();
     }
-    else if (m_mode == Mode::System &&
+    else if (m_modeState.current() == Mode::System &&
              m_systemView.state().navigationGrid.enabled())
     {
         const int level =
@@ -717,8 +717,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
     float levelAnnouncementAlpha = 0.0f;
 
-    if ((m_mode == Mode::Galaxy ||
-         m_mode == Mode::System) &&
+    if ((m_modeState.current() == Mode::Galaxy ||
+         m_modeState.current() == Mode::System) &&
         !m_navigationLevelAnnouncement.text.empty() &&
         m_navigationLevelAnnouncement.startedAtSeconds >= 0.0)
     {
@@ -779,10 +779,10 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         footerText,
         m_navigationLevelAnnouncement.text,
         levelAnnouncementAlpha,
-        m_mode == Mode::Galaxy ||
-            m_mode == Mode::System,
+        m_modeState.current() == Mode::Galaxy ||
+            m_modeState.current() == Mode::System,
         m_navigationLevelZeroButtonHovered,
-        m_mode == Mode::System,
+        m_modeState.current() == Mode::System,
         m_navigationTrackButtonHovered,
         m_systemView.state().selectedBodyTrackingEnabled,
         !m_systemView.state().selectedBodyId.empty()
@@ -800,7 +800,7 @@ void SystemMapRenderer::toggleSelectedBodyTracking()
     auto& state =
         m_systemView.state();
 
-    if (m_mode != Mode::System ||
+    if (m_modeState.current() != Mode::System ||
         state.selectedBodyId.empty())
     {
         return;
@@ -893,7 +893,7 @@ void SystemMapRenderer::resetNavigationViewToLevelZero(
     const Viewport& viewport
 )
 {
-    if (m_mode == Mode::Galaxy)
+    if (m_modeState.current() == Mode::Galaxy)
     {
         m_galaxyView.resetNavigationToEntry();
 
@@ -905,7 +905,7 @@ void SystemMapRenderer::resetNavigationViewToLevelZero(
         return;
     }
 
-    if (m_mode == Mode::System &&
+    if (m_modeState.current() == Mode::System &&
         m_systemView.state().navigationGrid.enabled())
     {
         m_systemView.resetNavigationToLevelZero(
@@ -1459,7 +1459,7 @@ void SystemMapRenderer::handleDetailAndHubInput(
 {
     const auto result =
         m_localMapInteraction.handle(
-            m_mode,
+            m_modeState.current(),
             m_detailView,
             m_hubView,
             m_detailPresentation.frame,
@@ -1479,7 +1479,7 @@ void SystemMapRenderer::handleDetailAndHubInput(
     using SelectionAction =
         game::system_map::LocalMapInteractionResult::SelectionAction;
 
-    if (m_mode != Mode::Detail)
+    if (m_modeState.current() != Mode::Detail)
         return;
 
     if (result.selectionAction == SelectionAction::SelectHub)

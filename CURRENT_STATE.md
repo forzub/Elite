@@ -1,6 +1,29 @@
 # CURRENT STATE
 
 
+## 2026-09-26 — Windows build PASS; automatic execution gate 3/4 PASS
+
+Fresh target-machine evidence:
+- canonical MinGW build PASS;
+- `maneuver_tracking_controller` PASS;
+- `docking_advisory` PASS;
+- `accepted_maneuver_program_builder` PASS;
+- `navigation_runtime_control` FAIL.
+
+Therefore the new Automatic docking code is compile-integrated and the geometry,
+accepted-program builder, angular tracking (including 180-degree correction) and
+program paging gates are green. Automatic docking is NOT yet accepted as working,
+because the live execution/control seam from accepted Follower output through
+ShipControlState into physical propulsion still has one failing native contract.
+
+The user-provided CTest summary does not include the assertion text from
+`navigation_runtime_control`, so the exact defect cannot yet be classified as
+production behavior vs stale test expectation. Do not change production
+semantics by guess; rerun only that test with `--output-on-failure` and use the
+first emitted assertion as the next fix target.
+
+
+
 ## 2026-09-26 — Automatic docking execution ownership closed; Windows compile gate pending
 
 The Automatic docking slice has been tightened before target-machine build.

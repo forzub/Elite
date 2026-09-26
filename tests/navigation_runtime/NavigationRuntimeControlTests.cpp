@@ -346,6 +346,67 @@ void testPlannerActuatorProgramReachesPhysicalAllocation()
     );
 }
 
+void testAssistedAutopilotUsesCanonicalFlightLaw()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = {100.0, 0.0, 0.0};
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "test";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.maxLinearGs = 7.5f;
+    params.strafeAccel = 73.549875f;
+    params.strafeDamping = 4.0f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 73.549875f;
+    params.reverseMainEngineAccelerationMps2 = 73.549875f;
+
+    world::coordinates::WorldPosition worldPosition {};
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+    for (int i = 0; i < 300; ++i)
+    {
+        game::navigation::DynamicMotionSystem::
+            applyNavigationAssistedFlightModel(
+                motion,
+                frame,
+                params,
+                0.01f,
+                100.0,
+                glm::dvec3(0.0),
+                forward,
+                right,
+                up
+            );
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            motion,
+            worldPosition,
+            frame,
+            params,
+            0.01
+        );
+    }
+
+    const glm::dvec3 velocity = glm::normalize(motion.localVelocityMps);
+    const double courseError = std::acos(std::clamp(
+        glm::dot(velocity, glm::dvec3(forward)),
+        -1.0,
+        1.0
+    ));
+
+    require(courseError <= 5.0 * 3.14159265358979323846 / 180.0,
+            "Assisted autopilot did not realign VREL to hull nose within 3 seconds");
+    requireNear(glm::length(motion.manoeuvreAccelerationMps2), 0.0, 1.0e-12,
+                "Assisted autopilot incorrectly spent precision RCS during ordinary transit");
+}
+
 void testAngularDemandUsesExistingCapabilityClamp()
 {
     ShipTransform transform;
@@ -632,6 +693,7 @@ int main()
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testPlannerActuatorProgramReachesPhysicalAllocation();
+        testAssistedAutopilotUsesCanonicalFlightLaw();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

@@ -7,6 +7,7 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/world/WorldParams.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>

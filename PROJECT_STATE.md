@@ -4206,3 +4206,45 @@ control-law contracts:
 
 No active M1 code changed in this requirements iteration. Its focused sampler
 and pipeline target gate remains next.
+
+## 2026-09-27 — flight law is becoming a ship-family capability
+
+Design direction is now two materially different local-flight families rather
+than treating Assisted/Newtonian as two cosmetic input mappings over one
+navigation algorithm.
+
+### Assisted family
+
+Intended character:
+- comparatively maneuverable;
+- somewhat lower top speed;
+- hull nose defines desired travel direction;
+- finite hull angular rate/acceleration still applies;
+- automatic game-flight stabilization bends velocity toward the nose;
+- forward/reverse main propulsion controls longitudinal speed;
+- physical manoeuvre/RCS is precision authority, not ordinary route curvature.
+
+Canonical Automatic execution now reuses the same game-flight law as manual
+Assisted. Planner capability projection uses the Assisted stabilizer budget
+rather than `manoeuvreThrusterAccel` for course-change timing.
+
+### Newtonian family
+
+Intended character:
+- faster/heavier/less maneuverable craft, including barge-like hulls;
+- velocity and attitude are independent;
+- ordinary navigation uses coast + hull rotation + primary main-engine burn;
+- braking is normally rotate/flip then main burn;
+- routes and parking should favor long, nearly straight legs rather than many
+  aircraft-like arcs;
+- final placement is slower and may use stronger class-specific manoeuvre
+  thrusters or external tug logic.
+
+Ordinary Newtonian route execution is now forbidden from consuming precision
+RCS as synthetic lateral main thrust. The dedicated stop/rotate/burn compiler
+remains to be completed.
+
+The current runtime control-law switch is retained temporarily for development
+and regression work. The architecture no longer depends on the switch being a
+player preference; a later descriptor-level ship-family lock can select the
+same two branches without redesigning Planner/Follower.

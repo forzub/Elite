@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / live Assisted + Automatic docking fixes
+# CONTINUE PROMPT — Elite Navigation v2 / docking tunnel + Automatic execution
 
 Work in public repository `forzub/Elite`, branch `main`.
 
@@ -9,93 +9,144 @@ At the start of every iteration read the newest sections of:
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
 
-After every state-affecting result update those files and regenerate this prompt
-from scratch again.
+After every state-affecting result update those files and REGENERATE THIS PROMPT
+FROM SCRATCH again. Commit fixes directly to GitHub `main`; do not send patch
+files to the user.
+
+## Accepted baseline
+
+Assisted manual flight is ACCEPTED by the user. Do not retune it unless new live
+evidence explicitly shows a new defect.
+
+Assisted doctrine:
+- approximately airplane-like nose/course coupling;
+- course follows hull direction within roughly 2–3 s for a substantial turn;
+- automatic lateral stabilization may use the configured Assisted authority;
+- manual keypad RCS remains the small physical gas-limited manoeuvre thruster;
+- no direct velocity rewrite;
+- shared linear-load envelope remains authoritative.
 
 ## Latest live evidence
 
-Manual `CALCULATE TRAJECTORY`: route appeared successfully.
+User ran the game after the previous fixes.
 
-Manual Assisted:
-- user reports course changes are far too slow;
-- requirement: Assisted is almost airplane-like: where the nose points, travel
-  direction should follow with only a short lag, normally no more than ~2–3 s.
+Observed:
+- Assisted: good, accepted.
+- manual docking mode: previously successful tunnel/corridor disappeared.
+- START DOCKING: route disappeared, one heavy freeze occurred, ship did not move.
+- server log:
+  `[DockAuto] request=2 phase=plan-failed reason=accepted-program-build-failed action=restore-human`.
+- old repeated `phase=plan-retry` storm is gone.
 
-Automatic `START DOCKING`:
-- hub map began freezing periodically and game field effectively stalled;
-- log showed repeated `[DockAuto] ... phase=plan-retry`;
-- every retry coincided with ~280–300 ms fixed-simulation work;
-- root issue was a synchronous heavy Planner call hammered from fixed-step
-  every ~0.5 s after plan failure.
+User requirement:
+- manual route must show the successful tunnel again;
+- Automatic must also keep showing the route/tunnel;
+- if a route has already been calculated for the same dock, Automatic may reuse
+  it instead of recalculating presentation geometry;
+- Autopilot should physically fly the route after stabilization/planning.
 
-## Implemented fixes on main
+## Fixes now on main
 
-### Assisted course coupling
+### Route/tunnel presentation
 
-Old defect:
-- after a sharp turn, longitudinal main demand was allocated first;
-- it could consume the entire shared linear-load envelope;
-- automatic lateral stabilization then had zero authority to remove old sideways
-  VREL;
-- FA-on therefore behaved too much like Newtonian inertia.
+Control ownership and presentation are separate.
 
-Current rule:
-- manual keypad RCS remains the small gas-limited physical RCS;
-- automatic Assisted lateral stabilization is separate;
-- in a sharp Assisted turn, cancelling old sideways VREL has priority;
-- longitudinal main thrust consumes remaining load authority;
-- total command remains inside the shared linear-load envelope;
-- no direct velocity rewrite.
+`SystemMapRenderer::applyDockingAction` enables:
+- RoutePlanning
+- LocalGuidance
+- HudGuidanceCorridor
 
-Current Cobra:
-- automatic Assisted lateral authority = 73.549875 m/s^2 (7.5 g linear envelope);
-- manual RCS remains 2 m/s^2 and gas limited.
+for both Guidance and Automatic.
 
-New native regression:
-`testAssistedCourseRealignsWithinThreeSeconds`
-- initial VREL = +X 100 m/s;
-- hull/nose = -Z (90-degree change);
-- target forward speed = 100 m/s;
-- after 3 s, course error must be <=5 degrees;
-- ship must not simply stop.
+Automatic route selection may resolve the same retained dock corridor.
 
-Newtonian behavior is unchanged.
+`SpaceState::updateDockingAdvisory` no longer clears an already calculated
+corridor merely because START DOCKING takes server Autopilot authority. On
+server hand-back, a retained route is returned to Guidance ownership instead of
+being erased.
 
-### Automatic docking fixed-step retry storm
+Architecture regression:
+`tests/architecture_contracts/check_automatic_docking.py` pins visible corridor
+ownership across Automatic.
 
-Removed:
-- `nextPlanAttemptUniverseTimeSeconds`;
-- `phase=plan-retry`;
-- automatic 0.5-second synchronous retry loop.
+### Accepted-program diagnostics
 
-Current behavior:
-- stabilize;
-- perform one Automatic plan for the stabilized state;
-- if it fails:
-  - store concrete `lastPlanFailureReason`;
-  - log
-    `[DockAuto] ... phase=plan-failed reason=<...> action=restore-human`;
-  - terminate that Automatic request;
-  - restore Human authority.
+`AcceptedManeuverProgramBuilder::Result` exposes `failureReason`.
 
-This is deliberate because the current Planner is synchronous and expensive.
-Do not reintroduce repeated fixed-step planning.
+Automatic server failures now preserve the exact builder reason, e.g.:
+- `accepted-program-angular-kinematics-infeasible`
+- `accepted-program-propulsion-program-infeasible`
 
-Recoverable execution tracking failure may still:
-- controlled stop/stabilize;
-- replan once from the new physical state.
-If that plan fails, hand back instead of retry storm.
+Do not collapse this back to generic `accepted-program-build-failed`.
 
-## Immediate verification
+### Rotating terminal attitude fix
 
-On Windows/MSYS2:
+Root mismatch:
+- GameServer computed non-zero angular velocity for the rotating docking port;
+- AcceptedManeuverProgramBuilder required that terminal omega;
+- TrajectoryGenerator previously authored orientation toward one STATIC terminal
+  quaternion;
+- this could create a physically impossible last-sample omega jump, which the
+  builder correctly rejected.
+
+Current contract:
+- `TrajectoryGenerationRequest` carries
+  `hasTerminalAngularVelocity` and
+  `terminalAngularVelocityRadPerSecond`;
+- GameServer feeds the rotating-port omega into TrajectoryGenerator;
+- terminal orientation is time-varying near capture: it is propagated backwards
+  from the exact final pose using the terminal omega;
+- final pose remains exact;
+- AcceptedManeuverProgramBuilder still independently rejects angular states that
+  exceed ship capability.
+
+Do NOT solve this by weakening angular feasibility checks.
+
+Architecture regression now pins the server -> trajectory terminal-spin handoff.
+
+## Automatic lifecycle
+
+```text
+START DOCKING
+ -> server takes Autopilot authority
+ -> BrakeToStop / stabilize
+ -> one heavy plan for the stabilized state
+ -> trajectory includes moving terminal velocity + rotating terminal attitude
+ -> AcceptedManeuverProgram
+ -> optional physical hull Aligning
+ -> if aligned state changed: discard stale program, stabilize, replan once
+ -> TrajectoryFollower
+ -> NavigationRuntimeControlBridge::stepProgram
+ -> shared physics
+ -> collision-free pre-capture completion
+ -> Human hand-back
+```
+
+Initial plan failure is one-shot. Never restore the old synchronous fixed-step
+retry timer/loop.
+
+Current success scope ends at pre-capture outside solid station geometry.
+Physical latch/contact remains a later layer.
+
+## Immediate Windows verification
+
+From MSYS2:
 
 ```bash
 cd /d/__elite/work
 git pull --ff-only origin main
 git log -1 --oneline
 
-bash verify_modes.sh
+python tests/architecture_contracts/check_automatic_docking.py
+
+cmake --build build/tests/navigation_runtime \
+  --target accepted_maneuver_program_builder_tests \
+  -j 8
+
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^accepted_maneuver_program_builder$" \
+  --output-on-failure
+
 bash verify_docking.sh
 bash build_mingw64.sh
 ```
@@ -106,26 +157,21 @@ If green:
 build/EliteGame.exe
 ```
 
-Live checks:
-1. Assisted: make a substantial pitch/yaw course change while moving. The
-   velocity/course should visibly follow the nose quickly rather than drifting
-   for many seconds.
-2. Confirm `CALCULATE TRAJECTORY` still works.
-3. Press `START DOCKING`.
-4. There must be NO repeating `phase=plan-retry`.
-5. If planning fails, capture the single
-   `phase=plan-failed reason=...` line. That exact reason is the next docking
-   fix target.
-6. If planning succeeds, capture all `[DockAuto]` lines through
-   stabilize -> optional aligning/aligned-replan -> executing -> pre-capture
-   completion.
-
-Current Automatic success remains pre-capture only; physical latch/contact is a
-later docking layer.
+Live gate:
+1. CALCULATE TRAJECTORY.
+2. Confirm both route line and guidance tunnel/corridor are visible.
+3. Without discarding that route, press START DOCKING.
+4. Route/tunnel must remain visible.
+5. Ship may stop/stabilize first, then must begin physical flight if planning is
+   accepted.
+6. Capture every `[DockAuto]` line.
+7. There must be no repeating `phase=plan-retry`.
+8. If plan still fails, use the new exact reason as the next fix target.
+9. If it executes, continue through optional align/replan and pre-capture.
 
 ## Architecture invariants
 
-Accepted navigation execution remains:
+Canonical execution remains:
 
 ```text
 trajectory + proof
@@ -139,13 +185,11 @@ trajectory + proof
 
 Planner owns nominal actuator schedule.
 Follower owns bounded correction.
-Physics owns installed hardware, load envelope, speed, gas and collision.
+Physics owns installed hardware, load envelope, gas, speed and collision.
 
 Do not restore:
 - `TrajectoryFollower(AcceptedShortSegment)`;
 - planner-only target collision bypass;
-- `SystemMapRenderer::m_mode`;
-- `CoordinateDisplayService::cycle()`;
-- Automatic fixed-step `plan-retry` loop.
-
-Commit fixes directly to GitHub `main`. Do not provide patch files.
+- Automatic fixed-step `plan-retry` loop;
+- hidden/disabled corridor presentation during Automatic;
+- direct velocity rewrites.

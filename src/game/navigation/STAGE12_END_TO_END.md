@@ -1,6 +1,17 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 
+## 2026-09-26 — Automatic approach chain passed native target-machine gates
+
+The full focused Automatic approach stack is green on the Windows target:
+runtime control, maneuver tracking, docking advisory, accepted-program builder,
+and the aggregate `verify_docking.sh` gate all pass.
+
+Stage 12 now advances to live flight evidence. No further architecture change is
+required before trying `START DOCKING` in the game.
+
+
+
 ## 2026-09-26 — first runtime-control failure was a test-envelope contradiction
 
 The first Windows `navigation_runtime_control` failure was caused by a

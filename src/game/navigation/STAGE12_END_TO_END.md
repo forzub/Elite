@@ -1,6 +1,22 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 
+## 2026-09-26 — first Windows evidence for production Automatic chain
+
+Target-machine build now passes with the new Automatic production chain.
+
+Native focused evidence:
+- maneuver_tracking_controller PASS;
+- docking_advisory PASS;
+- accepted_maneuver_program_builder PASS;
+- navigation_runtime_control FAIL.
+
+The failure is isolated to the final accepted-control -> physical execution
+contract. The supplied summary omitted the failing assertion, so no production
+change should be made until the single failing test is rerun with full output.
+
+
+
 ## 2026-09-26 — Automatic production chain now preserves actuator truth and physical entry state
 
 The production Automatic path now preserves the exact actuator ownership

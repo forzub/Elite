@@ -187,9 +187,11 @@ struct AcceptedManeuverProgram
     std::uint8_t sampleCount = 0;
     std::array<ReferenceSample, kMaxSamples> samples {};
 
-    // Explicit physical command intervals owned by Planner. During migration
-    // this may be zero for legacy producers; new Stage-12 programs publish
-    // exactly sampleCount-1 intervals.
+    // Explicit physical actuator intervals owned by Planner when the selected
+    // translation mode requires them. NewtonianMainEngine/PrecisionRcs may
+    // publish sampleCount-1 intervals. AssistedVelocity deliberately publishes
+    // zero actuator intervals because it executes the canonical target-speed /
+    // attitude game-flight law instead of a synthetic RCS schedule.
     std::uint8_t actuatorSegmentCount = 0;
     std::array<ActuatorSegment, kMaxSamples - 1> actuatorSegments {};
     bool actuatorProgramFeasible = true;

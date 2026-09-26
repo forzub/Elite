@@ -1290,3 +1290,15 @@ parking algorithm onto Newtonian craft.
 Current implementation establishes this separation and refuses fake-RCS
 Newtonian transit. A dedicated Newtonian stop/rotate/burn maneuver compiler is
 still future work and is not claimed complete in this gate.
+
+## 2026-09-27 — immediate gate: rerun rotating-terminal trajectory
+
+Pull current main and rerun `bash verify_docking.sh`.
+
+The first required result is now `trajectory_generator_angular: PASS`.
+If it still fails with terminal-state reachability, inspect terminal pose error
+versus terminal omega error separately; do not loosen the 5 degree orientation
+or 0.05 rad/s omega thresholds.
+
+Only after the complete docking verify is green proceed to
+`bash build_mingw64.sh` and live Assisted docking.

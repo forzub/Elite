@@ -90,8 +90,16 @@ try:
         "ManeuverTrackingController",
         "controlBridge->stepProgram(",
         "phase=replan",
+        "phase=plan-failed",
+        "action=restore-human",
+        "lastPlanFailureReason",
     )
 
+
+    if "phase=plan-retry" in server:
+        raise AssertionError(
+            "Automatic docking restored the synchronous fixed-step plan-retry loop"
+        )
 
     if "terminalAllowedObstacleId" in server:
         raise AssertionError(
@@ -111,6 +119,10 @@ try:
         "m_serverHubSemanticAnchorCatalog",
         "m_serverDockingPortRuntimeStateCatalog",
     )
+    if "nextPlanAttemptUniverseTimeSeconds" in header:
+        raise AssertionError(
+            "Automatic docking restored retry-timer state that can hammer Planner from fixed-step"
+        )
 
     require(
         "src/game/navigation/HubNavigationClearancePolicy.h",

@@ -47,7 +47,7 @@ try:
     require("src/game/simulation/ClientSessionSnapshot.h",
             "controlledEntityAutopilotActive")
     require("src/game/network/WireDataCodec.h",
-            "SimulationSnapshotWireSchemaVersion = 9u")
+            "SimulationSnapshotWireSchemaVersion = 10u")
     require("src/game/SpaceState.cpp",
             "phase=stabilizing", "buildAuthoritativeHubSnapshot",
             "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",

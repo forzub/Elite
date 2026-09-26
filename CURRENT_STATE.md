@@ -1,3 +1,56 @@
+## 2026-09-26 — live gate: freeze gone; propulsion entry mismatch fixed; manual route nose-first
+
+Fresh Windows/live evidence:
+- canonical client/server build succeeded;
+- the restored docking tunnel remains visible;
+- the old ~350 ms Automatic fixed-step/state-update freeze no longer appears on START DOCKING;
+- Automatic still returned Human authority after a one-shot plan failure:
+  `accepted-program-propulsion-program-infeasible`.
+
+Propulsion diagnosis:
+- AcceptedManeuverProgramBuilder decomposes every planned acceleration into the
+  real forward/reverse main banks plus the real manoeuvre/RCS authority;
+- Cobra's accepted-program lateral actuator is the physical 2 m/s² manoeuvre
+  thruster, not the much larger Assisted velocity-stabilization controller;
+- after angular kinematics became physical, the first trajectory samples could
+  accelerate along the route while the authored body attitude still started at
+  the arbitrary stopped hull attitude;
+- that required impossible sideways RCS and the builder correctly rejected it.
+
+Current Automatic fix:
+- the first planned program declares a required route-entry attitude from the
+  first advisory gate direction;
+- roll is chosen by projecting the current up axis onto that forward plane;
+- planned entry angular velocity is zero;
+- the existing bounded `Aligning` phase physically rotates the real hull to
+  this entry attitude;
+- alignment consumes real time/state, so the stale program is discarded and
+  Automatic stabilizes/replans from the now-aligned authoritative hull before
+  execution;
+- the physical propulsion feasibility gate remains strict. No Assisted-only
+  lateral authority is smuggled into the executable actuator program.
+
+Manual docking correction:
+- DockingAdvisoryRequest now supports an optional initial-forward launch lead;
+- manual planning feeds the real hull-forward axis transformed into the Hub
+  local frame;
+- the visible route starts 500 m ahead of the nose (or ten hull lengths,
+  whichever is greater);
+- if that exact ray is obstructed, Planner may shorten the lead but may not
+  rotate it sideways; if even the minimum forward segment is blocked, planning
+  fails explicitly with `initial forward corridor blocked`.
+
+HUD:
+- cockpit HUD now includes a fixed center boresight representing the hull/nose
+  optical axis;
+- it is deliberately independent of the velocity-vector/navigation marker.
+
+Regression coverage now pins the nose-first manual corridor, Automatic
+route-entry alignment/replan contract, and fixed screen-center boresight.
+
+Fresh Windows native/build/live verification of these newest changes is pending.
+
+
 # CURRENT STATE
 
 ## 2026-09-26 — Automatic freeze moved off fixed-step; angular program is now physical

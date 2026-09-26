@@ -646,77 +646,106 @@ void DynamicMotionSystem::applyLocalFrameInput(
     yieldAxisToManualRcs(r, strafeInput);
     yieldAxisToManualRcs(u, liftInput);
 
-    const double response =
+    const double longitudinalResponse =
         positiveOr(
             static_cast<double>(params.throttleAccel),
             static_cast<double>(
                 params.fallbackThrottleResponsePerSecond
             )
         );
+    const double lateralResponse =
+        positiveOr(
+            static_cast<double>(params.strafeDamping),
+            longitudinalResponse
+        );
     const bool brakingToStop =
         motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop;
-    // Commissioning must converge rather than hover around the settle
-    // threshold. Ask for the delta-v required in this fixed step, then let the
-    // normal installed main/RCS clamps below limit it. Velocity is never set
-    // directly by this controller.
-    const double stabilizationGain =
+
+    // END must converge exactly. Ordinary Assisted flight instead uses the
+    // authored longitudinal/lateral response gains and remains acceleration
+    // bounded by the real vehicle envelope.
+    const double longitudinalGain =
         brakingToStop && dtD > 0.0
             ? 1.0 / dtD
-            : response;
+            : longitudinalResponse;
+    const double lateralGain =
+        brakingToStop && dtD > 0.0
+            ? 1.0 / dtD
+            : lateralResponse;
 
-    // Assisted changes control doctrine, never installed hardware.
-    // Split the requested stabilization acceleration through the SAME physical
-    // propulsion topology used by navigation: real forward/reverse main
-    // authority first, then bounded RCS for whatever remains.
     const double longitudinalVelocityError =
         glm::dot(velocityError, f);
-    const double requestedLongitudinalAcceleration =
-        longitudinalVelocityError * stabilizationGain;
+    const glm::dvec3 lateralVelocityError =
+        velocityError - f * longitudinalVelocityError;
 
-    const double mainLongitudinalAcceleration =
+    const double requestedLongitudinalAcceleration =
+        longitudinalVelocityError * longitudinalGain;
+    const double requestedMainLongitudinalAcceleration =
         std::clamp(
             requestedLongitudinalAcceleration,
             -reverseMainAccel,
             forwardMainAccel
         );
 
-    motion.mainEngineAccelerationMps2 =
-        f * mainLongitudinalAcceleration;
+    const double totalLinearEnvelope =
+        game::ship::mainAccelerationLimitMps2(params);
 
-    const glm::dvec3 lateralVelocityError =
-        velocityError - f * longitudinalVelocityError;
+    // Assisted doctrine is direction-coupled: after the pilot turns the hull,
+    // removing the old sideways VREL has priority over immediately rebuilding
+    // longitudinal speed. The previous main-first allocator could consume the
+    // complete load envelope along the new nose and leave zero authority for
+    // lateral cancellation, making FA-on feel Newtonian for several seconds.
+    //
+    // Manual keypad RCS remains a real small gas-limited actuator and is not
+    // silently promoted. The separate automatic stabilization actuator is
+    // what bends the velocity vector toward the nose.
+    const glm::dvec3 manualRcsAcceleration =
+        clampMagnitude(
+            motion.manoeuvreAccelerationMps2,
+            manoeuvreAccel
+        );
+
+    motion.assistedStabilizationAccelerationMps2 =
+        clampSecondaryToTotalAccelerationEnvelope(
+            manualRcsAcceleration,
+            clampMagnitude(
+                lateralVelocityError * lateralGain,
+                assistedLateralStabilizationAccel
+            ),
+            totalLinearEnvelope
+        );
+
+    const glm::dvec3 requestedMainAcceleration =
+        f * requestedMainLongitudinalAcceleration;
+    motion.mainEngineAccelerationMps2 =
+        clampSecondaryToTotalAccelerationEnvelope(
+            manualRcsAcceleration +
+                motion.assistedStabilizationAccelerationMps2,
+            requestedMainAcceleration,
+            totalLinearEnvelope
+        );
+
+    const double actualMainLongitudinalAcceleration =
+        glm::dot(motion.mainEngineAccelerationMps2, f);
     const glm::dvec3 unservedLongitudinalAcceleration =
         f * (
             requestedLongitudinalAcceleration -
-            mainLongitudinalAcceleration
+            actualMainLongitudinalAcceleration
         );
 
-    // Longitudinal demand that cannot be served by an installed main bank may
-    // still use only the real manual/RCS authority. Assisted does not invent a
-    // second reverse main engine.
+    // If installed longitudinal main authority cannot serve the requested
+    // acceleration, only the real manoeuvre/RCS budget may cover the residue.
+    // The final combined command still fits the shared linear-load envelope.
     motion.manoeuvreAccelerationMps2 =
         clampSecondaryToTotalAccelerationEnvelope(
-            motion.mainEngineAccelerationMps2,
+            motion.assistedStabilizationAccelerationMps2 +
+                motion.mainEngineAccelerationMps2,
             clampMagnitude(
-                motion.manoeuvreAccelerationMps2 +
+                manualRcsAcceleration +
                     unservedLongitudinalAcceleration,
                 manoeuvreAccel
             ),
-            game::ship::mainAccelerationLimitMps2(params)
-        );
-
-    // Lateral drift cancellation is a separate Assisted actuator budget.
-    // This is what makes FA-on materially different from Newtonian without
-    // turning the pilot's keypad RCS into a 20 m/s^2 thruster.
-    motion.assistedStabilizationAccelerationMps2 =
-        clampSecondaryToTotalAccelerationEnvelope(
-            motion.mainEngineAccelerationMps2 +
-                motion.manoeuvreAccelerationMps2,
-            clampMagnitude(
-                lateralVelocityError * stabilizationGain,
-                assistedLateralStabilizationAccel
-            ),
-            game::ship::mainAccelerationLimitMps2(params)
+            totalLinearEnvelope
         );
 
     motion.engineAccelerationMps2 =

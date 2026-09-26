@@ -171,6 +171,7 @@ void testFlightLawTransitionStateMachine()
     game::navigation::DynamicMotionState motion;
     motion.localControlLaw = LocalFlightControlLaw::Newtonian;
     motion.localVelocityMps = glm::dvec3(3.0, 4.0, 0.0);
+    motion.forwardSpeedMps = 3.0;
     motion.velocityAlignmentMode = VelocityAlignmentMode::BrakeToStop;
     motion.assistedTargetSpeedHold = true;
     motion.assistedThrottleTrimWasActive = true;
@@ -199,9 +200,9 @@ void testFlightLawTransitionStateMachine()
     );
     requireNear(
         motion.targetForwardSpeedMps,
-        5.0,
+        3.0,
         1.0e-9,
-        "Assisted entry did not capture current VREL"
+        "Assisted entry captured total drift instead of forward VREL"
     );
     require(
         glm::length(motion.localVelocityMps-physicalVelocityBefore) < 1.0e-12,
@@ -667,6 +668,45 @@ void testAssistedExplicitMaxTargetPersistsUntilPilotOverrides()
     step(motion, position, frame, params, 0.1f, -1.0f);
     require(!motion.assistedTargetSpeedHold,
             "Assisted +/- did not cancel HOME max-target hold");
+}
+
+void testNewtonianNeutralRotationPreservesAngularInertia()
+{
+    auto params = makeParams();
+    params.angularDamping = 4.0f;
+    params.maxGs = 0.0f;
+    params.turnRadius = 0.0f;
+    params.angularAccel = 5.0f;
+    params.maxPitchRate = 10.0f;
+    params.maxYawRate = 10.0f;
+    params.maxRollRate = 10.0f;
+
+    WorldParams world;
+    ShipController controller;
+
+    ShipTransform newtonian;
+    newtonian.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    newtonian.yawRate = 1.25f;
+    controller.update(0.25f, params, newtonian, world);
+
+    requireNear(
+        newtonian.yawRate,
+        1.25,
+        1.0e-6,
+        "Newtonian neutral controls incorrectly damped angular inertia"
+    );
+
+    ShipTransform assisted;
+    assisted.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    assisted.yawRate = 1.25f;
+    controller.update(0.25f, params, assisted, world);
+
+    require(
+        assisted.yawRate < 1.25f,
+        "Assisted neutral controls failed to damp released angular motion"
+    );
 }
 
 void testAngularMotionUsesSharedLoadEnvelope()
@@ -1287,6 +1327,7 @@ int main()
         testAssistedEndUsesForeMainWithoutHullFlip();
         testAssistedAftFailureMakesForeMainPrimary();
         testAssistedEndFlipsAndUsesAftMainWithoutForeEngine();
+        testNewtonianNeutralRotationPreservesAngularInertia();
         testAngularMotionUsesSharedLoadEnvelope();
         testVelocityAlignmentBrakesBeforeTarget();
         testVelocityAlignmentEscapesExactAntiparallelPose();

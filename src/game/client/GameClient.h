@@ -208,7 +208,7 @@ private:
     bool                            m_hasPendingLocalControlLawCommand = false;
     game::navigation::LocalFlightControlLaw
                                     m_pendingLocalControlLaw =
-        game::navigation::LocalFlightControlLaw::Assisted;
+        game::navigation::defaultLocalFlightControlLaw();
     game::navigation::VelocityAlignmentMode
                                     m_pendingVelocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;

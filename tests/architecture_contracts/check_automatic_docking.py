@@ -131,6 +131,10 @@ try:
         "planning-result-missed-execution-epoch",
         "trajectoryRequest.hasInitialOrientation =",
         "trajectoryRequest.hasInitialAngularVelocity =",
+        "routeInitialForward =",
+        "advisoryPlan.gates.front().forward",
+        "initialAngularVelocityRadPerSecond =\n                            glm::dvec3(0.0)",
+        "phase=aligned-replan",
     )
 
 
@@ -231,6 +235,21 @@ try:
         "cockpit.docking.automatic_mode",
         "DockingRouteRequest::Mode::Automatic",
         "AUTOMATIC DOCKING MODE",
+        "request.hasInitialForward = true",
+        "request.initialForwardLeadMeters",
+        "renderBoresight(vp)",
+    )
+    require(
+        "src/game/navigation/DockingAdvisoryPlanner.cpp",
+        "initial forward corridor blocked",
+        "routeSearchStart",
+        "prependInitialForwardLead",
+    )
+    require(
+        "src/render/cockpit/FlightVectorIndicatorRenderer.cpp",
+        "renderBoresight(",
+        "static_cast<float>(viewport.width) * 0.5f",
+        "static_cast<float>(viewport.height) * 0.5f",
     )
     require(
         "src/assets/localization/ui/cockpit/flight.json",
@@ -275,7 +294,8 @@ try:
     print(" - Automatic reuses the visible advisory corridor instead of hiding it")
     print(" - server owns Autopilot authority and stabilization")
     print(" - heavy Automatic planning runs outside the fixed-step thread")
-    print(" - angular trajectory starts from the real hull state and remains bounded")
+    print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")
+    print(" - manual docking corridor is nose-first and cockpit HUD has a fixed hull boresight")
     print(" - active map-card mode is bright green and cockpit mode text is localized")
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
     print(" - Follower has one executable input type")

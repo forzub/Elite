@@ -284,11 +284,25 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             candidate.lengthMeters = 0.0;
             for (std::size_t i = 1; i < candidate.samples.size(); ++i)
             {
+                if (!clear(
+                        candidate.samples[i - 1],
+                        candidate.samples[i]))
+                {
+                    candidate.failure =
+                        "piecewise-straight docking route obstructed";
+                    candidate.samples.clear();
+                    return candidate;
+                }
+
                 candidate.lengthMeters += glm::length(
                     candidate.samples[i] - candidate.samples[i - 1]
                 );
             }
-            candidate.valid = candidate.samples.size() >= 2;
+            candidate.valid =
+                candidate.samples.size() >= 2 &&
+                candidate.lengthMeters >= 1.0;
+            if (!candidate.valid)
+                candidate.failure = "route too short";
             return candidate;
         }
 

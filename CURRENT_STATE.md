@@ -1,6 +1,52 @@
 # CURRENT STATE
 
 
+## 2026-09-26 — live test: Assisted course lag + Automatic fixed-step planner freeze fixed
+
+Fresh live evidence exposed two production defects and one positive result.
+
+Positive:
+- manual `CALCULATE TRAJECTORY` produced a route, so the user-visible guidance
+  planner path is alive.
+
+Defect 1 — Assisted course lag:
+- Assisted was still effectively main-first during a sharp hull turn.
+- A large new forward-speed error could consume the complete shared linear-load
+  envelope with main thrust, leaving zero authority for cancelling the old
+  sideways VREL.
+- This made FA-on feel Newtonian after attitude changes.
+
+Fix:
+- ordinary Assisted now treats velocity-direction coupling as the primary
+  sharp-turn objective;
+- manual keypad RCS remains a small real gas-limited actuator;
+- automatic Assisted lateral stabilization removes old sideways VREL first;
+- longitudinal main thrust consumes the remaining shared load envelope;
+- no direct velocity rewrite was introduced;
+- Cobra automatic Assisted lateral authority now uses the existing 7.5 g
+  linear envelope;
+- native contract added: a 90-degree course change from 100 m/s must converge
+  within 3 seconds to <=5 degrees course error without collapsing into a stop.
+
+Defect 2 — Automatic docking freeze:
+- live log showed `phase=plan-retry` every ~0.5 s;
+- each retry consumed ~280–300 ms in fixed simulation, causing the observed
+  cyclic hub-map freeze and effectively frozen game field.
+
+Fix:
+- removed the fixed-step retry timer/state;
+- a failed Automatic plan is now one-shot for that stabilized state;
+- Planner records a concrete failure reason;
+- server logs `phase=plan-failed reason=... action=restore-human`;
+- Human authority is restored instead of synchronously hammering Planner.
+- execution-time recoverable tracking failures may still perform a controlled
+  stabilize/replan; if the subsequent plan itself fails, it also hands back
+  rather than entering a retry storm.
+
+Fresh Windows compile/tests for these changes are pending.
+
+
+
 ## 2026-09-26 — focused Automatic docking gates all PASS
 
 Fresh target-machine evidence after correcting the stale runtime-control

@@ -1,6 +1,20 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 
+## 2026-09-26 — live Automatic attempt exposed fixed-step retry storm
+
+Live Automatic docking did not reach execution. Instead, after the ship
+stabilized, the server repeatedly logged `phase=plan-retry`; each attempt made
+fixed simulation spend roughly 0.28–0.30 seconds, producing periodic freezes.
+
+The synchronous retry loop is removed. The first failed plan now records a
+stage-specific reason and terminates the Automatic request with Human handback.
+This preserves responsiveness and gives the next live run enough information to
+fix the actual planning failure rather than hiding it behind an infinite retry
+storm.
+
+
+
 ## 2026-09-26 — Automatic approach chain passed native target-machine gates
 
 The full focused Automatic approach stack is green on the Windows target:

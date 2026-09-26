@@ -1,5 +1,64 @@
 # CURRENT STATE
 
+## 2026-09-26 — Automatic freeze moved off fixed-step; angular program is now physical
+
+Fresh live evidence:
+- the restored docking tunnel is visible again;
+- Automatic attempts still failed before movement with
+  `accepted-program-angular-kinematics-infeasible`;
+- each START DOCKING still produced a single ~365–370 ms state-update stall;
+- after that failure the server correctly restored Human authority, which made
+  the UI visibly return to manual guidance.
+
+Freeze diagnosis:
+- manual docking advisory already snapshots its inputs and executes
+  `DockingAdvisoryPlanner::plan` on a worker thread;
+- Automatic performed advisory planning + Ruckig trajectory generation +
+  AcceptedManeuverProgram construction synchronously from
+  `applyAutomaticDockingControls` in fixed-step.
+
+Current fix:
+- Automatic now snapshots immutable planning inputs after stabilization;
+- heavy planning runs outside fixed-step in a worker;
+- the ship stays stopped while the job is pending;
+- the job plans against a short future execution epoch so the returned absolute
+  maneuver clock is not stale when installed;
+- fixed-step only polls the atomic result, installs it, then enters Aligning or
+  Executing;
+- old synchronous retry-loop remains forbidden.
+
+Angular failure diagnosis:
+- TrajectoryGenerator previously authored geometric quaternions while
+  AcceptedManeuverProgramBuilder interpreted consecutive quaternions as a
+  physical angular program;
+- sharp geometric orientation changes could therefore imply omega/alpha beyond
+  the real ship envelope even though translation was valid.
+
+Current angular contract:
+- Automatic supplies real initial hull forward/up and measured angular velocity;
+- TrajectoryGenerator compiles orientation + omega together under vehicle
+  max-angular-speed and max-angular-acceleration limits;
+- rotating terminal omega remains an exact requested boundary;
+- the trajectory marks its angular state as planner-authored;
+- AcceptedManeuverProgramBuilder preserves authored omega and still independently
+  checks angular feasibility.
+
+UI:
+- active map-card actions are now bright green; inactive actions retain the
+  existing style. This applies generically to dock and ship card actions that
+  already publish `active` state;
+- cockpit docking mode text is state-driven rather than inferred from tunnel
+  visibility;
+- added localized AUTOMATIC DOCKING MODE text for en/ru/zh-Hans/es/ja.
+
+New native regression:
+`trajectory_generator_angular` checks a real initial attitude -> bounded turn ->
+rotating terminal pose/omega and proves every adjacent sample stays within
+configured omega/alpha limits.
+
+Fresh Windows compile/live verification is pending.
+
+
 ## 2026-09-26 — Assisted accepted; tunnel/autopilot regression isolated and corrected
 
 Fresh live result:

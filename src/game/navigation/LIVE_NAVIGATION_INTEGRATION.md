@@ -1,5 +1,40 @@
 # Navigation v2 — live runtime integration
 
+
+## 2026-09-26 — accepted actuator schedule is now a first-class live-control channel
+
+The production autopilot path no longer asks physics to reverse-engineer the
+Planner's nominal propulsion choice from one net acceleration vector.
+
+For accepted-program execution:
+
+```text
+AcceptedManeuverProgram actuator segment
+    -> TrajectoryFollower sampled rear/fore/RCS feed-forward
+    -> NavigationRuntimeControlBridge::stepProgram
+    -> ShipControlState navigationActuatorProgram*
+    -> DynamicMotionSystem::applyNavigationActuatorProgram
+    -> fixed-step motion
+```
+
+The nominal rear-main, fore/reverse-main and manoeuvre/RCS schedule remains the
+Planner-owned command. B10 tracking correction is carried separately and may
+consume only still-unused main authority plus remaining manoeuvre authority.
+The old generic net-demand path remains for transitional/non-program callers.
+
+Installed propulsion topology is authoritative vehicle data:
+- a real rear/aft main bank supplies positive body-forward authority;
+- a real fore/reverse main bank may supply negative body-forward authority when
+  the ship profile actually provides it;
+- neither control law invents hardware;
+- manoeuvre/RCS remains separately bounded and gas-limited.
+
+Automatic docking also has an explicit pre-execution hull-alignment phase. If
+the stabilized ship is outside the first accepted attitude tolerance, Autopilot
+physically rotates the hull using the same bounded angular-demand stack, then
+discards the now-stale program and replans from the new real state/time before
+execution. Tracking tolerance is not widened to hide the mismatch.
+
 **Status:** stage 11 ACCEPTED; stage 11B-2 replicated guidance/debug truth accepted on target machine  
 **Updated:** 2026-09-18 Europe/Kyiv  
 **Parent contracts:** `NAVIGATION_WORLD_V2.md`, `src/world/navigation/PILOT_SKILL_MODEL.md`

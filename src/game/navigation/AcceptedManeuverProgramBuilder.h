@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -103,12 +104,19 @@ public:
     struct Result
     {
         bool valid = false;
+        std::string failureReason;
         std::vector<AcceptedManeuverProgram> pages;
     };
 
     [[nodiscard]] static Result build(const Request& request)
     {
         Result out;
+        const auto fail = [](const char* reason)
+        {
+            Result failed;
+            failed.failureReason = reason ? reason : "unknown";
+            return failed;
+        };
         if (!request.trajectory ||
             !request.shipPhysics ||
             !request.trajectory->ready() ||
@@ -126,13 +134,13 @@ public:
                  request.terminalAngularVelocityMapRadPerSec
              )))
         {
-            return out;
+            return fail("invalid-request");
         }
 
         const auto& trajectory = *request.trajectory;
         const auto& samples = trajectory.samples;
         if (samples.size() < 2)
-            return out;
+            return fail("trajectory-too-few-samples");
 
         const ShipParams& params = *request.shipPhysics;
         const double forwardMain =
@@ -215,7 +223,7 @@ public:
             if (!(localDuration > 0.0) ||
                 !std::isfinite(localDuration))
             {
-                return Result {};
+                return fail("non-positive-page-duration");
             }
 
             page.validUntilUniverseTimeSeconds =
@@ -256,7 +264,7 @@ public:
             );
 
             if (!angularKinematicsFeasible(page))
-                return Result {};
+                return fail("angular-kinematics-infeasible");
 
             page.proof.mapRevision = request.mapRevision;
             page.proof.mapSourceRevision = request.mapSourceRevision;
@@ -295,7 +303,7 @@ public:
                 segment.durationSeconds =
                     b.timeOffsetSeconds - a.timeOffsetSeconds;
                 if (!(segment.durationSeconds > 0.0))
-                    return Result {};
+                    return fail("non-positive-actuator-segment-duration");
 
                 segment.rearMainEnabled =
                     start.rearMainThrottle01 > 1.0e-4 ||
@@ -325,7 +333,7 @@ public:
             }
 
             if (!page.actuatorProgramFeasible)
-                return Result {};
+                return fail("propulsion-program-infeasible");
 
             // Storage pages are not semantic phases. Only the final page may
             // complete the accepted objective.

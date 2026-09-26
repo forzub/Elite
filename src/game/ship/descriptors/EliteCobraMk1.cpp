@@ -61,8 +61,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         
         desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
         
-        desc.physics.strafeAccel            = 20.0f;    // Legacy navigation lateral envelope
-        desc.physics.strafeDamping          = 6.0f;     // Assisted stabilization response
+        desc.physics.strafeAccel            = 73.549875f; // Assisted automatic lateral authority (7.5 g envelope)
+        desc.physics.strafeDamping          = 6.0f;     // Assisted velocity-direction response
         desc.physics.maxStrafeSpeed         = 80.0f;    // Legacy assisted translation envelope
         desc.physics.manoeuvreThrusterAccel = 2.0f;     // Small physical RCS acceleration
         desc.physics.manoeuvreGasUsePerSecond = 0.20f;  // Full one-axis manual burn

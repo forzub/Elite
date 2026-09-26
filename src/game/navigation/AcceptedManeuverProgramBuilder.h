@@ -148,8 +148,6 @@ public:
         const ShipParams& params = *request.shipPhysics;
         const double forwardMain =
             game::ship::forwardMainAccelerationLimitMps2(params);
-        const double reverseMain =
-            game::ship::reverseMainAccelerationLimitMps2(params);
         const double controlledSpeed =
             game::ship::controlledSpeedLimitMps(params);
 

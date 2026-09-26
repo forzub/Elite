@@ -1960,7 +1960,12 @@ void SpaceState::updateDockingAdvisory()
                 automaticNowServerSeconds;
             m_automaticDockingAuthoritySeen = false;
             m_automaticDockingCancelPending = false;
-            m_client->setExternalControlPredictionSuppressed(true);
+
+            // Keep normal local prediction until the authoritative session
+            // snapshot confirms ControllerKind::Autopilot. If the server
+            // rejects the request, the pilot must not lose local controls for
+            // the request timeout window.
+            m_client->setExternalControlPredictionSuppressed(false);
 
             std::cout
                 << "[DockAuto] request=" << pending.serial

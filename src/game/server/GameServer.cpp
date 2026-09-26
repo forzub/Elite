@@ -24,11 +24,13 @@
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/DockingCompatibility.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/world/navigation/NavigationObstacleFactory.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
 #include "src/world/coordinates/WorldPosition.h"
 
@@ -1425,16 +1427,14 @@ bool GameServer::planAutomaticDocking(
                             object.hubLocalOffsetMeters
                         ),
                         tacticalBasis,
-                        80.0
+                        game::navigation::
+                            DiagnosticHubInfrastructureClearanceMeters
                     );
                 if (obstacle)
                     obstacles.push_back(*obstacle);
             }
             return obstacles;
         };
-
-    const std::string targetObstacleId =
-        "object:" + std::to_string(targetObject->id.value);
 
     const auto& motion = ship.core().transform().motion;
     const bool assisted =
@@ -1513,34 +1513,102 @@ bool GameServer::planAutomaticDocking(
         if (trajectoryRequest.pathPointsMeters.empty())
             return false;
 
-        const double terminalEntryProgressMeters =
-            [&]()
+        const glm::dvec3 advisoryStopMeters =
+            trajectoryRequest.pathPointsMeters.back();
+
+        // The target module is still authoritative solid collision geometry.
+        // Automatic navigation therefore terminates this execution slice
+        // OUTSIDE that geometry. Never use TrajectoryGenerator's
+        // terminalAllowedObstacleId as a planner-only collision exemption:
+        // shared physics would still collide with the same module.
+        const double minimumPreCaptureDepthMeters =
+            request.hullRadiusMeters +
+            game::navigation::
+                DiagnosticHubInfrastructureClearanceMeters +
+            game::navigation::
+                AutomaticDockingPreCaptureReserveMeters;
+
+        double preCaptureDepthMeters = std::min(
+            request.standoffMeters,
+            minimumPreCaptureDepthMeters
+        );
+
+        const auto preCaptureCenterAt =
+            [&](const DockingAdvisoryLocalPort& portState,
+                double depthMeters)
             {
-                double progress = 0.0;
-                for (std::size_t i = 1;
-                     i < trajectoryRequest.pathPointsMeters.size();
-                     ++i)
-                {
-                    progress += glm::length(
-                        trajectoryRequest.pathPointsMeters[i] -
-                        trajectoryRequest.pathPointsMeters[i - 1]
+                return
+                    portState.positionMeters +
+                    portState.forward * depthMeters;
+            };
+
+        const auto segmentToPreCaptureClear =
+            [&](double depthMeters)
+            {
+                return world::navigation::
+                    segmentClearOfNavigationObstacles(
+                        advisoryStopMeters,
+                        preCaptureCenterAt(port, depthMeters),
+                        request.obstacles,
+                        request.hullRadiusMeters
                     );
-                }
-                return progress;
-            }();
+            };
+
+        if (!segmentToPreCaptureClear(preCaptureDepthMeters))
+        {
+            // Back away toward the already-proved advisory stop until the
+            // complete conservative swept-sphere chord is collision-free.
+            double blockedDepthMeters = preCaptureDepthMeters;
+            double safeDepthMeters = request.standoffMeters;
+
+            if (!segmentToPreCaptureClear(safeDepthMeters))
+                return false;
+
+            for (int search = 0; search < 24; ++search)
+            {
+                const double probeDepthMeters =
+                    0.5 * (
+                        blockedDepthMeters +
+                        safeDepthMeters
+                    );
+
+                if (segmentToPreCaptureClear(probeDepthMeters))
+                    safeDepthMeters = probeDepthMeters;
+                else
+                    blockedDepthMeters = probeDepthMeters;
+            }
+
+            preCaptureDepthMeters =
+                safeDepthMeters +
+                game::navigation::
+                    AutomaticDockingPreCaptureReserveMeters;
+            preCaptureDepthMeters = std::min(
+                request.standoffMeters,
+                preCaptureDepthMeters
+            );
+
+            if (!segmentToPreCaptureClear(preCaptureDepthMeters))
+                return false;
+        }
+
+        const glm::dvec3 preCaptureCenterMeters =
+            preCaptureCenterAt(
+                port,
+                preCaptureDepthMeters
+            );
 
         if (glm::length(
                 trajectoryRequest.pathPointsMeters.back() -
-                port.positionMeters) > 1.0e-6)
+                preCaptureCenterMeters) > 1.0e-6)
         {
             trajectoryRequest.pathPointsMeters.push_back(
-                port.positionMeters
+                preCaptureCenterMeters
             );
         }
 
-        // Preserve the planner's gate speed doctrine but do not stop at the
-        // advisory standoff. Automatic docking continues through that point
-        // into the authored capture interface and matches the moving port.
+        // Preserve the planner's gate speed doctrine and extend it only to a
+        // collision-free pre-capture center pose. Physical contact/latch is a
+        // separate authority transition and is not faked by navigation.
         double sourceProgress = 0.0;
         for (std::size_t i = 0;
              i < advisoryPlan.gates.size();
@@ -1582,6 +1650,32 @@ bool GameServer::planAutomaticDocking(
             );
         }
 
+        if (trajectoryRequest.pathPointsMeters.size() >
+            advisoryPlan.gates.size())
+        {
+            const double terminalProgressMeters =
+                sourceProgress +
+                glm::length(
+                    preCaptureCenterMeters -
+                    advisoryStopMeters
+                );
+
+            world::navigation::TrajectoryPointSpeedConstraint terminal;
+            terminal.sourcePathProgressMeters =
+                terminalProgressMeters;
+            const double authoredEntry =
+                definition->maxEntrySpeedMps > 0.0
+                    ? definition->maxEntrySpeedMps
+                    : 2.0;
+            terminal.maxSpeedMps = std::min(
+                executionVehicle.maxSpeedMps,
+                std::max(0.5, authoredEntry)
+            );
+            trajectoryRequest.pointSpeedConstraints.push_back(
+                terminal
+            );
+        }
+
         const double velocityProbeSeconds = 0.01;
         const auto portBefore = portAt(
             captureUniverseTimeSeconds - velocityProbeSeconds
@@ -1592,10 +1686,21 @@ bool GameServer::planAutomaticDocking(
         if (!portBefore.valid || !portAfter.valid)
             return false;
 
+        const glm::dvec3 preCaptureBefore =
+            preCaptureCenterAt(
+                portBefore,
+                preCaptureDepthMeters
+            );
+        const glm::dvec3 preCaptureAfter =
+            preCaptureCenterAt(
+                portAfter,
+                preCaptureDepthMeters
+            );
+
         trajectoryRequest.hasTerminalVelocity = true;
         trajectoryRequest.terminalVelocityMps =
-            (portAfter.positionMeters -
-             portBefore.positionMeters) /
+            (preCaptureAfter -
+             preCaptureBefore) /
             (2.0 * velocityProbeSeconds);
 
         const auto portOrientation =
@@ -1657,12 +1762,6 @@ bool GameServer::planAutomaticDocking(
             port.up;
         trajectoryRequest.terminalOrientationBlendDistanceMeters =
             std::max(500.0, request.standoffMeters * 2.0);
-
-        trajectoryRequest.terminalAllowedObstacleId =
-            targetObstacleId;
-        trajectoryRequest.
-            terminalObstacleEntrySourceProgressMeters =
-                terminalEntryProgressMeters;
 
         trajectoryResult =
             world::navigation::TrajectoryGenerator::generate(
@@ -1749,7 +1848,9 @@ bool GameServer::planAutomaticDocking(
         << advisoryPlan.terminalApproachLengthMeters
         << " terminal_radius_m="
         << advisoryPlan.terminalTurnRadiusMeters
-        << " capture_t=" << captureUniverseTimeSeconds
+        << " pre_capture_depth_m="
+        << preCaptureDepthMeters
+        << " terminal_t=" << captureUniverseTimeSeconds
         << " terminal_omega_radps="
         << glm::length(
             terminalAngularVelocityMapRadPerSec
@@ -1801,7 +1902,7 @@ bool GameServer::finishAutomaticDocking(
 
     std::cout
         << "[DockAuto] "
-        << (completed ? "capture-ready" : "cancelled")
+        << (completed ? "approach-complete" : "cancelled")
         << " entity=" << controlledEntityId.value
         << " request=" << requestSerial
         << " reason=" << (reason ? reason : "none")
@@ -2114,7 +2215,7 @@ void GameServer::applyAutomaticDockingControls(
             completion.entityId,
             completion.requestSerial,
             true,
-            "terminal-envelope-captured"
+            "pre-capture-envelope-complete"
         );
     }
 }

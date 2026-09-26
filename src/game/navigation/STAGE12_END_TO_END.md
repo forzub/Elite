@@ -1,5 +1,20 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
+## 2026-09-26 — build gate repaired after stale client acceptance mode API
+
+The post-mode-refactor canonical build failed in client diagnostics, not in the
+navigation/flight runtime: `ClientAcceptanceHarness` still invoked removed
+`CoordinateDisplayService::cycle()`.
+
+The harness now follows the same state/projection boundary as production:
+`ClientModeState` owns coordinate-format selection and
+`CoordinateDisplayService` formats/projects it. No hidden transition API was
+restored.
+
+This is a gate-maintenance correction before Stage-12 Automatic executor work.
+Fresh Windows mode gate + canonical build remain required.
+
+
 ## 2026-09-26 — flight doctrine/state cleanup completed before Automatic executor wiring
 
 Local-flight state transitions are now centralized before Stage-12 automatic

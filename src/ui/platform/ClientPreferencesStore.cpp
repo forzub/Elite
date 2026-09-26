@@ -29,6 +29,7 @@ constexpr std::uintmax_t MaxPreferencesFileBytes = 256u * 1024u;
 constexpr std::size_t MaxRememberedServers = 64u;
 constexpr std::size_t MaxEndpointLength = 512u;
 constexpr std::size_t MaxLocaleLength = 32u;
+constexpr std::size_t MaxSkyCultureIdLength = 64u;
 
 bool fail(std::string* outError, const std::string& message)
 {
@@ -46,6 +47,24 @@ bool validEndpointKey(const std::string& value)
 bool validLocale(const std::string& value)
 {
     if (value.size() > MaxLocaleLength)
+        return false;
+
+    for (const unsigned char c : value)
+    {
+        const bool valid =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= '0' && c <= '9') ||
+            c == '-' || c == '_';
+        if (!valid)
+            return false;
+    }
+    return true;
+}
+
+bool validSkyCultureId(const std::string& value)
+{
+    if (value.size() > MaxSkyCultureIdLength)
         return false;
 
     for (const unsigned char c : value)
@@ -120,6 +139,8 @@ nlohmann::json toJson(const ClientPreferences& preferences)
     root["schema_version"] = ClientPreferences::SchemaVersion;
     root["last_server_endpoint"] = preferences.lastServerEndpoint;
     root["preferred_locale"] = preferences.preferredLocale;
+    root["constellations_enabled"] = preferences.constellationsEnabled;
+    root["sky_culture_id"] = preferences.skyCultureId;
     root["last_successful_account_by_server"] = nlohmann::json::object();
 
     for (const auto& [endpoint, account] : preferences.lastSuccessfulAccountByServer)
@@ -160,6 +181,24 @@ bool fromJson(
         parsed.preferredLocale = root["preferred_locale"].get<std::string>();
         if (!validLocale(parsed.preferredLocale))
             return fail(outError, "preferred_locale is invalid");
+    }
+
+    if (root.contains("constellations_enabled"))
+    {
+        if (!root["constellations_enabled"].is_boolean())
+            return fail(outError, "constellations_enabled must be a boolean");
+        parsed.constellationsEnabled =
+            root["constellations_enabled"].get<bool>();
+    }
+
+    if (root.contains("sky_culture_id"))
+    {
+        if (!root["sky_culture_id"].is_string())
+            return fail(outError, "sky_culture_id must be a string");
+        parsed.skyCultureId =
+            root["sky_culture_id"].get<std::string>();
+        if (!validSkyCultureId(parsed.skyCultureId))
+            return fail(outError, "sky_culture_id is invalid");
     }
 
     if (root.contains("last_successful_account_by_server"))

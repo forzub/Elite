@@ -16,7 +16,7 @@ class LocalFlightControlStateMachine
 public:
     static constexpr LocalFlightControlLaw defaultLaw() noexcept
     {
-        return LocalFlightControlLaw::Assisted;
+        return defaultLocalFlightControlLaw();
     }
 
     static constexpr LocalFlightControlLaw next(
@@ -30,7 +30,8 @@ public:
 
     static bool transition(
         DynamicMotionState& motion,
-        LocalFlightControlLaw requested
+        LocalFlightControlLaw requested,
+        double assistedEntryForwardSpeedMps
     ) noexcept
     {
         if (requested != LocalFlightControlLaw::Assisted &&
@@ -50,16 +51,34 @@ public:
         motion.assistedTargetSpeedHold = false;
         motion.assistedThrottleTrimWasActive = false;
 
-        // Assisted enters with the currently achieved VREL magnitude as its
-        // target. It therefore begins from continuity instead of producing a
-        // synthetic acceleration/braking impulse on the transition frame.
+        // Assisted owns a FORWARD-speed setpoint, not total |VREL|. Capturing
+        // total speed here used to reinterpret sideways Newtonian drift as a
+        // new commanded forward speed and made the two laws feel misleadingly
+        // similar after a mode switch.
         if (requested == LocalFlightControlLaw::Assisted)
         {
             motion.targetForwardSpeedMps =
-                std::max(0.0, glm::length(motion.localVelocityMps));
+                std::max(
+                    0.0,
+                    std::isfinite(assistedEntryForwardSpeedMps)
+                        ? assistedEntryForwardSpeedMps
+                        : 0.0
+                );
         }
 
         return true;
+    }
+
+    static bool transition(
+        DynamicMotionState& motion,
+        LocalFlightControlLaw requested
+    ) noexcept
+    {
+        return transition(
+            motion,
+            requested,
+            motion.forwardSpeedMps
+        );
     }
 
     static constexpr bool usesAssistedVelocityController(
@@ -67,6 +86,18 @@ public:
     ) noexcept
     {
         return law == LocalFlightControlLaw::Assisted;
+    }
+
+    static constexpr bool neutralAngularDampingEnabled(
+        LocalFlightControlLaw law,
+        VelocityAlignmentMode alignmentMode
+    ) noexcept
+    {
+        // Assisted flight automatically arrests pilot-induced angular motion.
+        // Newtonian flight preserves angular inertia unless a persistent
+        // alignment/autobrake action explicitly owns attitude.
+        return law == LocalFlightControlLaw::Assisted ||
+            alignmentMode != VelocityAlignmentMode::None;
     }
 
     static constexpr bool velocityAlignmentOwnsAttitude(

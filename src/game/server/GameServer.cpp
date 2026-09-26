@@ -1520,9 +1520,9 @@ bool GameServer::planAutomaticDocking(
 
         // The target module is still authoritative solid collision geometry.
         // Automatic navigation therefore terminates this execution slice
-        // OUTSIDE that geometry. Never use TrajectoryGenerator's
-        // terminalAllowedObstacleId as a planner-only collision exemption:
-        // shared physics would still collide with the same module.
+        // OUTSIDE that geometry. Never use a planner-only target-obstacle
+        // collision exemption here: shared physics would still collide with
+        // the same module.
         const double minimumPreCaptureDepthMeters =
             request.hullRadiusMeters +
             game::navigation::

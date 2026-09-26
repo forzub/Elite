@@ -15,6 +15,9 @@ def fail(message: str) -> None:
 
 
 state = read("src/game/navigation/DynamicMotionState.h")
+flight_state_machine = read(
+    "src/game/navigation/LocalFlightControlStateMachine.h"
+)
 system = read("src/game/navigation/DynamicMotionSystem.cpp")
 mapper = read("src/game/ship/controller/PlayerInputMapper.cpp")
 client = read("src/game/client/GameClient.cpp")
@@ -125,6 +128,7 @@ for token in (
     "GLFW_KEY_INSERT",
     "GLFW_KEY_END",
     "localControlLawCommandValid",
+    "LocalFlightControlStateMachine::next",
 ):
     if token not in mapper:
         fail(f"production input mapping lost: {token}")
@@ -146,16 +150,35 @@ for token in (
     if token not in client:
         fail(f"fixed-step discrete-command latch lost: {token}")
 
-if "LocalFlightControlLaw::Assisted" not in shared:
-    fail("shared mode-switch path lost Assisted law")
+for token in (
+    "defaultLaw()",
+    "LocalFlightControlLaw::Assisted",
+    "next(",
+    "transition(",
+    "motion.localControlLaw = requested",
+    "velocityAlignmentOwnsAttitude",
+    "motion.targetForwardSpeedMps",
+):
+    if token not in flight_state_machine:
+        fail(f"central flight state machine lost: {token}")
 
 for token in (
     "control.localControlLawCommandValid",
     "control.requestedLocalControlLaw",
+    "LocalFlightControlStateMachine::transition",
     "control.velocityAlignmentCommand",
 ):
     if token not in shared:
-        fail(f"shared server/client attitude path lost command: {token}")
+        fail(f"shared server/client attitude path lost state transition: {token}")
+
+if "motion.localControlLaw = control.requestedLocalControlLaw" in shared:
+    fail("SharedShipPhysics bypassed the flight state machine")
+
+if "LocalFlightControlStateMachine::defaultLaw()" not in space:
+    fail("SpaceState input fallback bypassed the authoritative Assisted default")
+
+if "velocityAlignmentOwnsAttitude" not in controller:
+    fail("ShipController reopened flight-law attitude ownership outside state machine")
 
 for token in (
     "shipPtr->core().effectivePhysics()",

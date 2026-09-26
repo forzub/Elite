@@ -145,9 +145,16 @@ public:
         m_starfieldRenderer.setConstellationOverlayEnabled(enabled);
     }
 
-    bool cycleConstellationCulture()
+    bool setConstellationCultureId(const std::string& cultureId)
     {
-        return m_starfieldRenderer.cycleConstellationCulture();
+        return m_starfieldRenderer.setConstellationCultureId(cultureId);
+    }
+
+    std::string nextConstellationCultureId(
+        const std::string& currentCultureId
+    ) const
+    {
+        return m_starfieldRenderer.nextConstellationCultureId(currentCultureId);
     }
 
     std::string constellationCultureId() const

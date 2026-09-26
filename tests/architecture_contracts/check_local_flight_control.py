@@ -186,6 +186,7 @@ for token in (
     "completeVelocityAlignment",
     "requestAssistedMaximumSpeed",
     "updateAssistedLongitudinalTarget",
+    "requestAssistedTargetSpeed",
     "longitudinalInputCancelsBrake",
     "neutralAngularDampingEnabled",
     "velocityAlignmentOwnsAttitude",
@@ -206,6 +207,30 @@ for token in (
 ):
     if token not in shared:
         fail(f"shared server/client attitude path lost state transition: {token}")
+
+for token in (
+    "navigationAssistedFlightModelValid",
+    "navigationTargetForwardSpeedMps",
+    "navigationAssistedCorrectionSystemMps2",
+):
+    if token not in control_state:
+        fail(f"Assisted autopilot control channel lost: {token}")
+
+for token in (
+    "applyNavigationAssistedFlightModel(",
+    "requestAssistedTargetSpeed(",
+    "applyLocalFrameInput(",
+    "motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0)",
+):
+    if token not in system:
+        fail(f"Assisted autopilot stopped sharing the manual game flight law: {token}")
+
+for token in (
+    "control.navigationAssistedFlightModelValid",
+    "applyNavigationAssistedFlightModel(",
+):
+    if token not in simulation:
+        fail(f"server Assisted execution path lost: {token}")
 
 if "motion.localControlLaw = control.requestedLocalControlLaw" in shared:
     fail("SharedShipPhysics bypassed the flight state machine")

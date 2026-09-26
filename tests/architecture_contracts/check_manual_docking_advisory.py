@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260925-soft-axis-v2"
+CHECK_REVISION = "20260926-nose-first-v3"
 
 
 def read(rel: str) -> str:
@@ -52,6 +52,9 @@ try:
             "phase=stabilizing", "buildAuthoritativeHubSnapshot",
             "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",
             "request.gateSpacingMeters = 500.0",
+            "request.hasInitialForward = true",
+            "request.initialForwardLeadMeters",
+            "frame.worldToLocalVector(",
             "phase=handoff_wait", "human_control=1",
             "controlledEntityAutopilotActive",
             "cockpit.docking.manual_mode")
@@ -85,12 +88,17 @@ try:
             "nearBoundary")
     require("src/game/navigation/DockingAdvisoryPlanner.h",
             "gateSpacingMeters = 500.0",
+            "hasInitialForward = false",
+            "initialForwardLeadMeters = 0.0",
             "terminalGateSpacingMeters = 250.0",
             "terminalDenseDistanceMeters = 2000.0",
             "terminalApproachLengthMeters = 0.0",
             "terminalTurnSegmentFraction = 0.40",
             "preferredTerminalTurnRadiusMeters = 0.0")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
+            "routeSearchStart",
+            "initial forward corridor blocked",
+            "prependInitialForwardLead",
             "mandatoryApproachLengthMeters",
             "preferredApproachLengthMeters",
             "dock mandatory ingress blocked",

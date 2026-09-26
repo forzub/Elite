@@ -974,14 +974,6 @@ void SystemMapRenderer::init()
         m_galaxyView.visuals().starfieldMinimumDistanceLy
     );
 
-    game::navigation::CoordinateDisplayService::instance().setFormat(
-        game::navigation::navigationCoordinateFormatFromString(
-            m_galaxyView.state().navigationGrid
-                .config()
-                .defaultCoordinateFormat
-        )
-    );
-
     if (!m_navigationRegionCatalog.loaded())
     {
         const bool namesLoaded =

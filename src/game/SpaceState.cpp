@@ -1728,6 +1728,34 @@ void SpaceState::updateDockingAdvisory()
         m_client->sendMessage(message);
     };
 
+    const auto sendAutomaticCommand =
+        [&](ClientShipCommand::Type type,
+            std::uint64_t serial,
+            const RouteTargetRef* target)
+        {
+            if (serial == 0)
+                return;
+
+            ClientShipCommand command;
+            command.type = type;
+            command.requestSerial = serial;
+
+            if (target)
+            {
+                command.dockingTargetSystemId =
+                    target->systemId;
+                command.dockingTargetModuleId =
+                    target->stableObjectId;
+                command.dockingTargetAnchorId =
+                    target->semanticAnchorId;
+            }
+
+            game::network::ClientMessage message;
+            message.clientTick = 0;
+            message.payload = std::move(command);
+            m_client->sendMessage(message);
+        };
+
     const auto serverAutopilotActive = [&]() -> bool
     {
         return m_client->hasSessionSnapshot() &&
@@ -1798,6 +1826,169 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice = {};
         m_dockAdviceJob.reset();
     };
+
+    constexpr double AutomaticDockingRequestTimeoutSeconds = 3.0;
+    constexpr double AutomaticDockingCancelSettleSeconds = 0.25;
+
+    const bool automaticPending =
+        pending.valid() &&
+        pending.mode == DockingRouteRequest::Mode::Automatic;
+
+    const auto resetAutomaticTracking = [&]()
+    {
+        m_automaticDockingSerial = 0;
+        m_automaticDockingRequestedServerSeconds = -1.0;
+        m_automaticDockingAuthoritySeen = false;
+        m_automaticDockingCancelPending = false;
+
+        if (m_dockingPreparationSerial == 0 &&
+            !m_dockingPreparationReleasePending)
+        {
+            m_client->setExternalControlPredictionSuppressed(false);
+        }
+    };
+
+    const double automaticNowServerSeconds =
+        m_client->estimatedServerTimeSeconds();
+
+    if (m_automaticDockingSerial != 0)
+    {
+        if (serverAutopilotActive())
+        {
+            m_automaticDockingAuthoritySeen = true;
+            m_client->setExternalControlPredictionSuppressed(true);
+        }
+        else if (m_automaticDockingAuthoritySeen)
+        {
+            const std::uint64_t completedSerial =
+                m_automaticDockingSerial;
+            const bool samePending =
+                automaticPending &&
+                pending.serial == completedSerial;
+
+            resetAutomaticTracking();
+            clear();
+
+            if (samePending)
+                requests.clear();
+
+            std::cout
+                << "[DockAuto] request=" << completedSerial
+                << " phase=server-handoff human_control=1\n";
+
+            if (samePending)
+                return;
+        }
+        else if (m_automaticDockingCancelPending)
+        {
+            if (automaticNowServerSeconds -
+                    m_automaticDockingRequestedServerSeconds <
+                AutomaticDockingCancelSettleSeconds)
+            {
+                return;
+            }
+
+            resetAutomaticTracking();
+            clear();
+        }
+        else if (!automaticPending ||
+                 pending.serial != m_automaticDockingSerial)
+        {
+            sendAutomaticCommand(
+                ClientShipCommand::CancelAutomaticDocking,
+                m_automaticDockingSerial,
+                nullptr
+            );
+            m_automaticDockingCancelPending = true;
+            m_automaticDockingRequestedServerSeconds =
+                automaticNowServerSeconds;
+            return;
+        }
+        else if (automaticNowServerSeconds -
+                    m_automaticDockingRequestedServerSeconds >
+                 AutomaticDockingRequestTimeoutSeconds)
+        {
+            const std::uint64_t rejectedSerial =
+                m_automaticDockingSerial;
+            sendAutomaticCommand(
+                ClientShipCommand::CancelAutomaticDocking,
+                rejectedSerial,
+                nullptr
+            );
+            resetAutomaticTracking();
+            clear();
+            requests.clear();
+            m_dockingGuidanceFailureReason =
+                "server did not accept automatic docking authority";
+
+            std::cerr
+                << "[DockAuto] request=" << rejectedSerial
+                << " failed="
+                << m_dockingGuidanceFailureReason << '\n';
+            return;
+        }
+    }
+
+    if (automaticPending)
+    {
+        // Manual preparation is a different authority lifecycle. Finish it and
+        // wait for the authoritative hand-back before asking for Automatic.
+        if (m_dockingPreparationSerial != 0 ||
+            m_dockingPreparationReleasePending)
+        {
+            if (!m_dockingPreparationReleasePending)
+                finishLocalPreparation(false);
+            clear();
+            return;
+        }
+
+        if (m_automaticDockingSerial == 0)
+        {
+            clear();
+            m_lastDockingPathRequestSerial = 0;
+            m_noSafeDockingGuidanceSolution = false;
+            m_dockingGuidanceFailureReason.clear();
+
+            sendAutomaticCommand(
+                ClientShipCommand::BeginAutomaticDocking,
+                pending.serial,
+                &pending.target
+            );
+
+            m_automaticDockingSerial = pending.serial;
+            m_automaticDockingRequestedServerSeconds =
+                automaticNowServerSeconds;
+            m_automaticDockingAuthoritySeen = false;
+            m_automaticDockingCancelPending = false;
+            m_client->setExternalControlPredictionSuppressed(true);
+
+            std::cout
+                << "[DockAuto] request=" << pending.serial
+                << " phase=requested system="
+                << pending.target.systemId
+                << " module=" << pending.target.stableObjectId
+                << " anchor=" << pending.target.semanticAnchorId
+                << '\n';
+        }
+
+        return;
+    }
+
+    if (m_automaticDockingSerial != 0)
+    {
+        if (!m_automaticDockingCancelPending)
+        {
+            sendAutomaticCommand(
+                ClientShipCommand::CancelAutomaticDocking,
+                m_automaticDockingSerial,
+                nullptr
+            );
+            m_automaticDockingCancelPending = true;
+            m_automaticDockingRequestedServerSeconds =
+                automaticNowServerSeconds;
+        }
+        return;
+    }
 
     if (!pending.valid() ||
         pending.mode != DockingRouteRequest::Mode::Guidance)

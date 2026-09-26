@@ -1,5 +1,23 @@
 # PROJECT STATE
 
+## 2026-09-26 — selectable-mode ownership rule implemented across active domains
+
+Architecture rule: every persistent selectable mode has exactly one
+authoritative state owner; renderers/controllers/services may project or execute
+that state but do not own duplicate transition logic.
+
+Current owners:
+- local flight doctrine -> `LocalFlightControlStateMachine` over
+  `DynamicMotionState`;
+- global client presentation modes -> `ClientModeState`;
+- navigation module enablement -> `NavigationModuleState`;
+- game presentation target -> `GamePresentationCoordinator`;
+- system-map Galaxy/System/Detail/Hub submode -> `MapModeState`.
+
+Assisted automatic lateral stabilization is deliberately separate from manual
+gas-limited RCS. It uses the ship-profile aggregate Assisted lateral capability
+and remains bounded by the common linear-load envelope.
+
 ## 2026-09-26 — state ownership rule generalized across runtime modes
 
 Architecture rule: every persistent selectable mode has one authoritative state

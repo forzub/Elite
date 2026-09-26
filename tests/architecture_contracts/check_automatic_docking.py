@@ -73,7 +73,7 @@ try:
         "VelocityAlignmentMode::BrakeToStop",
         "TrajectoryGenerator::generate(",
         "AcceptedManeuverProgramBuilder::build(",
-        "TrajectoryFollower::follow(",
+        "Follower::follow(",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "controlBridge->step(",

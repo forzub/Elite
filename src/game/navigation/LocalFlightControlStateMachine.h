@@ -50,6 +50,7 @@ public:
         motion.velocityAlignmentMode = VelocityAlignmentMode::None;
         motion.assistedTargetSpeedHold = false;
         motion.assistedThrottleTrimWasActive = false;
+        motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
 
         // Assisted owns a FORWARD-speed setpoint, not total |VREL|. Capturing
         // total speed here used to reinterpret sideways Newtonian drift as a
@@ -122,6 +123,7 @@ public:
         motion.velocityAlignmentMode = requested;
         if (requested == VelocityAlignmentMode::BrakeToStop)
         {
+            motion.targetForwardSpeedMps = 0.0;
             motion.assistedTargetSpeedHold = false;
             motion.assistedThrottleTrimWasActive = false;
         }
@@ -142,7 +144,75 @@ public:
         DynamicMotionState& motion
     ) noexcept
     {
+        if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
+            motion.targetForwardSpeedMps = 0.0;
         return cancelVelocityAlignment(motion);
+    }
+
+    static bool updateAssistedLongitudinalTarget(
+        DynamicMotionState& motion,
+        double trimInput,
+        double targetSpeedChangeRateMps2,
+        double dtSeconds,
+        double reachedForwardSpeedMps,
+        double maximumSpeedMps
+    ) noexcept
+    {
+        if (motion.localControlLaw != LocalFlightControlLaw::Assisted)
+            return false;
+
+        const double maxSpeed = std::max(
+            0.0,
+            std::isfinite(maximumSpeedMps) ? maximumSpeedMps : 0.0
+        );
+
+        if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
+        {
+            motion.targetForwardSpeedMps = 0.0;
+            motion.assistedTargetSpeedHold = false;
+            motion.assistedThrottleTrimWasActive = false;
+            return true;
+        }
+
+        const bool trimActive =
+            std::isfinite(trimInput) && std::abs(trimInput) > 1.0e-6;
+
+        if (trimActive)
+        {
+            motion.assistedTargetSpeedHold = false;
+            motion.assistedThrottleTrimWasActive = true;
+            motion.targetForwardSpeedMps +=
+                trimInput *
+                std::max(
+                    0.0,
+                    std::isfinite(targetSpeedChangeRateMps2)
+                        ? targetSpeedChangeRateMps2
+                        : 0.0
+                ) *
+                std::max(
+                    0.0,
+                    std::isfinite(dtSeconds) ? dtSeconds : 0.0
+                );
+        }
+        else if (motion.assistedThrottleTrimWasActive)
+        {
+            // Capture exactly once on the +/- release edge. Manual body-axis
+            // RCS and external impulses never rewrite the longitudinal setpoint.
+            motion.targetForwardSpeedMps = std::max(
+                0.0,
+                std::isfinite(reachedForwardSpeedMps)
+                    ? reachedForwardSpeedMps
+                    : 0.0
+            );
+            motion.assistedThrottleTrimWasActive = false;
+        }
+
+        motion.targetForwardSpeedMps = std::clamp(
+            motion.targetForwardSpeedMps,
+            0.0,
+            maxSpeed
+        );
+        return true;
     }
 
     static bool requestAssistedMaximumSpeed(

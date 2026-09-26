@@ -34,6 +34,7 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/ui/components/UIContainer.h"
 #include "src/ui/components/UIText.h"
+#include "src/ui/platform/ClientModeState.h"
 #include "src/ui/presentation/PresentationFunctionKeyRouter.h"
 
 namespace game::diagnostics
@@ -218,29 +219,84 @@ void testGameUiToggleContract()
 
 void testCoordinateDisplayHotkeyContract()
 {
-    auto& display = game::navigation::CoordinateDisplayService::instance();
-    const auto saved = display.format();
+    using game::navigation::CoordinateDisplayFormat;
 
-    display.setFormat(game::navigation::CoordinateDisplayFormat::Hierarchical);
-    require(std::string(display.formatName()) == "STRAIGHT THERE", "hierarchical coordinate display name changed");
+    auto& display = game::navigation::CoordinateDisplayService::instance();
+    const auto savedProjection = display.format();
+
+    // ClientModeState is the authoritative selected-mode owner. The coordinate
+    // display service is only the formatting projection used by presentation.
+    ui::platform::ClientModeState modeState;
+    require(
+        modeState.coordinateDisplayFormatId == "hierarchical",
+        "client coordinate mode no longer starts Hierarchical"
+    );
+
+    auto cycle = [&]()
+    {
+        const auto current =
+            game::navigation::coordinateDisplayFormatFromString(
+                modeState.coordinateDisplayFormatId
+            );
+        const auto next =
+            game::navigation::nextCoordinateDisplayFormat(current);
+        const auto& nextMode =
+            game::navigation::coordinateDisplayMode(next);
+
+        require(
+            modeState.setCoordinateDisplayFormatId(nextMode.id),
+            "coordinate-format state transition was not accepted"
+        );
+        display.setFormat(next);
+    };
+
+    display.setFormat(CoordinateDisplayFormat::Hierarchical);
+    require(
+        std::string(display.formatName()) == "STRAIGHT THERE",
+        "hierarchical coordinate display name changed"
+    );
     require(
         display.formatLine("G1 0/0/0").find("[STRAIGHT THERE]") == 0,
         "hierarchical coordinate display no longer reaches visible formatted line"
     );
 
-    display.cycle();
-    require(display.format() == game::navigation::CoordinateDisplayFormat::Axis, "first coordinate-format cycle no longer selects Axis");
-    require(std::string(display.formatName()) == "THREE AXES", "Axis coordinate display name changed");
+    const std::uint64_t initialRevision = modeState.revision;
 
-    display.cycle();
-    require(display.format() == game::navigation::CoordinateDisplayFormat::PackedBase32, "second coordinate-format cycle no longer selects PackedBase32");
-    require(std::string(display.formatName()) == "VERY SECRET CODE", "PackedBase32 coordinate display name changed");
+    cycle();
+    require(
+        modeState.coordinateDisplayFormatId == "axis" &&
+        display.format() == CoordinateDisplayFormat::Axis,
+        "first coordinate-format transition no longer selects/projects Axis"
+    );
+    require(
+        std::string(display.formatName()) == "THREE AXES",
+        "Axis coordinate display name changed"
+    );
 
-    display.cycle();
-    require(display.format() == game::navigation::CoordinateDisplayFormat::Hierarchical, "coordinate-format cycle no longer wraps to Hierarchical");
+    cycle();
+    require(
+        modeState.coordinateDisplayFormatId == "packed_base32" &&
+        display.format() == CoordinateDisplayFormat::PackedBase32,
+        "second coordinate-format transition no longer selects/projects PackedBase32"
+    );
+    require(
+        std::string(display.formatName()) == "VERY SECRET CODE",
+        "PackedBase32 coordinate display name changed"
+    );
 
-    display.setFormat(saved);
-    pass("CTRL+F11 + COORDINATE DISPLAY FORMAT");
+    cycle();
+    require(
+        modeState.coordinateDisplayFormatId == "hierarchical" &&
+        display.format() == CoordinateDisplayFormat::Hierarchical,
+        "coordinate-format transition no longer wraps/projects Hierarchical"
+    );
+    require(
+        modeState.revision == initialRevision + 3,
+        "coordinate-format transitions bypassed ClientModeState revision"
+    );
+
+    display.setFormat(savedProjection);
+    pass("CTRL+F11 + CLIENT MODE STATE -> COORDINATE DISPLAY PROJECTION");
 }
 
 void testConstellationOverlayContract()

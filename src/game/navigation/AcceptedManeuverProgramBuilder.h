@@ -418,6 +418,9 @@ private:
         if (samples.empty() || index >= samples.size())
             return glm::dvec3(0.0);
 
+        if (trajectory.angularKinematicsAuthored)
+            return samples[index].angularVelocityRadPerSecond;
+
         if (index == 0 && initialAngularVelocity)
             return *initialAngularVelocity;
 

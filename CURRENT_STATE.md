@@ -1,5 +1,39 @@
 # CURRENT STATE
 
+## 2026-09-26 — mode-state refactor implemented; first Windows gate found only a test expectation error
+
+Mode/state refactor now present on main:
+- one shared default local flight law, Assisted;
+- persistent flight-law/alignment/Assisted-target transitions are owned by
+  `LocalFlightControlStateMachine`; `DynamicMotionSystem`,
+  `SharedShipPhysics`, and `ShipController` no longer write those mode
+  fields directly;
+- Assisted entry captures longitudinal speed instead of total |VREL|;
+- neutral angular damping is Assisted doctrine; Newtonian neutral rotation
+  preserves angular inertia unless an explicit alignment state owns attitude;
+- Assisted automatic lateral stabilization is a separate capability/state from
+  the pilot gas-limited RCS. Cobra uses the configured aggregate
+  `strafeAccel` capability, bounded by the common ship load envelope;
+- the new Assisted stabilizer state is replicated; SimulationSnapshot wire
+  schema is now version 10;
+- global client modes (UI locale, constellation visibility, sky culture,
+  coordinate format) are owned by `ClientModeState` and persisted as
+  projections;
+- coordinate formatter/renderer no longer owns a hidden coordinate mode;
+- Galaxy/System/Detail/Hub renderer submode is now owned by `MapModeState`.
+
+First `verify_modes.sh` native run:
+- client preferences contract PASS;
+- local-flight contract failed only because its new lateral-stabilizer test
+  expected raw 20.0 m/s² while `makeParams()` has maxGs=2, so the production
+  capability correctly returned 19.6133 m/s² (2g).
+The test now expects
+`assistedLateralStabilizationAccelerationLimitMps2(params)`, i.e. the same
+central load-bounded capability as production.
+
+Wire-data static contract was also updated from schema 9 to 10 and now requires
+`assistedStabilizationAccelerationMps2`. Fresh Windows rerun is pending.
+
 ## 2026-09-26 — mode/state ownership refactor implemented; Windows verification pending
 
 The requested mode-switch audit found and corrected several independent hidden

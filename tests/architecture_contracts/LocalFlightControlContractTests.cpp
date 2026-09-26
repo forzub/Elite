@@ -370,9 +370,13 @@ void testAssistedLateralStabilizerIsDistinctFromNewtonianRcs()
         1.0e-9,
         "Assisted automatic drift cancellation leaked into manual RCS"
     );
+    const double expectedAssistedLateralAuthority =
+        game::ship::assistedLateralStabilizationAccelerationLimitMps2(
+            params
+        );
     requireNear(
         glm::length(assisted.assistedStabilizationAccelerationMps2),
-        20.0,
+        expectedAssistedLateralAuthority,
         1.0e-6,
         "Assisted did not use its configured lateral stabilization authority"
     );

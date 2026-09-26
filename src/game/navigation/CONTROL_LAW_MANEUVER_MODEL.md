@@ -708,3 +708,61 @@ families using explicit doctrine plus actual hardware. Capability/resource and
 continuous collision proof happen before acceptance. The accepted actuator
 schedule is then executed literally; bounded follower correction may consume
 only authority explicitly reserved by the planner.
+
+## 2026-09-27 — superseding execution rule: control law is part of the vehicle motion model
+
+The generic rule "every maneuver interval is decomposed into main + RCS" is no
+longer valid for all ship families.
+
+### Assisted
+
+Ordinary Assisted transit is a game-flight control law:
+
+```text
+bounded target hull attitude
++ target forward speed
++ finite angular dynamics
++ forward/reverse main authority
++ automatic velocity-to-nose stabilization
+= next tactical state
+```
+
+The automatic stabilizer is a distinct authored ship capability. It is not the
+2 m/s² keypad/manoeuvre RCS system. Manual and Automatic Assisted execution must
+invoke the same law.
+
+Therefore an Assisted `AcceptedManeuverProgram` may own a target-speed /
+attitude program instead of literal per-interval RCS vectors. Its executable
+proof is against the Assisted game-flight model and shared load/speed/angular
+limits.
+
+Physical manoeuvre/RCS remains available for explicit precision phases:
+centering, close formation, final placement/capture, parking trim, or a vehicle
+whose descriptor genuinely makes such thrusters primary.
+
+### Newtonian
+
+Ordinary Newtonian transit remains inertial and main-engine-dominant:
+
+```text
+coast
+ -> rotate hull within angular limits
+ -> main-engine burn
+ -> coast
+ -> rotate/flip
+ -> main-engine braking burn
+```
+
+Sustained route curvature must not be synthesized from precision RCS merely
+because an arbitrary acceleration vector was authored upstream.
+
+Docking/parking strategy is consequently different by family:
+- Assisted: fly-through curved approach is legal when the game-flight law can
+  track it.
+- Newtonian/heavy: prefer piecewise-straight approach, large turn volume and
+  slower final placement; class-specific stronger RCS or tug operations belong
+  to the precision/capture layer.
+
+The development-time control-law toggle may remain temporarily, but Planner
+and Follower must already treat the laws as distinct vehicle-motion families so
+a later descriptor-level class lock is only configuration, not architecture.

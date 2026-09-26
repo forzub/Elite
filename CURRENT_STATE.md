@@ -5639,3 +5639,37 @@ New regressions pin:
 
 Fresh Windows `verify_docking.sh`, full MinGW build and live Automatic flight
 are still required before this replacement is accepted.
+
+## 2026-09-27 — rotating-terminal gate exposed a real angular planner bug
+
+Fresh Windows `verify_docking.sh` reached the rotating-terminal trajectory gate
+and failed:
+
+```text
+trajectory_generator_angular: FAIL
+angular trajectory cannot reach requested terminal state
+```
+
+The test itself is physically valid: 90 degree body turn, `omega_max=1.0`,
+`alpha_max=0.5`, terminal `omega=(0,0.2,0)`, and a 200 m trajectory with a
+180 m terminal orientation blend. Do not weaken this test or its 5 degree /
+0.05 rad/s acceptance envelope.
+
+Root cause: `compileBoundedAngularKinematics` bounded each forward angular
+acceleration step but treated terminal angular velocity as a final-sample
+override. A feasible trajectory could therefore reach the penultimate sample
+with too much angular-rate error to remove in the last dt, then reject itself.
+
+Fix on main:
+- every sample now reserves backwards-reachable angular authority for the exact
+  terminal omega;
+- invariant:
+  `|omega(t)-omega_terminal| <= alpha_max*(T-t)`;
+- if current omega has already left that cone, generation fails honestly;
+- desired omega is projected into the next sample's terminal-reachable cone
+  before the ordinary per-step alpha clamp;
+- no terminal tolerance or angular capability was relaxed.
+
+The native angular test now additionally asserts that the penultimate omega is
+already reachable from the requested terminal omega within the last dt. Fresh
+Windows rerun is pending.

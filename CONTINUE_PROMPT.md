@@ -1,95 +1,244 @@
-# CONTINUE PROMPT — Elite Navigation v2 / propulsion-safe docking entry
+# CONTINUE PROMPT — Elite Navigation v2 / shared game-flight autopilot
 
 Work in public repository `forzub/Elite`, branch `main`.
 
-At the start of every iteration read the newest sections of:
+At the start of EVERY iteration read the newest relevant sections of:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
 - `src/game/navigation/STAGE12_END_TO_END.md`
 - `src/game/navigation/CONTROL_LAW_MANEUVER_MODEL.md`
+- this file
 
-After every state-affecting result:
-1. update the state/task/project/end-to-end MD files;
-2. REGENERATE THIS PROMPT FROM SCRATCH;
-3. commit fixes directly to GitHub `main`.
-Do not send patch files to the user.
+After every state-affecting iteration:
+1. update CURRENT_STATE / CURRENT_TASK / PROJECT_STATE / STAGE12_END_TO_END as appropriate;
+2. update CONTROL_LAW_MANEUVER_MODEL when flight doctrine changes;
+3. REGENERATE THIS CONTINUE_PROMPT FROM SCRATCH;
+4. commit directly to GitHub `main`.
 
-## Accepted baseline
+Do not send patch files to the user. Fresh Windows/MSYS2 evidence is required
+before claiming a new code slice accepted.
 
-Assisted manual flight is ACCEPTED by the user. Do not retune it without fresh
-live evidence.
+## User-approved flight behavior
 
-The docking tunnel/corridor must remain visible in Manual Guidance and while
-Automatic owns controls.
+Manual Assisted is ACCEPTED. Do not retune it without new live evidence.
 
-Automatic docking current scope ends at a collision-free pre-capture pose.
-Physical contact/latch is a later game-state/physics layer.
+Assisted feels almost aircraft-like:
+- where the hull nose points, the velocity/course should follow;
+- finite hull angular acceleration/rate still applies;
+- velocity realignment may lag, but should be within about 2–3 seconds;
+- forward/reverse main propulsion owns longitudinal speed;
+- the automatic Assisted velocity-to-nose stabilizer is a game-flight
+  capability distinct from the small physical keypad/manoeuvre RCS.
 
-## Latest Windows/live evidence
+Cobra current values include:
+- forward main: 73.549875 m/s²;
+- reverse main: 73.549875 m/s²;
+- Assisted automatic stabilization (`strafeAccel`): 73.549875 m/s², bounded by
+  the shared 7.5 g linear envelope;
+- physical `manoeuvreThrusterAccel`: 2.0 m/s²;
+- angular acceleration/rate remain bounded by ShipDynamics.
 
-The client/server build succeeded.
+Physical manoeuvre/RCS is precision authority: manual strafe/lift, final
+centering, close formation/placement, parking trim. Ordinary Assisted route
+curvature MUST NOT be tested against the 2 m/s² RCS budget.
 
-The previous synchronous Automatic planning freeze appears fixed: the latest
-START DOCKING attempts did not reproduce the old ~350 ms fixed-step/state-update
-stall.
+## Latest Windows evidence BEFORE the current replacement
 
-Automatic still did not begin flight. Each request ended after a short planning
-period with:
+At HEAD `c6dee4ee`:
+- `navigation_runtime_control`: PASS;
+- `maneuver_tracking_controller`: PASS;
+- `accepted_maneuver_program_builder`: PASS;
+- `docking_advisory`: FAIL:
+  `manual docking corridor did not start along hull nose`.
 
-```
+Live Automatic:
+```text
 [DockAuto] ... phase=plan-failed
 reason=accepted-program-propulsion-program-infeasible
 action=restore-human
 ```
 
-Human control restoration is therefore working.
+The old synchronous ~1 s docking freeze was NOT reproduced in that run.
+The center cockpit boresight is accepted by the user and should remain.
 
-The user also required:
-- Manual docking route must start in the direction the ship nose currently
-  points, so the first tunnel section is directly ahead after returning to
-  cockpit view.
-- Cockpit HUD must show a fixed marker for ship nose direction: the screen
-  center boresight.
+## Root cause of the Automatic failure
 
-## Current propulsion diagnosis
+Manual and Automatic Assisted were using different motion laws.
 
-`AcceptedManeuverProgramBuilder::compilePropulsion` decomposes each trajectory
-acceleration against the authored body forward vector using real hardware:
-- rear/forward main;
-- fore/reverse main;
-- physical manoeuvre/RCS authority.
+Manual:
+`DynamicMotionSystem::applyLocalFrameInput` uses the dedicated Assisted
+velocity-to-nose stabilizer to cancel old lateral VREL and bend the velocity
+vector toward the new hull nose.
 
-For Cobra, the physical manoeuvre thruster is 2 m/s². Do NOT substitute the
-larger Assisted velocity-stabilization authority: the accepted actuator program
-and `DynamicMotionSystem::applyNavigationActuatorProgram` must stay grounded in
-real propulsion.
+Old Automatic:
+`applyNavigationActuatorProgram` zeroed Assisted stabilization, decomposed the
+trajectory acceleration into main + physical manoeuvre/RCS, and rejected
+ordinary course changes when the residual exceeded 2 m/s².
 
-The physical angular compiler exposed an entry mismatch:
-- translation could start accelerating along the route;
-- body attitude could still start at the arbitrary stopped hull orientation;
-- the resulting lateral residual exceeded physical RCS authority;
-- Builder correctly returned `propulsion-program-infeasible`.
+That universal actuator decomposition was conceptually wrong for Assisted.
 
-## Current Automatic fix
+## Current replacement on main
 
-The first planned program now declares the required **route-entry attitude**:
-- forward = first advisory gate direction;
-- up = current hull up projected onto the new forward plane, with a safe
-  orthogonal fallback;
-- planned entry angular velocity = zero.
+### Accepted program has an explicit translation mode
 
-The existing server `Phase::Aligning` then has the intended job:
-1. compare the real stopped hull with the first accepted reference;
-2. physically rotate through normal bounded angular control;
-3. on alignment, discard the now-stale program;
-4. return to stabilization;
-5. asynchronously replan from the real aligned state/time;
-6. execute only the fresh program.
+`AcceptedManeuverProgram::TranslationMode`:
+- `AssistedVelocity`
+- `NewtonianMainEngine`
+- `PrecisionRcs` (reserved for explicit precision/capture phases)
 
-Expected live lifecycle when initial attitude differs:
+Programs also carry their `LocalFlightControlLaw`.
 
+### Assisted execution
+
+Assisted Builder behavior:
+- does NOT call propulsion decomposition for ordinary transit;
+- emits `actuatorSegmentCount = 0`;
+- validates speed/orientation state;
+- never publishes synthetic route RCS.
+
+Follower derives target forward speed from the accepted velocity reference.
+
+Bridge publishes:
+- `navigationAssistedFlightModelValid`
+- `navigationTargetForwardSpeedMps`
+- `navigationAssistedCorrectionSystemMps2`
+
+GameSimulation routes this to
+`DynamicMotionSystem::applyNavigationAssistedFlightModel`.
+
+That function:
+1. sets the target speed through
+   `LocalFlightControlStateMachine::requestAssistedTargetSpeed`;
+2. calls the SAME `applyLocalFrameInput` used by manual Assisted;
+3. keeps ordinary physical manoeuvre/RCS at zero;
+4. spends bounded lateral Follower correction inside the automatic Assisted
+   stabilization budget, not keypad RCS.
+
+Canonical Assisted execution:
+```text
+law-aware trajectory/reference
+ -> AcceptedManeuverProgram(AssistedVelocity)
+ -> TrajectoryFollower(target speed + tracking/angular intent)
+ -> NavigationRuntimeControlBridge
+ -> ShipControlState navigationAssistedFlightModel*
+ -> DynamicMotionSystem::applyNavigationAssistedFlightModel
+ -> SAME applyLocalFrameInput as manual Assisted
+ -> shared fixed-step integration
 ```
+
+### Planner vehicle profile
+
+Production docking now supplies the actual control law explicitly to
+`makeNavigationVehicleProfile`.
+
+Assisted:
+- course-change/lateral timing authority =
+  `assistedLateralStabilizationAccelerationLimitMps2`;
+- NOT `manoeuvreThrusterAccel`.
+
+Legacy generic profile callers retain their historical hardware-envelope
+semantics and were not silently converted to Assisted.
+
+### Newtonian split
+
+Design direction is two large ship-motion families, not two cosmetic control
+modes over one parking algorithm.
+
+Newtonian/heavy craft:
+- likely faster but much less maneuverable;
+- velocity independent from hull attitude;
+- ordinary strategy = coast, rotate, main burn, coast, rotate/flip, brake;
+- favor long nearly straight legs and large maneuvering space;
+- parking/pre-capture is slower;
+- final placement may later use stronger class-specific manoeuvre thrusters or
+  tugs.
+
+Current code establishes the hard boundary:
+- docking geometry sets `roundTurns = false` for Newtonian;
+- ordinary Newtonian Accepted programs use primary main engine only;
+- ordinary Newtonian route RCS is zero;
+- lateral acceleration that cannot be produced by aligned main thrust fails as
+  `newtonian-main-engine-program-infeasible`.
+
+This is intentional. Do NOT hide the remaining Newtonian compiler work by
+increasing RCS or restoring arbitrary-vector allocation.
+
+A dedicated Newtonian `coast -> rotate -> burn` /
+`accelerate -> rotate -> brake` maneuver compiler is still future work and
+must be treated separately from Assisted parking.
+
+The runtime Ctrl+F10 law switch remains temporarily for development/regression.
+Architecture no longer depends on it being a player preference; later a ship
+descriptor can lock the family without redesigning Planner/Follower.
+
+## Nose-first manual corridor fix
+
+Manual planning still requests a real hull-forward lead:
+```text
+max(500 m, 10 * hull length)
+```
+
+The latest failed native test showed generic filleting could consume the first
+straight segment after it was prepended.
+
+Now the first semantic launch corner is protected:
+`initialForwardLeadActive && i == 1` explicitly preserves
+`routeSearchStart` before later fillets.
+
+Planner may shorten a blocked lead but may not rotate it. If even the minimum
+forward segment is blocked, fail with:
+`initial forward corridor blocked`.
+
+Newtonian no-round geometry additionally proves every straight segment clear.
+
+## Regressions added
+
+`AcceptedManeuverProgramBuilderTests`:
+- Assisted accepts ordinary lateral/course demand even when physical RCS is only
+  2 m/s²;
+- Assisted program is `TranslationMode::AssistedVelocity`;
+- Assisted ordinary program has zero actuator/RCS segments;
+- Newtonian ordinary transit cannot use even a deliberately strong RCS budget
+  to fake lateral route thrust.
+
+`NavigationRuntimeControlTests`:
+- Automatic Assisted calls the canonical game-flight law;
+- starting with VREL +X and hull nose -Z, target forward speed 100 m/s must
+  realign course to within 5 degrees in 3 seconds;
+- ordinary `manoeuvreAccelerationMps2` remains zero.
+
+Static contracts pin:
+- Assisted game-flight execution channel;
+- explicit control-law planner projection;
+- Newtonian no-fake-RCS doctrine;
+- nose-first launch lead protected from filleting.
+
+`verify_docking.sh` now also runs
+`check_local_flight_control.py`.
+
+## Automatic docking async invariant
+
+Heavy planning remains outside fixed-step:
+- server takes Autopilot authority;
+- stabilizes/stops;
+- snapshots immutable planning input;
+- worker runs advisory + trajectory + accepted-program construction;
+- fixed-step polls the atomic result only.
+
+Never restore:
+- synchronous heavy planning in fixed-step;
+- `phase=plan-retry` retry storms.
+
+Existing entry alignment is retained:
+- first accepted reference defines route-entry attitude;
+- if real hull differs, `Phase::Aligning` physically turns it;
+- aligned stale program is discarded;
+- server stabilizes/replans from actual state;
+- only fresh program executes.
+
+Expected lifecycle when alignment is needed:
+```text
 phase=planning-async
 planned ... phase=aligning
 phase=aligned-replan
@@ -97,69 +246,11 @@ phase=planning-async
 planned ... phase=executing
 ```
 
-If already aligned, direct `phase=executing` is legal.
+Direct `phase=executing` is legal when already aligned.
 
-Do not weaken AcceptedManeuverProgramBuilder to make this pass.
+## Immediate Windows/MSYS2 gate
 
-## Current Manual corridor fix
-
-`DockingAdvisoryRequest` has:
-- `hasInitialForward`
-- `initialForward`
-- `initialForwardLeadMeters`
-
-Manual `SpaceState` planning supplies the real hull forward axis converted
-into the Hub-local planning frame and requests a lead of:
-
-```
-max(500 m, 10 * hull length)
-```
-
-Planner starts the route search after that forward lead, then prepends the real
-ship start so the first visible segment is nose-forward.
-
-Obstacle policy:
-- preserve the exact forward direction;
-- shorten the requested lead if the ray is obstructed;
-- if even the minimum safe forward segment is blocked, fail explicitly with
-  `initial forward corridor blocked`;
-- never silently rotate the initial segment sideways.
-
-A native `DockingAdvisoryPlannerTests` regression checks the first published
-segment against the requested nose axis.
-
-## HUD boresight
-
-`FlightVectorIndicatorRenderer::renderBoresight` draws a fixed optical sight at:
-
-```
-viewport.width * 0.5
-viewport.height * 0.5
-```
-
-It is rendered whenever cockpit HUD is rendered (except Drone camera) and is
-independent of the HudFlightVector navigation-module toggle.
-
-It represents **hull/nose direction**, not velocity/VREL.
-
-## Automatic async planning
-
-Heavy Automatic planning remains outside fixed-step:
-- stabilize/stop;
-- snapshot immutable planning inputs;
-- enter `Phase::Planning`;
-- worker performs advisory + Ruckig + accepted-program construction;
-- fixed-step only polls the atomic result;
-- ship stays stopped while worker is pending.
-
-Never restore:
-- synchronous heavy route/Ruckig planning inside fixed-step;
-- `phase=plan-retry` retry storms.
-
-## Immediate target-machine gate
-
-Run on Windows/MSYS2:
-
+Run exactly:
 ```bash
 cd /d/__elite/work
 
@@ -173,68 +264,49 @@ bash build_mingw64.sh
 build/EliteGame.exe
 ```
 
-Do not run an old executable if tests/build fail.
+If `verify_docking.sh` fails, fix the FIRST real failure before building/running.
+Do not claim success from GitHub-only/static inspection.
 
-## Live acceptance
+## Live Assisted acceptance
 
-### Manual
-1. Press CALCULATE TRAJECTORY.
-2. Route line and tunnel remain visible.
-3. Return to cockpit view.
-4. Fixed center boresight is visible.
-5. First tunnel frames should be directly ahead along that boresight before the
-   route begins its turn.
-
-### Automatic
-1. Press START DOCKING.
-2. No old planning freeze.
-3. Retained route/tunnel remains visible.
-4. Automatic card action remains active/bright green while the request is active.
-5. Expect async planning.
-6. If needed, ship physically aligns first.
-7. Alignment must produce `phase=aligned-replan`, not execute the stale plan.
-8. Fresh plan should reach `phase=executing`.
-9. Ship then physically moves along the route.
-10. The old `accepted-program-propulsion-program-infeasible` should not occur
-    merely because the initial stopped hull pointed away from the route.
-
-If it still fails, capture every `[DockAuto]` line and the exact reason.
+1. Center boresight remains visible.
+2. CALCULATE TRAJECTORY:
+   - Autopilot stops/stabilizes;
+   - manual route/tunnel is retained after Human handback;
+   - first visible tunnel section starts along boresight/nose.
+3. START DOCKING:
+   - no old fixed-step planning freeze;
+   - route/tunnel stays visible;
+   - async plan completes;
+   - optional physical align/replan occurs;
+   - fresh plan reaches `phase=executing`;
+   - ship actually moves along the route.
+4. The old
+   `accepted-program-propulsion-program-infeasible`
+   must NOT be produced merely because Assisted needs to turn/course-correct.
+5. If execution replans or cancels, capture every `[DockAuto]` line and exact
+   failure reason.
 
 ## Architecture invariants
 
-Canonical executable chain:
-
-```text
-trajectory + proof
- -> AcceptedManeuverProgram
- -> TrajectoryFollower
- -> NavigationRuntimeControlBridge::stepProgram
- -> ShipControlState navigationActuatorProgram*
- -> DynamicMotionSystem::applyNavigationActuatorProgram
- -> shared fixed-step physics
-```
-
-Ownership:
-- Planner: nominal trajectory/reference + actuator schedule.
-- Follower: bounded tracking correction only.
-- Physics: installed hardware, load envelope, gas, speed and collision.
-- Client/manual route: presentation/request state only.
-- Server Automatic: control authority and execution.
-- Boresight: presentation only, no control/navigation state.
-
-Do not restore:
-- `TrajectoryFollower(AcceptedShortSegment)`;
-- direct authoritative velocity/position/orientation rewrites;
-- planner-only target collision bypass;
-- fake extra RCS/Assisted authority in accepted actuator programs;
-- execution of a stale program after physical alignment;
-- hidden route/tunnel during Automatic;
-- synchronous Automatic planning or fixed-step retry loops.
+- Planner owns route/reference/control-law-compatible maneuver program.
+- Follower closes bounded tracking error; it is not a second planner.
+- Manual and Automatic Assisted share the same game-flight motion law.
+- Physical RCS is not ordinary Assisted lateral route authority.
+- Newtonian ordinary transit cannot spend precision RCS as fake main thrust.
+- ShipDynamics/descriptor remains the source of angular, speed, load and
+  installed propulsion limits.
+- No direct authoritative position/velocity/orientation rewrites.
+- No planner-only collision bypass.
+- No stale program execution after physical entry alignment.
+- No hidden tunnel during Automatic.
+- No synchronous Automatic planning retry loop.
+- Current docking scope ends at a collision-free pre-capture pose; physical
+  latch/contact is later.
 
 ## Verification status
 
-The newest nose-first route, entry-alignment propulsion fix, boresight and their
-regression changes are committed to `main`, but fresh Windows
-`verify_docking.sh`, canonical MinGW build and live flight evidence are still
-pending. Do not claim these newest changes are accepted until target-machine
-evidence is green.
+All changes above are committed to public `main`.
+Fresh target-machine `verify_docking.sh`, canonical MinGW build and live
+Assisted docking evidence are PENDING. Do not call this replacement accepted
+until those gates are green.

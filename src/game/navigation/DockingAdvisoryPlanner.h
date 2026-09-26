@@ -17,6 +17,12 @@ struct DockingAdvisoryRequest
     double maxSpeedMps = 100.0;
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;
+
+    // Assisted ships prefer fly-through arcs. Newtonian/heavy ships may ask
+    // for piecewise-straight geometry so their later maneuver compiler can
+    // coast, rotate and burn instead of pretending to be an aircraft.
+    bool roundTurns = true;
+
     double gateSpacingMeters = 500.0;
 
     // Optional launch-heading contract. Manual docking uses the real hull nose

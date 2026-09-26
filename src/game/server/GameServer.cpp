@@ -1779,6 +1779,9 @@ bool GameServer::planAutomaticDocking(
             port.up;
         trajectoryRequest.terminalOrientationBlendDistanceMeters =
             std::max(500.0, request.standoffMeters * 2.0);
+        trajectoryRequest.hasTerminalAngularVelocity = true;
+        trajectoryRequest.terminalAngularVelocityRadPerSecond =
+            terminalAngularVelocityMapRadPerSec;
 
         trajectoryResult =
             world::navigation::TrajectoryGenerator::generate(

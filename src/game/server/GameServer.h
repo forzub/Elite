@@ -358,6 +358,7 @@ private:
 
         Phase phase = Phase::Stabilizing;
         double settledSinceUniverseTimeSeconds = -1.0;
+        double nextPlanAttemptUniverseTimeSeconds = 0.0;
 
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;

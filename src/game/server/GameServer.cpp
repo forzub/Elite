@@ -2173,11 +2173,36 @@ void GameServer::applyAutomaticDockingControls(
                 followed.intent
             );
 
+        game::navigation::NavigationRuntimeControlBridge::
+            ProgramActuatorCommand actuator;
+        actuator.valid =
+            followed.hasActuatorCommand &&
+            followed.propulsionFeasible;
+        actuator.rearMainThrottle01 =
+            followed.rearMainThrottle01;
+        actuator.foreMainThrottle01 =
+            followed.foreMainThrottle01;
+        actuator.manoeuvreAccelerationSystemMps2 =
+            boundary.toSystemVector(
+                game::navigation::NavigationFrameBoundary::
+                    NavVector {
+                        followed.manoeuvreAccelerationMapMps2
+                    }
+            ).value;
+        actuator.linearFeedbackAccelerationSystemMps2 =
+            boundary.toSystemVector(
+                game::navigation::NavigationFrameBoundary::
+                    NavVector {
+                        followed.linearFeedbackLocalMps2
+                    }
+            ).value;
+
         const auto step =
-            runtime.controlBridge->step(
+            runtime.controlBridge->stepProgram(
                 time.universeTimeSeconds,
                 std::max(1.0e-6, time.gameplayDeltaSeconds),
-                systemIntent
+                systemIntent,
+                actuator
             );
 
         if (step.status !=

@@ -301,6 +301,40 @@ void FlightVectorIndicatorRenderer::emitShipGlyph(
     emitCircle(center, std::max(2.0f, scale * 0.075f), 1.3f, color, 18);
 }
 
+void FlightVectorIndicatorRenderer::renderBoresight(
+    const Viewport& viewport
+)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+
+    if (!m_program)
+        init();
+
+    m_screenW = viewport.width;
+    m_screenH = viewport.height;
+
+    const glm::vec2 center(
+        static_cast<float>(viewport.width) * 0.5f,
+        static_cast<float>(viewport.height) * 0.5f
+    );
+    const glm::vec4 color(0.55f, 0.94f, 1.00f, 0.92f);
+
+    // Open optical sight: the exact center stays unobscured while the four
+    // short brackets make the hull-forward axis readable over bright scenery.
+    beginBatch();
+    emitCircle(center, 4.5f, 1.2f, color, 28);
+    emitLine(center + glm::vec2(-18.0f, 0.0f),
+             center + glm::vec2(-8.0f, 0.0f), 1.4f, color);
+    emitLine(center + glm::vec2(8.0f, 0.0f),
+             center + glm::vec2(18.0f, 0.0f), 1.4f, color);
+    emitLine(center + glm::vec2(0.0f, -16.0f),
+             center + glm::vec2(0.0f, -8.0f), 1.4f, color);
+    emitLine(center + glm::vec2(0.0f, 8.0f),
+             center + glm::vec2(0.0f, 16.0f), 1.4f, color);
+    flushBatch();
+}
+
 void FlightVectorIndicatorRenderer::render(
     const game::presentation::FlightVectorIndicatorPresentation& presentation,
     const Viewport& viewport

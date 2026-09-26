@@ -82,7 +82,10 @@ bool validRequest(
         (request.hasTerminalVelocity &&
             (!finite3(request.terminalVelocityMps) ||
              magnitude(request.terminalVelocityMps) >
-                 request.vehicle.maxSpeedMps + 1.0e-6)))
+                 request.vehicle.maxSpeedMps + 1.0e-6)) ||
+        (request.hasTerminalAngularVelocity &&
+            (!request.hasTerminalOrientation ||
+             !finite3(request.terminalAngularVelocityRadPerSecond))))
     {
         return false;
     }
@@ -867,7 +870,9 @@ glm::dquat sampleOrientation(
     const glm::dvec3& velocity,
     const glm::dvec3& fallbackForward,
     double sourceProgress,
-    double totalSourceProgress
+    double totalSourceProgress,
+    double sampleTimeOffsetSeconds,
+    double terminalTimeOffsetSeconds
 )
 {
     const glm::dvec3 forward = normalizedOr(
@@ -888,11 +893,38 @@ glm::dquat sampleOrientation(
     if (!request.hasTerminalOrientation)
         return orientation;
 
-    const glm::dquat terminal =
+    glm::dquat terminal =
         world::navigation::orientationForForwardUp(
             request.terminalForward,
             request.terminalUp
         );
+
+    // A rotating capture target owns a time-varying terminal attitude. Work
+    // backwards from the exact final pose using its authored angular velocity
+    // so the last trajectory samples already carry the target spin instead of
+    // forcing AcceptedManeuverProgramBuilder to invent an instantaneous omega
+    // jump at the final sample.
+    if (request.hasTerminalAngularVelocity &&
+        finite(sampleTimeOffsetSeconds) &&
+        finite(terminalTimeOffsetSeconds) &&
+        terminalTimeOffsetSeconds >= sampleTimeOffsetSeconds)
+    {
+        const double omega =
+            magnitude(request.terminalAngularVelocityRadPerSecond);
+        const double remainingSeconds =
+            terminalTimeOffsetSeconds - sampleTimeOffsetSeconds;
+        if (omega > Epsilon && remainingSeconds > Epsilon)
+        {
+            const glm::dvec3 axis =
+                request.terminalAngularVelocityRadPerSecond / omega;
+            terminal = glm::normalize(
+                glm::angleAxis(
+                    -omega * remainingSeconds,
+                    axis
+                ) * terminal
+            );
+        }
+    }
     const double blendDistance = std::max(
         0.0,
         request.terminalOrientationBlendDistanceMeters
@@ -1525,7 +1557,9 @@ buildPathProgressTrajectory(
             sample.sourcePathProgressMeters,
             coarseSourceProgress.empty()
                 ? 0.0
-                : coarseSourceProgress.back()
+                : coarseSourceProgress.back(),
+            sample.timeOffsetSeconds,
+            progress.durationSeconds
         );
 
         out.diagnostics.maxSpeedMps = std::max(
@@ -1799,7 +1833,9 @@ RouteAttempt buildRouteAttempt(
                 sample.velocityMps,
                 fallbackForward,
                 sample.sourcePathProgressMeters,
-                totalSourceProgress
+                totalSourceProgress,
+                sample.timeOffsetSeconds,
+                0.0
             );
             out.diagnostics.maxSpeedMps = std::max(
                 out.diagnostics.maxSpeedMps,
@@ -1843,6 +1879,54 @@ RouteAttempt buildRouteAttempt(
     out.trajectory.durationSeconds = terminal.timeOffsetSeconds;
     out.trajectory.lengthMeters = accumulatedPathMeters;
     out.diagnostics.optimizedPathLengthMeters = accumulatedPathMeters;
+
+    // Single-leg routes learn their total duration only after the Ruckig solve.
+    // Re-evaluate the terminal-attitude blend here so rotating terminal targets
+    // receive the same time-varying boundary condition as scalar path routes.
+    if (request.hasTerminalOrientation &&
+        request.hasTerminalAngularVelocity)
+    {
+        for (std::size_t i = 0;
+             i < out.trajectory.samples.size();
+             ++i)
+        {
+            auto& sample = out.trajectory.samples[i];
+            glm::dvec3 fallbackForward(0.0, 0.0, -1.0);
+            if (glm::length(sample.velocityMps) > Epsilon)
+            {
+                fallbackForward = sample.velocityMps;
+            }
+            else if (i + 1 < out.trajectory.samples.size())
+            {
+                fallbackForward =
+                    out.trajectory.samples[i + 1].positionMeters -
+                    sample.positionMeters;
+            }
+            else if (i > 0)
+            {
+                fallbackForward =
+                    sample.positionMeters -
+                    out.trajectory.samples[i - 1].positionMeters;
+            }
+
+            sample.orientation = sampleOrientation(
+                request,
+                sample.velocityMps,
+                fallbackForward,
+                sample.sourcePathProgressMeters,
+                totalSourceProgress,
+                sample.timeOffsetSeconds,
+                out.trajectory.durationSeconds
+            );
+        }
+
+        // Preserve the exact final pose after the time-varying blend.
+        out.trajectory.samples.back().orientation =
+            world::navigation::orientationForForwardUp(
+                request.terminalForward,
+                request.terminalUp
+            );
+    }
 
     out.diagnostics.ruckigLegAttempts =
         cumulativeDiagnostics.ruckigLegAttempts;

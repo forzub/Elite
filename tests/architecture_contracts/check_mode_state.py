@@ -102,6 +102,34 @@ try:
         '"sky_culture_id"',
     )
 
+    # System-map Galaxy/System/Detail/Hub is a subsystem mode, not a loose
+    # renderer flag. SystemMapRenderer may own transition side effects, but the
+    # selected value itself belongs to MapModeState.
+    require(
+        "src/game/system_map/MapMode.h",
+        "class MapModeState",
+        "MapMode current() const",
+        "bool transition(MapMode requested)",
+        "void reset(MapMode mode = MapMode::Galaxy)",
+        "std::uint64_t m_revision",
+    )
+    require(
+        "src/game/system_map/SystemMapRenderer.h",
+        "game::system_map::MapModeState m_modeState",
+    )
+    require(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "m_modeState.reset(Mode::Galaxy)",
+        "m_modeState.transition(mode)",
+        "return m_modeState.current()",
+    )
+    map_h = read("src/game/system_map/SystemMapRenderer.h")
+    map_cpp = read("src/game/system_map/SystemMapRenderer.cpp")
+    if "Mode m_mode" in map_h or "m_mode =" in map_cpp:
+        raise AssertionError(
+            "SystemMapRenderer reintroduced loose persistent map mode state"
+        )
+
     # Existing mode systems that are already state-owned must stay that way.
     require(
         "src/core/Application.h",

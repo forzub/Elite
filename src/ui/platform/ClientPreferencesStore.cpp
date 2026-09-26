@@ -30,6 +30,7 @@ constexpr std::size_t MaxRememberedServers = 64u;
 constexpr std::size_t MaxEndpointLength = 512u;
 constexpr std::size_t MaxLocaleLength = 32u;
 constexpr std::size_t MaxSkyCultureIdLength = 64u;
+constexpr std::size_t MaxCoordinateDisplayFormatIdLength = 32u;
 
 bool fail(std::string* outError, const std::string& message)
 {
@@ -66,6 +67,27 @@ bool validSkyCultureId(const std::string& value)
 {
     if (value.size() > MaxSkyCultureIdLength)
         return false;
+
+    for (const unsigned char c : value)
+    {
+        const bool valid =
+            (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= '0' && c <= '9') ||
+            c == '-' || c == '_';
+        if (!valid)
+            return false;
+    }
+    return true;
+}
+
+bool validCoordinateDisplayFormatId(const std::string& value)
+{
+    if (value.empty() ||
+        value.size() > MaxCoordinateDisplayFormatIdLength)
+    {
+        return false;
+    }
 
     for (const unsigned char c : value)
     {
@@ -141,6 +163,8 @@ nlohmann::json toJson(const ClientPreferences& preferences)
     root["preferred_locale"] = preferences.preferredLocale;
     root["constellations_enabled"] = preferences.constellationsEnabled;
     root["sky_culture_id"] = preferences.skyCultureId;
+    root["coordinate_display_format_id"] =
+        preferences.coordinateDisplayFormatId;
     root["last_successful_account_by_server"] = nlohmann::json::object();
 
     for (const auto& [endpoint, account] : preferences.lastSuccessfulAccountByServer)
@@ -199,6 +223,28 @@ bool fromJson(
             root["sky_culture_id"].get<std::string>();
         if (!validSkyCultureId(parsed.skyCultureId))
             return fail(outError, "sky_culture_id is invalid");
+    }
+
+    if (root.contains("coordinate_display_format_id"))
+    {
+        if (!root["coordinate_display_format_id"].is_string())
+        {
+            return fail(
+                outError,
+                "coordinate_display_format_id must be a string"
+            );
+        }
+
+        parsed.coordinateDisplayFormatId =
+            root["coordinate_display_format_id"].get<std::string>();
+        if (!validCoordinateDisplayFormatId(
+                parsed.coordinateDisplayFormatId))
+        {
+            return fail(
+                outError,
+                "coordinate_display_format_id is invalid"
+            );
+        }
     }
 
     if (root.contains("last_successful_account_by_server"))

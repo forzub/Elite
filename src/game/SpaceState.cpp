@@ -3872,6 +3872,11 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
         {
+            // The hull boresight is a fundamental attitude cue, not a velocity
+            // cue and not a navigation-module product. Keep it present whenever
+            // the cockpit HUD is present.
+            m_flightVectorIndicatorRenderer.renderBoresight(vp);
+
             game::presentation::FlightInstrumentTextProfile textProfile;
             textProfile.newtonianModeLabel =
                 localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");

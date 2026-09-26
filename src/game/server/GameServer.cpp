@@ -1351,10 +1351,14 @@ bool GameServer::planAutomaticDocking(
     envelope.heightMeters = hull.heightMeters;
     envelope.valid = hull.valid;
 
+    const auto planningControlLaw =
+        ship.core().transform().motion.localControlLaw;
+
     auto fullVehicle =
         makeNavigationVehicleProfile(
             physics,
-            envelope
+            envelope,
+            planningControlLaw
         );
 
     const double linearReserve = std::min(
@@ -1432,7 +1436,7 @@ bool GameServer::planAutomaticDocking(
             )
         );
     const bool assisted =
-        motion.localControlLaw ==
+        planningControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
 
     const glm::dvec3 startPositionMeters =
@@ -1607,6 +1611,7 @@ bool GameServer::planAutomaticDocking(
                     request.lateralMps2 =
                         executionVehicle.
                             maxLateralAccelerationMps2;
+                    request.roundTurns = assisted;
                     request.gateSpacingMeters = 500.0;
                     request.terminalGateSpacingMeters = 250.0;
                     request.terminalDenseDistanceMeters = 2000.0;
@@ -2096,6 +2101,9 @@ bool GameServer::planAutomaticDocking(
                 build.trajectory =
                     &trajectoryResult.trajectory;
                 build.shipPhysics = &physics;
+                build.controlLaw = assisted
+                    ? LocalFlightControlLaw::Assisted
+                    : LocalFlightControlLaw::Newtonian;
                 build.objectiveRevision = requestSerial;
                 build.firstProgramRevision =
                     firstProgramRevision;
@@ -2892,9 +2900,14 @@ void GameServer::applyAutomaticDockingControls(
 
         game::navigation::NavigationRuntimeControlBridge::
             ProgramActuatorCommand actuator;
+        actuator.assistedVelocityModel =
+            followed.assistedVelocityModel;
+        actuator.assistedTargetForwardSpeedMps =
+            followed.assistedTargetForwardSpeedMps;
         actuator.valid =
-            followed.hasActuatorCommand &&
-            followed.propulsionFeasible;
+            followed.propulsionFeasible &&
+            (followed.assistedVelocityModel ||
+             followed.hasActuatorCommand);
         actuator.rearMainThrottle01 =
             followed.rearMainThrottle01;
         actuator.foreMainThrottle01 =

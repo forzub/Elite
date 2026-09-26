@@ -10858,3 +10858,14 @@ The subsequent verify failure was a static-checker location error only and did
 not invalidate these native results. The checker has been corrected to inspect
 production reachability tokens in `TrajectoryGenerator.cpp` and the anti-snap
 assertion in its actual native test file.
+
+## 2026-09-27 — server terminal angular handoff verified
+
+The static-check failure did not represent a Stage-12 break. Production
+`GameServer.cpp` explicitly sets terminal orientation, enables terminal angular
+velocity on `TrajectoryGenerationRequest`, supplies
+`terminalAngularVelocityMapRadPerSec`, and forwards the same terminal omega to
+`AcceptedManeuverProgramBuilder`.
+
+The automatic-docking architecture checker is now whitespace-tolerant so
+line-wrapping cannot masquerade as a lost execution contract.

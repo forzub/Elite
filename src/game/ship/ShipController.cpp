@@ -1,4 +1,5 @@
 #include "ShipController.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 
 #include <algorithm>
 #include <cmath>
@@ -86,27 +87,13 @@ bool isVelocityAlignmentAttitudeActive(
     using game::navigation::LocalFlightControlLaw;
     using game::navigation::VelocityAlignmentMode;
 
-    if (ship.motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
-    {
-        // Assisted uses a healthy fore/nose main directly for ordinary braking;
-        // it must rotate only when that reverse authority is unavailable and
-        // the aft main has to take over. Newtonian keeps explicit hull/thrust
-        // attitude ownership and therefore aligns whichever main bank survives.
-        if (ship.motion.localControlLaw == LocalFlightControlLaw::Assisted)
-            return !reverseMainEngineAvailable &&
-                forwardMainEngineAvailable;
-
-        return forwardMainEngineAvailable || reverseMainEngineAvailable;
-    }
-
-    if (ship.motion.localControlLaw != LocalFlightControlLaw::Newtonian)
-        return false;
-
-    return
-        ship.motion.velocityAlignmentMode ==
-            VelocityAlignmentMode::ForwardToVelocity ||
-        ship.motion.velocityAlignmentMode ==
-            VelocityAlignmentMode::BackwardToVelocity;
+    return game::navigation::LocalFlightControlStateMachine::
+        velocityAlignmentOwnsAttitude(
+            ship.motion.localControlLaw,
+            ship.motion.velocityAlignmentMode,
+            forwardMainEngineAvailable,
+            reverseMainEngineAvailable
+        );
 }
 
 float alignmentRateLimitAlongDirection(
@@ -246,40 +233,25 @@ bool applyVelocityAlignmentAttitude(
     {
         const glm::vec3 velocityDirection =
             glm::normalize(glm::vec3(velocityWorld));
-        const glm::vec3 currentForward = ship.forward();
-
-        // Aft/rear main pushes +forward, so braking with it requires the nose
-        // opposite velocity. Fore/nose main pushes -forward, so braking with it
-        // requires the nose along velocity.
+        // Aft/rear main pushes +forward, so braking with it requires
+        // the nose opposite velocity. Fore/nose main pushes -forward, so
+        // braking with it requires the nose along velocity.
         const glm::vec3 aftBrakeForward = -velocityDirection;
         const glm::vec3 foreBrakeForward = velocityDirection;
 
         if (ship.motion.localControlLaw ==
                 game::navigation::LocalFlightControlLaw::Newtonian)
         {
-            // Newtonian doctrine still prefers the aft main. If it has failed,
-            // the fore bank becomes the surviving main engine and the ship
-            // deliberately flies/works in the opposite hull direction.
             desiredForward = forwardMainEngineAvailable
                 ? aftBrakeForward
                 : foreBrakeForward;
-        }
-        else if (forwardMainEngineAvailable &&
-                 reverseMainEngineAvailable)
-        {
-            // Assisted has both banks available: use the attitude requiring
-            // the smaller rotation from the current hull pose.
-            desiredForward =
-                glm::dot(currentForward, foreBrakeForward) >=
-                        glm::dot(currentForward, aftBrakeForward)
-                    ? foreBrakeForward
-                    : aftBrakeForward;
         }
         else
         {
-            desiredForward = forwardMainEngineAvailable
-                ? aftBrakeForward
-                : foreBrakeForward;
+            // Assisted reaches this attitude path only when the fore/reverse
+            // main bank is unavailable. The state machine therefore selects
+            // the physical aft-main flip-and-burn fallback.
+            desiredForward = aftBrakeForward;
         }
     }
 

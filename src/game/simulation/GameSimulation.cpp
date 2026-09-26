@@ -4702,9 +4702,26 @@ m_hubVelocityMetersPerSecond[hubId] =
             const ShipParams effectivePhysics =
                 shipPtr->core().effectivePhysics();
 
-            if (control.navigationActuatorProgramValid &&
+            if (control.navigationAssistedFlightModelValid &&
                 control.navigationAccelerationDemandValid &&
                 !manualTranslationOverride)
+            {
+                game::navigation::DynamicMotionSystem::
+                    applyNavigationAssistedFlightModel(
+                        tr.motion,
+                        tr.motion.travelFrame,
+                        effectivePhysics,
+                        motionControlDt,
+                        control.navigationTargetForwardSpeedMps,
+                        control.navigationAssistedCorrectionSystemMps2,
+                        tr.forward(),
+                        tr.right(),
+                        tr.up()
+                    );
+            }
+            else if (control.navigationActuatorProgramValid &&
+                     control.navigationAccelerationDemandValid &&
+                     !manualTranslationOverride)
             {
                 game::navigation::DynamicMotionSystem::
                     applyNavigationActuatorProgram(

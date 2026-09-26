@@ -27,6 +27,25 @@ bool validIntent(
         intent.hazardUrgency01 <= 1.0;
 }
 
+bool validActuatorCommand(
+    const NavigationRuntimeControlBridge::ProgramActuatorCommand& actuator
+) noexcept
+{
+    const auto unit = [](double value) noexcept
+    {
+        return std::isfinite(value) &&
+            value >= 0.0 &&
+            value <= 1.0;
+    };
+
+    return
+        actuator.valid &&
+        unit(actuator.rearMainThrottle01) &&
+        unit(actuator.foreMainThrottle01) &&
+        finite(actuator.manoeuvreAccelerationSystemMps2) &&
+        finite(actuator.linearFeedbackAccelerationSystemMps2);
+}
+
 } // namespace
 
 NavigationRuntimeControlBridge::NavigationRuntimeControlBridge(
@@ -107,6 +126,45 @@ NavigationRuntimeControlBridge::step(
     result.control.navigationAngularAccelerationDemandSystemRadPerSec2 = result.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
     result.control.navigationIntentRevision = intent.revision;
 
+    return result;
+}
+
+NavigationRuntimeControlBridge::StepResult
+NavigationRuntimeControlBridge::stepProgram(
+    double timeSeconds,
+    double deltaSeconds,
+    const Intent& intent,
+    const ProgramActuatorCommand& actuator
+) noexcept
+{
+    StepResult result = step(
+        timeSeconds,
+        deltaSeconds,
+        intent
+    );
+
+    if (result.status != PilotExecutor::Status::Ok ||
+        !result.snapshot.valid ||
+        !validActuatorCommand(actuator))
+    {
+        if (!validActuatorCommand(actuator))
+        {
+            result.status = PilotExecutor::Status::InvalidInput;
+            result.control = ShipControlState {};
+            result.snapshot.valid = false;
+        }
+        return result;
+    }
+
+    result.control.navigationActuatorProgramValid = true;
+    result.control.navigationRearMainThrottle01 =
+        actuator.rearMainThrottle01;
+    result.control.navigationForeMainThrottle01 =
+        actuator.foreMainThrottle01;
+    result.control.navigationManoeuvreAccelerationSystemMps2 =
+        actuator.manoeuvreAccelerationSystemMps2;
+    result.control.navigationLinearFeedbackAccelerationSystemMps2 =
+        actuator.linearFeedbackAccelerationSystemMps2;
     return result;
 }
 

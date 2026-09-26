@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <atomic>
 
 
 #include "src/game/simulation/GameSimulation.h"
@@ -347,6 +348,7 @@ private:
         enum class Phase : std::uint8_t
         {
             Stabilizing = 0,
+            Planning,
             Aligning,
             Executing
         };
@@ -362,6 +364,25 @@ private:
         Phase phase = Phase::Stabilizing;
         double settledSinceUniverseTimeSeconds = -1.0;
         std::string lastPlanFailureReason;
+
+        struct PlanningJob
+        {
+            std::atomic<bool> ready {false};
+            bool success = false;
+            std::string failureReason;
+
+            double executionStartUniverseTimeSeconds = 0.0;
+            double trajectoryDurationSeconds = 0.0;
+            std::size_t gateCount = 0;
+            double finalAxisMeters = 0.0;
+            double terminalRadiusMeters = 0.0;
+            double preCaptureDepthMeters = 0.0;
+            double terminalUniverseTimeSeconds = 0.0;
+            double terminalAngularVelocityRadPerSec = 0.0;
+
+            std::vector<game::navigation::AcceptedManeuverProgram> programs;
+        };
+        std::shared_ptr<PlanningJob> planningJob;
 
         // First accepted-program attitude. If the stabilized hull is outside
         // the tracking envelope, Autopilot physically aligns to this basis,

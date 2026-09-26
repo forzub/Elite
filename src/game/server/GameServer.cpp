@@ -1220,7 +1220,6 @@ bool GameServer::beginAutomaticDocking(
     runtime.targetAnchorId = command.dockingTargetAnchorId;
     runtime.phase = DockingAutomaticRuntime::Phase::Stabilizing;
     runtime.settledSinceUniverseTimeSeconds = -1.0;
-    runtime.nextPlanAttemptUniverseTimeSeconds = 0.0;
     runtime.nextProgramRevision = 1;
 
     m_dockingAutomaticRuntimes[controlledEntityId.value] =
@@ -1251,6 +1250,14 @@ bool GameServer::planAutomaticDocking(
 {
     using namespace game::navigation;
 
+    runtime.lastPlanFailureReason.clear();
+    const auto fail =
+        [&](const std::string& reason)
+        {
+            runtime.lastPlanFailureReason = reason;
+            return false;
+        };
+
     const auto* hub =
         m_simulation.hubNavigationFrame(runtime.hubId);
     if (!hub ||
@@ -1258,7 +1265,7 @@ bool GameServer::planAutomaticDocking(
         hub->systemId != runtime.systemId ||
         !std::isfinite(universeTimeSeconds))
     {
-        return false;
+        return fail("invalid-hub-or-time");
     }
 
     const StaticObject* targetObject = nullptr;
@@ -1275,7 +1282,7 @@ bool GameServer::planAutomaticDocking(
         }
     }
     if (!targetObject)
-        return false;
+        return fail("target-module-not-found");
 
     const auto* definition =
         m_serverHubSemanticAnchorCatalog.find(
@@ -1292,7 +1299,7 @@ bool GameServer::planAutomaticDocking(
         !definition->enabled ||
         definition->kind != HubSemanticAnchorKind::DockingPort)
     {
-        return false;
+        return fail("docking-port-definition-invalid");
     }
 
     const auto& dimensions =
@@ -1315,7 +1322,7 @@ bool GameServer::planAutomaticDocking(
             *portRuntime
         );
     if (!compatibility.routeAvailable)
-        return false;
+        return fail("docking-port-incompatible-or-unavailable");
 
     game::simulation::HubAttachmentSnapshot attachment;
     attachment.systemId = targetObject->systemId;
@@ -1376,7 +1383,7 @@ bool GameServer::planAutomaticDocking(
         fullVehicle.maxLateralAccelerationMps2 <= linearReserve ||
         fullVehicle.maxAngularAccelerationRadPerSecond2 <= angularReserve)
     {
-        return false;
+        return fail("insufficient-vehicle-control-reserve");
     }
 
     auto executionVehicle = fullVehicle;
@@ -1453,7 +1460,7 @@ bool GameServer::planAutomaticDocking(
         const auto port =
             portAt(captureUniverseTimeSeconds);
         if (!port.valid)
-            return false;
+            return fail("predicted-port-pose-invalid");
 
         DockingAdvisoryRequest request;
         request.startMeters = motion.localPositionMeters;
@@ -1487,7 +1494,13 @@ bool GameServer::planAutomaticDocking(
         advisoryPlan =
             DockingAdvisoryPlanner::plan(request);
         if (!advisoryPlan.valid())
-            return false;
+        {
+            return fail(
+                advisoryPlan.failure.empty()
+                    ? "advisory-plan-invalid"
+                    : std::string("advisory:") + advisoryPlan.failure
+            );
+        }
 
         world::navigation::TrajectoryGenerationRequest trajectoryRequest;
         trajectoryRequest.systemId = runtime.systemId;
@@ -1513,7 +1526,7 @@ bool GameServer::planAutomaticDocking(
         }
 
         if (trajectoryRequest.pathPointsMeters.empty())
-            return false;
+            return fail("advisory-produced-no-path-points");
 
         const glm::dvec3 advisoryStopMeters =
             trajectoryRequest.pathPointsMeters.back();
@@ -1564,7 +1577,7 @@ bool GameServer::planAutomaticDocking(
             double safeDepthMeters = request.standoffMeters;
 
             if (!segmentToPreCaptureClear(safeDepthMeters))
-                return false;
+                return fail("pre-capture-standoff-blocked");
 
             for (int search = 0; search < 24; ++search)
             {
@@ -1590,7 +1603,7 @@ bool GameServer::planAutomaticDocking(
             );
 
             if (!segmentToPreCaptureClear(preCaptureDepthMeters))
-                return false;
+                return fail("pre-capture-reserve-blocked");
         }
 
         const glm::dvec3 preCaptureCenterMeters =
@@ -1688,7 +1701,7 @@ bool GameServer::planAutomaticDocking(
             captureUniverseTimeSeconds + velocityProbeSeconds
         );
         if (!portBefore.valid || !portAfter.valid)
-            return false;
+            return fail("terminal-port-motion-probe-invalid");
 
         const glm::dvec3 preCaptureBefore =
             preCaptureCenterAt(
@@ -1772,7 +1785,7 @@ bool GameServer::planAutomaticDocking(
                 trajectoryRequest
             );
         if (!trajectoryResult.ready())
-            return false;
+            return fail("trajectory-generation-failed");
 
         const double predictedCapture =
             universeTimeSeconds +
@@ -1790,7 +1803,7 @@ bool GameServer::planAutomaticDocking(
     }
 
     if (!trajectoryResult.ready())
-        return false;
+        return fail("trajectory-not-ready-after-capture-iteration");
 
     AcceptedManeuverProgramBuilder::Request build;
     build.trajectory = &trajectoryResult.trajectory;
@@ -1843,7 +1856,7 @@ bool GameServer::planAutomaticDocking(
     const auto accepted =
         AcceptedManeuverProgramBuilder::build(build);
     if (!accepted.valid || accepted.pages.empty())
-        return false;
+        return fail("accepted-program-build-failed");
 
     runtime.programs = accepted.pages;
     runtime.currentProgramPage = 0;
@@ -1864,7 +1877,7 @@ bool GameServer::planAutomaticDocking(
     {
         runtime.controlBridge.reset();
         runtime.programs.clear();
-        return false;
+        return fail("runtime-control-bridge-reset-failed");
     }
 
     const auto& firstReference =
@@ -2011,6 +2024,8 @@ void GameServer::applyAutomaticDockingControls(
         PlayerId playerId {};
         EntityId entityId {};
         std::uint64_t requestSerial = 0;
+        bool completed = false;
+        std::string reason;
     };
     std::vector<Completion> completed;
 
@@ -2026,7 +2041,9 @@ void GameServer::applyAutomaticDockingControls(
             completed.push_back({
                 runtime.playerId,
                 runtime.entityId,
-                runtime.requestSerial
+                runtime.requestSerial,
+                false,
+                "ship-or-autopilot-authority-lost"
             });
             continue;
         }
@@ -2111,26 +2128,31 @@ void GameServer::applyAutomaticDockingControls(
                 continue;
             }
 
-            if (time.universeTimeSeconds <
-                runtime.nextPlanAttemptUniverseTimeSeconds)
-            {
-                continue;
-            }
-
             if (!planAutomaticDocking(
                     runtime,
                     *ship,
                     time.universeTimeSeconds))
             {
-                runtime.nextPlanAttemptUniverseTimeSeconds =
-                    time.universeTimeSeconds + 0.50;
+                const std::string reason =
+                    runtime.lastPlanFailureReason.empty()
+                        ? "plan-failed"
+                        : runtime.lastPlanFailureReason;
+
                 std::cerr
                     << "[DockAuto] request="
                     << runtime.requestSerial
-                    << " phase=plan-retry"
-                    << " next_t="
-                    << runtime.nextPlanAttemptUniverseTimeSeconds
+                    << " phase=plan-failed"
+                    << " reason=" << reason
+                    << " action=restore-human"
                     << "\n";
+
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    reason
+                });
             }
             continue;
         }
@@ -2309,9 +2331,6 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.programs.clear();
                 runtime.controlBridge.reset();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
-                runtime.nextPlanAttemptUniverseTimeSeconds =
-                    time.universeTimeSeconds;
-
                 ShipControlState stop;
                 stop.velocityAlignmentCommand =
                     game::navigation::
@@ -2502,7 +2521,9 @@ void GameServer::applyAutomaticDockingControls(
             completed.push_back({
                 runtime.playerId,
                 runtime.entityId,
-                runtime.requestSerial
+                runtime.requestSerial,
+                true,
+                "pre-capture-envelope-complete"
             });
         }
     }
@@ -2513,8 +2534,8 @@ void GameServer::applyAutomaticDockingControls(
             completion.playerId,
             completion.entityId,
             completion.requestSerial,
-            true,
-            "pre-capture-envelope-complete"
+            completion.completed,
+            completion.reason.c_str()
         );
     }
 }

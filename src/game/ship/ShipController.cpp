@@ -205,8 +205,8 @@ bool applyVelocityAlignmentAttitude(
         if (ship.motion.velocityAlignmentMode !=
                 VelocityAlignmentMode::BrakeToStop)
         {
-            ship.motion.velocityAlignmentMode =
-                VelocityAlignmentMode::None;
+            (void)game::navigation::LocalFlightControlStateMachine::
+                completeVelocityAlignment(ship.motion);
         }
         return false;
     }
@@ -311,8 +311,8 @@ bool applyVelocityAlignmentAttitude(
         if (ship.motion.velocityAlignmentMode !=
                 VelocityAlignmentMode::BrakeToStop)
         {
-            ship.motion.velocityAlignmentMode =
-                VelocityAlignmentMode::None;
+            (void)game::navigation::LocalFlightControlStateMachine::
+                completeVelocityAlignment(ship.motion);
         }
         return true;
     }

@@ -1,6 +1,7 @@
 #include "src/game/ship/controller/PlayerInputMapper.h"
 
 #include "src/input/Input.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 
 namespace
 {
@@ -77,10 +78,9 @@ void PlayerInputMapper::updateFromKeyState(
             {
                 ctrl.localControlLawCommandValid = true;
                 ctrl.requestedLocalControlLaw =
-                    currentLocalControlLaw ==
-                            game::navigation::LocalFlightControlLaw::Newtonian
-                        ? game::navigation::LocalFlightControlLaw::Assisted
-                        : game::navigation::LocalFlightControlLaw::Newtonian;
+                    game::navigation::LocalFlightControlStateMachine::next(
+                        currentLocalControlLaw
+                    );
 
                 m_ctrlF10State = CtrlF10State::Idle;
                 m_ctrlF10ReleaseSamples = 0;

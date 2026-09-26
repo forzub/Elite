@@ -3678,40 +3678,67 @@ m_systemMapRenderer.render(
                 vp
             );
 
-            const bool manualDockingMode =
+            const bool dockingGuidanceVisible =
                 guidance.visible &&
                 guidance.spatialAdvisoryGates &&
                 guidance.source ==
                     game::navigation::GuidanceSource::DockingComputer &&
                 !m_activeDockingGuidanceCorridorId.empty();
 
-            if (manualDockingMode)
+            if (dockingGuidanceVisible)
             {
-                const double manualBlinkPhase = std::fmod(
-                    std::max(0.0, playerShip.renderReferenceFrame.universeTimeSeconds) * 2.0,
+                const auto& dockingRequest =
+                    m_navigationWorkspace.
+                        dockingRouteRequests().pending();
+                const bool automaticDockingMode =
+                    m_automaticDockingSerial != 0 ||
+                    (dockingRequest.valid() &&
+                     dockingRequest.mode ==
+                        game::navigation::
+                            DockingRouteRequest::Mode::Automatic);
+
+                const double dockingBlinkPhase = std::fmod(
+                    std::max(
+                        0.0,
+                        playerShip.renderReferenceFrame.
+                            universeTimeSeconds
+                    ) * 2.0,
                     1.0
                 );
-                if (manualBlinkPhase < 0.58)
+                if (dockingBlinkPhase < 0.58)
                 {
-                    const std::string manualText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.manual_mode",
-                        "MANUAL DOCKING MODE"
-                    );
-                    constexpr int manualPx = 20;
+                    const std::string dockingText =
+                        localizedUiText(
+                            context().app,
+                            automaticDockingMode
+                                ? "cockpit.docking.automatic_mode"
+                                : "cockpit.docking.manual_mode",
+                            automaticDockingMode
+                                ? "AUTOMATIC DOCKING MODE"
+                                : "MANUAL DOCKING MODE"
+                        );
+                    constexpr int dockingPx = 20;
                     auto& text = TextRenderer::instance();
                     const float width =
-                        text.measureTextPx(manualText, manualPx);
+                        text.measureTextPx(
+                            dockingText,
+                            dockingPx
+                        );
                     const float x =
                         static_cast<float>(vp.width) * 0.5f -
                         width * 0.5f;
                     const float y = 32.0f;
                     text.textDrawPx(
-                        manualText,
+                        dockingText,
                         x,
                         y,
-                        manualPx,
-                        glm::vec4(0.62f, 0.96f, 1.0f, 1.0f)
+                        dockingPx,
+                        glm::vec4(
+                            0.62f,
+                            0.96f,
+                            1.0f,
+                            1.0f
+                        )
                     );
                 }
             }

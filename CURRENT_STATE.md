@@ -1,5 +1,35 @@
 # CURRENT STATE
 
+## 2026-09-26 — Automatic docking status: execution components exist, production owner is missing
+
+Current main still does NOT provide working automatic docking.
+
+Existing production-capable pieces:
+- `DockingRouteRequest::Mode::Automatic` exists;
+- server control registry can transfer the player ship to
+  `ControllerKind::Autopilot`;
+- `AcceptedManeuverProgram`, `TrajectoryFollower`,
+  `NavigationRuntimeControlBridge`, and the explicit
+  `ShipControlState::navigationAccelerationDemand...` seam exist;
+- shared ship physics remains the authority that applies real vehicle limits.
+
+Missing production integration:
+- `SystemMapRenderer` hard-rejects `start_docking`;
+- `SpaceState::updateDockingAdvisory()` processes Guidance only and clears any
+  Automatic request;
+- server docking ownership currently exists only for the temporary
+  BrakeToStop preparation phase;
+- after route publication `finishDockingGuidancePreparation()` restores Human
+  ownership;
+- no server-owned player lifetime currently stores/advances an accepted maneuver
+  program through TrajectoryFollower -> NavigationRuntimeControlBridge every
+  simulation step.
+
+Therefore automatic docking is blocked by one architectural seam, not by lack of
+planner/follower primitives. After the current manual docking route gate passes,
+the next implementation milestone is explicitly the server-owned accepted-program
+executor, followed by wiring Automatic request/UI and live docking acceptance.
+
 ## 2026-09-25 — native docking gate exposed boundary-join defect; clearance retreat implemented
 
 Fresh standalone native evidence reached the real planner and failed the

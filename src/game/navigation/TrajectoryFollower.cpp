@@ -23,19 +23,6 @@ bool finite(const glm::dvec3& value) noexcept
     return finite(value.x) && finite(value.y) && finite(value.z);
 }
 
-glm::dvec3 normalizedOr(
-    const glm::dvec3& value,
-    const glm::dvec3& fallback
-) noexcept
-{
-    const double lengthSquared = glm::dot(value, value);
-    if (!finite(lengthSquared) || lengthSquared <= kEpsilon)
-        return fallback;
-
-    return value / std::sqrt(lengthSquared);
-}
-
-
 } // namespace
 
 TrajectoryFollower::Result TrajectoryFollower::follow(

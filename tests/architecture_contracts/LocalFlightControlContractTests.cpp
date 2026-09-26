@@ -612,10 +612,16 @@ void testAssistedVelocityFollowsNoseWithBoundedAcceleration()
     require(accel <= maxAccel + 1.0e-9,
             "Assisted controller exceeded ship linear acceleration envelope");
     requireNear(
-        glm::length(motion.mainEngineAccelerationMps2),
+        glm::length(motion.assistedStabilizationAccelerationMps2),
         maxAccel,
         1.0e-9,
-        "combined-envelope limiting derated the selected main engine"
+        "Assisted sharp-turn control did not prioritize removing sideways VREL"
+    );
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        0.0,
+        1.0e-9,
+        "Assisted sharp-turn control spent load budget on forward acceleration before cancelling sideways VREL"
     );
 
     game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
@@ -626,8 +632,83 @@ void testAssistedVelocityFollowsNoseWithBoundedAcceleration()
         0.1
     );
 
-    require(motion.localVelocityMps.z < 0.0,
+    require(motion.localVelocityMps.x < 50.0,
             "Assisted controller did not bend VREL toward nose");
+}
+
+void testAssistedCourseRealignsWithinThreeSeconds()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+
+    params.maxCombatSpeed = 500.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 73.549875f;
+    params.reverseMainEngineAccelerationMps2 = 73.549875f;
+    params.strafeAccel = 73.549875f;
+    params.strafeDamping = 6.0f;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+
+    // The hull has already turned 90 degrees to -Z while inertia still carries
+    // the ship along +X. Assisted must behave like a direction-coupled flight
+    // law: old sideways VREL is removed first and useful forward speed is then
+    // rebuilt without any direct velocity rewrite.
+    motion.localVelocityMps = glm::dvec3(100.0, 0.0, 0.0);
+    motion.targetForwardSpeedMps = 100.0;
+    motion.assistedTargetSpeedHold = true;
+
+    auto position =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+
+    constexpr double dt = 0.05;
+    for (int i = 0; i < 60; ++i)
+    {
+        game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+            motion,
+            frame,
+            params,
+            static_cast<float>(dt),
+            0.0f,
+            false,
+            0.0f,
+            0.0f,
+            0.0f,
+            glm::vec3(0.0f, 0.0f, -1.0f),
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            motion,
+            position,
+            frame,
+            params,
+            dt
+        );
+    }
+
+    const glm::dvec3 velocity = motion.localVelocityMps;
+    const double speed = glm::length(velocity);
+    require(speed > 10.0,
+            "Assisted course realignment collapsed into a stop");
+
+    const glm::dvec3 nose(0.0, 0.0, -1.0);
+    const double courseErrorRad = std::acos(
+        std::clamp(
+            glm::dot(glm::normalize(velocity), nose),
+            -1.0,
+            1.0
+        )
+    );
+
+    require(
+        courseErrorRad <= glm::radians(5.0),
+        "Assisted did not pull velocity onto the new nose course within 3 seconds"
+    );
 }
 
 
@@ -1440,6 +1521,7 @@ int main()
         testNewtonianMinusDoesNotCreateReverseMainThrust();
         testNewtonianAftFailureUsesForeMainAsPrimary();
         testAssistedVelocityFollowsNoseWithBoundedAcceleration();
+        testAssistedCourseRealignsWithinThreeSeconds();
         testAssistedThrottleReleaseCapturesReachedSpeed();
         testLinearAccelerationOverrideAppliesToBothFlightLaws();
         testAssistedExplicitMaxTargetPersistsUntilPilotOverrides();

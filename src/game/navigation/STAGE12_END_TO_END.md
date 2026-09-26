@@ -1,6 +1,16 @@
 # Navigation v2 — Stage 12 end-to-end runtime/stress/debug
 
 
+## 2026-09-26 — first runtime-control failure was a test-envelope contradiction
+
+The first Windows `navigation_runtime_control` failure was caused by a
+fixture that demanded 1g main acceleration and an additional 2 m/s^2 RCS while
+`maxLinearGs` itself was 1g. Production correctly reduced the secondary
+vector. The test now separates simultaneous main+RCS below the common envelope
+from a saturated-main case where RCS must yield to zero.
+
+
+
 ## 2026-09-26 — first Windows evidence for production Automatic chain
 
 Target-machine build now passes with the new Automatic production chain.

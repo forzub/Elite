@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 10u;
+inline constexpr std::uint16_t WireProtocolVersion = 11u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -649,6 +649,12 @@ inline bool encodeClientShipCommand(
     writer.i32(value.index);
     writer.f64(value.amount);
     writer.u64(value.requestSerial);
+    writer.i32(value.dockingTargetSystemId);
+    if (!writer.string(value.dockingTargetModuleId) ||
+        !writer.string(value.dockingTargetAnchorId))
+    {
+        return false;
+    }
     return true;
 }
 
@@ -659,22 +665,27 @@ inline bool decodeClientShipCommand(
 {
     std::uint8_t type = 0;
     std::int32_t index = 0;
+    std::int32_t dockingTargetSystemId = -1;
     if (!reader.u8(type) ||
         !reader.i32(index) ||
         !reader.f64(outValue.amount) ||
-        !reader.u64(outValue.requestSerial))
+        !reader.u64(outValue.requestSerial) ||
+        !reader.i32(dockingTargetSystemId) ||
+        !reader.string(outValue.dockingTargetModuleId) ||
+        !reader.string(outValue.dockingTargetAnchorId))
     {
         return false;
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::CompleteDockingGuidancePreparation))
+            ClientShipCommand::CancelAutomaticDocking))
     {
         return false;
     }
 
     outValue.type = static_cast<ClientShipCommand::Type>(type);
     outValue.index = index;
+    outValue.dockingTargetSystemId = dockingTargetSystemId;
     return true;
 }
 

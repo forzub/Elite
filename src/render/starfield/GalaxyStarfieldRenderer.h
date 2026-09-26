@@ -85,7 +85,11 @@ public:
         return m_constellationOverlayEnabled;
     }
 
-    bool cycleConstellationCulture();
+    // Render projection only: caller owns selected culture state.
+    bool setConstellationCultureId(const std::string& cultureId);
+    std::string nextConstellationCultureId(
+        const std::string& currentCultureId
+    ) const;
 
     std::string constellationCultureId() const;
     std::string constellationCultureDisplayName(

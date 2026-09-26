@@ -12,7 +12,12 @@ struct ClientPreferences
 
     std::string lastServerEndpoint;
     std::map<std::string, std::string> lastSuccessfulAccountByServer;
+
+    // Persisted projections of ClientModeState. Runtime mode ownership lives
+    // in ClientModeState; this structure is storage only.
     std::string preferredLocale;
+    bool constellationsEnabled = false;
+    std::string skyCultureId;
 
     std::string lastSuccessfulAccountFor(
         const std::string& endpoint) const;

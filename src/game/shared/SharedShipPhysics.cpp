@@ -70,36 +70,20 @@ void evaluateControl(
     if (control.velocityAlignmentCommand !=
             game::navigation::VelocityAlignmentMode::None)
     {
-        // HOME/INSERT are Newtonian vector-orientation tools. END is valid in
-        // both laws: Newtonian aligns tail-to-velocity and brakes; Assisted
-        // uses its velocity controller to bring VREL to zero.
-        if (control.velocityAlignmentCommand ==
-                game::navigation::VelocityAlignmentMode::BrakeToStop ||
-            motion.localControlLaw ==
-                game::navigation::LocalFlightControlLaw::Newtonian)
-        {
-            motion.velocityAlignmentMode =
-                control.velocityAlignmentCommand;
-
-            if (control.velocityAlignmentCommand ==
-                    game::navigation::VelocityAlignmentMode::BrakeToStop)
-            {
-                motion.assistedTargetSpeedHold = false;
-                motion.assistedThrottleTrimWasActive = false;
-            }
-        }
+        (void)game::navigation::LocalFlightControlStateMachine::
+            requestVelocityAlignment(
+                motion,
+                control.velocityAlignmentCommand
+            );
     }
 
-    if (control.assistedMaxSpeedCommand &&
-        motion.localControlLaw ==
-            game::navigation::LocalFlightControlLaw::Assisted)
+    if (control.assistedMaxSpeedCommand)
     {
-        motion.targetForwardSpeedMps =
-            std::max(0.0f, params.maxCombatSpeed);
-        motion.assistedTargetSpeedHold = true;
-        motion.assistedThrottleTrimWasActive = false;
-        motion.velocityAlignmentMode =
-            game::navigation::VelocityAlignmentMode::None;
+        (void)game::navigation::LocalFlightControlStateMachine::
+            requestAssistedMaximumSpeed(
+                motion,
+                static_cast<double>(params.maxCombatSpeed)
+            );
     }
 
     // Direct pilot attitude input always wins over an alignment autopilot.
@@ -108,27 +92,26 @@ void evaluateControl(
     if (hasManualAttitudeInput(control) ||
         control.navigationAccelerationDemandValid)
     {
-        motion.velocityAlignmentMode =
-            game::navigation::VelocityAlignmentMode::None;
+        (void)game::navigation::LocalFlightControlStateMachine::
+            cancelVelocityAlignment(motion);
     }
 
     // A fresh longitudinal command cancels autobrake only if that command has
-    // meaning in the active law. Newtonian '-' is intentionally a no-op: the
-    // pilot must turn the ship and apply forward thrust to brake, so tapping
-    // '-' must not accidentally cancel an END autobrake already in progress.
+    // meaning in the active law. Newtonian '-' remains a no-op.
     const bool manualLongitudinalOverride =
-        motion.localControlLaw ==
-                game::navigation::LocalFlightControlLaw::Newtonian
-            ? control.targetSpeedRate > 0.001f
-            : std::abs(control.targetSpeedRate) > 0.001f ||
-                control.assistedMaxSpeedCommand;
+        game::navigation::LocalFlightControlStateMachine::
+            longitudinalInputCancelsBrake(
+                motion.localControlLaw,
+                static_cast<double>(control.targetSpeedRate),
+                control.assistedMaxSpeedCommand
+            );
 
     if (manualLongitudinalOverride &&
         motion.velocityAlignmentMode ==
             game::navigation::VelocityAlignmentMode::BrakeToStop)
     {
-        motion.velocityAlignmentMode =
-            game::navigation::VelocityAlignmentMode::None;
+        (void)game::navigation::LocalFlightControlStateMachine::
+            cancelVelocityAlignment(motion);
     }
 
     // control -> transform input state

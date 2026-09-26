@@ -1,6 +1,35 @@
 # CURRENT TASK — manual docking advisory flight acceptance
 
 
+## 2026-09-26 — rerun corrected runtime-control gate
+
+Pull current main and rerun the single corrected test first:
+
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+
+cmake --build build/tests/navigation_runtime \
+  --target navigation_runtime_control_tests \
+  -j 8
+
+ctest --test-dir build/tests/navigation_runtime \
+  -R "^navigation_runtime_control$" \
+  --output-on-failure
+```
+
+If it passes, run:
+
+```bash
+bash verify_docking.sh
+```
+
+The canonical game build already passed on the previous Windows run, so another
+full build is only needed if the corrected native test exposes a real source
+compile dependency.
+
+
+
 ## 2026-09-26 — isolate the one remaining runtime-control failure
 
 The full game/server build now passes. Do not rebuild everything first.

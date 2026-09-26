@@ -139,6 +139,35 @@ void testDefaultAttitudeLoopIsNotUnderdamped()
     );
 }
 
+void testAntiparallelAttitudeStillProducesCorrection()
+{
+    Program program = baseProgram();
+    auto agent = exactAgentFor(program.samples[0]);
+
+    // Same up axis, but forward/right are exactly antiparallel: 180 deg yaw.
+    // The retired cross-product small-angle error evaluates to zero here.
+    agent.forwardMap = {-1.0, 0.0, 0.0};
+    agent.rightMap = {0.0, 0.0, -1.0};
+    agent.upMap = {0.0, 1.0, 0.0};
+    agent.pitchRateRadPerSec = 0.0;
+    agent.yawRateRadPerSec = 0.0;
+    agent.rollRateRadPerSec = 0.0;
+
+    const auto result =
+        Tracker::track(program, program.samples[0], agent, Tracker::Policy {});
+
+    require(
+        result.status == Tracker::Status::EnvelopeExceeded,
+        "180-degree attitude error must remain observable"
+    );
+    requireNear(
+        glm::length(result.angularFeedbackMapRadPerSec2),
+        program.tracking.angularFeedbackReserveRadPerSec2,
+        1.0e-12,
+        "180-degree attitude error failed to command bounded correction"
+    );
+}
+
 void testZeroErrorPreservesAcceptedFeedForwardExactly()
 {
     const Program program = baseProgram();
@@ -457,6 +486,7 @@ int main()
     try
     {
         testDefaultAttitudeLoopIsNotUnderdamped();
+        testAntiparallelAttitudeStillProducesCorrection();
         testZeroErrorPreservesAcceptedFeedForwardExactly();
         testFeedbackCannotExceedReservedAuthority();
         testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives();

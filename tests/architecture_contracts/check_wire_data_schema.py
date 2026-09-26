@@ -58,6 +58,7 @@ for token in (
     "v.executedAngularAccelerationDemandMapRadPerSec2",
     "v.mainEngineAccelerationMps2",
     "v.manoeuvreAccelerationMps2",
+    "v.assistedStabilizationAccelerationMps2",
     "v.manoeuvreGasPressure01",
     "v.manoeuvreGasDepleted",
 ):
@@ -73,7 +74,7 @@ for token in (
         fail(f"obsolete client-composed map response remains in wire schema: {token}")
 
 for token in (
-    "SimulationSnapshotWireSchemaVersion = 9u",
+    "SimulationSnapshotWireSchemaVersion = 10u",
     "SimulationSnapshotWireSchemaVersion",
     "MapResponseWireSchemaVersion",
     "encodeSimulationSnapshot(",

@@ -1,8 +1,8 @@
-# CONTINUE PROMPT — Elite Navigation v2 / docking live validation
+# CONTINUE PROMPT — Elite Navigation v2 / live Automatic angular-timing gate
 
 Work in public repository `forzub/Elite`, branch `main`.
 
-At the start of EVERY iteration read:
+At the start of EVERY iteration read the newest relevant sections of:
 - `CURRENT_STATE.md`
 - `CURRENT_TASK.md`
 - `PROJECT_STATE.md`
@@ -11,37 +11,249 @@ At the start of EVERY iteration read:
 - this file
 
 After every state-affecting iteration:
-1. update relevant state/task/project/end-to-end MD files;
-2. update CONTROL_LAW_MANEUVER_MODEL if flight doctrine changes;
-3. REGENERATE THIS FILE FROM SCRATCH;
+1. update CURRENT_STATE / CURRENT_TASK / PROJECT_STATE / STAGE12_END_TO_END as appropriate;
+2. update CONTROL_LAW_MANEUVER_MODEL when doctrine changes;
+3. REGENERATE THIS CONTINUE_PROMPT FROM SCRATCH;
 4. commit directly to public GitHub `main`.
 
 Do not send patch files. Fresh Windows/MSYS2 verify/build/live evidence is
-required before calling newest behavior accepted.
+required before claiming newest behavior accepted.
 
-## Flight doctrine
+## User-locked manual docking presentation
 
-Assisted is a game-flight model, not a raw RCS physics model:
-- hull nose defines intended travel direction;
-- course/VREL follows nose with finite lag, target <= about 2–3 s;
+This is now a hard user contract. Do NOT alter without an explicit request:
+
+```text
+ordinary manual docking corridor frames: 500 m
+terminal/final-zone frames:             250 m
+```
+
+No special 125 m launch cadence.
+No arbitrary fractional transition frame just to land exactly on the dense-zone
+boundary.
+
+Current implementation:
+- SpaceState sets `request.gateSpacingMeters = 500.0`;
+- SpaceState sets `request.terminalGateSpacingMeters = 250.0`;
+- DockingAdvisoryPlanner has no launch-only cadence override;
+- terminal cadence starts up to one normal interval early so the final dense
+  zone remains covered without a fractional transition step;
+- static contract rejects return of SpaceState 150 m cadence or
+  `distanceToActivation` transition logic;
+- native docking test requires first published launch gap ~= 500 m.
+
+The nose-first geometry itself may still use dense INTERNAL samples for
+collision/curvature proof. Only published corridor frames are locked to
+500/250.
+
+Normal nose-first lead is currently at least 1000 m so one full 500 m straight
+published interval can remain on the hull axis while the remaining lead can
+blend into a tangent first arc.
+
+## Flight-family doctrine
+
+Manual Assisted is accepted. Do not retune it without fresh live evidence.
+
+Assisted:
+- hull nose defines desired travel direction;
+- VREL/course follows nose with finite lag, target about <=2–3 s;
+- real angular rate/acceleration limits still apply;
 - forward/reverse main controls longitudinal speed;
 - automatic velocity-to-nose stabilization is ordinary Assisted course
   authority;
-- physical manoeuvre/RCS (Cobra currently 2 m/s²) is precision authority, not
-  ordinary route curvature authority.
+- physical manoeuvre/RCS (Cobra currently 2 m/s²) is precision authority, NOT
+  ordinary route-curvature authority.
 
-Automatic Assisted must execute the SAME flight law as manual Assisted.
+Automatic Assisted uses the SAME game-flight law as manual Assisted:
+```text
+AcceptedManeuverProgram(AssistedVelocity)
+ -> TrajectoryFollower
+ -> NavigationRuntimeControlBridge
+ -> ShipControlState navigationAssistedFlightModel*
+ -> DynamicMotionSystem::applyNavigationAssistedFlightModel
+ -> DynamicMotionSystem::applyLocalFrameInput
+ -> fixed-step physics
+```
 
-Newtonian/heavy is separate:
+Newtonian/heavy is a separate family:
 - faster, less maneuverable;
-- velocity independent from hull attitude;
-- doctrine = coast -> rotate -> main burn -> coast -> flip/rotate -> brake;
-- docking uses mostly piecewise-straight geometry;
-- precision RCS is not fake lateral main thrust.
+- inertial velocity independent from attitude;
+- ordinary doctrine: coast -> rotate -> main burn -> coast -> flip/rotate ->
+  braking burn;
+- docking favors long nearly straight legs and large turn volume;
+- precision RCS must not be used as fake sustained lateral main thrust.
 
-## Accepted evidence before newest live fixes
+Dedicated Newtonian coast/rotate/burn compiler remains future work.
 
-Fresh Windows native evidence:
+## Controller ownership / NPC analogy
+
+Do NOT create a second NPC ship entity for player Autopilot.
+
+Correct model already exists:
+```text
+same Ship entity
+Human controller -> Autopilot controller
+same ShipDynamics / installed hardware / fixed-step physics
+```
+
+`ControlRegistry::takeAutopilotControl()` changes the command source. AI/NPC
+and Autopilot may later share higher-level controller abstractions, but physics
+ownership remains on the same Ship.
+
+## Latest live evidence
+
+User now has this real Automatic server failure:
+
+```text
+[DockAuto] request=1 phase=plan-failed
+reason=trajectory:angular trajectory cannot reach requested terminal state
+action=restore-human
+```
+
+The ship first displayed/calculated a route but did not move.
+
+This proves:
+- UI request reached Automatic;
+- server acquired/used Autopilot authority;
+- server reached the Planner;
+- the safe Human hand-back occurred because no executable trajectory passed the
+  angular gate.
+
+So the current live blocker is NOT controller handoff.
+
+The visible/advisory route is not the same acceptance level as the executable
+server program. A visible route can exist while the server trajectory is
+rejected before AcceptedManeuverProgram / Follower execution.
+
+## Current angular-timing fix on main
+
+Root defect: translational Ruckig chose the fastest collision-free trajectory
+clock. Bounded angular compilation then had to fit exact terminal orientation
+and rotating-target terminal omega into that same clock. If the hull needed
+more time, Planner rejected the whole task.
+
+Correct behavior now:
+- retain the SAME collision-free route;
+- retain the SAME angular capability/tolerances;
+- lower translation speed until the hull has enough time.
+
+For multi-point routes, only an angular-terminal failure triggers retries using:
+
+```text
+1.00, 0.80, 0.64, 0.50, 0.40, 0.32, 0.25,
+0.20, 0.16, 0.125, 0.10, 0.08, 0.06, 0.05
+```
+
+A successful slowed route reports:
+`angular-speed-relaxed`.
+
+No collision rule, max angular speed, max angular acceleration, terminal pose
+tolerance or terminal-omega tolerance is weakened.
+
+New native regression:
+`testTranslationSlowsWhenAngularTerminalNeedsMoreTime`
+creates a translationally-fast 3-point route whose hull rotation needs more
+time and requires Planner to return a slower valid trajectory.
+
+## Exact angular diagnostics
+
+`compileBoundedAngularKinematics` now returns detailed reasons rather than
+only a generic failure. Possible live suffixes include:
+
+- `too-few-angular-samples`
+- `invalid-angular-capability`
+- `initial-omega-outside-capability omega=... max=...`
+- `invalid-angular-step sample=N dt=...`
+- `terminal-omega-unreachable-before-sample=N error=... reachable=...`
+- `terminal-orientation-error-deg=...`
+- `terminal-omega-error=...`
+
+If live planning still fails, use the exact new suffix. Do NOT loosen angular
+limits/tolerances by guess.
+
+## Docking-port click priority
+
+Latest user feedback: distant docking ports were hard to select; clicking near
+them often selected the entire parent construction.
+
+Root cause:
+- docking items had a high `pickPriority`;
+- but when `hitPolygonPx` existed it replaced the normal hit radius;
+- at distant zoom the real opening projected to only a few pixels;
+- overlay miss then fell through to `pickHubInfrastructureBody()`, which
+  selected the assembly mesh.
+
+Current behavior:
+- a DockingPort is hit by precise physical polygon OR semantic screen radius;
+- dock `hitRadiusPx = 22.0`;
+- dock `pickPriority = 1000`;
+- among overlapping dock markers, nearest cursor distance wins
+  (`nearerDock`);
+- infrastructure triangle pick runs only when overlay picking did not consume
+  the press.
+
+`verify_docking.sh` now also runs
+`tests/system_map/check_object_overlay.py` so this selection contract is part
+of docking verification.
+
+## Self-contained START DOCKING
+
+CALCULATE TRAJECTORY is not a prerequisite.
+
+Cold Automatic flow:
+```text
+START DOCKING
+ -> route-preflight if no matching visible corridor
+ -> temporary authoritative BrakeToStop / settle
+ -> authoritative Hub snapshot
+ -> law-aware advisory route / visible tunnel
+ -> temporary Human hand-back
+ -> BeginAutomaticDocking
+ -> server Autopilot stabilization
+ -> async server planning
+ -> AcceptedManeuverProgram
+ -> Follower / RuntimeControlBridge
+ -> shared Ship physics
+```
+
+The client preflight route is presentation/safe-start preparation only. Server
+Automatic still builds/proves the executable program.
+
+Server Automatic uses actual stopped hull forward and a nose-first lead. Its
+internal execution-guide sampling may remain denser than the user-visible
+500/250 corridor.
+
+## Automatic async invariant
+
+Heavy planning stays outside fixed-step:
+- immutable planning snapshot;
+- worker performs advisory + trajectory + Accepted-program construction;
+- fixed-step polls result only.
+
+Never restore:
+- synchronous heavy route/Ruckig work in fixed-step;
+- `phase=plan-retry` retry storms.
+
+Entry alignment remains:
+- accepted first reference owns route-entry attitude;
+- if needed, physical Aligning turns the real hull;
+- stale program is discarded;
+- stabilize/replan;
+- execute only a fresh program.
+
+Expected successful lifecycle after current fix:
+```text
+[DockAuto] ... phase=planning-async
+[DockAuto] planned ... phase=aligning
+[DockAuto] ... phase=aligned-replan
+[DockAuto] ... phase=planning-async
+[DockAuto] planned ... phase=executing
+```
+or direct `phase=executing` if already aligned.
+
+## Existing fresh target evidence before newest changes
+
+Previously green on Windows:
 ```text
 navigation_runtime_control .......... PASS
 maneuver_tracking_controller ........ PASS
@@ -51,216 +263,75 @@ trajectory_generator_angular ........ PASS
 manual docking static contract ...... PASS
 ```
 
-Cockpit center boresight is accepted by the user.
+Newest angular-time relaxation, strict cadence lock and dock-picking changes
+still need a fresh target rerun.
 
-Terminal angular pose/omega remain physical boundary conditions. No final-sample
-omega snap is allowed.
-
-## Latest live finding
-
-User supplied a cockpit screenshot and runtime log.
-
-Observed:
-- visible tunnel looked as though it belonged to another trajectory;
-- first piece was forward, then geometry transitioned awkwardly;
-- desired form:
-  `straight current-hull segment -> smooth arc -> route to dock`;
-- START DOCKING without prior CALCULATE TRAJECTORY made the button green and
-  displayed AUTOMATIC DOCKING MODE;
-- ship did not move;
-- log had `dock_request=1` but no `[DockAuto]` lifecycle lines.
-
-## Newest route/Automatic fixes already on main
-
-### Law-aware visible guidance
-
-SpaceState visible docking guidance now calls the explicit control-law vehicle
-profile overload:
-```cpp
-makeNavigationVehicleProfile(
-    effectivePhysics,
-    envelope,
-    guidanceControlLaw
-);
-```
-
-Assisted geometry therefore uses Assisted course authority rather than the old
-2 m/s² precision-RCS lateral limit.
-
-`request.roundTurns = guidanceAssisted`.
-
-### Straight prefix -> tangent first arc
-
-DockingAdvisoryPlanner no longer protects the whole 500 m nose-first lead from
-filleting.
-
-Current behavior:
-- exact hull-forward launch ray is retained;
-- `initialForwardAcceptedLeadMeters` stores actual available lead;
-- `initialForwardProtectedStraightMeters` preserves a visible straight prefix;
-- remaining lead is available to the first circular fillet via
-  `maximumLaunchCut`;
-- normal visible guidance cadence is now 150 m instead of 500 m;
-- launch region gets additional dense sampling.
-
-Native regression requires:
-- multiple straight-prefix frames;
-- a real later heading transition;
-- no >30 degree first-turn discrete kink.
-
-### START DOCKING is self-contained
-
-Manual CALCULATE TRAJECTORY is not a prerequisite.
-
-Cold Automatic:
-```text
-START DOCKING
- -> phase=route-preflight
- -> BeginDockingGuidancePreparation
- -> physical stop / settle
- -> authoritative Hub snapshot
- -> law-aware advisory route
- -> visible tunnel publication
- -> temporary authority hand-back
- -> phase=requested
- -> BeginAutomaticDocking
- -> server Stabilizing / async planning / execution
-```
-
-A matching already-visible corridor may still be reused.
-
-Server Automatic also sets:
-```cpp
-request.hasInitialForward = true;
-request.initialForward = currentForwardMap;
-request.initialForwardLeadMeters =
-    max(500.0, hull.lengthMeters*10.0);
-request.gateSpacingMeters = 150.0;
-request.terminalGateSpacingMeters = 150.0;
-```
-
-### Automatic observability
-
-Client should emit:
-```text
-[DockAuto] request=N phase=route-preflight
-[DockAuto] request=N phase=requested ...
-```
-
-Server should emit either:
-```text
-[DockAuto] begin ... phase=stabilizing
-```
-or explicit rejection:
-- `invalid-command`
-- `ship-not-found`
-- `ship-not-matched-to-target-hub`
-- `autopilot-authority-denied controller=...`
-
-## Latest compile regression and correction
-
-Fresh MinGW build failed at:
-```text
-GameServer.cpp:994:
-error: 'command' was not declared in this scope
-```
-
-Cause:
-the new Automatic authority-denied diagnostic was accidentally inserted into
-`beginDockingGuidancePreparation()`, which has only `requestSerial`.
-
-Corrected on main:
-- manual preparation uses:
-  `[DockPrep] ... request=<requestSerial>`;
-- Automatic uses:
-  `[DockAuto] ... request=<command.requestSerial>`;
-- Automatic authority-denied diagnostic is now in
-  `beginAutomaticDocking()`;
-- successful Automatic begin output is flushed.
-
-Post-edit source verification:
-- zero `command.requestSerial` references inside
-  `beginDockingGuidancePreparation()`;
-- expected Automatic authority-denied diagnostic is present inside
-  `beginAutomaticDocking()`.
-
-This was compile-only; no route/control/physics semantics changed.
-
-## Current HEAD progression
-
-The compile fix commit itself:
-```text
-abccc4956d8122ed1d75ec209cfa6d62e3ee5fc5
-```
-
-Documentation commits follow it. Pull current `main` and use whatever HEAD is
-reported by `git log -1 --oneline`.
-
-## Immediate target gate
+## Immediate Windows/MSYS2 gate
 
 Run:
+
 ```bash
 cd /d/__elite/work
 
 git pull --ff-only origin main
 git log -1 --oneline
 
-bash build_mingw64.sh
+bash verify_docking.sh
 ```
 
-If build fails, use the first compiler error only; do not change navigation
-semantics by guess.
+Do not build/run if verify fails.
 
-If build succeeds:
+If verify is fully green:
+
 ```bash
+bash build_mingw64.sh
 build/EliteGame.exe
 ```
 
-## Exact live test after successful build
+## Exact live test
 
-Do NOT press CALCULATE TRAJECTORY first.
-
-1. Start in Assisted.
-2. Select the docking port.
+1. In Hub map, test selecting a docking port from a relatively distant zoom.
+   The dock card/marker must win instead of the whole parent assembly.
+2. In Assisted, do NOT press CALCULATE TRAJECTORY first.
 3. Press START DOCKING directly.
 4. Capture every `[DockAuto]` and `[DockAdvisory]` line.
-5. Expected beginning:
-```text
-[DockAuto] request=N phase=route-preflight
-[DockAdvisory] request=N phase=stabilizing ...
-[DockAdvisory] request=N phase=settled ...
-[DockAdvisory] request=N phase=planning ...
-[DockAdvisory] request=N route=...
-[DockAdvisory] request=N phase=handoff_wait ...
-[DockAdvisory] request=N ... human_control=1
-[DockAuto] request=N phase=requested ...
-[DockAuto] begin ... phase=stabilizing
-```
-6. Then expect async planning, optional physical alignment/replan, then
-   `phase=executing`.
-7. Tunnel must visually show:
-   several frames ahead of the boresight -> smooth bend -> route toward dock.
-8. Ship must actually move once execution begins.
+5. Manual/preflight visible corridor must remain 500 m ordinary / 250 m final.
+6. The old generic angular plan-fail should no longer occur merely because the
+   fastest translational clock is too short. Planner should slow translation.
+7. Expected next real milestone is:
+   `planned ... phase=aligning` or `planned ... phase=executing`, followed
+   by physical ship movement.
+8. If it still fails, use the exact detailed angular reason now emitted.
 
 ## Non-negotiable invariants
 
-- Planner owns route/reference/control-law-compatible maneuver program.
-- Follower closes bounded tracking error only.
-- Manual and Automatic Assisted share one game-flight law.
-- Visible Assisted guidance uses the same law-aware capability model.
-- Physical RCS is not ordinary Assisted course authority.
-- Newtonian ordinary transit cannot use precision RCS as fake main thrust.
-- No direct authoritative position/velocity/orientation rewrites.
-- No planner-only target collision bypass.
-- No stale program execution after physical alignment.
-- No hidden corridor during Automatic.
-- No synchronous Automatic plan-retry storm.
-- START DOCKING must not depend on prior manual route calculation.
-- Current docking scope ends at collision-free pre-capture; physical latch is
-  later work.
+- manual visible docking frames = 500 m ordinary / 250 m final;
+- do not change that cadence without explicit user instruction;
+- Planner owns route/reference/control-law-compatible maneuver program;
+- Follower closes bounded error only;
+- Manual and Automatic Assisted share one game-flight law;
+- physical RCS is not ordinary Assisted course authority;
+- Newtonian transit cannot spend precision RCS as fake main thrust;
+- terminal pose/omega are physical boundary conditions;
+- translation may slow to satisfy angular feasibility, never widen angular
+  capability;
+- same Ship entity changes controller Human -> Autopilot;
+- no direct authoritative position/velocity/orientation rewrites;
+- no planner-only target collision bypass;
+- no stale program execution after physical alignment;
+- no hidden corridor during Automatic;
+- no synchronous Automatic planner retry loop;
+- START DOCKING must not require prior manual route calculation;
+- current docking scope ends at collision-free pre-capture; latch/contact later.
 
 ## Verification status
 
-Newest compile correction is committed.
-Fresh target MinGW build after the correction is PENDING.
-Cold START DOCKING live evidence is PENDING.
+Current code includes:
+- strict visible 500/250 cadence with no special launch/transition densification;
+- angular-time translation relaxation;
+- detailed angular rejection diagnostics;
+- distant dock semantic hit priority and nearest-dock arbitration;
+- new native/static regressions for all of the above.
+
+Fresh target `verify_docking.sh`, canonical MinGW build and live movement
+evidence are PENDING.

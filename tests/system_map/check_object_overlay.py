@@ -52,6 +52,8 @@ def main() -> int:
         "result.activatedObjectId = picked->objectId",
         "dockSemanticHit",
         "item.kind == MapObjectGlyphKind::DockingPort",
+        "nearerDock",
+        "picked->kind == MapObjectGlyphKind::DockingPort",
     )
     require("std::optional<MapObjectInfoPanelState>" not in overlay,
             "overlay regressed to a single-card state")

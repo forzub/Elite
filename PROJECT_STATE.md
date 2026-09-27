@@ -4519,3 +4519,13 @@ meaning; roll is not implicit from yaw.
 First candidate covers local speed timing, shared port-up reference and the
 HOLD spatial handoff. Strict capability/proof remains in force. Full control
 interface and contact/latch stages remain open. No live acceptance yet.
+## 2026-09-27 — trajectory-following failure gate
+
+Windows logs supersede the previous acceptance candidate: Automatic abandoned
+the moving program after 0.255 versus 0.25 rad/s angular-rate error, then
+after roughly 9–10 m/s of forward-speed lag. New telemetry records immutable
+reference, PilotSkill output, physical engine acceleration and body rates on
+the same tick. Assisted route geometry no longer silently falls below a
+cruise-based minimum on ordinary arcs. Manual key torque ramps over 0.25 s;
+navigation's independent angular-demand path retains full authority. This is
+a diagnostic/geometry candidate, pending Windows build and flight evidence.

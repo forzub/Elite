@@ -11174,3 +11174,17 @@ commit and exactly matches the locally checked candidate tree. No Windows
 native/game flight has yet confirmed ApproachHold -> physical stop ->
 FinalIngress -> pre-capture. The current slice is a published candidate,
 not runtime acceptance; contact/latch and in-plane trim remain open.
+## 2026-09-27 — observed live follow-up
+
+Windows flight of the published vehicle-level candidate produced in-flight
+`[DockAuto]` follower rejection at 0.255151 rad/s against the 0.25 angular
+limit, then repeated velocity-error rejection of roughly 9–10 m/s at
+250–300 m/s while heading error remained under one degree. Steering and
+translation were concurrent; speed tracking remains unverified. The new
+candidate keeps a small bounded angular-only correction during transit and
+logs `[DockAutoTrack]` once per 60 ticks, including reference speed,
+executed linear/angular PilotSkill demand, physical engine acceleration and
+actual rates. The advisory planner now rejects subminimum non-terminal
+Assisted fillets. The next live pass must establish whether acceleration
+lag comes from pilot filtering, throttle response or the shared physical
+acceleration envelope before further speed-control changes.

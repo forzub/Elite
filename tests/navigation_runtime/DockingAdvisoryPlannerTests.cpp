@@ -83,6 +83,16 @@ int main()
             << "nose-first route did not author a continuous launch fillet\n";
         return 35;
     }
+    const double minimumFlyableLaunchRadius =
+        0.25 * std::pow(0.8 * forwardLaunch.maxSpeedMps, 2.0) /
+        forwardLaunch.lateralMps2;
+    if(forwardLaunchPlan.initialTurnRadiusMeters + 1.0e-6 <
+       minimumFlyableLaunchRadius)
+    {
+        std::cerr << "Assisted launch fillet tightened below usable radius: "
+                  << forwardLaunchPlan.initialTurnRadiusMeters << "\n";
+        return 37;
+    }
 
     bool sawLaunchTurn=false;
     double travelled=firstFrameGap;

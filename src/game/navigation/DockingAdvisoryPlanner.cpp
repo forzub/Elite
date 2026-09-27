@@ -352,6 +352,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2,
                 terminalTurn ? r.preferredTerminalTurnRadiusMeters : 0.0
             });
+            // Below this radius the visible bend becomes a low-speed hairpin
+            // that an Assisted pilot cannot comfortably follow. Re-route or
+            // report no flyable route instead of silently tightening it.
+            const double minimumTransitRadius =
+                0.25 * std::pow(0.8 * r.maxSpeedMps, 2.0) / r.lateralMps2;
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction
@@ -400,6 +405,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                  ++attempt,tangentDistance*=0.5)
             {
                 const double radius=tangentDistance/tangentScale;
+                if (!terminalTurn && radius + 1.0e-6 <
+                    minimumTransitRadius)
+                    break;
                 if(terminalTurn &&
                    requiredTerminalRadiusMeters>0.0 &&
                    radius+1.0e-6<requiredTerminalRadiusMeters)

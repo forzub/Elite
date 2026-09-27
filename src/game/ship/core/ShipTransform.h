@@ -18,6 +18,9 @@ struct ShipTransform : public game::math::MathTransform
     float pitchInput = 0.0f;
     float yawInput   = 0.0f;
     float rollInput  = 0.0f;
+    // Duration of continuous manual input on each attitude axis. Navigation
+    // uses a separate angular-demand path and does not read this state.
+    glm::vec3 manualAngularHoldSeconds {0.0f};
 
     bool cruiseActive = false;
     bool jumpActive   = false;

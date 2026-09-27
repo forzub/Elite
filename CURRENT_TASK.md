@@ -1622,3 +1622,18 @@ FinalIngress and result. If an error remains, diagnose the first actual
 failure; do not assert acceptance based on static tests. Further work must
 replace engine-specific planning decisions where they conflict with the
 control-interface contract, finish in-plane hold alignment and contact/latch.
+## 2026-09-27 — investigate live trajectory-following failure
+
+Windows traces show Automatic angular-rate rejection at 0.255151 versus
+0.25 rad/s near 68 m/s, then repeated longitudinal velocity lag around
+9–10 m/s at roughly 250–300 m/s. The manual video mostly shows MANUAL
+DOCKING MODE; its corridor-exit record has lateral 5.43 m and vertical
+-2.36 m, inside the published release dimensions, so it cannot by itself
+prove a failed Automatic steering command. Candidate fixes allow a bounded
+angular correction while translating, enforce a minimum Assisted transit
+fillet radius, and soften tap torque without limiting navigation torque.
+`[DockAutoTrack]` now samples planned, pilot-commanded and ship-executed
+accelerations and rotation every 60 ticks to distinguish command lag from
+actuator saturation. Next gate: run Windows build and Automatic flight with
+all `[DockAutoTrack]` and `[DockAuto]` lines through HOLD. Do not declare the
+9–10 m/s speed lag resolved until that flight is measured.

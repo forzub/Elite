@@ -448,6 +448,11 @@ void ShipController::updateControlRates(
             game::ship::yawRateLimitRadPerSec(params)
         );
 
+    const bool alignmentOwnsAttitude = isVelocityAlignmentAttitudeActive(
+        ship,
+        params.forwardMainEngineAvailable,
+        params.reverseMainEngineAvailable
+    );
     (void)applyVelocityAlignmentAttitude(
         ship,
         dt,
@@ -464,6 +469,25 @@ void ShipController::updateControlRates(
         ship.yawInput,
         ship.rollInput
     );
+    // Ramp manual torque while a key is held. A one-frame tap should only
+    // nudge the ship; sustained input reaches the full physical authority.
+    // This never scales the separate navigation angular-demand path.
+    constexpr float tapAuthority = 0.18f;
+    constexpr float fullAuthorityAfterSeconds = 0.25f;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        if (alignmentOwnsAttitude || std::abs(angularInput[axis]) < 0.001f)
+            ship.manualAngularHoldSeconds[axis] = 0.0f;
+        else if (!alignmentOwnsAttitude)
+        {
+            const float held = ship.manualAngularHoldSeconds[axis];
+            angularInput[axis] *= tapAuthority +
+                (1.0f - tapAuthority) *
+                    std::clamp(held / fullAuthorityAfterSeconds, 0.0f, 1.0f);
+            ship.manualAngularHoldSeconds[axis] =
+                std::min(fullAuthorityAfterSeconds, held + std::max(0.0f, dt));
+        }
+    }
     const float angularInputLength = glm::length(angularInput);
     if (angularInputLength > 1.0f)
         angularInput /= angularInputLength;

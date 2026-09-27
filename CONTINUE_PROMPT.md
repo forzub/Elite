@@ -132,3 +132,15 @@ errors still recover. Prior change captures hold inside 12m/2mps. Native
 regression added. Next: Windows verify/build/live hold, final ingress,
 correction and result. IMPORTANT: current objective stops at pre-capture;
 physical dock contact/latch is still missing, do not claim full docking.
+# 2026-09-27 — live trajectory-following diagnosis in progress
+
+The published Automatic candidate failed the Windows run: a tiny angular
+rate excess (0.255151 versus 0.25 rad/s) triggered recovery at 68 m/s;
+later the ship trailed the reference speed by 9–10 m/s at 250–300 m/s.
+The manual cockpit video and corridor-exit log are a separate manual flight.
+Local changes allow bounded in-flight angular correction, prevent very tight
+ordinary Assisted route fillets, ramp manual tap torque without changing
+Autopilot torque, and add `[DockAutoTrack]` acceleration/rotation samples.
+Run `bash verify_docking.sh`, build on Windows and capture every `[DockAuto]`
+and `[DockAutoTrack]` line. Determine whether speed lag originates in pilot
+response or ship acceleration before claiming flight acceptance.

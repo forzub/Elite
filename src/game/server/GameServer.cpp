@@ -3226,10 +3226,12 @@ void GameServer::applyAutomaticDockingControls(
         );
         const bool correctingDockAttitude =
             followed.angularCorrectionOnly &&
-            followed.remainingDistanceMeters <= 500.0 &&
-            glm::length(agent.velocityMapMetersPerSecond) <= 5.0 &&
+            // A small angular-rate discrepancy is steerable in transit too.
+            // Rejecting here would stop translation before steering can act.
+            followed.angularVelocityErrorRadPerSec <=
+                program.tracking.angularVelocityErrorRadPerSec + 0.10 &&
             currentAngularSpeedRadPerSec <=
-                program.capability.maxAngularSpeedRadPerSec + 1.0e-6;
+                program.capability.maxAngularSpeedRadPerSec + 0.05;
 
         if (correctingDockAttitude &&
             (runtime.lastDiagnosticTick == 0 ||
@@ -3433,6 +3435,61 @@ void GameServer::applyAutomaticDockingControls(
         }
 
         runtime.controlBridgeFailureCount = 0;
+
+        // One sample per second: correlate the immutable trajectory, follower
+        // feedback, pilot command and measured ship response on Windows.
+        if (runtime.lastDiagnosticTick == 0 ||
+            time.serverTick - runtime.lastDiagnosticTick >= 60)
+        {
+            const auto diagnosticSample = game::navigation::
+                ManeuverProgramSampler::sample(
+                    program, time.universeTimeSeconds);
+            const glm::dvec3 plannedAcceleration =
+                boundary.toSystemVector(
+                    game::navigation::NavigationFrameBoundary::NavVector {
+                        diagnosticSample.reference.linearAccelerationFeedForwardMapMps2
+                    }).value;
+            const glm::dvec3 commandedAcceleration =
+                step.snapshot.executedLinearAccelerationDemandSystemMps2;
+            const glm::dvec3 commandedAngular =
+                step.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
+            const glm::dvec3 measuredAcceleration =
+                motion.engineAccelerationMps2;
+            std::cout << "[DockAutoTrack] request=" << runtime.requestSerial
+                      << " page=" << runtime.currentProgramPage
+                      << " t_s=" << time.universeTimeSeconds -
+                          program.acceptedAtUniverseTimeSeconds
+                      << " remaining_m=" << followed.remainingDistanceMeters
+                      << " speed_ref_mps=" <<
+                          glm::length(diagnosticSample.reference.velocityMapMetersPerSecond)
+                      << " speed_actual_mps=" <<
+                          glm::length(agent.velocityMapMetersPerSecond)
+                      << " cross_track_m=" << followed.crossTrackErrorMeters
+                      << " velocity_error_mps=" <<
+                          followed.envelopeVelocityErrorMps
+                      << " angle_error_deg=" <<
+                          glm::degrees(followed.forwardAngleErrorRad)
+                      << " omega_error_radps=" <<
+                          followed.angularVelocityErrorRadPerSec
+                      << " planned_accel_system_mps2=(" << plannedAcceleration.x
+                      << "," << plannedAcceleration.y << ","
+                      << plannedAcceleration.z << ")"
+                      << " commanded_accel_system_mps2=(" << commandedAcceleration.x
+                      << "," << commandedAcceleration.y << ","
+                      << commandedAcceleration.z << ")"
+                      << " measured_engine_accel_system_mps2=(" << measuredAcceleration.x
+                      << "," << measuredAcceleration.y << ","
+                      << measuredAcceleration.z << ")"
+                      << " commanded_angular_radps2=(" << commandedAngular.x
+                      << "," << commandedAngular.y << ","
+                      << commandedAngular.z << ")"
+                      << " actual_rates_radps=(" << agent.pitchRateRadPerSec
+                      << "," << agent.yawRateRadPerSec << ","
+                      << agent.rollRateRadPerSec << ")"
+                      << " pilot_blocked=" << step.snapshot.reactionBlocked
+                      << std::endl;
+            runtime.lastDiagnosticTick = time.serverTick;
+        }
 
         ship->setControlState(step.control);
 

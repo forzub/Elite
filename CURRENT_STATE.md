@@ -6270,3 +6270,16 @@ server. Local automatic/manual architecture scripts passed. Full Windows
 `verify_docking.sh`, client/server build and live request remain **pending**;
 do not label this candidate accepted. The requested general control-interface
 redesign, in-plane fine alignment and physical contact/latch are not complete.
+## 2026-09-27 — live failure analysis and new diagnostic candidate
+
+Published candidate `a0b5aa1` failed in user Windows flight. Small in-flight
+angular-rate error caused an unnecessary recovery; later forward-speed lag
+crossed the 8 m/s follower limit. Both translation and attitude were active:
+forward-angle errors in the failed samples stayed under one degree. Manual
+flight footage is a separate mode; it does not demonstrate Automatic command
+output. A tight Assisted turn exists because the advisory planner could halve
+non-terminal arcs below its speed-derived desired radius. Current local
+candidate limits that tightening, allows bounded in-flight angular correction,
+ramps manual tap torque, and emits `[DockAutoTrack]` command/physics samples.
+Native advisory and targeted architecture gates passed; full Windows flight
+still required, especially to diagnose the unresolved forward-speed lag.

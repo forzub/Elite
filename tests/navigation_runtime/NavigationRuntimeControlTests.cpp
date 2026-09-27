@@ -587,9 +587,18 @@ void testManualAttitudeOverridesNavigationAngularDemand()
     );
     requireNear(
         transform.pitchRate,
-        0.2,
+        0.036,
         1.0e-5,
-        "manual override must still use the same angular capability clamp"
+        "a short manual tap must use only the initial fraction of angular authority"
+    );
+    for (int sample = 0; sample < 4; ++sample)
+        SharedShipPhysics::evaluateControl(
+            transform, params, control, world, 0.1f);
+    requireNear(
+        transform.pitchRate,
+        0.7048,
+        1.0e-4,
+        "held manual input must regain full angular authority"
     );
 }
 

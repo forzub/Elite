@@ -10906,3 +10906,39 @@ No Stage-12 execution boundary changed. The GameServer build failure came from a
 mis-scoped log expression in manual docking preparation. Manual preparation now
 uses its `requestSerial`; Automatic diagnostics use
 `ClientShipCommand::requestSerial` inside `beginAutomaticDocking()`.
+
+## 2026-09-27 — Stage-12 Planner may slow translation to satisfy angular proof
+
+Latest live Automatic reached server planning but failed before Accepted program
+construction because the fastest scalar translation clock was incompatible with
+the exact bounded angular terminal state.
+
+For multi-point execution the generation flow is now:
+
+```text
+collision-free execution guide
+ -> scalar Ruckig progress at nominal speed
+ -> bounded angular compilation
+ -> if ONLY angular-terminal infeasible:
+      retry same guide at lower translational speed
+ -> bounded angular compilation passes
+ -> AcceptedManeuverProgramBuilder
+ -> Follower
+ -> RuntimeControlBridge
+ -> same Ship fixed-step physics
+```
+
+Angular capability/tolerance is never widened to obtain a pass.
+
+The angular compiler now exposes a concrete rejection reason, including
+unreachable terminal omega before a sample, terminal orientation error, terminal
+omega error, invalid step or invalid capability.
+
+Controller ownership is already correct for the observed failure:
+`ControlRegistry::takeAutopilotControl` changes the source of commands on the
+same Ship entity. The live `phase=plan-failed ... action=restore-human` proves
+that Automatic authority existed and was intentionally handed back because
+planning did not produce an executable program.
+
+Visible manual corridor cadence is a separate locked presentation contract:
+500 m normal, 250 m terminal.

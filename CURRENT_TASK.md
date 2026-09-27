@@ -1380,3 +1380,31 @@ press START DOCKING without first pressing CALCULATE TRAJECTORY.
 The route-preflight / straight-prefix -> launch-arc changes remain the code under
 live validation. This iteration only repairs the misplaced diagnostic compile
 error.
+
+## 2026-09-27 — immediate gate: angular-time relaxation then real movement
+
+Hard UI contract: manual docking corridor is 500 m normal / 250 m terminal.
+Do not alter those values or add special launch/transition frame cadences unless
+the user explicitly asks.
+
+Next target sequence:
+
+1. Pull current main and run `bash verify_docking.sh`.
+2. The new angular native regression must prove translation is slowed when
+   bounded hull rotation needs more time.
+3. The docking-advisory native regression must prove the first published launch
+   frame is ~500 m and the later first turn is still smooth.
+4. Object-overlay contract must pin dock semantic hit radius/priority and
+   nearest-dock arbitration.
+5. Only after full verify PASS run `bash build_mingw64.sh`.
+6. Live: START DOCKING directly in Assisted. The old generic failure
+   `trajectory:angular trajectory cannot reach requested terminal state`
+   should be replaced by a valid planned program, potentially reporting a
+   longer `trajectory_s`.
+7. Expected next meaningful lifecycle is `planned ... phase=aligning` or
+   `phase=executing`, followed by actual ship motion.
+8. If angular planning still fails, use the new detailed reason verbatim; do
+   not widen angular limits or tolerances.
+
+Also validate clicking a distant docking port: its card must win over the parent
+module/assembly when the cursor is within the dock marker hit area.

@@ -99,7 +99,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         // routeSearchStart.
         initialForwardProtectedStraightMeters=std::min(
             acceptedLead,
-            std::max(25.0, acceptedLead*0.50)
+            std::max(500.0, acceptedLead*0.50)
         );
     }
 
@@ -712,21 +712,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             r.terminalDenseDistanceMeters+terminalSpacing;
 
         double spacingMeters=r.gateSpacingMeters;
-
-        // Keep the launch straight and its first tangent arc visually and
-        // geometrically faithful. Sparse 500 m presentation chords used to
-        // jump across the protected prefix/arc and made the cockpit tunnel
-        // look as if it belonged to another trajectory.
-        if(initialForwardLeadActive &&
-           denseProgress[previous] <=
-               initialForwardAcceptedLeadMeters+
-                   r.gateSpacingMeters)
-        {
-            spacingMeters=std::min(
-                spacingMeters,
-                std::max(50.0,r.gateSpacingMeters*0.25)
-            );
-        }
 
         if(remainingFromPrevious<=terminalActivationRemaining)
         {

@@ -4386,3 +4386,14 @@ gameplay requirement: accept a difference up to max(0.1 ms, 1% of the step).
 Reject larger missing/duplicated tick gaps. The live server still supplies a
 local pilot clock from gameplay delta; world time remains authoritative for
 trajectory sampling. Windows runtime evidence for Automatic remains pending.
+
+## 2026-09-27 — timeline storage-page adjacency uses local time
+
+Windows observed the first real Automatic motion, then an InvalidInput loop
+when selecting accepted program pages. Comparing separately reconstructed
+absolute page ends/starts at the large universe epoch against a nanosecond
+gap was invalid for contiguous local samples. Page adjacency now compares
+sequence offsets and page-local duration, preserving strict continuity
+without demanding impossible absolute-clock precision. BeforeStart holds
+position; corrupt timelines fail once and report the reason to the client.
+Live target validation is pending.

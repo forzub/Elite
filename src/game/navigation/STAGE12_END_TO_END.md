@@ -11015,3 +11015,15 @@ agree within nanoseconds. Reaction/decision/latency timing only needs the same
 gameplay step: accept rounding of max(0.1 ms, 1% of step), and continue to
 reject a skipped/duplicated tick. A bridge regression covers both cases.
 This change has not yet passed a Windows live flight gate.
+
+## 2026-09-27 — live page selection loop after first physical motion
+
+The Windows runtime moved the ship after the pilot clock fix, but emitted
+`phase=replan reason=no-active-program-page status=0` repeatedly. Selection
+validates future pages while picking the current one; its nanosecond continuity
+check compared two absolute epoch sums that differ by one double ULP at the
+1998-based universe clock. Compare page-local offsets for continuity and still
+activate at the next page's own absolute start. An InvalidInput timeline now
+emits a terminal result; BeforeStart holds until the planned epoch. The
+regression uses a live-scale epoch for contiguous pages and a real gap.
+Windows native/live results are pending.

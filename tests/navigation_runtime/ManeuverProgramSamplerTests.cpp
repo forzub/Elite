@@ -320,6 +320,48 @@ void testStoragePageSelectionUsesNextPageStart()
     );
 }
 
+void testStoragePageContinuityAtRealUniverseEpoch()
+{
+    Program pages[2] = {baseProgram(), baseProgram()};
+    constexpr double epoch = 875000000.0;
+    pages[0].acceptedAtUniverseTimeSeconds = epoch;
+    pages[0].sequenceStartOffsetSeconds = 0.1;
+    pages[0].samples[1].timeOffsetSeconds = 0.2;
+    pages[0].validUntilUniverseTimeSeconds = epoch + 2.0;
+
+    pages[1].acceptedAtUniverseTimeSeconds = epoch;
+    pages[1].sequenceStartOffsetSeconds = 0.3;
+    pages[1].samples[1].timeOffsetSeconds = 0.2;
+    pages[1].validUntilUniverseTimeSeconds = epoch + 2.0;
+
+    const auto firstWindow = Timeline::pageWindow(pages[0]);
+    const auto secondWindow = Timeline::pageWindow(pages[1]);
+    require(std::abs(secondWindow.startUniverseTimeSeconds -
+                     firstWindow.endUniverseTimeSeconds) > 1.0e-9,
+            "fixture must expose absolute-epoch rounding");
+
+    const auto first = Timeline::selectActivePage(
+        pages, 2, firstWindow.startUniverseTimeSeconds, 0
+    );
+    require(first.status == Timeline::SelectionStatus::Active &&
+                first.pageIndex == 0,
+            "large universe epoch rejected the first continuous page");
+
+    const auto second = Timeline::selectActivePage(
+        pages, 2, secondWindow.startUniverseTimeSeconds, 0
+    );
+    require(second.status == Timeline::SelectionStatus::Active &&
+                second.pageIndex == 1,
+            "large universe epoch blocked the next continuous page");
+
+    pages[1].sequenceStartOffsetSeconds += 0.01;
+    const auto gap = Timeline::selectActivePage(
+        pages, 2, firstWindow.startUniverseTimeSeconds, 0
+    );
+    require(gap.status == Timeline::SelectionStatus::InvalidInput,
+            "real page discontinuity must still be rejected");
+}
+
 void testFollowerCompletionUsesPageLocalElapsedTime()
 {
     Program page = baseProgram();
@@ -382,6 +424,7 @@ int main()
         testInvalidProgramFailsClosed();
         testProgramStorageIsStaticallyBounded();
         testStoragePageSelectionUsesNextPageStart();
+        testStoragePageContinuityAtRealUniverseEpoch();
         testFollowerCompletionUsesPageLocalElapsedTime();
 
         std::cout << "MANEUVER PROGRAM SAMPLER TESTS: PASS\n";

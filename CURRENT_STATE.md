@@ -6050,3 +6050,17 @@ from the live bridge fix and accept time/delta rounding up to the greater of
 0.1 ms or 1% of the step; larger discontinuities still return InvalidInput.
 The bridge regression covers harmless rounding and a missing tick. Windows
 native and live Automatic verification remain pending.
+
+## 2026-09-27 — live Automatic passes bridge, then rejects program pages
+
+The latest Windows build started physical movement for request 1; repeated
+`no-active-program-page status=0` then made the ship alternately accelerate and
+brake as the server replanned. `status=0` is Timeline::InvalidInput, not a
+network packet failure. Accepted pages use a 1998-based universe epoch of
+hundreds of millions of seconds. Timeline checked their adjacency using two
+separately rounded absolute timestamps within 1 ns; these can differ by about
+0.12 microseconds even when local sample offsets are continuous. Selection now
+checks adjacency in local maneuver time and retains the canonical absolute start
+for activation. A genuinely invalid timeline ends the request with a server
+result instead of looping; BeforeStart holds until the planned start. Windows
+native and live flight for this correction remain pending.

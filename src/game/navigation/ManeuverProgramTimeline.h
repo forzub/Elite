@@ -128,12 +128,17 @@ public:
             const auto& current = pages[selected];
             const auto& next = pages[selected + 1];
             const PageWindow nextWindow = pageWindow(next);
+            // Check adjacency in the maneuver's local clock. Subtracting two
+            // independently rounded absolute universe timestamps loses
+            // sub-microsecond precision at the live 1998-based epoch.
+            const double localEnd =
+                current.sequenceStartOffsetSeconds +
+                current.samples[current.sampleCount - 1].timeOffsetSeconds;
             if (!nextWindow.valid ||
                 next.acceptedAtUniverseTimeSeconds !=
                     current.acceptedAtUniverseTimeSeconds ||
                 std::abs(
-                    nextWindow.startUniverseTimeSeconds -
-                    selectedWindow.endUniverseTimeSeconds
+                    next.sequenceStartOffsetSeconds - localEnd
                 ) > PageContinuityToleranceSeconds)
             {
                 return Selection {};

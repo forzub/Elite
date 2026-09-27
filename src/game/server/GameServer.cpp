@@ -2990,14 +2990,32 @@ void GameServer::applyAutomaticDockingControls(
             Timeline::SelectionStatus::Active)
         {
             std::cerr << "[DockAuto] request=" << runtime.requestSerial
-                      << " phase=replan reason=no-active-program-page"
+                      << " phase=execution-failed reason=no-active-program-page"
                       << " status=" << static_cast<int>(selection.status)
+                      << " page=" << runtime.currentProgramPage
+                      << " pages=" << runtime.programs.size()
+                      << " now=" << time.universeTimeSeconds
+                      << " first_start="
+                      << Timeline::pageWindow(runtime.programs.front()).
+                             startUniverseTimeSeconds
                       << std::endl;
-            runtime.phase =
-                DockingAutomaticRuntime::Phase::Stabilizing;
-            runtime.programs.clear();
-            runtime.controlBridge.reset();
-            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            if (selection.status ==
+                Timeline::SelectionStatus::BeforeStart)
+            {
+                ShipControlState hold;
+                hold.velocityAlignmentCommand =
+                    game::navigation::VelocityAlignmentMode::BrakeToStop;
+                ship->setControlState(hold);
+                continue;
+            }
+
+            completed.push_back({
+                runtime.playerId,
+                runtime.entityId,
+                runtime.requestSerial,
+                false,
+                "invalid-program-page-timeline"
+            });
             continue;
         }
 

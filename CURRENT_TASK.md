@@ -1494,3 +1494,13 @@ visible corridor, and report any server outcome to the client. The executor
 permits 0.1 ms / 1% clock rounding but still rejects missing gameplay ticks;
 log `failure_kind`, `clock_s`, `delta_s` on any bridge failure. Do not mark the
 Automatic runtime accepted until live movement and final result are observed.
+
+## 2026-09-27 — verify local-time program page selection
+
+The new Windows trace proves bridge execution and physical movement, then
+repeated Timeline::InvalidInput for multi-page maneuvers. Pull/build/test the
+local-offset page-continuity correction, press START DOCKING once and confirm
+no repeated `no-active-program-page status=0` or accelerate/brake oscillation.
+If selection genuinely fails, expect one terminal `[DockResult]` with
+`invalid-program-page-timeline` on server and client. Continue to verify
+corridor persistence, hold stop, final ingress and actual terminal outcome.

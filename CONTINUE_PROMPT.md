@@ -7,3 +7,13 @@ Latest Windows build succeeded for client and server. Live START DOCKING request
 Current correction (not yet target-validated): pilot bridge resets at local clock zero upon accepted program installation; both Aligning and Executing increment local clock by the same gameplay delta passed to `step`/`stepProgram`. Follower samples still use absolute universe time. Bridge failure kinds distinguish invalid intent, invalid actuator and executor rejection. After three repeated failures the server returns a terminal result and reason rather than looping. A native bridge test verifies clock diagnostics. The executor now permits harmless clock/delta rounding up to max(0.1 ms, 1% of the step) while rejecting a missing tick; its delay/decision schedule and filter must share elapsed time. Do not relax actuator, tracking, safety or terminal tolerances. Preserve visible corridor in Automatic, manual visible frame spacing 500 m / 250 m, and two-stage ApproachHold -> stop -> FinalIngress.
 
 After publication, Windows procedure: `git pull --ff-only origin main`, `bash verify_docking.sh`, `bash build_mingw64.sh`, `build/EliteGame.exe 2>&1 | tee build/test-logs/docking-live.log`. Press START DOCKING once. Verify no repeating status 2; record `failure_kind`, `clock_s`, `delta_s`, actuator values if any failure. Observe actual motion, corridor, stop and final ingress, and both `[DockResult]` directions. Target verification remains pending.
+
+Latest Windows result: physical motion began, then repeated
+`no-active-program-page status=0` with start/stop oscillation. This is
+Timeline::InvalidInput: page adjacency used separately rounded absolute
+universe epoch sums with a 1 ns tolerance, while the epoch is hundreds of
+millions of seconds. Current correction compares page-local maneuver offsets,
+adds a live-scale-epoch regression, holds for BeforeStart and terminates
+corrupted timelines with a serialled result. Pull fresh main once published,
+rerun Windows gate and verify sustained motion rather than restart loops.
+Full Automatic acceptance remains pending.

@@ -182,6 +182,7 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
     float dt,
     double targetForwardSpeedMps,
     const glm::dvec3& feedbackAccelerationSystemMps2,
+    const glm::dvec3& executedAccelerationDemandSystemMps2,
     const glm::vec3& shipForward,
     const glm::vec3& shipRight,
     const glm::vec3& shipUp
@@ -190,7 +191,10 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
     if (motion.localControlLaw != LocalFlightControlLaw::Assisted ||
         !frame.valid ||
         dt <= 0.0f ||
-        !std::isfinite(targetForwardSpeedMps))
+        !std::isfinite(targetForwardSpeedMps) ||
+        !std::isfinite(executedAccelerationDemandSystemMps2.x) ||
+        !std::isfinite(executedAccelerationDemandSystemMps2.y) ||
+        !std::isfinite(executedAccelerationDemandSystemMps2.z))
     {
         motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
         motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
@@ -201,9 +205,37 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
 
     const double maxSpeed =
         game::ship::controlledSpeedLimitMps(params);
+    const glm::dvec3 forward =
+        glm::normalize(glm::dvec3(shipForward));
+    const double responseGain =
+        static_cast<double>(params.throttleAccel) > 0.0
+            ? static_cast<double>(params.throttleAccel)
+            : static_cast<double>(
+                  params.fallbackThrottleResponsePerSecond
+              );
+    const double requestedForwardAcceleration = glm::dot(
+        executedAccelerationDemandSystemMps2, forward
+    );
+    const double executableForwardAcceleration =
+        std::isfinite(requestedForwardAcceleration)
+            ? std::clamp(
+                  requestedForwardAcceleration,
+                  -game::ship::reverseMainAccelerationLimitMps2(params),
+                  game::ship::forwardMainAccelerationLimitMps2(params)
+              )
+            : 0.0;
+    // Assisted is a first-order speed controller: a = gain * (target - v).
+    // Asking it for the reference speed alone guarantees a lag of a/gain
+    // during every planned burn. Feed the already pilot-executed acceleration
+    // into the setpoint; the real main engine still clips acceleration below.
+    const double compensatedTargetSpeedMps =
+        targetForwardSpeedMps +
+        (responseGain > 0.0
+            ? executableForwardAcceleration / responseGain
+            : 0.0);
     (void)LocalFlightControlStateMachine::requestAssistedTargetSpeed(
         motion,
-        targetForwardSpeedMps,
+        compensatedTargetSpeedMps,
         maxSpeed
     );
 
@@ -229,8 +261,7 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
     // Assisted stabilizer. It is NOT physical keypad/manoeuvre RCS. Keep only
     // the component perpendicular to the hull nose; longitudinal tracking is
     // expressed by the target-forward-speed command above.
-    const glm::dvec3 f =
-        glm::normalize(glm::dvec3(shipForward));
+    const glm::dvec3 f = forward;
     glm::dvec3 lateralFeedback =
         feedbackAccelerationSystemMps2 -
         f * glm::dot(feedbackAccelerationSystemMps2, f);

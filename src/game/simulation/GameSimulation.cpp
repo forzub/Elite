@@ -4714,6 +4714,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                         motionControlDt,
                         control.navigationTargetForwardSpeedMps,
                         control.navigationAssistedCorrectionSystemMps2,
+                        control.navigationLinearAccelerationDemandSystemMps2,
                         tr.forward(),
                         tr.right(),
                         tr.up()

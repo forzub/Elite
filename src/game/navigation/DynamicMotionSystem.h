@@ -49,8 +49,9 @@ public:
 
     // Executes Assisted autopilot translation through the exact same local
     // flight law as manual Assisted control. The nominal command is a target
-    // forward speed; small Follower correction is folded into the automatic
-    // Assisted stabilizer budget, never into physical keypad/manoeuvre RCS.
+    // forward speed with pilot-executed acceleration compensation for the
+    // manual speed-controller response lag. Small lateral Follower correction
+    // uses the Assisted stabilizer, never physical keypad/manoeuvre RCS.
     static void applyNavigationAssistedFlightModel(
         DynamicMotionState& motion,
         const KinematicFrame& frame,
@@ -58,6 +59,7 @@ public:
         float dt,
         double targetForwardSpeedMps,
         const glm::dvec3& feedbackAccelerationSystemMps2,
+        const glm::dvec3& executedAccelerationDemandSystemMps2,
         const glm::vec3& shipForward,
         const glm::vec3& shipRight,
         const glm::vec3& shipUp

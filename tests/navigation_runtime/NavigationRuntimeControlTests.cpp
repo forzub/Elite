@@ -420,6 +420,7 @@ void testAssistedAutopilotUsesCanonicalFlightLaw()
                 0.01f,
                 100.0,
                 glm::dvec3(0.0),
+                glm::dvec3(0.0),
                 forward,
                 right,
                 up
@@ -444,6 +445,53 @@ void testAssistedAutopilotUsesCanonicalFlightLaw()
             "Assisted autopilot did not realign VREL to hull nose within 3 seconds");
     requireNear(glm::length(motion.manoeuvreAccelerationMps2), 0.0, 1.0e-12,
                 "Assisted autopilot incorrectly spent precision RCS during ordinary transit");
+}
+
+void testAssistedProgramTracksPhysicallyFeasibleAcceleration()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "test";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.throttleAccel = 5.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 73.549875f;
+    params.reverseMainEngineAccelerationMps2 = 73.549875f;
+
+    world::coordinates::WorldPosition worldPosition {};
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+    constexpr double plannedAcceleration = 46.0;
+    constexpr double dt = 0.02;
+
+    for (int tick = 1; tick <= 17; ++tick)
+    {
+        const double referenceSpeed = tick * dt * plannedAcceleration;
+        game::navigation::DynamicMotionSystem::
+            applyNavigationAssistedFlightModel(
+                motion, frame, params, static_cast<float>(dt),
+                referenceSpeed, glm::dvec3(0.0),
+                glm::dvec3(0.0, 0.0, -plannedAcceleration),
+                forward, right, up
+            );
+        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+            motion, worldPosition, frame, params, dt
+        );
+    }
+
+    const double actualSpeed = -motion.localVelocityMps.z;
+    require(std::abs(actualSpeed - 17 * dt * plannedAcceleration) < 1.0,
+            "Assisted speed response lagged a feasible planned burn beyond the tracking envelope");
+    require(actualSpeed < 73.549875 * 17 * dt + 1.0e-6,
+            "Assisted compensation bypassed the physical main-engine limit");
 }
 
 void testAngularDemandUsesExistingCapabilityClamp()
@@ -734,6 +782,7 @@ int main()
         testPlannerActuatorProgramReachesPhysicalAllocation();
         testProgramBridgeReportsWhichBoundaryRejectedTheStep();
         testAssistedAutopilotUsesCanonicalFlightLaw();
+        testAssistedProgramTracksPhysicallyFeasibleAcceleration();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

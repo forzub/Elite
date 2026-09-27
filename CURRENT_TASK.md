@@ -1516,3 +1516,14 @@ ends after three cycles with `[DockResult] tracking-envelope-exceeded`. Diagnose
 the actual failed dimension before changing the physical envelope, trajectory
 or follower; distinguish a server velocity discontinuity from client snapshot
 presentation. Full Automatic docking is still not accepted.
+
+## 2026-09-27 — verify Assisted ramp compensation and safe handback
+
+Run native navigation runtime control test, full docking gate and Windows
+client/server rebuild. On live START DOCKING verify the page-1 reference
+velocity no longer outruns actual speed beyond the 8 m/s envelope during
+a feasible acceleration. Preserve the exact position/attitude limits and
+monitor physical velocity continuity. If the request fails, verify the
+server returns Human control with `BrakeToStop`, and the prior Autopilot
+setpoint cannot keep accelerating toward 143 m/s. Inspect hold stop/final
+ingress separately. This slice needs target-machine proof before acceptance.

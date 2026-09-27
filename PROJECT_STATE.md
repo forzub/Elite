@@ -4409,3 +4409,18 @@ to three and reports a terminal reason. A velocity-continuity diagnostic
 compares successive authoritative samples with acceleration authority plus
 diagnostic slack. A visual speed snap is not yet proven to be a physics write.
 Windows native/live evidence is pending.
+
+## 2026-09-27 — Assisted planner-to-physics longitudinal response
+
+The executed Assisted speed command previously carried only the planned
+velocity. Actual controller acceleration is `gain * (target - actual)`
+clipped by installed physical main authority. A feasible planned acceleration
+ramp therefore creates persistent lag `a/gain` and triggers a velocity-only
+tracking rejection. The bridge now also gives the canonical Assisted motion
+function the already PilotSkill-executed linear acceleration demand; its
+forward projection divided by the same response gain advances the speed
+setpoint. Speed and physical acceleration remain clamped by the existing
+control law. Automatic Human handback actively brakes and clears a retained
+Assisted speed target through LocalFlightControlStateMachine. No trajectory
+acceptance, geometry or terminal tolerances were widened. Windows live
+verification remains pending.

@@ -6080,3 +6080,25 @@ above installed acceleration times elapsed time plus 0.5 m/s diagnostic slack.
 Three repeated tracking failures end the request with a returned reason instead
 of an endless restart. Windows native/live gate must locate the violated
 envelope and confirm whether the reported speed snap is physical or visual.
+
+## 2026-09-27 — live tracking failure identifies Assisted speed-response mismatch
+
+Windows compiled client/server and ran two Automatic requests. Each reached
+page 1 at elapsed 0.34 s with ship speed 6.155 m/s against planned 15.706 m/s.
+Effective position error was <0.001 m (25 m allowed), angle <0.09 deg
+(15 deg allowed), angular-rate error <0.05 rad/s (0.25 allowed). The only
+violation was effective along-track speed error 8.55 m/s > 8 m/s, after the
+existing 1 m/s FreeTransit deadband. No `physics-watch` discontinuity appeared
+in the supplied console. User reported subsequent 143 m/s after Human handback.
+
+Cause: the planner budgets installed forward main acceleration; Assisted
+uses a first-order speed response with gain `throttleAccel=5 s^-1` on Cobra.
+Passing only reference speed as target makes a ramp of ~46 m/s^2 lag by
+roughly a/gain=9.2 m/s, reproducing the measured discrepancy even with
+physically capable engines. The candidate offsets the Assisted target by
+the PilotSkill-executed forward acceleration divided by the same response
+gain; normal main-engine and speed caps still constrain actual acceleration.
+On Automatic completion/failure the server explicitly requests bounded
+BrakeToStop and clears persistent Assisted speed target before restoring
+Human authority. The previously neutral handback could leave the old speed
+target active. Focused native and Windows live confirmation are pending.

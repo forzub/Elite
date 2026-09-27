@@ -11040,3 +11040,17 @@ request with a server/client result rather than restart forever. An independent
 server velocity-continuity warning will test the reported sudden stop; physics
 hard-zero is currently limited to <= stopSpeedEpsilonMps. No tracking or physical
 acceptance limits were widened. Windows build and flight evidence are pending.
+
+## 2026-09-27 — live Assisted longitudinal tracking mismatch
+
+At page 1 t=0.34 s, latest Windows log reported actual speed 6.15515 m/s,
+reference 15.7056 m/s, effective velocity error 8.55049 m/s against 8 m/s.
+Position and orientation were safely inside envelope; propulsion was feasible.
+The Assisted response gain on Cobra is 5 s^-1, so a ~46 m/s^2 reference ramp
+produces a ~9.2 m/s steady speed lag when the autopilot commands only the
+reference speed. Canonical Assisted actuation now receives pilot-executed
+acceleration and adds its forward component divided by the response gain to
+the requested speed. The real installed main bank and controlled speed remain
+authoritative. Failed/completed Automatic now requests a physical BrakeToStop
+through the state machine before Human handback to clear any persistent speed
+target. Native and live acceptance for this fix are pending.

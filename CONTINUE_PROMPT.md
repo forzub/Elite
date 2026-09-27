@@ -28,3 +28,14 @@ cycles with `tracking-envelope-exceeded`. Windows run must provide first
 `phase=recovery` line and any `phase=physics-watch` line, and separate physical
 velocity change from client snapshot presentation. Do not widen the envelope
 until exact failed dimension and origin are known.
+
+New Windows evidence localizes failure: at page 1 t=0.34 s, actual speed
+6.15515 m/s versus planned 15.7056 m/s; effective velocity error 8.55049 >
+8 m/s. Position and attitude were fine; no reported `physics-watch` warning.
+Cobra Assisted speed response gain is 5 s^-1, which explains ~9 m/s lag for
+a feasible ~46 m/s^2 ramp. Candidate feeds pilot-executed acceleration/gain
+forward into canonical Assisted target speed, retaining real acceleration and
+speed caps. Automatic finish now issues BrakeToStop and clears sticky speed
+setpoint before Human handback (user observed later speed 143 m/s). Native
+Windows verification and live flight remain pending; do not mark accepted
+until motion, corridor, hold/final ingress and handback pass.

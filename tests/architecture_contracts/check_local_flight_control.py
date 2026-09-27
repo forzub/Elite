@@ -105,7 +105,8 @@ for token in (
 for token in (
     "manoeuvreAccelerationLimit",
     "controlledMainAcceleration + actualManoeuvreLocalAcceleration",
-    "requestedMainLocalAcceleration + actualManoeuvreLocalAcceleration",
+    "requestedMainLocalAcceleration +",
+    "actualAssistedStabilizationLocalAcceleration",
     "manoeuvreGasPressure01",
     "manoeuvreGasUsePerSecond",
     "manoeuvreGasRechargePerSecond",

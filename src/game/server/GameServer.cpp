@@ -29,6 +29,7 @@
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/world/navigation/NavigationObstacleFactory.h"
@@ -2351,7 +2352,20 @@ bool GameServer::finishAutomaticDocking(
     }
 
     if (Ship* ship = m_simulation.getShip(controlledEntityId))
-        ship->setControlState(ShipControlState {});
+    {
+        // Assisted keeps the last forward-speed target after a neutral
+        // control sample. Cancel that Autopilot target with a physical brake
+        // before Human control resumes; manual thrust can override it.
+        ShipControlState stop;
+        stop.velocityAlignmentCommand =
+            game::navigation::VelocityAlignmentMode::BrakeToStop;
+        (void)game::navigation::LocalFlightControlStateMachine::
+            requestVelocityAlignment(
+                ship->core().transform().motion,
+                game::navigation::VelocityAlignmentMode::BrakeToStop
+            );
+        ship->setControlState(stop);
+    }
 
     const bool restored =
         m_controls.restoreHumanControl(

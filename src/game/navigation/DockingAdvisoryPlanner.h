@@ -64,7 +64,14 @@ struct DockingAdvisoryGate
 struct DockingAdvisoryPlan
 {
     std::string failure;
+
+    // Sparse user-facing corridor frames.
     std::vector<DockingAdvisoryGate> gates;
+
+    // Dense samples of the same accepted route, including the same speed
+    // profile. Automatic execution consumes this product instead of asking a
+    // second planner to reinterpret sparse display gates into another curve.
+    std::vector<DockingAdvisoryGate> executionGates;
 
     // Diagnostics for route-selection policy. A detour means Planner changed
     // coarse geometry before conceding turn radius. relaxed means no route

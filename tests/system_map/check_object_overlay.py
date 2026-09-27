@@ -50,6 +50,8 @@ def main() -> int:
         "std::string m_activeObjectId",
         "result.activatedObjectId = panel->objectId",
         "result.activatedObjectId = picked->objectId",
+        "dockSemanticHit",
+        "item.kind == MapObjectGlyphKind::DockingPort",
     )
     require("std::optional<MapObjectInfoPanelState>" not in overlay,
             "overlay regressed to a single-card state")
@@ -87,6 +89,9 @@ def main() -> int:
         "src/game/system_map/SystemMapRenderer.cpp",
         "Keep the first physical sample",
         "futureFrame.worldToLocalPosition",
+        "item.hitRadiusPx = 22.0",
+        "item.pickPriority = 1000",
+        "Docking ports are actionable semantic subtargets",
     )
     require("guidanceFrame.universeTimeSeconds + 0.25" not in map_renderer,
             "map trajectory regressed to trimming the first rolling-guidance sample")

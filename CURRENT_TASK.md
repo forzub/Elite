@@ -1369,3 +1369,14 @@ authority acquisition, planning, alignment or execution.
 
 Do not restore a dependency on pressing Manual first and do not fall back to the
 2 m/s² RCS profile for Assisted guidance.
+
+## 2026-09-27 — immediate gate after GameServer compile correction
+
+Pull current main and rerun the canonical MinGW build.
+
+If build succeeds, run the cold Automatic live test:
+press START DOCKING without first pressing CALCULATE TRAJECTORY.
+
+The route-preflight / straight-prefix -> launch-arc changes remain the code under
+live validation. This iteration only repairs the misplaced diagnostic compile
+error.

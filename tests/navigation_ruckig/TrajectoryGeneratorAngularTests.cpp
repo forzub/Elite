@@ -236,6 +236,49 @@ void testTranslationSlowsWhenAngularTerminalNeedsMoreTime()
     );
 }
 
+void testLongStraightCruisesBeforeLocalTurnAndStop()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "local-speed-keyframes";
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.maxSpeedMps = 500.0;
+    request.vehicle.maxForwardAccelerationMps2 = 20.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 20.0;
+    request.vehicle.maxLateralAccelerationMps2 = 5.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 5.0;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 10.0;
+    request.pathPointsMeters = {
+        {0.0, 0.0, 0.0},
+        {10000.0, 0.0, 0.0},
+        {10010.0, 0.0, 1.0},
+        {10020.0, 0.0, 3.0},
+        {10030.0, 0.0, 6.0},
+        {10040.0, 0.0, 10.0}
+    };
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+    require(result.ready(),
+            "keyframed route failed: " + result.trajectory.message);
+    double straightPeak = 0.0;
+    double turnPeak = 0.0;
+    for (const auto& sample : result.trajectory.samples)
+    {
+        if (sample.pathProgressMeters < 9900.0)
+            straightPeak = std::max(straightPeak, sample.speedMps);
+        else
+            turnPeak = std::max(turnPeak, sample.speedMps);
+        require(sample.speedMps <= 400.001,
+                "ordinary cruise exceeded 0.8 ship maximum");
+    }
+    require(straightPeak > 250.0,
+            "local slow turn capped the long straight");
+    require(turnPeak < straightPeak * 0.8,
+            "ship did not brake before the local turn");
+    require(result.trajectory.samples.back().speedMps < 0.01,
+            "route did not stop at HOLD");
+}
+
 } // namespace
 
 int main()
@@ -244,6 +287,7 @@ int main()
     {
         testRotatingTerminalAngularProgramIsPhysicallyBounded();
         testTranslationSlowsWhenAngularTerminalNeedsMoreTime();
+        testLongStraightCruisesBeforeLocalTurnAndStop();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";
         return EXIT_SUCCESS;

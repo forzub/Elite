@@ -46,7 +46,8 @@ struct ShipControlState
 
     // Navigation v2 / autopilot direct SYSTEM-frame control seam.
     //
-    // Vectors below are in authoritative system/world axes after the explicit\n    // NavigationFrameBoundary. This is an acceleration DEMAND, not an applied force and not a physics
+    // Vectors below are in authoritative system/world axes after the explicit
+    // NavigationFrameBoundary. This is an acceleration DEMAND, not an applied force and not a physics
     // override. SharedShipPhysics / ShipController / DynamicMotionSystem still
     // enforce the authoritative vehicle capability and speed/resource limits.
     //
@@ -58,27 +59,11 @@ struct ShipControlState
     glm::dvec3 navigationAngularAccelerationDemandSystemRadPerSec2 {0.0};
     std::uint64_t navigationIntentRevision = 0;
 
-    // Server/autopilot Assisted translation channel. This intentionally uses
-    // the same game flight law as manual Assisted control: target speed along
-    // the hull nose plus the automatic velocity-to-nose stabilizer. It does
-    // not reinterpret ordinary route curvature as physical keypad/RCS thrust.
-    bool navigationAssistedFlightModelValid = false;
-    double navigationTargetForwardSpeedMps = 0.0;
-    glm::dvec3 navigationAssistedCorrectionSystemMps2 {0.0};
-
-    // Server/autopilot-only nominal actuator program. Human wire controls never
-    // populate this channel. When valid, translation executes the Planner-owned
-    // actuator schedule instead of re-splitting the same net feed-forward into
-    // a second propulsion decision inside DynamicMotionSystem.
-    bool navigationActuatorProgramValid = false;
-    double navigationRearMainThrottle01 = 0.0;
-    double navigationForeMainThrottle01 = 0.0;
-    glm::dvec3 navigationManoeuvreAccelerationSystemMps2 {0.0};
-
-    // Bounded Follower correction is deliberately separate from the nominal
-    // actuator schedule. Physics may allocate only this reserve correction
-    // against remaining physical authority.
-    glm::dvec3 navigationLinearFeedbackAccelerationSystemMps2 {0.0};
+    // Desired ship motion, independent of propulsion layout. The ship's
+    // flight law observes its real velocity and allocates installed engines.
+    // Angular demand uses the existing navigation channel above.
+    bool navigationVelocityTargetValid = false;
+    glm::dvec3 navigationTargetVelocitySystemMps {0.0};
 
     std::uint64_t controlTick = 0;
 };

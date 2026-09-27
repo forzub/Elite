@@ -88,6 +88,9 @@ bool validRequest(
             (!finite3(request.terminalVelocityMps) ||
              magnitude(request.terminalVelocityMps) >
                  request.vehicle.maxSpeedMps + 1.0e-6)) ||
+        (request.hasRouteUpReference &&
+            (!finite3(request.routeUpReference) ||
+             magnitude(request.routeUpReference) <= Epsilon)) ||
         (request.hasTerminalAngularVelocity &&
             (!request.hasTerminalOrientation ||
              !finite3(request.terminalAngularVelocityRadPerSecond))))
@@ -886,7 +889,11 @@ glm::dquat sampleOrientation(
     );
 
     glm::dvec3 upHint(0.0, 1.0, 0.0);
-    if (request.hasTerminalOrientation &&
+    if (request.hasRouteUpReference)
+    {
+        upHint = glm::normalize(request.routeUpReference);
+    }
+    else if (request.hasTerminalOrientation &&
         magnitude(request.terminalUp) > Epsilon)
     {
         upHint = glm::normalize(request.terminalUp);
@@ -1556,93 +1563,217 @@ glm::dvec3 guideCurvatureVector(
     return (t1 - t0) / (s1 - s0);
 }
 
-double globalGuideSpeedLimit(
+struct KeyframedProgressSample
+{
+    double timeOffsetSeconds = 0.0;
+    double progressMeters = 0.0;
+    double speedMps = 0.0;
+    double accelerationMps2 = 0.0;
+};
+
+struct KeyframedProgressResult
+{
+    bool ready = false;
+    std::string message;
+    double durationSeconds = 0.0;
+    std::vector<KeyframedProgressSample> samples;
+};
+
+KeyframedProgressResult keyframedGuideProgress(
     const world::navigation::TrajectoryGenerationRequest& request,
-    const ExecutionGuide& guide
+    const ExecutionGuide& guide,
+    const std::vector<double>& arc,
+    double initialSpeed,
+    double terminalSpeed,
+    double speedScale
 )
 {
-    double limit = request.vehicle.maxSpeedMps;
+    KeyframedProgressResult out;
+    const std::size_t count = guide.points.size();
+    if (count < 2 || arc.size() != count)
+        return out;
 
+    const double cruise = request.vehicle.maxSpeedMps *
+        0.8 * std::clamp(speedScale, 0.01, 1.0);
+    const double accelerating =
+        request.vehicle.maxForwardAccelerationMps2;
+    const double braking =
+        request.vehicle.maxBrakingAccelerationMps2;
+    const double lateral =
+        request.vehicle.maxLateralAccelerationMps2;
+    std::vector<double> limits(count, cruise);
+
+    // A restriction belongs to its local route station. A slow docking arc
+    // must never set the cruise speed of a straight kilometre away.
     for (const auto& range : request.speedLimitRanges)
     {
-        if (finite(range.maxSpeedMps) &&
-            range.maxSpeedMps > 0.0)
+        if (!finite(range.sourcePathStartMeters) ||
+            !finite(range.sourcePathEndMeters) ||
+            !finite(range.maxSpeedMps) || range.maxSpeedMps <= 0.0)
+            continue;
+        const double lo = std::min(range.sourcePathStartMeters,
+                                   range.sourcePathEndMeters);
+        const double hi = std::max(range.sourcePathStartMeters,
+                                   range.sourcePathEndMeters);
+        const auto first = std::lower_bound(guide.sourceProgress.begin(),
+                                            guide.sourceProgress.end(), lo);
+        const auto last = std::upper_bound(first,
+            guide.sourceProgress.end(), hi);
+        for (auto it = first; it != last; ++it)
         {
-            limit = std::min(limit, range.maxSpeedMps);
+            const auto index = static_cast<std::size_t>(
+                it - guide.sourceProgress.begin());
+            limits[index] = std::min(limits[index], range.maxSpeedMps);
         }
     }
-
-    const double terminalSourceProgress =
-        guide.sourceProgress.empty()
-            ? std::numeric_limits<double>::infinity()
-            : guide.sourceProgress.back();
-
-    for (const auto& point : request.pointSpeedConstraints)
+    for (const auto& constraint : request.pointSpeedConstraints)
     {
-        if (!finite(point.maxSpeedMps) ||
-            point.maxSpeedMps <= 0.0)
-        {
+        if (!finite(constraint.sourcePathProgressMeters) ||
+            !finite(constraint.maxSpeedMps) ||
+            constraint.maxSpeedMps < 0.0)
             continue;
-        }
-
-        const bool exactMovingTerminal =
-            request.hasTerminalVelocity &&
-            finite(point.sourcePathProgressMeters) &&
-            std::abs(
-                point.sourcePathProgressMeters -
-                terminalSourceProgress
-            ) <= 1.0e-5;
-
-        // A terminal speed is a boundary state, not a cruise-speed command.
-        // Ruckig already receives it as targetSpeedMps. Applying it here as a
-        // global maximum would needlessly hold the whole route at finish speed.
-        if (exactMovingTerminal)
-            continue;
-
-        limit = std::min(limit, point.maxSpeedMps);
+        const auto after = std::lower_bound(
+            guide.sourceProgress.begin(), guide.sourceProgress.end(),
+            constraint.sourcePathProgressMeters);
+        std::size_t nearest = static_cast<std::size_t>(
+            after - guide.sourceProgress.begin());
+        if (nearest == count)
+            nearest = count - 1;
+        else if (nearest > 0 &&
+                 std::abs(guide.sourceProgress[nearest - 1] -
+                          constraint.sourcePathProgressMeters) <
+                 std::abs(guide.sourceProgress[nearest] -
+                          constraint.sourcePathProgressMeters))
+            --nearest;
+        limits[nearest] = std::min(limits[nearest],
+                                   constraint.maxSpeedMps);
     }
-
-    const double lateralAcceleration = std::max(
-        request.policy.minimumAccelerationMps2,
-        request.vehicle.maxLateralAccelerationMps2
-    );
-
-    for (std::size_t i = 1;
-         i + 1 < guide.points.size();
-         ++i)
+    for (std::size_t i = 1; i + 1 < count; ++i)
     {
-        const glm::dvec3 a =
-            guide.points[i] - guide.points[i - 1];
-        const glm::dvec3 b =
-            guide.points[i + 1] - guide.points[i];
-        const glm::dvec3 across =
-            guide.points[i + 1] - guide.points[i - 1];
-
-        const double la = magnitude(a);
-        const double lb = magnitude(b);
-        const double lc = magnitude(across);
-        const double denom = la * lb * lc;
+        const glm::dvec3 a = guide.points[i] - guide.points[i - 1];
+        const glm::dvec3 b = guide.points[i + 1] - guide.points[i];
+        const double denom = magnitude(a) * magnitude(b) *
+            magnitude(guide.points[i + 1] - guide.points[i - 1]);
         if (denom <= Epsilon)
             continue;
-
         const double curvature =
-            2.0 * magnitude(glm::cross(a, b)) /
-            denom;
+            2.0 * magnitude(glm::cross(a, b)) / denom;
         if (curvature > 1.0e-9)
-        {
-            limit = std::min(
-                limit,
-                std::sqrt(
-                    lateralAcceleration / curvature
-                )
-            );
-        }
+            limits[i] = std::min(limits[i],
+                std::sqrt(lateral / curvature));
+    }
+    // Keep each curved chord within the speed admitted at either end.
+    std::vector<double> edgeLimits(count - 1, cruise);
+    for (std::size_t i = 0; i + 1 < count; ++i)
+    {
+        edgeLimits[i] = std::min(cruise,
+            segmentSpeedLimit(request, guide.sourceProgress[i],
+                              guide.sourceProgress[i + 1]));
+        // A low speed at the *end* of a long straight is a braking target,
+        // never a cruise cap over the entire straight.
+        if (arc[i + 1] - arc[i] <= 30.0)
+            edgeLimits[i] = std::min({edgeLimits[i],
+                limits[i], limits[i + 1]});
     }
 
-    return std::max(
-        request.policy.minimumSpeedMps,
-        limit
-    );
+    std::vector<double> speeds = limits;
+    speeds.front() = std::max(0.0, initialSpeed);
+    speeds.back() = std::max(0.0, terminalSpeed);
+    if (speeds.front() > request.vehicle.maxSpeedMps + Epsilon ||
+        speeds.back() > request.vehicle.maxSpeedMps + Epsilon)
+        return out;
+    for (std::size_t i = count - 1; i > 0; --i)
+    {
+        const double distance = arc[i] - arc[i - 1];
+        if (distance <= Epsilon)
+            return out;
+        const double reachable = std::sqrt(
+            speeds[i] * speeds[i] + 2.0 * braking * distance);
+        if (i > 1)
+            speeds[i - 1] = std::min(speeds[i - 1], reachable);
+        else if (speeds.front() > reachable + 1.0e-5)
+            return out;
+    }
+    for (std::size_t i = 1; i < count; ++i)
+    {
+        const double distance = arc[i] - arc[i - 1];
+        const double reachable = std::sqrt(
+            speeds[i - 1] * speeds[i - 1] +
+            2.0 * accelerating * distance);
+        if (i + 1 < count)
+            speeds[i] = std::min(speeds[i], reachable);
+        else if (speeds.back() > reachable + 1.0e-5)
+            return out;
+    }
+
+    out.samples.push_back({0.0, 0.0, speeds.front(), 0.0});
+    const double interval = request.policy.progressSampleIntervalSeconds;
+    double clock = 0.0;
+    // The extra peak/cruise/brake keyframes are produced analytically on each
+    // long straight. Speeds are interpolated by v²(s): this makes physical
+    // acceleration constant on a keyframe interval, including a stop at HOLD.
+    for (std::size_t i = 0; i + 1 < count; ++i)
+    {
+        const double distance = arc[i + 1] - arc[i];
+        const double v0 = speeds[i], v1 = speeds[i + 1];
+        const double vmax = std::max({v0, v1, edgeLimits[i]});
+        const double accelerateDistance =
+            std::max(0.0, (vmax * vmax - v0 * v0) /
+                (2.0 * accelerating));
+        const double brakeDistance =
+            std::max(0.0, (vmax * vmax - v1 * v1) /
+                (2.0 * braking));
+        double peak = vmax;
+        if (accelerateDistance + brakeDistance > distance)
+            peak = std::sqrt(std::max(0.0,
+                (2.0 * accelerating * braking * distance +
+                 braking * v0 * v0 + accelerating * v1 * v1) /
+                (accelerating + braking)));
+        const double upDistance =
+            std::max(0.0, (peak * peak - v0 * v0) /
+                (2.0 * accelerating));
+        const double downDistance =
+            std::max(0.0, (peak * peak - v1 * v1) /
+                (2.0 * braking));
+        const double coastDistance =
+            std::max(0.0, distance - upDistance - downDistance);
+
+        const auto leg = [&](double length, double from, double acceleration)
+        {
+            if (length <= 1.0e-8)
+                return;
+            const double to = std::sqrt(std::max(0.0,
+                from * from + 2.0 * acceleration * length));
+            const double duration =
+                std::abs(acceleration) > Epsilon
+                    ? 2.0 * length / (from + to)
+                    : length / from;
+            const double startClock = clock;
+            const double startProgress = out.samples.back().progressMeters;
+            while (clock + interval < startClock + duration - 1.0e-8)
+            {
+                clock += interval;
+                const double t = clock - startClock;
+                out.samples.push_back({clock,
+                    startProgress + from * t +
+                        0.5 * acceleration * t * t,
+                    from + acceleration * t, acceleration});
+            }
+            clock = startClock + duration;
+            out.samples.push_back({clock, startProgress + length,
+                to, acceleration});
+        };
+        leg(upDistance, v0, accelerating);
+        leg(coastDistance, peak, 0.0);
+        leg(downDistance, peak, -braking);
+        out.samples.back().progressMeters = arc[i + 1];
+        out.samples.back().speedMps = v1;
+    }
+    out.durationSeconds = clock;
+    out.ready = out.samples.size() >= 2 && finite(clock);
+    if (!out.ready)
+        out.message = "keyframed speed profile infeasible";
+    return out;
 }
 
 world::navigation::TrajectoryGenerationResult
@@ -1699,61 +1830,16 @@ buildPathProgressTrajectory(
               )
             : 0.0;
 
-    const double basePathSpeedLimit =
-        globalGuideSpeedLimit(
-            request,
-            guide
-        );
-    const double pathSpeedLimit =
-        std::max(
-            request.policy.minimumSpeedMps,
-            basePathSpeedLimit *
-                std::clamp(speedScale, 0.01, 1.0)
-        );
-
-    game::navigation::RuckigProgressRequest progressRequest;
-    progressRequest.startProgressMeters = 0.0;
-    progressRequest.startSpeedMps =
-        std::max(0.0, initialAlongSpeed);
-    progressRequest.startAccelerationMps2 =
-        glm::dot(
-            request.initialAccelerationMps2,
-            first.tangent
-        );
-    progressRequest.targetProgressMeters = arc.back();
-    progressRequest.targetSpeedMps = terminalAlongSpeed;
-    progressRequest.targetAccelerationMps2 = 0.0;
-    progressRequest.maxSpeedMps = std::max({
-        pathSpeedLimit,
-        progressRequest.startSpeedMps,
-        progressRequest.targetSpeedMps
-    });
-    progressRequest.maxAccelerationMps2 = std::max(
-        request.policy.minimumAccelerationMps2,
-        std::min(
-            request.vehicle.maxForwardAccelerationMps2,
-            request.vehicle.maxBrakingAccelerationMps2
-        )
-    );
-    progressRequest.maxJerkMps3 = std::max(
-        request.policy.jerkMinimumMps3,
-        progressRequest.maxAccelerationMps2 *
-            request.policy.jerkAccelerationMultiplier
-    );
-    progressRequest.sampleIntervalSeconds =
-        request.policy.progressSampleIntervalSeconds;
-
-    const auto progress =
-        game::navigation::RuckigTrajectorySolver::solveProgress(
-            progressRequest
-        );
+    const auto progress = keyframedGuideProgress(
+        request, guide, arc, std::max(0.0, initialAlongSpeed),
+        terminalAlongSpeed, speedScale);
 
     if (!progress.ready)
     {
         return failure(
             request,
             world::navigation::TrajectoryStatus::NumericalFailure,
-            "scalar Ruckig path progress failed: " +
+            "keyframed path progress failed: " +
                 progress.message
         );
     }
@@ -1767,8 +1853,8 @@ buildPathProgressTrajectory(
         request.startUniverseTimeSeconds;
     out.trajectory.message =
         speedScale < 0.999
-            ? "Ruckig scalar path-progress trajectory; angular-speed-relaxed"
-            : "Ruckig scalar path-progress trajectory";
+            ? "keyframed path-progress trajectory; angular-speed-relaxed"
+            : "keyframed path-progress trajectory";
     out.trajectory.durationSeconds =
         progress.durationSeconds;
     out.trajectory.lengthMeters =
@@ -1787,8 +1873,10 @@ buildPathProgressTrajectory(
         guide.roundedCorners;
     out.diagnostics.expandedGuideCorners =
         guide.expandedCorners;
-    out.diagnostics.ruckigLegAttempts = 1;
-    out.diagnostics.ruckigLegSuccesses = 1;
+    // This branch uses route-local keyframes, not the legacy one-scalar
+    // Ruckig solve. Keep solver diagnostics truthful for runtime analysis.
+    out.diagnostics.ruckigLegAttempts = 0;
+    out.diagnostics.ruckigLegSuccesses = 0;
     out.diagnostics.initialAlongPathSpeedMps =
         initialAlongSpeed;
     out.diagnostics.initialCrossTrackSpeedMps =
@@ -2319,13 +2407,10 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     const ExecutionGuide guide =
         buildExecutionGuide(request, coarseSourceProgress);
 
-    // Ruckig is a state-to-state online trajectory generator. Do not abuse
-    // the 3-D solver as a dense waypoint/path interpolator: close spatial
-    // guide samples become separate target states and can create stop-like
-    // slowdowns and large lateral polynomial bows. For a curved retained
-    // route, geometry is fixed first and Ruckig owns only scalar path progress
-    // s(t). The legacy 3-D state-to-state leg solver remains useful for the
-    // true single-leg case.
+    // A dense 3-D state-to-state waypoint solver can create stop-like
+    // slowdowns and lateral bows. Curved retained routes instead fix geometry
+    // first, then assign local speed/acceleration keyframes to path progress.
+    // The 3-D Ruckig leg solver remains useful for a true single leg.
     if (request.pathPointsMeters.size() > 2)
     {
         // Translation and attitude share one clock. A route that is linearly

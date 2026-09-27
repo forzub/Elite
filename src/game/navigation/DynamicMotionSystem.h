@@ -49,33 +49,19 @@ public:
 
     // Executes Assisted autopilot translation through the exact same local
     // flight law as manual Assisted control. The nominal command is a target
-    // forward speed with pilot-executed acceleration compensation for the
-    // manual speed-controller response lag. Small lateral Follower correction
-    // uses the Assisted stabilizer, never physical keypad/manoeuvre RCS.
+    // velocity vector with pilot-executed acceleration compensation for the
+    // manual speed-controller response lag. The ship derives its forward
+    // setpoint and bounded lateral correction from its measured motion.
     static void applyNavigationAssistedFlightModel(
         DynamicMotionState& motion,
         const KinematicFrame& frame,
         const ShipParams& params,
         float dt,
-        double targetForwardSpeedMps,
-        const glm::dvec3& feedbackAccelerationSystemMps2,
+        const glm::dvec3& targetVelocitySystemMps,
         const glm::dvec3& executedAccelerationDemandSystemMps2,
         const glm::vec3& shipForward,
         const glm::vec3& shipRight,
         const glm::vec3& shipUp
-    );
-
-    // Executes one Planner-owned actuator sample plus bounded Follower
-    // correction. The nominal rear/fore main schedule is preserved; only
-    // feedback may consume remaining main/RCS authority.
-    static void applyNavigationActuatorProgram(
-        DynamicMotionState& motion,
-        const ShipParams& params,
-        double rearMainThrottle01,
-        double foreMainThrottle01,
-        const glm::dvec3& manoeuvreAccelerationSystemMps2,
-        const glm::dvec3& feedbackAccelerationSystemMps2,
-        const glm::vec3& shipForward
     );
 
     static void updateLocalFrameMotion(

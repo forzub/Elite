@@ -690,10 +690,10 @@ for forbidden in (
     require(forbidden not in e2e,
             f"E2E still asserts obsolete runtime contract {forbidden}")
 
-require("## The planner does not command individual thrusters" not in ownership_doc,
-        "command-ownership document contradicts Planner-owned actuator program")
-require("The planner owns the nominal actuator schedule" in ownership_doc,
-        "command ownership does not state current actuator-program contract")
+require("## The planner proves motion; the ship selects propulsion" in ownership_doc,
+        "command ownership does not state current vehicle-motion contract")
+require("The planner owns the nominal actuator schedule" not in ownership_doc,
+        "command ownership retained superseded actuator schedule")
 
 print("[PASS] navigation active-path API purity contract")
 print(" - scenario file I/O ends before Stage-1/Stage-2 calculations")

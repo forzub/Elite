@@ -12,8 +12,8 @@ namespace game::navigation
       * consume an already collision-free coarse polyline;
       * derive a local continuous execution guide without changing topology;
       * keep spatial geometry p(s) separate from timing s(t);
-      * use Ruckig state-to-state for a true single leg and scalar Ruckig
-        progress for curved/multi-point routes;
+      * use Ruckig state-to-state for a true single leg and route-local speed
+        keyframes for curved/multi-point routes;
       * validate the resulting swept trajectory against canonical navigation
         geometry;
       * return one immutable, time-parameterized trajectory product.

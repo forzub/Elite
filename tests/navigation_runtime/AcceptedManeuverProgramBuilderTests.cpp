@@ -97,8 +97,6 @@ void testTerminalAngularVelocityIsAcceptedAndPreserved()
     require(program.valid, "accepted program is invalid");
     require(program.objectiveRevision == 7, "objective revision lost");
     require(program.revision == 11, "program revision lost");
-    require(program.actuatorProgramFeasible,
-            "zero-feed-forward trajectory reported infeasible actuators");
     require(program.completionTriggersReplan,
             "final storage page must own objective completion");
 
@@ -236,8 +234,6 @@ void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
                 TranslationMode::AssistedVelocity,
         "Assisted program did not select the game-flight execution mode"
     );
-    require(program.actuatorSegmentCount == 0,
-            "Assisted route still published a synthetic RCS actuator schedule");
 }
 
 void testNewtonianTransitDoesNotSpendPrecisionRcs()
@@ -266,9 +262,31 @@ void testNewtonianTransitDoesNotSpendPrecisionRcs()
             "Newtonian transit incorrectly used precision RCS as route thrust");
     require(
         result.failureReason ==
-            "newtonian-main-engine-program-infeasible",
+            "newtonian-motion-envelope-infeasible",
         "Newtonian rejection did not identify main-engine alignment failure"
     );
+}
+
+void testNewtonianReverseDemandRequiresInstalledAuthority()
+{
+    ShipParams params = makeParams();
+    params.reverseMainEngineAvailable = false;
+    auto trajectory = makeTrajectory();
+    for (auto& sample : trajectory.samples)
+        sample.accelerationMps2 = {0.0, 0.0, 5.0};
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.controlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    request.objectiveRevision = 13;
+    request.firstProgramRevision = 50;
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+    require(!result.valid && result.failureReason ==
+                "newtonian-motion-envelope-infeasible",
+            "rear-only ship accepted a backward acceleration it cannot deliver");
 }
 
 void testImpossibleTerminalSpinIsRejected()
@@ -306,6 +324,7 @@ int main()
         testStoragePageBoundaryPreservesAngularState();
         testAssistedUsesGameFlightLawInsteadOfRcsAllocation();
         testNewtonianTransitDoesNotSpendPrecisionRcs();
+        testNewtonianReverseDemandRequiresInstalledAuthority();
         testImpossibleTerminalSpinIsRejected();
 
         std::cout

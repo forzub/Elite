@@ -15,6 +15,7 @@ struct DockingAdvisoryRequest
     double standoffMeters = 300.0;
     double hullRadiusMeters = 0.0;
     double maxSpeedMps = 100.0;
+    double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;
 

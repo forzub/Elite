@@ -27,36 +27,6 @@ bool validIntent(
         intent.hazardUrgency01 <= 1.0;
 }
 
-bool validActuatorCommand(
-    const NavigationRuntimeControlBridge::ProgramActuatorCommand& actuator
-) noexcept
-{
-    const auto unit = [](double value) noexcept
-    {
-        return std::isfinite(value) &&
-            value >= 0.0 &&
-            value <= 1.0;
-    };
-
-    if (!actuator.valid ||
-        !finite(actuator.linearFeedbackAccelerationSystemMps2))
-    {
-        return false;
-    }
-
-    if (actuator.assistedVelocityModel)
-    {
-        return
-            std::isfinite(actuator.assistedTargetForwardSpeedMps) &&
-            actuator.assistedTargetForwardSpeedMps >= 0.0;
-    }
-
-    return
-        unit(actuator.rearMainThrottle01) &&
-        unit(actuator.foreMainThrottle01) &&
-        finite(actuator.manoeuvreAccelerationSystemMps2);
-}
-
 } // namespace
 
 NavigationRuntimeControlBridge::NavigationRuntimeControlBridge(
@@ -144,53 +114,27 @@ NavigationRuntimeControlBridge::step(
 }
 
 NavigationRuntimeControlBridge::StepResult
-NavigationRuntimeControlBridge::stepProgram(
+NavigationRuntimeControlBridge::stepVehicle(
     double timeSeconds,
     double deltaSeconds,
     const Intent& intent,
-    const ProgramActuatorCommand& actuator
+    const glm::dvec3& targetVelocitySystemMps
 ) noexcept
 {
-    StepResult result = step(
-        timeSeconds,
-        deltaSeconds,
-        intent
-    );
-
-    if (result.status != PilotExecutor::Status::Ok ||
-        !result.snapshot.valid ||
-        !validActuatorCommand(actuator))
+    if (!finite(targetVelocitySystemMps))
     {
-        if (!validActuatorCommand(actuator))
-        {
-            result.status = PilotExecutor::Status::InvalidInput;
-            result.failure = StepResult::FailureKind::InvalidActuator;
-            result.control = ShipControlState {};
-            result.snapshot.valid = false;
-        }
+        StepResult result;
+        result.status = PilotExecutor::Status::InvalidInput;
+        result.failure = StepResult::FailureKind::InvalidIntent;
         return result;
     }
-
-    if (actuator.assistedVelocityModel)
+    StepResult result = step(timeSeconds, deltaSeconds, intent);
+    if (result.status == PilotExecutor::Status::Ok &&
+        result.snapshot.valid)
     {
-        result.control.navigationAssistedFlightModelValid = true;
-        result.control.navigationTargetForwardSpeedMps =
-            actuator.assistedTargetForwardSpeedMps;
-        result.control.navigationAssistedCorrectionSystemMps2 =
-            actuator.linearFeedbackAccelerationSystemMps2;
-        result.control.navigationActuatorProgramValid = false;
-    }
-    else
-    {
-        result.control.navigationActuatorProgramValid = true;
-        result.control.navigationRearMainThrottle01 =
-            actuator.rearMainThrottle01;
-        result.control.navigationForeMainThrottle01 =
-            actuator.foreMainThrottle01;
-        result.control.navigationManoeuvreAccelerationSystemMps2 =
-            actuator.manoeuvreAccelerationSystemMps2;
-        result.control.navigationLinearFeedbackAccelerationSystemMps2 =
-            actuator.linearFeedbackAccelerationSystemMps2;
+        result.control.navigationVelocityTargetValid = true;
+        result.control.navigationTargetVelocitySystemMps =
+            targetVelocitySystemMps;
     }
     return result;
 }

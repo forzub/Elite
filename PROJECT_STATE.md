@@ -1,3 +1,27 @@
+## 2026-09-27 — test-contract audit
+
+The active docking gate now checks the vehicle-motion interface rather than
+the superseded nominal engine schedule, and includes sampling of the accepted
+motion program. The overlay check now asserts retained route start and
+Hub-local projection rather than an obsolete comment string. Thirty non-benchmark navigation/docking Python checks were
+also sampled: twenty passed, ten reported unrelated earlier marker/fixture
+mismatches outside the revised control boundary. No Windows target-machine
+verification has occurred for the new commits. Publication is blocked by
+the prior automatic review rejection of `git push origin main`; the remote
+checkout still cannot fetch the candidate.
+
+## 2026-09-27 — vehicle-level control candidate
+
+Autopilot authority is expressed as a system-frame target velocity plus
+pilot-executed linear and angular acceleration demand. The physical ship
+control law observes actual motion and chooses propulsion; engine schedules
+no longer cross the accepted-program, Follower, bridge or ShipControlState
+boundary. Newtonian program acceptance proves body-axis acceleration against
+installed capability without issuing throttle commands. Assisted still uses
+its canonical speed/stabilizer model. Runtime acceptance remains pending on
+the Windows target. Port latch and precise in-plane capture remain separate
+unimplemented scope.
+
 ## 2026-09-26 — route heading, entry attitude and boresight ownership
 
 Manual route geometry may carry an explicit launch-heading constraint. For
@@ -4468,3 +4492,21 @@ continues near the dock at low speed. Unsafe translation or excessive actual
 angular speed still triggers recovery. The earlier bounded hold capture
 enters fresh FinalIngress. Full docking, including physical latch, has not
 been implemented or accepted.
+## 2026-09-27 — revised docking navigation and control contract
+
+User-reported request 2 invalidated the previous near-port acceptance claim:
+HOLD was almost reached, but storage-page completion and angular tracking
+still drove a full approach recovery and Assisted reverse-flight failure.
+
+The target pipeline is: authoritative safe stabilized start; start/end safe
+sections; collision-free 3D tangent geometry; route-local speed and full
+orientation keyframes; vehicle control plus observed feedback; in-plane HOLD
+stop/alignment; dock-relative short ingress; physical contact/latch. The
+Planner may use observed performance limits to keep speed/braking feasible,
+but it must not replace the ship's physics or treat exact program samples as
+the only safe physical states. The visible top marker has a real attitude
+meaning; roll is not implicit from yaw.
+
+First candidate covers local speed timing, shared port-up reference and the
+HOLD spatial handoff. Strict capability/proof remains in force. Full control
+interface and contact/latch stages remain open. No live acceptance yet.

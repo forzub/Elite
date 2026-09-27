@@ -1,3 +1,27 @@
+## 2026-09-27 — Windows gate after test-contract audit
+
+The updated `verify_docking.sh` gates docking advisory, accepted-program
+builder, sampler, runtime control, tracking, angular trajectory, manual and
+automatic architecture, flight control, API purity, and system-map overlay.
+Run it on the canonical MSYS2 MinGW64 checkout only after the local candidate
+becomes available there. Then rebuild with `bash build_mingw64.sh`, launch
+`build/EliteGame.exe`, and capture every `[DockAuto]` line through HOLD and
+FinalIngress. `origin/main` does not yet contain commits 91a8a57/3defe45 or
+the test audit; `git pull` alone cannot deliver them. Separate failures of
+non-gated broader static checks require their own diagnosis and correction;
+do not silence them to claim docking acceptance.
+
+## 2026-09-27 — verify motion-level autopilot candidate
+
+Rebuild and run the native navigation/docking gates, then reproduce START
+DOCKING through ApproachHold and FinalIngress with a free compatible port.
+Confirm that the ship stops within 12 m of HOLD at <=2 m/s without a long
+reverse-flight replan, stabilizes angular rate, and completes collision-free
+pre-capture. Capture every `[DockAuto]` line and visible motion. Inspect the
+new velocity-target control path for Assisted and Newtonian; ship physics
+must decide installed propulsion. A successful pre-capture is not a physical
+contact/latch. Current local changes need target-machine verification.
+
 ## 2026-09-26 — verify nose-first tunnel + physical Automatic entry alignment
 
 Assisted remains accepted; do not retune it.
@@ -1568,3 +1592,23 @@ bounded angular control rather than restart the whole route. Preserve any
 plan/physics-watch/recovery/result lines. Native completion at the
 pre-capture point is only the current objective; a separate dock-contact
 and latch authority/state transition is still needed for actual docking.
+## 2026-09-27 — live gate for route-local speed and HOLD handoff
+
+User contract: Autopilot operates the ship through control inputs and measured
+vehicle response; physics/engine allocation remain owned by the ship. Starting
+from a safe state, stabilize angular rates, align the hull to travel direction
+if moving, and use a safe launch section. Build spatial tangent arcs from the
+final approach backward, give route nodes speed/acceleration and a frame-up
+marker, cap ordinary cruise at 0.8 vehicle maximum, and insert acceleration
+and braking phases on long straights. At the final-section entrance stop, damp,
+align laterally in the entry plane and match dock bottom/up/spin before ingress.
+Small safe errors must be controlled locally instead of invalidating the route.
+
+Current implementation slice removes global minimum-speed timing and the
+storage-page condition that caused the reported 10 m HOLD recovery. Run the
+Windows native gate and rebuild client/server, then START DOCKING and collect
+the planned peak speed, page/velocity/position and `hold-complete` through
+FinalIngress and result. If an error remains, diagnose the first actual
+failure; do not assert acceptance based on static tests. Further work must
+replace engine-specific planning decisions where they conflict with the
+control-interface contract, finish in-plane hold alignment and contact/latch.

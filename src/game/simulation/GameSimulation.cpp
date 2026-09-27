@@ -4702,8 +4702,10 @@ m_hubVelocityMetersPerSecond[hubId] =
             const ShipParams effectivePhysics =
                 shipPtr->core().effectivePhysics();
 
-            if (control.navigationAssistedFlightModelValid &&
+            if (control.navigationVelocityTargetValid &&
                 control.navigationAccelerationDemandValid &&
+                tr.motion.localControlLaw ==
+                    game::navigation::LocalFlightControlLaw::Assisted &&
                 !manualTranslationOverride)
             {
                 game::navigation::DynamicMotionSystem::
@@ -4712,26 +4714,23 @@ m_hubVelocityMetersPerSecond[hubId] =
                         tr.motion.travelFrame,
                         effectivePhysics,
                         motionControlDt,
-                        control.navigationTargetForwardSpeedMps,
-                        control.navigationAssistedCorrectionSystemMps2,
+                        control.navigationTargetVelocitySystemMps,
                         control.navigationLinearAccelerationDemandSystemMps2,
-                        tr.forward(),
-                        tr.right(),
-                        tr.up()
+                        tr.forward(), tr.right(), tr.up()
                     );
             }
-            else if (control.navigationActuatorProgramValid &&
+            else if (control.navigationVelocityTargetValid &&
                      control.navigationAccelerationDemandValid &&
                      !manualTranslationOverride)
             {
+                // Newtonian hardware allocation lives in the ship. The
+                // Navigator supplies a velocity target and pilot demand;
+                // engine choice remains a physical vehicle response.
                 game::navigation::DynamicMotionSystem::
-                    applyNavigationActuatorProgram(
+                    applySystemAccelerationDemand(
                         tr.motion,
                         effectivePhysics,
-                        control.navigationRearMainThrottle01,
-                        control.navigationForeMainThrottle01,
-                        control.navigationManoeuvreAccelerationSystemMps2,
-                        control.navigationLinearFeedbackAccelerationSystemMps2,
+                        control.navigationLinearAccelerationDemandSystemMps2,
                         tr.forward()
                     );
             }

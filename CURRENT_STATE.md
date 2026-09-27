@@ -1,3 +1,47 @@
+## 2026-09-27 — audit of docking test contracts before Windows commands
+
+The vehicle-motion rewrite is still a local candidate. Reviewed the docking
+and navigation test sources for the retired stepProgram/throttle/actuator
+interface. The broad navigation API-purity check still required the old
+Planner-owned throttle schedule; its ownership document and assertion have
+been corrected. `verify_docking.sh` now includes the accepted-program sampler
+native test and the API-purity check. All static checks used by the updated docking gate now pass; script
+syntax and git whitespace checks pass. The overlay check was corrected from
+an obsolete comment to the actual preserved Hub-local route-start invariant. Previous local builder, sampler and
+runtime-control native executables passed. No current Windows build or live
+flight result exists.
+
+A wider scan of 30 non-benchmark navigation/docking Python checks reports 10
+red contracts in other subsystems (foundation docking marker, NPC, replication,
+local avoidance, map, space, stage-12 compiler fixture, stress-field basis and
+moving-gap documentation). None of those checks changed in this candidate;
+the docking marker is also absent at the previous verified baseline. They are
+not evidence that the new autopilot is working. The aggregate docking gate
+still needs the user's Windows run. The local branch contains two commits
+not present on origin/main; a previous push was rejected by automatic review.
+
+## 2026-09-27 — candidate: vehicle-motion autopilot interface
+
+The live docking failure at 10.0222 m and 0.995736 m/s included residual
+angular-rate error 0.280841 rad/s. The previously committed spatial HOLD
+capture and local speed keyframes have no Windows flight acceptance yet.
+
+The new candidate removes engine/throttle commands from the live autopilot
+boundary. Follower samples a reference velocity and full attitude; PilotSkill
+filters acceleration and angular demand; ShipControlState carries a system-frame
+velocity target; GameSimulation delegates propulsion to the ship flight law
+using actual measured velocity. Assisted retains its real nose-coupled speed
+controller and bounded lateral stabilizer. Newtonian applies the vehicle's
+physical acceleration allocator. AcceptedManeuverProgram no longer stores
+per-engine throttle segments; Newtonian acceptance checks body-axis motion
+capability and rejects transverse route acceleration. HOLD capture still
+requires a stopped fresh state before FinalIngress.
+
+Linux G++ syntax checks, native builder/sampler/runtime-control tests, and
+four architecture checks passed. This is a
+candidate, not Windows native/live acceptance; physical dock contact and
+in-plane terminal trim remain open.
+
 ## 2026-09-26 — live gate: freeze gone; propulsion entry mismatch fixed; manual route nose-first
 
 Fresh Windows/live evidence:
@@ -6178,3 +6222,40 @@ counter-torque, while a positional departure still invalidates feed-forward.
 The current automatic docking objective ends at collision-free pre-capture;
 physical port contact and latch are not implemented by this slice. Windows
 native/live verification and the actual final-ingress outcome remain open.
+## 2026-09-27 — route-local speed keyframes and HOLD spatial capture candidate
+
+Fresh Windows flight request 2 on `7a81d58` did **not** dock: on page 436,
+at 10.0222 m and 0.995736 m/s from HOLD, angular-rate tracking error
+0.280841 exceeded the soft 0.25 rad/s limit. The controller entered recovery,
+then a near-HOLD replan failed `accepted-program-assisted-reverse-flight-not-supported`
+and returned Human control. The prior angular-only fix did not prevent this.
+No `hold-complete` or FinalIngress was observed.
+
+The route's scalar Ruckig backend applied its minimum curvature/speed constraint
+to the entire route, suppressing speed on long straights. Current candidate
+replaces this global scalar solve for multi-point routes with route-local speed
+keyframes: cruise cap 0.8 of vehicle maximum, curvature/point/range limits,
+backward braking and forward acceleration passes, and acceleration/cruise/brake
+peaks on long straight intervals. Geometry and the independent physical
+program acceptance remain intact. A numerical probe with a 10 km straight and
+short 3D corner reached 400 m/s on the straight, <=70 m/s near the corner and
+zero at the finish under a 20 m/s² acceleration limit.
+The manual display gate recommendation now uses the same 0.8 cruise cap and
+separate forward acceleration/backward braking limits. The builder's failure
+helper previously accepted `const char*` while its detailed reverse-flight
+diagnostic assembled `std::string`; that pre-existing compile error is fixed.
+
+HOLD transition now measures distance from the physical ship to the actual
+last program endpoint (not the current storage page endpoint), and can capture
+a low-speed ship inside the 12 m safe HOLD volume before a trailing page expires.
+It then physically brakes/damps and plans FinalIngress from a fresh state.
+The approach trajectory uses the port's up vector as its route-frame roll
+reference; visible corridor frames already use that same port-up reference.
+Manual frame spacing remains 500 m / 250 m; the long protected launch lead is
+unchanged to preserve the first nose-aligned display frame.
+
+G++ syntax checks passed for the modified planner, trajectory generator and
+server. Local automatic/manual architecture scripts passed. Full Windows
+`verify_docking.sh`, client/server build and live request remain **pending**;
+do not label this candidate accepted. The requested general control-interface
+redesign, in-plane fine alignment and physical contact/latch are not complete.

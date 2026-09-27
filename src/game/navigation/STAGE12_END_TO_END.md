@@ -11114,3 +11114,54 @@ FinalIngress from fresh state. Native/live acceptance is pending.
 The present success reason `pre-capture-envelope-complete` means reaching a
 collision-free point in front of the port. It does not attach the ship to the
 rotating port; that stage remains to be implemented separately.
+## 2026-09-27 — spatial HOLD and local speed keyframe revision
+
+Live Windows request 2 failed at 10.0222 m and 0.995736 m/s before HOLD:
+angular-rate error 0.280841 > 0.25 entered recovery, and the replacement
+near-HOLD route was rejected as Assisted reverse flight. Previous angular-only
+continuation did not prevent the failure. A safe HOLD position must be captured
+from actual position/speed, independent of the current program storage page.
+
+Multi-point trajectory timing now has local speed limits at route stations,
+with backward braking and forward acceleration propagation and optional peak
+acceleration/cruise/braking nodes on long intervals. A slow arc no longer
+imposes its speed on the whole route. The route-up reference is the dock-port
+top direction, shared with the visible orientation markers. Ordinary cap is
+0.8 vehicle maximum; local curvature and braking may lower it. The trajectory
+is still executed via accepted program, Follower and authoritative ship physics.
+
+Target native/live verification is pending. This changes no real port contact
+or latch authority. In-plane HOLD trim and the general ship-control-only
+Autopilot API are still outstanding before the full user contract is met.
+
+## 2026-09-27 — superseding control ownership candidate
+
+The earlier per-engine accepted-program schedule has been removed from the
+live navigation chain and program storage. A route supplies position,
+velocity, complete hull basis, omega and bounded acceleration. Follower
+compares these against measured authoritative ship motion. PilotSkill filters
+commanded acceleration and angular response. The ship consumes only the
+velocity target and executed acceleration, allocates actual propulsion,
+then reports the resulting physical state on the next fixed tick. Assisted
+computes its own forward setpoint and lateral stabilization from the target
+vector. Newtonian is independently checked against the body-axis motion
+envelope before acceptance; it never receives synthetic throttle keys.
+
+The observed late HOLD angular rejection and reverse-flight replanning are
+addressed by the spatial HOLD stop candidate in the preceding section.
+Local G++ syntax checks, builder/sampler/runtime-control native tests, and
+architecture contracts pass. The previous Windows log does not verify this
+new candidate. Full target flight, in-plane terminal trim, and physical
+latch have not passed.
+
+## 2026-09-27 — audit of active docking gates
+
+The API-purity test and command-ownership document now agree with the
+vehicle-motion bridge. The docking gate explicitly builds/runs the sampler
+and checks API purity. Its map overlay check now matches the actual retained
+Hub-local route-start implementation. Local static checks and the previous native
+builder/sampler/runtime-control executables pass. A broader navigation static
+sweep returned ten pre-existing contracts with unrelated old markers or
+fixtures; they are not counted as target-machine acceptance and have not
+been silently weakened. The two local commits remain unpublished and the
+Windows native/game flight gate is still pending.

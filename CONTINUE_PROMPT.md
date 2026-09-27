@@ -1,4 +1,49 @@
+# 2026-09-27 — test audit and Windows delivery status
+
+`verify_docking.sh` now includes maneuver_program_sampler and navigation API
+purity. NAVIGATION_COMMAND_OWNERSHIP.md and its API-purity test were updated
+to the current vehicle-motion contract. The overlay test was also updated
+to check retained route start in Hub-local space. All six docking-gate static
+checks pass; a broad
+scan of 30 non-benchmark static checks found ten unrelated pre-existing red
+contracts. Local branch is ahead of origin/main by two commits plus this audit;
+the earlier automatic review rejected `git push origin main`, so the user's
+Windows `git pull` cannot yet retrieve the rewritten autopilot. Do not state
+otherwise or bypass review. Windows build/live HOLD/FinalIngress gate remains
+open. See leading CURRENT_STATE/CURRENT_TASK/PROJECT_STATE/Stage-12 sections.
+
+# 2026-09-27 — vehicle-motion boundary candidate (unverified on Windows)
+
+After the earlier spatial HOLD/keyframe commit, the current local changes
+rewrite the live Autopilot interface: AcceptedManeuverProgram stores motion
+reference without throttle segments; Follower exposes target velocity;
+NavigationRuntimeControlBridge::stepVehicle publishes system-frame velocity
+plus filtered acceleration/angular demand; GameSimulation delegates Assisted
+and Newtonian allocation to the ship flight law. The Assisted law uses measured
+velocity, target forward/lateral velocity, and installed physical limits.
+Newtonian program proof checks motion authority without issuing engine
+commands. Old stepProgram/actuator control channels and physical executor
+were removed. Local C++ builder, sampler and runtime-control tests plus
+architecture checks pass; full Windows build and docking flight have not run.
+The previous 10.0222 m near-HOLD failure must be reproduced with the new build;
+pre-capture in-plane trim and physical contact/latch are still outstanding.
+The local branch is ahead of origin/main; an earlier automatic push request
+was rejected by auto-review. Do not try to publish by another mechanism.
+
 # CONTINUE PROMPT — Elite Automatic docking bridge clock
+
+LATEST 2026-09-27: Windows request 2 on `7a81d58` reached page 436,
+10.0222 m/0.995736 m/s before HOLD; omega error 0.280841 > 0.25 triggered
+recovery; near-HOLD replan failed Assisted reverse flight. The angular-only fix
+did not work. Current unverified candidate implements route-local speed
+keyframes (0.8 max ordinary cap, curvature/braking/acceleration, long-straight
+peaks), port-up roll reference and spatial HOLD capture independent of storage
+page. G++ syntax and local static checks passed; Windows gate/build/live remain
+pending. User requires Autopilot to command observed ship behavior rather than
+calculate/allocate individual engines; 3D tangent arcs, start/end safe sections,
+in-plane stop/trim, bottom-to-bottom entry and eventual contact/latch. These
+broader changes are not yet accepted/complete. Read the leading sections of
+the four canonical state documents and Stage 12 before further edits.
 
 Repository: public `forzub/Elite`, canonical `main`. Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, `src/game/navigation/STAGE12_END_TO_END.md` before behavior changes. Update all four state documents after state-affecting events. Earlier published implementation: `4da95fa3`, publication notes: `212d9614`.
 

@@ -30,7 +30,7 @@ int main()
     forwardLaunch.gateSpacingMeters=500.0;
     forwardLaunch.hasInitialForward=true;
     forwardLaunch.initialForward={1.0,0.0,0.0};
-    forwardLaunch.initialForwardLeadMeters=500.0;
+    forwardLaunch.initialForwardLeadMeters=1000.0;
 
     const auto forwardLaunchPlan=
         DockingAdvisoryPlanner::plan(forwardLaunch);
@@ -59,22 +59,23 @@ int main()
 
     const auto initialForward=
         glm::normalize(forwardLaunch.initialForward);
-    const auto secondPublishedDirection=glm::normalize(
-        forwardLaunchPlan.gates[2].positionMeters-
-        forwardLaunchPlan.gates[1].positionMeters
+    const double firstFrameGap=glm::length(
+        forwardLaunchPlan.gates[1].positionMeters-
+        forwardLaunchPlan.gates[0].positionMeters
     );
-    if(glm::dot(secondPublishedDirection,initialForward)<0.995)
+    if(firstFrameGap<490.0 || firstFrameGap>500.0+1.0e-5)
     {
         std::cerr
-            << "nose-first corridor did not preserve a visible straight prefix\n";
+            << "manual docking launch cadence is not 500 m: "
+            << firstFrameGap << "\n";
         return 34;
     }
 
     bool sawSmoothLaunchTurn=false;
-    double travelled=0.0;
+    double travelled=firstFrameGap;
     glm::dvec3 previousDirection=firstPublishedDirection;
     for(std::size_t i=1;
-        i+1<forwardLaunchPlan.gates.size() && travelled<1200.0;
+        i+1<forwardLaunchPlan.gates.size() && travelled<2000.0;
         ++i)
     {
         const auto segment=

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <utility>
 #include "src/world/navigation/GeometricPathPlanner.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"

@@ -164,6 +164,78 @@ void testRotatingTerminalAngularProgramIsPhysicallyBounded()
     );
 }
 
+
+void testTranslationSlowsWhenAngularTerminalNeedsMoreTime()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "angular-time-relaxation-test";
+    request.startUniverseTimeSeconds = 2000.0;
+
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.preferredClearanceMeters = 0.0;
+    request.vehicle.maxSpeedMps = 400.0;
+    request.vehicle.maxForwardAccelerationMps2 = 200.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 200.0;
+    request.vehicle.maxLateralAccelerationMps2 = 200.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 0.6;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 0.15;
+
+    // The translationally fastest solution is only a few seconds long, while
+    // the hull needs materially longer to rotate from -Z to +X and arrive
+    // with the requested terminal omega. This must be solved by slowing the
+    // same route, not by rejecting the navigation task or widening alpha.
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(200.0, 0.0, 0.0),
+        glm::dvec3(400.0, 0.0, 0.0)
+    };
+
+    request.initialVelocityMps = glm::dvec3(0.0);
+    request.initialAccelerationMps2 = glm::dvec3(0.0);
+    request.hasInitialOrientation = true;
+    request.initialForward = glm::dvec3(0.0, 0.0, -1.0);
+    request.initialUp = glm::dvec3(0.0, 1.0, 0.0);
+    request.hasInitialAngularVelocity = true;
+    request.initialAngularVelocityRadPerSecond = glm::dvec3(0.0);
+
+    request.hasTerminalVelocity = true;
+    request.terminalVelocityMps = glm::dvec3(0.0);
+    request.hasTerminalOrientation = true;
+    request.terminalForward = glm::dvec3(1.0, 0.0, 0.0);
+    request.terminalUp = glm::dvec3(0.0, 1.0, 0.0);
+    request.terminalOrientationBlendDistanceMeters = 400.0;
+    request.hasTerminalAngularVelocity = true;
+    request.terminalAngularVelocityRadPerSecond =
+        glm::dvec3(0.0, 0.1, 0.0);
+
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "angular-time relaxation failed: " + result.trajectory.message
+    );
+    require(
+        result.trajectory.message.find("angular-speed-relaxed") !=
+            std::string::npos,
+        "planner did not slow translation for the angular boundary"
+    );
+    require(
+        result.trajectory.durationSeconds > 4.0,
+        "angular-time relaxation did not materially increase route time"
+    );
+
+    const auto& terminal = result.trajectory.samples.back();
+    require(
+        length(
+            terminal.angularVelocityRadPerSecond -
+            request.terminalAngularVelocityRadPerSecond
+        ) <= 0.05 + 1.0e-6,
+        "relaxed route still missed terminal angular velocity"
+    );
+}
+
 } // namespace
 
 int main()
@@ -171,6 +243,7 @@ int main()
     try
     {
         testRotatingTerminalAngularProgramIsPhysicallyBounded();
+        testTranslationSlowsWhenAngularTerminalNeedsMoreTime();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";
         return EXIT_SUCCESS;

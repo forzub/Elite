@@ -51,6 +51,8 @@ public:
         double remainingDistanceMeters = 0.0;
         double crossTrackErrorMeters = 0.0;
         double linearVelocityErrorMps = 0.0;
+        double envelopePositionErrorMeters = 0.0;
+        double envelopeVelocityErrorMps = 0.0;
         double forwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
         bool trackingErrorExceeded = false;

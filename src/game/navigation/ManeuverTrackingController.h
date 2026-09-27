@@ -60,6 +60,8 @@ public:
 
         double positionErrorMeters = 0.0;
         double linearVelocityErrorMps = 0.0;
+        double envelopePositionErrorMeters = 0.0;
+        double envelopeVelocityErrorMps = 0.0;
         double forwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
     };

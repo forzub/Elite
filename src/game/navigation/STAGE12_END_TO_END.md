@@ -11027,3 +11027,16 @@ activate at the next page's own absolute start. An InvalidInput timeline now
 emits a terminal result; BeforeStart holds until the planned epoch. The
 regression uses a live-scale epoch for contiguous pages and a real gap.
 Windows native/live results are pending.
+
+## 2026-09-27 — tracking rejection after live page-timeline fix
+
+The latest live attempt passes the page selector and begins moving, then repeatedly
+reports `tracking_error=1 propulsion_ok=1`. Follower's tracking envelope covers
+position, velocity, forward angle and angular rate; FreeTransit applies along
+track deadbands when evaluating the first two. Previous logs did not identify
+which boundary failed. The candidate reports both raw and effective distances,
+speeds, attitude/rate errors and their limits. Three failures terminate the
+request with a server/client result rather than restart forever. An independent
+server velocity-continuity warning will test the reported sudden stop; physics
+hard-zero is currently limited to <= stopSpeedEpsilonMps. No tracking or physical
+acceptance limits were widened. Windows build and flight evidence are pending.

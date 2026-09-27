@@ -74,6 +74,10 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         tracking.positionErrorMeters;
     result.linearVelocityErrorMps =
         tracking.linearVelocityErrorMps;
+    result.envelopePositionErrorMeters =
+        tracking.envelopePositionErrorMeters;
+    result.envelopeVelocityErrorMps =
+        tracking.envelopeVelocityErrorMps;
     result.forwardAngleErrorRad =
         tracking.forwardAngleErrorRad;
     result.angularVelocityErrorRadPerSec =

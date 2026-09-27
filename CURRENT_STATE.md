@@ -6064,3 +6064,19 @@ checks adjacency in local maneuver time and retains the canonical absolute start
 for activation. A genuinely invalid timeline ends the request with a server
 result instead of looping; BeforeStart holds until the planned start. Windows
 native and live flight for this correction remain pending.
+
+## 2026-09-27 — live tracking-envelope loop after timeline correction
+
+Latest Windows build no longer logs the invalid page timeline. It moves the ship
+but repeatedly logs `tracking_error=1 propulsion_ok=1`; every rejection stops
+and replans, producing visible start/stop motion. Which tracking component fails
+is not present in the old log. The reporter also perceives a speed snap to zero.
+Physics code only explicitly zeroes velocity in BrakeToStop at or below the
+configured `stopSpeedEpsilonMps` (default 0.05 m/s); a larger jump is not
+proven by the supplied log. Current candidate logs raw and effective envelope
+position/speed errors, attitude/rate errors, limits, actual/reference speeds,
+step delta and stop threshold. It flags any authoritative map-velocity change
+above installed acceleration times elapsed time plus 0.5 m/s diagnostic slack.
+Three repeated tracking failures end the request with a returned reason instead
+of an endless restart. Windows native/live gate must locate the violated
+envelope and confirm whether the reported speed snap is physical or visual.

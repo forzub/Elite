@@ -17,3 +17,14 @@ adds a live-scale-epoch regression, holds for BeforeStart and terminates
 corrupted timelines with a serialled result. Pull fresh main once published,
 rerun Windows gate and verify sustained motion rather than restart loops.
 Full Automatic acceptance remains pending.
+
+Latest Windows live after page fix: actual motion begins, then repeated
+`tracking_error=1 propulsion_ok=1` with perceived abrupt speed reset. Cause of
+tracking error is unknown because old logs lacked each error and limit; physics
+only explicitly zeroes velocity at <= default 0.05 m/s in BrakeToStop. Current
+candidate adds raw/effective error and limits telemetry, speed and physical
+velocity-discontinuity watch, and terminates after three tracking recovery
+cycles with `tracking-envelope-exceeded`. Windows run must provide first
+`phase=recovery` line and any `phase=physics-watch` line, and separate physical
+velocity change from client snapshot presentation. Do not widen the envelope
+until exact failed dimension and origin are known.

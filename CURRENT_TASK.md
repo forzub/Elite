@@ -1504,3 +1504,15 @@ no repeated `no-active-program-page status=0` or accelerate/brake oscillation.
 If selection genuinely fails, expect one terminal `[DockResult]` with
 `invalid-program-page-timeline` on server and client. Continue to verify
 corridor persistence, hold stop, final ingress and actual terminal outcome.
+
+## 2026-09-27 — diagnose tracking limit and observed speed discontinuity
+
+Run Windows native verification and live Automatic once. Capture the first
+`phase=recovery reason=follower-rejected` line with raw/effective position and
+velocity errors, attitude and angular-rate errors, corresponding limits, actual
+and target speeds and `stop_snap_epsilon_mps`. Watch for
+`phase=physics-watch reason=velocity-discontinuity`. A repeated failure now
+ends after three cycles with `[DockResult] tracking-envelope-exceeded`. Diagnose
+the actual failed dimension before changing the physical envelope, trajectory
+or follower; distinguish a server velocity discontinuity from client snapshot
+presentation. Full Automatic docking is still not accepted.

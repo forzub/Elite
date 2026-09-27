@@ -28,6 +28,7 @@
 #include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
+#include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/world/navigation/NavigationObstacleFactory.h"
@@ -2428,6 +2429,41 @@ void GameServer::applyAutomaticDockingControls(
         const auto* hub =
             m_simulation.hubNavigationFrame(runtime.hubId);
 
+        if (runtime.lastObservedVelocityTick != 0 &&
+            time.serverTick > runtime.lastObservedVelocityTick)
+        {
+            const double elapsedSeconds =
+                static_cast<double>(
+                    time.serverTick - runtime.lastObservedVelocityTick
+                ) * time.gameplayDeltaSeconds;
+            const double observedDeltaSpeedMps = glm::length(
+                motion.localVelocityMps -
+                runtime.lastObservedVelocityMapMps
+            );
+            const double physicalDeltaLimitMps =
+                game::ship::mainAccelerationLimitMps2(
+                    ship->core().effectivePhysics()
+                ) * elapsedSeconds + 0.5;
+            if (elapsedSeconds > 0.0 &&
+                observedDeltaSpeedMps > physicalDeltaLimitMps)
+            {
+                std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                          << " phase=physics-watch"
+                          << " reason=velocity-discontinuity"
+                          << " before_mps="
+                          << glm::length(runtime.lastObservedVelocityMapMps)
+                          << " after_mps="
+                          << glm::length(motion.localVelocityMps)
+                          << " delta_v_mps=" << observedDeltaSpeedMps
+                          << " physical_limit_mps="
+                          << physicalDeltaLimitMps
+                          << " elapsed_s=" << elapsedSeconds
+                          << std::endl;
+            }
+        }
+        runtime.lastObservedVelocityMapMps = motion.localVelocityMps;
+        runtime.lastObservedVelocityTick = time.serverTick;
+
         if (!hub ||
             !hub->valid ||
             hub->systemId != runtime.systemId ||
@@ -3077,6 +3113,82 @@ void GameServer::applyAutomaticDockingControls(
             followed.trackingErrorExceeded ||
             !followed.propulsionFeasible)
         {
+            const double speedBeforeStopMps =
+                glm::length(motion.localVelocityMps);
+            const auto sampled = game::navigation::
+                ManeuverProgramSampler::sample(
+                    program, time.universeTimeSeconds
+                );
+
+            if (followed.trackingErrorExceeded)
+                ++runtime.trackingFailureCount;
+
+            std::cerr
+                << "[DockAuto] request=" << runtime.requestSerial
+                << " phase=recovery reason=follower-rejected"
+                << " follower_status="
+                << static_cast<int>(followed.status)
+                << " tracking_error="
+                << (followed.trackingErrorExceeded ? 1 : 0)
+                << " propulsion_ok="
+                << (followed.propulsionFeasible ? 1 : 0)
+                << " page=" << runtime.currentProgramPage
+                << " t_s=" << time.universeTimeSeconds -
+                    program.acceptedAtUniverseTimeSeconds
+                << " speed_mps=" << speedBeforeStopMps
+                << " target_speed_mps="
+                << glm::length(
+                    sampled.reference.velocityMapMetersPerSecond
+                )
+                << " sample_status="
+                << static_cast<int>(sampled.status)
+                << " position_error_m="
+                << followed.crossTrackErrorMeters
+                << " envelope_position_error_m="
+                << followed.envelopePositionErrorMeters
+                << " position_limit_m="
+                << program.tracking.positionErrorMeters
+                << " velocity_error_mps="
+                << followed.linearVelocityErrorMps
+                << " envelope_velocity_error_mps="
+                << followed.envelopeVelocityErrorMps
+                << " velocity_limit_mps="
+                << program.tracking.linearVelocityErrorMps
+                << " angle_error_deg="
+                << glm::degrees(followed.forwardAngleErrorRad)
+                << " angle_limit_deg="
+                << glm::degrees(
+                    program.tracking.forwardAngleErrorRad
+                )
+                << " omega_error_radps="
+                << followed.angularVelocityErrorRadPerSec
+                << " omega_limit_radps="
+                << program.tracking.angularVelocityErrorRadPerSec
+                << " recovery_count=" << runtime.trackingFailureCount
+                << " stop_snap_epsilon_mps="
+                << ship->core().descriptor().physics.
+                       stopSpeedEpsilonMps
+                << " delta_s=" << time.gameplayDeltaSeconds
+                << std::endl;
+
+            if (runtime.trackingFailureCount >= 3 ||
+                followed.status == Follower::Status::InvalidInput ||
+                !followed.propulsionFeasible)
+            {
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    false,
+                    followed.status == Follower::Status::InvalidInput
+                        ? "follower-invalid-input"
+                        : !followed.propulsionFeasible
+                            ? "follower-propulsion-infeasible"
+                            : "tracking-envelope-exceeded"
+                });
+                continue;
+            }
+
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -3088,15 +3200,6 @@ void GameServer::applyAutomaticDockingControls(
                 game::navigation::VelocityAlignmentMode::BrakeToStop;
             ship->setControlState(stop);
 
-            std::cerr
-                << "[DockAuto] request="
-                << runtime.requestSerial
-                << " phase=replan"
-                << " tracking_error="
-                << (followed.trackingErrorExceeded ? 1 : 0)
-                << " propulsion_ok="
-                << (followed.propulsionFeasible ? 1 : 0)
-                << "\n";
             continue;
         }
 

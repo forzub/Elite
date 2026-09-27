@@ -323,6 +323,8 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         glm::length(effectivePositionError);
     const double envelopeVelocityErrorMps =
         glm::length(effectiveVelocityError);
+    result.envelopePositionErrorMeters = envelopePositionErrorMeters;
+    result.envelopeVelocityErrorMps = envelopeVelocityErrorMps;
 
     const bool outsideEnvelope =
         exceeded(

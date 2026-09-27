@@ -419,6 +419,10 @@ private:
         // still use absolute universe time.
         double controlClockSeconds = 0.0;
         std::uint32_t controlBridgeFailureCount = 0;
+        // Count recovery cycles for one docking request, across replans.
+        std::uint32_t trackingFailureCount = 0;
+        glm::dvec3 lastObservedVelocityMapMps {0.0};
+        std::uint64_t lastObservedVelocityTick = 0;
         game::navigation::ManeuverTrackingController::Policy trackingPolicy {};
         std::uint64_t nextProgramRevision = 1;
     };

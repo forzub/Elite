@@ -4397,3 +4397,15 @@ sequence offsets and page-local duration, preserving strict continuity
 without demanding impossible absolute-clock precision. BeforeStart holds
 position; corrupt timelines fail once and report the reason to the client.
 Live target validation is pending.
+
+## 2026-09-27 — distinguish follower-envelope failure from velocity snap
+
+A corrected accepted-program timeline now reaches Follower, but live Automatic
+reports repeated tracking envelope excess with feasible propulsion. Server
+previously hid the dimension/size of the tracking error and retried forever.
+Follower now carries effective FreeTransit envelope errors alongside raw errors
+for diagnosis. Runtime logs real thresholds and speeds, limits repeated replans
+to three and reports a terminal reason. A velocity-continuity diagnostic
+compares successive authoritative samples with acceleration authority plus
+diagnostic slack. A visual speed snap is not yet proven to be a physics write.
+Windows native/live evidence is pending.

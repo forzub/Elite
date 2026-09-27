@@ -2772,8 +2772,11 @@ void SystemMapRenderer::decorateHubDockingOverlay(
                 item.physicalSizeMeters,
                 finalScale
             );
-            item.hitRadiusPx = 15.0;
-            item.pickPriority = 200;
+            // Docking ports are actionable semantic subtargets and must win
+            // over their parent module/assembly even when the physical opening
+            // is sub-pixel at distant zoom.
+            item.hitRadiusPx = 22.0;
+            item.pickPriority = 1000;
             item.pointerInteractive = true;
             item.drawGlyph = true;
 

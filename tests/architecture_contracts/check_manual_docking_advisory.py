@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260927-launch-arc-v5"
+CHECK_REVISION = "20260927-cadence-lock-v6"
 
 
 def read(rel: str) -> str:
@@ -51,7 +51,8 @@ try:
     require("src/game/SpaceState.cpp",
             "phase=stabilizing", "buildAuthoritativeHubSnapshot",
             "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",
-            "request.gateSpacingMeters = 150.0",
+            "request.gateSpacingMeters = 500.0",
+            "request.terminalGateSpacingMeters = 250.0",
             "request.hasInitialForward = true",
             "request.initialForwardLeadMeters",
             "frame.worldToLocalVector(",
@@ -155,6 +156,10 @@ try:
             "bottomCenter",
             "deviationBlinkOn")
     space_cpp = read("src/game/SpaceState.cpp")
+    if "request.gateSpacingMeters = 150.0" in space_cpp:
+        raise AssertionError(
+            "manual docking cadence changed from locked 500 m / 250 m contract"
+        )
     if "longitudinalToleranceMeters * 0.25" in space_cpp:
         raise AssertionError(
             "manual docking longitudinal release reverted to the old 25% margin"

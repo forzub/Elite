@@ -824,3 +824,566 @@ FreighterSpec makeFreighterSpec(
 Then the procedural ship generator builds the vessel from that specification.
 
 Result: different jobs naturally create different ships.
+
+
+---
+
+## 24. Modular damage: spatial modules, not a single HP bar
+
+Best open reference found:
+
+~~~text
+Star Ruler 2
+source/game/obj/blueprint.cpp
+source/game/obj/blueprint.h
+~~~
+
+The original implementation uses a spatial hex grid.
+
+Incoming hit:
+
+~~~text
+impact direction
+ -> locate entry cell
+ -> walk through cells
+ -> resistance consumes penetration
+ -> local module takes damage
+ -> residual energy continues
+ -> subsystem efficiency falls
+ -> vital module may disable subsystem
+~~~
+
+This is exactly the right causal depth for Elite.
+
+## 25. Elite damage geometry can be simpler
+
+We already have ship modules and collision volumes.
+
+Use:
+
+~~~text
+module OBB/AABB
++ module BVH / spatial index
++ projectile ray or swept segment
+~~~
+
+~~~cpp
+auto hits =
+    ship.moduleBVH.raycastAll(impactRay);
+
+sortByEntryDistance(hits);
+~~~
+
+Then pass residual energy through the ordered intersections.
+
+## 26. Simple penetration model
+
+~~~cpp
+void applyPenetratingHit(
+    Ship& ship,
+    const Ray& ray,
+    double energy)
+{
+    auto hits =
+        ship.moduleBVH.raycastAll(ray);
+
+    sortByDistance(hits);
+
+    for (const ModuleHit& hit : hits) {
+        if (energy <= 0.0)
+            break;
+
+        ModuleState& m =
+            ship.modules[hit.moduleId];
+
+        double armorCost =
+            m.armorResistance
+            * hit.pathLengthInsideArmor;
+
+        double absorbed =
+            std::min(energy, armorCost);
+
+        energy -= absorbed;
+
+        if (energy <= 0.0)
+            break;
+
+        double damage =
+            std::min(
+                m.hp,
+                energy * m.damagePerEnergy);
+
+        m.hp -= damage;
+
+        energy -=
+            damage * m.energyPerHp;
+
+        updateModuleState(ship, m);
+    }
+}
+~~~
+
+This can produce a readable physical result:
+
+~~~text
+armor partially absorbs hit
+ -> projectile enters cargo bay
+ -> residual energy continues
+ -> reactor is damaged
+ -> reactor output falls
+~~~
+
+No finite-element structural simulation is required.
+
+## 27. Module efficiency
+
+Star Ruler 2 scales subsystem effectiveness by the fraction of surviving cells.
+
+Elite can use module health directly:
+
+~~~cpp
+double moduleEfficiency(const ModuleState& m)
+{
+    double h =
+        clamp(m.hp / m.maxHp, 0.0, 1.0);
+
+    if (h <= m.failureThreshold)
+        return 0.0;
+
+    return smoothstep(
+        m.failureThreshold,
+        1.0,
+        h);
+}
+~~~
+
+Apply it to real capabilities:
+
+~~~text
+engine thrust *= efficiency
+reactor power *= efficiency
+sensor range *= efficiency
+weapon reload/power *= efficiency
+radiator capacity *= efficiency
+repair capability *= efficiency
+~~~
+
+## 28. Gameplay-relevant module failures
+
+We do not need to simulate every cable or pipe.
+
+Useful consequences:
+
+~~~text
+main engine destroyed
+ -> main thrust lost
+
+front / reverse engine damaged
+ -> braking authority reduced
+
+RCS cluster destroyed
+ -> lateral and angular authority reduced
+
+reactor damaged
+ -> global power budget reduced
+
+sensor damaged
+ -> detection range / precision reduced
+
+cargo module breached
+ -> cargo loss
+
+docking mechanism damaged
+ -> some docking ports become unusable
+~~~
+
+The ship remains a coherent physical object but its behavior changes.
+
+## 29. Damage must update navigation capability
+
+Each ship should own a capability revision.
+
+~~~cpp
+uint64_t capabilityRevision;
+~~~
+
+When a damage threshold changes a capability:
+
+~~~cpp
+void onCapabilityModuleChanged(Ship& ship)
+{
+    ++ship.capabilityRevision;
+
+    ShipCapability cap =
+        rebuildCapability(ship);
+
+    navigation.notifyCapabilityChanged(
+        ship.id,
+        cap,
+        ship.capabilityRevision);
+}
+~~~
+
+Navigation then does:
+
+~~~text
+ShipCapability changed
+ -> validate remaining AcceptedManeuverProgram
+
+still feasible
+ -> continue
+
+not feasible
+ -> SafetySupervisor chooses recovery
+ -> Planner replans
+~~~
+
+A random hit must not simply turn autopilot off.
+
+## 30. Visual damage can remain cheap
+
+~~~text
+module-health threshold
+ -> decal
+ -> sparks
+ -> smoke / fire
+ -> emissive off
+ -> animation stop
+ -> optional mesh-group hide or detach
+~~~
+
+Large detachable modules can be added later. They are not required for the first damage model.
+
+## 31. Repair
+
+Simple automatic priority:
+
+~~~text
+Priority 1:
+control
+reactor
+propulsion
+
+Priority 2:
+sensors
+docking
+weapons
+
+Priority 3:
+cargo
+armor
+cosmetic modules
+~~~
+
+~~~cpp
+repairBudgetPerSecond
+ -> distribute by priority
+ -> restore module hp
+~~~
+
+No per-bolt repair interface is required.
+
+---
+
+## 32. Economy creates station traffic
+
+Each active ShipmentRequest creates a real traffic intent:
+
+~~~text
+Freighter
+ -> StrategicRoute
+ -> local Planner
+ -> station ArrivalGate
+ -> TrafficController
+ -> Hold / queue
+ -> assigned Dock
+ -> DockingPortGuidance
+ -> Follower
+ -> unload
+~~~
+
+This means civilian traffic is never decorative. It exists because a resource needs to move.
+
+## 33. Simple emergent station infrastructure
+
+Star Ruler 2 contains another useful cheap trick.
+
+Its region code counts trade events. The number of civilian trade stations is then increased or decreased from the amount of real trade traffic.
+
+Conceptually:
+
+~~~text
+trade activity rises
+ -> tradeCounter rises
+ -> desired station count rises
+ -> station infrastructure appears
+
+trade activity falls
+ -> excessive station infrastructure disappears
+~~~
+
+We should not necessarily spawn/delete major player-facing stations this way, but the principle is useful for secondary infrastructure:
+
+~~~text
+traffic volume
+ -> demand for docks
+ -> demand for warehouses
+ -> demand for refuelling
+ -> demand for tug/repair capacity
+ -> local infrastructure growth
+~~~
+
+A simple moving average of traffic can drive this.
+
+~~~cpp
+infrastructurePressure =
+    lerp(
+        infrastructurePressure,
+        observedTrafficPerHour,
+        smoothing);
+~~~
+
+Then thresholds can create or upgrade service modules.
+
+## 34. Player-facing economy should expose consequences
+
+Useful messages:
+
+~~~text
+Hub fuel stock is low.
+
+Refinery is waiting for ore.
+
+Six ships are waiting for docking clearance.
+
+Freighter 24 lost its main engine.
+
+Shipyard production stopped: metal shortage.
+
+Trade route became dangerous.
+~~~
+
+The player does not need to see every internal counter.
+
+---
+
+## 35. Minimal vertical slice
+
+Start with one system:
+
+~~~text
+3 EconomicNodes
+4 commodities
+2–3 production recipes
+1 station
+4 docks
+3 freighters
+
+procedural freighter generator
+
+damage modules:
+    engine
+    reactor
+    cargo
+    sensor or weapon
+
+Planner/Follower integration
+~~~
+
+Test scenario:
+
+~~~text
+Mine produces Ore
+ -> Refinery shortage
+ -> ShipmentRequest
+ -> freighter assigned
+ -> route
+ -> station queue
+ -> docking
+ -> delivery
+ -> Metal production
+
+pirate attacks freighter
+ -> main engine damaged
+ -> capability revision
+ -> current maneuver no longer feasible
+ -> replan
+ -> delivery delayed
+ -> shortage persists
+ -> new economic consequences
+~~~
+
+If this looks alive, the architecture works.
+
+## 36. Suggested code ownership
+
+~~~text
+src/world/economy/
+    CommodityDef
+    Inventory
+    ProductionRecipe
+    EconomicNode
+    EconomyTick
+    ShipmentRequest
+    ShipmentDispatcher
+    AbstractShipment
+
+src/world/traffic/
+    StrategicRoutePlanner
+    TrafficController
+    ArrivalQueue
+
+src/ships/generation/
+    ShipRoleRecipe
+    ShipStructuralGraph
+    ModuleCatalog
+    ModulePlacementRule
+    ProceduralShipGenerator
+    ShipDesignValidator
+
+src/ships/damage/
+    ShipModuleState
+    ShipModuleBVH
+    DamageEvent
+    PenetrationResolver
+    CapabilityRebuilder
+
+src/ships/
+    ShipCapability
+    ShipCapabilityRevision
+~~~
+
+## 37. Acceptance tests
+
+Ship generation batch:
+
+~~~text
+generate 10,000 ships
+
+100% mandatory systems present
+0 illegal overlaps
+critical modules connected
+power budget valid
+role thrust valid
+center of mass valid
+same seed -> same design checksum
+~~~
+
+Damage tests:
+
+~~~text
+front shot -> armor -> cargo
+rear shot -> main engine
+side shot -> reactor
+grazing shot
+overpenetration
+multiple modules inline
+~~~
+
+Verify hit order, residual energy, module efficiency and capability revision.
+
+Economy test:
+
+~~~text
+run 30 simulated days headless
+
+inventories bounded
+shortage creates shipments
+surplus source selected
+cargo conserved
+destroyed shipment creates deficit
+replacement shipment generated
+~~~
+
+Simulation-LOD test:
+
+~~~text
+abstract shipment final result
+approximately equals
+materialized physical shipment final result
+~~~
+
+with explicit tolerances.
+
+## 38. Mirrored open-source code
+
+Star Ruler 2 source code is MIT licensed.
+
+Pinned source:
+
+~~~text
+BlindMindStudios/StarRuler2-Source
+beec9bff697ffbebafaeb66d0cba1856a02cb6db
+~~~
+
+Mirrored under:
+
+~~~text
+third_party/systemic_reference/star_ruler_2/
+
+COPYING
+
+ship_generation/
+    random_designs.as
+
+modular_damage/
+    blueprint.cpp
+    blueprint.h
+
+economy/
+    system_pathing.as
+    Civilian.as
+    Resources.as
+    RegionObjects.as
+~~~
+
+These are research references. Production Elite code should use our own types and architecture.
+
+Pioneer remains a GPL-3.0 research reference:
+
+~~~text
+pioneerspacesim/pioneer
+c62b938356e37c35d67406b32ebb69d57cf4eeb9
+
+useful:
+src/galaxy/StarSystemGenerator.cpp
+src/galaxy/Economy.cpp
+src/terrain/
+~~~
+
+Blockchain is intentionally excluded.
+
+## 39. Final implementation rule
+
+Elite should simulate:
+
+~~~text
+CAUSE
+ -> VISIBLE CONSEQUENCE
+ -> NEW GAMEPLAY STATE
+~~~
+
+Examples:
+
+~~~text
+reactor hit
+ -> less power
+ -> worse thrust / weapons
+
+resource shortage
+ -> shipment
+ -> visible freighter traffic
+
+freighter destroyed
+ -> cargo loss
+ -> local shortage
+
+engine destroyed
+ -> ShipCapability changes
+ -> Planner adapts
+
+different transport job
+ -> different procedural ship modules/proportions
+~~~
+
+This is enough to create the impression of a coherent realistic world without turning the game into a professional simulator.

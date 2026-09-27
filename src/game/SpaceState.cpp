@@ -1834,6 +1834,21 @@ void SpaceState::updateDockingAdvisory()
         pending.valid() &&
         pending.mode == DockingRouteRequest::Mode::Automatic;
 
+    const std::string automaticCorridorId =
+        automaticPending
+            ? "dock:" + pending.target.stableObjectId +
+                ":" + pending.target.semanticAnchorId
+            : std::string {};
+    const bool hasVisibleRouteForAutomaticTarget =
+        automaticPending &&
+        !automaticCorridorId.empty() &&
+        m_activeDockingGuidanceCorridorId == automaticCorridorId &&
+        m_dockAdvice.serial != 0;
+    const bool automaticNeedsPreparedRoute =
+        automaticPending &&
+        m_automaticDockingSerial == 0 &&
+        !hasVisibleRouteForAutomaticTarget;
+
     const auto resetAutomaticTracking = [&]()
     {
         m_automaticDockingSerial = 0;
@@ -1951,25 +1966,26 @@ void SpaceState::updateDockingAdvisory()
         }
     }
 
-    if (automaticPending)
+    if (automaticPending && !automaticNeedsPreparedRoute)
     {
-        // Manual preparation is a different authority lifecycle. Finish it and
-        // wait for the authoritative hand-back before asking for Automatic.
+        // Automatic may reuse a route already prepared for the same dock. If
+        // this request itself just prepared the visible route, wait for the
+        // temporary preparation authority to be handed back, but KEEP the
+        // route/tunnel alive.
         if (m_dockingPreparationSerial != 0 ||
             m_dockingPreparationReleasePending)
         {
             if (!m_dockingPreparationReleasePending)
-                finishLocalPreparation(false);
-            clear();
+            {
+                finishLocalPreparation(
+                    hasVisibleRouteForAutomaticTarget
+                );
+            }
             return;
         }
 
         if (m_automaticDockingSerial == 0)
         {
-            // Reuse an already published advisory corridor for the same dock.
-            // Automatic owns controls on the server, not presentation on the
-            // client. Clearing here used to make a valid manual tunnel vanish
-            // exactly when START DOCKING was pressed.
             m_noSafeDockingGuidanceSolution = false;
             m_dockingGuidanceFailureReason.clear();
 
@@ -1997,10 +2013,24 @@ void SpaceState::updateDockingAdvisory()
                 << pending.target.systemId
                 << " module=" << pending.target.stableObjectId
                 << " anchor=" << pending.target.semanticAnchorId
-                << '\n';
+                << std::endl;
         }
 
         return;
+    }
+
+    if (automaticNeedsPreparedRoute &&
+        m_lastDockingPathRequestSerial != pending.serial)
+    {
+        // START DOCKING is self-contained. If no route exists yet, run the
+        // same authoritative stop/snapshot/advisory preparation used by
+        // CALCULATE TRAJECTORY. After the visible route is published and
+        // temporary authority returns, the branch above starts server
+        // Automatic. The user never has to press Manual first.
+        std::cout
+            << "[DockAuto] request=" << pending.serial
+            << " phase=route-preflight"
+            << std::endl;
     }
 
     if (m_automaticDockingSerial != 0)
@@ -2019,8 +2049,12 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
-    if (!pending.valid() ||
-        pending.mode != DockingRouteRequest::Mode::Guidance)
+    const bool localRoutePreparationPending =
+        pending.valid() &&
+        (pending.mode == DockingRouteRequest::Mode::Guidance ||
+         automaticNeedsPreparedRoute);
+
+    if (!localRoutePreparationPending)
     {
         if (!m_dockingPreparationReleasePending)
             finishLocalPreparation(false);
@@ -2264,9 +2298,12 @@ void SpaceState::updateDockingAdvisory()
                 *player->second.descriptor,
                 player->second.modules
             );
+        const auto guidanceControlLaw =
+            player->second.transform.motion.localControlLaw;
         const auto shipProfile = makeNavigationVehicleProfile(
             effectivePhysics,
-            envelope
+            envelope,
+            guidanceControlLaw
         );
 
         DockingAdvisoryRequest request;
@@ -2319,16 +2356,20 @@ void SpaceState::updateDockingAdvisory()
             shipProfile.maxBrakingAccelerationMps2;
         request.lateralMps2 =
             shipProfile.maxLateralAccelerationMps2;
-        request.gateSpacingMeters = 500.0;
+        // Cockpit guidance is a tunnel, not a sparse map polyline. 500 m
+        // frame spacing could shortcut a curved segment into a misleading
+        // chord. Keep enough frames to show straight -> tangent arc -> route.
+        request.gateSpacingMeters = 150.0;
 
-        // Manual Assisted guidance must be realistically flyable by a human.
+        // Manual/Automatic preflight Assisted guidance must be realistically
+        // flyable by the SAME game flight law used by the ship.
         // Enter the docking axis much earlier and preserve a broad circular
         // turn. Newtonian guidance intentionally keeps the sharper legacy
         // geometry because the ship can rotate independently of velocity.
-        const bool manualAssisted =
-            player->second.transform.motion.localControlLaw ==
+        const bool guidanceAssisted =
+            guidanceControlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
-        if (manualAssisted)
+        if (guidanceAssisted)
         {
             request.terminalApproachLengthMeters = 9000.0;
             request.terminalTurnSegmentFraction = 0.85;
@@ -2337,7 +2378,7 @@ void SpaceState::updateDockingAdvisory()
 
         std::cout << "[DockAdvisory] request=" << pending.serial
                   << " profile="
-                  << (manualAssisted ? "manual-assisted" : "manual-newtonian")
+                  << (guidanceAssisted ? "assisted" : "newtonian")
                   << " final_axis_m="
                   << std::max({
                          700.0,

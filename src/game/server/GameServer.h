@@ -409,6 +409,7 @@ private:
         glm::dvec3 alignmentUpMap {0.0, 1.0, 0.0};
         double alignedSinceUniverseTimeSeconds = -1.0;
         std::uint64_t lastDiagnosticTick = 0;
+        std::uint64_t lastTrackingDiagnosticTick = 0;
 
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;

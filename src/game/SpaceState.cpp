@@ -2321,7 +2321,7 @@ void SpaceState::updateDockingAdvisory()
             )
         );
         request.initialForwardLeadMeters = std::max(
-            500.0,
+            1000.0,
             hull.lengthMeters * 10.0
         );
         const auto startFromWorld = frame.worldToLocalPosition(

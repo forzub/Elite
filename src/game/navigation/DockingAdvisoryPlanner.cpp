@@ -269,6 +269,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     struct RoundedCandidate
     {
         bool valid = false;
+        bool initialTurnPresent = false;
+        double initialTurnRadiusMeters = 0.0;
         bool terminalTurnPresent = false;
         double terminalTurnRadiusMeters = 0.0;
         double lengthMeters = 0.0;
@@ -442,6 +444,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 {
                     candidate.samples.insert(
                         candidate.samples.end(),arc.begin(),arc.end());
+                    if(initialForwardLeadActive && i==1)
+                    {
+                        candidate.initialTurnPresent=true;
+                        candidate.initialTurnRadiusMeters=radius;
+                    }
                     if (terminalTurn)
                     {
                         candidate.terminalTurnPresent=true;
@@ -638,6 +645,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     out.terminalDetourUsed=detourUsed;
     out.terminalTurnRadiusRelaxed=radiusRelaxed;
     out.terminalTurnRadiusMeters=selected.terminalTurnRadiusMeters;
+    out.initialTurnPresent=selected.initialTurnPresent;
+    out.initialTurnRadiusMeters=selected.initialTurnRadiusMeters;
 
     std::vector<double> progress(samples.size(),0.0);
     for (std::size_t i=1;i<samples.size();++i)

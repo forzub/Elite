@@ -10869,3 +10869,33 @@ velocity on `TrajectoryGenerationRequest`, supplies
 
 The automatic-docking architecture checker is now whitespace-tolerant so
 line-wrapping cannot masquerade as a lost execution contract.
+
+## 2026-09-27 — cold START DOCKING route-preflight
+
+Automatic docking no longer assumes that a Guidance route was calculated first.
+
+Cold start chain:
+```text
+map START DOCKING request
+ -> DockingRouteRequest::Automatic
+ -> client route-preflight if no matching corridor
+ -> BeginDockingGuidancePreparation
+ -> server physical BrakeToStop
+ -> authoritative Hub snapshot
+ -> law-aware DockingAdvisoryPlanner
+ -> publish cockpit/map corridor
+ -> CompleteDockingGuidancePreparation
+ -> authoritative Human hand-back
+ -> BeginAutomaticDocking
+ -> server Stabilizing / async planning
+ -> AcceptedManeuverProgram
+ -> Follower / Bridge / shared flight law
+```
+
+The preflight route is not an executable client command. It provides a coherent
+visible route and stabilized start state before server Automatic owns execution.
+
+Assisted visible guidance now uses the explicit Assisted vehicle profile and a
+150 m nominal gate cadence. Its launch geometry preserves a straight prefix but
+allows a tangent circular first turn; the old fully protected 500 m lead that
+created a hard kink is retired.

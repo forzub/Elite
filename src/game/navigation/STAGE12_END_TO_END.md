@@ -11054,3 +11054,20 @@ the requested speed. The real installed main bank and controlled speed remain
 authoritative. Failed/completed Automatic now requests a physical BrakeToStop
 through the state machine before Human handback to clear any persistent speed
 target. Native and live acceptance for this fix are pending.
+
+## 2026-09-27 — Assisted curve feed-forward and speed meaning
+
+First live flight after longitudinal compensation reached page 390 at 117 s.
+Actual/planned scalar speeds ~97.6/97.7 m/s, but velocity-vector error was
+9.918 m/s (8 m/s allowed); forward error was only 0.84 deg. The follower's
+planned lateral acceleration reached PilotSkill but Assisted physics used
+only its forward projection. Candidate adds the executed lateral demand to
+the existing stabilization actuator with unchanged magnitude/load clamps.
+Turn regression and recovery logs include reference/actual velocity vectors.
+
+Scalar trajectory generation takes one global minimum for all speed and
+curvature limits. Manual guidance can show a local 500 m/s bound while an
+executable route peaks near 98 m/s. Plan logs now show executable peak and
+ship speed limit; route-local speed scheduling is open. Authored hull
+orientation can turn without banking; final ingress aligns complete roll
+basis. Windows turn, hold and final-ingress gates remain open.

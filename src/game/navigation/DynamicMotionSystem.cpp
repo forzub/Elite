@@ -271,9 +271,18 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
     const double totalLinearEnvelope =
         game::ship::mainAccelerationLimitMps2(params);
 
+    // The trajectory budgets turn acceleration. Nose-coupled stabilization
+    // alone has to accumulate a sideways velocity error before producing it.
+    // Apply the pilot-executed lateral demand as feed-forward, subject to the
+    // same physical stabilization and shared load limits as manual Assisted.
+    const glm::dvec3 lateralFeedForward =
+        executedAccelerationDemandSystemMps2 -
+        f * requestedForwardAcceleration;
+
     motion.assistedStabilizationAccelerationMps2 =
         clampMagnitude(
-            motion.assistedStabilizationAccelerationMps2 + lateralFeedback,
+            motion.assistedStabilizationAccelerationMps2 +
+                lateralFeedForward + lateralFeedback,
             assistedAuthority
         );
 

@@ -1527,3 +1527,13 @@ monitor physical velocity continuity. If the request fails, verify the
 server returns Human control with `BrakeToStop`, and the prior Autopilot
 setpoint cannot keep accelerating toward 143 m/s. Inspect hold stop/final
 ingress separately. This slice needs target-machine proof before acceptance.
+
+## 2026-09-27 — immediate gate: Assisted turn feed-forward
+
+Automatic reached page 390 at 117.06 s. Scalar speed tracks the program, but
+vector speed error exceeded the 8 m/s envelope during the approach. Run the
+Windows native docking gate and live flight after the lateral feed-forward
+change. Inspect reference/actual velocity vectors on any recovery; confirm
+the ship follows the turn, reaches hold stop and final ingress, and aligns
+roll to the dock basis. Peak executable speed vs ship limit is now logged.
+The scalar solver's whole-route minimum speed remains an open issue.

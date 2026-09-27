@@ -4424,3 +4424,15 @@ control law. Automatic Human handback actively brakes and clears a retained
 Assisted speed target through LocalFlightControlStateMachine. No trajectory
 acceptance, geometry or terminal tolerances were widened. Windows live
 verification remains pending.
+
+## 2026-09-27 — late-turn Assisted feed-forward gap
+
+Live Automatic reached page 390 at 117.06 s. Actual/planned scalar speeds
+agreed near 98 m/s, but vector velocity error was 9.9 m/s > 8 m/s; position
+and attitude remained within limits. The pilot-executed lateral trajectory
+acceleration was discarded by Assisted actuation. Candidate feeds it into
+the canonical stabilization actuator within physical caps. New diagnostics
+differentiate vector motion from attitude. Scalar path progress uses the
+whole-route minimum of local constraints, explaining a possible ~98 m/s
+program despite a local 500 m/s corridor recommendation. Native/live proof
+and route-local speed scheduling remain pending.

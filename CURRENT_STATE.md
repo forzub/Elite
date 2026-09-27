@@ -6102,3 +6102,20 @@ On Automatic completion/failure the server explicitly requests bounded
 BrakeToStop and clears persistent Assisted speed target before restoring
 Human authority. The previously neutral handback could leave the old speed
 target active. Focused native and Windows live confirmation are pending.
+
+## 2026-09-27 — late Assisted turn exceeds vector tracking
+
+Latest Windows build passes and Automatic flies through page 390 (~117 s).
+Actual scalar speed 97.598 m/s nearly equals reference 97.714 m/s, but vector
+velocity error reaches 9.918 m/s (effective 9.898 > 8 m/s). Position error
+13.08 m is under 25 m; forward error 0.84 deg is under 15 deg. The user ended
+the run after one recovery; this excerpt does not prove a terminal failure.
+
+Trajectory samples budget lateral turn acceleration, but Assisted physics had
+consumed the pilot-executed demand only longitudinally. This candidate adds
+the executed lateral component to Assisted stabilization, subject to its
+existing physical and load limits. New turn regression and recovery-vector
+diagnostics require Windows verification. Scalar path-progress Ruckig also
+uses the minimum local speed/curvature bound over the entire route. Thus a
+local manual-corridor recommendation of 500 m/s and an executable ~98 m/s
+route can coexist. Route-local speed scheduling remains open.

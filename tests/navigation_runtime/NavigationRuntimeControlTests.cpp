@@ -494,6 +494,44 @@ void testAssistedProgramTracksPhysicallyFeasibleAcceleration()
             "Assisted compensation bypassed the physical main-engine limit");
 }
 
+void testAssistedProgramAppliesTurnFeedForward()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -98.0);
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "test";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.throttleAccel = 5.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 73.549875f;
+    params.reverseMainEngineAccelerationMps2 = 73.549875f;
+
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion, frame, params, 0.02f, 98.0,
+            glm::dvec3(0.0), glm::dvec3(4.0, 0.0, 0.0),
+            forward, right, up
+        );
+
+    requireNear(motion.assistedStabilizationAccelerationMps2.x, 4.0,
+                1.0e-5,
+                "Assisted docking turn lost the planned lateral acceleration");
+    requireNear(motion.engineAccelerationMps2.x, 4.0, 1.0e-5,
+                "Assisted turn demand did not reach the actual motion actuator");
+    requireNear(motion.manoeuvreAccelerationMps2.x, 0.0, 1.0e-6,
+                "Assisted turn improperly spent precision RCS");
+}
+
 void testAngularDemandUsesExistingCapabilityClamp()
 {
     ShipTransform transform;
@@ -783,6 +821,7 @@ int main()
         testProgramBridgeReportsWhichBoundaryRejectedTheStep();
         testAssistedAutopilotUsesCanonicalFlightLaw();
         testAssistedProgramTracksPhysicallyFeasibleAcceleration();
+        testAssistedProgramAppliesTurnFeedForward();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

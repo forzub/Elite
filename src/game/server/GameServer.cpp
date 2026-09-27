@@ -2776,6 +2776,20 @@ void GameServer::applyAutomaticDockingControls(
                     ? DockingAutomaticRuntime::Phase::Executing
                     : DockingAutomaticRuntime::Phase::Aligning;
 
+            double peakProgramSpeedMps = 0.0;
+            for (const auto& page : runtime.programs)
+            {
+                for (std::size_t i = 0; i < page.sampleCount; ++i)
+                {
+                    peakProgramSpeedMps = std::max(
+                        peakProgramSpeedMps,
+                        glm::length(
+                            page.samples[i].velocityMapMetersPerSecond
+                        )
+                    );
+                }
+            }
+
             std::cout
                 << "[DockAuto] planned entity="
                 << runtime.entityId.value
@@ -2783,6 +2797,10 @@ void GameServer::applyAutomaticDockingControls(
                 << " pages=" << runtime.programs.size()
                 << " trajectory_s="
                 << job->trajectoryDurationSeconds
+                << " peak_program_speed_mps=" << peakProgramSpeedMps
+                << " ship_speed_limit_mps="
+                << game::ship::controlledSpeedLimitMps(
+                       ship->core().effectivePhysics())
                 << " gates=" << job->gateCount
                 << " final_axis_m="
                 << job->finalAxisMeters
@@ -3154,6 +3172,21 @@ void GameServer::applyAutomaticDockingControls(
                 << glm::length(
                     sampled.reference.velocityMapMetersPerSecond
                 )
+                << " reference_velocity_mps=("
+                << sampled.reference.velocityMapMetersPerSecond.x << ","
+                << sampled.reference.velocityMapMetersPerSecond.y << ","
+                << sampled.reference.velocityMapMetersPerSecond.z << ")"
+                << " actual_velocity_mps=("
+                << agent.velocityMapMetersPerSecond.x << ","
+                << agent.velocityMapMetersPerSecond.y << ","
+                << agent.velocityMapMetersPerSecond.z << ")"
+                << " planned_accel_mps2=("
+                << sampled.reference.linearAccelerationFeedForwardMapMps2.x << ","
+                << sampled.reference.linearAccelerationFeedForwardMapMps2.y << ","
+                << sampled.reference.linearAccelerationFeedForwardMapMps2.z << ")"
+                << " actual_forward=("
+                << agent.forwardMap.x << "," << agent.forwardMap.y
+                << "," << agent.forwardMap.z << ")"
                 << " sample_status="
                 << static_cast<int>(sampled.status)
                 << " position_error_m="

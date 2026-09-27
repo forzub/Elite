@@ -39,3 +39,12 @@ speed caps. Automatic finish now issues BrakeToStop and clears sticky speed
 setpoint before Human handback (user observed later speed 143 m/s). Native
 Windows verification and live flight remain pending; do not mark accepted
 until motion, corridor, hold/final ingress and handback pass.
+
+Latest Windows flight reached page 390 at t=117.06 s: actual/planned speeds
+97.598/97.714 m/s, but vector error 9.918 m/s (8 limit); position/attitude
+were within limits. Assisted physics discarded planned lateral acceleration.
+Candidate feeds pilot-executed lateral demand to physically clamped Assisted
+stabilization, with native turn test and velocity-vector recovery diagnostics.
+Scalar Ruckig backend takes whole-route minimum speed (~98 m/s), so corridor
+local 500 m/s is not executable speed. Next: Windows gate/live turn, hold and
+final ingress. Route-local speed scheduling remains open.

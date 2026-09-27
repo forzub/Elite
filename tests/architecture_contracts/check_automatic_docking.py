@@ -173,8 +173,21 @@ try:
         "request.initialForwardLeadMeters",
         "request.gateSpacingMeters = 150.0",
         "reason=autopilot-authority-denied",
+        "DockingAutomaticRuntime::Stage::ApproachHold",
+        "DockingAutomaticRuntime::Stage::FinalIngress",
+        "finalIngressStage",
+        "This is the agreed stop before the short docking leg.",
+        "build.hasTerminalAngularVelocity =",
+        "stage=approach-hold",
+        "phase=hold-complete",
+        "next=final-ingress",
     )
 
+
+    if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:
+        raise AssertionError(
+            "Automatic docking regressed to appending pre-capture onto the long approach stage"
+        )
 
     if "phase=plan-retry" in server:
         raise AssertionError(
@@ -193,6 +206,9 @@ try:
     header = require(
         "src/game/server/GameServer.h",
         "struct DockingAutomaticRuntime",
+        "enum class Stage",
+        "ApproachHold",
+        "FinalIngress",
         "std::vector<game::navigation::AcceptedManeuverProgram> programs",
         "NavigationRuntimeControlBridge",
         "m_dockingAutomaticRuntimes",
@@ -346,6 +362,7 @@ try:
     print("[PASS] automatic docking ownership/execution contract")
     print(" - Automatic prepares its own visible advisory route when none exists")
     print(" - Automatic reuses an existing route for the same dock without hiding it")
+    print(" - Automatic transit stops at a hold point before a separate final-ingress stage")
     print(" - server owns Autopilot authority and stabilization")
     print(" - heavy Automatic planning runs outside the fixed-step thread")
     print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")

@@ -66,6 +66,13 @@ try:
         "phase=server-handoff",
         "route_retained=",
         "DockingRouteRequest::Mode::Guidance",
+        "automaticNeedsPreparedRoute",
+        "hasVisibleRouteForAutomaticTarget",
+        "phase=route-preflight",
+        "localRoutePreparationPending",
+        "guidanceControlLaw",
+        "request.roundTurns = guidanceAssisted",
+        "request.gateSpacingMeters = 150.0",
     )
 
     trajectory_header = require(
@@ -155,6 +162,11 @@ try:
         "build.controlLaw = assisted",
         "followed.assistedVelocityModel",
         "followed.assistedTargetForwardSpeedMps",
+        "request.hasInitialForward = true",
+        "request.initialForward = currentForwardMap",
+        "request.initialForwardLeadMeters",
+        "request.gateSpacingMeters = 150.0",
+        "reason=autopilot-authority-denied",
     )
 
 
@@ -273,7 +285,9 @@ try:
         "initial forward corridor blocked",
         "routeSearchStart",
         "prependInitialForwardLead",
-        "initialForwardLeadActive && i == 1",
+        "initialForwardProtectedStraightMeters",
+        "maximumLaunchCut",
+        "initialForwardAcceptedLeadMeters",
         "!r.roundTurns",
     )
     require(
@@ -324,7 +338,8 @@ try:
     )
 
     print("[PASS] automatic docking ownership/execution contract")
-    print(" - Automatic reuses the visible advisory corridor instead of hiding it")
+    print(" - Automatic prepares its own visible advisory route when none exists")
+    print(" - Automatic reuses an existing route for the same dock without hiding it")
     print(" - server owns Autopilot authority and stabilization")
     print(" - heavy Automatic planning runs outside the fixed-step thread")
     print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")

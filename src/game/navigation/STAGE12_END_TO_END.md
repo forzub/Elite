@@ -11081,3 +11081,20 @@ The new test used capabilityParams() with strafeAccel=2 m/s^2 while demanding
 now declares 8 m/s^2, proves a 4 m/s^2 planned turn reaches the actuator
 without RCS, and proves an excessive 100 m/s^2 request clamps at 8.
 No production change was needed; await exact target-machine rerun.
+
+## 2026-09-27 — end-of-approach capture is a separate stop boundary
+
+Live Automatic reached ApproachHold page 422 at 126.82 s, only 9.415 m
+from the standoff point at 1.026 m/s. The final sample reference was zero,
+position/velocity/forward stayed within tracking limits; residual omega
+0.284 rad/s exceeded the 0.25 tracking limit and forced a new long approach.
+That new approach failed Assisted reverse-flight proof before FinalIngress.
+
+The late ApproachHold sample now admits a bounded standoff capture (12 m,
+2 m/s) that transitions to the existing physical BrakeToStop stabilization.
+FinalIngress still requires a new stopped authoritative state, fresh dock
+pose and collision check, full-basis alignment, and a separately accepted
+program. Ordinary approach recovery within 150 m of HOLD omits the 1000 m
+forward lead; normal distant starts retain it. ProgramBuilder reports
+page/sample/time/forward projection on reverse-flight rejection without
+weakening the test. Await Windows native and full live pre-capture proof.

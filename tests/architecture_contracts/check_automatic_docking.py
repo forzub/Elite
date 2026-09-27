@@ -168,7 +168,7 @@ try:
         "build.controlLaw = assisted",
         "followed.assistedVelocityModel",
         "followed.assistedTargetForwardSpeedMps",
-        "request.hasInitialForward = true",
+        "request.hasInitialForward = !nearHoldRecovery",
         "request.initialForward = currentForwardMap",
         "request.initialForwardLeadMeters",
         "request.gateSpacingMeters = 150.0",
@@ -181,6 +181,8 @@ try:
         "stage=approach-hold",
         "phase=hold-complete",
         "next=final-ingress",
+        "ManeuverProgramSampler::Status::AfterEnd",
+        "enterFinalIngress(\"standoff-stop\")",
     )
 
 
@@ -192,6 +194,14 @@ try:
     if "phase=plan-retry" in server:
         raise AssertionError(
             "Automatic docking restored the synchronous fixed-step plan-retry loop"
+        )
+
+    if server.index('enterFinalIngress("standoff-stop")') > server.index(
+        'phase=recovery reason=follower-rejected'
+    ):
+        raise AssertionError(
+            "Automatic docking must capture a stopped approach hold before "
+            "rejecting the final program on residual angular rate"
         )
 
     if "terminalAllowedObstacleId" in server:

@@ -1722,12 +1722,26 @@ bool GameServer::planAutomaticDocking(
                         // stage and must not make the long transit infeasible.
                         DockingAdvisoryRequest request;
                         request.startMeters = startPositionMeters;
-                        request.hasInitialForward = true;
+                        // Recovery already close to the HOLD point is a
+                        // short positioning maneuver. A mandatory kilometre
+                        // nose-first launch here would depart away from the
+                        // dock, loop back, and demand reverse Assisted flight.
+                        const glm::dvec3 holdPositionMeters =
+                            port.positionMeters +
+                            port.forward * standoffMeters;
+                        const bool nearHoldRecovery =
+                            glm::length(
+                                startPositionMeters - holdPositionMeters
+                            ) < 150.0;
+                        request.hasInitialForward = !nearHoldRecovery;
                         request.initialForward = currentForwardMap;
-                        request.initialForwardLeadMeters = std::max(
-                            1000.0,
-                            hull.lengthMeters * 10.0
-                        );
+                        request.initialForwardLeadMeters =
+                            nearHoldRecovery
+                                ? 0.0
+                                : std::max(
+                                      1000.0,
+                                      hull.lengthMeters * 10.0
+                                  );
                         request.entranceMeters =
                             port.positionMeters;
                         request.outward = port.forward;
@@ -3140,6 +3154,63 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.trackingPolicy
             );
 
+        const bool finalPage =
+            runtime.currentProgramPage + 1 ==
+                runtime.programs.size();
+
+        // The approach terminates at a safe standoff, not at the rotating
+        // docking port. At the final sample a small residual angular rate
+        // must be physically damped during the separate hold stop. Replanning
+        // the entire long approach from a few metres before the hold point
+        // can turn the short remaining displacement into a reverse route.
+        const auto enterFinalIngress = [&](const char* capture)
+        {
+            runtime.stage =
+                DockingAutomaticRuntime::Stage::FinalIngress;
+            runtime.phase =
+                DockingAutomaticRuntime::Phase::Stabilizing;
+            runtime.programs.clear();
+            runtime.controlBridge.reset();
+            runtime.planningJob.reset();
+            runtime.currentProgramPage = 0;
+            runtime.settledSinceUniverseTimeSeconds = -1.0;
+            runtime.alignedSinceUniverseTimeSeconds = -1.0;
+
+            ShipControlState hold;
+            hold.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+            ship->setControlState(hold);
+
+            std::cout << "[DockAuto] request=" << runtime.requestSerial
+                      << " stage=approach-hold phase=hold-complete"
+                      << " capture=" << capture
+                      << " remaining_m=" << followed.remainingDistanceMeters
+                      << " speed_mps=" << glm::length(agent.velocityMapMetersPerSecond)
+                      << " omega_error_radps=" << followed.angularVelocityErrorRadPerSec
+                      << " next=final-ingress\n";
+        };
+
+        // Once the clock reaches the last reference, allow a bounded capture
+        // of the collision-free standoff. FinalIngress begins only after its
+        // own physical stop and fresh geometry/obstacle check. This does not
+        // change any Follower tracking or terminal acceptance tolerances.
+        if (runtime.stage ==
+                DockingAutomaticRuntime::Stage::ApproachHold &&
+            finalPage &&
+            followed.status != Follower::Status::InvalidInput &&
+            followed.propulsionFeasible &&
+            std::isfinite(followed.remainingDistanceMeters) &&
+            followed.remainingDistanceMeters <= 12.0 &&
+            glm::length(agent.velocityMapMetersPerSecond) <= 2.0 &&
+            game::navigation::ManeuverProgramSampler::sample(
+                program, time.universeTimeSeconds
+            ).status ==
+                game::navigation::ManeuverProgramSampler::Status::AfterEnd)
+        {
+            enterFinalIngress("standoff-stop");
+            continue;
+        }
+
         if (followed.status ==
                 Follower::Status::InvalidInput ||
             followed.trackingErrorExceeded ||
@@ -3355,9 +3426,6 @@ void GameServer::applyAutomaticDockingControls(
 
         ship->setControlState(step.control);
 
-        const bool finalPage =
-            runtime.currentProgramPage + 1 ==
-                runtime.programs.size();
         if (finalPage &&
             followed.status ==
                 Follower::Status::Complete)
@@ -3365,33 +3433,7 @@ void GameServer::applyAutomaticDockingControls(
             if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold)
             {
-                // The agreed docking architecture has a real stop between
-                // transit and final ingress. Do not carry the transit program
-                // or its angular state across this boundary.
-                runtime.stage =
-                    DockingAutomaticRuntime::Stage::FinalIngress;
-                runtime.phase =
-                    DockingAutomaticRuntime::Phase::Stabilizing;
-                runtime.programs.clear();
-                runtime.controlBridge.reset();
-                runtime.planningJob.reset();
-                runtime.currentProgramPage = 0;
-                runtime.settledSinceUniverseTimeSeconds = -1.0;
-                runtime.alignedSinceUniverseTimeSeconds = -1.0;
-
-                ShipControlState hold;
-                hold.velocityAlignmentCommand =
-                    game::navigation::
-                        VelocityAlignmentMode::BrakeToStop;
-                ship->setControlState(hold);
-
-                std::cout
-                    << "[DockAuto] request="
-                    << runtime.requestSerial
-                    << " stage=approach-hold"
-                    << " phase=hold-complete"
-                    << " next=final-ingress"
-                    << "\n";
+                enterFinalIngress("terminal-accepted");
             }
             else
             {

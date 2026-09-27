@@ -56,3 +56,12 @@ Fixture now sets strafeAccel=8 and checks both 4 delivered and 100 clamped
 to 8. Production physics unchanged. Next rerun verify_docking.sh; if still
 red collect ctest -R ^navigation_runtime_control$ --output-on-failure,
 then test live turn/hold/ingress.
+
+Latest Windows live run reached ApproachHold page 422 t=126.82 s, 9.41455 m
+before HOLD at 1.0255 m/s; angular-rate error .284315 exceeded .25,
+triggered recovery and a near-HOLD full-approach replan rejected as Assisted
+reverse flight. No final ingress started. Current candidate captures last
+HOLD sample within 12m/2mps then physically stops/damps before fresh
+FinalIngress; near-HOLD ApproachHold recovery avoids a 1000m forward launch;
+reverse-flight failure now includes sample details. Next Windows verify,
+client/server build, live stage=final-ingress then pre-capture success.

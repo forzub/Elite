@@ -4445,3 +4445,15 @@ turn regression shows an impossible expectation: 4 m/s^2 demanded with a
 fixture allowing only 2. Fixture now allows 8, tests an ordinary 4 m/s^2
 turn and a saturated 100-to-8 m/s^2 command. No production limits were
 relaxed. Native and live acceptance remain open.
+
+## 2026-09-27 — collision-free HOLD capture after residual rotation
+
+Windows live ApproachHold reached page 422 at 126.82 s: position 9.415 m
+short, speed 1.026 m/s, angular-rate error 0.284 > 0.25 rad/s. The old
+orchestrator rejected this at the final reference and retried the full
+approach, which failed its Assisted reverse-flight proof; final ingress had
+not started. Bounded standoff capture now enters physical stop/rotation
+damping before fresh FinalIngress planning when distance <=12 m and speed
+<=2 m/s at the last sample. Nearby recovery suppresses the ordinary 1000 m
+forward launch. Detailed reverse rejection keeps the strict physical gate.
+No final docking acceptance has yet been demonstrated.

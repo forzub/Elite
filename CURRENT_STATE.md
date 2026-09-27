@@ -6132,3 +6132,26 @@ correctly caps the command at 2. The turn fixture now installs 8 m/s^2 of
 lateral authority, checks that 4 arrives, then demands 100 and checks that
 the actual actuator stays at 8. Production physics was not changed. Native
 rerun and live dock turn are pending.
+
+## 2026-09-27 — live arrival at approach hold, stage transition blocked
+
+Latest Windows build/live flight reached the last ApproachHold page 422 at
+126.82 s. The reference was stopped; actual speed was 1.0255 m/s and
+position error 9.41455 m against the safe hold target. Tracking velocity
+and forward errors were inside the 8 m/s and 15-degree limits, but angular
+rate error 0.284315 rad/s exceeded 0.25. Follower rejected the expired
+hold page before the server could enter the physical stop/FinalIngress state.
+The subsequent long-approach replan from only ~9 m before HOLD failed with
+`accepted-program-assisted-reverse-flight-not-supported`; automatic control
+returned Human. The excerpt contains no `phase=hold-complete`, so it does not
+prove a failed final-ingress program.
+
+Current correction treats a final ApproachHold sample within 12 m and at
+<=2 m/s as a bounded standoff capture, then physically brakes/damps and
+replans the separate FinalIngress from fresh authoritative state. If an
+ApproachHold recovery begins within 150 m of HOLD, it does not append the
+normal kilometre nose-first launch that creates a loop near the dock. The
+existing tracking and terminal tolerances remain unchanged. Reverse-flight
+rejections now report page/sample/time/forward speed to distinguish any
+future genuinely infeasible final-ingress plan. Windows native/live flight
+and final pre-capture completion remain pending.

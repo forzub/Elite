@@ -314,7 +314,16 @@ public:
                     );
                     if (forwardSpeed < -0.05)
                     {
-                        return fail("assisted-reverse-flight-not-supported");
+                        return fail(
+                            "assisted-reverse-flight-not-supported"
+                            " page=" + std::to_string(out.pages.size()) +
+                            " sample=" + std::to_string(i) +
+                            " t_s=" +
+                                std::to_string(sample.timeOffsetSeconds) +
+                            " forward_mps=" +
+                                std::to_string(forwardSpeed) +
+                            " speed_mps=" + std::to_string(speed)
+                        );
                     }
                 }
             }

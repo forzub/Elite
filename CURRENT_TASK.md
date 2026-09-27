@@ -1545,3 +1545,15 @@ navigation_runtime_control failed. The turn test itself configured only
 2 m/s^2 of lateral authority while asserting 4. Rerun `verify_docking.sh`
 with the corrected 8 m/s^2 fixture and its explicit clamp check. If the test
 still fails, collect the one-test `ctest -R ^navigation_runtime_control$ --output-on-failure` assertion. Then rebuild and check the live approach turn.
+
+## 2026-09-27 — verify HOLD capture then FinalIngress
+
+Run Windows `verify_docking.sh`, rebuild client/server and retest START
+DOCKING. The late HOLD approach should log `phase=hold-complete
+capture=standoff-stop` (or terminal-accepted), remain under Autopilot while
+braking/angular damping, then log planning/execution for `final-ingress`.
+Confirm final ingress succeeds and returns `pre-capture-envelope-complete`.
+If a new plan fails, keep the exact `reason=` including page/sample/forward
+speed; do not confuse a failed second-stage plan with the previous late
+ApproachHold error. Controlled docking contact/latch is still a separate
+stage outside this pre-capture contract.

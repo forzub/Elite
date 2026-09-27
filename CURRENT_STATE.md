@@ -5967,3 +5967,18 @@ that the nose-first transition is an actual tangent circular fillet while
 retaining the user-locked 500 m / 250 m frame cadence.
 
 Fresh Windows verify/build/live evidence is pending.
+
+## 2026-09-27 — current live stop is before server Automatic
+
+Newest live log shows `dock_request=1` but no `[DockAuto]` or
+`[DockAdvisory]` lifecycle line.
+
+Therefore the observed no-motion case is currently before server planning:
+the UI has a pending docking request, but there is no evidence yet that
+SpaceState sent route-preflight or BeginAutomaticDocking.
+
+A one-shot `[DockRequest]` trace is now emitted whenever a new pending serial
+enters SpaceState. It reports mode, previous path serial, preparation serial,
+Automatic serial, visible-route reuse and whether route-preflight is required.
+
+No flight/planner/physics behavior changed in this diagnostic iteration.

@@ -4298,3 +4298,38 @@ A compile-only regression from the diagnostic patch was fixed by scoping
 DockPrep and DockAuto logging to their respective function APIs.
 
 This correction does not alter control authority or flight behavior.
+
+## 2026-09-27 — translation and attitude share one maneuver clock
+
+A valid maneuver is no longer defined as "fastest translational trajectory,
+then see whether attitude can keep up."
+
+For executable multi-point navigation, linear motion and body attitude share one
+physical time axis. If a collision-free geometric route can be flown
+translationally faster than the bounded hull can satisfy an exact angular
+boundary, Planner must first increase maneuver time by reducing translation
+speed.
+
+Only an angular-terminal infeasibility triggers this timing relaxation. Other
+numerical, collision or path failures remain hard failures.
+
+This preserves the architectural split:
+- route geometry remains Planner-owned and collision-proved;
+- ship angular limits remain descriptor/ShipDynamics-owned;
+- the Accepted program remains the proof product;
+- Follower does not repair an impossible Planner clock.
+
+### Controller ownership
+
+Player Automatic and NPC-style control should share the same controller concept:
+the physical Ship does not change identity or become a different simulation
+class. ControlRegistry selects the command source (Human, AI, Autopilot) while
+ShipDynamics and fixed-step physics remain identical.
+
+### Persistent docking UI contracts
+
+Manual visible docking frames are locked at 500 m ordinary / 250 m terminal by
+explicit user requirement.
+
+Docking ports are semantic actionable subtargets and therefore have click
+priority over their parent infrastructure, including at distant zoom.

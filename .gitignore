@@ -3,6 +3,8 @@
 /out/
 /bin/
 /third_party/*
+!/third_party/procedural_reference/
+!/third_party/procedural_reference/**
 !/third_party/fonts/
 /third_party/fonts/*
 !/third_party/fonts/noto/

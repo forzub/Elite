@@ -1257,6 +1257,7 @@ bool GameServer::beginAutomaticDocking(
     runtime.hubId = hubId;
     runtime.targetModuleId = command.dockingTargetModuleId;
     runtime.targetAnchorId = command.dockingTargetAnchorId;
+    runtime.stage = DockingAutomaticRuntime::Stage::ApproachHold;
     runtime.phase = DockingAutomaticRuntime::Phase::Stabilizing;
     runtime.settledSinceUniverseTimeSeconds = -1.0;
     runtime.nextProgramRevision = 1;
@@ -1490,6 +1491,7 @@ bool GameServer::planAutomaticDocking(
     const std::uint64_t firstProgramRevision =
         runtime.nextProgramRevision;
     const std::uint64_t proofRevision = m_serverTick;
+    const auto dockingStage = runtime.stage;
 
     // The worker normally completes in a few hundred milliseconds. Plan from
     // one second in the future and hold the ship stopped until that epoch so
@@ -1527,6 +1529,7 @@ bool GameServer::planAutomaticDocking(
          requestSerial,
          firstProgramRevision,
          proofRevision,
+         dockingStage,
          executionStartUniverseTimeSeconds]() mutable
         {
             using namespace game::navigation;

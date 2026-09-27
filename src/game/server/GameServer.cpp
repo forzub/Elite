@@ -1634,7 +1634,7 @@ bool GameServer::planAutomaticDocking(
                     request.hasInitialForward = true;
                     request.initialForward = currentForwardMap;
                     request.initialForwardLeadMeters = std::max(
-                        500.0,
+                        1000.0,
                         hull.lengthMeters * 10.0
                     );
                     request.entranceMeters =

@@ -787,3 +787,26 @@ For Newtonian:
 The manual/Automatic-preflight path in SpaceState now calls the explicit
 flight-law `makeNavigationVehicleProfile` overload. Server Automatic already
 does the same.
+
+## 2026-09-27 — translational speed is subordinate to angular reachability
+
+A maneuver program has one execution clock. Translational optimization may not
+choose a duration that makes the required bounded hull-attitude program
+impossible.
+
+For a retained collision-free route:
+1. solve nominal translation timing;
+2. compile body attitude/omega under real max angular speed and acceleration;
+3. if the exact angular terminal boundary is unreachable only because there is
+   insufficient time, lower translation speed and solve the same route again;
+4. never increase angular authority or relax terminal tolerances to compensate.
+
+This applies particularly to rotating docking targets where terminal pose and
+terminal omega are both exact navigation boundary conditions.
+
+Assisted still uses its game-flight velocity-to-nose mechanic for course
+response. Timing relaxation does not convert ordinary course change into RCS
+and does not modify the accepted manual Assisted handling law.
+
+Manual corridor display cadence is not a flight-law parameter and is locked by
+user contract at 500 m ordinary / 250 m terminal.

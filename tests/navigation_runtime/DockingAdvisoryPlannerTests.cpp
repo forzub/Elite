@@ -139,6 +139,15 @@ int main()
             (r.entranceMeters+r.standoffMeters*r.outward))>1e-6 ||
         result.gates.back().speedMps!=0.0)
     { std::cerr << "docking advisory failed: " << result.failure << '\n'; return 1; }
+    if(result.executionGates.size()<=result.gates.size() ||
+       glm::length(result.executionGates.front().positionMeters-
+                   result.gates.front().positionMeters)>1e-6 ||
+       glm::length(result.executionGates.back().positionMeters-
+                   result.gates.back().positionMeters)>1e-6)
+    {
+        std::cerr << "dense automatic route is not the same accepted advisory path\n";
+        return 38;
+    }
     bool sawNominal500mGate=false;
     for (std::size_t i=1;i<result.gates.size();++i)
     {

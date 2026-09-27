@@ -236,6 +236,39 @@ void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
     );
 }
 
+void testAssistedRejectsImpossibleMotionEnvelope()
+{
+    ShipParams params = makeParams();
+    params.strafeAccel = 20.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+
+    auto trajectory = makeTrajectory();
+    for (auto& sample : trajectory.samples)
+    {
+        sample.accelerationMps2 = {80.0, 0.0, 0.0};
+    }
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.controlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    request.objectiveRevision = 14;
+    request.firstProgramRevision = 60;
+    request.capabilityRevision = 8;
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+
+    require(!result.valid,
+            "Assisted accepted a lateral acceleration it cannot execute");
+    require(
+        result.failureReason ==
+            "assisted-motion-envelope-infeasible",
+        "Assisted impossible-motion rejection exposed the wrong reason"
+    );
+}
+
+
 void testNewtonianTransitDoesNotSpendPrecisionRcs()
 {
     ShipParams params = makeParams();
@@ -323,6 +356,7 @@ int main()
         testTerminalAngularVelocityIsAcceptedAndPreserved();
         testStoragePageBoundaryPreservesAngularState();
         testAssistedUsesGameFlightLawInsteadOfRcsAllocation();
+        testAssistedRejectsImpossibleMotionEnvelope();
         testNewtonianTransitDoesNotSpendPrecisionRcs();
         testNewtonianReverseDemandRequiresInstalledAuthority();
         testImpossibleTerminalSpinIsRejected();
@@ -333,6 +367,7 @@ int main()
             << " - rotating terminal angular velocity retained\n"
             << " - storage-page angular state remains continuous\n"
             << " - Assisted uses game-flight velocity control, not route RCS\n"
+            << " - impossible Assisted acceleration is rejected before Follower\n"
             << " - Newtonian ordinary transit cannot spend precision RCS\n"
             << " - impossible terminal spin rejected before Follower\n";
         return 0;

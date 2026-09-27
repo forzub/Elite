@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -269,120 +270,61 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     );
 }
 
-void testPlannerActuatorProgramReachesPhysicalAllocation()
+void testVehicleBridgePublishesMotionTargetWithoutSelectingEngines()
 {
     Bridge bridge(expertProfile());
-
     Bridge::Intent initial;
     initial.revision = 100;
-    initial.targetRevision = 1001;
-    require(bridge.reset(0.0, initial),
-            "program bridge reset must succeed");
+    require(bridge.reset(0.0, initial), "vehicle bridge reset failed");
 
     Bridge::Intent intent;
     intent.revision = 101;
-    intent.targetRevision = 1002;
     intent.idealLinearAccelerationSystemMps2 = {1.0, 0.0, -4.0};
-
-    Bridge::ProgramActuatorCommand actuator;
-    actuator.valid = true;
-    actuator.rearMainThrottle01 = 0.5;
-    actuator.foreMainThrottle01 = 0.25;
-    actuator.manoeuvreAccelerationSystemMps2 = {0.5, 0.0, 0.0};
-    actuator.linearFeedbackAccelerationSystemMps2 = {1.0, 0.0, -1.0};
-
-    const auto step =
-        bridge.stepProgram(0.01, 0.01, intent, actuator);
-
-    require(step.snapshot.valid,
-            "program bridge must publish a valid execution snapshot");
-    require(step.control.navigationActuatorProgramValid,
-            "program bridge lost explicit actuator ownership");
-    requireNear(step.control.navigationRearMainThrottle01, 0.5, 0.0,
-                "rear-main schedule changed in bridge");
-    requireNear(step.control.navigationForeMainThrottle01, 0.25, 0.0,
-                "fore-main schedule changed in bridge");
-    requireNear(
-        step.control.navigationManoeuvreAccelerationSystemMps2.x,
-        0.5,
-        0.0,
-        "planner manoeuvre schedule changed in bridge"
+    const glm::dvec3 targetVelocity {2.0, 1.0, -12.0};
+    const auto step = bridge.stepVehicle(
+        0.01, 0.01, intent, targetVelocity
     );
-
-    ShipParams params = capabilityParams();
-    params.forwardMainEngineAvailable = true;
-    params.reverseMainEngineAvailable = true;
-    params.forwardMainEngineAccelerationMps2 = 10.0f;
-    params.reverseMainEngineAccelerationMps2 = 8.0f;
-    params.maxLinearGs = 10.0f;
-
-    game::navigation::DynamicMotionState motion;
-    game::navigation::DynamicMotionSystem::applyNavigationActuatorProgram(
-        motion,
-        params,
-        step.control.navigationRearMainThrottle01,
-        step.control.navigationForeMainThrottle01,
-        step.control.navigationManoeuvreAccelerationSystemMps2,
-        step.control.navigationLinearFeedbackAccelerationSystemMps2,
-        glm::vec3(0.0f, 0.0f, -1.0f)
-    );
-
-    // Nominal main = 5 forward - 2 reverse = 3 forward. The bounded
-    // Follower correction asks for one more forward and therefore consumes
-    // unused rear-main authority without rewriting the nominal schedule.
-    requireNear(
-        glm::dot(
-            motion.mainEngineAccelerationMps2,
-            glm::dvec3(0.0, 0.0, -1.0)
-        ),
-        4.0,
-        1.0e-9,
-        "feedback did not use remaining main authority around accepted schedule"
-    );
-    requireNear(
-        motion.manoeuvreAccelerationMps2.x,
-        1.5,
-        1.0e-9,
-        "planner RCS plus lateral feedback did not remain on manoeuvre authority"
-    );
+    require(step.snapshot.valid && step.control.navigationVelocityTargetValid,
+            "vehicle target was not published");
+    requireNear(glm::length(step.control.navigationTargetVelocitySystemMps -
+                            targetVelocity), 0.0, 0.0,
+                "bridge changed requested vehicle velocity");
+    requireNear(step.control.navigationLinearAccelerationDemandSystemMps2.x,
+                step.snapshot.executedLinearAccelerationDemandSystemMps2.x,
+                1.0e-9, "pilot execution differs from ship command");
 }
 
-void testProgramBridgeReportsWhichBoundaryRejectedTheStep()
+void testVehicleBridgeRejectsInvalidVelocityAndClock()
 {
     Bridge bridge(expertProfile());
     Bridge::Intent intent;
     intent.revision = 17;
-    require(bridge.reset(0.0, intent), "diagnostic bridge reset failed");
-
-    Bridge::ProgramActuatorCommand actuator;
-    actuator.valid = true;
-    const auto roundedClock = bridge.stepProgram(
-        0.01005, 0.01, intent, actuator
+    require(bridge.reset(0.0, intent), "vehicle bridge reset failed");
+    const glm::dvec3 target {0.0, 0.0, -3.0};
+    const auto roundedClock = bridge.stepVehicle(
+        0.01005, 0.01, intent, target
     );
     require(roundedClock.status == Bridge::PilotExecutor::Status::Ok,
-            "sub-millisecond pilot clock rounding must not reject control");
-
-    const auto wrongClock = bridge.stepProgram(
-        0.10, 0.01, intent, actuator
+            "pilot clock rounding rejected vehicle command");
+    const auto wrongClock = bridge.stepVehicle(
+        0.10, 0.01, intent, target
     );
     require(wrongClock.status == Bridge::PilotExecutor::Status::InvalidInput &&
                 wrongClock.failure ==
                     Bridge::StepResult::FailureKind::ExecutorRejected,
-            "mismatched pilot clock must report executor rejection");
-
-    const auto accepted = bridge.stepProgram(
-        0.02005, 0.01, intent, actuator
+            "clock mismatch must report executor rejection");
+    const auto invalidVelocity = bridge.stepVehicle(
+        0.02005, 0.01, intent,
+        {std::numeric_limits<double>::quiet_NaN(), 0.0, 0.0}
     );
-    require(accepted.status == Bridge::PilotExecutor::Status::Ok,
-            "local pilot clock must accept the first control step");
-
-    actuator.valid = false;
-    const auto invalidActuator = bridge.stepProgram(
-        0.03005, 0.01, intent, actuator
+    require(!invalidVelocity.snapshot.valid &&
+                !invalidVelocity.control.navigationVelocityTargetValid,
+            "nonfinite target must never reach ship control");
+    const auto recovered = bridge.stepVehicle(
+        0.02005, 0.01, intent, target
     );
-    require(invalidActuator.failure ==
-                Bridge::StepResult::FailureKind::InvalidActuator,
-            "rejected actuator must be distinguishable from a clock error");
+    require(recovered.status == Bridge::PilotExecutor::Status::Ok,
+            "invalid target must not advance the pilot clock");
 }
 
 void testAssistedAutopilotUsesCanonicalFlightLaw()
@@ -418,8 +360,7 @@ void testAssistedAutopilotUsesCanonicalFlightLaw()
                 frame,
                 params,
                 0.01f,
-                100.0,
-                glm::dvec3(0.0),
+                glm::dvec3(0.0, 0.0, -100.0),
                 glm::dvec3(0.0),
                 forward,
                 right,
@@ -478,7 +419,7 @@ void testAssistedProgramTracksPhysicallyFeasibleAcceleration()
         game::navigation::DynamicMotionSystem::
             applyNavigationAssistedFlightModel(
                 motion, frame, params, static_cast<float>(dt),
-                referenceSpeed, glm::dvec3(0.0),
+                glm::dvec3(0.0, 0.0, -referenceSpeed),
                 glm::dvec3(0.0, 0.0, -plannedAcceleration),
                 forward, right, up
             );
@@ -519,8 +460,9 @@ void testAssistedProgramAppliesTurnFeedForward()
     const glm::vec3 up(0.0f, 1.0f, 0.0f);
     game::navigation::DynamicMotionSystem::
         applyNavigationAssistedFlightModel(
-            motion, frame, params, 0.02f, 98.0,
-            glm::dvec3(0.0), glm::dvec3(4.0, 0.0, 0.0),
+            motion, frame, params, 0.02f,
+            glm::dvec3(0.0, 0.0, -98.0),
+            glm::dvec3(4.0, 0.0, 0.0),
             forward, right, up
         );
 
@@ -534,13 +476,50 @@ void testAssistedProgramAppliesTurnFeedForward()
 
     game::navigation::DynamicMotionSystem::
         applyNavigationAssistedFlightModel(
-            motion, frame, params, 0.02f, 98.0,
-            glm::dvec3(0.0), glm::dvec3(100.0, 0.0, 0.0),
+            motion, frame, params, 0.02f,
+            glm::dvec3(0.0, 0.0, -98.0),
+            glm::dvec3(100.0, 0.0, 0.0),
             forward, right, up
         );
     requireNear(motion.assistedStabilizationAccelerationMps2.x, 8.0,
                 1.0e-5,
                 "Assisted turn exceeded installed stabilization authority");
+}
+
+void testAssistedVehicleCorrectsMeasuredLateralMotion()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = {3.0, 0.0, -20.0};
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "lateral-response";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.strafeAccel = 12.0f;
+    params.strafeDamping = 2.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 20.0f;
+    params.reverseMainEngineAccelerationMps2 = 20.0f;
+
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion, frame, params, 0.02f,
+            glm::dvec3(1.0, 0.0, -20.0), glm::dvec3(0.0),
+            forward, right, up
+        );
+
+    require(motion.assistedStabilizationAccelerationMps2.x < 0.0,
+            "ship must react to actual lateral velocity above its target");
+    requireNear(glm::length(motion.manoeuvreAccelerationMps2), 0.0, 1.0e-12,
+                "vehicle response must not synthesize precision RCS");
 }
 
 void testAngularDemandUsesExistingCapabilityClamp()
@@ -828,11 +807,12 @@ int main()
     {
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
-        testPlannerActuatorProgramReachesPhysicalAllocation();
-        testProgramBridgeReportsWhichBoundaryRejectedTheStep();
+        testVehicleBridgePublishesMotionTargetWithoutSelectingEngines();
+        testVehicleBridgeRejectsInvalidVelocityAndClock();
         testAssistedAutopilotUsesCanonicalFlightLaw();
         testAssistedProgramTracksPhysicallyFeasibleAcceleration();
         testAssistedProgramAppliesTurnFeedForward();
+        testAssistedVehicleCorrectsMeasuredLateralMotion();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

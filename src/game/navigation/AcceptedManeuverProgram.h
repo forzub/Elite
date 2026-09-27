@@ -80,34 +80,6 @@ struct AcceptedManeuverProgram
         glm::dvec3 angularAccelerationFeedForwardMapRadPerSec2 {0.0};
     };
 
-    struct ActuatorSegment
-    {
-        // Interval from samples[i] to samples[i+1].
-        double durationSeconds = 0.0;
-
-        // Longitudinal main channels are explicit because installed topology
-        // is vehicle data. A profile may expose rear/forward main thrust,
-        // fore/reverse main thrust, both, or neither; the program must never
-        // synthesize hardware from a signed acceleration request.
-        bool rearMainEnabled = false;
-        double rearMainThrottleStart01 = 0.0;
-        double rearMainThrottleEnd01 = 0.0;
-
-        bool foreMainEnabled = false;
-        double foreMainThrottleStart01 = 0.0;
-        double foreMainThrottleEnd01 = 0.0;
-
-        // World/NavLocal feed-forward requested from real manoeuvre/RCS
-        // authority over this interval.
-        glm::dvec3 manoeuvreAccelerationStartMapMps2 {0.0};
-        glm::dvec3 manoeuvreAccelerationEndMapMps2 {0.0};
-
-        // False means the sampled kinematic reference demanded more feed-forward
-        // authority than the vehicle model can physically allocate. This is
-        // observable during migration and will become a hard acceptance gate.
-        bool propulsionFeasible = true;
-    };
-
     struct TerminalTolerance
     {
         double positionMeters = 0.0;
@@ -186,15 +158,6 @@ struct AcceptedManeuverProgram
 
     std::uint8_t sampleCount = 0;
     std::array<ReferenceSample, kMaxSamples> samples {};
-
-    // Explicit physical actuator intervals owned by Planner when the selected
-    // translation mode requires them. NewtonianMainEngine/PrecisionRcs may
-    // publish sampleCount-1 intervals. AssistedVelocity deliberately publishes
-    // zero actuator intervals because it executes the canonical target-speed /
-    // attitude game-flight law instead of a synthetic RCS schedule.
-    std::uint8_t actuatorSegmentCount = 0;
-    std::array<ActuatorSegment, kMaxSamples - 1> actuatorSegments {};
-    bool actuatorProgramFeasible = true;
 
     TerminalTolerance terminalTolerance {};
     TrackingEnvelope tracking {};

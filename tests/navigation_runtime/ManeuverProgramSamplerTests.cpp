@@ -158,59 +158,6 @@ void testMidpointInterpolatesReferenceAndFeedForwardOnly()
     );
 }
 
-void testActuatorSegmentIsSampledWithoutReallocation()
-{
-    Program program = baseProgram();
-    program.actuatorSegmentCount = 1;
-    auto& segment = program.actuatorSegments[0];
-    segment.durationSeconds = 2.0;
-    segment.rearMainEnabled = true;
-    segment.rearMainThrottleStart01 = 0.20;
-    segment.rearMainThrottleEnd01 = 0.80;
-    segment.foreMainEnabled = false;
-    segment.manoeuvreAccelerationStartMapMps2 =
-        {0.0, 1.0, 0.0};
-    segment.manoeuvreAccelerationEndMapMps2 =
-        {0.0, 2.0, 0.0};
-    segment.propulsionFeasible = true;
-
-    const auto midpoint = Sampler::sample(program, 101.0);
-    require(
-        midpoint.status == Sampler::Status::Active,
-        "actuator-program midpoint must remain active"
-    );
-    require(
-        midpoint.hasActuatorCommand,
-        "sampler lost explicit planner actuator command"
-    );
-    require(
-        midpoint.actuatorSegmentIndex == 0,
-        "sampler selected the wrong actuator interval"
-    );
-    requireNear(
-        midpoint.rearMainThrottle01,
-        0.50,
-        1.0e-12,
-        "rear-main throttle interpolation is wrong"
-    );
-    requireNear(
-        midpoint.foreMainThrottle01,
-        0.0,
-        0.0,
-        "sampler invented a fore main engine"
-    );
-    requireNear(
-        midpoint.manoeuvreAccelerationMapMps2.y,
-        1.50,
-        1.0e-12,
-        "manoeuvre/RCS command interpolation is wrong"
-    );
-    require(
-        midpoint.propulsionFeasible,
-        "sampler changed the planner feasibility witness"
-    );
-}
-
 void testProgramBoundsClampWithoutCreatingNewTrajectory()
 {
     const Program program = baseProgram();
@@ -419,7 +366,6 @@ int main()
     {
         testExactAcceptedSamplePreservesFeedForward();
         testMidpointInterpolatesReferenceAndFeedForwardOnly();
-        testActuatorSegmentIsSampledWithoutReallocation();
         testProgramBoundsClampWithoutCreatingNewTrajectory();
         testInvalidProgramFailsClosed();
         testProgramStorageIsStaticallyBounded();
@@ -431,7 +377,7 @@ int main()
         std::cout << " - fixed-capacity AcceptedManeuverProgram\n";
         std::cout << " - exact proved feed-forward survives sampling\n";
         std::cout << " - sampler performs no target-velocity control solve\n";
-        std::cout << " - planner actuator intervals are sampled directly\n";
+        std::cout << " - velocity and full-attitude reference keys are sampled directly\n";
         std::cout << " - invalid time domains fail closed\n";
         std::cout << " - storage pages share one canonical maneuver timeline\n";
         std::cout << " - Follower completion uses page-local elapsed time\n";

@@ -11133,3 +11133,23 @@ is still executed via accepted program, Follower and authoritative ship physics.
 Target native/live verification is pending. This changes no real port contact
 or latch authority. In-plane HOLD trim and the general ship-control-only
 Autopilot API are still outstanding before the full user contract is met.
+
+## 2026-09-27 — superseding control ownership candidate
+
+The earlier per-engine accepted-program schedule has been removed from the
+live navigation chain and program storage. A route supplies position,
+velocity, complete hull basis, omega and bounded acceleration. Follower
+compares these against measured authoritative ship motion. PilotSkill filters
+commanded acceleration and angular response. The ship consumes only the
+velocity target and executed acceleration, allocates actual propulsion,
+then reports the resulting physical state on the next fixed tick. Assisted
+computes its own forward setpoint and lateral stabilization from the target
+vector. Newtonian is independently checked against the body-axis motion
+envelope before acceptance; it never receives synthetic throttle keys.
+
+The observed late HOLD angular rejection and reverse-flight replanning are
+addressed by the spatial HOLD stop candidate in the preceding section.
+Local G++ syntax checks, builder/sampler/runtime-control native tests, and
+architecture contracts pass. The previous Windows log does not verify this
+new candidate. Full target flight, in-plane terminal trim, and physical
+latch have not passed.

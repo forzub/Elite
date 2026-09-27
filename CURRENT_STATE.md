@@ -1,3 +1,25 @@
+## 2026-09-27 — candidate: vehicle-motion autopilot interface
+
+The live docking failure at 10.0222 m and 0.995736 m/s included residual
+angular-rate error 0.280841 rad/s. The previously committed spatial HOLD
+capture and local speed keyframes have no Windows flight acceptance yet.
+
+The new candidate removes engine/throttle commands from the live autopilot
+boundary. Follower samples a reference velocity and full attitude; PilotSkill
+filters acceleration and angular demand; ShipControlState carries a system-frame
+velocity target; GameSimulation delegates propulsion to the ship flight law
+using actual measured velocity. Assisted retains its real nose-coupled speed
+controller and bounded lateral stabilizer. Newtonian applies the vehicle's
+physical acceleration allocator. AcceptedManeuverProgram no longer stores
+per-engine throttle segments; Newtonian acceptance checks body-axis motion
+capability and rejects transverse route acceleration. HOLD capture still
+requires a stopped fresh state before FinalIngress.
+
+Linux G++ syntax checks, native builder/sampler/runtime-control tests, and
+four architecture checks passed. This is a
+candidate, not Windows native/live acceptance; physical dock contact and
+in-plane terminal trim remain open.
+
 ## 2026-09-26 — live gate: freeze gone; propulsion entry mismatch fixed; manual route nose-first
 
 Fresh Windows/live evidence:

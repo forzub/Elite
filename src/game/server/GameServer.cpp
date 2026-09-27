@@ -52,7 +52,6 @@ const char* bridgeFailureName(
     {
     case Kind::None: return "none";
     case Kind::InvalidIntent: return "invalid-intent";
-    case Kind::InvalidActuator: return "invalid-actuator";
     case Kind::ExecutorRejected: return "executor-rejected";
     }
     return "unknown";
@@ -3212,7 +3211,6 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold &&
             followed.status != Follower::Status::InvalidInput &&
-            followed.propulsionFeasible &&
             std::isfinite(holdDistanceMeters) &&
             holdDistanceMeters <= 12.0 &&
             glm::length(agent.velocityMapMetersPerSecond) <= 2.0)
@@ -3228,7 +3226,6 @@ void GameServer::applyAutomaticDockingControls(
         );
         const bool correctingDockAttitude =
             followed.angularCorrectionOnly &&
-            followed.propulsionFeasible &&
             followed.remainingDistanceMeters <= 500.0 &&
             glm::length(agent.velocityMapMetersPerSecond) <= 5.0 &&
             currentAngularSpeedRadPerSec <=
@@ -3258,8 +3255,7 @@ void GameServer::applyAutomaticDockingControls(
         if (followed.status ==
                 Follower::Status::InvalidInput ||
             (followed.trackingErrorExceeded &&
-             !correctingDockAttitude) ||
-            !followed.propulsionFeasible)
+             !correctingDockAttitude))
         {
             const double speedBeforeStopMps =
                 glm::length(motion.localVelocityMps);
@@ -3278,8 +3274,6 @@ void GameServer::applyAutomaticDockingControls(
                 << static_cast<int>(followed.status)
                 << " tracking_error="
                 << (followed.trackingErrorExceeded ? 1 : 0)
-                << " propulsion_ok="
-                << (followed.propulsionFeasible ? 1 : 0)
                 << " page=" << runtime.currentProgramPage
                 << " t_s=" << time.universeTimeSeconds -
                     program.acceptedAtUniverseTimeSeconds
@@ -3335,8 +3329,7 @@ void GameServer::applyAutomaticDockingControls(
                 << std::endl;
 
             if (runtime.trackingFailureCount >= 3 ||
-                followed.status == Follower::Status::InvalidInput ||
-                !followed.propulsionFeasible)
+                followed.status == Follower::Status::InvalidInput)
             {
                 completed.push_back({
                     runtime.playerId,
@@ -3345,9 +3338,7 @@ void GameServer::applyAutomaticDockingControls(
                     false,
                     followed.status == Follower::Status::InvalidInput
                         ? "follower-invalid-input"
-                        : !followed.propulsionFeasible
-                            ? "follower-propulsion-infeasible"
-                            : "tracking-envelope-exceeded"
+                        : "tracking-envelope-exceeded"
                 });
                 continue;
             }
@@ -3387,44 +3378,21 @@ void GameServer::applyAutomaticDockingControls(
                 followed.intent
             );
 
-        game::navigation::NavigationRuntimeControlBridge::
-            ProgramActuatorCommand actuator;
-        actuator.assistedVelocityModel =
-            followed.assistedVelocityModel;
-        actuator.assistedTargetForwardSpeedMps =
-            followed.assistedTargetForwardSpeedMps;
-        actuator.valid =
-            followed.propulsionFeasible &&
-            (followed.assistedVelocityModel ||
-             followed.hasActuatorCommand);
-        actuator.rearMainThrottle01 =
-            followed.rearMainThrottle01;
-        actuator.foreMainThrottle01 =
-            followed.foreMainThrottle01;
-        actuator.manoeuvreAccelerationSystemMps2 =
+        const glm::dvec3 targetVelocitySystemMps =
             boundary.toSystemVector(
                 game::navigation::NavigationFrameBoundary::
-                    NavVector {
-                        followed.manoeuvreAccelerationMapMps2
-                    }
-            ).value;
-        actuator.linearFeedbackAccelerationSystemMps2 =
-            boundary.toSystemVector(
-                game::navigation::NavigationFrameBoundary::
-                    NavVector {
-                        followed.linearFeedbackLocalMps2
-                    }
+                    NavVector {followed.targetVelocityMapMps}
             ).value;
 
         const double controlDeltaSeconds =
             std::max(1.0e-6, time.gameplayDeltaSeconds);
         runtime.controlClockSeconds += controlDeltaSeconds;
         const auto step =
-            runtime.controlBridge->stepProgram(
+            runtime.controlBridge->stepVehicle(
                 runtime.controlClockSeconds,
                 controlDeltaSeconds,
                 systemIntent,
-                actuator
+                targetVelocitySystemMps
             );
 
         if (step.status !=
@@ -3441,13 +3409,10 @@ void GameServer::applyAutomaticDockingControls(
                       << " snapshot_valid=" << (step.snapshot.valid ? 1 : 0)
                       << " clock_s=" << runtime.controlClockSeconds
                       << " delta_s=" << controlDeltaSeconds
-                      << " actuator_valid=" << (actuator.valid ? 1 : 0)
-                      << " assisted="
-                      << (actuator.assistedVelocityModel ? 1 : 0)
-                      << " forward_mps="
-                      << actuator.assistedTargetForwardSpeedMps
-                      << " rear=" << actuator.rearMainThrottle01
-                      << " fore=" << actuator.foreMainThrottle01
+                      << " target_velocity_mps=("
+                      << targetVelocitySystemMps.x << ","
+                      << targetVelocitySystemMps.y << ","
+                      << targetVelocitySystemMps.z << ")"
                       << std::endl;
             ++runtime.controlBridgeFailureCount;
             if (runtime.controlBridgeFailureCount >= 3)

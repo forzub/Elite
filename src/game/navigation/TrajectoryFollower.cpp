@@ -70,6 +70,8 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     }
 
     result.intent = tracking.intent;
+    result.targetVelocityMapMps =
+        sampled.reference.velocityMapMetersPerSecond;
     result.crossTrackErrorMeters =
         tracking.positionErrorMeters;
     result.linearVelocityErrorMps =
@@ -86,35 +88,6 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         tracking.status ==
         ManeuverTrackingController::Status::EnvelopeExceeded;
     result.angularCorrectionOnly = tracking.angularCorrectionOnly;
-    result.linearFeedbackLocalMps2 =
-        tracking.linearFeedbackMapMps2;
-    result.angularFeedbackLocalRadPerSec2 =
-        tracking.angularFeedbackMapRadPerSec2;
-
-    result.assistedVelocityModel =
-        program.translationMode ==
-            AcceptedManeuverProgram::TranslationMode::AssistedVelocity;
-    if (result.assistedVelocityModel)
-    {
-        const glm::dvec3 forward =
-            glm::normalize(sampled.reference.forwardMap);
-        result.assistedTargetForwardSpeedMps = std::max(
-            0.0,
-            glm::dot(
-                sampled.reference.velocityMapMetersPerSecond,
-                forward
-            )
-        );
-    }
-
-    result.hasActuatorCommand = sampled.hasActuatorCommand;
-    result.actuatorSegmentIndex = sampled.actuatorSegmentIndex;
-    result.rearMainThrottle01 = sampled.rearMainThrottle01;
-    result.foreMainThrottle01 = sampled.foreMainThrottle01;
-    result.manoeuvreAccelerationMapMps2 =
-        sampled.manoeuvreAccelerationMapMps2;
-    result.propulsionFeasible = sampled.propulsionFeasible;
-
     const std::size_t lastIndex =
         static_cast<std::size_t>(program.sampleCount - 1);
     result.remainingDistanceMeters =

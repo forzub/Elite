@@ -1,3 +1,14 @@
+## 2026-09-27 — verify motion-level autopilot candidate
+
+Rebuild and run the native navigation/docking gates, then reproduce START
+DOCKING through ApproachHold and FinalIngress with a free compatible port.
+Confirm that the ship stops within 12 m of HOLD at <=2 m/s without a long
+reverse-flight replan, stabilizes angular rate, and completes collision-free
+pre-capture. Capture every `[DockAuto]` line and visible motion. Inspect the
+new velocity-target control path for Assisted and Newtonian; ship physics
+must decide installed propulsion. A successful pre-capture is not a physical
+contact/latch. Current local changes need target-machine verification.
+
 ## 2026-09-26 — verify nose-first tunnel + physical Automatic entry alignment
 
 Assisted remains accepted; do not retune it.

@@ -1,3 +1,15 @@
+## 2026-09-27 — vehicle-level control candidate
+
+Autopilot authority is expressed as a system-frame target velocity plus
+pilot-executed linear and angular acceleration demand. The physical ship
+control law observes actual motion and chooses propulsion; engine schedules
+no longer cross the accepted-program, Follower, bridge or ShipControlState
+boundary. Newtonian program acceptance proves body-axis acceleration against
+installed capability without issuing throttle commands. Assisted still uses
+its canonical speed/stabilizer model. Runtime acceptance remains pending on
+the Windows target. Port latch and precise in-plane capture remain separate
+unimplemented scope.
+
 ## 2026-09-26 — route heading, entry attitude and boresight ownership
 
 Manual route geometry may carry an explicit launch-heading constraint. For

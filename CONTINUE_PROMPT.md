@@ -1,3 +1,21 @@
+# 2026-09-27 — vehicle-motion boundary candidate (unverified on Windows)
+
+After the earlier spatial HOLD/keyframe commit, the current local changes
+rewrite the live Autopilot interface: AcceptedManeuverProgram stores motion
+reference without throttle segments; Follower exposes target velocity;
+NavigationRuntimeControlBridge::stepVehicle publishes system-frame velocity
+plus filtered acceleration/angular demand; GameSimulation delegates Assisted
+and Newtonian allocation to the ship flight law. The Assisted law uses measured
+velocity, target forward/lateral velocity, and installed physical limits.
+Newtonian program proof checks motion authority without issuing engine
+commands. Old stepProgram/actuator control channels and physical executor
+were removed. Local C++ builder, sampler and runtime-control tests plus
+architecture checks pass; full Windows build and docking flight have not run.
+The previous 10.0222 m near-HOLD failure must be reproduced with the new build;
+pre-capture in-plane trim and physical contact/latch are still outstanding.
+The local branch is ahead of origin/main; an earlier automatic push request
+was rejected by auto-review. Do not try to publish by another mechanism.
+
 # CONTINUE PROMPT — Elite Automatic docking bridge clock
 
 LATEST 2026-09-27: Windows request 2 on `7a81d58` reached page 436,

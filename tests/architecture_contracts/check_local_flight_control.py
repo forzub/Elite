@@ -210,9 +210,8 @@ for token in (
         fail(f"shared server/client attitude path lost state transition: {token}")
 
 for token in (
-    "navigationAssistedFlightModelValid",
-    "navigationTargetForwardSpeedMps",
-    "navigationAssistedCorrectionSystemMps2",
+    "navigationVelocityTargetValid",
+    "navigationTargetVelocitySystemMps",
 ):
     if token not in control_state:
         fail(f"Assisted autopilot control channel lost: {token}")
@@ -227,7 +226,7 @@ for token in (
         fail(f"Assisted autopilot stopped sharing the manual game flight law: {token}")
 
 for token in (
-    "control.navigationAssistedFlightModelValid",
+    "control.navigationVelocityTargetValid",
     "applyNavigationAssistedFlightModel(",
 ):
     if token not in simulation:

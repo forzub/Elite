@@ -27,11 +27,8 @@ for marker in (
     "navigationLinearAccelerationDemandSystemMps2",
     "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
-    "navigationActuatorProgramValid",
-    "navigationRearMainThrottle01",
-    "navigationForeMainThrottle01",
-    "navigationManoeuvreAccelerationSystemMps2",
-    "navigationLinearFeedbackAccelerationSystemMps2",
+    "navigationVelocityTargetValid",
+    "navigationTargetVelocitySystemMps",
 ):
     require(marker in CONTROL, f"ShipControlState direct navigation seam missing: {marker}")
 
@@ -39,8 +36,7 @@ for marker in (
     "class NavigationRuntimeControlBridge final",
     "using PilotExecutor = world::navigation::PilotSkillExecutor",
     "ExecutionSnapshot",
-    "ProgramActuatorCommand",
-    "stepProgram(",
+    "stepVehicle(",
     "idealLinearAccelerationDemandSystemMps2",
     "executedLinearAccelerationDemandSystemMps2",
     "activeTargetRevision",
@@ -53,11 +49,8 @@ for marker in (
     "navigationLinearAccelerationDemandSystemMps2",
     "navigationAngularAccelerationDemandSystemRadPerSec2",
     "navigationIntentRevision",
-    "navigationActuatorProgramValid = true",
-    "navigationRearMainThrottle01",
-    "navigationForeMainThrottle01",
-    "navigationManoeuvreAccelerationSystemMps2",
-    "navigationLinearFeedbackAccelerationSystemMps2",
+    "navigationVelocityTargetValid = true",
+    "navigationTargetVelocitySystemMps",
 ):
     require(marker in BRIDGE_CPP, f"runtime bridge implementation missing: {marker}")
 
@@ -85,10 +78,6 @@ require(
     "applySystemAccelerationDemand" in MOTION_H,
     "DynamicMotionSystem direct linear-demand API missing",
 )
-require(
-    "applyNavigationActuatorProgram" in MOTION_H,
-    "DynamicMotionSystem planner-actuator execution API missing",
-)
 
 for marker in (
     "forwardMainAuthority",
@@ -99,23 +88,10 @@ for marker in (
     require(marker in MOTION_CPP, f"real propulsion split missing: {marker}")
 
 for marker in (
-    "nominalForwardMain",
-    "nominalReverseMain",
-    "availableForwardMain",
-    "availableReverseMain",
-    "feedbackMainLongitudinal",
-    "manoeuvreAccelerationSystemMps2 +",
-):
-    require(
-        marker in MOTION_CPP,
-        f"planner-owned actuator allocation missing: {marker}"
-    )
-
-for marker in (
     "manualTranslationOverride",
     "control.navigationAccelerationDemandValid",
-    "control.navigationActuatorProgramValid",
-    "applyNavigationActuatorProgram",
+    "control.navigationVelocityTargetValid",
+    "applyNavigationAssistedFlightModel",
     "applySystemAccelerationDemand",
     "applyLocalFrameInput",
 ):
@@ -135,20 +111,15 @@ for forbidden in (
     )
 
 for marker in (
-    "live runtime integration",
-    "same executed demand",
-    "Main engine",
-    "Planner-owned",
-    "rear/fore",
-    "Manual override",
-    "No physics bypass",
-    "11B after acceptance",
-    "same accepted intent/execution snapshot/revision",
+    "stepVehicle", "targetVelocitySystemMps", "authoritative ship state"
 ):
-    require(
-        marker.lower() in DOC.lower(),
-        f"live integration documentation missing: {marker}",
-    )
+    require(marker.lower() in DOC.lower(),
+            f"live integration documentation missing: {marker}")
+
+for forbidden in ("ProgramActuatorCommand", "navigationRearMainThrottle01",
+                  "navigationForeMainThrottle01", "stepProgram("):
+    require(forbidden not in BRIDGE_H + BRIDGE_CPP + CONTROL + SIM,
+            f"obsolete autopilot actuator channel survives: {forbidden}")
 
 for marker in (
     "src/game/navigation/NavigationRuntimeControlBridge.cpp",
@@ -166,7 +137,7 @@ print(" - accepted navigation/pilot output reaches ShipControlState through one 
 print(" - bridge publishes the same executed demand for downstream control and future guidance/debug")
 print(" - angular demand uses existing ShipController acceleration/rate capability limits")
 print(" - generic net demand maps onto installed rear/fore main banks plus bounded manoeuvre authority")
-print(" - accepted-program execution preserves Planner-owned nominal actuator allocation")
+print(" - accepted-program execution sends velocity and angular demand, never engine schedules")
 print(" - manual control materially overrides navigation demand")
 print(" - GameSimulation applies the new channel without replacing legacy controls for other ships")
 print(" - navigation never writes authoritative position/velocity/angular-rate state directly")

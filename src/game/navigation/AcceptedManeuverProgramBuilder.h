@@ -146,8 +146,6 @@ public:
             return fail("trajectory-too-few-samples");
 
         const ShipParams& params = *request.shipPhysics;
-        const double forwardMain =
-            game::ship::forwardMainAccelerationLimitMps2(params);
         const double controlledSpeed =
             game::ship::controlledSpeedLimitMps(params);
 
@@ -283,15 +281,12 @@ public:
             page.proof.minimumAngularAuthorityReserveRadPerSec2 =
                 request.policy.angularFeedbackReserveRadPerSec2;
 
-            page.actuatorProgramFeasible = true;
-
             if (request.controlLaw == LocalFlightControlLaw::Assisted)
             {
                 // Assisted route execution is NOT a synthetic propulsion
                 // allocation problem. Manual and automatic flight share the
                 // same nose-coupled game flight law; physical manoeuvre/RCS is
                 // reserved for later precision-placement doctrine.
-                page.actuatorSegmentCount = 0;
 
                 for (std::size_t i = 0; i < count; ++i)
                 {
@@ -329,66 +324,31 @@ public:
             }
             else
             {
-                // Ordinary Newtonian navigation is rotate + main-engine burn.
-                // Do not let the generic allocator hide an invalid trajectory
-                // by spending precision RCS as sustained lateral route thrust.
-                page.actuatorSegmentCount =
-                    static_cast<std::uint8_t>(count - 1);
-
-                for (std::size_t i = 0; i + 1 < count; ++i)
+                // Prove vehicle motion against body-axis capability without
+                // choosing an engine, throttle, or RCS schedule. The actual
+                // ship allocates propulsion from the executed demand.
+                for (std::size_t i = 0; i < count; ++i)
                 {
-                    const auto& a = page.samples[i];
-                    const auto& b = page.samples[i + 1];
-                    auto& segment = page.actuatorSegments[i];
-
-                    const auto start = compilePropulsion(
-                        a,
-                        forwardMain,
-                        0.0,
-                        0.0
+                    const auto& sample = page.samples[i];
+                    const glm::dvec3 forward = normalizedOr(
+                        sample.forwardMap,
+                        glm::dvec3(0.0, 0.0, -1.0)
                     );
-                    const auto finish = compilePropulsion(
-                        b,
-                        forwardMain,
-                        0.0,
-                        0.0
-                    );
-
-                    segment.durationSeconds =
-                        b.timeOffsetSeconds - a.timeOffsetSeconds;
-                    if (!(segment.durationSeconds > 0.0))
+                    const glm::dvec3 demand =
+                        sample.linearAccelerationFeedForwardMapMps2;
+                    const double along = glm::dot(demand, forward);
+                    const glm::dvec3 transverse = demand - along * forward;
+                    const double forwardAuthority =
+                        game::ship::forwardMainAccelerationLimitMps2(params);
+                    const double reverseAuthority =
+                        game::ship::reverseMainAccelerationLimitMps2(params);
+                    if (!finiteVec(demand) ||
+                        glm::length(transverse) > 1.0e-3 ||
+                        along > forwardAuthority + 1.0e-6 ||
+                        along < -reverseAuthority - 1.0e-6)
                     {
-                        return fail(
-                            "non-positive-actuator-segment-duration"
-                        );
+                        return fail("newtonian-motion-envelope-infeasible");
                     }
-
-                    segment.rearMainEnabled =
-                        start.rearMainThrottle01 > 1.0e-4 ||
-                        finish.rearMainThrottle01 > 1.0e-4;
-                    segment.rearMainThrottleStart01 =
-                        start.rearMainThrottle01;
-                    segment.rearMainThrottleEnd01 =
-                        finish.rearMainThrottle01;
-                    segment.foreMainEnabled = false;
-                    segment.foreMainThrottleStart01 = 0.0;
-                    segment.foreMainThrottleEnd01 = 0.0;
-                    segment.manoeuvreAccelerationStartMapMps2 =
-                        glm::dvec3(0.0);
-                    segment.manoeuvreAccelerationEndMapMps2 =
-                        glm::dvec3(0.0);
-                    segment.propulsionFeasible =
-                        start.feasible && finish.feasible;
-                    page.actuatorProgramFeasible =
-                        page.actuatorProgramFeasible &&
-                        segment.propulsionFeasible;
-                }
-
-                if (!page.actuatorProgramFeasible)
-                {
-                    return fail(
-                        "newtonian-main-engine-program-infeasible"
-                    );
                 }
             }
 
@@ -409,14 +369,6 @@ public:
     }
 
 private:
-    struct PlannedPropulsion
-    {
-        double rearMainThrottle01 = 0.0;
-        double foreMainThrottle01 = 0.0;
-        glm::dvec3 manoeuvreAccelerationMapMps2 {0.0};
-        bool feasible = true;
-    };
-
     [[nodiscard]] static bool finiteVec(
         const glm::dvec3& value
     ) noexcept
@@ -660,64 +612,6 @@ private:
         return value / std::sqrt(n2);
     }
 
-    [[nodiscard]] static PlannedPropulsion compilePropulsion(
-        const AcceptedManeuverProgram::ReferenceSample& sample,
-        double forwardMain,
-        double reverseMain,
-        double manoeuvre
-    ) noexcept
-    {
-        PlannedPropulsion out;
-        const glm::dvec3 forward = normalizedOr(
-            sample.forwardMap,
-            glm::dvec3(0.0, 0.0, -1.0)
-        );
-        const double requestedForward = glm::dot(
-            sample.linearAccelerationFeedForwardMapMps2,
-            forward
-        );
-
-        const double rear = std::clamp(
-            requestedForward,
-            0.0,
-            std::max(0.0, forwardMain)
-        );
-        const double fore = std::clamp(
-            -requestedForward,
-            0.0,
-            std::max(0.0, reverseMain)
-        );
-
-        out.rearMainThrottle01 =
-            forwardMain > 1.0e-9 ? rear / forwardMain : 0.0;
-        out.foreMainThrottle01 =
-            reverseMain > 1.0e-9 ? fore / reverseMain : 0.0;
-
-        const glm::dvec3 mainAcceleration =
-            forward * (rear - fore);
-        glm::dvec3 manoeuvreDemand =
-            sample.linearAccelerationFeedForwardMapMps2 -
-            mainAcceleration;
-
-        const double manoeuvreMagnitude =
-            glm::length(manoeuvreDemand);
-        out.feasible =
-            requestedForward <=
-                forwardMain + manoeuvre + 1.0e-6 &&
-            requestedForward >=
-                -reverseMain - manoeuvre - 1.0e-6 &&
-            manoeuvreMagnitude <= manoeuvre + 1.0e-6;
-
-        if (manoeuvreMagnitude > manoeuvre &&
-            manoeuvreMagnitude > 1.0e-12)
-        {
-            manoeuvreDemand *=
-                manoeuvre / manoeuvreMagnitude;
-        }
-
-        out.manoeuvreAccelerationMapMps2 = manoeuvreDemand;
-        return out;
-    }
 };
 
 } // namespace game::navigation

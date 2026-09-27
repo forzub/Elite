@@ -1,3 +1,16 @@
+## 2026-09-27 — current vehicle-motion contract
+
+The 2026-09-26 actuator-schedule description below is historical and is
+superseded by this contract. The live pipeline is
+`AcceptedManeuverProgram -> TrajectoryFollower -> stepVehicle ->
+ShipControlState navigationVelocityTargetValid -> DynamicMotionSystem ->
+authoritative ship state`. The bridge sends `targetVelocitySystemMps`
+and filtered linear/angular demand, never engine selection. The actual ship
+flight law observes velocity and allocates available propulsion within its
+physical limits. Manual inputs retain their existing override behavior.
+Newtonian route acceptance checks capability without publishing a throttle
+program. Assisted uses its normal nose-coupled flight law.
+
 # Navigation v2 — live runtime integration
 
 

@@ -1329,3 +1329,43 @@ The production terminal angular handoff has been manually verified in
 Expected result: full `[DOCK-VERIFY] PASS`.
 
 After that, run the canonical MinGW build and live Assisted docking test.
+
+## 2026-09-27 — active gate: START DOCKING from a cold route state
+
+Run the complete docking verify on current main. The new native launch fixture
+must prove straight prefix -> smooth first arc rather than merely checking the
+first vector.
+
+After a green verify/build, test this exact live sequence:
+
+1. Start the game in Assisted.
+2. Do **not** press CALCULATE TRAJECTORY.
+3. Select a docking port and press START DOCKING directly.
+4. Expected logs:
+   ```text
+   [DockAuto] request=N phase=route-preflight
+   [DockAdvisory] request=N phase=stabilizing ...
+   [DockAdvisory] request=N phase=settled ...
+   [DockAdvisory] request=N phase=planning ...
+   [DockAdvisory] request=N route=...
+   [DockAdvisory] request=N phase=handoff_wait ...
+   [DockAdvisory] request=N ... human_control=1
+   [DockAuto] request=N phase=requested ...
+   [DockAuto] begin ... phase=stabilizing
+   ...
+   [DockAuto] request=N phase=planning-async
+   ...
+   phase=executing
+   ```
+5. The cockpit tunnel must visibly begin in front of the boresight with several
+   frames on the current hull axis, then bend smoothly into the route, then
+   continue toward the dock.
+6. The ship must actually acquire server Autopilot authority and move after
+   planning/alignment.
+
+If Automatic is still inert, the new flushed client/server logs must show
+whether it stopped at route-preflight, request dispatch, server rejection,
+authority acquisition, planning, alignment or execution.
+
+Do not restore a dependency on pressing Manual first and do not fall back to the
+2 m/s² RCS profile for Assisted guidance.

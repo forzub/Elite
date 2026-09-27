@@ -2369,6 +2369,7 @@ void SpaceState::updateDockingAdvisory()
         const bool guidanceAssisted =
             guidanceControlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
+        request.roundTurns = guidanceAssisted;
         if (guidanceAssisted)
         {
             request.terminalApproachLengthMeters = 9000.0;

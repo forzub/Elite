@@ -2737,6 +2737,7 @@ void GameServer::applyAutomaticDockingControls(
                 continue;
             }
             runtime.controlClockSeconds = 0.0;
+            runtime.lastTrackingDiagnosticTick = 0;
 
             const auto& firstReference =
                 runtime.programs.front().samples[0];
@@ -3443,8 +3444,8 @@ void GameServer::applyAutomaticDockingControls(
 
         // One sample per second: correlate the immutable trajectory, follower
         // feedback, pilot command and measured ship response on Windows.
-        if (runtime.lastDiagnosticTick == 0 ||
-            time.serverTick - runtime.lastDiagnosticTick >= 60)
+        if (runtime.lastTrackingDiagnosticTick == 0 ||
+            time.serverTick - runtime.lastTrackingDiagnosticTick >= 60)
         {
             const auto diagnosticSample = game::navigation::
                 ManeuverProgramSampler::sample(
@@ -3493,7 +3494,8 @@ void GameServer::applyAutomaticDockingControls(
                       << agent.rollRateRadPerSec << ")"
                       << " pilot_blocked=" << step.snapshot.reactionBlocked
                       << std::endl;
-            runtime.lastDiagnosticTick = time.serverTick;
+            runtime.lastTrackingDiagnosticTick =
+                time.serverTick;
         }
 
         ship->setControlState(step.control);

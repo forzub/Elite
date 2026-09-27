@@ -10993,3 +10993,17 @@ otherwise silent state changes. Protocol version 12 and native/live validation
 are required on the target machine.
 The implementation tree was published to main as `4da95fa3` after explicit
 authorization; target Windows verification and live flight remain open gates.
+
+## 2026-09-27 — target control-bridge clock failure
+
+The live server produced many `status=2 snapshot_valid=0` bridge replan lines
+for request 1. `status=2` means InvalidInput. Executor validation requires the
+elapsed time between calls to equal the supplied delta. The runtime reset it at
+the planned future execution epoch, then sent an actual later server tick plus
+only one gameplay delta. The correction resets the pilot clock to zero when a
+program is installed, then advances that local clock by the exact gameplay
+delta on each Aligning/Executing step. World-space program/follower sampling
+continues to use absolute universe timestamps. New failure kinds distinguish
+clock/executor, intent, and actuator rejection. Three consecutive bridge
+failures terminate with a reason delivered back to the client. Native/live
+validation of this candidate is pending.

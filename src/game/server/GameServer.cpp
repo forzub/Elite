@@ -39,6 +39,23 @@
 
 namespace {
 
+const char* bridgeFailureName(
+    game::navigation::NavigationRuntimeControlBridge::
+        StepResult::FailureKind kind
+) noexcept
+{
+    using Kind = game::navigation::NavigationRuntimeControlBridge::
+        StepResult::FailureKind;
+    switch (kind)
+    {
+    case Kind::None: return "none";
+    case Kind::InvalidIntent: return "invalid-intent";
+    case Kind::InvalidActuator: return "invalid-actuator";
+    case Kind::ExecutorRejected: return "executor-rejected";
+    }
+    return "unknown";
+}
+
 
 
 
@@ -2632,7 +2649,7 @@ void GameServer::applyAutomaticDockingControls(
             neutral.targetRevision =
                 runtime.programs.front().revision;
             if (!runtime.controlBridge->reset(
-                    job->executionStartUniverseTimeSeconds,
+                    0.0,
                     neutral))
             {
                 runtime.controlBridge.reset();
@@ -2647,6 +2664,7 @@ void GameServer::applyAutomaticDockingControls(
                 });
                 continue;
             }
+            runtime.controlClockSeconds = 0.0;
 
             const auto& firstReference =
                 runtime.programs.front().samples[0];
@@ -2853,13 +2871,13 @@ void GameServer::applyAutomaticDockingControls(
                 boundary.toSystemControlIntent(
                     tracking.intent
                 );
+            const double controlDeltaSeconds =
+                std::max(1.0e-6, time.gameplayDeltaSeconds);
+            runtime.controlClockSeconds += controlDeltaSeconds;
             const auto step =
                 runtime.controlBridge->step(
-                    time.universeTimeSeconds,
-                    std::max(
-                        1.0e-6,
-                        time.gameplayDeltaSeconds
-                    ),
+                    runtime.controlClockSeconds,
+                    controlDeltaSeconds,
                     systemIntent
                 );
 
@@ -2869,6 +2887,24 @@ void GameServer::applyAutomaticDockingControls(
                             PilotExecutor::Status::Ok ||
                 !step.snapshot.valid)
             {
+                std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                          << " phase=replan reason=alignment-bridge-step"
+                          << " status=" << static_cast<int>(step.status)
+                          << " failure_kind="
+                          << bridgeFailureName(step.failure)
+                          << " clock_s=" << runtime.controlClockSeconds
+                          << " delta_s=" << controlDeltaSeconds
+                          << std::endl;
+                ++runtime.controlBridgeFailureCount;
+                if (runtime.controlBridgeFailureCount >= 3)
+                {
+                    completed.push_back({
+                        runtime.playerId, runtime.entityId,
+                        runtime.requestSerial, false,
+                        std::string("alignment-bridge-") +
+                            bridgeFailureName(step.failure)
+                    });
+                }
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
@@ -2876,6 +2912,8 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 continue;
             }
+
+            runtime.controlBridgeFailureCount = 0;
 
             ship->setControlState(step.control);
 
@@ -3094,10 +3132,13 @@ void GameServer::applyAutomaticDockingControls(
                     }
             ).value;
 
+        const double controlDeltaSeconds =
+            std::max(1.0e-6, time.gameplayDeltaSeconds);
+        runtime.controlClockSeconds += controlDeltaSeconds;
         const auto step =
             runtime.controlBridge->stepProgram(
-                time.universeTimeSeconds,
-                std::max(1.0e-6, time.gameplayDeltaSeconds),
+                runtime.controlClockSeconds,
+                controlDeltaSeconds,
                 systemIntent,
                 actuator
             );
@@ -3111,8 +3152,29 @@ void GameServer::applyAutomaticDockingControls(
             std::cerr << "[DockAuto] request=" << runtime.requestSerial
                       << " phase=replan reason=control-bridge-step"
                       << " status=" << static_cast<int>(step.status)
+                      << " failure_kind="
+                      << bridgeFailureName(step.failure)
                       << " snapshot_valid=" << (step.snapshot.valid ? 1 : 0)
+                      << " clock_s=" << runtime.controlClockSeconds
+                      << " delta_s=" << controlDeltaSeconds
+                      << " actuator_valid=" << (actuator.valid ? 1 : 0)
+                      << " assisted="
+                      << (actuator.assistedVelocityModel ? 1 : 0)
+                      << " forward_mps="
+                      << actuator.assistedTargetForwardSpeedMps
+                      << " rear=" << actuator.rearMainThrottle01
+                      << " fore=" << actuator.foreMainThrottle01
                       << std::endl;
+            ++runtime.controlBridgeFailureCount;
+            if (runtime.controlBridgeFailureCount >= 3)
+            {
+                completed.push_back({
+                    runtime.playerId, runtime.entityId,
+                    runtime.requestSerial, false,
+                    std::string("control-bridge-") +
+                        bridgeFailureName(step.failure)
+                });
+            }
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -3120,6 +3182,8 @@ void GameServer::applyAutomaticDockingControls(
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             continue;
         }
+
+        runtime.controlBridgeFailureCount = 0;
 
         ship->setControlState(step.control);
 

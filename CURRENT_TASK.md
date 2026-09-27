@@ -1474,3 +1474,15 @@ advisory must carry an unsafe warning. Actual ship motion and endpoint still
 need live acceptance; static checks alone do not prove either.
 Publication is complete on `main` at `4da95fa3`; pull the latest `main`
 before running the target-machine gate.
+
+## 2026-09-27 — next gate: local pilot clock
+
+Pull the correction after publication, run full `bash verify_docking.sh`,
+rebuild both binaries with `bash build_mingw64.sh`, then press START DOCKING once
+in Assisted. The previous repeating `status=2` bridge rejection must disappear.
+If the bridge still rejects a step, record `failure_kind`, `clock_s`, `delta_s`,
+and actuator fields from the new log. Three consecutive failures now end with
+`[DockResult]` server and client reasons. If physical execution begins, evaluate
+motion, corridor persistence, hold stop, and final ingress separately. Startup
+M8E frame stalls in the supplied excerpt are independent of this bridge
+rejection and remain an open performance issue.

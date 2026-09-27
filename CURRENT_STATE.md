@@ -6018,3 +6018,25 @@ Publication: the complete diagnostic and corridor/result tree was published
 to public `forzub/Elite` main as `4da95fa3` after explicit user approval.
 GitHub verified the published tree SHA matches the tested local tree. Native
 Windows verify/build/live acceptance remains pending.
+
+## 2026-09-27 — live bridge rejection at automatic execution
+
+Windows built both binaries and the live run reached server Automatic request 1.
+Repeated `[DockAuto] phase=replan reason=control-bridge-step status=2
+snapshot_valid=0` shows the program reached the Follower/bridge boundary but
+never produced a physical control sample. `PilotSkillExecutor::Status::InvalidInput`
+is 2. Code inspection found that the bridge was reset at a planned future
+absolute universe epoch, then first stepped at a later real tick using only the
+one-tick gameplay delta. The executor requires `stepTime - resetTime == delta`
+within a strict tolerance; any planning/installation gap fails that check.
+The large absolute epoch also makes strict double precision checks fragile.
+
+Current correction gives the pilot executor a local clock reset to zero on
+program installation and advanced by the exact gameplay delta on both Aligning
+and Executing steps. Follower and trajectory sampling still use absolute
+universe time. Bridge results now distinguish invalid intent, invalid actuator,
+and executor rejection. Three repeated bridge failures terminate the request
+with a server result instead of replanning indefinitely. Local static checks
+pass; target Windows native and live gates are pending for this correction.
+This corrected implementation is the next public-main candidate for the
+target-machine gate; its publication alone will not imply runtime acceptance.

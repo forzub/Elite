@@ -347,6 +347,38 @@ void testPlannerActuatorProgramReachesPhysicalAllocation()
     );
 }
 
+void testProgramBridgeReportsWhichBoundaryRejectedTheStep()
+{
+    Bridge bridge(expertProfile());
+    Bridge::Intent intent;
+    intent.revision = 17;
+    require(bridge.reset(0.0, intent), "diagnostic bridge reset failed");
+
+    Bridge::ProgramActuatorCommand actuator;
+    actuator.valid = true;
+    const auto wrongClock = bridge.stepProgram(
+        0.10, 0.01, intent, actuator
+    );
+    require(wrongClock.status == Bridge::PilotExecutor::Status::InvalidInput &&
+                wrongClock.failure ==
+                    Bridge::StepResult::FailureKind::ExecutorRejected,
+            "mismatched pilot clock must report executor rejection");
+
+    const auto accepted = bridge.stepProgram(
+        0.01, 0.01, intent, actuator
+    );
+    require(accepted.status == Bridge::PilotExecutor::Status::Ok,
+            "local pilot clock must accept the first control step");
+
+    actuator.valid = false;
+    const auto invalidActuator = bridge.stepProgram(
+        0.02, 0.01, intent, actuator
+    );
+    require(invalidActuator.failure ==
+                Bridge::StepResult::FailureKind::InvalidActuator,
+            "rejected actuator must be distinguishable from a clock error");
+}
+
 void testAssistedAutopilotUsesCanonicalFlightLaw()
 {
     game::navigation::DynamicMotionState motion;
@@ -694,6 +726,7 @@ int main()
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testPlannerActuatorProgramReachesPhysicalAllocation();
+        testProgramBridgeReportsWhichBoundaryRejectedTheStep();
         testAssistedAutopilotUsesCanonicalFlightLaw();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();

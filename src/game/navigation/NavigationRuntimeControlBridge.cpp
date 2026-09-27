@@ -91,6 +91,7 @@ NavigationRuntimeControlBridge::step(
     if (!validIntent(intent))
     {
         result.status = PilotExecutor::Status::InvalidInput;
+        result.failure = StepResult::FailureKind::InvalidIntent;
         return result;
     }
 
@@ -101,6 +102,8 @@ NavigationRuntimeControlBridge::step(
     );
 
     result.status = pilot.status;
+    if (pilot.status != PilotExecutor::Status::Ok)
+        result.failure = StepResult::FailureKind::ExecutorRejected;
 
     result.snapshot.intentRevision = intent.revision;
     result.snapshot.activeTargetRevision = pilot.activeTargetRevision;
@@ -161,6 +164,7 @@ NavigationRuntimeControlBridge::stepProgram(
         if (!validActuatorCommand(actuator))
         {
             result.status = PilotExecutor::Status::InvalidInput;
+            result.failure = StepResult::FailureKind::InvalidActuator;
             result.control = ShipControlState {};
             result.snapshot.valid = false;
         }

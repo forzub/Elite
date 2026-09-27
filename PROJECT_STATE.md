@@ -4368,3 +4368,13 @@ outcome channel, not an extra Planner or Follower command. Wire protocol 12
 requires rebuilding both sides together.
 The implementation tree was published to `main` at `4da95fa3` after explicit
 authorization. Publication is distinct from native or live acceptance.
+
+The first target Automatic execution revealed a bridge clock-domain bug:
+absolute planned program time was used to reset PilotSkillExecutor, whereas
+later steps supplied per-tick gameplay deltas. The corrected executor clock is
+local to the installed program and advances only by actual control deltas;
+the accepted maneuver schedule remains in authoritative universe time. This
+does not relax actuator or tracking acceptance. Repeated bridge failure is a
+terminal, serialled server result instead of an infinite replan loop.
+This correction is delivered on canonical main for Windows verification;
+successful static checks remain distinct from flight acceptance.

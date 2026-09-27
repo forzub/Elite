@@ -64,8 +64,16 @@ public:
 
     struct StepResult
     {
+        enum class FailureKind : std::uint8_t
+        {
+            None = 0,
+            InvalidIntent,
+            InvalidActuator,
+            ExecutorRejected
+        };
         PilotExecutor::Status status =
             PilotExecutor::Status::NotInitialized;
+        FailureKind failure = FailureKind::None;
 
         ShipControlState control {};
         ExecutionSnapshot snapshot {};

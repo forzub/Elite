@@ -414,6 +414,11 @@ private:
         std::size_t currentProgramPage = 0;
         std::unique_ptr<game::navigation::NavigationRuntimeControlBridge>
             controlBridge;
+        // PilotSkillExecutor requires step time to advance by exactly the
+        // supplied delta. Keep its clock local to execution; maneuver samples
+        // still use absolute universe time.
+        double controlClockSeconds = 0.0;
+        std::uint32_t controlBridgeFailureCount = 0;
         game::navigation::ManeuverTrackingController::Policy trackingPolicy {};
         std::uint64_t nextProgramRevision = 1;
     };

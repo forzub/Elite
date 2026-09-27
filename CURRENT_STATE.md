@@ -5824,3 +5824,98 @@ Post-edit source check:
 
 No Planner, Follower, route geometry, flight law, physics or docking state-machine
 semantics changed in this correction. Fresh target build is pending.
+
+## 2026-09-27 — live Automatic reaches server Planner; angular timing is current blocker
+
+Newest live evidence:
+
+```text
+[DockAuto] request=1 phase=plan-failed
+reason=trajectory:angular trajectory cannot reach requested terminal state
+action=restore-human
+```
+
+This materially narrows the failure. START DOCKING is reaching the server,
+Autopilot authority is being acquired, stabilization/planning is running, and
+the server is deliberately restoring Human only because no executable
+trajectory passed the angular gate. This is no longer an authority-transfer or
+"make the player ship an NPC" problem.
+
+The same Ship entity remains authoritative throughout:
+```text
+Human controller -> Autopilot controller
+same Ship / ShipDynamics / installed hardware / fixed-step physics
+```
+That is the intended NPC-like ownership model.
+
+### Angular timing defect and correction
+
+The translational scalar Ruckig solve previously chose the fastest
+collision-free route time independently of hull attitude timing. The angular
+compiler then required the same clock to reach exact terminal attitude and
+terminal omega. If the hull physically needed more time, generation failed
+instead of slowing translation.
+
+Multi-point trajectory generation now retries the SAME safe geometry with lower
+translation speed only when the failure is angular-terminal reachability.
+Current speed scales:
+`1.00, 0.80, 0.64, 0.50, 0.40, 0.32, 0.25, 0.20, 0.16, 0.125, 0.10, 0.08, 0.06, 0.05`.
+
+No angular rate, angular acceleration, collision, terminal orientation or
+terminal-omega tolerance is relaxed.
+
+A successful slowed trajectory reports
+`angular-speed-relaxed`. If even the slowest allowed solve fails, the
+trajectory now reports the exact angular cause, including sample/reachable
+omega or final pose/omega error instead of only the generic message.
+
+A native regression now creates a route whose fastest translation is too short
+for the authored hull rotation and requires Planner to increase route time.
+
+### Manual docking-frame cadence is now a hard user contract
+
+The user explicitly requires:
+- ordinary manual docking corridor: **500 m between published frames**;
+- terminal/final zone: **250 m**;
+- do not change this again without an explicit user request.
+
+All accidental densification has been removed:
+- SpaceState publishes `gateSpacingMeters = 500.0`;
+- SpaceState publishes `terminalGateSpacingMeters = 250.0`;
+- the former launch-only 125 m cadence override is deleted;
+- the former fractional one-off frame used to land exactly on the dense-zone
+  boundary is deleted;
+- terminal cadence starts up to one normal interval early instead.
+
+The native launch regression requires the first published frame gap to be
+approximately 500 m. Static contract rejects a return of 150 m visible cadence
+or fractional transition logic.
+
+To preserve a real 500 m straight nose-first frame and still leave geometry for
+a tangent first arc, normal initial-forward lead is now at least 1000 m and the
+first 500 m is protected from the fillet. This changes geometry length, not
+published frame cadence.
+
+### Docking-port picking
+
+Live feedback also showed far docking ports were hard to select and parent
+infrastructure often stole the click.
+
+Root cause: a dock had high pick priority, but once a projected physical
+`hitPolygonPx` existed it replaced the normal hit radius. At distant zoom the
+physical opening can be only a few pixels, so overlay picking missed and the
+subsequent infrastructure triangle picker selected the whole assembly.
+
+Current fix:
+- docking port is selectable by precise physical polygon **OR** semantic
+  screen-space dock radius;
+- dock hit radius: 22 px;
+- dock pick priority: 1000;
+- among overlapping docks, the one nearest the cursor wins;
+- parent infrastructure remains the fallback only when no docking-port overlay
+  consumes the press.
+
+`verify_docking.sh` now also runs the object-overlay contract so docking-port
+picking is part of the docking gate.
+
+Fresh Windows verify/build/live evidence for these newest changes is pending.

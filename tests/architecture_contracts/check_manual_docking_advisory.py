@@ -136,7 +136,7 @@ try:
             "terminal_radius_m=",
             "radius_relaxed=")
     require("tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
-            "visible straight prefix",
+            "manual docking launch cadence is not 500 m",
             "hard first-turn kink",
             "never transitioned into a launch arc")
     require("src/game/server/GameServer.cpp",

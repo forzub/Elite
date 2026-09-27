@@ -605,9 +605,18 @@ public:
                         const double distance =
                             glm::length(mousePx - item.screenPx);
                         const bool preciseHit = !item.hitPolygonPx.empty();
+                        const bool dockSemanticHit =
+                            item.kind == MapObjectGlyphKind::DockingPort &&
+                            distance <= item.hitRadiusPx;
                         if (preciseHit)
                         {
-                            if (!screenPointInsideConvexPolygon(
+                            // A distant docking opening may project to only a
+                            // few pixels. It remains a semantic control target:
+                            // its screen-space dock marker must stay clickable
+                            // and must get first refusal before the parent
+                            // infrastructure triangle picker.
+                            if (!dockSemanticHit &&
+                                !screenPointInsideConvexPolygon(
                                     mousePx,
                                     item.hitPolygonPx))
                             {

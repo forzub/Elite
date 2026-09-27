@@ -989,9 +989,9 @@ bool GameServer::beginDockingGuidancePreparation(
     if (!m_controls.takeAutopilotControl(playerId, controlledEntityId))
     {
         std::cerr
-            << "[DockAuto] rejected entity="
+            << "[DockPrep] rejected entity="
             << controlledEntityId.value
-            << " request=" << command.requestSerial
+            << " request=" << requestSerial
             << " reason=autopilot-authority-denied"
             << " controller="
             << static_cast<int>(
@@ -1228,7 +1228,19 @@ bool GameServer::beginAutomaticDocking(
     }
 
     if (!m_controls.takeAutopilotControl(playerId, controlledEntityId))
+    {
+        std::cerr
+            << "[DockAuto] rejected entity="
+            << controlledEntityId.value
+            << " request=" << command.requestSerial
+            << " reason=autopilot-authority-denied"
+            << " controller="
+            << static_cast<int>(
+                   m_controls.controllerKind(controlledEntityId)
+               )
+            << std::endl;
         return false;
+    }
 
     if (auto it = m_controlStreams.find(controlledEntityId.value);
         it != m_controlStreams.end())
@@ -1264,7 +1276,8 @@ bool GameServer::beginAutomaticDocking(
         << " hub=" << hubId
         << " target=" << command.dockingTargetModuleId
         << ":" << command.dockingTargetAnchorId
-        << " phase=stabilizing\n";
+        << " phase=stabilizing"
+        << std::endl;
     return true;
 }
 

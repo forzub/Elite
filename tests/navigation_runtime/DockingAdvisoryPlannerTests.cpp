@@ -51,6 +51,63 @@ int main()
         return 32;
     }
 
+    if(forwardLaunchPlan.gates.size()<4)
+    {
+        std::cerr << "nose-first corridor has too few launch/turn frames\n";
+        return 33;
+    }
+
+    const auto initialForward=
+        glm::normalize(forwardLaunch.initialForward);
+    const auto secondPublishedDirection=glm::normalize(
+        forwardLaunchPlan.gates[2].positionMeters-
+        forwardLaunchPlan.gates[1].positionMeters
+    );
+    if(glm::dot(secondPublishedDirection,initialForward)<0.995)
+    {
+        std::cerr
+            << "nose-first corridor did not preserve a visible straight prefix\n";
+        return 34;
+    }
+
+    bool sawSmoothLaunchTurn=false;
+    double travelled=0.0;
+    glm::dvec3 previousDirection=firstPublishedDirection;
+    for(std::size_t i=1;
+        i+1<forwardLaunchPlan.gates.size() && travelled<1200.0;
+        ++i)
+    {
+        const auto segment=
+            forwardLaunchPlan.gates[i+1].positionMeters-
+            forwardLaunchPlan.gates[i].positionMeters;
+        const double segmentLength=glm::length(segment);
+        if(segmentLength<=1.0e-6)
+            continue;
+
+        const auto direction=segment/segmentLength;
+        const double headingStep=std::acos(std::clamp(
+            glm::dot(previousDirection,direction),-1.0,1.0
+        ));
+        if(headingStep>glm::radians(30.0))
+        {
+            std::cerr
+                << "nose-first corridor contains a hard first-turn kink: "
+                << glm::degrees(headingStep) << " deg\n";
+            return 35;
+        }
+        if(glm::dot(direction,initialForward)<0.98)
+            sawSmoothLaunchTurn=true;
+
+        travelled+=segmentLength;
+        previousDirection=direction;
+    }
+    if(!sawSmoothLaunchTurn)
+    {
+        std::cerr
+            << "nose-first corridor never transitioned into a launch arc\n";
+        return 36;
+    }
+
     DockingAdvisoryRequest r;
     r.startMeters={-10000.0,2500.0,0.0};
     r.entranceMeters={3000.0,350.0,-450.0};

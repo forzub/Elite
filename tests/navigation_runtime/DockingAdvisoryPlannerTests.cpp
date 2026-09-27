@@ -84,7 +84,7 @@ int main()
         return 35;
     }
     const double minimumFlyableLaunchRadius =
-        0.25 * std::pow(0.8 * forwardLaunch.maxSpeedMps, 2.0) /
+        0.50 * forwardLaunch.maxSpeedMps * forwardLaunch.maxSpeedMps /
         forwardLaunch.lateralMps2;
     if(forwardLaunchPlan.initialTurnRadiusMeters + 1.0e-6 <
        minimumFlyableLaunchRadius)

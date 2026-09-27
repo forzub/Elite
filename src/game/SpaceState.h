@@ -300,6 +300,7 @@ private:
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
     std::uint64_t m_lastDockingPathRequestSerial = 0;
+    std::uint64_t m_lastDockingRequestTraceSerial = 0;
     std::uint64_t m_dockingPreparationSerial = 0;
     double m_dockingPreparationSettledSinceServerSeconds = -1.0;
     bool m_dockingPreparationReleasePending = false;

@@ -986,9 +986,16 @@ glm::dvec3 angularVelocityBetweenOrientations(
 
 bool compileBoundedAngularKinematics(
     const world::navigation::TrajectoryGenerationRequest& request,
-    world::navigation::Trajectory& trajectory
+    world::navigation::Trajectory& trajectory,
+    std::string* failureReason = nullptr
 )
 {
+    const auto angularFail = [&](std::string reason)
+    {
+        if (failureReason)
+            *failureReason = std::move(reason);
+        return false;
+    };
     // Legacy/advisory callers that do not supply the real hull attitude keep
     // the existing geometric orientation product. Automatic execution supplies
     // an initial body state and therefore receives a physical angular program.
@@ -996,14 +1003,14 @@ bool compileBoundedAngularKinematics(
         return true;
 
     if (trajectory.samples.size() < 2)
-        return false;
+        return angularFail("too-few-angular-samples");
 
     const double maxRate =
         request.vehicle.maxAngularVelocityRadPerSecond;
     const double maxAlpha =
         request.vehicle.maxAngularAccelerationRadPerSecond2;
     if (!(maxRate > Epsilon) || !(maxAlpha > Epsilon))
-        return false;
+        return angularFail("invalid-angular-capability");
 
     std::vector<glm::dquat> desired;
     desired.reserve(trajectory.samples.size());
@@ -1022,7 +1029,11 @@ bool compileBoundedAngularKinematics(
     if (!finite3(omega) ||
         magnitude(omega) > maxRate + 1.0e-6)
     {
-        return false;
+        return angularFail(
+            "initial-omega-outside-capability omega=" +
+            std::to_string(magnitude(omega)) +
+            " max=" + std::to_string(maxRate)
+        );
     }
 
     trajectory.samples.front().orientation = current;
@@ -1034,7 +1045,10 @@ bool compileBoundedAngularKinematics(
             trajectory.samples[i].timeOffsetSeconds -
             trajectory.samples[i - 1].timeOffsetSeconds;
         if (!(dt > Epsilon) || !finite(dt))
-            return false;
+            return angularFail(
+                "invalid-angular-step sample=" + std::to_string(i) +
+                " dt=" + std::to_string(dt)
+            );
 
         glm::dquat target = desired[i];
         if (glm::dot(current, target) < 0.0)
@@ -1105,10 +1119,21 @@ bool compileBoundedAngularKinematics(
             // The old implementation only replaced targetOmega on the final
             // sample, so a perfectly feasible program could arrive there with
             // too much angular speed to remove in one dt and reject itself.
-            if (magnitude(omega - terminalOmega) >
-                maxAlpha * remainingBefore + 1.0e-6)
+            const double terminalOmegaErrorBefore =
+                magnitude(omega - terminalOmega);
+            const double terminalOmegaReachBefore =
+                maxAlpha * remainingBefore;
+            if (terminalOmegaErrorBefore >
+                terminalOmegaReachBefore + 1.0e-6)
             {
-                return false;
+                return angularFail(
+                    "terminal-omega-unreachable-before-sample=" +
+                    std::to_string(i) +
+                    " error=" +
+                    std::to_string(terminalOmegaErrorBefore) +
+                    " reachable=" +
+                    std::to_string(terminalOmegaReachBefore)
+                );
             }
 
             glm::dvec3 terminalDelta =
@@ -1182,16 +1207,26 @@ bool compileBoundedAngularKinematics(
                 )
             );
         if (terminalAngleError > 0.08726646259971647)
-            return false;
+            return angularFail(
+                "terminal-orientation-error-deg=" +
+                std::to_string(glm::degrees(terminalAngleError))
+            );
     }
 
-    if (request.hasTerminalAngularVelocity &&
-        magnitude(
-            omega -
-            request.terminalAngularVelocityRadPerSecond
-        ) > 0.05)
+    if (request.hasTerminalAngularVelocity)
     {
-        return false;
+        const double terminalOmegaError =
+            magnitude(
+                omega -
+                request.terminalAngularVelocityRadPerSecond
+            );
+        if (terminalOmegaError > 0.05)
+        {
+            return angularFail(
+                "terminal-omega-error=" +
+                std::to_string(terminalOmegaError)
+            );
+        }
     }
 
     trajectory.angularKinematicsAuthored = true;
@@ -1880,14 +1915,17 @@ buildPathProgressTrajectory(
             );
     }
 
+    std::string angularFailureReason;
     if (!compileBoundedAngularKinematics(
             request,
-            out.trajectory))
+            out.trajectory,
+            &angularFailureReason))
     {
         return failure(
             request,
             world::navigation::TrajectoryStatus::InitialStateInfeasible,
-            "angular trajectory cannot reach requested terminal state"
+            "angular trajectory cannot reach requested terminal state: " +
+                angularFailureReason
         );
     }
 
@@ -2197,14 +2235,17 @@ RouteAttempt buildRouteAttempt(
             );
     }
 
+    std::string angularFailureReason;
     if (!compileBoundedAngularKinematics(
             request,
-            out.trajectory))
+            out.trajectory,
+            &angularFailureReason))
     {
         attempt.failureStatus =
             world::navigation::TrajectoryStatus::InitialStateInfeasible;
         attempt.failureMessage =
-            "angular trajectory cannot reach requested terminal state";
+            "angular trajectory cannot reach requested terminal state: " +
+            angularFailureReason;
         return attempt;
     }
 
@@ -2330,8 +2371,10 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             if (result.ready())
                 return result;
 
-            if (result.trajectory.message !=
-                "angular trajectory cannot reach requested terminal state")
+            if (result.trajectory.message.rfind(
+                    "angular trajectory cannot reach requested terminal state",
+                    0
+                ) != 0)
             {
                 return result;
             }

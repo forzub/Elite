@@ -5802,3 +5802,25 @@ first-vector check. It now requires:
 - no >30 degree discrete heading kink over the first 1200 m.
 
 Fresh Windows verify/build/live evidence for these newest edits is pending.
+
+## 2026-09-27 — GameServer compile regression corrected
+
+Fresh MinGW build failed in `GameServer.cpp` because the new
+`autopilot-authority-denied` diagnostic was accidentally inserted into
+`beginDockingGuidancePreparation()`, whose API has `requestSerial` but no
+`ClientShipCommand command`.
+
+Correction:
+- manual preparation logs `[DockPrep]` and uses `requestSerial`;
+- Automatic logs `[DockAuto]` and uses `command.requestSerial`;
+- the Automatic authority-denied diagnostic is now located in
+  `beginAutomaticDocking()` where it belongs;
+- successful Automatic begin output is flushed.
+
+Post-edit source check:
+- `beginDockingGuidancePreparation()`: zero `command.requestSerial`
+  references;
+- `beginAutomaticDocking()`: authority-denied diagnostic present.
+
+No Planner, Follower, route geometry, flight law, physics or docking state-machine
+semantics changed in this correction. Fresh target build is pending.

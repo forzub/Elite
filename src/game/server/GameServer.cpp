@@ -987,7 +987,19 @@ bool GameServer::beginDockingGuidancePreparation(
     }
 
     if (!m_controls.takeAutopilotControl(playerId, controlledEntityId))
+    {
+        std::cerr
+            << "[DockAuto] rejected entity="
+            << controlledEntityId.value
+            << " request=" << command.requestSerial
+            << " reason=autopilot-authority-denied"
+            << " controller="
+            << static_cast<int>(
+                   m_controls.controllerKind(controlledEntityId)
+               )
+            << std::endl;
         return false;
+    }
 
     if (auto it = m_controlStreams.find(controlledEntityId.value);
         it != m_controlStreams.end())
@@ -1131,12 +1143,26 @@ bool GameServer::beginAutomaticDocking(
         command.dockingTargetModuleId.empty() ||
         command.dockingTargetAnchorId.empty())
     {
+        std::cerr
+            << "[DockAuto] rejected entity="
+            << controlledEntityId.value
+            << " request=" << command.requestSerial
+            << " reason=invalid-command"
+            << std::endl;
         return false;
     }
 
     Ship* ship = m_simulation.getShip(controlledEntityId);
     if (!ship)
+    {
+        std::cerr
+            << "[DockAuto] rejected entity="
+            << controlledEntityId.value
+            << " request=" << command.requestSerial
+            << " reason=ship-not-found"
+            << std::endl;
         return false;
+    }
 
     const auto& motion = ship->core().transform().motion;
     const std::string hubId =

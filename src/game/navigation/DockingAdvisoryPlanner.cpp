@@ -356,7 +356,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             // that an Assisted pilot cannot comfortably follow. Re-route or
             // report no flyable route instead of silently tightening it.
             const double minimumTransitRadius =
-                0.25 * std::pow(0.8 * r.maxSpeedMps, 2.0) / r.lateralMps2;
+                0.50 * r.maxSpeedMps * r.maxSpeedMps / r.lateralMps2;
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction
@@ -505,23 +505,136 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const double preferredTerminalRadius =
         r.preferredTerminalTurnRadiusMeters;
 
+    const auto estimatedTraversalSeconds =
+        [&](const RoundedCandidate& candidate)
+        {
+            if (!candidate.valid || candidate.samples.size() < 2)
+                return std::numeric_limits<double>::infinity();
+
+            const std::size_t count = candidate.samples.size();
+            const double cruiseSpeed = std::max(0.5, 0.8 * r.maxSpeedMps);
+            std::vector<double> speeds(count, cruiseSpeed);
+            speeds.front() = 0.0;
+            speeds.back() = 0.0;
+
+            for (std::size_t i = 1; i + 1 < count; ++i)
+            {
+                const glm::dvec3 a =
+                    candidate.samples[i] - candidate.samples[i - 1];
+                const glm::dvec3 b =
+                    candidate.samples[i + 1] - candidate.samples[i];
+                const double la = glm::length(a);
+                const double lb = glm::length(b);
+                const double across = glm::length(
+                    candidate.samples[i + 1] -
+                    candidate.samples[i - 1]
+                );
+                const double denom = la * lb * across;
+                if (denom <= 1.0e-9)
+                    continue;
+
+                const double curvature =
+                    2.0 * glm::length(glm::cross(a, b)) / denom;
+                if (curvature > 1.0e-9)
+                {
+                    speeds[i] = std::min(
+                        speeds[i],
+                        std::sqrt(r.lateralMps2 / curvature)
+                    );
+                }
+            }
+
+            for (std::size_t i = count - 1; i > 0; --i)
+            {
+                const double ds = glm::length(
+                    candidate.samples[i] -
+                    candidate.samples[i - 1]
+                );
+                speeds[i - 1] = std::min(
+                    speeds[i - 1],
+                    std::sqrt(
+                        speeds[i] * speeds[i] +
+                        2.0 * r.brakingMps2 * ds
+                    )
+                );
+            }
+
+            for (std::size_t i = 1; i < count; ++i)
+            {
+                const double ds = glm::length(
+                    candidate.samples[i] -
+                    candidate.samples[i - 1]
+                );
+                speeds[i] = std::min(
+                    speeds[i],
+                    std::sqrt(
+                        speeds[i - 1] * speeds[i - 1] +
+                        2.0 * r.acceleratingMps2 * ds
+                    )
+                );
+            }
+
+            double seconds = 0.0;
+            for (std::size_t i = 1; i < count; ++i)
+            {
+                const double ds = glm::length(
+                    candidate.samples[i] -
+                    candidate.samples[i - 1]
+                );
+                const double speedSum = speeds[i - 1] + speeds[i];
+                if (speedSum <= 1.0e-6)
+                    return std::numeric_limits<double>::infinity();
+                seconds += 2.0 * ds / speedSum;
+            }
+            return seconds;
+        };
+
     // Phase 1: preserve the human-flyable radius on the nominal route.
     RoundedCandidate selected =
         roundGeometry(
             nominalGeometry.pointsMeters,
             preferredTerminalRadius
         );
+    double selectedTraversalSeconds =
+        estimatedTraversalSeconds(selected);
     bool detourUsed=false;
     bool radiusRelaxed=false;
 
-    // Phase 2: if the preferred arc collides or cannot be fitted, change the
-    // route before changing the radius. First vary the direction from which
-    // the ship reaches the docking-axis alignment point. This is the important
-    // topological fallback: GeometricPathPlanner may route from the current
-    // ship position to any of these pre-alignment points around the entire
-    // station, while the final semantic docking axis remains unchanged.
+    const auto considerPreferredCandidate =
+        [&](RoundedCandidate candidate, bool candidateIsDetour)
+        {
+            if (!candidate.valid)
+                return;
+
+            const double candidateSeconds =
+                estimatedTraversalSeconds(candidate);
+            const bool better =
+                !selected.valid ||
+                candidateSeconds + 1.0e-6 <
+                    selectedTraversalSeconds ||
+                (std::abs(
+                     candidateSeconds -
+                     selectedTraversalSeconds
+                 ) <= 1.0e-6 &&
+                 candidate.lengthMeters + 1.0e-6 <
+                     selected.lengthMeters);
+
+            if (!better)
+                return;
+
+            selected = std::move(candidate);
+            selectedTraversalSeconds = candidateSeconds;
+            detourUsed = candidateIsDetour;
+        };
+
+    // Phase 2: compare alternate topologies even when the nominal route is
+    // technically valid. Pure shortest-distance A* can choose the wrong side
+    // of a station: a slightly shorter path with a tight bend is slower and
+    // harder to fly than a modest detour with a broad turn. Sample ingress
+    // directions around the docking axis and select the lowest estimated
+    // physical traversal time while preserving the preferred terminal radius.
     world::navigation::GeometricPathResult wideGeometry;
-    if (!selected.valid && preferredTerminalRadius>0.0)
+    if (preferredTerminalRadius>0.0)
     {
         const glm::dvec3 finalDirection =
             glm::normalize(stop-align);
@@ -544,7 +657,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             6.283185307179586476925286766559;
 
         for(int sample=0;
-            sample<terminalIngressSamples && !selected.valid;
+            sample<terminalIngressSamples;
             ++sample)
         {
             const double angle=
@@ -560,8 +673,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
             auto ingressSearch=search;
             ingressSearch.goalMeters=preAlign;
-            // A route-existence fallback must not turn the normal 48-obstacle
-            // work cap into a false proof of impossibility.
             ingressSearch.params.maxConsideredObstacles=0;
             const auto ingressGeometry=
                 world::navigation::GeometricPathPlanner::plan(ingressSearch);
@@ -574,24 +685,21 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 points.push_back(align);
             points=prependInitialForwardLead(std::move(points));
 
-            auto detour=roundGeometry(
-                points,
-                preferredTerminalRadius
+            considerPreferredCandidate(
+                roundGeometry(
+                    points,
+                    preferredTerminalRadius
+                ),
+                true
             );
-            if(detour.valid)
-            {
-                selected=std::move(detour);
-                detourUsed=true;
-            }
         }
 
-        // If changing terminal ingress direction still cannot keep the broad
-        // arc, widen obstacle clearance on the original topology. This can
-        // force visibility/A* support nodes onto the far side of a large
-        // station/structure. Try half radius first so a nearby semantic
-        // alignment point is not unnecessarily swallowed by inflated geometry.
+        // Also ask the visibility graph for wider-clearance routes. Unlike the
+        // old fallback this is a comparison, not an emergency path: a valid
+        // nominal route may still lose when the far side is materially easier
+        // for the ship to execute.
         for (int reroutePass=0;
-             reroutePass<2 && !selected.valid;
+             reroutePass<2;
              ++reroutePass)
         {
             const double clearanceScale =
@@ -608,15 +716,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     std::move(rerouted.pointsMeters)
                 );
             wideGeometry=rerouted;
-            auto wide = roundGeometry(
-                rerouted.pointsMeters,
-                preferredTerminalRadius
+            considerPreferredCandidate(
+                roundGeometry(
+                    rerouted.pointsMeters,
+                    preferredTerminalRadius
+                ),
+                true
             );
-            if (wide.valid)
-            {
-                selected=std::move(wide);
-                detourUsed=true;
-            }
         }
     }
 

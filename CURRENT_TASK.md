@@ -1,3 +1,16 @@
+## 2026-09-27 — Windows gate after test-contract audit
+
+The updated `verify_docking.sh` gates docking advisory, accepted-program
+builder, sampler, runtime control, tracking, angular trajectory, manual and
+automatic architecture, flight control, API purity, and system-map overlay.
+Run it on the canonical MSYS2 MinGW64 checkout only after the local candidate
+becomes available there. Then rebuild with `bash build_mingw64.sh`, launch
+`build/EliteGame.exe`, and capture every `[DockAuto]` line through HOLD and
+FinalIngress. `origin/main` does not yet contain commits 91a8a57/3defe45 or
+the test audit; `git pull` alone cannot deliver them. Separate failures of
+non-gated broader static checks require their own diagnosis and correction;
+do not silence them to claim docking acceptance.
+
 ## 2026-09-27 — verify motion-level autopilot candidate
 
 Rebuild and run the native navigation/docking gates, then reproduce START

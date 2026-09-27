@@ -1,3 +1,15 @@
+## 2026-09-27 — test-contract audit
+
+The active docking gate now checks the vehicle-motion interface rather than
+the superseded nominal engine schedule, and includes sampling of the accepted
+motion program. The overlay check now asserts retained route start and
+Hub-local projection rather than an obsolete comment string. Thirty non-benchmark navigation/docking Python checks were
+also sampled: twenty passed, ten reported unrelated earlier marker/fixture
+mismatches outside the revised control boundary. No Windows target-machine
+verification has occurred for the new commits. Publication is blocked by
+the prior automatic review rejection of `git push origin main`; the remote
+checkout still cannot fetch the candidate.
+
 ## 2026-09-27 — vehicle-level control candidate
 
 Autopilot authority is expressed as a system-frame target velocity plus

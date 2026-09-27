@@ -1,7 +1,7 @@
 # Navigation command ownership and accepted maneuver API
 
 **Status:** architecture contract / active Stage-12 correction
-**Updated:** 2026-09-22 Europe/Kyiv
+**Updated:** 2026-09-27 Europe/Kyiv
 **Related:** `NAVIGATION_PIPELINE_AUDIT.md`, `NAVIGATION_BEHAVIOR_CHARACTER_MODEL.md`, `CONTROL_LAW_MANEUVER_MODEL.md`, `TRAJECTORY_EXECUTION_REPLAN_MODEL.md`
 
 ## Core ownership question
@@ -199,50 +199,25 @@ the feed-forward acceleration/attitude program that was actually proved
 
 The proof and execution must refer to the same program.
 
-## The planner owns the nominal actuator schedule
+## The planner proves motion; the ship selects propulsion
 
-The accepted maneuver is not merely a kinematic trajectory and it is not a
-signed acceleration vector that a downstream allocator is expected to
-reinterpret.
+For each planned interval, the Planner publishes position, velocity,
+acceleration, full hull attitude and angular motion. It proves the motion
+against the vehicle's capability snapshot and available geometry. It does not
+publish engine selections or throttle ramps. Newtonian transit requires
+body-aligned acceleration within installed longitudinal authority; Assisted
+transit uses the ship's bounded nose-coupled flight law.
 
-For each planned interval the Planner publishes the physical actuator schedule
-that was part of the feasibility proof:
+The Follower samples the accepted motion and corrects its tracking error from
+the measured ship state. PilotSkill filters its acceleration and angular
+command. The flight-control layer receives a target velocity and the executed
+demands, observes real motion, selects available propulsion and clamps it to
+actual hardware and resource limits. Physics integrates the resulting motion.
 
-~~~text
-rear/aft main:
-    enabled
-    throttle start/end or equivalent ramp law
-
-fore/reverse main:
-    only when the VehicleDynamicsProfile says that hardware exists
-    enabled
-    throttle start/end
-
-manoeuvre/RCS:
-    bounded requested acceleration/force vector
-
-attitude:
-    q/omega/alpha reference that makes the actuator directions physically valid
-~~~
-
-The low-level flight-control/propulsion layer remains the **physical authority**:
-it applies installed-actuator limits, resource depletion and safety clamps, and
-physics integrates the actual result. It does not choose a different nominal
-engine allocation just because the Planner's program is inconvenient.
-
-Therefore:
-
-~~~text
-Planner chooses and proves nominal main/RCS/attitude allocation.
-Autopilot tracks that accepted schedule and adds only proved bounded correction.
-Low-level control clamps/enforces real hardware.
-Physics decides what actually happens.
-~~~
-
-If actual capability differs from the capability revision used by the proof,
-or if bounded correction cannot recover tracking, the program is invalidated
-and authority returns to Planner. No downstream layer silently invents a new
-maneuver.
+If actual capability changes, or bounded tracking cannot recover, the current
+program must be invalidated and replanned from authoritative state. At a safe
+approach hold, bounded positional capture enters the separate stop phase
+instead of launching a long reverse approach.
 
 ## 4. Trajectory follower — closes the loop around the accepted program
 
@@ -425,7 +400,7 @@ accepted program contains reference state + feed-forward control
 
 follower tracks; it does not re-plan
 
-planner publishes the proved nominal actuator schedule; low-level control enforces real actuator limits
+planner proves motion; ship flight control selects propulsion under real actuator limits
 
 Newtonian turn != stop-turn-go
 

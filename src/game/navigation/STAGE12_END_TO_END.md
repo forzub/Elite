@@ -11153,3 +11153,15 @@ Local G++ syntax checks, builder/sampler/runtime-control native tests, and
 architecture contracts pass. The previous Windows log does not verify this
 new candidate. Full target flight, in-plane terminal trim, and physical
 latch have not passed.
+
+## 2026-09-27 — audit of active docking gates
+
+The API-purity test and command-ownership document now agree with the
+vehicle-motion bridge. The docking gate explicitly builds/runs the sampler
+and checks API purity. Its map overlay check now matches the actual retained
+Hub-local route-start implementation. Local static checks and the previous native
+builder/sampler/runtime-control executables pass. A broader navigation static
+sweep returned ten pre-existing contracts with unrelated old markers or
+fixtures; they are not counted as target-machine acceptance and have not
+been silently weakened. The two local commits remain unpublished and the
+Windows native/game flight gate is still pending.

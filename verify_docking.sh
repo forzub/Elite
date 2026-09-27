@@ -14,17 +14,18 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" \
     -B "${TEST_BUILD_DIR}" \
     -G Ninja
 
-echo "[DOCK-VERIFY] build docking + accepted-program + live-control native gates"
+echo "[DOCK-VERIFY] build docking + accepted-program + sampler + live-control native gates"
 cmake --build "${TEST_BUILD_DIR}" \
     --target docking_advisory_tests \
              accepted_maneuver_program_builder_tests \
+             maneuver_program_sampler_tests \
              navigation_runtime_control_tests \
              maneuver_tracking_controller_tests \
     -j 8
 
 echo "[DOCK-VERIFY] run native docking + execution gates"
 ctest --test-dir "${TEST_BUILD_DIR}" \
-    -R "^(docking_advisory|accepted_maneuver_program_builder|navigation_runtime_control|maneuver_tracking_controller)$" \
+    -R "^(docking_advisory|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|maneuver_tracking_controller)$" \
     --output-on-failure
 
 echo "[DOCK-VERIFY] configure rotating-terminal trajectory gate"
@@ -44,6 +45,7 @@ python "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.p
 python "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_local_flight_control.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_runtime_control.py"
+python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_api_purity.py"
 python "${ROOT_DIR}/tests/system_map/check_object_overlay.py"
 
 echo "[DOCK-VERIFY] PASS"

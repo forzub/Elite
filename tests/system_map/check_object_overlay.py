@@ -89,7 +89,8 @@ def main() -> int:
 
     map_renderer = require_text(
         "src/game/system_map/SystemMapRenderer.cpp",
-        "Keep the first physical sample",
+        "Keep every supplied point, including the route start.",
+        "corridor->hubLocalGatePositionsMeters[index]",
         "futureFrame.worldToLocalPosition",
         "item.hitRadiusPx = 22.0",
         "item.pickPriority = 1000",

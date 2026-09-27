@@ -1,3 +1,25 @@
+## 2026-09-27 — audit of docking test contracts before Windows commands
+
+The vehicle-motion rewrite is still a local candidate. Reviewed the docking
+and navigation test sources for the retired stepProgram/throttle/actuator
+interface. The broad navigation API-purity check still required the old
+Planner-owned throttle schedule; its ownership document and assertion have
+been corrected. `verify_docking.sh` now includes the accepted-program sampler
+native test and the API-purity check. All static checks used by the updated docking gate now pass; script
+syntax and git whitespace checks pass. The overlay check was corrected from
+an obsolete comment to the actual preserved Hub-local route-start invariant. Previous local builder, sampler and
+runtime-control native executables passed. No current Windows build or live
+flight result exists.
+
+A wider scan of 30 non-benchmark navigation/docking Python checks reports 10
+red contracts in other subsystems (foundation docking marker, NPC, replication,
+local avoidance, map, space, stage-12 compiler fixture, stress-field basis and
+moving-gap documentation). None of those checks changed in this candidate;
+the docking marker is also absent at the previous verified baseline. They are
+not evidence that the new autopilot is working. The aggregate docking gate
+still needs the user's Windows run. The local branch contains two commits
+not present on origin/main; a previous push was rejected by automatic review.
+
 ## 2026-09-27 — candidate: vehicle-motion autopilot interface
 
 The live docking failure at 10.0222 m and 0.995736 m/s included residual

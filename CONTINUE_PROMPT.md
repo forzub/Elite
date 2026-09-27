@@ -1,3 +1,17 @@
+# 2026-09-27 — test audit and Windows delivery status
+
+`verify_docking.sh` now includes maneuver_program_sampler and navigation API
+purity. NAVIGATION_COMMAND_OWNERSHIP.md and its API-purity test were updated
+to the current vehicle-motion contract. The overlay test was also updated
+to check retained route start in Hub-local space. All six docking-gate static
+checks pass; a broad
+scan of 30 non-benchmark static checks found ten unrelated pre-existing red
+contracts. Local branch is ahead of origin/main by two commits plus this audit;
+the earlier automatic review rejected `git push origin main`, so the user's
+Windows `git pull` cannot yet retrieve the rewritten autopilot. Do not state
+otherwise or bypass review. Windows build/live HOLD/FinalIngress gate remains
+open. See leading CURRENT_STATE/CURRENT_TASK/PROJECT_STATE/Stage-12 sections.
+
 # 2026-09-27 — vehicle-motion boundary candidate (unverified on Windows)
 
 After the earlier spatial HOLD/keyframe commit, the current local changes

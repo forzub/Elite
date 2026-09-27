@@ -73,6 +73,12 @@ struct DockingAdvisoryPlan
     bool terminalTurnRadiusRelaxed = false;
     double terminalTurnRadiusMeters = 0.0;
 
+    // First nose-first launch turn is authored as a tangent circular fillet.
+    // Published 500 m corridor frames are only sparse chords and must not be
+    // mistaken for the continuity proof of the underlying geometry.
+    bool initialTurnPresent = false;
+    double initialTurnRadiusMeters = 0.0;
+
     // terminalApproachLengthMeters is the actually accepted collision-free
     // straight docking-axis lead. The request value is preferred geometry, not
     // a hard semantic requirement; only the minimum ingress immediately in

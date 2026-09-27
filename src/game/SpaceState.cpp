@@ -2495,6 +2495,8 @@ void SpaceState::updateDockingAdvisory()
         request.hullRadiusMeters =
             envelope.conservativeSafetyRadiusMeters();
         request.maxSpeedMps = shipProfile.maxSpeedMps;
+        request.acceleratingMps2 =
+            shipProfile.maxForwardAccelerationMps2;
         request.brakingMps2 =
             shipProfile.maxBrakingAccelerationMps2;
         request.lateralMps2 =

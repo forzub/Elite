@@ -112,10 +112,10 @@ public:
     [[nodiscard]] static Result build(const Request& request)
     {
         Result out;
-        const auto fail = [](const char* reason)
+        const auto fail = [](const std::string& reason)
         {
             Result failed;
-            failed.failureReason = reason ? reason : "unknown";
+            failed.failureReason = reason;
             return failed;
         };
         if (!request.trajectory ||

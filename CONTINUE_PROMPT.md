@@ -1,5 +1,18 @@
 # CONTINUE PROMPT — Elite Automatic docking bridge clock
 
+LATEST 2026-09-27: Windows request 2 on `7a81d58` reached page 436,
+10.0222 m/0.995736 m/s before HOLD; omega error 0.280841 > 0.25 triggered
+recovery; near-HOLD replan failed Assisted reverse flight. The angular-only fix
+did not work. Current unverified candidate implements route-local speed
+keyframes (0.8 max ordinary cap, curvature/braking/acceleration, long-straight
+peaks), port-up roll reference and spatial HOLD capture independent of storage
+page. G++ syntax and local static checks passed; Windows gate/build/live remain
+pending. User requires Autopilot to command observed ship behavior rather than
+calculate/allocate individual engines; 3D tangent arcs, start/end safe sections,
+in-plane stop/trim, bottom-to-bottom entry and eventual contact/latch. These
+broader changes are not yet accepted/complete. Read the leading sections of
+the four canonical state documents and Stage 12 before further edits.
+
 Repository: public `forzub/Elite`, canonical `main`. Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md`, `src/game/navigation/STAGE12_END_TO_END.md` before behavior changes. Update all four state documents after state-affecting events. Earlier published implementation: `4da95fa3`, publication notes: `212d9614`.
 
 Latest Windows build succeeded for client and server. Live START DOCKING request 1 reached server Follower/RuntimeControlBridge but repeatedly logged `phase=replan reason=control-bridge-step status=2 snapshot_valid=0`. `PilotSkillExecutor::Status::InvalidInput` is 2. The old bridge was reset at the planned future absolute universe epoch; its first actual control step arrived later but supplied only one gameplay tick as delta. Executor validates exact equality between step-time increment and delta, so this is a proven clock-domain mismatch. Large absolute epochs further erode the tight tolerance. M8E startup frame stalls were also present but are separate from the bridge rejection.

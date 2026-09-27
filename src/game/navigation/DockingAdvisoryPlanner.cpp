@@ -18,6 +18,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.standoffMeters) || r.standoffMeters <= 0 ||
         !std::isfinite(r.hullRadiusMeters) || r.hullRadiusMeters <= 0 ||
         !std::isfinite(r.maxSpeedMps) || r.maxSpeedMps <= 0 ||
+        !std::isfinite(r.acceleratingMps2) || r.acceleratingMps2 <= 0 ||
         !std::isfinite(r.brakingMps2) || r.brakingMps2 <= 0 ||
         !std::isfinite(r.lateralMps2) || r.lateralMps2 <= 0 ||
         !std::isfinite(r.gateSpacingMeters) || r.gateSpacingMeters <= 0 ||
@@ -662,7 +663,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         dense.push_back({
             glm::mix(samples[j-1],samples[j],t),
             glm::normalize(samples[j]-samples[j-1]),
-            r.maxSpeedMps
+            r.maxSpeedMps * 0.8
         });
     }
     dense.push_back({
@@ -694,6 +695,21 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 dense[i].speedMps*dense[i].speedMps+
                 2*r.brakingMps2*ds
             )
+        );
+    }
+
+    // The preparation phase starts this route from a stopped ship. Forward
+    // limits keep the visible speed recommendation consistent with actual
+    // acceleration, while the previous pass reserves braking for every arc.
+    dense.front().speedMps = 0.0;
+    for (std::size_t i=1;i<dense.size();++i)
+    {
+        const double ds=glm::length(
+            dense[i].positionMeters-dense[i-1].positionMeters);
+        dense[i].speedMps=std::min(
+            dense[i].speedMps,
+            std::sqrt(dense[i-1].speedMps*dense[i-1].speedMps+
+                      2*r.acceleratingMps2*ds)
         );
     }
 

@@ -4468,3 +4468,21 @@ continues near the dock at low speed. Unsafe translation or excessive actual
 angular speed still triggers recovery. The earlier bounded hold capture
 enters fresh FinalIngress. Full docking, including physical latch, has not
 been implemented or accepted.
+## 2026-09-27 — revised docking navigation and control contract
+
+User-reported request 2 invalidated the previous near-port acceptance claim:
+HOLD was almost reached, but storage-page completion and angular tracking
+still drove a full approach recovery and Assisted reverse-flight failure.
+
+The target pipeline is: authoritative safe stabilized start; start/end safe
+sections; collision-free 3D tangent geometry; route-local speed and full
+orientation keyframes; vehicle control plus observed feedback; in-plane HOLD
+stop/alignment; dock-relative short ingress; physical contact/latch. The
+Planner may use observed performance limits to keep speed/braking feasible,
+but it must not replace the ship's physics or treat exact program samples as
+the only safe physical states. The visible top marker has a real attitude
+meaning; roll is not implicit from yaw.
+
+First candidate covers local speed timing, shared port-up reference and the
+HOLD spatial handoff. Strict capability/proof remains in force. Full control
+interface and contact/latch stages remain open. No live acceptance yet.

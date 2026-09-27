@@ -178,7 +178,7 @@ struct TrajectoryGenerationRequest
     // Coarse topology only. Runtime trajectory generation must not search a
     // second global path here. A local execution guide may round these corners,
     // but dense guide samples are geometry p(s), not independent Ruckig target
-    // states. Multi-point routes use scalar Ruckig progress s(t).
+    // states. Multi-point routes use route-local speed keyframes s(t).
     std::vector<glm::dvec3> pathPointsMeters;
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;
@@ -202,6 +202,12 @@ struct TrajectoryGenerationRequest
     // A moving fly-through finish must not be represented as a fake stop.
     bool hasTerminalVelocity = false;
     glm::dvec3 terminalVelocityMps {0.0};
+
+    // The route frames have an authored top edge. Use the same reference for
+    // hull roll throughout transit, including ApproachHold before exact dock
+    // attitude/rotation becomes a FinalIngress boundary.
+    bool hasRouteUpReference = false;
+    glm::dvec3 routeUpReference {0.0, 1.0, 0.0};
 
     std::vector<TrajectoryPointSpeedConstraint> pointSpeedConstraints;
     std::vector<TrajectorySpeedLimitRange> speedLimitRanges;

@@ -181,7 +181,7 @@ try:
         "stage=approach-hold",
         "phase=hold-complete",
         "next=final-ingress",
-        "ManeuverProgramSampler::Status::AfterEnd",
+        "holdDistanceMeters <= 12.0",
         "enterFinalIngress(\"standoff-stop\")",
     )
 

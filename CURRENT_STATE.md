@@ -6178,3 +6178,40 @@ counter-torque, while a positional departure still invalidates feed-forward.
 The current automatic docking objective ends at collision-free pre-capture;
 physical port contact and latch are not implemented by this slice. Windows
 native/live verification and the actual final-ingress outcome remain open.
+## 2026-09-27 — route-local speed keyframes and HOLD spatial capture candidate
+
+Fresh Windows flight request 2 on `7a81d58` did **not** dock: on page 436,
+at 10.0222 m and 0.995736 m/s from HOLD, angular-rate tracking error
+0.280841 exceeded the soft 0.25 rad/s limit. The controller entered recovery,
+then a near-HOLD replan failed `accepted-program-assisted-reverse-flight-not-supported`
+and returned Human control. The prior angular-only fix did not prevent this.
+No `hold-complete` or FinalIngress was observed.
+
+The route's scalar Ruckig backend applied its minimum curvature/speed constraint
+to the entire route, suppressing speed on long straights. Current candidate
+replaces this global scalar solve for multi-point routes with route-local speed
+keyframes: cruise cap 0.8 of vehicle maximum, curvature/point/range limits,
+backward braking and forward acceleration passes, and acceleration/cruise/brake
+peaks on long straight intervals. Geometry and the independent physical
+program acceptance remain intact. A numerical probe with a 10 km straight and
+short 3D corner reached 400 m/s on the straight, <=70 m/s near the corner and
+zero at the finish under a 20 m/s² acceleration limit.
+The manual display gate recommendation now uses the same 0.8 cruise cap and
+separate forward acceleration/backward braking limits. The builder's failure
+helper previously accepted `const char*` while its detailed reverse-flight
+diagnostic assembled `std::string`; that pre-existing compile error is fixed.
+
+HOLD transition now measures distance from the physical ship to the actual
+last program endpoint (not the current storage page endpoint), and can capture
+a low-speed ship inside the 12 m safe HOLD volume before a trailing page expires.
+It then physically brakes/damps and plans FinalIngress from a fresh state.
+The approach trajectory uses the port's up vector as its route-frame roll
+reference; visible corridor frames already use that same port-up reference.
+Manual frame spacing remains 500 m / 250 m; the long protected launch lead is
+unchanged to preserve the first nose-aligned display frame.
+
+G++ syntax checks passed for the modified planner, trajectory generator and
+server. Local automatic/manual architecture scripts passed. Full Windows
+`verify_docking.sh`, client/server build and live request remain **pending**;
+do not label this candidate accepted. The requested general control-interface
+redesign, in-plane fine alignment and physical contact/latch are not complete.

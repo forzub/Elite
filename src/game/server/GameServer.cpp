@@ -1708,6 +1708,8 @@ bool GameServer::planAutomaticDocking(
                         startVelocityMps;
                     trajectoryRequest.initialAccelerationMps2 =
                         glm::dvec3(0.0);
+                    trajectoryRequest.hasRouteUpReference = true;
+                    trajectoryRequest.routeUpReference = port.up;
 
                     glm::dvec3 routeInitialForward =
                         currentForwardMap;
@@ -1751,6 +1753,8 @@ bool GameServer::planAutomaticDocking(
                             hullRadiusMeters;
                         request.maxSpeedMps =
                             executionVehicle.maxSpeedMps;
+                        request.acceleratingMps2 =
+                            executionVehicle.maxForwardAccelerationMps2;
                         request.brakingMps2 =
                             executionVehicle.
                                 maxBrakingAccelerationMps2;
@@ -3165,6 +3169,10 @@ void GameServer::applyAutomaticDockingControls(
         // can turn the short remaining displacement into a reverse route.
         const auto enterFinalIngress = [&](const char* capture)
         {
+            const auto& terminalProgram = runtime.programs.back();
+            const double distanceToHoldMeters = glm::length(
+                terminalProgram.samples[terminalProgram.sampleCount - 1].
+                    positionMapMeters - agent.positionMapMeters);
             runtime.stage =
                 DockingAutomaticRuntime::Stage::FinalIngress;
             runtime.phase =
@@ -3184,28 +3192,30 @@ void GameServer::applyAutomaticDockingControls(
             std::cout << "[DockAuto] request=" << runtime.requestSerial
                       << " stage=approach-hold phase=hold-complete"
                       << " capture=" << capture
-                      << " remaining_m=" << followed.remainingDistanceMeters
+                      << " remaining_m=" << distanceToHoldMeters
                       << " speed_mps=" << glm::length(agent.velocityMapMetersPerSecond)
                       << " omega_error_radps=" << followed.angularVelocityErrorRadPerSec
                       << " next=final-ingress\n";
         };
 
-        // Once the clock reaches the last reference, allow a bounded capture
-        // of the collision-free standoff. FinalIngress begins only after its
-        // own physical stop and fresh geometry/obstacle check. This does not
-        // change any Follower tracking or terminal acceptance tolerances.
+        // HOLD is a safe spatial state, not a requirement to consume every
+        // storage page of the old program. A ship that arrives within the
+        // bounded standoff at low speed can stop here even if a trailing page
+        // remains, or the current page has expired with a little angular
+        // drift. Never re-launch a kilometre of approach from this position.
+        const auto& holdProgram = runtime.programs.back();
+        const glm::dvec3 holdPosition =
+            holdProgram.samples[holdProgram.sampleCount - 1].
+                positionMapMeters;
+        const double holdDistanceMeters =
+            glm::length(holdPosition - agent.positionMapMeters);
         if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold &&
-            finalPage &&
             followed.status != Follower::Status::InvalidInput &&
             followed.propulsionFeasible &&
-            std::isfinite(followed.remainingDistanceMeters) &&
-            followed.remainingDistanceMeters <= 12.0 &&
-            glm::length(agent.velocityMapMetersPerSecond) <= 2.0 &&
-            game::navigation::ManeuverProgramSampler::sample(
-                program, time.universeTimeSeconds
-            ).status ==
-                game::navigation::ManeuverProgramSampler::Status::AfterEnd)
+            std::isfinite(holdDistanceMeters) &&
+            holdDistanceMeters <= 12.0 &&
+            glm::length(agent.velocityMapMetersPerSecond) <= 2.0)
         {
             enterFinalIngress("standoff-stop");
             continue;

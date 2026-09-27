@@ -11114,3 +11114,22 @@ FinalIngress from fresh state. Native/live acceptance is pending.
 The present success reason `pre-capture-envelope-complete` means reaching a
 collision-free point in front of the port. It does not attach the ship to the
 rotating port; that stage remains to be implemented separately.
+## 2026-09-27 — spatial HOLD and local speed keyframe revision
+
+Live Windows request 2 failed at 10.0222 m and 0.995736 m/s before HOLD:
+angular-rate error 0.280841 > 0.25 entered recovery, and the replacement
+near-HOLD route was rejected as Assisted reverse flight. Previous angular-only
+continuation did not prevent the failure. A safe HOLD position must be captured
+from actual position/speed, independent of the current program storage page.
+
+Multi-point trajectory timing now has local speed limits at route stations,
+with backward braking and forward acceleration propagation and optional peak
+acceleration/cruise/braking nodes on long intervals. A slow arc no longer
+imposes its speed on the whole route. The route-up reference is the dock-port
+top direction, shared with the visible orientation markers. Ordinary cap is
+0.8 vehicle maximum; local curvature and braking may lower it. The trajectory
+is still executed via accepted program, Follower and authoritative ship physics.
+
+Target native/live verification is pending. This changes no real port contact
+or latch authority. In-plane HOLD trim and the general ship-control-only
+Autopilot API are still outstanding before the full user contract is met.

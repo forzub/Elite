@@ -766,3 +766,24 @@ Docking/parking strategy is consequently different by family:
 The development-time control-law toggle may remain temporarily, but Planner
 and Follower must already treat the laws as distinct vehicle-motion families so
 a later descriptor-level class lock is only configuration, not architecture.
+
+## 2026-09-27 — guidance geometry must use the selected flight law
+
+A docking tunnel is a navigation product, not merely a decorative polyline.
+Its turn geometry must be generated from the same control-law capability model
+that the pilot/autopilot will execute.
+
+For Assisted:
+- route curvature uses the automatic velocity-to-nose stabilization capability;
+- physical 2 m/s² precision RCS must not determine ordinary docking arcs;
+- the launch from a stopped craft is authored as
+  `straight hull-axis prefix -> tangent arc -> route`.
+
+For Newtonian:
+- visible guidance sets `roundTurns=false`;
+- route topology remains piecewise-straight so later coast/rotate/burn
+  compilation is not disguised as aircraft-style cornering.
+
+The manual/Automatic-preflight path in SpaceState now calls the explicit
+flight-law `makeNavigationVehicleProfile` overload. Server Automatic already
+does the same.

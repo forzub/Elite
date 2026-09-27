@@ -11071,3 +11071,13 @@ executable route peaks near 98 m/s. Plan logs now show executable peak and
 ship speed limit; route-local speed scheduling is open. Authored hull
 orientation can turn without banking; final ingress aligns complete roll
 basis. Windows turn, hold and final-ingress gates remain open.
+
+## 2026-09-27 — turn fixture must respect installed authority
+
+First Windows native gate after turn feed-forward: compile passed, three
+other native docking tests passed, navigation_runtime_control failed.
+The new test used capabilityParams() with strafeAccel=2 m/s^2 while demanding
+4 m/s^2. Assisted correctly saturates at the installed budget. The fixture
+now declares 8 m/s^2, proves a 4 m/s^2 planned turn reaches the actuator
+without RCS, and proves an excessive 100 m/s^2 request clamps at 8.
+No production change was needed; await exact target-machine rerun.

@@ -6119,3 +6119,16 @@ diagnostics require Windows verification. Scalar path-progress Ruckig also
 uses the minimum local speed/curvature bound over the entire route. Thus a
 local manual-corridor recommendation of 500 m/s and an executable ~98 m/s
 route can coexist. Route-local speed scheduling remains open.
+
+## 2026-09-27 — Windows native turn test exposed stale test capability
+
+The Windows docking gate compiled, and maneuver_tracking_controller,
+docking_advisory and accepted_maneuver_program_builder passed. The new
+navigation_runtime_control test failed, but the supplied CTest summary does
+not contain the failed assertion. Source inspection identifies a deterministic
+fixture error: the test demanded 4 m/s^2 of lateral turn feed-forward while
+capabilityParams() set strafeAccel=2 m/s^2. The production Assisted actuator
+correctly caps the command at 2. The turn fixture now installs 8 m/s^2 of
+lateral authority, checks that 4 arrives, then demands 100 and checks that
+the actual actuator stays at 8. Production physics was not changed. Native
+rerun and live dock turn are pending.

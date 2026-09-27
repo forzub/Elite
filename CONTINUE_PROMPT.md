@@ -48,3 +48,11 @@ stabilization, with native turn test and velocity-vector recovery diagnostics.
 Scalar Ruckig backend takes whole-route minimum speed (~98 m/s), so corridor
 local 500 m/s is not executable speed. Next: Windows gate/live turn, hold and
 final ingress. Route-local speed scheduling remains open.
+
+Windows build and 3/4 native docking tests passed after lateral-turn fix;
+navigation_runtime_control failed. Source inspection found the new turn test
+asked for 4 m/s^2 but configured only 2 m/s^2 assisted lateral authority.
+Fixture now sets strafeAccel=8 and checks both 4 delivered and 100 clamped
+to 8. Production physics unchanged. Next rerun verify_docking.sh; if still
+red collect ctest -R ^navigation_runtime_control$ --output-on-failure,
+then test live turn/hold/ingress.

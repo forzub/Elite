@@ -508,6 +508,7 @@ void testAssistedProgramAppliesTurnFeedForward()
     ShipParams params = capabilityParams();
     params.throttleAccel = 5.0f;
     params.maxLinearGs = 7.5f;
+    params.strafeAccel = 8.0f;
     params.forwardMainEngineAvailable = true;
     params.reverseMainEngineAvailable = true;
     params.forwardMainEngineAccelerationMps2 = 73.549875f;
@@ -530,6 +531,16 @@ void testAssistedProgramAppliesTurnFeedForward()
                 "Assisted turn demand did not reach the actual motion actuator");
     requireNear(motion.manoeuvreAccelerationMps2.x, 0.0, 1.0e-6,
                 "Assisted turn improperly spent precision RCS");
+
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion, frame, params, 0.02f, 98.0,
+            glm::dvec3(0.0), glm::dvec3(100.0, 0.0, 0.0),
+            forward, right, up
+        );
+    requireNear(motion.assistedStabilizationAccelerationMps2.x, 8.0,
+                1.0e-5,
+                "Assisted turn exceeded installed stabilization authority");
 }
 
 void testAngularDemandUsesExistingCapabilityClamp()

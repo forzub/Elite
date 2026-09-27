@@ -1537,3 +1537,11 @@ change. Inspect reference/actual velocity vectors on any recovery; confirm
 the ship follows the turn, reaches hold stop and final ingress, and aligns
 roll to the dock basis. Peak executable speed vs ship limit is now logged.
 The scalar solver's whole-route minimum speed remains an open issue.
+
+## 2026-09-27 — rerun corrected native turn fixture
+
+Windows compiled the candidate; three native docking tests passed and
+navigation_runtime_control failed. The turn test itself configured only
+2 m/s^2 of lateral authority while asserting 4. Rerun `verify_docking.sh`
+with the corrected 8 m/s^2 fixture and its explicit clamp check. If the test
+still fails, collect the one-test `ctest -R ^navigation_runtime_control$ --output-on-failure` assertion. Then rebuild and check the live approach turn.

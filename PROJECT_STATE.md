@@ -4436,3 +4436,12 @@ differentiate vector motion from attitude. Scalar path progress uses the
 whole-route minimum of local constraints, explaining a possible ~98 m/s
 program despite a local 500 m/s corridor recommendation. Native/live proof
 and route-local speed scheduling remain pending.
+
+## 2026-09-27 — first Windows test of lateral turn candidate
+
+Windows compile succeeded and three of four native docking tests passed.
+The fourth was navigation_runtime_control. Inspection of the newly added
+turn regression shows an impossible expectation: 4 m/s^2 demanded with a
+fixture allowing only 2. Fixture now allows 8, tests an ordinary 4 m/s^2
+turn and a saturated 100-to-8 m/s^2 command. No production limits were
+relaxed. Native and live acceptance remain open.

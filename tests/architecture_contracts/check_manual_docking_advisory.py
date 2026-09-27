@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260927-nose-first-v4"
+CHECK_REVISION = "20260927-launch-arc-v5"
 
 
 def read(rel: str) -> str:
@@ -51,7 +51,7 @@ try:
     require("src/game/SpaceState.cpp",
             "phase=stabilizing", "buildAuthoritativeHubSnapshot",
             "relativeSpeedMps", "angularRateRadPerSec", "SettleHoldSeconds",
-            "request.gateSpacingMeters = 500.0",
+            "request.gateSpacingMeters = 150.0",
             "request.hasInitialForward = true",
             "request.initialForwardLeadMeters",
             "frame.worldToLocalVector(",
@@ -99,7 +99,9 @@ try:
             "routeSearchStart",
             "initial forward corridor blocked",
             "prependInitialForwardLead",
-            "initialForwardLeadActive && i == 1",
+            "initialForwardProtectedStraightMeters",
+            "maximumLaunchCut",
+            "initialForwardAcceptedLeadMeters",
             "mandatoryApproachLengthMeters",
             "preferredApproachLengthMeters",
             "dock mandatory ingress blocked",
@@ -120,7 +122,9 @@ try:
             "phase=settled",
             "vrel_mps=",
             "SettleHoldSeconds",
-            "manual-assisted",
+            "guidanceAssisted",
+            "guidanceControlLaw",
+            "request.roundTurns = guidanceAssisted",
             "request.terminalApproachLengthMeters = 9000.0",
             "request.terminalTurnSegmentFraction = 0.85",
             "request.preferredTerminalTurnRadiusMeters = 6000.0",
@@ -130,6 +134,10 @@ try:
             "final_axis_shortened=",
             "terminal_radius_m=",
             "radius_relaxed=")
+    require("tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
+            "visible straight prefix",
+            "hard first-turn kink",
+            "never transitioned into a launch arc")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",

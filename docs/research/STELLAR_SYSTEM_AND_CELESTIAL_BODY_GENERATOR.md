@@ -1183,3 +1183,84 @@ Simulation
 14. Planet surface integration.
 
 Сначала доказываем статистически нормальную систему. Только после этого выбранная планета получает полноценную поверхность.
+
+
+---
+
+# 41. Solar System and Earth ground-truth fixtures
+
+The reference set contains explicit Solar System/Earth configurations, which are useful as validation targets rather than as procedural-surface generators.
+
+## REBOUND
+
+REBOUND has a built-in \`solarsystem\` dataset sourced from NASA Horizons for testing, and can also query named bodies such as Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus and Neptune from Horizons. This gives us high-quality orbital initial conditions for dynamical validation.
+
+Important distinction:
+
+~~~text
+REBOUND Solar System
+= orbital/dynamical initial conditions + N-body integration
+!= procedural Earth terrain generator
+~~~
+
+## VPLanet
+
+VPLanet contains a full \`examples/SS_NBody\` Solar System setup with Sun + Mercury through Neptune. We mirrored the input fixtures under:
+
+~~~text
+third_party/stellar_system_reference/vplanet/SS_NBody/
+~~~
+
+It also contains several Earth-specific physical examples now mirrored under:
+
+~~~text
+third_party/stellar_system_reference/vplanet/EarthClimate/earth.in
+third_party/stellar_system_reference/vplanet/EarthInterior/earth.in
+third_party/stellar_system_reference/vplanet/MagmOc_Earth/Earth.in
+~~~
+
+These provide distinct Earth benchmarks:
+
+- **EarthClimate** — orbital forcing, obliquity, latitudinal energy balance, ice sheets and climate parameters;
+- **EarthInterior** — radiogenic heating and thermal interior evolution;
+- **MagmOc_Earth** — primordial magma-ocean solidification, water inventory, atmospheric escape and oxygen/water partitioning;
+- **SS_NBody/Earth** — mass, radius, rotation, obliquity and orbital elements in a Solar-System dynamical fixture.
+
+This is extremely valuable for Elite's CelestialBodyGenerator: Earth can be a canonical regression fixture.
+
+Suggested acceptance concept:
+
+~~~text
+Generate body descriptor from an explicit "Earth calibration profile"
+        |
+        v
+compare against known Earth targets:
+ mass
+ radius
+ density
+ surface gravity
+ escape velocity
+ semi-major axis
+ eccentricity
+ obliquity
+ rotation period
+ equilibrium/climate regime
+ atmosphere class
+ interior heat regime
+        |
+        v
+only then trust synthetic Earth-like worlds
+~~~
+
+The same pattern should be applied to Venus, Mars, Jupiter and the other Solar System bodies to force the generator to span very different physical regimes.
+
+Crucially, none of these projects provides the missing final layer we still need:
+
+~~~text
+physical Earth descriptor
+        |
+        X
+actual procedural continents / mountains / oceans / terrain
+~~~
+
+That surface layer remains our own PlanetSurfaceGenerator problem. Solar System data gives us the physical constraints; our procedural surface generator must create a plausible realization consistent with those constraints.

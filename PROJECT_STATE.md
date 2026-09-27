@@ -4333,3 +4333,20 @@ explicit user requirement.
 
 Docking ports are semantic actionable subtargets and therefore have click
 priority over their parent infrastructure, including at distant zoom.
+
+## 2026-09-27 — docking phase ownership
+
+Automatic docking is explicitly staged:
+
+1. **ApproachHold** — navigation transit to a standoff hold point.
+   Completion requires arrival/stop but not exact rotating-port angular state.
+2. **FinalIngress** — a separate short precision maneuver created only after the
+   real ship has stopped and a fresh port pose is available.
+
+The final ingress owns full dock-basis alignment. Forward fixes nose direction;
+Up fixes roll about that axis, so yaw/pitch/roll are all represented by the
+same 3-D attitude target.
+
+This separation prevents terminal capture constraints from poisoning ordinary
+route feasibility and matches the intended game-play sequence:
+arrive -> stop -> align -> enter.

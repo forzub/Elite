@@ -11165,3 +11165,12 @@ sweep returned ten pre-existing contracts with unrelated old markers or
 fixtures; they are not counted as target-machine acceptance and have not
 been silently weakened. The two local commits remain unpublished and the
 Windows native/game flight gate is still pending.
+
+## 2026-09-27 — GitHub publication and target gate
+
+The navigation control and gate changes are published in `forzub/Elite` main.
+Merge `c3b5dc2` preserves the separately authored space-games research
+commit and exactly matches the locally checked candidate tree. No Windows
+native/game flight has yet confirmed ApproachHold -> physical stop ->
+FinalIngress -> pre-capture. The current slice is a published candidate,
+not runtime acceptance; contact/latch and in-plane trim remain open.

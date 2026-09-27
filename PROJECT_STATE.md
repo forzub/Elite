@@ -1,3 +1,12 @@
+## 2026-09-27 — publication after repository integration
+
+The vehicle-level autopilot interface, local route-speed scheduling, spatial
+HOLD capture and updated active docking test gate have been published on
+`forzub/Elite` main together with the pre-existing space-games research
+commit. GitHub merge `c3b5dc2` matches the verified local file tree.
+The Windows target gate is pending and must decide whether the late angular
+error, approach stop and FinalIngress now behave correctly in flight.
+
 ## 2026-09-27 — test-contract audit
 
 The active docking gate now checks the vehicle-motion interface rather than

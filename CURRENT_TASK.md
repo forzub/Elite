@@ -1,3 +1,13 @@
+## 2026-09-27 — fetch published docking candidate and fly
+
+On the Windows MSYS2 MinGW64 checkout: fetch/pull `origin main`, verify the
+published merge commit `c3b5dc2` is an ancestor, run `bash verify_docking.sh`,
+then build the full navigation-runtime suite and run its CTests. After those
+gates, run `bash build_mingw64.sh` and launch `build/EliteGame.exe` while
+capturing `[DockAuto]` output. Observe actual HOLD capture, stop, FinalIngress
+and pre-capture. Physical dock contact/latch and in-plane terminal trim are
+not accepted by this candidate.
+
 ## 2026-09-27 — Windows gate after test-contract audit
 
 The updated `verify_docking.sh` gates docking advisory, accepted-program

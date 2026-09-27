@@ -1,3 +1,14 @@
+## 2026-09-27 — vehicle-motion candidate published; Windows gate pending
+
+GitHub `forzub/Elite` main now contains the three docking/control/test changes,
+merged without changing the intervening space-games research document. Remote
+merge commit `c3b5dc2` has the same tree as the locally verified candidate.
+The updated docking static gate and local native builder, sampler and runtime
+control tests passed before publication. No Windows build or actual flight on
+this revision has been observed. Reproduce the earlier 10.0222 m HOLD failure
+and observe stabilization, final ingress and pre-capture before accepting the
+runtime slice. The wider ten unrelated static-contract failures remain open.
+
 ## 2026-09-27 — audit of docking test contracts before Windows commands
 
 The vehicle-motion rewrite is still a local candidate. Reviewed the docking

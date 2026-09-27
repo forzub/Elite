@@ -1,3 +1,15 @@
+# 2026-09-27 — published docking candidate; run Windows flight gate
+
+GitHub `forzub/Elite` main now contains the rewritten vehicle-motion
+Autopilot, route-local speed keyframes and spatial HOLD capture. Merge
+`c3b5dc2` preserved the intervening research document. The updated
+`verify_docking.sh` and local builder/sampler/runtime-control native tests
+passed; Windows build/live docking are still pending. In MSYS2 MinGW64:
+`git pull --ff-only origin main`, `bash verify_docking.sh`, build/run the
+full navigation-runtime CTest suite, `bash build_mingw64.sh`, then launch
+`build/EliteGame.exe` with console logging. Continue from the recorded
+10.0222 m HOLD angular-rate failure. Do not claim physical latch accepted.
+
 # 2026-09-27 — test audit and Windows delivery status
 
 `verify_docking.sh` now includes maneuver_program_sampler and navigation API

@@ -700,8 +700,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         std::size_t next=previous+1;
 
-        // Anchor the cadence transition explicitly. A sparse 500 m step may
-        // never jump across the terminal-density boundary.
+        // USER-CONTRACT: published docking frames use the authored
+        // cadence only. Normal guidance is 500 m and terminal guidance is
+        // 250 m for the current docking request. Do not inject a special
+        // fractional transition frame merely to land exactly on the dense
+        // boundary. Start terminal cadence up to one normal interval early so
+        // the final dense region is still fully covered.
         const double remainingFromPrevious=
             denseProgress.back()-denseProgress[previous];
         const double terminalSpacing=std::min(
@@ -709,21 +713,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             r.terminalGateSpacingMeters
         );
         const double terminalActivationRemaining=
-            r.terminalDenseDistanceMeters+terminalSpacing;
+            r.terminalDenseDistanceMeters+r.gateSpacingMeters;
 
-        double spacingMeters=r.gateSpacingMeters;
-
-        if(remainingFromPrevious<=terminalActivationRemaining)
-        {
-            spacingMeters=terminalSpacing;
-        }
-        else
-        {
-            const double distanceToActivation=
-                remainingFromPrevious-terminalActivationRemaining;
-            if(distanceToActivation<r.gateSpacingMeters)
-                spacingMeters=distanceToActivation;
-        }
+        const double spacingMeters=
+            remainingFromPrevious<=terminalActivationRemaining
+                ? terminalSpacing
+                : r.gateSpacingMeters;
 
         while(next+1<dense.size())
         {

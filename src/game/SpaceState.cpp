@@ -2356,10 +2356,10 @@ void SpaceState::updateDockingAdvisory()
             shipProfile.maxBrakingAccelerationMps2;
         request.lateralMps2 =
             shipProfile.maxLateralAccelerationMps2;
-        // Cockpit guidance is a tunnel, not a sparse map polyline. 500 m
-        // frame spacing could shortcut a curved segment into a misleading
-        // chord. Keep enough frames to show straight -> tangent arc -> route.
-        request.gateSpacingMeters = 150.0;
+        // USER-CONTRACT: manual docking corridor frame cadence is fixed.
+        // Do not change without an explicit user request.
+        request.gateSpacingMeters = 500.0;
+        request.terminalGateSpacingMeters = 250.0;
 
         // Manual/Automatic preflight Assisted guidance must be realistically
         // flyable by the SAME game flight law used by the ship.

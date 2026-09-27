@@ -103,6 +103,8 @@ try:
             "initialForwardProtectedStraightMeters",
             "maximumLaunchCut",
             "initialForwardAcceptedLeadMeters",
+            "initialTurnPresent",
+            "initialTurnRadiusMeters",
             "mandatoryApproachLengthMeters",
             "preferredApproachLengthMeters",
             "dock mandatory ingress blocked",
@@ -138,7 +140,7 @@ try:
             "radius_relaxed=")
     require("tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
             "manual docking launch cadence is not 500 m",
-            "hard first-turn kink",
+            "nose-first route did not author a continuous launch fillet",
             "never transitioned into a launch arc")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",

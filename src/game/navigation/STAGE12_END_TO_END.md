@@ -10899,3 +10899,10 @@ Assisted visible guidance now uses the explicit Assisted vehicle profile and a
 150 m nominal gate cadence. Its launch geometry preserves a straight prefix but
 allows a tangent circular first turn; the old fully protected 500 m lead that
 created a hard kink is retired.
+
+## 2026-09-27 — compile-only diagnostic fix
+
+No Stage-12 execution boundary changed. The GameServer build failure came from a
+mis-scoped log expression in manual docking preparation. Manual preparation now
+uses its `requestSerial`; Automatic diagnostics use
+`ClientShipCommand::requestSerial` inside `beginAutomaticDocking()`.

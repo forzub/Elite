@@ -2259,6 +2259,11 @@ bool GameServer::planAutomaticDocking(
 
     std::cout
         << "[DockAuto] request=" << runtime.requestSerial
+        << " stage="
+        << (runtime.stage ==
+                DockingAutomaticRuntime::Stage::ApproachHold
+                ? "approach-hold"
+                : "final-ingress")
         << " phase=planning-async"
         << " execution_t="
         << executionStartUniverseTimeSeconds
@@ -2661,6 +2666,11 @@ void GameServer::applyAutomaticDockingControls(
                 << job->terminalAngularVelocityRadPerSec
                 << " initial_attitude_error_deg="
                 << glm::degrees(initialAttitudeErrorRad)
+                << " stage="
+                << (runtime.stage ==
+                        DockingAutomaticRuntime::Stage::ApproachHold
+                        ? "approach-hold"
+                        : "final-ingress")
                 << " phase="
                 << (runtime.phase ==
                         DockingAutomaticRuntime::Phase::Executing
@@ -3038,13 +3048,47 @@ void GameServer::applyAutomaticDockingControls(
             followed.status ==
                 Follower::Status::Complete)
         {
-            completed.push_back({
-                runtime.playerId,
-                runtime.entityId,
-                runtime.requestSerial,
-                true,
-                "pre-capture-envelope-complete"
-            });
+            if (runtime.stage ==
+                DockingAutomaticRuntime::Stage::ApproachHold)
+            {
+                // The agreed docking architecture has a real stop between
+                // transit and final ingress. Do not carry the transit program
+                // or its angular state across this boundary.
+                runtime.stage =
+                    DockingAutomaticRuntime::Stage::FinalIngress;
+                runtime.phase =
+                    DockingAutomaticRuntime::Phase::Stabilizing;
+                runtime.programs.clear();
+                runtime.controlBridge.reset();
+                runtime.planningJob.reset();
+                runtime.currentProgramPage = 0;
+                runtime.settledSinceUniverseTimeSeconds = -1.0;
+                runtime.alignedSinceUniverseTimeSeconds = -1.0;
+
+                ShipControlState hold;
+                hold.velocityAlignmentCommand =
+                    game::navigation::
+                        VelocityAlignmentMode::BrakeToStop;
+                ship->setControlState(hold);
+
+                std::cout
+                    << "[DockAuto] request="
+                    << runtime.requestSerial
+                    << " stage=approach-hold"
+                    << " phase=hold-complete"
+                    << " next=final-ingress"
+                    << "\n";
+            }
+            else
+            {
+                completed.push_back({
+                    runtime.playerId,
+                    runtime.entityId,
+                    runtime.requestSerial,
+                    true,
+                    "pre-capture-envelope-complete"
+                });
+            }
         }
     }
 

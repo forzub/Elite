@@ -10991,3 +10991,5 @@ and exposes that reason after the authoritative snapshot. Preparation takeover
 has a bounded timeout. Detailed server replan/stabilization diagnostics mark
 otherwise silent state changes. Protocol version 12 and native/live validation
 are required on the target machine.
+The implementation tree was published to main as `4da95fa3` after explicit
+authorization; target Windows verification and live flight remain open gates.

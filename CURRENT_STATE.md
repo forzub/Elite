@@ -6013,3 +6013,8 @@ The wire version is now 12; old client/server binaries cannot interoperate.
 Failures in preparation, planning, handoff, and follower recovery now have
 specific logs. New static contracts pass; native build and live evidence await
 the target Windows toolchain. No physical maneuver acceptance was relaxed.
+
+Publication: the complete diagnostic and corridor/result tree was published
+to public `forzub/Elite` main as `4da95fa3` after explicit user approval.
+GitHub verified the published tree SHA matches the tested local tree. Native
+Windows verify/build/live acceptance remains pending.

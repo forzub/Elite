@@ -1,6 +1,6 @@
 # CONTINUE PROMPT — Elite docking bidirectional handoff
 
-Public repository `forzub/Elite`, canonical branch `main`. Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md` and `src/game/navigation/STAGE12_END_TO_END.md` before implementation. Update those files after state-affecting events. The preceding local diagnostic commit is `6b8d6498`; a push of that commit was blocked by automatic approval review. The current additional work is local and also needs publication approval; do not bypass that rejection through another tool.
+Public repository `forzub/Elite`, canonical branch `main`. Read `AGENTS.md`, `CURRENT_STATE.md`, `CURRENT_TASK.md`, `PROJECT_STATE.md` and `src/game/navigation/STAGE12_END_TO_END.md` before implementation. Update those files after state-affecting events. The diagnostic and corridor/result implementation tree was published to main as `4da95fa3` after explicit user approval. The current Markdown update records that publication.
 
 User requirements: always show the docking corridor during manual and automatic docking; trace every failure and exception so the first lost handoff and exact reason are visible; confirm the chain works both UI -> server and server -> client. The live no-motion root cause has not been proven by target evidence.
 

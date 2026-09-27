@@ -1472,3 +1472,5 @@ executes. A server rejection or planner failure must display its reason and
 retain the visual route when it is still representable. An invalid/stale
 advisory must carry an unsafe warning. Actual ship motion and endpoint still
 need live acceptance; static checks alone do not prove either.
+Publication is complete on `main` at `4da95fa3`; pull the latest `main`
+before running the target-machine gate.

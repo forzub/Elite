@@ -4366,3 +4366,5 @@ The candidate now maintains route presentation during Automatic execution and
 replicates `{serial, succeeded, reason}` per controlled session. This is an
 outcome channel, not an extra Planner or Follower command. Wire protocol 12
 requires rebuilding both sides together.
+The implementation tree was published to `main` at `4da95fa3` after explicit
+authorization. Publication is distinct from native or live acceptance.

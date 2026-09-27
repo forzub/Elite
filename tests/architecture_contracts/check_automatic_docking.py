@@ -72,7 +72,8 @@ try:
         "localRoutePreparationPending",
         "guidanceControlLaw",
         "request.roundTurns = guidanceAssisted",
-        "request.gateSpacingMeters = 150.0",
+        "request.gateSpacingMeters = 500.0",
+        "request.terminalGateSpacingMeters = 250.0",
     )
 
     trajectory_header = require(
@@ -93,12 +94,17 @@ try:
         "remainingBefore",
         "remainingAfter",
         "maxTerminalDelta",
+        "AngularTimeScales",
+        "angular-speed-relaxed",
+        "after translation-speed relaxation",
     )
     require(
         "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
         "angular planner deferred terminal omega correction to the final sample",
         "penultimate.angularVelocityRadPerSecond",
         "maxAlpha * terminalDt",
+        "testTranslationSlowsWhenAngularTerminalNeedsMoreTime",
+        "planner did not slow translation for the angular boundary",
     )
     require(
         "src/world/navigation/Trajectory.h",

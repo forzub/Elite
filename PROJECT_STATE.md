@@ -4457,3 +4457,14 @@ damping before fresh FinalIngress planning when distance <=12 m and speed
 <=2 m/s at the last sample. Nearby recovery suppresses the ordinary 1000 m
 forward launch. Detailed reverse rejection keeps the strict physical gate.
 No final docking acceptance has yet been demonstrated.
+
+## 2026-09-27 — correctable errors belong to the controller
+
+The user identified a game-design mismatch: minor hold position/angular-rate
+errors should induce physical steering, not abandon the task. The candidate
+keeps Planner/Follower feed-forward when angular rate alone leaves its soft
+tracking envelope, counter-steers through installed angular authority and
+continues near the dock at low speed. Unsafe translation or excessive actual
+angular speed still triggers recovery. The earlier bounded hold capture
+enters fresh FinalIngress. Full docking, including physical latch, has not
+been implemented or accepted.

@@ -56,6 +56,7 @@ public:
         double forwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
         bool trackingErrorExceeded = false;
+        bool angularCorrectionOnly = false;
 
         // Bounded B10 correction is kept distinct from the Planner-owned
         // feed-forward actuator schedule all the way to physics.

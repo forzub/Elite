@@ -65,3 +65,13 @@ HOLD sample within 12m/2mps then physically stops/damps before fresh
 FinalIngress; near-HOLD ApproachHold recovery avoids a 1000m forward launch;
 reverse-flight failure now includes sample details. Next Windows verify,
 client/server build, live stage=final-ingress then pre-capture success.
+
+User rejects abort/replan for minor angular/hold deviations; wants game-like
+physical steering. Candidate classifies angular-only tracking excess while
+translation/heading remain valid, preserves moving trajectory feed-forward,
+adds bounded angular correction, continues within 500m of target at <=5mps
+and within ship angular capability. Existing unsafe translation/actuator
+errors still recover. Prior change captures hold inside 12m/2mps. Native
+regression added. Next: Windows verify/build/live hold, final ingress,
+correction and result. IMPORTANT: current objective stops at pre-capture;
+physical dock contact/latch is still missing, do not claim full docking.

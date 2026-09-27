@@ -85,6 +85,7 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     result.trackingErrorExceeded =
         tracking.status ==
         ManeuverTrackingController::Status::EnvelopeExceeded;
+    result.angularCorrectionOnly = tracking.angularCorrectionOnly;
     result.linearFeedbackLocalMps2 =
         tracking.linearFeedbackMapMps2;
     result.angularFeedbackLocalRadPerSec2 =

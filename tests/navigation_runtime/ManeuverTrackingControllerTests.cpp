@@ -266,6 +266,8 @@ void testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()
         result.status == Tracker::Status::EnvelopeExceeded,
         "reacquisition fixture did not leave the tracking envelope"
     );
+    require(!result.angularCorrectionOnly,
+            "cross-track departure was incorrectly treated as an angular-only correction");
 
     requireNear(
         glm::length(
@@ -290,6 +292,46 @@ void testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives()
         result.angularFeedbackMapRadPerSec2.z < -0.70,
         "reacquisition chased frozen reference angular velocity instead of damping hull spin"
     );
+}
+
+void testSlowDockAngularErrorKeepsMovingReference()
+{
+    Program program = baseProgram();
+    program.tracking.angularVelocityErrorRadPerSec = 0.25;
+    const auto& reference = program.samples[0];
+    auto agent = exactAgentFor(reference);
+    agent.rollRateRadPerSec += 0.30;
+
+    const auto result =
+        Tracker::track(program, reference, agent, Tracker::Policy {});
+    require(result.status == Tracker::Status::EnvelopeExceeded &&
+                result.angularCorrectionOnly,
+            "isolated angular drift did not enter bounded steering correction");
+    requireNear(
+        glm::length(result.intent.idealLinearAccelerationLocalMps2 -
+                    reference.linearAccelerationFeedForwardMapMps2 -
+                    result.linearFeedbackMapMps2),
+        0.0, 1.0e-12,
+        "angular drift wrongly erased the accepted translation command"
+    );
+    requireNear(
+        glm::length(result.intent.idealAngularAccelerationLocalRadPerSec2 -
+                    reference.angularAccelerationFeedForwardMapRadPerSec2 -
+                    result.angularFeedbackMapRadPerSec2),
+        0.0, 1.0e-12,
+        "angular drift wrongly erased moving-dock angular feed-forward"
+    );
+    require(result.angularFeedbackMapRadPerSec2.x < 0.0,
+            "correction failed to reduce the excess roll rate");
+
+    auto followerAgent = followerAgentFor(reference);
+    followerAgent.rollRateRadPerSec += 0.30;
+    const auto follower = Follower::follow(
+        program, program.acceptedAtUniverseTimeSeconds,
+        followerAgent, Tracker::Policy {}
+    );
+    require(follower.trackingErrorExceeded && follower.angularCorrectionOnly,
+            "Follower lost the isolated angular correction status");
 }
 
 void testFollowerUsesB9ThenB10WithoutResolvingControl()
@@ -490,6 +532,7 @@ int main()
         testZeroErrorPreservesAcceptedFeedForwardExactly();
         testFeedbackCannotExceedReservedAuthority();
         testEnvelopeRecoveryNeutralizesFrozenReferenceDerivatives();
+        testSlowDockAngularErrorKeepsMovingReference();
         testFollowerUsesB9ThenB10WithoutResolvingControl();
         testFollowerCompletesOnlyAtTerminalState();
         testFreeTransitSpeedCorridorIgnoresTinyLongitudinalError();

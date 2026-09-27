@@ -3211,9 +3211,44 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
+        const double currentAngularSpeedRadPerSec = std::sqrt(
+            agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +
+            agent.yawRateRadPerSec * agent.yawRateRadPerSec +
+            agent.rollRateRadPerSec * agent.rollRateRadPerSec
+        );
+        const bool correctingDockAttitude =
+            followed.angularCorrectionOnly &&
+            followed.propulsionFeasible &&
+            followed.remainingDistanceMeters <= 500.0 &&
+            glm::length(agent.velocityMapMetersPerSecond) <= 5.0 &&
+            currentAngularSpeedRadPerSec <=
+                program.capability.maxAngularSpeedRadPerSec + 1.0e-6;
+
+        if (correctingDockAttitude &&
+            (runtime.lastDiagnosticTick == 0 ||
+             time.serverTick - runtime.lastDiagnosticTick >= 180))
+        {
+            std::cout << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=correcting-attitude"
+                      << " stage="
+                      << (runtime.stage ==
+                              DockingAutomaticRuntime::Stage::FinalIngress
+                          ? "final-ingress" : "approach-hold")
+                      << " remaining_m=" << followed.remainingDistanceMeters
+                      << " speed_mps="
+                      << glm::length(agent.velocityMapMetersPerSecond)
+                      << " omega_error_radps="
+                      << followed.angularVelocityErrorRadPerSec
+                      << " omega_limit_radps="
+                      << program.tracking.angularVelocityErrorRadPerSec
+                      << std::endl;
+            runtime.lastDiagnosticTick = time.serverTick;
+        }
+
         if (followed.status ==
                 Follower::Status::InvalidInput ||
-            followed.trackingErrorExceeded ||
+            (followed.trackingErrorExceeded &&
+             !correctingDockAttitude) ||
             !followed.propulsionFeasible)
         {
             const double speedBeforeStopMps =

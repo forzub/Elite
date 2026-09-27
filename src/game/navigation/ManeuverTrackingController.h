@@ -64,6 +64,7 @@ public:
         double envelopeVelocityErrorMps = 0.0;
         double forwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
+        bool angularCorrectionOnly = false;
     };
 
     [[nodiscard]] static Result track(

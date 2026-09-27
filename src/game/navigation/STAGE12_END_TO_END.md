@@ -11098,3 +11098,19 @@ program. Ordinary approach recovery within 150 m of HOLD omits the 1000 m
 forward lead; normal distant starts retain it. ProgramBuilder reports
 page/sample/time/forward projection on reverse-flight rejection without
 weakening the test. Await Windows native and full live pre-capture proof.
+
+## 2026-09-27 — near-dock angular drift is steering feedback
+
+A tracking envelope is an alert for the control loop, not automatically a
+fatal program fault. When only angular rate crosses its soft envelope,
+ManeuverTrackingController keeps the accepted moving reference plus bounded
+angular feedback. Automatic docking continues this correction within 500 m
+of the end at <=5 m/s, provided the actual angular rate is within the ship's
+physical capability. Position/velocity/forward errors, actuator failures
+and blocked geometry keep their existing safety boundaries. The previous
+12 m/2 m/s standoff capture then physically stabilizes and replans a new
+FinalIngress from fresh state. Native/live acceptance is pending.
+
+The present success reason `pre-capture-envelope-complete` means reaching a
+collision-free point in front of the port. It does not attach the ship to the
+rotating port; that stage remains to be implemented separately.

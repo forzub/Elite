@@ -344,6 +344,21 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
             program.tracking.angularVelocityErrorRadPerSec
         );
 
+    // A small excess in rotation while translation and heading are still
+    // inside the corridor is a steering task, not a lost trajectory. Keep
+    // the moving reference and close its angular-rate error using the same
+    // bounded angular actuator. The orchestration layer decides whether the
+    // surrounding geometry/speed makes continuing safe.
+    result.angularCorrectionOnly = outsideEnvelope &&
+        !exceeded(envelopePositionErrorMeters,
+                  program.tracking.positionErrorMeters) &&
+        !exceeded(envelopeVelocityErrorMps,
+                  program.tracking.linearVelocityErrorMps) &&
+        !exceeded(result.forwardAngleErrorRad,
+                  program.tracking.forwardAngleErrorRad) &&
+        exceeded(result.angularVelocityErrorRadPerSec,
+                 program.tracking.angularVelocityErrorRadPerSec);
+
     const glm::dvec3 requestedLinearFeedback =
         effectivePositionError * policy.positionGainPerSecond2 +
         effectiveVelocityError * policy.velocityGainPerSecond;
@@ -352,7 +367,7 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
     // longer authoritative. B10 falls back to bounded error reduction only;
     // orchestration may invalidate the program if that condition persists.
     const glm::dvec3 controlAngularVelocityError =
-        outsideEnvelope
+        outsideEnvelope && !result.angularCorrectionOnly
             ? -actualAngularVelocity
             : angularVelocityError;
 
@@ -378,11 +393,11 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         std::clamp(program.hazardUrgency01, 0.0, 1.0);
 
     const glm::dvec3 linearFeedForward =
-        outsideEnvelope
+        outsideEnvelope && !result.angularCorrectionOnly
             ? glm::dvec3(0.0)
             : reference.linearAccelerationFeedForwardMapMps2;
     const glm::dvec3 angularFeedForward =
-        outsideEnvelope
+        outsideEnvelope && !result.angularCorrectionOnly
             ? glm::dvec3(0.0)
             : reference.angularAccelerationFeedForwardMapRadPerSec2;
 

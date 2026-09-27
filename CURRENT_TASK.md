@@ -1557,3 +1557,14 @@ If a new plan fails, keep the exact `reason=` including page/sample/forward
 speed; do not confuse a failed second-stage plan with the previous late
 ApproachHold error. Controlled docking contact/latch is still a separate
 stage outside this pre-capture contract.
+
+## 2026-09-27 — native/live test for angular correction in final ingress
+
+After updating main, run `verify_docking.sh`, rebuild game/server and fly
+Automatic docking. Confirm `phase=hold-complete`, then `stage=final-ingress`
+and `phase=correcting-attitude` if the angular-rate error alone crosses the
+tracking envelope. Ship should remain under Autopilot and continue to use
+bounded angular control rather than restart the whole route. Preserve any
+plan/physics-watch/recovery/result lines. Native completion at the
+pre-capture point is only the current objective; a separate dock-contact
+and latch authority/state transition is still needed for actual docking.

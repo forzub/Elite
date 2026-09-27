@@ -6155,3 +6155,26 @@ existing tracking and terminal tolerances remain unchanged. Reverse-flight
 rejections now report page/sample/time/forward speed to distinguish any
 future genuinely infeasible final-ingress plan. Windows native/live flight
 and final pre-capture completion remain pending.
+
+## 2026-09-27 — game-like correction for local docking errors
+
+User rejected treating ~9 m hold offset and 0.284 versus 0.25 rad/s
+angular deviation as a catastrophic failure. This matches the executable
+chain: ManeuverTrackingController previously suppressed moving-program
+feed-forward whenever any one tracking component crossed its envelope, and
+the server discarded the program/replanned on angular-only errors.
+
+Current candidate classifies isolated angular-rate drift when position,
+velocity and forward direction remain in their envelopes. It preserves the
+accepted translation and angular feed-forward, adds bounded angular-rate
+feedback, and lets the server keep controlling the same ship inside 500 m
+of the endpoint at <=5 m/s while the actual angular rate remains inside the
+ship capability. Ordinary unsafe displacement/velocity errors, invalid
+programs and propulsion failures still have their existing recovery. The
+previous hold capture handles the 9.4 m standoff case. Native regression
+checks that a 0.30 rad/s rate drift keeps a moving reference and produces
+counter-torque, while a positional departure still invalidates feed-forward.
+
+The current automatic docking objective ends at collision-free pre-capture;
+physical port contact and latch are not implemented by this slice. Windows
+native/live verification and the actual final-ingress outcome remain open.

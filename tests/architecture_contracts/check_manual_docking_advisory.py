@@ -161,16 +161,17 @@ try:
         raise AssertionError(
             "manual docking cadence changed from locked 500 m / 250 m contract"
         )
-    if "distanceToActivation" in planner_cpp:
-        raise AssertionError(
-            "docking planner reintroduced fractional cadence-transition frames"
-        )
     if "longitudinalToleranceMeters * 0.25" in space_cpp:
         raise AssertionError(
             "manual docking longitudinal release reverted to the old 25% margin"
         )
 
     planner_cpp = read("src/game/navigation/DockingAdvisoryPlanner.cpp")
+
+    if "distanceToActivation" in planner_cpp:
+        raise AssertionError(
+            "docking planner reintroduced fractional cadence-transition frames"
+        )
 
     # The preferred long axis is allowed to be probed with clear(align, stop);
     # that probe now shortens the soft lead. What must never return is the old

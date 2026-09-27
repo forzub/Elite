@@ -1,4 +1,4 @@
-# CONTINUE PROMPT — Elite Navigation v2 / live Automatic angular-timing gate
+# CONTINUE PROMPT — Elite Navigation v2 / two-stage Automatic docking
 
 Work in public repository `forzub/Elite`, branch `main`.
 
@@ -13,263 +13,184 @@ At the start of EVERY iteration read the newest relevant sections of:
 After every state-affecting iteration:
 1. update CURRENT_STATE / CURRENT_TASK / PROJECT_STATE / STAGE12_END_TO_END as appropriate;
 2. update CONTROL_LAW_MANEUVER_MODEL when doctrine changes;
-3. REGENERATE THIS CONTINUE_PROMPT FROM SCRATCH;
+3. REGENERATE THIS FILE FROM SCRATCH;
 4. commit directly to public GitHub `main`.
 
-Do not send patch files. Fresh Windows/MSYS2 verify/build/live evidence is
-required before claiming newest behavior accepted.
+Do not send patch files. Fresh Windows/MSYS2 verify/build/live evidence is required before declaring newest behavior accepted.
 
-## User-locked manual docking presentation
+## Hard user contracts
 
-This is now a hard user contract. Do NOT alter without an explicit request:
+Manual visible docking corridor cadence is fixed:
+- ordinary frames: 500 m;
+- final-zone frames: 250 m.
 
+Do NOT change these values without an explicit user request.
+Do NOT add launch-only 125 m frames or arbitrary fractional transition frames.
+
+The user also requires docking to have a real stop boundary:
 ```text
-ordinary manual docking corridor frames: 500 m
-terminal/final-zone frames:             250 m
+long approach -> hold point -> STOP -> final short ingress
 ```
 
-No special 125 m launch cadence.
-No arbitrary fractional transition frame just to land exactly on the dense-zone
-boundary.
-
-Current implementation:
-- SpaceState sets `request.gateSpacingMeters = 500.0`;
-- SpaceState sets `request.terminalGateSpacingMeters = 250.0`;
-- DockingAdvisoryPlanner has no launch-only cadence override;
-- terminal cadence starts up to one normal interval early so the final dense
-  zone remains covered without a fractional transition step;
-- static contract rejects return of SpaceState 150 m cadence or
-  `distanceToActivation` transition logic;
-- native docking test requires first published launch gap ~= 500 m.
-
-The nose-first geometry itself may still use dense INTERNAL samples for
-collision/curvature proof. Only published corridor frames are locked to
-500/250.
-
-Normal nose-first lead is currently at least 1000 m so one full 500 m straight
-published interval can remain on the hull axis while the remaining lead can
-blend into a tangent first arc.
+Do not collapse this back into one trajectory.
 
 ## Flight-family doctrine
 
-Manual Assisted is accepted. Do not retune it without fresh live evidence.
-
 Assisted:
 - hull nose defines desired travel direction;
-- VREL/course follows nose with finite lag, target about <=2–3 s;
-- real angular rate/acceleration limits still apply;
+- course follows nose with finite lag (target about <=2–3 s);
 - forward/reverse main controls longitudinal speed;
-- automatic velocity-to-nose stabilization is ordinary Assisted course
-  authority;
-- physical manoeuvre/RCS (Cobra currently 2 m/s²) is precision authority, NOT
-  ordinary route-curvature authority.
+- automatic velocity-to-nose stabilization is ordinary Assisted course authority;
+- physical manoeuvre/RCS is precision authority, not ordinary route-curvature authority;
+- angular speed/acceleration limits remain real.
 
-Automatic Assisted uses the SAME game-flight law as manual Assisted:
-```text
-AcceptedManeuverProgram(AssistedVelocity)
- -> TrajectoryFollower
- -> NavigationRuntimeControlBridge
- -> ShipControlState navigationAssistedFlightModel*
- -> DynamicMotionSystem::applyNavigationAssistedFlightModel
- -> DynamicMotionSystem::applyLocalFrameInput
- -> fixed-step physics
-```
+Newtonian/heavy:
+- velocity independent from hull attitude;
+- ordinary doctrine is coast -> rotate -> main burn -> coast -> rotate/flip -> brake;
+- docking uses mostly long piecewise-straight legs;
+- precision RCS is not fake sustained lateral main thrust.
 
-Newtonian/heavy is a separate family:
-- faster, less maneuverable;
-- inertial velocity independent from attitude;
-- ordinary doctrine: coast -> rotate -> main burn -> coast -> flip/rotate ->
-  braking burn;
-- docking favors long nearly straight legs and large turn volume;
-- precision RCS must not be used as fake sustained lateral main thrust.
-
-Dedicated Newtonian coast/rotate/burn compiler remains future work.
-
-## Controller ownership / NPC analogy
+## Controller ownership
 
 Do NOT create a second NPC ship entity for player Autopilot.
 
-Correct model already exists:
+Correct model:
 ```text
 same Ship entity
 Human controller -> Autopilot controller
 same ShipDynamics / installed hardware / fixed-step physics
 ```
 
-`ControlRegistry::takeAutopilotControl()` changes the command source. AI/NPC
-and Autopilot may later share higher-level controller abstractions, but physics
-ownership remains on the same Ship.
+`ControlRegistry::takeAutopilotControl()` changes command ownership only.
 
 ## Latest live evidence
 
-User now has this real Automatic server failure:
-
+User saw:
 ```text
 [DockAuto] request=1 phase=plan-failed
 reason=trajectory:angular trajectory cannot reach requested terminal state
 action=restore-human
 ```
 
-The ship first displayed/calculated a route but did not move.
+This proved Automatic reached server planning and Human was restored only because the executable program failed acceptance.
 
-This proves:
-- UI request reached Automatic;
-- server acquired/used Autopilot authority;
-- server reached the Planner;
-- the safe Human hand-back occurred because no executable trajectory passed the
-  angular gate.
+The code review found the architectural cause:
+the long approach trajectory appended a pre-capture point and forced that same long program to end with:
+- moving pre-capture terminal velocity;
+- exact docking-port orientation;
+- exact docking-port angular velocity.
 
-So the current live blocker is NOT controller handoff.
+That violated the agreed two-stage docking sequence.
 
-The visible/advisory route is not the same acceptance level as the executable
-server program. A visible route can exist while the server trajectory is
-rejected before AcceptedManeuverProgram / Follower execution.
+## Current Automatic architecture on main
 
-## Current angular-timing fix on main
-
-Root defect: translational Ruckig chose the fastest collision-free trajectory
-clock. Bounded angular compilation then had to fit exact terminal orientation
-and rotating-target terminal omega into that same clock. If the hull needed
-more time, Planner rejected the whole task.
-
-Correct behavior now:
-- retain the SAME collision-free route;
-- retain the SAME angular capability/tolerances;
-- lower translation speed until the hull has enough time.
-
-For multi-point routes, only an angular-terminal failure triggers retries using:
-
-```text
-1.00, 0.80, 0.64, 0.50, 0.40, 0.32, 0.25,
-0.20, 0.16, 0.125, 0.10, 0.08, 0.06, 0.05
+`DockingAutomaticRuntime` now has:
+```cpp
+enum class Stage {
+    ApproachHold,
+    FinalIngress
+};
 ```
 
-A successful slowed route reports:
-`angular-speed-relaxed`.
+### Stage 1 — ApproachHold
 
-No collision rule, max angular speed, max angular acceleration, terminal pose
-tolerance or terminal-omega tolerance is weakened.
+- Build ordinary collision-free docking route.
+- End at the DockingAdvisory standoff/hold gate.
+- Terminal translational velocity = zero.
+- Do NOT append pre-capture to the long route.
+- Do NOT require exact dock terminal orientation/omega.
+- Execute with normal AcceptedManeuverProgram/Follower/Bridge/Ship physics.
 
-New native regression:
-`testTranslationSlowsWhenAngularTerminalNeedsMoreTime`
-creates a translationally-fast 3-point route whose hull rotation needs more
-time and requires Planner to return a slower valid trajectory.
+On completion:
+```text
+stage=approach-hold phase=hold-complete next=final-ingress
+```
 
-## Exact angular diagnostics
+Then:
+- command BrakeToStop;
+- discard transit program/control bridge;
+- stabilize on the real authoritative ship state;
+- start a new planning job for FinalIngress.
 
-`compileBoundedAngularKinematics` now returns detailed reasons rather than
-only a generic failure. Possible live suffixes include:
+### Stage 2 — FinalIngress
 
-- `too-few-angular-samples`
-- `invalid-angular-capability`
-- `initial-omega-outside-capability omega=... max=...`
-- `invalid-angular-step sample=N dt=...`
-- `terminal-omega-unreachable-before-sample=N error=... reachable=...`
+- Recompute current/predicted docking-port pose.
+- Build only the short hold-to-pre-capture route.
+- Use three collinear points so scalar path-progress timing is available.
+- Initial alignment uses the complete dock basis.
+- Exact terminal port orientation and angular velocity apply only here.
+- Generic angular-time relaxation may slow this short route if needed.
+- Completion ends at collision-free pre-capture; physical latch/contact remains later work.
+
+## Yaw / pitch / roll
+
+Docking attitude is full 3-D.
+
+FinalIngress target basis:
+```text
+forward = -port.forward
+up      =  port.up
+right   = derived orthogonally
+```
+
+Forward constrains nose direction.
+Up constrains roll around the nose axis.
+
+Existing Aligning compares both forward and up vectors, and angular state is represented by a 3-D omega vector/quaternion kinematics. Therefore yaw, pitch and roll are all represented. There is no yaw-only limitation.
+
+## Angular timing
+
+General trajectory generation still supports slowing translation when an exact angular terminal boundary needs more time. It does NOT widen max angular rate/acceleration or terminal tolerances.
+
+Detailed angular rejection reasons include:
+- `terminal-omega-unreachable-before-sample=...`
 - `terminal-orientation-error-deg=...`
 - `terminal-omega-error=...`
+- `invalid-angular-step ...`
 
-If live planning still fails, use the exact new suffix. Do NOT loosen angular
-limits/tolerances by guess.
+For the long ApproachHold stage, exact dock terminal angular state is no longer requested.
 
-## Docking-port click priority
+## Manual launch geometry and 500m frames
 
-Latest user feedback: distant docking ports were hard to select; clicking near
-them often selected the entire parent construction.
-
-Root cause:
-- docking items had a high `pickPriority`;
-- but when `hitPolygonPx` existed it replaced the normal hit radius;
-- at distant zoom the real opening projected to only a few pixels;
-- overlay miss then fell through to `pickHubInfrastructureBody()`, which
-  selected the assembly mesh.
-
-Current behavior:
-- a DockingPort is hit by precise physical polygon OR semantic screen radius;
-- dock `hitRadiusPx = 22.0`;
-- dock `pickPriority = 1000`;
-- among overlapping dock markers, nearest cursor distance wins
-  (`nearerDock`);
-- infrastructure triangle pick runs only when overlay picking did not consume
-  the press.
-
-`verify_docking.sh` now also runs
-`tests/system_map/check_object_overlay.py` so this selection contract is part
-of docking verification.
-
-## Self-contained START DOCKING
-
-CALCULATE TRAJECTORY is not a prerequisite.
-
-Cold Automatic flow:
+Latest native test failure:
 ```text
-START DOCKING
- -> route-preflight if no matching visible corridor
- -> temporary authoritative BrakeToStop / settle
- -> authoritative Hub snapshot
- -> law-aware advisory route / visible tunnel
- -> temporary Human hand-back
- -> BeginAutomaticDocking
- -> server Autopilot stabilization
- -> async server planning
- -> AcceptedManeuverProgram
- -> Follower / RuntimeControlBridge
- -> shared Ship physics
+nose-first corridor contains a hard first-turn kink: 36.0804 deg
 ```
 
-The client preflight route is presentation/safe-start preparation only. Server
-Automatic still builds/proves the executable program.
+That test criterion was wrong.
 
-Server Automatic uses actual stopped hull forward and a nose-first lead. Its
-internal execution-guide sampling may remain denser than the user-visible
-500/250 corridor.
+A 500 m published corridor frame is a sparse chord of the underlying route. A >30 degree change between consecutive display chords does not prove that the underlying curve has a geometric discontinuity.
 
-## Automatic async invariant
-
-Heavy planning stays outside fixed-step:
-- immutable planning snapshot;
-- worker performs advisory + trajectory + Accepted-program construction;
-- fixed-step polls result only.
-
-Never restore:
-- synchronous heavy route/Ruckig work in fixed-step;
-- `phase=plan-retry` retry storms.
-
-Entry alignment remains:
-- accepted first reference owns route-entry attitude;
-- if needed, physical Aligning turns the real hull;
-- stale program is discarded;
-- stabilize/replan;
-- execute only a fresh program.
-
-Expected successful lifecycle after current fix:
-```text
-[DockAuto] ... phase=planning-async
-[DockAuto] planned ... phase=aligning
-[DockAuto] ... phase=aligned-replan
-[DockAuto] ... phase=planning-async
-[DockAuto] planned ... phase=executing
-```
-or direct `phase=executing` if already aligned.
-
-## Existing fresh target evidence before newest changes
-
-Previously green on Windows:
-```text
-navigation_runtime_control .......... PASS
-maneuver_tracking_controller ........ PASS
-docking_advisory .................... PASS
-accepted_maneuver_program_builder ... PASS
-trajectory_generator_angular ........ PASS
-manual docking static contract ...... PASS
+DockingAdvisoryPlan now exposes:
+```cpp
+bool initialTurnPresent;
+double initialTurnRadiusMeters;
 ```
 
-Newest angular-time relaxation, strict cadence lock and dock-picking changes
-still need a fresh target rerun.
+The planner sets these only when the first nose-first transition is an actual tangent circular fillet.
+
+Native test now requires:
+- first published gap about 500 m;
+- first segment along hull nose;
+- `initialTurnPresent == true`;
+- positive launch turn radius;
+- later published route visibly departs the initial axis.
+
+It no longer invents a 30-degree limit between 500 m display chords.
+
+## Dock picking
+
+Docking ports are semantic subtargets:
+- physical hit polygon OR 22 px semantic hit radius;
+- pick priority 1000;
+- nearest dock wins among overlapping ports;
+- parent infrastructure triangle picking runs only if no dock overlay consumed the click.
+
+`verify_docking.sh` includes the map-object overlay contract.
 
 ## Immediate Windows/MSYS2 gate
 
 Run:
-
 ```bash
 cd /d/__elite/work
 
@@ -281,8 +202,7 @@ bash verify_docking.sh
 
 Do not build/run if verify fails.
 
-If verify is fully green:
-
+If verify passes:
 ```bash
 bash build_mingw64.sh
 build/EliteGame.exe
@@ -290,48 +210,50 @@ build/EliteGame.exe
 
 ## Exact live test
 
-1. In Hub map, test selecting a docking port from a relatively distant zoom.
-   The dock card/marker must win instead of the whole parent assembly.
-2. In Assisted, do NOT press CALCULATE TRAJECTORY first.
-3. Press START DOCKING directly.
-4. Capture every `[DockAuto]` and `[DockAdvisory]` line.
-5. Manual/preflight visible corridor must remain 500 m ordinary / 250 m final.
-6. The old generic angular plan-fail should no longer occur merely because the
-   fastest translational clock is too short. Planner should slow translation.
-7. Expected next real milestone is:
-   `planned ... phase=aligning` or `planned ... phase=executing`, followed
-   by physical ship movement.
-8. If it still fails, use the exact detailed angular reason now emitted.
+Do NOT press CALCULATE TRAJECTORY first.
+
+1. Select a dock.
+2. Press START DOCKING.
+3. Capture all `[DockAuto]` and `[DockAdvisory]` lines.
+4. Expected long-stage logs:
+```text
+stage=approach-hold phase=planning-async
+[DockAuto] planned ... stage=approach-hold phase=aligning|executing
+```
+5. Ship must physically travel to the hold point.
+6. At hold completion:
+```text
+stage=approach-hold phase=hold-complete next=final-ingress
+```
+7. Ship must physically stop/stabilize.
+8. Then:
+```text
+stage=final-ingress phase=planning-async
+[DockAuto] planned ... stage=final-ingress phase=aligning|executing
+```
+9. Final alignment must be full-basis (yaw/pitch/roll), then execute the short ingress.
+10. If it fails, use the first exact failure line; do not re-merge stages.
 
 ## Non-negotiable invariants
 
-- manual visible docking frames = 500 m ordinary / 250 m final;
-- do not change that cadence without explicit user instruction;
-- Planner owns route/reference/control-law-compatible maneuver program;
-- Follower closes bounded error only;
+- manual visible frames = 500 m ordinary / 250 m final;
+- long docking approach ends at a real hold/stop point;
+- pre-capture belongs to separate FinalIngress;
+- exact rotating-port orientation/omega belongs only to FinalIngress;
+- same Ship entity changes controller Human -> Autopilot;
+- Planner owns route/reference/program;
+- Follower closes bounded tracking error only;
 - Manual and Automatic Assisted share one game-flight law;
 - physical RCS is not ordinary Assisted course authority;
-- Newtonian transit cannot spend precision RCS as fake main thrust;
-- terminal pose/omega are physical boundary conditions;
-- translation may slow to satisfy angular feasibility, never widen angular
-  capability;
-- same Ship entity changes controller Human -> Autopilot;
+- full docking attitude includes roll via forward+up basis;
 - no direct authoritative position/velocity/orientation rewrites;
 - no planner-only target collision bypass;
-- no stale program execution after physical alignment;
-- no hidden corridor during Automatic;
-- no synchronous Automatic planner retry loop;
-- START DOCKING must not require prior manual route calculation;
-- current docking scope ends at collision-free pre-capture; latch/contact later.
+- no stale program after physical alignment;
+- no synchronous fixed-step planner retry storm;
+- START DOCKING does not require prior manual route calculation.
 
 ## Verification status
 
-Current code includes:
-- strict visible 500/250 cadence with no special launch/transition densification;
-- angular-time translation relaxation;
-- detailed angular rejection diagnostics;
-- distant dock semantic hit priority and nearest-dock arbitration;
-- new native/static regressions for all of the above.
+Newest two-stage Automatic code, launch-fillet diagnostic/test correction, angular diagnostics/timing relaxation, 500/250 cadence lock and dock-picking priority are committed to public main.
 
-Fresh target `verify_docking.sh`, canonical MinGW build and live movement
-evidence are PENDING.
+Fresh target `verify_docking.sh`, canonical MinGW build and live two-stage Automatic evidence are PENDING.

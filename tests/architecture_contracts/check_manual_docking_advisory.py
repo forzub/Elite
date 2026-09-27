@@ -118,7 +118,8 @@ try:
             "preferredTerminalRadius*clearanceScale",
             "no collision-free docking route after reroute/tighten fallback",
             "remainingFromPrevious",
-            "r.terminalDenseDistanceMeters+terminalSpacing")
+            "r.terminalDenseDistanceMeters+r.gateSpacingMeters",
+            "USER-CONTRACT: published docking frames use the authored")
     require("src/game/SpaceState.cpp",
             "phase=settled",
             "vrel_mps=",
@@ -159,6 +160,10 @@ try:
     if "request.gateSpacingMeters = 150.0" in space_cpp:
         raise AssertionError(
             "manual docking cadence changed from locked 500 m / 250 m contract"
+        )
+    if "distanceToActivation" in planner_cpp:
+        raise AssertionError(
+            "docking planner reintroduced fractional cadence-transition frames"
         )
     if "longitudinalToleranceMeters * 0.25" in space_cpp:
         raise AssertionError(

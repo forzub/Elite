@@ -1614,7 +1614,8 @@ world::navigation::TrajectoryGenerationResult
 buildPathProgressTrajectory(
     const world::navigation::TrajectoryGenerationRequest& request,
     const std::vector<double>& coarseSourceProgress,
-    const ExecutionGuide& guide
+    const ExecutionGuide& guide,
+    double speedScale
 )
 {
 
@@ -1663,10 +1664,16 @@ buildPathProgressTrajectory(
               )
             : 0.0;
 
-    const double pathSpeedLimit =
+    const double basePathSpeedLimit =
         globalGuideSpeedLimit(
             request,
             guide
+        );
+    const double pathSpeedLimit =
+        std::max(
+            request.policy.minimumSpeedMps,
+            basePathSpeedLimit *
+                std::clamp(speedScale, 0.01, 1.0)
         );
 
     game::navigation::RuckigProgressRequest progressRequest;
@@ -1724,7 +1731,9 @@ buildPathProgressTrajectory(
     out.trajectory.startUniverseTimeSeconds =
         request.startUniverseTimeSeconds;
     out.trajectory.message =
-        "Ruckig scalar path-progress trajectory";
+        speedScale < 0.999
+            ? "Ruckig scalar path-progress trajectory; angular-speed-relaxed"
+            : "Ruckig scalar path-progress trajectory";
     out.trajectory.durationSeconds =
         progress.durationSeconds;
     out.trajectory.lengthMeters =
@@ -2278,20 +2287,59 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     // true single-leg case.
     if (request.pathPointsMeters.size() > 2)
     {
-        auto result = buildPathProgressTrajectory(
-            request,
-            coarseSourceProgress,
-            guide
-        );
-        result.executionGuidePointsMeters =
-            guide.points;
-        result.diagnostics.executionGuidePoints =
-            guide.points.size();
-        result.diagnostics.roundedGuideCorners =
-            guide.roundedCorners;
-        result.diagnostics.expandedGuideCorners =
-            guide.expandedCorners;
+        // Translation and attitude share one clock. A route that is linearly
+        // feasible at maximum speed may still be too short in time for the
+        // hull to reach an exact rotating terminal pose/omega. In that case
+        // the correct planner response is to fly the SAME safe geometry more
+        // slowly, not to reject Autopilot or widen angular limits.
+        constexpr double AngularTimeScales[] = {
+            1.00,
+            0.80,
+            0.64,
+            0.50,
+            0.40,
+            0.32,
+            0.25,
+            0.20,
+            0.16,
+            0.125,
+            0.10,
+            0.08,
+            0.06,
+            0.05
+        };
 
+        world::navigation::TrajectoryGenerationResult result;
+        for (const double speedScale : AngularTimeScales)
+        {
+            result = buildPathProgressTrajectory(
+                request,
+                coarseSourceProgress,
+                guide,
+                speedScale
+            );
+            result.executionGuidePointsMeters =
+                guide.points;
+            result.diagnostics.executionGuidePoints =
+                guide.points.size();
+            result.diagnostics.roundedGuideCorners =
+                guide.roundedCorners;
+            result.diagnostics.expandedGuideCorners =
+                guide.expandedCorners;
+
+            if (result.ready())
+                return result;
+
+            if (result.trajectory.message !=
+                "angular trajectory cannot reach requested terminal state")
+            {
+                return result;
+            }
+        }
+
+        result.trajectory.message =
+            "angular trajectory cannot reach requested terminal state "
+            "after translation-speed relaxation";
         return result;
     }
 

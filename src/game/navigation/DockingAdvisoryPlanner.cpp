@@ -48,6 +48,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     glm::dvec3 routeSearchStart=r.startMeters;
     bool initialForwardLeadActive=false;
+    double initialForwardAcceptedLeadMeters=0.0;
+    double initialForwardProtectedStraightMeters=0.0;
     if(r.hasInitialForward && r.initialForwardLeadMeters>1.0e-6)
     {
         const glm::dvec3 initialForward=glm::normalize(r.initialForward);
@@ -88,6 +90,17 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         routeSearchStart=
             r.startMeters+initialForward*acceptedLead;
         initialForwardLeadActive=true;
+        initialForwardAcceptedLeadMeters=acceptedLead;
+
+        // The launch contract needs a visibly straight section through the
+        // windshield, but the rest of the lead must remain available for a
+        // tangent arc into the geometric route. The previous implementation
+        // protected the entire lead and therefore created a hard corner at
+        // routeSearchStart.
+        initialForwardProtectedStraightMeters=std::min(
+            acceptedLead,
+            std::max(25.0, acceptedLead*0.50)
+        );
     }
 
     // Only the near-port ingress is semantic hard geometry. The much longer
@@ -308,15 +321,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         for (std::size_t i=1;i+1<vertices.size();++i)
         {
-            // The authored nose-first launch leg is semantic geometry. Do not
-            // let generic filleting eat the very first straight segment; the
-            // turn may begin only after routeSearchStart has been reached.
-            if (initialForwardLeadActive && i == 1)
-            {
-                candidate.samples.push_back(vertices[i]);
-                continue;
-            }
-
             const auto a=vertices[i]-vertices[i-1];
             const auto b=vertices[i+1]-vertices[i];
             const double la=glm::length(a), lb=glm::length(b);
@@ -354,6 +358,29 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 lb*segmentFraction,
                 desiredRadius*tangentScale
             });
+
+            if(initialForwardLeadActive && i==1)
+            {
+                const double maximumLaunchCut=std::max(
+                    0.0,
+                    initialForwardAcceptedLeadMeters-
+                        initialForwardProtectedStraightMeters
+                );
+                tangentDistance=std::min(
+                    tangentDistance,
+                    maximumLaunchCut
+                );
+
+                // If obstacle shortening left no room for a tangent arc, keep
+                // the proved straight lead and expose the sharp topology
+                // honestly. Normal 500 m launch leads retain hundreds of
+                // metres for a smooth first turn.
+                if(tangentDistance<0.25)
+                {
+                    candidate.samples.push_back(vertices[i]);
+                    continue;
+                }
+            }
 
             if(terminalTurn &&
                requiredTerminalRadiusMeters>0.0 &&
@@ -685,6 +712,22 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             r.terminalDenseDistanceMeters+terminalSpacing;
 
         double spacingMeters=r.gateSpacingMeters;
+
+        // Keep the launch straight and its first tangent arc visually and
+        // geometrically faithful. Sparse 500 m presentation chords used to
+        // jump across the protected prefix/arc and made the cockpit tunnel
+        // look as if it belonged to another trajectory.
+        if(initialForwardLeadActive &&
+           denseProgress[previous] <=
+               initialForwardAcceptedLeadMeters+
+                   r.gateSpacingMeters)
+        {
+            spacingMeters=std::min(
+                spacingMeters,
+                std::max(50.0,r.gateSpacingMeters*0.25)
+            );
+        }
+
         if(remainingFromPrevious<=terminalActivationRemaining)
         {
             spacingMeters=terminalSpacing;

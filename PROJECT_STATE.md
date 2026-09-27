@@ -4290,3 +4290,11 @@ preflight preview because of moving target prediction, the authoritative
 accepted program/corridor should be replicated back for exact presentation.
 That remains a presentation-consistency refinement, not permission for the
 client preview to command physics.
+
+## 2026-09-27 — diagnostic scoping correction
+
+The self-contained Automatic route-preflight architecture is unchanged.
+A compile-only regression from the diagnostic patch was fixed by scoping
+DockPrep and DockAuto logging to their respective function APIs.
+
+This correction does not alter control authority or flight behavior.

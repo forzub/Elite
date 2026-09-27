@@ -33,7 +33,7 @@ try:
 
     wire = require(
         "src/game/network/WireProtocol.h",
-        "WireProtocolVersion = 11u",
+        "WireProtocolVersion = 12u",
         "value.dockingTargetSystemId",
         "value.dockingTargetModuleId",
         "value.dockingTargetAnchorId",

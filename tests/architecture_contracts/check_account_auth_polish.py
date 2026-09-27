@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,7 +44,8 @@ for token in (
     if token not in session:
         fail(f"wire/session account-handle contract missing: {token}")
 
-if "WireProtocolVersion = 9u" not in wire:
+version = re.search(r"WireProtocolVersion\s*=\s*(\d+)u", wire)
+if not version or int(version.group(1)) < 9:
     fail("SessionHello schema changed without wire protocol version bump")
 if "AccountHandleMaxLength" not in wire:
     fail("wire decoder does not bound AccountHandle before authoritative validation")

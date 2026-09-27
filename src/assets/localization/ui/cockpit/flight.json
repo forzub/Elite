@@ -92,6 +92,13 @@
       "zh-Hans": "自动对接模式",
       "es": "MODO DE ATRAQUE AUTOMÁTICO",
       "ja": "自動ドッキングモード"
+    },
+    "cockpit.docking.preparing_mode": {
+      "en": "PREPARING AUTOMATIC DOCKING",
+      "ru": "ПОДГОТОВКА АВТОМАТИЧЕСКОЙ СТЫКОВКИ",
+      "zh-Hans": "正在准备自动对接",
+      "es": "PREPARANDO ATRAQUE AUTOMÁTICO",
+      "ja": "自動ドッキング準備中"
     }
   }
 }

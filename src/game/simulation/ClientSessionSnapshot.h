@@ -21,6 +21,11 @@ struct ClientSessionSnapshot
     // Per-session authority fact for the controlled entity. The client uses
     // this to fence local prediction across temporary server Autopilot handoffs.
     bool controlledEntityAutopilotActive = false;
+    // Last terminal Automatic docking result, scoped to this session's ship.
+    // The serial disambiguates an old result from a newly issued request.
+    std::uint64_t dockingResultSerial = 0;
+    bool dockingResultSucceeded = false;
+    std::string dockingResultReason;
 
     double universeTimeSeconds = 0.0;
     double universeTimeScale = 1.0;

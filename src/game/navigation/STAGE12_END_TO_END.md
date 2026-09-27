@@ -10966,3 +10966,28 @@ ApproachHold requirements. They belong only to FinalIngress.
 
 The existing Aligning phase compares both forward and up vectors, therefore it
 corrects roll in addition to yaw/pitch before executing final ingress.
+
+## 2026-09-27 — Automatic request handoff observability
+
+The live symptom of a visible route plus no motion is ambiguous without a
+per-request trace. `FramePerf dock_request=0` samples just one update frame.
+The added `[DockRequest]` UI/client/server/clear markers trace the serial from
+the button into server receipt, while existing `[DockAdvisory]` and `[DockAuto]`
+mark preflight and execution. Cockpit Automatic text now requires confirmed
+Automatic server authority; route preparation displays PREPARING. The current
+runtime cause awaits one target-machine trace after this diagnostic build.
+Local static contract passed; the full native gate could not start here because
+`cmake` is absent. No runtime acceptance is claimed.
+
+## 2026-09-27 — visible Automatic corridor and terminal response
+
+The previous active-Automatic early return prevented Hub-local route frames
+from being projected/published each update. The visible advisory now continues
+to refresh during server Automatic ownership. A client advisory departure does
+not cancel the server maneuver; an invalid advisory is retained with an unsafe
+warning instead of silently vanishing. Server completion/failure now crosses
+the wire as a per-session result serial, success bit and reason. Client logs
+and exposes that reason after the authoritative snapshot. Preparation takeover
+has a bounded timeout. Detailed server replan/stabilization diagnostics mark
+otherwise silent state changes. Protocol version 12 and native/live validation
+are required on the target machine.

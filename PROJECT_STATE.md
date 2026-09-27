@@ -4350,3 +4350,19 @@ same 3-D attitude target.
 This separation prevents terminal capture constraints from poisoning ordinary
 route feasibility and matches the intended game-play sequence:
 arrive -> stop -> align -> enter.
+
+## 2026-09-27 — request, presentation and server authority are distinct
+
+`SystemMapRenderer` records a docking UI request in the shared navigation
+workspace. `SpaceState` separately prepares/publishes a visible advisory route,
+then sends `BeginAutomaticDocking`. `GameServer` separately accepts Autopilot
+authority and executes the two-stage maneuver. The UI must not equate a pending
+request or visible route with accepted Automatic authority. Transition logs now
+share the request serial across these boundaries; target evidence is pending.
+
+The subsequent audit found two missing links: active Automatic skipped client
+route reprojection, and terminal server outcomes did not cross the network.
+The candidate now maintains route presentation during Automatic execution and
+replicates `{serial, succeeded, reason}` per controlled session. This is an
+outcome channel, not an extra Planner or Follower command. Wire protocol 12
+requires rebuilding both sides together.

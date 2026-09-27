@@ -5982,3 +5982,34 @@ enters SpaceState. It reports mode, previous path serial, preparation serial,
 Automatic serial, visible-route reuse and whether route-preflight is required.
 
 No flight/planner/physics behavior changed in this diagnostic iteration.
+
+## 2026-09-27 — docking UI claimed Automatic before authority existed
+
+Code trace found that the cockpit selected `AUTOMATIC DOCKING MODE` from the
+pending UI request, even before `BeginAutomaticDocking` was sent or the server
+confirmed Autopilot ownership. A visible corridor is a client advisory product,
+not evidence of an accepted maneuver. The sampled `dock_request=0` in FramePerf
+reports only that frame; it does not establish the state at the button press.
+
+Current diagnostic candidate logs one serial at UI request, SpaceState entry,
+each client command, server receipt/rejection and request clearing. The cockpit
+now says PREPARING AUTOMATIC DOCKING until the Automatic request has actually
+observed authoritative server Autopilot ownership. No movement/planner law was
+changed. Target build and a fresh clicked-button trace remain pending.
+Local static Automatic contract and localization JSON parse passed. The full
+`verify_docking.sh` could not start in this Linux workspace because `cmake` is
+not installed; it must run on the target Windows toolchain.
+
+## 2026-09-27 — Automatic corridor and failure round trip
+
+Code audit found that the active Automatic branch returned from SpaceState
+before refreshing the visual docking corridor. The server also sent only a
+Boolean Autopilot ownership state back to the client; its failure reason was
+logged server-side and lost to the cockpit. The current candidate keeps
+refreshing the same Hub-local corridor while Automatic owns the ship, retains
+the last route with an unsafe warning on advisory-only validation failures,
+and carries a serialled terminal result/reason in the per-session snapshot.
+The wire version is now 12; old client/server binaries cannot interoperate.
+Failures in preparation, planning, handoff, and follower recovery now have
+specific logs. New static contracts pass; native build and live evidence await
+the target Windows toolchain. No physical maneuver acceptance was relaxed.

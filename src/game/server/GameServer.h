@@ -310,6 +310,16 @@ private:
     bool controlledEntityAutopilotActiveForSession(
         game::network::ServerSessionId sessionId
     ) const noexcept;
+    void copyDockingResultForSession(
+        game::network::ServerSessionId sessionId,
+        game::simulation::ClientSessionSnapshot& outSession
+    ) const;
+    void recordDockingResult(
+        EntityId entityId,
+        std::uint64_t serial,
+        bool succeeded,
+        const char* reason
+    );
     world::celestial::PlayerNavigationState navigationStateForEntity(
         EntityId entityId
     ) const;
@@ -398,6 +408,7 @@ private:
         glm::dvec3 alignmentRightMap {1.0, 0.0, 0.0};
         glm::dvec3 alignmentUpMap {0.0, 1.0, 0.0};
         double alignedSinceUniverseTimeSeconds = -1.0;
+        std::uint64_t lastDiagnosticTick = 0;
 
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;
@@ -409,6 +420,14 @@ private:
 
     std::unordered_map<std::uint32_t, DockingAutomaticRuntime>
         m_dockingAutomaticRuntimes;
+
+    struct DockingResult
+    {
+        std::uint64_t serial = 0;
+        bool succeeded = false;
+        std::string reason;
+    };
+    std::unordered_map<std::uint32_t, DockingResult> m_dockingResults;
 
     game::navigation::HubSemanticAnchorCatalog
         m_serverHubSemanticAnchorCatalog;

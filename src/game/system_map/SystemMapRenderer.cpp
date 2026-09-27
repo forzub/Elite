@@ -2926,10 +2926,15 @@ void SystemMapRenderer::applyDockingAction(
         return;
     }
 
+    std::cout << "[DockRequest] ui-action=" << actionKey
+              << " object=" << objectId << std::endl;
+
     const auto* item = currentOverlayItem(objectId);
     if (!item ||
         item->infoKind != game::system_map::MapObjectInfoKind::DockingPort)
     {
+        std::cerr << "[DockRequest] ui-reject reason=port-unavailable"
+                  << std::endl;
         return;
     }
 
@@ -2937,6 +2942,8 @@ void SystemMapRenderer::applyDockingAction(
     if (!target.valid() ||
         target.kind != game::navigation::NavigationRouteAnchorKind::SemanticAnchor)
     {
+        std::cerr << "[DockRequest] ui-reject reason=invalid-target"
+                  << std::endl;
         return;
     }
 
@@ -2952,6 +2959,14 @@ void SystemMapRenderer::applyDockingAction(
         );
     if (serial != 0)
     {
+        std::cout << "[DockRequest] ui serial=" << serial
+                  << " mode="
+                  << (requestMode == game::navigation::DockingRouteRequest::Mode::Automatic
+                          ? "automatic" : "guidance")
+                  << " system=" << target.systemId
+                  << " module=" << target.stableObjectId
+                  << " anchor=" << target.semanticAnchorId
+                  << std::endl;
         m_navigationWorkspace.modules().setEnabled(
             game::navigation::NavigationModuleId::RoutePlanning,
             true
@@ -2989,6 +3004,8 @@ void SystemMapRenderer::cancelDockingTaskForClosedCard(
     if (pending.target.stableObjectId == moduleId &&
         pending.target.semanticAnchorId == anchorId)
     {
+        std::cout << "[DockRequest] ui-clear serial=" << pending.serial
+                  << " reason=card-closed" << std::endl;
         // Docking guidance is intentionally card-scoped. Closing the dock
         // information card means the pilot has cancelled that advisory task;
         // SpaceState drops the corridor on the next update and tracking is

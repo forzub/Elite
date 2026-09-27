@@ -302,6 +302,7 @@ private:
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::uint64_t m_lastDockingRequestTraceSerial = 0;
     std::uint64_t m_dockingPreparationSerial = 0;
+    double m_dockingPreparationRequestedServerSeconds = -1.0;
     double m_dockingPreparationSettledSinceServerSeconds = -1.0;
     bool m_dockingPreparationReleasePending = false;
     bool m_dockingPreparationReleasePublishesRoute = false;

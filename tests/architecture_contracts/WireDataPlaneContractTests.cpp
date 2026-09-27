@@ -412,6 +412,9 @@ SimulationSnapshot makeSnapshot()
     snapshot.hubs.push_back(hub);
 
     snapshot.session.controlledEntityAutopilotActive = true;
+    snapshot.session.dockingResultSerial = 42;
+    snapshot.session.dockingResultSucceeded = false;
+    snapshot.session.dockingResultReason = "planner-exception:diagnostic";
     snapshot.session.playerNavigation.currentSystemId = 3;
     snapshot.session.playerNavigation.worldPosition = ship.transform.worldPosition;
     snapshot.session.playerNavigation.orientation = ship.transform.orientation;
@@ -548,6 +551,11 @@ void testSnapshotRoundTrip()
         "hub payload mismatch");
     require(decoded.session.controlledEntityAutopilotActive,
         "per-session controlled-entity Autopilot state did not round-trip");
+    require(decoded.session.dockingResultSerial == 42 &&
+                !decoded.session.dockingResultSucceeded &&
+                decoded.session.dockingResultReason ==
+                    "planner-exception:diagnostic",
+        "per-session docking failure did not round-trip");
     require(decoded.session.playerNavigation.currentSystemId == 3,
         "per-session navigation mismatch");
     require(decoded.session.ownedNavigationAssets.size() == 1u,

@@ -1725,6 +1725,13 @@ void SpaceState::updateDockingAdvisory()
         game::network::ClientMessage message;
         message.clientTick = 0;
         message.payload = command;
+        std::cout << "[DockRequest] client-send serial=" << serial
+                  << " command="
+                  << (type == ClientShipCommand::BeginDockingGuidancePreparation
+                          ? "begin-preparation"
+                          : type == ClientShipCommand::CompleteDockingGuidancePreparation
+                              ? "complete-preparation" : "cancel-preparation")
+                  << std::endl;
         m_client->sendMessage(message);
     };
 
@@ -1750,10 +1757,15 @@ void SpaceState::updateDockingAdvisory()
                     target->semanticAnchorId;
             }
 
-            game::network::ClientMessage message;
-            message.clientTick = 0;
-            message.payload = std::move(command);
-            m_client->sendMessage(message);
+        game::network::ClientMessage message;
+        message.clientTick = 0;
+        message.payload = std::move(command);
+        std::cout << "[DockRequest] client-send serial=" << serial
+                  << " command="
+                  << (type == ClientShipCommand::BeginAutomaticDocking
+                          ? "begin-automatic" : "cancel-automatic")
+                  << std::endl;
+        m_client->sendMessage(message);
         };
 
     const auto serverAutopilotActive = [&]() -> bool
@@ -1776,6 +1788,7 @@ void SpaceState::updateDockingAdvisory()
             m_dockingPreparationReleasePublishesRoute;
 
         m_dockingPreparationSerial = 0;
+        m_dockingPreparationRequestedServerSeconds = -1.0;
         m_dockingPreparationSettledSinceServerSeconds = -1.0;
         m_dockingPreparationReleasePending = false;
         m_dockingPreparationReleasePublishesRoute = false;
@@ -1886,6 +1899,69 @@ void SpaceState::updateDockingAdvisory()
     const double automaticNowServerSeconds =
         m_client->estimatedServerTimeSeconds();
 
+    if (m_automaticDockingSerial != 0 &&
+        m_client->hasSessionSnapshot() &&
+        m_client->sessionSnapshot().dockingResultSerial ==
+            m_automaticDockingSerial)
+    {
+        const auto& result = m_client->sessionSnapshot();
+        const std::uint64_t finishedSerial = m_automaticDockingSerial;
+        const bool samePending = automaticPending &&
+            pending.serial == finishedSerial;
+        const bool routeRetained =
+            !m_activeDockingGuidanceCorridorId.empty() &&
+            m_dockAdvice.serial != 0;
+        const std::string reason = result.dockingResultReason;
+        if (serverAutopilotActive())
+        {
+            const std::string failure =
+                "automatic docking: " + reason +
+                " (server still owns control)";
+            if (m_dockingGuidanceFailureReason != failure)
+            {
+                std::cerr << "[DockResult] client serial="
+                          << finishedSerial << " failed=" << reason
+                          << " human_control=0" << std::endl;
+            }
+            m_dockingGuidanceFailureReason = failure;
+            m_client->setExternalControlPredictionSuppressed(true);
+            return;
+        }
+        std::cout << "[DockResult] client serial=" << finishedSerial
+                  << " success=" << (result.dockingResultSucceeded ? 1 : 0)
+                  << " reason=" << reason
+                  << " route_retained=" << (routeRetained ? 1 : 0)
+                  << std::endl;
+        resetAutomaticTracking();
+        if (samePending)
+        {
+            if (routeRetained)
+            {
+                const auto target = pending.target;
+                const auto guidanceSerial = requests.request(
+                    target, DockingRouteRequest::Mode::Guidance
+                );
+                m_lastDockingPathRequestSerial = guidanceSerial;
+                m_dockAdvice.serial = guidanceSerial;
+            }
+            else
+            {
+                requests.clear();
+            }
+        }
+        if (!result.dockingResultSucceeded)
+        {
+            m_dockingGuidanceFailureReason =
+                "automatic docking: " + reason;
+            std::cerr << "[DockAuto] request=" << finishedSerial
+                      << " failed=" << reason
+                      << " human_control="
+                      << (serverAutopilotActive() ? 0 : 1)
+                      << std::endl;
+        }
+        return;
+    }
+
     if (m_automaticDockingSerial != 0)
     {
         if (serverAutopilotActive())
@@ -1922,6 +1998,10 @@ void SpaceState::updateDockingAdvisory()
                 }
                 else
                 {
+                    std::cout << "[DockRequest] client-clear serial="
+                              << completedSerial
+                              << " reason=automatic-handoff-no-route"
+                              << std::endl;
                     requests.clear();
                 }
             }
@@ -1973,7 +2053,10 @@ void SpaceState::updateDockingAdvisory()
                 nullptr
             );
             resetAutomaticTracking();
-            clear();
+            std::cout << "[DockRequest] client-clear serial="
+                      << rejectedSerial
+                      << " reason=automatic-authority-timeout"
+                      << std::endl;
             requests.clear();
             m_dockingGuidanceFailureReason =
                 "server did not accept automatic docking authority";
@@ -2034,11 +2117,42 @@ void SpaceState::updateDockingAdvisory()
                 << " module=" << pending.target.stableObjectId
                 << " anchor=" << pending.target.semanticAnchorId
                 << std::endl;
+            return;
         }
-
-        return;
     }
 
+    const auto fail = [&](const std::string& reason)
+    {
+        if (automaticPending && m_automaticDockingSerial != 0 &&
+            m_dockAdvice.serial != 0)
+        {
+            // A client advisory failure cannot cancel a server maneuver.
+            // Retain the last visible route but mark it unsafe.
+            if (m_dockingGuidanceFailureReason != reason)
+            {
+                std::cerr << "[DockAdvisory] request=" << pending.serial
+                          << " failed=" << reason
+                          << " action=retain-unsafe-route-server-owns-control"
+                          << std::endl;
+            }
+            m_dockingGuidanceFailureReason = reason;
+            m_noSafeDockingGuidanceSolution = true;
+            return;
+        }
+        finishLocalPreparation(false);
+        clear();
+        m_dockingGuidanceFailureReason = reason;
+        std::cerr << "[DockAdvisory] request=" << pending.serial
+                  << " failed=" << reason << '\n';
+        requests.clear();
+    };
+
+    // Once Automatic owns the request, keep refreshing the same Hub-local
+    // visible corridor below. Route preparation and cancellation no longer
+    // apply to this active execution; the server owns the maneuver.
+    if (!(automaticPending && m_automaticDockingSerial != 0 &&
+          !automaticNeedsPreparedRoute))
+    {
     if (automaticNeedsPreparedRoute &&
         m_lastDockingPathRequestSerial != pending.serial)
     {
@@ -2079,21 +2193,28 @@ void SpaceState::updateDockingAdvisory()
         if (!m_dockingPreparationReleasePending)
             finishLocalPreparation(false);
         clear();
+        if (pending.valid())
+        {
+            std::cout << "[DockRequest] client-clear serial="
+                      << pending.serial
+                      << " reason=route-preparation-inactive"
+                      << std::endl;
+        }
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
-        m_dockingGuidanceFailureReason.clear();
         return;
     }
 
-    const auto fail = [&](const std::string& reason)
+    if (m_dockingPreparationSerial == pending.serial &&
+        !m_dockingPreparationReleasePending &&
+        !serverAutopilotActive() &&
+        m_dockingPreparationRequestedServerSeconds >= 0.0 &&
+        automaticNowServerSeconds -
+            m_dockingPreparationRequestedServerSeconds > 3.0)
     {
-        finishLocalPreparation(false);
-        clear();
-        m_dockingGuidanceFailureReason = reason;
-        std::cerr << "[DockAdvisory] request=" << pending.serial
-                  << " failed=" << reason << '\n';
-        requests.clear();
-    };
+        fail("server did not accept docking preparation authority");
+        return;
+    }
 
     if (m_lastDockingPathRequestSerial != pending.serial)
     {
@@ -2161,6 +2282,8 @@ void SpaceState::updateDockingAdvisory()
             pending.serial
         );
         m_dockingPreparationSerial = pending.serial;
+        m_dockingPreparationRequestedServerSeconds =
+            automaticNowServerSeconds;
         m_dockingPreparationSettledSinceServerSeconds = -1.0;
         m_dockingPreparationReleasePending = false;
         m_dockingPreparationReleasePublishesRoute = false;
@@ -2455,9 +2578,14 @@ void SpaceState::updateDockingAdvisory()
                 {
                     job->plan = DockingAdvisoryPlanner::plan(request);
                 }
-                catch (const std::exception&)
+                catch (const std::exception& error)
                 {
-                    job->plan.failure = "planner exception";
+                    job->plan.failure =
+                        std::string("planner exception: ") + error.what();
+                }
+                catch (...)
+                {
+                    job->plan.failure = "planner unknown exception";
                 }
                 job->ready.store(true, std::memory_order_release);
                 count->fetch_sub(1, std::memory_order_acq_rel);
@@ -2513,6 +2641,7 @@ void SpaceState::updateDockingAdvisory()
             "dock:" + pending.target.stableObjectId +
             ":" + pending.target.semanticAnchorId;
         m_dockingGuidanceFailureReason.clear();
+    }
     }
 
     auto& active = m_dockAdvice;
@@ -2724,7 +2853,11 @@ void SpaceState::updateDockingAdvisory()
 
             if (tracking == DockingAdvisoryTrackingResult::Left)
             {
-                std::cerr << "[DockAdvisory] left request=" << pending.serial
+                if (!automaticPending ||
+                    m_dockingGuidanceFailureReason !=
+                        "automatic off visible advisory corridor")
+                {
+                    std::cerr << "[DockAdvisory] left request=" << pending.serial
                           << " tick=" << metadata.serverTick
                           << " universe_t=" << metadata.universeTimeSeconds
                           << " hub=" << active.hubId
@@ -2738,8 +2871,18 @@ void SpaceState::updateDockingAdvisory()
                           << " release_m="
                           << releaseSection.lateralToleranceMeters << ","
                           << releaseSection.verticalToleranceMeters << '\n';
-                fail("ship left guidance corridor");
-                return;
+                }
+                if (!automaticPending)
+                {
+                    fail("ship left guidance corridor");
+                    return;
+                }
+                // This sparse visible advisory is not the server's accepted
+                // Automatic program. Keep it drawn and let the authoritative
+                // follower decide whether to replan or stop.
+                m_dockingGuidanceFailureReason =
+                    "automatic off visible advisory corridor";
+                m_noSafeDockingGuidanceSolution = true;
             }
 
             if ((tracking == DockingAdvisoryTrackingResult::Inside ||
@@ -2788,6 +2931,7 @@ void SpaceState::updateDockingAdvisory()
         route.source = GuidanceSource::DockingComputer;
         route.purpose = GuidancePurpose::Approach;
         route.advisoryOnly = true;
+        route.noSafePrimarySolution = m_noSafeDockingGuidanceSolution;
         route.deviationWarning = active.deviationWarning;
         route.deviationCritical = active.deviationCritical;
         route.priority = 50;
@@ -3764,12 +3908,17 @@ m_systemMapRenderer.render(
                 const auto& dockingRequest =
                     m_navigationWorkspace.
                         dockingRouteRequests().pending();
-                const bool automaticDockingMode =
+                const bool automaticDockingRequested =
                     m_automaticDockingSerial != 0 ||
                     (dockingRequest.valid() &&
                      dockingRequest.mode ==
                         game::navigation::
                             DockingRouteRequest::Mode::Automatic);
+                const bool automaticDockingActive =
+                    m_automaticDockingSerial != 0 &&
+                    m_automaticDockingAuthoritySeen &&
+                    m_client->hasSessionSnapshot() &&
+                    m_client->sessionSnapshot().controlledEntityAutopilotActive;
 
                 const double dockingBlinkPhase = std::fmod(
                     std::max(
@@ -3784,12 +3933,16 @@ m_systemMapRenderer.render(
                     const std::string dockingText =
                         localizedUiText(
                             context().app,
-                            automaticDockingMode
+                            automaticDockingActive
                                 ? "cockpit.docking.automatic_mode"
-                                : "cockpit.docking.manual_mode",
-                            automaticDockingMode
+                                : automaticDockingRequested
+                                    ? "cockpit.docking.preparing_mode"
+                                    : "cockpit.docking.manual_mode",
+                            automaticDockingActive
                                 ? "AUTOMATIC DOCKING MODE"
-                                : "MANUAL DOCKING MODE"
+                                : automaticDockingRequested
+                                    ? "PREPARING AUTOMATIC DOCKING"
+                                    : "MANUAL DOCKING MODE"
                         );
                     constexpr int dockingPx = 20;
                     auto& text = TextRenderer::instance();

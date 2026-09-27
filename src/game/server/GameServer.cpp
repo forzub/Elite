@@ -938,11 +938,19 @@ bool GameServer::beginDockingGuidancePreparation(
 )
 {
     if (!playerId || controlledEntityId.value == 0 || requestSerial == 0)
+    {
+        std::cerr << "[DockPrep] rejected request=" << requestSerial
+                  << " reason=invalid-player-entity-or-serial" << std::endl;
         return false;
+    }
 
     Ship* ship = m_simulation.getShip(controlledEntityId);
     if (!ship)
+    {
+        std::cerr << "[DockPrep] rejected request=" << requestSerial
+                  << " reason=ship-not-found" << std::endl;
         return false;
+    }
 
     if (const auto automatic =
             m_dockingAutomaticRuntimes.find(controlledEntityId.value);
@@ -1059,10 +1067,19 @@ bool GameServer::finishDockingGuidancePreparation(
 {
     const auto it = m_dockingGuidancePreparations.find(controlledEntityId.value);
     if (it == m_dockingGuidancePreparations.end())
+    {
+        std::cerr << "[DockPrep] finish-ignored request=" << requestSerial
+                  << " reason=no-active-preparation" << std::endl;
         return false;
+    }
     const auto prep = it->second;
     if (prep.playerId != playerId || prep.requestSerial != requestSerial)
+    {
+        std::cerr << "[DockPrep] finish-ignored request=" << requestSerial
+                  << " reason=player-or-serial-mismatch active="
+                  << prep.requestSerial << std::endl;
         return false;
+    }
 
     if (auto streamIt = m_controlStreams.find(controlledEntityId.value);
         streamIt != m_controlStreams.end())
@@ -1149,6 +1166,8 @@ bool GameServer::beginAutomaticDocking(
             << " request=" << command.requestSerial
             << " reason=invalid-command"
             << std::endl;
+        recordDockingResult(controlledEntityId, command.requestSerial,
+                            false, "invalid-command");
         return false;
     }
 
@@ -1161,6 +1180,8 @@ bool GameServer::beginAutomaticDocking(
             << " request=" << command.requestSerial
             << " reason=ship-not-found"
             << std::endl;
+        recordDockingResult(controlledEntityId, command.requestSerial,
+                            false, "ship-not-found");
         return false;
     }
 
@@ -1186,6 +1207,8 @@ bool GameServer::beginAutomaticDocking(
             << controlledEntityId.value
             << " request=" << command.requestSerial
             << " reason=ship-not-matched-to-target-hub\n";
+        recordDockingResult(controlledEntityId, command.requestSerial,
+                            false, "ship-not-matched-to-target-hub");
         return false;
     }
 
@@ -1239,6 +1262,8 @@ bool GameServer::beginAutomaticDocking(
                    m_controls.controllerKind(controlledEntityId)
                )
             << std::endl;
+        recordDockingResult(controlledEntityId, command.requestSerial,
+                            false, "autopilot-authority-denied");
         return false;
     }
 
@@ -1264,6 +1289,7 @@ bool GameServer::beginAutomaticDocking(
 
     m_dockingAutomaticRuntimes[controlledEntityId.value] =
         std::move(runtime);
+    m_dockingResults.erase(controlledEntityId.value);
 
     ShipControlState stop;
     stop.velocityAlignmentCommand =
@@ -2284,11 +2310,18 @@ bool GameServer::finishAutomaticDocking(
             controlledEntityId.value
         );
     if (it == m_dockingAutomaticRuntimes.end())
+    {
+        std::cerr << "[DockAuto] finish-ignored request=" << requestSerial
+                  << " reason=no-active-runtime" << std::endl;
         return false;
+    }
 
     if (it->second.playerId != playerId ||
         it->second.requestSerial != requestSerial)
     {
+        std::cerr << "[DockAuto] finish-ignored request=" << requestSerial
+                  << " reason=player-or-serial-mismatch active="
+                  << it->second.requestSerial << std::endl;
         return false;
     }
 
@@ -2309,14 +2342,21 @@ bool GameServer::finishAutomaticDocking(
         );
 
     m_dockingAutomaticRuntimes.erase(it);
+    recordDockingResult(
+        controlledEntityId, requestSerial, completed && restored,
+        restored ? (reason ? reason : "unspecified")
+                 : "human-control-restore-failed"
+    );
     m_forceSnapshotPublication = true;
 
     std::cout
         << "[DockAuto] "
-        << (completed ? "approach-complete" : "cancelled")
+        << (completed && restored ? "approach-complete" : "cancelled")
         << " entity=" << controlledEntityId.value
         << " request=" << requestSerial
-        << " reason=" << (reason ? reason : "none")
+        << " reason="
+        << (restored ? (reason ? reason : "none")
+                     : "human-control-restore-failed")
         << " human_restored=" << (restored ? 1 : 0)
         << "\n";
     return restored;
@@ -2378,6 +2418,16 @@ void GameServer::applyAutomaticDockingControls(
             !motion.matchedToReferenceFrame ||
             motion.matchedReferenceFrameId != runtime.hubId)
         {
+            if (runtime.lastDiagnosticTick == 0 ||
+                time.serverTick - runtime.lastDiagnosticTick >= 180)
+            {
+                std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                          << " phase=waiting reason=hub-frame-mismatch"
+                          << " ship_hub=" << motion.matchedReferenceFrameId
+                          << " target_hub=" << runtime.hubId
+                          << std::endl;
+                runtime.lastDiagnosticTick = time.serverTick;
+            }
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -2422,6 +2472,18 @@ void GameServer::applyAutomaticDockingControls(
             if (speed > speedThreshold ||
                 angularRate > 0.01)
             {
+                if (runtime.lastDiagnosticTick == 0 ||
+                    time.serverTick - runtime.lastDiagnosticTick >= 180)
+                {
+                    std::cout << "[DockAuto] request="
+                              << runtime.requestSerial
+                              << " phase=stabilizing"
+                              << " speed_mps=" << speed
+                              << " threshold_mps=" << speedThreshold
+                              << " omega_radps=" << angularRate
+                              << std::endl;
+                    runtime.lastDiagnosticTick = time.serverTick;
+                }
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 continue;
             }
@@ -2685,6 +2747,9 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.programs.empty() ||
             !runtime.controlBridge)
         {
+            std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=replan reason=program-or-bridge-missing"
+                      << std::endl;
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.settledSinceUniverseTimeSeconds = -1.0;
@@ -2886,6 +2951,10 @@ void GameServer::applyAutomaticDockingControls(
         if (selection.status !=
             Timeline::SelectionStatus::Active)
         {
+            std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=replan reason=no-active-program-page"
+                      << " status=" << static_cast<int>(selection.status)
+                      << std::endl;
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -2902,6 +2971,11 @@ void GameServer::applyAutomaticDockingControls(
         if (time.universeTimeSeconds >
             program.validUntilUniverseTimeSeconds)
         {
+            std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=replan reason=program-expired"
+                      << " now=" << time.universeTimeSeconds
+                      << " valid_until=" << program.validUntilUniverseTimeSeconds
+                      << std::endl;
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -2975,6 +3049,9 @@ void GameServer::applyAutomaticDockingControls(
         );
         if (!boundary.valid())
         {
+            std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=replan reason=invalid-frame-boundary"
+                      << std::endl;
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -3031,6 +3108,11 @@ void GameServer::applyAutomaticDockingControls(
                         PilotExecutor::Status::Ok ||
             !step.snapshot.valid)
         {
+            std::cerr << "[DockAuto] request=" << runtime.requestSerial
+                      << " phase=replan reason=control-bridge-step"
+                      << " status=" << static_cast<int>(step.status)
+                      << " snapshot_valid=" << (step.snapshot.valid ? 1 : 0)
+                      << std::endl;
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
@@ -3119,6 +3201,7 @@ void GameServer::resetSessionControlState(
     m_dockingAutomaticRuntimes.erase(
         controlledEntityId.value
     );
+    m_dockingResults.erase(controlledEntityId.value);
 
     std::uint64_t previousLastReceived = 0;
     std::uint64_t previousLastProcessed = 0;
@@ -3341,6 +3424,29 @@ void GameServer::receiveClientMessage(
     game::network::ServerSessionId sessionId,
     const game::network::ClientMessage& msg)
 {
+    if (const auto* dock =
+            std::get_if<ClientShipCommand>(&msg.payload))
+    {
+        if (dock->type == ClientShipCommand::BeginDockingGuidancePreparation ||
+            dock->type == ClientShipCommand::CompleteDockingGuidancePreparation ||
+            dock->type == ClientShipCommand::CancelDockingGuidancePreparation ||
+            dock->type == ClientShipCommand::BeginAutomaticDocking ||
+            dock->type == ClientShipCommand::CancelAutomaticDocking)
+        {
+            std::cout << "[DockRequest] server-recv serial="
+                      << dock->requestSerial
+                      << " command="
+                      << (dock->type == ClientShipCommand::BeginAutomaticDocking
+                              ? "begin-automatic"
+                              : dock->type == ClientShipCommand::CancelAutomaticDocking
+                                  ? "cancel-automatic"
+                                  : dock->type == ClientShipCommand::BeginDockingGuidancePreparation
+                                      ? "begin-preparation"
+                                      : dock->type == ClientShipCommand::CompleteDockingGuidancePreparation
+                                          ? "complete-preparation" : "cancel-preparation")
+                      << std::endl;
+        }
+    }
     const PlayerId playerId = m_sessions.player(sessionId);
     const EntityId controlledEntityId =
         controlledEntityForSession(sessionId);
@@ -3348,6 +3454,20 @@ void GameServer::receiveClientMessage(
     if (!playerId || controlledEntityId.value == 0)
     {
         ++m_queueDiagnostics.rejectedSessionMessages;
+        if (const auto* dock =
+                std::get_if<ClientShipCommand>(&msg.payload))
+        {
+            if (dock->type == ClientShipCommand::BeginDockingGuidancePreparation ||
+                dock->type == ClientShipCommand::CompleteDockingGuidancePreparation ||
+                dock->type == ClientShipCommand::CancelDockingGuidancePreparation ||
+                dock->type == ClientShipCommand::BeginAutomaticDocking ||
+                dock->type == ClientShipCommand::CancelAutomaticDocking)
+            {
+                std::cerr << "[DockRequest] server-reject serial="
+                          << dock->requestSerial
+                          << " reason=no-controlled-entity" << std::endl;
+            }
+        }
         return;
     }
 
@@ -3684,6 +3804,41 @@ bool GameServer::controlledEntityAutopilotActiveForSession(
             game::server::ControllerKind::Autopilot;
 }
 
+void GameServer::recordDockingResult(
+    EntityId entityId,
+    std::uint64_t serial,
+    bool succeeded,
+    const char* reason
+)
+{
+    if (entityId.value == 0 || serial == 0)
+        return;
+    m_dockingResults[entityId.value] =
+        DockingResult {serial, succeeded, reason ? reason : "unspecified"};
+    m_forceSnapshotPublication = true;
+    std::cout << "[DockResult] server serial=" << serial
+              << " success=" << (succeeded ? 1 : 0)
+              << " reason=" << m_dockingResults[entityId.value].reason
+              << std::endl;
+}
+
+void GameServer::copyDockingResultForSession(
+    game::network::ServerSessionId sessionId,
+    game::simulation::ClientSessionSnapshot& outSession
+) const
+{
+    outSession.dockingResultSerial = 0;
+    outSession.dockingResultSucceeded = false;
+    outSession.dockingResultReason.clear();
+    const EntityId entityId = controlledEntityForSession(sessionId);
+    const auto it = m_dockingResults.find(entityId.value);
+    if (it == m_dockingResults.end())
+        return;
+    outSession.dockingResultSerial = it->second.serial;
+    outSession.dockingResultSucceeded = it->second.succeeded;
+    outSession.dockingResultReason = it->second.reason;
+}
+
 bool GameServer::copySnapshotForSession(
     game::network::ServerSessionId sessionId,
     SimulationSnapshot& outSnapshot
@@ -3701,6 +3856,7 @@ bool GameServer::copySnapshotForSession(
         navigationSensorsForSession(sessionId);
     outSnapshot.session.controlledEntityAutopilotActive =
         controlledEntityAutopilotActiveForSession(sessionId);
+    copyDockingResultForSession(sessionId, outSnapshot.session);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -3734,6 +3890,7 @@ bool GameServer::copyHydratedSnapshotForSession(
         navigationSensorsForSession(sessionId);
     outSnapshot.session.controlledEntityAutopilotActive =
         controlledEntityAutopilotActiveForSession(sessionId);
+    copyDockingResultForSession(sessionId, outSnapshot.session);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -3760,6 +3917,7 @@ bool GameServer::copySparseSnapshotForSession(
         navigationSensorsForSession(sessionId);
     outSnapshot.session.controlledEntityAutopilotActive =
         controlledEntityAutopilotActiveForSession(sessionId);
+    copyDockingResultForSession(sessionId, outSnapshot.session);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

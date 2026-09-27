@@ -1447,3 +1447,28 @@ Capture the first `[DockRequest]` line plus any following
 The first missing transition will identify whether the break is:
 UI request mode -> SpaceState, route-preflight, preparation command,
 Automatic command dispatch, or server acceptance.
+
+## 2026-09-27 — live diagnostic: request versus authority
+
+Build current main, start Assisted, press START DOCKING once without pressing
+CALCULATE TRAJECTORY. Capture the combined console from before the click through
+the first result. Follow one serial through `[DockRequest] ui`, `serial`,
+`client-send`, `server-recv`, plus `[DockAdvisory]` and `[DockAuto]`. If the
+request disappears, inspect `ui-clear` / `client-clear`. The cockpit must show
+PREPARING while route preflight runs, and Automatic only after server authority
+is confirmed. Native code gate has not replaced this live validation.
+The local static contract passed; this workspace has no `cmake`, so the full
+verify/build remain target-machine gates.
+
+## 2026-09-27 — next gate: full corridor and server result
+
+Build client AND server from the same protocol-12 commit, run
+`bash verify_docking.sh`, then `bash build_mingw64.sh`. In Assisted, press
+START DOCKING directly and capture the full combined console from click to
+server completion. Check the same request serial across UI, client send,
+server receive, `[DockAuto]`, `[DockResult] server`, and `[DockResult] client`.
+The cockpit/map corridor should remain visible and refresh while Automatic
+executes. A server rejection or planner failure must display its reason and
+retain the visual route when it is still representable. An invalid/stale
+advisory must carry an unsafe warning. Actual ship motion and endpoint still
+need live acceptance; static checks alone do not prove either.

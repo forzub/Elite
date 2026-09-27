@@ -827,6 +827,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         );
     }
 
+    // Preserve the exact accepted dense route for Automatic execution. The
+    // sparse public gates below are only presentation samples of this same
+    // product and must never be reinterpreted into a different flight path.
+    out.executionGates = dense;
+
     std::vector<double> denseProgress(dense.size(),0.0);
     for(std::size_t i=1;i<dense.size();++i)
         denseProgress[i]=denseProgress[i-1]+glm::length(

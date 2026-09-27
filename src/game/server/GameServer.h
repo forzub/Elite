@@ -345,6 +345,12 @@ private:
 
     struct DockingAutomaticRuntime
     {
+        enum class Stage : std::uint8_t
+        {
+            ApproachHold = 0,
+            FinalIngress
+        };
+
         enum class Phase : std::uint8_t
         {
             Stabilizing = 0,
@@ -361,6 +367,7 @@ private:
         std::string targetModuleId;
         std::string targetAnchorId;
 
+        Stage stage = Stage::ApproachHold;
         Phase phase = Phase::Stabilizing;
         double settledSinceUniverseTimeSeconds = -1.0;
         std::string lastPlanFailureReason;

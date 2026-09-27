@@ -1788,10 +1788,15 @@ bool GameServer::planAutomaticDocking(
                             return;
                         }
 
+                        const auto& executionGates =
+                            advisoryPlan.executionGates.empty()
+                                ? advisoryPlan.gates
+                                : advisoryPlan.executionGates;
+
                         trajectoryRequest.pathPointsMeters.reserve(
-                            advisoryPlan.gates.size()
+                            executionGates.size()
                         );
-                        for (const auto& gate : advisoryPlan.gates)
+                        for (const auto& gate : executionGates)
                         {
                             trajectoryRequest.pathPointsMeters.
                                 push_back(gate.positionMeters);
@@ -1807,7 +1812,7 @@ bool GameServer::planAutomaticDocking(
                         }
 
                         routeInitialForward =
-                            advisoryPlan.gates.front().forward;
+                            executionGates.front().forward;
                         if (glm::length(routeInitialForward) <= 1.0e-9)
                             routeInitialForward = currentForwardMap;
                         routeInitialForward =
@@ -1815,15 +1820,15 @@ bool GameServer::planAutomaticDocking(
 
                         double sourceProgress = 0.0;
                         for (std::size_t i = 0;
-                             i < advisoryPlan.gates.size();
+                             i < executionGates.size();
                              ++i)
                         {
                             if (i > 0)
                             {
                                 sourceProgress += glm::length(
-                                    advisoryPlan.gates[i].
+                                    executionGates[i].
                                         positionMeters -
-                                    advisoryPlan.gates[i - 1].
+                                    executionGates[i - 1].
                                         positionMeters
                                 );
                             }
@@ -1837,7 +1842,7 @@ bool GameServer::planAutomaticDocking(
                                 executionVehicle.maxSpeedMps,
                                 std::max(
                                     0.5,
-                                    advisoryPlan.gates[i].speedMps
+                                    executionGates[i].speedMps
                                 )
                             );
                             trajectoryRequest.

@@ -356,6 +356,12 @@ void testProgramBridgeReportsWhichBoundaryRejectedTheStep()
 
     Bridge::ProgramActuatorCommand actuator;
     actuator.valid = true;
+    const auto roundedClock = bridge.stepProgram(
+        0.01005, 0.01, intent, actuator
+    );
+    require(roundedClock.status == Bridge::PilotExecutor::Status::Ok,
+            "sub-millisecond pilot clock rounding must not reject control");
+
     const auto wrongClock = bridge.stepProgram(
         0.10, 0.01, intent, actuator
     );
@@ -365,14 +371,14 @@ void testProgramBridgeReportsWhichBoundaryRejectedTheStep()
             "mismatched pilot clock must report executor rejection");
 
     const auto accepted = bridge.stepProgram(
-        0.01, 0.01, intent, actuator
+        0.02005, 0.01, intent, actuator
     );
     require(accepted.status == Bridge::PilotExecutor::Status::Ok,
             "local pilot clock must accept the first control step");
 
     actuator.valid = false;
     const auto invalidActuator = bridge.stepProgram(
-        0.02, 0.01, intent, actuator
+        0.03005, 0.01, intent, actuator
     );
     require(invalidActuator.failure ==
                 Bridge::StepResult::FailureKind::InvalidActuator,

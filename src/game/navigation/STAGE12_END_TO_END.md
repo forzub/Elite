@@ -11007,3 +11007,11 @@ continues to use absolute universe timestamps. New failure kinds distinguish
 clock/executor, intent, and actuator rejection. Three consecutive bridge
 failures terminate with a reason delivered back to the client. Native/live
 validation of this candidate is pending.
+## 2026-09-27 — pilot clock tolerance after live bridge diagnosis
+
+The live clock-domain failure required a local pilot clock for the server
+bridge. PilotSkillExecutor also required time increment and filter delta to
+agree within nanoseconds. Reaction/decision/latency timing only needs the same
+gameplay step: accept rounding of max(0.1 ms, 1% of step), and continue to
+reject a skipped/duplicated tick. A bridge regression covers both cases.
+This change has not yet passed a Windows live flight gate.

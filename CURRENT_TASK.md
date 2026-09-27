@@ -1486,3 +1486,11 @@ and actuator fields from the new log. Three consecutive failures now end with
 motion, corridor persistence, hold stop, and final ingress separately. Startup
 M8E frame stalls in the supplied excerpt are independent of this bridge
 rejection and remain an open performance issue.
+## 2026-09-27 — verify tolerant pilot clock with live Automatic docking
+
+Run Windows native docking verification and client/server build on the new
+main. START DOCKING should pass the pilot bridge, move physically along the
+visible corridor, and report any server outcome to the client. The executor
+permits 0.1 ms / 1% clock rounding but still rejects missing gameplay ticks;
+log `failure_kind`, `clock_s`, `delta_s` on any bridge failure. Do not mark the
+Automatic runtime accepted until live movement and final result are observed.

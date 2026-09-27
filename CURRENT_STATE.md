@@ -6040,3 +6040,13 @@ with a server result instead of replanning indefinitely. Local static checks
 pass; target Windows native and live gates are pending for this correction.
 This corrected implementation is the next public-main candidate for the
 target-machine gate; its publication alone will not imply runtime acceptance.
+
+## 2026-09-27 — pilot clock check uses gameplay-scale tolerance
+
+The executor uses elapsed time for decision/reaction/latency scheduling and
+`deltaSeconds` for its command filter. A whole missing tick would make these
+disagree, but nanosecond agreement is unnecessary. Keep the local pilot clock
+from the live bridge fix and accept time/delta rounding up to the greater of
+0.1 ms or 1% of the step; larger discontinuities still return InvalidInput.
+The bridge regression covers harmless rounding and a missing tick. Windows
+native and live Automatic verification remain pending.

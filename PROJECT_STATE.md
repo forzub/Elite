@@ -4378,3 +4378,11 @@ does not relax actuator or tracking acceptance. Repeated bridge failure is a
 terminal, serialled server result instead of an infinite replan loop.
 This correction is delivered on canonical main for Windows verification;
 successful static checks remain distinct from flight acceptance.
+## 2026-09-27 — pilot clock precision contract
+
+Pilot decision cadence and latency use the same elapsed interval as the filter
+integration. Matching absolute time to `deltaSeconds` to nanoseconds is not a
+gameplay requirement: accept a difference up to max(0.1 ms, 1% of the step).
+Reject larger missing/duplicated tick gaps. The live server still supplies a
+local pilot clock from gameplay delta; world time remains authoritative for
+trajectory sampling. Windows runtime evidence for Automatic remains pending.

@@ -268,7 +268,7 @@ no world scan
 no dynamic allocation in steady-state execution
 ```
 
-Time input is explicit and must agree with `deltaSeconds`. This prevents replay drift caused by inconsistent caller timing.
+Time input is explicit and must agree with `deltaSeconds` within 0.1 ms or 1% of the step, whichever is larger. This allows harmless clock rounding while rejecting a missing or duplicated gameplay tick that would skew reaction/decision timing relative to filter integration. Replay is deterministic for the same time and delta inputs.
 
 ## Result diagnostics
 

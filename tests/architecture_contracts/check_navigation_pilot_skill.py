@@ -31,8 +31,8 @@ for marker in (
     "anticipationSeconds",
     "riskPreference01",
     "comfortPreference01",
-    "kMaxPendingCommands = 256",
-    "kMaxIntegrationSubsteps = 64",
+    "kPendingCommandStorageCapacity = 256",
+    "maximumIntegrationSubsteps = 64",
 ):
     require(marker in HEADER, f"pilot skill interface missing: {marker}")
 
@@ -47,7 +47,7 @@ for marker in (
     "maxLinearCommandSlewMetersPerSec3",
     "emergencyResponseThreshold01",
     "emergencyReactionDelayScale",
-    "kMaxIntegrationSubsteps",
+    "execution.maximumIntegrationSubsteps",
 ):
     require(marker in IMPL, f"pilot skill implementation missing: {marker}")
 

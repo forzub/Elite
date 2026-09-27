@@ -276,6 +276,12 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
     if (!initialized_)
         return result;
 
+    // Decision/latency timing and filter integration must share the same
+    // elapsed interval. Sub-millisecond clock rounding is immaterial here;
+    // a missing or duplicated gameplay tick is not.
+    const double clockToleranceSeconds =
+        std::max(1.0e-4, deltaSeconds * 0.01);
+
     if (!profileValid_ ||
         !finite(timeSeconds) ||
         !finite(deltaSeconds) ||
@@ -284,7 +290,7 @@ PilotSkillExecutor::StepResult PilotSkillExecutor::step(
         timeSeconds + kTolerance < lastTimeSeconds_ ||
         std::abs(
             (timeSeconds - lastTimeSeconds_) - deltaSeconds
-        ) > std::max(1.0e-9, deltaSeconds * 1.0e-6) ||
+        ) > clockToleranceSeconds ||
         !validCommand(desiredCommand))
     {
         result.status = Status::InvalidInput;

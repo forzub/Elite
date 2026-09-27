@@ -58,6 +58,23 @@ void testProfileValidation()
             "policy preference outside [0,1] must fail validation");
 }
 
+void testPilotClockAllowsRoundingButRejectsMissingTick()
+{
+    Executor executor(expertProfile());
+    Executor::Command command;
+    require(executor.reset(0.0, command), "pilot clock reset failed");
+
+    require(executor.step(0.01005, 0.01, command).status ==
+                Executor::Status::Ok,
+            "50 microseconds of clock rounding must be accepted");
+    require(executor.step(0.1, 0.01, command).status ==
+                Executor::Status::InvalidInput,
+            "missing gameplay tick must still be rejected");
+    require(executor.step(0.02005, 0.01, command).status ==
+                Executor::Status::Ok,
+            "rejected clock gap must not advance the pilot state");
+}
+
 void testReactionDelayAndCommandLatency()
 {
     Executor::PilotSkillProfile profile = expertProfile();
@@ -243,8 +260,8 @@ void testDeterministicNoiseIsReplayStable()
             "same seed/input must reproduce identical linear command"
         );
         requireNear(
-            ra.executedAngularAccelerationDemandSystemRadPerSec2.z,
-            rb.executedAngularAccelerationDemandSystemRadPerSec2.z,
+            ra.executedAngularAccelerationDemandRadPerSec2.z,
+            rb.executedAngularAccelerationDemandRadPerSec2.z,
             0.0,
             "same seed/input must reproduce identical angular command"
         );
@@ -459,6 +476,7 @@ int main()
     try
     {
         testProfileValidation();
+        testPilotClockAllowsRoundingButRejectsMissingTick();
         testReactionDelayAndCommandLatency();
         testTargetRevisionCanAdvanceInsideSameIntent();
         testDecisionCadenceIsSampleAndHold();

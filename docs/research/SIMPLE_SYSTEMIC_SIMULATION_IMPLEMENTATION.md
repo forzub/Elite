@@ -491,3 +491,336 @@ freighter destroyed
 ~~~
 
 This makes piracy, escorting, blockades and infrastructure damage meaningful without a complicated macroeconomic model.
+
+
+---
+
+## 14. Procedural ship generation: function first
+
+Best open implementation found:
+
+~~~text
+BlindMindStudios/StarRuler2-Source
+scripts/shared/util/random_designs.as
+~~~
+
+Pinned source commit:
+
+~~~text
+beec9bff697ffbebafaeb66d0cba1856a02cb6db
+~~~
+
+The important architecture is not random visual assembly. It is:
+
+~~~text
+ShipRole
+ -> functional composition recipe
+ -> connected structural footprint
+ -> functional subsystem placement
+ -> remaining-space fill
+ -> armor
+ -> validation
+ -> compatible visual hull
+~~~
+
+This is the correct direction for Elite.
+
+## 15. Star Ruler 2 shape algorithm
+
+The original uses a hex grid.
+
+Simplified:
+
+~~~text
+start at center
+
+while target size not reached:
+    choose an occupied cell
+        weighted by its free adjacent cells
+
+    choose a free adjacent direction
+        using directional weights
+
+    occupy that cell
+
+    often occupy the mirrored counterpart
+~~~
+
+This produces a connected, varied, controllably symmetric footprint cheaply.
+
+Elite should transfer the principle, not necessarily the hex grid.
+
+## 16. Elite topology-first generator
+
+Recommended chain:
+
+~~~text
+ROLE
+ -> SIZE
+ -> FUNCTION BUDGET
+ -> STRUCTURAL SPINE
+ -> EXTERNAL MODULES
+ -> INTERNAL MODULES
+ -> FILLER / CARGO
+ -> HULL / ARMOR
+ -> PHYSICAL VALIDATION
+ -> VISUAL ASSEMBLY
+~~~
+
+Suggested structural representation:
+
+~~~cpp
+struct StructuralNode {
+    NodeId id;
+    Transform transform;
+    std::vector<Socket> sockets;
+};
+
+struct Socket {
+    SocketType type;
+    SizeClass size;
+    Transform transform;
+    TagSet allowedTags;
+};
+~~~
+
+Example topology:
+
+~~~text
+          bridge
+            |
+nose -- core -- cargo -- cargo -- engines
+            |
+          reactor
+~~~
+
+The visual meshes are selected after functional topology is valid.
+
+## 17. Role recipes
+
+Freighter example:
+
+~~~cpp
+ShipRecipe Freighter {
+    core      = 0.05;
+    reactor   = 0.08;
+    engines   = 0.22;
+    cargo     = 0.38;
+    radiator  = 0.08;
+    fuel      = 0.10;
+    docking   = 0.03;
+    sensors   = 0.02;
+    armor     = remainder;
+};
+~~~
+
+Fighter:
+
+~~~text
+high engine budget
+high weapon budget
+medium fuel
+medium armor
+tiny cargo
+~~~
+
+Mining vessel:
+
+~~~text
+high cargo
+high power
+high mining equipment
+high radiator capacity
+medium engine
+~~~
+
+These are internal role weights, not player-facing tuning sliders.
+
+## 18. Place constrained external systems first
+
+Star Ruler 2 explicitly distinguishes placement strategies such as Weapon, Exhaust, Internal, Filler and ArmorLayer.
+
+Elite should use the same concept.
+
+Suggested order:
+
+~~~text
+1 engines
+2 docking / landing hardware
+3 weapons
+4 radiators
+5 sensors
+6 external bridge if required
+7 reactor / core / tanks
+8 cargo / crew / filler
+9 armor / hull fairing
+~~~
+
+Reasons:
+
+~~~text
+engine needs exhaust clearance
+weapon needs firing arc
+dock needs approach clearance
+radiator needs exposed surface
+cargo can occupy remaining internal space
+~~~
+
+## 19. Module placement rules
+
+~~~cpp
+struct ModulePlacementRule {
+    bool requiresExterior;
+    bool requiresRear;
+    bool requiresForwardArc;
+    bool requiresClearance;
+
+    double symmetryPreference;
+    double centerPreference;
+
+    TagSet adjacencyPreferred;
+    TagSet adjacencyForbidden;
+};
+~~~
+
+Candidate score:
+
+~~~cpp
+double placementScore(
+    const ModuleDef& m,
+    const CandidateSocket& s)
+{
+    double score = 1.0;
+
+    score *= exteriorScore(m, s);
+    score *= directionScore(m, s);
+    score *= symmetryScore(m, s);
+    score *= adjacencyScore(m, s);
+    score *= centerOfMassScore(m, s);
+
+    return score;
+}
+~~~
+
+Choose one valid candidate by weighted random.
+
+This allows manufacturer/style DNA to modify preferences without changing functional constraints.
+
+## 20. Generate, validate, retry
+
+One of the best patterns in Star Ruler 2 is deliberately simple:
+
+~~~text
+generate candidate
+ -> validate
+ -> reject if bad
+ -> retry
+~~~
+
+Its random designer can retry many times instead of making every placement rule perfect.
+
+Elite:
+
+~~~cpp
+for (int attempt = 0; attempt < 32; ++attempt) {
+    ShipDesign d =
+        buildCandidate(seed, attempt);
+
+    ValidationResult v =
+        validate(d);
+
+    if (v.ok())
+        return d;
+}
+
+return fallbackDesign(role, size);
+~~~
+
+When attempt number is part of deterministic seed derivation, the result remains reproducible.
+
+## 21. Ship validation contract
+
+Minimum checks:
+
+~~~text
+mandatory systems exist
+all critical modules connected
+no illegal module overlap
+mass is valid
+center of mass is acceptable
+main thrust meets role requirement
+mandatory power demand is covered
+radiator capacity is acceptable
+dock / landing clearance is free
+weapon arcs are useful
+control mode is feasible
+~~~
+
+The generator should reject physically nonsensical combinations rather than invent compensating magic.
+
+## 22. Visual variation comes after validity
+
+Cheap uniqueness:
+
+~~~text
+same functional topology
++ mesh-family variants
++ proportions
++ manufacturer DNA
++ palette
++ decals
++ wear
++ antennas
++ optional cosmetic shell pieces
+~~~
+
+Do not create a new functional topology merely to get another paint scheme or silhouette.
+
+## 23. Economy can determine procedural ship shape
+
+A shipment already knows:
+
+~~~text
+cargo amount
+route distance
+route danger
+desired delivery time
+~~~
+
+This can define a FreighterSpec:
+
+~~~cpp
+FreighterSpec makeFreighterSpec(
+    double cargoMass,
+    double routeDistance,
+    RouteClass route)
+{
+    FreighterSpec s;
+
+    s.cargoVolume =
+        cargoMass / averageCargoDensity;
+
+    s.targetMass =
+        cargoMass / targetPayloadFraction;
+
+    s.requiredAcceleration =
+        roleAcceleration(route);
+
+    s.requiredMainThrust =
+        s.targetMass * s.requiredAcceleration;
+
+    s.fuelMass =
+        estimateFuel(
+            s.targetMass,
+            routeDistance);
+
+    s.power =
+        estimatePower(s);
+
+    return s;
+}
+~~~
+
+Then the procedural ship generator builds the vessel from that specification.
+
+Result: different jobs naturally create different ships.

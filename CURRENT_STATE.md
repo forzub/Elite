@@ -5919,3 +5919,51 @@ Current fix:
 picking is part of the docking gate.
 
 Fresh Windows verify/build/live evidence for these newest changes is pending.
+
+## 2026-09-27 — Automatic docking restored to two physical stages
+
+The latest live failure plus code review exposed an architectural regression:
+the long Automatic transit appended the pre-capture point to the same trajectory
+and required that one program to end with the rotating port's exact orientation
+and angular velocity.
+
+That contradicted the agreed docking sequence.
+
+Current Automatic runtime now has:
+```text
+Stage::ApproachHold
+Stage::FinalIngress
+```
+
+ApproachHold:
+- uses the ordinary collision-free docking route;
+- ends at the advisory standoff/hold gate;
+- terminal translational velocity is zero;
+- does NOT append pre-capture;
+- does NOT require exact dock terminal orientation/omega.
+
+When ApproachHold completes:
+- Autopilot commands BrakeToStop;
+- all transit program/control state is discarded;
+- runtime logs `phase=hold-complete next=final-ingress`;
+- runtime stabilizes again from the real authoritative ship state.
+
+FinalIngress:
+- recomputes the current/predicted docking-port pose;
+- builds only the short hold-to-pre-capture maneuver;
+- uses the complete port basis, so alignment includes yaw, pitch and roll;
+- exact rotating-port terminal orientation and angular velocity are authored
+  only here;
+- generic angular-time relaxation may slow only this short ingress when needed.
+
+The Ship entity does not become a separate NPC object. Human vs Autopilot is
+controller ownership on the same physical Ship.
+
+The prior docking_advisory native FAIL at a 36.08 degree change between
+published 500 m corridor chords was a bad test criterion. Sparse display chords
+are not the underlying curve-continuity proof. DockingAdvisoryPlan now exposes
+`initialTurnPresent` and `initialTurnRadiusMeters`; the native test verifies
+that the nose-first transition is an actual tangent circular fillet while
+retaining the user-locked 500 m / 250 m frame cadence.
+
+Fresh Windows verify/build/live evidence is pending.

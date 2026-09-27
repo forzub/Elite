@@ -1849,6 +1849,26 @@ void SpaceState::updateDockingAdvisory()
         m_automaticDockingSerial == 0 &&
         !hasVisibleRouteForAutomaticTarget;
 
+    if (pending.valid() &&
+        pending.serial != m_lastDockingRequestTraceSerial)
+    {
+        m_lastDockingRequestTraceSerial = pending.serial;
+        std::cout
+            << "[DockRequest] serial=" << pending.serial
+            << " mode="
+            << (pending.mode == DockingRouteRequest::Mode::Automatic
+                    ? "automatic"
+                    : "guidance")
+            << " last_path=" << m_lastDockingPathRequestSerial
+            << " prep_serial=" << m_dockingPreparationSerial
+            << " auto_serial=" << m_automaticDockingSerial
+            << " visible_route="
+            << (hasVisibleRouteForAutomaticTarget ? 1 : 0)
+            << " needs_preflight="
+            << (automaticNeedsPreparedRoute ? 1 : 0)
+            << std::endl;
+    }
+
     const auto resetAutomaticTracking = [&]()
     {
         m_automaticDockingSerial = 0;

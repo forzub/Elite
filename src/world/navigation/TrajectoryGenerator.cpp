@@ -1534,6 +1534,56 @@ GuideMetricSample sampleGuide(
     return out;
 }
 
+glm::dvec3 guideVertexCurvatureVector(
+    const ExecutionGuide& guide,
+    std::size_t index
+)
+{
+    if (guide.points.size() < 3 ||
+        index == 0 ||
+        index + 1 >= guide.points.size())
+    {
+        return glm::dvec3(0.0);
+    }
+
+    const glm::dvec3 incomingDelta =
+        guide.points[index] -
+        guide.points[index - 1];
+    const glm::dvec3 outgoingDelta =
+        guide.points[index + 1] -
+        guide.points[index];
+    const double incomingLength =
+        magnitude(incomingDelta);
+    const double outgoingLength =
+        magnitude(outgoingDelta);
+    const double acrossLength = magnitude(
+        guide.points[index + 1] -
+        guide.points[index - 1]
+    );
+    const double denominator =
+        incomingLength * outgoingLength * acrossLength;
+    if (denominator <= Epsilon)
+        return glm::dvec3(0.0);
+
+    const double curvature =
+        2.0 * magnitude(
+            glm::cross(incomingDelta, outgoingDelta)
+        ) / denominator;
+    if (curvature <= 1.0e-12)
+        return glm::dvec3(0.0);
+
+    const glm::dvec3 incoming =
+        incomingDelta / incomingLength;
+    const glm::dvec3 outgoing =
+        outgoingDelta / outgoingLength;
+    const glm::dvec3 tangentDelta =
+        outgoing - incoming;
+    return normalizedOr(
+        tangentDelta,
+        glm::dvec3(0.0)
+    ) * curvature;
+}
+
 glm::dvec3 guideCurvatureVector(
     const world::navigation::TrajectoryGenerationRequest& request,
     const ExecutionGuide& guide,
@@ -1541,26 +1591,54 @@ glm::dvec3 guideCurvatureVector(
     double progressMeters
 )
 {
-    if (arc.empty() || arc.back() <= Epsilon)
+    (void)request;
+    if (guide.points.size() < 3 ||
+        arc.size() != guide.points.size() ||
+        arc.back() <= Epsilon)
+    {
         return glm::dvec3(0.0);
+    }
 
-    const double probe = std::clamp(
-        arc.back() * request.policy.curvatureProbeFraction,
-        request.policy.curvatureProbeMinimumMeters,
-        request.policy.curvatureProbeMaximumMeters
+    const double s = std::clamp(
+        progressMeters,
+        0.0,
+        arc.back()
     );
-    const double s0 =
-        std::max(0.0, progressMeters - probe);
-    const double s1 =
-        std::min(arc.back(), progressMeters + probe);
-    if (s1 - s0 <= Epsilon)
-        return glm::dvec3(0.0);
+    const auto upper = std::upper_bound(
+        arc.begin(),
+        arc.end(),
+        s
+    );
+    std::size_t right =
+        upper == arc.end()
+            ? arc.size() - 1
+            : static_cast<std::size_t>(
+                std::distance(arc.begin(), upper)
+              );
+    right = std::clamp<std::size_t>(
+        right,
+        1,
+        arc.size() - 1
+    );
+    const std::size_t left = right - 1;
 
-    const glm::dvec3 t0 =
-        sampleGuide(guide, arc, s0).tangent;
-    const glm::dvec3 t1 =
-        sampleGuide(guide, arc, s1).tangent;
-    return (t1 - t0) / (s1 - s0);
+    const double span =
+        std::max(Epsilon, arc[right] - arc[left]);
+    const double u = std::clamp(
+        (s - arc[left]) / span,
+        0.0,
+        1.0
+    );
+
+    // The execution guide is a sampled smooth corner. Treating each sampled
+    // chord as a piecewise-constant tangent created a mathematical impulse at
+    // every sample boundary: a 1 m finite-difference probe could report
+    // 5-10x the physical curvature that the speed planner used. Interpolate
+    // the circumcircle curvature of adjacent guide vertices instead, so the
+    // feed-forward acceleration and the speed limit describe the same curve.
+    return
+        guideVertexCurvatureVector(guide, left) * (1.0 - u) +
+        guideVertexCurvatureVector(guide, right) * u;
 }
 
 struct KeyframedProgressSample
@@ -1650,17 +1728,21 @@ KeyframedProgressResult keyframedGuideProgress(
     }
     for (std::size_t i = 1; i + 1 < count; ++i)
     {
-        const glm::dvec3 a = guide.points[i] - guide.points[i - 1];
-        const glm::dvec3 b = guide.points[i + 1] - guide.points[i];
-        const double denom = magnitude(a) * magnitude(b) *
-            magnitude(guide.points[i + 1] - guide.points[i - 1]);
-        if (denom <= Epsilon)
-            continue;
-        const double curvature =
-            2.0 * magnitude(glm::cross(a, b)) / denom;
+        const double curvature = magnitude(
+            guideCurvatureVector(
+                request,
+                guide,
+                arc,
+                arc[i]
+            )
+        );
         if (curvature > 1.0e-9)
-            limits[i] = std::min(limits[i],
-                std::sqrt(lateral / curvature));
+        {
+            limits[i] = std::min(
+                limits[i],
+                std::sqrt(lateral / curvature)
+            );
+        }
     }
     // Keep each curved chord within the speed admitted at either end.
     std::vector<double> edgeLimits(count - 1, cruise);
@@ -1965,6 +2047,39 @@ buildPathProgressTrajectory(
             world::navigation::TrajectoryStatus::NumericalFailure,
             "scalar path progress produced too few mapped samples"
         );
+    }
+
+    // A mapped path-progress sample must remain inside the same physical
+    // directional envelope used to build its speed profile. This is the
+    // Planner-side proof that prevents a mathematically valid curve from
+    // asking the live ship for, e.g., 100+ m/s^2 of lateral acceleration.
+    for (const auto& sample : out.trajectory.samples)
+    {
+        const glm::dvec3 forward = normalizedOr(
+            sample.velocityMps,
+            sample.orientation *
+                glm::dvec3(0.0, 0.0, -1.0)
+        );
+        const double along =
+            glm::dot(sample.accelerationMps2, forward);
+        const glm::dvec3 lateralAcceleration =
+            sample.accelerationMps2 - forward * along;
+        const double lateralMagnitude =
+            magnitude(lateralAcceleration);
+
+        if (along >
+                request.vehicle.maxForwardAccelerationMps2 + 1.0e-5 ||
+            along <
+                -request.vehicle.maxBrakingAccelerationMps2 - 1.0e-5 ||
+            lateralMagnitude >
+                request.vehicle.maxLateralAccelerationMps2 + 1.0e-5)
+        {
+            return failure(
+                request,
+                world::navigation::TrajectoryStatus::NumericalFailure,
+                "path-progress acceleration exceeds vehicle envelope"
+            );
+        }
     }
 
     // Preserve the exact authored initial state; the path-progress solve owns

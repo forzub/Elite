@@ -10942,3 +10942,27 @@ planning did not produce an executable program.
 
 Visible manual corridor cadence is a separate locked presentation contract:
 500 m normal, 250 m terminal.
+
+## 2026-09-27 — Automatic docking stage boundary
+
+Canonical docking execution now has an explicit stop boundary:
+
+```text
+ApproachHold geometry
+ -> trajectory/program
+ -> Follower/Bridge/Ship physics
+ -> HOLD complete
+ -> physical BrakeToStop
+ -> discard transit program
+ -> fresh authoritative state
+ -> FinalIngress geometry
+ -> full-basis alignment
+ -> short ingress program
+ -> pre-capture complete
+```
+
+Exact terminal dock orientation and terminal angular velocity are not
+ApproachHold requirements. They belong only to FinalIngress.
+
+The existing Aligning phase compares both forward and up vectors, therefore it
+corrects roll in addition to yaw/pitch before executing final ingress.

@@ -5737,3 +5737,68 @@ Fix:
 
 No production navigation, physics, Planner, Follower or trajectory code changed
 after the already-green native run.
+
+## 2026-09-27 — live gate exposed self-preflight and launch-geometry defects
+
+Fresh live evidence after the native docking gates:
+- cockpit boresight is useful and remains accepted;
+- the visible docking tunnel did not look like a route the current ship would
+  naturally enter: it showed a nose-forward line followed by a visually hard /
+  displaced transition;
+- pressing START DOCKING with no previously calculated manual route made the
+  button green and showed AUTOMATIC DOCKING MODE, but the ship did not move;
+- FramePerf showed `dock_request=1`;
+- the captured log contained no `[DockAuto]` lifecycle line at all.
+
+This proves the presentation request became active but the old Automatic UX was
+not self-contained/observable enough.
+
+Three concrete defects were found.
+
+1. **Visible Assisted guidance still used the legacy generic vehicle profile.**
+   That profile derives lateral authority from physical
+   `manoeuvreThrusterAccel` (2 m/s²). This contradicted the newly accepted
+   Assisted game-flight law. Visible manual/preflight routing now calls the
+   explicit control-law overload of `makeNavigationVehicleProfile`; Assisted
+   turn geometry therefore uses the same velocity-to-nose authority as
+   Automatic/manual flight.
+
+2. **The nose-first fix protected the entire 500 m lead from filleting.**
+   That guaranteed the first segment direction but created a hard corner at
+   `routeSearchStart`. Planner now protects only a visible straight prefix
+   (normally half the accepted lead) and allows the remainder of the lead to be
+   consumed by a tangent circular first-turn fillet. Initial/first-turn
+   presentation cadence is also densified. SpaceState publishes normal docking
+   guidance at 150 m cadence instead of the old 500 m sparse chords.
+
+3. **START DOCKING depended on an already visible route for good UX.**
+   Automatic is now self-contained:
+   ```text
+   START DOCKING
+    -> route-preflight when no matching corridor exists
+    -> temporary authoritative Autopilot stop/stabilize
+    -> authoritative Hub snapshot
+    -> visible advisory route/tunnel
+    -> temporary authority hand-back
+    -> BeginAutomaticDocking
+    -> server Automatic planning/execution
+   ```
+   An already calculated route for the same dock is still reused.
+
+Server Automatic now also supplies the actual stopped hull forward axis and
+nose-first lead to its own DockingAdvisoryRequest and uses 150 m gate cadence,
+so executable geometry starts with the same launch semantics as the visible
+preflight.
+
+Automatic request diagnostics are now flushed and every early server rejection
+has an explicit `[DockAuto] rejected ... reason=...` line. A successful
+client request logs `phase=requested`; a route-less start first logs
+`phase=route-preflight`.
+
+Native DockingAdvisoryPlanner regression was strengthened beyond the old
+first-vector check. It now requires:
+- multiple visible straight-prefix segments;
+- then a real launch turn;
+- no >30 degree discrete heading kink over the first 1200 m.
+
+Fresh Windows verify/build/live evidence for these newest edits is pending.

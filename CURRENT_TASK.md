@@ -1436,3 +1436,14 @@ At the hold point the ship must actually stop before the final short ingress.
 
 If FinalIngress angular planning fails, use the detailed angular diagnostic;
 do not reattach pre-capture to the long transit and do not widen angular limits.
+
+## 2026-09-27 — immediate diagnostic gate
+
+Pull/build/run and press START DOCKING once.
+
+Capture the first `[DockRequest]` line plus any following
+`[DockAuto]`/`[DockAdvisory]` lines.
+
+The first missing transition will identify whether the break is:
+UI request mode -> SpaceState, route-preflight, preparation command,
+Automatic command dispatch, or server acceptance.

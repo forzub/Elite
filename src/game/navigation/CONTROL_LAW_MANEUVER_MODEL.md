@@ -810,3 +810,18 @@ and does not modify the accepted manual Assisted handling law.
 
 Manual corridor display cadence is not a flight-law parameter and is locked by
 user contract at 500 m ordinary / 250 m terminal.
+
+## 2026-09-27 — docking attitude is full 3-D, not yaw-only
+
+Dock final alignment uses a complete body basis:
+- target forward = opposite docking-port outward axis;
+- target up = docking-port up axis;
+- right is derived orthogonally.
+
+Therefore the attitude controller can and must correct yaw, pitch and roll.
+Angular velocity is also a 3-D vector under the shared max-angular-speed and
+max-angular-acceleration limits.
+
+Ordinary ApproachHold navigation does not need to match the rotating port's
+terminal angular state. That boundary is applied only after the hold-point stop
+during the separate FinalIngress stage.

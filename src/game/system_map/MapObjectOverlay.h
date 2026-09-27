@@ -634,25 +634,42 @@ public:
                             item.pickPriority > bestPickPriority;
                         const bool samePriority =
                             item.pickPriority == bestPickPriority;
+                        const bool dockToDock =
+                            samePriority &&
+                            picked &&
+                            item.kind == MapObjectGlyphKind::DockingPort &&
+                            picked->kind == MapObjectGlyphKind::DockingPort;
+
+                        // Among semantic docking subtargets, cursor proximity
+                        // wins. Physical opening size must not make a farther
+                        // neighboring dock steal a click at distant zoom.
+                        const bool nearerDock =
+                            dockToDock &&
+                            distance < bestDistance - 1.0e-6;
                         const bool larger =
                             samePriority &&
+                            !dockToDock &&
                             physicalSizeMeters >
                                 bestPhysicalSizeMeters + 1.0e-6;
                         const bool sameSize =
                             samePriority &&
-                            std::abs(
-                                physicalSizeMeters -
-                                bestPhysicalSizeMeters
-                            ) <= 1.0e-6;
+                            (dockToDock ||
+                             std::abs(
+                                 physicalSizeMeters -
+                                 bestPhysicalSizeMeters
+                             ) <= 1.0e-6);
                         const bool nearer =
-                            sameSize && distance < bestDistance - 1.0e-6;
+                            !dockToDock &&
+                            sameSize &&
+                            distance < bestDistance - 1.0e-6;
                         const bool deterministicTie =
                             sameSize &&
                             std::abs(distance - bestDistance) <= 1.0e-6 &&
                             picked &&
                             item.objectId < picked->objectId;
 
-                        if (!picked || higherPriority || larger || nearer || deterministicTie)
+                        if (!picked || higherPriority || nearerDock ||
+                            larger || nearer || deterministicTie)
                         {
                             picked = &item;
                             bestPickPriority = item.pickPriority;

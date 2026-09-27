@@ -4263,3 +4263,30 @@ inside:
 
 This is independent of Assisted/Newtonian doctrine. Both ship families require
 physically reachable body attitude and angular velocity programs.
+
+## 2026-09-27 — Automatic docking owns its route-preflight UX
+
+START DOCKING is now a complete user operation. A pre-existing manual guidance
+route is an optimization/presentation reuse case, not a prerequisite.
+
+When no matching visible corridor exists, the client orchestration uses the
+same authoritative preparation protocol as CALCULATE TRAJECTORY:
+stop -> settle -> authoritative Hub snapshot -> advisory route -> publish
+corridor. It then returns temporary authority and starts server Automatic.
+
+This does not move execution authority to the client. Server Automatic still
+owns its own immutable planning inputs, collision proof, accepted program and
+actuation. The preflight route is presentation/safe-start preparation.
+
+Visible and executable Assisted docking now share these route assumptions:
+- same actual hull-forward launch direction;
+- same minimum/requested nose-first lead doctrine;
+- same Assisted control-law capability interpretation rather than 2 m/s²
+  precision RCS;
+- denser 150 m advisory cadence around the route.
+
+Longer-term, if server accepted geometry becomes materially different from the
+preflight preview because of moving target prediction, the authoritative
+accepted program/corridor should be replicated back for exact presentation.
+That remains a presentation-consistency refinement, not permission for the
+client preview to command physics.

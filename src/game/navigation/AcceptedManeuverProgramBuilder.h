@@ -283,10 +283,31 @@ public:
 
             if (request.controlLaw == LocalFlightControlLaw::Assisted)
             {
-                // Assisted route execution is NOT a synthetic propulsion
-                // allocation problem. Manual and automatic flight share the
-                // same nose-coupled game flight law; physical manoeuvre/RCS is
-                // reserved for later precision-placement doctrine.
+                // Assisted route execution shares the same nose-coupled game
+                // flight law as manual control. It is not allowed to spend
+                // precision keypad RCS as sustained route thrust, but the
+                // accepted motion must still fit the installed main-engine
+                // and Assisted stabilization authority. Otherwise the
+                // Follower is guaranteed to lag a physically impossible
+                // reference and eventually reject itself.
+                const double forwardAuthority = std::max(
+                    0.0,
+                    game::ship::forwardMainAccelerationLimitMps2(params) -
+                        request.policy.linearFeedbackReserveMps2
+                );
+                const double brakingAuthority = std::max(
+                    0.0,
+                    game::ship::reverseMainAccelerationLimitMps2(params) -
+                        request.policy.linearFeedbackReserveMps2
+                );
+                const double lateralAuthority = std::max(
+                    0.0,
+                    game::ship::
+                        assistedLateralStabilizationAccelerationLimitMps2(
+                            params
+                        ) -
+                        request.policy.linearFeedbackReserveMps2
+                );
 
                 for (std::size_t i = 0; i < count; ++i)
                 {
@@ -318,6 +339,23 @@ public:
                             " forward_mps=" +
                                 std::to_string(forwardSpeed) +
                             " speed_mps=" + std::to_string(speed)
+                        );
+                    }
+
+                    const glm::dvec3 demand =
+                        sample.linearAccelerationFeedForwardMapMps2;
+                    const double along =
+                        glm::dot(demand, forward);
+                    const glm::dvec3 transverse =
+                        demand - forward * along;
+                    if (!finiteVec(demand) ||
+                        along > forwardAuthority + 1.0e-6 ||
+                        along < -brakingAuthority - 1.0e-6 ||
+                        glm::length(transverse) >
+                            lateralAuthority + 1.0e-6)
+                    {
+                        return fail(
+                            "assisted-motion-envelope-infeasible"
                         );
                     }
                 }

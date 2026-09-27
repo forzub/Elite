@@ -1408,3 +1408,31 @@ Next target sequence:
 
 Also validate clicking a distant docking port: its card must win over the parent
 module/assembly when the cursor is within the dock marker hit area.
+
+## 2026-09-27 — next gate: hold stop must execute before final ingress
+
+Run full docking verification on current main.
+
+Expected native/static contracts:
+- manual corridor remains 500 m normal / 250 m final;
+- nose-first launch has a real tangent circular fillet;
+- Automatic runtime contains ApproachHold and FinalIngress;
+- long approach cannot append pre-capture;
+- exact terminal angular matching is final-ingress-only.
+
+After build, live START DOCKING without manual pre-calculation.
+
+Expected lifecycle should now include:
+```text
+stage=approach-hold phase=planning-async
+planned ... stage=approach-hold phase=...
+... physical transit ...
+stage=approach-hold phase=hold-complete next=final-ingress
+stage=final-ingress phase=planning-async
+planned ... stage=final-ingress phase=aligning|executing
+```
+
+At the hold point the ship must actually stop before the final short ingress.
+
+If FinalIngress angular planning fails, use the detailed angular diagnostic;
+do not reattach pre-capture to the long transit and do not widen angular limits.

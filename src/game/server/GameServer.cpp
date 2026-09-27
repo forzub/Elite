@@ -1592,6 +1592,12 @@ bool GameServer::planAutomaticDocking(
 
                     DockingAdvisoryRequest request;
                     request.startMeters = startPositionMeters;
+                    request.hasInitialForward = true;
+                    request.initialForward = currentForwardMap;
+                    request.initialForwardLeadMeters = std::max(
+                        500.0,
+                        hull.lengthMeters * 10.0
+                    );
                     request.entranceMeters =
                         port.positionMeters;
                     request.outward = port.forward;
@@ -1612,8 +1618,8 @@ bool GameServer::planAutomaticDocking(
                         executionVehicle.
                             maxLateralAccelerationMps2;
                     request.roundTurns = assisted;
-                    request.gateSpacingMeters = 500.0;
-                    request.terminalGateSpacingMeters = 250.0;
+                    request.gateSpacingMeters = 150.0;
+                    request.terminalGateSpacingMeters = 150.0;
                     request.terminalDenseDistanceMeters = 2000.0;
                     if (assisted)
                     {

@@ -1,3 +1,35 @@
+## 2026-09-28 — Stage 12 public Planner/Autopilot seam implemented
+
+The architecture split is now represented in code rather than documentation
+only.
+
+Public Stage-12 navigation entrypoints:
+- `navigation/planner/RoutePlannerApi.h`;
+- `navigation/autopilot/RouteFollowerApi.h`.
+
+RoutePlanner currently adapts the already proven docking-route geometry backend
+behind a generic endpoint/capability/obstacle API. External callers no longer
+depend on `DockingAdvisoryPlanner` types.
+
+RouteFollower facade owns access to the current proven execution kernels:
+- active page selection;
+- spatial/time reference sampling;
+- entry-attitude acquisition;
+- route following/tracking.
+GameServer no longer imports Timeline/Sampler/TrackingController/TrajectoryFollower
+implementation types.
+
+`AcceptedManeuverProgram` is the deliberate immutable Planner-to-Autopilot
+execution DTO. It may cross this boundary; mutable execution internals may not.
+
+Dock Traffic and Landing are separate build/domain modules and are not Stage-12
+navigation responsibilities. Their APIs cannot be imported into Planner or
+Autopilot public headers.
+
+This is an ownership-preserving refactor: do not change the successful
+SpatialCorridor geometry/control doctrine while validating the new boundary.
+Windows native/build evidence is pending.
+
 ## 2026-09-28 — Stage 12 boundary extension: docking is not one navigation module
 
 The successful SpatialCorridor work is now the reusable navigation substrate,

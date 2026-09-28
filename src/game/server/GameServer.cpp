@@ -2307,6 +2307,10 @@ bool GameServer::planAutomaticDocking(
                     finalIngressStage
                         ? 0.0
                         : advisoryPlan.terminalTurnRadiusMeters;
+                job->terminalArcRotationDegrees =
+                    finalIngressStage
+                        ? 0.0
+                        : advisoryPlan.terminalArcRotationDegrees;
                 job->maxPlannedAccelerationMps2 = 0.0;
                 for (const auto& sample :
                      trajectoryResult.trajectory.samples)
@@ -2855,6 +2859,8 @@ void GameServer::applyAutomaticDockingControls(
                 << job->finalAxisMeters
                 << " terminal_radius_m="
                 << job->terminalRadiusMeters
+                << " arc_rotation_deg="
+                << job->terminalArcRotationDegrees
                 << " max_planned_accel_mps2="
                 << job->maxPlannedAccelerationMps2
                 << " pre_capture_depth_m="

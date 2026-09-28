@@ -604,6 +604,20 @@ ExecutionGuide buildExecutionGuide(
     return guide;
 }
 
+ExecutionGuide buildAuthoredExecutionGuide(
+    const world::navigation::TrajectoryGenerationRequest& request,
+    const std::vector<double>& sourceProgress
+)
+{
+    ExecutionGuide guide;
+    guide.points = request.pathPointsMeters;
+    guide.sourceProgress = sourceProgress;
+    guide.roundedCorners = 0;
+    guide.expandedCorners = 0;
+    return guide;
+}
+
+
 bool violatesKnownStopDistance(
     const world::navigation::TrajectoryGenerationRequest& request,
     const std::vector<double>& sourceProgress
@@ -2520,7 +2534,15 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     }
 
     const ExecutionGuide guide =
-        buildExecutionGuide(request, coarseSourceProgress);
+        request.pathGeometryAlreadyAuthored
+            ? buildAuthoredExecutionGuide(
+                  request,
+                  coarseSourceProgress
+              )
+            : buildExecutionGuide(
+                  request,
+                  coarseSourceProgress
+              );
 
     // A dense 3-D state-to-state waypoint solver can create stop-like
     // slowdowns and lateral bows. Curved retained routes instead fix geometry

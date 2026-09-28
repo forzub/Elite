@@ -52,13 +52,56 @@ public:
         return std::max(12.0, trackingPositionErrorMeters);
     }
 
-    static double holdCaptureSpeedMps(
-        double trackingVelocityErrorMps
+    // HOLD capture is a braking problem, not a magic speed threshold.
+    // If the craft is already inside the accepted spatial envelope and can
+    // physically stop before leaving it, transition to FinalIngress and let
+    // the dedicated stop/alignment phase finish the job.
+    static bool canCaptureHoldWhileBraking(
+        double distanceToHoldMeters,
+        double trackingPositionErrorMeters,
+        double speedMps,
+        double brakingAuthorityMps2,
+        double responseSeconds = 0.25
     ) noexcept
     {
-        if (!std::isfinite(trackingVelocityErrorMps))
-            return 0.0;
-        return std::max(2.0, 0.5 * trackingVelocityErrorMps);
+        const double values[] = {
+            distanceToHoldMeters,
+            trackingPositionErrorMeters,
+            speedMps,
+            brakingAuthorityMps2,
+            responseSeconds
+        };
+        for (double value : values)
+        {
+            if (!std::isfinite(value) || value < 0.0)
+                return false;
+        }
+
+        if (!(brakingAuthorityMps2 > 0.0))
+            return false;
+
+        const double captureRadius =
+            holdCaptureDistanceMeters(
+                trackingPositionErrorMeters
+            );
+        if (!(captureRadius > 0.0) ||
+            distanceToHoldMeters > captureRadius)
+        {
+            return false;
+        }
+
+        const double availableBrakingDistance =
+            std::max(
+                0.0,
+                captureRadius - distanceToHoldMeters
+            );
+        const double requiredBrakingDistance =
+            speedMps * responseSeconds +
+            (speedMps * speedMps) /
+                (2.0 * brakingAuthorityMps2);
+
+        return requiredBrakingDistance <=
+            availableBrakingDistance + 1.0e-9;
     }
 
     // A route is still geometrically safe while position and hull direction are

@@ -1650,9 +1650,19 @@ glm::dvec3 guideCurvatureVector(
     // 5-10x the physical curvature that the speed planner used. Interpolate
     // the circumcircle curvature of adjacent guide vertices instead, so the
     // feed-forward acceleration and the speed limit describe the same curve.
-    return
+    //
+    // Curvature is, by definition, normal to the instantaneous tangent.
+    // Interpolating two vertex normals can introduce a small tangential
+    // component on a chord. If left in place, that fake component is added to
+    // the real longitudinal acceleration and can make an otherwise feasible
+    // sample exceed the vehicle envelope.
+    const glm::dvec3 tangent =
+        sampleGuide(guide, arc, s).tangent;
+    glm::dvec3 curvature =
         guideVertexCurvatureVector(guide, left) * (1.0 - u) +
         guideVertexCurvatureVector(guide, right) * u;
+    curvature -= tangent * glm::dot(curvature, tangent);
+    return curvature;
 }
 
 struct KeyframedProgressSample
@@ -2067,8 +2077,11 @@ buildPathProgressTrajectory(
     // directional envelope used to build its speed profile. This is the
     // Planner-side proof that prevents a mathematically valid curve from
     // asking the live ship for, e.g., 100+ m/s^2 of lateral acceleration.
-    for (const auto& sample : out.trajectory.samples)
+    for (std::size_t sampleIndex = 0;
+         sampleIndex < out.trajectory.samples.size();
+         ++sampleIndex)
     {
+        const auto& sample = out.trajectory.samples[sampleIndex];
         const glm::dvec3 forward = normalizedOr(
             sample.velocityMps,
             sample.orientation *
@@ -2092,6 +2105,22 @@ buildPathProgressTrajectory(
                 request,
                 world::navigation::TrajectoryStatus::NumericalFailure,
                 "path-progress acceleration exceeds vehicle envelope"
+                " sample=" + std::to_string(sampleIndex) +
+                " along=" + std::to_string(along) +
+                " forward_limit=" +
+                    std::to_string(
+                        request.vehicle.maxForwardAccelerationMps2
+                    ) +
+                " brake_limit=" +
+                    std::to_string(
+                        request.vehicle.maxBrakingAccelerationMps2
+                    ) +
+                " lateral=" + std::to_string(lateralMagnitude) +
+                " lateral_limit=" +
+                    std::to_string(
+                        request.vehicle.maxLateralAccelerationMps2
+                    ) +
+                " speed=" + std::to_string(sample.speedMps)
             );
         }
     }

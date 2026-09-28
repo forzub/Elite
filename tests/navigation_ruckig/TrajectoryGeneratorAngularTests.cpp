@@ -290,6 +290,71 @@ void testAuthoredPathGeometryIsNotRedrawn()
     }
 }
 
+void testAuthoredArcStaysInsideAccelerationEnvelope()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "authored-arc-envelope-test";
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.maxSpeedMps = 100.0;
+    request.vehicle.maxForwardAccelerationMps2 = 10.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 10.0;
+    request.vehicle.maxLateralAccelerationMps2 = 5.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 2.0;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 2.0;
+    request.pathGeometryAlreadyAuthored = true;
+
+    constexpr double Radius = 1000.0;
+    constexpr int Samples = 65;
+    for (int i = 0; i < Samples; ++i)
+    {
+        const double a =
+            (0.5 * 3.14159265358979323846) *
+            static_cast<double>(i) /
+            static_cast<double>(Samples - 1);
+        request.pathPointsMeters.push_back({
+            Radius * std::sin(a),
+            0.0,
+            Radius * (1.0 - std::cos(a))
+        });
+    }
+
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "authored circular route exceeded acceleration envelope: " +
+            result.trajectory.message
+    );
+
+    for (const auto& sample : result.trajectory.samples)
+    {
+        const glm::dvec3 tangent =
+            length(sample.velocityMps) > 1.0e-9
+                ? glm::normalize(sample.velocityMps)
+                : glm::dvec3(1.0, 0.0, 0.0);
+        const double along =
+            glm::dot(sample.accelerationMps2, tangent);
+        const glm::dvec3 lateral =
+            sample.accelerationMps2 - tangent * along;
+
+        require(
+            along <= request.vehicle.maxForwardAccelerationMps2 + 1.0e-5,
+            "authored arc exceeded forward acceleration"
+        );
+        require(
+            along >= -request.vehicle.maxBrakingAccelerationMps2 - 1.0e-5,
+            "authored arc exceeded braking acceleration"
+        );
+        require(
+            length(lateral) <=
+                request.vehicle.maxLateralAccelerationMps2 + 1.0e-5,
+            "authored arc exceeded lateral acceleration"
+        );
+    }
+}
+
 void testLongStraightCruisesBeforeLocalTurnAndStop()
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -342,6 +407,7 @@ int main()
         testRotatingTerminalAngularProgramIsPhysicallyBounded();
         testTranslationSlowsWhenAngularTerminalNeedsMoreTime();
         testAuthoredPathGeometryIsNotRedrawn();
+        testAuthoredArcStaysInsideAccelerationEnvelope();
         testLongStraightCruisesBeforeLocalTurnAndStop();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";

@@ -39,8 +39,20 @@ void printTerminalArcDiagnostics(
         << plan.terminalArcCollisionRejected
         << " accepted="
         << plan.terminalArcAcceptedCandidates
+        << " axis_passes="
+        << plan.terminalArcAxisPassesTested
+        << " final_axis_m="
+        << plan.terminalApproachLengthMeters
+        << " axis_extended="
+        << plan.terminalApproachExtended
         << " relaxed="
         << plan.terminalTurnRadiusRelaxed
+        << " blocker="
+        << (plan.terminalArcDominantBlockerId.empty()
+                ? "none"
+                : plan.terminalArcDominantBlockerId)
+        << " blocker_hits="
+        << plan.terminalArcDominantBlockerHits
         << " last_rejection="
         << (plan.terminalArcLastRejection.empty()
                 ? "none"
@@ -306,6 +318,24 @@ int main()
                   << nearestAlignDistance << "\n";
         printTerminalArcDiagnostics(curvedPlan);
         return 24;
+    }
+
+    // Regression: route-to-entry rounding must end at ENTRY. It must never
+    // smuggle HOLD into the transit path before the exact terminal primitive.
+    for(std::size_t i=0;i<alignGateIndex;++i)
+    {
+        if(glm::length(
+               curvedPlan.executionGates[i].positionMeters-curvedStop
+           )<1.0e-6)
+        {
+            std::cerr
+                << "docking HOLD appeared before terminal ALIGN"
+                << " gate_index=" << i
+                << " align_gate_index=" << alignGateIndex
+                << "\n";
+            printTerminalArcDiagnostics(curvedPlan);
+            return 42;
+        }
     }
 
     // ALIGN is an authored semantic vertex and is now preserved exactly.

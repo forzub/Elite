@@ -50,6 +50,7 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
         input.maxAngularVelocityRadPerSecond;
     legacy.maxAngularAccelerationRadPerSecond2 =
         input.maxAngularAccelerationRadPerSecond2;
+    legacy.initialSpeedMps = input.initialSpeedMps;
     legacy.roundTurns = input.roundTurns;
     legacy.hasInitialForward = input.hasInitialForward;
     legacy.initialForward = input.initialForward;

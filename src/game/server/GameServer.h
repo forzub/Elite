@@ -391,8 +391,12 @@ private:
             double executionStartUniverseTimeSeconds = 0.0;
             double trajectoryDurationSeconds = 0.0;
             std::size_t gateCount = 0;
+            std::size_t executionPointCount = 0;
+            bool advisoryDetourUsed = false;
+            double initialTurnRadiusMeters = 0.0;
             double finalAxisMeters = 0.0;
             double terminalRadiusMeters = 0.0;
+            double maxPlannedAccelerationMps2 = 0.0;
             double preCaptureDepthMeters = 0.0;
             double terminalUniverseTimeSeconds = 0.0;
             double terminalAngularVelocityRadPerSec = 0.0;

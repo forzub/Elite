@@ -328,29 +328,54 @@ void testAuthoredArcStaysInsideAccelerationEnvelope()
             result.trajectory.message
     );
 
-    for (const auto& sample : result.trajectory.samples)
+    for (std::size_t i=0;i<result.trajectory.samples.size();++i)
     {
+        const auto& sample=result.trajectory.samples[i];
         const glm::dvec3 tangent =
             length(sample.velocityMps) > 1.0e-9
                 ? glm::normalize(sample.velocityMps)
-                : glm::dvec3(1.0, 0.0, 0.0);
+                : glm::normalize(
+                      sample.orientation *
+                      glm::dvec3(0.0,0.0,-1.0)
+                  );
         const double along =
             glm::dot(sample.accelerationMps2, tangent);
         const glm::dvec3 lateral =
             sample.accelerationMps2 - tangent * along;
+        const double lateralMagnitude=length(lateral);
+
+        const auto sampleDiagnostic=[&]()
+        {
+            return
+                " sample=" + std::to_string(i) +
+                " speed=" + std::to_string(sample.speedMps) +
+                " along=" + std::to_string(along) +
+                " lateral=" + std::to_string(lateralMagnitude) +
+                " accel=(" +
+                    std::to_string(sample.accelerationMps2.x) + "," +
+                    std::to_string(sample.accelerationMps2.y) + "," +
+                    std::to_string(sample.accelerationMps2.z) + ")" +
+                " tangent=(" +
+                    std::to_string(tangent.x) + "," +
+                    std::to_string(tangent.y) + "," +
+                    std::to_string(tangent.z) + ")";
+        };
 
         require(
             along <= request.vehicle.maxForwardAccelerationMps2 + 1.0e-5,
-            "authored arc exceeded forward acceleration"
+            "authored arc exceeded forward acceleration" +
+                sampleDiagnostic()
         );
         require(
             along >= -request.vehicle.maxBrakingAccelerationMps2 - 1.0e-5,
-            "authored arc exceeded braking acceleration"
+            "authored arc exceeded braking acceleration" +
+                sampleDiagnostic()
         );
         require(
-            length(lateral) <=
+            lateralMagnitude <=
                 request.vehicle.maxLateralAccelerationMps2 + 1.0e-5,
-            "authored arc exceeded lateral acceleration"
+            "authored arc exceeded lateral acceleration" +
+                sampleDiagnostic()
         );
     }
 }

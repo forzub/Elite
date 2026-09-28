@@ -743,7 +743,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             std::max(1000.0, 2.0 * transitComfortRadius);
 
         constexpr int terminalIngressSamples=36;
-        constexpr int terminalAxisPasses=5;
+        constexpr double axisOffsetFactors[] = {
+            0.0,
+            -0.5, 0.5,
+            -1.0, 1.0,
+            -2.0, 2.0,
+            -4.0, 4.0
+        };
         constexpr double twoPi=
             6.283185307179586476925286766559;
         constexpr double halfPi=
@@ -774,26 +780,42 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     blocker->radiusMeters;
             };
 
-        // Search the nearest acceptable terminal axis first. Only when ALL 36
-        // rotations at that station fail do we move the complete exact-R
-        // primitive farther outward. This is cheaper and more deterministic
-        // than mixing distance and rotation into one global search.
-        for(int axisPass=0;
-            axisPass<terminalAxisPasses && !selected.valid;
-            ++axisPass)
+        // Search the nearest acceptable terminal axis first. If all 36
+        // rotations fail, slide ALIGN along the docking axis while preserving
+        // the exact same R. Moving inward lets a broad arc peel away before a
+        // far-axis blocker; moving outward helps when the local ring itself is
+        // crowded. Never trade radius for convenience.
+        std::vector<double> testedApproachLengths;
+        for(const double offsetFactor : axisOffsetFactors)
         {
+            if(selected.valid)
+                break;
+
+            const double candidateApproachLengthMeters =
+                std::max(
+                    mandatoryApproachLengthMeters,
+                    finalApproachLengthMeters +
+                        offsetFactor*terminalPrimitiveRadius
+                );
+
+            bool duplicateAxis=false;
+            for(const double tested : testedApproachLengths)
+            {
+                if(std::abs(
+                       tested-candidateApproachLengthMeters
+                   )<=1.0e-6)
+                {
+                    duplicateAxis=true;
+                    break;
+                }
+            }
+            if(duplicateAxis)
+                continue;
+            testedApproachLengths.push_back(
+                candidateApproachLengthMeters
+            );
             ++out.terminalArcAxisPassesTested;
 
-            const double axisExtensionMeters =
-                axisPass==0
-                    ? 0.0
-                    : terminalPrimitiveRadius *
-                        std::pow(
-                            2.0,
-                            static_cast<double>(axisPass-2)
-                        );
-            const double candidateApproachLengthMeters =
-                finalApproachLengthMeters + axisExtensionMeters;
             const glm::dvec3 candidateAlign =
                 stop + outward*candidateApproachLengthMeters;
             const glm::dvec3 finalDirection =

@@ -11,6 +11,44 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
+namespace
+{
+void printTerminalArcDiagnostics(
+    const game::navigation::DockingAdvisoryPlan& plan
+)
+{
+    std::cerr
+        << " terminal-arc diagnostics:"
+        << " requested_radius_m="
+        << plan.terminalTurnRequestedRadiusMeters
+        << " selected_radius_m="
+        << plan.terminalTurnRadiusMeters
+        << " rotation_deg="
+        << plan.terminalArcRotationDegrees
+        << " candidates="
+        << plan.terminalArcCandidatesTested
+        << " routeable="
+        << plan.terminalArcRouteable
+        << " route_rejected="
+        << plan.terminalArcRouteRejected
+        << " transit_ready="
+        << plan.terminalArcTransitReady
+        << " transit_rejected="
+        << plan.terminalArcTransitRejected
+        << " collision_rejected="
+        << plan.terminalArcCollisionRejected
+        << " accepted="
+        << plan.terminalArcAcceptedCandidates
+        << " relaxed="
+        << plan.terminalTurnRadiusRelaxed
+        << " last_rejection="
+        << (plan.terminalArcLastRejection.empty()
+                ? "none"
+                : plan.terminalArcLastRejection)
+        << "\n";
+}
+}
+
 int main()
 {
     using namespace game::navigation;
@@ -222,6 +260,7 @@ int main()
     {
         std::cerr << "circular fillet fixture failed: "
                   << curvedPlan.failure << "\n";
+        printTerminalArcDiagnostics(curvedPlan);
         return 23;
     }
     const auto curvedStop=
@@ -239,6 +278,7 @@ int main()
     {
         std::cerr << "manual Assisted terminal radius too small: "
                   << curvedPlan.terminalTurnRadiusMeters << "\n";
+        printTerminalArcDiagnostics(curvedPlan);
         return 26;
     }
 
@@ -382,6 +422,7 @@ int main()
                   << " relaxed=" << reroutedPlan.terminalTurnRadiusRelaxed
                   << " radius=" << reroutedPlan.terminalTurnRadiusMeters
                   << "\n";
+        printTerminalArcDiagnostics(reroutedPlan);
         return 27;
     }
 
@@ -404,6 +445,7 @@ int main()
                   << " relaxed=" << tightenedPlan.terminalTurnRadiusRelaxed
                   << " radius=" << tightenedPlan.terminalTurnRadiusMeters
                   << "\n";
+        printTerminalArcDiagnostics(tightenedPlan);
         return 28;
     }
 

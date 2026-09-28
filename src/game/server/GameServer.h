@@ -396,7 +396,16 @@ private:
             double initialTurnRadiusMeters = 0.0;
             double finalAxisMeters = 0.0;
             double terminalRadiusMeters = 0.0;
+            double requestedTerminalRadiusMeters = 0.0;
             double terminalArcRotationDegrees = 0.0;
+            int terminalArcCandidatesTested = 0;
+            int terminalArcRouteable = 0;
+            int terminalArcRouteRejected = 0;
+            int terminalArcTransitReady = 0;
+            int terminalArcTransitRejected = 0;
+            int terminalArcCollisionRejected = 0;
+            int terminalArcAcceptedCandidates = 0;
+            std::string terminalArcLastRejection;
             double maxPlannedAccelerationMps2 = 0.0;
             double preCaptureDepthMeters = 0.0;
             double terminalUniverseTimeSeconds = 0.0;

@@ -23,6 +23,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.acceleratingMps2) || r.acceleratingMps2 <= 0 ||
         !std::isfinite(r.brakingMps2) || r.brakingMps2 <= 0 ||
         !std::isfinite(r.lateralMps2) || r.lateralMps2 <= 0 ||
+        !std::isfinite(r.initialSpeedMps) || r.initialSpeedMps < 0.0 ||
         !std::isfinite(r.gateSpacingMeters) || r.gateSpacingMeters <= 0 ||
         !std::isfinite(r.initialForwardLeadMeters) ||
             r.initialForwardLeadMeters < 0.0 ||
@@ -585,22 +586,58 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         return candidate;
     };
 
-    const double terminalTurnSpeedMps =
-        std::max(0.5, 0.8 * r.maxSpeedMps);
-    const double lateralTerminalRadiusMeters =
-        terminalTurnSpeedMps * terminalTurnSpeedMps / r.lateralMps2;
-    const double angularTerminalRadiusMeters =
+    // Terminal turn geometry is derived from the state actually handed to
+    // Planner, not from a fixed fraction of the ship's top speed. Automatic
+    // docking normally arrives here after stop-and-settle, so a stationary
+    // craft is no longer forced to reserve a multi-kilometre 400 m/s arc.
+    //
+    // The hull-scaled floor prevents an absurd pivot-sized path. Once geometry
+    // is authored, the dense speed profile below is still free to accelerate
+    // on straights and will cap the turn speed by lateral/angular authority.
+    const double planningOriginSpeedMps =
+        std::clamp(r.initialSpeedMps, 0.0, r.maxSpeedMps);
+    const double minimumTerminalRadiusMeters =
+        std::max(20.0, 4.0 * r.hullRadiusMeters);
+    const double originLateralRadiusMeters =
+        planningOriginSpeedMps * planningOriginSpeedMps /
+        r.lateralMps2;
+    const double originAngularRadiusMeters =
         r.deriveTerminalTurnRadiusFromVehicle
-            ? terminalTurnSpeedMps / r.maxAngularVelocityRadPerSecond
+            ? planningOriginSpeedMps /
+                r.maxAngularVelocityRadPerSecond
             : 0.0;
     const double preferredTerminalRadius =
         r.deriveTerminalTurnRadiusFromVehicle
             ? std::max({
-                  20.0,
-                  lateralTerminalRadiusMeters,
-                  angularTerminalRadiusMeters
+                  minimumTerminalRadiusMeters,
+                  originLateralRadiusMeters,
+                  originAngularRadiusMeters
               })
             : r.preferredTerminalTurnRadiusMeters;
+
+    const double terminalTurnSpeedMps =
+        r.deriveTerminalTurnRadiusFromVehicle
+            ? std::max(
+                  0.5,
+                  std::min({
+                      r.maxSpeedMps,
+                      std::sqrt(
+                          r.lateralMps2 *
+                          preferredTerminalRadius
+                      ),
+                      r.maxAngularVelocityRadPerSecond *
+                          preferredTerminalRadius
+                  })
+              )
+            : std::max(0.5, 0.8 * r.maxSpeedMps);
+    const double lateralTerminalRadiusMeters =
+        terminalTurnSpeedMps * terminalTurnSpeedMps /
+        r.lateralMps2;
+    const double angularTerminalRadiusMeters =
+        r.deriveTerminalTurnRadiusFromVehicle
+            ? terminalTurnSpeedMps /
+                r.maxAngularVelocityRadPerSecond
+            : 0.0;
 
     if(preferredTerminalRadius>0.0)
     {

@@ -2290,6 +2290,15 @@ bool GameServer::planAutomaticDocking(
                     finalIngressStage
                         ? trajectoryResult.trajectory.samples.size()
                         : advisoryPlan.gates.size();
+                job->executionPointCount =
+                    trajectoryResult.executionGuidePointsMeters.size();
+                job->advisoryDetourUsed =
+                    !finalIngressStage &&
+                    advisoryPlan.terminalDetourUsed;
+                job->initialTurnRadiusMeters =
+                    finalIngressStage
+                        ? 0.0
+                        : advisoryPlan.initialTurnRadiusMeters;
                 job->finalAxisMeters =
                     finalIngressStage
                         ? 0.0
@@ -2298,6 +2307,15 @@ bool GameServer::planAutomaticDocking(
                     finalIngressStage
                         ? 0.0
                         : advisoryPlan.terminalTurnRadiusMeters;
+                job->maxPlannedAccelerationMps2 = 0.0;
+                for (const auto& sample :
+                     trajectoryResult.trajectory.samples)
+                {
+                    job->maxPlannedAccelerationMps2 = std::max(
+                        job->maxPlannedAccelerationMps2,
+                        glm::length(sample.accelerationMps2)
+                    );
+                }
                 job->preCaptureDepthMeters =
                     finalPreCaptureDepthMeters;
                 job->terminalUniverseTimeSeconds =
@@ -2827,10 +2845,18 @@ void GameServer::applyAutomaticDockingControls(
                 << game::ship::controlledSpeedLimitMps(
                        ship->core().effectivePhysics())
                 << " gates=" << job->gateCount
+                << " execution_points="
+                << job->executionPointCount
+                << " detour="
+                << (job->advisoryDetourUsed ? 1 : 0)
+                << " initial_turn_radius_m="
+                << job->initialTurnRadiusMeters
                 << " final_axis_m="
                 << job->finalAxisMeters
                 << " terminal_radius_m="
                 << job->terminalRadiusMeters
+                << " max_planned_accel_mps2="
+                << job->maxPlannedAccelerationMps2
                 << " pre_capture_depth_m="
                 << job->preCaptureDepthMeters
                 << " terminal_t="

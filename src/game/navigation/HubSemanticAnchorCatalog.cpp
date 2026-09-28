@@ -128,6 +128,8 @@ bool HubSemanticAnchorCatalog::load(const std::string& path)
             anchor.requiredClearanceMeters =
                 item.value("required_clearance_m", 0.0);
             anchor.maxEntrySpeedMps = item.value("max_entry_speed_mps", 0.0);
+            anchor.captureDepthMeters =
+                item.value("capture_depth_m", 0.0);
             anchor.enabled = item.value("enabled", true);
 
             if (!anchor.id.empty())

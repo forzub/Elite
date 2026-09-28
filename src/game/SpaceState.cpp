@@ -2129,6 +2129,299 @@ void SpaceState::updateDockingAdvisory()
         }
     }
 
+    const auto publishAuthoritativeAutomaticCorridor = [&]() -> bool
+    {
+        if (!automaticPending ||
+            m_automaticDockingSerial == 0 ||
+            !m_client->hasSessionSnapshot())
+        {
+            return false;
+        }
+
+        const auto& session = m_client->sessionSnapshot();
+        if (!session.automaticDockingRouteValid ||
+            session.automaticDockingRouteRequestSerial !=
+                m_automaticDockingSerial ||
+            session.automaticDockingRouteSystemId !=
+                pending.target.systemId ||
+            session.automaticDockingRoute.size() < 2)
+        {
+            return false;
+        }
+
+        const auto player =
+            m_client->world().ships().find(m_playerId.value);
+        if (player == m_client->world().ships().end() ||
+            !player->second.descriptor)
+        {
+            return false;
+        }
+
+        const auto& renderReference =
+            player->second.renderReferenceFrame;
+        if (!renderReference.valid ||
+            renderReference.type != MotionMode::HubTactical ||
+            renderReference.systemId !=
+                session.automaticDockingRouteSystemId ||
+            renderReference.hubId !=
+                session.automaticDockingRouteHubId)
+        {
+            return false;
+        }
+
+        auto renderFrame = renderReference.kinematicFrame();
+        renderFrame.frameId =
+            session.automaticDockingRouteHubId;
+
+        const auto& dimensions =
+            player->second.descriptor->logicalDimensions();
+        const double shipWidth =
+            dimensions.enabled
+                ? std::max(
+                      1.0,
+                      static_cast<double>(dimensions.width)
+                  )
+                : 1.0;
+        const double shipHeight =
+            dimensions.enabled
+                ? std::max(
+                      1.0,
+                      static_cast<double>(dimensions.height)
+                  )
+                : 1.0;
+        const double tolerance = std::max(
+            1.0,
+            session.automaticDockingRouteToleranceMeters
+        );
+        const double frameWidth =
+            shipWidth + 2.0 * tolerance;
+        const double frameHeight =
+            shipHeight + 2.0 * tolerance;
+        const double renderTime =
+            renderReference.universeTimeSeconds;
+
+        const auto makeFrame =
+            [&](const game::simulation::AutomaticDockingRoutePoint& point,
+                double displayedSpeedMps,
+                bool terminal)
+                -> GuidanceFrame
+            {
+                GuidanceFrame frame;
+                frame.universeTimeSeconds = renderTime;
+                frame.centerMeters =
+                    renderFrame.localToWorldPosition(
+                        point.positionHubLocalMeters
+                    );
+
+                glm::dvec3 forward =
+                    renderFrame.localToWorldVector(
+                        point.forwardHubLocal
+                    );
+                if (glm::length(forward) <= 1.0e-9)
+                    forward = glm::dvec3(0.0, 0.0, -1.0);
+                forward = glm::normalize(forward);
+
+                glm::dvec3 up =
+                    renderFrame.localToWorldVector(
+                        point.upHubLocal
+                    );
+                up -= forward * glm::dot(up, forward);
+                if (glm::length(up) <= 1.0e-9)
+                {
+                    const glm::dvec3 seed =
+                        std::abs(forward.y) < 0.90
+                            ? glm::dvec3(0.0, 1.0, 0.0)
+                            : glm::dvec3(1.0, 0.0, 0.0);
+                    up =
+                        seed -
+                        forward * glm::dot(seed, forward);
+                }
+                up = glm::normalize(up);
+
+                const glm::dvec3 right =
+                    glm::normalize(glm::cross(forward, up));
+                up =
+                    glm::normalize(glm::cross(right, forward));
+
+                frame.orientation =
+                    glm::normalize(
+                        glm::quat_cast(
+                            glm::dmat3(
+                                right,
+                                up,
+                                -forward
+                            )
+                        )
+                    );
+                frame.widthMeters = frameWidth;
+                frame.heightMeters = frameHeight;
+                frame.lateralToleranceMeters = tolerance;
+                frame.verticalToleranceMeters = tolerance;
+                frame.recommendedSpeedMps =
+                    std::max(0.0, displayedSpeedMps);
+                frame.requiredVehiclePose = terminal;
+                return frame;
+            };
+
+        const std::string corridorId =
+            "dock:" + pending.target.stableObjectId +
+            ":" + pending.target.semanticAnchorId;
+        const auto& accepted =
+            session.automaticDockingRoute;
+
+        GuidanceCorridor dense;
+        dense.id = corridorId;
+        dense.systemId =
+            session.automaticDockingRouteSystemId;
+        dense.source = GuidanceSource::DockingComputer;
+        dense.purpose =
+            session.automaticDockingRouteFinalIngress
+                ? GuidancePurpose::Docking
+                : GuidancePurpose::Approach;
+        dense.generatedAtUniverseTimeSeconds = renderTime;
+        dense.confidence = 1.0;
+        dense.priority = 100;
+        dense.advisoryOnly = false;
+        dense.spatialAdvisoryGates = false;
+        dense.hubLocalFrameId =
+            session.automaticDockingRouteHubId;
+        dense.frames.reserve(accepted.size());
+        dense.hubLocalGatePositionsMeters.reserve(
+            accepted.size()
+        );
+
+        for (std::size_t i = 0; i < accepted.size(); ++i)
+        {
+            dense.hubLocalGatePositionsMeters.push_back(
+                accepted[i].positionHubLocalMeters
+            );
+            dense.frames.push_back(
+                makeFrame(
+                    accepted[i],
+                    accepted[i].speedMps,
+                    i + 1 == accepted.size()
+                )
+            );
+        }
+
+        // Cockpit frames are only a sparse presentation of the SAME accepted
+        // route. They do not become another planning product.
+        std::vector<double> progress(accepted.size(), 0.0);
+        for (std::size_t i = 1; i < accepted.size(); ++i)
+        {
+            progress[i] =
+                progress[i - 1] +
+                glm::length(
+                    accepted[i].positionHubLocalMeters -
+                    accepted[i - 1].positionHubLocalMeters
+                );
+        }
+
+        GuidanceCorridor sparse = dense;
+        sparse.id += ":frames";
+        sparse.spatialAdvisoryGates = true;
+        sparse.frames.clear();
+        sparse.hubLocalGatePositionsMeters.clear();
+
+        const auto appendSparse =
+            [&](std::size_t index, double speed)
+            {
+                sparse.hubLocalGatePositionsMeters.push_back(
+                    accepted[index].positionHubLocalMeters
+                );
+                sparse.frames.push_back(
+                    makeFrame(
+                        accepted[index],
+                        speed,
+                        index + 1 == accepted.size()
+                    )
+                );
+            };
+
+        appendSparse(0, accepted.front().speedMps);
+        std::size_t previous = 0;
+        while (previous + 1 < accepted.size())
+        {
+            const double remaining =
+                progress.back() - progress[previous];
+            const double spacing =
+                remaining <= 2500.0 ? 250.0 : 500.0;
+
+            std::size_t next = previous + 1;
+            while (next + 1 < accepted.size() &&
+                   progress[next + 1] - progress[previous] <=
+                       spacing + 1.0e-6)
+            {
+                ++next;
+            }
+
+            double recommended =
+                accepted[next].speedMps;
+            for (std::size_t i = previous + 1;
+                 i <= next;
+                 ++i)
+            {
+                recommended = std::min(
+                    recommended,
+                    accepted[i].speedMps
+                );
+            }
+
+            appendSparse(next, recommended);
+            previous = next;
+        }
+
+        guidance.publish(std::move(dense));
+        guidance.publish(std::move(sparse));
+        m_activeDockingGuidanceCorridorId =
+            corridorId;
+
+        const bool revisionChanged =
+            !m_dockAdvice.authoritativeAutomaticRoute ||
+            m_dockAdvice.authoritativeAutomaticRouteRevision !=
+                session.automaticDockingRouteRevision;
+        m_dockAdvice.authoritativeAutomaticRoute = true;
+        m_dockAdvice.authoritativeAutomaticRouteRevision =
+            session.automaticDockingRouteRevision;
+
+        if (revisionChanged)
+        {
+            std::cout
+                << "[DockAutoRoute] request="
+                << session.automaticDockingRouteRequestSerial
+                << " revision="
+                << session.automaticDockingRouteRevision
+                << " stage="
+                << (session.automaticDockingRouteFinalIngress
+                        ? "final-ingress"
+                        : "approach-hold")
+                << " accepted_points="
+                << accepted.size()
+                << " hud_gates="
+                << workspace.guidance().
+                       activeSpatialAdvisoryGates(
+                           session.automaticDockingRouteSystemId,
+                           renderTime,
+                           &workspace.modules()
+                       )->frames.size()
+                << " source=accepted-program"
+                << std::endl;
+        }
+
+        return true;
+    };
+
+    if (automaticPending &&
+        m_automaticDockingSerial != 0)
+    {
+        (void)publishAuthoritativeAutomaticCorridor();
+
+        // No client planner is permitted for Automatic. While the server is
+        // stabilizing/planning there simply is no executable tunnel yet; once
+        // AcceptedManeuverProgram exists the branch above publishes it.
+        return;
+    }
+
     const auto fail = [&](const std::string& reason)
     {
         if (automaticPending && m_automaticDockingSerial != 0 &&

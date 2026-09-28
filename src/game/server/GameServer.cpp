@@ -1768,6 +1768,12 @@ bool GameServer::planAutomaticDocking(
                         request.lateralMps2 =
                             executionVehicle.
                                 maxLateralAccelerationMps2;
+                        request.maxAngularVelocityRadPerSecond =
+                            executionVehicle.
+                                maxAngularVelocityRadPerSecond;
+                        request.maxAngularAccelerationRadPerSecond2 =
+                            executionVehicle.
+                                maxAngularAccelerationRadPerSecond2;
                         request.roundTurns = assisted;
                         request.gateSpacingMeters = 150.0;
                         request.terminalGateSpacingMeters = 150.0;
@@ -1778,8 +1784,8 @@ bool GameServer::planAutomaticDocking(
                                 9000.0;
                             request.terminalTurnSegmentFraction =
                                 0.85;
-                            request.preferredTerminalTurnRadiusMeters =
-                                6000.0;
+                            request.deriveTerminalTurnRadiusFromVehicle =
+                                true;
                         }
                         request.obstacles = obstacles;
 

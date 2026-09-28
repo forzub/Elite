@@ -67,6 +67,40 @@ public:
         static const std::vector<ModuleDescriptor> empty;
         return empty;
     }
+
+    const std::vector<LogicalCollisionBox>&
+    logicalCollisionBoxes() const override
+    {
+        // 360 x 360 x 900 outer body with a real 190 x 110 through aperture.
+        // Four wall OBBs replace the old solid whole-object fallback.
+        static const std::vector<LogicalCollisionBox> boxes {
+            {
+                glm::vec3(-137.5f, 0.0f, 0.0f),
+                glm::vec3(42.5f, 180.0f, 450.0f),
+                glm::mat3(1.0f),
+                "dock_wall_left"
+            },
+            {
+                glm::vec3(137.5f, 0.0f, 0.0f),
+                glm::vec3(42.5f, 180.0f, 450.0f),
+                glm::mat3(1.0f),
+                "dock_wall_right"
+            },
+            {
+                glm::vec3(0.0f, 117.5f, 0.0f),
+                glm::vec3(95.0f, 62.5f, 450.0f),
+                glm::mat3(1.0f),
+                "dock_wall_top"
+            },
+            {
+                glm::vec3(0.0f, -117.5f, 0.0f),
+                glm::vec3(95.0f, 62.5f, 450.0f),
+                glm::mat3(1.0f),
+                "dock_wall_bottom"
+            }
+        };
+        return boxes;
+    }
 };
 
 class GuidanceDockCylinderDescriptor final : public IObjectDescriptor
@@ -118,6 +152,41 @@ public:
     {
         static const std::vector<ModuleDescriptor> empty;
         return empty;
+    }
+
+    const std::vector<LogicalCollisionBox>&
+    logicalCollisionBoxes() const override
+    {
+        // Conservative rectangular wall decomposition around the visible
+        // 200 x 120 aperture. It intentionally preserves the full 1200 m
+        // through passage instead of turning the cylinder into a solid OBB.
+        static const std::vector<LogicalCollisionBox> boxes {
+            {
+                glm::vec3(-155.0f, 0.0f, 0.0f),
+                glm::vec3(55.0f, 210.0f, 600.0f),
+                glm::mat3(1.0f),
+                "dock_wall_left"
+            },
+            {
+                glm::vec3(155.0f, 0.0f, 0.0f),
+                glm::vec3(55.0f, 210.0f, 600.0f),
+                glm::mat3(1.0f),
+                "dock_wall_right"
+            },
+            {
+                glm::vec3(0.0f, 135.0f, 0.0f),
+                glm::vec3(100.0f, 75.0f, 600.0f),
+                glm::mat3(1.0f),
+                "dock_wall_top"
+            },
+            {
+                glm::vec3(0.0f, -135.0f, 0.0f),
+                glm::vec3(100.0f, 75.0f, 600.0f),
+                glm::mat3(1.0f),
+                "dock_wall_bottom"
+            }
+        };
+        return boxes;
     }
 };
 

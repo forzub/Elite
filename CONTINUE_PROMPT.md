@@ -1,3 +1,37 @@
+## Continue from 2026-09-28 docking infrastructure architecture decision
+
+The user accepted the long SpatialCorridor behavior as very good. Preserve it.
+Do not broadly retune Planner/Follower while refactoring ownership.
+
+Read `src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md` before the
+next docking implementation.
+
+Next work is architectural separation, not more monolithic FinalIngress code:
+
+- generic RoutePlanner in its own files/module;
+- generic RouteFollower/Autopilot in its own files/module;
+- DockTrafficController in separate docking/traffic files;
+- DockLandingController in separate docking/landing files;
+- DockFacility semantic model separate from art mesh.
+
+Enforce narrow public DTO/API headers and add architecture-contract tests for
+forbidden cross-module includes/private state leakage.
+
+Traffic policy:
+- remote request does not reserve pad/portal/queue;
+- committed queue begins only in a controlled ETA/distance horizon;
+- one physical EntryHoldPoint per portal/final-approach lane initially;
+- dispatcher queue is virtual; other ships wait outside the lane at safe planned
+  staging stops;
+- physical fit is mandatory;
+- class policy may emergency-upgrade to a larger compatible dock only;
+- smaller dock is never allowed;
+- arrival and departure both reserve shared conflict resources.
+
+Landing begins only at LandingHandoff and is not RouteFollower logic. It owns
+RCS/manoeuvring-thruster pad alignment, gear, settle, contact, latch and later
+undock handoff.
+
 ## Continue from 2026-09-28 live corridor success / dock ingress candidate
 
 The user reports the long automatic corridor is now excellent: corridor held,

@@ -29,6 +29,7 @@ enum class ClientNavigationPlanningSnapshotStatus
     HubFrameInvalid,
     ObjectPredictionFailed,
     TargetModulePredictionFailed,
+    ObstacleGeometryUnavailable,
     CoordinateRoundTripFailed
 };
 

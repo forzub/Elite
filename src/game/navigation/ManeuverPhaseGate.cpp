@@ -78,6 +78,24 @@ ManeuverPhaseGate::Result ManeuverPhaseGate::evaluate(
         universeTimeSeconds >=
         result.nominalEndUniverseTimeSeconds;
 
+    const bool spatialCorridor =
+        program.referenceMode ==
+            AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+
+    // SpatialCorridor is progress-driven. Nominal sample time is only an
+    // authoring/reference scale; it must never hand the craft to the next
+    // phase while it is still physically inside the current tunnel chunk.
+    // Conversely, once the real terminal state is captured, holding until the
+    // nominal clock expires would drag the spatial reference behind the craft.
+    if (policy.mode == Mode::ScheduledMoving && spatialCorridor)
+    {
+        result.status =
+            followerStatus == TrajectoryFollower::Status::Complete
+                ? Status::Advance
+                : Status::Continue;
+        return result;
+    }
+
     if (!result.nominalEndReached)
     {
         result.status = Status::Continue;

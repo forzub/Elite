@@ -1391,15 +1391,16 @@ bool GameServer::planAutomaticDocking(
     }
 
     const StaticObject* targetObject = nullptr;
+    std::uint32_t targetObjectId = 0;
     for (const auto& [id, object] : m_simulation.staticObjects())
     {
-        (void)id;
         if (object.systemId == runtime.systemId &&
             object.attachedToHub &&
             object.hubId == runtime.hubId &&
             object.hubModuleId == runtime.targetModuleId)
         {
             targetObject = &object;
+            targetObjectId = id.value;
             break;
         }
     }
@@ -1624,6 +1625,7 @@ bool GameServer::planAutomaticDocking(
          linearReserve,
          angularReserve,
          obstacleSources = std::move(obstacleSources),
+         targetObjectId,
          currentForwardMap,
          currentUpMap,
          assisted,
@@ -1706,8 +1708,14 @@ bool GameServer::planAutomaticDocking(
                                             std::to_string(source.id),
                                         {
                                             false,
-                                            game::navigation::
-                                                DiagnosticHubInfrastructureClearanceMeters
+                                            source.id == targetObjectId
+                                                ? std::max(
+                                                      0.0,
+                                                      definitionCopy.
+                                                          requiredClearanceMeters
+                                                  )
+                                                : game::navigation::
+                                                      DiagnosticHubInfrastructureClearanceMeters
                                         }
                                     );
 
@@ -2095,9 +2103,42 @@ bool GameServer::planAutomaticDocking(
                                     hullRadiusMeters
                                 ))
                         {
-                            finishFailure(
-                                "final-capture-corridor-blocked"
-                            );
+                            const world::navigation::NavigationObstacle*
+                                blocker = nullptr;
+                            for (const auto& obstacle : obstacles)
+                            {
+                                if (world::navigation::
+                                        segmentIntersectsNavigationObstacle(
+                                            preCaptureCenterMeters,
+                                            captureCenterMeters,
+                                            obstacle,
+                                            hullRadiusMeters
+                                        ))
+                                {
+                                    blocker = &obstacle;
+                                    break;
+                                }
+                            }
+
+                            std::string reason =
+                                "final-capture-corridor-blocked";
+                            if (blocker)
+                            {
+                                reason +=
+                                    " blocker=" + blocker->id +
+                                    " blocker_clearance_m=" +
+                                    std::to_string(
+                                        blocker->requiredClearanceMeters
+                                    );
+                            }
+                            reason +=
+                                " agent_radius_m=" +
+                                std::to_string(hullRadiusMeters) +
+                                " dock_clearance_m=" +
+                                std::to_string(
+                                    definitionCopy.requiredClearanceMeters
+                                );
+                            finishFailure(reason);
                             return;
                         }
 

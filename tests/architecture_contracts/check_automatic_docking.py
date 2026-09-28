@@ -281,14 +281,16 @@ try:
         "AutomaticDockingRoutePoint",
         "automaticDockingRouteValid",
         "automaticDockingRouteRevision",
+        "automaticDockingRouteToleranceMeters",
         "automaticDockingRoute",
     )
     require(
         "src/game/SpaceState.cpp",
         "source=accepted-program",
-        "authoritativeAutomaticRoute",
+        "m_presentedAutomaticDockingRouteRevision",
         "automaticDockingRouteRevision",
-        "route.advisoryOnly =",
+        "dense.advisoryOnly = false",
+        "sparse.spatialAdvisoryGates = true",
     )
     if "runtime.controlBridge" in server or "PilotSkillExecutor" in server:
         raise AssertionError(

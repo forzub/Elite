@@ -161,6 +161,116 @@ public:
         out.pagesAdvanced = selected - currentPageIndex;
         return out;
     }
+
+    [[nodiscard]] static Selection selectSpatialPage(
+        const AcceptedManeuverProgram* pages,
+        std::size_t pageCount,
+        double universeTimeSeconds,
+        const glm::dvec3& positionMapMeters,
+        std::size_t currentPageIndex
+    ) noexcept
+    {
+        constexpr double PageContinuityToleranceSeconds = 1.0e-9;
+        constexpr double SegmentEpsilon = 1.0e-12;
+
+        Selection out;
+        if (pages == nullptr ||
+            pageCount == 0 ||
+            currentPageIndex >= pageCount ||
+            !std::isfinite(universeTimeSeconds) ||
+            !std::isfinite(positionMapMeters.x) ||
+            !std::isfinite(positionMapMeters.y) ||
+            !std::isfinite(positionMapMeters.z))
+        {
+            return out;
+        }
+
+        std::size_t selected = currentPageIndex;
+        const auto firstWindow = pageWindow(pages[selected]);
+        if (!firstWindow.valid)
+            return out;
+
+        if (universeTimeSeconds <
+            firstWindow.startUniverseTimeSeconds)
+        {
+            out.status = SelectionStatus::BeforeStart;
+            out.pageIndex = selected;
+            return out;
+        }
+
+        while (selected + 1 < pageCount)
+        {
+            const auto& current = pages[selected];
+            const auto& next = pages[selected + 1];
+            const auto nextWindow = pageWindow(next);
+
+            if (!nextWindow.valid ||
+                current.referenceMode !=
+                    AcceptedManeuverProgram::ReferenceMode::
+                        SpatialCorridor ||
+                next.referenceMode != current.referenceMode ||
+                next.acceptedAtUniverseTimeSeconds !=
+                    current.acceptedAtUniverseTimeSeconds ||
+                next.objectiveRevision != current.objectiveRevision ||
+                current.sampleCount < 2 ||
+                next.sampleCount < 2)
+            {
+                return Selection {};
+            }
+
+            const double localEnd =
+                current.sequenceStartOffsetSeconds +
+                current.samples[current.sampleCount - 1].
+                    timeOffsetSeconds;
+            if (std::abs(
+                    next.sequenceStartOffsetSeconds - localEnd
+                ) > PageContinuityToleranceSeconds)
+            {
+                return Selection {};
+            }
+
+            const auto& beforeEnd =
+                current.samples[
+                    static_cast<std::size_t>(
+                        current.sampleCount - 2
+                    )
+                ];
+            const auto& end =
+                current.samples[
+                    static_cast<std::size_t>(
+                        current.sampleCount - 1
+                    )
+                ];
+            const glm::dvec3 terminalSegment =
+                end.positionMapMeters -
+                beforeEnd.positionMapMeters;
+            const double segmentLength2 =
+                glm::dot(terminalSegment, terminalSegment);
+            if (!(segmentLength2 > SegmentEpsilon) ||
+                !std::isfinite(segmentLength2))
+            {
+                return Selection {};
+            }
+
+            // Storage is not a maneuver phase. Advance only after the real
+            // craft passes the endpoint plane in the accepted path direction.
+            // Nominal time is deliberately irrelevant here.
+            const double pastEndpoint =
+                glm::dot(
+                    positionMapMeters - end.positionMapMeters,
+                    terminalSegment
+                );
+            if (!(pastEndpoint >= 0.0))
+                break;
+
+            ++selected;
+        }
+
+        out.status = SelectionStatus::Active;
+        out.pageIndex = selected;
+        out.pagesAdvanced = selected - currentPageIndex;
+        return out;
+    }
 };
 
 } // namespace game::navigation

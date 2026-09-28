@@ -1,3 +1,10 @@
+## 2026-09-28 — build/test command ownership is now explicit
+
+Root `BUILD_TEST_LAYOUT.md` is the authoritative developer command map.
+It records canonical runtime paths, standalone test build trees, build-target vs CTest-name mapping, and the requirement to inspect current CMake ownership before giving commands.
+
+Current Automatic docking candidate uses stop-and-settle planning, speed-aware terminal turn geometry, curvature-based speed profiling, and semantic target-dock clearance. Historical sections describing moving-origin coast planning are retained only as history and are not the current contract.
+
 ## 2026-09-28 — Automatic docking state semantics corrected
 
 Automatic docking now distinguishes two preparation semantics:

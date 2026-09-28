@@ -359,7 +359,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const double desiredRadius=std::max({
                 20.0,
                 authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
-                terminalTurn ? r.preferredTerminalTurnRadiusMeters : 0.0
+                terminalTurn ? requiredTerminalRadiusMeters : 0.0
             });
             // Below this radius the visible bend becomes a low-speed hairpin
             // that an Assisted pilot cannot comfortably follow. Re-route or

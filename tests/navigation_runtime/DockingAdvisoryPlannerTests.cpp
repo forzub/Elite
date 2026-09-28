@@ -224,12 +224,14 @@ int main()
     curved.maxSpeedMps=100.0;
     curved.brakingMps2=10.0;
     curved.lateralMps2=5.0;
+    curved.maxAngularVelocityRadPerSecond=0.04;
+    curved.maxAngularAccelerationRadPerSecond2=0.10;
     curved.gateSpacingMeters=500.0;
     curved.terminalGateSpacingMeters=100.0;
     curved.terminalDenseDistanceMeters=2000.0;
     curved.terminalApproachLengthMeters=9000.0;
     curved.terminalTurnSegmentFraction=0.85;
-    curved.preferredTerminalTurnRadiusMeters=6000.0;
+    curved.deriveTerminalTurnRadiusFromVehicle=true;
     const auto curvedPlan=DockingAdvisoryPlanner::plan(curved);
     if(!curvedPlan.valid())
     {
@@ -248,11 +250,32 @@ int main()
         });
     const auto curvedFinalDirection=glm::normalize(curvedStop-curvedAlign);
 
-    if(curvedPlan.terminalTurnRadiusMeters+1.0e-6<
-       curved.preferredTerminalTurnRadiusMeters)
+    const double expectedTurnSpeed=0.8*curved.maxSpeedMps;
+    const double expectedLateralRadius=
+        expectedTurnSpeed*expectedTurnSpeed/curved.lateralMps2;
+    const double expectedAngularRadius=
+        expectedTurnSpeed/curved.maxAngularVelocityRadPerSecond;
+    const double expectedTerminalRadius=std::max({
+        20.0,
+        expectedLateralRadius,
+        expectedAngularRadius
+    });
+    if(std::abs(
+           curvedPlan.terminalTurnRadiusMeters-
+           expectedTerminalRadius
+       )>1.0e-6 ||
+       std::abs(
+           curvedPlan.terminalTurnSpeedMps-
+           expectedTurnSpeed
+       )>1.0e-6)
     {
-        std::cerr << "manual Assisted terminal radius too small: "
-                  << curvedPlan.terminalTurnRadiusMeters << "\n";
+        std::cerr
+            << "Assisted terminal radius not derived from planned speed"
+            << " expected_radius=" << expectedTerminalRadius
+            << " actual_radius=" << curvedPlan.terminalTurnRadiusMeters
+            << " expected_speed=" << expectedTurnSpeed
+            << " actual_speed=" << curvedPlan.terminalTurnSpeedMps
+            << "\n";
         printTerminalArcDiagnostics(curvedPlan);
         return 26;
     }
@@ -390,7 +413,7 @@ int main()
        !shortenedAxisPlan.terminalApproachShortened ||
        shortenedAxisPlan.terminalTurnRadiusRelaxed ||
        shortenedAxisPlan.terminalTurnRadiusMeters+1.0e-6<
-           shortenedAxis.preferredTerminalTurnRadiusMeters ||
+           shortenedAxisPlan.terminalTurnRequestedRadiusMeters ||
        shortenedAxisPlan.terminalApproachLengthMeters>=
            shortenedAxis.terminalApproachLengthMeters-1.0 ||
        shortenedAxisPlan.terminalApproachLengthMeters<=700.0 ||
@@ -465,7 +488,7 @@ int main()
        !reroutedPlan.terminalDetourUsed ||
        reroutedPlan.terminalTurnRadiusRelaxed ||
        reroutedPlan.terminalTurnRadiusMeters+1.0e-6<
-           rerouted.preferredTerminalTurnRadiusMeters)
+           reroutedPlan.terminalTurnRequestedRadiusMeters)
     {
         std::cerr << "preferred terminal arc blocker cancelled instead of rerouting: "
                   << reroutedPlan.failure
@@ -478,9 +501,9 @@ int main()
     }
 
     // Final-straight length and turn radius are independent geometry. Even a
-    // short semantic final axis must keep the preferred 6 km turn when open
-    // space exists around it; the arc is moved upstream and rotated instead of
-    // being squeezed into the final straight.
+    // short semantic final axis must keep the vehicle-derived turn radius when
+    // open space exists; the arc is moved/rotated instead of being squeezed
+    // into the final straight.
     auto tightened=curved;
     tightened.startMeters={-4000.0,0.0,1200.0};
     tightened.terminalApproachLengthMeters=0.0;
@@ -489,7 +512,7 @@ int main()
     if(!tightenedPlan.valid() ||
        tightenedPlan.terminalTurnRadiusRelaxed ||
        tightenedPlan.terminalTurnRadiusMeters+1.0e-6<
-           tightened.preferredTerminalTurnRadiusMeters)
+           tightenedPlan.terminalTurnRequestedRadiusMeters)
     {
         std::cerr << "short final straight incorrectly squeezed terminal radius: "
                   << tightenedPlan.failure

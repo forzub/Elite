@@ -39,7 +39,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             r.terminalTurnSegmentFraction <= 0.0 ||
             r.terminalTurnSegmentFraction > 0.90 ||
         !std::isfinite(r.preferredTerminalTurnRadiusMeters) ||
-            r.preferredTerminalTurnRadiusMeters < 0.0)
+            r.preferredTerminalTurnRadiusMeters < 0.0 ||
+        (r.deriveTerminalTurnRadiusFromVehicle &&
+            (!std::isfinite(r.maxAngularVelocityRadPerSecond) ||
+             r.maxAngularVelocityRadPerSecond <= 0.0 ||
+             !std::isfinite(r.maxAngularAccelerationRadPerSecond2) ||
+             r.maxAngularAccelerationRadPerSecond2 <= 0.0)))
     { out.failure = "invalid dock advisory input"; return out; }
 
     const auto outward = glm::normalize(r.outward);
@@ -263,6 +268,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     if ((!nominalGeometry.valid ||
          nominalGeometry.pointsMeters.size() < 2) &&
+        !r.deriveTerminalTurnRadiusFromVehicle &&
         r.preferredTerminalTurnRadiusMeters <= 0.0)
     {
         out.failure = nominalGeometry.message.empty()
@@ -580,8 +586,33 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         return candidate;
     };
 
+    const double terminalTurnSpeedMps =
+        std::max(0.5, 0.8 * r.maxSpeedMps);
+    const double lateralTerminalRadiusMeters =
+        terminalTurnSpeedMps * terminalTurnSpeedMps / r.lateralMps2;
+    const double angularTerminalRadiusMeters =
+        r.deriveTerminalTurnRadiusFromVehicle
+            ? terminalTurnSpeedMps / r.maxAngularVelocityRadPerSecond
+            : 0.0;
     const double preferredTerminalRadius =
-        r.preferredTerminalTurnRadiusMeters;
+        r.deriveTerminalTurnRadiusFromVehicle
+            ? std::max({
+                  20.0,
+                  lateralTerminalRadiusMeters,
+                  angularTerminalRadiusMeters
+              })
+            : r.preferredTerminalTurnRadiusMeters;
+
+    if(preferredTerminalRadius>0.0)
+    {
+        out.terminalTurnSpeedMps = terminalTurnSpeedMps;
+        out.terminalTurnLateralRadiusMeters =
+            lateralTerminalRadiusMeters;
+        out.terminalTurnAngularRadiusMeters =
+            angularTerminalRadiusMeters;
+        out.terminalTurnRequestedRadiusMeters =
+            preferredTerminalRadius;
+    }
 
     const auto estimatedTraversalSeconds =
         [&](const RoundedCandidate& candidate)
@@ -722,20 +753,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     if (preferredTerminalRadius>0.0)
     {
         const double authoredCruiseSpeed =
-            0.8 * r.maxSpeedMps;
+            terminalTurnSpeedMps;
         const double transitComfortRadius=std::max(
             20.0,
             0.50 * authoredCruiseSpeed * authoredCruiseSpeed /
                 r.lateralMps2
         );
-        const double terminalPrimitiveRadius=std::max({
-            20.0,
-            authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
-            preferredTerminalRadius
-        });
-
-        out.terminalTurnRequestedRadiusMeters =
-            terminalPrimitiveRadius;
+        const double terminalPrimitiveRadius=
+            preferredTerminalRadius;
 
         // This straight only settles the preceding route onto the terminal
         // tangent. It does not size or reshape the terminal arc.
@@ -1291,6 +1316,12 @@ std::string dockingAdvisoryPlanDiagnosticSummary(
 )
 {
     return
+        " turn_speed_mps=" +
+        std::to_string(plan.terminalTurnSpeedMps) +
+        " lateral_radius_m=" +
+        std::to_string(plan.terminalTurnLateralRadiusMeters) +
+        " angular_radius_m=" +
+        std::to_string(plan.terminalTurnAngularRadiusMeters) +
         " requested_radius_m=" +
         std::to_string(plan.terminalTurnRequestedRadiusMeters) +
         " selected_radius_m=" +

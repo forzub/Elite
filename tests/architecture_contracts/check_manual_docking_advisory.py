@@ -76,6 +76,17 @@ try:
             "makeRoute(frame, port, time)" in advisory or
             "predictHubSemanticAnchorAt(active.port" in advisory):
         raise AssertionError("docking advisory reintroduced mixed-epoch geometry")
+    require("src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
+            "NavigationHitVolumeAdapter::buildObstacles",
+            "world.objects().find(object.id.value)",
+            "debugHitVolumes",
+            "ObstacleGeometryUnavailable")
+    require("src/game/navigation/NavigationHitVolumeAdapter.h",
+            "DebugHitVolumeSnapshot",
+            "Client planning consumes the authoritative replicated local hit-volume")
+    require("tests/navigation_runtime/NavigationHitVolumeAdapterTests.cpp",
+            "real gap between exact HitVolumes was erased",
+            "solid module volume stopped blocking navigation")
     require("src/game/navigation/GuidanceCorridor.h",
             "hubLocalFrameId", "hubLocalGatePositionsMeters",
             "deviationWarning", "deviationCritical")
@@ -197,6 +208,14 @@ try:
             "frameDistanceMeters <= 500.0",
             "bottomCenter",
             "deviationBlinkOn")
+    client_planning_cpp = read(
+        "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp"
+    )
+    if "makeNavigationObstacleForObject" in client_planning_cpp:
+        raise AssertionError(
+            "client docking planning regressed to descriptor-wide obstacle geometry"
+        )
+
     space_cpp = read("src/game/SpaceState.cpp")
     for forbidden in (
         "m_dockAdvice.gates =",

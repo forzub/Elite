@@ -65,6 +65,7 @@ public:
         std::size_t referenceUpperSampleIndex = 0;
         double referenceInterpolation01 = 0.0;
         double referenceSpatialDistanceMeters = 0.0;
+        double spatialSpeedScale = 1.0;
 
         // The accepted reference is a vehicle-motion program. Tracking
         // feedback remains inside intent, with no propulsion allocation here.

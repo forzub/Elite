@@ -200,6 +200,7 @@ try:
         "request.deriveTerminalTurnRadiusFromVehicle =",
         "request.maxAngularVelocityRadPerSecond =",
         "request.maxAngularAccelerationRadPerSecond2 =",
+        "request.initialSpeedMps =",
         "build.controlLaw = assisted",
         "followed.targetVelocityMapMps",
         "request.hasInitialForward = !nearHoldRecovery",

@@ -163,7 +163,8 @@ try:
         "pre_capture_depth_m=",
         "DockingAutomaticRuntime::Phase::Aligning",
         "phase=aligned-replan",
-        "ManeuverTrackingController",
+        "game::navigation::planner::RoutePlanner::plan(",
+        "game::navigation::autopilot::RouteFollower",
         "phase=replan",
         "phase=plan-failed",
         "action=restore-human",
@@ -302,6 +303,15 @@ try:
         "dense.advisoryOnly = false",
         "sparse.spatialAdvisoryGates = true",
     )
+    if "navigation/DockingAdvisoryPlanner.h" in server:
+        raise AssertionError(
+            "GameServer reached through the RoutePlanner public boundary"
+        )
+    if "navigation/TrajectoryFollower.h" in server:
+        raise AssertionError(
+            "GameServer reached through the RouteFollower public boundary"
+        )
+
     if "runtime.controlBridge" in server or "PilotSkillExecutor" in server:
         raise AssertionError(
             "Automatic docking still routes Follower output through pilot-skill filtering"

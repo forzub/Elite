@@ -402,14 +402,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
                 terminalTurn ? requiredTerminalRadiusMeters : 0.0
             });
-            // Below this radius the visible bend becomes a low-speed hairpin
-            // that an Assisted pilot cannot comfortably follow. Re-route or
-            // report no flyable route instead of silently tightening it.
-            const double ordinaryCruiseSpeed =
-                0.8 * r.maxSpeedMps;
-            const double minimumTransitRadius =
-                0.50 * ordinaryCruiseSpeed * ordinaryCruiseSpeed /
-                r.lateralMps2;
+            // Generic transit fillets are geometry, not a command to hold
+            // cruise speed through every bend. The accepted dense route below
+            // derives a curvature speed limit and then applies acceleration /
+            // braking passes. Rejecting a smaller open-space fillet here based
+            // on 0.8 * maxSpeed made a stopped ship unable to plan after any
+            // substantial heading change: the 1 km nose-first lead leaves
+            // finite tangent room, while the old cruise-radius floor demanded
+            // kilometres. Keep the exact terminal primitive strict, but let
+            // ordinary transit turns be traversed at the speed their curvature
+            // physically permits.
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction
@@ -458,9 +460,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                  ++attempt,tangentDistance*=0.5)
             {
                 const double radius=tangentDistance/tangentScale;
-                if (!terminalTurn && radius + 1.0e-6 <
-                    minimumTransitRadius)
-                    break;
                 if(terminalTurn &&
                    requiredTerminalRadiusMeters>0.0 &&
                    radius+1.0e-6<requiredTerminalRadiusMeters)

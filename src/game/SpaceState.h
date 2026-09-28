@@ -313,6 +313,7 @@ private:
     double m_automaticDockingRequestedServerSeconds = -1.0;
     bool m_automaticDockingAuthoritySeen = false;
     bool m_automaticDockingCancelPending = false;
+    std::uint64_t m_presentedAutomaticDockingRouteRevision = 0;
 
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
@@ -341,8 +342,6 @@ private:
         bool deviationWarning = false;
         bool deviationCritical = false;
         bool corridorDeparted = false;
-        bool authoritativeAutomaticRoute = false;
-        std::uint64_t authoritativeAutomaticRouteRevision = 0;
         std::size_t nextGate = 0;
         game::navigation::DockingAdvisoryCorridorTracker tracker;
     } m_dockAdvice;

@@ -4301,13 +4301,89 @@ void GameServer::copyDockingResultForSession(
     outSession.dockingResultSerial = 0;
     outSession.dockingResultSucceeded = false;
     outSession.dockingResultReason.clear();
+
+    outSession.automaticDockingRouteValid = false;
+    outSession.automaticDockingRouteFinalIngress = false;
+    outSession.automaticDockingRouteRequestSerial = 0;
+    outSession.automaticDockingRouteRevision = 0;
+    outSession.automaticDockingRouteSystemId = -1;
+    outSession.automaticDockingRouteHubId.clear();
+    outSession.automaticDockingRoute.clear();
+
     const EntityId entityId = controlledEntityForSession(sessionId);
-    const auto it = m_dockingResults.find(entityId.value);
-    if (it == m_dockingResults.end())
+
+    const auto automatic =
+        m_dockingAutomaticRuntimes.find(entityId.value);
+    if (automatic != m_dockingAutomaticRuntimes.end())
+    {
+        const auto& runtime = automatic->second;
+        if (!runtime.programs.empty())
+        {
+            outSession.automaticDockingRouteValid = true;
+            outSession.automaticDockingRouteFinalIngress =
+                runtime.stage ==
+                    DockingAutomaticRuntime::Stage::FinalIngress;
+            outSession.automaticDockingRouteRequestSerial =
+                runtime.requestSerial;
+            outSession.automaticDockingRouteRevision =
+                runtime.programs.front().revision;
+            outSession.automaticDockingRouteSystemId =
+                runtime.systemId;
+            outSession.automaticDockingRouteHubId =
+                runtime.hubId;
+
+            std::size_t reserveCount = 0;
+            for (const auto& page : runtime.programs)
+                reserveCount += page.sampleCount;
+            outSession.automaticDockingRoute.reserve(reserveCount);
+
+            for (const auto& page : runtime.programs)
+            {
+                for (std::size_t i = 0;
+                     i < page.sampleCount;
+                     ++i)
+                {
+                    const auto& sample = page.samples[i];
+
+                    if (!outSession.automaticDockingRoute.empty() &&
+                        glm::length(
+                            outSession.automaticDockingRoute.back().
+                                positionHubLocalMeters -
+                            sample.positionMapMeters
+                        ) <= 1.0e-6)
+                    {
+                        continue;
+                    }
+
+                    game::simulation::AutomaticDockingRoutePoint point;
+                    point.positionHubLocalMeters =
+                        sample.positionMapMeters;
+                    point.forwardHubLocal =
+                        sample.forwardMap;
+                    point.upHubLocal =
+                        sample.upMap;
+                    point.speedMps =
+                        glm::length(
+                            sample.velocityMapMetersPerSecond
+                        );
+                    outSession.automaticDockingRoute.push_back(
+                        std::move(point)
+                    );
+                }
+            }
+
+            outSession.automaticDockingRouteValid =
+                outSession.automaticDockingRoute.size() >= 2;
+        }
+    }
+
+    const auto result = m_dockingResults.find(entityId.value);
+    if (result == m_dockingResults.end())
         return;
-    outSession.dockingResultSerial = it->second.serial;
-    outSession.dockingResultSucceeded = it->second.succeeded;
-    outSession.dockingResultReason = it->second.reason;
+
+    outSession.dockingResultSerial = result->second.serial;
+    outSession.dockingResultSucceeded = result->second.succeeded;
+    outSession.dockingResultReason = result->second.reason;
 }
 
 bool GameServer::copySnapshotForSession(

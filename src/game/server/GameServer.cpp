@@ -1336,10 +1336,12 @@ bool GameServer::beginAutomaticDocking(
         std::move(runtime);
     m_dockingResults.erase(controlledEntityId.value);
 
-    ShipControlState stop;
-    stop.velocityAlignmentCommand =
-        game::navigation::VelocityAlignmentMode::BrakeToStop;
-    ship->setControlState(stop);
+    ship->setControlState(
+        automaticDockingPreparationControl(
+            *ship,
+            false
+        )
+    );
 
     m_forceSnapshotPublication = true;
     std::cout
@@ -1349,6 +1351,11 @@ bool GameServer::beginAutomaticDocking(
         << " target=" << command.dockingTargetModuleId
         << ":" << command.dockingTargetAnchorId
         << " phase=stabilizing"
+        << " mode=coast"
+        << " speed_mps="
+        << glm::length(
+               ship->core().transform().motion.localVelocityMps
+           )
         << std::endl;
     return true;
 }

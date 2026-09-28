@@ -29,13 +29,28 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     const AcceptedManeuverProgram& program,
     double universeTimeSeconds,
     const AgentState& agent,
-    const ManeuverTrackingController::Policy& trackingPolicy
+    const ManeuverTrackingController::Policy& trackingPolicy,
+    std::size_t minimumSpatialSegmentIndex
 ) noexcept
 {
     Result result;
 
+    const bool spatialCorridor =
+        program.referenceMode ==
+            AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+
     const auto sampled =
-        ManeuverProgramSampler::sample(program, universeTimeSeconds);
+        spatialCorridor
+            ? ManeuverProgramSampler::sampleSpatial(
+                  program,
+                  universeTimeSeconds,
+                  agent.positionMapMeters,
+                  minimumSpatialSegmentIndex
+              )
+            : ManeuverProgramSampler::sample(
+                  program,
+                  universeTimeSeconds
+              );
     if (sampled.status ==
             ManeuverProgramSampler::Status::InvalidInput ||
         sampled.status ==
@@ -88,6 +103,16 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         tracking.status ==
         ManeuverTrackingController::Status::EnvelopeExceeded;
     result.angularCorrectionOnly = tracking.angularCorrectionOnly;
+    result.spatialReference = sampled.spatialReference;
+    result.referenceLowerSampleIndex =
+        sampled.lowerSampleIndex;
+    result.referenceUpperSampleIndex =
+        sampled.upperSampleIndex;
+    result.referenceInterpolation01 =
+        sampled.interpolation01;
+    result.referenceSpatialDistanceMeters =
+        sampled.spatialDistanceMeters;
+
     const std::size_t lastIndex =
         static_cast<std::size_t>(program.sampleCount - 1);
     result.remainingDistanceMeters =
@@ -121,9 +146,16 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         result.angularVelocityErrorRadPerSec <=
             program.terminalTolerance.angularVelocityRadPerSec;
 
+    // Spatial corridors are progress-driven. Reaching the accepted terminal
+    // state early is success; nominal trajectory time is not allowed to hold
+    // the craft back or drag the reference ahead. TimeScheduled maneuvers keep
+    // their original completion clock semantics.
+    const bool completionClockSatisfied =
+        spatialCorridor || atOrAfterProgramEnd;
+
     result.status =
         program.completionTriggersReplan &&
-        atOrAfterProgramEnd &&
+        completionClockSatisfied &&
         terminalSatisfied
             ? Status::Complete
             : Status::Following;

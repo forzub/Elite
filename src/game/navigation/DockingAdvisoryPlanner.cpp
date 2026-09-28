@@ -762,10 +762,29 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         const double terminalPrimitiveRadius=
             preferredTerminalRadius;
 
-        // This straight only settles the preceding route onto the terminal
-        // tangent. It does not size or reshape the terminal arc.
+        const double terminalAngularRateRadPerSecond =
+            authoredCruiseSpeed / terminalPrimitiveRadius;
+        const double angularRampSeconds =
+            r.deriveTerminalTurnRadiusFromVehicle
+                ? terminalAngularRateRadPerSecond /
+                    r.maxAngularAccelerationRadPerSecond2
+                : 0.0;
+        const double angularRampDistanceMeters =
+            authoredCruiseSpeed * angularRampSeconds;
+        out.terminalTurnAngularRampMeters =
+            angularRampDistanceMeters;
+
+        // This straight settles the preceding route onto the terminal tangent
+        // and provides enough distance for the hull angular rate to ramp up
+        // within the real angular-acceleration envelope. It still does not
+        // resize or redraw the terminal arc itself.
         const double preArcStraightMeters =
-            std::max(1000.0, 2.0 * transitComfortRadius);
+            std::max({
+                1000.0,
+                2.0 * transitComfortRadius,
+                angularRampDistanceMeters,
+                2.0 * r.hullRadiusMeters
+            });
 
         constexpr int terminalIngressSamples=36;
         constexpr double axisOffsetFactors[] = {
@@ -1322,6 +1341,8 @@ std::string dockingAdvisoryPlanDiagnosticSummary(
         std::to_string(plan.terminalTurnLateralRadiusMeters) +
         " angular_radius_m=" +
         std::to_string(plan.terminalTurnAngularRadiusMeters) +
+        " angular_ramp_m=" +
+        std::to_string(plan.terminalTurnAngularRampMeters) +
         " requested_radius_m=" +
         std::to_string(plan.terminalTurnRequestedRadiusMeters) +
         " selected_radius_m=" +

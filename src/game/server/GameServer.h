@@ -427,6 +427,7 @@ private:
 
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;
+        std::size_t currentSpatialSegment = 0;
         std::unique_ptr<game::navigation::NavigationRuntimeControlBridge>
             controlBridge;
         // PilotSkillExecutor requires step time to advance by exactly the

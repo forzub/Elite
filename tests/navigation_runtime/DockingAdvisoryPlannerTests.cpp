@@ -774,7 +774,12 @@ int main()
     if (std::abs(recoveryReserve - 14.709975) > 1.0e-6 ||
         DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(25.0) !=
             25.0 ||
-        DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(8.0) != 4.0 ||
+        !DockingAutomaticRecoveryPolicy::canCaptureHoldWhileBraking(
+            0.05, 25.0, 4.38238, 58.0
+        ) ||
+        DockingAutomaticRecoveryPolicy::canCaptureHoldWhileBraking(
+            24.9, 25.0, 20.0, 58.0
+        ) ||
         !DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
             24.6798, 25.0,
             8.02537, 8.0,

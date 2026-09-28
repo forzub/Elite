@@ -18,6 +18,8 @@ struct DockingAdvisoryRequest
     double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;
     double lateralMps2 = 3.0;
+    double maxAngularVelocityRadPerSecond = 0.0;
+    double maxAngularAccelerationRadPerSecond2 = 0.0;
 
     // Assisted ships prefer fly-through arcs. Newtonian/heavy ships may ask
     // for piecewise-straight geometry so their later maneuver compiler can
@@ -47,10 +49,11 @@ struct DockingAdvisoryRequest
     double terminalApproachLengthMeters = 0.0;
     double terminalTurnSegmentFraction = 0.40;
 
-    // Preferred human-flyable radius. For Assisted docking this is authored
-    // geometry, not a hint: Planner may rotate the arc around the docking axis
-    // and slide ALIGN along that axis, but it must not silently squeeze the
-    // requested radius into a different maneuver.
+    // Production Assisted docking derives its terminal radius from the turn
+    // speed selected by Planner plus the vehicle's lateral/angular authority.
+    // The optional explicit radius remains only for deterministic fixtures and
+    // compatibility callers; production must leave it at zero.
+    bool deriveTerminalTurnRadiusFromVehicle = false;
     double preferredTerminalTurnRadiusMeters = 0.0;
 
     std::vector<world::navigation::NavigationObstacle> obstacles;
@@ -84,6 +87,9 @@ struct DockingAdvisoryPlan
     // Exact preferred terminal-arc diagnostics. These counters make a failed
     // route explain itself instead of collapsing every cause into "invalid".
     double terminalTurnRequestedRadiusMeters = 0.0;
+    double terminalTurnSpeedMps = 0.0;
+    double terminalTurnLateralRadiusMeters = 0.0;
+    double terminalTurnAngularRadiusMeters = 0.0;
     int terminalArcCandidatesTested = 0;
     int terminalArcRouteable = 0;
     int terminalArcRouteRejected = 0;

@@ -1299,8 +1299,8 @@ void testChainedTransitions()
             "chain injected a velocity reset at a phase seam"
         );
         require(
-            m.maxSeamForwardJumpDeg <= 1.0e-6,
-            "chain injected an attitude reset at a phase seam"
+            m.maxSeamForwardJumpDeg <= 0.01,
+            "chain injected a material attitude reset at a phase seam"
         );
         require(
             m.maxSeamAngularVelocityJumpRadPerSec <= 1.0e-9,

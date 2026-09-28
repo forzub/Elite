@@ -119,6 +119,7 @@ struct DockingAdvisoryPlan
     // a hard semantic requirement; only the minimum ingress immediately in
     // front of the port is mandatory.
     bool terminalApproachShortened = false;
+    bool terminalApproachExtended = false;
     double terminalApproachLengthMeters = 0.0;
 
     bool valid() const noexcept { return failure.empty() && gates.size() >= 2; }

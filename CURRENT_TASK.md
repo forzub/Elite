@@ -1,3 +1,30 @@
+## 2026-09-28 — verify moving-start + HOLD/FinalIngress regression
+
+Immediate acceptance scenario:
+
+1. Start the ship moving in Assisted mode.
+2. Press START DOCKING directly while VREL is non-zero.
+3. During ApproachHold stabilization/planning the ship must keep essentially
+   the same linear VREL and fly straight; it must not brake to zero.
+4. The planner must build from the projected future coast position.
+5. Autopilot follows the accepted corridor to HOLD.
+6. Near HOLD, if the ship can physically stop inside the accepted envelope,
+   transition directly to FinalIngress instead of replanning a tiny reverse
+   ApproachHold segment.
+7. FinalIngress must then stop the ship, rotate/align while stationary, replan
+   from the fresh aligned state, and proceed through the dock aperture.
+
+Expected log markers:
+- `[DockAuto] begin ... mode=coast`;
+- `phase=planning-async start_mode=coast ... projected_start_m=(...)`;
+- no initial `assisted-motion-envelope-infeasible`;
+- `stage=approach-hold phase=hold-complete capture=standoff-braking-envelope`;
+- no HOLD-end `course_error_deg≈180` rejection;
+- no recovery-generated `assisted-reverse-flight-not-supported`.
+
+Run `bash verify_docking.sh` first, then build `EliteGame`, then perform the
+live scenario above.
+
 ## 2026-09-28 — gate hard module split, then wire dispatcher
 
 Immediate task is validation of the first physical/API split before introducing

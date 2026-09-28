@@ -195,8 +195,12 @@ try:
         "stage=approach-hold",
         "phase=hold-complete",
         "next=final-ingress",
-        "holdDistanceMeters <= 12.0",
-        "enterFinalIngress(\"standoff-stop\")",
+        "DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters",
+        "DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps",
+        "enterFinalIngress(\"standoff-tracking-envelope\")",
+        "recoverableDynamicExcursion(",
+        "phase=correcting-envelope",
+        "request.roundTurns =\n                            assisted && !nearHoldRecovery",
     )
 
 
@@ -210,12 +214,12 @@ try:
             "Automatic docking restored the synchronous fixed-step plan-retry loop"
         )
 
-    if server.index('enterFinalIngress("standoff-stop")') > server.index(
+    if server.index('enterFinalIngress("standoff-tracking-envelope")') > server.index(
         'phase=recovery reason=follower-rejected'
     ):
         raise AssertionError(
-            "Automatic docking must capture a stopped approach hold before "
-            "rejecting the final program on residual angular rate"
+            "Automatic docking must capture a safe approach hold before "
+            "rejecting the final program on residual dynamic error"
         )
 
     if "terminalAllowedObstacleId" in server:
@@ -241,6 +245,26 @@ try:
         raise AssertionError(
             "Automatic docking regressed to descriptor-wide Station obstacle geometry"
         )
+
+    if "const double linearReserve = std::min(\n        0.5" in server:
+        raise AssertionError(
+            "Automatic docking tracking reserve regressed to the old 0.5 m/s^2 cap"
+        )
+
+    require(
+        "src/game/navigation/DockingAutomaticRecoveryPolicy.h",
+        "linearFeedbackReserveMps2(",
+        "holdCaptureDistanceMeters(",
+        "holdCaptureSpeedMps(",
+        "recoverableDynamicExcursion(",
+        "0.20",
+        "1.25 * velocityLimitMps",
+        "2.0 * angularVelocityLimitRadPerSec",
+    )
+    require(
+        "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
+        "automatic docking recovery policy lost safe in-place correction semantics",
+    )
 
     header = require(
         "src/game/server/GameServer.h",

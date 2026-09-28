@@ -230,9 +230,21 @@ try:
     )
 
 
-    if "ShipControlState stop;\n    stop.velocityAlignmentCommand =\n        game::navigation::VelocityAlignmentMode::BrakeToStop;\n    ship->setControlState(stop);\n\n    m_forceSnapshotPublication = true;" in server:
+    if "ShipControlState automaticDockingPreparationControl()" not in server:
         raise AssertionError(
-            "Automatic docking startup regressed to BrakeToStop instead of coast"
+            "Automatic docking lost the explicit stop-and-settle preparation control"
+        )
+    if "const bool requireLinearStop = true;" not in server:
+        raise AssertionError(
+            "Automatic docking may plan from residual translation instead of a stable start"
+        )
+    if "const bool coastToExecution = false;" not in server:
+        raise AssertionError(
+            "Automatic docking restored moving-origin projection after stop-and-settle"
+        )
+    if '<< " mode=coast"' in server:
+        raise AssertionError(
+            "Automatic docking startup regressed to coast instead of stop-and-settle"
         )
 
     if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:

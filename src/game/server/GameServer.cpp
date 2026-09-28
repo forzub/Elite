@@ -1666,6 +1666,7 @@ bool GameServer::planAutomaticDocking(
                 double captureUniverseTimeSeconds =
                     executionStartUniverseTimeSeconds;
                 double finalPreCaptureDepthMeters = 0.0;
+                double finalCaptureDepthMeters = 0.0;
                 glm::dvec3 terminalAngularVelocityMapRadPerSec(
                     0.0
                 );
@@ -1877,17 +1878,27 @@ bool GameServer::planAutomaticDocking(
                     }
                     else
                     {
-                        // Stage 2: after the hold-point stop, perform a short
-                        // dedicated ingress. The complete dock basis is used,
-                        // therefore entry alignment corrects roll as well as
-                        // yaw/pitch before execution.
-                        const auto preCaptureCenterAt =
+                        // Stage 2 is now a real dock ingress:
+                        // HOLD -> exterior pre-capture -> entrance plane ->
+                        // authored internal capture point. No target-collision
+                        // bypass exists; the shared exact HitVolume product
+                        // must prove that the aperture is physically open.
+                        const auto exteriorPointAt =
                             [&](const DockingAdvisoryLocalPort&
                                     portState,
                                 double depthMeters)
                             {
                                 return
                                     portState.positionMeters +
+                                    portState.forward * depthMeters;
+                            };
+                        const auto capturePointAt =
+                            [&](const DockingAdvisoryLocalPort&
+                                    portState,
+                                double depthMeters)
+                            {
+                                return
+                                    portState.positionMeters -
                                     portState.forward * depthMeters;
                             };
 
@@ -1910,7 +1921,7 @@ bool GameServer::planAutomaticDocking(
                                 return world::navigation::
                                     segmentClearOfNavigationObstacles(
                                         startPositionMeters,
-                                        preCaptureCenterAt(
+                                        exteriorPointAt(
                                             port,
                                             depthMeters
                                         ),
@@ -1977,16 +1988,55 @@ bool GameServer::planAutomaticDocking(
                             }
                         }
 
+                        const double captureDepthMeters =
+                            definitionCopy.captureDepthMeters;
+                        if (!std::isfinite(captureDepthMeters) ||
+                            captureDepthMeters <= 1.0)
+                        {
+                            finishFailure(
+                                "dock-capture-depth-unconfigured"
+                            );
+                            return;
+                        }
+
                         const glm::dvec3 preCaptureCenterMeters =
-                            preCaptureCenterAt(
+                            exteriorPointAt(
                                 port,
                                 preCaptureDepthMeters
                             );
+                        const glm::dvec3 entranceCenterMeters =
+                            port.positionMeters;
+                        const glm::dvec3 captureCenterMeters =
+                            capturePointAt(
+                                port,
+                                captureDepthMeters
+                            );
+
                         finalPreCaptureDepthMeters =
                             preCaptureDepthMeters;
+                        finalCaptureDepthMeters =
+                            captureDepthMeters;
+
+                        // First prove the actual tunnel through the target.
+                        // A solid fallback HitVolume must fail here instead of
+                        // being silently whitelisted because the object is a
+                        // docking target.
+                        if (!world::navigation::
+                                segmentClearOfNavigationObstacles(
+                                    preCaptureCenterMeters,
+                                    captureCenterMeters,
+                                    obstacles,
+                                    hullRadiusMeters
+                                ))
+                        {
+                            finishFailure(
+                                "final-capture-corridor-blocked"
+                            );
+                            return;
+                        }
 
                         const glm::dvec3 ingressDelta =
-                            preCaptureCenterMeters -
+                            captureCenterMeters -
                             startPositionMeters;
                         const double ingressDistance =
                             glm::length(ingressDelta);
@@ -1998,18 +2048,13 @@ bool GameServer::planAutomaticDocking(
                             return;
                         }
 
-                        // Three collinear samples deliberately select the
-                        // scalar path-progress backend. That backend may slow
-                        // this short ingress when exact rotating-terminal
-                        // angular conditions need more time.
+                        trajectoryRequest.pathGeometryAlreadyAuthored =
+                            true;
                         trajectoryRequest.pathPointsMeters = {
                             startPositionMeters,
-                            glm::mix(
-                                startPositionMeters,
-                                preCaptureCenterMeters,
-                                0.5
-                            ),
-                            preCaptureCenterMeters
+                            preCaptureCenterMeters,
+                            entranceCenterMeters,
+                            captureCenterMeters
                         };
 
                         routeInitialForward =
@@ -2031,25 +2076,28 @@ bool GameServer::planAutomaticDocking(
                             std::max(0.5, authoredEntry)
                         );
 
-                        world::navigation::
-                            TrajectoryPointSpeedConstraint midpoint;
-                        midpoint.sourcePathProgressMeters =
-                            ingressDistance * 0.5;
-                        midpoint.maxSpeedMps = ingressSpeed;
-                        trajectoryRequest.
-                            pointSpeedConstraints.push_back(
-                                midpoint
+                        double sourceProgress = 0.0;
+                        for (std::size_t i = 1;
+                             i < trajectoryRequest.pathPointsMeters.size();
+                             ++i)
+                        {
+                            sourceProgress += glm::length(
+                                trajectoryRequest.pathPointsMeters[i] -
+                                trajectoryRequest.pathPointsMeters[i - 1]
                             );
 
-                        world::navigation::
-                            TrajectoryPointSpeedConstraint terminal;
-                        terminal.sourcePathProgressMeters =
-                            ingressDistance;
-                        terminal.maxSpeedMps = ingressSpeed;
-                        trajectoryRequest.
-                            pointSpeedConstraints.push_back(
-                                terminal
-                            );
+                            world::navigation::
+                                TrajectoryPointSpeedConstraint
+                                    constraint;
+                            constraint.sourcePathProgressMeters =
+                                sourceProgress;
+                            constraint.maxSpeedMps =
+                                ingressSpeed;
+                            trajectoryRequest.
+                                pointSpeedConstraints.push_back(
+                                    constraint
+                                );
+                        }
 
                         const double velocityProbeSeconds = 0.01;
                         const auto portBefore = portAt(
@@ -2069,21 +2117,21 @@ bool GameServer::planAutomaticDocking(
                             return;
                         }
 
-                        const glm::dvec3 preCaptureBefore =
-                            preCaptureCenterAt(
+                        const glm::dvec3 captureBefore =
+                            capturePointAt(
                                 portBefore,
-                                preCaptureDepthMeters
+                                captureDepthMeters
                             );
-                        const glm::dvec3 preCaptureAfter =
-                            preCaptureCenterAt(
+                        const glm::dvec3 captureAfter =
+                            capturePointAt(
                                 portAfter,
-                                preCaptureDepthMeters
+                                captureDepthMeters
                             );
 
                         trajectoryRequest.hasTerminalVelocity = true;
                         trajectoryRequest.terminalVelocityMps =
-                            (preCaptureAfter -
-                             preCaptureBefore) /
+                            (captureAfter -
+                             captureBefore) /
                             (2.0 * velocityProbeSeconds);
 
                         const auto portOrientation =
@@ -2387,6 +2435,8 @@ bool GameServer::planAutomaticDocking(
                 }
                 job->preCaptureDepthMeters =
                     finalPreCaptureDepthMeters;
+                job->captureDepthMeters =
+                    finalCaptureDepthMeters;
                 job->terminalUniverseTimeSeconds =
                     captureUniverseTimeSeconds;
                 job->terminalAngularVelocityRadPerSec =
@@ -2922,6 +2972,8 @@ void GameServer::applyAutomaticDockingControls(
                 << job->maxPlannedAccelerationMps2
                 << " pre_capture_depth_m="
                 << job->preCaptureDepthMeters
+                << " capture_depth_m="
+                << job->captureDepthMeters
                 << " terminal_t="
                 << job->terminalUniverseTimeSeconds
                 << " terminal_omega_radps="
@@ -3663,7 +3715,7 @@ void GameServer::applyAutomaticDockingControls(
                     runtime.entityId,
                     runtime.requestSerial,
                     true,
-                    "pre-capture-envelope-complete"
+                    "capture-envelope-complete"
                 });
             }
         }

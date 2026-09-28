@@ -19,46 +19,9 @@ void printTerminalArcDiagnostics(
 {
     std::cerr
         << " terminal-arc diagnostics:"
-        << " requested_radius_m="
-        << plan.terminalTurnRequestedRadiusMeters
-        << " selected_radius_m="
-        << plan.terminalTurnRadiusMeters
-        << " rotation_deg="
-        << plan.terminalArcRotationDegrees
-        << " candidates="
-        << plan.terminalArcCandidatesTested
-        << " routeable="
-        << plan.terminalArcRouteable
-        << " route_rejected="
-        << plan.terminalArcRouteRejected
-        << " transit_ready="
-        << plan.terminalArcTransitReady
-        << " transit_rejected="
-        << plan.terminalArcTransitRejected
-        << " collision_rejected="
-        << plan.terminalArcCollisionRejected
-        << " accepted="
-        << plan.terminalArcAcceptedCandidates
-        << " axis_passes="
-        << plan.terminalArcAxisPassesTested
-        << " final_axis_m="
-        << plan.terminalApproachLengthMeters
-        << " axis_extended="
-        << plan.terminalApproachExtended
-        << " relaxed="
-        << plan.terminalTurnRadiusRelaxed
-        << " blocker="
-        << (plan.terminalArcDominantBlockerId.empty()
-                ? "none"
-                : plan.terminalArcDominantBlockerId)
-        << " blocker_hits="
-        << plan.terminalArcDominantBlockerHits
-        << " last_rejection="
-        << (plan.terminalArcLastRejection.empty()
-                ? "none"
-                : plan.terminalArcLastRejection)
+        << game::navigation::
+            dockingAdvisoryPlanDiagnosticSummary(plan)
         << "\n";
-}
 }
 
 int main()
@@ -425,6 +388,9 @@ int main()
         farAxisInflatedRadius;
     if(!shortenedAxisPlan.valid() ||
        !shortenedAxisPlan.terminalApproachShortened ||
+       shortenedAxisPlan.terminalTurnRadiusRelaxed ||
+       shortenedAxisPlan.terminalTurnRadiusMeters+1.0e-6<
+           shortenedAxis.preferredTerminalTurnRadiusMeters ||
        shortenedAxisPlan.terminalApproachLengthMeters>=
            shortenedAxis.terminalApproachLengthMeters-1.0 ||
        shortenedAxisPlan.terminalApproachLengthMeters<=700.0 ||
@@ -436,9 +402,12 @@ int main()
             << " shortened=" << shortenedAxisPlan.terminalApproachShortened
             << " final_axis_m="
             << shortenedAxisPlan.terminalApproachLengthMeters
+            << " radius_m="
+            << shortenedAxisPlan.terminalTurnRadiusMeters
             << " join_clearance_m="
             << shortenedAxisJoinClearance
             << "\n";
+        printTerminalArcDiagnostics(shortenedAxisPlan);
         return 29;
     }
 

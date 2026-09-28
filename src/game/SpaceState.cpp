@@ -2501,6 +2501,10 @@ void SpaceState::updateDockingAdvisory()
             shipProfile.maxBrakingAccelerationMps2;
         request.lateralMps2 =
             shipProfile.maxLateralAccelerationMps2;
+        request.maxAngularVelocityRadPerSecond =
+            shipProfile.maxAngularVelocityRadPerSecond;
+        request.maxAngularAccelerationRadPerSecond2 =
+            shipProfile.maxAngularAccelerationRadPerSecond2;
         // USER-CONTRACT: manual docking corridor frame cadence is fixed.
         // Do not change without an explicit user request.
         request.gateSpacingMeters = 500.0;
@@ -2519,7 +2523,7 @@ void SpaceState::updateDockingAdvisory()
         {
             request.terminalApproachLengthMeters = 9000.0;
             request.terminalTurnSegmentFraction = 0.85;
-            request.preferredTerminalTurnRadiusMeters = 6000.0;
+            request.deriveTerminalTurnRadiusFromVehicle = true;
         }
 
         std::cout << "[DockAdvisory] request=" << pending.serial
@@ -2533,8 +2537,16 @@ void SpaceState::updateDockingAdvisory()
                      })
                   << " turn_fraction="
                   << request.terminalTurnSegmentFraction
-                  << " preferred_turn_radius_m="
-                  << request.preferredTerminalTurnRadiusMeters
+                  << " turn_radius_policy="
+                  << (request.deriveTerminalTurnRadiusFromVehicle
+                          ? "vehicle-derived"
+                          : "generic")
+                  << " max_omega_radps="
+                  << request.maxAngularVelocityRadPerSecond
+                  << " max_alpha_radps2="
+                  << request.maxAngularAccelerationRadPerSecond2
+                  << " hull_radius_m="
+                  << request.hullRadiusMeters
                   << " initial_forward_lead_m="
                   << request.initialForwardLeadMeters
                   << '\n';

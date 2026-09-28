@@ -184,6 +184,8 @@ try:
         "request.initialForward = currentForwardMap",
         "request.initialForwardLeadMeters",
         "request.gateSpacingMeters = 150.0",
+        "NavigationHitVolumeAdapter::buildObstacles",
+        "source.hitComponent = object.hitComponent",
         "reason=autopilot-authority-denied",
         "DockingAutomaticRuntime::Stage::ApproachHold",
         "DockingAutomaticRuntime::Stage::FinalIngress",
@@ -235,6 +237,11 @@ try:
             "Automatic Assisted docking regressed to a fixed 6 km terminal radius"
         )
 
+    if "makeNavigationObstacleForObject" in server:
+        raise AssertionError(
+            "Automatic docking regressed to descriptor-wide Station obstacle geometry"
+        )
+
     header = require(
         "src/game/server/GameServer.h",
         "struct DockingAutomaticRuntime",
@@ -262,6 +269,9 @@ try:
     client_snapshot = require(
         "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
         "DiagnosticHubInfrastructureClearanceMeters",
+        "NavigationHitVolumeAdapter::buildObstacles",
+        "debugHitVolumes",
+        "ObstacleGeometryUnavailable",
     )
     if "constexpr double DiagnosticHubInfrastructureClearanceMeters" in client_snapshot:
         raise AssertionError(

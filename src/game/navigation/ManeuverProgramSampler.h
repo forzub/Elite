@@ -8,9 +8,15 @@
 namespace game::navigation
 {
 
-// Pure O(1)-bounded program interpretation block.
+// Pure bounded program interpretation block.
 //
-// AcceptedManeuverProgram + universe time -> one reference/feed-forward sample.
+// TimeScheduled:
+//   AcceptedManeuverProgram + universe time -> reference/feed-forward sample.
+//
+// SpatialCorridor:
+//   AcceptedManeuverProgram + real vehicle position -> nearest monotonic
+//   reference/feed-forward sample on the accepted polyline.
+//
 // It owns no world query, obstacle search, feedback control or replanning.
 class ManeuverProgramSampler final
 {
@@ -33,11 +39,23 @@ public:
         std::size_t upperSampleIndex = 0;
         double interpolation01 = 0.0;
 
+        bool spatialReference = false;
+        double spatialDistanceMeters = 0.0;
     };
 
     [[nodiscard]] static Result sample(
         const AcceptedManeuverProgram& program,
         double universeTimeSeconds
+    ) noexcept;
+
+    // Spatial-corridor sampling never lets nominal time run away from the
+    // vehicle. The caller supplies a monotonic minimum segment index so a
+    // self-near path cannot make execution jump backwards.
+    [[nodiscard]] static Result sampleSpatial(
+        const AcceptedManeuverProgram& program,
+        double universeTimeSeconds,
+        const glm::dvec3& positionMapMeters,
+        std::size_t minimumSegmentIndex = 0
     ) noexcept;
 };
 

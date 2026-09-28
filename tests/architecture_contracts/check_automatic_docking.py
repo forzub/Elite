@@ -359,7 +359,6 @@ try:
         "trajectory.angularKinematicsAuthored",
         "completionTriggersReplan",
         "ReferenceMode referenceMode",
-        "spatialSlowdownStartFraction",
         "page.referenceMode = request.referenceMode",
         "page.tracking.spatialSlowdownStartFraction",
         "TranslationMode::AssistedVelocity",
@@ -374,6 +373,17 @@ try:
         "ReferenceMode referenceMode = ReferenceMode::TimeScheduled",
         "spatialSlowdownStartFraction = 0.50",
     )
+    if "spatialSlowdownStartFraction" in builder:
+        raise AssertionError(
+            "spatial corridor regained the retired cross-track speed governor"
+        )
+    if "spatialSlowdownStartFraction" in read(
+        "src/game/navigation/AcceptedManeuverProgram.h"
+    ):
+        raise AssertionError(
+            "accepted program still exposes the retired cross-track slowdown policy"
+        )
+
     require(
         "src/game/navigation/ManeuverProgramSampler.h",
         "sampleSpatial(",

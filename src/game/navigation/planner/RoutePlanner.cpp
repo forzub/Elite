@@ -1,5 +1,6 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 
+#include <cmath>
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
@@ -28,11 +29,16 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
     legacy.standoffMeters = input.terminalReferenceDistanceMeters;
 
     // The current backend represents the generic endpoint as
-    // entrance + outward * standoff. Keep that implementation detail private
-    // to this adapter so callers do not depend on docking-specific geometry.
+    // entrance + normalized(outward) * standoff. Keep that implementation
+    // detail private so callers only own the exact generic goal point.
+    const double outwardLength = glm::length(input.terminalOutward);
+    const glm::dvec3 terminalOutward =
+        std::isfinite(outwardLength) && outwardLength > 1.0e-12
+            ? input.terminalOutward / outwardLength
+            : input.terminalOutward;
     legacy.entranceMeters =
         input.goalMeters -
-        input.terminalOutward *
+        terminalOutward *
             input.terminalReferenceDistanceMeters;
 
     legacy.hullRadiusMeters = input.agentRadiusMeters;

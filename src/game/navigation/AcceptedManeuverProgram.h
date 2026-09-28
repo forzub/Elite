@@ -46,6 +46,18 @@ struct AcceptedManeuverProgram
         PrecisionRcs
     };
 
+    enum class ReferenceMode : std::uint8_t
+    {
+        // Reference position/velocity are sampled by the accepted maneuver
+        // clock. Use this only when timing itself is part of the maneuver.
+        TimeScheduled = 0,
+
+        // Vehicle progress owns the clock. Follower projects the real craft
+        // onto the accepted spatial program and advances only as the craft
+        // physically progresses through it. This is the tunnel/canyon mode.
+        SpatialCorridor
+    };
+
     enum class ManeuverFamily : std::uint8_t
     {
         Undefined = 0,
@@ -145,6 +157,7 @@ struct AcceptedManeuverProgram
     std::uint64_t objectiveRevision = 0;
 
     ManeuverFamily family = ManeuverFamily::Undefined;
+    ReferenceMode referenceMode = ReferenceMode::TimeScheduled;
     LocalFlightControlLaw controlLaw = defaultLocalFlightControlLaw();
     TranslationMode translationMode = TranslationMode::Undefined;
 

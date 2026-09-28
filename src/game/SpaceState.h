@@ -341,6 +341,8 @@ private:
         bool deviationWarning = false;
         bool deviationCritical = false;
         bool corridorDeparted = false;
+        bool authoritativeAutomaticRoute = false;
+        std::uint64_t authoritativeAutomaticRouteRevision = 0;
         std::size_t nextGate = 0;
         game::navigation::DockingAdvisoryCorridorTracker tracker;
     } m_dockAdvice;

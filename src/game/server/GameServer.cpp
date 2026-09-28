@@ -3015,13 +3015,10 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Aligning)
         {
-            using Tracker =
-                game::navigation::ManeuverTrackingController;
-
             const auto& baseProgram =
                 runtime.programs.front();
 
-            Tracker::AgentState agent;
+            FollowerAgent agent;
             agent.positionMapMeters =
                 motion.localPositionMeters;
             agent.velocityMapMetersPerSecond =
@@ -3045,44 +3042,17 @@ void GameServer::applyAutomaticDockingControls(
             agent.rollRateRadPerSec =
                 transform.rollRate;
 
-            auto reference =
-                baseProgram.samples[0];
-            reference.positionMapMeters =
-                agent.positionMapMeters;
-            reference.velocityMapMetersPerSecond =
-                agent.velocityMapMetersPerSecond;
-            reference.linearAccelerationFeedForwardMapMps2 =
-                glm::dvec3(0.0);
-            reference.forwardMap =
-                runtime.alignmentForwardMap;
-            reference.rightMap =
-                runtime.alignmentRightMap;
-            reference.upMap =
-                runtime.alignmentUpMap;
-            reference.angularVelocityMapRadPerSecond =
-                glm::dvec3(0.0);
-            reference.angularAccelerationFeedForwardMapRadPerSec2 =
-                glm::dvec3(0.0);
-
-            auto alignmentProgram = baseProgram;
-            alignmentProgram.family =
-                game::navigation::AcceptedManeuverProgram::
-                    ManeuverFamily::PrecisionTransit;
-            alignmentProgram.tracking.positionErrorMeters = 0.0;
-            alignmentProgram.tracking.linearVelocityErrorMps = 0.0;
-            alignmentProgram.tracking.forwardAngleErrorRad = 0.0;
-            alignmentProgram.tracking.angularVelocityErrorRadPerSec = 0.0;
-            alignmentProgram.tracking.linearFeedbackReserveMps2 = 0.0;
-
-            const auto tracking =
-                Tracker::track(
-                    alignmentProgram,
-                    reference,
+            const auto alignment =
+                Follower::alignToAttitude(
+                    baseProgram,
                     agent,
+                    runtime.alignmentForwardMap,
+                    runtime.alignmentRightMap,
+                    runtime.alignmentUpMap,
                     runtime.trackingPolicy
                 );
 
-            if (tracking.status == Tracker::Status::InvalidInput)
+            if (!alignment.valid)
             {
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
@@ -3105,7 +3075,7 @@ void GameServer::applyAutomaticDockingControls(
 
             const auto systemIntent =
                 boundary.toSystemControlIntent(
-                    tracking.intent
+                    alignment.intent
                 );
             ShipControlState alignmentControl;
             alignmentControl.navigationAccelerationDemandValid = true;
@@ -3117,39 +3087,14 @@ void GameServer::applyAutomaticDockingControls(
                 systemIntent.revision;
             ship->setControlState(alignmentControl);
 
-            const auto axisAngle =
-                [](const glm::dvec3& a,
-                   const glm::dvec3& b)
-                {
-                    return std::acos(
-                        std::clamp(
-                            glm::dot(
-                                glm::normalize(a),
-                                glm::normalize(b)
-                            ),
-                            -1.0,
-                            1.0
-                        )
-                    );
-                };
-
-            const double forwardErrorRad =
-                axisAngle(
-                    agent.forwardMap,
-                    runtime.alignmentForwardMap
-                );
-            const double upErrorRad =
-                axisAngle(
-                    agent.upMap,
-                    runtime.alignmentUpMap
-                );
             const double entryToleranceRad =
                 baseProgram.
                     terminalTolerance.forwardAngleRad;
 
             if (std::max(
-                    forwardErrorRad,
-                    upErrorRad) <= entryToleranceRad)
+                    alignment.forwardAngleErrorRad,
+                    alignment.upAngleErrorRad) <=
+                entryToleranceRad)
             {
                 // Alignment changes the physical state and consumes universe
                 // time. Never execute the now-stale program: stabilize again
@@ -3169,9 +3114,13 @@ void GameServer::applyAutomaticDockingControls(
                     << runtime.requestSerial
                     << " phase=aligned-replan"
                     << " forward_error_deg="
-                    << glm::degrees(forwardErrorRad)
+                    << glm::degrees(
+                           alignment.forwardAngleErrorRad
+                       )
                     << " up_error_deg="
-                    << glm::degrees(upErrorRad)
+                    << glm::degrees(
+                           alignment.upAngleErrorRad
+                       )
                     << "\n";
             }
             continue;

@@ -32,6 +32,7 @@
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
+#include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/world/navigation/NavigationObstacleFactory.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
@@ -1485,11 +1486,15 @@ bool GameServer::planAutomaticDocking(
 
     struct ObstacleSource
     {
-        ObjectType type {};
         std::uint32_t id = 0;
         glm::dvec3 offsetMeters {0.0};
         glm::dvec3 rotationDeg {0.0};
         glm::dvec3 angularVelocityDegPerSecond {0.0};
+
+        // Immutable local collision geometry copied before the async planner
+        // starts. Navigation uses the same HitVolume product as damage/runtime
+        // collision instead of rebuilding a descriptor-wide Station box.
+        game::damage::HitComponent hitComponent;
     };
 
     std::vector<ObstacleSource> obstacleSources;
@@ -1503,13 +1508,13 @@ bool GameServer::planAutomaticDocking(
         }
 
         ObstacleSource source;
-        source.type = object.type;
         source.id = id.value;
         source.offsetMeters = object.hubLocalOffsetMeters;
         source.rotationDeg = object.hubLocalRotationDeg;
         source.angularVelocityDegPerSecond =
             object.hubLocalAngularVelocityDegPerSecond;
-        obstacleSources.push_back(source);
+        source.hitComponent = object.hitComponent;
+        obstacleSources.push_back(std::move(source));
     }
 
     const auto& transform = ship.core().transform();
@@ -1640,22 +1645,33 @@ bool GameServer::planAutomaticDocking(
                                     );
                             }
 
-                            const auto obstacle =
-                                world::navigation::
-                                    makeNavigationObstacleForObject(
-                                        source.type,
-                                        "object:" +
-                                            std::to_string(source.id),
+                            auto exactObstacles =
+                                game::navigation::
+                                    NavigationHitVolumeAdapter::buildObstacles(
+                                        source.hitComponent,
                                         source.id,
                                         hubVisualToTacticalVector(
                                             source.offsetMeters
                                         ),
                                         tacticalBasis,
-                                        game::navigation::
-                                            DiagnosticHubInfrastructureClearanceMeters
+                                        "object:" +
+                                            std::to_string(source.id),
+                                        {
+                                            false,
+                                            game::navigation::
+                                                DiagnosticHubInfrastructureClearanceMeters
+                                        }
                                     );
-                            if (obstacle)
-                                obstacles.push_back(*obstacle);
+
+                            obstacles.insert(
+                                obstacles.end(),
+                                std::make_move_iterator(
+                                    exactObstacles.begin()
+                                ),
+                                std::make_move_iterator(
+                                    exactObstacles.end()
+                                )
+                            );
                         }
                         return obstacles;
                     };

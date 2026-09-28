@@ -43,22 +43,6 @@
 
 namespace {
 
-const char* bridgeFailureName(
-    game::navigation::NavigationRuntimeControlBridge::
-        StepResult::FailureKind kind
-) noexcept
-{
-    using Kind = game::navigation::NavigationRuntimeControlBridge::
-        StepResult::FailureKind;
-    switch (kind)
-    {
-    case Kind::None: return "none";
-    case Kind::InvalidIntent: return "invalid-intent";
-    case Kind::ExecutorRejected: return "executor-rejected";
-    }
-    return "unknown";
-}
-
 std::string dockingAdvisoryTrace(
     const game::navigation::DockingAdvisoryPlan& plan
 )
@@ -2629,7 +2613,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.planningJob.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
 
@@ -2815,38 +2798,6 @@ void GameServer::applyAutomaticDockingControls(
                     runtime.programs.size()
                 );
 
-            runtime.controlBridge =
-                std::make_unique<
-                    game::navigation::NavigationRuntimeControlBridge
-                >(
-                    game::navigation::
-                        NavigationRuntimeControlBridge::
-                            PilotSkillProfile {}
-                );
-
-            game::navigation::
-                NavigationRuntimeControlBridge::Intent
-                    neutral;
-            neutral.revision = runtime.requestSerial;
-            neutral.targetRevision =
-                runtime.programs.front().revision;
-            if (!runtime.controlBridge->reset(
-                    0.0,
-                    neutral))
-            {
-                runtime.controlBridge.reset();
-                runtime.programs.clear();
-                runtime.planningJob.reset();
-                completed.push_back({
-                    runtime.playerId,
-                    runtime.entityId,
-                    runtime.requestSerial,
-                    false,
-                    "runtime-control-bridge-reset-failed"
-                });
-                continue;
-            }
-            runtime.controlClockSeconds = 0.0;
             runtime.lastTrackingDiagnosticTick = 0;
 
             const auto& firstReference =
@@ -2993,8 +2944,7 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
-        if (runtime.programs.empty() ||
-            !runtime.controlBridge)
+        if (runtime.programs.empty())
         {
             std::cerr << "[DockAuto] request=" << runtime.requestSerial
                       << " phase=replan reason=program-or-bridge-missing"
@@ -3080,7 +3030,6 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
-                runtime.controlBridge.reset();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 continue;
             }
@@ -3093,7 +3042,6 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
-                runtime.controlBridge.reset();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 continue;
             }
@@ -3139,7 +3087,6 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
-                runtime.controlBridge.reset();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 continue;
             }
@@ -3188,7 +3135,6 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.phase =
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
-                runtime.controlBridge.reset();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 ShipControlState stop;
                 stop.velocityAlignmentCommand =
@@ -3287,7 +3233,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             continue;
         }
@@ -3354,7 +3299,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.planningJob.reset();
             runtime.currentProgramPage = 0;
             runtime.currentSpatialSegment = 0;
@@ -3583,7 +3527,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
 
             ShipControlState stop;
@@ -3605,7 +3548,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             continue;
         }
@@ -3664,7 +3606,6 @@ void GameServer::applyAutomaticDockingControls(
             runtime.phase =
                 DockingAutomaticRuntime::Phase::Stabilizing;
             runtime.programs.clear();
-            runtime.controlBridge.reset();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             continue;
         }

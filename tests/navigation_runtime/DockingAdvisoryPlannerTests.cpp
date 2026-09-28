@@ -98,14 +98,18 @@ int main()
             << "nose-first route did not author a continuous launch fillet\n";
         return 35;
     }
-    const double minimumFlyableLaunchRadius =
-        0.50 * std::pow(0.8 * forwardLaunch.maxSpeedMps, 2.0) /
-        forwardLaunch.lateralMps2;
-    if(forwardLaunchPlan.initialTurnRadiusMeters + 1.0e-6 <
-       minimumFlyableLaunchRadius)
+    // A launch fillet is allowed to be tighter than the radius implied by
+    // cruise speed. Dense gate speeds carry the dynamic limit; geometry must
+    // not reject an otherwise clear route merely because it must slow down.
+    const double launchTurnSpeedLimit =
+        std::sqrt(
+            forwardLaunch.lateralMps2 *
+            forwardLaunchPlan.initialTurnRadiusMeters
+        );
+    if(!std::isfinite(launchTurnSpeedLimit) ||
+       launchTurnSpeedLimit <= 0.0)
     {
-        std::cerr << "Assisted launch fillet tightened below usable radius: "
-                  << forwardLaunchPlan.initialTurnRadiusMeters << "\n";
+        std::cerr << "nose-first route produced invalid launch speed limit\n";
         return 37;
     }
 
@@ -132,6 +136,40 @@ int main()
         std::cerr
             << "nose-first corridor never transitioned into a launch arc\n";
         return 36;
+    }
+
+    // Regression: a stopped Assisted ship may have a high top speed and a
+    // heading inherited from an arbitrary previous manoeuvre. The old planner
+    // demanded that the first bend support 80% of max speed even though the
+    // route starts at zero speed. With a 1 km nose-first lead that made this
+    // perfectly open route impossible after turning the ship.
+    auto postManeuverLaunch=forwardLaunch;
+    postManeuverLaunch.maxSpeedMps=500.0;
+    postManeuverLaunch.acceleratingMps2=52.0;
+    postManeuverLaunch.brakingMps2=52.0;
+    postManeuverLaunch.lateralMps2=52.0;
+    const auto postManeuverPlan=
+        DockingAdvisoryPlanner::plan(postManeuverLaunch);
+    if(!postManeuverPlan.valid() ||
+       !postManeuverPlan.initialTurnPresent)
+    {
+        std::cerr
+            << "stopped post-manoeuvre ship could not build a slower launch turn: "
+            << postManeuverPlan.failure << "\n";
+        return 38;
+    }
+    const double retiredCruiseRadiusFloor=
+        0.50 *
+        std::pow(0.8 * postManeuverLaunch.maxSpeedMps,2.0) /
+        postManeuverLaunch.lateralMps2;
+    if(postManeuverPlan.initialTurnRadiusMeters + 1.0e-6 >=
+       retiredCruiseRadiusFloor)
+    {
+        std::cerr
+            << "post-manoeuvre fixture no longer exercises the retired cruise-radius veto: radius="
+            << postManeuverPlan.initialTurnRadiusMeters
+            << " old_floor=" << retiredCruiseRadiusFloor << "\n";
+        return 39;
     }
 
     DockingAdvisoryRequest r;

@@ -205,9 +205,13 @@ ShipParams cobraParams()
     p.maxCombatSpeed = 500.0f;
     p.maxCruiseSpeed = 1000.0f;
     p.throttleAccel = 5.0f;
+    p.forwardMainEngineAvailable = true;
+    p.reverseMainEngineAvailable = true;
+    p.forwardMainEngineAccelerationMps2 = 73.549875f;
+    p.reverseMainEngineAccelerationMps2 = 73.549875f;
 
     p.autoLevelStrength = 0.0f;
-    p.strafeAccel = 20.0f;
+    p.strafeAccel = 73.549875f;
     p.strafeDamping = 6.0f;
     p.maxStrafeSpeed = 80.0f;
     p.manoeuvreThrusterAccel = 2.0f;
@@ -844,10 +848,11 @@ PhaseMetrics executePhase(
         }
 
         const auto bridgeResult =
-            v.bridge.step(
+            v.bridge.stepVehicle(
                 v.timeSeconds + kDt,
                 kDt,
-                toSystemIntent(follower.intent)
+                toSystemIntent(follower.intent),
+                follower.targetVelocityMapMps
             );
 
         if (bridgeResult.status !=
@@ -865,13 +870,34 @@ PhaseMetrics executePhase(
             static_cast<float>(kDt)
         );
 
-        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
-            v.transform.motion,
-            v.params,
-            bridgeResult.control.
-                navigationLinearAccelerationDemandSystemMps2,
-            v.transform.forward()
-        );
+        if (v.transform.motion.localControlLaw == Law::Assisted &&
+            bridgeResult.control.navigationVelocityTargetValid)
+        {
+            game::navigation::DynamicMotionSystem::
+                applyNavigationAssistedFlightModel(
+                    v.transform.motion,
+                    v.frame,
+                    v.params,
+                    static_cast<float>(kDt),
+                    bridgeResult.control.navigationTargetVelocitySystemMps,
+                    bridgeResult.control.
+                        navigationLinearAccelerationDemandSystemMps2,
+                    v.transform.forward(),
+                    v.transform.right(),
+                    v.transform.up()
+                );
+        }
+        else
+        {
+            game::navigation::DynamicMotionSystem::
+                applySystemAccelerationDemand(
+                    v.transform.motion,
+                    v.params,
+                    bridgeResult.control.
+                        navigationLinearAccelerationDemandSystemMps2,
+                    v.transform.forward()
+                );
+        }
 
         game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
             v.transform.motion,

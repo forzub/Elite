@@ -62,6 +62,42 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     auto reference = sampled.reference;
     double spatialSpeedScale = 1.0;
 
+    // SpatialCorridor is a path-following contract, not a stopwatch.  The
+    // projection above owns position progress.  A trajectory often begins at
+    // a legitimate zero-speed sample; if we blindly keep that sample's zero
+    // velocity until position changes, a stopped craft can never create the
+    // very progress that would advance the reference.  Break that deadlock
+    // from spatial data only: the current segment supplies the course and the
+    // next accepted control point supplies the local launch speed.  Once the
+    // craft has moved, ordinary spatial interpolation owns speed again.
+    if (spatialCorridor &&
+        sampled.lowerSampleIndex < sampled.upperSampleIndex &&
+        sampled.upperSampleIndex < program.sampleCount)
+    {
+        const auto& lower =
+            program.samples[sampled.lowerSampleIndex];
+        const auto& upper =
+            program.samples[sampled.upperSampleIndex];
+        const glm::dvec3 segment =
+            upper.positionMapMeters - lower.positionMapMeters;
+        const double segmentLength = glm::length(segment);
+        const double referenceSpeed =
+            glm::length(reference.velocityMapMetersPerSecond);
+        const double upperSpeed =
+            glm::length(upper.velocityMapMetersPerSecond);
+
+        if (finite(segmentLength) &&
+            finite(referenceSpeed) &&
+            finite(upperSpeed) &&
+            segmentLength > kEpsilon &&
+            referenceSpeed <= kEpsilon &&
+            upperSpeed > kEpsilon)
+        {
+            reference.velocityMapMetersPerSecond =
+                (segment / segmentLength) * upperSpeed;
+        }
+    }
+
     if (spatialCorridor &&
         program.tracking.positionErrorMeters > kEpsilon)
     {

@@ -1,3 +1,30 @@
+## Implementation status — 2026-09-28 first separation slice
+
+Implemented as a candidate:
+- generic public RoutePlanner facade in its own planner directory;
+- generic public RouteFollower/Autopilot facade in its own autopilot directory;
+- GameServer/SpaceState migrated off direct legacy Planner/Follower backend
+  dependencies;
+- Timeline/Sampler/Tracker access hidden behind RouteFollowerApi;
+- DockFacility public semantic descriptor;
+- independent DockTrafficController API/implementation with provisional vs
+  controlled-horizon queue semantics and physical/class policy;
+- independent DockLandingController API/implementation with LandingHandoff and
+  no-main-engine terminal-control contract;
+- separate `EliteDockingInfrastructure` build target;
+- native/API tests plus forbidden-dependency architecture gate.
+
+Not implemented yet:
+- authoritative facility catalog/runtime population from station models;
+- live dispatcher replication/UI;
+- pad occupancy and timed portal/lane reservations;
+- traffic-controller integration into START DOCKING;
+- EntryHoldPoint execution;
+- LandingController RCS control, gear/contact/latch;
+- authoritative DOCKED/undock state.
+
+Windows compile/test evidence is pending before live integration.
+
 # Docking infrastructure architecture
 
 Status: design contract for the next docking slice. This document intentionally

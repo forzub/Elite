@@ -1,3 +1,47 @@
+## 2026-09-28 — live spatial corridor strong; internal dock ingress candidate
+
+Fresh standalone EliteGame visual evidence from the user is strongly positive for
+the rewritten SpatialCorridor execution:
+- ship remains inside the displayed authoritative corridor;
+- turns are smooth;
+- hull up/down orientation relative to the dock is maintained very well;
+- the previous corridor-loss behavior is no longer the active problem.
+
+One remaining presentation/control-quality issue is small continuous straight-line
+"hunting". Root cause is the per-fixed-step look-ahead ray reacting to tiny
+cross-track position noise even when the craft is already centered. The current
+candidate adds a small center deadband: inside it Follower holds the exact current
+segment tangent; outside it the existing look-ahead recovery remains active.
+Route speed is unchanged and turn geometry is untouched.
+
+The live run also confirmed that Automatic stops before entering the dock. Code
+inspection shows this was intentional in the old runtime: FinalIngress ended at
+an exterior pre-capture point and returned Human authority with
+`pre-capture-envelope-complete`.
+
+The dock itself also had mismatched visual/collision truth. The guidance OBJ has
+a real 190x110 (cube) / 200x120 (cylinder) through aperture, but monolithic
+`ObjectRuntimeHitBuilder` previously produced one solid whole-object OBB. The
+candidate fixes the source:
+- `IObjectDescriptor` can author logical collision boxes for monolithic objects;
+- guidance docks author four wall OBBs around the visible opening;
+- the shared HitComponent therefore exposes a real through passage to both
+  navigation and collision consumers;
+- docking semantic anchors now author `capture_depth_m` (450 m cube, 600 m
+  cylinder), explicitly locating the internal capture point;
+- FinalIngress is now HOLD -> exterior pre-capture -> entrance plane -> internal
+  capture point;
+- the exact shared hit volumes must prove the segment through the target. There
+  is no target-object collision whitelist. A blocked opening fails as
+  `final-capture-corridor-blocked`;
+- successful FinalIngress now reports `capture-envelope-complete`, not exterior
+  pre-capture completion.
+
+This candidate intentionally does NOT yet add permanent dock latch/undock state.
+The next live gate is physical ingress through the real aperture and stopping at
+the internal capture point. Only after that evidence should authoritative latch
+ownership be added.
+
 ## 2026-09-28 — compile cleanup after retired slowdown policy
 
 Native Windows build exposed one stale validation reference in `ManeuverProgramSampler.cpp` to the already removed `spatialSlowdownStartFraction` field. That stale check is removed. The unused `finite(glm::dvec3)` helper in `TrajectoryFollower.cpp` was also removed. Code HEAD for this cleanup: `64e0a665b1fbcc5f8f20d9905674e6df140d2e25`. Windows gate must be rerun; candidate is still unaccepted pending native tests/build/live flight.

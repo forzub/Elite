@@ -936,10 +936,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             continue;
 
         const glm::dvec3 direction=segment/length;
+        // Sampling density is approximate, not a geometric grid.
+        // Split the complete authored segment into N equal pieces so its exact
+        // endpoint is always retained. Using floor gives a step close to the
+        // requested density without creating a short remainder fragment.
         const int subdivisions=std::max(
             1,
             static_cast<int>(
-                std::ceil(length/denseSpacingMeters)
+                std::floor(length/denseSpacingMeters)
             )
         );
 

@@ -1,3 +1,7 @@
+## 2026-09-28 — rerun composite only
+
+The previous targeted rerun is now 5/6 green. Rebuild and run only `navigation_composite_proving_ground_tests` / CTest `navigation_composite_proving_ground`. If green, rerun the complete navigation-runtime CTest suite and then the docking gate.
+
 ## 2026-09-28 — rerun six audited navigation-runtime failures
 
 After pulling current main, rebuild the standalone `build/tests/navigation_runtime` tree and rerun exactly these CTest names first:

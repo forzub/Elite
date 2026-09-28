@@ -113,12 +113,6 @@ struct AcceptedManeuverProgram
         double alongTrackPositionDeadbandMeters = 0.0;
         double alongTrackSpeedDeadbandMps = 0.0;
 
-        // SpatialCorridor only. Full reference speed is retained inside this
-        // fraction of the proved cross-track envelope. From here to the
-        // envelope edge Follower progressively slows along-path motion so
-        // centering authority wins over schedule.
-        double spatialSlowdownStartFraction = 0.50;
-
         // Authority intentionally reserved for the follower. Maneuver proof
         // must account for this reserve instead of consuming 100% authority.
         double linearFeedbackReserveMps2 = 0.0;

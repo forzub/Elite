@@ -47,7 +47,7 @@
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
-#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
@@ -331,7 +331,7 @@ private:
         // SpaceState owns presentation/tracking state only. Planner output is
         // stored intact and consumed read-only: sparse HUD gates and dense map
         // geometry remain Planner-owned products.
-        game::navigation::DockingAdvisoryPlan plan;
+        game::navigation::planner::RoutePlan plan;
         double standoffMeters = 0.0;
         double widthMeters = 0.0;
         double heightMeters = 0.0;
@@ -351,7 +351,7 @@ private:
         std::uint64_t timelineRevision = 0;
         double startedServerSeconds = 0.0;
         DockAdvice context;
-        game::navigation::DockingAdvisoryPlan plan;
+        game::navigation::planner::RoutePlan plan;
     };
     std::shared_ptr<DockAdviceJob> m_dockAdviceJob;
     std::shared_ptr<std::atomic<int>> m_dockWorkerCount =

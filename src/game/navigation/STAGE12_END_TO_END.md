@@ -1,3 +1,25 @@
+## 2026-09-28 — moving start and stationary spatial endpoint contract
+
+Stage-12 Automatic execution no longer assumes that route calculation starts
+from rest.
+
+For ApproachHold:
+`measured P,V -> zero linear acceleration coast -> projected P at execution
+epoch -> Planner -> AcceptedManeuverProgram -> Follower`.
+
+For FinalIngress:
+`HOLD capture -> BrakeToStop -> attitude acquisition -> fresh plan -> timed
+terminal ingress`.
+
+A zero-speed SpatialCorridor checkpoint has no translational course. The
+Follower may command attitude correction there, but the hull/reference angle
+cannot by itself invalidate the spatial route.
+
+Planner feasibility must also stay strictly inside the execution envelope.
+Docking currently compiles with 90% of the reserve-reduced acceleration
+authority so sample interpolation/curvature does not sit on the
+AcceptedProgram rejection boundary.
+
 ## 2026-09-28 — Stage 12 public Planner/Autopilot seam implemented
 
 The architecture split is now represented in code rather than documentation

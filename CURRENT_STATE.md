@@ -1,3 +1,65 @@
+## 2026-09-28 — first hard Planner/Autopilot/Traffic/Landing module split candidate
+
+The first implementation slice of
+`src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md` is now on `main`.
+This is an architecture candidate pending Windows compile/test evidence; it is
+not yet live dispatcher/parking functionality.
+
+New public navigation boundaries:
+- `src/game/navigation/planner/RoutePlannerApi.h` exposes generic
+  `RoutePlanRequest -> RoutePlan`;
+- `src/game/navigation/autopilot/RouteFollowerApi.h` exposes route execution,
+  page selection, reference diagnostics and attitude acquisition;
+- production `GameServer` no longer includes or names
+  `DockingAdvisoryPlanner`, `TrajectoryFollower`,
+  `ManeuverTrackingController`, `ManeuverProgramSampler` or
+  `ManeuverProgramTimeline`;
+- manual `SpaceState` route planning also consumes `RoutePlannerApi`, not
+  the legacy docking planner directly;
+- `AcceptedManeuverProgram` remains the explicit immutable execution DTO
+  allowed across Planner -> Autopilot. Private sampling/tracking state does not
+  cross that boundary.
+
+The current proven route geometry/control algorithms are intentionally retained
+behind adapters:
+- legacy `DockingAdvisoryPlanner` is a private RoutePlanner backend for this
+  migration slice;
+- legacy `TrajectoryFollower`/Sampler/Timeline/TrackingController are private
+  RouteFollower backend components.
+This preserves the user's successful SpatialCorridor flight while changing
+ownership first.
+
+New physically separate docking infrastructure:
+- `src/game/docking/model/DockFacilityDescriptor.h`;
+- `src/game/docking/traffic/DockTrafficControllerApi.h/.cpp`;
+- `src/game/docking/landing/DockLandingControllerApi.h/.cpp`.
+Traffic and Landing are compiled in their own `EliteDockingInfrastructure`
+library with no navigation link dependency.
+
+The first Traffic implementation already pins the critical policy seam:
+- remote/far requests are provisional and cannot mutate the queue or obtain a
+  queue token;
+- controlled-horizon requests can obtain stable queue positions;
+- physical fit cannot be overridden;
+- normal class allocation is exact-class;
+- emergency allocation may use a larger compatible class, never a smaller one.
+
+The first Landing implementation is intentionally only the boundary/state
+skeleton. A valid `LandingHandoff` enters terminal alignment and the public
+contract forbids main-engine authority. RCS settle, gear/contact/latch physics
+are not implemented yet.
+
+New native/API and architecture gates:
+- `route_planner_api`;
+- `route_follower_api`;
+- `docking_infrastructure_api`;
+- `check_docking_module_boundaries.py`.
+`verify_docking.sh` runs all of them.
+
+Next evidence must be the Windows MinGW `verify_docking.sh` gate and standalone
+`EliteGame` compile. Do not wire live Traffic/Landing into Automatic until
+this boundary compiles cleanly.
+
 ## 2026-09-28 — docking architecture split fixed before further FinalIngress work
 
 The long SpatialCorridor is now a successful reusable navigation primitive and

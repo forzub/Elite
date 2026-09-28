@@ -139,6 +139,62 @@ static int makeHitTemplateCacheKey(ObjectType typeId)
 }
 
 
+static bool appendAuthoredLogicalHitVolumes(
+    HitComponent& hitComponent,
+    const IObjectDescriptor& descriptor
+)
+{
+    const auto& boxes = descriptor.logicalCollisionBoxes();
+    if (boxes.empty())
+        return false;
+
+    std::size_t accepted = 0;
+    for (std::size_t i = 0; i < boxes.size(); ++i)
+    {
+        const auto& box = boxes[i];
+        if (!std::isfinite(box.centerMeters.x) ||
+            !std::isfinite(box.centerMeters.y) ||
+            !std::isfinite(box.centerMeters.z) ||
+            !std::isfinite(box.halfSizeMeters.x) ||
+            !std::isfinite(box.halfSizeMeters.y) ||
+            !std::isfinite(box.halfSizeMeters.z) ||
+            box.halfSizeMeters.x <= 0.0f ||
+            box.halfSizeMeters.y <= 0.0f ||
+            box.halfSizeMeters.z <= 0.0f)
+        {
+            continue;
+        }
+
+        HitVolume volume;
+        volume.zone = HitZoneType::Generic;
+        volume.priority = 0;
+        volume.layerIndex = 0;
+        volume.center = box.centerMeters;
+        volume.halfSize = box.halfSizeMeters;
+        volume.orientation = box.orientation;
+        volume.m_label =
+            box.label.empty()
+                ? "__logical_collision_box__" + std::to_string(i)
+                : box.label;
+        volume.moduleId =
+            "__logical_collision_box__" + std::to_string(i);
+        volume.subsystemId.clear();
+        volume.destructible = false;
+        volume.health = 1.0f;
+        volume.maxHealth = 1.0f;
+        volume.armor = 0.0f;
+        volume.penetrationResistance = 0.0f;
+        volume.destroyed = false;
+        volume.supportLinkVolume = false;
+
+        hitComponent.volumes.push_back(std::move(volume));
+        ++accepted;
+    }
+
+    return accepted > 0;
+}
+
+
 static bool appendWholeObjectLogicalHitVolume(
     HitComponent& hitComponent,
     const IObjectDescriptor& descriptor
@@ -2298,7 +2354,18 @@ void ObjectRuntimeHitBuilder::rebuild(
     if (!AssemblyMeshLibrary::has(typeId))
     {
         if (hitComponent.volumes.empty())
-            appendWholeObjectLogicalHitVolume(hitComponent, descriptor);
+        {
+            if (!appendAuthoredLogicalHitVolumes(
+                    hitComponent,
+                    descriptor
+                ))
+            {
+                appendWholeObjectLogicalHitVolume(
+                    hitComponent,
+                    descriptor
+                );
+            }
+        }
         return;
     }
 

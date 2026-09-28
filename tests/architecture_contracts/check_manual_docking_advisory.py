@@ -100,7 +100,7 @@ try:
             'guidance.erase(\n                    m_activeDockingGuidanceCorridorId + ":frames"',
             "if (!active.corridorDeparted)")
     require("src/game/SpaceState.h",
-            "game::navigation::DockingAdvisoryPlan plan",
+            "game::navigation::planner::RoutePlan plan",
             "SpaceState owns presentation/tracking state only",
             "Planner output is")
     require("src/game/navigation/DockingAdvisoryCorridor.h",
@@ -192,7 +192,7 @@ try:
             "active.plan.executionGates",
             "auto route = makeRoute(mapRouteGates)",
             "auto frameRoute = makeRoute(gates)",
-            "dockingAdvisoryPlanDiagnosticSummary(job->plan)",
+            "job->plan.diagnosticSummary",
             "hud_gates=",
             "map_points=",
             "longitudinalToleranceMeters + std::max(",
@@ -224,6 +224,16 @@ try:
     if "makeNavigationObstacleForObject" in client_planning_cpp:
         raise AssertionError(
             "client docking planning regressed to descriptor-wide obstacle geometry"
+        )
+
+    require(
+        "src/game/SpaceState.cpp",
+        "navigation/planner/RoutePlannerApi.h",
+        "game::navigation::planner::RoutePlanner::plan(request)",
+    )
+    if "navigation/DockingAdvisoryPlanner.h" in read("src/game/SpaceState.cpp"):
+        raise AssertionError(
+            "SpaceState bypasses the public RoutePlanner boundary"
         )
 
     space_cpp = read("src/game/SpaceState.cpp")

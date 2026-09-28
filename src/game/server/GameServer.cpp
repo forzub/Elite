@@ -3437,6 +3437,12 @@ void GameServer::applyAutomaticDockingControls(
                               DockingAutomaticRuntime::Stage::FinalIngress
                           ? "final-ingress" : "approach-hold")
                       << " remaining_m=" << followed.remainingDistanceMeters
+                      << " reference_mode="
+                      << (followed.spatialReference ? "spatial" : "time")
+                      << " ref_distance_m="
+                      << followed.referenceSpatialDistanceMeters
+                      << " spatial_speed_scale="
+                      << followed.spatialSpeedScale
                       << " position_error_m="
                       << followed.envelopePositionErrorMeters
                       << " position_limit_m="
@@ -3502,6 +3508,8 @@ void GameServer::applyAutomaticDockingControls(
                 << followed.referenceInterpolation01
                 << " ref_distance_m="
                 << followed.referenceSpatialDistanceMeters
+                << " spatial_speed_scale="
+                << followed.spatialSpeedScale
                 << " t_s=" << time.universeTimeSeconds -
                     program.acceptedAtUniverseTimeSeconds
                 << " speed_mps=" << speedBeforeStopMps
@@ -3703,6 +3711,8 @@ void GameServer::applyAutomaticDockingControls(
                       << followed.referenceInterpolation01
                       << " ref_distance_m="
                       << followed.referenceSpatialDistanceMeters
+                      << " spatial_speed_scale="
+                      << followed.spatialSpeedScale
                       << " t_s=" << time.universeTimeSeconds -
                           program.acceptedAtUniverseTimeSeconds
                       << " remaining_m=" << followed.remainingDistanceMeters

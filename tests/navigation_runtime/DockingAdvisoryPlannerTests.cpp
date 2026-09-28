@@ -260,6 +260,10 @@ int main()
         expectedLateralRadius,
         expectedAngularRadius
     });
+    const double expectedAngularRamp=
+        expectedTurnSpeed *
+        ((expectedTurnSpeed/expectedTerminalRadius) /
+         curved.maxAngularAccelerationRadPerSecond2);
     if(std::abs(
            curvedPlan.terminalTurnRadiusMeters-
            expectedTerminalRadius
@@ -267,6 +271,10 @@ int main()
        std::abs(
            curvedPlan.terminalTurnSpeedMps-
            expectedTurnSpeed
+       )>1.0e-6 ||
+       std::abs(
+           curvedPlan.terminalTurnAngularRampMeters-
+           expectedAngularRamp
        )>1.0e-6)
     {
         std::cerr
@@ -275,6 +283,9 @@ int main()
             << " actual_radius=" << curvedPlan.terminalTurnRadiusMeters
             << " expected_speed=" << expectedTurnSpeed
             << " actual_speed=" << curvedPlan.terminalTurnSpeedMps
+            << " expected_angular_ramp=" << expectedAngularRamp
+            << " actual_angular_ramp="
+            << curvedPlan.terminalTurnAngularRampMeters
             << "\n";
         printTerminalArcDiagnostics(curvedPlan);
         return 26;

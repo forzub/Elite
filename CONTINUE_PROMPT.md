@@ -1,3 +1,9 @@
+## Continue from 2026-09-28 SpatialCorridor portal correction
+
+Latest target evidence: Newtonian composite is fully good; Assisted keeps geometry and dynamic clearance safe but had 81 tracking-envelope ticks because portal_102 was still TimeScheduled. Current main sets that constrained segment to SpatialCorridor and maintains the monotonic spatial cursor exactly as the production RouteFollower contract expects. Final StateCapture remains TimeScheduled.
+
+Next required evidence: composite-only Windows rerun. Read BUILD_TEST_LAYOUT.md before giving commands.
+
 ## Continue from 2026-09-28 full accepted-segment dynamic proof
 
 Composite root cause: 4 s local planner horizon was incorrectly treated as authority to execute 16 s/18 s accepted programs while a moving hazard remained authoritative. Current main now proves the entire portal and final-capture program against the hazard before execution; unsafe future occupancy causes hold + re-author + re-proof, never tunnel widening or hazard suppression.

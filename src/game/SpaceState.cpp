@@ -69,7 +69,7 @@
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
-#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/world/coordinates/WorldPosition.h"
@@ -2732,7 +2732,7 @@ void SpaceState::updateDockingAdvisory()
             guidanceControlLaw
         );
 
-        DockingAdvisoryRequest request;
+        game::navigation::planner::RoutePlanRequest request;
         if (snapshot.controlledShip.motionMode != MotionMode::HubTactical ||
             snapshot.controlledShip.hubId != snapshot.hubPredictionSource.hubId)
         {
@@ -2768,14 +2768,17 @@ void SpaceState::updateDockingAdvisory()
             fail("ship start disagrees with Hub local frame");
             return;
         }
-        request.entranceMeters = localPort.positionMeters;
-        request.outward = localPort.forward;
-        request.standoffMeters = std::max(
+        request.terminalReferenceDistanceMeters = std::max(
             300.0,
             hull.lengthMeters * 10.0 +
                 definition->requiredClearanceMeters * 4.0
         );
-        request.hullRadiusMeters =
+        request.goalMeters =
+            localPort.positionMeters +
+            localPort.forward *
+                request.terminalReferenceDistanceMeters;
+        request.terminalOutward = localPort.forward;
+        request.agentRadiusMeters =
             envelope.conservativeSafetyRadiusMeters();
         request.maxSpeedMps = shipProfile.maxSpeedMps;
         request.acceleratingMps2 =
@@ -2815,7 +2818,7 @@ void SpaceState::updateDockingAdvisory()
                   << " final_axis_m="
                   << std::max({
                          700.0,
-                         3*request.standoffMeters,
+                         3*request.terminalReferenceDistanceMeters,
                          request.terminalApproachLengthMeters
                      })
                   << " turn_fraction="
@@ -2854,7 +2857,7 @@ void SpaceState::updateDockingAdvisory()
         job->context.timelineRevision = snapshot.epoch.universeTimelineRevision;
         job->context.portDefinition = *definition;
         job->context.portAttachment = snapshot.targetObject.hubAttachment;
-        job->context.standoffMeters = request.standoffMeters;
+        job->context.standoffMeters = request.terminalReferenceDistanceMeters;
         job->context.widthMeters = fit.openingWidthMeters;
         job->context.heightMeters = fit.openingHeightMeters;
         job->context.shipWidthMeters = hull.widthMeters;
@@ -2873,7 +2876,7 @@ void SpaceState::updateDockingAdvisory()
             {
                 try
                 {
-                    job->plan = DockingAdvisoryPlanner::plan(request);
+                    job->plan = game::navigation::planner::RoutePlanner::plan(request);
                 }
                 catch (const std::exception& error)
                 {
@@ -2917,7 +2920,7 @@ void SpaceState::updateDockingAdvisory()
         {
             fail(
                 job->plan.failure +
-                dockingAdvisoryPlanDiagnosticSummary(job->plan)
+                job->plan.diagnosticSummary
             );
             return;
         }
@@ -2925,7 +2928,7 @@ void SpaceState::updateDockingAdvisory()
         std::cout << "[DockAdvisory] request=" << pending.serial
                   << " route="
                   << (job->plan.terminalDetourUsed ? "detour" : "nominal")
-                  << dockingAdvisoryPlanDiagnosticSummary(job->plan)
+                  << job->plan.diagnosticSummary
                   << " execution_points="
                   << job->plan.executionGates.size()
                   << " hud_gates="

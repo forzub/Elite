@@ -171,11 +171,16 @@ void testExhaustedFrontierKeepsObjectiveActiveAndWitnessesVisible()
 void testSharedStateBlockerDoesNotWasteRemainingFrontier()
 {
     auto request = requestWithTwoHorizons();
-    request.commonPhysicalQuery.controlLaw = Law::Assisted;
+
+    // Assisted is now a supported physical control law. Exercise the same
+    // coordinator contract with a genuinely shared state blocker instead:
+    // every frontier alternative inherits the same unsupported initial spin.
+    request.commonPhysicalQuery.state.angularVelocityMapRadPerSecond =
+        {0.0, 0.2, 0.0};
 
     const auto result = Coordinator::advance(request);
     require(result.status == Coordinator::Status::SharedStateBlocked,
-            "unsupported shared law was treated as an alternative-local miss");
+            "shared initial-state blocker was treated as an alternative-local miss");
     require(result.attemptCount == 1,
             "shared-state blocker consumed unrelated alternatives");
     require(result.nextCursor.nextAlternativeIndex == 0,
@@ -184,7 +189,7 @@ void testSharedStateBlockerDoesNotWasteRemainingFrontier()
             "shared-state blocker disabled the objective");
     require(
         result.attempts[0].infeasibility.reason ==
-            Compiler::InfeasibilityReason::UnsupportedControlLaw,
+            Compiler::InfeasibilityReason::InitialAngularStateUnsupported,
         "shared-state blocker lost the compiler witness"
     );
 }

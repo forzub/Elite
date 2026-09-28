@@ -1,3 +1,7 @@
+## 2026-09-29 — rerun composite after spatial validity-window fix
+
+Rebuild/run only navigation_composite_proving_ground. If portal_102 completes, inspect final capture next. If portal_102 still fails, use the new final_pos_error_m, final_vel_error_mps, simulated_s and validity_budget_s fields to decide whether the accepted spatial profile itself is physically under-authorized or the validity budget is wrong. After composite passes, run maneuver_phase_gate + maneuver_tracking_controller regressions and then the full navigation-runtime suite.
+
 ## 2026-09-28 — verify spatial gate + Newtonian drift before composite
 
 Next Windows step: build and run only maneuver_phase_gate and maneuver_tracking_controller first. If both pass, rebuild/run navigation_composite_proving_ground. Only after all three pass should the full navigation-runtime suite be run.

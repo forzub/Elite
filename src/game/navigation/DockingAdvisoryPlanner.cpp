@@ -348,9 +348,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             }
 
             const bool terminalTurn=(i+1==vertices.size()-1);
+            const double authoredCruiseSpeed =
+                0.8 * r.maxSpeedMps;
             const double desiredRadius=std::max({
                 20.0,
-                r.maxSpeedMps*r.maxSpeedMps/r.lateralMps2,
+                authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
                 terminalTurn ? r.preferredTerminalTurnRadiusMeters : 0.0
             });
             // Below this radius the visible bend becomes a low-speed hairpin
@@ -593,16 +595,21 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             return seconds;
         };
 
-    // Phase 1: preserve the human-flyable radius on the nominal route.
-    RoundedCandidate selected =
-        roundGeometry(
-            nominalGeometry.pointsMeters,
-            preferredTerminalRadius
-        );
+    // Phase 1: routes without a preferred terminal radius keep the ordinary
+    // rounded topology. A preferred docking radius uses a different contract:
+    // 'align' is the START OF THE FINAL STRAIGHT, not the virtual sharp corner
+    // consumed by a fillet.
+    RoundedCandidate selected;
     double selectedTraversalSeconds =
-        estimatedTraversalSeconds(selected);
+        std::numeric_limits<double>::infinity();
     bool detourUsed=false;
     bool radiusRelaxed=false;
+
+    if (preferredTerminalRadius<=0.0)
+    {
+        selected=roundGeometry(nominalGeometry.pointsMeters,0.0);
+        selectedTraversalSeconds=estimatedTraversalSeconds(selected);
+    }
 
     const auto considerPreferredCandidate =
         [&](RoundedCandidate candidate, bool candidateIsDetour)
@@ -631,12 +638,15 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             detourUsed = candidateIsDetour;
         };
 
-    // Phase 2: compare alternate topologies even when the nominal route is
-    // technically valid. Pure shortest-distance A* can choose the wrong side
-    // of a station: a slightly shorter path with a tight bend is slower and
-    // harder to fly than a modest detour with a broad turn. Sample ingress
-    // directions around the docking axis and select the lowest estimated
-    // physical traversal time while preserving the preferred terminal radius.
+    // Phase 2: author the terminal circular primitive first, then route TO it.
+    //
+    // 'align' is the exact point where the final straight begins.  For a
+    // 90-degree circular transition of radius R, the virtual polyline corner
+    // sits R metres BEHIND align along the outgoing axis. Rotating the incoming
+    // tangent around the docking axis rotates the whole turn plane without
+    // changing either R or the final straight. This is deliberately the
+    // inverse of the old approach, which chose one polyline first and then
+    // asked whether a large fillet happened to fit inside it.
     world::navigation::GeometricPathResult wideGeometry;
     if (preferredTerminalRadius>0.0)
     {
@@ -651,12 +661,33 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         const glm::dvec3 lateralB =
             glm::normalize(glm::cross(finalDirection,lateralA));
 
-        const double terminalLeadLength=std::max(
-            finalApproachLengthMeters,
-            preferredTerminalRadius/
-                r.terminalTurnSegmentFraction*1.10
-        );
-        constexpr int terminalIngressSamples=12;
+        const double authoredCruiseSpeed =
+            0.8 * r.maxSpeedMps;
+        const double terminalPrimitiveRadius=std::max({
+            20.0,
+            authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
+            preferredTerminalRadius
+        });
+
+        // roundGeometry() constructs a tangent fillet around a virtual corner.
+        // Moving that corner one radius upstream makes the arc EXIT exactly at
+        // align; align->stop therefore remains an untouched semantic final
+        // approach regardless of the chosen radius.
+        const glm::dvec3 terminalCorner =
+            align-finalDirection*terminalPrimitiveRadius;
+
+        // Leave enough incoming straight for the terminal fillet plus a
+        // preceding route turn. The actual occupied segment is validated after
+        // rounding; we intentionally do not require the discarded sharp-corner
+        // chord itself to be collision-free.
+        const double terminalLeadLength=std::max({
+            terminalPrimitiveRadius*1.50,
+            terminalPrimitiveRadius/
+                r.terminalTurnSegmentFraction*1.10,
+            1000.0
+        });
+
+        constexpr int terminalIngressSamples=36;
         constexpr double twoPi=
             6.283185307179586476925286766559;
 
@@ -669,14 +700,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 incoming=
                 lateralA*std::cos(angle)+
                 lateralB*std::sin(angle);
-            const glm::dvec3 preAlign=
-                align-incoming*terminalLeadLength;
-
-            if(!clear(preAlign,align))
-                continue;
+            const glm::dvec3 preCorner=
+                terminalCorner-incoming*terminalLeadLength;
 
             auto ingressSearch=search;
-            ingressSearch.goalMeters=preAlign;
+            ingressSearch.goalMeters=preCorner;
             ingressSearch.params.maxConsideredObstacles=0;
             const auto ingressGeometry=
                 world::navigation::GeometricPathPlanner::plan(ingressSearch);
@@ -685,48 +713,31 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 continue;
 
             auto points=ingressGeometry.pointsMeters;
-            if(glm::length(points.back()-align)>1.0e-6)
-                points.push_back(align);
+            if(glm::length(points.back()-terminalCorner)>1.0e-6)
+                points.push_back(terminalCorner);
             points=prependInitialForwardLead(std::move(points));
 
             considerPreferredCandidate(
                 roundGeometry(
                     points,
-                    preferredTerminalRadius
+                    terminalPrimitiveRadius
                 ),
                 true
             );
         }
 
-        // Also ask the visibility graph for wider-clearance routes. Unlike the
-        // old fallback this is a comparison, not an emergency path: a valid
-        // nominal route may still lose when the far side is materially easier
-        // for the ship to execute.
-        for (int reroutePass=0;
-             reroutePass<2;
-             ++reroutePass)
+        // Preserve one ordinary topology for the radius-relaxation fallback
+        // below. It is NOT allowed to outrank a valid rotated terminal
+        // primitive, because that would reintroduce the old "polyline first,
+        // squeeze the arc later" behavior.
+        wideGeometry=planGeometry(0.0,0);
+        if(wideGeometry.valid &&
+           wideGeometry.pointsMeters.size()>=2)
         {
-            const double clearanceScale =
-                reroutePass==0 ? 0.5 : 1.0;
-            auto rerouted = planGeometry(
-                preferredTerminalRadius*clearanceScale,
-                0
-            );
-            if (!rerouted.valid || rerouted.pointsMeters.size()<2)
-                continue;
-
-            rerouted.pointsMeters=
+            wideGeometry.pointsMeters=
                 prependInitialForwardLead(
-                    std::move(rerouted.pointsMeters)
+                    std::move(wideGeometry.pointsMeters)
                 );
-            wideGeometry=rerouted;
-            considerPreferredCandidate(
-                roundGeometry(
-                    rerouted.pointsMeters,
-                    preferredTerminalRadius
-                ),
-                true
-            );
         }
     }
 

@@ -329,7 +329,7 @@ try:
         "!r.roundTurns",
         "terminalPrimitiveRadius",
         "terminalIngressSamples=36",
-        "terminalAxisPasses=5",
+        "axisOffsetFactors",
         "candidateApproachLengthMeters",
         "terminalArcRotationDegrees",
         "terminalArcAcceptedCandidates",

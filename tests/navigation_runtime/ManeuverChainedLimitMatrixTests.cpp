@@ -193,7 +193,7 @@ void setTransformBasis(ShipTransform& transform, const Basis& basis)
         glm::vec4(glm::vec3(-basis.forward), 0.0f);
 }
 
-ShipParams cobraParams()
+ShipParams cobraParams(Law law)
 {
     ShipParams p {};
     p.maxPitchRate = 2.5f;
@@ -206,7 +206,7 @@ ShipParams cobraParams()
     p.maxCruiseSpeed = 1000.0f;
     p.throttleAccel = 5.0f;
     p.forwardMainEngineAvailable = true;
-    p.reverseMainEngineAvailable = true;
+    p.reverseMainEngineAvailable = (law == Law::Assisted);
     p.forwardMainEngineAccelerationMps2 = 73.549875f;
     p.reverseMainEngineAccelerationMps2 = 73.549875f;
 
@@ -262,7 +262,7 @@ struct Vehicle
     double timeSeconds = 0.0;
 
     Vehicle(Law law)
-        : params(cobraParams()),
+        : params(cobraParams(law)),
           bridge(expertProfile())
     {
         frame.systemId = 1;

@@ -3043,9 +3043,10 @@ void SpaceState::updateDockingAdvisory()
 
             if (tracking == DockingAdvisoryTrackingResult::Left)
             {
-                if (!automaticPending ||
-                    m_dockingGuidanceFailureReason !=
-                        "automatic off visible advisory corridor")
+                if (!active.authoritativeAutomaticRoute &&
+                    (!automaticPending ||
+                     m_dockingGuidanceFailureReason !=
+                         "automatic off visible advisory corridor"))
                 {
                     std::cerr << "[DockAdvisory] left request=" << pending.serial
                           << " tick=" << metadata.serverTick
@@ -3062,21 +3063,31 @@ void SpaceState::updateDockingAdvisory()
                           << releaseSection.lateralToleranceMeters << ","
                           << releaseSection.verticalToleranceMeters << '\n';
                 }
-                if (!automaticPending)
+                if (automaticPending &&
+                    active.authoritativeAutomaticRoute)
+                {
+                    // This is the actual server program. Never hide the
+                    // execution corridor merely because the craft is outside
+                    // it; the player must see where the autopilot is trying to
+                    // return. Follower owns recovery/course correction.
+                    active.corridorDeparted = false;
+                    m_dockingGuidanceFailureReason.clear();
+                }
+                else if (!automaticPending)
                 {
                     fail("ship left guidance corridor");
                     return;
                 }
-                // The sparse tunnel is presentation, not the accepted server
-                // program. Hide it after a real departure; if the craft later
-                // rejoins the nominal corridor, normal tracking below restores
-                // it without changing Planner/Follower ownership.
-                active.corridorDeparted = true;
-                guidance.erase(
-                    m_activeDockingGuidanceCorridorId + ":frames"
-                );
-                m_dockingGuidanceFailureReason =
-                    "automatic off visible advisory corridor";
+                else
+                {
+                    // Legacy client preflight route: presentation only.
+                    active.corridorDeparted = true;
+                    guidance.erase(
+                        m_activeDockingGuidanceCorridorId + ":frames"
+                    );
+                    m_dockingGuidanceFailureReason =
+                        "automatic off visible advisory corridor";
+                }
             }
             else if (tracking == DockingAdvisoryTrackingResult::Inside &&
                      active.corridorDeparted)

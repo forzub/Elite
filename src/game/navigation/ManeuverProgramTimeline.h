@@ -259,13 +259,37 @@ public:
             // Storage is not a maneuver phase. Advance only after the real
             // craft passes the endpoint plane in the accepted path direction.
             // Nominal time is deliberately irrelevant here.
+            const glm::dvec3 fromEndpoint =
+                positionMapMeters - end.positionMapMeters;
             const double pastEndpoint =
                 glm::dot(
-                    positionMapMeters - end.positionMapMeters,
+                    fromEndpoint,
                     terminalSegment
                 );
-            if (pastEndpoint >= 0.0)
+            const double terminalProgress =
+                glm::dot(
+                    positionMapMeters -
+                        beforeEnd.positionMapMeters,
+                    terminalSegment
+                ) / segmentLength2;
+            const glm::dvec3 crossFromTerminalSegment =
+                positionMapMeters -
+                beforeEnd.positionMapMeters -
+                terminalSegment * terminalProgress;
+            const double crossDistance =
+                glm::length(crossFromTerminalSegment);
+            const double advanceCrossTrackLimit =
+                std::max(
+                    1.0e-6,
+                    current.tracking.positionErrorMeters
+                );
+
+            if (pastEndpoint >= 0.0 &&
+                std::isfinite(crossDistance) &&
+                crossDistance <= advanceCrossTrackLimit)
+            {
                 ++selected;
+            }
         }
 
         out.status = SelectionStatus::Active;

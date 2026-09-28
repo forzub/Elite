@@ -48,39 +48,11 @@ std::string dockingAdvisoryTrace(
     return plan.diagnosticSummary;
 }
 
-ShipControlState automaticDockingPreparationControl(
-    const Ship& ship,
-    bool stopLinearMotion
-)
+ShipControlState automaticDockingPreparationControl()
 {
     ShipControlState control;
-    if (stopLinearMotion)
-    {
-        control.velocityAlignmentCommand =
-            game::navigation::VelocityAlignmentMode::BrakeToStop;
-        return control;
-    }
-
-    // Approach planning is allowed from a moving ship. Remove translational
-    // acceleration, preserve current VREL and damp only angular motion so the
-    // planning origin advances on the same straight inertial line.
-    control.navigationAccelerationDemandValid = true;
-    control.navigationLinearAccelerationDemandSystemMps2 =
-        glm::dvec3(0.0);
-
-    const auto& transform = ship.core().transform();
-    const glm::dvec3 angularVelocitySystemRadPerSec =
-        glm::dvec3(transform.right()) *
-            static_cast<double>(transform.pitchRate) +
-        glm::dvec3(transform.up()) *
-            static_cast<double>(transform.yawRate) +
-        glm::dvec3(transform.forward()) *
-            static_cast<double>(transform.rollRate);
-
-    constexpr double AngularRateDampingPerSecond = 4.0;
-    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
-        -angularVelocitySystemRadPerSec *
-        AngularRateDampingPerSecond;
+    control.velocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::BrakeToStop;
     return control;
 }
 
@@ -1337,10 +1309,7 @@ bool GameServer::beginAutomaticDocking(
     m_dockingResults.erase(controlledEntityId.value);
 
     ship->setControlState(
-        automaticDockingPreparationControl(
-            *ship,
-            false
-        )
+        automaticDockingPreparationControl()
     );
 
     m_forceSnapshotPublication = true;
@@ -1351,7 +1320,7 @@ bool GameServer::beginAutomaticDocking(
         << " target=" << command.dockingTargetModuleId
         << ":" << command.dockingTargetAnchorId
         << " phase=stabilizing"
-        << " mode=coast"
+        << " mode=stop"
         << " speed_mps="
         << glm::length(
                ship->core().transform().motion.localVelocityMps
@@ -1590,21 +1559,16 @@ bool GameServer::planAutomaticDocking(
     const std::uint64_t proofRevision = m_serverTick;
     const auto dockingStage = runtime.stage;
 
-    // The worker normally completes in a few hundred milliseconds. Plan from
-    // one second in the future. ApproachHold preserves VREL with zero linear
-    // acceleration while planning, so its start position must advance along
-    // that measured velocity. FinalIngress is deliberately stopped first.
+    // Automatic owns the craft before planning. Stabilization has already
+    // reduced VREL and angular rate to the preparation thresholds, so the
+    // planner starts from the freshly observed authoritative position instead
+    // of extrapolating a moving origin one second into the future.
     constexpr double PlanningLeadSeconds = 1.0;
     const double executionStartUniverseTimeSeconds =
         universeTimeSeconds + PlanningLeadSeconds;
-    const bool coastToExecution =
-        runtime.stage ==
-            DockingAutomaticRuntime::Stage::ApproachHold;
+    const bool coastToExecution = false;
     const glm::dvec3 startPositionMeters =
-        observedStartPositionMeters +
-        (coastToExecution
-            ? startVelocityMps * PlanningLeadSeconds
-            : glm::dvec3(0.0));
+        observedStartPositionMeters;
 
     auto job =
         std::make_shared<DockingAutomaticRuntime::PlanningJob>();
@@ -2799,14 +2763,9 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Stabilizing)
         {
-            const bool requireLinearStop =
-                runtime.stage ==
-                    DockingAutomaticRuntime::Stage::FinalIngress;
+            const bool requireLinearStop = true;
             ship->setControlState(
-                automaticDockingPreparationControl(
-                    *ship,
-                    requireLinearStop
-                )
+                automaticDockingPreparationControl()
             );
 
             const double speed =
@@ -2838,7 +2797,7 @@ void GameServer::applyAutomaticDockingControls(
                               << runtime.requestSerial
                               << " phase=stabilizing"
                               << " mode="
-                              << (requireLinearStop ? "stop" : "coast")
+                              << "stop"
                               << " speed_mps=" << speed
                               << " threshold_mps=" << speedThreshold
                               << " omega_radps=" << angularRate
@@ -2895,14 +2854,9 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Planning)
         {
-            const bool requireLinearStop =
-                runtime.stage ==
-                    DockingAutomaticRuntime::Stage::FinalIngress;
+            const bool requireLinearStop = true;
             ship->setControlState(
-                automaticDockingPreparationControl(
-                    *ship,
-                    requireLinearStop
-                )
+                automaticDockingPreparationControl()
             );
 
             const auto job = runtime.planningJob;
@@ -3234,11 +3188,7 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.programs.clear();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
                 ship->setControlState(
-                    automaticDockingPreparationControl(
-                        *ship,
-                        runtime.stage ==
-                            DockingAutomaticRuntime::Stage::FinalIngress
-                    )
+                    automaticDockingPreparationControl()
                 );
 
                 std::cout
@@ -3280,11 +3230,7 @@ void GameServer::applyAutomaticDockingControls(
             if (selection.status == PageStatus::BeforeStart)
             {
                 ship->setControlState(
-                    automaticDockingPreparationControl(
-                        *ship,
-                        runtime.stage ==
-                            DockingAutomaticRuntime::Stage::FinalIngress
-                    )
+                    automaticDockingPreparationControl()
                 );
                 continue;
             }
@@ -3634,11 +3580,7 @@ void GameServer::applyAutomaticDockingControls(
             runtime.settledSinceUniverseTimeSeconds = -1.0;
 
             ship->setControlState(
-                automaticDockingPreparationControl(
-                    *ship,
-                    runtime.stage ==
-                        DockingAutomaticRuntime::Stage::FinalIngress
-                )
+                automaticDockingPreparationControl()
             );
 
             continue;

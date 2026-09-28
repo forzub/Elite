@@ -232,48 +232,50 @@ int main()
             3*curved.standoffMeters,
             curved.terminalApproachLengthMeters
         });
-    const auto incomingRaw=curvedAlign-curved.startMeters;
-    const auto outgoingRaw=curvedStop-curvedAlign;
-    const double incomingLength=glm::length(incomingRaw);
-    const double outgoingLength=glm::length(outgoingRaw);
-    const auto incoming=incomingRaw/incomingLength;
-    const auto outgoing=outgoingRaw/outgoingLength;
-    const double turnAngle=std::acos(std::clamp(
-        glm::dot(incoming,outgoing),-1.0,1.0));
-    const double tangentScale=std::tan(turnAngle*0.5);
-    const double desiredRadius=std::max({
-        20.0,
-        curved.maxSpeedMps*curved.maxSpeedMps/curved.lateralMps2,
-        curved.preferredTerminalTurnRadiusMeters
-    });
-    const double tangentDistance=std::min({
-        incomingLength*curved.terminalTurnSegmentFraction,
-        outgoingLength*curved.terminalTurnSegmentFraction,
-        desiredRadius*tangentScale
-    });
-    const double expectedRadius=tangentDistance/tangentScale;
-    if(expectedRadius<6000.0)
+    const auto finalDirection=glm::normalize(curvedStop-curvedAlign);
+
+    if(curvedPlan.terminalTurnRadiusMeters+1.0e-6<
+       curved.preferredTerminalTurnRadiusMeters)
     {
         std::cerr << "manual Assisted terminal radius too small: "
-                  << expectedRadius << "\n";
+                  << curvedPlan.terminalTurnRadiusMeters << "\n";
         return 26;
     }
-    const auto entry=curvedAlign-tangentDistance*incoming;
-    const auto turnNormal=glm::normalize(glm::cross(incoming,outgoing));
-    const auto inwardNormal=glm::normalize(glm::cross(turnNormal,incoming));
-    const auto circleCenter=entry+expectedRadius*inwardNormal;
-    std::size_t gatesOnCircle=0;
-    for(const auto& gate:curvedPlan.gates)
+
+    // The semantic final straight starts at curvedAlign. A preferred circular
+    // turn is authored BEFORE that point and must not consume the straight.
+    // The dense accepted route therefore has to pass through align and then
+    // remain on the docking axis to HOLD.
+    double nearestAlignDistance=1.0e30;
+    for(const auto& gate:curvedPlan.executionGates)
+        nearestAlignDistance=std::min(
+            nearestAlignDistance,
+            glm::length(gate.positionMeters-curvedAlign)
+        );
+    if(nearestAlignDistance>15.0)
     {
-        if(std::abs(glm::length(gate.positionMeters-circleCenter)-
-                    expectedRadius)<0.5)
-            ++gatesOnCircle;
-    }
-    if(gatesOnCircle<4)
-    {
-        std::cerr << "terminal turn is not sampled as a circular fillet; count="
-                  << gatesOnCircle << "\n";
+        std::cerr << "terminal arc did not exit at final-straight start; miss="
+                  << nearestAlignDistance << "\n";
         return 24;
+    }
+
+    bool sawFinalStraight=false;
+    for(std::size_t i=1;i<curvedPlan.executionGates.size();++i)
+    {
+        const auto& a=curvedPlan.executionGates[i-1];
+        const auto& b=curvedPlan.executionGates[i];
+        if(glm::length(a.positionMeters-curvedAlign)<25.0 ||
+           sawFinalStraight)
+        {
+            sawFinalStraight=true;
+            const auto segment=b.positionMeters-a.positionMeters;
+            if(glm::length(segment)>1.0e-6 &&
+               glm::dot(glm::normalize(segment),finalDirection)<0.9999)
+            {
+                std::cerr << "terminal arc consumed or bent the final straight\n";
+                return 39;
+            }
+        }
     }
 
     // An obstacle may block only the far, preferred part of the 9 km
@@ -338,20 +340,31 @@ int main()
         return 30;
     }
 
-    // Blocking only the preferred circular arc must not cancel manual
-    // guidance. Planner first changes coarse topology and keeps the preferred
-    // radius if a wider collision-free approach exists.
-    const auto startRadial=entry-circleCenter;
-    const double midPhi=turnAngle*0.5;
-    const auto midRadial=
-        startRadial*std::cos(midPhi)+
-        glm::cross(turnNormal,startRadial)*std::sin(midPhi)+
-        turnNormal*glm::dot(turnNormal,startRadial)*
-            (1.0-std::cos(midPhi));
+    // Blocking only the selected preferred circular arc must not cancel
+    // guidance. Put a small obstacle on the actual accepted turn and require
+    // Planner to rotate the same-radius terminal primitive to another side of
+    // the docking axis.
     world::navigation::NavigationObstacle arcBlocker;
     arcBlocker.id="terminal_arc_blocker";
     arcBlocker.shape=world::navigation::NavigationObstacleShape::Sphere;
-    arcBlocker.centerMeters=circleCenter+midRadial;
+    bool foundArcProbe=false;
+    for(std::size_t i=curvedPlan.executionGates.size();i>0;--i)
+    {
+        const auto& gate=curvedPlan.executionGates[i-1];
+        const double alignment=
+            glm::dot(glm::normalize(gate.forward),finalDirection);
+        if(alignment<0.95)
+        {
+            arcBlocker.centerMeters=gate.positionMeters;
+            foundArcProbe=true;
+            break;
+        }
+    }
+    if(!foundArcProbe)
+    {
+        std::cerr << "could not locate terminal arc probe point\n";
+        return 40;
+    }
     arcBlocker.radiusMeters=120.0;
 
     auto rerouted=curved;
@@ -372,22 +385,21 @@ int main()
         return 27;
     }
 
-    // If no topology can physically fit the 6 km preferred radius because the
-    // semantic final-axis segment is too short, guidance must still survive.
-    // The planner accepts the widest feasible terminal arc rather than
-    // treating the preference as a task-failure threshold.
+    // Final-straight length and turn radius are independent geometry. Even a
+    // short semantic final axis must keep the preferred 6 km turn when open
+    // space exists around it; the arc is moved upstream and rotated instead of
+    // being squeezed into the final straight.
     auto tightened=curved;
     tightened.startMeters={-4000.0,0.0,1200.0};
     tightened.terminalApproachLengthMeters=0.0;
     tightened.obstacles.clear();
     const auto tightenedPlan=DockingAdvisoryPlanner::plan(tightened);
     if(!tightenedPlan.valid() ||
-       !tightenedPlan.terminalTurnRadiusRelaxed ||
-       tightenedPlan.terminalTurnRadiusMeters<=0.0 ||
-       tightenedPlan.terminalTurnRadiusMeters+1.0e-6>=
+       tightenedPlan.terminalTurnRadiusRelaxed ||
+       tightenedPlan.terminalTurnRadiusMeters+1.0e-6<
            tightened.preferredTerminalTurnRadiusMeters)
     {
-        std::cerr << "unavailable preferred radius cancelled instead of tightening: "
+        std::cerr << "short final straight incorrectly squeezed terminal radius: "
                   << tightenedPlan.failure
                   << " relaxed=" << tightenedPlan.terminalTurnRadiusRelaxed
                   << " radius=" << tightenedPlan.terminalTurnRadiusMeters

@@ -83,10 +83,14 @@ bool flushDesktopCompositor()
 void traceSlowMainPhase(
     const char* phase,
     const XprocTraceClock::time_point& begin,
-    double thresholdMs = 100.0)
+    double thresholdMs = -1.0)
 {
+    const double effectiveThresholdMs =
+        thresholdMs >= 0.0
+            ? thresholdMs
+            : (core::runtimeTraceEnabled() ? 20.0 : 100.0);
     const double durationMs = xprocElapsedMs(begin);
-    if (durationMs < thresholdMs)
+    if (durationMs < effectiveThresholdMs)
         return;
 
     std::cerr
@@ -865,10 +869,12 @@ void Application::mainLoop()
         float dt                = static_cast<float>(currentTime - lastTime);
 
 #ifdef _WIN32
-        if (dt > 0.250f)
+        const float frameGapTraceThresholdSeconds =
+            core::runtimeTraceEnabled() ? 0.050f : 0.250f;
+        if (dt > frameGapTraceThresholdSeconds)
         {
             std::cerr
-                << "[M8E-STARTUP][frame-gap] pid=" << GetCurrentProcessId()
+                << "[M8E-HITCH][frame-gap] pid=" << GetCurrentProcessId()
                 << " gap_ms=" << (static_cast<double>(dt) * 1000.0)
                 << " uptime_ms=" << xprocTraceTickMs()
                 << " foreground_pid=" << foregroundProcessIdForTrace()
@@ -920,7 +926,13 @@ void Application::mainLoop()
         else
             Input::instance().reset();
 
+#ifdef _WIN32
+        xprocPhaseBegin = XprocTraceClock::now();
+#endif
         updateGameUiPresentation();
+#ifdef _WIN32
+        traceSlowMainPhase("game-ui-presentation", xprocPhaseBegin);
+#endif
         if (!m_running)
             break;
 
@@ -986,8 +998,10 @@ void Application::mainLoop()
 
 
         #ifdef _WIN32
+        xprocPhaseBegin = XprocTraceClock::now();
         processDocumentWebViewCommands(0);
         processDocumentWebViewCommands(1);
+        traceSlowMainPhase("webview-commands", xprocPhaseBegin);
         #endif
 
         if (!m_running)
@@ -1242,8 +1256,14 @@ if ((systemMapMode || serviceMode))
 #ifdef _WIN32
         traceSlowMainPhase("swap-buffers", xprocPhaseBegin);
 #endif
+#ifdef _WIN32
+        xprocPhaseBegin = XprocTraceClock::now();
+#endif
         if (auto* activeSpace = dynamic_cast<SpaceState*>(m_states.current()))
             commitPreparedPresentationAfterSwap(*activeSpace);
+#ifdef _WIN32
+        traceSlowMainPhase("presentation-commit", xprocPhaseBegin);
+#endif
     }
 
     std::cerr << "[App] main loop exit pid=" << GetCurrentProcessId()

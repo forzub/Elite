@@ -1,3 +1,33 @@
+## 2026-09-28 — Navigation v2 Automatic route ownership simplified
+
+Automatic docking now has one route ownership chain:
+
+`server DockingAdvisoryPlanner -> authored geometry -> TrajectoryGenerator dynamic compilation -> AcceptedManeuverProgram -> TrajectoryFollower -> ShipControlState -> ship flight law/physics`.
+
+The AcceptedManeuverProgram is also the sole Automatic presentation source:
+its route is replicated to the client and adapted read-only to Hub-map and HUD
+corridors. The client/manual DockingAdvisoryPlanner is no longer an Automatic
+preflight dependency.
+
+TrajectoryGenerator is not a second route planner in this contract. For
+Automatic Stage 1 it receives Planner geometry with
+`pathGeometryAlreadyAuthored=true` and may calculate only physically feasible
+timing, speed, orientation, angular state and acceleration along that geometry.
+If dynamics cannot satisfy the geometry, planning fails/replans; an execution
+layer must not silently invent a replacement path.
+
+Spatial corridor execution is course-correcting rather than speed-governing.
+Cross-track displacement creates an inward look-ahead steering target while
+the accepted local speed profile remains authoritative. The old
+cross-track-speed governor and its policy field were removed.
+
+Docking Automatic is a machine controller, not a simulated human pilot:
+`PilotSkillExecutor` was removed from its execution seam. NPC skill modelling
+remains separate.
+
+Status: implementation candidate on `main`; Windows/native/live acceptance is
+pending.
+
 ## 2026-09-27 — publication after repository integration
 
 The vehicle-level autopilot interface, local route-speed scheduling, spatial

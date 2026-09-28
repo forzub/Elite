@@ -1,3 +1,31 @@
+## 2026-09-28 — verify centered flight + physical dock ingress
+
+Standalone EliteGame only.
+
+1. Run `bash verify_docking.sh`; the gate now also verifies that the guidance
+   dock collision model preserves the authored aperture and has internal
+   capture-depth semantics.
+2. Build EliteGame and run START DOCKING directly.
+3. On long straight corridor sections, confirm the previous constant tiny
+   left/right/up/down hunting is substantially reduced. The ship may make real
+   corrections after leaving the center band; it must not become rail-locked.
+4. Confirm the already good behavior remains: exact corridor retention, smooth
+   turns, and dock-relative up/down orientation.
+5. At HOLD, Automatic must stop/re-stabilize as before.
+6. FinalIngress must now publish a route through the entrance plane into the
+   dock. The planned diagnostic should contain both
+   `pre_capture_depth_m=` and `capture_depth_m=`.
+7. If exact hit volumes do not leave enough physical clearance, the expected
+   failure is `final-capture-corridor-blocked`; do not bypass target collision.
+8. If execution succeeds, the ship must visibly cross the dock entrance and
+   stop at the authored internal capture point, ending with
+   `capture-envelope-complete`.
+9. Permanent latch/undock state is intentionally the next slice after physical
+   ingress is proven.
+
+Capture `[DockAutoRoute]`, `[DockAutoTrack]`, `[DockAuto]` and
+`[DockResult]` for any failure.
+
 ## 2026-09-28 — verify one-source Automatic corridor on standalone EliteGame
 
 Use only the standalone `EliteGame` build for this gate.

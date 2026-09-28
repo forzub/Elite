@@ -309,6 +309,144 @@ void testStoragePageContinuityAtRealUniverseEpoch()
             "real page discontinuity must still be rejected");
 }
 
+void testSpatialSamplerFollowsVehicleInsteadOfNominalClock()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+
+    // Nominal time is already beyond this page, but the craft is physically
+    // only 25% along the accepted segment. Spatial mode must stay with the
+    // craft instead of jumping to the terminal reference.
+    const auto result = Sampler::sampleSpatial(
+        program,
+        102.5,
+        glm::dvec3(2.5, 1.0, 0.0),
+        0
+    );
+
+    require(result.status == Sampler::Status::Active,
+            "spatial sampler became time-expired");
+    require(result.spatialReference,
+            "spatial sampler did not mark its reference mode");
+    require(result.lowerSampleIndex == 0 &&
+                result.upperSampleIndex == 1,
+            "spatial sampler selected the wrong accepted segment");
+    requireNear(
+        result.interpolation01,
+        0.25,
+        1.0e-12,
+        "spatial sampler followed nominal clock instead of vehicle progress"
+    );
+    requireNear(
+        result.reference.positionMapMeters.x,
+        2.5,
+        1.0e-12,
+        "spatial reference did not project onto accepted geometry"
+    );
+    requireNear(
+        result.spatialDistanceMeters,
+        1.0,
+        1.0e-12,
+        "spatial sampler cross-track distance is wrong"
+    );
+}
+
+void testSpatialSamplerNeverJumpsBehindMonotonicCursor()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.sampleCount = 4;
+    program.validUntilUniverseTimeSeconds = 110.0;
+
+    for (std::size_t i = 0; i < 4; ++i)
+    {
+        auto& sample = program.samples[i];
+        sample.timeOffsetSeconds = static_cast<double>(i);
+        sample.positionMapMeters =
+            {10.0 * static_cast<double>(i), 0.0, 0.0};
+        sample.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+        sample.linearAccelerationFeedForwardMapMps2 =
+            glm::dvec3(0.0);
+        sample.forwardMap = {1.0, 0.0, 0.0};
+        sample.rightMap = {0.0, 0.0, 1.0};
+        sample.upMap = {0.0, 1.0, 0.0};
+        sample.angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+        sample.angularAccelerationFeedForwardMapRadPerSec2 =
+            glm::dvec3(0.0);
+    }
+
+    const auto result = Sampler::sampleSpatial(
+        program,
+        101.0,
+        glm::dvec3(5.0, 0.0, 0.0),
+        2
+    );
+
+    require(result.status == Sampler::Status::Active,
+            "monotonic spatial cursor invalidated a valid program");
+    require(result.lowerSampleIndex == 2,
+            "spatial sampler jumped backwards behind its monotonic cursor");
+    requireNear(
+        result.reference.positionMapMeters.x,
+        20.0,
+        1.0e-12,
+        "monotonic spatial cursor was ignored"
+    );
+}
+
+void testSpatialPageSelectionUsesPhysicalProgressNotTime()
+{
+    Program pages[2] = {baseProgram(), baseProgram()};
+    for (auto& page : pages)
+    {
+        page.referenceMode = Program::ReferenceMode::SpatialCorridor;
+        page.acceptedAtUniverseTimeSeconds = 50.0;
+        page.validUntilUniverseTimeSeconds = 1000.0;
+        page.samples[0].timeOffsetSeconds = 0.0;
+        page.samples[1].timeOffsetSeconds = 10.0;
+        page.samples[0].velocityMapMetersPerSecond =
+            {1.0, 0.0, 0.0};
+        page.samples[1].velocityMapMetersPerSecond =
+            {1.0, 0.0, 0.0};
+    }
+
+    pages[0].sequenceStartOffsetSeconds = 0.0;
+    pages[0].samples[0].positionMapMeters = {0.0, 0.0, 0.0};
+    pages[0].samples[1].positionMapMeters = {10.0, 0.0, 0.0};
+
+    pages[1].revision = 78;
+    pages[1].sequenceStartOffsetSeconds = 10.0;
+    pages[1].samples[0].positionMapMeters = {10.0, 0.0, 0.0};
+    pages[1].samples[1].positionMapMeters = {20.0, 0.0, 0.0};
+
+    const auto stillFirst = Timeline::selectSpatialPage(
+        pages,
+        2,
+        500.0,
+        glm::dvec3(5.0, 0.0, 0.0),
+        0
+    );
+    require(
+        stillFirst.status == Timeline::SelectionStatus::Active &&
+        stillFirst.pageIndex == 0,
+        "nominal time advanced a spatial storage page ahead of the craft"
+    );
+
+    const auto crossed = Timeline::selectSpatialPage(
+        pages,
+        2,
+        500.0,
+        glm::dvec3(11.0, 0.0, 0.0),
+        0
+    );
+    require(
+        crossed.status == Timeline::SelectionStatus::Active &&
+        crossed.pageIndex == 1 &&
+        crossed.pagesAdvanced == 1,
+        "spatial storage page did not advance after physical endpoint crossing"
+    );
+}
+
 void testFollowerCompletionUsesPageLocalElapsedTime()
 {
     Program page = baseProgram();
@@ -371,6 +509,9 @@ int main()
         testProgramStorageIsStaticallyBounded();
         testStoragePageSelectionUsesNextPageStart();
         testStoragePageContinuityAtRealUniverseEpoch();
+        testSpatialSamplerFollowsVehicleInsteadOfNominalClock();
+        testSpatialSamplerNeverJumpsBehindMonotonicCursor();
+        testSpatialPageSelectionUsesPhysicalProgressNotTime();
         testFollowerCompletionUsesPageLocalElapsedTime();
 
         std::cout << "MANEUVER PROGRAM SAMPLER TESTS: PASS\n";
@@ -380,6 +521,9 @@ int main()
         std::cout << " - velocity and full-attitude reference keys are sampled directly\n";
         std::cout << " - invalid time domains fail closed\n";
         std::cout << " - storage pages share one canonical maneuver timeline\n";
+        std::cout << " - spatial corridors follow physical progress, not nominal time\n";
+        std::cout << " - spatial storage pages advance only after endpoint crossing\n";
+        std::cout << " - monotonic spatial cursor cannot jump backwards\n";
         std::cout << " - Follower completion uses page-local elapsed time\n";
         return 0;
     }

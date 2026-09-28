@@ -1,3 +1,48 @@
+## 2026-09-28 — Stage 12 boundary extension: docking is not one navigation module
+
+The successful SpatialCorridor work is now the reusable navigation substrate,
+not the landing system itself.
+
+Mandatory ownership:
+
+```text
+DockTrafficController --DockingClearance--> RoutePlanner
+RoutePlanner --accepted route/program--> RouteFollower/Autopilot
+RouteFollower/Autopilot --LandingHandoff--> DockLandingController
+```
+
+Planner and Autopilot remain generic Navigation v2 components. They may not
+import docking queue, pad occupancy, landing-gear or latch internals.
+
+DockLandingController is a separate terminal controller. Its job starts only at
+an explicit LandingHandoff near the assigned pad. It owns pad-relative
+alignment, manoeuvring-thruster settle, gear deployment/contact and latch.
+Normal landing after handoff must not use the main engine.
+
+DockTrafficController is a separate infrastructure scheduler. It owns physical
+compatibility, class policy, queue order, pad assignment, entry/exit conflict
+reservations and estimated waits. It never generates flight-control commands.
+
+All three boundaries plus Traffic must be physically represented in separate
+source files/directories and exposed through narrow public DTO/API headers.
+Architecture-contract tests must reject forbidden private-header dependencies
+and hidden shared mutable state.
+
+Long-range requests use two stages:
+- remote inquiry/provisional compatibility and ETA only;
+- committed queue/resource admission only inside a controlled approach horizon.
+
+The initial waiting implementation is one EntryHoldPoint/final-approach lane per
+portal plus a virtual queue. Only one ship is admitted to that lane at a time;
+other queued craft wait outside it at safe approach stops. This avoids building
+a free-form holding yard while preserving collision-free sequencing.
+
+The full docking-infrastructure contract is authoritative in
+`src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md`.
+
+Do not add further FinalIngress/latch/queue special cases to the existing
+Automatic state machine before these boundaries are introduced.
+
 ## 2026-09-28 — physical docking aperture and capture-point contract
 
 The live SpatialCorridor approach now behaves correctly enough that terminal

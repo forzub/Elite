@@ -61,6 +61,7 @@ nominal_h = read("src/game/navigation/NominalRoutePlanner.h")
 nominal_cpp = read("src/game/navigation/NominalRoutePlanner.cpp")
 trajectory_cpp = read("src/world/navigation/TrajectoryGenerator.cpp")
 ruckig_h = read("src/game/navigation/RuckigTrajectorySolver.h")
+accepted_program_h = read("src/game/navigation/AcceptedManeuverProgram.h")
 sampler_h = read("src/game/navigation/ManeuverProgramSampler.h")
 timeline_h = read("src/game/navigation/ManeuverProgramTimeline.h")
 tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
@@ -227,6 +228,15 @@ for token in (
     "solveProgress(",
 ):
     require(token in ruckig_h, f"Ruckig solver API missing explicit request {token}")
+
+for token in (
+    "enum class ReferenceMode",
+    "TimeScheduled",
+    "SpatialCorridor",
+    "spatialSlowdownStartFraction",
+):
+    require(token in accepted_program_h,
+            f"AcceptedManeuverProgram API missing spatial reference contract {token}")
 
 for token in (
     "const AcceptedManeuverProgram& program",

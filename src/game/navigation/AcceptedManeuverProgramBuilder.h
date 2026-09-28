@@ -44,6 +44,7 @@ public:
         double trackingAngularVelocityErrorRadPerSec = 0.25;
         double alongTrackPositionDeadbandMeters = 10.0;
         double alongTrackSpeedDeadbandMps = 1.0;
+        double spatialSlowdownStartFraction = 0.50;
 
         // These reserves must already have been withheld from trajectory
         // generation. The builder records them; it does not manufacture extra
@@ -69,6 +70,8 @@ public:
                 nonNegative(trackingAngularVelocityErrorRadPerSec) &&
                 nonNegative(alongTrackPositionDeadbandMeters) &&
                 nonNegative(alongTrackSpeedDeadbandMps) &&
+                nonNegative(spatialSlowdownStartFraction) &&
+                spatialSlowdownStartFraction < 1.0 &&
                 nonNegative(linearFeedbackReserveMps2) &&
                 nonNegative(angularFeedbackReserveRadPerSec2);
         }
@@ -264,6 +267,8 @@ public:
                 request.policy.alongTrackPositionDeadbandMeters;
             page.tracking.alongTrackSpeedDeadbandMps =
                 request.policy.alongTrackSpeedDeadbandMps;
+            page.tracking.spatialSlowdownStartFraction =
+                request.policy.spatialSlowdownStartFraction;
             page.tracking.linearFeedbackReserveMps2 =
                 request.policy.linearFeedbackReserveMps2;
             page.tracking.angularFeedbackReserveRadPerSec2 =

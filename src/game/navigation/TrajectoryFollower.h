@@ -56,6 +56,7 @@ public:
         double envelopePositionErrorMeters = 0.0;
         double envelopeVelocityErrorMps = 0.0;
         double forwardAngleErrorRad = 0.0;
+        double envelopeForwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
         bool trackingErrorExceeded = false;
         bool angularCorrectionOnly = false;

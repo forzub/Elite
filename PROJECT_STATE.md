@@ -1,3 +1,30 @@
+## 2026-09-28 — module split implementation candidate
+
+Navigation and docking infrastructure now have concrete source/build boundaries.
+
+Production orchestration consumes:
+`RoutePlannerApi -> AcceptedManeuverProgram -> RouteFollowerApi`.
+
+The legacy algorithms that produced the successful current flight remain private
+backend implementation during migration. This avoids rewriting route geometry
+and control behavior at the same time as module ownership.
+
+`GameServer` no longer reaches into Planner/Follower backend classes for
+planning, alignment, page selection, sampling or tracking. `SpaceState`
+manual guidance likewise consumes the public RoutePlanner facade.
+
+Dock traffic/model/landing source is physically separate under
+`src/game/docking/` and builds as `EliteDockingInfrastructure` without a
+Navigation link. The first controller implementations exist primarily to make
+the API executable/testable before live integration.
+
+The architectural invariant is now mechanically gated: new public navigation
+headers cannot import docking Traffic/Landing, and Traffic/Landing cannot import
+navigation Planner/Autopilot.
+
+Status: candidate only. Windows MinGW/native gate and EliteGame compile are
+required before proceeding to authoritative dispatcher integration.
+
 ## 2026-09-28 — reusable navigation separated conceptually from docking infrastructure
 
 Project architecture now treats route planning/execution and docking terminal

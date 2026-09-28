@@ -287,12 +287,20 @@ int main()
     // The dense accepted route therefore has to pass through align and then
     // remain on the docking axis to HOLD.
     double nearestAlignDistance=1.0e30;
-    for(const auto& gate:curvedPlan.executionGates)
-        nearestAlignDistance=std::min(
-            nearestAlignDistance,
-            glm::length(gate.positionMeters-curvedAlign)
+    std::size_t alignGateIndex=curvedPlan.executionGates.size();
+    for(std::size_t i=0;i<curvedPlan.executionGates.size();++i)
+    {
+        const double distance=glm::length(
+            curvedPlan.executionGates[i].positionMeters-curvedAlign
         );
-    if(nearestAlignDistance>1.0e-6)
+        if(distance<nearestAlignDistance)
+        {
+            nearestAlignDistance=distance;
+            alignGateIndex=i;
+        }
+    }
+    if(nearestAlignDistance>1.0e-6 ||
+       alignGateIndex>=curvedPlan.executionGates.size())
     {
         std::cerr << "execution path lost exact terminal align vertex; miss="
                   << nearestAlignDistance << "\n";
@@ -300,59 +308,66 @@ int main()
         return 24;
     }
 
-    bool sawFinalStraight=false;
-    for(std::size_t i=1;i<curvedPlan.executionGates.size();++i)
+    // ALIGN is an authored semantic vertex and is now preserved exactly.
+    // Therefore final-straight validation must follow ROUTE ORDER, not infer
+    // "after align" from one coordinate projection. A perfectly valid detour
+    // may cross the plane through ALIGN earlier while still being kilometres
+    // off the docking axis.
+    if(alignGateIndex+1>=curvedPlan.executionGates.size())
+    {
+        std::cerr << "terminal align is the last execution gate; no final straight\n";
+        printTerminalArcDiagnostics(curvedPlan);
+        return 41;
+    }
+
+    for(std::size_t i=alignGateIndex+1;
+        i<curvedPlan.executionGates.size();
+        ++i)
     {
         const auto& a=curvedPlan.executionGates[i-1];
         const auto& b=curvedPlan.executionGates[i];
-        const double aAlong=glm::dot(
-            a.positionMeters-curvedAlign,
-            curvedFinalDirection
-        );
-        const double bAlong=glm::dot(
-            b.positionMeters-curvedAlign,
-            curvedFinalDirection
-        );
-        if(aAlong>=-1.0e-6 && bAlong>1.0e-6)
+        const auto segment=b.positionMeters-a.positionMeters;
+        if(glm::length(segment)<=1.0e-6)
+            continue;
+
+        const double directionDot=
+            glm::dot(
+                glm::normalize(segment),
+                curvedFinalDirection
+            );
+        const glm::dvec3 fromAxis=
+            b.positionMeters-curvedAlign;
+        const double along=
+            glm::dot(fromAxis,curvedFinalDirection);
+        const double crossTrack=
+            glm::length(
+                fromAxis-curvedFinalDirection*along
+            );
+
+        if(directionDot<0.9999 || crossTrack>1.0e-6)
         {
-            sawFinalStraight=true;
-            const auto segment=b.positionMeters-a.positionMeters;
-            if(glm::length(segment)>1.0e-6)
-            {
-                const double directionDot=
-                    glm::dot(
-                        glm::normalize(segment),
-                        curvedFinalDirection
-                    );
-                if(directionDot<0.9999)
-                {
-                    std::cerr
-                        << "terminal arc consumed or bent the final straight"
-                        << " dot=" << directionDot
-                        << " a=("
-                        << a.positionMeters.x << ","
-                        << a.positionMeters.y << ","
-                        << a.positionMeters.z << ")"
-                        << " b=("
-                        << b.positionMeters.x << ","
-                        << b.positionMeters.y << ","
-                        << b.positionMeters.z << ")"
-                        << " align=("
-                        << curvedAlign.x << ","
-                        << curvedAlign.y << ","
-                        << curvedAlign.z << ")"
-                        << "\n";
-                    printTerminalArcDiagnostics(curvedPlan);
-                    return 39;
-                }
-            }
+            std::cerr
+                << "final straight bent after exact ALIGN"
+                << " align_gate_index=" << alignGateIndex
+                << " gate_index=" << i
+                << " dot=" << directionDot
+                << " cross_track_m=" << crossTrack
+                << " a=("
+                << a.positionMeters.x << ","
+                << a.positionMeters.y << ","
+                << a.positionMeters.z << ")"
+                << " b=("
+                << b.positionMeters.x << ","
+                << b.positionMeters.y << ","
+                << b.positionMeters.z << ")"
+                << " align=("
+                << curvedAlign.x << ","
+                << curvedAlign.y << ","
+                << curvedAlign.z << ")"
+                << "\n";
+            printTerminalArcDiagnostics(curvedPlan);
+            return 39;
         }
-    }
-    if(!sawFinalStraight)
-    {
-        std::cerr << "no accepted samples on semantic final straight\n";
-        printTerminalArcDiagnostics(curvedPlan);
-        return 41;
     }
 
     // An obstacle may block only the far, preferred part of the 9 km

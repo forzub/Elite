@@ -1,3 +1,28 @@
+## 2026-09-28 — Dock geometry now matches docking semantics
+
+The long Automatic SpatialCorridor has positive live flight evidence: corridor
+retention, smooth turns and dock-relative vertical/roll alignment are working.
+
+Docking geometry had a separate source-of-truth defect. Guidance dock render
+meshes are hollow, but monolithic collision fallback was a solid descriptor OBB.
+That made actual internal ingress unprovable and explains why the runtime had
+historically terminated at exterior pre-capture.
+
+Monolithic descriptors can now author a decomposition of logical collision
+boxes. Guidance test docks use four structural wall boxes around the aperture,
+so the existing shared HitComponent remains the sole collision/navigation source
+while preserving the hole.
+
+Dock semantic anchors now include an explicit positive internal
+`captureDepthMeters`. FinalIngress consumes it to author one exact collinear
+sequence through pre-capture, entrance and internal capture. Dynamic trajectory
+compilation remains subordinate to that geometry and exact obstacle clearance
+must succeed.
+
+Permanent authoritative latch/undock state is not part of this candidate; it
+follows only after physical ingress to the internal capture point is verified
+on Windows.
+
 ## 2026-09-28 — Navigation v2 Automatic route ownership simplified
 
 Automatic docking now has one route ownership chain:

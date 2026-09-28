@@ -288,6 +288,17 @@ try:
         )
 
     compact_server = "".join(server.split())
+    target_clearance_contract = (
+        "source.id==targetObjectId?"
+        "std::max(0.0,definitionCopy.requiredClearanceMeters):"
+        "game::navigation::DiagnosticHubInfrastructureClearanceMeters"
+    )
+    if target_clearance_contract not in compact_server:
+        raise AssertionError(
+            "Automatic docking target aperture lost its semantic dock clearance "
+            "and may be sealed by generic Hub infrastructure inflation"
+        )
+
     if (
         "build.referenceMode=finalIngressStage?"
         "AcceptedManeuverProgram::ReferenceMode::TimeScheduled:"

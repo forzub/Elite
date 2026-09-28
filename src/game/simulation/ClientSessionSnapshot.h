@@ -39,6 +39,7 @@ struct ClientSessionSnapshot
     bool automaticDockingRouteFinalIngress = false;
     std::uint64_t automaticDockingRouteRequestSerial = 0;
     std::uint64_t automaticDockingRouteRevision = 0;
+    double automaticDockingRouteToleranceMeters = 0.0;
     int automaticDockingRouteSystemId = -1;
     std::string automaticDockingRouteHubId;
     std::vector<AutomaticDockingRoutePoint> automaticDockingRoute;

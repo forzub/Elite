@@ -317,10 +317,17 @@ void testSpatialSamplerFollowsVehicleInsteadOfNominalClock()
     // Nominal time is already beyond this page, but the craft is physically
     // only 25% along the accepted segment. Spatial mode must stay with the
     // craft instead of jumping to the terminal reference.
+    const double segmentLength = std::sqrt(116.0);
+    const glm::dvec3 oneMeterPerpendicular(
+        -4.0 / segmentLength,
+        10.0 / segmentLength,
+        0.0
+    );
     const auto result = Sampler::sampleSpatial(
         program,
         102.5,
-        glm::dvec3(2.5, 1.0, 0.0),
+        glm::dvec3(2.5, 1.0, 0.0) +
+            oneMeterPerpendicular,
         0
     );
 

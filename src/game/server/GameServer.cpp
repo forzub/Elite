@@ -3050,50 +3050,15 @@ void GameServer::applyAutomaticDockingControls(
                 boundary.toSystemControlIntent(
                     tracking.intent
                 );
-            const double controlDeltaSeconds =
-                std::max(1.0e-6, time.gameplayDeltaSeconds);
-            runtime.controlClockSeconds += controlDeltaSeconds;
-            const auto step =
-                runtime.controlBridge->step(
-                    runtime.controlClockSeconds,
-                    controlDeltaSeconds,
-                    systemIntent
-                );
-
-            if (step.status !=
-                    game::navigation::
-                        NavigationRuntimeControlBridge::
-                            PilotExecutor::Status::Ok ||
-                !step.snapshot.valid)
-            {
-                std::cerr << "[DockAuto] request=" << runtime.requestSerial
-                          << " phase=replan reason=alignment-bridge-step"
-                          << " status=" << static_cast<int>(step.status)
-                          << " failure_kind="
-                          << bridgeFailureName(step.failure)
-                          << " clock_s=" << runtime.controlClockSeconds
-                          << " delta_s=" << controlDeltaSeconds
-                          << std::endl;
-                ++runtime.controlBridgeFailureCount;
-                if (runtime.controlBridgeFailureCount >= 3)
-                {
-                    completed.push_back({
-                        runtime.playerId, runtime.entityId,
-                        runtime.requestSerial, false,
-                        std::string("alignment-bridge-") +
-                            bridgeFailureName(step.failure)
-                    });
-                }
-                runtime.phase =
-                    DockingAutomaticRuntime::Phase::Stabilizing;
-                runtime.programs.clear();
-                runtime.settledSinceUniverseTimeSeconds = -1.0;
-                continue;
-            }
-
-            runtime.controlBridgeFailureCount = 0;
-
-            ship->setControlState(step.control);
+            ShipControlState alignmentControl;
+            alignmentControl.navigationAccelerationDemandValid = true;
+            alignmentControl.navigationLinearAccelerationDemandSystemMps2 =
+                systemIntent.idealLinearAccelerationSystemMps2;
+            alignmentControl.navigationAngularAccelerationDemandSystemRadPerSec2 =
+                systemIntent.idealAngularAccelerationSystemRadPerSec2;
+            alignmentControl.navigationIntentRevision =
+                systemIntent.revision;
+            ship->setControlState(alignmentControl);
 
             const auto axisAngle =
                 [](const glm::dvec3& a,
@@ -3563,54 +3528,17 @@ void GameServer::applyAutomaticDockingControls(
                     NavVector {followed.targetVelocityMapMps}
             ).value;
 
-        const double controlDeltaSeconds =
-            std::max(1.0e-6, time.gameplayDeltaSeconds);
-        runtime.controlClockSeconds += controlDeltaSeconds;
-        const auto step =
-            runtime.controlBridge->stepVehicle(
-                runtime.controlClockSeconds,
-                controlDeltaSeconds,
-                systemIntent,
-                targetVelocitySystemMps
-            );
-
-        if (step.status !=
-                game::navigation::
-                    NavigationRuntimeControlBridge::
-                        PilotExecutor::Status::Ok ||
-            !step.snapshot.valid)
-        {
-            std::cerr << "[DockAuto] request=" << runtime.requestSerial
-                      << " phase=replan reason=control-bridge-step"
-                      << " status=" << static_cast<int>(step.status)
-                      << " failure_kind="
-                      << bridgeFailureName(step.failure)
-                      << " snapshot_valid=" << (step.snapshot.valid ? 1 : 0)
-                      << " clock_s=" << runtime.controlClockSeconds
-                      << " delta_s=" << controlDeltaSeconds
-                      << " target_velocity_mps=("
-                      << targetVelocitySystemMps.x << ","
-                      << targetVelocitySystemMps.y << ","
-                      << targetVelocitySystemMps.z << ")"
-                      << std::endl;
-            ++runtime.controlBridgeFailureCount;
-            if (runtime.controlBridgeFailureCount >= 3)
-            {
-                completed.push_back({
-                    runtime.playerId, runtime.entityId,
-                    runtime.requestSerial, false,
-                    std::string("control-bridge-") +
-                        bridgeFailureName(step.failure)
-                });
-            }
-            runtime.phase =
-                DockingAutomaticRuntime::Phase::Stabilizing;
-            runtime.programs.clear();
-            runtime.settledSinceUniverseTimeSeconds = -1.0;
-            continue;
-        }
-
-        runtime.controlBridgeFailureCount = 0;
+        ShipControlState automaticControl;
+        automaticControl.navigationAccelerationDemandValid = true;
+        automaticControl.navigationLinearAccelerationDemandSystemMps2 =
+            systemIntent.idealLinearAccelerationSystemMps2;
+        automaticControl.navigationAngularAccelerationDemandSystemRadPerSec2 =
+            systemIntent.idealAngularAccelerationSystemRadPerSec2;
+        automaticControl.navigationIntentRevision =
+            systemIntent.revision;
+        automaticControl.navigationVelocityTargetValid = true;
+        automaticControl.navigationTargetVelocitySystemMps =
+            targetVelocitySystemMps;
 
         // One sample per second: correlate the immutable trajectory, follower
         // feedback, pilot command and measured ship response on Windows.
@@ -3639,9 +3567,9 @@ void GameServer::applyAutomaticDockingControls(
                         diagnosticSample.reference.linearAccelerationFeedForwardMapMps2
                     }).value;
             const glm::dvec3 commandedAcceleration =
-                step.snapshot.executedLinearAccelerationDemandSystemMps2;
+                systemIntent.idealLinearAccelerationSystemMps2;
             const glm::dvec3 commandedAngular =
-                step.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
+                systemIntent.idealAngularAccelerationSystemRadPerSec2;
             const glm::dvec3 measuredAcceleration =
                 motion.engineAccelerationMps2;
             std::cout << "[DockAutoTrack] request=" << runtime.requestSerial
@@ -3687,13 +3615,13 @@ void GameServer::applyAutomaticDockingControls(
                       << " actual_rates_radps=(" << agent.pitchRateRadPerSec
                       << "," << agent.yawRateRadPerSec << ","
                       << agent.rollRateRadPerSec << ")"
-                      << " pilot_blocked=" << step.snapshot.reactionBlocked
+                      << " direct_follower_control=1"
                       << std::endl;
             runtime.lastTrackingDiagnosticTick =
                 time.serverTick;
         }
 
-        ship->setControlState(step.control);
+        ship->setControlState(automaticControl);
 
         if (finalPage &&
             followed.status ==

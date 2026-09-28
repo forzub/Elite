@@ -288,8 +288,10 @@ endpoint plane of the current accepted page.
 
 Progress must also be path-order monotonic. The executor must not choose an
 arbitrary nearest future segment: in a hairpin or canyon, a later branch can be
-physically close through solid geometry. Sequential endpoint crossing prevents
-such a shortcut.
+physically close through solid geometry. A segment/page advances only when the
+real craft has crossed its endpoint plane **and** remains inside that segment's
+proved cross-track tracking envelope. Crossing the plane far off-axis is a
+corner cut, not route progress.
 
 The accepted trajectory currently samples scalar path progress every 0.02 s.
 At 400 m/s this is about 8 m spatial spacing, so execution geometry is much

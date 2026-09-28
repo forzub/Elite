@@ -1,3 +1,38 @@
+## 2026-09-28 — moving-start docking + rotating HOLD failure fixed in code
+
+A pre-module-split live run exposed two independent Automatic docking defects.
+
+Observed live evidence:
+- starting Automatic while the ship already had VREL forced `BrakeToStop`;
+- the geometrical route was available, but AcceptedProgram rejected the
+  boundary-valued Assisted trajectory as
+  `assisted-motion-envelope-infeasible`;
+- at the HOLD endpoint the ship was ~0.05 m from the reference at ~4.38 m/s,
+  but zero reference speed plus opposite hull attitude produced a false
+  ~179.5 degree course loss;
+- recovery then rebuilt ApproachHold from almost the endpoint and generated a
+  tiny reverse Assisted sample (`-0.5 m/s`), which was correctly rejected but
+  should never have been requested.
+
+Current candidate fixes:
+- ApproachHold preparation is now COAST: zero translational acceleration,
+  preserved VREL, bounded angular-rate damping only;
+- async planning projects the start position by
+  `startVelocityMps * PlanningLeadSeconds` so the program starts where the
+  coasting ship will actually be;
+- FinalIngress still deliberately uses `BrakeToStop`;
+- Planner/Trajectory use 90% of the already reserve-reduced execution
+  acceleration envelope, leaving headroom before AcceptedProgram validation;
+- HOLD capture now uses physical stopping distance inside the accepted
+  position envelope instead of the retired fixed speed threshold;
+- a zero-speed SpatialCorridor reference has no translational course, so hull
+  attitude no longer creates a false route-loss angle;
+- entering FinalIngress resets the stage-local tracking failure budget;
+- Assisted envelope rejection now logs page/sample/time and demanded vs
+  available longitudinal/lateral acceleration.
+
+Native Windows verification is still required.
+
 ## 2026-09-28 — first hard Planner/Autopilot/Traffic/Landing module split candidate
 
 The first implementation slice of

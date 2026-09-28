@@ -42,7 +42,7 @@
 namespace {
 
 constexpr const char* DockingAutomaticImplementationRevision =
-    "dock-auto-20260928-stop-adaptive-fillet-semantic-clearance";
+    "dock-auto-20260928-stop-speed-aware-turn-semantic-clearance";
 
 std::string dockingAdvisoryTrace(
     const game::navigation::planner::RoutePlan& plan

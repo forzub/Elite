@@ -200,7 +200,9 @@ public:
             return out;
         }
 
-        while (selected + 1 < pageCount)
+        // Storage pages are sequential path chunks. Advance at most one page
+        // per fixed-step; never let geometry coincidences skip a hairpin branch.
+        if (selected + 1 < pageCount)
         {
             const auto& current = pages[selected];
             const auto& next = pages[selected + 1];

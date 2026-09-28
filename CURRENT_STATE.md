@@ -1,3 +1,54 @@
+## 2026-09-28 — candidate: one authoritative Automatic corridor; Windows gate pending
+
+The previous live observation `[DockAdvisory] left ... gate=4` exposed an
+architectural ambiguity rather than proving that Follower had left its own
+accepted route: the cockpit could still display a client-side
+`DockingAdvisoryPlanner` result while Automatic stopped the real ship and ran
+the server planner again. The visible tunnel and the executed route therefore
+were allowed to differ.
+
+The current `main` candidate removes that split for Automatic docking:
+
+- `START DOCKING` no longer runs the client/manual advisory planner as a
+  preflight. The client sends `BeginAutomaticDocking` directly.
+- The server builds Automatic geometry once with `DockingAdvisoryPlanner`.
+  `TrajectoryGenerator` receives that geometry with
+  `pathGeometryAlreadyAuthored=true`; its role is dynamic feasibility and
+  speed/orientation/acceleration compilation, not a second geometric route.
+- The resulting `AcceptedManeuverProgram` is the execution source of truth.
+  Its Hub-local points, course basis, speed and tracking tolerance are
+  replicated in the per-session Automatic route snapshot.
+- Automatic HUD/Hub-map guidance is built directly from that replicated
+  AcceptedProgram. Sparse 500 m / terminal 250 m cockpit frames are only a
+  presentation sampling of the same accepted route. During stabilization or
+  replan, when no AcceptedProgram exists, the old tunnel is withdrawn instead
+  of being displayed as stale truth.
+- Spatial Follower no longer reduces route speed as cross-track error grows.
+  The retired `spatialSlowdownStartFraction` policy has been removed.
+  Follower keeps the accepted local speed and steers the hull/velocity target
+  toward a bounded 50–250 m look-ahead point on the same ordered path.
+- Steering angle and route-loss course angle are now separate values.
+  Angular control follows the inward look-ahead ray, while route-loss checks
+  compare the hull against the authored corridor tangent. A corrective turn
+  therefore cannot invalidate the route merely because it is a large turn.
+- Automatic docking no longer passes Follower commands through
+  `NavigationRuntimeControlBridge/PilotSkillExecutor`. Follower writes the
+  vehicle-level target velocity and acceleration demand directly into
+  `ShipControlState`; Assisted/Newtonian flight law and ship physics remain
+  the physical capability authority. PilotSkill remains available for NPC/human
+  skill simulation, not the docking computer.
+- Spatial progress remains ordered and position-driven through
+  `ManeuverProgramSampler::sampleSpatial` plus the monotonic segment cursor;
+  accepted samples/page boundaries cannot be skipped by elapsed time or by a
+  globally nearest future segment.
+
+Candidate code baseline before these documentation commits:
+`f60e30ce2afb098856ef12f3f10dab463d2611b7`.
+
+No Windows native build, `verify_docking.sh`, or live flight has yet been
+observed on this candidate. Do not mark the slice accepted until those gates
+pass and a live run shows the ship following the same corridor that HUD renders.
+
 ## 2026-09-27 — vehicle-motion candidate published; Windows gate pending
 
 GitHub `forzub/Elite` main now contains the three docking/control/test changes,

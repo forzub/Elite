@@ -315,16 +315,30 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
             return Result {};
         }
 
+        const glm::dvec3 relative =
+            positionMapMeters - a.positionMapMeters;
         const double rawProgress =
-            glm::dot(
-                positionMapMeters - a.positionMapMeters,
-                segment
-            ) / segmentLength2;
+            glm::dot(relative, segment) / segmentLength2;
         if (!finite(rawProgress))
             return Result {};
 
-        if (rawProgress >= 1.0)
+        const glm::dvec3 crossAtProgress =
+            relative - segment * rawProgress;
+        const double crossDistance =
+            glm::length(crossAtProgress);
+        if (!finite(crossDistance))
+            return Result {};
+
+        const double advanceCrossTrackLimit =
+            std::max(
+                1.0e-6,
+                program.tracking.positionErrorMeters
+            );
+        if (rawProgress >= 1.0 &&
+            crossDistance <= advanceCrossTrackLimit)
+        {
             ++selectedSegment;
+        }
     }
 
     const auto& selectedA =

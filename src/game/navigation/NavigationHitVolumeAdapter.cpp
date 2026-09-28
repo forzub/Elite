@@ -19,6 +19,16 @@ bool includeVolume(
         (options.includeSupportLinkVolumes || !volume.supportLinkVolume);
 }
 
+bool includeVolume(
+    const game::simulation::DebugHitVolumeSnapshot& volume,
+    const NavigationHitVolumeAdapter::Options& options
+) noexcept
+{
+    return
+        !volume.destroyed &&
+        (options.includeSupportLinkVolumes || !volume.supportLinkVolume);
+}
+
 glm::dmat3 normalizedBasis(const glm::dmat3& basis) noexcept
 {
     glm::dmat3 out(1.0);
@@ -96,6 +106,79 @@ NavigationHitVolumeAdapter::buildObstacles(
 {
     return buildObstacles(
         hitComponent,
+        entityId,
+        objectWorldPositionMeters,
+        objectLocalToWorld,
+        idPrefix,
+        Options{}
+    );
+}
+
+std::vector<world::navigation::NavigationObstacle>
+NavigationHitVolumeAdapter::buildObstacles(
+    const std::vector<game::simulation::DebugHitVolumeSnapshot>& volumes,
+    std::uint32_t entityId,
+    const glm::dvec3& objectWorldPositionMeters,
+    const glm::dmat3& objectLocalToWorld,
+    const std::string& idPrefix,
+    const Options& options
+)
+{
+    std::vector<world::navigation::NavigationObstacle> out;
+    out.reserve(volumes.size());
+
+    const glm::dmat3 ownerBasis = normalizedBasis(objectLocalToWorld);
+
+    std::size_t volumeIndex = 0;
+    for (const auto& volume : volumes)
+    {
+        if (!includeVolume(volume, options))
+        {
+            ++volumeIndex;
+            continue;
+        }
+
+        world::navigation::NavigationObstacle obstacle;
+        obstacle.id =
+            idPrefix + "::hit::" + std::to_string(volumeIndex);
+        obstacle.entityId = entityId;
+        obstacle.shape =
+            world::navigation::NavigationObstacleShape::Box;
+
+        obstacle.centerMeters =
+            objectWorldPositionMeters +
+            ownerBasis * glm::dvec3(volume.center);
+
+        obstacle.localToWorldBasis =
+            normalizedBasis(
+                ownerBasis * glm::dmat3(volume.orientation)
+            );
+        obstacle.halfExtentsMeters =
+            glm::max(
+                glm::dvec3(volume.halfSize),
+                glm::dvec3(0.0)
+            );
+        obstacle.requiredClearanceMeters =
+            std::max(0.0, options.requiredClearanceMeters);
+
+        out.push_back(std::move(obstacle));
+        ++volumeIndex;
+    }
+
+    return out;
+}
+
+std::vector<world::navigation::NavigationObstacle>
+NavigationHitVolumeAdapter::buildObstacles(
+    const std::vector<game::simulation::DebugHitVolumeSnapshot>& volumes,
+    std::uint32_t entityId,
+    const glm::dvec3& objectWorldPositionMeters,
+    const glm::dmat3& objectLocalToWorld,
+    const std::string& idPrefix
+)
+{
+    return buildObstacles(
+        volumes,
         entityId,
         objectWorldPositionMeters,
         objectLocalToWorld,

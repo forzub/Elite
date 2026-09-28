@@ -3513,10 +3513,12 @@ void GameServer::applyAutomaticDockingControls(
                 << " t_s=" << time.universeTimeSeconds -
                     program.acceptedAtUniverseTimeSeconds
                 << " speed_mps=" << speedBeforeStopMps
-                << " target_speed_mps="
+                << " reference_speed_mps="
                 << glm::length(
                     sampled.reference.velocityMapMetersPerSecond
                 )
+                << " target_speed_mps="
+                << glm::length(followed.targetVelocityMapMps)
                 << " reference_velocity_mps=("
                 << sampled.reference.velocityMapMetersPerSecond.x << ","
                 << sampled.reference.velocityMapMetersPerSecond.y << ","
@@ -3718,6 +3720,8 @@ void GameServer::applyAutomaticDockingControls(
                       << " remaining_m=" << followed.remainingDistanceMeters
                       << " speed_ref_mps=" <<
                           glm::length(diagnosticSample.reference.velocityMapMetersPerSecond)
+                      << " speed_target_mps=" <<
+                          glm::length(followed.targetVelocityMapMps)
                       << " speed_actual_mps=" <<
                           glm::length(agent.velocityMapMetersPerSecond)
                       << " cross_track_m=" << followed.crossTrackErrorMeters

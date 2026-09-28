@@ -3466,10 +3466,22 @@ void GameServer::applyAutomaticDockingControls(
         {
             const double speedBeforeStopMps =
                 glm::length(motion.localVelocityMps);
-            const auto sampled = game::navigation::
-                ManeuverProgramSampler::sample(
-                    program, time.universeTimeSeconds
-                );
+            const auto sampled =
+                program.referenceMode ==
+                    game::navigation::AcceptedManeuverProgram::
+                        ReferenceMode::SpatialCorridor
+                    ? game::navigation::ManeuverProgramSampler::
+                          sampleSpatial(
+                              program,
+                              time.universeTimeSeconds,
+                              agent.positionMapMeters,
+                              runtime.currentSpatialSegment
+                          )
+                    : game::navigation::ManeuverProgramSampler::
+                          sample(
+                              program,
+                              time.universeTimeSeconds
+                          );
 
             if (followed.trackingErrorExceeded)
                 ++runtime.trackingFailureCount;
@@ -3482,6 +3494,14 @@ void GameServer::applyAutomaticDockingControls(
                 << " tracking_error="
                 << (followed.trackingErrorExceeded ? 1 : 0)
                 << " page=" << runtime.currentProgramPage
+                << " reference_mode="
+                << (followed.spatialReference ? "spatial" : "time")
+                << " ref_segment="
+                << followed.referenceLowerSampleIndex
+                << " ref_alpha="
+                << followed.referenceInterpolation01
+                << " ref_distance_m="
+                << followed.referenceSpatialDistanceMeters
                 << " t_s=" << time.universeTimeSeconds -
                     program.acceptedAtUniverseTimeSeconds
                 << " speed_mps=" << speedBeforeStopMps
@@ -3646,9 +3666,22 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.lastTrackingDiagnosticTick == 0 ||
             time.serverTick - runtime.lastTrackingDiagnosticTick >= 60)
         {
-            const auto diagnosticSample = game::navigation::
-                ManeuverProgramSampler::sample(
-                    program, time.universeTimeSeconds);
+            const auto diagnosticSample =
+                program.referenceMode ==
+                    game::navigation::AcceptedManeuverProgram::
+                        ReferenceMode::SpatialCorridor
+                    ? game::navigation::ManeuverProgramSampler::
+                          sampleSpatial(
+                              program,
+                              time.universeTimeSeconds,
+                              agent.positionMapMeters,
+                              runtime.currentSpatialSegment
+                          )
+                    : game::navigation::ManeuverProgramSampler::
+                          sample(
+                              program,
+                              time.universeTimeSeconds
+                          );
             const glm::dvec3 plannedAcceleration =
                 boundary.toSystemVector(
                     game::navigation::NavigationFrameBoundary::NavVector {
@@ -3662,6 +3695,14 @@ void GameServer::applyAutomaticDockingControls(
                 motion.engineAccelerationMps2;
             std::cout << "[DockAutoTrack] request=" << runtime.requestSerial
                       << " page=" << runtime.currentProgramPage
+                      << " reference_mode="
+                      << (followed.spatialReference ? "spatial" : "time")
+                      << " ref_segment="
+                      << followed.referenceLowerSampleIndex
+                      << " ref_alpha="
+                      << followed.referenceInterpolation01
+                      << " ref_distance_m="
+                      << followed.referenceSpatialDistanceMeters
                       << " t_s=" << time.universeTimeSeconds -
                           program.acceptedAtUniverseTimeSeconds
                       << " remaining_m=" << followed.remainingDistanceMeters

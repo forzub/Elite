@@ -91,9 +91,26 @@ struct RouteReferenceDiagnostic
     double spatialDistanceMeters = 0.0;
 };
 
+struct RouteAlignmentResult
+{
+    bool valid = false;
+    NavigationLocalControlIntent intent {};
+    double forwardAngleErrorRad = 0.0;
+    double upAngleErrorRad = 0.0;
+};
+
 class RouteFollower final
 {
 public:
+    [[nodiscard]] static RouteAlignmentResult alignToAttitude(
+        const AcceptedManeuverProgram& capabilityProgram,
+        const RouteFollowerAgentState& agent,
+        const glm::dvec3& desiredForwardMap,
+        const glm::dvec3& desiredRightMap,
+        const glm::dvec3& desiredUpMap,
+        const RouteFollowerPolicy& policy
+    ) noexcept;
+
     [[nodiscard]] static RouteProgramSelection selectPage(
         const std::vector<AcceptedManeuverProgram>& pages,
         double universeTimeSeconds,

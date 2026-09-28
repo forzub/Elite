@@ -34,7 +34,6 @@
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
-#include "src/world/navigation/NavigationObstacleFactory.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
 #include "src/world/coordinates/WorldPosition.h"

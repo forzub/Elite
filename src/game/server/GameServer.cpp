@@ -3327,7 +3327,7 @@ void GameServer::applyAutomaticDockingControls(
                 program.tracking.positionErrorMeters,
                 followed.envelopeVelocityErrorMps,
                 program.tracking.linearVelocityErrorMps,
-                followed.forwardAngleErrorRad,
+                followed.envelopeForwardAngleErrorRad,
                 program.tracking.forwardAngleErrorRad,
                 followed.angularVelocityErrorRadPerSec,
                 program.tracking.angularVelocityErrorRadPerSec,
@@ -3360,8 +3360,16 @@ void GameServer::applyAutomaticDockingControls(
                       << followed.envelopeVelocityErrorMps
                       << " velocity_limit_mps="
                       << program.tracking.linearVelocityErrorMps
-                      << " angle_error_deg="
+                      << " course_error_deg="
+                      << glm::degrees(
+                             followed.envelopeForwardAngleErrorRad
+                         )
+                      << " steering_angle_deg="
                       << glm::degrees(followed.forwardAngleErrorRad)
+                      << " angle_error_deg="
+                      << glm::degrees(
+                             followed.envelopeForwardAngleErrorRad
+                         )
                       << " angle_limit_deg="
                       << glm::degrees(
                              program.tracking.forwardAngleErrorRad
@@ -3596,8 +3604,16 @@ void GameServer::applyAutomaticDockingControls(
                       << " cross_track_m=" << followed.crossTrackErrorMeters
                       << " velocity_error_mps=" <<
                           followed.envelopeVelocityErrorMps
-                      << " angle_error_deg=" <<
+                      << " course_error_deg=" <<
+                          glm::degrees(
+                              followed.envelopeForwardAngleErrorRad
+                          )
+                      << " steering_angle_deg=" <<
                           glm::degrees(followed.forwardAngleErrorRad)
+                      << " angle_error_deg=" <<
+                          glm::degrees(
+                              followed.envelopeForwardAngleErrorRad
+                          )
                       << " omega_error_radps=" <<
                           followed.angularVelocityErrorRadPerSec
                       << " planned_accel_system_mps2=(" << plannedAcceleration.x

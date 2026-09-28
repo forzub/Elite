@@ -552,6 +552,56 @@ void testFollowerSpatialCorridorTracksPathInsteadOfClock()
     );
 }
 
+void testSpatialCorridorSlowsBeforeLeavingEnvelope()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.tracking.positionErrorMeters = 20.0;
+    program.tracking.spatialSlowdownStartFraction = 0.50;
+
+    auto agent = followerAgentFor(program.samples[0]);
+    agent.positionMapMeters = {2.5, 15.0, 0.0};
+    agent.velocityMapMetersPerSecond = {5.0, 0.0, 0.0};
+
+    const auto result = Follower::follow(
+        program,
+        10.25,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(
+        result.status == Follower::Status::Following &&
+        !result.trackingErrorExceeded,
+        "corridor governor treated deliberate along-track slowdown as route loss"
+    );
+    requireNear(
+        result.spatialSpeedScale,
+        0.5,
+        1.0e-12,
+        "corridor speed governor did not scale from cross-track envelope"
+    );
+    requireNear(
+        glm::length(result.targetVelocityMapMps),
+        2.5,
+        1.0e-12,
+        "corridor governor did not reduce along-track target speed"
+    );
+    requireNear(
+        result.envelopePositionErrorMeters,
+        15.0,
+        1.0e-12,
+        "corridor envelope stopped measuring cross-track position"
+    );
+    requireNear(
+        result.envelopeVelocityErrorMps,
+        0.0,
+        1.0e-12,
+        "deliberate along-track speed regulation polluted cross-track envelope"
+    );
+}
+
 void testFollowerSpatialCorridorCanCompleteBeforeNominalTime()
 {
     Program program = baseProgram();
@@ -605,6 +655,7 @@ int main()
         testFreeTransitCorridorStillCorrectsCrossTrackMotion();
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
+        testSpatialCorridorSlowsBeforeLeavingEnvelope();
         testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 

@@ -1,3 +1,11 @@
+## Continue from 2026-09-28 composite-only rerun
+
+Latest target evidence: navigation_runtime_planner, maneuver_corner_family_matrix, maneuver_rigid_body_corridor, maneuver_chained_limit_matrix, and physical_maneuver_search_coordinator pass. Only navigation_composite_proving_ground remains pending.
+
+The latest fix does not widen the 19 m corridor or disable the moving hazard. It settles residual entry velocity before the constrained portal and routes Assisted active braking through the same velocity-target flight model used by production.
+
+Read BUILD_TEST_LAYOUT.md before changing commands.
+
 ## Continue from 2026-09-28 six-test runtime audit
 
 Latest Windows full runtime suite: 23/29 passed; six failures were audited. Docking-specific tests remained green. Candidate fixes are on main and need Windows rerun.

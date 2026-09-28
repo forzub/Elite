@@ -92,7 +92,7 @@ struct RigidVehicleModel
     double maxRollRateRadPerSec = 3.0;
 };
 
-ShipParams cobraParams(const RigidVehicleModel& model)
+ShipParams cobraParams(const RigidVehicleModel& model, Law law)
 {
     ShipParams p {};
     p.maxPitchRate = static_cast<float>(model.maxPitchRateRadPerSec);
@@ -106,7 +106,7 @@ ShipParams cobraParams(const RigidVehicleModel& model)
     p.maxCruiseSpeed = 1000.0f;
     p.throttleAccel = 5.0f;
     p.forwardMainEngineAvailable = true;
-    p.reverseMainEngineAvailable = true;
+    p.reverseMainEngineAvailable = (law == Law::Assisted);
     p.forwardMainEngineAccelerationMps2 =
         static_cast<float>(model.aftMainAccelerationMps2);
     p.reverseMainEngineAccelerationMps2 =
@@ -433,7 +433,7 @@ struct Vehicle
         const PilotCase& pilot,
         Law law
     )
-        : params(cobraParams(model)),
+        : params(cobraParams(model, law)),
           bridge(pilot.profile)
     {
         frame.systemId = 1;

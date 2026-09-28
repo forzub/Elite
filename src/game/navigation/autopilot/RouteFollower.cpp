@@ -1,10 +1,108 @@
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
 
+#include "src/game/navigation/ManeuverProgramSampler.h"
+#include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 
 namespace game::navigation::autopilot
 {
+
+RouteProgramSelection RouteFollower::selectPage(
+    const std::vector<AcceptedManeuverProgram>& pages,
+    double universeTimeSeconds,
+    const glm::dvec3& positionMapMeters,
+    std::size_t currentPageIndex
+) noexcept
+{
+    RouteProgramSelection out;
+    if (pages.empty() || currentPageIndex >= pages.size())
+        return out;
+
+    const bool spatial =
+        pages[currentPageIndex].referenceMode ==
+            AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+
+    const auto selected =
+        spatial
+            ? game::navigation::ManeuverProgramTimeline::selectSpatialPage(
+                  pages.data(),
+                  pages.size(),
+                  universeTimeSeconds,
+                  positionMapMeters,
+                  currentPageIndex
+              )
+            : game::navigation::ManeuverProgramTimeline::selectActivePage(
+                  pages.data(),
+                  pages.size(),
+                  universeTimeSeconds,
+                  currentPageIndex
+              );
+
+    switch (selected.status)
+    {
+        case game::navigation::ManeuverProgramTimeline::
+            SelectionStatus::BeforeStart:
+            out.status = RouteProgramSelectionStatus::BeforeStart;
+            break;
+        case game::navigation::ManeuverProgramTimeline::
+            SelectionStatus::Active:
+            out.status = RouteProgramSelectionStatus::Active;
+            break;
+        default:
+            out.status = RouteProgramSelectionStatus::InvalidInput;
+            break;
+    }
+
+    out.pageIndex = selected.pageIndex;
+    out.pagesAdvanced = selected.pagesAdvanced;
+    const auto firstWindow =
+        game::navigation::ManeuverProgramTimeline::pageWindow(
+            pages.front()
+        );
+    if (firstWindow.valid)
+    {
+        out.firstPageStartUniverseTimeSeconds =
+            firstWindow.startUniverseTimeSeconds;
+    }
+    return out;
+}
+
+RouteReferenceDiagnostic RouteFollower::sampleReference(
+    const AcceptedManeuverProgram& program,
+    double universeTimeSeconds,
+    const glm::dvec3& positionMapMeters,
+    std::size_t minimumSpatialSegmentIndex
+) noexcept
+{
+    const auto sampled =
+        program.referenceMode ==
+                AcceptedManeuverProgram::ReferenceMode::SpatialCorridor
+            ? game::navigation::ManeuverProgramSampler::sampleSpatial(
+                  program,
+                  universeTimeSeconds,
+                  positionMapMeters,
+                  minimumSpatialSegmentIndex
+              )
+            : game::navigation::ManeuverProgramSampler::sample(
+                  program,
+                  universeTimeSeconds
+              );
+
+    RouteReferenceDiagnostic out;
+    out.valid =
+        sampled.status !=
+            game::navigation::ManeuverProgramSampler::Status::InvalidInput &&
+        sampled.status !=
+            game::navigation::ManeuverProgramSampler::Status::BeforeStart;
+    out.spatialReference = sampled.spatialReference;
+    out.reference = sampled.reference;
+    out.lowerSampleIndex = sampled.lowerSampleIndex;
+    out.upperSampleIndex = sampled.upperSampleIndex;
+    out.interpolation01 = sampled.interpolation01;
+    out.spatialDistanceMeters = sampled.spatialDistanceMeters;
+    return out;
+}
 
 RouteFollowerResult RouteFollower::follow(
     const AcceptedManeuverProgram& program,

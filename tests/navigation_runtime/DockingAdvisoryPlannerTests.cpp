@@ -304,8 +304,15 @@ int main()
     {
         const auto& a=curvedPlan.executionGates[i-1];
         const auto& b=curvedPlan.executionGates[i];
-        if(glm::length(a.positionMeters-curvedAlign)<25.0 ||
-           sawFinalStraight)
+        const double aAlong=glm::dot(
+            a.positionMeters-curvedAlign,
+            curvedFinalDirection
+        );
+        const double bAlong=glm::dot(
+            b.positionMeters-curvedAlign,
+            curvedFinalDirection
+        );
+        if(aAlong>=-1.0e-6 && bAlong>1.0e-6)
         {
             sawFinalStraight=true;
             const auto segment=b.positionMeters-a.positionMeters;
@@ -313,9 +320,16 @@ int main()
                glm::dot(glm::normalize(segment),curvedFinalDirection)<0.9999)
             {
                 std::cerr << "terminal arc consumed or bent the final straight\n";
+                printTerminalArcDiagnostics(curvedPlan);
                 return 39;
             }
         }
+    }
+    if(!sawFinalStraight)
+    {
+        std::cerr << "no accepted samples on semantic final straight\n";
+        printTerminalArcDiagnostics(curvedPlan);
+        return 41;
     }
 
     // An obstacle may block only the far, preferred part of the 9 km

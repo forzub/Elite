@@ -175,6 +175,9 @@ try:
         "phase=aligned-replan",
         "planningControlLaw",
         "request.roundTurns = assisted",
+        "request.deriveTerminalTurnRadiusFromVehicle =",
+        "request.maxAngularVelocityRadPerSecond =",
+        "request.maxAngularAccelerationRadPerSecond2 =",
         "build.controlLaw = assisted",
         "followed.targetVelocityMapMps",
         "request.hasInitialForward = !nearHoldRecovery",
@@ -225,6 +228,11 @@ try:
     if "advisoryPlan.executionGates.empty()" in server:
         raise AssertionError(
             "Automatic docking regained sparse-gate fallback instead of requiring Planner-owned dense geometry"
+        )
+
+    if "preferredTerminalTurnRadiusMeters =\n                                6000.0" in server:
+        raise AssertionError(
+            "Automatic Assisted docking regressed to a fixed 6 km terminal radius"
         )
 
     header = require(
@@ -327,6 +335,10 @@ try:
         "maximumLaunchCut",
         "initialForwardAcceptedLeadMeters",
         "!r.roundTurns",
+        "terminalTurnSpeedMps",
+        "lateralTerminalRadiusMeters",
+        "angularTerminalRadiusMeters",
+        "angularRampDistanceMeters",
         "terminalPrimitiveRadius",
         "terminalIngressSamples=36",
         "axisOffsetFactors",

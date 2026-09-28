@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260928-vehicle-derived-terminal-radius-v9"
+CHECK_REVISION = "20260928-sliding-align-exact-endpoint-v10"
 
 
 def read(rel: str) -> str:
@@ -280,9 +280,10 @@ try:
             "terminal docking arc no longer searches all sides around the docking axis"
         )
 
-    if "j==arcSegments" not in planner_cpp or "point=align" not in planner_cpp:
+    if ("j==arcSegments" not in planner_cpp or
+            "point=candidateAlign" not in planner_cpp):
         raise AssertionError(
-            "exact terminal arc no longer preserves ALIGN as its authored endpoint"
+            "exact terminal arc no longer preserves the selected ALIGN as its authored endpoint"
         )
 
     corridor_header = read("src/game/navigation/DockingAdvisoryCorridor.h")

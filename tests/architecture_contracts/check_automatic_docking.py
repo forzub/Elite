@@ -362,7 +362,6 @@ try:
         "completionTriggersReplan",
         "ReferenceMode referenceMode",
         "page.referenceMode = request.referenceMode",
-        "page.tracking.spatialSlowdownStartFraction",
         "TranslationMode::AssistedVelocity",
         "newtonian-motion-envelope-infeasible",
     )
@@ -373,7 +372,6 @@ try:
         "TimeScheduled",
         "SpatialCorridor",
         "ReferenceMode referenceMode = ReferenceMode::TimeScheduled",
-        "spatialSlowdownStartFraction = 0.50",
     )
     if "spatialSlowdownStartFraction" in builder:
         raise AssertionError(

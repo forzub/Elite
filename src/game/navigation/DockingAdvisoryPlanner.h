@@ -47,10 +47,10 @@ struct DockingAdvisoryRequest
     double terminalApproachLengthMeters = 0.0;
     double terminalTurnSegmentFraction = 0.40;
 
-    // Preferred human-flyable radius, not a task-failure threshold. Planner
-    // must first try another geometric route that preserves it; only after the
-    // reroute search is exhausted may it tighten the terminal arc as far as
-    // collision-free geometry allows.
+    // Preferred human-flyable radius. For Assisted docking this is authored
+    // geometry, not a hint: Planner may rotate the arc around the docking axis
+    // and move its ALIGN farther outward, but it must not silently squeeze the
+    // requested radius into a different maneuver.
     double preferredTerminalTurnRadiusMeters = 0.0;
 
     std::vector<world::navigation::NavigationObstacle> obstacles;
@@ -91,7 +91,17 @@ struct DockingAdvisoryPlan
     int terminalArcTransitRejected = 0;
     int terminalArcCollisionRejected = 0;
     int terminalArcAcceptedCandidates = 0;
+    int terminalArcAxisPassesTested = 0;
     std::string terminalArcLastRejection;
+
+    // Dominant concrete obstacle that rejected exact-radius candidates.
+    // This makes a live failure actionable instead of reporting only
+    // "terminal-arc-obstructed".
+    std::string terminalArcDominantBlockerId;
+    int terminalArcDominantBlockerHits = 0;
+    glm::dvec3 terminalArcDominantBlockerCenterMeters {0.0};
+    glm::dvec3 terminalArcDominantBlockerHalfExtentsMeters {0.0};
+    double terminalArcDominantBlockerRadiusMeters = 0.0;
 
     // Selected rotation of the terminal circular primitive around the docking
     // axis. Zero is one basis direction; other values prove Planner actually

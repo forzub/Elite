@@ -1,3 +1,53 @@
+## 2026-09-28 — docking architecture split fixed before further FinalIngress work
+
+The long SpatialCorridor is now a successful reusable navigation primitive and
+must remain separate from terminal landing. The next docking work is no longer
+allowed to grow inside one Automatic docking state machine.
+
+Authoritative design is now recorded in
+`src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md`.
+
+Required ownership split:
+- `RoutePlanner`: generic route geometry/dynamic profile only;
+- `RouteFollower/Autopilot`: follows an accepted route and emits vehicle-level
+  navigation intent;
+- `DockLandingController`: separate terminal pad alignment, manoeuvring-thruster
+  parking, landing gear, contact/latch and undock handoff;
+- `DockTrafficController`: separate physical/class compatibility, pad
+  allocation, arrival/departure queue and conflict-resource reservations.
+
+These modules must be physically separated in source files/directories and
+communicate only through explicit public DTO/API headers. Architecture-contract
+tests must forbid private include/dependency leakage, hidden mutable cross-module
+state, Planner access to queue/pad state, Autopilot access to landing/latch
+state, and Landing/Traffic access to Planner/Follower internals.
+
+Dock assignment has two independent filters:
+1. physical fit is a hard geometry rule and can never be overridden;
+2. S/M/L class allocation is policy. Emergency may assign a larger compatible
+   dock, never a smaller one.
+
+Long-range docking requests are provisional. A request made five minutes away
+must not reserve a pad or queue position and block ships already near the
+station. Hard queue admission occurs only inside a configurable controlled
+approach horizon, preferably ETA-based. Queue order is based on arrival
+readiness at that horizon, with explicit emergency priority.
+
+Initial holding model deliberately avoids a complex free-form staging yard.
+Each portal has one authoritative EntryHoldPoint/final-approach lane. The
+dispatcher maintains a virtual queue; only one ship is admitted to that near
+lane. Other queued ships remain outside it and may stop at a Planner-generated
+safe staging point on their existing approach route until cleared forward.
+
+This architecture supersedes treating "dock" as one mesh/box. A DockFacility is
+semantic infrastructure: KinematicFrame, AccessPortal, EntryHoldPoint,
+TrafficConflictZone, InternalLane and ParkingPad. Art/collision geometry may
+later change completely without changing Planner/Autopilot/Traffic/Landing APIs.
+
+No claim is made that this split is implemented yet. The next implementation
+slice is API + architecture-contract separation before more terminal behavior is
+added.
+
 ## 2026-09-28 — live spatial corridor strong; internal dock ingress candidate
 
 Fresh standalone EliteGame visual evidence from the user is strongly positive for

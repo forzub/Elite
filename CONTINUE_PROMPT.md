@@ -1,3 +1,26 @@
+## Continue from 2026-09-28 single-source Automatic corridor candidate
+
+Work from `forzub/Elite` `main`. The candidate code baseline before this
+documentation update is `f60e30ce2afb098856ef12f3f10dab463d2611b7`.
+
+Do not restore the retired architecture:
+- no client Automatic route-preflight;
+- no separate visible route from the one Follower executes;
+- no cross-track speed governor / `spatialSlowdownStartFraction`;
+- no PilotSkillExecutor in docking Automatic;
+- no time-driven or globally-nearest future-segment spatial progress.
+
+Current intended chain:
+`server Planner -> authored geometry -> dynamic compilation -> AcceptedProgram -> Follower -> ShipControlState -> flight law/physics`.
+HUD/Hub-map Automatic corridor is a read-only presentation of the same
+AcceptedProgram.
+
+Next evidence is Windows standalone only:
+`bash verify_docking.sh`, build `EliteGame`, then live START DOCKING with
+`[DockAutoRoute]`, `[DockAutoTrack]`, `[DockAuto]`, `[DockResult]`
+captured. Confirm inward steering keeps route speed, course error remains
+geometric, and the ship advances through the visible accepted corridor.
+
 # 2026-09-27 — published docking candidate; run Windows flight gate
 
 GitHub `forzub/Elite` main now contains the rewritten vehicle-motion

@@ -76,6 +76,7 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Maneuver sampler | `maneuver_program_sampler_tests` | `maneuver_program_sampler` |
 | Runtime control | `navigation_runtime_control_tests` | `navigation_runtime_control` |
 | Tracking controller | `maneuver_tracking_controller_tests` | `maneuver_tracking_controller` |
+| Maneuver phase gate | `maneuver_phase_gate_tests` | `maneuver_phase_gate` |
 | Public RoutePlanner API | `route_planner_api_tests` | `route_planner_api` |
 | Public RouteFollower API | `route_follower_api_tests` | `route_follower_api` |
 | Docking infrastructure API | `docking_infrastructure_api_tests` | `docking_infrastructure_api` |

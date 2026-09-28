@@ -357,7 +357,9 @@ try:
     require(
         "tests/navigation_runtime/ManeuverProgramSamplerTests.cpp",
         "testSpatialSamplerFollowsVehicleInsteadOfNominalClock",
+        "testSpatialSamplerDoesNotJumpAcrossHairpin",
         "testSpatialPageSelectionUsesPhysicalProgressNotTime",
+        "testSpatialPageCannotSkipMultiplePathChunksPerStep",
         "testSpatialSamplerNeverJumpsBehindMonotonicCursor",
     )
     require(

@@ -352,8 +352,15 @@ ShipParams cobraParams(const RigidVehicleModel& model)
     p.maxCombatSpeed = 500.0f;
     p.maxCruiseSpeed = 1000.0f;
     p.throttleAccel = 5.0f;
+    p.forwardMainEngineAvailable = true;
+    p.reverseMainEngineAvailable = true;
+    p.forwardMainEngineAccelerationMps2 =
+        static_cast<float>(model.aftMainAccelerationMps2);
+    p.reverseMainEngineAccelerationMps2 =
+        static_cast<float>(model.assistedForeMainAccelerationMps2);
     p.autoLevelStrength = 0.0f;
-    p.strafeAccel = 20.0f;
+    p.strafeAccel =
+        static_cast<float>(model.assistedForeMainAccelerationMps2);
     p.strafeDamping = 6.0f;
     p.maxStrafeSpeed = 80.0f;
     p.manoeuvreThrusterAccel =
@@ -1303,10 +1310,11 @@ RunResult runProgram(
         }
 
         const auto bridgeResult =
-            v.bridge.step(
+            v.bridge.stepVehicle(
                 v.timeSeconds + kDt,
                 kDt,
-                toSystemIntent(follower.intent)
+                toSystemIntent(follower.intent),
+                follower.targetVelocityMapMps
             );
 
         if (bridgeResult.status !=
@@ -1323,13 +1331,34 @@ RunResult runProgram(
             static_cast<float>(kDt)
         );
 
-        game::navigation::DynamicMotionSystem::applySystemAccelerationDemand(
-            v.transform.motion,
-            v.params,
-            bridgeResult.control.
-                navigationLinearAccelerationDemandSystemMps2,
-            v.transform.forward()
-        );
+        if (v.transform.motion.localControlLaw == Law::Assisted &&
+            bridgeResult.control.navigationVelocityTargetValid)
+        {
+            game::navigation::DynamicMotionSystem::
+                applyNavigationAssistedFlightModel(
+                    v.transform.motion,
+                    v.frame,
+                    v.params,
+                    static_cast<float>(kDt),
+                    bridgeResult.control.navigationTargetVelocitySystemMps,
+                    bridgeResult.control.
+                        navigationLinearAccelerationDemandSystemMps2,
+                    v.transform.forward(),
+                    v.transform.right(),
+                    v.transform.up()
+                );
+        }
+        else
+        {
+            game::navigation::DynamicMotionSystem::
+                applySystemAccelerationDemand(
+                    v.transform.motion,
+                    v.params,
+                    bridgeResult.control.
+                        navigationLinearAccelerationDemandSystemMps2,
+                    v.transform.forward()
+                );
+        }
 
         const glm::dvec3 bodyForward(v.transform.forward());
         const double longitudinalMain =

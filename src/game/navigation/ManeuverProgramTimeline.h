@@ -186,12 +186,14 @@ public:
         }
 
         std::size_t selected = currentPageIndex;
-        const auto firstWindow = pageWindow(pages[selected]);
-        if (!firstWindow.valid)
+        const auto currentWindow = pageWindow(pages[selected]);
+        if (!currentWindow.valid)
             return out;
 
+        // Spatial pages share the maneuver acceptance epoch. Once the maneuver
+        // has started, page-local nominal timestamps never gate progress.
         if (universeTimeSeconds <
-            firstWindow.startUniverseTimeSeconds)
+            pages[0].acceptedAtUniverseTimeSeconds)
         {
             out.status = SelectionStatus::BeforeStart;
             out.pageIndex = selected;

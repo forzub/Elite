@@ -187,6 +187,19 @@ try:
             "bottomCenter",
             "deviationBlinkOn")
     space_cpp = read("src/game/SpaceState.cpp")
+    for forbidden in (
+        "m_dockAdvice.gates =",
+        "m_dockAdvice.mapRouteGates",
+        "active.mapRouteGates",
+        "active.gates",
+        "plan.executionGates.empty()",
+    ):
+        if forbidden in space_cpp:
+            raise AssertionError(
+                "SpaceState regained ownership of Planner route geometry: "
+                + forbidden
+            )
+
     if "request.gateSpacingMeters = 150.0" in space_cpp:
         raise AssertionError(
             "manual docking cadence changed from locked 500 m / 250 m contract"

@@ -136,7 +136,15 @@ try:
         "VelocityAlignmentMode::BrakeToStop",
         "TrajectoryGenerator::generate(",
         "AcceptedManeuverProgramBuilder::build(",
+        "build.referenceMode =",
+        "ReferenceMode::SpatialCorridor",
+        "ReferenceMode::TimeScheduled",
+        "Timeline::selectSpatialPage(",
+        "runtime.currentSpatialSegment",
         "Follower::follow(",
+        "reference_mode=",
+        "ref_segment=",
+        "ref_distance_m=",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "controlBridge->stepVehicle(",
@@ -251,6 +259,12 @@ try:
             "Automatic docking tracking reserve regressed to the old 0.5 m/s^2 cap"
         )
 
+    if ("finalIngressStage\n                        ? AcceptedManeuverProgram::\n"
+            "                              ReferenceMode::TimeScheduled" not in server):
+        raise AssertionError(
+            "Automatic docking lost Stage-1 spatial / FinalIngress timed reference split"
+        )
+
     require(
         "src/game/navigation/DockingAutomaticRecoveryPolicy.h",
         "linearFeedbackReserveMps2(",
@@ -273,6 +287,7 @@ try:
         "ApproachHold",
         "FinalIngress",
         "std::vector<game::navigation::AcceptedManeuverProgram> programs",
+        "currentSpatialSegment",
         "NavigationRuntimeControlBridge",
         "m_dockingAutomaticRuntimes",
         "struct PlanningJob",
@@ -314,8 +329,41 @@ try:
         "angularKinematicsFeasible(",
         "trajectory.angularKinematicsAuthored",
         "completionTriggersReplan",
+        "ReferenceMode referenceMode",
+        "page.referenceMode = request.referenceMode",
         "TranslationMode::AssistedVelocity",
         "newtonian-motion-envelope-infeasible",
+    )
+
+    require(
+        "src/game/navigation/AcceptedManeuverProgram.h",
+        "enum class ReferenceMode",
+        "TimeScheduled",
+        "SpatialCorridor",
+        "ReferenceMode referenceMode = ReferenceMode::TimeScheduled",
+    )
+    require(
+        "src/game/navigation/ManeuverProgramSampler.h",
+        "sampleSpatial(",
+        "minimumSegmentIndex",
+        "spatialDistanceMeters",
+    )
+    require(
+        "src/game/navigation/ManeuverProgramTimeline.h",
+        "selectSpatialPage(",
+        "positionMapMeters",
+        "Storage is not a maneuver phase",
+    )
+    require(
+        "tests/navigation_runtime/ManeuverProgramSamplerTests.cpp",
+        "testSpatialSamplerFollowsVehicleInsteadOfNominalClock",
+        "testSpatialPageSelectionUsesPhysicalProgressNotTime",
+        "testSpatialSamplerNeverJumpsBehindMonotonicCursor",
+    )
+    require(
+        "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp",
+        "testFollowerSpatialCorridorTracksPathInsteadOfClock",
+        "testFollowerSpatialCorridorCanCompleteBeforeNominalTime",
     )
 
     follower_h = read("src/game/navigation/TrajectoryFollower.h")

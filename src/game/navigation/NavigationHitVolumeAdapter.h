@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/damage/HitComponent.h"
+#include "src/game/simulation/DebugHitVolumeSnapshot.h"
 #include "src/world/navigation/NavigationObstacle.h"
 
 namespace game::navigation
@@ -40,6 +41,27 @@ public:
     [[nodiscard]] static std::vector<world::navigation::NavigationObstacle>
     buildObstacles(
         const game::damage::HitComponent& hitComponent,
+        std::uint32_t entityId,
+        const glm::dvec3& objectWorldPositionMeters,
+        const glm::dmat3& objectLocalToWorld,
+        const std::string& idPrefix
+    );
+
+    // Client planning consumes the authoritative replicated local hit-volume
+    // cache instead of recreating a coarse descriptor-wide obstacle.
+    [[nodiscard]] static std::vector<world::navigation::NavigationObstacle>
+    buildObstacles(
+        const std::vector<game::simulation::DebugHitVolumeSnapshot>& volumes,
+        std::uint32_t entityId,
+        const glm::dvec3& objectWorldPositionMeters,
+        const glm::dmat3& objectLocalToWorld,
+        const std::string& idPrefix,
+        const Options& options
+    );
+
+    [[nodiscard]] static std::vector<world::navigation::NavigationObstacle>
+    buildObstacles(
+        const std::vector<game::simulation::DebugHitVolumeSnapshot>& volumes,
         std::uint32_t entityId,
         const glm::dvec3& objectWorldPositionMeters,
         const glm::dmat3& objectLocalToWorld,

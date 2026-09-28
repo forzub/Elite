@@ -1815,6 +1815,8 @@ bool GameServer::planAutomaticDocking(
                         request.maxAngularAccelerationRadPerSecond2 =
                             planningVehicle.
                                 maxAngularAccelerationRadPerSecond2;
+                        request.initialSpeedMps =
+                            glm::length(startVelocityMps);
                         request.roundTurns =
                             assisted && !nearHoldRecovery;
                         request.gateSpacingMeters = 150.0;

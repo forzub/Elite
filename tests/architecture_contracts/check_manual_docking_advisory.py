@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260928-sliding-align-exact-endpoint-v10"
+CHECK_REVISION = "20260928-corridor-reentry-v11"
 
 
 def read(rel: str) -> str:
@@ -90,6 +90,15 @@ try:
     require("src/game/navigation/GuidanceCorridor.h",
             "hubLocalFrameId", "hubLocalGatePositionsMeters",
             "deviationWarning", "deviationCritical")
+    require("src/game/SpaceState.h",
+            "bool corridorDeparted = false")
+    require("src/game/SpaceState.cpp",
+            "nearestForwardSegment",
+            "active.corridorDeparted = true",
+            "active.corridorDeparted = false",
+            "[DockAdvisory] reentered request=",
+            'guidance.erase(\n                    m_activeDockingGuidanceCorridorId + ":frames"',
+            "if (!active.corridorDeparted)")
     require("src/game/SpaceState.h",
             "game::navigation::DockingAdvisoryPlan plan",
             "SpaceState owns presentation/tracking state only",
@@ -191,7 +200,8 @@ try:
     require("tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
             "manual docking launch cadence is not 500 m",
             "nose-first route did not author a continuous launch fillet",
-            "never transitioned into a launch arc")
+            "never transitioned into a launch arc",
+            "corridor warning/leave/reentry semantics failed")
     require("src/game/server/GameServer.cpp",
             "[DockPrep] begin entity=",
             "vrel_mps=",
@@ -287,6 +297,16 @@ try:
     if "request.preferredTerminalTurnRadiusMeters = 6000.0" in space_cpp:
         raise AssertionError(
             "manual Assisted docking regressed to a fixed 6 km terminal radius"
+        )
+
+    if ('m_noSafeDockingGuidanceSolution = true;' in
+            space_cpp.split(
+                'if (tracking == DockingAdvisoryTrackingResult::Left)', 1
+            )[1].split(
+                'if ((tracking == DockingAdvisoryTrackingResult::Inside', 1
+            )[0]):
+        raise AssertionError(
+            "automatic visible-corridor departure regained latched red no-safe state"
         )
 
     if "roundGeometry(\n                    points,\n                    terminalPrimitiveRadius" in planner_cpp:

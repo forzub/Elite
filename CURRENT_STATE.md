@@ -1,3 +1,7 @@
+## 2026-09-28 — compile cleanup after retired slowdown policy
+
+Native Windows build exposed one stale validation reference in `ManeuverProgramSampler.cpp` to the already removed `spatialSlowdownStartFraction` field. That stale check is removed. The unused `finite(glm::dvec3)` helper in `TrajectoryFollower.cpp` was also removed. Code HEAD for this cleanup: `64e0a665b1fbcc5f8f20d9905674e6df140d2e25`. Windows gate must be rerun; candidate is still unaccepted pending native tests/build/live flight.
+
 ## 2026-09-28 — candidate: one authoritative Automatic corridor; Windows gate pending
 
 The previous live observation `[DockAdvisory] left ... gate=4` exposed an

@@ -131,7 +131,7 @@ try:
             "candidate.terminalApproachLengthMeters",
             "terminalArcCandidatesTested",
             "terminalArcAcceptedCandidates",
-            "terminalAxisPasses=5",
+            "axisOffsetFactors",
             "candidateApproachLengthMeters",
             "transit-endpoint-mismatch",
             "firstBlockingObstacle",

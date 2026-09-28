@@ -174,7 +174,7 @@ try:
         "initialAngularVelocityRadPerSecond =\n                            glm::dvec3(0.0)",
         "phase=aligned-replan",
         "planningControlLaw",
-        "request.roundTurns = assisted",
+        "request.roundTurns =\n                            assisted && !nearHoldRecovery",
         "request.deriveTerminalTurnRadiusFromVehicle =",
         "request.maxAngularVelocityRadPerSecond =",
         "request.maxAngularAccelerationRadPerSecond2 =",

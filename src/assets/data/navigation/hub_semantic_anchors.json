@@ -32,7 +32,8 @@
           "max_entry_speed_mps": 18,
           "enabled": true,
           "display_name": "DOCK FRONT",
-          "orientation_policy": "upright"
+          "orientation_policy": "upright",
+          "capture_depth_m": 450
         },
         {
           "id": "dock_gate_rear",
@@ -61,7 +62,8 @@
           "max_entry_speed_mps": 18,
           "enabled": true,
           "display_name": "DOCK REAR",
-          "orientation_policy": "upright"
+          "orientation_policy": "upright",
+          "capture_depth_m": 450
         },
         {
           "id": "attack_reference_core",
@@ -123,7 +125,8 @@
           "max_entry_speed_mps": 14,
           "enabled": true,
           "display_name": "DOCK FRONT",
-          "orientation_policy": "upright"
+          "orientation_policy": "upright",
+          "capture_depth_m": 600
         },
         {
           "id": "dock_gate_rear",
@@ -152,7 +155,8 @@
           "max_entry_speed_mps": 14,
           "enabled": true,
           "display_name": "DOCK REAR",
-          "orientation_policy": "upright"
+          "orientation_policy": "upright",
+          "capture_depth_m": 600
         }
       ]
     }

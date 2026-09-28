@@ -36,7 +36,6 @@
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
-#include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -428,13 +427,9 @@ private:
         std::vector<game::navigation::AcceptedManeuverProgram> programs;
         std::size_t currentProgramPage = 0;
         std::size_t currentSpatialSegment = 0;
-        std::unique_ptr<game::navigation::NavigationRuntimeControlBridge>
-            controlBridge;
-        // PilotSkillExecutor requires step time to advance by exactly the
-        // supplied delta. Keep its clock local to execution; maneuver samples
-        // still use absolute universe time.
-        double controlClockSeconds = 0.0;
-        std::uint32_t controlBridgeFailureCount = 0;
+        // Automatic docking executes Follower output directly through the
+        // ship control law. PilotSkillExecutor is reserved for human/NPC skill
+        // simulation and is intentionally not part of docking-computer control.
         // Count recovery cycles for one docking request, across replans.
         std::uint32_t trackingFailureCount = 0;
         glm::dvec3 lastObservedVelocityMapMps {0.0};

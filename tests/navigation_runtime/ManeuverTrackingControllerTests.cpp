@@ -511,6 +511,71 @@ void testFreeTransitCorridorCorrectsOnlyExcessOutsideBand()
     );
 }
 
+void testFollowerSpatialCorridorTracksPathInsteadOfClock()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+
+    // Nominal clock is at the end, but the craft is physically near 25% of
+    // the path and one metre off-axis.
+    auto agent = followerAgentFor(program.samples[0]);
+    agent.positionMapMeters = {2.5, 1.0, 0.0};
+    agent.velocityMapMetersPerSecond = {5.0, 0.0, 0.0};
+
+    const auto result = Follower::follow(
+        program,
+        11.0,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(result.status == Follower::Status::Following,
+            "spatial corridor incorrectly completed by nominal time");
+    require(result.spatialReference,
+            "Follower did not use spatial reference for corridor mode");
+    requireNear(
+        result.referenceInterpolation01,
+        0.25,
+        1.0e-12,
+        "Follower reference ran ahead of physical path progress"
+    );
+    requireNear(
+        result.referenceSpatialDistanceMeters,
+        1.0,
+        1.0e-12,
+        "Follower did not measure real cross-track distance to corridor"
+    );
+    require(
+        result.crossTrackErrorMeters < 1.01,
+        "Follower tracked the time-scheduled point instead of corridor projection"
+    );
+}
+
+void testFollowerSpatialCorridorCanCompleteBeforeNominalTime()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+
+    auto agent = followerAgentFor(program.samples[1]);
+    const auto result = Follower::follow(
+        program,
+        10.25,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(
+        result.status == Follower::Status::Complete,
+        "spatial corridor held a physically completed maneuver for nominal time"
+    );
+    require(result.spatialReference &&
+                result.referenceInterpolation01 > 0.999999,
+            "terminal spatial projection did not reach accepted endpoint"
+    );
+}
+
 void testFollowerRejectsExecutionBeforeAcceptanceTime()
 {
     const Program program = baseProgram();
@@ -539,6 +604,8 @@ int main()
         testFreeTransitDeadbandDoesNotFalseTriggerEnvelope();
         testFreeTransitCorridorStillCorrectsCrossTrackMotion();
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
+        testFollowerSpatialCorridorTracksPathInsteadOfClock();
+        testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
         std::cout << "MANEUVER TRACKING CONTROLLER TESTS: PASS\n";

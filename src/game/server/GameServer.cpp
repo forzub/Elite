@@ -61,33 +61,8 @@ std::string dockingAdvisoryTrace(
     const game::navigation::DockingAdvisoryPlan& plan
 )
 {
-    return
-        " requested_radius_m=" +
-        std::to_string(plan.terminalTurnRequestedRadiusMeters) +
-        " selected_radius_m=" +
-        std::to_string(plan.terminalTurnRadiusMeters) +
-        " rotation_deg=" +
-        std::to_string(plan.terminalArcRotationDegrees) +
-        " candidates=" +
-        std::to_string(plan.terminalArcCandidatesTested) +
-        " routeable=" +
-        std::to_string(plan.terminalArcRouteable) +
-        " route_rejected=" +
-        std::to_string(plan.terminalArcRouteRejected) +
-        " transit_ready=" +
-        std::to_string(plan.terminalArcTransitReady) +
-        " transit_rejected=" +
-        std::to_string(plan.terminalArcTransitRejected) +
-        " collision_rejected=" +
-        std::to_string(plan.terminalArcCollisionRejected) +
-        " accepted=" +
-        std::to_string(plan.terminalArcAcceptedCandidates) +
-        " relaxed=" +
-        std::to_string(plan.terminalTurnRadiusRelaxed ? 1 : 0) +
-        " last_rejection=" +
-        (plan.terminalArcLastRejection.empty()
-            ? std::string("none")
-            : plan.terminalArcLastRejection);
+    return game::navigation::
+        dockingAdvisoryPlanDiagnosticSummary(plan);
 }
 
 

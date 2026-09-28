@@ -671,7 +671,13 @@ void testAdjustedTargetPreservesNominalConflictIdentity()
     policy.horizon.turnDistanceMeters = 600.0;
     policy.horizon.minimumHorizonMeters = 600.0;
     policy.horizon.safetyMarginMeters = 5.0;
-    policy.avoidance.lateralGridHalfExtentSamples = 4;
+
+    // This fixture verifies conflict provenance, not the exact edge of the
+    // local-bypass search envelope. Keep enough search room that a 50 m actor
+    // plus the 5 m hull/safety envelope cannot make the test fail merely
+    // because the current grid step lands on the clearance boundary.
+    policy.avoidance.lateralGridHalfExtentSamples = 6;
+    policy.avoidance.maximumLateralOffsetMeters = 120.0;
 
     const Planner::Result result = Planner::plan(
         agent,

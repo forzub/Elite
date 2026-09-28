@@ -490,7 +490,15 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             }
         }
 
-        candidate.samples.push_back(stop);
+        // roundGeometry owns only the endpoint explicitly supplied
+        // by its caller. The old helper always appended docking HOLD here,
+        // which corrupted route-to-entry calls into
+        // route -> entry -> HOLD before the exact terminal arc was appended.
+        if(candidate.samples.empty() ||
+           glm::length(candidate.samples.back()-finalPoint)>1.0e-6)
+        {
+            candidate.samples.push_back(finalPoint);
+        }
         for (std::size_t i=1;i<candidate.samples.size();++i)
         {
             if (!clear(candidate.samples[i-1],candidate.samples[i]))

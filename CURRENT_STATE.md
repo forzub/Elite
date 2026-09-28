@@ -1,3 +1,11 @@
+## 2026-09-28 — production spatial handoff and Newtonian drift contract fix
+
+Latest composite evidence exposed two real production contract mismatches after portal_102 was switched to SpatialCorridor:
+- ManeuverPhaseGate::ScheduledMoving still advanced purely at nominal program time, so a spatial tunnel phase could hand off while the craft had not physically completed the corridor. This is now fixed: TimeScheduled phases keep clock handoff; SpatialCorridor phases advance only when TrajectoryFollower reports Complete, including early physical completion.
+- ManeuverTrackingController treated hull/course angle as spatial route loss for every control law. That is correct for AssistedVelocity but wrong for NewtonianMainEngine, where large velocity/hull slip is a valid drift/braking state. Newtonian spatial route loss now remains geometric cross-track position/velocity; attitude feedback still operates but hull slip alone no longer invalidates the tunnel.
+
+Regression tests were added in ManeuverPhaseGateTests and ManeuverTrackingControllerTests. Windows verification is pending; do not mark the production contract green until those two tests and composite pass on target.
+
 ## 2026-09-28 — Assisted portal tracking failure traced to wrong reference mode
 
 Latest composite evidence: Newtonian now passes fully. Assisted also keeps the 19 m portal geometry and moving-hazard clearance safe (planned 1.759 m, actual 1.802 m, hull half-width 17.401 m) but reported 81 tracking-envelope exceed ticks during portal_102.

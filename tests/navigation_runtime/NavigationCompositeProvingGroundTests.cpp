@@ -2915,16 +2915,28 @@ CompositeMetrics runComposite(Law law)
     }
 
     // Phase 5: final precision capture from the second portal to the objective.
+    // This accepted segment is also much longer than the local planner horizon,
+    // so apply the same whole-program moving-hazard proof before execution.
     const glm::dvec3 finalTarget = goal.targetPositionMapMeters;
-    const Basis finalBasis =
-        basisForForward({1.0, 0.0, 0.0}, captureState(v).basis);
+    Program capture;
+    Basis finalBasis {};
+    double capturePlannedDynamicClearance =
+        -std::numeric_limits<double>::infinity();
+    bool captureProgramProven = false;
 
+    constexpr int MaximumCaptureProofAttempts = 24;
+
+    for (int proofAttempt = 0;
+         proofAttempt < MaximumCaptureProofAttempts;
+         ++proofAttempt)
     {
         const VehicleState start = captureState(v);
+        finalBasis =
+            basisForForward({1.0, 0.0, 0.0}, start.basis);
 
-        const Program capture =
+        capture =
             makeProgram(
-                12040,
+                12080 + static_cast<std::uint64_t>(proofAttempt),
                 v.timeSeconds,
                 start,
                 finalTarget,
@@ -2935,10 +2947,65 @@ CompositeMetrics runComposite(Law law)
                 Program::ManeuverFamily::PrecisionCapture
             );
 
+        capturePlannedDynamicClearance =
+            minimumProgramDynamicClearance(capture, hazard);
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-CAPTURE-PROOF]"
+            << " law=" << lawName(law)
+            << " attempt=" << proofAttempt
+            << " planned_dynamic_clearance_m="
+            << capturePlannedDynamicClearance
+            << " speed_mps="
+            << glm::length(v.transform.motion.localVelocityMps)
+            << "\n";
+
+        if (capturePlannedDynamicClearance >=
+            MinimumAcceptedDynamicClearanceMeters)
+        {
+            captureProgramProven = true;
+            break;
+        }
+
+        traceContext.phase = "final_capture_dynamic_hold";
+        traceContext.plannerStatus = "future_dynamic_conflict";
+        traceContext.hasSelectedTarget = false;
+        traceContext.hasReacquisitionTarget = false;
+        traceContext.hasPortalTarget = false;
+
+        const auto hold =
+            executeActiveBraking(
+                v,
+                hazard,
+                goal.velocityResponsePerSecond,
+                1.25,
+                &traceContext,
+                1.0
+            );
+
+        require(
+            hold.valid && hold.completed,
+            "composite final-capture dynamic hold failed"
+        );
+        require(
+            hold.minDynamicClearanceMeters > 0.5,
+            "composite final-capture dynamic hold lost clearance"
+        );
+
+        absorb(total, hold);
+    }
+
+    require(
+        captureProgramProven,
+        "composite could not prove a dynamically safe final capture"
+    );
+
+    {
         const auto phase =
             (
                 traceContext.phase = "final_capture",
-                traceContext.plannerStatus = "nominal_clear",
+                traceContext.plannerStatus = "full_program_dynamic_clear",
                 traceContext.hasSelectedTarget = false,
                 traceContext.hasReacquisitionTarget = false,
                 traceContext.hasPortalTarget = false,
@@ -2952,11 +3019,29 @@ CompositeMetrics runComposite(Law law)
                 )
             );
 
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-CAPTURE-ACTUAL]"
+            << " law=" << lawName(law)
+            << " planned_dynamic_clearance_m="
+            << capturePlannedDynamicClearance
+            << " actual_dynamic_clearance_m="
+            << phase.minDynamicClearanceMeters
+            << " final_pos_error_m="
+            << phase.finalPositionErrorMeters
+            << " final_vel_error_mps="
+            << phase.finalVelocityErrorMps
+            << "\n";
+
         require(
             phase.valid &&
             phase.completed &&
             !phase.captureTimedOut,
             "composite final StateCapture failed"
+        );
+        require(
+            phase.minDynamicClearanceMeters > 0.5,
+            "composite final StateCapture lost dynamic clearance"
         );
 
         absorb(total, phase);

@@ -505,6 +505,60 @@ void testSpatialPageSelectionUsesPhysicalProgressNotTime()
     );
 }
 
+void testSpatialPageCannotSkipMultiplePathChunksPerStep()
+{
+    Program pages[3] = {
+        baseProgram(),
+        baseProgram(),
+        baseProgram()
+    };
+
+    for (std::size_t i = 0; i < 3; ++i)
+    {
+        auto& page = pages[i];
+        page.revision = 80 + i;
+        page.referenceMode = Program::ReferenceMode::SpatialCorridor;
+        page.acceptedAtUniverseTimeSeconds = 50.0;
+        page.validUntilUniverseTimeSeconds = 1000.0;
+        page.sequenceStartOffsetSeconds =
+            10.0 * static_cast<double>(i);
+        page.samples[0].timeOffsetSeconds = 0.0;
+        page.samples[1].timeOffsetSeconds = 10.0;
+        page.samples[0].positionMapMeters =
+            {10.0 * static_cast<double>(i), 0.0, 0.0};
+        page.samples[1].positionMapMeters =
+            {10.0 * static_cast<double>(i + 1), 0.0, 0.0};
+    }
+
+    const auto firstStep = Timeline::selectSpatialPage(
+        pages,
+        3,
+        500.0,
+        glm::dvec3(25.0, 0.0, 0.0),
+        0
+    );
+    require(
+        firstStep.status == Timeline::SelectionStatus::Active &&
+        firstStep.pageIndex == 1 &&
+        firstStep.pagesAdvanced == 1,
+        "one spatial tick skipped multiple accepted path chunks"
+    );
+
+    const auto secondStep = Timeline::selectSpatialPage(
+        pages,
+        3,
+        500.0,
+        glm::dvec3(25.0, 0.0, 0.0),
+        firstStep.pageIndex
+    );
+    require(
+        secondStep.status == Timeline::SelectionStatus::Active &&
+        secondStep.pageIndex == 2 &&
+        secondStep.pagesAdvanced == 1,
+        "spatial page cursor failed to continue sequentially"
+    );
+}
+
 void testFollowerCompletionUsesPageLocalElapsedTime()
 {
     Program page = baseProgram();
@@ -571,6 +625,7 @@ int main()
         testSpatialSamplerDoesNotJumpAcrossHairpin();
         testSpatialSamplerNeverJumpsBehindMonotonicCursor();
         testSpatialPageSelectionUsesPhysicalProgressNotTime();
+        testSpatialPageCannotSkipMultiplePathChunksPerStep();
         testFollowerCompletionUsesPageLocalElapsedTime();
 
         std::cout << "MANEUVER PROGRAM SAMPLER TESTS: PASS\n";

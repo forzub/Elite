@@ -2409,11 +2409,32 @@ void SpaceState::updateDockingAdvisory()
     if (automaticPending &&
         m_automaticDockingSerial != 0)
     {
-        (void)publishAuthoritativeAutomaticCorridor();
+        const bool published =
+            publishAuthoritativeAutomaticCorridor();
+
+        if (!published &&
+            m_presentedAutomaticDockingRouteRevision != 0)
+        {
+            const std::string corridorId =
+                "dock:" + pending.target.stableObjectId +
+                ":" + pending.target.semanticAnchorId;
+            guidance.erase(corridorId);
+            guidance.erase(corridorId + ":frames");
+            if (m_activeDockingGuidanceCorridorId == corridorId)
+                m_activeDockingGuidanceCorridorId.clear();
+            m_presentedAutomaticDockingRouteRevision = 0;
+
+            std::cout
+                << "[DockAutoRoute] request="
+                << m_automaticDockingSerial
+                << " source=accepted-program"
+                << " state=withdrawn-for-replan"
+                << std::endl;
+        }
 
         // No client planner is permitted for Automatic. While the server is
-        // stabilizing/planning there simply is no executable tunnel yet; once
-        // AcceptedManeuverProgram exists the branch above publishes it.
+        // stabilizing/planning there simply is no executable tunnel; once a
+        // new AcceptedManeuverProgram exists it is published above.
         return;
     }
 

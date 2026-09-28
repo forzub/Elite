@@ -232,7 +232,7 @@ int main()
             3*curved.standoffMeters,
             curved.terminalApproachLengthMeters
         });
-    const auto finalDirection=glm::normalize(curvedStop-curvedAlign);
+    const auto curvedFinalDirection=glm::normalize(curvedStop-curvedAlign);
 
     if(curvedPlan.terminalTurnRadiusMeters+1.0e-6<
        curved.preferredTerminalTurnRadiusMeters)
@@ -270,7 +270,7 @@ int main()
             sawFinalStraight=true;
             const auto segment=b.positionMeters-a.positionMeters;
             if(glm::length(segment)>1.0e-6 &&
-               glm::dot(glm::normalize(segment),finalDirection)<0.9999)
+               glm::dot(glm::normalize(segment),curvedFinalDirection)<0.9999)
             {
                 std::cerr << "terminal arc consumed or bent the final straight\n";
                 return 39;
@@ -352,7 +352,7 @@ int main()
     {
         const auto& gate=curvedPlan.executionGates[i-1];
         const double alignment=
-            glm::dot(glm::normalize(gate.forward),finalDirection);
+            glm::dot(glm::normalize(gate.forward),curvedFinalDirection);
         if(alignment<0.95)
         {
             arcBlocker.centerMeters=gate.positionMeters;

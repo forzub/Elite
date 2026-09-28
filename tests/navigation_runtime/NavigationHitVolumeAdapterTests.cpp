@@ -1,4 +1,5 @@
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
+#include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 
 #include <cmath>
@@ -92,6 +93,76 @@ int main()
         std::cerr
             << "destroyed hit volume remained in navigation geometry\n";
         return 5;
+    }
+
+    // The diagnostic docking target is a real four-wall tunnel. Generic Hub
+    // infrastructure clearance is intentionally large for open-space routing,
+    // but applying it to the target walls seals the authored aperture. The
+    // target must instead use the docking port's semantic clearance.
+    std::vector<DebugHitVolumeSnapshot> dockWalls;
+    const auto addDockWall =
+        [&](const char* id,
+            const glm::vec3& center,
+            const glm::vec3& halfSize)
+        {
+            DebugHitVolumeSnapshot wall;
+            wall.moduleId = id;
+            wall.center = center;
+            wall.halfSize = halfSize;
+            dockWalls.push_back(wall);
+        };
+    addDockWall("left", {-137.5f,0.0f,0.0f}, {42.5f,180.0f,450.0f});
+    addDockWall("right", {137.5f,0.0f,0.0f}, {42.5f,180.0f,450.0f});
+    addDockWall("top", {0.0f,117.5f,0.0f}, {95.0f,62.5f,450.0f});
+    addDockWall("bottom", {0.0f,-117.5f,0.0f}, {95.0f,62.5f,450.0f});
+
+    constexpr double DockSemanticClearanceMeters = 18.0;
+    constexpr double CobraConservativeRadiusMeters = 18.0;
+    const glm::dvec3 dockAxisStart(0.0,0.0,-700.0);
+    const glm::dvec3 dockAxisEnd(0.0,0.0,450.0);
+
+    const auto semanticDockObstacles =
+        NavigationHitVolumeAdapter::buildObstacles(
+            dockWalls,
+            88u,
+            glm::dvec3(0.0),
+            glm::dmat3(1.0),
+            "object:88",
+            {false,DockSemanticClearanceMeters}
+        );
+    if(!world::navigation::segmentClearOfNavigationObstacles(
+            dockAxisStart,
+            dockAxisEnd,
+            semanticDockObstacles,
+            CobraConservativeRadiusMeters))
+    {
+        std::cerr
+            << "semantic docking clearance sealed the authored aperture\n";
+        return 6;
+    }
+
+    const auto genericHubObstacles =
+        NavigationHitVolumeAdapter::buildObstacles(
+            dockWalls,
+            88u,
+            glm::dvec3(0.0),
+            glm::dmat3(1.0),
+            "object:88",
+            {
+                false,
+                game::navigation::
+                    DiagnosticHubInfrastructureClearanceMeters
+            }
+        );
+    if(world::navigation::segmentClearOfNavigationObstacles(
+            dockAxisStart,
+            dockAxisEnd,
+            genericHubObstacles,
+            CobraConservativeRadiusMeters))
+    {
+        std::cerr
+            << "docking aperture regression fixture no longer detects generic Hub over-inflation\n";
+        return 7;
     }
 
     std::cout << "NAVIGATION HIT VOLUME ADAPTER TESTS: PASS\n";

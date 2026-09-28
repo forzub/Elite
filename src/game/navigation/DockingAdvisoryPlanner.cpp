@@ -261,7 +261,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         }
     }
 
-    if (!nominalGeometry.valid || nominalGeometry.pointsMeters.size() < 2)
+    if ((!nominalGeometry.valid ||
+         nominalGeometry.pointsMeters.size() < 2) &&
+        r.preferredTerminalTurnRadiusMeters <= 0.0)
     {
         out.failure = nominalGeometry.message.empty()
             ? "no collision-free docking route"
@@ -283,10 +285,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             return points;
         };
 
-    nominalGeometry.pointsMeters=
-        prependInitialForwardLead(
-            std::move(nominalGeometry.pointsMeters)
-        );
+    if(nominalGeometry.valid &&
+       nominalGeometry.pointsMeters.size()>=2)
+    {
+        nominalGeometry.pointsMeters=
+            prependInitialForwardLead(
+                std::move(nominalGeometry.pointsMeters)
+            );
+    }
 
     struct RoundedCandidate
     {

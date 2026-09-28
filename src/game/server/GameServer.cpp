@@ -2854,7 +2854,6 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Planning)
         {
-            const bool requireLinearStop = true;
             ship->setControlState(
                 automaticDockingPreparationControl()
             );
@@ -2904,8 +2903,9 @@ void GameServer::applyAutomaticDockingControls(
             }
 
             // The worker plans against a short future execution epoch.
-            // ApproachHold coasts to the projected start point; FinalIngress
-            // remains stopped while the rotating terminal solution is built.
+            // Automatic keeps the ship stopped while the asynchronous result
+            // is built, so the accepted program starts from the same stable
+            // physical state that was supplied to Planner.
             if (time.universeTimeSeconds + 1.0e-6 <
                 job->executionStartUniverseTimeSeconds)
             {

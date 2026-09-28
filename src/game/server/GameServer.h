@@ -396,6 +396,7 @@ private:
             double initialTurnRadiusMeters = 0.0;
             double finalAxisMeters = 0.0;
             double terminalRadiusMeters = 0.0;
+            double terminalArcRotationDegrees = 0.0;
             double maxPlannedAccelerationMps2 = 0.0;
             double preCaptureDepthMeters = 0.0;
             double terminalUniverseTimeSeconds = 0.0;

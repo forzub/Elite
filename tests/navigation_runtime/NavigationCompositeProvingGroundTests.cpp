@@ -1816,10 +1816,11 @@ ExecutionMetrics executeActiveBraking(
                 (-static_cast<double>(v.transform.rollRate) * 2.0);
 
         const auto bridgeResult =
-            v.bridge.step(
+            v.bridge.stepVehicle(
                 v.timeSeconds + kDt,
                 kDt,
-                toSystemIntent(local)
+                toSystemIntent(local),
+                glm::dvec3(0.0)
             );
 
         if (bridgeResult.status !=
@@ -2658,6 +2659,54 @@ CompositeMetrics runComposite(Law law)
         resumed.staticPortalPath.front() == 102,
         "composite resumed wrong portal after local replan"
     );
+
+    // Re-enter constrained topology from a settled physical state. Extending
+    // a quintic while preserving a non-zero entry velocity can enlarge its
+    // geometric overshoot (the v0*T boundary term grows with duration), so
+    // "make it slower" is not equivalent to simply stretching the same
+    // moving-boundary curve. Keep the dynamic hazard authoritative while the
+    // vehicle removes residual drift, then author the narrow passage.
+    if (glm::length(v.transform.motion.localVelocityMps) > 0.50)
+    {
+        traceContext.phase = "portal_102_entry_settle";
+        traceContext.plannerStatus = "nominal_clear";
+        traceContext.hasSelectedTarget = false;
+        traceContext.hasReacquisitionTarget = false;
+        traceContext.hasPortalTarget = true;
+        traceContext.portalTarget = resumed.coarseWaypointMapMeters;
+
+        const auto settle =
+            executeActiveBraking(
+                v,
+                hazard,
+                goal.velocityResponsePerSecond,
+                8.0,
+                &traceContext
+            );
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-PORTAL-SETTLE]"
+            << " law=" << lawName(law)
+            << " completed=" << (settle.completed ? 1 : 0)
+            << " final_speed_mps="
+            << glm::length(v.transform.motion.localVelocityMps)
+            << " min_dynamic_clearance_m="
+            << settle.minDynamicClearanceMeters
+            << "\n";
+
+        require(
+            settle.valid && settle.completed,
+            "composite could not settle before narrow portal"
+        );
+        require(
+            settle.minDynamicClearanceMeters > 0.5,
+            "composite portal-entry settle lost dynamic clearance"
+        );
+
+        absorb(total, settle);
+        ++total.phases;
+    }
 
     // Phase 4: narrow passage to the second portal. The 19 m half-width is
     // the physical constraint; traversal time is allowed to grow so a craft

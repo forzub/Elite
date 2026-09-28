@@ -684,6 +684,17 @@ void testSpatialCorridorSteersBackWithoutReducingRouteSpeed()
         result.targetVelocityMapMps.y < -1.0,
         "spatial corridor did not steer the velocity target back toward the path"
     );
+    require(
+        result.forwardAngleErrorRad >
+            program.tracking.forwardAngleErrorRad,
+        "test setup did not require a substantial inward steering angle"
+    );
+    requireNear(
+        result.envelopeForwardAngleErrorRad,
+        0.0,
+        1.0e-12,
+        "corrective steering was mistaken for geometric corridor course loss"
+    );
     requireNear(
         result.envelopePositionErrorMeters,
         15.0,

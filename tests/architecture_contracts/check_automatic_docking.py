@@ -197,6 +197,11 @@ try:
         "request.hasInitialForward = !nearHoldRecovery",
         "request.initialForward = currentForwardMap",
         "request.initialForwardLeadMeters",
+        "definitionCopy.captureDepthMeters",
+        "final-capture-corridor-blocked",
+        "captureCenterMeters",
+        "entranceCenterMeters",
+        "capture-envelope-complete",
         "request.gateSpacingMeters = 150.0",
         "NavigationHitVolumeAdapter::buildObstacles",
         "source.hitComponent = object.hitComponent",
@@ -234,6 +239,11 @@ try:
         raise AssertionError(
             "Automatic docking must capture a safe approach hold before "
             "rejecting the final program on residual dynamic error"
+        )
+
+    if "pre-capture-envelope-complete" in server:
+        raise AssertionError(
+            "Automatic docking still treats exterior pre-capture as successful docking"
         )
 
     if "terminalAllowedObstacleId" in server:
@@ -296,6 +306,21 @@ try:
         raise AssertionError(
             "Automatic docking still routes Follower output through pilot-skill filtering"
         )
+
+    require(
+        "src/game/navigation/HubSemanticAnchor.h",
+        "captureDepthMeters",
+        "Positive distance from the entrance plane INTO the dock",
+    )
+    require(
+        "src/game/navigation/HubSemanticAnchorCatalog.cpp",
+        'item.value("capture_depth_m", 0.0)',
+    )
+    require(
+        "src/world/modules/ObjectRuntimeHitBuilder.cpp",
+        "appendAuthoredLogicalHitVolumes",
+        "descriptor.logicalCollisionBoxes()",
+    )
 
     require(
         "src/game/navigation/DockingAutomaticRecoveryPolicy.h",

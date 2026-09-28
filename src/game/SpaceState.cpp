@@ -2769,6 +2769,51 @@ void SpaceState::updateDockingAdvisory()
             fail("ship local position invalid");
             return;
         }
+
+        // HUD progress is monotonic, but it must be allowed to catch up after
+        // the craft temporarily leaves the visible tunnel. Otherwise a ship
+        // that rejoins farther downstream is forever measured against an old
+        // gate and can appear kilometres outside a corridor it is actually in.
+        if (active.nextGate + 1 < gates.size())
+        {
+            std::size_t nearestForwardSegment = active.nextGate;
+            double nearestForwardDistance2 =
+                std::numeric_limits<double>::infinity();
+
+            for (std::size_t index = active.nextGate;
+                 index + 1 < gates.size();
+                 ++index)
+            {
+                const glm::dvec3 start =
+                    gates[index].positionMeters;
+                const glm::dvec3 end =
+                    gates[index + 1].positionMeters;
+                const glm::dvec3 segment = end - start;
+                const double segmentLength2 =
+                    glm::dot(segment, segment);
+                if (!(segmentLength2 > 1.0e-12))
+                    continue;
+
+                const double projection = std::clamp(
+                    glm::dot(position - start, segment) /
+                        segmentLength2,
+                    0.0,
+                    1.0
+                );
+                const glm::dvec3 delta =
+                    position - (start + projection * segment);
+                const double distance2 = glm::dot(delta, delta);
+                if (distance2 < nearestForwardDistance2)
+                {
+                    nearestForwardDistance2 = distance2;
+                    nearestForwardSegment = index;
+                }
+            }
+
+            active.nextGate =
+                std::max(active.nextGate, nearestForwardSegment);
+        }
+
         if (active.nextGate + 1 < gates.size())
         {
             const auto a = gates[active.nextGate].positionMeters;
@@ -2836,6 +2881,7 @@ void SpaceState::updateDockingAdvisory()
             );
             active.deviationWarning =
                 active.tracker.entered() &&
+                tracking != DockingAdvisoryTrackingResult::Left &&
                 (tracking == DockingAdvisoryTrackingResult::Warning ||
                  dockingAdvisoryNearBoundary(
                      lateralOffsetMeters,
@@ -2845,7 +2891,7 @@ void SpaceState::updateDockingAdvisory()
                      longitudinalToleranceMeters
                  ));
             active.deviationCritical =
-                active.tracker.entered() && !insideNominal;
+                tracking == DockingAdvisoryTrackingResult::Left;
 
             if (active.deviationWarning != wasWarning ||
                 active.deviationCritical != wasCritical)
@@ -2891,12 +2937,36 @@ void SpaceState::updateDockingAdvisory()
                     fail("ship left guidance corridor");
                     return;
                 }
-                // This sparse visible advisory is not the server's accepted
-                // Automatic program. Keep it drawn and let the authoritative
-                // follower decide whether to replan or stop.
+                // The sparse tunnel is presentation, not the accepted server
+                // program. Hide it after a real departure; if the craft later
+                // rejoins the nominal corridor, normal tracking below restores
+                // it without changing Planner/Follower ownership.
+                active.corridorDeparted = true;
+                guidance.erase(
+                    m_activeDockingGuidanceCorridorId + ":frames"
+                );
                 m_dockingGuidanceFailureReason =
                     "automatic off visible advisory corridor";
-                m_noSafeDockingGuidanceSolution = true;
+            }
+            else if (tracking == DockingAdvisoryTrackingResult::Inside &&
+                     active.corridorDeparted)
+            {
+                active.corridorDeparted = false;
+                active.deviationWarning = false;
+                active.deviationCritical = false;
+                if (m_dockingGuidanceFailureReason ==
+                    "automatic off visible advisory corridor")
+                {
+                    m_dockingGuidanceFailureReason.clear();
+                }
+                m_noSafeDockingGuidanceSolution = false;
+                std::cout << "[DockAdvisory] reentered request="
+                          << pending.serial
+                          << " tick=" << metadata.serverTick
+                          << " gate=" << active.nextGate
+                          << " ship_local_m=(" << position.x << ','
+                          << position.y << ',' << position.z << ')'
+                          << '\n';
             }
 
             if ((tracking == DockingAdvisoryTrackingResult::Inside ||
@@ -3021,20 +3091,29 @@ void SpaceState::updateDockingAdvisory()
     auto route = makeRoute(mapRouteGates);
     guidance.publish(route);
 
-    auto frameRoute = makeRoute(gates);
-    frameRoute.id += ":frames";
-    frameRoute.spatialAdvisoryGates = true;
-    frameRoute.frames.erase(
-        frameRoute.frames.begin(),
-        frameRoute.frames.begin() +
-            static_cast<std::ptrdiff_t>(active.nextGate)
-    );
-    frameRoute.hubLocalGatePositionsMeters.erase(
-        frameRoute.hubLocalGatePositionsMeters.begin(),
-        frameRoute.hubLocalGatePositionsMeters.begin() +
-            static_cast<std::ptrdiff_t>(active.nextGate)
-    );
-    guidance.publish(std::move(frameRoute));
+    if (!active.corridorDeparted)
+    {
+        auto frameRoute = makeRoute(gates);
+        frameRoute.id += ":frames";
+        frameRoute.spatialAdvisoryGates = true;
+        frameRoute.frames.erase(
+            frameRoute.frames.begin(),
+            frameRoute.frames.begin() +
+                static_cast<std::ptrdiff_t>(active.nextGate)
+        );
+        frameRoute.hubLocalGatePositionsMeters.erase(
+            frameRoute.hubLocalGatePositionsMeters.begin(),
+            frameRoute.hubLocalGatePositionsMeters.begin() +
+                static_cast<std::ptrdiff_t>(active.nextGate)
+        );
+        guidance.publish(std::move(frameRoute));
+    }
+    else
+    {
+        guidance.erase(
+            m_activeDockingGuidanceCorridorId + ":frames"
+        );
+    }
 
     if (m_dockingPreparationSerial == pending.serial &&
         !m_dockingPreparationReleasePending)

@@ -21,6 +21,12 @@ struct DockingAdvisoryRequest
     double maxAngularVelocityRadPerSecond = 0.0;
     double maxAngularAccelerationRadPerSecond2 = 0.0;
 
+    // Authoritative speed at the planning origin. Automatic docking normally
+    // supplies the residual VREL after stop-and-settle; generic callers may
+    // supply a non-zero value. Turn geometry must not pretend the craft is
+    // already flying at a fixed fraction of its top speed.
+    double initialSpeedMps = 0.0;
+
     // Assisted ships prefer fly-through arcs. Newtonian/heavy ships may ask
     // for piecewise-straight geometry so their later maneuver compiler can
     // coast, rotate and burn instead of pretending to be an aircraft.

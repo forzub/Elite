@@ -122,8 +122,21 @@ struct DockingAdvisoryPlan
     bool terminalApproachExtended = false;
     double terminalApproachLengthMeters = 0.0;
 
-    bool valid() const noexcept { return failure.empty() && gates.size() >= 2; }
+    bool valid() const noexcept
+    {
+        return failure.empty() &&
+            gates.size() >= 2 &&
+            executionGates.size() >= 2;
+    }
 };
+
+// Canonical one-line diagnostics used by client preflight and authoritative
+// Automatic planning. Presentation/state layers must not reconstruct their own
+// interpretation of Planner decisions.
+std::string dockingAdvisoryPlanDiagnosticSummary(
+    const DockingAdvisoryPlan& plan
+);
+
 class DockingAdvisoryPlanner
 {
 public:

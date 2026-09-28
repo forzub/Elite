@@ -162,8 +162,57 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
             finite(steeringDistance) &&
             finite(referenceSpeed))
         {
-            const glm::dvec3 desiredForward =
+            glm::dvec3 desiredForward =
                 steeringRay / steeringDistance;
+
+            // Avoid visible hunting on a straight segment. Tiny positional
+            // noise must not create a new nose target every fixed step. Once
+            // the craft is inside a small central band, hold the authored
+            // segment tangent exactly; outside that band, retain the stronger
+            // inward look-ahead steering used for real corridor recovery.
+            const auto& lower =
+                program.samples[sampled.lowerSampleIndex];
+            const auto& upper =
+                program.samples[sampled.upperSampleIndex];
+            const glm::dvec3 segment =
+                upper.positionMapMeters -
+                lower.positionMapMeters;
+            const double segmentLength =
+                glm::length(segment);
+
+            if (segmentLength > kEpsilon &&
+                finite(segmentLength))
+            {
+                const glm::dvec3 tangent =
+                    segment / segmentLength;
+                const double rawProgress =
+                    glm::dot(
+                        agent.positionMapMeters -
+                            lower.positionMapMeters,
+                        segment
+                    ) / (segmentLength * segmentLength);
+                const double clampedProgress =
+                    std::clamp(rawProgress, 0.0, 1.0);
+                const glm::dvec3 projected =
+                    lower.positionMapMeters +
+                    segment * clampedProgress;
+                const double crossTrackMeters =
+                    glm::length(
+                        agent.positionMapMeters - projected
+                    );
+                const double centerDeadbandMeters =
+                    std::clamp(
+                        program.tracking.positionErrorMeters * 0.10,
+                        1.0,
+                        4.0
+                    );
+
+                if (finite(crossTrackMeters) &&
+                    crossTrackMeters <= centerDeadbandMeters)
+                {
+                    desiredForward = tangent;
+                }
+            }
 
             targetVelocityMapMps =
                 desiredForward * referenceSpeed;

@@ -1,3 +1,24 @@
+## Continue from 2026-09-28 moving-start/HOLD fixes
+
+A pre-latest live log exposed and the code now addresses:
+- ApproachHold incorrectly braking a moving ship before planning;
+- Assisted route planned exactly on the AcceptedProgram acceleration boundary;
+- false ~180-degree course loss at a zero-speed HOLD reference;
+- recovery replanning a tiny reverse Assisted segment instead of entering
+  FinalIngress.
+
+Current contracts:
+- ApproachHold = coast with zero translational acceleration + angular damping;
+- planning origin = measured P + measured V * planning lead;
+- FinalIngress = stop + rotate/align + fresh short plan;
+- HOLD capture = physical stopping distance inside accepted envelope;
+- zero-speed SpatialCorridor reference has no route-loss course;
+- planner uses 90% of reserve-reduced acceleration envelope.
+
+Next action is Windows `verify_docking.sh`, `EliteGame` build, then one live
+run starting START DOCKING while already moving. Do not tune corridor geometry
+unless that evidence specifically shows a geometry failure.
+
 ## Continue from 2026-09-28 first hard module split
 
 A first concrete Planner/Autopilot/Traffic/Landing separation is on `main`.

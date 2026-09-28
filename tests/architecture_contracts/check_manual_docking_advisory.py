@@ -137,6 +137,11 @@ try:
             "firstBlockingObstacle",
             "roundGeometry(points,0.0,entry)",
             "no collision-free exact-radius terminal arc",
+            "dockingAdvisoryPlanDiagnosticSummary",
+            "\" final_axis_m=\"",
+            "\" axis_passes=\"",
+            "\" blocker=\"",
+            "\" last_rejection=\"",
             "remainingFromPrevious",
             "r.terminalDenseDistanceMeters+r.gateSpacingMeters",
             "USER-CONTRACT: published docking frames use the authored")
@@ -160,11 +165,7 @@ try:
             "hud_gates=",
             "map_points=",
             "longitudinalToleranceMeters + std::max(",
-            "30.0,",
-            "final_axis_m=",
-            "final_axis_shortened=",
-            "terminal_radius_m=",
-            "radius_relaxed=")
+            "30.0,")
     require("tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
             "manual docking launch cadence is not 500 m",
             "nose-first route did not author a continuous launch fillet",

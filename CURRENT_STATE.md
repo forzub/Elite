@@ -1,3 +1,18 @@
+## 2026-09-28 — Assisted portal tracking failure traced to wrong reference mode
+
+Latest composite evidence: Newtonian now passes fully. Assisted also keeps the 19 m portal geometry and moving-hazard clearance safe (planned 1.759 m, actual 1.802 m, hull half-width 17.401 m) but reported 81 tracking-envelope exceed ticks during portal_102.
+
+Root cause: the constrained portal program was still using AcceptedManeuverProgram::ReferenceMode::TimeScheduled by default. That makes tunnel execution a race against nominal time, while the intended tunnel/canyon contract is SpatialCorridor: real vehicle position advances the reference and route loss is geometric cross-track/course error.
+
+Current candidate fix on main:
+- portal_102 explicitly uses SpatialCorridor for both control laws;
+- Assisted portal metadata uses AssistedVelocity; Newtonian uses NewtonianMainEngine;
+- the synthetic execution harness now preserves a monotonic spatial-segment cursor and passes it into TrajectoryFollower, matching the production RouteFollower contract;
+- portal diagnostics now print max envelope position, velocity, course and angular-rate errors separately;
+- final StateCapture remains TimeScheduled because it is a terminal-state maneuver, not a tunnel-following segment.
+
+Windows rerun pending; do not mark composite green yet.
+
 ## 2026-09-28 — composite long-segment dynamic proof
 
 Latest target evidence still had only `navigation_composite_proving_ground` red. The new log showed safe dynamic clearance during replacement (4.747 m), continuation (22.821 m), and portal-entry settle (30.597 m), so the remaining failure had to occur in the later long accepted segments.

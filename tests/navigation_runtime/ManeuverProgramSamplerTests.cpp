@@ -505,6 +505,73 @@ void testSpatialPageSelectionUsesPhysicalProgressNotTime()
     );
 }
 
+void testSpatialProgressCannotAdvanceOutsideCorridor()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.sampleCount = 3;
+    program.validUntilUniverseTimeSeconds = 110.0;
+    program.tracking.positionErrorMeters = 5.0;
+
+    for (std::size_t i = 0; i < 3; ++i)
+    {
+        auto& sample = program.samples[i];
+        sample.timeOffsetSeconds = static_cast<double>(i);
+        sample.positionMapMeters =
+            {10.0 * static_cast<double>(i), 0.0, 0.0};
+        sample.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+        sample.linearAccelerationFeedForwardMapMps2 =
+            glm::dvec3(0.0);
+        sample.forwardMap = {1.0, 0.0, 0.0};
+        sample.rightMap = {0.0, 0.0, 1.0};
+        sample.upMap = {0.0, 1.0, 0.0};
+        sample.angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+        sample.angularAccelerationFeedForwardMapRadPerSec2 =
+            glm::dvec3(0.0);
+    }
+
+    const auto outside = Sampler::sampleSpatial(
+        program,
+        101.0,
+        glm::dvec3(11.0, 20.0, 0.0),
+        0
+    );
+    require(
+        outside.status == Sampler::Status::Active &&
+        outside.lowerSampleIndex == 0,
+        "spatial cursor advanced after cutting a corner outside corridor"
+    );
+
+    Program pages[2] = {program, program};
+    pages[0].acceptedAtUniverseTimeSeconds = 50.0;
+    pages[0].sequenceStartOffsetSeconds = 0.0;
+    pages[0].sampleCount = 2;
+    pages[0].samples[0].timeOffsetSeconds = 0.0;
+    pages[0].samples[1].timeOffsetSeconds = 1.0;
+    pages[0].samples[0].positionMapMeters = {0.0, 0.0, 0.0};
+    pages[0].samples[1].positionMapMeters = {10.0, 0.0, 0.0};
+    pages[0].validUntilUniverseTimeSeconds = 1000.0;
+
+    pages[1] = pages[0];
+    pages[1].revision += 1;
+    pages[1].sequenceStartOffsetSeconds = 1.0;
+    pages[1].samples[0].positionMapMeters = {10.0, 0.0, 0.0};
+    pages[1].samples[1].positionMapMeters = {20.0, 0.0, 0.0};
+
+    const auto pageOutside = Timeline::selectSpatialPage(
+        pages,
+        2,
+        500.0,
+        glm::dvec3(11.0, 20.0, 0.0),
+        0
+    );
+    require(
+        pageOutside.status == Timeline::SelectionStatus::Active &&
+        pageOutside.pageIndex == 0,
+        "spatial storage page advanced outside its proved corridor"
+    );
+}
+
 void testSpatialPageCannotSkipMultiplePathChunksPerStep()
 {
     Program pages[3] = {
@@ -625,6 +692,7 @@ int main()
         testSpatialSamplerDoesNotJumpAcrossHairpin();
         testSpatialSamplerNeverJumpsBehindMonotonicCursor();
         testSpatialPageSelectionUsesPhysicalProgressNotTime();
+        testSpatialProgressCannotAdvanceOutsideCorridor();
         testSpatialPageCannotSkipMultiplePathChunksPerStep();
         testFollowerCompletionUsesPageLocalElapsedTime();
 

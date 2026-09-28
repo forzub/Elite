@@ -355,14 +355,29 @@ public:
                         glm::dot(demand, forward);
                     const glm::dvec3 transverse =
                         demand - forward * along;
+                    const double transverseMagnitude =
+                        glm::length(transverse);
                     if (!finiteVec(demand) ||
                         along > forwardAuthority + 1.0e-6 ||
                         along < -brakingAuthority - 1.0e-6 ||
-                        glm::length(transverse) >
+                        transverseMagnitude >
                             lateralAuthority + 1.0e-6)
                     {
                         return fail(
                             "assisted-motion-envelope-infeasible"
+                            " page=" + std::to_string(out.pages.size()) +
+                            " sample=" + std::to_string(i) +
+                            " t_s=" +
+                                std::to_string(sample.timeOffsetSeconds) +
+                            " along_mps2=" + std::to_string(along) +
+                            " transverse_mps2=" +
+                                std::to_string(transverseMagnitude) +
+                            " forward_authority_mps2=" +
+                                std::to_string(forwardAuthority) +
+                            " braking_authority_mps2=" +
+                                std::to_string(brakingAuthority) +
+                            " lateral_authority_mps2=" +
+                                std::to_string(lateralAuthority)
                         );
                     }
                 }

@@ -1798,9 +1798,7 @@ bool GameServer::planAutomaticDocking(
                         }
 
                         const auto& executionGates =
-                            advisoryPlan.executionGates.empty()
-                                ? advisoryPlan.gates
-                                : advisoryPlan.executionGates;
+                            advisoryPlan.executionGates;
 
                         trajectoryRequest.pathGeometryAlreadyAuthored =
                             true;

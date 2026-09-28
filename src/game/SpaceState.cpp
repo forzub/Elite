@@ -2958,8 +2958,8 @@ void SpaceState::updateDockingAdvisory()
                     "automatic off visible advisory corridor")
                 {
                     m_dockingGuidanceFailureReason.clear();
+                    m_noSafeDockingGuidanceSolution = false;
                 }
-                m_noSafeDockingGuidanceSolution = false;
                 std::cout << "[DockAdvisory] reentered request="
                           << pending.serial
                           << " tick=" << metadata.serverTick

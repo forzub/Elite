@@ -79,6 +79,8 @@ public:
         const world::navigation::Trajectory* trajectory = nullptr;
         const ShipParams* shipPhysics = nullptr;
         LocalFlightControlLaw controlLaw = defaultLocalFlightControlLaw();
+        AcceptedManeuverProgram::ReferenceMode referenceMode =
+            AcceptedManeuverProgram::ReferenceMode::TimeScheduled;
 
         std::uint64_t objectiveRevision = 0;
         std::uint64_t firstProgramRevision = 1;
@@ -167,6 +169,7 @@ public:
                 last + 1 == samples.size()
                     ? AcceptedManeuverProgram::ManeuverFamily::PrecisionTransit
                     : AcceptedManeuverProgram::ManeuverFamily::FreeTransit;
+            page.referenceMode = request.referenceMode;
             page.controlLaw = request.controlLaw;
             page.translationMode =
                 request.controlLaw == LocalFlightControlLaw::Assisted

@@ -46,6 +46,11 @@ struct HubSemanticAnchorDefinition
     double requiredClearanceMeters = 0.0;
     double maxEntrySpeedMps = 0.0;
 
+    // Positive distance from the entrance plane INTO the dock along
+    // -localForward. Zero means that this semantic anchor has no authored
+    // internal capture point and Automatic must fail closed.
+    double captureDepthMeters = 0.0;
+
     bool enabled = true;
 };
 
@@ -79,6 +84,7 @@ struct ResolvedHubSemanticAnchor
     glm::dvec3 extentMeters {0.0};
     double requiredClearanceMeters = 0.0;
     double maxEntrySpeedMps = 0.0;
+    double captureDepthMeters = 0.0;
     bool enabled = true;
 
     glm::dvec3 forward() const noexcept
@@ -153,6 +159,7 @@ inline ResolvedHubSemanticAnchor resolveHubSemanticAnchor(
     out.extentMeters = definition.extentMeters;
     out.requiredClearanceMeters = definition.requiredClearanceMeters;
     out.maxEntrySpeedMps = definition.maxEntrySpeedMps;
+    out.captureDepthMeters = definition.captureDepthMeters;
     out.enabled = definition.enabled;
     out.angularVelocityWorldRadPerSecond =
         objectAngularVelocityWorldRadPerSecond;

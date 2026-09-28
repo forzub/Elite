@@ -1,3 +1,37 @@
+## 2026-09-28 — gate hard module split, then wire dispatcher
+
+Immediate task is validation of the first physical/API split before introducing
+new live behavior.
+
+Windows gate:
+1. pull current `main`;
+2. run `bash verify_docking.sh`;
+3. if green, build only `EliteGame`;
+4. no live-flight retuning is required for this architecture-only slice.
+
+The gate must prove:
+- generic `RoutePlannerApi` reaches an exact non-docking goal without exposing
+  docking-private types;
+- public `RouteFollowerApi` owns page selection, reference sampling, attitude
+  acquisition and route following without exposing Tracker/Sampler/Timeline
+  headers;
+- GameServer and SpaceState cannot include the retired private planner/follower
+  seams;
+- Traffic+Landing compile independently of Navigation;
+- far/provisional traffic request cannot reserve queue/resources;
+- emergency class policy can only upgrade to a larger physically compatible
+  dock;
+- LandingHandoff is a separate terminal boundary and normal landing has no main
+  engine authority.
+
+After this gate passes, the next implementation slice is DockTrafficController
+integration into authoritative server/session state:
+- expose facility/portal/pad availability;
+- provisional remote inquiry;
+- controlled-horizon queue admission;
+- one EntryHoldPoint per portal;
+- no LandingController integration yet until traffic assignment is authoritative.
+
 ## 2026-09-28 — next task: split navigation, traffic and landing before more docking behavior
 
 Do not continue adding pad/latch/queue behavior inside the current docking

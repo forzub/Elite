@@ -2277,6 +2277,12 @@ bool GameServer::planAutomaticDocking(
                 build.controlLaw = assisted
                     ? LocalFlightControlLaw::Assisted
                     : LocalFlightControlLaw::Newtonian;
+                build.referenceMode =
+                    finalIngressStage
+                        ? AcceptedManeuverProgram::
+                              ReferenceMode::TimeScheduled
+                        : AcceptedManeuverProgram::
+                              ReferenceMode::SpatialCorridor;
                 build.objectiveRevision = requestSerial;
                 build.firstProgramRevision =
                     firstProgramRevision;
@@ -2803,6 +2809,7 @@ void GameServer::applyAutomaticDockingControls(
 
             runtime.programs = std::move(job->programs);
             runtime.currentProgramPage = 0;
+            runtime.currentSpatialSegment = 0;
             runtime.nextProgramRevision +=
                 static_cast<std::uint64_t>(
                     runtime.programs.size()
@@ -3202,13 +3209,27 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
+        const bool spatialCorridor =
+            runtime.programs[runtime.currentProgramPage].
+                referenceMode ==
+            game::navigation::AcceptedManeuverProgram::
+                ReferenceMode::SpatialCorridor;
+
         const auto selection =
-            Timeline::selectActivePage(
-                runtime.programs.data(),
-                runtime.programs.size(),
-                time.universeTimeSeconds,
-                runtime.currentProgramPage
-            );
+            spatialCorridor
+                ? Timeline::selectSpatialPage(
+                      runtime.programs.data(),
+                      runtime.programs.size(),
+                      time.universeTimeSeconds,
+                      motion.localPositionMeters,
+                      runtime.currentProgramPage
+                  )
+                : Timeline::selectActivePage(
+                      runtime.programs.data(),
+                      runtime.programs.size(),
+                      time.universeTimeSeconds,
+                      runtime.currentProgramPage
+                  );
 
         if (selection.status !=
             Timeline::SelectionStatus::Active)
@@ -3243,13 +3264,20 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
-        runtime.currentProgramPage =
-            selection.pageIndex;
+        if (selection.pageIndex != runtime.currentProgramPage)
+        {
+            runtime.currentProgramPage =
+                selection.pageIndex;
+            runtime.currentSpatialSegment = 0;
+        }
         const auto& program =
             runtime.programs[runtime.currentProgramPage];
 
-        if (time.universeTimeSeconds >
-            program.validUntilUniverseTimeSeconds)
+        if (program.referenceMode ==
+                game::navigation::AcceptedManeuverProgram::
+                    ReferenceMode::TimeScheduled &&
+            time.universeTimeSeconds >
+                program.validUntilUniverseTimeSeconds)
         {
             std::cerr << "[DockAuto] request=" << runtime.requestSerial
                       << " phase=replan reason=program-expired"
@@ -3293,8 +3321,18 @@ void GameServer::applyAutomaticDockingControls(
                 program,
                 time.universeTimeSeconds,
                 agent,
-                runtime.trackingPolicy
+                runtime.trackingPolicy,
+                runtime.currentSpatialSegment
             );
+
+        if (followed.spatialReference)
+        {
+            runtime.currentSpatialSegment =
+                std::max(
+                    runtime.currentSpatialSegment,
+                    followed.referenceLowerSampleIndex
+                );
+        }
 
         const bool finalPage =
             runtime.currentProgramPage + 1 ==
@@ -3319,6 +3357,7 @@ void GameServer::applyAutomaticDockingControls(
             runtime.controlBridge.reset();
             runtime.planningJob.reset();
             runtime.currentProgramPage = 0;
+            runtime.currentSpatialSegment = 0;
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             runtime.alignedSinceUniverseTimeSeconds = -1.0;
 

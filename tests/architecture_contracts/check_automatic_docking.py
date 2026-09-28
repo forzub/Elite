@@ -369,6 +369,7 @@ try:
         "testSpatialSamplerFollowsVehicleInsteadOfNominalClock",
         "testSpatialSamplerDoesNotJumpAcrossHairpin",
         "testSpatialPageSelectionUsesPhysicalProgressNotTime",
+        "testSpatialProgressCannotAdvanceOutsideCorridor",
         "testSpatialPageCannotSkipMultiplePathChunksPerStep",
         "testSpatialSamplerNeverJumpsBehindMonotonicCursor",
     )

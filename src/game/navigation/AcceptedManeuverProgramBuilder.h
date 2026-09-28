@@ -125,6 +125,10 @@ public:
             !request.trajectory->ready() ||
             (request.controlLaw != LocalFlightControlLaw::Assisted &&
              request.controlLaw != LocalFlightControlLaw::Newtonian) ||
+            (request.referenceMode !=
+                 AcceptedManeuverProgram::ReferenceMode::TimeScheduled &&
+             request.referenceMode !=
+                 AcceptedManeuverProgram::ReferenceMode::SpatialCorridor) ||
             request.objectiveRevision == 0 ||
             request.firstProgramRevision == 0 ||
             !request.policy.valid() ||

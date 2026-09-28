@@ -1,3 +1,30 @@
+## 2026-09-28 — Automatic docking state semantics corrected
+
+Automatic docking now distinguishes two preparation semantics:
+
+`ApproachHold`
+: retain measured linear VREL, command zero translational acceleration, damp
+  angular rate, and plan from the future coast position.
+
+`FinalIngress`
+: brake to a stop, hold position, acquire the rotating terminal attitude, then
+  replan/execute the short terminal ingress.
+
+The HOLD handoff is now based on whether the craft can physically brake inside
+the accepted spatial envelope. It is no longer gated by an arbitrary fraction
+of tracking-speed tolerance.
+
+SpatialCorridor course validity is also corrected at zero reference speed:
+stationary checkpoints have attitude, but no translational course direction.
+This prevents a 180-degree hull attitude from being mislabeled as corridor
+loss while the ship is essentially on the HOLD point.
+
+Planner execution headroom is now explicit: the route/trajectory compiler uses
+90% of the reserve-reduced acceleration envelope; AcceptedProgram validation
+keeps the remaining margin.
+
+Status: candidate pending Windows native/build/live evidence.
+
 ## 2026-09-28 — module split implementation candidate
 
 Navigation and docking infrastructure now have concrete source/build boundaries.

@@ -1,3 +1,32 @@
+## 2026-09-28 — Automatic spatial corridor ownership contract
+
+For Automatic docking and future tunnel/canyon traversal, geometric route truth
+is singular.
+
+1. Planner authors one ordered Hub/Nav-local path.
+2. Trajectory generation may validate/annotate that path with physically
+   reachable speed, orientation, omega and acceleration, but may not replace
+   the accepted geometry when `pathGeometryAlreadyAuthored=true`.
+3. AcceptedManeuverProgram is the executable route product.
+4. TrajectoryFollower consumes accepted samples in order using physical
+   projection and a monotonic spatial cursor.
+5. Cross-track error changes steering toward a bounded forward look-ahead point
+   on the same route. It does not reduce the authored route speed merely
+   because the vehicle is off-axis.
+6. Route-loss course error is measured against the corridor tangent; steering
+   error is measured against the corrective look-ahead direction. These are
+   deliberately distinct.
+7. Automatic docking sends Follower output directly to the vehicle-level
+   ShipControlState. Human/NPC PilotSkill filtering is not in this machine
+   controller path.
+8. The client displays the exact AcceptedProgram route replicated by the
+   authoritative server. 500/250 m HUD gates are presentation-only samples and
+   never become a second route definition.
+9. If the accepted program is invalidated for stabilization/replan, its
+   displayed corridor is withdrawn until a new accepted revision exists.
+
+This contract is a candidate pending Windows native and live-flight evidence.
+
 ## 2026-09-26 — live propulsion rejection traced to route-entry attitude
 
 Fresh live Automatic evidence:

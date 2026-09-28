@@ -29,8 +29,6 @@
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
-#include "src/game/navigation/ManeuverProgramTimeline.h"
-#include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
@@ -2571,7 +2569,8 @@ void GameServer::applyAutomaticDockingControls(
         game::navigation::autopilot::RouteFollowerAgentState;
     using FollowerStatus =
         game::navigation::autopilot::RouteFollowerStatus;
-    using Timeline = game::navigation::ManeuverProgramTimeline;
+    using PageStatus =
+        game::navigation::autopilot::RouteProgramSelectionStatus;
 
     struct Completion
     {
@@ -3178,30 +3177,15 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
-        const bool spatialCorridor =
-            runtime.programs[runtime.currentProgramPage].
-                referenceMode ==
-            game::navigation::AcceptedManeuverProgram::
-                ReferenceMode::SpatialCorridor;
-
         const auto selection =
-            spatialCorridor
-                ? Timeline::selectSpatialPage(
-                      runtime.programs.data(),
-                      runtime.programs.size(),
-                      time.universeTimeSeconds,
-                      motion.localPositionMeters,
-                      runtime.currentProgramPage
-                  )
-                : Timeline::selectActivePage(
-                      runtime.programs.data(),
-                      runtime.programs.size(),
-                      time.universeTimeSeconds,
-                      runtime.currentProgramPage
-                  );
+            Follower::selectPage(
+                runtime.programs,
+                time.universeTimeSeconds,
+                motion.localPositionMeters,
+                runtime.currentProgramPage
+            );
 
-        if (selection.status !=
-            Timeline::SelectionStatus::Active)
+        if (selection.status != PageStatus::Active)
         {
             std::cerr << "[DockAuto] request=" << runtime.requestSerial
                       << " phase=execution-failed reason=no-active-program-page"
@@ -3210,11 +3194,9 @@ void GameServer::applyAutomaticDockingControls(
                       << " pages=" << runtime.programs.size()
                       << " now=" << time.universeTimeSeconds
                       << " first_start="
-                      << Timeline::pageWindow(runtime.programs.front()).
-                             startUniverseTimeSeconds
+                      << selection.firstPageStartUniverseTimeSeconds
                       << std::endl;
-            if (selection.status ==
-                Timeline::SelectionStatus::BeforeStart)
+            if (selection.status == PageStatus::BeforeStart)
             {
                 ShipControlState hold;
                 hold.velocityAlignmentCommand =
@@ -3448,21 +3430,12 @@ void GameServer::applyAutomaticDockingControls(
             const double speedBeforeStopMps =
                 glm::length(motion.localVelocityMps);
             const auto sampled =
-                program.referenceMode ==
-                    game::navigation::AcceptedManeuverProgram::
-                        ReferenceMode::SpatialCorridor
-                    ? game::navigation::ManeuverProgramSampler::
-                          sampleSpatial(
-                              program,
-                              time.universeTimeSeconds,
-                              agent.positionMapMeters,
-                              runtime.currentSpatialSegment
-                          )
-                    : game::navigation::ManeuverProgramSampler::
-                          sample(
-                              program,
-                              time.universeTimeSeconds
-                          );
+                Follower::sampleReference(
+                    program,
+                    time.universeTimeSeconds,
+                    agent.positionMapMeters,
+                    runtime.currentSpatialSegment
+                );
 
             if (followed.trackingErrorExceeded)
                 ++runtime.trackingFailureCount;
@@ -3509,8 +3482,8 @@ void GameServer::applyAutomaticDockingControls(
                 << " actual_forward=("
                 << agent.forwardMap.x << "," << agent.forwardMap.y
                 << "," << agent.forwardMap.z << ")"
-                << " sample_status="
-                << static_cast<int>(sampled.status)
+                << " sample_valid="
+                << (sampled.valid ? 1 : 0)
                 << " position_error_m="
                 << followed.crossTrackErrorMeters
                 << " envelope_position_error_m="
@@ -3620,21 +3593,12 @@ void GameServer::applyAutomaticDockingControls(
             time.serverTick - runtime.lastTrackingDiagnosticTick >= 60)
         {
             const auto diagnosticSample =
-                program.referenceMode ==
-                    game::navigation::AcceptedManeuverProgram::
-                        ReferenceMode::SpatialCorridor
-                    ? game::navigation::ManeuverProgramSampler::
-                          sampleSpatial(
-                              program,
-                              time.universeTimeSeconds,
-                              agent.positionMapMeters,
-                              runtime.currentSpatialSegment
-                          )
-                    : game::navigation::ManeuverProgramSampler::
-                          sample(
-                              program,
-                              time.universeTimeSeconds
-                          );
+                Follower::sampleReference(
+                    program,
+                    time.universeTimeSeconds,
+                    agent.positionMapMeters,
+                    runtime.currentSpatialSegment
+                );
             const glm::dvec3 plannedAcceleration =
                 boundary.toSystemVector(
                     game::navigation::NavigationFrameBoundary::NavVector {

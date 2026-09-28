@@ -41,6 +41,9 @@
 
 namespace {
 
+constexpr const char* DockingAutomaticImplementationRevision =
+    "dock-auto-20260928-stop-adaptive-fillet-semantic-clearance";
+
 std::string dockingAdvisoryTrace(
     const game::navigation::planner::RoutePlan& plan
 )
@@ -1319,6 +1322,7 @@ bool GameServer::beginAutomaticDocking(
         << " hub=" << hubId
         << " target=" << command.dockingTargetModuleId
         << ":" << command.dockingTargetAnchorId
+        << " impl=" << DockingAutomaticImplementationRevision
         << " phase=stabilizing"
         << " mode=stop"
         << " speed_mps="

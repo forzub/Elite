@@ -1263,4 +1263,73 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     return out;
 }
+
+std::string dockingAdvisoryPlanDiagnosticSummary(
+    const DockingAdvisoryPlan& plan
+)
+{
+    return
+        " requested_radius_m=" +
+        std::to_string(plan.terminalTurnRequestedRadiusMeters) +
+        " selected_radius_m=" +
+        std::to_string(plan.terminalTurnRadiusMeters) +
+        " final_axis_m=" +
+        std::to_string(plan.terminalApproachLengthMeters) +
+        " axis_extended=" +
+        std::to_string(plan.terminalApproachExtended ? 1 : 0) +
+        " axis_passes=" +
+        std::to_string(plan.terminalArcAxisPassesTested) +
+        " rotation_deg=" +
+        std::to_string(plan.terminalArcRotationDegrees) +
+        " candidates=" +
+        std::to_string(plan.terminalArcCandidatesTested) +
+        " routeable=" +
+        std::to_string(plan.terminalArcRouteable) +
+        " route_rejected=" +
+        std::to_string(plan.terminalArcRouteRejected) +
+        " transit_ready=" +
+        std::to_string(plan.terminalArcTransitReady) +
+        " transit_rejected=" +
+        std::to_string(plan.terminalArcTransitRejected) +
+        " collision_rejected=" +
+        std::to_string(plan.terminalArcCollisionRejected) +
+        " accepted=" +
+        std::to_string(plan.terminalArcAcceptedCandidates) +
+        " relaxed=" +
+        std::to_string(plan.terminalTurnRadiusRelaxed ? 1 : 0) +
+        " blocker=" +
+        (plan.terminalArcDominantBlockerId.empty()
+            ? std::string("none")
+            : plan.terminalArcDominantBlockerId) +
+        " blocker_hits=" +
+        std::to_string(plan.terminalArcDominantBlockerHits) +
+        " blocker_center=(" +
+        std::to_string(
+            plan.terminalArcDominantBlockerCenterMeters.x
+        ) + "," +
+        std::to_string(
+            plan.terminalArcDominantBlockerCenterMeters.y
+        ) + "," +
+        std::to_string(
+            plan.terminalArcDominantBlockerCenterMeters.z
+        ) + ")" +
+        " blocker_half=(" +
+        std::to_string(
+            plan.terminalArcDominantBlockerHalfExtentsMeters.x
+        ) + "," +
+        std::to_string(
+            plan.terminalArcDominantBlockerHalfExtentsMeters.y
+        ) + "," +
+        std::to_string(
+            plan.terminalArcDominantBlockerHalfExtentsMeters.z
+        ) + ")" +
+        " blocker_radius_m=" +
+        std::to_string(
+            plan.terminalArcDominantBlockerRadiusMeters
+        ) +
+        " last_rejection=" +
+        (plan.terminalArcLastRejection.empty()
+            ? std::string("none")
+            : plan.terminalArcLastRejection);
+}
 } // namespace game::navigation

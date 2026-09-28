@@ -22,7 +22,7 @@
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
-#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/DockingCompatibility.h"
@@ -32,7 +32,7 @@
 #include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
-#include "src/game/navigation/TrajectoryFollower.h"
+#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -44,11 +44,10 @@
 namespace {
 
 std::string dockingAdvisoryTrace(
-    const game::navigation::DockingAdvisoryPlan& plan
+    const game::navigation::planner::RoutePlan& plan
 )
 {
-    return game::navigation::
-        dockingAdvisoryPlanDiagnosticSummary(plan);
+    return plan.diagnosticSummary;
 }
 
 
@@ -1662,7 +1661,7 @@ bool GameServer::planAutomaticDocking(
 
                 world::navigation::TrajectoryGenerationResult
                     trajectoryResult;
-                DockingAdvisoryPlan advisoryPlan;
+                game::navigation::planner::RoutePlan advisoryPlan;
                 double captureUniverseTimeSeconds =
                     executionStartUniverseTimeSeconds;
                 double finalPreCaptureDepthMeters = 0.0;
@@ -1730,7 +1729,7 @@ bool GameServer::planAutomaticDocking(
                         // The ship arrives here and stops. Exact dock roll and
                         // terminal omega belong to the separate final-ingress
                         // stage and must not make the long transit infeasible.
-                        DockingAdvisoryRequest request;
+                        game::navigation::planner::RoutePlanRequest request;
                         request.startMeters = startPositionMeters;
                         // Recovery already close to the HOLD point is a
                         // short positioning maneuver. A mandatory kilometre
@@ -1752,12 +1751,12 @@ bool GameServer::planAutomaticDocking(
                                       1000.0,
                                       hull.lengthMeters * 10.0
                                   );
-                        request.entranceMeters =
-                            port.positionMeters;
-                        request.outward = port.forward;
-                        request.standoffMeters =
+                        request.goalMeters =
+                            holdPositionMeters;
+                        request.terminalOutward = port.forward;
+                        request.terminalReferenceDistanceMeters =
                             standoffMeters;
-                        request.hullRadiusMeters =
+                        request.agentRadiusMeters =
                             hullRadiusMeters;
                         request.maxSpeedMps =
                             executionVehicle.maxSpeedMps;
@@ -1792,7 +1791,9 @@ bool GameServer::planAutomaticDocking(
                         request.obstacles = obstacles;
 
                         advisoryPlan =
-                            DockingAdvisoryPlanner::plan(request);
+                            game::navigation::planner::RoutePlanner::plan(
+                                request
+                            );
                         if (!advisoryPlan.valid())
                         {
                             std::string reason =
@@ -2564,7 +2565,12 @@ void GameServer::applyAutomaticDockingControls(
     const game::server::ServerTimeContext& time
 )
 {
-    using Follower = game::navigation::TrajectoryFollower;
+    using Follower =
+        game::navigation::autopilot::RouteFollower;
+    using FollowerAgent =
+        game::navigation::autopilot::RouteFollowerAgentState;
+    using FollowerStatus =
+        game::navigation::autopilot::RouteFollowerStatus;
     using Timeline = game::navigation::ManeuverProgramTimeline;
 
     struct Completion
@@ -3254,7 +3260,7 @@ void GameServer::applyAutomaticDockingControls(
             continue;
         }
 
-        Follower::AgentState agent;
+        FollowerAgent agent;
         agent.positionMapMeters =
             motion.localPositionMeters;
         agent.velocityMapMetersPerSecond =
@@ -3357,7 +3363,7 @@ void GameServer::applyAutomaticDockingControls(
             );
         if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold &&
-            followed.status != Follower::Status::InvalidInput &&
+            followed.status != FollowerStatus::InvalidInput &&
             std::isfinite(holdDistanceMeters) &&
             holdDistanceMeters <= holdCaptureDistanceMeters &&
             glm::length(agent.velocityMapMetersPerSecond) <=
@@ -3435,7 +3441,7 @@ void GameServer::applyAutomaticDockingControls(
         }
 
         if (followed.status ==
-                Follower::Status::InvalidInput ||
+                FollowerStatus::InvalidInput ||
             (followed.trackingErrorExceeded &&
              !correctingInsideSpatialEnvelope))
         {
@@ -3543,14 +3549,14 @@ void GameServer::applyAutomaticDockingControls(
                 << std::endl;
 
             if (runtime.trackingFailureCount >= 3 ||
-                followed.status == Follower::Status::InvalidInput)
+                followed.status == FollowerStatus::InvalidInput)
             {
                 completed.push_back({
                     runtime.playerId,
                     runtime.entityId,
                     runtime.requestSerial,
                     false,
-                    followed.status == Follower::Status::InvalidInput
+                    followed.status == FollowerStatus::InvalidInput
                         ? "follower-invalid-input"
                         : "tracking-envelope-exceeded"
                 });
@@ -3701,7 +3707,7 @@ void GameServer::applyAutomaticDockingControls(
 
         if (finalPage &&
             followed.status ==
-                Follower::Status::Complete)
+                FollowerStatus::Complete)
         {
             if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold)

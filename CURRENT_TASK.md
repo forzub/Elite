@@ -1,3 +1,7 @@
+## 2026-09-28 — rerun composite with SpatialCorridor portal
+
+Rebuild and run only navigation_composite_proving_ground. Inspect COMPOSITE-PORTAL-ACTUAL, especially tracking_exceeded_ticks plus max_env_pos_m, max_env_vel_mps, max_env_course_deg and max_ang_vel_err_radps. If green, run the complete navigation-runtime suite and then verify_docking.sh.
+
 ## 2026-09-28 — rerun composite after whole-program hazard proof
 
 Rebuild only `navigation_composite_proving_ground_tests` in `build/tests/navigation_runtime`, then run CTest `navigation_composite_proving_ground`. Inspect the new PORTAL/CAPTURE PROOF and ACTUAL lines. If green, run the complete navigation-runtime suite and then `bash verify_docking.sh`.

@@ -1,3 +1,9 @@
+## Continue from 2026-09-29 spatial validity-window correction
+
+Current main: SpatialCorridor phase handoff is physical, Newtonian hull slip is not route loss, and the composite harness now executes spatial programs until AcceptedManeuverProgram::validUntilUniverseTimeSeconds rather than an obsolete nominalEnd+5.1 synthetic deadline. New portal diagnostics expose final P/V and actual execution budget.
+
+Next required evidence: composite-only Windows rerun. Then run the two unit regressions if composite is green.
+
 ## Continue from 2026-09-28 production spatial-contract correction
 
 Current main fixes two production issues found by composite: SpatialCorridor no longer advances by nominal ScheduledMoving time, and NewtonianMainEngine hull/course slip no longer counts as geometric corridor loss by itself. Regression tests were added for both. Next evidence required: maneuver_phase_gate + maneuver_tracking_controller, then composite.

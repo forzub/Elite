@@ -79,4 +79,42 @@ for mesh_name, half_width, half_height in (
     if f"{half_width:.6f}" not in mesh or f"{half_height:.6f}" not in mesh:
         fail(f"{mesh_name} does not expose the horizontal aperture dimensions")
 
-print("[PASS] Hub guidance box rotates slowly, cylinder stays static, apertures are horizontal")
+
+
+# Collision/navigation truth must preserve the same authored aperture. The
+# monolithic guidance docks may not fall back to one solid logical OBB.
+descriptor = (ROOT / "src/game/station/descriptors/GuidanceTestDockDescriptor.h").read_text(
+    encoding="utf-8", errors="replace"
+)
+builder = (ROOT / "src/world/modules/ObjectRuntimeHitBuilder.cpp").read_text(
+    encoding="utf-8", errors="replace"
+)
+semantic = (ROOT / "src/assets/data/navigation/hub_semantic_anchors.json").read_text(
+    encoding="utf-8", errors="replace"
+)
+
+for token in (
+    "logicalCollisionBoxes() const override",
+    "dock_wall_left",
+    "dock_wall_right",
+    "dock_wall_top",
+    "dock_wall_bottom",
+):
+    if token not in descriptor:
+        fail(f"guidance dock collision shell lost {token}")
+
+if "appendAuthoredLogicalHitVolumes" not in builder:
+    fail("monolithic object hit builder does not consume authored collision boxes")
+
+if "capture_depth_m" not in semantic:
+    fail("docking semantics have no authored internal capture depth")
+
+for module in anchors["modules"]:
+    docks = [a for a in module.get("anchors", []) if a.get("kind") == "docking_port"]
+    for dock in docks:
+        depth = float(dock.get("capture_depth_m", 0.0))
+        length = float(dock["extent_m"][2])
+        if not (0.0 < depth <= length):
+            fail(f"{module['module_id']}/{dock['id']} capture depth is outside the dock")
+
+print("[PASS] Hub guidance docks have visible + collision apertures and internal capture depth")

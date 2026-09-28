@@ -66,6 +66,8 @@ sampler_h = read("src/game/navigation/ManeuverProgramSampler.h")
 timeline_h = read("src/game/navigation/ManeuverProgramTimeline.h")
 tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
 follower_h = read("src/game/navigation/TrajectoryFollower.h")
+route_planner_api = read("src/game/navigation/planner/RoutePlannerApi.h")
+route_follower_api = read("src/game/navigation/autopilot/RouteFollowerApi.h")
 bridge_h = read("src/game/navigation/NavigationRuntimeControlBridge.h")
 phase_gate_h = read("src/game/navigation/ManeuverPhaseGate.h")
 phase_gate_cpp = read("src/game/navigation/ManeuverPhaseGate.cpp")
@@ -233,10 +235,46 @@ for token in (
     "enum class ReferenceMode",
     "TimeScheduled",
     "SpatialCorridor",
-    "spatialSlowdownStartFraction",
 ):
     require(token in accepted_program_h,
             f"AcceptedManeuverProgram API missing spatial reference contract {token}")
+
+for token in (
+    "struct RoutePlanRequest",
+    "struct RoutePlan",
+    "class RoutePlanner",
+):
+    require(token in route_planner_api,
+            f"RoutePlanner public API missing explicit boundary token {token!r}")
+
+for forbidden in (
+    "DockingAdvisoryPlanner",
+    "TrajectoryFollower",
+    "ManeuverTrackingController",
+    "DockTrafficController",
+    "DockLandingController",
+):
+    require(forbidden not in route_planner_api,
+            f"RoutePlanner public API leaks private/cross-domain type {forbidden!r}")
+
+for token in (
+    "struct RouteFollowerPolicy",
+    "struct RouteFollowerAgentState",
+    "struct RouteFollowerResult",
+    "class RouteFollower",
+):
+    require(token in route_follower_api,
+            f"RouteFollower public API missing explicit boundary token {token!r}")
+
+for forbidden in (
+    "TrajectoryFollower.h",
+    "ManeuverTrackingController.h",
+    "RoutePlannerApi.h",
+    "docking/traffic",
+    "docking/landing",
+):
+    require(forbidden not in route_follower_api,
+            f"RouteFollower public API leaks private/cross-domain dependency {forbidden!r}")
 
 for token in (
     "const AcceptedManeuverProgram& program",

@@ -15,8 +15,9 @@ namespace game::navigation
 // hand control to the next phase.
 //
 // ScheduledMoving:
-//   a continuous moving reference phase advances when its nominal program
-//   horizon ends.
+//   TimeScheduled phases advance when their nominal program horizon ends.
+//   SpatialCorridor phases are progress-driven and advance only when
+//   TrajectoryFollower reports real physical completion.
 //
 // StateCapture:
 //   after the nominal horizon, execution keeps tracking the terminal sample

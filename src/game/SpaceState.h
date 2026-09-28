@@ -327,7 +327,13 @@ private:
         std::uint64_t lastValidatedTick = 0;
         game::navigation::HubSemanticAnchorDefinition portDefinition;
         game::simulation::HubAttachmentSnapshot portAttachment;
+        // Sparse 500/250 m gates belong to cockpit/HUD guidance.
         std::vector<game::navigation::DockingAdvisoryGate> gates;
+
+        // Dense points preserve the exact Planner-authored geometry for the
+        // Hub map. The map must not reconstruct the route from sparse HUD
+        // frames or it visibly turns circular arcs back into polylines.
+        std::vector<game::navigation::DockingAdvisoryGate> mapRouteGates;
         double standoffMeters = 0.0;
         double widthMeters = 0.0;
         double heightMeters = 0.0;

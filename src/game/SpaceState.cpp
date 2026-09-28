@@ -1882,6 +1882,7 @@ void SpaceState::updateDockingAdvisory()
         m_automaticDockingRequestedServerSeconds = -1.0;
         m_automaticDockingAuthoritySeen = false;
         m_automaticDockingCancelPending = false;
+        m_presentedAutomaticDockingRouteRevision = 0;
 
         if (m_dockingPreparationSerial == 0 &&
             !m_dockingPreparationReleasePending)
@@ -2377,11 +2378,9 @@ void SpaceState::updateDockingAdvisory()
             corridorId;
 
         const bool revisionChanged =
-            !m_dockAdvice.authoritativeAutomaticRoute ||
-            m_dockAdvice.authoritativeAutomaticRouteRevision !=
+            m_presentedAutomaticDockingRouteRevision !=
                 session.automaticDockingRouteRevision;
-        m_dockAdvice.authoritativeAutomaticRoute = true;
-        m_dockAdvice.authoritativeAutomaticRouteRevision =
+        m_presentedAutomaticDockingRouteRevision =
             session.automaticDockingRouteRevision;
 
         if (revisionChanged)
@@ -2927,134 +2926,6 @@ void SpaceState::updateDockingAdvisory()
     if (!active.serial)
         return;
 
-    // Automatic presentation must use the exact server AcceptedManeuverProgram
-    // that Follower is executing. The client preflight plan is only a temporary
-    // preview until this authoritative route arrives.
-    if (automaticPending &&
-        m_client->hasSessionSnapshot())
-    {
-        const auto& session = m_client->sessionSnapshot();
-        const bool sameAutomaticRequest =
-            session.automaticDockingRouteValid &&
-            session.automaticDockingRouteRequestSerial ==
-                m_automaticDockingSerial &&
-            session.automaticDockingRouteSystemId ==
-                active.systemId &&
-            session.automaticDockingRouteHubId ==
-                active.hubId &&
-            session.automaticDockingRoute.size() >= 2;
-
-        if (sameAutomaticRequest &&
-            (!active.authoritativeAutomaticRoute ||
-             active.authoritativeAutomaticRouteRevision !=
-                 session.automaticDockingRouteRevision))
-        {
-            std::vector<DockingAdvisoryGate> acceptedRoute;
-            acceptedRoute.reserve(
-                session.automaticDockingRoute.size()
-            );
-            for (const auto& point :
-                 session.automaticDockingRoute)
-            {
-                DockingAdvisoryGate gate;
-                gate.positionMeters =
-                    point.positionHubLocalMeters;
-                gate.forward =
-                    point.forwardHubLocal;
-                gate.speedMps =
-                    point.speedMps;
-                acceptedRoute.push_back(gate);
-            }
-
-            active.plan.executionGates =
-                acceptedRoute;
-
-            // Preserve the user-facing 500 m / terminal 250 m frame cadence,
-            // but sample it ONLY from the authoritative accepted route.
-            std::vector<double> progress(
-                acceptedRoute.size(),
-                0.0
-            );
-            for (std::size_t i = 1;
-                 i < acceptedRoute.size();
-                 ++i)
-            {
-                progress[i] =
-                    progress[i - 1] +
-                    glm::length(
-                        acceptedRoute[i].positionMeters -
-                        acceptedRoute[i - 1].positionMeters
-                    );
-            }
-
-            active.plan.gates.clear();
-            active.plan.gates.push_back(
-                acceptedRoute.front()
-            );
-
-            std::size_t previous = 0;
-            while (previous + 1 < acceptedRoute.size())
-            {
-                const double remaining =
-                    progress.back() - progress[previous];
-                const double spacingMeters =
-                    remaining <= 2500.0
-                        ? 250.0
-                        : 500.0;
-
-                std::size_t next = previous + 1;
-                while (next + 1 < acceptedRoute.size() &&
-                       progress[next + 1] -
-                               progress[previous] <=
-                           spacingMeters + 1.0e-6)
-                {
-                    ++next;
-                }
-
-                auto gate = acceptedRoute[next];
-                for (std::size_t j = previous + 1;
-                     j <= next;
-                     ++j)
-                {
-                    gate.speedMps =
-                        std::min(
-                            gate.speedMps,
-                            acceptedRoute[j].speedMps
-                        );
-                }
-                active.plan.gates.push_back(gate);
-                previous = next;
-            }
-
-            active.authoritativeAutomaticRoute = true;
-            active.authoritativeAutomaticRouteRevision =
-                session.automaticDockingRouteRevision;
-            active.nextGate = 0;
-            active.tracker =
-                DockingAdvisoryCorridorTracker {};
-            active.corridorDeparted = false;
-            active.deviationWarning = false;
-            active.deviationCritical = false;
-            m_dockingGuidanceFailureReason.clear();
-
-            std::cout
-                << "[DockAutoRoute] request="
-                << session.automaticDockingRouteRequestSerial
-                << " revision="
-                << session.automaticDockingRouteRevision
-                << " stage="
-                << (session.automaticDockingRouteFinalIngress
-                        ? "final-ingress"
-                        : "approach-hold")
-                << " accepted_points="
-                << active.plan.executionGates.size()
-                << " hud_gates="
-                << active.plan.gates.size()
-                << " source=accepted-program"
-                << std::endl;
-        }
-    }
-
     const auto& metadata = m_client->lastSimulationMetadata();
     if (metadata.universeTimelineRevision != active.timelineRevision)
     {
@@ -3132,9 +3003,8 @@ void SpaceState::updateDockingAdvisory()
         const auto axisDeltaLocal =
             gates.back().positionMeters - dockStandoffLocal;
         const double axisErrorMeters = glm::length(axisDeltaLocal);
-        if (!active.authoritativeAutomaticRoute &&
-            (!std::isfinite(axisErrorMeters) ||
-             axisErrorMeters > 2.0))
+        if (!std::isfinite(axisErrorMeters) ||
+            axisErrorMeters > 2.0)
         {
             std::cerr << "[DockAdvisory] axis request=" << pending.serial
                       << " tick=" << metadata.serverTick
@@ -3308,10 +3178,9 @@ void SpaceState::updateDockingAdvisory()
 
             if (tracking == DockingAdvisoryTrackingResult::Left)
             {
-                if (!active.authoritativeAutomaticRoute &&
-                    (!automaticPending ||
-                     m_dockingGuidanceFailureReason !=
-                         "automatic off visible advisory corridor"))
+                if (!automaticPending ||
+                    m_dockingGuidanceFailureReason !=
+                        "automatic off visible advisory corridor")
                 {
                     std::cerr << "[DockAdvisory] left request=" << pending.serial
                           << " tick=" << metadata.serverTick
@@ -3328,17 +3197,7 @@ void SpaceState::updateDockingAdvisory()
                           << releaseSection.lateralToleranceMeters << ","
                           << releaseSection.verticalToleranceMeters << '\n';
                 }
-                if (automaticPending &&
-                    active.authoritativeAutomaticRoute)
-                {
-                    // This is the actual server program. Never hide the
-                    // execution corridor merely because the craft is outside
-                    // it; the player must see where the autopilot is trying to
-                    // return. Follower owns recovery/course correction.
-                    active.corridorDeparted = false;
-                    m_dockingGuidanceFailureReason.clear();
-                }
-                else if (!automaticPending)
+                if (!automaticPending)
                 {
                     fail("ship left guidance corridor");
                     return;
@@ -3423,8 +3282,7 @@ void SpaceState::updateDockingAdvisory()
         route.systemId = active.systemId;
         route.source = GuidanceSource::DockingComputer;
         route.purpose = GuidancePurpose::Approach;
-        route.advisoryOnly =
-            !active.authoritativeAutomaticRoute;
+        route.advisoryOnly = true;
         route.noSafePrimarySolution = m_noSafeDockingGuidanceSolution;
         route.deviationWarning = active.deviationWarning;
         route.deviationCritical = active.deviationCritical;

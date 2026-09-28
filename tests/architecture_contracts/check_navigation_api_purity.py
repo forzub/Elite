@@ -261,6 +261,10 @@ for token in (
     "struct RouteFollowerPolicy",
     "struct RouteFollowerAgentState",
     "struct RouteFollowerResult",
+    "struct RouteAlignmentResult",
+    "selectPage(",
+    "sampleReference(",
+    "alignToAttitude(",
     "class RouteFollower",
 ):
     require(token in route_follower_api,

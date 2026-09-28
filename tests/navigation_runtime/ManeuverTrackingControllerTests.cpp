@@ -645,13 +645,12 @@ void testSpatialCorridorAngularRateIsSteeringNotRouteLoss()
     );
 }
 
-void testSpatialCorridorSlowsBeforeLeavingEnvelope()
+void testSpatialCorridorSteersBackWithoutReducingRouteSpeed()
 {
     Program program = baseProgram();
     program.referenceMode = Program::ReferenceMode::SpatialCorridor;
     program.family = Program::ManeuverFamily::FreeTransit;
     program.tracking.positionErrorMeters = 20.0;
-    program.tracking.spatialSlowdownStartFraction = 0.50;
 
     auto agent = followerAgentFor(program.samples[0]);
     agent.positionMapMeters = {2.5, 15.0, 0.0};
@@ -667,31 +666,29 @@ void testSpatialCorridorSlowsBeforeLeavingEnvelope()
     require(
         result.status == Follower::Status::Following &&
         !result.trackingErrorExceeded,
-        "corridor governor treated deliberate along-track slowdown as route loss"
+        "spatial corridor treated recoverable cross-track error as route loss"
     );
     requireNear(
         result.spatialSpeedScale,
-        0.5,
+        1.0,
         1.0e-12,
-        "corridor speed governor did not scale from cross-track envelope"
+        "spatial corridor still reduced route speed because of cross-track error"
     );
     requireNear(
         glm::length(result.targetVelocityMapMps),
-        2.5,
+        5.0,
         1.0e-12,
-        "corridor governor did not reduce along-track target speed"
+        "spatial corridor changed the authored route speed while correcting course"
+    );
+    require(
+        result.targetVelocityMapMps.y < -1.0,
+        "spatial corridor did not steer the velocity target back toward the path"
     );
     requireNear(
         result.envelopePositionErrorMeters,
         15.0,
         1.0e-12,
-        "corridor envelope stopped measuring cross-track position"
-    );
-    requireNear(
-        result.envelopeVelocityErrorMps,
-        0.0,
-        1.0e-12,
-        "deliberate along-track speed regulation polluted cross-track envelope"
+        "corridor envelope stopped measuring geometric cross-track position"
     );
 }
 
@@ -750,7 +747,7 @@ int main()
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
         testSpatialCorridorLaunchesFromStoppedControlPoint();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
-        testSpatialCorridorSlowsBeforeLeavingEnvelope();
+        testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
         testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
@@ -766,6 +763,7 @@ int main()
         std::cout << " - free transit keeps full cross-track correction\n";
         std::cout << " - spatial corridor launches from a stopped control point without clock progress\n";
         std::cout << " - spatial angular-rate drift is corrected without route loss\n";
+        std::cout << " - cross-track error steers back into the corridor without reducing route speed\n";
         return 0;
     }
     catch (const std::exception& error)

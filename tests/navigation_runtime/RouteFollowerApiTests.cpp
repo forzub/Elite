@@ -95,6 +95,17 @@ int main()
             );
         require(sampled.valid, "RouteFollower public API failed reference sampling");
 
+        const auto alignment =
+            game::navigation::autopilot::RouteFollower::alignToAttitude(
+                program,
+                agent,
+                glm::dvec3(1.0, 0.0, 0.0),
+                glm::dvec3(0.0, 0.0, 1.0),
+                glm::dvec3(0.0, 1.0, 0.0),
+                game::navigation::autopilot::RouteFollowerPolicy {}
+            );
+        require(alignment.valid, "RouteFollower public alignment API rejected valid state");
+
         const auto result =
             game::navigation::autopilot::RouteFollower::follow(
                 program,
@@ -114,6 +125,7 @@ int main()
         std::cout << "ROUTE FOLLOWER API TESTS: PASS\n";
         std::cout << " - generic autopilot API executes without private tracker types\n";
         std::cout << " - page selection and reference sampling stay behind the same API\n";
+        std::cout << " - attitude acquisition stays behind the same API\n";
         return 0;
     }
     catch (const std::exception& error)

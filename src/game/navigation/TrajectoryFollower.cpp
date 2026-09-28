@@ -18,11 +18,6 @@ bool finite(double value) noexcept
     return std::isfinite(value);
 }
 
-bool finite(const glm::dvec3& value) noexcept
-{
-    return finite(value.x) && finite(value.y) && finite(value.z);
-}
-
 } // namespace
 
 TrajectoryFollower::Result TrajectoryFollower::follow(

@@ -296,6 +296,36 @@ At 400 m/s this is about 8 m spatial spacing, so execution geometry is much
 denser than the 500/250 m cockpit advisory frames. HUD frame cadence is a
 presentation concern and must never become Follower path geometry.
 
+### Corridor speed governor
+
+Spatial tracking must prioritize staying inside the accepted corridor over
+maintaining nominal schedule speed. The accepted tracking policy therefore
+contains an explicit `spatialSlowdownStartFraction`.
+
+Current ordinary policy:
+
+~~~text
+cross-track <= 50% of proved tracking envelope
+    -> keep 100% planned path speed
+
+50% < cross-track < 100%
+    -> reduce along-path target speed continuously
+
+cross-track >= 100%
+    -> target along-path speed reaches zero;
+       use reserved authority to recenter rather than continue deeper off-axis
+~~~
+
+This governor does not invent a route, move the accepted path, or weaken
+collision proof. It changes only execution rate along the already accepted
+geometry. Planned braking is not weakened while slowing for corridor capture.
+
+For `SpatialCorridor`, longitudinal schedule drift is therefore not itself a
+route-loss condition. The execution envelope that answers "did we leave the
+tunnel?" is based on cross-track position/velocity plus attitude/angular state.
+Longitudinal speed remains controlled and terminal-state constrained, but the
+Follower is allowed to slow it deliberately to protect corridor containment.
+
 `SpatialCorridor` completion is state-based. Reaching the accepted terminal
 state early is valid; being late does not make the spatial reference jump
 forward. A material geometry/world revision may invalidate the program, but

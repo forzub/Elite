@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <utility>
+#include <unordered_map>
 #include "src/world/navigation/GeometricPathPlanner.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
 
@@ -47,6 +48,25 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
     { return world::navigation::segmentClearOfNavigationObstacles(
         a,b,r.obstacles,r.hullRadiusMeters); };
+
+    const auto firstBlockingObstacle =
+        [&](const glm::dvec3& a,
+            const glm::dvec3& b)
+            -> const world::navigation::NavigationObstacle*
+        {
+            for (const auto& obstacle : r.obstacles)
+            {
+                if (world::navigation::segmentIntersectsNavigationObstacle(
+                        a,
+                        b,
+                        obstacle,
+                        r.hullRadiusMeters))
+                {
+                    return &obstacle;
+                }
+            }
+            return nullptr;
+        };
 
     glm::dvec3 routeSearchStart=r.startMeters;
     bool initialForwardLeadActive=false;
@@ -276,6 +296,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         bool terminalTurnPresent = false;
         double terminalTurnRadiusMeters = 0.0;
         double terminalArcRotationDegrees = 0.0;
+        double terminalApproachLengthMeters = 0.0;
         double lengthMeters = 0.0;
         std::string failure;
         std::vector<glm::dvec3> samples;
@@ -311,8 +332,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         candidate.samples[i - 1],
                         candidate.samples[i]))
                 {
+                    const auto* blocker =
+                        firstBlockingObstacle(
+                            candidate.samples[i - 1],
+                            candidate.samples[i]
+                        );
                     candidate.failure =
-                        "piecewise-straight docking route obstructed";
+                        "piecewise-straight docking route obstructed blocker=" +
+                        (blocker && !blocker->id.empty()
+                            ? blocker->id
+                            : std::string("unknown"));
                     candidate.samples.clear();
                     return candidate;
                 }
@@ -456,7 +485,18 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         glm::cross(turnNormal,startRadial)*sp+
                         turnNormal*glm::dot(turnNormal,startRadial)*(1.0-cp);
                     const auto point=center+radial;
-                    if (!clear(previous,point)) {safe=false;break;}
+                    if (!clear(previous,point))
+                    {
+                        const auto* blocker =
+                            firstBlockingObstacle(previous,point);
+                        candidate.failure =
+                            "circular route fillet obstructed blocker=" +
+                            (blocker && !blocker->id.empty()
+                                ? blocker->id
+                                : std::string("unknown"));
+                        safe=false;
+                        break;
+                    }
                     arc.push_back(point);
                     previous=point;
                 }
@@ -482,10 +522,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
             if (!rounded)
             {
-                candidate.failure =
-                    terminalTurn
-                        ? "no clearance for terminal circular route fillet"
-                        : "no clearance for circular route fillet";
+                if (candidate.failure.empty())
+                {
+                    candidate.failure =
+                        terminalTurn
+                            ? "no clearance for terminal circular route fillet"
+                            : "no clearance for circular route fillet";
+                }
                 return candidate;
             }
         }
@@ -503,7 +546,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         {
             if (!clear(candidate.samples[i-1],candidate.samples[i]))
             {
-                candidate.failure="rounded route obstructed";
+                const auto* blocker =
+                    firstBlockingObstacle(
+                        candidate.samples[i-1],
+                        candidate.samples[i]
+                    );
+                candidate.failure=
+                    "rounded route obstructed blocker=" +
+                    (blocker && !blocker->id.empty()
+                        ? blocker->id
+                        : std::string("unknown"));
                 candidate.samples.clear();
                 return candidate;
             }

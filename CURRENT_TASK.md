@@ -1,3 +1,22 @@
+## 2026-09-28 — rebuild verified current docking candidate
+
+Immediate task:
+1. pull current `main`;
+2. use `BUILD_TEST_LAYOUT.md` as the command source of truth;
+3. configure/build the standalone navigation-runtime tree in `build/tests/navigation_runtime`;
+4. confirm the full runtime-test build no longer fails in `NavigationCompositeProvingGroundTests.cpp`;
+5. run the docking gate;
+6. build current `EliteGame` only after the gate is green;
+7. live-run Automatic docking and verify the implementation marker
+   `impl=dock-auto-20260928-stop-speed-aware-turn-semantic-clearance`.
+
+Expected current behavior:
+- Automatic first stops and settles the ship, then plans from the fresh physical state;
+- terminal turn geometry must respond to actual planning-origin speed, not fixed `0.8 * maxSpeed`;
+- if final capture still fails, use the new blocker/clearance diagnostics to decide whether the authored HitVolume itself is wrong.
+
+Do not use the older coast/projected-start acceptance scenario in lower historical sections as the current contract.
+
 ## 2026-09-28 — verify moving-start + HOLD/FinalIngress regression
 
 Immediate acceptance scenario:

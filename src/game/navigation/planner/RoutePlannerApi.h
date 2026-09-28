@@ -29,6 +29,7 @@ struct RoutePlanRequest
     double lateralMps2 = 3.0;
     double maxAngularVelocityRadPerSecond = 0.0;
     double maxAngularAccelerationRadPerSecond2 = 0.0;
+    double initialSpeedMps = 0.0;
 
     bool roundTurns = true;
 

@@ -23,6 +23,7 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/DockingCompatibility.h"
 #include "src/game/navigation/HubFrameBasis.h"
@@ -1454,13 +1455,12 @@ bool GameServer::planAutomaticDocking(
             planningControlLaw
         );
 
-    const double linearReserve = std::min(
-        0.5,
-        std::max(
-            0.0,
-            fullVehicle.maxLateralAccelerationMps2 * 0.20
-        )
-    );
+    const double linearReserve =
+        DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+            fullVehicle.maxForwardAccelerationMps2,
+            fullVehicle.maxBrakingAccelerationMps2,
+            fullVehicle.maxLateralAccelerationMps2
+        );
     const double angularReserve = std::min(
         0.25,
         std::max(
@@ -1790,11 +1790,12 @@ bool GameServer::planAutomaticDocking(
                         request.maxAngularAccelerationRadPerSecond2 =
                             executionVehicle.
                                 maxAngularAccelerationRadPerSecond2;
-                        request.roundTurns = assisted;
+                        request.roundTurns =
+                            assisted && !nearHoldRecovery;
                         request.gateSpacingMeters = 150.0;
                         request.terminalGateSpacingMeters = 150.0;
                         request.terminalDenseDistanceMeters = 2000.0;
-                        if (assisted)
+                        if (assisted && !nearHoldRecovery)
                         {
                             request.terminalApproachLengthMeters =
                                 9000.0;
@@ -3342,14 +3343,23 @@ void GameServer::applyAutomaticDockingControls(
                 positionMapMeters;
         const double holdDistanceMeters =
             glm::length(holdPosition - agent.positionMapMeters);
+        const double holdCaptureDistanceMeters =
+            DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(
+                program.tracking.positionErrorMeters
+            );
+        const double holdCaptureSpeedMps =
+            DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(
+                program.tracking.linearVelocityErrorMps
+            );
         if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold &&
             followed.status != Follower::Status::InvalidInput &&
             std::isfinite(holdDistanceMeters) &&
-            holdDistanceMeters <= 12.0 &&
-            glm::length(agent.velocityMapMetersPerSecond) <= 2.0)
+            holdDistanceMeters <= holdCaptureDistanceMeters &&
+            glm::length(agent.velocityMapMetersPerSecond) <=
+                holdCaptureSpeedMps)
         {
-            enterFinalIngress("standoff-stop");
+            enterFinalIngress("standoff-tracking-envelope");
             continue;
         }
 
@@ -3358,28 +3368,46 @@ void GameServer::applyAutomaticDockingControls(
             agent.yawRateRadPerSec * agent.yawRateRadPerSec +
             agent.rollRateRadPerSec * agent.rollRateRadPerSec
         );
-        const bool correctingDockAttitude =
-            followed.angularCorrectionOnly &&
-            // A small angular-rate discrepancy is steerable in transit too.
-            // Rejecting here would stop translation before steering can act.
-            followed.angularVelocityErrorRadPerSec <=
-                program.tracking.angularVelocityErrorRadPerSec + 0.10 &&
-            currentAngularSpeedRadPerSec <=
-                program.capability.maxAngularSpeedRadPerSec + 0.05;
+        const bool correctingInsideSpatialEnvelope =
+            followed.trackingErrorExceeded &&
+            DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
+                followed.envelopePositionErrorMeters,
+                program.tracking.positionErrorMeters,
+                followed.envelopeVelocityErrorMps,
+                program.tracking.linearVelocityErrorMps,
+                followed.forwardAngleErrorRad,
+                program.tracking.forwardAngleErrorRad,
+                followed.angularVelocityErrorRadPerSec,
+                program.tracking.angularVelocityErrorRadPerSec,
+                currentAngularSpeedRadPerSec,
+                program.capability.maxAngularSpeedRadPerSec
+            );
 
-        if (correctingDockAttitude &&
+        if (correctingInsideSpatialEnvelope &&
             (runtime.lastDiagnosticTick == 0 ||
              time.serverTick - runtime.lastDiagnosticTick >= 180))
         {
             std::cout << "[DockAuto] request=" << runtime.requestSerial
-                      << " phase=correcting-attitude"
+                      << " phase=correcting-envelope"
                       << " stage="
                       << (runtime.stage ==
                               DockingAutomaticRuntime::Stage::FinalIngress
                           ? "final-ingress" : "approach-hold")
                       << " remaining_m=" << followed.remainingDistanceMeters
-                      << " speed_mps="
-                      << glm::length(agent.velocityMapMetersPerSecond)
+                      << " position_error_m="
+                      << followed.envelopePositionErrorMeters
+                      << " position_limit_m="
+                      << program.tracking.positionErrorMeters
+                      << " velocity_error_mps="
+                      << followed.envelopeVelocityErrorMps
+                      << " velocity_limit_mps="
+                      << program.tracking.linearVelocityErrorMps
+                      << " angle_error_deg="
+                      << glm::degrees(followed.forwardAngleErrorRad)
+                      << " angle_limit_deg="
+                      << glm::degrees(
+                             program.tracking.forwardAngleErrorRad
+                         )
                       << " omega_error_radps="
                       << followed.angularVelocityErrorRadPerSec
                       << " omega_limit_radps="
@@ -3391,7 +3419,7 @@ void GameServer::applyAutomaticDockingControls(
         if (followed.status ==
                 Follower::Status::InvalidInput ||
             (followed.trackingErrorExceeded &&
-             !correctingDockAttitude))
+             !correctingInsideSpatialEnvelope))
         {
             const double speedBeforeStopMps =
                 glm::length(motion.localVelocityMps);

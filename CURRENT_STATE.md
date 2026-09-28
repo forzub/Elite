@@ -1,3 +1,22 @@
+## 2026-09-28 — authoritative build layout + speed-aware Automatic docking
+
+The current Automatic docking baseline is now stop-and-settle before planning.
+Do not restore the earlier moving-origin/coast contract from older sections below.
+
+Current implementation facts:
+- Automatic preparation commands BrakeToStop and waits for stable linear/angular motion before planning;
+- RoutePlanner receives the measured planning-origin speed as `initialSpeedMps`;
+- Assisted terminal-turn radius is no longer derived from `0.8 * maxSpeed`; it is derived from actual planning-origin speed plus vehicle lateral/angular authority, with only a hull-scaled geometric floor;
+- ordinary transit fillets no longer fail merely because a cruise-speed radius does not fit; the dense speed profile slows for curvature;
+- the selected docking target uses its semantic dock clearance rather than the generic 80 m Hub-infrastructure clearance;
+- Automatic log marker: `impl=dock-auto-20260928-stop-speed-aware-turn-semantic-clearance`;
+- `NavigationCompositeProvingGroundTests.cpp` was updated to the current 4/5-argument TrajectoryFollower API after a Windows compile failure.
+
+Build/test command ownership is documented in root `BUILD_TEST_LAYOUT.md`.
+Before issuing commands, inspect the current owning `CMakeLists.txt` and canonical scripts; never assume a standalone test target belongs to root `build/`.
+
+Latest Windows evidence before the composite-test compile fix showed an old executable was still being run, so no new live-flight conclusion is accepted yet.
+
 ## 2026-09-28 — moving-start docking + rotating HOLD failure fixed in code
 
 A pre-module-split live run exposed two independent Automatic docking defects.

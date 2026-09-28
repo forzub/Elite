@@ -1,3 +1,33 @@
+## Continue from 2026-09-28 first hard module split
+
+A first concrete Planner/Autopilot/Traffic/Landing separation is on `main`.
+
+New public seams:
+- `src/game/navigation/planner/RoutePlannerApi.h`;
+- `src/game/navigation/autopilot/RouteFollowerApi.h`.
+
+New docking domain:
+- `src/game/docking/model/DockFacilityDescriptor.h`;
+- `src/game/docking/traffic/DockTrafficControllerApi.h/.cpp`;
+- `src/game/docking/landing/DockLandingControllerApi.h/.cpp`.
+
+Do not restore direct GameServer/SpaceState dependencies on
+`DockingAdvisoryPlanner`, `TrajectoryFollower`,
+`ManeuverTrackingController`, `ManeuverProgramSampler` or
+`ManeuverProgramTimeline`.
+
+The old algorithms remain private adapter backends for now because the user's
+current SpatialCorridor flight is successful and must not be rewritten during
+an ownership refactor.
+
+Before wiring live queue/landing behavior, obtain Windows evidence:
+`bash verify_docking.sh`, then build standalone `EliteGame`.
+
+If that gate passes, next slice is authoritative DockTrafficController
+integration only: remote provisional inquiry -> controlled-horizon queue ->
+EntryHoldPoint/portal/pad clearance. LandingController remains a later,
+separate handoff.
+
 ## Continue from 2026-09-28 docking infrastructure architecture decision
 
 The user accepted the long SpatialCorridor behavior as very good. Preserve it.

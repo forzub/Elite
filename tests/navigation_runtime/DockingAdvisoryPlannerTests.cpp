@@ -1,5 +1,6 @@
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
+#include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
@@ -760,8 +761,39 @@ int main()
         tracking.observe(false,true,0.2)!=DockingAdvisoryTrackingResult::Warning ||
         tracking.observe(false,false,0.3)!=DockingAdvisoryTrackingResult::Warning ||
         tracking.observe(false,false,0.7)!=DockingAdvisoryTrackingResult::Warning ||
-        tracking.observe(false,false,1.31)!=DockingAdvisoryTrackingResult::Left)
-    { std::cerr << "corridor warning/hysteresis semantics failed\n"; return 21; }
+        tracking.observe(false,false,1.31)!=DockingAdvisoryTrackingResult::Left ||
+        tracking.observe(true,true,1.40)!=DockingAdvisoryTrackingResult::Inside)
+    { std::cerr << "corridor warning/leave/reentry semantics failed\n"; return 21; }
+
+    const double recoveryReserve =
+        DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+            73.549875,
+            73.549875,
+            73.549875
+        );
+    if (std::abs(recoveryReserve - 14.709975) > 1.0e-6 ||
+        DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(25.0) !=
+            25.0 ||
+        DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(8.0) != 4.0 ||
+        !DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
+            24.6798, 25.0,
+            8.02537, 8.0,
+            glm::radians(3.33), glm::radians(15.0),
+            0.381041, 0.25,
+            0.40, 3.0
+        ) ||
+        DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
+            25.01, 25.0,
+            1.0, 8.0,
+            0.01, glm::radians(15.0),
+            0.01, 0.25,
+            0.01, 3.0
+        ))
+    {
+        std::cerr
+            << "automatic docking recovery policy lost safe in-place correction semantics\n";
+        return 39;
+    }
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';
 }

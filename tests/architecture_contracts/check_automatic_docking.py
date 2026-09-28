@@ -247,6 +247,11 @@ try:
             "Automatic docking startup regressed to coast instead of stop-and-settle"
         )
 
+    if "dock-auto-20260928-stop-adaptive-fillet-semantic-clearance" not in server:
+        raise AssertionError(
+            "Automatic docking implementation revision marker is missing"
+        )
+
     if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:
         raise AssertionError(
             "Automatic docking regressed to appending pre-capture onto the long approach stage"

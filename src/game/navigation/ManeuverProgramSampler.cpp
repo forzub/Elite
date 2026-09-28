@@ -67,8 +67,6 @@ bool validProgram(const Program& program) noexcept
         !nonNegativeFinite(program.tracking.angularVelocityErrorRadPerSec) ||
         !nonNegativeFinite(program.tracking.alongTrackPositionDeadbandMeters) ||
         !nonNegativeFinite(program.tracking.alongTrackSpeedDeadbandMps) ||
-        !nonNegativeFinite(program.tracking.spatialSlowdownStartFraction) ||
-        program.tracking.spatialSlowdownStartFraction >= 1.0 ||
         !nonNegativeFinite(program.tracking.linearFeedbackReserveMps2) ||
         !nonNegativeFinite(program.tracking.angularFeedbackReserveRadPerSec2) ||
         !finite(program.hazardUrgency01))

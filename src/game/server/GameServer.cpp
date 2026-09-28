@@ -57,6 +57,39 @@ const char* bridgeFailureName(
     return "unknown";
 }
 
+std::string dockingAdvisoryTrace(
+    const game::navigation::DockingAdvisoryPlan& plan
+)
+{
+    return
+        " requested_radius_m=" +
+        std::to_string(plan.terminalTurnRequestedRadiusMeters) +
+        " selected_radius_m=" +
+        std::to_string(plan.terminalTurnRadiusMeters) +
+        " rotation_deg=" +
+        std::to_string(plan.terminalArcRotationDegrees) +
+        " candidates=" +
+        std::to_string(plan.terminalArcCandidatesTested) +
+        " routeable=" +
+        std::to_string(plan.terminalArcRouteable) +
+        " route_rejected=" +
+        std::to_string(plan.terminalArcRouteRejected) +
+        " transit_ready=" +
+        std::to_string(plan.terminalArcTransitReady) +
+        " transit_rejected=" +
+        std::to_string(plan.terminalArcTransitRejected) +
+        " collision_rejected=" +
+        std::to_string(plan.terminalArcCollisionRejected) +
+        " accepted=" +
+        std::to_string(plan.terminalArcAcceptedCandidates) +
+        " relaxed=" +
+        std::to_string(plan.terminalTurnRadiusRelaxed ? 1 : 0) +
+        " last_rejection=" +
+        (plan.terminalArcLastRejection.empty()
+            ? std::string("none")
+            : plan.terminalArcLastRejection);
+}
+
 
 
 
@@ -1784,52 +1817,7 @@ bool GameServer::planAutomaticDocking(
                                     ? "advisory-plan-invalid"
                                     : std::string("advisory:") +
                                         advisoryPlan.failure;
-                            reason +=
-                                " requested_radius_m=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalTurnRequestedRadiusMeters
-                                ) +
-                                " candidates=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcCandidatesTested
-                                ) +
-                                " routeable=" +
-                                std::to_string(
-                                    advisoryPlan.terminalArcRouteable
-                                ) +
-                                " route_rejected=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcRouteRejected
-                                ) +
-                                " transit_ready=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcTransitReady
-                                ) +
-                                " transit_rejected=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcTransitRejected
-                                ) +
-                                " collision_rejected=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcCollisionRejected
-                                ) +
-                                " accepted=" +
-                                std::to_string(
-                                    advisoryPlan.
-                                        terminalArcAcceptedCandidates
-                                ) +
-                                " last_rejection=" +
-                                (advisoryPlan.
-                                     terminalArcLastRejection.empty()
-                                    ? std::string("none")
-                                    : advisoryPlan.
-                                        terminalArcLastRejection);
+                            reason += dockingAdvisoryTrace(advisoryPlan);
                             finishFailure(reason);
                             return;
                         }
@@ -2248,14 +2236,14 @@ bool GameServer::planAutomaticDocking(
                             );
                     if (!trajectoryResult.ready())
                     {
-                        finishFailure(
-                            trajectoryResult.trajectory.
-                                    message.empty()
+                        std::string reason =
+                            trajectoryResult.trajectory.message.empty()
                                 ? "trajectory-generation-failed"
                                 : std::string("trajectory:") +
-                                    trajectoryResult.trajectory.
-                                        message
-                        );
+                                    trajectoryResult.trajectory.message;
+                        if(!finalIngressStage)
+                            reason += dockingAdvisoryTrace(advisoryPlan);
+                        finishFailure(reason);
                         return;
                     }
 
@@ -2319,12 +2307,14 @@ bool GameServer::planAutomaticDocking(
                 if (!accepted.valid ||
                     accepted.pages.empty())
                 {
-                    finishFailure(
+                    std::string reason =
                         accepted.failureReason.empty()
                             ? "accepted-program-build-failed"
                             : "accepted-program-" +
-                                accepted.failureReason
-                    );
+                                accepted.failureReason;
+                    if(!finalIngressStage)
+                        reason += dockingAdvisoryTrace(advisoryPlan);
+                    finishFailure(reason);
                     return;
                 }
 

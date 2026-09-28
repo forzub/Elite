@@ -2831,7 +2831,7 @@ void SpaceState::updateDockingAdvisory()
                   << request.maxAngularVelocityRadPerSecond
                   << " max_alpha_radps2="
                   << request.maxAngularAccelerationRadPerSecond2
-                  << " hull_radius_m="
+                  << " agent_radius_m="
                   << request.agentRadiusMeters
                   << " initial_forward_lead_m="
                   << request.initialForwardLeadMeters

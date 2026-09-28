@@ -62,7 +62,10 @@ public:
         double linearVelocityErrorMps = 0.0;
         double envelopePositionErrorMeters = 0.0;
         double envelopeVelocityErrorMps = 0.0;
+        // Steering error may point toward an in-corridor look-ahead target.
+        // Route-loss course error remains measured against corridor tangent.
         double forwardAngleErrorRad = 0.0;
+        double envelopeForwardAngleErrorRad = 0.0;
         double angularVelocityErrorRadPerSec = 0.0;
         bool angularCorrectionOnly = false;
     };

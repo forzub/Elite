@@ -2066,10 +2066,9 @@ void SpaceState::updateDockingAdvisory()
 
     if (automaticPending)
     {
-        // Automatic may reuse a route already prepared for the same dock. If
-        // this request itself just prepared the visible route, wait for the
-        // temporary preparation authority to be handed back, but KEEP the
-        // route/tunnel alive.
+        // If a Manual preparation still owns the craft, release that
+        // temporary authority first. Automatic itself never consumes or
+        // reuses the client-planned route.
         if (m_dockingPreparationSerial != 0 ||
             m_dockingPreparationReleasePending)
         {
@@ -2372,6 +2371,8 @@ void SpaceState::updateDockingAdvisory()
             previous = next;
         }
 
+        const std::size_t hudGateCount =
+            sparse.frames.size();
         guidance.publish(std::move(dense));
         guidance.publish(std::move(sparse));
         m_activeDockingGuidanceCorridorId =
@@ -2397,12 +2398,7 @@ void SpaceState::updateDockingAdvisory()
                 << " accepted_points="
                 << accepted.size()
                 << " hud_gates="
-                << workspace.guidance().
-                       activeSpatialAdvisoryGates(
-                           session.automaticDockingRouteSystemId,
-                           renderTime,
-                           &workspace.modules()
-                       )->frames.size()
+                << hudGateCount
                 << " source=accepted-program"
                 << std::endl;
         }
@@ -2776,8 +2772,8 @@ void SpaceState::updateDockingAdvisory()
         request.gateSpacingMeters = 500.0;
         request.terminalGateSpacingMeters = 250.0;
 
-        // Manual/Automatic preflight Assisted guidance must be realistically
-        // flyable by the SAME game flight law used by the ship.
+        // Manual Assisted guidance must be realistically flyable by the SAME
+        // game flight law used by the ship.
         // Enter the docking axis much earlier and preserve a broad circular
         // turn. Newtonian guidance intentionally keeps the sharper legacy
         // geometry because the ship can rotate independently of velocity.

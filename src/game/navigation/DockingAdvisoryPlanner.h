@@ -49,7 +49,7 @@ struct DockingAdvisoryRequest
 
     // Preferred human-flyable radius. For Assisted docking this is authored
     // geometry, not a hint: Planner may rotate the arc around the docking axis
-    // and move its ALIGN farther outward, but it must not silently squeeze the
+    // and slide ALIGN along that axis, but it must not silently squeeze the
     // requested radius into a different maneuver.
     double preferredTerminalTurnRadiusMeters = 0.0;
 

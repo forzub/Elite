@@ -144,7 +144,7 @@ try:
         "build.referenceMode =",
         "ReferenceMode::SpatialCorridor",
         "ReferenceMode::TimeScheduled",
-        "Timeline::selectSpatialPage(",
+        "Follower::selectPage(",
         "runtime.currentSpatialSegment",
         "Follower::follow(",
         "reference_mode=",
@@ -310,6 +310,18 @@ try:
     if "navigation/TrajectoryFollower.h" in server:
         raise AssertionError(
             "GameServer reached through the RouteFollower public boundary"
+        )
+    if "navigation/ManeuverProgramSampler.h" in server:
+        raise AssertionError(
+            "GameServer leaked Autopilot sampler internals"
+        )
+    if "navigation/ManeuverProgramTimeline.h" in server:
+        raise AssertionError(
+            "GameServer leaked Autopilot timeline internals"
+        )
+    if "ManeuverProgramSampler::" in server or "ManeuverProgramTimeline::" in server:
+        raise AssertionError(
+            "GameServer bypasses RouteFollower API for execution sampling"
         )
 
     if "runtime.controlBridge" in server or "PilotSkillExecutor" in server:

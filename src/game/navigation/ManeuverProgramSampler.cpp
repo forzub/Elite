@@ -277,9 +277,11 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
     if (!window.valid)
         return result;
 
-    result.elapsedSeconds =
-        universeTimeSeconds - window.startUniverseTimeSeconds;
-    if (result.elapsedSeconds < 0.0)
+    // Spatial storage pages share one accepted maneuver epoch. Their local
+    // nominal page start is metadata only; physical progress may legitimately
+    // cross a storage boundary earlier or later than nominal time.
+    if (universeTimeSeconds <
+        program.acceptedAtUniverseTimeSeconds)
     {
         result.status = Status::BeforeStart;
         result.reference = program.samples[0];
@@ -351,6 +353,7 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
         lowerTime + (upperTime - lowerTime) * bestAlpha;
 
     result.status = Status::Active;
+    result.elapsedSeconds = sampledOffset;
     result.lowerSampleIndex = bestLower;
     result.upperSampleIndex = bestUpper;
     result.interpolation01 = bestAlpha;

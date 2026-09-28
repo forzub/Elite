@@ -164,7 +164,8 @@ try:
         "routeInitialForward =",
         "executionGates.front().forward",
         "trajectoryRequest.pathGeometryAlreadyAuthored =",
-        "advisoryPlan.executionGates.empty()",
+        "const auto& executionGates =",
+        "advisoryPlan.executionGates",
         "dockingAdvisoryTrace(advisoryPlan)",
         "requested_terminal_radius_m=",
         "arc_rotation_deg=",
@@ -219,6 +220,11 @@ try:
     if "terminalObstacleEntrySourceProgressMeters" in server:
         raise AssertionError(
             "Automatic docking reintroduced target-obstacle collision bypass"
+        )
+
+    if "advisoryPlan.executionGates.empty()" in server:
+        raise AssertionError(
+            "Automatic docking regained sparse-gate fallback instead of requiring Planner-owned dense geometry"
         )
 
     header = require(
@@ -323,8 +329,11 @@ try:
         "!r.roundTurns",
         "terminalPrimitiveRadius",
         "terminalIngressSamples=36",
+        "terminalAxisPasses=5",
+        "candidateApproachLengthMeters",
         "terminalArcRotationDegrees",
         "terminalArcAcceptedCandidates",
+        "no collision-free exact-radius terminal arc",
         "Subdivide EACH authored segment independently",
     )
     require(

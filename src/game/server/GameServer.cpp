@@ -3465,8 +3465,16 @@ void GameServer::applyAutomaticDockingControls(
                 << followed.envelopeVelocityErrorMps
                 << " velocity_limit_mps="
                 << program.tracking.linearVelocityErrorMps
-                << " angle_error_deg="
+                << " course_error_deg="
+                << glm::degrees(
+                    followed.envelopeForwardAngleErrorRad
+                )
+                << " steering_angle_deg="
                 << glm::degrees(followed.forwardAngleErrorRad)
+                << " angle_error_deg="
+                << glm::degrees(
+                    followed.envelopeForwardAngleErrorRad
+                )
                 << " angle_limit_deg="
                 << glm::degrees(
                     program.tracking.forwardAngleErrorRad

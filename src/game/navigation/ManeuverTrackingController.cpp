@@ -264,6 +264,8 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
     result.linearVelocityErrorMps = glm::length(velocityError);
     result.forwardAngleErrorRad =
         angleBetween(agent.forwardMap, reference.forwardMap);
+    double envelopeForwardAngleErrorRad =
+        result.forwardAngleErrorRad;
     result.angularVelocityErrorRadPerSec =
         glm::length(angularVelocityError);
 
@@ -309,6 +311,13 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
             }
             tangent /= std::sqrt(forwardLength2);
         }
+
+        // Steering may deliberately point inward toward a look-ahead
+        // point. Route-loss course is still measured against the authored
+        // corridor tangent, otherwise the correction itself can invalidate
+        // the route it is trying to recover.
+        envelopeForwardAngleErrorRad =
+            angleBetween(agent.forwardMap, tangent);
 
         const double alongPosition =
             glm::dot(positionError, tangent);
@@ -380,6 +389,8 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         glm::length(envelopeVelocityError);
     result.envelopePositionErrorMeters = envelopePositionErrorMeters;
     result.envelopeVelocityErrorMps = envelopeVelocityErrorMps;
+    result.envelopeForwardAngleErrorRad =
+        envelopeForwardAngleErrorRad;
 
     const bool positionEnvelopeExceeded =
         exceeded(
@@ -393,7 +404,7 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         );
     const bool courseEnvelopeExceeded =
         exceeded(
-            result.forwardAngleErrorRad,
+            envelopeForwardAngleErrorRad,
             program.tracking.forwardAngleErrorRad
         );
     const bool angularRateEnvelopeExceeded =

@@ -247,6 +247,54 @@ where feedback is limited by the tracking envelope and the already-proved author
 
 Large divergence invalidates the accepted maneuver and requests replan; the follower does not silently redesign the trajectory.
 
+## SpatialCorridor reference mode — tunnels, canyons and long docking approach
+
+A collision-checked corridor is a spatial contract. Its reference must not run
+away from the physical vehicle merely because nominal trajectory time advances.
+
+`AcceptedManeuverProgram::ReferenceMode` therefore distinguishes:
+
+~~~text
+TimeScheduled
+    timing is part of the maneuver contract
+    example: short moving/rotating terminal ingress
+
+SpatialCorridor
+    accepted path order is primary
+    example: docking approach, tunnel, canyon, narrow passage
+~~~
+
+For `SpatialCorridor` execution:
+
+~~~text
+actual vehicle position
+    -> monotonic current accepted segment
+    -> project onto that segment
+    -> obtain P_ref / V_ref / A_ff / attitude at spatial progress
+    -> bounded cross-track + velocity + attitude correction
+~~~
+
+Nominal time still exists as Planner metadata and speed-profile provenance, but
+it does **not** choose a future path point and it does **not** advance storage
+pages. A storage page advances only after the real craft physically passes the
+endpoint plane of the current accepted page.
+
+Progress must also be path-order monotonic. The executor must not choose an
+arbitrary nearest future segment: in a hairpin or canyon, a later branch can be
+physically close through solid geometry. Sequential endpoint crossing prevents
+such a shortcut.
+
+The accepted trajectory currently samples scalar path progress every 0.02 s.
+At 400 m/s this is about 8 m spatial spacing, so execution geometry is much
+denser than the 500/250 m cockpit advisory frames. HUD frame cadence is a
+presentation concern and must never become Follower path geometry.
+
+`SpatialCorridor` completion is state-based. Reaching the accepted terminal
+state early is valid; being late does not make the spatial reference jump
+forward. A material geometry/world revision may invalidate the program, but
+nominal schedule drift by itself is not a reason to abandon a still-safe
+corridor.
+
 ## 5. PilotSkill — models execution quality
 
 PilotSkill operates on the ideal program/control request.

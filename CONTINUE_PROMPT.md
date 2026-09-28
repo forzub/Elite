@@ -1,3 +1,9 @@
+## Continue from 2026-09-28 full accepted-segment dynamic proof
+
+Composite root cause: 4 s local planner horizon was incorrectly treated as authority to execute 16 s/18 s accepted programs while a moving hazard remained authoritative. Current main now proves the entire portal and final-capture program against the hazard before execution; unsafe future occupancy causes hold + re-author + re-proof, never tunnel widening or hazard suppression.
+
+Next evidence required: composite-only Windows rerun. Read BUILD_TEST_LAYOUT.md before issuing commands.
+
 ## Continue from 2026-09-28 composite-only rerun
 
 Latest target evidence: navigation_runtime_planner, maneuver_corner_family_matrix, maneuver_rigid_body_corridor, maneuver_chained_limit_matrix, and physical_maneuver_search_coordinator pass. Only navigation_composite_proving_ground remains pending.

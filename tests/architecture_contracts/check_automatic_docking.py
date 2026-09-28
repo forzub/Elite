@@ -66,15 +66,20 @@ try:
         "phase=server-handoff",
         "route_retained=",
         "DockingRouteRequest::Mode::Guidance",
-        "automaticNeedsPreparedRoute",
         "hasVisibleRouteForAutomaticTarget",
-        "phase=route-preflight",
         "localRoutePreparationPending",
+        "automatic_route_source=server",
+        "source=accepted-program",
         "guidanceControlLaw",
         "request.roundTurns = guidanceAssisted",
         "request.gateSpacingMeters = 500.0",
         "request.terminalGateSpacingMeters = 250.0",
     )
+
+    if "automaticNeedsPreparedRoute" in space or "phase=route-preflight" in space:
+        raise AssertionError(
+            "Automatic docking regressed to client-side route preflight before server planning"
+        )
 
     trajectory_header = require(
         "src/world/navigation/TrajectoryGenerator.h",
@@ -150,6 +155,8 @@ try:
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "followed.targetVelocityMapMps",
+        "automaticControl.navigationVelocityTargetValid = true",
+        "ship->setControlState(automaticControl)",
         "terminalAngularVelocityMapRadPerSec",
         "minimumPreCaptureDepthMeters",
         "segmentClearOfNavigationObstacles(",
@@ -507,8 +514,8 @@ try:
     )
 
     print("[PASS] automatic docking ownership/execution contract")
-    print(" - Automatic prepares its own visible advisory route when none exists")
-    print(" - Automatic reuses an existing route for the same dock without hiding it")
+    print(" - Automatic never runs the client advisory planner as a preflight")
+    print(" - Automatic HUD is published only from the server AcceptedManeuverProgram")
     print(" - Automatic transit stops at a hold point before a separate final-ingress stage")
     print(" - server owns Autopilot authority and stabilization")
     print(" - heavy Automatic planning runs outside the fixed-step thread")

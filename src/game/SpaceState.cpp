@@ -3295,7 +3295,7 @@ void SpaceState::updateDockingAdvisory()
     }
 
     const auto makeRoute =
-        [&](const std::vector<DockingAdvisoryGate>& routeGates)
+        [&](const std::vector<game::navigation::planner::RouteGate>& routeGates)
     {
         GuidanceCorridor route;
         route.id = m_activeDockingGuidanceCorridorId;

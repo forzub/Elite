@@ -23,6 +23,7 @@ void printTerminalArcDiagnostics(
             dockingAdvisoryPlanDiagnosticSummary(plan)
         << "\n";
 }
+} // namespace
 
 int main()
 {

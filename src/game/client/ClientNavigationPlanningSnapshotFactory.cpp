@@ -7,7 +7,7 @@
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/HubNavigationClearancePolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
-#include "src/world/navigation/NavigationObstacleFactory.h"
+#include "src/game/navigation/NavigationHitVolumeAdapter.h"
 
 namespace game::client
 {
@@ -88,6 +88,8 @@ const char* clientNavigationPlanningSnapshotStatusName(
             return "hub_attached_object_prediction_failed";
         case ClientNavigationPlanningSnapshotStatus::TargetModulePredictionFailed:
             return "target_module_prediction_failed";
+        case ClientNavigationPlanningSnapshotStatus::ObstacleGeometryUnavailable:
+            return "authoritative_obstacle_geometry_unavailable";
         case ClientNavigationPlanningSnapshotStatus::CoordinateRoundTripFailed:
             return "planning_frame_coordinate_roundtrip_failed";
     }
@@ -326,39 +328,81 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
         return out;
     }
 
-    // Build route geometry from the same predicted object poses. Geometry
-    // construction is shared with future server-side planning; SpaceState must
-    // never invent per-object collision radii.
+    // Build route geometry from the authoritative replicated HitVolume
+    // product. A descriptor-wide Station OBB destroys real holes/passages and
+    // makes docking to external modules impossible, so docking/navigation must
+    // never reconstruct that coarse fallback here.
     out.navigationObstacles.clear();
     for (const auto& object : out.objects)
     {
         if (object.systemId != requestedSystemId)
             continue;
 
-        const std::string obstacleId =
+        const auto cachedIt =
+            world.objects().find(object.id.value);
+        if (cachedIt == world.objects().end())
+        {
+            out.status =
+                ClientNavigationPlanningSnapshotStatus::
+                    ObstacleGeometryUnavailable;
+            return out;
+        }
+
+        const auto& volumes =
+            cachedIt->second.debugHitVolumes;
+        if (volumes.empty())
+        {
+            // Static graph payload is sparse on the wire, but ClientWorldState
+            // retains the last authoritative local hit-volume set. Empty here
+            // means we genuinely cannot prove collision geometry yet.
+            out.status =
+                ClientNavigationPlanningSnapshotStatus::
+                    ObstacleGeometryUnavailable;
+            return out;
+        }
+
+        const std::string obstaclePrefix =
             "object:" + std::to_string(object.id.value);
-        const auto obstacle =
-            world::navigation::makeNavigationObstacleForObject(
-                object.type,
-                obstacleId,
+        auto exactObstacles =
+            game::navigation::NavigationHitVolumeAdapter::buildObstacles(
+                volumes,
                 object.id.value,
                 world::coordinates::fullMeters(object.worldPosition),
                 glm::dmat3(glm::mat3(object.orientation)),
-                game::navigation::DiagnosticHubInfrastructureClearanceMeters
+                obstaclePrefix,
+                {
+                    false,
+                    game::navigation::
+                        DiagnosticHubInfrastructureClearanceMeters
+                }
             );
-        if (!obstacle)
-            continue;
 
-        auto localObstacle = *obstacle;
-        localObstacle.centerMeters =
-            out.planningFrame.worldToLocalPosition(localObstacle.centerMeters);
-        localObstacle.localToWorldBasis =
-            glm::transpose(out.planningFrame.localToWorldBasis) *
-            localObstacle.localToWorldBasis;
-        out.navigationObstacles.push_back(std::move(localObstacle));
+        if (exactObstacles.empty())
+        {
+            out.status =
+                ClientNavigationPlanningSnapshotStatus::
+                    ObstacleGeometryUnavailable;
+            return out;
+        }
 
         if (object.id == out.targetObject.id)
-            out.targetNavigationObstacleId = obstacleId;
+            out.targetNavigationObstacleId =
+                exactObstacles.front().id;
+
+        for (auto& obstacle : exactObstacles)
+        {
+            obstacle.centerMeters =
+                out.planningFrame.worldToLocalPosition(
+                    obstacle.centerMeters
+                );
+            obstacle.localToWorldBasis =
+                glm::transpose(
+                    out.planningFrame.localToWorldBasis
+                ) * obstacle.localToWorldBasis;
+            out.navigationObstacles.push_back(
+                std::move(obstacle)
+            );
+        }
     }
 
     out.controlledShip = *shipIt;

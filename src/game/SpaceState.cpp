@@ -1857,11 +1857,6 @@ void SpaceState::updateDockingAdvisory()
         !automaticCorridorId.empty() &&
         m_activeDockingGuidanceCorridorId == automaticCorridorId &&
         m_dockAdvice.serial != 0;
-    const bool automaticNeedsPreparedRoute =
-        automaticPending &&
-        m_automaticDockingSerial == 0 &&
-        !hasVisibleRouteForAutomaticTarget;
-
     if (pending.valid() &&
         pending.serial != m_lastDockingRequestTraceSerial)
     {
@@ -1877,8 +1872,7 @@ void SpaceState::updateDockingAdvisory()
             << " auto_serial=" << m_automaticDockingSerial
             << " visible_route="
             << (hasVisibleRouteForAutomaticTarget ? 1 : 0)
-            << " needs_preflight="
-            << (automaticNeedsPreparedRoute ? 1 : 0)
+            << " automatic_route_source=server"
             << std::endl;
     }
 
@@ -2069,7 +2063,7 @@ void SpaceState::updateDockingAdvisory()
         }
     }
 
-    if (automaticPending && !automaticNeedsPreparedRoute)
+    if (automaticPending)
     {
         // Automatic may reuse a route already prepared for the same dock. If
         // this request itself just prepared the visible route, wait for the
@@ -2110,6 +2104,20 @@ void SpaceState::updateDockingAdvisory()
             // the request timeout window.
             m_client->setExternalControlPredictionSuppressed(false);
 
+            // Automatic has one route owner: the server. Remove any client
+            // preflight/manual corridor now; the AcceptedProgram corridor will
+            // be published from the session snapshot after planning.
+            if (!m_activeDockingGuidanceCorridorId.empty())
+            {
+                guidance.erase(m_activeDockingGuidanceCorridorId);
+                guidance.erase(
+                    m_activeDockingGuidanceCorridorId + ":frames"
+                );
+            }
+            m_activeDockingGuidanceCorridorId.clear();
+            m_dockAdvice = {};
+            m_dockAdviceJob.reset();
+
             std::cout
                 << "[DockAuto] request=" << pending.serial
                 << " phase=requested system="
@@ -2147,46 +2155,12 @@ void SpaceState::updateDockingAdvisory()
         requests.clear();
     };
 
-    // Once Automatic owns the request, keep refreshing the same Hub-local
-    // visible corridor below. Route preparation and cancellation no longer
-    // apply to this active execution; the server owns the maneuver.
-    if (!(automaticPending && m_automaticDockingSerial != 0 &&
-          !automaticNeedsPreparedRoute))
-    {
-    if (automaticNeedsPreparedRoute &&
-        m_lastDockingPathRequestSerial != pending.serial)
-    {
-        // START DOCKING is self-contained. If no route exists yet, run the
-        // same authoritative stop/snapshot/advisory preparation used by
-        // CALCULATE TRAJECTORY. After the visible route is published and
-        // temporary authority returns, the branch above starts server
-        // Automatic. The user never has to press Manual first.
-        std::cout
-            << "[DockAuto] request=" << pending.serial
-            << " phase=route-preflight"
-            << std::endl;
-    }
-
-    if (m_automaticDockingSerial != 0)
-    {
-        if (!m_automaticDockingCancelPending)
-        {
-            sendAutomaticCommand(
-                ClientShipCommand::CancelAutomaticDocking,
-                m_automaticDockingSerial,
-                nullptr
-            );
-            m_automaticDockingCancelPending = true;
-            m_automaticDockingRequestedServerSeconds =
-                automaticNowServerSeconds;
-        }
-        return;
-    }
-
+    // Client-side route construction exists only for Manual/Guidance.
+    // Automatic is planned exactly once by the authoritative server and its
+    // AcceptedManeuverProgram is replicated back for presentation.
     const bool localRoutePreparationPending =
         pending.valid() &&
-        (pending.mode == DockingRouteRequest::Mode::Guidance ||
-         automaticNeedsPreparedRoute);
+        pending.mode == DockingRouteRequest::Mode::Guidance;
 
     if (!localRoutePreparationPending)
     {
@@ -2656,8 +2630,6 @@ void SpaceState::updateDockingAdvisory()
             ":" + pending.target.semanticAnchorId;
         m_dockingGuidanceFailureReason.clear();
     }
-    }
-
     auto& active = m_dockAdvice;
     if (!active.serial)
         return;

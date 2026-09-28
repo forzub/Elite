@@ -2433,6 +2433,10 @@ bool GameServer::planAutomaticDocking(
         << " phase=planning-async"
         << " execution_t="
         << executionStartUniverseTimeSeconds
+        << " linear_feedback_reserve_mps2="
+        << linearReserve
+        << " angular_feedback_reserve_radps2="
+        << angularReserve
         << "\n";
     return true;
 }

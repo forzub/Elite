@@ -264,10 +264,8 @@ public:
                     positionMapMeters - end.positionMapMeters,
                     terminalSegment
                 );
-            if (!(pastEndpoint >= 0.0))
-                break;
-
-            ++selected;
+            if (pastEndpoint >= 0.0)
+                ++selected;
         }
 
         out.status = SelectionStatus::Active;

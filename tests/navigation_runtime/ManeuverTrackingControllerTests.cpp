@@ -746,6 +746,44 @@ void testSpatialCorridorHoldsTangentInsideCenterDeadband()
     );
 }
 
+void testSpatialZeroSpeedHoldDoesNotInventCourseLoss()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+    program.samples[0].velocityMapMetersPerSecond = glm::dvec3(0.0);
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+
+    const auto& reference = program.samples[0];
+    auto agent = exactAgentFor(reference);
+
+    // 180-degree hull attitude at a stationary checkpoint is an attitude
+    // correction, not a translational course error: course is undefined at
+    // zero speed.
+    agent.forwardMap = -reference.forwardMap;
+    agent.rightMap = -reference.rightMap;
+    agent.upMap = reference.upMap;
+
+    const auto result =
+        Tracker::track(program, reference, agent, Tracker::Policy {});
+
+    require(
+        result.status == Tracker::Status::Tracking,
+        "zero-speed spatial hold treated hull attitude as route loss"
+    );
+    require(
+        result.forwardAngleErrorRad > glm::radians(170.0),
+        "zero-speed hold fixture did not create a large attitude error"
+    );
+    requireNear(
+        result.envelopeForwardAngleErrorRad,
+        0.0,
+        1.0e-12,
+        "zero-speed spatial hold invented a geometric course direction"
+    );
+}
+
 void testFollowerSpatialCorridorCanCompleteBeforeNominalTime()
 {
     Program program = baseProgram();
@@ -803,6 +841,7 @@ int main()
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
         testSpatialCorridorHoldsTangentInsideCenterDeadband();
+        testSpatialZeroSpeedHoldDoesNotInventCourseLoss();
         testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
@@ -820,6 +859,7 @@ int main()
         std::cout << " - spatial angular-rate drift is corrected without route loss\n";
         std::cout << " - cross-track error steers back into the corridor without reducing route speed\n";
         std::cout << " - centered spatial flight holds the segment tangent without look-ahead hunting\n";
+        std::cout << " - zero-speed spatial hold has attitude error but no invented course loss\n";
         return 0;
     }
     catch (const std::exception& error)

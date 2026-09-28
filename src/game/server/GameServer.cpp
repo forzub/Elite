@@ -3350,6 +3350,7 @@ void GameServer::applyAutomaticDockingControls(
             runtime.planningJob.reset();
             runtime.currentProgramPage = 0;
             runtime.currentSpatialSegment = 0;
+            runtime.trackingFailureCount = 0;
             runtime.settledSinceUniverseTimeSeconds = -1.0;
             runtime.alignedSinceUniverseTimeSeconds = -1.0;
 

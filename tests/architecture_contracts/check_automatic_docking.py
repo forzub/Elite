@@ -82,6 +82,7 @@ try:
         "hasInitialAngularVelocity",
         "hasTerminalAngularVelocity",
         "terminalAngularVelocityRadPerSecond",
+        "pathGeometryAlreadyAuthored",
     )
     trajectory_impl = require(
         "src/world/navigation/TrajectoryGenerator.cpp",
@@ -97,6 +98,9 @@ try:
         "AngularTimeScales",
         "angular-speed-relaxed",
         "after translation-speed relaxation",
+        "buildAuthoredExecutionGuide(",
+        "guide.points = request.pathPointsMeters",
+        "path-progress acceleration exceeds vehicle envelope",
     )
     require(
         "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
@@ -158,7 +162,14 @@ try:
         "trajectoryRequest.hasInitialOrientation =",
         "trajectoryRequest.hasInitialAngularVelocity =",
         "routeInitialForward =",
-        "advisoryPlan.gates.front().forward",
+        "executionGates.front().forward",
+        "trajectoryRequest.pathGeometryAlreadyAuthored =",
+        "advisoryPlan.executionGates.empty()",
+        "dockingAdvisoryTrace(advisoryPlan)",
+        "requested_terminal_radius_m=",
+        "arc_rotation_deg=",
+        "arc_candidates=",
+        "arc_accepted=",
         "initialAngularVelocityRadPerSecond =\n                            glm::dvec3(0.0)",
         "phase=aligned-replan",
         "planningControlLaw",
@@ -310,6 +321,11 @@ try:
         "maximumLaunchCut",
         "initialForwardAcceptedLeadMeters",
         "!r.roundTurns",
+        "terminalPrimitiveRadius",
+        "terminalIngressSamples=36",
+        "terminalArcRotationDegrees",
+        "terminalArcAcceptedCandidates",
+        "Subdivide EACH authored segment independently",
     )
     require(
         "src/render/cockpit/FlightVectorIndicatorRenderer.cpp",

@@ -145,6 +145,7 @@ try:
         "reference_mode=",
         "ref_segment=",
         "ref_distance_m=",
+        "spatial_speed_scale=",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "controlBridge->stepVehicle(",
@@ -330,7 +331,9 @@ try:
         "trajectory.angularKinematicsAuthored",
         "completionTriggersReplan",
         "ReferenceMode referenceMode",
+        "spatialSlowdownStartFraction",
         "page.referenceMode = request.referenceMode",
+        "page.tracking.spatialSlowdownStartFraction",
         "TranslationMode::AssistedVelocity",
         "newtonian-motion-envelope-infeasible",
     )
@@ -341,6 +344,7 @@ try:
         "TimeScheduled",
         "SpatialCorridor",
         "ReferenceMode referenceMode = ReferenceMode::TimeScheduled",
+        "spatialSlowdownStartFraction = 0.50",
     )
     require(
         "src/game/navigation/ManeuverProgramSampler.h",
@@ -365,6 +369,7 @@ try:
     require(
         "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp",
         "testFollowerSpatialCorridorTracksPathInsteadOfClock",
+        "testSpatialCorridorSlowsBeforeLeavingEnvelope",
         "testFollowerSpatialCorridorCanCompleteBeforeNominalTime",
     )
 

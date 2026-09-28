@@ -84,14 +84,54 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
         out.executionGates.push_back(adaptGate(gate));
 
     out.terminalDetourUsed = planned.terminalDetourUsed;
+    out.terminalTurnRadiusRelaxed =
+        planned.terminalTurnRadiusRelaxed;
+    out.terminalTurnRequestedRadiusMeters =
+        planned.terminalTurnRequestedRadiusMeters;
+    out.terminalTurnSpeedMps = planned.terminalTurnSpeedMps;
+    out.terminalTurnLateralRadiusMeters =
+        planned.terminalTurnLateralRadiusMeters;
+    out.terminalTurnAngularRadiusMeters =
+        planned.terminalTurnAngularRadiusMeters;
+    out.terminalTurnAngularRampMeters =
+        planned.terminalTurnAngularRampMeters;
+    out.terminalArcCandidatesTested =
+        planned.terminalArcCandidatesTested;
+    out.terminalArcRouteable = planned.terminalArcRouteable;
+    out.terminalArcRouteRejected =
+        planned.terminalArcRouteRejected;
+    out.terminalArcTransitReady = planned.terminalArcTransitReady;
+    out.terminalArcTransitRejected =
+        planned.terminalArcTransitRejected;
+    out.terminalArcCollisionRejected =
+        planned.terminalArcCollisionRejected;
+    out.terminalArcAcceptedCandidates =
+        planned.terminalArcAcceptedCandidates;
+    out.terminalArcAxisPassesTested =
+        planned.terminalArcAxisPassesTested;
+    out.terminalArcLastRejection =
+        planned.terminalArcLastRejection;
+    out.terminalArcDominantBlockerId =
+        planned.terminalArcDominantBlockerId;
+    out.terminalArcDominantBlockerHits =
+        planned.terminalArcDominantBlockerHits;
+    out.terminalArcDominantBlockerCenterMeters =
+        planned.terminalArcDominantBlockerCenterMeters;
+    out.terminalArcDominantBlockerHalfExtentsMeters =
+        planned.terminalArcDominantBlockerHalfExtentsMeters;
+    out.terminalArcDominantBlockerRadiusMeters =
+        planned.terminalArcDominantBlockerRadiusMeters;
+    out.terminalArcRotationDegrees =
+        planned.terminalArcRotationDegrees;
+    out.initialTurnPresent = planned.initialTurnPresent;
     out.initialTurnRadiusMeters = planned.initialTurnRadiusMeters;
+    out.terminalApproachShortened =
+        planned.terminalApproachShortened;
+    out.terminalApproachExtended =
+        planned.terminalApproachExtended;
     out.terminalApproachLengthMeters =
         planned.terminalApproachLengthMeters;
     out.terminalTurnRadiusMeters = planned.terminalTurnRadiusMeters;
-    out.terminalArcRotationDegrees =
-        planned.terminalArcRotationDegrees;
-    out.terminalArcRouteable = planned.terminalArcRouteable;
-    out.terminalArcTransitReady = planned.terminalArcTransitReady;
     return out;
 }
 

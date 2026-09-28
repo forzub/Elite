@@ -81,6 +81,18 @@ struct DockingAdvisoryPlan
     bool terminalTurnRadiusRelaxed = false;
     double terminalTurnRadiusMeters = 0.0;
 
+    // Exact preferred terminal-arc diagnostics. These counters make a failed
+    // route explain itself instead of collapsing every cause into "invalid".
+    double terminalTurnRequestedRadiusMeters = 0.0;
+    int terminalArcCandidatesTested = 0;
+    int terminalArcRouteable = 0;
+    int terminalArcRouteRejected = 0;
+    int terminalArcTransitReady = 0;
+    int terminalArcTransitRejected = 0;
+    int terminalArcCollisionRejected = 0;
+    int terminalArcAcceptedCandidates = 0;
+    std::string terminalArcLastRejection;
+
     // Selected rotation of the terminal circular primitive around the docking
     // axis. Zero is one basis direction; other values prove Planner actually
     // searched another side instead of squeezing the same local corner.

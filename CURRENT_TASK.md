@@ -1,3 +1,46 @@
+## 2026-09-28 — next task: split navigation, traffic and landing before more docking behavior
+
+Do not continue adding pad/latch/queue behavior inside the current docking
+Automatic runtime. First establish the hard module/API boundaries described in
+`src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md`.
+
+Implementation order:
+
+1. Define public DTO/API headers for four owners:
+   - generic RoutePlanner;
+   - RouteFollower/Autopilot;
+   - DockTrafficController;
+   - DockLandingController.
+2. Physically separate their implementation files/directories. Existing
+   navigation classes may be moved behind adapters incrementally, but no module
+   may include another module's private implementation header.
+3. Add architecture-contract tests that fail on forbidden includes/dependencies,
+   duplicate state ownership or direct private access through GameServer.
+4. Preserve the already successful SpatialCorridor behavior while moving it
+   behind the generic Planner/Autopilot boundary.
+5. Introduce DockFacility semantic data independent from mesh shape:
+   AccessPortal, EntryHoldPoint, conflict resources, internal lanes and pads.
+6. Add DockTrafficController with two-stage admission:
+   remote inquiry is provisional; hard queue/pad/portal reservation begins only
+   at a controlled ETA/distance horizon.
+7. Initial queue implementation uses one physical EntryHoldPoint per portal plus
+   a virtual queue. Do not build a free-form holding yard yet.
+8. Traffic compatibility must distinguish hard physical fit from class policy.
+   Emergency may upgrade to a larger compatible dock, never downgrade to a
+   smaller aperture/pad.
+9. Map/UI state must come from dispatcher replicated state and distinguish
+   physical incompatibility, class restriction, occupied/reserved/entry-busy,
+   queue length/position and estimated release/wait.
+10. Replace the current internal-capture completion with a clean
+    `LandingHandoff` boundary. Only DockLandingController may then align over
+    the pad, prohibit main engines, deploy gear, settle, contact and latch.
+11. Departure is also traffic-controlled: remain latched until exit resources are
+    reserved and UndockClearance is issued.
+
+Acceptance for this slice is architectural first: generic Planner and Autopilot
+tests must build/use their public APIs without linking docking Traffic or
+Landing implementation.
+
 ## 2026-09-28 — verify centered flight + physical dock ingress
 
 Standalone EliteGame only.

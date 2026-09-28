@@ -3182,11 +3182,13 @@ void GameServer::applyAutomaticDockingControls(
                     DockingAutomaticRuntime::Phase::Stabilizing;
                 runtime.programs.clear();
                 runtime.settledSinceUniverseTimeSeconds = -1.0;
-                ShipControlState stop;
-                stop.velocityAlignmentCommand =
-                    game::navigation::
-                        VelocityAlignmentMode::BrakeToStop;
-                ship->setControlState(stop);
+                ship->setControlState(
+                    automaticDockingPreparationControl(
+                        *ship,
+                        runtime.stage ==
+                            DockingAutomaticRuntime::Stage::FinalIngress
+                    )
+                );
 
                 std::cout
                     << "[DockAuto] request="
@@ -3366,23 +3368,30 @@ void GameServer::applyAutomaticDockingControls(
                 positionMapMeters;
         const double holdDistanceMeters =
             glm::length(holdPosition - agent.positionMapMeters);
-        const double holdCaptureDistanceMeters =
-            game::navigation::DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(
-                program.tracking.positionErrorMeters
-            );
-        const double holdCaptureSpeedMps =
-            game::navigation::DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(
-                program.tracking.linearVelocityErrorMps
-            );
+        const double holdSpeedMps =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const double holdBrakingAuthorityMps2 =
+            program.controlLaw ==
+                    game::navigation::LocalFlightControlLaw::Assisted
+                ? program.capability.
+                      maxReverseMainAccelerationMetersPerSec2
+                : program.capability.
+                      maxForwardMainAccelerationMetersPerSec2;
+        const bool holdPhysicallyCapturable =
+            game::navigation::DockingAutomaticRecoveryPolicy::
+                canCaptureHoldWhileBraking(
+                    holdDistanceMeters,
+                    program.tracking.positionErrorMeters,
+                    holdSpeedMps,
+                    holdBrakingAuthorityMps2
+                );
+
         if (runtime.stage ==
                 DockingAutomaticRuntime::Stage::ApproachHold &&
             followed.status != FollowerStatus::InvalidInput &&
-            std::isfinite(holdDistanceMeters) &&
-            holdDistanceMeters <= holdCaptureDistanceMeters &&
-            glm::length(agent.velocityMapMetersPerSecond) <=
-                holdCaptureSpeedMps)
+            holdPhysicallyCapturable)
         {
-            enterFinalIngress("standoff-tracking-envelope");
+            enterFinalIngress("standoff-braking-envelope");
             continue;
         }
 

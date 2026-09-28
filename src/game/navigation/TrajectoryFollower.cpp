@@ -98,84 +98,125 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         }
     }
 
-    if (spatialCorridor &&
-        program.tracking.positionErrorMeters > kEpsilon)
-    {
-        const double limit =
-            program.tracking.positionErrorMeters;
-        const double slowdownStart =
-            limit *
-            program.tracking.spatialSlowdownStartFraction;
+    glm::dvec3 targetVelocityMapMps =
+        reference.velocityMapMetersPerSecond;
 
-        if (sampled.spatialDistanceMeters > slowdownStart &&
-            limit > slowdownStart + kEpsilon)
+    // SpatialCorridor is geometric guidance. Cross-track error must change
+    // COURSE, not silently reduce the route speed. Aim the hull and the
+    // Assisted velocity target at a bounded look-ahead point on the SAME
+    // accepted path. ManeuverTrackingController still derives its spatial
+    // envelope tangent from reference.velocity, so route-loss remains measured
+    // against the authored corridor rather than this corrective steering ray.
+    if (spatialCorridor &&
+        sampled.lowerSampleIndex < sampled.upperSampleIndex &&
+        sampled.upperSampleIndex < program.sampleCount)
+    {
+        const double actualSpeed =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const double lookAheadMeters = std::clamp(
+            std::max(50.0, actualSpeed * 1.5),
+            50.0,
+            250.0
+        );
+
+        glm::dvec3 lookAheadPoint =
+            program.samples[sampled.upperSampleIndex].
+                positionMapMeters;
+        double accumulated = glm::length(
+            lookAheadPoint - reference.positionMapMeters
+        );
+
+        for (std::size_t i = sampled.upperSampleIndex;
+             i + 1 < program.sampleCount &&
+             accumulated < lookAheadMeters;
+             ++i)
         {
-            spatialSpeedScale = std::clamp(
-                (limit - sampled.spatialDistanceMeters) /
-                    (limit - slowdownStart),
-                0.0,
-                1.0
-            );
+            const glm::dvec3 a =
+                program.samples[i].positionMapMeters;
+            const glm::dvec3 b =
+                program.samples[i + 1].positionMapMeters;
+            const double segmentLength = glm::length(b - a);
+            if (!(segmentLength > kEpsilon) ||
+                !finite(segmentLength))
+            {
+                continue;
+            }
+
+            const double remaining =
+                lookAheadMeters - accumulated;
+            if (remaining < segmentLength)
+            {
+                lookAheadPoint =
+                    a + (b - a) * (remaining / segmentLength);
+                accumulated = lookAheadMeters;
+                break;
+            }
+
+            accumulated += segmentLength;
+            lookAheadPoint = b;
         }
 
-        if (spatialSpeedScale < 1.0)
+        const glm::dvec3 steeringRay =
+            lookAheadPoint - agent.positionMapMeters;
+        const double steeringDistance =
+            glm::length(steeringRay);
+        const double referenceSpeed =
+            glm::length(reference.velocityMapMetersPerSecond);
+
+        if (steeringDistance > kEpsilon &&
+            finite(steeringDistance) &&
+            finite(referenceSpeed))
         {
-            glm::dvec3 tangent =
-                reference.velocityMapMetersPerSecond;
-            double tangentLength = glm::length(tangent);
-            if (!(tangentLength > kEpsilon) &&
-                sampled.upperSampleIndex <
-                    program.sampleCount)
+            const glm::dvec3 desiredForward =
+                steeringRay / steeringDistance;
+
+            targetVelocityMapMps =
+                desiredForward * referenceSpeed;
+
+            // Course correction owns yaw/pitch while retaining a stable roll
+            // reference. This makes Assisted behave like the agreed aircraft
+            // model: nose points back into the tunnel and velocity follows.
+            glm::dvec3 up =
+                reference.upMap -
+                desiredForward *
+                    glm::dot(reference.upMap, desiredForward);
+            double upLength = glm::length(up);
+            if (!(upLength > kEpsilon))
             {
-                tangent =
-                    program.samples[sampled.upperSampleIndex].
-                        positionMapMeters -
-                    program.samples[sampled.lowerSampleIndex].
-                        positionMapMeters;
-                tangentLength = glm::length(tangent);
+                up =
+                    agent.upMap -
+                    desiredForward *
+                        glm::dot(agent.upMap, desiredForward);
+                upLength = glm::length(up);
+            }
+            if (!(upLength > kEpsilon))
+            {
+                const glm::dvec3 seed =
+                    std::abs(desiredForward.y) < 0.90
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                up =
+                    seed -
+                    desiredForward *
+                        glm::dot(seed, desiredForward);
+                upLength = glm::length(up);
             }
 
-            if (tangentLength > kEpsilon)
+            if (upLength > kEpsilon)
             {
-                tangent /= tangentLength;
-                const glm::dvec3 acceleration =
-                    reference.
-                        linearAccelerationFeedForwardMapMps2;
-                const double alongAcceleration =
-                    glm::dot(acceleration, tangent);
-                const glm::dvec3 lateralAcceleration =
-                    acceleration -
-                    tangent * alongAcceleration;
+                up /= upLength;
+                const glm::dvec3 right =
+                    glm::normalize(
+                        glm::cross(desiredForward, up)
+                    );
+                up = glm::normalize(
+                    glm::cross(right, desiredForward)
+                );
 
-                // Slowing for corridor capture may suppress planned forward
-                // acceleration, but never weakens already-planned braking.
-                const double governedAlongAcceleration =
-                    alongAcceleration > 0.0
-                        ? alongAcceleration * spatialSpeedScale
-                        : alongAcceleration;
-
-                reference.
-                    linearAccelerationFeedForwardMapMps2 =
-                        tangent * governedAlongAcceleration +
-                        lateralAcceleration *
-                            spatialSpeedScale *
-                            spatialSpeedScale;
+                reference.forwardMap = desiredForward;
+                reference.rightMap = right;
+                reference.upMap = up;
             }
-            else
-            {
-                reference.
-                    linearAccelerationFeedForwardMapMps2 =
-                        glm::dvec3(0.0);
-            }
-
-            reference.velocityMapMetersPerSecond *=
-                spatialSpeedScale;
-            reference.angularVelocityMapRadPerSecond *=
-                spatialSpeedScale;
-            reference.
-                angularAccelerationFeedForwardMapRadPerSec2 *=
-                    spatialSpeedScale *
-                    spatialSpeedScale;
         }
     }
 
@@ -206,7 +247,7 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
 
     result.intent = tracking.intent;
     result.targetVelocityMapMps =
-        reference.velocityMapMetersPerSecond;
+        targetVelocityMapMps;
     result.crossTrackErrorMeters =
         tracking.positionErrorMeters;
     result.linearVelocityErrorMps =

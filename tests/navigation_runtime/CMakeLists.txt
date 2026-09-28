@@ -952,6 +952,29 @@ target_link_libraries(docking_advisory_tests PRIVATE EliteNavigationRuntimeContr
 add_test(NAME docking_advisory COMMAND docking_advisory_tests)
 
 add_executable(
+    navigation_hit_volume_adapter_tests
+    NavigationHitVolumeAdapterTests.cpp
+)
+target_include_directories(
+    navigation_hit_volume_adapter_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(
+    navigation_hit_volume_adapter_tests
+    PRIVATE cxx_std_17
+)
+target_link_libraries(
+    navigation_hit_volume_adapter_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+add_test(
+    NAME navigation_hit_volume_adapter
+    COMMAND navigation_hit_volume_adapter_tests
+)
+
+add_executable(
     nominal_route_planner_tests
     NominalRoutePlannerTests.cpp
 )

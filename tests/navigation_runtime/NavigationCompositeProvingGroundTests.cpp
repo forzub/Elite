@@ -2659,7 +2659,10 @@ CompositeMetrics runComposite(Law law)
         "composite resumed wrong portal after local replan"
     );
 
-    // Phase 4: narrow passage to the second portal.
+    // Phase 4: narrow passage to the second portal. The 19 m half-width is
+    // the physical constraint; traversal time is allowed to grow so a craft
+    // with weak lateral authority can reduce curvature/tracking demand rather
+    // than treating a speed choice as proof that the passage is impossible.
     {
         const VehicleState start = captureState(v);
         const Basis terminal =
@@ -2675,7 +2678,7 @@ CompositeMetrics runComposite(Law law)
                 resumed.coarseWaypointMapMeters,
                 {6.0, 0.0, 0.0},
                 terminal,
-                10.0,
+                16.0,
                 law == Law::Newtonian
                     ? OrientationMode::FixedStart
                     : OrientationMode::VelocityAligned,

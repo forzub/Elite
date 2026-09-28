@@ -552,6 +552,99 @@ void testFollowerSpatialCorridorTracksPathInsteadOfClock()
     );
 }
 
+void testSpatialCorridorLaunchesFromStoppedControlPoint()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+
+    program.samples[0].velocityMapMetersPerSecond = glm::dvec3(0.0);
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.samples[1].velocityMapMetersPerSecond =
+        glm::dvec3(5.0, 0.0, 0.0);
+    program.samples[1].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+
+    auto agent = followerAgentFor(program.samples[0]);
+    agent.velocityMapMetersPerSecond = glm::dvec3(0.0);
+
+    const auto result = Follower::follow(
+        program,
+        program.acceptedAtUniverseTimeSeconds + 0.75,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(result.status == Follower::Status::Following,
+            "stopped spatial launch did not remain active");
+    require(result.spatialReference &&
+                result.referenceInterpolation01 <= 1.0e-12,
+            "stopped spatial launch advanced position by clock");
+    requireNear(
+        glm::length(result.targetVelocityMapMps),
+        5.0,
+        1.0e-12,
+        "stopped spatial launch kept the zero-speed lower checkpoint"
+    );
+    require(
+        result.intent.idealLinearAccelerationLocalMps2.x > 0.0,
+        "stopped spatial launch produced no forward control demand"
+    );
+}
+
+void testSpatialCorridorAngularRateIsSteeringNotRouteLoss()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.tracking.angularVelocityErrorRadPerSec = 0.25;
+
+    const auto& reference = program.samples[0];
+    auto agent = exactAgentFor(reference);
+    agent.rollRateRadPerSec += 0.55;
+
+    const auto result =
+        Tracker::track(program, reference, agent, Tracker::Policy {});
+
+    require(
+        result.status == Tracker::Status::Tracking,
+        "spatial corridor treated angular-rate error as route loss"
+    );
+    require(
+        result.angularCorrectionOnly,
+        "spatial corridor did not report bounded angular correction"
+    );
+    requireNear(
+        glm::length(
+            result.intent.idealLinearAccelerationLocalMps2 -
+            reference.linearAccelerationFeedForwardMapMps2 -
+            result.linearFeedbackMapMps2
+        ),
+        0.0,
+        1.0e-12,
+        "spatial angular correction erased accepted translation"
+    );
+    require(
+        result.angularFeedbackMapRadPerSec2.x < 0.0,
+        "spatial angular correction failed to oppose excess spin"
+    );
+
+    auto followerAgent = followerAgentFor(reference);
+    followerAgent.rollRateRadPerSec += 0.55;
+    const auto follower = Follower::follow(
+        program,
+        program.acceptedAtUniverseTimeSeconds,
+        followerAgent,
+        Tracker::Policy {}
+    );
+    require(
+        !follower.trackingErrorExceeded &&
+            follower.angularCorrectionOnly,
+        "Follower still rejected a spatial angular-rate-only excursion"
+    );
+}
+
 void testSpatialCorridorSlowsBeforeLeavingEnvelope()
 {
     Program program = baseProgram();
@@ -655,6 +748,8 @@ int main()
         testFreeTransitCorridorStillCorrectsCrossTrackMotion();
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
+        testSpatialCorridorLaunchesFromStoppedControlPoint();
+        testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
         testSpatialCorridorSlowsBeforeLeavingEnvelope();
         testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
@@ -669,6 +764,8 @@ int main()
         std::cout << " - free transit ignores harmless longitudinal speed drift\n";
         std::cout << " - free-transit deadbands do not falsely trip the execution envelope\n";
         std::cout << " - free transit keeps full cross-track correction\n";
+        std::cout << " - spatial corridor launches from a stopped control point without clock progress\n";
+        std::cout << " - spatial angular-rate drift is corrected without route loss\n";
         return 0;
     }
     catch (const std::exception& error)

@@ -60,6 +60,39 @@ void testScheduledMovingAdvancesAtNominalEnd()
             "ScheduledMoving did not advance at nominal end");
 }
 
+void testSpatialScheduledMovingUsesPhysicalCompletion()
+{
+    Program p = programAt(15.0, 2.0);
+    p.referenceMode = Program::ReferenceMode::SpatialCorridor;
+
+    Gate::Policy policy;
+    policy.mode = Gate::Mode::ScheduledMoving;
+
+    const auto stillInsideAtNominalEnd =
+        Gate::evaluate(
+            p,
+            17.0,
+            Follower::Status::Following,
+            policy
+        );
+    require(
+        stillInsideAtNominalEnd.status == Gate::Status::Continue,
+        "SpatialCorridor advanced by nominal clock before physical completion"
+    );
+
+    const auto completedEarly =
+        Gate::evaluate(
+            p,
+            16.0,
+            Follower::Status::Complete,
+            policy
+        );
+    require(
+        completedEarly.status == Gate::Status::Advance,
+        "SpatialCorridor failed to advance on early physical completion"
+    );
+}
+
 void testStateCaptureHoldsPastNominalEnd()
 {
     const Program p = programAt(20.0, 3.0);
@@ -167,6 +200,7 @@ int main()
     try
     {
         testScheduledMovingAdvancesAtNominalEnd();
+        testSpatialScheduledMovingUsesPhysicalCompletion();
         testStateCaptureHoldsPastNominalEnd();
         testStateCaptureAdvancesOnlyOnFollowerComplete();
         testStateCaptureTimesOutInsteadOfSilentlyAdvancing();
@@ -174,6 +208,7 @@ int main()
 
         std::cout << "MANEUVER PHASE GATE TESTS: PASS\n";
         std::cout << " - ScheduledMoving advances at nominal reference end\n";
+        std::cout << " - SpatialCorridor ScheduledMoving advances only on physical completion\n";
         std::cout << " - StateCapture holds terminal sample until real Follower::Complete\n";
         std::cout << " - failed capture times out explicitly instead of silently advancing\n";
         return 0;

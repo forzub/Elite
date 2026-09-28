@@ -319,8 +319,14 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         // course to lose. The hull may legitimately rotate in place (HOLD /
         // terminal alignment), so attitude error remains a steering signal
         // but must not become a 180-degree corridor-loss event.
+        const bool newtonianSpatialDrift =
+            program.translationMode ==
+                AcceptedManeuverProgram::TranslationMode::
+                    NewtonianMainEngine;
+
         envelopeForwardAngleErrorRad =
-            referenceSpeedSquared > kEpsilon
+            referenceSpeedSquared > kEpsilon &&
+            !newtonianSpatialDrift
                 ? angleBetween(agent.forwardMap, tangent)
                 : 0.0;
 

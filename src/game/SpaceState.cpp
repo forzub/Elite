@@ -2631,8 +2631,20 @@ void SpaceState::updateDockingAdvisory()
                   << job->plan.terminalApproachLengthMeters
                   << " final_axis_shortened="
                   << (job->plan.terminalApproachShortened ? 1 : 0)
+                  << " requested_terminal_radius_m="
+                  << job->plan.terminalTurnRequestedRadiusMeters
                   << " terminal_radius_m="
                   << job->plan.terminalTurnRadiusMeters
+                  << " arc_rotation_deg="
+                  << job->plan.terminalArcRotationDegrees
+                  << " arc_candidates="
+                  << job->plan.terminalArcCandidatesTested
+                  << " arc_accepted="
+                  << job->plan.terminalArcAcceptedCandidates
+                  << " execution_points="
+                  << job->plan.executionGates.size()
+                  << " hud_gates="
+                  << job->plan.gates.size()
                   << " radius_relaxed="
                   << (job->plan.terminalTurnRadiusRelaxed ? 1 : 0)
                   << '\n';

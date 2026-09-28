@@ -1508,6 +1508,21 @@ bool GameServer::planAutomaticDocking(
     executionVehicle.maxAngularAccelerationRadPerSecond2 -=
         angularReserve;
 
+    // Planner must not sit exactly on the AcceptedProgram envelope. Real
+    // trajectory samples combine tangential and curvature acceleration, and
+    // roundoff at the exact authority boundary previously made a geometrically
+    // valid 400 m/s arc fail as assisted-motion-envelope-infeasible.
+    constexpr double AutomaticPlanningAuthorityFraction = 0.90;
+    auto planningVehicle = executionVehicle;
+    planningVehicle.maxForwardAccelerationMps2 *=
+        AutomaticPlanningAuthorityFraction;
+    planningVehicle.maxBrakingAccelerationMps2 *=
+        AutomaticPlanningAuthorityFraction;
+    planningVehicle.maxLateralAccelerationMps2 *=
+        AutomaticPlanningAuthorityFraction;
+    planningVehicle.maxAngularAccelerationRadPerSecond2 *=
+        AutomaticPlanningAuthorityFraction;
+
     struct ObstacleSource
     {
         std::uint32_t id = 0;
@@ -1560,7 +1575,7 @@ bool GameServer::planAutomaticDocking(
         planningControlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted;
 
-    const glm::dvec3 startPositionMeters =
+    const glm::dvec3 observedStartPositionMeters =
         motion.localPositionMeters;
     const glm::dvec3 startVelocityMps =
         motion.localVelocityMps;
@@ -1575,11 +1590,20 @@ bool GameServer::planAutomaticDocking(
     const auto dockingStage = runtime.stage;
 
     // The worker normally completes in a few hundred milliseconds. Plan from
-    // one second in the future and hold the ship stopped until that epoch so
-    // the returned absolute-time maneuver is not already stale when installed.
+    // one second in the future. ApproachHold preserves VREL with zero linear
+    // acceleration while planning, so its start position must advance along
+    // that measured velocity. FinalIngress is deliberately stopped first.
     constexpr double PlanningLeadSeconds = 1.0;
     const double executionStartUniverseTimeSeconds =
         universeTimeSeconds + PlanningLeadSeconds;
+    const bool coastToExecution =
+        runtime.stage ==
+            DockingAutomaticRuntime::Stage::ApproachHold;
+    const glm::dvec3 startPositionMeters =
+        observedStartPositionMeters +
+        (coastToExecution
+            ? startVelocityMps * PlanningLeadSeconds
+            : glm::dvec3(0.0));
 
     auto job =
         std::make_shared<DockingAutomaticRuntime::PlanningJob>();
@@ -1596,7 +1620,7 @@ bool GameServer::planAutomaticDocking(
          hull,
          envelope,
          physics,
-         executionVehicle,
+         planningVehicle,
          linearReserve,
          angularReserve,
          obstacleSources = std::move(obstacleSources),
@@ -1751,7 +1775,7 @@ bool GameServer::planAutomaticDocking(
                     trajectoryRequest.universeTimeScale = 1.0;
                     trajectoryRequest.obstacles = obstacles;
                     trajectoryRequest.vehicle =
-                        executionVehicle;
+                        planningVehicle;
                     trajectoryRequest.initialVelocityMps =
                         startVelocityMps;
                     trajectoryRequest.initialAccelerationMps2 =
@@ -1800,20 +1824,20 @@ bool GameServer::planAutomaticDocking(
                         request.agentRadiusMeters =
                             hullRadiusMeters;
                         request.maxSpeedMps =
-                            executionVehicle.maxSpeedMps;
+                            planningVehicle.maxSpeedMps;
                         request.acceleratingMps2 =
-                            executionVehicle.maxForwardAccelerationMps2;
+                            planningVehicle.maxForwardAccelerationMps2;
                         request.brakingMps2 =
-                            executionVehicle.
+                            planningVehicle.
                                 maxBrakingAccelerationMps2;
                         request.lateralMps2 =
-                            executionVehicle.
+                            planningVehicle.
                                 maxLateralAccelerationMps2;
                         request.maxAngularVelocityRadPerSecond =
-                            executionVehicle.
+                            planningVehicle.
                                 maxAngularVelocityRadPerSecond;
                         request.maxAngularAccelerationRadPerSecond2 =
-                            executionVehicle.
+                            planningVehicle.
                                 maxAngularAccelerationRadPerSecond2;
                         request.roundTurns =
                             assisted && !nearHoldRecovery;
@@ -1898,7 +1922,7 @@ bool GameServer::planAutomaticDocking(
                             constraint.sourcePathProgressMeters =
                                 sourceProgress;
                             constraint.maxSpeedMps = std::min(
-                                executionVehicle.maxSpeedMps,
+                                planningVehicle.maxSpeedMps,
                                 std::max(
                                     0.5,
                                     executionGates[i].speedMps
@@ -2114,7 +2138,7 @@ bool GameServer::planAutomaticDocking(
                                 ? definitionCopy.maxEntrySpeedMps
                                 : 2.0;
                         const double ingressSpeed = std::min(
-                            executionVehicle.maxSpeedMps,
+                            planningVehicle.maxSpeedMps,
                             std::max(0.5, authoredEntry)
                         );
 

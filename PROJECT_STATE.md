@@ -1,3 +1,50 @@
+## 2026-09-28 — reusable navigation separated conceptually from docking infrastructure
+
+Project architecture now treats route planning/execution and docking terminal
+operations as different domains.
+
+Reusable navigation domain:
+`RoutePlanner -> accepted route/program -> RouteFollower/Autopilot -> vehicle control/physics`.
+
+Docking infrastructure domain:
+`DockTrafficController -> DockingClearance -> Planner/Autopilot -> LandingHandoff -> DockLandingController -> gear/contact/latch`.
+
+The separation is intentional so Planner/Autopilot can serve tunnels, canyons,
+formation joins, pursuit, repair and NPC travel without importing docking queue,
+pad, landing-gear or latch semantics.
+
+The target source layout physically separates planner, autopilot, traffic,
+landing and dock-model code. Public DTO/API headers are the only permitted
+cross-domain dependency. Architecture tests must enforce the boundary rather
+than relying on convention.
+
+Dock traffic is modeled as reservation of infrastructure resources rather than
+steering:
+- portal;
+- near-entry hold point;
+- conflict zones;
+- internal lane;
+- parking pad.
+
+A far-away docking request is only an inquiry/provisional recommendation. It
+does not reserve resources. Queue eligibility begins when the ship reaches a
+controlled approach horizon based primarily on ETA. This prevents a ship that
+requested from five minutes away from blocking traffic that is already near the
+station.
+
+The first holding implementation is intentionally minimal: one physical
+EntryHoldPoint/final approach lane per portal and a virtual dispatcher queue.
+Only one ship enters that lane; other queued ships remain outside it and can stop
+safely on their existing planned approach until advanced. A dedicated holding
+yard/ring remains an optional future infrastructure feature, not a prerequisite.
+
+Physical aperture/pad fit is absolute. Size class is a separate allocation
+policy. Emergency may assign a physically compatible larger-class dock but
+never a smaller one.
+
+Full contract:
+`src/game/docking/DOCKING_INFRASTRUCTURE_ARCHITECTURE.md`.
+
 ## 2026-09-28 — Dock geometry now matches docking semantics
 
 The long Automatic SpatialCorridor has positive live flight evidence: corridor

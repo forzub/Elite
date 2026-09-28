@@ -64,12 +64,42 @@ struct RoutePlan
     std::vector<RouteGate> executionGates;
 
     bool terminalDetourUsed = false;
+
+    // Planner diagnostics are carried through the public value API so
+    // orchestration can explain a decision without depending on the private
+    // docking-route backend type.
+    bool terminalTurnRadiusRelaxed = false;
+    double terminalTurnRequestedRadiusMeters = 0.0;
+    double terminalTurnSpeedMps = 0.0;
+    double terminalTurnLateralRadiusMeters = 0.0;
+    double terminalTurnAngularRadiusMeters = 0.0;
+    double terminalTurnAngularRampMeters = 0.0;
+
+    int terminalArcCandidatesTested = 0;
+    int terminalArcRouteable = 0;
+    int terminalArcRouteRejected = 0;
+    int terminalArcTransitReady = 0;
+    int terminalArcTransitRejected = 0;
+    int terminalArcCollisionRejected = 0;
+    int terminalArcAcceptedCandidates = 0;
+    int terminalArcAxisPassesTested = 0;
+    std::string terminalArcLastRejection;
+
+    std::string terminalArcDominantBlockerId;
+    int terminalArcDominantBlockerHits = 0;
+    glm::dvec3 terminalArcDominantBlockerCenterMeters {0.0};
+    glm::dvec3 terminalArcDominantBlockerHalfExtentsMeters {0.0};
+    double terminalArcDominantBlockerRadiusMeters = 0.0;
+
+    double terminalArcRotationDegrees = 0.0;
+
+    bool initialTurnPresent = false;
     double initialTurnRadiusMeters = 0.0;
+
+    bool terminalApproachShortened = false;
+    bool terminalApproachExtended = false;
     double terminalApproachLengthMeters = 0.0;
     double terminalTurnRadiusMeters = 0.0;
-    double terminalArcRotationDegrees = 0.0;
-    int terminalArcRouteable = 0;
-    int terminalArcTransitReady = 0;
 
     [[nodiscard]] bool valid() const noexcept
     {

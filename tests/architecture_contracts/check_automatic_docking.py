@@ -146,6 +146,7 @@ try:
         "ref_segment=",
         "ref_distance_m=",
         "spatial_speed_scale=",
+        "speed_target_mps=",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "controlBridge->stepVehicle(",

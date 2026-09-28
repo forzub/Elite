@@ -407,6 +407,7 @@ private:
             std::string terminalArcLastRejection;
             double maxPlannedAccelerationMps2 = 0.0;
             double preCaptureDepthMeters = 0.0;
+            double captureDepthMeters = 0.0;
             double terminalUniverseTimeSeconds = 0.0;
             double terminalAngularVelocityRadPerSec = 0.0;
 

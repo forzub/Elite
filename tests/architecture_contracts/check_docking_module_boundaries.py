@@ -129,6 +129,7 @@ def main() -> None:
         "navigation/ManeuverProgramTimeline.h",
         "ManeuverProgramSampler::",
         "ManeuverProgramTimeline::",
+        "ManeuverTrackingController",
     )
     require(
         "src/game/SpaceState.cpp",

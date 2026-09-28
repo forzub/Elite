@@ -1,3 +1,15 @@
+## 2026-09-28 — rerun six audited navigation-runtime failures
+
+After pulling current main, rebuild the standalone `build/tests/navigation_runtime` tree and rerun exactly these CTest names first:
+- `navigation_runtime_planner`;
+- `maneuver_corner_family_matrix`;
+- `maneuver_rigid_body_corridor`;
+- `maneuver_chained_limit_matrix`;
+- `navigation_composite_proving_ground`;
+- `physical_maneuver_search_coordinator`.
+
+If all six pass, rerun the complete navigation-runtime CTest suite, then `bash verify_docking.sh`. Command ownership is in root `BUILD_TEST_LAYOUT.md` and must be rechecked against CMake before future command changes.
+
 ## 2026-09-28 — rebuild verified current docking candidate
 
 Immediate task:

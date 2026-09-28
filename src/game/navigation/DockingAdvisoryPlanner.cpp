@@ -681,7 +681,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         // rounding; we intentionally do not require the discarded sharp-corner
         // chord itself to be collision-free.
         const double terminalLeadLength=std::max({
-            terminalPrimitiveRadius*1.50,
+            terminalPrimitiveRadius*2.00,
             terminalPrimitiveRadius/
                 r.terminalTurnSegmentFraction*1.10,
             1000.0

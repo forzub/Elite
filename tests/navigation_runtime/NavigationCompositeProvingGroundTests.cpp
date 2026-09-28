@@ -1312,6 +1312,10 @@ struct ExecutionMetrics
     std::size_t trackingExceededTicks = 0;
     double maxSlipDeg = 0.0;
     double maxForwardErrorDeg = 0.0;
+    double maxEnvelopePositionErrorMeters = 0.0;
+    double maxEnvelopeVelocityErrorMps = 0.0;
+    double maxEnvelopeCourseErrorDeg = 0.0;
+    double maxAngularVelocityErrorRadPerSec = 0.0;
     double maxHullHalfWidthMeters = 0.0;
     double minStaticClearanceMeters =
         std::numeric_limits<double>::infinity();
@@ -1359,6 +1363,8 @@ ExecutionMetrics executeProgram(
             ? startTime + stopAfterSeconds
             : nominalEnd + gatePolicy.maximumCaptureOverrunSeconds + 0.10;
 
+    std::size_t minimumSpatialSegmentIndex = 0;
+
     while (v.timeSeconds <= requestedStop + 1.0e-9)
     {
         const auto follower =
@@ -1366,13 +1372,23 @@ ExecutionMetrics executeProgram(
                 program,
                 v.timeSeconds,
                 followerAgent(v),
-                game::navigation::ManeuverTrackingController::Policy{}
+                game::navigation::ManeuverTrackingController::Policy{},
+                minimumSpatialSegmentIndex
             );
 
         if (follower.status == Follower::Status::InvalidInput)
         {
             m.valid = false;
             break;
+        }
+
+        if (follower.spatialReference)
+        {
+            minimumSpatialSegmentIndex =
+                std::max(
+                    minimumSpatialSegmentIndex,
+                    follower.referenceLowerSampleIndex
+                );
         }
 
         m.trackingExceededTicks +=
@@ -1382,6 +1398,27 @@ ExecutionMetrics executeProgram(
                 m.maxForwardErrorDeg,
                 follower.forwardAngleErrorRad *
                     180.0 / kPi
+            );
+        m.maxEnvelopePositionErrorMeters =
+            std::max(
+                m.maxEnvelopePositionErrorMeters,
+                follower.envelopePositionErrorMeters
+            );
+        m.maxEnvelopeVelocityErrorMps =
+            std::max(
+                m.maxEnvelopeVelocityErrorMps,
+                follower.envelopeVelocityErrorMps
+            );
+        m.maxEnvelopeCourseErrorDeg =
+            std::max(
+                m.maxEnvelopeCourseErrorDeg,
+                follower.envelopeForwardAngleErrorRad *
+                    180.0 / kPi
+            );
+        m.maxAngularVelocityErrorRadPerSec =
+            std::max(
+                m.maxAngularVelocityErrorRadPerSec,
+                follower.angularVelocityErrorRadPerSec
             );
 
         if (!partial)
@@ -2807,6 +2844,17 @@ CompositeMetrics runComposite(Law law)
                 Program::ManeuverFamily::PrecisionTransit
             );
 
+        // Constrained passage execution is geometric, not a race against the
+        // nominal maneuver clock. The accepted samples still carry a nominal
+        // speed/feed-forward profile for proof and control, while Follower
+        // advances the reference from real vehicle progress through the tunnel.
+        narrow.referenceMode = Program::ReferenceMode::SpatialCorridor;
+        narrow.controlLaw = law;
+        narrow.translationMode =
+            law == Law::Assisted
+                ? Program::TranslationMode::AssistedVelocity
+                : Program::TranslationMode::NewtonianMainEngine;
+
         narrowPlannedDynamicClearance =
             minimumProgramDynamicClearance(narrow, hazard);
 
@@ -2894,6 +2942,14 @@ CompositeMetrics runComposite(Law law)
             << phase.maxHullHalfWidthMeters
             << " tracking_exceeded_ticks="
             << phase.trackingExceededTicks
+            << " max_env_pos_m="
+            << phase.maxEnvelopePositionErrorMeters
+            << " max_env_vel_mps="
+            << phase.maxEnvelopeVelocityErrorMps
+            << " max_env_course_deg="
+            << phase.maxEnvelopeCourseErrorDeg
+            << " max_ang_vel_err_radps="
+            << phase.maxAngularVelocityErrorRadPerSec
             << "\n";
 
         require(

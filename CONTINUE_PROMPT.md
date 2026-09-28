@@ -1,3 +1,26 @@
+## Continue from 2026-09-28 live corridor success / dock ingress candidate
+
+The user reports the long automatic corridor is now excellent: corridor held,
+turns smooth, and dock-relative up/down orientation maintained. Do not retune
+that successful behavior broadly.
+
+Current candidate changes:
+- small center deadband holds exact segment tangent to reduce straight-line
+  hunting without changing route speed;
+- guidance docks no longer use a solid whole-object hit box; they author four
+  wall OBBs around the visible aperture;
+- docking anchors load explicit `capture_depth_m`;
+- FinalIngress now goes through the entrance to the internal capture point and
+  must pass exact obstacle clearance;
+- success reason is `capture-envelope-complete`;
+- permanent latch/undock state is still intentionally unimplemented.
+
+Next: Windows `bash verify_docking.sh`, build standalone EliteGame, run START
+DOCKING, verify straight stability and physical passage inside. If planning
+fails, use the exact `[DockAuto]` reason. In particular,
+`final-capture-corridor-blocked` means the shared collision aperture is still
+physically insufficient and must be fixed at geometry truth, never bypassed.
+
 ## 2026-09-28 — rerun Windows gate after compile cleanup
 
 Pull through `64e0a665b1fbcc5f8f20d9905674e6df140d2e25`. The stale `ManeuverProgramSampler` validation reference to retired `spatialSlowdownStartFraction` is removed. Rerun `bash verify_docking.sh`, then build and run standalone `EliteGame`. Do not restore the retired slowdown field to satisfy old code.

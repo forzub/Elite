@@ -1,3 +1,7 @@
+## 2026-09-28 — verify spatial gate + Newtonian drift before composite
+
+Next Windows step: build and run only maneuver_phase_gate and maneuver_tracking_controller first. If both pass, rebuild/run navigation_composite_proving_ground. Only after all three pass should the full navigation-runtime suite be run.
+
 ## 2026-09-28 — rerun composite with SpatialCorridor portal
 
 Rebuild and run only navigation_composite_proving_ground. Inspect COMPOSITE-PORTAL-ACTUAL, especially tracking_exceeded_ticks plus max_env_pos_m, max_env_vel_mps, max_env_course_deg and max_ang_vel_err_radps. If green, run the complete navigation-runtime suite and then verify_docking.sh.

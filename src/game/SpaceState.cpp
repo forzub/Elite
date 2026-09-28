@@ -2639,6 +2639,10 @@ void SpaceState::updateDockingAdvisory()
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.gates = std::move(job->plan.gates);
+        m_dockAdvice.mapRouteGates =
+            std::move(job->plan.executionGates);
+        if (m_dockAdvice.mapRouteGates.empty())
+            m_dockAdvice.mapRouteGates = m_dockAdvice.gates;
         m_activeDockingGuidanceCorridorId =
             "dock:" + pending.target.stableObjectId +
             ":" + pending.target.semanticAnchorId;
@@ -2897,8 +2901,10 @@ void SpaceState::updateDockingAdvisory()
         active.lastValidatedTick = metadata.serverTick;
     }
 
-    // Only the final presentation adapter leaves Hub-local coordinates. Both
-    // map and cockpit receive the same gates in the player's render frame.
+    // Only the final presentation adapter leaves Hub-local coordinates.
+    // Cockpit uses sparse 500/250 m gates; Hub Map uses the dense exact
+    // Planner-authored geometry. They represent the same route but must not
+    // share presentation sampling, otherwise the map turns arcs into chords.
     const auto& playerRenderFrame = ship->second.renderReferenceFrame;
     if (!playerRenderFrame.valid ||
         playerRenderFrame.systemId != active.systemId ||
@@ -2925,7 +2931,8 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
-    const auto makeRoute = [&]()
+    const auto makeRoute =
+        [&](const std::vector<DockingAdvisoryGate>& routeGates)
     {
         GuidanceCorridor route;
         route.id = m_activeDockingGuidanceCorridorId;
@@ -2938,12 +2945,12 @@ void SpaceState::updateDockingAdvisory()
         route.deviationCritical = active.deviationCritical;
         route.priority = 50;
         route.generatedAtUniverseTimeSeconds = renderTime;
-        route.frames.reserve(gates.size());
+        route.frames.reserve(routeGates.size());
         route.hubLocalFrameId = active.hubId;
-        route.hubLocalGatePositionsMeters.reserve(gates.size());
-        for (std::size_t index = 0; index < gates.size(); ++index)
+        route.hubLocalGatePositionsMeters.reserve(routeGates.size());
+        for (std::size_t index = 0; index < routeGates.size(); ++index)
         {
-            const auto& gate = gates[index];
+            const auto& gate = routeGates[index];
             route.hubLocalGatePositionsMeters.push_back(gate.positionMeters);
             GuidanceFrame f;
             f.universeTimeSeconds = renderTime;
@@ -2977,7 +2984,7 @@ void SpaceState::updateDockingAdvisory()
 
             const auto section = dockingAdvisoryCrossSection(
                 glm::length(
-                    gates.back().positionMeters - gate.positionMeters
+                    routeGates.back().positionMeters - gate.positionMeters
                 ),
                 active.lateralToleranceMeters,
                 active.verticalToleranceMeters
@@ -2993,27 +3000,35 @@ void SpaceState::updateDockingAdvisory()
             f.lateralToleranceMeters = section.lateralToleranceMeters;
             f.verticalToleranceMeters = section.verticalToleranceMeters;
             f.recommendedSpeedMps = gate.speedMps;
-            f.requiredVehiclePose = index + 1 == gates.size();
+            f.requiredVehiclePose =
+                index + 1 == routeGates.size();
             route.frames.push_back(f);
         }
         return route;
     };
 
-    auto route = makeRoute();
+    const auto& mapRouteGates =
+        active.mapRouteGates.empty()
+            ? gates
+            : active.mapRouteGates;
+
+    auto route = makeRoute(mapRouteGates);
     guidance.publish(route);
-    route.id += ":frames";
-    route.spatialAdvisoryGates = true;
-    route.frames.erase(
-        route.frames.begin(),
-        route.frames.begin() +
+
+    auto frameRoute = makeRoute(gates);
+    frameRoute.id += ":frames";
+    frameRoute.spatialAdvisoryGates = true;
+    frameRoute.frames.erase(
+        frameRoute.frames.begin(),
+        frameRoute.frames.begin() +
             static_cast<std::ptrdiff_t>(active.nextGate)
     );
-    route.hubLocalGatePositionsMeters.erase(
-        route.hubLocalGatePositionsMeters.begin(),
-        route.hubLocalGatePositionsMeters.begin() +
+    frameRoute.hubLocalGatePositionsMeters.erase(
+        frameRoute.hubLocalGatePositionsMeters.begin(),
+        frameRoute.hubLocalGatePositionsMeters.begin() +
             static_cast<std::ptrdiff_t>(active.nextGate)
     );
-    guidance.publish(std::move(route));
+    guidance.publish(std::move(frameRoute));
 
     if (m_dockingPreparationSerial == pending.serial &&
         !m_dockingPreparationReleasePending)
@@ -3027,7 +3042,9 @@ void SpaceState::updateDockingAdvisory()
                   << active.lastValidatedTick
                   << " render_t=" << renderTime
                   << " hub=" << active.hubId
-                  << " gates=" << gates.size() << '\n';
+                  << " hud_gates=" << gates.size()
+                  << " map_points=" << mapRouteGates.size()
+                  << '\n';
     }
 }
 

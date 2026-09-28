@@ -266,6 +266,7 @@ int main()
     curved.lateralMps2=5.0;
     curved.maxAngularVelocityRadPerSecond=0.04;
     curved.maxAngularAccelerationRadPerSecond2=0.10;
+    curved.initialSpeedMps=25.0;
     curved.gateSpacingMeters=500.0;
     curved.terminalGateSpacingMeters=100.0;
     curved.terminalDenseDistanceMeters=2000.0;
@@ -290,16 +291,29 @@ int main()
         });
     const auto curvedFinalDirection=glm::normalize(curvedStop-curvedAlign);
 
-    const double expectedTurnSpeed=0.8*curved.maxSpeedMps;
-    const double expectedLateralRadius=
-        expectedTurnSpeed*expectedTurnSpeed/curved.lateralMps2;
-    const double expectedAngularRadius=
-        expectedTurnSpeed/curved.maxAngularVelocityRadPerSecond;
+    const double expectedOriginLateralRadius=
+        curved.initialSpeedMps*curved.initialSpeedMps/
+        curved.lateralMps2;
+    const double expectedOriginAngularRadius=
+        curved.initialSpeedMps/
+        curved.maxAngularVelocityRadPerSecond;
     const double expectedTerminalRadius=std::max({
         20.0,
-        expectedLateralRadius,
-        expectedAngularRadius
+        4.0*curved.hullRadiusMeters,
+        expectedOriginLateralRadius,
+        expectedOriginAngularRadius
     });
+    const double expectedTurnSpeed=std::max(
+        0.5,
+        std::min({
+            curved.maxSpeedMps,
+            std::sqrt(
+                curved.lateralMps2*expectedTerminalRadius
+            ),
+            curved.maxAngularVelocityRadPerSecond*
+                expectedTerminalRadius
+        })
+    );
     const double expectedAngularRamp=
         expectedTurnSpeed *
         ((expectedTurnSpeed/expectedTerminalRadius) /
@@ -355,6 +369,30 @@ int main()
                   << nearestAlignDistance << "\n";
         printTerminalArcDiagnostics(curvedPlan);
         return 24;
+    }
+
+    auto slowerCurved=curved;
+    slowerCurved.initialSpeedMps=10.0;
+    const auto slowerCurvedPlan=
+        DockingAdvisoryPlanner::plan(slowerCurved);
+    if(!slowerCurvedPlan.valid() ||
+       !(slowerCurvedPlan.terminalTurnRadiusMeters + 1.0e-6 <
+         curvedPlan.terminalTurnRadiusMeters) ||
+       !(slowerCurvedPlan.terminalTurnSpeedMps + 1.0e-6 <
+         curvedPlan.terminalTurnSpeedMps))
+    {
+        std::cerr
+            << "terminal turn did not adapt to planning-origin speed"
+            << " fast_radius="
+            << curvedPlan.terminalTurnRadiusMeters
+            << " slow_radius="
+            << slowerCurvedPlan.terminalTurnRadiusMeters
+            << " fast_speed="
+            << curvedPlan.terminalTurnSpeedMps
+            << " slow_speed="
+            << slowerCurvedPlan.terminalTurnSpeedMps
+            << "\n";
+        return 41;
     }
 
     // Regression: route-to-entry rounding must end at ENTRY. It must never

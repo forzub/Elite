@@ -59,6 +59,90 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         return result;
     }
 
+    auto reference = sampled.reference;
+    double spatialSpeedScale = 1.0;
+
+    if (spatialCorridor &&
+        program.tracking.positionErrorMeters > kEpsilon)
+    {
+        const double limit =
+            program.tracking.positionErrorMeters;
+        const double slowdownStart =
+            limit *
+            program.tracking.spatialSlowdownStartFraction;
+
+        if (sampled.spatialDistanceMeters > slowdownStart &&
+            limit > slowdownStart + kEpsilon)
+        {
+            spatialSpeedScale = std::clamp(
+                (limit - sampled.spatialDistanceMeters) /
+                    (limit - slowdownStart),
+                0.0,
+                1.0
+            );
+        }
+
+        if (spatialSpeedScale < 1.0)
+        {
+            glm::dvec3 tangent =
+                reference.velocityMapMetersPerSecond;
+            double tangentLength = glm::length(tangent);
+            if (!(tangentLength > kEpsilon) &&
+                sampled.upperSampleIndex <
+                    program.sampleCount)
+            {
+                tangent =
+                    program.samples[sampled.upperSampleIndex].
+                        positionMapMeters -
+                    program.samples[sampled.lowerSampleIndex].
+                        positionMapMeters;
+                tangentLength = glm::length(tangent);
+            }
+
+            if (tangentLength > kEpsilon)
+            {
+                tangent /= tangentLength;
+                const glm::dvec3 acceleration =
+                    reference.
+                        linearAccelerationFeedForwardMapMps2;
+                const double alongAcceleration =
+                    glm::dot(acceleration, tangent);
+                const glm::dvec3 lateralAcceleration =
+                    acceleration -
+                    tangent * alongAcceleration;
+
+                // Slowing for corridor capture may suppress planned forward
+                // acceleration, but never weakens already-planned braking.
+                const double governedAlongAcceleration =
+                    alongAcceleration > 0.0
+                        ? alongAcceleration * spatialSpeedScale
+                        : alongAcceleration;
+
+                reference.
+                    linearAccelerationFeedForwardMapMps2 =
+                        tangent * governedAlongAcceleration +
+                        lateralAcceleration *
+                            spatialSpeedScale *
+                            spatialSpeedScale;
+            }
+            else
+            {
+                reference.
+                    linearAccelerationFeedForwardMapMps2 =
+                        glm::dvec3(0.0);
+            }
+
+            reference.velocityMapMetersPerSecond *=
+                spatialSpeedScale;
+            reference.angularVelocityMapRadPerSecond *=
+                spatialSpeedScale;
+            reference.
+                angularAccelerationFeedForwardMapRadPerSec2 *=
+                    spatialSpeedScale *
+                    spatialSpeedScale;
+        }
+    }
+
     ManeuverTrackingController::AgentState trackingAgent;
     trackingAgent.positionMapMeters = agent.positionMapMeters;
     trackingAgent.velocityMapMetersPerSecond =
@@ -73,7 +157,7 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     const auto tracking =
         ManeuverTrackingController::track(
             program,
-            sampled.reference,
+            reference,
             trackingAgent,
             trackingPolicy
         );
@@ -86,7 +170,7 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
 
     result.intent = tracking.intent;
     result.targetVelocityMapMps =
-        sampled.reference.velocityMapMetersPerSecond;
+        reference.velocityMapMetersPerSecond;
     result.crossTrackErrorMeters =
         tracking.positionErrorMeters;
     result.linearVelocityErrorMps =
@@ -112,6 +196,8 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         sampled.interpolation01;
     result.referenceSpatialDistanceMeters =
         sampled.spatialDistanceMeters;
+    result.spatialSpeedScale =
+        spatialSpeedScale;
 
     const std::size_t lastIndex =
         static_cast<std::size_t>(program.sampleCount - 1);

@@ -59,6 +59,12 @@ public:
         bool trackingErrorExceeded = false;
         bool angularCorrectionOnly = false;
 
+        bool spatialReference = false;
+        std::size_t referenceLowerSampleIndex = 0;
+        std::size_t referenceUpperSampleIndex = 0;
+        double referenceInterpolation01 = 0.0;
+        double referenceSpatialDistanceMeters = 0.0;
+
         // The accepted reference is a vehicle-motion program. Tracking
         // feedback remains inside intent, with no propulsion allocation here.
     };
@@ -67,7 +73,8 @@ public:
         const AcceptedManeuverProgram& program,
         double universeTimeSeconds,
         const AgentState& agent,
-        const ManeuverTrackingController::Policy& trackingPolicy
+        const ManeuverTrackingController::Policy& trackingPolicy,
+        std::size_t minimumSpatialSegmentIndex = 0
     ) noexcept;
 
 };

@@ -703,6 +703,49 @@ void testSpatialCorridorSteersBackWithoutReducingRouteSpeed()
     );
 }
 
+void testSpatialCorridorHoldsTangentInsideCenterDeadband()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+    program.tracking.positionErrorMeters = 20.0;
+
+    auto agent = followerAgentFor(program.samples[0]);
+    agent.positionMapMeters = {2.5, 0.75, 0.0};
+    agent.velocityMapMetersPerSecond = {5.0, 0.0, 0.0};
+
+    const auto result = Follower::follow(
+        program,
+        10.25,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(
+        result.status == Follower::Status::Following &&
+        !result.trackingErrorExceeded,
+        "centered spatial corridor state was rejected"
+    );
+    requireNear(
+        glm::length(result.targetVelocityMapMps),
+        5.0,
+        1.0e-12,
+        "center deadband changed route speed"
+    );
+    requireNear(
+        result.targetVelocityMapMps.y,
+        0.0,
+        1.0e-12,
+        "center deadband kept hunting toward a moving look-ahead point"
+    );
+    requireNear(
+        result.targetVelocityMapMps.z,
+        0.0,
+        1.0e-12,
+        "center deadband introduced off-axis steering"
+    );
+}
+
 void testFollowerSpatialCorridorCanCompleteBeforeNominalTime()
 {
     Program program = baseProgram();
@@ -759,6 +802,7 @@ int main()
         testSpatialCorridorLaunchesFromStoppedControlPoint();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
+        testSpatialCorridorHoldsTangentInsideCenterDeadband();
         testFollowerSpatialCorridorCanCompleteBeforeNominalTime();
         testFollowerRejectsExecutionBeforeAcceptanceTime();
 
@@ -775,6 +819,7 @@ int main()
         std::cout << " - spatial corridor launches from a stopped control point without clock progress\n";
         std::cout << " - spatial angular-rate drift is corrected without route loss\n";
         std::cout << " - cross-track error steers back into the corridor without reducing route speed\n";
+        std::cout << " - centered spatial flight holds the segment tangent without look-ahead hunting\n";
         return 0;
     }
     catch (const std::exception& error)

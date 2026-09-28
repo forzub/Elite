@@ -1,3 +1,17 @@
+## 2026-09-28 — runtime-suite stale harness cleanup after Windows evidence
+
+Windows full navigation-runtime CTest completed 29 tests with 6 failures while the current docking-specific chain remained green. The failures were audited instead of weakening production tolerances.
+
+Current candidate corrections on main:
+- NavigationRuntimePlanner provenance fixture gets a non-degenerate local-bypass search envelope; its purpose is conflict identity, not testing the exact grid boundary.
+- Corner-family, rigid-body, chained-limit and composite labs now execute Assisted through the production-style `stepVehicle -> applyNavigationAssistedFlightModel` path instead of the retired acceleration-only harness path.
+- Those comparison fixtures now model the real Cobra Assisted front main engine and Assisted stabilization authority, while Newtonian comparison fixtures keep reverse-main unavailable.
+- PhysicalManeuverSearchCoordinator no longer treats Assisted as an unsupported law; its shared-state-blocker test now uses a genuinely shared unsupported initial angular state.
+- Chained attitude seam uses a physically meaningful 0.01 degree threshold rather than a sub-float 1e-6 degree false hard-fail.
+- Composite narrow-passage half-width remains 19 m; traversal duration was increased instead of widening the corridor.
+
+Target-machine rerun is pending. Do not claim the six tests are green until Windows evidence confirms them.
+
 ## 2026-09-28 — authoritative build layout + speed-aware Automatic docking
 
 The current Automatic docking baseline is now stop-and-settle before planning.

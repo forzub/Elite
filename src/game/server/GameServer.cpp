@@ -2748,10 +2748,15 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Stabilizing)
         {
-            ShipControlState stop;
-            stop.velocityAlignmentCommand =
-                game::navigation::VelocityAlignmentMode::BrakeToStop;
-            ship->setControlState(stop);
+            const bool requireLinearStop =
+                runtime.stage ==
+                    DockingAutomaticRuntime::Stage::FinalIngress;
+            ship->setControlState(
+                automaticDockingPreparationControl(
+                    *ship,
+                    requireLinearStop
+                )
+            );
 
             const double speed =
                 glm::length(motion.localVelocityMps);
@@ -2772,7 +2777,7 @@ void GameServer::applyAutomaticDockingControls(
                 )
             );
 
-            if (speed > speedThreshold ||
+            if ((requireLinearStop && speed > speedThreshold) ||
                 angularRate > 0.01)
             {
                 if (runtime.lastDiagnosticTick == 0 ||
@@ -2781,6 +2786,8 @@ void GameServer::applyAutomaticDockingControls(
                     std::cout << "[DockAuto] request="
                               << runtime.requestSerial
                               << " phase=stabilizing"
+                              << " mode="
+                              << (requireLinearStop ? "stop" : "coast")
                               << " speed_mps=" << speed
                               << " threshold_mps=" << speedThreshold
                               << " omega_radps=" << angularRate
@@ -2837,10 +2844,15 @@ void GameServer::applyAutomaticDockingControls(
         if (runtime.phase ==
             DockingAutomaticRuntime::Phase::Planning)
         {
-            ShipControlState stop;
-            stop.velocityAlignmentCommand =
-                game::navigation::VelocityAlignmentMode::BrakeToStop;
-            ship->setControlState(stop);
+            const bool requireLinearStop =
+                runtime.stage ==
+                    DockingAutomaticRuntime::Stage::FinalIngress;
+            ship->setControlState(
+                automaticDockingPreparationControl(
+                    *ship,
+                    requireLinearStop
+                )
+            );
 
             const auto job = runtime.planningJob;
             if (!job)
@@ -2886,9 +2898,9 @@ void GameServer::applyAutomaticDockingControls(
                 continue;
             }
 
-            // The worker plans against a short future execution epoch. Keep
-            // the real ship stopped until that epoch instead of consuming an
-            // already-running absolute-time maneuver while planning finishes.
+            // The worker plans against a short future execution epoch.
+            // ApproachHold coasts to the projected start point; FinalIngress
+            // remains stopped while the rotating terminal solution is built.
             if (time.universeTimeSeconds + 1.0e-6 <
                 job->executionStartUniverseTimeSeconds)
             {
@@ -3214,10 +3226,13 @@ void GameServer::applyAutomaticDockingControls(
                       << std::endl;
             if (selection.status == PageStatus::BeforeStart)
             {
-                ShipControlState hold;
-                hold.velocityAlignmentCommand =
-                    game::navigation::VelocityAlignmentMode::BrakeToStop;
-                ship->setControlState(hold);
+                ship->setControlState(
+                    automaticDockingPreparationControl(
+                        *ship,
+                        runtime.stage ==
+                            DockingAutomaticRuntime::Stage::FinalIngress
+                    )
+                );
                 continue;
             }
 
@@ -3557,10 +3572,13 @@ void GameServer::applyAutomaticDockingControls(
             runtime.programs.clear();
             runtime.settledSinceUniverseTimeSeconds = -1.0;
 
-            ShipControlState stop;
-            stop.velocityAlignmentCommand =
-                game::navigation::VelocityAlignmentMode::BrakeToStop;
-            ship->setControlState(stop);
+            ship->setControlState(
+                automaticDockingPreparationControl(
+                    *ship,
+                    runtime.stage ==
+                        DockingAutomaticRuntime::Stage::FinalIngress
+                )
+            );
 
             continue;
         }

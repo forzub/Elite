@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260928-exact-terminal-arc-v7"
+CHECK_REVISION = "20260928-exact-terminal-arc-v8"
 
 
 def read(rel: str) -> str:
@@ -80,9 +80,9 @@ try:
             "hubLocalFrameId", "hubLocalGatePositionsMeters",
             "deviationWarning", "deviationCritical")
     require("src/game/SpaceState.h",
-            "mapRouteGates",
-            "Sparse 500/250 m gates belong to cockpit/HUD guidance",
-            "Dense points preserve the exact Planner-authored geometry")
+            "game::navigation::DockingAdvisoryPlan plan",
+            "SpaceState owns presentation/tracking state only",
+            "Planner output is")
     require("src/game/navigation/DockingAdvisoryCorridor.h",
             "dockingAdvisoryReleaseCrossSection",
             "marginFraction = 1.00",
@@ -128,10 +128,15 @@ try:
             "const glm::dvec3 entry",
             "candidate.terminalTurnRadiusMeters=",
             "candidate.terminalArcRotationDegrees",
+            "candidate.terminalApproachLengthMeters",
             "terminalArcCandidatesTested",
             "terminalArcAcceptedCandidates",
+            "terminalAxisPasses=5",
+            "candidateApproachLengthMeters",
+            "transit-endpoint-mismatch",
+            "firstBlockingObstacle",
             "roundGeometry(points,0.0,entry)",
-            "no collision-free docking route after reroute/tighten fallback",
+            "no collision-free exact-radius terminal arc",
             "remainingFromPrevious",
             "r.terminalDenseDistanceMeters+r.gateSpacingMeters",
             "USER-CONTRACT: published docking frames use the authored")
@@ -145,11 +150,13 @@ try:
             "request.terminalApproachLengthMeters = 9000.0",
             "request.terminalTurnSegmentFraction = 0.85",
             "request.preferredTerminalTurnRadiusMeters = 6000.0",
-            "m_dockAdvice.mapRouteGates =",
-            "std::move(job->plan.executionGates)",
+            "m_dockAdvice.plan = std::move(job->plan)",
+            "const auto& gates = active.plan.gates",
             "const auto& mapRouteGates =",
+            "active.plan.executionGates",
             "auto route = makeRoute(mapRouteGates)",
             "auto frameRoute = makeRoute(gates)",
+            "dockingAdvisoryPlanDiagnosticSummary(job->plan)",
             "hud_gates=",
             "map_points=",
             "longitudinalToleranceMeters + std::max(",
@@ -226,6 +233,11 @@ try:
     if "preferredTerminalRadius*clearanceScale" in planner_cpp:
         raise AssertionError(
             "terminal docking arc regressed to clearance-scaling around a preselected route"
+        )
+
+    if "selected=std::move(relaxed)" in planner_cpp:
+        raise AssertionError(
+            "Assisted terminal arc regained silent radius-relaxation fallback"
         )
 
     if "roundGeometry(\n                    points,\n                    terminalPrimitiveRadius" in planner_cpp:

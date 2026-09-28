@@ -47,6 +47,7 @@ python "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_local_flight_control.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_runtime_control.py"
 python "${ROOT_DIR}/tests/architecture_contracts/check_navigation_api_purity.py"
+python "${ROOT_DIR}/tests/architecture_contracts/check_hub_guidance_test_geometry.py"
 python "${ROOT_DIR}/tests/system_map/check_object_overlay.py"
 
 echo "[DOCK-VERIFY] PASS"

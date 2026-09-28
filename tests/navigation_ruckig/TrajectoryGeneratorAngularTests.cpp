@@ -236,6 +236,60 @@ void testTranslationSlowsWhenAngularTerminalNeedsMoreTime()
     );
 }
 
+void testAuthoredPathGeometryIsNotRedrawn()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "authored-geometry-test";
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.maxSpeedMps = 50.0;
+    request.vehicle.maxForwardAccelerationMps2 = 10.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 10.0;
+    request.vehicle.maxLateralAccelerationMps2 = 10.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 2.0;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 2.0;
+    request.pathGeometryAlreadyAuthored = true;
+    request.pathPointsMeters = {
+        {0.0, 0.0, 0.0},
+        {100.0, 0.0, 0.0},
+        {200.0, 0.0, 20.0},
+        {300.0, 0.0, 60.0}
+    };
+
+    const auto expected = request.pathPointsMeters;
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "authored geometry trajectory failed: " +
+            result.trajectory.message
+    );
+    require(
+        result.executionGuidePointsMeters.size() == expected.size(),
+        "trajectory layer changed authored geometry point count"
+    );
+    for (std::size_t i = 0; i < expected.size(); ++i)
+    {
+        require(
+            length(
+                result.executionGuidePointsMeters[i] -
+                expected[i]
+            ) <= 1.0e-9,
+            "trajectory layer moved an authored geometry point"
+        );
+    }
+
+    for (const auto& sample : result.trajectory.samples)
+    {
+        require(
+            length(sample.accelerationMps2) <=
+                15.0,
+            "authored route generated an implausible acceleration spike"
+        );
+    }
+}
+
 void testLongStraightCruisesBeforeLocalTurnAndStop()
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -287,6 +341,7 @@ int main()
     {
         testRotatingTerminalAngularProgramIsPhysicallyBounded();
         testTranslationSlowsWhenAngularTerminalNeedsMoreTime();
+        testAuthoredPathGeometryIsNotRedrawn();
         testLongStraightCruisesBeforeLocalTurnAndStop();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";

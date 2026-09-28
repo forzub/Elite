@@ -1,3 +1,22 @@
+## Continue from 2026-09-28 verified build-layout correction
+
+Read root `BUILD_TEST_LAYOUT.md` before giving any build/test/run command.
+For every non-trivial command, verify the current owning `CMakeLists.txt`, exact build target, build tree, and CTest name. Prefer existing canonical scripts when they already implement the gate.
+
+Current build ownership:
+- root `build/` owns `EliteGame`;
+- standalone navigation-runtime targets live in `build/tests/navigation_runtime/` and are declared by `tests/navigation_runtime/CMakeLists.txt`;
+- do not run `cmake --build build --target docking_advisory_tests` or similar standalone-test targets.
+
+Latest code state:
+- Automatic is stop-and-settle before planning;
+- Planner carries `initialSpeedMps` and terminal radius is speed-aware instead of using `0.8 * maxSpeed`;
+- target dock HitVolumes use semantic dock clearance;
+- runtime marker is `impl=dock-auto-20260928-stop-speed-aware-turn-semantic-clearance`;
+- Windows full navigation-runtime build exposed one stale 3-argument `TrajectoryFollower::follow` in `NavigationCompositeProvingGroundTests.cpp`; it is fixed on main, and all 30 navigation-runtime test sources were checked for the same stale call pattern.
+
+Next step is Windows rebuild/test evidence, not more route tuning.
+
 ## Continue from 2026-09-28 moving-start/HOLD fixes
 
 A pre-latest live log exposed and the code now addresses:

@@ -271,9 +271,19 @@ void testAssistedRejectsImpossibleMotionEnvelope()
     require(!result.valid,
             "Assisted accepted a lateral acceleration it cannot execute");
     require(
-        result.failureReason ==
+        result.failureReason.rfind(
             "assisted-motion-envelope-infeasible",
+            0
+        ) == 0,
         "Assisted impossible-motion rejection exposed the wrong reason"
+    );
+    require(
+        result.failureReason.find("sample=") != std::string::npos &&
+        result.failureReason.find("along_mps2=") != std::string::npos &&
+        result.failureReason.find("transverse_mps2=") != std::string::npos &&
+        result.failureReason.find("lateral_authority_mps2=") !=
+            std::string::npos,
+        "Assisted impossible-motion rejection lost its diagnostic context"
     );
 }
 

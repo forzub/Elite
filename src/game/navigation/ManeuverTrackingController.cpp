@@ -314,8 +314,15 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         // point. Route-loss course is still measured against the authored
         // corridor tangent, otherwise the correction itself can invalidate
         // the route it is trying to recover.
+        //
+        // At an authored zero-speed checkpoint there is no translational
+        // course to lose. The hull may legitimately rotate in place (HOLD /
+        // terminal alignment), so attitude error remains a steering signal
+        // but must not become a 180-degree corridor-loss event.
         envelopeForwardAngleErrorRad =
-            angleBetween(agent.forwardMap, tangent);
+            referenceSpeedSquared > kEpsilon
+                ? angleBetween(agent.forwardMap, tangent)
+                : 0.0;
 
         const double alongPosition =
             glm::dot(positionError, tangent);

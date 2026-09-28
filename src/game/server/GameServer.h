@@ -36,7 +36,7 @@
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
-#include "src/game/navigation/ManeuverTrackingController.h"
+#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 
@@ -435,7 +435,7 @@ private:
         std::uint32_t trackingFailureCount = 0;
         glm::dvec3 lastObservedVelocityMapMps {0.0};
         std::uint64_t lastObservedVelocityTick = 0;
-        game::navigation::ManeuverTrackingController::Policy trackingPolicy {};
+        game::navigation::autopilot::RouteFollowerPolicy trackingPolicy {};
         std::uint64_t nextProgramRevision = 1;
     };
 

@@ -14,9 +14,10 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" \
     -B "${TEST_BUILD_DIR}" \
     -G Ninja
 
-echo "[DOCK-VERIFY] build docking + accepted-program + sampler + live-control native gates"
+echo "[DOCK-VERIFY] build docking + exact-geometry + accepted-program + sampler + live-control native gates"
 cmake --build "${TEST_BUILD_DIR}" \
     --target docking_advisory_tests \
+             navigation_hit_volume_adapter_tests \
              accepted_maneuver_program_builder_tests \
              maneuver_program_sampler_tests \
              navigation_runtime_control_tests \
@@ -25,7 +26,7 @@ cmake --build "${TEST_BUILD_DIR}" \
 
 echo "[DOCK-VERIFY] run native docking + execution gates"
 ctest --test-dir "${TEST_BUILD_DIR}" \
-    -R "^(docking_advisory|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|maneuver_tracking_controller)$" \
+    -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|maneuver_tracking_controller)$" \
     --output-on-failure
 
 echo "[DOCK-VERIFY] configure rotating-terminal trajectory gate"

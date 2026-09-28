@@ -1247,6 +1247,62 @@ ReplacementFit fitAuthorityBoundedReplacement(
 }
 
 
+double minimumProgramDynamicClearance(
+    const Program& program,
+    const DynamicHazard& hazard
+)
+{
+    if (!hazard.active)
+        return std::numeric_limits<double>::infinity();
+
+    if (!program.valid || program.sampleCount == 0)
+        return -std::numeric_limits<double>::infinity();
+
+    constexpr int DenseSamples = 768;
+    const double duration =
+        program.samples[
+            static_cast<std::size_t>(program.sampleCount - 1)
+        ].timeOffsetSeconds;
+
+    double minimumClearance =
+        std::numeric_limits<double>::infinity();
+
+    for (int i = 0; i <= DenseSamples; ++i)
+    {
+        const double t =
+            duration *
+            static_cast<double>(i) /
+            static_cast<double>(DenseSamples);
+
+        const double universeTime =
+            program.acceptedAtUniverseTimeSeconds + t;
+        const auto sampled =
+            Sampler::sample(program, universeTime);
+
+        if (sampled.status != Sampler::Status::Active &&
+            sampled.status != Sampler::Status::AfterEnd)
+        {
+            return -std::numeric_limits<double>::infinity();
+        }
+
+        const glm::dvec3 hazardAtSample =
+            dynamicHazardPosition(hazard, universeTime);
+
+        minimumClearance =
+            std::min(
+                minimumClearance,
+                glm::length(
+                    sampled.reference.positionMapMeters -
+                    hazardAtSample
+                ) -
+                (kHullBoundingRadiusMeters + hazard.radiusMeters)
+            );
+    }
+
+    return minimumClearance;
+}
+
+
 
 struct ExecutionMetrics
 {
@@ -1788,7 +1844,8 @@ ExecutionMetrics executeActiveBraking(
     const DynamicHazard& hazard,
     double velocityResponsePerSecond = 0.75,
     double maximumSeconds = 8.0,
-    TraceContext* traceContext = nullptr
+    TraceContext* traceContext = nullptr,
+    double minimumSeconds = 0.0
 )
 {
     ExecutionMetrics m;
@@ -1891,7 +1948,9 @@ ExecutionMetrics executeActiveBraking(
                 conservativeDynamicClearance(v, hazard)
             );
 
-        if (glm::length(v.transform.motion.localVelocityMps) <= 0.50)
+        if (m.simulatedSeconds + 1.0e-9 >=
+                std::max(0.0, minimumSeconds) &&
+            glm::length(v.transform.motion.localVelocityMps) <= 0.50)
         {
             m.completed = true;
             break;
@@ -2708,10 +2767,24 @@ CompositeMetrics runComposite(Law law)
         ++total.phases;
     }
 
-    // Phase 4: narrow passage to the second portal. The 19 m half-width is
-    // the physical constraint; traversal time is allowed to grow so a craft
-    // with weak lateral authority can reduce curvature/tracking demand rather
-    // than treating a speed choice as proof that the passage is impossible.
+    // Phase 4: narrow passage to the second portal. Planner NominalClear is
+    // only a bounded visible-horizon statement (4 s in this fixture); it must
+    // not authorize a longer accepted program blindly. Before execution, prove
+    // the whole authored program against the still-authoritative moving hazard.
+    // If the future hazard intersects that long program, hold/settle in the
+    // already-safe region, let the hazard continue, then re-author from the
+    // new real vehicle state and prove again. The 19 m portal is never widened.
+    Program narrow;
+    double narrowPlannedDynamicClearance =
+        -std::numeric_limits<double>::infinity();
+    bool narrowProgramProven = false;
+
+    constexpr double MinimumAcceptedDynamicClearanceMeters = 1.50;
+    constexpr int MaximumPortalProofAttempts = 24;
+
+    for (int proofAttempt = 0;
+         proofAttempt < MaximumPortalProofAttempts;
+         ++proofAttempt)
     {
         const VehicleState start = captureState(v);
         const Basis terminal =
@@ -2719,9 +2792,9 @@ CompositeMetrics runComposite(Law law)
                 ? start.basis
                 : basisForForward({1.0, 0.0, 0.0}, start.basis);
 
-        const Program narrow =
+        narrow =
             makeProgram(
-                12030,
+                12030 + static_cast<std::uint64_t>(proofAttempt),
                 v.timeSeconds,
                 start,
                 resumed.coarseWaypointMapMeters,
@@ -2734,10 +2807,66 @@ CompositeMetrics runComposite(Law law)
                 Program::ManeuverFamily::PrecisionTransit
             );
 
+        narrowPlannedDynamicClearance =
+            minimumProgramDynamicClearance(narrow, hazard);
+
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-PORTAL-PROOF]"
+            << " law=" << lawName(law)
+            << " attempt=" << proofAttempt
+            << " planned_dynamic_clearance_m="
+            << narrowPlannedDynamicClearance
+            << " speed_mps="
+            << glm::length(v.transform.motion.localVelocityMps)
+            << "\n";
+
+        if (narrowPlannedDynamicClearance >=
+            MinimumAcceptedDynamicClearanceMeters)
+        {
+            narrowProgramProven = true;
+            break;
+        }
+
+        traceContext.phase = "portal_102_dynamic_hold";
+        traceContext.plannerStatus = "future_dynamic_conflict";
+        traceContext.hasSelectedTarget = false;
+        traceContext.hasReacquisitionTarget = false;
+        traceContext.hasPortalTarget = true;
+        traceContext.portalTarget = resumed.coarseWaypointMapMeters;
+
+        const auto hold =
+            executeActiveBraking(
+                v,
+                hazard,
+                goal.velocityResponsePerSecond,
+                1.25,
+                &traceContext,
+                1.0
+            );
+
+        require(
+            hold.valid && hold.completed,
+            "composite portal dynamic hold failed"
+        );
+        require(
+            hold.minDynamicClearanceMeters > 0.5,
+            "composite portal dynamic hold lost clearance"
+        );
+
+        absorb(total, hold);
+    }
+
+    require(
+        narrowProgramProven,
+        "composite could not prove a dynamically safe narrow-portal program"
+    );
+
+    {
         const auto phase =
             (
                 traceContext.phase = "portal_102",
-                traceContext.plannerStatus = "nominal_clear",
+                traceContext.plannerStatus = "full_program_dynamic_clear",
                 traceContext.hasSelectedTarget = false,
                 traceContext.hasReacquisitionTarget = false,
                 traceContext.hasPortalTarget = true,
@@ -2753,9 +2882,27 @@ CompositeMetrics runComposite(Law law)
                 )
             );
 
+        std::cout
+            << std::fixed << std::setprecision(6)
+            << "[COMPOSITE-PORTAL-ACTUAL]"
+            << " law=" << lawName(law)
+            << " planned_dynamic_clearance_m="
+            << narrowPlannedDynamicClearance
+            << " actual_dynamic_clearance_m="
+            << phase.minDynamicClearanceMeters
+            << " hull_half_width_m="
+            << phase.maxHullHalfWidthMeters
+            << " tracking_exceeded_ticks="
+            << phase.trackingExceededTicks
+            << "\n";
+
         require(
             phase.valid && phase.completed,
             "composite narrow passage failed"
+        );
+        require(
+            phase.minDynamicClearanceMeters > 0.5,
+            "composite narrow passage lost dynamic clearance"
         );
         require(
             phase.maxHullHalfWidthMeters <=

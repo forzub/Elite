@@ -149,9 +149,7 @@ try:
         "speed_target_mps=",
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
-        "controlBridge->stepVehicle(",
         "followed.targetVelocityMapMps",
-        "ship->setControlState(step.control)",
         "terminalAngularVelocityMapRadPerSec",
         "minimumPreCaptureDepthMeters",
         "segmentClearOfNavigationObstacles(",
@@ -159,7 +157,6 @@ try:
         "DockingAutomaticRuntime::Phase::Aligning",
         "phase=aligned-replan",
         "ManeuverTrackingController",
-        "controlBridge->stepVehicle(",
         "phase=replan",
         "phase=plan-failed",
         "action=restore-human",
@@ -273,6 +270,25 @@ try:
         )
 
     require(
+        "src/game/simulation/ClientSessionSnapshot.h",
+        "AutomaticDockingRoutePoint",
+        "automaticDockingRouteValid",
+        "automaticDockingRouteRevision",
+        "automaticDockingRoute",
+    )
+    require(
+        "src/game/SpaceState.cpp",
+        "source=accepted-program",
+        "authoritativeAutomaticRoute",
+        "automaticDockingRouteRevision",
+        "route.advisoryOnly =",
+    )
+    if "runtime.controlBridge" in server or "PilotSkillExecutor" in server:
+        raise AssertionError(
+            "Automatic docking still routes Follower output through pilot-skill filtering"
+        )
+
+    require(
         "src/game/navigation/DockingAutomaticRecoveryPolicy.h",
         "linearFeedbackReserveMps2(",
         "holdCaptureDistanceMeters(",
@@ -295,7 +311,6 @@ try:
         "FinalIngress",
         "std::vector<game::navigation::AcceptedManeuverProgram> programs",
         "currentSpatialSegment",
-        "NavigationRuntimeControlBridge",
         "m_dockingAutomaticRuntimes",
         "struct PlanningJob",
         "std::shared_ptr<PlanningJob> planningJob",
@@ -376,7 +391,7 @@ try:
     require(
         "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp",
         "testFollowerSpatialCorridorTracksPathInsteadOfClock",
-        "testSpatialCorridorSlowsBeforeLeavingEnvelope",
+        "testSpatialCorridorSteersBackWithoutReducingRouteSpeed",
         "testFollowerSpatialCorridorCanCompleteBeforeNominalTime",
     )
 
@@ -500,6 +515,8 @@ try:
     print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")
     print(" - manual docking corridor is nose-first and cockpit HUD has a fixed hull boresight")
     print(" - active map-card mode is bright green and cockpit mode text is localized")
+    print(" - Automatic HUD is sourced from the same AcceptedManeuverProgram executed by Follower")
+    print(" - Automatic Follower commands bypass human/NPC PilotSkill filtering")
     print(" - Assisted automatic transit executes the same nose-coupled game flight law as manual control")
     print(" - Newtonian ordinary transit cannot spend precision RCS as fake lateral route thrust")
     print(" - trajectory is converted to AcceptedManeuverProgram before Follower")

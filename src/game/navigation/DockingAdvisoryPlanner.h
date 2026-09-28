@@ -90,6 +90,7 @@ struct DockingAdvisoryPlan
     double terminalTurnSpeedMps = 0.0;
     double terminalTurnLateralRadiusMeters = 0.0;
     double terminalTurnAngularRadiusMeters = 0.0;
+    double terminalTurnAngularRampMeters = 0.0;
     int terminalArcCandidatesTested = 0;
     int terminalArcRouteable = 0;
     int terminalArcRouteRejected = 0;

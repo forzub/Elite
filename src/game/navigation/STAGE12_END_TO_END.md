@@ -11188,3 +11188,14 @@ actual rates. The advisory planner now rejects subminimum non-terminal
 Assisted fillets. The next live pass must establish whether acceleration
 lag comes from pilot filtering, throttle response or the shared physical
 acceleration envelope before further speed-control changes.
+
+## 2026-09-28 — Spatial control points are not timestamp rendezvous
+
+Live Stage-1 docking exposed the zero-speed boundary case of the new SpatialCorridor mode. Projecting a stopped craft exactly onto the first trajectory sample correctly produced alpha=0, but copying that sample's zero target velocity made progress mathematically self-locking: position could advance only after motion, while motion could begin only after position advanced to a later sample.
+
+For SpatialCorridor, accepted trajectory samples are therefore interpreted as ordered spatial control points. The real craft position still selects the current segment and interpolation alpha monotonically. At a zero-speed lower control point with a non-zero-speed successor, Follower uses the current segment tangent and the successor's accepted speed as a local launch target; it does not advance reference position or use universe time as progress. After physical movement begins, spatial interpolation again determines the local speed state.
+
+The execution safety envelope now matches tunnel/canyon semantics. Cross-track position, cross-track velocity and forward-angle error define whether the craft has left the accepted corridor. Angular velocity remains a tracked control state and is damped with the accepted bounded angular reserve, but angular-rate error alone cannot invalidate a SpatialCorridor while the actual hull course is still inside its forward-angle envelope. TimeScheduled maneuvers retain full dynamic-state rejection because timing/phase can be physically meaningful there.
+
+Regression coverage requires both a stopped spatial launch without clock progress and continued bounded control for an angular-rate-only spatial excursion. Windows native/live evidence is pending.
+

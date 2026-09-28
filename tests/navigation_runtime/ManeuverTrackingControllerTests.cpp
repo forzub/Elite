@@ -645,6 +645,56 @@ void testSpatialCorridorAngularRateIsSteeringNotRouteLoss()
     );
 }
 
+void testNewtonianSpatialDriftDoesNotCountAsRouteLoss()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+    program.translationMode =
+        Program::TranslationMode::NewtonianMainEngine;
+
+    const auto& reference = program.samples[0];
+    auto agent = exactAgentFor(reference);
+
+    // Newtonian flight may legitimately carry velocity down the accepted
+    // corridor while the hull is pointed elsewhere for drift/braking setup.
+    // Cross-track P/V remain exact, so hull-course slip alone is not route
+    // loss. Attitude feedback may still work toward the authored basis.
+    agent.forwardMap = -reference.forwardMap;
+    agent.rightMap = -reference.rightMap;
+    agent.upMap = reference.upMap;
+
+    const auto result =
+        Tracker::track(program, reference, agent, Tracker::Policy {});
+
+    require(
+        result.status == Tracker::Status::Tracking,
+        "Newtonian spatial drift was treated as corridor loss"
+    );
+    require(
+        result.forwardAngleErrorRad > glm::radians(170.0),
+        "Newtonian drift fixture did not create material hull/course slip"
+    );
+    requireNear(
+        result.envelopeForwardAngleErrorRad,
+        0.0,
+        1.0e-12,
+        "Newtonian hull/course slip leaked into spatial route-loss envelope"
+    );
+    requireNear(
+        result.envelopePositionErrorMeters,
+        0.0,
+        1.0e-12,
+        "Newtonian drift fixture unexpectedly left the corridor"
+    );
+    requireNear(
+        result.envelopeVelocityErrorMps,
+        0.0,
+        1.0e-12,
+        "Newtonian drift fixture unexpectedly gained cross-track velocity"
+    );
+}
+
 void testSpatialCorridorSteersBackWithoutReducingRouteSpeed()
 {
     Program program = baseProgram();
@@ -839,6 +889,7 @@ int main()
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
         testSpatialCorridorLaunchesFromStoppedControlPoint();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
+        testNewtonianSpatialDriftDoesNotCountAsRouteLoss();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
         testSpatialCorridorHoldsTangentInsideCenterDeadband();
         testSpatialZeroSpeedHoldDoesNotInventCourseLoss();

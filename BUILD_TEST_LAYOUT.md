@@ -79,7 +79,12 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Public RoutePlanner API | `route_planner_api_tests` | `route_planner_api` |
 | Public RouteFollower API | `route_follower_api_tests` | `route_follower_api` |
 | Docking infrastructure API | `docking_infrastructure_api_tests` | `docking_infrastructure_api` |
+| Runtime planner | `navigation_runtime_planner_tests` | `navigation_runtime_planner` |
+| Corner-family matrix | `maneuver_corner_family_matrix_tests` | `maneuver_corner_family_matrix` |
+| Rigid-body corridor | `maneuver_rigid_body_corridor_tests` | `maneuver_rigid_body_corridor` |
+| Chained-limit matrix | `maneuver_chained_limit_matrix_tests` | `maneuver_chained_limit_matrix` |
 | Composite proving ground | `navigation_composite_proving_ground_tests` | `navigation_composite_proving_ground` |
+| Physical maneuver search coordinator | `physical_maneuver_search_coordinator_tests` | `physical_maneuver_search_coordinator` |
 
 When a target/test name is not in this table, inspect the current owning
 `CMakeLists.txt` before issuing a command.

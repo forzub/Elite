@@ -48,6 +48,42 @@ std::string dockingAdvisoryTrace(
     return plan.diagnosticSummary;
 }
 
+ShipControlState automaticDockingPreparationControl(
+    const Ship& ship,
+    bool stopLinearMotion
+)
+{
+    ShipControlState control;
+    if (stopLinearMotion)
+    {
+        control.velocityAlignmentCommand =
+            game::navigation::VelocityAlignmentMode::BrakeToStop;
+        return control;
+    }
+
+    // Approach planning is allowed from a moving ship. Remove translational
+    // acceleration, preserve current VREL and damp only angular motion so the
+    // planning origin advances on the same straight inertial line.
+    control.navigationAccelerationDemandValid = true;
+    control.navigationLinearAccelerationDemandSystemMps2 =
+        glm::dvec3(0.0);
+
+    const auto& transform = ship.core().transform();
+    const glm::dvec3 angularVelocitySystemRadPerSec =
+        glm::dvec3(transform.right()) *
+            static_cast<double>(transform.pitchRate) +
+        glm::dvec3(transform.up()) *
+            static_cast<double>(transform.yawRate) +
+        glm::dvec3(transform.forward()) *
+            static_cast<double>(transform.rollRate);
+
+    constexpr double AngularRateDampingPerSecond = 4.0;
+    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
+        -angularVelocitySystemRadPerSec *
+        AngularRateDampingPerSecond;
+    return control;
+}
+
 
 
 

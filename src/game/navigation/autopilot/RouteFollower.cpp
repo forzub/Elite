@@ -5,8 +5,123 @@
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/TrajectoryFollower.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace game::navigation::autopilot
 {
+namespace
+{
+
+game::navigation::ManeuverTrackingController::AgentState adaptAgent(
+    const RouteFollowerAgentState& agent
+) noexcept
+{
+    game::navigation::ManeuverTrackingController::AgentState out;
+    out.positionMapMeters = agent.positionMapMeters;
+    out.velocityMapMetersPerSecond = agent.velocityMapMetersPerSecond;
+    out.forwardMap = agent.forwardMap;
+    out.rightMap = agent.rightMap;
+    out.upMap = agent.upMap;
+    out.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+    out.yawRateRadPerSec = agent.yawRateRadPerSec;
+    out.rollRateRadPerSec = agent.rollRateRadPerSec;
+    return out;
+}
+
+game::navigation::ManeuverTrackingController::Policy adaptPolicy(
+    const RouteFollowerPolicy& policy
+) noexcept
+{
+    game::navigation::ManeuverTrackingController::Policy out;
+    out.positionGainPerSecond2 = policy.positionGainPerSecond2;
+    out.velocityGainPerSecond = policy.velocityGainPerSecond;
+    out.attitudeGainPerSecond2 = policy.attitudeGainPerSecond2;
+    out.angularVelocityGainPerSecond =
+        policy.angularVelocityGainPerSecond;
+    return out;
+}
+
+double axisAngle(
+    const glm::dvec3& a,
+    const glm::dvec3& b
+) noexcept
+{
+    const double la = glm::length(a);
+    const double lb = glm::length(b);
+    if (!(std::isfinite(la) && std::isfinite(lb)) ||
+        la <= 1.0e-12 || lb <= 1.0e-12)
+    {
+        return 3.14159265358979323846;
+    }
+
+    return std::acos(
+        std::clamp(glm::dot(a / la, b / lb), -1.0, 1.0)
+    );
+}
+
+} // namespace
+
+RouteAlignmentResult RouteFollower::alignToAttitude(
+    const AcceptedManeuverProgram& capabilityProgram,
+    const RouteFollowerAgentState& agent,
+    const glm::dvec3& desiredForwardMap,
+    const glm::dvec3& desiredRightMap,
+    const glm::dvec3& desiredUpMap,
+    const RouteFollowerPolicy& policy
+) noexcept
+{
+    RouteAlignmentResult out;
+    if (!capabilityProgram.valid ||
+        capabilityProgram.sampleCount == 0)
+    {
+        return out;
+    }
+
+    auto reference = capabilityProgram.samples[0];
+    reference.positionMapMeters = agent.positionMapMeters;
+    reference.velocityMapMetersPerSecond =
+        agent.velocityMapMetersPerSecond;
+    reference.linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    reference.forwardMap = desiredForwardMap;
+    reference.rightMap = desiredRightMap;
+    reference.upMap = desiredUpMap;
+    reference.angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+    reference.angularAccelerationFeedForwardMapRadPerSec2 =
+        glm::dvec3(0.0);
+
+    auto alignmentProgram = capabilityProgram;
+    alignmentProgram.family =
+        AcceptedManeuverProgram::ManeuverFamily::PrecisionTransit;
+    alignmentProgram.tracking.positionErrorMeters = 0.0;
+    alignmentProgram.tracking.linearVelocityErrorMps = 0.0;
+    alignmentProgram.tracking.forwardAngleErrorRad = 0.0;
+    alignmentProgram.tracking.angularVelocityErrorRadPerSec = 0.0;
+    alignmentProgram.tracking.linearFeedbackReserveMps2 = 0.0;
+
+    const auto tracking =
+        game::navigation::ManeuverTrackingController::track(
+            alignmentProgram,
+            reference,
+            adaptAgent(agent),
+            adaptPolicy(policy)
+        );
+    if (tracking.status ==
+        game::navigation::ManeuverTrackingController::Status::InvalidInput)
+    {
+        return out;
+    }
+
+    out.valid = true;
+    out.intent = tracking.intent;
+    out.forwardAngleErrorRad =
+        axisAngle(agent.forwardMap, desiredForwardMap);
+    out.upAngleErrorRad =
+        axisAngle(agent.upMap, desiredUpMap);
+    return out;
+}
+
 
 RouteProgramSelection RouteFollower::selectPage(
     const std::vector<AcceptedManeuverProgram>& pages,
@@ -113,22 +228,18 @@ RouteFollowerResult RouteFollower::follow(
 ) noexcept
 {
     game::navigation::TrajectoryFollower::AgentState legacyAgent;
-    legacyAgent.positionMapMeters = agent.positionMapMeters;
+    const auto trackingAgent = adaptAgent(agent);
+    legacyAgent.positionMapMeters = trackingAgent.positionMapMeters;
     legacyAgent.velocityMapMetersPerSecond =
-        agent.velocityMapMetersPerSecond;
-    legacyAgent.forwardMap = agent.forwardMap;
-    legacyAgent.rightMap = agent.rightMap;
-    legacyAgent.upMap = agent.upMap;
-    legacyAgent.pitchRateRadPerSec = agent.pitchRateRadPerSec;
-    legacyAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
-    legacyAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
+        trackingAgent.velocityMapMetersPerSecond;
+    legacyAgent.forwardMap = trackingAgent.forwardMap;
+    legacyAgent.rightMap = trackingAgent.rightMap;
+    legacyAgent.upMap = trackingAgent.upMap;
+    legacyAgent.pitchRateRadPerSec = trackingAgent.pitchRateRadPerSec;
+    legacyAgent.yawRateRadPerSec = trackingAgent.yawRateRadPerSec;
+    legacyAgent.rollRateRadPerSec = trackingAgent.rollRateRadPerSec;
 
-    game::navigation::ManeuverTrackingController::Policy legacyPolicy;
-    legacyPolicy.positionGainPerSecond2 = policy.positionGainPerSecond2;
-    legacyPolicy.velocityGainPerSecond = policy.velocityGainPerSecond;
-    legacyPolicy.attitudeGainPerSecond2 = policy.attitudeGainPerSecond2;
-    legacyPolicy.angularVelocityGainPerSecond =
-        policy.angularVelocityGainPerSecond;
+    const auto legacyPolicy = adaptPolicy(policy);
 
     const auto legacy = game::navigation::TrajectoryFollower::follow(
         program,

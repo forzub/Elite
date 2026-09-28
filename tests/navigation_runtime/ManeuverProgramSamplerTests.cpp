@@ -358,6 +358,57 @@ void testSpatialSamplerFollowsVehicleInsteadOfNominalClock()
     );
 }
 
+void testSpatialSamplerDoesNotJumpAcrossHairpin()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.sampleCount = 4;
+    program.validUntilUniverseTimeSeconds = 110.0;
+
+    const glm::dvec3 positions[4] = {
+        {0.0, 0.0, 0.0},
+        {10.0, 0.0, 0.0},
+        {10.0, 10.0, 0.0},
+        {0.0, 10.0, 0.0}
+    };
+    for (std::size_t i = 0; i < 4; ++i)
+    {
+        auto& sample = program.samples[i];
+        sample.timeOffsetSeconds = static_cast<double>(i);
+        sample.positionMapMeters = positions[i];
+        sample.velocityMapMetersPerSecond = {5.0, 0.0, 0.0};
+        sample.linearAccelerationFeedForwardMapMps2 =
+            glm::dvec3(0.0);
+        sample.forwardMap = {1.0, 0.0, 0.0};
+        sample.rightMap = {0.0, 0.0, 1.0};
+        sample.upMap = {0.0, 1.0, 0.0};
+        sample.angularVelocityMapRadPerSecond = glm::dvec3(0.0);
+        sample.angularAccelerationFeedForwardMapRadPerSec2 =
+            glm::dvec3(0.0);
+    }
+
+    // Geometrically this point is very close to the final return leg at y=10,
+    // but the craft has not yet passed the endpoint plane of the first leg.
+    // A nearest-future-segment search would cut across the canyon wall.
+    const auto result = Sampler::sampleSpatial(
+        program,
+        101.0,
+        glm::dvec3(1.0, 9.5, 0.0),
+        0
+    );
+
+    require(result.status == Sampler::Status::Active,
+            "hairpin spatial fixture became invalid");
+    require(result.lowerSampleIndex == 0,
+            "spatial sampler jumped across a hairpin to a future branch");
+    requireNear(
+        result.reference.positionMapMeters.y,
+        0.0,
+        1.0e-12,
+        "hairpin reference left the current accepted corridor segment"
+    );
+}
+
 void testSpatialSamplerNeverJumpsBehindMonotonicCursor()
 {
     Program program = baseProgram();
@@ -517,6 +568,7 @@ int main()
         testStoragePageSelectionUsesNextPageStart();
         testStoragePageContinuityAtRealUniverseEpoch();
         testSpatialSamplerFollowsVehicleInsteadOfNominalClock();
+        testSpatialSamplerDoesNotJumpAcrossHairpin();
         testSpatialSamplerNeverJumpsBehindMonotonicCursor();
         testSpatialPageSelectionUsesPhysicalProgressNotTime();
         testFollowerCompletionUsesPageLocalElapsedTime();
@@ -529,6 +581,7 @@ int main()
         std::cout << " - invalid time domains fail closed\n";
         std::cout << " - storage pages share one canonical maneuver timeline\n";
         std::cout << " - spatial corridors follow physical progress, not nominal time\n";
+        std::cout << " - hairpins cannot jump to a nearby future branch\n";
         std::cout << " - spatial storage pages advance only after endpoint crossing\n";
         std::cout << " - monotonic spatial cursor cannot jump backwards\n";
         std::cout << " - Follower completion uses page-local elapsed time\n";

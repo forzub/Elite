@@ -901,10 +901,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     out.initialTurnPresent=selected.initialTurnPresent;
     out.initialTurnRadiusMeters=selected.initialTurnRadiusMeters;
 
-    std::vector<double> progress(samples.size(),0.0);
-    for (std::size_t i=1;i<samples.size();++i)
-        progress[i]=progress[i-1]+glm::length(samples[i]-samples[i-1]);
-
     // Build the execution path without ever skipping an authored vertex.
     // Global-distance resampling used to place one sample just before a
     // semantic vertex (e.g. terminal align) and the next just after it. The

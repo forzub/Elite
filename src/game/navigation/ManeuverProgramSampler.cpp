@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace game::navigation
 {
@@ -251,6 +252,116 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sample(
         program.samples[upper],
         alpha,
         result.elapsedSeconds
+    );
+    return result;
+}
+
+ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
+    const AcceptedManeuverProgram& program,
+    double universeTimeSeconds,
+    const glm::dvec3& positionMapMeters,
+    std::size_t minimumSegmentIndex
+) noexcept
+{
+    Result result;
+    if (!validProgram(program) ||
+        !finite(universeTimeSeconds) ||
+        !finite(positionMapMeters) ||
+        program.sampleCount < 2)
+    {
+        return result;
+    }
+
+    const auto window =
+        ManeuverProgramTimeline::pageWindow(program);
+    if (!window.valid)
+        return result;
+
+    result.elapsedSeconds =
+        universeTimeSeconds - window.startUniverseTimeSeconds;
+    if (result.elapsedSeconds < 0.0)
+    {
+        result.status = Status::BeforeStart;
+        result.reference = program.samples[0];
+        return result;
+    }
+
+    const std::size_t lastSegment =
+        static_cast<std::size_t>(program.sampleCount - 2);
+    const std::size_t firstSegment =
+        std::min(minimumSegmentIndex, lastSegment);
+
+    double bestDistance2 =
+        std::numeric_limits<double>::infinity();
+    std::size_t bestLower = firstSegment;
+    double bestAlpha = 0.0;
+
+    for (std::size_t lower = firstSegment;
+         lower <= lastSegment;
+         ++lower)
+    {
+        const auto& a = program.samples[lower];
+        const auto& b = program.samples[lower + 1];
+        const glm::dvec3 segment =
+            b.positionMapMeters - a.positionMapMeters;
+        const double segmentLength2 =
+            glm::dot(segment, segment);
+
+        double alpha = 0.0;
+        if (finite(segmentLength2) &&
+            segmentLength2 > kEpsilon)
+        {
+            alpha = std::clamp(
+                glm::dot(
+                    positionMapMeters - a.positionMapMeters,
+                    segment
+                ) / segmentLength2,
+                0.0,
+                1.0
+            );
+        }
+
+        const glm::dvec3 projected =
+            a.positionMapMeters + alpha * segment;
+        const glm::dvec3 delta =
+            positionMapMeters - projected;
+        const double distance2 = glm::dot(delta, delta);
+        if (!finite(distance2))
+            return Result {};
+
+        // Equal-distance joins belong to the later segment. Combined with the
+        // caller's monotonic minimumSegmentIndex this prevents path progress
+        // from bouncing backwards at sample/page boundaries.
+        if (distance2 < bestDistance2 - kEpsilon ||
+            (std::abs(distance2 - bestDistance2) <= kEpsilon &&
+             lower > bestLower))
+        {
+            bestDistance2 = distance2;
+            bestLower = lower;
+            bestAlpha = alpha;
+        }
+    }
+
+    const std::size_t bestUpper = bestLower + 1;
+    const double lowerTime =
+        program.samples[bestLower].timeOffsetSeconds;
+    const double upperTime =
+        program.samples[bestUpper].timeOffsetSeconds;
+    const double sampledOffset =
+        lowerTime + (upperTime - lowerTime) * bestAlpha;
+
+    result.status = Status::Active;
+    result.lowerSampleIndex = bestLower;
+    result.upperSampleIndex = bestUpper;
+    result.interpolation01 = bestAlpha;
+    result.spatialReference = true;
+    result.spatialDistanceMeters =
+        std::sqrt(std::max(0.0, bestDistance2));
+    result.reference = interpolate(
+        program.samples[bestLower],
+        program.samples[bestUpper],
+        bestAlpha,
+        sampledOffset
     );
     return result;
 }

@@ -81,6 +81,11 @@ struct DockingAdvisoryPlan
     bool terminalTurnRadiusRelaxed = false;
     double terminalTurnRadiusMeters = 0.0;
 
+    // Selected rotation of the terminal circular primitive around the docking
+    // axis. Zero is one basis direction; other values prove Planner actually
+    // searched another side instead of squeezing the same local corner.
+    double terminalArcRotationDegrees = 0.0;
+
     // First nose-first launch turn is authored as a tangent circular fillet.
     // Published 500 m corridor frames are only sparse chords and must not be
     // mistaken for the continuity proof of the underlying geometry.

@@ -1456,7 +1456,7 @@ bool GameServer::planAutomaticDocking(
         );
 
     const double linearReserve =
-        DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+        game::navigation::DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
             fullVehicle.maxForwardAccelerationMps2,
             fullVehicle.maxBrakingAccelerationMps2,
             fullVehicle.maxLateralAccelerationMps2
@@ -3344,11 +3344,11 @@ void GameServer::applyAutomaticDockingControls(
         const double holdDistanceMeters =
             glm::length(holdPosition - agent.positionMapMeters);
         const double holdCaptureDistanceMeters =
-            DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(
+            game::navigation::DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters(
                 program.tracking.positionErrorMeters
             );
         const double holdCaptureSpeedMps =
-            DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(
+            game::navigation::DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps(
                 program.tracking.linearVelocityErrorMps
             );
         if (runtime.stage ==
@@ -3370,7 +3370,7 @@ void GameServer::applyAutomaticDockingControls(
         );
         const bool correctingInsideSpatialEnvelope =
             followed.trackingErrorExceeded &&
-            DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
+            game::navigation::DockingAutomaticRecoveryPolicy::recoverableDynamicExcursion(
                 followed.envelopePositionErrorMeters,
                 program.tracking.positionErrorMeters,
                 followed.envelopeVelocityErrorMps,

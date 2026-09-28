@@ -1,3 +1,7 @@
+## 2026-09-28 — rerun Windows gate after compile cleanup
+
+Pull through `64e0a665b1fbcc5f8f20d9905674e6df140d2e25`. The stale `ManeuverProgramSampler` validation reference to retired `spatialSlowdownStartFraction` is removed. Rerun `bash verify_docking.sh`, then build and run standalone `EliteGame`. Do not restore the retired slowdown field to satisfy old code.
+
 ## Continue from 2026-09-28 single-source Automatic corridor candidate
 
 Work from `forzub/Elite` `main`. The candidate code baseline before this

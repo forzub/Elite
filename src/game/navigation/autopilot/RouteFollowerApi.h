@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -63,9 +64,50 @@ struct RouteFollowerResult
     double spatialSpeedScale = 1.0;
 };
 
+enum class RouteProgramSelectionStatus : std::uint8_t
+{
+    InvalidInput = 0,
+    BeforeStart,
+    Active
+};
+
+struct RouteProgramSelection
+{
+    RouteProgramSelectionStatus status =
+        RouteProgramSelectionStatus::InvalidInput;
+    std::size_t pageIndex = 0;
+    std::size_t pagesAdvanced = 0;
+    double firstPageStartUniverseTimeSeconds = 0.0;
+};
+
+struct RouteReferenceDiagnostic
+{
+    bool valid = false;
+    bool spatialReference = false;
+    AcceptedManeuverProgram::ReferenceSample reference {};
+    std::size_t lowerSampleIndex = 0;
+    std::size_t upperSampleIndex = 0;
+    double interpolation01 = 0.0;
+    double spatialDistanceMeters = 0.0;
+};
+
 class RouteFollower final
 {
 public:
+    [[nodiscard]] static RouteProgramSelection selectPage(
+        const std::vector<AcceptedManeuverProgram>& pages,
+        double universeTimeSeconds,
+        const glm::dvec3& positionMapMeters,
+        std::size_t currentPageIndex
+    ) noexcept;
+
+    [[nodiscard]] static RouteReferenceDiagnostic sampleReference(
+        const AcceptedManeuverProgram& program,
+        double universeTimeSeconds,
+        const glm::dvec3& positionMapMeters,
+        std::size_t minimumSpatialSegmentIndex = 0
+    ) noexcept;
+
     [[nodiscard]] static RouteFollowerResult follow(
         const AcceptedManeuverProgram& program,
         double universeTimeSeconds,

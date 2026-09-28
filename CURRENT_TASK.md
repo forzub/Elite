@@ -1,3 +1,36 @@
+## 2026-09-28 — verify one-source Automatic corridor on standalone EliteGame
+
+Use only the standalone `EliteGame` build for this gate.
+
+Acceptance sequence:
+
+1. Pull current `main` and run `bash verify_docking.sh`.
+2. Build `EliteGame`.
+3. Press `START DOCKING` directly; Automatic must not require or run a
+   client `CALCULATE TRAJECTORY`/route-preflight first.
+4. During server stabilization/planning there may be no tunnel. Once an
+   AcceptedProgram exists, expect
+   `[DockAutoRoute] ... source=accepted-program` and the displayed tunnel/map
+   route must be that exact execution product.
+5. A replan must withdraw the old Automatic corridor until the new revision is
+   accepted; stale geometry must not remain visible.
+6. `[DockAutoTrack]` must report `direct_follower_control=1`.
+   Cross-track correction must keep `spatial_speed_scale=1`, preserve the
+   route speed target, and change the steering/course direction back toward
+   the path.
+7. Diagnostics now distinguish `steering_angle_deg` from
+   `course_error_deg`. A large inward steering angle alone must not trigger
+   route loss when geometric course/cross-track state remains recoverable.
+8. The ship must advance through ordered spatial samples rather than clock
+   progress or nearest-future-segment jumps.
+9. If it still exits the accepted corridor, capture every
+   `[DockAutoRoute]`, `[DockAutoTrack]`, `[DockAuto]` and
+   `[DockResult]` line. The next diagnosis must use those authoritative
+   values, not the retired client advisory route.
+
+The candidate is not accepted until native tests/build and live flight evidence
+exist on Windows.
+
 ## 2026-09-27 — fetch published docking candidate and fly
 
 On the Windows MSYS2 MinGW64 checkout: fetch/pull `origin main`, verify the

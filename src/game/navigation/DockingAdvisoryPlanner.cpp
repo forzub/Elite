@@ -283,7 +283,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     const auto roundGeometry =
         [&](const std::vector<glm::dvec3>& geometryPoints,
-            double requiredTerminalRadiusMeters)
+            double requiredTerminalRadiusMeters,
+            const glm::dvec3& finalPoint)
     {
         RoundedCandidate candidate;
         if (geometryPoints.size() < 2)
@@ -293,7 +294,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         }
 
         auto vertices = geometryPoints;
-        vertices.push_back(stop);
+        if (vertices.empty() ||
+            glm::length(vertices.back() - finalPoint) > 1.0e-6)
+        {
+            vertices.push_back(finalPoint);
+        }
         candidate.samples = {vertices.front()};
 
         if (!r.roundTurns)
@@ -608,7 +613,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     if (preferredTerminalRadius<=0.0)
     {
-        selected=roundGeometry(nominalGeometry.pointsMeters,0.0);
+        selected=roundGeometry(nominalGeometry.pointsMeters,0.0,stop);
         selectedTraversalSeconds=estimatedTraversalSeconds(selected);
     }
 
@@ -641,13 +646,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     // Phase 2: author the terminal circular primitive first, then route TO it.
     //
-    // 'align' is the exact point where the final straight begins.  For a
-    // 90-degree circular transition of radius R, the virtual polyline corner
-    // sits R metres BEHIND align along the outgoing axis. Rotating the incoming
-    // tangent around the docking axis rotates the whole turn plane without
-    // changing either R or the final straight. This is deliberately the
-    // inverse of the old approach, which chose one polyline first and then
-    // asked whether a large fillet happened to fit inside it.
+    // HARD CONTRACT:
+    //   entry -> exact circular arc(R) -> align -> stop
+    //
+    // The generic corner-rounding code is NOT allowed to alter R. It only
+    // smooths the route that arrives at the straight tangent BEFORE entry.
+    // This keeps the requested docking arc a commanded primitive instead of a
+    // suggestion that another planner layer may squeeze afterwards.
     world::navigation::GeometricPathResult wideGeometry;
     if (preferredTerminalRadius>0.0)
     {
@@ -664,33 +669,34 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         const double authoredCruiseSpeed =
             0.8 * r.maxSpeedMps;
+        const double transitComfortRadius=std::max(
+            20.0,
+            0.50 * authoredCruiseSpeed * authoredCruiseSpeed /
+                r.lateralMps2
+        );
         const double terminalPrimitiveRadius=std::max({
             20.0,
             authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
             preferredTerminalRadius
         });
 
-        // roundGeometry() constructs a tangent fillet around a virtual corner.
-        // Moving that corner one radius upstream makes the arc EXIT exactly at
-        // align; align->stop therefore remains an untouched semantic final
-        // approach regardless of the chosen radius.
-        const glm::dvec3 terminalCorner =
-            align-finalDirection*terminalPrimitiveRadius;
+        out.terminalTurnRequestedRadiusMeters =
+            terminalPrimitiveRadius;
 
-        // Leave enough incoming straight for the terminal fillet plus a
-        // preceding route turn. The actual occupied segment is validated after
-        // rounding; we intentionally do not require the discarded sharp-corner
-        // chord itself to be collision-free.
-        const double terminalLeadLength=std::max({
-            terminalPrimitiveRadius*2.00,
-            terminalPrimitiveRadius/
-                r.terminalTurnSegmentFraction*1.10,
-            1000.0
-        });
+        // This straight exists only to let the preceding topology turn settle
+        // onto the exact terminal-arc tangent. It does NOT size the terminal
+        // arc itself.
+        const double preArcStraightMeters =
+            std::max(1000.0, 2.0 * transitComfortRadius);
 
         constexpr int terminalIngressSamples=36;
         constexpr double twoPi=
             6.283185307179586476925286766559;
+        constexpr double halfPi=
+            1.5707963267948966192313216916398;
+
+        out.terminalArcCandidatesTested =
+            terminalIngressSamples;
 
         for(int sample=0;
             sample<terminalIngressSamples;
@@ -701,41 +707,150 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 incoming=
                 lateralA*std::cos(angle)+
                 lateralB*std::sin(angle);
-            const glm::dvec3 preCorner=
-                terminalCorner-incoming*terminalLeadLength;
+
+            // Exact quarter-circle ending at align:
+            //   center = align - incoming*R
+            //   entry  = center - finalDirection*R
+            //
+            // Tangent(entry)=incoming, tangent(align)=finalDirection.
+            const glm::dvec3 center =
+                align - incoming * terminalPrimitiveRadius;
+            const glm::dvec3 entry =
+                center - finalDirection * terminalPrimitiveRadius;
+            const glm::dvec3 preEntry =
+                entry - incoming * preArcStraightMeters;
 
             auto ingressSearch=search;
-            ingressSearch.goalMeters=preCorner;
+            ingressSearch.goalMeters=preEntry;
             ingressSearch.params.maxConsideredObstacles=0;
             const auto ingressGeometry=
                 world::navigation::GeometricPathPlanner::plan(ingressSearch);
             if(!ingressGeometry.valid ||
                ingressGeometry.pointsMeters.size()<2)
+            {
+                ++out.terminalArcRouteRejected;
+                out.terminalArcLastRejection =
+                    "route-to-pre-entry:" +
+                    (ingressGeometry.message.empty()
+                        ? std::string("invalid")
+                        : ingressGeometry.message);
                 continue;
+            }
+            ++out.terminalArcRouteable;
 
             auto points=ingressGeometry.pointsMeters;
-            if(glm::length(points.back()-terminalCorner)>1.0e-6)
-                points.push_back(terminalCorner);
             points=prependInitialForwardLead(std::move(points));
 
-            auto rotatedCandidate =
-                roundGeometry(
-                    points,
-                    terminalPrimitiveRadius
-                );
-            rotatedCandidate.terminalArcRotationDegrees =
+            auto transitCandidate =
+                roundGeometry(points,0.0,entry);
+            if(!transitCandidate.valid)
+            {
+                ++out.terminalArcTransitRejected;
+                out.terminalArcLastRejection =
+                    "transit-to-entry:" +
+                    transitCandidate.failure;
+                continue;
+            }
+            ++out.terminalArcTransitReady;
+
+            RoundedCandidate candidate =
+                std::move(transitCandidate);
+            candidate.terminalTurnPresent=true;
+            candidate.terminalTurnRadiusMeters=
+                terminalPrimitiveRadius;
+            candidate.terminalArcRotationDegrees =
                 angle * 180.0 /
                 3.1415926535897932384626433832795;
+
+            const glm::dvec3 turnNormal =
+                glm::normalize(glm::cross(incoming,finalDirection));
+            const glm::dvec3 startRadial =
+                entry-center;
+            const double arcLength =
+                terminalPrimitiveRadius * halfPi;
+            const int arcSegments=std::clamp(
+                static_cast<int>(std::ceil(arcLength/10.0)),
+                12,
+                1024
+            );
+
+            bool arcClear=true;
+            glm::dvec3 previous=entry;
+            for(int j=1;j<=arcSegments;++j)
+            {
+                const double t=
+                    double(j)/double(arcSegments);
+                const double phi=halfPi*t;
+                const double cp=std::cos(phi);
+                const double sp=std::sin(phi);
+                const glm::dvec3 radial=
+                    startRadial*cp+
+                    glm::cross(turnNormal,startRadial)*sp+
+                    turnNormal*
+                        glm::dot(turnNormal,startRadial)*
+                        (1.0-cp);
+                glm::dvec3 point=center+radial;
+                if(j==arcSegments)
+                    point=align;
+
+                if(!clear(previous,point))
+                {
+                    arcClear=false;
+                    break;
+                }
+
+                candidate.samples.push_back(point);
+                previous=point;
+            }
+
+            if(!arcClear || !clear(align,stop))
+            {
+                ++out.terminalArcCollisionRejected;
+                out.terminalArcLastRejection =
+                    !arcClear
+                        ? "terminal-arc-obstructed"
+                        : "final-straight-obstructed";
+                continue;
+            }
+
+            if(glm::length(candidate.samples.back()-stop)>1.0e-6)
+                candidate.samples.push_back(stop);
+
+            candidate.lengthMeters=0.0;
+            bool wholeRouteClear=true;
+            for(std::size_t i=1;i<candidate.samples.size();++i)
+            {
+                if(!clear(candidate.samples[i-1],candidate.samples[i]))
+                {
+                    wholeRouteClear=false;
+                    break;
+                }
+                candidate.lengthMeters +=
+                    glm::length(
+                        candidate.samples[i]-
+                        candidate.samples[i-1]
+                    );
+            }
+
+            if(!wholeRouteClear)
+            {
+                ++out.terminalArcCollisionRejected;
+                out.terminalArcLastRejection =
+                    "combined-route-obstructed";
+                continue;
+            }
+
+            candidate.valid=true;
+            candidate.failure.clear();
+            ++out.terminalArcAcceptedCandidates;
             considerPreferredCandidate(
-                std::move(rotatedCandidate),
+                std::move(candidate),
                 true
             );
         }
 
-        // Preserve one ordinary topology for the radius-relaxation fallback
-        // below. It is NOT allowed to outrank a valid rotated terminal
-        // primitive, because that would reintroduce the old "polyline first,
-        // squeeze the arc later" behavior.
+        // Keep a conventional route only as the explicit radius-relaxation
+        // fallback after ALL rotated exact-R candidates have failed.
         wideGeometry=planGeometry(0.0,0);
         if(wideGeometry.valid &&
            wideGeometry.pointsMeters.size()>=2)
@@ -753,12 +868,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     // circular arc rather than cancelling the manual navigation task.
     if (!selected.valid)
     {
-        auto relaxed = roundGeometry(nominalGeometry.pointsMeters,0.0);
+        auto relaxed = roundGeometry(nominalGeometry.pointsMeters,0.0,stop);
         if (!relaxed.valid &&
             wideGeometry.valid &&
             wideGeometry.pointsMeters.size()>=2)
         {
-            relaxed=roundGeometry(wideGeometry.pointsMeters,0.0);
+            relaxed=roundGeometry(wideGeometry.pointsMeters,0.0,stop);
             if (relaxed.valid)
                 detourUsed=true;
         }

@@ -48,7 +48,10 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationRuntimePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NominalRoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/navigation/GeometricPathPlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/autopilot/RouteFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverPhaseGate.cpp"
@@ -943,13 +946,43 @@ set_tests_properties(
 
 add_executable(docking_advisory_tests
     DockingAdvisoryPlannerTests.cpp
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorldPredictor.cpp")
 target_include_directories(docking_advisory_tests PRIVATE
     "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(docking_advisory_tests PRIVATE cxx_std_17)
 target_link_libraries(docking_advisory_tests PRIVATE EliteNavigationRuntimeControl)
 add_test(NAME docking_advisory COMMAND docking_advisory_tests)
+
+add_executable(
+    route_planner_api_tests
+    RoutePlannerApiTests.cpp
+)
+target_include_directories(route_planner_api_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(route_planner_api_tests PRIVATE cxx_std_17)
+target_link_libraries(route_planner_api_tests PRIVATE EliteNavigationRuntimeControl)
+add_test(NAME route_planner_api COMMAND route_planner_api_tests)
+
+add_executable(
+    route_follower_api_tests
+    RouteFollowerApiTests.cpp
+)
+target_include_directories(route_follower_api_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(route_follower_api_tests PRIVATE cxx_std_17)
+target_link_libraries(route_follower_api_tests PRIVATE EliteNavigationRuntimeControl)
+add_test(NAME route_follower_api COMMAND route_follower_api_tests)
+
+add_executable(
+    docking_infrastructure_api_tests
+    DockingInfrastructureApiTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/docking/traffic/DockTrafficController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/docking/landing/DockLandingController.cpp"
+)
+target_include_directories(docking_infrastructure_api_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(docking_infrastructure_api_tests PRIVATE cxx_std_17)
+add_test(NAME docking_infrastructure_api COMMAND docking_infrastructure_api_tests)
 
 add_executable(
     navigation_hit_volume_adapter_tests

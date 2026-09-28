@@ -32,6 +32,14 @@
 #include "src/world/descriptors/ModuleDescriptor.h"
 #include "src/world/descriptors/LogicalDimensions.h"
 
+struct LogicalCollisionBox
+{
+    glm::vec3 centerMeters {0.0f};
+    glm::vec3 halfSizeMeters {0.5f};
+    glm::mat3 orientation {1.0f};
+    std::string label;
+};
+
 class IObjectDescriptor
 {
 public:
@@ -51,6 +59,18 @@ public:
     virtual const glm::vec3& meshUpAxis() const = 0;
 
     virtual const std::vector<ModuleDescriptor>& moduleDescriptors() const = 0;
+
+    // Optional authoritative logical collision decomposition for monolithic
+    // objects whose visible mesh contains navigable openings (hangars, docks,
+    // gates). Empty keeps the legacy whole-logical-bounds fallback. Consumers
+    // use these boxes for the shared HitComponent product; navigation and
+    // collision therefore see the same holes instead of special-casing them.
+    virtual const std::vector<LogicalCollisionBox>&
+    logicalCollisionBoxes() const
+    {
+        static const std::vector<LogicalCollisionBox> empty;
+        return empty;
+    }
 
     // Строит матрицу, которая переводит координаты меша
     // из авторского локального базиса в логический игровой базис:

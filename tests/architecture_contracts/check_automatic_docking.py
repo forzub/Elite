@@ -223,8 +223,8 @@ try:
         "phase=hold-complete",
         "next=final-ingress",
         "DockingAutomaticRecoveryPolicy::holdCaptureDistanceMeters",
-        "DockingAutomaticRecoveryPolicy::holdCaptureSpeedMps",
-        "enterFinalIngress(\"standoff-tracking-envelope\")",
+        "DockingAutomaticRecoveryPolicy::canCaptureHoldWhileBraking",
+        "enterFinalIngress(\"standoff-braking-envelope\")",
         "recoverableDynamicExcursion(",
         "phase=correcting-envelope",
         "request.roundTurns =\n                            assisted && !nearHoldRecovery",
@@ -246,7 +246,7 @@ try:
             "Automatic docking restored the synchronous fixed-step plan-retry loop"
         )
 
-    if server.index('enterFinalIngress("standoff-tracking-envelope")') > server.index(
+    if server.index('enterFinalIngress("standoff-braking-envelope")') > server.index(
         'phase=recovery reason=follower-rejected'
     ):
         raise AssertionError(

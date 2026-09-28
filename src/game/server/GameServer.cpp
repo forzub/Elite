@@ -1779,12 +1779,58 @@ bool GameServer::planAutomaticDocking(
                             DockingAdvisoryPlanner::plan(request);
                         if (!advisoryPlan.valid())
                         {
-                            finishFailure(
+                            std::string reason =
                                 advisoryPlan.failure.empty()
                                     ? "advisory-plan-invalid"
                                     : std::string("advisory:") +
-                                        advisoryPlan.failure
-                            );
+                                        advisoryPlan.failure;
+                            reason +=
+                                " requested_radius_m=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalTurnRequestedRadiusMeters
+                                ) +
+                                " candidates=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcCandidatesTested
+                                ) +
+                                " routeable=" +
+                                std::to_string(
+                                    advisoryPlan.terminalArcRouteable
+                                ) +
+                                " route_rejected=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcRouteRejected
+                                ) +
+                                " transit_ready=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcTransitReady
+                                ) +
+                                " transit_rejected=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcTransitRejected
+                                ) +
+                                " collision_rejected=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcCollisionRejected
+                                ) +
+                                " accepted=" +
+                                std::to_string(
+                                    advisoryPlan.
+                                        terminalArcAcceptedCandidates
+                                ) +
+                                " last_rejection=" +
+                                (advisoryPlan.
+                                     terminalArcLastRejection.empty()
+                                    ? std::string("none")
+                                    : advisoryPlan.
+                                        terminalArcLastRejection);
+                            finishFailure(reason);
                             return;
                         }
 
@@ -2307,10 +2353,53 @@ bool GameServer::planAutomaticDocking(
                     finalIngressStage
                         ? 0.0
                         : advisoryPlan.terminalTurnRadiusMeters;
+                job->requestedTerminalRadiusMeters =
+                    finalIngressStage
+                        ? 0.0
+                        : advisoryPlan.
+                            terminalTurnRequestedRadiusMeters;
                 job->terminalArcRotationDegrees =
                     finalIngressStage
                         ? 0.0
                         : advisoryPlan.terminalArcRotationDegrees;
+                job->terminalArcCandidatesTested =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.
+                            terminalArcCandidatesTested;
+                job->terminalArcRouteable =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.terminalArcRouteable;
+                job->terminalArcRouteRejected =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.
+                            terminalArcRouteRejected;
+                job->terminalArcTransitReady =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.terminalArcTransitReady;
+                job->terminalArcTransitRejected =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.
+                            terminalArcTransitRejected;
+                job->terminalArcCollisionRejected =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.
+                            terminalArcCollisionRejected;
+                job->terminalArcAcceptedCandidates =
+                    finalIngressStage
+                        ? 0
+                        : advisoryPlan.
+                            terminalArcAcceptedCandidates;
+                job->terminalArcLastRejection =
+                    finalIngressStage
+                        ? std::string()
+                        : advisoryPlan.
+                            terminalArcLastRejection;
                 job->maxPlannedAccelerationMps2 = 0.0;
                 for (const auto& sample :
                      trajectoryResult.trajectory.samples)
@@ -2857,10 +2946,30 @@ void GameServer::applyAutomaticDockingControls(
                 << job->initialTurnRadiusMeters
                 << " final_axis_m="
                 << job->finalAxisMeters
+                << " requested_terminal_radius_m="
+                << job->requestedTerminalRadiusMeters
                 << " terminal_radius_m="
                 << job->terminalRadiusMeters
                 << " arc_rotation_deg="
                 << job->terminalArcRotationDegrees
+                << " arc_candidates="
+                << job->terminalArcCandidatesTested
+                << " arc_routeable="
+                << job->terminalArcRouteable
+                << " arc_route_rejected="
+                << job->terminalArcRouteRejected
+                << " arc_transit_ready="
+                << job->terminalArcTransitReady
+                << " arc_transit_rejected="
+                << job->terminalArcTransitRejected
+                << " arc_collision_rejected="
+                << job->terminalArcCollisionRejected
+                << " arc_accepted="
+                << job->terminalArcAcceptedCandidates
+                << " arc_last_rejection="
+                << (job->terminalArcLastRejection.empty()
+                        ? "none"
+                        : job->terminalArcLastRejection)
                 << " max_planned_accel_mps2="
                 << job->maxPlannedAccelerationMps2
                 << " pre_capture_depth_m="

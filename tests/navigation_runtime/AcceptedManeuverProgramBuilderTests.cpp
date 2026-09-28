@@ -215,6 +215,9 @@ void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
     request.trajectory = &trajectory;
     request.shipPhysics = &params;
     request.controlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    request.referenceMode =
+        game::navigation::AcceptedManeuverProgram::
+            ReferenceMode::SpatialCorridor;
     request.objectiveRevision = 12;
     request.firstProgramRevision = 40;
     request.capabilityRevision = 6;
@@ -233,6 +236,12 @@ void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
             game::navigation::AcceptedManeuverProgram::
                 TranslationMode::AssistedVelocity,
         "Assisted program did not select the game-flight execution mode"
+    );
+    require(
+        program.referenceMode ==
+            game::navigation::AcceptedManeuverProgram::
+                ReferenceMode::SpatialCorridor,
+        "builder lost the spatial-corridor execution contract"
     );
 }
 

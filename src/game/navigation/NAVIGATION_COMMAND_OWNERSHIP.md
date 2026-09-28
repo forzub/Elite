@@ -227,14 +227,21 @@ The follower must **not**:
 - invent a new target velocity from a point;
 - re-solve free-space geometry.
 
-It samples the accepted program at current elapsed time:
+It samples the accepted program according to its declared reference mode:
 
 ~~~text
-P_ref, V_ref, A_ff
-q_ref, omega_ref, alpha_ff
+TimeScheduled
+    -> current accepted maneuver time
+
+SpatialCorridor
+    -> monotonic physical progress on the accepted path
+
+both produce:
+    P_ref, V_ref, A_ff
+    q_ref, omega_ref, alpha_ff
 ~~~
 
-and compares against actual state.
+and compares that reference against actual state.
 
 It produces bounded feedback correction:
 

@@ -258,6 +258,8 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
         tracking.envelopeVelocityErrorMps;
     result.forwardAngleErrorRad =
         tracking.forwardAngleErrorRad;
+    result.envelopeForwardAngleErrorRad =
+        tracking.envelopeForwardAngleErrorRad;
     result.angularVelocityErrorRadPerSec =
         tracking.angularVelocityErrorRadPerSec;
     result.trackingErrorExceeded =

@@ -1,3 +1,11 @@
+## 2026-09-29 — spatial composite harness now obeys accepted validity window
+
+Latest composite run shows the production spatial fixes working for Newtonian: portal_102 reports tracking_exceeded_ticks=0, max envelope position/velocity/course error all 0, and the 19 m hull constraint remains satisfied. The remaining failure is phase completion, not route loss.
+
+Root cause in the synthetic composite harness: executeProgram still bounded every non-partial phase by nominalEnd + capture-overrun, even for SpatialCorridor. Production NavigationExecutionReplanPolicy instead treats AcceptedManeuverProgram::validUntilUniverseTimeSeconds as the hard execution boundary and requests SegmentExpired replanning only there. The harness now mirrors that contract: SpatialCorridor may execute until validUntil; TimeScheduled phases retain nominal/capture-overrun timing. PORTAL-ACTUAL now also prints final P/V error, simulated duration and validity budget.
+
+Windows rerun pending; do not mark composite green yet.
+
 ## 2026-09-28 — production spatial handoff and Newtonian drift contract fix
 
 Latest composite evidence exposed two real production contract mismatches after portal_102 was switched to SpatialCorridor:

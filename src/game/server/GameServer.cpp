@@ -2537,8 +2537,18 @@ bool GameServer::planAutomaticDocking(
                 ? "approach-hold"
                 : "final-ingress")
         << " phase=planning-async"
+        << " start_mode="
+        << (coastToExecution ? "coast" : "stop")
         << " execution_t="
         << executionStartUniverseTimeSeconds
+        << " projected_start_m=("
+        << startPositionMeters.x << ","
+        << startPositionMeters.y << ","
+        << startPositionMeters.z << ")"
+        << " initial_speed_mps="
+        << glm::length(startVelocityMps)
+        << " planning_authority_fraction="
+        << AutomaticPlanningAuthorityFraction
         << " linear_feedback_reserve_mps2="
         << linearReserve
         << " angular_feedback_reserve_radps2="

@@ -140,7 +140,9 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/local/LocalAvoidancePlanner.cpp
     src/game/navigation/NavigationRuntimePlanner.cpp
     src/game/navigation/NominalRoutePlanner.cpp
+    src/game/navigation/planner/RoutePlanner.cpp
     src/game/navigation/TrajectoryFollower.cpp
+    src/game/navigation/autopilot/RouteFollower.cpp
     src/game/navigation/ManeuverProgramSampler.cpp
     src/game/navigation/ManeuverTrackingController.cpp
     src/game/navigation/ManeuverPhaseGate.cpp
@@ -159,6 +161,16 @@ target_link_libraries(EliteNavigationWorldRuntime
     PUBLIC EliteNavigationGeometry
            EliteNavigationTrajectory
 )
+
+add_library(EliteDockingInfrastructure STATIC
+    src/game/docking/traffic/DockTrafficController.cpp
+    src/game/docking/landing/DockLandingController.cpp
+)
+target_include_directories(EliteDockingInfrastructure PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_compile_features(EliteDockingInfrastructure PUBLIC cxx_std_17)
 
 # Game-level maneuver selection sits deliberately above NavigationWorld.
 # It consumes already-produced candidate annotations and active control-law
@@ -573,7 +585,6 @@ add_executable(EliteGame
     src/game/navigation/TrajectoryPredictor.cpp
     src/game/navigation/TrajectorySafetyEvaluator.cpp
     src/game/navigation/NavigationWorldPredictor.cpp
-    src/game/navigation/DockingAdvisoryPlanner.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
@@ -713,8 +724,7 @@ if(ELITE_BUILD_SERVER)
         src/world/navigation/control/PilotSkillExecutor.cpp
         src/game/navigation/TrajectoryPredictor.cpp
         src/game/navigation/TrajectorySafetyEvaluator.cpp
-        src/game/navigation/DockingAdvisoryPlanner.cpp
-        src/game/navigation/LocalGuidancePlanner.cpp
+            src/game/navigation/LocalGuidancePlanner.cpp
         src/game/navigation/HubSemanticAnchorCatalog.cpp
         src/game/navigation/DockingPortRuntimeStateCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp
@@ -730,6 +740,7 @@ if(ELITE_BUILD_SERVER)
     target_link_libraries(EliteServer PRIVATE
         EliteNavigationGeometry
         EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
         EliteManeuverDecision
         EliteNavigationRuckig
         EliteAssemblyGeometry
@@ -1051,6 +1062,7 @@ target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
     EliteNavigationWorldRuntime
+    EliteDockingInfrastructure
     EliteManeuverDecision
     EliteNavigationRuckig
     EliteAssemblyGeometry

@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260928-exact-terminal-arc-v8"
+CHECK_REVISION = "20260928-vehicle-derived-terminal-radius-v9"
 
 
 def read(rel: str) -> str:
@@ -99,6 +99,9 @@ try:
             "terminalDenseDistanceMeters = 2000.0",
             "terminalApproachLengthMeters = 0.0",
             "terminalTurnSegmentFraction = 0.40",
+            "deriveTerminalTurnRadiusFromVehicle = false",
+            "maxAngularVelocityRadPerSecond = 0.0",
+            "maxAngularAccelerationRadPerSecond2 = 0.0",
             "preferredTerminalTurnRadiusMeters = 0.0")
     require("src/game/navigation/DockingAdvisoryPlanner.cpp",
             "routeSearchStart",
@@ -121,6 +124,10 @@ try:
             "arcLength=radius*turnAngle",
             "center=entry+radius*inwardNormal",
             "preferred terminal turn radius unavailable on candidate",
+            "terminalTurnSpeedMps",
+            "lateralTerminalRadiusMeters",
+            "angularTerminalRadiusMeters",
+            "angularRampDistanceMeters",
             "terminalPrimitiveRadius",
             "terminalIngressSamples=36",
             "const glm::dvec3 preEntry",
@@ -154,7 +161,11 @@ try:
             "request.roundTurns = guidanceAssisted",
             "request.terminalApproachLengthMeters = 9000.0",
             "request.terminalTurnSegmentFraction = 0.85",
-            "request.preferredTerminalTurnRadiusMeters = 6000.0",
+            "request.deriveTerminalTurnRadiusFromVehicle = true",
+            "request.maxAngularVelocityRadPerSecond =",
+            "request.maxAngularAccelerationRadPerSecond2 =",
+            "turn_radius_policy=",
+            "vehicle-derived",
             "m_dockAdvice.plan = std::move(job->plan)",
             "const auto& gates = active.plan.gates",
             "const auto& mapRouteGates =",
@@ -252,6 +263,11 @@ try:
     if "selected=std::move(relaxed)" in planner_cpp:
         raise AssertionError(
             "Assisted terminal arc regained silent radius-relaxation fallback"
+        )
+
+    if "request.preferredTerminalTurnRadiusMeters = 6000.0" in space_cpp:
+        raise AssertionError(
+            "manual Assisted docking regressed to a fixed 6 km terminal radius"
         )
 
     if "roundGeometry(\n                    points,\n                    terminalPrimitiveRadius" in planner_cpp:

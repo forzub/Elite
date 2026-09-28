@@ -1,3 +1,18 @@
+## 2026-09-28 — composite long-segment dynamic proof
+
+Latest target evidence still had only `navigation_composite_proving_ground` red. The new log showed safe dynamic clearance during replacement (4.747 m), continuation (22.821 m), and portal-entry settle (30.597 m), so the remaining failure had to occur in the later long accepted segments.
+
+Root cause: the fixture's runtime planner horizon is 4 s, but it then executed a 16 s narrow-portal program and an 18 s final-capture program without a whole-program moving-hazard proof. `NominalClear` for the bounded horizon was being misused as authority for a much longer future segment.
+
+Current candidate fix:
+- added dense whole-program dynamic-clearance proof using `ManeuverProgramSampler` against the authoritative moving hazard;
+- both `portal_102` and `final_capture` require that proof before Follower execution;
+- if the future portion is unsafe, the craft remains in a safe stopped/settled hold while the hazard continues moving, then the program is re-authored from actual state and re-proved;
+- the 19 m portal is unchanged and the hazard is never disabled;
+- logs now expose `COMPOSITE-PORTAL-PROOF/ACTUAL` and `COMPOSITE-CAPTURE-PROOF/ACTUAL`.
+
+Windows rerun pending; do not mark composite green yet.
+
 ## 2026-09-28 — composite portal settle after 5/6 targeted rerun
 
 Target-machine evidence: 5 of the 6 audited tests now pass; only `navigation_composite_proving_ground` remains red. The narrow 19 m passage itself now passes, exposing a later aggregate dynamic-clearance failure.

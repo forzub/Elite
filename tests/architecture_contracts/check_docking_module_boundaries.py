@@ -125,6 +125,10 @@ def main() -> None:
         "src/game/server/GameServer.cpp",
         "navigation/DockingAdvisoryPlanner.h",
         "navigation/TrajectoryFollower.h",
+        "navigation/ManeuverProgramSampler.h",
+        "navigation/ManeuverProgramTimeline.h",
+        "ManeuverProgramSampler::",
+        "ManeuverProgramTimeline::",
     )
     require(
         "src/game/SpaceState.cpp",

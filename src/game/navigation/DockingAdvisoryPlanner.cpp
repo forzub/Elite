@@ -356,8 +356,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             // Below this radius the visible bend becomes a low-speed hairpin
             // that an Assisted pilot cannot comfortably follow. Re-route or
             // report no flyable route instead of silently tightening it.
+            const double ordinaryCruiseSpeed =
+                0.8 * r.maxSpeedMps;
             const double minimumTransitRadius =
-                0.50 * r.maxSpeedMps * r.maxSpeedMps / r.lateralMps2;
+                0.50 * ordinaryCruiseSpeed * ordinaryCruiseSpeed /
+                r.lateralMps2;
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction

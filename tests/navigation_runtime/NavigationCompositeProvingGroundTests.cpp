@@ -1305,7 +1305,8 @@ ExecutionMetrics executeProgram(
             Follower::follow(
                 program,
                 v.timeSeconds,
-                followerAgent(v)
+                followerAgent(v),
+                game::navigation::ManeuverTrackingController::Policy{}
             );
 
         if (follower.status == Follower::Status::InvalidInput)

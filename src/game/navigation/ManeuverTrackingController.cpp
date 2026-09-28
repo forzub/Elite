@@ -277,16 +277,67 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
 
     glm::dvec3 effectivePositionError = positionError;
     glm::dvec3 effectiveVelocityError = velocityError;
+    glm::dvec3 envelopePositionError = positionError;
+    glm::dvec3 envelopeVelocityError = velocityError;
 
     const double referenceSpeedSquared =
         glm::dot(
             reference.velocityMapMetersPerSecond,
             reference.velocityMapMetersPerSecond
         );
+    const bool spatialCorridor =
+        program.referenceMode ==
+            AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
 
-    if (program.family ==
-            AcceptedManeuverProgram::ManeuverFamily::FreeTransit &&
-        referenceSpeedSquared > kEpsilon)
+    if (spatialCorridor)
+    {
+        glm::dvec3 tangent = reference.forwardMap;
+        if (referenceSpeedSquared > kEpsilon)
+        {
+            tangent =
+                reference.velocityMapMetersPerSecond /
+                std::sqrt(referenceSpeedSquared);
+        }
+        else
+        {
+            const double forwardLength2 =
+                glm::dot(tangent, tangent);
+            if (!(forwardLength2 > kEpsilon) ||
+                !finite(forwardLength2))
+            {
+                return Result {};
+            }
+            tangent /= std::sqrt(forwardLength2);
+        }
+
+        const double alongPosition =
+            glm::dot(positionError, tangent);
+        const double alongVelocity =
+            glm::dot(velocityError, tangent);
+
+        const glm::dvec3 crossPosition =
+            positionError - tangent * alongPosition;
+        const glm::dvec3 crossVelocity =
+            velocityError - tangent * alongVelocity;
+
+        // Spatial progress already owns longitudinal position. Follower may
+        // slow or accelerate along the corridor without declaring the path
+        // lost. Longitudinal speed still receives bounded feedback, while the
+        // execution envelope itself measures only escape from the tunnel.
+        effectivePositionError = crossPosition;
+        effectiveVelocityError =
+            crossVelocity +
+            tangent * signedDeadbandExcess(
+                alongVelocity,
+                program.tracking.alongTrackSpeedDeadbandMps
+            );
+
+        envelopePositionError = crossPosition;
+        envelopeVelocityError = crossVelocity;
+    }
+    else if (program.family ==
+                 AcceptedManeuverProgram::ManeuverFamily::FreeTransit &&
+             referenceSpeedSquared > kEpsilon)
     {
         const glm::dvec3 tangent =
             reference.velocityMapMetersPerSecond /
@@ -314,17 +365,19 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
                 program.tracking.
                     alongTrackSpeedDeadbandMps
             );
+
+        envelopePositionError = effectivePositionError;
+        envelopeVelocityError = effectiveVelocityError;
     }
 
-    // FreeTransit longitudinal deadbands are part of the tracking
-    // contract, not merely a feedback convenience. The execution envelope must
-    // therefore be evaluated against the same effective errors; otherwise a
-    // harmless along-track lead/lag can report EnvelopeExceeded while the
-    // controller intentionally commands zero correction.
+    // TimeScheduled FreeTransit applies longitudinal deadbands to both control
+    // and envelope. SpatialCorridor is different: longitudinal schedule drift
+    // is a speed-control problem, while only cross-track P/V can mean the craft
+    // has escaped the accepted tunnel.
     const double envelopePositionErrorMeters =
-        glm::length(effectivePositionError);
+        glm::length(envelopePositionError);
     const double envelopeVelocityErrorMps =
-        glm::length(effectiveVelocityError);
+        glm::length(envelopeVelocityError);
     result.envelopePositionErrorMeters = envelopePositionErrorMeters;
     result.envelopeVelocityErrorMps = envelopeVelocityErrorMps;
 

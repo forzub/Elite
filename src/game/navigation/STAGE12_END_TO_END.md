@@ -1,3 +1,32 @@
+## 2026-09-28 — physical docking aperture and capture-point contract
+
+The live SpatialCorridor approach now behaves correctly enough that terminal
+docking is treated as its own geometry/state slice.
+
+Docking target geometry must have the same truth for rendering, collision and
+navigation. A visible hangar opening may not be represented by a solid
+whole-object HitVolume. Monolithic dock descriptors therefore author wall OBBs
+around their aperture; the normal HitComponent/NavigationHitVolumeAdapter path
+consumes those boxes without a docking-specific collision exception.
+
+A docking-port semantic now owns `captureDepthMeters`, measured from the
+entrance plane inward along `-forward`. FinalIngress geometry is:
+
+`HOLD -> exterior pre-capture -> entrance plane -> internal capture point`.
+
+The target dock remains an ordinary obstacle. The ingress is accepted only when
+the exact shared hit volumes prove that the hull can pass through the aperture.
+`final-capture-corridor-blocked` is a real geometry failure and must never be
+converted into a target whitelist.
+
+The SpatialCorridor center-line control also has a small derived center deadband:
+within it the hull target is the exact current segment tangent to avoid fixed-step
+look-ahead hunting; outside it normal look-ahead recovery steers back to the path.
+No cross-track speed reduction is reintroduced.
+
+Authoritative latch/undock ownership remains a subsequent stage after physical
+internal capture is demonstrated.
+
 ## 2026-09-28 — Automatic spatial corridor ownership contract
 
 For Automatic docking and future tunnel/canyon traversal, geometric route truth

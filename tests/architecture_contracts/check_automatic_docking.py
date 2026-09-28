@@ -260,8 +260,13 @@ try:
             "Automatic docking tracking reserve regressed to the old 0.5 m/s^2 cap"
         )
 
-    if ("finalIngressStage\n                        ? AcceptedManeuverProgram::\n"
-            "                              ReferenceMode::TimeScheduled" not in server):
+    compact_server = "".join(server.split())
+    if (
+        "build.referenceMode=finalIngressStage?"
+        "AcceptedManeuverProgram::ReferenceMode::TimeScheduled:"
+        "AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;"
+        not in compact_server
+    ):
         raise AssertionError(
             "Automatic docking lost Stage-1 spatial / FinalIngress timed reference split"
         )

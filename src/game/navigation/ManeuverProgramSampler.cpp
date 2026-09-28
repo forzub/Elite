@@ -296,7 +296,8 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
     // Progress strictly in accepted path order. Do not search all future
     // segments by Euclidean proximity: in a hairpin/canyon a later branch may
     // be physically close through a wall and must never steal the reference.
-    while (selectedSegment < lastSegment)
+    // One fixed-step may advance at most one accepted segment.
+    if (selectedSegment < lastSegment)
     {
         const auto& a = program.samples[selectedSegment];
         const auto& b = program.samples[selectedSegment + 1];
@@ -318,10 +319,8 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
         if (!finite(rawProgress))
             return Result {};
 
-        if (rawProgress < 1.0)
-            break;
-
-        ++selectedSegment;
+        if (rawProgress >= 1.0)
+            ++selectedSegment;
     }
 
     const auto& selectedA =

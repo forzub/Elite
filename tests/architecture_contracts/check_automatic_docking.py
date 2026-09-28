@@ -135,6 +135,13 @@ try:
         "src/game/server/GameServer.cpp",
         "beginAutomaticDocking(",
         "applyAutomaticDockingControls(",
+        "automaticDockingPreparationControl(",
+        "mode=coast",
+        "coastToExecution",
+        "startVelocityMps * PlanningLeadSeconds",
+        "AutomaticPlanningAuthorityFraction = 0.90",
+        "canCaptureHoldWhileBraking(",
+        "standoff-braking-envelope",
         "planAutomaticDocking(",
         "finishAutomaticDocking(",
         "takeAutopilotControl",
@@ -223,6 +230,11 @@ try:
         "request.roundTurns =\n                            assisted && !nearHoldRecovery",
     )
 
+
+    if "ShipControlState stop;\n    stop.velocityAlignmentCommand =\n        game::navigation::VelocityAlignmentMode::BrakeToStop;\n    ship->setControlState(stop);\n\n    m_forceSnapshotPublication = true;" in server:
+        raise AssertionError(
+            "Automatic docking startup regressed to BrakeToStop instead of coast"
+        )
 
     if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:
         raise AssertionError(
@@ -348,7 +360,7 @@ try:
         "src/game/navigation/DockingAutomaticRecoveryPolicy.h",
         "linearFeedbackReserveMps2(",
         "holdCaptureDistanceMeters(",
-        "holdCaptureSpeedMps(",
+        "canCaptureHoldWhileBraking(",
         "recoverableDynamicExcursion(",
         "0.20",
         "1.25 * velocityLimitMps",
@@ -456,6 +468,7 @@ try:
         "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp",
         "testFollowerSpatialCorridorTracksPathInsteadOfClock",
         "testSpatialCorridorSteersBackWithoutReducingRouteSpeed",
+        "testSpatialZeroSpeedHoldDoesNotInventCourseLoss",
         "testFollowerSpatialCorridorCanCompleteBeforeNominalTime",
     )
 

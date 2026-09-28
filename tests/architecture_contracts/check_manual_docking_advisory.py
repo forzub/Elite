@@ -4,7 +4,7 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECK_REVISION = "20260927-cadence-lock-v6"
+CHECK_REVISION = "20260928-exact-terminal-arc-v7"
 
 
 def read(rel: str) -> str:
@@ -117,7 +117,16 @@ try:
             "arcLength=radius*turnAngle",
             "center=entry+radius*inwardNormal",
             "preferred terminal turn radius unavailable on candidate",
-            "preferredTerminalRadius*clearanceScale",
+            "terminalPrimitiveRadius",
+            "terminalIngressSamples=36",
+            "const glm::dvec3 preEntry",
+            "const glm::dvec3 center",
+            "const glm::dvec3 entry",
+            "candidate.terminalTurnRadiusMeters=",
+            "candidate.terminalArcRotationDegrees",
+            "terminalArcCandidatesTested",
+            "terminalArcAcceptedCandidates",
+            "roundGeometry(points,0.0,entry)",
             "no collision-free docking route after reroute/tighten fallback",
             "remainingFromPrevious",
             "r.terminalDenseDistanceMeters+r.gateSpacingMeters",
@@ -201,6 +210,26 @@ try:
     if 'out.failure="manual terminal turn radius unavailable"' in planner_cpp:
         raise AssertionError(
             "preferred manual terminal radius became a task-failure threshold again"
+        )
+
+    if "preferredTerminalRadius*clearanceScale" in planner_cpp:
+        raise AssertionError(
+            "terminal docking arc regressed to clearance-scaling around a preselected route"
+        )
+
+    if "roundGeometry(\n                    points,\n                    terminalPrimitiveRadius" in planner_cpp:
+        raise AssertionError(
+            "exact terminal docking arc was handed back to generic corner rounding"
+        )
+
+    if "terminalIngressSamples=36" not in planner_cpp:
+        raise AssertionError(
+            "terminal docking arc no longer searches all sides around the docking axis"
+        )
+
+    if "j==arcSegments" not in planner_cpp or "point=align" not in planner_cpp:
+        raise AssertionError(
+            "exact terminal arc no longer preserves ALIGN as its authored endpoint"
         )
 
     corridor_header = read("src/game/navigation/DockingAdvisoryCorridor.h")

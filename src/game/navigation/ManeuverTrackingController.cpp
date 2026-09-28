@@ -381,38 +381,44 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
     result.envelopePositionErrorMeters = envelopePositionErrorMeters;
     result.envelopeVelocityErrorMps = envelopeVelocityErrorMps;
 
-    const bool outsideEnvelope =
+    const bool positionEnvelopeExceeded =
         exceeded(
             envelopePositionErrorMeters,
             program.tracking.positionErrorMeters
-        ) ||
+        );
+    const bool velocityEnvelopeExceeded =
         exceeded(
             envelopeVelocityErrorMps,
             program.tracking.linearVelocityErrorMps
-        ) ||
+        );
+    const bool courseEnvelopeExceeded =
         exceeded(
             result.forwardAngleErrorRad,
             program.tracking.forwardAngleErrorRad
-        ) ||
+        );
+    const bool angularRateEnvelopeExceeded =
         exceeded(
             result.angularVelocityErrorRadPerSec,
             program.tracking.angularVelocityErrorRadPerSec
         );
 
-    // A small excess in rotation while translation and heading are still
-    // inside the corridor is a steering task, not a lost trajectory. Keep
-    // the moving reference and close its angular-rate error using the same
-    // bounded angular actuator. The orchestration layer decides whether the
-    // surrounding geometry/speed makes continuing safe.
-    result.angularCorrectionOnly = outsideEnvelope &&
-        !exceeded(envelopePositionErrorMeters,
-                  program.tracking.positionErrorMeters) &&
-        !exceeded(envelopeVelocityErrorMps,
-                  program.tracking.linearVelocityErrorMps) &&
-        !exceeded(result.forwardAngleErrorRad,
-                  program.tracking.forwardAngleErrorRad) &&
-        exceeded(result.angularVelocityErrorRadPerSec,
-                 program.tracking.angularVelocityErrorRadPerSec);
+    // In a spatial tunnel/canyon, route loss is geometric: cross-track
+    // position/velocity and hull course must stay inside their envelopes.
+    // Angular-rate mismatch is not a second clock.  While the nose is still
+    // inside the allowed course cone, bounded angular feedback must remove the
+    // spin without stopping translation or throwing the accepted route away.
+    // TimeScheduled maneuvers retain the stricter dynamic-state envelope.
+    const bool outsideEnvelope =
+        positionEnvelopeExceeded ||
+        velocityEnvelopeExceeded ||
+        courseEnvelopeExceeded ||
+        (!spatialCorridor && angularRateEnvelopeExceeded);
+
+    result.angularCorrectionOnly =
+        !positionEnvelopeExceeded &&
+        !velocityEnvelopeExceeded &&
+        !courseEnvelopeExceeded &&
+        angularRateEnvelopeExceeded;
 
     const glm::dvec3 requestedLinearFeedback =
         effectivePositionError * policy.positionGainPerSecond2 +

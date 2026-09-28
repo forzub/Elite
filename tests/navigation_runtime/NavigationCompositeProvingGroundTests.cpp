@@ -1358,10 +1358,25 @@ ExecutionMetrics executeProgram(
         ].timeOffsetSeconds;
 
     const bool partial = stopAfterSeconds > 0.0;
+    const bool spatialCorridor =
+        program.referenceMode ==
+            Program::ReferenceMode::SpatialCorridor;
+
+    // Spatial corridors are progress-driven and may legitimately take longer
+    // than their nominal authoring clock. Their real hard bound is the
+    // accepted-program validity witness: at validUntil the production replan
+    // policy requests a fresh local suffix. TimeScheduled phases retain their
+    // existing nominal/capture-overrun bound.
     const double requestedStop =
         partial
             ? startTime + stopAfterSeconds
-            : nominalEnd + gatePolicy.maximumCaptureOverrunSeconds + 0.10;
+            : (
+                spatialCorridor
+                    ? program.validUntilUniverseTimeSeconds
+                    : nominalEnd +
+                        gatePolicy.maximumCaptureOverrunSeconds +
+                        0.10
+              );
 
     std::size_t minimumSpatialSegmentIndex = 0;
 
@@ -2950,6 +2965,15 @@ CompositeMetrics runComposite(Law law)
             << phase.maxEnvelopeCourseErrorDeg
             << " max_ang_vel_err_radps="
             << phase.maxAngularVelocityErrorRadPerSec
+            << " final_pos_error_m="
+            << phase.finalPositionErrorMeters
+            << " final_vel_error_mps="
+            << phase.finalVelocityErrorMps
+            << " simulated_s="
+            << phase.simulatedSeconds
+            << " validity_budget_s="
+            << (narrow.validUntilUniverseTimeSeconds -
+                narrow.acceptedAtUniverseTimeSeconds)
             << "\n";
 
         require(

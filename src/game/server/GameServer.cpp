@@ -4306,6 +4306,7 @@ void GameServer::copyDockingResultForSession(
     outSession.automaticDockingRouteFinalIngress = false;
     outSession.automaticDockingRouteRequestSerial = 0;
     outSession.automaticDockingRouteRevision = 0;
+    outSession.automaticDockingRouteToleranceMeters = 0.0;
     outSession.automaticDockingRouteSystemId = -1;
     outSession.automaticDockingRouteHubId.clear();
     outSession.automaticDockingRoute.clear();
@@ -4327,6 +4328,8 @@ void GameServer::copyDockingResultForSession(
                 runtime.requestSerial;
             outSession.automaticDockingRouteRevision =
                 runtime.programs.front().revision;
+            outSession.automaticDockingRouteToleranceMeters =
+                runtime.programs.front().tracking.positionErrorMeters;
             outSession.automaticDockingRouteSystemId =
                 runtime.systemId;
             outSession.automaticDockingRouteHubId =

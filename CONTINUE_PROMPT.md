@@ -1,3 +1,16 @@
+## Continue from 2026-09-28 six-test runtime audit
+
+Latest Windows full runtime suite: 23/29 passed; six failures were audited. Docking-specific tests remained green. Candidate fixes are on main and need Windows rerun.
+
+Important findings:
+- several old simulation labs bypassed the current production Assisted path by using `NavigationRuntimeControlBridge::step` plus raw `applySystemAccelerationDemand`; they now use `stepVehicle` and `applyNavigationAssistedFlightModel`;
+- Assisted comparison fixtures now carry the real Cobra fore/reverse main engine; Newtonian comparison fixtures do not;
+- PhysicalManeuverSearchCoordinator's old "Assisted unsupported" expectation was obsolete;
+- the chained seam threshold of 1e-6 degrees was below meaningful float-orientation precision and is now 0.01 degrees;
+- composite narrow corridor remains 19 m; the test slows traversal rather than widening it.
+
+Read `BUILD_TEST_LAYOUT.md` before issuing commands. Next evidence is a targeted rerun of the six failing CTest names, then full runtime suite if green.
+
 ## Continue from 2026-09-28 verified build-layout correction
 
 Read root `BUILD_TEST_LAYOUT.md` before giving any build/test/run command.

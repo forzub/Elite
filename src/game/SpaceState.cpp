@@ -2620,41 +2620,25 @@ void SpaceState::updateDockingAdvisory()
         }
         if (!job->plan.valid())
         {
-            fail(job->plan.failure);
+            fail(
+                job->plan.failure +
+                dockingAdvisoryPlanDiagnosticSummary(job->plan)
+            );
             return;
         }
 
         std::cout << "[DockAdvisory] request=" << pending.serial
                   << " route="
                   << (job->plan.terminalDetourUsed ? "detour" : "nominal")
-                  << " final_axis_m="
-                  << job->plan.terminalApproachLengthMeters
-                  << " final_axis_shortened="
-                  << (job->plan.terminalApproachShortened ? 1 : 0)
-                  << " requested_terminal_radius_m="
-                  << job->plan.terminalTurnRequestedRadiusMeters
-                  << " terminal_radius_m="
-                  << job->plan.terminalTurnRadiusMeters
-                  << " arc_rotation_deg="
-                  << job->plan.terminalArcRotationDegrees
-                  << " arc_candidates="
-                  << job->plan.terminalArcCandidatesTested
-                  << " arc_accepted="
-                  << job->plan.terminalArcAcceptedCandidates
+                  << dockingAdvisoryPlanDiagnosticSummary(job->plan)
                   << " execution_points="
                   << job->plan.executionGates.size()
                   << " hud_gates="
                   << job->plan.gates.size()
-                  << " radius_relaxed="
-                  << (job->plan.terminalTurnRadiusRelaxed ? 1 : 0)
                   << '\n';
 
         m_dockAdvice = std::move(job->context);
-        m_dockAdvice.gates = std::move(job->plan.gates);
-        m_dockAdvice.mapRouteGates =
-            std::move(job->plan.executionGates);
-        if (m_dockAdvice.mapRouteGates.empty())
-            m_dockAdvice.mapRouteGates = m_dockAdvice.gates;
+        m_dockAdvice.plan = std::move(job->plan);
         m_activeDockingGuidanceCorridorId =
             "dock:" + pending.target.stableObjectId +
             ":" + pending.target.semanticAnchorId;
@@ -2680,7 +2664,7 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
-    const auto& gates = active.gates;
+    const auto& gates = active.plan.gates;
     // Flight decisions are made only from a complete authoritative sample at
     // one server tick. No local prediction or render interpolation enters the
     // axis, corridor, or progress decisions.
@@ -3020,9 +3004,7 @@ void SpaceState::updateDockingAdvisory()
     };
 
     const auto& mapRouteGates =
-        active.mapRouteGates.empty()
-            ? gates
-            : active.mapRouteGates;
+        active.plan.executionGates;
 
     auto route = makeRoute(mapRouteGates);
     guidance.publish(route);

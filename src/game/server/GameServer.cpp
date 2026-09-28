@@ -1793,6 +1793,8 @@ bool GameServer::planAutomaticDocking(
                                 ? advisoryPlan.gates
                                 : advisoryPlan.executionGates;
 
+                        trajectoryRequest.pathGeometryAlreadyAuthored =
+                            true;
                         trajectoryRequest.pathPointsMeters.reserve(
                             executionGates.size()
                         );

@@ -71,6 +71,30 @@ int main()
         agent.rightMap = {0.0, 0.0, 1.0};
         agent.upMap = {0.0, 1.0, 0.0};
 
+        std::vector<Program> pages {program};
+        const auto selection =
+            game::navigation::autopilot::RouteFollower::selectPage(
+                pages,
+                10.2,
+                agent.positionMapMeters,
+                0
+            );
+        require(
+            selection.status ==
+                game::navigation::autopilot::
+                    RouteProgramSelectionStatus::Active,
+            "RouteFollower public API failed to select an active program page"
+        );
+
+        const auto sampled =
+            game::navigation::autopilot::RouteFollower::sampleReference(
+                program,
+                10.2,
+                agent.positionMapMeters,
+                0
+            );
+        require(sampled.valid, "RouteFollower public API failed reference sampling");
+
         const auto result =
             game::navigation::autopilot::RouteFollower::follow(
                 program,
@@ -89,6 +113,7 @@ int main()
 
         std::cout << "ROUTE FOLLOWER API TESTS: PASS\n";
         std::cout << " - generic autopilot API executes without private tracker types\n";
+        std::cout << " - page selection and reference sampling stay behind the same API\n";
         return 0;
     }
     catch (const std::exception& error)

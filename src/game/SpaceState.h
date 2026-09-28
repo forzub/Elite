@@ -340,6 +340,7 @@ private:
         double verticalToleranceMeters = 0.0;
         bool deviationWarning = false;
         bool deviationCritical = false;
+        bool corridorDeparted = false;
         std::size_t nextGate = 0;
         game::navigation::DockingAdvisoryCorridorTracker tracker;
     } m_dockAdvice;

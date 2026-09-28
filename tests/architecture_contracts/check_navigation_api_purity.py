@@ -247,6 +247,9 @@ for token in (
 for token in (
     "const AcceptedManeuverProgram& program",
     "double universeTimeSeconds",
+    "sampleSpatial(",
+    "const glm::dvec3& positionMapMeters",
+    "std::size_t minimumSegmentIndex",
 ):
     require(token in sampler_h, f"ManeuverProgramSampler API missing explicit input {token}")
 
@@ -256,6 +259,7 @@ for token in (
     "pageWindow(",
     "elapsedPageSeconds(",
     "selectActivePage(",
+    "selectSpatialPage(",
 ):
     require(token in timeline_h,
             f"maneuver storage-page timeline API missing {token}")

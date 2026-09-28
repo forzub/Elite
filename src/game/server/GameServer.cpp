@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <utility>
 #include <thread>
+#include <iterator>
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/world_state/InitialWorldState.h"

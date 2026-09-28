@@ -1,3 +1,9 @@
+## Continue from 2026-09-28 production spatial-contract correction
+
+Current main fixes two production issues found by composite: SpatialCorridor no longer advances by nominal ScheduledMoving time, and NewtonianMainEngine hull/course slip no longer counts as geometric corridor loss by itself. Regression tests were added for both. Next evidence required: maneuver_phase_gate + maneuver_tracking_controller, then composite.
+
+Read BUILD_TEST_LAYOUT.md before issuing commands.
+
 ## Continue from 2026-09-28 SpatialCorridor portal correction
 
 Latest target evidence: Newtonian composite is fully good; Assisted keeps geometry and dynamic clearance safe but had 81 tracking-envelope ticks because portal_102 was still TimeScheduled. Current main sets that constrained segment to SpatialCorridor and maintains the monotonic spatial cursor exactly as the production RouteFollower contract expects. Final StateCapture remains TimeScheduled.

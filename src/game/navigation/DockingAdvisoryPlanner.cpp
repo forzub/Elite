@@ -275,6 +275,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         double initialTurnRadiusMeters = 0.0;
         bool terminalTurnPresent = false;
         double terminalTurnRadiusMeters = 0.0;
+        double terminalArcRotationDegrees = 0.0;
         double lengthMeters = 0.0;
         std::string failure;
         std::vector<glm::dvec3> samples;
@@ -717,11 +718,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 points.push_back(terminalCorner);
             points=prependInitialForwardLead(std::move(points));
 
-            considerPreferredCandidate(
+            auto rotatedCandidate =
                 roundGeometry(
                     points,
                     terminalPrimitiveRadius
-                ),
+                );
+            rotatedCandidate.terminalArcRotationDegrees =
+                angle * 180.0 /
+                3.1415926535897932384626433832795;
+            considerPreferredCandidate(
+                std::move(rotatedCandidate),
                 true
             );
         }
@@ -775,6 +781,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     out.terminalDetourUsed=detourUsed;
     out.terminalTurnRadiusRelaxed=radiusRelaxed;
     out.terminalTurnRadiusMeters=selected.terminalTurnRadiusMeters;
+    out.terminalArcRotationDegrees=
+        selected.terminalArcRotationDegrees;
     out.initialTurnPresent=selected.initialTurnPresent;
     out.initialTurnRadiusMeters=selected.initialTurnRadiusMeters;
 

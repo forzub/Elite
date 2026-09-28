@@ -1,3 +1,7 @@
+## 2026-09-28 — rerun composite after whole-program hazard proof
+
+Rebuild only `navigation_composite_proving_ground_tests` in `build/tests/navigation_runtime`, then run CTest `navigation_composite_proving_ground`. Inspect the new PORTAL/CAPTURE PROOF and ACTUAL lines. If green, run the complete navigation-runtime suite and then `bash verify_docking.sh`.
+
 ## 2026-09-28 — rerun composite only
 
 The previous targeted rerun is now 5/6 green. Rebuild and run only `navigation_composite_proving_ground_tests` / CTest `navigation_composite_proving_ground`. If green, rerun the complete navigation-runtime CTest suite and then the docking gate.

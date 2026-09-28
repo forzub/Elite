@@ -290,60 +290,74 @@ ManeuverProgramSampler::Result ManeuverProgramSampler::sampleSpatial(
 
     const std::size_t lastSegment =
         static_cast<std::size_t>(program.sampleCount - 2);
-    const std::size_t firstSegment =
+    std::size_t selectedSegment =
         std::min(minimumSegmentIndex, lastSegment);
 
-    double bestDistance2 =
-        std::numeric_limits<double>::infinity();
-    std::size_t bestLower = firstSegment;
-    double bestAlpha = 0.0;
-
-    for (std::size_t lower = firstSegment;
-         lower <= lastSegment;
-         ++lower)
+    // Progress strictly in accepted path order. Do not search all future
+    // segments by Euclidean proximity: in a hairpin/canyon a later branch may
+    // be physically close through a wall and must never steal the reference.
+    while (selectedSegment < lastSegment)
     {
-        const auto& a = program.samples[lower];
-        const auto& b = program.samples[lower + 1];
+        const auto& a = program.samples[selectedSegment];
+        const auto& b = program.samples[selectedSegment + 1];
         const glm::dvec3 segment =
             b.positionMapMeters - a.positionMapMeters;
         const double segmentLength2 =
             glm::dot(segment, segment);
-
-        double alpha = 0.0;
-        if (finite(segmentLength2) &&
-            segmentLength2 > kEpsilon)
+        if (!finite(segmentLength2) ||
+            segmentLength2 <= kEpsilon)
         {
-            alpha = std::clamp(
-                glm::dot(
-                    positionMapMeters - a.positionMapMeters,
-                    segment
-                ) / segmentLength2,
-                0.0,
-                1.0
-            );
+            return Result {};
         }
 
-        const glm::dvec3 projected =
-            a.positionMapMeters + alpha * segment;
-        const glm::dvec3 delta =
-            positionMapMeters - projected;
-        const double distance2 = glm::dot(delta, delta);
-        if (!finite(distance2))
+        const double rawProgress =
+            glm::dot(
+                positionMapMeters - a.positionMapMeters,
+                segment
+            ) / segmentLength2;
+        if (!finite(rawProgress))
             return Result {};
 
-        // Equal-distance joins belong to the later segment. Combined with the
-        // caller's monotonic minimumSegmentIndex this prevents path progress
-        // from bouncing backwards at sample/page boundaries.
-        if (distance2 < bestDistance2 - kEpsilon ||
-            (std::abs(distance2 - bestDistance2) <= kEpsilon &&
-             lower > bestLower))
-        {
-            bestDistance2 = distance2;
-            bestLower = lower;
-            bestAlpha = alpha;
-        }
+        if (rawProgress < 1.0)
+            break;
+
+        ++selectedSegment;
     }
 
+    const auto& selectedA =
+        program.samples[selectedSegment];
+    const auto& selectedB =
+        program.samples[selectedSegment + 1];
+    const glm::dvec3 selectedDelta =
+        selectedB.positionMapMeters -
+        selectedA.positionMapMeters;
+    const double selectedLength2 =
+        glm::dot(selectedDelta, selectedDelta);
+    if (!finite(selectedLength2) ||
+        selectedLength2 <= kEpsilon)
+    {
+        return Result {};
+    }
+
+    const double bestAlpha = std::clamp(
+        glm::dot(
+            positionMapMeters - selectedA.positionMapMeters,
+            selectedDelta
+        ) / selectedLength2,
+        0.0,
+        1.0
+    );
+    const glm::dvec3 projected =
+        selectedA.positionMapMeters +
+        bestAlpha * selectedDelta;
+    const glm::dvec3 projectionDelta =
+        positionMapMeters - projected;
+    const double bestDistance2 =
+        glm::dot(projectionDelta, projectionDelta);
+    if (!finite(bestDistance2))
+        return Result {};
+
+    const std::size_t bestLower = selectedSegment;
     const std::size_t bestUpper = bestLower + 1;
     const double lowerTime =
         program.samples[bestLower].timeOffsetSeconds;

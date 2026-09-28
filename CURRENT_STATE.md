@@ -1,3 +1,11 @@
+## 2026-09-28 — composite portal settle after 5/6 targeted rerun
+
+Target-machine evidence: 5 of the 6 audited tests now pass; only `navigation_composite_proving_ground` remains red. The narrow 19 m passage itself now passes, exposing a later aggregate dynamic-clearance failure.
+
+Root cause in the synthetic proving-ground authoring: stretching the narrow quintic from 10 s to 16 s while preserving non-zero entry velocity increases the `v0*T` boundary term and can enlarge geometric overshoot. The fix keeps the hazard active, settles residual velocity before entering constrained topology, then authors the narrow precision segment from a stable state. `executeActiveBraking` now uses the production-style `stepVehicle(..., targetVelocity=0)` path so Assisted braking reaches the real fore/reverse main engine.
+
+Commit candidate: `b69160aabcdc4e5899c0b05d9fc98371161b06d3`. Windows rerun pending; do not mark the suite green yet.
+
 ## 2026-09-28 — runtime-suite stale harness cleanup after Windows evidence
 
 Windows full navigation-runtime CTest completed 29 tests with 6 failures while the current docking-specific chain remained green. The failures were audited instead of weakening production tolerances.

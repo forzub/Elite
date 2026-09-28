@@ -905,24 +905,65 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     for (std::size_t i=1;i<samples.size();++i)
         progress[i]=progress[i-1]+glm::length(samples[i]-samples[i-1]);
 
+    // Build the execution path without ever skipping an authored vertex.
+    // Global-distance resampling used to place one sample just before a
+    // semantic vertex (e.g. terminal align) and the next just after it. The
+    // resulting chord silently cut the corner even though Planner had authored
+    // the correct geometry. Subdivide EACH authored segment independently and
+    // always emit its exact endpoint.
     std::vector<DockingAdvisoryGate> dense;
-    for (double d=0;d<progress.back();d+=std::min(10.0,r.gateSpacingMeters))
+    const double denseSpacingMeters =
+        std::min(10.0,r.gateSpacingMeters);
+
+    if(!samples.empty())
     {
-        const auto it=std::upper_bound(progress.begin(),progress.end(),d);
-        const std::size_t j=std::clamp<std::size_t>(
-            it-progress.begin(),1,samples.size()-1);
-        const double t=(d-progress[j-1])/(progress[j]-progress[j-1]);
+        glm::dvec3 firstForward(0.0,0.0,-1.0);
+        if(samples.size()>=2 &&
+           glm::length(samples[1]-samples[0])>1.0e-9)
+        {
+            firstForward=
+                glm::normalize(samples[1]-samples[0]);
+        }
         dense.push_back({
-            glm::mix(samples[j-1],samples[j],t),
-            glm::normalize(samples[j]-samples[j-1]),
-            r.maxSpeedMps * 0.8
+            samples.front(),
+            firstForward,
+            0.0
         });
     }
-    dense.push_back({
-        stop,
-        glm::normalize(stop-samples[samples.size()-2]),
-        0.0
-    });
+
+    for(std::size_t i=1;i<samples.size();++i)
+    {
+        const glm::dvec3 segment=
+            samples[i]-samples[i-1];
+        const double length=glm::length(segment);
+        if(length<=1.0e-9)
+            continue;
+
+        const glm::dvec3 direction=segment/length;
+        const int subdivisions=std::max(
+            1,
+            static_cast<int>(
+                std::ceil(length/denseSpacingMeters)
+            )
+        );
+
+        for(int j=1;j<=subdivisions;++j)
+        {
+            const double t=
+                static_cast<double>(j)/
+                static_cast<double>(subdivisions);
+            dense.push_back({
+                j==subdivisions
+                    ? samples[i]
+                    : glm::mix(samples[i-1],samples[i],t),
+                direction,
+                r.maxSpeedMps * 0.8
+            });
+        }
+    }
+
+    if(!dense.empty())
+        dense.back().speedMps=0.0;
 
     for (std::size_t i=1;i+1<dense.size();++i)
     {

@@ -1,3 +1,45 @@
+## 2026-09-28 — public Planner / Autopilot module boundary
+
+The production orchestration boundary is now explicit:
+
+~~~text
+RoutePlannerApi.h
+    RoutePlanRequest -> RoutePlan
+
+AcceptedManeuverProgram
+    immutable Planner -> Autopilot execution DTO
+
+RouteFollowerApi.h
+    AcceptedManeuverProgram + measured agent state
+        -> NavigationLocalControlIntent + tracking diagnostics
+~~~
+
+New callers must include the public facade headers under
+`navigation/planner/` and `navigation/autopilot/`. The historical
+`DockingAdvisoryPlanner`, `TrajectoryFollower`,
+`ManeuverProgramSampler` and `ManeuverTrackingController` are backend
+implementation components during migration; orchestration code must not acquire
+new direct dependencies on them.
+
+`AcceptedManeuverProgram` is deliberately allowed across the Planner ->
+Autopilot boundary because it is immutable value-owned execution truth. Its
+existence does not permit callers to manipulate sampler cursors or tracking
+controller internals.
+
+Dock traffic allocation and terminal landing are outside Navigation:
+`DockTrafficController` and `DockLandingController` must not be imported by
+Planner/Autopilot APIs.
+
+Machine Autopilot executes Follower output directly through the vehicle flight
+law/physics. `PilotSkillExecutor` is optional execution-quality modelling for
+NPC/human-like controllers and is not part of the Automatic docking computer
+path.
+
+For `SpatialCorridor`, cross-track error changes steering toward an ordered
+look-ahead point on the same accepted path. It does not reduce route speed via
+the retired `spatialSlowdownStartFraction` policy. Route speed remains Planner
+truth; emergency braking/replan is a separate safety decision.
+
 # Navigation command ownership and accepted maneuver API
 
 **Status:** architecture contract / active Stage-12 correction
@@ -209,10 +251,11 @@ body-aligned acceleration within installed longitudinal authority; Assisted
 transit uses the ship's bounded nose-coupled flight law.
 
 The Follower samples the accepted motion and corrects its tracking error from
-the measured ship state. PilotSkill filters its acceleration and angular
-command. The flight-control layer receives a target velocity and the executed
-demands, observes real motion, selects available propulsion and clamps it to
-actual hardware and resource limits. Physics integrates the resulting motion.
+the measured ship state. Machine Autopilot sends that vehicle-level intent
+directly to the flight-control layer. NPC/human-like control may optionally
+insert PilotSkill as a separate execution-quality adapter. The flight-control
+layer observes real motion, selects available propulsion and clamps it to actual
+hardware and resource limits. Physics integrates the resulting motion.
 
 If actual capability changes, or bounded tracking cannot recover, the current
 program must be invalidated and replanned from authoritative state. At a safe
@@ -298,41 +341,26 @@ At 400 m/s this is about 8 m spatial spacing, so execution geometry is much
 denser than the 500/250 m cockpit advisory frames. HUD frame cadence is a
 presentation concern and must never become Follower path geometry.
 
-### Corridor speed governor
+### Spatial corridor course correction
 
-Spatial tracking must prioritize staying inside the accepted corridor over
-maintaining nominal schedule speed. The accepted tracking policy therefore
-contains an explicit `spatialSlowdownStartFraction`.
-
-Current ordinary policy:
+Spatial tracking protects geometry by steering, not by silently rewriting the
+Planner speed profile.
 
 ~~~text
-cross-track <= 50% of proved tracking envelope
-    -> keep 100% planned path speed
+inside center deadband
+    -> hold exact current segment tangent
 
-50% < cross-track < 100%
-    -> reduce along-path target speed continuously
+outside center deadband but recoverable
+    -> steer toward bounded look-ahead point on the same ordered path
+    -> preserve local Planner route speed
 
-cross-track >= 100%
-    -> target along-path speed reaches zero;
-       use reserved authority to recenter rather than continue deeper off-axis
+outside recoverable envelope / new hard hazard
+    -> explicit recovery, braking or replan policy
 ~~~
 
-This governor does not invent a route, move the accepted path, or weaken
-collision proof. It changes only execution rate along the already accepted
-geometry. Planned braking is not weakened while slowing for corridor capture.
-
-For `SpatialCorridor`, longitudinal schedule drift is therefore not itself a
-route-loss condition. The execution envelope that answers "did we leave the
-tunnel?" is based on cross-track position/velocity plus attitude/angular state.
-Longitudinal speed remains controlled and terminal-state constrained, but the
-Follower is allowed to slow it deliberately to protect corridor containment.
-
-`SpatialCorridor` completion is state-based. Reaching the accepted terminal
-state early is valid; being late does not make the spatial reference jump
-forward. A material geometry/world revision may invalidate the program, but
-nominal schedule drift by itself is not a reason to abandon a still-safe
-corridor.
+Steering angle and geometric corridor-course error are distinct. A large
+corrective turn toward the tunnel center must not itself be interpreted as
+leaving the tunnel.
 
 ## 5. PilotSkill — models execution quality
 

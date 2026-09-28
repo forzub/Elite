@@ -292,10 +292,11 @@ int main()
             nearestAlignDistance,
             glm::length(gate.positionMeters-curvedAlign)
         );
-    if(nearestAlignDistance>15.0)
+    if(nearestAlignDistance>1.0e-6)
     {
-        std::cerr << "terminal arc did not exit at final-straight start; miss="
+        std::cerr << "execution path lost exact terminal align vertex; miss="
                   << nearestAlignDistance << "\n";
+        printTerminalArcDiagnostics(curvedPlan);
         return 24;
     }
 
@@ -316,12 +317,34 @@ int main()
         {
             sawFinalStraight=true;
             const auto segment=b.positionMeters-a.positionMeters;
-            if(glm::length(segment)>1.0e-6 &&
-               glm::dot(glm::normalize(segment),curvedFinalDirection)<0.9999)
+            if(glm::length(segment)>1.0e-6)
             {
-                std::cerr << "terminal arc consumed or bent the final straight\n";
-                printTerminalArcDiagnostics(curvedPlan);
-                return 39;
+                const double directionDot=
+                    glm::dot(
+                        glm::normalize(segment),
+                        curvedFinalDirection
+                    );
+                if(directionDot<0.9999)
+                {
+                    std::cerr
+                        << "terminal arc consumed or bent the final straight"
+                        << " dot=" << directionDot
+                        << " a=("
+                        << a.positionMeters.x << ","
+                        << a.positionMeters.y << ","
+                        << a.positionMeters.z << ")"
+                        << " b=("
+                        << b.positionMeters.x << ","
+                        << b.positionMeters.y << ","
+                        << b.positionMeters.z << ")"
+                        << " align=("
+                        << curvedAlign.x << ","
+                        << curvedAlign.y << ","
+                        << curvedAlign.z << ")"
+                        << "\n";
+                    printTerminalArcDiagnostics(curvedPlan);
+                    return 39;
+                }
             }
         }
     }

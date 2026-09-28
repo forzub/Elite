@@ -180,6 +180,14 @@ struct TrajectoryGenerationRequest
     // but dense guide samples are geometry p(s), not independent Ruckig target
     // states. Multi-point routes use route-local speed keyframes s(t).
     std::vector<glm::dvec3> pathPointsMeters;
+
+    // When true, pathPointsMeters are already the accepted collision-checked
+    // execution geometry p(s). The trajectory layer may parameterize time and
+    // compile attitude, but it must not round, expand or otherwise redraw the
+    // spatial route. Docking uses this to guarantee that HUD corridor and
+    // Autopilot execute one route rather than two successive interpretations.
+    bool pathGeometryAlreadyAuthored = false;
+
     std::vector<NavigationObstacle> obstacles;
     NavigationVehicleProfile vehicle;
     TrajectoryGenerationPolicy policy {};

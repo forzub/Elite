@@ -1,3 +1,18 @@
+## 2026-10-02 — explicit STOP(v=0) / START(v>0,a=0) semantics and physical RCS trim
+
+User clarified the desired control contract: if an authored point requires zero velocity but the craft arrives with a small residual velocity, physically remove that residual with manoeuvre/RCS thrust; do not reinterpret near-zero as the start of a moving segment. Conversely, a new moving segment must begin with non-zero reference speed while its boundary feed-forward acceleration may be zero.
+
+Implemented on main:
+- Navigation control intents now carry precisionTranslationOnly through NavigationFrameBoundary and NavigationRuntimeControlBridge into ShipControlState.
+- DynamicMotionSystem::applyNavigationPrecisionVelocityTrim removes measured velocity error with physical manoeuvre-thruster authority only; main engines and Assisted stabilization remain off.
+- GameSimulation routes precision navigation samples through that RCS-only executor before ordinary Assisted/Newtonian allocation.
+- TrajectoryFollower automatically requests precision RCS trim when the authored reference is exactly v=0 and measured speed is below the explicit 0.50 m/s precision-stop entry threshold.
+- Spatial moving START is distinct: current composite portal authoring seeds sample[0] with the first moving sample's non-zero speed while keeping sample[0] feed-forward acceleration exactly zero.
+- The composite braking/hold helper now macro-brakes first, switches to physical RCS below 0.50 m/s, and only declares STOP inside ShipParams::stopSpeedEpsilonMps before snapping numerical residue to exact zero.
+- Regression coverage added for RCS-only STOP and STOP-vs-moving-START classification.
+
+Windows compile/runtime verification pending; do not mark green yet.
+
 ## 2026-09-29 — spatial composite harness now obeys accepted validity window
 
 Latest composite run shows the production spatial fixes working for Newtonian: portal_102 reports tracking_exceeded_ticks=0, max envelope position/velocity/course error all 0, and the 19 m hull constraint remains satisfied. The remaining failure is phase completion, not route loss.

@@ -1,3 +1,7 @@
+## Continue from 2026-10-02 Assisted VREL-course correction
+
+Latest Windows run proves Newtonian composite end-to-end green. Assisted physically traverses the portal and final capture but self-invalidated because route-loss compared hull heading to the local tangent while Follower intentionally aimed the hull toward a bend look-ahead point. Current main now measures Assisted SpatialCorridor course from actual VREL vs tangent; attitude steering remains independent. Two regressions cover steering lead vs genuine VREL departure. Next evidence: tracking-controller + composite rerun.
+
 ## Continue from 2026-10-02 tunnel-start tangent correction
 
 Current main now enforces the user's original geometry rule: the constrained tunnel starts along the ship's actual current forward direction. The previous bug came from STOP leaving start.velocity=0, after which makeCurve had no heading derivative and authored the first segment directly toward the portal; post-hoc sample[0] velocity rewriting plus Newtonian FixedStart made hull and tunnel diverge. Zero-speed spatial samples are now STOP only; moving START is explicitly v>0,a_ff=0 along start.basis.forward; constrained Newtonian orientation follows the curve.

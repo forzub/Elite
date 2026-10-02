@@ -1,3 +1,9 @@
+## Continue from 2026-10-02 tunnel-start tangent correction
+
+Current main now enforces the user's original geometry rule: the constrained tunnel starts along the ship's actual current forward direction. The previous bug came from STOP leaving start.velocity=0, after which makeCurve had no heading derivative and authored the first segment directly toward the portal; post-hoc sample[0] velocity rewriting plus Newtonian FixedStart made hull and tunnel diverge. Zero-speed spatial samples are now STOP only; moving START is explicitly v>0,a_ff=0 along start.basis.forward; constrained Newtonian orientation follows the curve.
+
+Next evidence: maneuver_tracking_controller + navigation_composite_proving_ground Windows rerun.
+
 ## Continue from 2026-10-02 STOP/START navigation contract
 
 Current main implements the user's requested semantics: authored v=0 is a real STOP completed by physical RCS-only trim when residual speed is small; moving SpatialCorridor START has v>0 with a_ff=0. The precision semantic is wired through production GameSimulation, not only the composite fixture. New regressions cover actuator choice and STOP-vs-START classification. Next evidence required is a four-test Windows build/run (runtime_control, tracking_controller, phase_gate, composite).

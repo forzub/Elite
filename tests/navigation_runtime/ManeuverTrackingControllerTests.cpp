@@ -593,7 +593,7 @@ void testFollowerSpatialCorridorTracksPathInsteadOfClock()
     );
 }
 
-void testSpatialCorridorLaunchesFromStoppedControlPoint()
+void testSpatialCorridorZeroSpeedPointRemainsStop()
 {
     Program program = baseProgram();
     program.referenceMode = Program::ReferenceMode::SpatialCorridor;
@@ -604,8 +604,6 @@ void testSpatialCorridorLaunchesFromStoppedControlPoint()
         glm::dvec3(0.0);
     program.samples[1].velocityMapMetersPerSecond =
         glm::dvec3(5.0, 0.0, 0.0);
-    program.samples[1].linearAccelerationFeedForwardMapMps2 =
-        glm::dvec3(0.0);
 
     auto agent = followerAgentFor(program.samples[0]);
     agent.velocityMapMetersPerSecond = glm::dvec3(0.0);
@@ -617,20 +615,59 @@ void testSpatialCorridorLaunchesFromStoppedControlPoint()
         Tracker::Policy {}
     );
 
-    require(result.status == Follower::Status::Following,
-            "stopped spatial launch did not remain active");
-    require(result.spatialReference &&
-                result.referenceInterpolation01 <= 1.0e-12,
-            "stopped spatial launch advanced position by clock");
-    requireNear(
-        glm::length(result.targetVelocityMapMps),
-        5.0,
-        1.0e-12,
-        "stopped spatial launch kept the zero-speed lower checkpoint"
+    require(
+        result.status == Follower::Status::Following,
+        "zero-speed spatial STOP did not remain active"
     );
     require(
-        result.intent.idealLinearAccelerationLocalMps2.x > 0.0,
-        "stopped spatial launch produced no forward control demand"
+        result.spatialReference &&
+            result.referenceInterpolation01 <= 1.0e-12,
+        "zero-speed spatial STOP advanced by clock"
+    );
+    requireNear(
+        glm::length(result.targetVelocityMapMps),
+        0.0,
+        1.0e-12,
+        "zero-speed spatial STOP was reinterpreted as a moving launch"
+    );
+}
+
+void testSpatialCorridorMovingStartIsExplicit()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::FreeTransit;
+
+    program.samples[0].velocityMapMetersPerSecond =
+        glm::dvec3(0.25, 0.0, 0.0);
+    program.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+    program.samples[1].velocityMapMetersPerSecond =
+        glm::dvec3(5.0, 0.0, 0.0);
+
+    auto agent = followerAgentFor(program.samples[0]);
+    agent.velocityMapMetersPerSecond = glm::dvec3(0.0);
+
+    const auto result = Follower::follow(
+        program,
+        program.acceptedAtUniverseTimeSeconds,
+        agent,
+        Tracker::Policy {}
+    );
+
+    require(
+        result.status == Follower::Status::Following,
+        "explicit moving spatial START did not remain active"
+    );
+    requireNear(
+        glm::length(result.targetVelocityMapMps),
+        0.25,
+        1.0e-12,
+        "moving spatial START lost its authored non-zero speed"
+    );
+    require(
+        !result.intent.precisionTranslationOnly,
+        "moving spatial START was mistaken for a STOP"
     );
 }
 
@@ -929,7 +966,8 @@ int main()
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
         testFollowerDistinguishesStopFromMovingStart();
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
-        testSpatialCorridorLaunchesFromStoppedControlPoint();
+        testSpatialCorridorZeroSpeedPointRemainsStop();
+        testSpatialCorridorMovingStartIsExplicit();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
         testNewtonianSpatialDriftDoesNotCountAsRouteLoss();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();

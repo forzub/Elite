@@ -27,6 +27,12 @@ public:
         // about 2.83; the small margin prevents physical clamping from
         // turning return-to-reference into a visible pendulum oscillation.
         double angularVelocityGainPerSecond = 3.00;
+
+        // When an authored reference explicitly requires zero translation
+        // speed and the real craft is already this slow, Follower switches the
+        // remaining trim to physical manoeuvre/RCS thrust. This is a STOP
+        // capture threshold, not a generic near-zero epsilon.
+        double precisionStopEntrySpeedMps = 0.50;
     };
 
     struct AgentState

@@ -65,5 +65,9 @@ struct ShipControlState
     bool navigationVelocityTargetValid = false;
     glm::dvec3 navigationTargetVelocitySystemMps {0.0};
 
+    // Precision stop/placement owns only physical manoeuvre thrusters. This
+    // prevents a millimetres-per-second trim from waking a main engine.
+    bool navigationPrecisionTranslationOnly = false;
+
     std::uint64_t controlTick = 0;
 };

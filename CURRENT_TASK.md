@@ -1,3 +1,7 @@
+## 2026-10-02 — rerun Assisted spatial course fix
+
+Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests, then run their two CTest cases. Expected: unit regressions green; Assisted COMPOSITE-PORTAL-ACTUAL should keep hull_half_width_m < 19 and tracking_exceeded_ticks should drop to 0. If tracking still exceeds, inspect max_env_pos_m, max_env_vel_mps and the now-VREL-based max_env_course_deg separately.
+
 ## 2026-10-02 — verify tunnel begins along ship heading
 
 Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests. Run those two CTest cases first. In COMPOSITE-PORTAL-PROOF verify start_tangent_to_hull_deg is approximately 0. If composite still fails, inspect hull_half_width_m, final_pos_error_m and final_vel_error_mps; do not reintroduce FixedStart or a zero-speed launch heuristic.

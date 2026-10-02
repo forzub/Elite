@@ -1,3 +1,7 @@
+## 2026-10-02 — verify physical RCS STOP and non-zero spatial START
+
+Build navigation_runtime_control_tests, maneuver_tracking_controller_tests, maneuver_phase_gate_tests, and navigation_composite_proving_ground_tests. Run their four CTest cases. If the three unit contracts pass but composite fails, inspect COMPOSITE-PORTAL-ACTUAL; the previous 47 m deadlock should be gone. Do not loosen corridor or tracking tolerances to make it pass.
+
 ## 2026-09-29 — rerun composite after spatial validity-window fix
 
 Rebuild/run only navigation_composite_proving_ground. If portal_102 completes, inspect final capture next. If portal_102 still fails, use the new final_pos_error_m, final_vel_error_mps, simulated_s and validity_budget_s fields to decide whether the accepted spatial profile itself is physically under-authorized or the validity budget is wrong. After composite passes, run maneuver_phase_gate + maneuver_tracking_controller regressions and then the full navigation-runtime suite.

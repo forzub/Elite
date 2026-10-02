@@ -270,6 +270,65 @@ void testLinearDemandUsesRealMainAndManoeuvreAuthority()
     );
 }
 
+void testPrecisionVelocityTrimUsesOnlyPhysicalRcs()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    motion.localVelocityMps = {0.03, -0.02, 0.01};
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "precision-stop";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    world::coordinates::WorldPosition worldPosition {};
+
+    const double initialSpeed =
+        glm::length(motion.localVelocityMps);
+
+    game::navigation::DynamicMotionSystem::
+        applyNavigationPrecisionVelocityTrim(
+            motion,
+            frame,
+            params,
+            0.02f,
+            glm::dvec3(0.0)
+        );
+
+    requireNear(
+        glm::length(motion.mainEngineAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "precision STOP woke a main engine"
+    );
+    requireNear(
+        glm::length(motion.assistedStabilizationAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "precision STOP used Assisted stabilization instead of RCS"
+    );
+    require(
+        glm::length(motion.manoeuvreAccelerationMps2) > 0.0,
+        "precision STOP produced no physical RCS impulse"
+    );
+
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        motion,
+        worldPosition,
+        frame,
+        params,
+        0.02
+    );
+
+    require(
+        glm::length(motion.localVelocityMps) <
+            initialSpeed * 1.0e-6,
+        "precision RCS trim failed to remove the residual velocity"
+    );
+}
+
 void testVehicleBridgePublishesMotionTargetWithoutSelectingEngines()
 {
     Bridge bridge(expertProfile());
@@ -279,6 +338,7 @@ void testVehicleBridgePublishesMotionTargetWithoutSelectingEngines()
 
     Bridge::Intent intent;
     intent.revision = 101;
+    intent.precisionTranslationOnly = true;
     intent.idealLinearAccelerationSystemMps2 = {1.0, 0.0, -4.0};
     const glm::dvec3 targetVelocity {2.0, 1.0, -12.0};
     const auto step = bridge.stepVehicle(
@@ -286,6 +346,10 @@ void testVehicleBridgePublishesMotionTargetWithoutSelectingEngines()
     );
     require(step.snapshot.valid && step.control.navigationVelocityTargetValid,
             "vehicle target was not published");
+    require(
+        step.control.navigationPrecisionTranslationOnly,
+        "vehicle bridge lost precision RCS translation ownership"
+    );
     requireNear(glm::length(step.control.navigationTargetVelocitySystemMps -
                             targetVelocity), 0.0, 0.0,
                 "bridge changed requested vehicle velocity");
@@ -816,6 +880,7 @@ int main()
     {
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
+        testPrecisionVelocityTrimUsesOnlyPhysicalRcs();
         testVehicleBridgePublishesMotionTargetWithoutSelectingEngines();
         testVehicleBridgeRejectsInvalidVelocityAndClock();
         testAssistedAutopilotUsesCanonicalFlightLaw();

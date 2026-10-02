@@ -308,6 +308,49 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
         motion.assistedStabilizationAccelerationMps2;
 }
 
+void DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(
+    DynamicMotionState& motion,
+    const KinematicFrame& frame,
+    const ShipParams& params,
+    float dt,
+    const glm::dvec3& targetVelocitySystemMps
+)
+{
+    motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+    motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
+
+    if (!frame.valid ||
+        dt <= 0.0f ||
+        !std::isfinite(targetVelocitySystemMps.x) ||
+        !std::isfinite(targetVelocitySystemMps.y) ||
+        !std::isfinite(targetVelocitySystemMps.z))
+    {
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        return;
+    }
+
+    const glm::dvec3 targetVelocityLocalMps =
+        frame.worldToLocalVector(targetVelocitySystemMps);
+    const glm::dvec3 velocityErrorLocalMps =
+        targetVelocityLocalMps - motion.localVelocityMps;
+
+    const double manoeuvreAuthority =
+        game::ship::manoeuvreAccelerationLimitMps2(params);
+    const glm::dvec3 requiredLocalAcceleration =
+        velocityErrorLocalMps / static_cast<double>(dt);
+    const glm::dvec3 commandedLocalAcceleration =
+        clampMagnitude(
+            requiredLocalAcceleration,
+            manoeuvreAuthority
+        );
+
+    motion.manoeuvreAccelerationMps2 =
+        frame.localToWorldVector(commandedLocalAcceleration);
+    motion.engineAccelerationMps2 =
+        motion.manoeuvreAccelerationMps2;
+}
+
 void DynamicMotionSystem::updateLocalFrameMotion(
     DynamicMotionState& motion,
     world::coordinates::WorldPosition& worldPosition,

@@ -18,6 +18,11 @@ struct NavigationLocalControlIntent
     glm::dvec3 idealLinearAccelerationLocalMps2 {0.0};
     glm::dvec3 idealAngularAccelerationLocalRadPerSec2 {0.0};
 
+    // Precision placement/stop phase: translation demand must be executed
+    // only by the physical manoeuvre/RCS system. Main engines and Assisted
+    // stabilization are intentionally excluded.
+    bool precisionTranslationOnly = false;
+
     bool emergency = false;
     double hazardUrgency01 = 0.0;
 };
@@ -32,6 +37,8 @@ struct NavigationSystemControlIntent
 
     glm::dvec3 idealLinearAccelerationSystemMps2 {0.0};
     glm::dvec3 idealAngularAccelerationSystemRadPerSec2 {0.0};
+
+    bool precisionTranslationOnly = false;
 
     bool emergency = false;
     double hazardUrgency01 = 0.0;

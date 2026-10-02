@@ -108,6 +108,8 @@ NavigationRuntimeControlBridge::step(
     result.control.navigationAccelerationDemandValid = true;
     result.control.navigationLinearAccelerationDemandSystemMps2 = result.snapshot.executedLinearAccelerationDemandSystemMps2;
     result.control.navigationAngularAccelerationDemandSystemRadPerSec2 = result.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
+    result.control.navigationPrecisionTranslationOnly =
+        intent.precisionTranslationOnly;
     result.control.navigationIntentRevision = intent.revision;
 
     return result;

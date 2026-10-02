@@ -4704,6 +4704,20 @@ m_hubVelocityMetersPerSecond[hubId] =
 
             if (control.navigationVelocityTargetValid &&
                 control.navigationAccelerationDemandValid &&
+                control.navigationPrecisionTranslationOnly &&
+                !manualTranslationOverride)
+            {
+                game::navigation::DynamicMotionSystem::
+                    applyNavigationPrecisionVelocityTrim(
+                        tr.motion,
+                        tr.motion.travelFrame,
+                        effectivePhysics,
+                        motionControlDt,
+                        control.navigationTargetVelocitySystemMps
+                    );
+            }
+            else if (control.navigationVelocityTargetValid &&
+                control.navigationAccelerationDemandValid &&
                 tr.motion.localControlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted &&
                 !manualTranslationOverride)

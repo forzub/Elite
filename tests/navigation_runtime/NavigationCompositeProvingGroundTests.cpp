@@ -411,6 +411,8 @@ game::navigation::NavigationSystemControlIntent toSystemIntent(
         local.idealLinearAccelerationLocalMps2;
     system.idealAngularAccelerationSystemRadPerSec2 =
         local.idealAngularAccelerationLocalRadPerSec2;
+    system.precisionTranslationOnly =
+        local.precisionTranslationOnly;
     system.emergency = local.emergency;
     system.hazardUrgency01 = local.hazardUrgency01;
     return system;
@@ -1490,7 +1492,19 @@ ExecutionMetrics executeProgram(
             static_cast<float>(kDt)
         );
 
-        if (v.transform.motion.localControlLaw == Law::Assisted &&
+        if (bridgeResult.control.navigationPrecisionTranslationOnly &&
+            bridgeResult.control.navigationVelocityTargetValid)
+        {
+            game::navigation::DynamicMotionSystem::
+                applyNavigationPrecisionVelocityTrim(
+                    v.transform.motion,
+                    v.frame,
+                    v.params,
+                    static_cast<float>(kDt),
+                    bridgeResult.control.navigationTargetVelocitySystemMps
+                );
+        }
+        else if (v.transform.motion.localControlLaw == Law::Assisted &&
             bridgeResult.control.navigationVelocityTargetValid)
         {
             game::navigation::DynamicMotionSystem::
@@ -1911,6 +1925,11 @@ ExecutionMetrics executeActiveBraking(
         local.targetRevision = 12002;
         local.emergency = true;
         local.hazardUrgency01 = 1.0;
+
+        const double currentSpeedMps =
+            glm::length(v.transform.motion.localVelocityMps);
+        local.precisionTranslationOnly =
+            currentSpeedMps <= 0.50;
         local.idealLinearAccelerationLocalMps2 =
             -v.transform.motion.localVelocityMps *
             velocityResponsePerSecond;
@@ -1947,7 +1966,19 @@ ExecutionMetrics executeActiveBraking(
             static_cast<float>(kDt)
         );
 
-        if (v.transform.motion.localControlLaw == Law::Assisted &&
+        if (bridgeResult.control.navigationPrecisionTranslationOnly &&
+            bridgeResult.control.navigationVelocityTargetValid)
+        {
+            game::navigation::DynamicMotionSystem::
+                applyNavigationPrecisionVelocityTrim(
+                    v.transform.motion,
+                    v.frame,
+                    v.params,
+                    static_cast<float>(kDt),
+                    bridgeResult.control.navigationTargetVelocitySystemMps
+                );
+        }
+        else if (v.transform.motion.localControlLaw == Law::Assisted &&
             bridgeResult.control.navigationVelocityTargetValid)
         {
             game::navigation::DynamicMotionSystem::
@@ -2002,8 +2033,13 @@ ExecutionMetrics executeActiveBraking(
 
         if (m.simulatedSeconds + 1.0e-9 >=
                 std::max(0.0, minimumSeconds) &&
-            glm::length(v.transform.motion.localVelocityMps) <= 0.50)
+            glm::length(v.transform.motion.localVelocityMps) <=
+                static_cast<double>(v.params.stopSpeedEpsilonMps))
         {
+            // The final RCS impulse has physically removed the residual
+            // velocity. Snap only inside the ship's declared stop epsilon so
+            // downstream authored STOP/START boundaries are numerically exact.
+            v.transform.motion.localVelocityMps = glm::dvec3(0.0);
             m.completed = true;
             break;
         }
@@ -2869,6 +2905,34 @@ CompositeMetrics runComposite(Law law)
             law == Law::Assisted
                 ? Program::TranslationMode::AssistedVelocity
                 : Program::TranslationMode::NewtonianMainEngine;
+
+        // START semantics: a moving spatial segment never begins with v=0.
+        // Reuse the first physically-authored moving sample as the launch
+        // speed, but keep feed-forward acceleration exactly zero at the
+        // boundary. STOP(v=0) belongs to the preceding phase.
+        if (narrow.sampleCount >= 2)
+        {
+            const glm::dvec3 firstSegment =
+                narrow.samples[1].positionMapMeters -
+                narrow.samples[0].positionMapMeters;
+            const double firstSegmentLength =
+                glm::length(firstSegment);
+            const double firstMovingSpeed =
+                glm::length(
+                    narrow.samples[1].velocityMapMetersPerSecond
+                );
+
+            if (firstSegmentLength > 1.0e-12 &&
+                firstMovingSpeed > 1.0e-12)
+            {
+                narrow.samples[0].velocityMapMetersPerSecond =
+                    (firstSegment / firstSegmentLength) *
+                    firstMovingSpeed;
+                narrow.samples[0].
+                    linearAccelerationFeedForwardMapMps2 =
+                        glm::dvec3(0.0);
+            }
+        }
 
         narrowPlannedDynamicClearance =
             minimumProgramDynamicClearance(narrow, hazard);

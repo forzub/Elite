@@ -2875,12 +2875,18 @@ CompositeMetrics runComposite(Law law)
          ++proofAttempt)
     {
         const VehicleState start = captureState(v);
-        const Basis terminal =
-            law == Law::Newtonian
-                ? start.basis
-                : basisForForward({1.0, 0.0, 0.0}, start.basis);
 
-        narrow =
+        // The tunnel begins along the ACTUAL hull heading. STOP left the real
+        // vehicle at v=0, but a new moving segment must author a non-zero
+        // initial reference speed. First estimate a gentle launch speed from
+        // the same endpoint/duration, then rebuild the curve with that speed
+        // along the ship's current nose. makeCurve() fixes a(0)=0, so this
+        // gives the agreed START(v>0, a_ff=0) boundary and makes the first
+        // tunnel tangent coincide with the hull heading.
+        const Basis terminal =
+            basisForForward({1.0, 0.0, 0.0}, start.basis);
+
+        Program provisional =
             makeProgram(
                 12030 + static_cast<std::uint64_t>(proofAttempt),
                 v.timeSeconds,
@@ -2889,9 +2895,36 @@ CompositeMetrics runComposite(Law law)
                 {6.0, 0.0, 0.0},
                 terminal,
                 16.0,
-                law == Law::Newtonian
-                    ? OrientationMode::FixedStart
-                    : OrientationMode::VelocityAligned,
+                OrientationMode::VelocityAligned,
+                Program::ManeuverFamily::PrecisionTransit
+            );
+
+        VehicleState authoredStart = start;
+        double launchSpeedMps = 0.25;
+        if (provisional.sampleCount >= 2)
+        {
+            launchSpeedMps =
+                std::max(
+                    launchSpeedMps,
+                    glm::length(
+                        provisional.samples[1].
+                            velocityMapMetersPerSecond
+                    )
+                );
+        }
+        authoredStart.velocity =
+            glm::normalize(start.basis.forward) * launchSpeedMps;
+
+        narrow =
+            makeProgram(
+                12030 + static_cast<std::uint64_t>(proofAttempt),
+                v.timeSeconds,
+                authoredStart,
+                resumed.coarseWaypointMapMeters,
+                {6.0, 0.0, 0.0},
+                terminal,
+                16.0,
+                OrientationMode::VelocityAligned,
                 Program::ManeuverFamily::PrecisionTransit
             );
 
@@ -2906,33 +2939,10 @@ CompositeMetrics runComposite(Law law)
                 ? Program::TranslationMode::AssistedVelocity
                 : Program::TranslationMode::NewtonianMainEngine;
 
-        // START semantics: a moving spatial segment never begins with v=0.
-        // Reuse the first physically-authored moving sample as the launch
-        // speed, but keep feed-forward acceleration exactly zero at the
-        // boundary. STOP(v=0) belongs to the preceding phase.
-        if (narrow.sampleCount >= 2)
-        {
-            const glm::dvec3 firstSegment =
-                narrow.samples[1].positionMapMeters -
-                narrow.samples[0].positionMapMeters;
-            const double firstSegmentLength =
-                glm::length(firstSegment);
-            const double firstMovingSpeed =
-                glm::length(
-                    narrow.samples[1].velocityMapMetersPerSecond
-                );
-
-            if (firstSegmentLength > 1.0e-12 &&
-                firstMovingSpeed > 1.0e-12)
-            {
-                narrow.samples[0].velocityMapMetersPerSecond =
-                    (firstSegment / firstSegmentLength) *
-                    firstMovingSpeed;
-                narrow.samples[0].
-                    linearAccelerationFeedForwardMapMps2 =
-                        glm::dvec3(0.0);
-            }
-        }
+        // START direction is already encoded in the curve itself; do not
+        // rewrite sample[0] after proof geometry has been authored.
+        narrow.samples[0].linearAccelerationFeedForwardMapMps2 =
+            glm::dvec3(0.0);
 
         narrowPlannedDynamicClearance =
             minimumProgramDynamicClearance(narrow, hazard);
@@ -2946,6 +2956,15 @@ CompositeMetrics runComposite(Law law)
             << narrowPlannedDynamicClearance
             << " speed_mps="
             << glm::length(v.transform.motion.localVelocityMps)
+            << " start_ref_speed_mps="
+            << glm::length(
+                   narrow.samples[0].velocityMapMetersPerSecond
+               )
+            << " start_tangent_to_hull_deg="
+            << angleRad(
+                   narrow.samples[0].velocityMapMetersPerSecond,
+                   start.basis.forward
+               ) * 180.0 / kPi
             << "\n";
 
         if (narrowPlannedDynamicClearance >=

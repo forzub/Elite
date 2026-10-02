@@ -1,3 +1,7 @@
+## Continue from 2026-10-02 STOP/START navigation contract
+
+Current main implements the user's requested semantics: authored v=0 is a real STOP completed by physical RCS-only trim when residual speed is small; moving SpatialCorridor START has v>0 with a_ff=0. The precision semantic is wired through production GameSimulation, not only the composite fixture. New regressions cover actuator choice and STOP-vs-START classification. Next evidence required is a four-test Windows build/run (runtime_control, tracking_controller, phase_gate, composite).
+
 ## Continue from 2026-09-29 spatial validity-window correction
 
 Current main: SpatialCorridor phase handoff is physical, Newtonian hull slip is not route loss, and the composite harness now executes spatial programs until AcceptedManeuverProgram::validUntilUniverseTimeSeconds rather than an obsolete nominalEnd+5.1 synthetic deadline. New portal diagnostics expose final P/V and actual execution budget.

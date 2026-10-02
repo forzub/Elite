@@ -1,3 +1,20 @@
+## 2026-10-02 — Newtonian composite green; Assisted route-loss course moved from hull attitude to actual VREL
+
+Latest Windows evidence:
+- maneuver_tracking_controller passes;
+- Newtonian now completes the entire composite proving ground: portal start tangent matches the hull (~0 deg), portal hull half-width is 17.276 m inside the 19 m limit, tracking_exceeded_ticks=0, portal terminal errors are sub-meter/sub-0.1 m/s, and final capture succeeds.
+- Assisted also physically completes portal_102 and final capture with safe dynamic clearance and hull width, but the synthetic route-loss counter reported 70 ticks solely because max_env_course_deg reached 55.6 deg while cross-track position/velocity remained small.
+
+Root cause: SpatialCorridor course loss for Assisted was measured as hull-forward vs authored local tangent. TrajectoryFollower deliberately rotates the hull toward a look-ahead point on a bend, so that commanded steering lead could invalidate its own accepted corridor.
+
+Current main separates control attitude from route geometry:
+- Assisted SpatialCorridor route course is measured from actual vehicle velocity (VREL) against the accepted tangent;
+- hull attitude remains the steering target and continues receiving angular feedback toward the look-ahead reference;
+- Newtonian remains exempt from hull/course route loss because hull/velocity slip is valid doctrine;
+- regression tests prove (a) a 60-degree Assisted hull steering lead with VREL still tangent is not route loss, and (b) a 40-degree actual VREL course departure does invalidate the corridor even when the cross-track speed magnitude is still inside its independent envelope.
+
+Windows rerun pending; do not mark Assisted composite green yet.
+
 ## 2026-10-02 — narrow tunnel start tangent now follows actual hull heading
 
 Latest Windows evidence: STOP/RCS/START unit contracts pass, but composite Newtonian still failed portal_102 with tracking_exceeded_ticks=0, final speed near zero, final position error ~48.7 m, and actual hull half-width ~61.5 m against the 19 m portal. Root cause was tunnel authoring, not tracking: after STOP the real start velocity is exactly zero, so makeCurve() had no start-direction derivative; the first geometric segment fell directly toward the portal. A later post-hoc velocity rewrite pointed sample[0] along that already-authored segment, while Newtonian also used OrientationMode::FixedStart. Thus the accepted tunnel direction and hull heading diverged by construction.

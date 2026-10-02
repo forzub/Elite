@@ -471,6 +471,9 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
 
     result.intent.revision = program.objectiveRevision;
     result.intent.targetRevision = program.revision;
+    result.intent.precisionTranslationOnly =
+        program.translationMode ==
+            AcceptedManeuverProgram::TranslationMode::PrecisionRcs;
     result.intent.emergency = program.emergency;
     result.intent.hazardUrgency01 =
         std::clamp(program.hazardUrgency01, 0.0, 1.0);

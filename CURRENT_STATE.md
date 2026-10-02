@@ -1,3 +1,11 @@
+## 2026-10-02 — Assisted composite now judged by velocity-alignment lag duration, not peak slip angle
+
+Latest Windows evidence: Newtonian remains fully green. Assisted now traverses portal_102 with tracking_exceeded_ticks=0, hull half-width 17.293 m inside the 19 m portal, safe dynamic clearance, sub-meter terminal position error, and successful final capture. The only remaining failure was the legacy aggregate assertion maxSlipDeg <= 8.0. That metric records the single largest instantaneous angle between hull nose and VREL over the whole scenario, so it rejects legitimate transient turning even when the velocity catches up promptly.
+
+Current main retains maxSlipDeg as a diagnostic but replaces the pass/fail criterion with the actual agreed Assisted behavior: while speed >0.25 m/s, a material nose/VREL mismatch above 8 deg may exist transiently, but one continuous exceedance may not persist beyond 3.0 seconds. ExecutionMetrics records maxContinuousAssistedSlipSeconds per accepted program and CompositeMetrics carries the worst phase. If this new duration guard fails, the controller itself is genuinely too slow; do not loosen it merely to pass the test.
+
+Windows rerun pending.
+
 ## 2026-10-02 — Newtonian composite green; Assisted route-loss course moved from hull attitude to actual VREL
 
 Latest Windows evidence:

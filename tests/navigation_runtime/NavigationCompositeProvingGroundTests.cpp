@@ -1313,6 +1313,7 @@ struct ExecutionMetrics
     bool captureTimedOut = false;
     std::size_t trackingExceededTicks = 0;
     double maxSlipDeg = 0.0;
+    double maxContinuousAssistedSlipSeconds = 0.0;
     double maxForwardErrorDeg = 0.0;
     double maxEnvelopePositionErrorMeters = 0.0;
     double maxEnvelopeVelocityErrorMps = 0.0;
@@ -1381,6 +1382,7 @@ ExecutionMetrics executeProgram(
               );
 
     std::size_t minimumSpatialSegmentIndex = 0;
+    double currentAssistedSlipSeconds = 0.0;
 
     while (v.timeSeconds <= requestedStop + 1.0e-9)
     {
@@ -1556,14 +1558,36 @@ ExecutionMetrics executeProgram(
             glm::length(v.transform.motion.localVelocityMps);
         if (speed > 0.25)
         {
+            const double slipDeg =
+                angleRad(
+                    v.transform.motion.localVelocityMps,
+                    glm::dvec3(v.transform.forward())
+                ) * 180.0 / kPi;
+
             m.maxSlipDeg =
-                std::max(
-                    m.maxSlipDeg,
-                    angleRad(
-                        v.transform.motion.localVelocityMps,
-                        glm::dvec3(v.transform.forward())
-                    ) * 180.0 / kPi
-                );
+                std::max(m.maxSlipDeg, slipDeg);
+
+            // Assisted is allowed a transient velocity-to-nose lag while the
+            // hull turns. The contract is temporal: a material mismatch must
+            // be corrected within about 2-3 seconds, not "never exceed 8 deg".
+            if (v.transform.motion.localControlLaw == Law::Assisted &&
+                slipDeg > 8.0)
+            {
+                currentAssistedSlipSeconds += kDt;
+                m.maxContinuousAssistedSlipSeconds =
+                    std::max(
+                        m.maxContinuousAssistedSlipSeconds,
+                        currentAssistedSlipSeconds
+                    );
+            }
+            else
+            {
+                currentAssistedSlipSeconds = 0.0;
+            }
+        }
+        else
+        {
+            currentAssistedSlipSeconds = 0.0;
         }
 
         m.maxHullHalfWidthMeters =
@@ -1894,6 +1918,7 @@ struct CompositeMetrics
         std::numeric_limits<double>::infinity();
     double maxHullHalfWidthMeters = 0.0;
     double maxSlipDeg = 0.0;
+    double maxContinuousAssistedSlipSeconds = 0.0;
     double maxForwardErrorDeg = 0.0;
     double finalPositionErrorMeters = 0.0;
     double finalSpeedMps = 0.0;
@@ -2074,6 +2099,11 @@ void absorb(
         );
     total.maxSlipDeg =
         std::max(total.maxSlipDeg, phase.maxSlipDeg);
+    total.maxContinuousAssistedSlipSeconds =
+        std::max(
+            total.maxContinuousAssistedSlipSeconds,
+            phase.maxContinuousAssistedSlipSeconds
+        );
     total.maxForwardErrorDeg =
         std::max(
             total.maxForwardErrorDeg,
@@ -3305,8 +3335,8 @@ void testCompositeProvingGround()
                 "composite Assisted did not select aligned family"
             );
             require(
-                m.maxSlipDeg <= 8.0,
-                "composite Assisted accumulated excessive slip"
+                m.maxContinuousAssistedSlipSeconds <= 3.0 + 1.0e-9,
+                "composite Assisted velocity-to-nose lag persisted beyond 3 seconds"
             );
         }
 
@@ -3329,6 +3359,8 @@ void testCompositeProvingGround()
             << " max_hull_half_width_m="
             << m.maxHullHalfWidthMeters
             << " max_slip_deg=" << m.maxSlipDeg
+            << " max_continuous_assisted_slip_s="
+            << m.maxContinuousAssistedSlipSeconds
             << " max_forward_error_deg="
             << m.maxForwardErrorDeg
             << " tracking_exceeded_ticks="

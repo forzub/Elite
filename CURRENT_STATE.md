@@ -1,3 +1,17 @@
+## 2026-10-02 — narrow tunnel start tangent now follows actual hull heading
+
+Latest Windows evidence: STOP/RCS/START unit contracts pass, but composite Newtonian still failed portal_102 with tracking_exceeded_ticks=0, final speed near zero, final position error ~48.7 m, and actual hull half-width ~61.5 m against the 19 m portal. Root cause was tunnel authoring, not tracking: after STOP the real start velocity is exactly zero, so makeCurve() had no start-direction derivative; the first geometric segment fell directly toward the portal. A later post-hoc velocity rewrite pointed sample[0] along that already-authored segment, while Newtonian also used OrientationMode::FixedStart. Thus the accepted tunnel direction and hull heading diverged by construction.
+
+Current main fixes the agreed contract:
+- zero spatial velocity is now unambiguously STOP; the old TrajectoryFollower heuristic that auto-launched from a v=0 lower sample has been removed;
+- portal_102 moving START is authored in the curve itself with non-zero start reference velocity along the actual start.basis.forward and a_ff(0)=0;
+- the tunnel therefore begins tangent to the actual hull heading, then curves toward the portal;
+- constrained passage orientation now uses VelocityAligned for Newtonian as well as Assisted so the hull can rotate along the bend instead of remaining frozen at the incoming bypass attitude;
+- the obsolete regression test that required auto-launch from a stopped control point was replaced by explicit STOP and moving START tests;
+- COMPOSITE-PORTAL-PROOF now logs start_ref_speed_mps and start_tangent_to_hull_deg; the latter should be ~0.
+
+Windows verification pending.
+
 ## 2026-10-02 — explicit STOP(v=0) / START(v>0,a=0) semantics and physical RCS trim
 
 User clarified the desired control contract: if an authored point requires zero velocity but the craft arrives with a small residual velocity, physically remove that residual with manoeuvre/RCS thrust; do not reinterpret near-zero as the start of a moving segment. Conversely, a new moving segment must begin with non-zero reference speed while its boundary feed-forward acceleration may be zero.

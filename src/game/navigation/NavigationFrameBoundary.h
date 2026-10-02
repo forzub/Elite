@@ -245,6 +245,8 @@ public:
             frame_.localToWorldVector(
                 local.idealAngularAccelerationLocalRadPerSec2
             );
+        out.precisionTranslationOnly =
+            local.precisionTranslationOnly;
         out.emergency = local.emergency;
         out.hazardUrgency01 = local.hazardUrgency01;
         return out;
@@ -265,6 +267,8 @@ public:
             frame_.worldToLocalVector(
                 system.idealAngularAccelerationSystemRadPerSec2
             );
+        out.precisionTranslationOnly =
+            system.precisionTranslationOnly;
         out.emergency = system.emergency;
         out.hazardUrgency01 = system.hazardUrgency01;
         return out;

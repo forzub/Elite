@@ -511,6 +511,47 @@ void testFreeTransitCorridorCorrectsOnlyExcessOutsideBand()
     );
 }
 
+void testFollowerDistinguishesStopFromMovingStart()
+{
+    Program stop = baseProgram();
+    stop.samples[0].velocityMapMetersPerSecond = glm::dvec3(0.0);
+    stop.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+
+    auto residual = followerAgentFor(stop.samples[0]);
+    residual.velocityMapMetersPerSecond = {0.03, 0.0, 0.0};
+
+    const auto stopping = Follower::follow(
+        stop,
+        stop.acceptedAtUniverseTimeSeconds,
+        residual,
+        Tracker::Policy {}
+    );
+    require(
+        stopping.intent.precisionTranslationOnly,
+        "authored v=0 point did not request precision RCS stop"
+    );
+
+    Program moving = stop;
+    moving.samples[0].velocityMapMetersPerSecond = {0.08, 0.0, 0.0};
+    moving.samples[0].linearAccelerationFeedForwardMapMps2 =
+        glm::dvec3(0.0);
+
+    auto launch = followerAgentFor(moving.samples[0]);
+    launch.velocityMapMetersPerSecond = glm::dvec3(0.0);
+
+    const auto starting = Follower::follow(
+        moving,
+        moving.acceptedAtUniverseTimeSeconds,
+        launch,
+        Tracker::Policy {}
+    );
+    require(
+        !starting.intent.precisionTranslationOnly,
+        "moving START with v>0 was mistaken for a STOP point"
+    );
+}
+
 void testFollowerSpatialCorridorTracksPathInsteadOfClock()
 {
     Program program = baseProgram();
@@ -886,6 +927,7 @@ int main()
         testFreeTransitDeadbandDoesNotFalseTriggerEnvelope();
         testFreeTransitCorridorStillCorrectsCrossTrackMotion();
         testFreeTransitCorridorCorrectsOnlyExcessOutsideBand();
+        testFollowerDistinguishesStopFromMovingStart();
         testFollowerSpatialCorridorTracksPathInsteadOfClock();
         testSpatialCorridorLaunchesFromStoppedControlPoint();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();

@@ -723,6 +723,105 @@ void testSpatialCorridorAngularRateIsSteeringNotRouteLoss()
     );
 }
 
+void testAssistedSpatialSteeringLeadIsNotRouteLoss()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+    program.translationMode =
+        Program::TranslationMode::AssistedVelocity;
+
+    auto reference = program.samples[0];
+
+    // The accepted path tangent is +X, but Follower may deliberately point
+    // the hull well inside a bend toward its look-ahead target. Travel is
+    // still exactly tangent to the corridor.
+    const double angle = glm::radians(60.0);
+    reference.forwardMap = {
+        std::cos(angle), 0.0, std::sin(angle)
+    };
+    reference.rightMap = {
+        -std::sin(angle), 0.0, std::cos(angle)
+    };
+    reference.upMap = {0.0, 1.0, 0.0};
+
+    auto agent = exactAgentFor(reference);
+    agent.velocityMapMetersPerSecond =
+        program.samples[0].velocityMapMetersPerSecond;
+
+    const auto result =
+        Tracker::track(
+            program,
+            reference,
+            agent,
+            Tracker::Policy {}
+        );
+
+    require(
+        result.status == Tracker::Status::Tracking,
+        "Assisted look-ahead hull lead was treated as corridor loss"
+    );
+    requireNear(
+        result.envelopeForwardAngleErrorRad,
+        0.0,
+        1.0e-12,
+        "Assisted route-loss course followed hull attitude instead of VREL"
+    );
+}
+
+void testAssistedSpatialVelocityCourseDepartureIsRouteLoss()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+    program.translationMode =
+        Program::TranslationMode::AssistedVelocity;
+    program.tracking.linearVelocityErrorMps = 10.0;
+    program.tracking.forwardAngleErrorRad = 0.5;
+
+    auto reference = program.samples[0];
+    const double angle = glm::radians(40.0);
+
+    // Keep attitude exactly on its steering reference so this test isolates
+    // actual travel-course departure from attitude tracking.
+    reference.forwardMap = {
+        std::cos(angle), 0.0, std::sin(angle)
+    };
+    reference.rightMap = {
+        -std::sin(angle), 0.0, std::cos(angle)
+    };
+    reference.upMap = {0.0, 1.0, 0.0};
+
+    auto agent = exactAgentFor(reference);
+    const double speed =
+        glm::length(reference.velocityMapMetersPerSecond);
+    agent.velocityMapMetersPerSecond =
+        speed * reference.forwardMap;
+
+    const auto result =
+        Tracker::track(
+            program,
+            reference,
+            agent,
+            Tracker::Policy {}
+        );
+
+    require(
+        result.envelopeVelocityErrorMps <
+            program.tracking.linearVelocityErrorMps,
+        "velocity-course fixture accidentally exceeded cross-track speed envelope"
+    );
+    require(
+        result.envelopeForwardAngleErrorRad >
+            program.tracking.forwardAngleErrorRad,
+        "Assisted VREL course departure did not reach course envelope"
+    );
+    require(
+        result.status == Tracker::Status::EnvelopeExceeded,
+        "Assisted VREL left corridor course without invalidating the route"
+    );
+}
+
 void testNewtonianSpatialDriftDoesNotCountAsRouteLoss()
 {
     Program program = baseProgram();
@@ -969,6 +1068,8 @@ int main()
         testSpatialCorridorZeroSpeedPointRemainsStop();
         testSpatialCorridorMovingStartIsExplicit();
         testSpatialCorridorAngularRateIsSteeringNotRouteLoss();
+        testAssistedSpatialSteeringLeadIsNotRouteLoss();
+        testAssistedSpatialVelocityCourseDepartureIsRouteLoss();
         testNewtonianSpatialDriftDoesNotCountAsRouteLoss();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
         testSpatialCorridorHoldsTangentInsideCenterDeadband();

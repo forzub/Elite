@@ -55,6 +55,13 @@ struct AcceptedManeuverProgram
         // Vehicle progress owns the clock. Follower projects the real craft
         // onto the accepted spatial program and advances only as the craft
         // physically progresses through it. This is the tunnel/canyon mode.
+        //
+        // STOP/START semantic:
+        // - an authored reference velocity of exactly zero means STOP/capture;
+        //   small measured residual velocity is finished with physical RCS;
+        // - the first sample of a new moving spatial segment must therefore
+        //   have non-zero reference speed, even when its feed-forward
+        //   acceleration at the boundary is zero.
         SpatialCorridor
     };
 

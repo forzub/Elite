@@ -169,7 +169,8 @@ bool validPolicy(const ManeuverTrackingController::Policy& policy) noexcept
         nonNegativeFinite(policy.positionGainPerSecond2) &&
         nonNegativeFinite(policy.velocityGainPerSecond) &&
         nonNegativeFinite(policy.attitudeGainPerSecond2) &&
-        nonNegativeFinite(policy.angularVelocityGainPerSecond);
+        nonNegativeFinite(policy.angularVelocityGainPerSecond) &&
+        nonNegativeFinite(policy.precisionStopEntrySpeedMps);
 }
 
 bool validInput(

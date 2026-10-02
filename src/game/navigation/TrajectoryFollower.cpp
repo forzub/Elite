@@ -275,13 +275,32 @@ TrajectoryFollower::Result TrajectoryFollower::follow(
     trackingAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
     trackingAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
 
-    const auto tracking =
+    auto tracking =
         ManeuverTrackingController::track(
             program,
             reference,
             trackingAgent,
             trackingPolicy
         );
+
+    const double authoredReferenceSpeedMps =
+        glm::length(reference.velocityMapMetersPerSecond);
+    const double measuredSpeedMps =
+        glm::length(agent.velocityMapMetersPerSecond);
+
+    // An authored v=0 point is a real STOP contract. Once ordinary propulsion
+    // has brought the craft close enough, finish the residual delta-v with
+    // physical manoeuvre/RCS authority rather than asymptotically carrying a
+    // tiny non-zero speed forever. A moving segment must therefore author a
+    // non-zero first reference speed; zero is never used as a "start moving"
+    // sentinel.
+    if (finite(authoredReferenceSpeedMps) &&
+        finite(measuredSpeedMps) &&
+        authoredReferenceSpeedMps <= kEpsilon &&
+        measuredSpeedMps <= trackingPolicy.precisionStopEntrySpeedMps)
+    {
+        tracking.intent.precisionTranslationOnly = true;
+    }
 
     if (tracking.status ==
         ManeuverTrackingController::Status::InvalidInput)

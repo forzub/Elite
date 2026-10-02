@@ -1,3 +1,7 @@
+## 2026-10-02 — verify tunnel begins along ship heading
+
+Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests. Run those two CTest cases first. In COMPOSITE-PORTAL-PROOF verify start_tangent_to_hull_deg is approximately 0. If composite still fails, inspect hull_half_width_m, final_pos_error_m and final_vel_error_mps; do not reintroduce FixedStart or a zero-speed launch heuristic.
+
 ## 2026-10-02 — verify physical RCS STOP and non-zero spatial START
 
 Build navigation_runtime_control_tests, maneuver_tracking_controller_tests, maneuver_phase_gate_tests, and navigation_composite_proving_ground_tests. Run their four CTest cases. If the three unit contracts pass but composite fails, inspect COMPOSITE-PORTAL-ACTUAL; the previous 47 m deadlock should be gone. Do not loosen corridor or tracking tolerances to make it pass.

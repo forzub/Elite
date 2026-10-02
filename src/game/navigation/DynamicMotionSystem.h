@@ -64,6 +64,17 @@ public:
         const glm::vec3& shipUp
     );
 
+    // Precision placement/STOP executor. It never wakes a main engine.
+    // The manoeuvre/RCS system removes the measured velocity error as quickly
+    // as its physical authority and this control step allow.
+    static void applyNavigationPrecisionVelocityTrim(
+        DynamicMotionState& motion,
+        const KinematicFrame& frame,
+        const ShipParams& params,
+        float dt,
+        const glm::dvec3& targetVelocitySystemMps
+    );
+
     static void updateLocalFrameMotion(
         DynamicMotionState& motion,
         world::coordinates::WorldPosition& worldPosition,

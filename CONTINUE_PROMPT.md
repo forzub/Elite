@@ -1,3 +1,7 @@
+## Continue from 2026-10-02 Assisted lag-duration metric
+
+Current main: Newtonian composite is end-to-end green. Assisted physically completes portal and final capture with zero tracking-envelope violations. The obsolete final rule maxSlipDeg<=8 was replaced by a temporal contract: with speed >0.25 m/s, continuous nose/VREL slip above 8 deg must clear within 3 seconds. Peak angle remains diagnostic only. Next evidence: tracking-controller + composite rerun, then full navigation-runtime suite if green.
+
 ## Continue from 2026-10-02 Assisted VREL-course correction
 
 Latest Windows run proves Newtonian composite end-to-end green. Assisted physically traverses the portal and final capture but self-invalidated because route-loss compared hull heading to the local tangent while Follower intentionally aimed the hull toward a bend look-ahead point. Current main now measures Assisted SpatialCorridor course from actual VREL vs tangent; attitude steering remains independent. Two regressions cover steering lead vs genuine VREL departure. Next evidence: tracking-controller + composite rerun.

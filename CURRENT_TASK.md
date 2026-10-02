@@ -1,3 +1,7 @@
+## 2026-10-02 — verify Assisted 3-second velocity-alignment lag contract
+
+Rebuild/run maneuver_tracking_controller and navigation_composite_proving_ground. If composite passes, run the full navigation-runtime suite. If it fails with the new message 'velocity-to-nose lag persisted beyond 3 seconds', inspect max_continuous_assisted_slip_s; that is now a genuine Assisted-response problem rather than a route-loss or geometry problem.
+
 ## 2026-10-02 — rerun Assisted spatial course fix
 
 Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests, then run their two CTest cases. Expected: unit regressions green; Assisted COMPOSITE-PORTAL-ACTUAL should keep hull_half_width_m < 19 and tracking_exceeded_ticks should drop to 0. If tracking still exceeds, inspect max_env_pos_m, max_env_vel_mps and the now-VREL-based max_env_course_deg separately.

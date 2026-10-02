@@ -311,24 +311,35 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
             tangent /= std::sqrt(forwardLength2);
         }
 
-        // Steering may deliberately point inward toward a look-ahead
-        // point. Route-loss course is still measured against the authored
-        // corridor tangent, otherwise the correction itself can invalidate
-        // the route it is trying to recover.
+        // Spatial route loss is about where the vehicle is actually
+        // travelling, not where its hull is momentarily pointing. Assisted
+        // steering deliberately leads the local tangent by aiming the nose at
+        // a look-ahead point on a bend; treating that commanded lead angle as
+        // route loss makes Follower invalidate its own correction.
         //
-        // At an authored zero-speed checkpoint there is no translational
-        // course to lose. The hull may legitimately rotate in place (HOLD /
-        // terminal alignment), so attitude error remains a steering signal
-        // but must not become a 180-degree corridor-loss event.
-        const bool newtonianSpatialDrift =
+        // Newtonian may carry arbitrary hull/velocity slip by doctrine, so its
+        // hull angle is never a corridor-loss signal either. For Assisted,
+        // measure the real VREL course against the accepted tangent. Attitude
+        // tracking remains independent below and continues to turn the hull
+        // toward the steering reference.
+        const bool assistedSpatial =
             program.translationMode ==
                 AcceptedManeuverProgram::TranslationMode::
-                    NewtonianMainEngine;
+                    AssistedVelocity;
+        const double actualSpeedSquared =
+            glm::dot(
+                agent.velocityMapMetersPerSecond,
+                agent.velocityMapMetersPerSecond
+            );
 
         envelopeForwardAngleErrorRad =
+            assistedSpatial &&
             referenceSpeedSquared > kEpsilon &&
-            !newtonianSpatialDrift
-                ? angleBetween(agent.forwardMap, tangent)
+            actualSpeedSquared > kEpsilon
+                ? angleBetween(
+                      agent.velocityMapMetersPerSecond,
+                      tangent
+                  )
                 : 0.0;
 
         const double alongPosition =
@@ -426,7 +437,9 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         );
 
     // In a spatial tunnel/canyon, route loss is geometric: cross-track
-    // position/velocity and hull course must stay inside their envelopes.
+    // position/velocity and, for Assisted, actual travel course must stay
+    // inside their envelopes. Hull attitude is a steering/control state and
+    // may deliberately lead a bend.
     // Angular-rate mismatch is not a second clock.  While the nose is still
     // inside the allowed course cone, bounded angular feedback must remove the
     // spin without stopping translation or throwing the accepted route away.

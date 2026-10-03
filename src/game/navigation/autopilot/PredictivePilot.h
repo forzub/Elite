@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 #include <glm/glm.hpp>
@@ -13,24 +14,36 @@
 namespace game::navigation::autopilot
 {
 
-// Second-generation virtual pilot.
-//
-// This controller is intentionally independent of ShipControlAdapter and of the
-// legacy navigation actuator seam. Its input is a desired vehicle state; its
-// only output is the same ordinary ShipControlState a human pilot can produce.
-//
-// Attitude control is predictive: it converts orientation error into a bounded
-// target angular rate from the physical braking envelope
-//
-//      omega_target^2 <= 2 * alpha * angle_remaining
-//
-// and then accelerates or counter-steers through ordinary pitch/yaw/roll keys.
-// Translation in Assisted mode is closed around measured forward speed rather
-// than around the persistent setpoint, so releasing +/- occurs only after the
-// real craft has reached the requested speed.
 class PredictivePilot final
 {
 public:
+    struct State
+    {
+        bool initialized = false;
+
+        glm::dvec3 previousVelocityMapMps {0.0};
+        double previousPitchRateRadPerSec = 0.0;
+        double previousYawRateRadPerSec = 0.0;
+        double previousRollRateRadPerSec = 0.0;
+
+        float previousPitchInput = 0.0f;
+        float previousYawInput = 0.0f;
+        float previousRollInput = 0.0f;
+        float previousTargetSpeedRate = 0.0f;
+
+        double effectivePitchAuthorityRadPerSec2 = 0.0;
+        double effectiveYawAuthorityRadPerSec2 = 0.0;
+        double effectiveRollAuthorityRadPerSec2 = 0.0;
+
+        // Measured first-order Assisted response estimate. This is not a
+        // planner property; it is learned from the real craft while V2 flies.
+        double assistedCourseResponseSeconds = 2.0;
+        double assistedSpeedResponseMps2 = 0.0;
+
+        double lastMeasuredCourseErrorRad = 0.0;
+        bool hasMeasuredCourseError = false;
+    };
+
     struct Request
     {
         LocalFlightControlLaw law = defaultLocalFlightControlLaw();
@@ -56,10 +69,17 @@ public:
 
     [[nodiscard]] static ShipControlState make(
         const Request& request,
-        const ShipParams& params
+        const ShipParams& params,
+        State& state
     ) noexcept
     {
-        ShipControlState out;
+        const double dt =
+            std::max(
+                1.0e-4,
+                std::isfinite(request.deltaSeconds)
+                    ? request.deltaSeconds
+                    : 0.0
+            );
 
         const glm::dvec3 forward =
             normalizedOr(request.forwardMap, {0.0, 0.0, -1.0});
@@ -67,6 +87,10 @@ public:
             normalizedOr(request.rightMap, {1.0, 0.0, 0.0});
         const glm::dvec3 up =
             normalizedOr(request.upMap, {0.0, 1.0, 0.0});
+
+        updateIdentification(request, params, forward, dt, state);
+
+        ShipControlState out;
 
         const glm::dvec3 desiredForward =
             normalizedOr(request.desiredForwardMap, forward);
@@ -83,53 +107,52 @@ public:
                 desiredUp
             );
 
-        const double angularAuthority =
+        const double configuredAngularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
-        const double dt =
-            std::max(
-                1.0e-4,
-                std::isfinite(request.deltaSeconds)
-                    ? request.deltaSeconds
-                    : 0.0
+
+        const double pitchAuthority =
+            learnedAuthority(
+                state.effectivePitchAuthorityRadPerSec2,
+                configuredAngularAuthority
+            );
+        const double yawAuthority =
+            learnedAuthority(
+                state.effectiveYawAuthorityRadPerSec2,
+                configuredAngularAuthority
+            );
+        const double rollAuthority =
+            learnedAuthority(
+                state.effectiveRollAuthorityRadPerSec2,
+                configuredAngularAuthority
             );
 
-        if (angularAuthority > 1.0e-9)
-        {
-            const double pitchError =
-                glm::dot(rotationErrorMap, right);
-            const double yawError =
-                glm::dot(rotationErrorMap, up);
-            const double rollError =
-                glm::dot(rotationErrorMap, forward);
-
-            out.pitchInput = static_cast<float>(
-                predictiveAxisInput(
-                    pitchError,
-                    finiteOrZero(request.pitchRateRadPerSec),
-                    std::max(0.0, static_cast<double>(params.maxPitchRate)),
-                    angularAuthority,
-                    dt
-                )
-            );
-            out.yawInput = static_cast<float>(
-                predictiveAxisInput(
-                    yawError,
-                    finiteOrZero(request.yawRateRadPerSec),
-                    std::max(0.0, static_cast<double>(params.maxYawRate)),
-                    angularAuthority,
-                    dt
-                )
-            );
-            out.rollInput = static_cast<float>(
-                predictiveAxisInput(
-                    rollError,
-                    finiteOrZero(request.rollRateRadPerSec),
-                    std::max(0.0, static_cast<double>(params.maxRollRate)),
-                    angularAuthority,
-                    dt
-                )
-            );
-        }
+        out.pitchInput = static_cast<float>(
+            choosePredictiveAxisInput(
+                glm::dot(rotationErrorMap, right),
+                finiteOrZero(request.pitchRateRadPerSec),
+                std::max(0.0, static_cast<double>(params.maxPitchRate)),
+                pitchAuthority,
+                dt
+            )
+        );
+        out.yawInput = static_cast<float>(
+            choosePredictiveAxisInput(
+                glm::dot(rotationErrorMap, up),
+                finiteOrZero(request.yawRateRadPerSec),
+                std::max(0.0, static_cast<double>(params.maxYawRate)),
+                yawAuthority,
+                dt
+            )
+        );
+        out.rollInput = static_cast<float>(
+            choosePredictiveAxisInput(
+                glm::dot(rotationErrorMap, forward),
+                finiteOrZero(request.rollRateRadPerSec),
+                std::max(0.0, static_cast<double>(params.maxRollRate)),
+                rollAuthority,
+                dt
+            )
+        );
 
         const double actualSpeed = finiteLength(request.actualVelocityMapMps);
         constexpr double PrecisionStopEntrySpeedMps = 0.50;
@@ -139,9 +162,6 @@ public:
 
         if (request.stopRequested && !precisionStop)
         {
-            // END is an ordinary human control in both laws. Assisted uses its
-            // real reverse-main authority when installed; Newtonian owns the
-            // normal turn-and-burn alignment sequence.
             out.velocityAlignmentCommand =
                 VelocityAlignmentMode::BrakeToStop;
         }
@@ -187,7 +207,7 @@ public:
 
             const double maxSpeed =
                 game::ship::controlledSpeedLimitMps(params);
-            const double targetRateMps2 = std::max(
+            const double configuredTargetRate = std::max(
                 static_cast<double>(
                     params.assistedMinimumTargetSpeedChangeRateMps2
                 ),
@@ -196,19 +216,27 @@ public:
                         params.assistedTargetSpeedChangeRateFractionPerSecond
                     )
             );
-
-            // Do not chase the hidden Assisted setpoint. A human observes what
-            // the craft is actually doing, presses +/- and releases when the
-            // real speed reaches the target. The 0.75 s horizon makes that
-            // behavior continuous instead of full-key bang/bang.
-            constexpr double SpeedPredictionHorizonSeconds = 0.75;
-            if (targetRateMps2 > 1.0e-9)
-            {
-                out.targetSpeedRate = finiteClamp(
-                    (desiredSpeed - actualForwardSpeed) /
-                    (targetRateMps2 * SpeedPredictionHorizonSeconds)
+            const double learnedTargetRate =
+                state.assistedSpeedResponseMps2 > 1.0e-6
+                    ? state.assistedSpeedResponseMps2
+                    : configuredTargetRate;
+            const double effectiveTargetRate =
+                std::clamp(
+                    learnedTargetRate,
+                    std::max(1.0, configuredTargetRate * 0.25),
+                    std::max(1.0, configuredTargetRate * 2.0)
                 );
-            }
+
+            const double horizon = std::clamp(
+                state.assistedCourseResponseSeconds * 0.35,
+                0.35,
+                1.25
+            );
+
+            out.targetSpeedRate = finiteClamp(
+                (desiredSpeed - actualForwardSpeed) /
+                (effectiveTargetRate * horizon)
+            );
         }
         else
         {
@@ -229,11 +257,23 @@ public:
             }
         }
 
-        // Absolute V2 invariant: this pilot never falls through to direct
-        // navigation actuator control.
         out.navigationAccelerationDemandValid = false;
         out.navigationVelocityTargetValid = false;
         out.navigationPrecisionTranslationOnly = false;
+
+        state.initialized = true;
+        state.previousVelocityMapMps = request.actualVelocityMapMps;
+        state.previousPitchRateRadPerSec =
+            finiteOrZero(request.pitchRateRadPerSec);
+        state.previousYawRateRadPerSec =
+            finiteOrZero(request.yawRateRadPerSec);
+        state.previousRollRateRadPerSec =
+            finiteOrZero(request.rollRateRadPerSec);
+        state.previousPitchInput = out.pitchInput;
+        state.previousYawInput = out.yawInput;
+        state.previousRollInput = out.rollInput;
+        state.previousTargetSpeedRate = out.targetSpeedRate;
+
         return out;
     }
 
@@ -275,6 +315,162 @@ private:
                 1.0
             )
         );
+    }
+
+    [[nodiscard]] static double learnedAuthority(
+        double learned,
+        double configured
+    ) noexcept
+    {
+        if (!(configured > 1.0e-9))
+            return 0.0;
+        if (!(learned > 1.0e-9))
+            return configured;
+        return std::clamp(
+            learned,
+            configured * 0.25,
+            configured * 1.50
+        );
+    }
+
+    static void updateAuthorityEstimate(
+        double previousInput,
+        double previousRate,
+        double currentRate,
+        double dt,
+        double configuredAuthority,
+        double& estimate
+    ) noexcept
+    {
+        if (!(dt > 1.0e-5) ||
+            std::abs(previousInput) < 0.20 ||
+            !(configuredAuthority > 1.0e-9))
+        {
+            return;
+        }
+
+        const double measured =
+            std::abs((currentRate - previousRate) / dt) /
+            std::max(0.20, std::abs(previousInput));
+        if (!std::isfinite(measured) || measured <= 1.0e-6)
+            return;
+
+        const double bounded =
+            std::clamp(
+                measured,
+                configuredAuthority * 0.20,
+                configuredAuthority * 2.0
+            );
+        if (!(estimate > 1.0e-9))
+            estimate = bounded;
+        else
+            estimate = estimate * 0.92 + bounded * 0.08;
+    }
+
+    static void updateIdentification(
+        const Request& request,
+        const ShipParams& params,
+        const glm::dvec3& forward,
+        double dt,
+        State& state
+    ) noexcept
+    {
+        const double configuredAngularAuthority =
+            game::ship::angularAccelerationLimitRadPerSec2(params);
+
+        if (state.initialized)
+        {
+            updateAuthorityEstimate(
+                state.previousPitchInput,
+                state.previousPitchRateRadPerSec,
+                finiteOrZero(request.pitchRateRadPerSec),
+                dt,
+                configuredAngularAuthority,
+                state.effectivePitchAuthorityRadPerSec2
+            );
+            updateAuthorityEstimate(
+                state.previousYawInput,
+                state.previousYawRateRadPerSec,
+                finiteOrZero(request.yawRateRadPerSec),
+                dt,
+                configuredAngularAuthority,
+                state.effectiveYawAuthorityRadPerSec2
+            );
+            updateAuthorityEstimate(
+                state.previousRollInput,
+                state.previousRollRateRadPerSec,
+                finiteOrZero(request.rollRateRadPerSec),
+                dt,
+                configuredAngularAuthority,
+                state.effectiveRollAuthorityRadPerSec2
+            );
+
+            if (std::abs(state.previousTargetSpeedRate) > 0.15)
+            {
+                const double previousForwardSpeed =
+                    glm::dot(state.previousVelocityMapMps, forward);
+                const double currentForwardSpeed =
+                    glm::dot(request.actualVelocityMapMps, forward);
+                const double measuredResponse =
+                    std::abs(
+                        (currentForwardSpeed - previousForwardSpeed) / dt
+                    ) /
+                    std::max(
+                        0.15,
+                        std::abs(
+                            static_cast<double>(
+                                state.previousTargetSpeedRate
+                            )
+                        )
+                    );
+                if (std::isfinite(measuredResponse) &&
+                    measuredResponse > 1.0e-4)
+                {
+                    if (!(state.assistedSpeedResponseMps2 > 1.0e-6))
+                        state.assistedSpeedResponseMps2 = measuredResponse;
+                    else
+                        state.assistedSpeedResponseMps2 =
+                            state.assistedSpeedResponseMps2 * 0.95 +
+                            measuredResponse * 0.05;
+                }
+            }
+        }
+
+        const double speed = finiteLength(request.actualVelocityMapMps);
+        if (speed > 0.5)
+        {
+            const glm::dvec3 velocityDir =
+                request.actualVelocityMapMps / speed;
+            const double courseError = std::acos(
+                std::clamp(
+                    glm::dot(velocityDir, forward),
+                    -1.0,
+                    1.0
+                )
+            );
+
+            if (state.hasMeasuredCourseError && dt > 1.0e-5)
+            {
+                const double closureRate =
+                    (state.lastMeasuredCourseErrorRad - courseError) / dt;
+                if (courseError > 0.01 && closureRate > 1.0e-4)
+                {
+                    const double measuredTau =
+                        courseError / closureRate;
+                    if (std::isfinite(measuredTau))
+                    {
+                        const double boundedTau =
+                            std::clamp(measuredTau, 0.25, 5.0);
+                        state.assistedCourseResponseSeconds =
+                            state.assistedCourseResponseSeconds * 0.95 +
+                            boundedTau * 0.05;
+                    }
+                }
+            }
+
+            state.lastMeasuredCourseErrorRad = courseError;
+            state.hasMeasuredCourseError = true;
+        }
     }
 
     [[nodiscard]] static glm::dvec3 orientationErrorVector(
@@ -330,7 +526,7 @@ private:
         return rotation;
     }
 
-    [[nodiscard]] static double predictiveAxisInput(
+    [[nodiscard]] static double choosePredictiveAxisInput(
         double angleErrorRad,
         double angularRateRadPerSec,
         double maxRateRadPerSec,
@@ -340,7 +536,10 @@ private:
     {
         constexpr double AngleDeadbandRad = 0.0015;
         constexpr double RateDeadbandRadPerSec = 0.004;
-        constexpr double ResponseHorizonSeconds = 0.18;
+        constexpr double HorizonSeconds = 0.75;
+        constexpr std::array<double, 5> Candidates {
+            -1.0, -0.5, 0.0, 0.5, 1.0
+        };
 
         if (!std::isfinite(angleErrorRad) ||
             !std::isfinite(angularRateRadPerSec) ||
@@ -355,38 +554,58 @@ private:
             return 0.0;
         }
 
-        // The target angular rate is exactly the largest rate that can still
-        // be stopped inside the remaining angle at full available authority.
-        const double brakingLimitedRate = std::sqrt(
-            std::max(
-                0.0,
-                2.0 * angularAuthorityRadPerSec2 *
-                    std::abs(angleErrorRad)
-            )
-        );
-        const double rateLimit =
-            maxRateRadPerSec > 1.0e-9
-                ? maxRateRadPerSec
-                : brakingLimitedRate;
-        const double desiredRate =
-            std::copysign(
-                std::min(rateLimit, brakingLimitedRate),
-                angleErrorRad
-            );
-
         const double horizon =
-            std::max(
-                ResponseHorizonSeconds,
-                std::min(0.50, dt * 4.0)
-            );
-        const double requiredAcceleration =
-            (desiredRate - angularRateRadPerSec) / horizon;
+            std::max(HorizonSeconds, std::min(1.25, dt * 6.0));
 
-        return std::clamp(
-            requiredAcceleration / angularAuthorityRadPerSec2,
-            -1.0,
-            1.0
-        );
+        double bestInput = 0.0;
+        double bestCost = 1.0e100;
+
+        for (const double input : Candidates)
+        {
+            const double acceleration =
+                input * angularAuthorityRadPerSec2;
+            double predictedRate =
+                angularRateRadPerSec + acceleration * horizon;
+
+            if (maxRateRadPerSec > 1.0e-9)
+            {
+                predictedRate = std::clamp(
+                    predictedRate,
+                    -maxRateRadPerSec,
+                    maxRateRadPerSec
+                );
+            }
+
+            const double predictedAngle =
+                angleErrorRad -
+                angularRateRadPerSec * horizon -
+                0.5 * acceleration * horizon * horizon;
+
+            const double brakingAngle =
+                predictedRate * predictedRate /
+                (2.0 * angularAuthorityRadPerSec2);
+
+            const bool movingPastTarget =
+                predictedAngle * predictedRate < 0.0;
+            const double overshootPenalty =
+                movingPastTarget
+                    ? brakingAngle * 4.0
+                    : 0.0;
+
+            const double cost =
+                std::abs(predictedAngle) * 8.0 +
+                std::abs(predictedRate) * 1.5 +
+                overshootPenalty +
+                std::abs(input) * 0.02;
+
+            if (cost < bestCost)
+            {
+                bestCost = cost;
+                bestInput = input;
+            }
+        }
+
+        return bestInput;
     }
 };
 

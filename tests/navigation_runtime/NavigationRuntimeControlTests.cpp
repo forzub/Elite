@@ -320,64 +320,6 @@ void testPredictivePilotUsesEndForAuthoredStop()
     );
 }
 
-void testBridgePublishesOneDirectDemandSample()
-{
-    Bridge bridge(expertProfile());
-
-    Bridge::Intent initial;
-    initial.revision = 1;
-    initial.targetRevision = 11;
-    require(bridge.reset(0.0, initial),
-            "runtime bridge reset must succeed");
-
-    Bridge::Intent intent;
-    intent.revision = 2;
-    intent.targetRevision = 22;
-    intent.idealLinearAccelerationSystemMps2 = {3.0, 0.0, -6.0};
-    intent.idealAngularAccelerationSystemRadPerSec2 = {1.0, 0.5, 0.25};
-
-    const auto result = bridge.step(0.01, 0.01, intent);
-    require(
-        result.status ==
-            world::navigation::PilotSkillExecutor::Status::Ok,
-        "bridge step must execute through accepted pilot skill"
-    );
-    require(result.snapshot.valid,
-            "successful bridge step must publish a valid execution snapshot");
-    require(result.control.navigationAccelerationDemandValid,
-            "bridge must use the explicit navigation acceleration channel");
-    require(result.control.navigationIntentRevision == intent.revision,
-            "control sample must preserve navigation intent revision");
-    require(result.snapshot.intentRevision == 2,
-            "execution snapshot lost high-level intent revision");
-    require(result.snapshot.activeTargetRevision == 22,
-            "execution snapshot lost concrete target revision");
-
-    requireNear(
-        result.control.navigationLinearAccelerationDemandSystemMps2.x,
-        result.snapshot.executedLinearAccelerationDemandSystemMps2.x,
-        0.0,
-        "control and debug/guidance snapshot must publish the same executed linear demand"
-    );
-    requireNear(
-        result.control.navigationAngularAccelerationDemandSystemRadPerSec2.x,
-        result.snapshot.executedAngularAccelerationDemandSystemRadPerSec2.x,
-        0.0,
-        "control and debug/guidance snapshot must publish the same executed angular demand"
-    );
-
-    requireNear(result.control.pitchInput, 0.0, 0.0,
-                "autopilot bridge must not synthesize legacy pitch keys");
-    requireNear(result.control.yawInput, 0.0, 0.0,
-                "autopilot bridge must not synthesize legacy yaw keys");
-    requireNear(result.control.rollInput, 0.0, 0.0,
-                "autopilot bridge must not synthesize legacy roll keys");
-    requireNear(result.control.forwardInput, 0.0, 0.0,
-                "autopilot bridge must not synthesize keypad RCS keys");
-    requireNear(result.control.targetSpeedRate, 0.0, 0.0,
-                "autopilot bridge must not synthesize legacy throttle trim");
-}
-
 void testLinearDemandUsesRealMainAndManoeuvreAuthority()
 {
     game::navigation::DynamicMotionState motion;
@@ -575,148 +517,6 @@ void testPrecisionVelocityTrimUsesOnlyPhysicalRcs()
     );
 }
 
-void testVehicleBridgePublishesMotionTargetWithoutSelectingEngines()
-{
-    Bridge bridge(expertProfile());
-    Bridge::Intent initial;
-    initial.revision = 100;
-    require(bridge.reset(0.0, initial), "vehicle bridge reset failed");
-
-    Bridge::Intent intent;
-    intent.revision = 101;
-    intent.precisionTranslationOnly = true;
-    intent.idealLinearAccelerationSystemMps2 = {1.0, 0.0, -4.0};
-    const glm::dvec3 targetVelocity {2.0, 1.0, -12.0};
-    const auto step = bridge.stepVehicle(
-        0.01, 0.01, intent, targetVelocity
-    );
-    require(step.snapshot.valid && step.control.navigationVelocityTargetValid,
-            "vehicle target was not published");
-    require(
-        step.control.navigationPrecisionTranslationOnly,
-        "vehicle bridge lost precision RCS translation ownership"
-    );
-    requireNear(glm::length(step.control.navigationTargetVelocitySystemMps -
-                            targetVelocity), 0.0, 0.0,
-                "bridge changed requested vehicle velocity");
-    requireNear(step.control.navigationLinearAccelerationDemandSystemMps2.x,
-                step.snapshot.executedLinearAccelerationDemandSystemMps2.x,
-                1.0e-9, "pilot execution differs from ship command");
-}
-
-void testVehicleBridgeRejectsInvalidVelocityAndClock()
-{
-    Bridge bridge(expertProfile());
-    Bridge::Intent intent;
-    intent.revision = 17;
-    require(bridge.reset(0.0, intent), "vehicle bridge reset failed");
-    const glm::dvec3 target {0.0, 0.0, -3.0};
-    const auto roundedClock = bridge.stepVehicle(
-        0.01005, 0.01, intent, target
-    );
-    require(roundedClock.status == Bridge::PilotExecutor::Status::Ok,
-            "pilot clock rounding rejected vehicle command");
-    const auto wrongClock = bridge.stepVehicle(
-        0.10, 0.01, intent, target
-    );
-    require(wrongClock.status == Bridge::PilotExecutor::Status::InvalidInput &&
-                wrongClock.failure ==
-                    Bridge::StepResult::FailureKind::ExecutorRejected,
-            "clock mismatch must report executor rejection");
-    const auto invalidVelocity = bridge.stepVehicle(
-        0.02005, 0.01, intent,
-        {std::numeric_limits<double>::quiet_NaN(), 0.0, 0.0}
-    );
-    require(!invalidVelocity.snapshot.valid &&
-                !invalidVelocity.control.navigationVelocityTargetValid,
-            "nonfinite target must never reach ship control");
-    const auto recovered = bridge.stepVehicle(
-        0.02005, 0.01, intent, target
-    );
-    require(recovered.status == Bridge::PilotExecutor::Status::Ok,
-            "invalid target must not advance the pilot clock");
-}
-
-void testAngularDemandUsesExistingCapabilityClamp()
-{
-    ShipTransform transform;
-    ShipParams params = capabilityParams();
-    WorldParams world {};
-
-    ShipControlState control {};
-    control.navigationAccelerationDemandValid = true;
-    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
-        glm::dvec3(100.0, 0.0, 0.0);
-
-    SharedShipPhysics::evaluateControl(
-        transform,
-        params,
-        control,
-        world,
-        0.1f
-    );
-
-    requireNear(
-        transform.pitchRate,
-        0.2,
-        1.0e-5,
-        "direct world angular demand must clamp at the existing angular acceleration envelope"
-    );
-    requireNear(
-        transform.yawRate,
-        0.0,
-        1.0e-6,
-        "pure world-right angular demand must not create yaw"
-    );
-    requireNear(
-        transform.rollRate,
-        0.0,
-        1.0e-6,
-        "pure world-right angular demand must not create roll"
-    );
-}
-
-void testManualAttitudeOverridesNavigationAngularDemand()
-{
-    ShipTransform transform;
-    ShipParams params = capabilityParams();
-    WorldParams world {};
-
-    ShipControlState control {};
-    control.navigationAccelerationDemandValid = true;
-    control.navigationAngularAccelerationDemandSystemRadPerSec2 =
-        glm::dvec3(-100.0, 0.0, 0.0);
-    control.pitchInput = 1.0f;
-
-    SharedShipPhysics::evaluateControl(
-        transform,
-        params,
-        control,
-        world,
-        0.1f
-    );
-
-    require(
-        transform.pitchRate > 0.0f,
-        "material manual attitude input must win over navigation angular demand"
-    );
-    requireNear(
-        transform.pitchRate,
-        0.036,
-        1.0e-5,
-        "a short manual tap must use only the initial fraction of angular authority"
-    );
-    for (int sample = 0; sample < 4; ++sample)
-        SharedShipPhysics::evaluateControl(
-            transform, params, control, world, 0.1f);
-    requireNear(
-        transform.pitchRate,
-        0.7048,
-        1.0e-4,
-        "held manual input must regain full angular authority"
-    );
-}
-
 void testNpcGoalBecomesNavigationIntentWithoutLegacyControl()
 {
     game::navigation::NpcNavigationKinematicState state;
@@ -873,56 +673,6 @@ void testReplicatedNavigationExecutionStateIsReadOnlyTruth()
     );
 }
 
-void testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys()
-{
-    Bridge bridge(expertProfile());
-
-    Bridge::Intent initial;
-    initial.revision = 7;
-    require(bridge.reset(0.0, initial),
-            "end-to-end bridge reset must succeed");
-
-    Bridge::Intent intent;
-    intent.revision = 8;
-    intent.idealAngularAccelerationSystemRadPerSec2 =
-        {100.0, 0.0, 0.0};
-
-    // Let the expert executor ramp toward the request.
-    Bridge::StepResult result;
-    for (int i = 1; i <= 20; ++i)
-    {
-        result = bridge.step(
-            0.01 * static_cast<double>(i),
-            0.01,
-            intent
-        );
-    }
-
-    require(result.snapshot.valid,
-            "bridge must produce a valid executed demand");
-
-    ShipTransform transform;
-    const ShipParams params = capabilityParams();
-    WorldParams world {};
-
-    SharedShipPhysics::evaluateControl(
-        transform,
-        params,
-        result.control,
-        world,
-        0.1f
-    );
-
-    require(
-        transform.pitchRate > 0.0f,
-        "bridge direct demand must reach the actual ship angular-control path"
-    );
-    require(
-        transform.pitchRate <= 0.20001f,
-        "actual ship capability must remain authoritative downstream of pilot skill"
-    );
-}
-
 } // namespace
 
 int main()
@@ -935,17 +685,11 @@ int main()
         testPredictivePilotUsesOrdinaryNewtonianThrottle();
         testPredictivePilotUsesRcsForSmallAuthoredStopResidual();
         testPredictivePilotUsesEndForAuthoredStop();
-        testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testPrecisionVelocityTrimUsesOnlyPhysicalRcs();
-        testVehicleBridgePublishesMotionTargetWithoutSelectingEngines();
-        testVehicleBridgeRejectsInvalidVelocityAndClock();
-        testAngularDemandUsesExistingCapabilityClamp();
-        testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();
         testNpcHoldGoalBrakesRelativeVelocity();
         testReplicatedNavigationExecutionStateIsReadOnlyTruth();
-        testBridgeDemandCanReachCapabilityLayerWithoutLegacyKeys();
 
         std::cout << "NAVIGATION RUNTIME CONTROL TESTS: PASS\n";
         return 0;

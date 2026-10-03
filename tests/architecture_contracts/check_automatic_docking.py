@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-
 
 def read(rel: str) -> str:
     path = ROOT / rel
@@ -11,323 +9,162 @@ def read(rel: str) -> str:
         raise AssertionError(f"missing {rel}")
     return path.read_text(encoding="utf-8", errors="replace")
 
-
 def require(rel: str, *tokens: str) -> str:
     body = read(rel)
-    compact_body = "".join(body.split())
+    compact = "".join(body.split())
     for token in tokens:
-        if token not in body and "".join(token.split()) not in compact_body:
-            raise AssertionError(f"{rel}: missing automatic-docking token {token!r}")
+        if token not in body and "".join(token.split()) not in compact:
+            raise AssertionError(f"{rel}: missing token {token!r}")
     return body
 
+def forbid(rel: str, *tokens: str) -> str:
+    body = read(rel)
+    for token in tokens:
+        if token in body:
+            raise AssertionError(f"{rel}: forbidden server-navigation token {token!r}")
+    return body
 
 try:
-    command = require(
-        "src/game/network/ClientShipCommand.h",
-        "BeginAutomaticDocking",
-        "CancelAutomaticDocking",
-        "dockingTargetSystemId",
-        "dockingTargetModuleId",
-        "dockingTargetAnchorId",
-    )
-
-    wire = require(
-        "src/game/network/WireProtocol.h",
-        "WireProtocolVersion = 12u",
-        "value.dockingTargetSystemId",
-        "value.dockingTargetModuleId",
-        "value.dockingTargetAnchorId",
-        "ClientShipCommand::CancelAutomaticDocking",
-    )
-
     renderer = require(
         "src/game/system_map/SystemMapRenderer.cpp",
         'automatic.key = "start_docking"',
-        "automatic.enabled = compatibility.routeAvailable",
         "DockingRouteRequest::Mode::Automatic",
         "dockingRouteRequests().request(",
         "NavigationModuleId::LocalGuidance",
         "NavigationModuleId::HudGuidanceCorridor",
     )
     if "automatic.enabled = false" in renderer:
-        raise AssertionError("Start Docking returned to a permanently disabled presentation action")
-    if 'if (actionKey == "start_docking")\n        return' in renderer:
-        raise AssertionError("Start Docking dispatch is still a fail-closed no-op")
+        raise AssertionError("Start Docking is permanently disabled")
 
-    space = require(
-        "src/game/SpaceState.cpp",
+    # Navigation task intent never crosses the network boundary.
+    forbid(
+        "src/game/network/ClientShipCommand.h",
+        "BeginDockingGuidancePreparation",
+        "CompleteDockingGuidancePreparation",
+        "CancelDockingGuidancePreparation",
         "BeginAutomaticDocking",
         "CancelAutomaticDocking",
-        "m_automaticDockingAuthoritySeen",
-        "serverAutopilotActive()",
-        "setExternalControlPredictionSuppressed(true)",
-        "setExternalControlPredictionSuppressed(false)",
-        "phase=requested",
-        "phase=server-handoff",
-        "route_retained=",
-        "DockingRouteRequest::Mode::Guidance",
-        "hasVisibleRouteForAutomaticTarget",
-        "localRoutePreparationPending",
-        "automatic_route_source=server",
-        "source=accepted-program",
-        "guidanceControlLaw",
-        "request.roundTurns = guidanceAssisted",
-        "request.gateSpacingMeters = 500.0",
-        "request.terminalGateSpacingMeters = 250.0",
+        "dockingTargetSystemId",
+        "dockingTargetModuleId",
+        "dockingTargetAnchorId",
+        "requestSerial",
     )
-
-    if "automaticNeedsPreparedRoute" in space or "phase=route-preflight" in space:
-        raise AssertionError(
-            "Automatic docking regressed to client-side route preflight before server planning"
-        )
-
-    trajectory_header = require(
-        "src/world/navigation/TrajectoryGenerator.h",
-        "hasInitialOrientation",
-        "hasInitialAngularVelocity",
-        "hasTerminalAngularVelocity",
-        "terminalAngularVelocityRadPerSecond",
-        "pathGeometryAlreadyAuthored",
+    forbid(
+        "src/game/network/WireProtocol.h",
+        "dockingTargetSystemId",
+        "dockingTargetModuleId",
+        "dockingTargetAnchorId",
+        "CancelAutomaticDocking",
     )
-    trajectory_impl = require(
-        "src/world/navigation/TrajectoryGenerator.cpp",
-        "request.hasTerminalAngularVelocity",
-        "terminalTimeOffsetSeconds - sampleTimeOffsetSeconds",
-        "-omega * remainingSeconds",
-        "compileBoundedAngularKinematics(",
-        "trajectory.angularKinematicsAuthored = true",
-        "maxAngularAccelerationRadPerSecond2",
-        "remainingBefore",
-        "remainingAfter",
-        "maxTerminalDelta",
-        "AngularTimeScales",
-        "angular-speed-relaxed",
-        "after translation-speed relaxation",
-        "buildAuthoredExecutionGuide(",
-        "guide.points = request.pathPointsMeters",
-        "path-progress acceleration exceeds vehicle envelope",
+    forbid(
+        "src/game/simulation/ClientSessionSnapshot.h",
+        "AutomaticDockingRoutePoint",
+        "automaticDockingRoute",
+        "dockingResultSerial",
+        "controlledEntityAutopilotActive",
     )
-    require(
-        "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
-        "angular planner deferred terminal omega correction to the final sample",
-        "penultimate.angularVelocityRadPerSecond",
-        "maxAlpha * terminalDt",
-        "testTranslationSlowsWhenAngularTerminalNeedsMoreTime",
-        "planner did not slow translation for the angular boundary",
-    )
-    require(
-        "src/world/navigation/Trajectory.h",
-        "angularKinematicsAuthored",
-    )
-    server_terminal_angular = require(
-        "src/game/server/GameServer.cpp",
-        "hasTerminalAngularVelocity = true",
-        "terminalAngularVelocityRadPerSecond",
-        "terminalAngularVelocityMapRadPerSec",
-        "TrajectoryGenerator::generate(",
-    )
-    if "trajectoryRequest" not in server_terminal_angular:
-        raise AssertionError(
-            "Automatic docking terminal angular state is no longer authored on the trajectory request"
-        )
 
     server = require(
         "src/game/server/GameServer.cpp",
-        "beginAutomaticDocking(",
-        "applyAutomaticDockingControls(",
-        "automaticDockingPreparationControl(",
-        "coastToExecution",
-        "AutomaticPlanningAuthorityFraction = 0.90",
-        "canCaptureHoldWhileBraking(",
-        "standoff-braking-envelope",
-        "planAutomaticDocking(",
-        "finishAutomaticDocking(",
-        "takeAutopilotControl",
-        "VelocityAlignmentMode::BrakeToStop",
-        "TrajectoryGenerator::generate(",
-        "AcceptedManeuverProgramBuilder::build(",
-        "MaximumValidationRefinementAttempts = 6",
-        "ValidationDisposition::NeedsRefinement",
-        "feedback.recommendedScale",
-        "validation=needs-refinement",
-        "trajectoryRequest.pointSpeedConstraints",
-        "planner-refinement-budget-exhausted",
-        "phase=refinement-replan",
-        "action=keep-autopilot-and-replan",
-        "build.referenceMode =",
-        "ReferenceMode::SpatialCorridor",
-        "ReferenceMode::TimeScheduled",
-        "Follower::selectPage(",
-        "runtime.currentSpatialSegment",
-        "Follower::follow(",
-        "reference_mode=",
-        "ref_segment=",
-        "ref_distance_m=",
-        "spatial_speed_scale=",
-        "speed_target_mps=",
-        "NavigationFrameBoundary boundary",
-        "toSystemControlIntent(",
-        "followed.targetVelocityMapMps",
-        "PredictivePilot::Request",
-        "PredictivePilot::make(",
-        "pilot_inputs=1",
-        "ship->setControlState(automaticControl)",
-        "terminalAngularVelocityMapRadPerSec",
-        "minimumPreCaptureDepthMeters",
-        "segmentClearOfNavigationObstacles(",
-        "pre_capture_depth_m=",
-        "DockingAutomaticRuntime::Phase::Aligning",
-        "phase=aligned-replan",
-        "game::navigation::planner::RoutePlanner::plan(",
-        "game::navigation::autopilot::RouteFollower",
-        "phase=replan",
-        "phase=plan-failed",
-        "action=restore-human",
-        "lastPlanFailureReason",
-        "phase=planning-async",
-        "std::thread(",
-        "DockingAutomaticRuntime::Phase::Planning",
-        "executionStartUniverseTimeSeconds",
-        "planning-result-missed-execution-epoch",
-        "trajectoryRequest.hasInitialOrientation =",
-        "trajectoryRequest.hasInitialAngularVelocity =",
-        "routeInitialForward =",
-        "executionGates.front().forward",
-        "trajectoryRequest.pathGeometryAlreadyAuthored =",
-        "const auto& executionGates =",
-        "advisoryPlan.executionGates",
-        "dockingAdvisoryTrace(advisoryPlan)",
-        "requested_terminal_radius_m=",
-        "arc_rotation_deg=",
-        "arc_candidates=",
-        "arc_accepted=",
-        "initialAngularVelocityRadPerSecond =\n                            glm::dvec3(0.0)",
-        "phase=aligned-replan",
-        "planningControlLaw",
-        "request.roundTurns =\n                            assisted && !nearHoldRecovery",
-        "request.deriveTerminalTurnRadiusFromVehicle =",
-        "request.maxAngularVelocityRadPerSecond =",
-        "request.maxAngularAccelerationRadPerSecond2 =",
-        "request.initialSpeedMps =",
-        "build.controlLaw = assisted",
-        "followed.targetVelocityMapMps",
-        "request.hasInitialForward = !nearHoldRecovery",
-        "request.initialForward = currentForwardMap",
-        "request.initialForwardLeadMeters",
-        "definitionCopy.captureDepthMeters",
-        "final-capture-corridor-blocked",
-        "captureCenterMeters",
-        "entranceCenterMeters",
-        "capture-envelope-complete",
-        "request.gateSpacingMeters = 150.0",
-        "NavigationHitVolumeAdapter::buildObstacles",
-        "source.hitComponent = object.hitComponent",
-        "reason=autopilot-authority-denied",
-        "DockingAutomaticRuntime::Stage::ApproachHold",
-        "DockingAutomaticRuntime::Stage::FinalIngress",
-        "finalIngressStage",
-        "This is the agreed stop before the short docking leg.",
-        "build.hasTerminalAngularVelocity =",
-        "stage=approach-hold",
-        "phase=hold-complete",
-        "next=final-ingress",
-        "canCaptureHoldWhileBraking(",
-        "enterFinalIngress(\"standoff-braking-envelope\")",
-        "recoverableDynamicExcursion(",
-        "phase=correcting-envelope",
-        "request.roundTurns =\n                            assisted && !nearHoldRecovery",
+        "submitCommand(controlledEntityId, payload)",
+        "FixedStepControlQueue",
+        "ship.setControlState(cmd)",
+        "Server sees only ordinary ship controls",
     )
-
-
-    builder = require(
-        "src/game/navigation/AcceptedManeuverProgramBuilder.h",
-        "enum class ValidationDisposition",
-        "NeedsRefinement",
-        "enum class RefinementKind",
-        "ReduceSpeed",
-        "IncreaseTurnRadius",
-        "BrakeEarlier",
-        "ReduceAngularRate",
-        "requiredValue",
-        "availableValue",
-        "recommendedScale",
-    )
-    require(
-        "src/game/navigation/planner/RoutePlannerApi.h",
-        "RoutePlanDisposition",
-        "WaitForWindow",
-        "PhysicallyImpossible",
-        "InvalidWorldData",
-        "RoutePlanFailureCode",
-        "HullDoesNotFit",
-        "GoalGeometricallyIsolated",
-        "UnavoidableCollision",
-        "PropulsionInsufficient",
-        "userMessage",
-        "routePlanFailureMessage",
-    )
-    require(
-        "src/game/navigation/planner/RoutePlanner.cpp",
-        "HullDoesNotFit",
-        "GoalGeometricallyIsolated",
-        "UnavoidableCollision",
-        "PropulsionInsufficient",
-        "DynamicWindowUnavailable",
-        "search another sector, radius, lead length or approach geometry",
-        "wait for a valid movement window and replan",
-    )
-    require(
-        "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",
-        "testAssistedRequestsRefinementForMotionEnvelope",
-        "ValidationDisposition::NeedsRefinement",
-        "RefinementKind::IncreaseTurnRadius",
-        "recommendedScale < 1.0",
-    )
-
-    if (
-        'reason.rfind(\n                        "planner-refinement-budget-exhausted"' not in server or
-        "action=keep-autopilot-and-replan" not in server
+    for token in (
+        "DockingAutomaticRuntime",
+        "beginAutomaticDocking",
+        "planAutomaticDocking",
+        "applyAutomaticDockingControls",
+        "beginDockingGuidancePreparation",
+        "applyDockingGuidancePreparationControls",
+        "RoutePlanner",
+        "TrajectoryGenerator",
+        "AcceptedManeuverProgram",
+        "RouteFollower",
+        "PredictivePilot",
+        "DockingAdvisoryPlanner",
+        "automaticDockingRoute",
+        "DockResult",
+        "DockAuto",
+        "DockPrep",
     ):
-        raise AssertionError(
-            "refinement budget exhaustion may again restore Human control instead of replanning"
-        )
-
-    if "ShipControlAdapter" in server:
-        raise AssertionError(
-            "Automatic docking mixed legacy ShipControlAdapter into PredictivePilot V2"
-        )
-
-    for forbidden in (
-        "automaticControl.navigationAccelerationDemandValid = true",
-        "automaticControl.navigationVelocityTargetValid = true",
-        "alignmentControl.navigationAccelerationDemandValid = true",
-        "alignmentControl.navigationVelocityTargetValid = true",
-        "applyNavigationAssistedFlightModel(",
-        "applySystemAccelerationDemand(",
-    ):
-        if forbidden in server:
+        if token in server:
             raise AssertionError(
-                "Production automatic docking bypassed ordinary ship controls: "
-                + forbidden
+                "GameServer regained client-navigation ownership: " + token
             )
 
-    v2_follower = require(
+    forbid(
+        "src/game/server/GameServer.h",
+        "DockingAutomaticRuntime",
+        "RouteFollower",
+        "PredictivePilot",
+        "AcceptedManeuverProgram",
+        "HubSemanticAnchorCatalog",
+        "DockingPortRuntimeStateCatalog",
+    )
+
+    # Manual route and Automatic share one client planner. Only the input owner
+    # differs after RouteReady.
+    space = require(
+        "src/game/SpaceState.cpp",
+        "ClientDockingPhase::Stabilizing",
+        "ClientDockingPhase::Planning",
+        "ClientDockingPhase::RouteReady",
+        "ClientDockingPhase::Executing",
+        "ClientAutopilot::stabilize(",
+        "ClientNavigationPlanningSnapshotFactory",
+        "RoutePlanner::plan(request)",
+        "request.gateSpacingMeters = 500.0",
+        "request.terminalGateSpacingMeters = 250.0",
+        "request.deriveTerminalTurnRadiusFromVehicle = true",
+        "ClientAutopilot::start(",
+        "ClientAutopilot::update(",
+        "m_client->submitInput(m_clientAutopilotControl)",
+        "execution=client-input",
+        "route_source=client",
+        "control_path=ShipControlState",
+        "phase=manual",
+        "phase=executing",
+    )
+    for forbidden_token in (
+        "BeginAutomaticDocking",
+        "BeginDockingGuidancePreparation",
+        "serverAutopilotActive",
+        "automatic_route_source=server",
+        "source=accepted-program",
+        "controlledEntityAutopilotActive",
+    ):
+        if forbidden_token in space:
+            raise AssertionError(
+                "SpaceState still depends on server docking orchestration: "
+                + forbidden_token
+            )
+
+    client_auto = require(
+        "src/game/navigation/autopilot/ClientRouteAutopilot.h",
+        "class ClientRouteAutopilot final",
+        "RouteFollower::follow(",
+        "RouteFollower::sampleReference(",
+        "PredictivePilot::make(",
+        "ReferenceMode::SpatialCorridor",
+        "ShipControlState",
+        "VelocityAlignmentMode::BrakeToStop",
+    )
+
+    follower = require(
         "src/game/navigation/autopilot/RouteFollower.cpp",
         "the accepted centerline is the ONLY path",
         "centerlinePoint",
         "inward * correctionSpeed",
-        "reference.velocityMapMetersPerSecond",
     )
-    if "TrajectoryFollower" in v2_follower:
-        raise AssertionError(
-            "Autopilot V2 follower fell back to legacy TrajectoryFollower"
-        )
-    if "lookAhead" in v2_follower or "steeringRay" in v2_follower:
-        raise AssertionError(
-            "Autopilot V2 follower regained a private look-ahead route"
-        )
+    for token in ("TrajectoryFollower", "lookAhead", "steeringRay"):
+        if token in follower:
+            raise AssertionError(
+                "RouteFollower V2 regained a private route mechanism: " + token
+            )
 
-    adapter = require(
+    pilot = require(
         "src/game/navigation/autopilot/PredictivePilot.h",
         "pitchInput",
         "yawInput",
@@ -342,408 +179,53 @@ try:
         "navigationPrecisionTranslationOnly = false",
     )
 
-    runtime_control_tests = require(
-        "tests/navigation_runtime/NavigationRuntimeControlTests.cpp",
-        "testPredictivePilotUsesOnlyOrdinaryAssistedControls",
-        "testPredictivePilotBrakesAngularMotionBeforeOvershoot",
-        "testPredictivePilotLearnsMeasuredPitchAuthority",
-        "testPredictivePilotUsesRcsForSmallAuthoredStopResidual",
-        "testPredictivePilotUsesEndForAuthoredStop",
-    )
-
-    if "ShipControlState automaticDockingPreparationControl()" not in server:
-        raise AssertionError(
-            "Automatic docking lost the explicit stop-and-settle preparation control"
-        )
-    if "const bool requireLinearStop = true;" not in server:
-        raise AssertionError(
-            "Automatic docking may plan from residual translation instead of a stable start"
-        )
-    if "const bool coastToExecution = false;" not in server:
-        raise AssertionError(
-            "Automatic docking restored moving-origin projection after stop-and-settle"
-        )
-    if '<< " mode=coast"' in server:
-        raise AssertionError(
-            "Automatic docking startup regressed to coast instead of stop-and-settle"
-        )
-
-    if "dock-auto-20261003-predictive-pilot-v2" not in server:
-        raise AssertionError(
-            "Automatic docking predictive-pilot implementation revision marker is missing"
-        )
-
-    if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:
-        raise AssertionError(
-            "Automatic docking regressed to appending pre-capture onto the long approach stage"
-        )
-
-    if "phase=plan-retry" in server:
-        raise AssertionError(
-            "Automatic docking restored the synchronous fixed-step plan-retry loop"
-        )
-
-    if server.index('enterFinalIngress("standoff-braking-envelope")') > server.index(
-        'phase=recovery reason=follower-rejected'
-    ):
-        raise AssertionError(
-            "Automatic docking must capture a safe approach hold before "
-            "rejecting the final program on residual dynamic error"
-        )
-
-    if "pre-capture-envelope-complete" in server:
-        raise AssertionError(
-            "Automatic docking still treats exterior pre-capture as successful docking"
-        )
-
-    if "terminalAllowedObstacleId" in server:
-        raise AssertionError(
-            "Automatic docking reintroduced planner-only permission to enter solid target geometry"
-        )
-    if "terminalObstacleEntrySourceProgressMeters" in server:
-        raise AssertionError(
-            "Automatic docking reintroduced target-obstacle collision bypass"
-        )
-
-    if "advisoryPlan.executionGates.empty()" in server:
-        raise AssertionError(
-            "Automatic docking regained sparse-gate fallback instead of requiring Planner-owned dense geometry"
-        )
-
-    if "preferredTerminalTurnRadiusMeters =\n                                6000.0" in server:
-        raise AssertionError(
-            "Automatic Assisted docking regressed to a fixed 6 km terminal radius"
-        )
-
-    if "makeNavigationObstacleForObject" in server:
-        raise AssertionError(
-            "Automatic docking regressed to descriptor-wide Station obstacle geometry"
-        )
-
-    if "const double linearReserve = std::min(\n        0.5" in server:
-        raise AssertionError(
-            "Automatic docking tracking reserve regressed to the old 0.5 m/s^2 cap"
-        )
-
-    compact_server = "".join(server.split())
-    target_clearance_contract = (
-        "source.id==targetObjectId?"
-        "std::max(0.0,definitionCopy.requiredClearanceMeters):"
-        "game::navigation::DiagnosticHubInfrastructureClearanceMeters"
-    )
-    if target_clearance_contract not in compact_server:
-        raise AssertionError(
-            "Automatic docking target aperture lost its semantic dock clearance "
-            "and may be sealed by generic Hub infrastructure inflation"
-        )
-
-    if (
-        "build.referenceMode=finalIngressStage?"
-        "AcceptedManeuverProgram::ReferenceMode::TimeScheduled:"
-        "AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;"
-        not in compact_server
-    ):
-        raise AssertionError(
-            "Automatic docking lost Stage-1 spatial / FinalIngress timed reference split"
-        )
-
     require(
-        "src/game/simulation/ClientSessionSnapshot.h",
-        "AutomaticDockingRoutePoint",
-        "automaticDockingRouteValid",
-        "automaticDockingRouteRevision",
-        "automaticDockingRouteToleranceMeters",
-        "automaticDockingRoute",
+        "tests/navigation_runtime/ClientRouteAutopilotTests.cpp",
+        "testClientAutopilotEmitsOrdinaryControls",
+        "testClientStabilizerUsesOrdinaryControls",
+        "ReferenceMode::SpatialCorridor",
+        "navigationAccelerationDemandValid",
+        "navigationVelocityTargetValid",
     )
     require(
-        "src/game/SpaceState.cpp",
-        "source=accepted-program",
-        "m_presentedAutomaticDockingRouteRevision",
-        "automaticDockingRouteRevision",
-        "dense.advisoryOnly = false",
-        "sparse.spatialAdvisoryGates = true",
-    )
-    if "navigation/DockingAdvisoryPlanner.h" in server:
-        raise AssertionError(
-            "GameServer reached through the RoutePlanner public boundary"
-        )
-    if "navigation/TrajectoryFollower.h" in server:
-        raise AssertionError(
-            "GameServer reached through the RouteFollower public boundary"
-        )
-    if "navigation/ManeuverProgramSampler.h" in server:
-        raise AssertionError(
-            "GameServer leaked Autopilot sampler internals"
-        )
-    if "navigation/ManeuverProgramTimeline.h" in server:
-        raise AssertionError(
-            "GameServer leaked Autopilot timeline internals"
-        )
-    if "ManeuverProgramSampler::" in server or "ManeuverProgramTimeline::" in server:
-        raise AssertionError(
-            "GameServer bypasses RouteFollower API for execution sampling"
-        )
-
-    if "runtime.controlBridge" in server or "PilotSkillExecutor" in server:
-        raise AssertionError(
-            "Automatic docking still routes Follower output through pilot-skill filtering"
-        )
-
-    require(
-        "src/game/navigation/HubSemanticAnchor.h",
-        "captureDepthMeters",
-        "Positive distance from the entrance plane INTO the dock",
-    )
-    require(
-        "src/game/navigation/HubSemanticAnchorCatalog.cpp",
-        'item.value("capture_depth_m", 0.0)',
-    )
-    require(
-        "src/world/modules/ObjectRuntimeHitBuilder.cpp",
-        "appendAuthoredLogicalHitVolumes",
-        "descriptor.logicalCollisionBoxes()",
+        "tests/navigation_runtime/CMakeLists.txt",
+        "client_route_autopilot_tests",
+        "NAME client_route_autopilot",
     )
 
+    # Planner remains responsible for understandable failure taxonomy.
     require(
-        "src/game/navigation/DockingAutomaticRecoveryPolicy.h",
-        "linearFeedbackReserveMps2(",
-        "holdCaptureDistanceMeters(",
-        "canCaptureHoldWhileBraking(",
-        "recoverableDynamicExcursion(",
-        "0.20",
-        "1.25 * velocityLimitMps",
-        "2.0 * angularVelocityLimitRadPerSec",
+        "src/game/navigation/planner/RoutePlannerApi.h",
+        "RoutePlanDisposition",
+        "NeedsRefinement",
+        "WaitForWindow",
+        "PhysicallyImpossible",
+        "InvalidWorldData",
+        "HullDoesNotFit",
+        "GoalGeometricallyIsolated",
+        "UnavoidableCollision",
+        "PropulsionInsufficient",
+        "userMessage",
     )
-    require(
-        "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
-        "automatic docking recovery policy lost safe in-place correction semantics",
-        "stop-and-settle incorrectly collapsed the authored terminal turn",
-        "expectedDesignTurnSpeed",
-        "20.0*curved.hullRadiusMeters",
-    )
+
+    # Stop-and-settle must not collapse the authored terminal arc.
     require(
         "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "designTurnSpeedMps",
         "0.50 * r.maxSpeedMps",
         "20.0 * r.hullRadiusMeters",
-        "must not shrink",
+    )
+    require(
+        "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
+        "stop-and-settle incorrectly collapsed the authored terminal turn",
     )
 
-    header = require(
-        "src/game/server/GameServer.h",
-        "struct DockingAutomaticRuntime",
-        "enum class Stage",
-        "ApproachHold",
-        "FinalIngress",
-        "std::vector<game::navigation::AcceptedManeuverProgram> programs",
-        "currentSpatialSegment",
-        "m_dockingAutomaticRuntimes",
-        "struct PlanningJob",
-        "std::shared_ptr<PlanningJob> planningJob",
-        "m_serverHubSemanticAnchorCatalog",
-        "m_serverDockingPortRuntimeStateCatalog",
-    )
-    if "nextPlanAttemptUniverseTimeSeconds" in header:
-        raise AssertionError(
-            "Automatic docking restored retry-timer state that can hammer Planner from fixed-step"
-        )
-
-    require(
-        "src/game/navigation/HubNavigationClearancePolicy.h",
-        "DiagnosticHubInfrastructureClearanceMeters",
-        "AutomaticDockingPreCaptureReserveMeters",
-    )
-    client_snapshot = require(
-        "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
-        "DiagnosticHubInfrastructureClearanceMeters",
-        "NavigationHitVolumeAdapter::buildObstacles",
-        "debugHitVolumes",
-        "ObstacleGeometryUnavailable",
-    )
-    if "constexpr double DiagnosticHubInfrastructureClearanceMeters" in client_snapshot:
-        raise AssertionError(
-            "client reintroduced a private Hub infrastructure clearance truth"
-        )
-
-    builder = require(
-        "src/game/navigation/AcceptedManeuverProgramBuilder.h",
-        "class AcceptedManeuverProgramBuilder final",
-        "const world::navigation::Trajectory* trajectory",
-        "hasInitialAngularVelocity",
-        "hasTerminalAngularVelocity",
-        "trajectoryAngularVelocityAt(",
-        "trajectoryAngularAccelerationAt(",
-        "deriveAngularKinematics(",
-        "angularKinematicsFeasible(",
-        "trajectory.angularKinematicsAuthored",
-        "completionTriggersReplan",
-        "ReferenceMode referenceMode",
-        "page.referenceMode = request.referenceMode",
-        "TranslationMode::AssistedVelocity",
-        "newtonian-motion-envelope-infeasible",
-    )
-
-    require(
-        "src/game/navigation/AcceptedManeuverProgram.h",
-        "enum class ReferenceMode",
-        "TimeScheduled",
-        "SpatialCorridor",
-        "ReferenceMode referenceMode = ReferenceMode::TimeScheduled",
-    )
-    if "spatialSlowdownStartFraction" in builder:
-        raise AssertionError(
-            "spatial corridor regained the retired cross-track speed governor"
-        )
-    if "spatialSlowdownStartFraction" in read(
-        "src/game/navigation/AcceptedManeuverProgram.h"
-    ):
-        raise AssertionError(
-            "accepted program still exposes the retired cross-track slowdown policy"
-        )
-
-    require(
-        "src/game/navigation/ManeuverProgramSampler.h",
-        "sampleSpatial(",
-        "minimumSegmentIndex",
-        "spatialDistanceMeters",
-    )
-    require(
-        "src/game/navigation/ManeuverProgramTimeline.h",
-        "selectSpatialPage(",
-        "positionMapMeters",
-        "Storage is not a maneuver phase",
-    )
-    require(
-        "tests/navigation_runtime/ManeuverProgramSamplerTests.cpp",
-        "testSpatialSamplerFollowsVehicleInsteadOfNominalClock",
-        "testSpatialSamplerDoesNotJumpAcrossHairpin",
-        "testSpatialPageSelectionUsesPhysicalProgressNotTime",
-        "testSpatialProgressCannotAdvanceOutsideCorridor",
-        "testSpatialPageCannotSkipMultiplePathChunksPerStep",
-        "testSpatialSamplerNeverJumpsBehindMonotonicCursor",
-    )
-    require(
-        "tests/navigation_runtime/RouteFollowerApiTests.cpp",
-        "RouteFollower::follow(",
-        "RouteFollower::sampleReference(",
-        "RouteFollowerStatus::InvalidInput",
-        "result.spatialReference",
-    )
-    require(
-        "tests/navigation_runtime/NavigationV2TunnelProvingGroundTests.cpp",
-        "PredictivePilot V2 left the accepted tunnel",
-        "maxContinuousSlipSeconds <= 3.0",
-        "Pilot::make(request, params, pilotState)",
-        "RouteFollower V2 rejected the accepted tunnel",
-    )
-
-    legacy_follower_h = read("src/game/navigation/TrajectoryFollower.h")
-    legacy_follower_cpp = read("src/game/navigation/TrajectoryFollower.cpp")
-    if "AcceptedShortSegment" in legacy_follower_h + legacy_follower_cpp:
-        raise AssertionError(
-            "legacy TrajectoryFollower regained the retired AcceptedShortSegment API"
-        )
-
-    require(
-        "src/game/system_map/MapObjectOverlayRenderer.cpp",
-        "activeGreen",
-        "0.18f, 1.00f, 0.32f",
-    )
-    require(
-        "src/game/SpaceState.cpp",
-        "cockpit.docking.automatic_mode",
-        "DockingRouteRequest::Mode::Automatic",
-        "AUTOMATIC DOCKING MODE",
-        "request.hasInitialForward = true",
-        "request.initialForwardLeadMeters",
-        "renderBoresight(vp)",
-    )
-    require(
-        "src/game/navigation/DockingAdvisoryPlanner.cpp",
-        "initial forward corridor blocked",
-        "routeSearchStart",
-        "prependInitialForwardLead",
-        "initialForwardProtectedStraightMeters",
-        "maximumLaunchCut",
-        "initialForwardAcceptedLeadMeters",
-        "!r.roundTurns",
-        "terminalTurnSpeedMps",
-        "lateralTerminalRadiusMeters",
-        "angularTerminalRadiusMeters",
-        "angularRampDistanceMeters",
-        "terminalPrimitiveRadius",
-        "terminalIngressSamples=36",
-        "axisOffsetFactors",
-        "candidateApproachLengthMeters",
-        "terminalArcRotationDegrees",
-        "terminalArcAcceptedCandidates",
-        "no collision-free exact-radius terminal arc",
-        "Subdivide EACH authored segment independently",
-    )
-    require(
-        "src/render/cockpit/FlightVectorIndicatorRenderer.cpp",
-        "renderBoresight(",
-        "static_cast<float>(viewport.width) * 0.5f",
-        "static_cast<float>(viewport.height) * 0.5f",
-    )
-    require(
-        "src/assets/localization/ui/cockpit/flight.json",
-        "cockpit.docking.automatic_mode",
-        "AUTOMATIC DOCKING MODE",
-        "АВТОМАТИЧЕСКИЙ РЕЖИМ СТЫКОВКИ",
-        "自动对接模式",
-        "MODO DE ATRAQUE AUTOMÁTICO",
-        "自動ドッキングモード",
-    )
-
-    require(
-        "tests/navigation_ruckig/CMakeLists.txt",
-        "trajectory_generator_angular_tests",
-        "trajectory_generator_angular",
-        "src/world/navigation/TrajectoryGenerator.cpp",
-    )
-    require(
-        "tests/navigation_ruckig/TrajectoryGeneratorAngularTests.cpp",
-        "angularKinematicsAuthored",
-        "maxAngularAccelerationRadPerSecond2",
-        "terminalAngularVelocityRadPerSecond",
-    )
-
-    cmake = require(
-        "CMakeLists.txt",
-        "src/game/navigation/DockingPortRuntimeStateCatalog.cpp",
-    )
-    runtime_cmake = require(
-        "tests/navigation_runtime/CMakeLists.txt",
-        "accepted_maneuver_program_builder_tests",
-        "accepted_maneuver_program_builder",
-    )
-    builder_test = require(
-        "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",
-        "testTerminalAngularVelocityIsAcceptedAndPreserved",
-        "testStoragePageBoundaryPreservesAngularState",
-        "testAssistedUsesGameFlightLawInsteadOfRcsAllocation",
-        "testNewtonianTransitDoesNotSpendPrecisionRcs",
-        "testImpossibleTerminalSpinIsRejected",
-    )
-
-    print("[PASS] automatic docking ownership/execution contract")
-    print(" - Automatic never runs the client advisory planner as a preflight")
-    print(" - Automatic HUD is published only from the server AcceptedManeuverProgram")
-    print(" - Automatic transit stops at a hold point before a separate final-ingress stage")
-    print(" - server owns Autopilot authority and stabilization")
-    print(" - heavy Automatic planning runs outside the fixed-step thread")
-    print(" - Automatic aligns the real hull to the planned route-entry attitude before execution")
-    print(" - manual docking corridor is nose-first and cockpit HUD has a fixed hull boresight")
-    print(" - active map-card mode is bright green and cockpit mode text is localized")
-    print(" - Automatic HUD is sourced from the same AcceptedManeuverProgram executed by Follower")
-    print(" - Automatic Follower commands bypass human/NPC PilotSkill filtering")
-    print(" - Assisted automatic transit executes the same nose-coupled game flight law as manual control")
-    print(" - Newtonian ordinary transit cannot spend precision RCS as fake lateral route thrust")
-    print(" - trajectory is converted to AcceptedManeuverProgram before Follower")
-    print(" - Follower has one executable input type")
-    print(" - rotating target omega is part of terminal acceptance")
-    print(" - current slice ends outside solid target geometry; latch remains separate")
+    print("[PASS] client-owned automatic docking architecture")
+    print(" - Planner/Follower/PredictivePilot live on the client")
+    print(" - Manual route and Automatic use one client Planner product")
+    print(" - server receives only ordinary ShipControlState execution input")
+    print(" - docking/navigation task intent is absent from the network protocol")
+    print(" - RouteFollower V2 executes the exact authored centerline")
 except AssertionError as exc:
-    print(f"[FAIL] {exc}", file=sys.stderr)
+    print(f"[FAIL] {exc}")
     raise SystemExit(1)

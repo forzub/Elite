@@ -22,6 +22,12 @@ get_filename_component(
     ABSOLUTE
 )
 
+include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
+elite_add_ruckig_navigation(
+    EliteNavigationRuckig
+    "${ELITE_SOURCE_ROOT}"
+)
+
 add_subdirectory(
     "${ELITE_SOURCE_ROOT}/src/world/navigation/control"
     "${CMAKE_BINARY_DIR}/elite_navigation_control"
@@ -80,6 +86,7 @@ target_link_libraries(
         EliteNavigationMap
         EliteNavigationLocal
         EliteNavigationTrajectory
+        EliteNavigationRuckig
 )
 
 add_executable(

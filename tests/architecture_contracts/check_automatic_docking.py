@@ -149,7 +149,6 @@ try:
         "PredictivePilot::make(",
         "ReferenceMode::SpatialCorridor",
         "ShipControlState",
-        "VelocityAlignmentMode::BrakeToStop",
     )
 
     follower = require(

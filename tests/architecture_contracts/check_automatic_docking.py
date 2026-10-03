@@ -552,40 +552,26 @@ try:
         "testSpatialSamplerNeverJumpsBehindMonotonicCursor",
     )
     require(
-        "tests/navigation_runtime/ManeuverTrackingControllerTests.cpp",
-        "testFollowerSpatialCorridorTracksPathInsteadOfClock",
-        "testSpatialCorridorSteersBackWithoutReducingRouteSpeed",
-        "testSpatialZeroSpeedHoldDoesNotInventCourseLoss",
-        "testFollowerSpatialCorridorCanCompleteBeforeNominalTime",
+        "tests/navigation_runtime/RouteFollowerApiTests.cpp",
+        "RouteFollower::follow(",
+        "RouteFollower::sampleReference(",
+        "RouteFollowerStatus::InvalidInput",
+        "result.spatialReference",
+    )
+    require(
+        "tests/navigation_runtime/NavigationV2TunnelProvingGroundTests.cpp",
+        "PredictivePilot V2 left the accepted tunnel",
+        "maxContinuousSlipSeconds <= 3.0",
+        "Pilot::make(request, params, pilotState)",
+        "RouteFollower V2 rejected the accepted tunnel",
     )
 
-    follower_h = read("src/game/navigation/TrajectoryFollower.h")
-    follower_cpp = read("src/game/navigation/TrajectoryFollower.cpp")
-    if "AcceptedShortSegment" in follower_h + follower_cpp:
+    legacy_follower_h = read("src/game/navigation/TrajectoryFollower.h")
+    legacy_follower_cpp = read("src/game/navigation/TrajectoryFollower.cpp")
+    if "AcceptedShortSegment" in legacy_follower_h + legacy_follower_cpp:
         raise AssertionError(
-            "TrajectoryFollower regained the retired AcceptedShortSegment execution API"
+            "legacy TrajectoryFollower regained the retired AcceptedShortSegment API"
         )
-
-    lab_adapter = require(
-        "src/game/diagnostics/NavigationRuntimeLabAcceptedProgramAdapter.h",
-        "NavigationRuntimeLabAcceptedProgramAdapter",
-        "AcceptedShortSegment",
-        "AcceptedManeuverProgram",
-    )
-    simulation = require(
-        "src/game/simulation/GameSimulation.cpp",
-        "NavigationRuntimeLabAcceptedProgramAdapter::adapt",
-        "followAcceptedSegment",
-        "control.navigationVelocityTargetValid",
-        "applyNavigationAssistedFlightModel(",
-    )
-    dynamic = require(
-        "src/game/navigation/DynamicMotionSystem.cpp",
-        "applyNavigationAssistedFlightModel(",
-        "requestAssistedTargetSpeed(",
-        "applyLocalFrameInput(",
-        "motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0)",
-    )
 
     require(
         "src/game/system_map/MapObjectOverlayRenderer.cpp",

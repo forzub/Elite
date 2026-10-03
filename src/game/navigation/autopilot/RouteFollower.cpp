@@ -254,6 +254,41 @@ RouteFollowerResult RouteFollower::follow(
     }
 
     auto reference = sampled.reference;
+
+    // Restore the proven SpatialCorridor launch contract from
+    // 2608765f48.  A zero-speed first sample is the physical initial
+    // condition, not a permanent hold command.  Spatial progress cannot move
+    // until the ship moves, so at the exact origin use the accepted next
+    // control point's speed along the current segment.  Once position advances,
+    // ordinary spatial interpolation takes over again.
+    if (spatialCorridor &&
+        sampled.lowerSampleIndex < sampled.upperSampleIndex &&
+        sampled.upperSampleIndex < program.sampleCount)
+    {
+        const auto& lower =
+            program.samples[sampled.lowerSampleIndex];
+        const auto& upper =
+            program.samples[sampled.upperSampleIndex];
+        const glm::dvec3 segment =
+            upper.positionMapMeters - lower.positionMapMeters;
+        const double segmentLength = glm::length(segment);
+        const double referenceSpeed =
+            glm::length(reference.velocityMapMetersPerSecond);
+        const double upperSpeed =
+            glm::length(upper.velocityMapMetersPerSecond);
+
+        if (std::isfinite(segmentLength) &&
+            std::isfinite(referenceSpeed) &&
+            std::isfinite(upperSpeed) &&
+            segmentLength > 1.0e-12 &&
+            referenceSpeed <= 1.0e-12 &&
+            upperSpeed > 1.0e-12)
+        {
+            reference.velocityMapMetersPerSecond =
+                (segment / segmentLength) * upperSpeed;
+        }
+    }
+
     glm::dvec3 targetVelocity =
         reference.velocityMapMetersPerSecond;
 

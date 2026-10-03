@@ -151,7 +151,7 @@ try:
         "feedback.recommendedScale",
         "validation=needs-refinement",
         "trajectoryRequest.pointSpeedConstraints",
-        "planner-physically-impossible-after-refinement",
+        "planner-refinement-budget-exhausted",
         "build.referenceMode =",
         "ReferenceMode::SpatialCorridor",
         "ReferenceMode::TimeScheduled",

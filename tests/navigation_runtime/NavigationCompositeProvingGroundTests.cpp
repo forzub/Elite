@@ -2539,6 +2539,8 @@ CompositeMetrics runComposite(Law law)
                 << " min_dynamic_clearance_m="
                 << phase.minDynamicClearanceMeters
                 << " max_slip_deg=" << phase.maxSlipDeg
+                << " max_continuous_assisted_slip_s="
+                << phase.maxContinuousAssistedSlipSeconds
                 << " max_forward_error_deg="
                 << phase.maxForwardErrorDeg
                 << " tracking_exceeded_ticks="
@@ -2761,6 +2763,8 @@ CompositeMetrics runComposite(Law law)
                 << continuation.minimumPlannedDynamicClearanceMeters
                 << " min_actual_dynamic_clearance_m="
                 << continuationPhase.minDynamicClearanceMeters
+                << " max_continuous_assisted_slip_s="
+                << continuationPhase.maxContinuousAssistedSlipSeconds
                 << " tracking_exceeded_ticks="
                 << continuationPhase.trackingExceededTicks
                 << "\n";
@@ -3078,6 +3082,8 @@ CompositeMetrics runComposite(Law law)
             << phase.maxEnvelopeCourseErrorDeg
             << " max_ang_vel_err_radps="
             << phase.maxAngularVelocityErrorRadPerSec
+            << " max_continuous_assisted_slip_s="
+            << phase.maxContinuousAssistedSlipSeconds
             << " final_pos_error_m="
             << phase.finalPositionErrorMeters
             << " final_vel_error_mps="
@@ -3220,6 +3226,8 @@ CompositeMetrics runComposite(Law law)
             << capturePlannedDynamicClearance
             << " actual_dynamic_clearance_m="
             << phase.minDynamicClearanceMeters
+            << " max_continuous_assisted_slip_s="
+            << phase.maxContinuousAssistedSlipSeconds
             << " final_pos_error_m="
             << phase.finalPositionErrorMeters
             << " final_vel_error_mps="

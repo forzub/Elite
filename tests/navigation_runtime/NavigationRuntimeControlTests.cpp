@@ -581,6 +581,58 @@ void testAssistedProgramFeedForwardOnlyAssistsNoseAlignment()
     );
 }
 
+void testAssistedLateralVelocityTargetDoesNotCreateSlip()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = {0.0, 0.0, -20.0};
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "nose-coupled-target";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.strafeAccel = 12.0f;
+    params.strafeDamping = 2.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 20.0f;
+    params.reverseMainEngineAccelerationMps2 = 20.0f;
+
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion,
+            frame,
+            params,
+            0.02f,
+            glm::dvec3(5.0, 0.0, -20.0),
+            glm::dvec3(0.0),
+            forward,
+            right,
+            up
+        );
+
+    requireNear(
+        motion.assistedStabilizationAccelerationMps2.x,
+        0.0,
+        1.0e-12,
+        "lateral target velocity created sideways Assisted equilibrium"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "nose-coupled target unexpectedly spent precision RCS"
+    );
+}
+
 void testAssistedVehicleCorrectsMeasuredLateralMotion()
 {
     game::navigation::DynamicMotionState motion;
@@ -917,6 +969,7 @@ int main()
         testAssistedAutopilotUsesCanonicalFlightLaw();
         testAssistedProgramTracksPhysicallyFeasibleAcceleration();
         testAssistedProgramFeedForwardOnlyAssistsNoseAlignment();
+        testAssistedLateralVelocityTargetDoesNotCreateSlip();
         testAssistedVehicleCorrectsMeasuredLateralMotion();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();

@@ -35,6 +35,7 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
+#include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
@@ -436,6 +437,7 @@ private:
         glm::dvec3 lastObservedVelocityMapMps {0.0};
         std::uint64_t lastObservedVelocityTick = 0;
         game::navigation::autopilot::RouteFollowerPolicy trackingPolicy {};
+        game::navigation::autopilot::PredictivePilot::State pilotState {};
         std::uint64_t nextProgramRevision = 1;
     };
 

@@ -1,3 +1,18 @@
+## 2026-10-03 — Assisted scalar speed decoupled from steering vector direction
+
+Latest Windows evidence: navigation_runtime_control and maneuver_tracking_controller pass. The low-speed bypass START fix no longer produces tracking failure; the planner safely holds through several AdjustedClear iterations until the moving hazard clears. The remaining composite failure is now portal_102 Assisted: the portal program begins tangent to the hull, but execution stalls with final position error ~47.36 m, final velocity error ~6 m/s, max course error ~124.8 deg and 500 tracking ticks.
+
+Root cause in production DynamicMotionSystem::applyNavigationAssistedFlightModel: scalar Assisted speed was computed as max(0, dot(targetVelocity, currentHullForward)). Spatial Follower uses targetVelocity direction as a look-ahead steering direction. On a sharp bend, once that target points more than 90 deg away from the current nose, the projection becomes <=0 and the flight law commands zero forward speed. The ship then stops exactly when it needs to keep moving and rotate, causing spatial-progress deadlock.
+
+Current main now defines Assisted command semantics explicitly:
+- scalar speed request = |targetVelocitySystemMps|;
+- travel direction = actual current hull nose;
+- Follower/attitude loop owns steering direction;
+- lateral target velocity remains non-authoritative for propulsion, preserving the prior nose-coupling fix;
+- a new navigation_runtime_control regression uses a target vector 120 deg away from the current nose and requires targetForwardSpeedMps to remain 6 m/s, positive main-engine thrust, and zero precision RCS.
+
+Windows verification pending.
+
 ## 2026-10-03 — low-speed dynamic bypass now uses explicit moving START
 
 Latest Windows evidence after the Assisted nose-coupling production fix: navigation_runtime_control and maneuver_tracking_controller pass; Assisted replacement and first continuation now keep max continuous >8 deg slip at 0.0 s. The remaining composite failure moved to dynamic_bypass_3 after a full braking stop: an 8 s continuation accumulated 105 tracking-envelope ticks despite zero excessive slip.

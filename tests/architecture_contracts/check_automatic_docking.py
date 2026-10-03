@@ -162,7 +162,9 @@ try:
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "followed.targetVelocityMapMps",
-        "automaticControl.navigationVelocityTargetValid = true",
+        "ShipControlAdapter::Request",
+        "ShipControlAdapter::make(",
+        "pilot_inputs=1",
         "ship->setControlState(automaticControl)",
         "terminalAngularVelocityMapRadPerSec",
         "minimumPreCaptureDepthMeters",
@@ -231,6 +233,43 @@ try:
     )
 
 
+    for forbidden in (
+        "automaticControl.navigationAccelerationDemandValid = true",
+        "automaticControl.navigationVelocityTargetValid = true",
+        "alignmentControl.navigationAccelerationDemandValid = true",
+        "alignmentControl.navigationVelocityTargetValid = true",
+        "applyNavigationAssistedFlightModel(",
+        "applySystemAccelerationDemand(",
+    ):
+        if forbidden in server:
+            raise AssertionError(
+                "Production automatic docking bypassed ordinary ship controls: "
+                + forbidden
+            )
+
+    adapter = require(
+        "src/game/navigation/autopilot/ShipControlAdapter.h",
+        "pitchInput",
+        "yawInput",
+        "rollInput",
+        "targetSpeedRate",
+        "forwardInput",
+        "strafeInput",
+        "liftInput",
+        "VelocityAlignmentMode::BrakeToStop",
+        "navigationAccelerationDemandValid = false",
+        "navigationVelocityTargetValid = false",
+        "navigationPrecisionTranslationOnly = false",
+    )
+
+    runtime_control_tests = require(
+        "tests/navigation_runtime/NavigationRuntimeControlTests.cpp",
+        "testAutopilotAdapterUsesOnlyOrdinaryAssistedControls",
+        "testAutopilotAdapterUsesOrdinaryNewtonianThrottle",
+        "testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual",
+        "testAutopilotAdapterUsesEndForNewtonianAuthoredStop",
+    )
+
     if "ShipControlState automaticDockingPreparationControl()" not in server:
         raise AssertionError(
             "Automatic docking lost the explicit stop-and-settle preparation control"
@@ -248,9 +287,9 @@ try:
             "Automatic docking startup regressed to coast instead of stop-and-settle"
         )
 
-    if "dock-auto-20260928-stop-speed-aware-turn-semantic-clearance" not in server:
+    if "dock-auto-20261003-pilot-input-controls" not in server:
         raise AssertionError(
-            "Automatic docking implementation revision marker is missing"
+            "Automatic docking pilot-input implementation revision marker is missing"
         )
 
     if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:

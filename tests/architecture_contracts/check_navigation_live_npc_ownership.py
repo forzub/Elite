@@ -100,6 +100,9 @@ for marker in (
     "NpcNavigationKinematicState navigationState",
     "NpcNavigationIntentController::buildIntent",
     "bridgeIt->second->step",
+    "ShipControlAdapter::Request",
+    "ShipControlAdapter::make(",
+    "pilotRequest.stopRequested",
     "ship.setControlState(latest.control)",
     "m_npcNavigationExecutionSnapshots[id] = latest.snapshot",
     "kMaximumStepSeconds",
@@ -109,6 +112,12 @@ for marker in (
 require(
     "m_npcAiSystem.computeControl" not in SIM_CPP,
     "GameSimulation still calls retired NPC direct steering",
+)
+
+require(
+    "if (isNavigationRuntimeLabShip(id))" in SIM_CPP and
+    "ShipControlAdapter::make(" in SIM_CPP,
+    "production NPC control must pass through the ordinary pilot-input adapter",
 )
 
 for forbidden in (
@@ -170,6 +179,8 @@ print("NAVIGATION LIVE NPC OWNERSHIP CONTRACT: PASS")
 print(" - NpcAiSystem publishes goal/policy only and no longer emits steering controls")
 print(" - Navigation v2 converts NPC goals plus a lightweight kinematic snapshot into nominal acceleration intent")
 print(" - GameSimulation owns persistent per-NPC pilot/runtime bridge state")
+print(" - production NPCs convert executed intent into ordinary ShipControlState pilot inputs")
+print(" - only the explicit navigation runtime lab may retain the legacy direct-demand seam")
 print(" - activation-decimated elapsed time is advanced in bounded exact-time pieces")
 print(" - no failure path falls back to the retired direct steering authority")
 print(" - the exact executed demand/revision is retained for future replication/guidance")

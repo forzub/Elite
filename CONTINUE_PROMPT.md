@@ -1,3 +1,18 @@
+## Continue from 2026-10-03 fully client-owned player navigation
+
+Player docking/navigation no longer belongs to GameServer.
+
+Canonical production chain:
+SystemMap/UI local intent -> SpaceState client state machine -> RoutePlanner -> ClientRouteAutopilot -> RouteFollower V2 -> PredictivePilot V2 -> ordinary ShipControlState -> GameClient::submitInput -> server fixed-step physics -> authoritative snapshot feedback.
+
+SHOW ROUTE is entirely client-owned. Its temporary stabilization is a virtual pilot using ordinary controls; the server only observes/applies those controls. Automatic uses the same client planner product and the same ordinary control stream. Human input is not submitted while the client virtual pilot owns the local control stream.
+
+GameServer must remain navigation-blind for the player: no docking task commands, no manual preparation ownership, no automatic docking runtime, no player Planner/Follower/PredictivePilot, no replicated docking route/result/authority state. Server-side NPC AI remains a separate concern.
+
+Use check_automatic_docking.py, check_navigation_live_runtime_control.py and check_docking_module_boundaries.py as the architecture lock. Then run client_route_autopilot plus the current V2 runtime/tunnel tests and verify_docking.sh. Live traces should be [DockClient]/[DockClientTrack] only.
+
+The older server-owned validator/refinement notes below are historical. Recoverable route refinement still belongs conceptually to Planner, but any production implementation must now live on the client, never reintroduce server navigation ownership.
+
 ## Continue from 2026-10-03 validator-driven replanning
 
 A recoverable AcceptedManeuverProgram validation failure is now feedback, not a terminal docking failure. AcceptedManeuverProgramBuilder returns ValidationDisposition + RefinementKind + page/sample + required/available + recommendedScale. GameServer retries TrajectoryGenerator up to a bounded number of refinement attempts, scaling speed constraints instead of restoring human control immediately. Logs expose [DockAutoPlan] validation=needs-refinement with the quantitative correction.

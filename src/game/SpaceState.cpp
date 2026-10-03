@@ -1729,7 +1729,7 @@ void SpaceState::updateDockingAdvisory()
         pending.serial != m_lastDockingRequestTraceSerial)
     {
         m_lastDockingRequestTraceSerial = pending.serial;
-        std::cout
+        std::cerr
             << "[DockClientFlow] observed-request"
             << " serial=" << pending.serial
             << " mode="
@@ -1783,7 +1783,7 @@ void SpaceState::updateDockingAdvisory()
         if (m_clientDockingPhase != ClientDockingPhase::Idle ||
             m_clientAutopilotControlActive)
         {
-            std::cout
+            std::cerr
                 << "[DockClient] phase=idle reason=no-pending-request"
                 << std::endl;
         }
@@ -1988,7 +1988,7 @@ void SpaceState::updateDockingAdvisory()
             {
                 m_clientDockingTraceTick =
                     m_client->lastSimulationMetadata().serverTick;
-                std::cout
+                std::cerr
                     << "[DockClient] request=" << pending.serial
                     << " phase=stabilizing"
                     << " vrel_mps=" << relativeSpeedMps
@@ -2337,7 +2337,7 @@ void SpaceState::updateDockingAdvisory()
 
             m_clientDockingPhase =
                 ClientDockingPhase::Executing;
-            std::cout
+            std::cerr
                 << "[DockClient] request=" << pending.serial
                 << " phase=executing"
                 << " control_path=ShipControlState"
@@ -2349,7 +2349,7 @@ void SpaceState::updateDockingAdvisory()
                 ClientDockingPhase::RouteReady;
             m_clientAutopilotControlActive = false;
             m_clientAutopilotControl = {};
-            std::cout
+            std::cerr
                 << "[DockClient] request=" << pending.serial
                 << " phase=manual"
                 << " human_control=1"
@@ -2399,7 +2399,7 @@ void SpaceState::updateDockingAdvisory()
             m_clientDockingPhase =
                 ClientDockingPhase::RouteReady;
 
-            std::cout
+            std::cerr
                 << "[DockClient] request=" << pending.serial
                 << " phase=complete"
                 << " human_control=1"
@@ -2416,7 +2416,7 @@ void SpaceState::updateDockingAdvisory()
                 m_clientDockingTraceTick =
                     m_client->lastSimulationMetadata().serverTick;
 
-                std::cout
+                std::cerr
                     << "[DockClientTrack] request="
                     << pending.serial
                     << " page=" << output.pageIndex

@@ -146,6 +146,9 @@ try:
     client_auto = require(
         "src/game/navigation/autopilot/ClientRouteAutopilot.h",
         "class ClientRouteAutopilot final",
+        "TrajectoryGenerator::generate(",
+        "AcceptedManeuverProgramBuilder::build(",
+        "pathGeometryAlreadyAuthored = true",
         "RouteFollower::follow(",
         "RouteFollower::sampleReference(",
         "PredictivePilot::make(",
@@ -156,6 +159,8 @@ try:
     follower = require(
         "src/game/navigation/autopilot/RouteFollower.cpp",
         "the accepted centerline is the ONLY path",
+        "2608765f48",
+        "upperSpeed",
         "centerlinePoint",
         "inward * correctionSpeed",
     )

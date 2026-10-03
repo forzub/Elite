@@ -118,6 +118,60 @@ void testClientAutopilotEmitsOrdinaryControls()
     );
 }
 
+void testStoppedSpatialOriginLaunches()
+{
+    auto route = plan();
+    route.gates.front().speedMps = 0.0;
+    route.executionGates.front().speedMps = 0.0;
+
+    Autopilot::State state;
+    const auto vehicle = params();
+
+    require(
+        Autopilot::start(
+            state,
+            route,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            8,
+            25.0
+        ),
+        "client autopilot rejected stopped-start route"
+    );
+
+    Agent agent;
+    agent.positionMapMeters = {0.0, 0.0, 0.0};
+    agent.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    agent.forwardMap = {1.0, 0.0, 0.0};
+    agent.rightMap = {0.0, 0.0, 1.0};
+    agent.upMap = {0.0, 1.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        agent,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "stopped-start route emitted invalid output");
+    require(
+        std::abs(output.control.targetSpeedRate) > 1.0e-6 ||
+        std::abs(output.control.pitchInput) > 1.0e-6 ||
+        std::abs(output.control.yawInput) > 1.0e-6,
+        "stopped spatial origin deadlocked at zero control"
+    );
+    require(
+        glm::length(
+            state.programs.front().
+                samples[0].velocityMapMetersPerSecond
+        ) > 0.0,
+        "stopped route origin was not converted into a moving departure seed"
+    );
+}
+
 void testClientStabilizerUsesOrdinaryControls()
 {
     Autopilot::State routeState;
@@ -157,11 +211,13 @@ int main()
     try
     {
         testClientAutopilotEmitsOrdinaryControls();
+        testStoppedSpatialOriginLaunches();
         testClientStabilizerUsesOrdinaryControls();
         std::cout
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
             << " - RoutePlan is adapted to SpatialCorridor on the client\n"
             << " - execution emits only ordinary ShipControlState inputs\n"
+            << " - stopped spatial origin launches instead of deadlocking\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;
     }

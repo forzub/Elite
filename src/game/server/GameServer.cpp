@@ -1703,6 +1703,8 @@ bool GameServer::planAutomaticDocking(
 
                 world::navigation::TrajectoryGenerationResult
                     trajectoryResult;
+                world::navigation::TrajectoryGenerationRequest
+                    trajectoryRequest;
                 game::navigation::planner::RoutePlan advisoryPlan;
                 double captureUniverseTimeSeconds =
                     executionStartUniverseTimeSeconds;
@@ -1742,9 +1744,8 @@ bool GameServer::planAutomaticDocking(
                             captureUniverseTimeSeconds
                         );
 
-                    world::navigation::
-                        TrajectoryGenerationRequest
-                            trajectoryRequest;
+                    trajectoryRequest =
+                        world::navigation::TrajectoryGenerationRequest {};
                     trajectoryRequest.systemId = systemId;
                     trajectoryRequest.frameId = hubId;
                     trajectoryRequest.startUniverseTimeSeconds =
@@ -2380,53 +2381,155 @@ bool GameServer::planAutomaticDocking(
                     return;
                 }
 
-                AcceptedManeuverProgramBuilder::Request build;
-                build.trajectory =
-                    &trajectoryResult.trajectory;
-                build.shipPhysics = &physics;
-                build.controlLaw = assisted
-                    ? LocalFlightControlLaw::Assisted
-                    : LocalFlightControlLaw::Newtonian;
-                build.referenceMode =
-                    finalIngressStage
-                        ? AcceptedManeuverProgram::
-                              ReferenceMode::TimeScheduled
-                        : AcceptedManeuverProgram::
-                              ReferenceMode::SpatialCorridor;
-                build.objectiveRevision = requestSerial;
-                build.firstProgramRevision =
-                    firstProgramRevision;
-                build.capabilityRevision = requestSerial;
-                build.mapRevision = proofRevision;
-                build.mapSourceRevision = proofRevision;
-                build.spaceRevision = proofRevision;
-                build.spaceSourceRevision = proofRevision;
-                build.minimumClearanceMeters = 0.0;
-                build.hasInitialAngularVelocity = true;
-                build.initialAngularVelocityMapRadPerSec =
-                    glm::dvec3(0.0);
-                build.hasTerminalAngularVelocity =
-                    finalIngressStage;
-                build.terminalAngularVelocityMapRadPerSec =
-                    terminalAngularVelocityMapRadPerSec;
-                build.policy.linearFeedbackReserveMps2 =
-                    linearReserve;
-                build.policy.angularFeedbackReserveRadPerSec2 =
-                    angularReserve;
+                AcceptedManeuverProgramBuilder::Result accepted;
+                constexpr int MaximumValidationRefinementAttempts = 6;
 
-                const auto accepted =
-                    AcceptedManeuverProgramBuilder::build(build);
+                for (int refinementAttempt = 0;
+                     refinementAttempt < MaximumValidationRefinementAttempts;
+                     ++refinementAttempt)
+                {
+                    AcceptedManeuverProgramBuilder::Request build;
+                    build.trajectory =
+                        &trajectoryResult.trajectory;
+                    build.shipPhysics = &physics;
+                    build.controlLaw = assisted
+                        ? LocalFlightControlLaw::Assisted
+                        : LocalFlightControlLaw::Newtonian;
+                    build.referenceMode =
+                        finalIngressStage
+                            ? AcceptedManeuverProgram::
+                                  ReferenceMode::TimeScheduled
+                            : AcceptedManeuverProgram::
+                                  ReferenceMode::SpatialCorridor;
+                    build.objectiveRevision = requestSerial;
+                    build.firstProgramRevision =
+                        firstProgramRevision;
+                    build.capabilityRevision = requestSerial;
+                    build.mapRevision = proofRevision;
+                    build.mapSourceRevision = proofRevision;
+                    build.spaceRevision = proofRevision;
+                    build.spaceSourceRevision = proofRevision;
+                    build.minimumClearanceMeters = 0.0;
+                    build.hasInitialAngularVelocity = true;
+                    build.initialAngularVelocityMapRadPerSec =
+                        glm::dvec3(0.0);
+                    build.hasTerminalAngularVelocity =
+                        finalIngressStage;
+                    build.terminalAngularVelocityMapRadPerSec =
+                        terminalAngularVelocityMapRadPerSec;
+                    build.policy.linearFeedbackReserveMps2 =
+                        linearReserve;
+                    build.policy.angularFeedbackReserveRadPerSec2 =
+                        angularReserve;
+
+                    accepted =
+                        AcceptedManeuverProgramBuilder::build(build);
+                    if (accepted.valid &&
+                        !accepted.pages.empty())
+                    {
+                        break;
+                    }
+
+                    const auto& feedback = accepted.feedback;
+                    if (feedback.disposition !=
+                        AcceptedManeuverProgramBuilder::
+                            ValidationDisposition::NeedsRefinement)
+                    {
+                        std::string reason =
+                            accepted.failureReason.empty()
+                                ? "accepted-program-build-failed"
+                                : "accepted-program-" +
+                                    accepted.failureReason;
+                        if (!feedback.message.empty())
+                        {
+                            reason += " detail=" + feedback.message;
+                        }
+                        if(!finalIngressStage)
+                            reason += dockingAdvisoryTrace(advisoryPlan);
+                        finishFailure(reason);
+                        return;
+                    }
+
+                    if (refinementAttempt + 1 >=
+                        MaximumValidationRefinementAttempts)
+                    {
+                        std::string reason =
+                            "planner-physically-impossible-after-refinement"
+                            " detail=" + feedback.message +
+                            " required=" +
+                                std::to_string(feedback.requiredValue) +
+                            " available=" +
+                                std::to_string(feedback.availableValue);
+                        if(!finalIngressStage)
+                            reason += dockingAdvisoryTrace(advisoryPlan);
+                        finishFailure(reason);
+                        return;
+                    }
+
+                    const double scale = std::clamp(
+                        feedback.recommendedScale,
+                        0.50,
+                        0.98
+                    );
+
+                    std::cout
+                        << "[DockAutoPlan] request=" << requestSerial
+                        << " validation=needs-refinement"
+                        << " attempt=" << (refinementAttempt + 1)
+                        << " page=" << feedback.pageIndex
+                        << " sample=" << feedback.sampleIndex
+                        << " refinement="
+                        << static_cast<int>(feedback.refinement)
+                        << " required=" << feedback.requiredValue
+                        << " available=" << feedback.availableValue
+                        << " speed_scale=" << scale
+                        << " detail=" << feedback.message
+                        << "\n";
+
+                    trajectoryRequest.vehicle.maxSpeedMps =
+                        std::max(
+                            0.5,
+                            trajectoryRequest.vehicle.maxSpeedMps *
+                                scale
+                        );
+
+                    for (auto& constraint :
+                         trajectoryRequest.pointSpeedConstraints)
+                    {
+                        constraint.maxSpeedMps =
+                            std::max(
+                                0.5,
+                                constraint.maxSpeedMps * scale
+                            );
+                    }
+
+                    trajectoryResult =
+                        world::navigation::
+                            TrajectoryGenerator::generate(
+                                trajectoryRequest
+                            );
+
+                    if (!trajectoryResult.ready())
+                    {
+                        std::string reason =
+                            trajectoryResult.trajectory.message.empty()
+                                ? "trajectory-refinement-generation-failed"
+                                : std::string(
+                                      "trajectory-refinement:") +
+                                    trajectoryResult.trajectory.message;
+                        if(!finalIngressStage)
+                            reason += dockingAdvisoryTrace(advisoryPlan);
+                        finishFailure(reason);
+                        return;
+                    }
+                }
+
                 if (!accepted.valid ||
                     accepted.pages.empty())
                 {
-                    std::string reason =
-                        accepted.failureReason.empty()
-                            ? "accepted-program-build-failed"
-                            : "accepted-program-" +
-                                accepted.failureReason;
-                    if(!finalIngressStage)
-                        reason += dockingAdvisoryTrace(advisoryPlan);
-                    finishFailure(reason);
+                    finishFailure(
+                        "planner-physically-impossible-after-refinement"
+                    );
                     return;
                 }
 

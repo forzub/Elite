@@ -1842,10 +1842,26 @@ bool GameServer::planAutomaticDocking(
                         if (!advisoryPlan.valid())
                         {
                             std::string reason =
-                                advisoryPlan.failure.empty()
-                                    ? "advisory-plan-invalid"
-                                    : std::string("advisory:") +
-                                        advisoryPlan.failure;
+                                "planner-outcome=" +
+                                std::to_string(
+                                    static_cast<int>(
+                                        advisoryPlan.disposition
+                                    )
+                                ) +
+                                " code=" +
+                                std::to_string(
+                                    static_cast<int>(
+                                        advisoryPlan.failureCode
+                                    )
+                                );
+
+                            if (!advisoryPlan.userMessage.empty())
+                                reason += " message=" +
+                                    advisoryPlan.userMessage;
+                            if (!advisoryPlan.failure.empty())
+                                reason += " backend=" +
+                                    advisoryPlan.failure;
+
                             reason += dockingAdvisoryTrace(advisoryPlan);
                             finishFailure(reason);
                             return;

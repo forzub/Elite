@@ -380,9 +380,35 @@ private:
                     up
                 );
 
-                sample.velocityMapMetersPerSecond =
-                    normalizedOr(tangent, forward) *
+                double authoredSpeedMps =
                     std::max(0.0, gate.speedMps);
+
+                // SpatialCorridor is position-driven, not time-driven.  A
+                // stopped first checkpoint is an initial condition ("start
+                // here from rest"), not an instruction to remain stopped.
+                // If sample[0] is exactly zero while the next checkpoint is
+                // moving, sampling at the exact route origin otherwise forms
+                // a deadlock: zero target speed -> zero control -> zero spatial
+                // progress -> the same zero-speed sample forever.
+                //
+                // Seed only a zero-speed departure into a moving segment.
+                // Braking into a genuine zero-speed terminal checkpoint is
+                // untouched because its following gate is not moving.
+                if (authoredSpeedMps <= 1.0e-9 &&
+                    gateIndex + 1 < gates.size())
+                {
+                    const double nextSpeedMps =
+                        std::max(0.0, gates[gateIndex + 1].speedMps);
+                    if (nextSpeedMps > 1.0e-6)
+                    {
+                        constexpr double SpatialLaunchSpeedMps = 0.25;
+                        authoredSpeedMps =
+                            std::min(SpatialLaunchSpeedMps, nextSpeedMps);
+                    }
+                }
+
+                sample.velocityMapMetersPerSecond =
+                    normalizedOr(tangent, forward) * authoredSpeedMps;
                 sample.linearAccelerationFeedForwardMapMps2 =
                     glm::dvec3(0.0);
                 sample.forwardMap = forward;

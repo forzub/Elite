@@ -1,3 +1,7 @@
+## Continue from 2026-10-03 Assisted nose-coupling fix
+
+Current main removes the production bug where autopilot lateral target velocity established a second sideways Assisted equilibrium. VREL direction is again coupled to the actual current hull nose; lateral feed-forward can only assist an existing alignment correction and cannot create/oppose slip. New runtime-control regressions enforce this, and composite logs slip duration per phase. Next evidence: runtime_control + tracking_controller + composite Windows rerun; then full suite if green.
+
 ## Continue from 2026-10-02 Assisted lag-duration metric
 
 Current main: Newtonian composite is end-to-end green. Assisted physically completes portal and final capture with zero tracking-envelope violations. The obsolete final rule maxSlipDeg<=8 was replaced by a temporal contract: with speed >0.25 m/s, continuous nose/VREL slip above 8 deg must clear within 3 seconds. Peak angle remains diagnostic only. Next evidence: tracking-controller + composite rerun, then full navigation-runtime suite if green.

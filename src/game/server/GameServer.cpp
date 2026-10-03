@@ -3754,6 +3754,16 @@ void GameServer::applyAutomaticDockingControls(
                       << " rcs_fwd=" << automaticControl.forwardInput
                       << " rcs_strafe=" << automaticControl.strafeInput
                       << " rcs_lift=" << automaticControl.liftInput
+                      << " learned_pitch_alpha="
+                      << runtime.pilotState.effectivePitchAuthorityRadPerSec2
+                      << " learned_yaw_alpha="
+                      << runtime.pilotState.effectiveYawAuthorityRadPerSec2
+                      << " learned_roll_alpha="
+                      << runtime.pilotState.effectiveRollAuthorityRadPerSec2
+                      << " assisted_course_tau_s="
+                      << runtime.pilotState.assistedCourseResponseSeconds
+                      << " assisted_speed_response_mps2="
+                      << runtime.pilotState.assistedSpeedResponseMps2
                       << std::endl;
             runtime.lastTrackingDiagnosticTick =
                 time.serverTick;

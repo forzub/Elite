@@ -1,3 +1,28 @@
+## 2026-10-03 — navigation test suite realigned to PredictivePilot V2
+
+Full navigation-test audit completed after the V2 autopilot split.
+
+Current production/V2 acceptance path is now:
+- AcceptedManeuverProgram;
+- RouteFollower V2;
+- PredictivePilot V2;
+- ordinary ShipControlState;
+- SharedShipPhysics / DynamicMotionSystem::applyLocalFrameInput.
+
+Changes:
+- navigation_runtime_control is V2-only; legacy Bridge/direct-demand and old Assisted-helper cases were deleted from that gate.
+- ManeuverProgramSamplerTests now uses public RouteFollower V2 for follower completion checks.
+- new navigation_v2_tunnel_proving_ground executes RouteFollower V2 + PredictivePilot V2 through ordinary ship controls and checks accepted-tunnel containment, <=3 s Assisted slip, physical progress and learned angular authority.
+- old NavigationCompositeProvingGround and matrix/execution labs are retained only as legacy_navigation_lab comparison/oracle tests.
+- legacy_navigation_lab targets are EXCLUDE_FROM_ALL and skipped by the default navigation-runtime runner.
+- legacy standalone navigation-tool architecture contracts are opt-in via ELITE_RUN_LEGACY_NAVIGATION_LABS=1.
+- verify_docking.sh now gates on the V2 tunnel proving ground rather than legacy maneuver_tracking/composite execution.
+- tests/run_all_mingw64.sh now includes the navigation-runtime PredictivePilot V2 suite.
+- full architecture runner now includes automatic-docking and docking-module V2 contracts.
+- BUILD_TEST_LAYOUT.md updated to the V2 target/test names and binary marker.
+
+Windows compile/runtime verification is pending.
+
 ## 2026-10-03 — PredictivePilot V2 second layer: adaptive dynamics + centerline-locked corridor following
 
 Production automatic docking now uses only PredictivePilot V2. ShipControlAdapter and direct navigation actuator demand are forbidden in the production server path.

@@ -89,10 +89,20 @@ STOP and START must never be inferred from floating-point equality.
 
 ## Production automatic docking invariant
 
-`GameServer.cpp` automatic docking must construct control via
-`ShipControlAdapter::make()` and then call `ship->setControlState(...)`.
+`GameServer.cpp` automatic docking must construct control exclusively via
+`PredictivePilot::make()` and then call `ship->setControlState(...)`.
+
+`ShipControlAdapter` is retained only as historical/lab code. Production automatic docking must not include it, call it, or fall back to it.
 
 It must not write direct navigation actuator demand fields or call direct
 navigation propulsion functions.
 
 The architecture test `check_automatic_docking.py` enforces this boundary.
+
+## V2 isolation invariant
+
+Automatic docking has exactly one pilot-control owner: `PredictivePilot`.
+No tick may combine, blend, sequence, or fall back between PredictivePilot and
+ShipControlAdapter/direct navigation actuator demands. If V2 cannot produce a
+valid ordinary control sample, automatic docking must fail/recover explicitly;
+it must never silently hand the same maneuver to the legacy controller.

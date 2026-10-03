@@ -1,3 +1,7 @@
+## 2026-10-03 — verify nose-coupled Assisted production fix
+
+Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Do not loosen the 3-second guard. If composite still fails the lag-duration contract, use the new per-phase max_continuous_assisted_slip_s fields to identify the exact phase, then fix the controller/authoring that phase uses. If all three pass, run the full navigation-runtime suite.
+
 ## 2026-10-02 — verify Assisted 3-second velocity-alignment lag contract
 
 Rebuild/run maneuver_tracking_controller and navigation_composite_proving_ground. If composite passes, run the full navigation-runtime suite. If it fails with the new message 'velocity-to-nose lag persisted beyond 3 seconds', inspect max_continuous_assisted_slip_s; that is now a genuine Assisted-response problem rather than a route-loss or geometry problem.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${ROOT_DIR}/tests/helpers/build_layout.sh"
@@ -7,234 +7,26 @@ elite_require_build_toolchain
 
 BUILD_DIR="${ELITE_TEST_BUILD_ROOT}/navigation_runtime"
 
-now_ms() {
-    date +%s%3N
-}
+echo "[NAV-RUNTIME] configure current navigation-runtime suite"
+cmake     -S "${ROOT_DIR}/tests/navigation_runtime"     -B "${BUILD_DIR}"     -G Ninja     -DCMAKE_BUILD_TYPE=Release
 
-elapsed_ms() {
-    local start_ms="$1"
-    local end_ms="$2"
-    echo $((end_ms - start_ms))
-}
+echo "[NAV-RUNTIME] build current production/V2 tests"
+# Legacy comparison labs are EXCLUDE_FROM_ALL in CMake and therefore cannot
+# break the production acceptance build merely because a retired API changes.
+cmake --build "${BUILD_DIR}"
 
-TOTAL_START_MS="$(now_ms)"
-CONFIGURE_MS="skipped"
-BUILD_MS="skipped"
-TESTS_MS="skipped"
-SCHEDULER_DIAGNOSTIC_MS="skipped"
-B5_DIAGNOSTIC_MS="skipped"
-EXECUTION_LAB_DIAGNOSTIC_MS="skipped"
-CORRIDOR_MATRIX_DIAGNOSTIC_MS="skipped"
-RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS="skipped"
-CORNER_FAMILY_DIAGNOSTIC_MS="skipped"
-FLY_THROUGH_3D_DIAGNOSTIC_MS="skipped"
-SPEED_DOCTRINE_DIAGNOSTIC_MS="skipped"
-CHAINED_LIMIT_DIAGNOSTIC_MS="skipped"
-COMPOSITE_DIAGNOSTIC_MS="skipped"
-CONFIGURE_RC=0
-BUILD_RC=0
-TESTS_RC=0
-SCHEDULER_DIAGNOSTIC_RC=0
-B5_DIAGNOSTIC_RC=0
-EXECUTION_LAB_DIAGNOSTIC_RC=0
-CORRIDOR_MATRIX_DIAGNOSTIC_RC=0
-RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC=0
-CORNER_FAMILY_DIAGNOSTIC_RC=0
-FLY_THROUGH_3D_DIAGNOSTIC_RC=0
-SPEED_DOCTRINE_DIAGNOSTIC_RC=0
-CHAINED_LIMIT_DIAGNOSTIC_RC=0
-COMPOSITE_DIAGNOSTIC_RC=0
+echo "[NAV-RUNTIME] run current production/V2 tests"
+ctest     --test-dir "${BUILD_DIR}"     -LE legacy_navigation_lab     --output-on-failure
 
-CONFIGURE_START_MS="$(now_ms)"
-cmake \
-    -S "${ROOT_DIR}/tests/navigation_runtime" \
-    -B "${BUILD_DIR}" \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release
-CONFIGURE_RC=$?
-CONFIGURE_END_MS="$(now_ms)"
-CONFIGURE_MS="$(elapsed_ms "${CONFIGURE_START_MS}" "${CONFIGURE_END_MS}")"
+echo "[NAV-RUNTIME] V2 tunnel diagnostic"
+ctest     --test-dir "${BUILD_DIR}"     -R "^navigation_v2_tunnel_proving_ground$"     -V
 
-if [[ "${CONFIGURE_RC}" -eq 0 ]]; then
-    BUILD_START_MS="$(now_ms)"
-    cmake --build "${BUILD_DIR}"
-    BUILD_RC=$?
-    BUILD_END_MS="$(now_ms)"
-    BUILD_MS="$(elapsed_ms "${BUILD_START_MS}" "${BUILD_END_MS}")"
-fi
+if [[ "${ELITE_RUN_LEGACY_NAVIGATION_LABS:-0}" == "1" ]]; then
+    echo "[NAV-RUNTIME] build explicitly requested legacy comparison labs"
+    cmake --build "${BUILD_DIR}"         --target navigation_runtime_planner_tests                  maneuver_phase_gate_tests                  maneuver_tracking_controller_tests                  maneuver_corner_family_matrix_tests                  maneuver_rigid_body_corridor_tests                  maneuver_corridor_matrix_tests                  maneuver_fly_through_3d_tests                  maneuver_speed_doctrine_matrix_tests                  maneuver_chained_limit_matrix_tests                  navigation_composite_proving_ground_tests                  maneuver_program_execution_lab_tests
 
-if [[ "${CONFIGURE_RC}" -eq 0 && "${BUILD_RC}" -eq 0 ]]; then
-    TEST_START_MS="$(now_ms)"
-    ctest --test-dir "${BUILD_DIR}" --output-on-failure
-    TESTS_RC=$?
-
-    if [[ "${TESTS_RC}" -eq 0 ]]; then
-        SCHEDULER_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R navigation_work_scheduler \
-            -V
-        SCHEDULER_DIAGNOSTIC_RC=$?
-        SCHEDULER_DIAGNOSTIC_END_MS="$(now_ms)"
-        SCHEDULER_DIAGNOSTIC_MS="$(elapsed_ms "${SCHEDULER_DIAGNOSTIC_START_MS}" "${SCHEDULER_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${SCHEDULER_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${SCHEDULER_DIAGNOSTIC_RC}"
-        fi
-
-        B5_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R ordinary_physical_maneuver_compiler \
-            -V
-        B5_DIAGNOSTIC_RC=$?
-        B5_DIAGNOSTIC_END_MS="$(now_ms)"
-        B5_DIAGNOSTIC_MS="$(elapsed_ms "${B5_DIAGNOSTIC_START_MS}" "${B5_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${B5_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${B5_DIAGNOSTIC_RC}"
-        fi
-
-        EXECUTION_LAB_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_program_execution_lab \
-            -V
-        EXECUTION_LAB_DIAGNOSTIC_RC=$?
-        EXECUTION_LAB_DIAGNOSTIC_END_MS="$(now_ms)"
-        EXECUTION_LAB_DIAGNOSTIC_MS="$(elapsed_ms "${EXECUTION_LAB_DIAGNOSTIC_START_MS}" "${EXECUTION_LAB_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${EXECUTION_LAB_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${EXECUTION_LAB_DIAGNOSTIC_RC}"
-        fi
-
-        CORRIDOR_MATRIX_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_corridor_matrix \
-            -V
-        CORRIDOR_MATRIX_DIAGNOSTIC_RC=$?
-        CORRIDOR_MATRIX_DIAGNOSTIC_END_MS="$(now_ms)"
-        CORRIDOR_MATRIX_DIAGNOSTIC_MS="$(elapsed_ms "${CORRIDOR_MATRIX_DIAGNOSTIC_START_MS}" "${CORRIDOR_MATRIX_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${CORRIDOR_MATRIX_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${CORRIDOR_MATRIX_DIAGNOSTIC_RC}"
-        fi
-
-        RIGID_BODY_CORRIDOR_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_rigid_body_corridor \
-            -V
-        RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC=$?
-        RIGID_BODY_CORRIDOR_DIAGNOSTIC_END_MS="$(now_ms)"
-        RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS="$(elapsed_ms "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_START_MS}" "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${RIGID_BODY_CORRIDOR_DIAGNOSTIC_RC}"
-        fi
-
-        CORNER_FAMILY_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_corner_family_matrix \
-            -V
-        CORNER_FAMILY_DIAGNOSTIC_RC=$?
-        CORNER_FAMILY_DIAGNOSTIC_END_MS="$(now_ms)"
-        CORNER_FAMILY_DIAGNOSTIC_MS="$(elapsed_ms "${CORNER_FAMILY_DIAGNOSTIC_START_MS}" "${CORNER_FAMILY_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${CORNER_FAMILY_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${CORNER_FAMILY_DIAGNOSTIC_RC}"
-        fi
-
-        FLY_THROUGH_3D_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_fly_through_3d \
-            -V
-        FLY_THROUGH_3D_DIAGNOSTIC_RC=$?
-        FLY_THROUGH_3D_DIAGNOSTIC_END_MS="$(now_ms)"
-        FLY_THROUGH_3D_DIAGNOSTIC_MS="$(elapsed_ms "${FLY_THROUGH_3D_DIAGNOSTIC_START_MS}" "${FLY_THROUGH_3D_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${FLY_THROUGH_3D_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${FLY_THROUGH_3D_DIAGNOSTIC_RC}"
-        fi
-
-        SPEED_DOCTRINE_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_speed_doctrine_matrix \
-            -V
-        SPEED_DOCTRINE_DIAGNOSTIC_RC=$?
-        SPEED_DOCTRINE_DIAGNOSTIC_END_MS="$(now_ms)"
-        SPEED_DOCTRINE_DIAGNOSTIC_MS="$(elapsed_ms "${SPEED_DOCTRINE_DIAGNOSTIC_START_MS}" "${SPEED_DOCTRINE_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${SPEED_DOCTRINE_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${SPEED_DOCTRINE_DIAGNOSTIC_RC}"
-        fi
-
-        CHAINED_LIMIT_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R maneuver_chained_limit_matrix \
-            -V
-        CHAINED_LIMIT_DIAGNOSTIC_RC=$?
-        CHAINED_LIMIT_DIAGNOSTIC_END_MS="$(now_ms)"
-        CHAINED_LIMIT_DIAGNOSTIC_MS="$(elapsed_ms "${CHAINED_LIMIT_DIAGNOSTIC_START_MS}" "${CHAINED_LIMIT_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${CHAINED_LIMIT_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${CHAINED_LIMIT_DIAGNOSTIC_RC}"
-        fi
-
-        COMPOSITE_DIAGNOSTIC_START_MS="$(now_ms)"
-        ctest \
-            --test-dir "${BUILD_DIR}" \
-            -R navigation_composite_proving_ground \
-            -V
-        COMPOSITE_DIAGNOSTIC_RC=$?
-        COMPOSITE_DIAGNOSTIC_END_MS="$(now_ms)"
-        COMPOSITE_DIAGNOSTIC_MS="$(elapsed_ms "${COMPOSITE_DIAGNOSTIC_START_MS}" "${COMPOSITE_DIAGNOSTIC_END_MS}")"
-
-        if [[ "${COMPOSITE_DIAGNOSTIC_RC}" -ne 0 ]]; then
-            TESTS_RC="${COMPOSITE_DIAGNOSTIC_RC}"
-        fi
-    fi
-
-    TEST_END_MS="$(now_ms)"
-    TESTS_MS="$(elapsed_ms "${TEST_START_MS}" "${TEST_END_MS}")"
-fi
-
-TOTAL_END_MS="$(now_ms)"
-TOTAL_MS="$(elapsed_ms "${TOTAL_START_MS}" "${TOTAL_END_MS}")"
-
-echo "[TIMING] navigation_runtime configure_ms=${CONFIGURE_MS}"
-echo "[TIMING] navigation_runtime build_ms=${BUILD_MS}"
-echo "[TIMING] navigation_runtime tests_ms=${TESTS_MS}"
-echo "[TIMING] navigation_runtime scheduler_scale_diagnostic_ms=${SCHEDULER_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime b5_scale_diagnostic_ms=${B5_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime maneuver_execution_lab_ms=${EXECUTION_LAB_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime corridor_matrix_ms=${CORRIDOR_MATRIX_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime rigid_body_corridor_ms=${RIGID_BODY_CORRIDOR_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime corner_family_matrix_ms=${CORNER_FAMILY_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime fly_through_3d_ms=${FLY_THROUGH_3D_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime speed_doctrine_matrix_ms=${SPEED_DOCTRINE_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime chained_limit_matrix_ms=${CHAINED_LIMIT_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime composite_proving_ground_ms=${COMPOSITE_DIAGNOSTIC_MS}"
-echo "[TIMING] navigation_runtime total_ms=${TOTAL_MS}"
-
-if [[ "${CONFIGURE_RC}" -ne 0 ]]; then
-    echo "[RESULT] navigation_runtime FAIL phase=configure rc=${CONFIGURE_RC}"
-    exit "${CONFIGURE_RC}"
-fi
-
-if [[ "${BUILD_RC}" -ne 0 ]]; then
-    echo "[RESULT] navigation_runtime FAIL phase=build rc=${BUILD_RC}"
-    exit "${BUILD_RC}"
-fi
-
-if [[ "${TESTS_RC}" -ne 0 ]]; then
-    echo "[RESULT] navigation_runtime FAIL phase=tests rc=${TESTS_RC}"
-    exit "${TESTS_RC}"
+    echo "[NAV-RUNTIME] run explicitly requested legacy comparison labs"
+    ctest         --test-dir "${BUILD_DIR}"         -L legacy_navigation_lab         --output-on-failure
 fi
 
 echo "[RESULT] navigation_runtime PASS"

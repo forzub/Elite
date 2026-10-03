@@ -247,6 +247,22 @@ try:
                 + forbidden
             )
 
+    v2_follower = require(
+        "src/game/navigation/autopilot/RouteFollower.cpp",
+        "the accepted centerline is the ONLY path",
+        "centerlinePoint",
+        "inward * correctionSpeed",
+        "reference.velocityMapMetersPerSecond",
+    )
+    if "TrajectoryFollower" in v2_follower:
+        raise AssertionError(
+            "Autopilot V2 follower fell back to legacy TrajectoryFollower"
+        )
+    if "lookAhead" in v2_follower or "steeringRay" in v2_follower:
+        raise AssertionError(
+            "Autopilot V2 follower regained a private look-ahead route"
+        )
+
     adapter = require(
         "src/game/navigation/autopilot/PredictivePilot.h",
         "pitchInput",

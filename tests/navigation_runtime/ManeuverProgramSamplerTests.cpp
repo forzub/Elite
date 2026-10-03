@@ -1,7 +1,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
-#include "src/game/navigation/TrajectoryFollower.h"
+#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 
 #include <cmath>
 #include <iostream>
@@ -15,7 +15,10 @@ namespace
 using Program = game::navigation::AcceptedManeuverProgram;
 using Sampler = game::navigation::ManeuverProgramSampler;
 using Timeline = game::navigation::ManeuverProgramTimeline;
-using Follower = game::navigation::TrajectoryFollower;
+using Follower = game::navigation::autopilot::RouteFollower;
+using FollowerAgent = game::navigation::autopilot::RouteFollowerAgentState;
+using FollowerPolicy = game::navigation::autopilot::RouteFollowerPolicy;
+using FollowerStatus = game::navigation::autopilot::RouteFollowerStatus;
 
 void require(bool condition, const std::string& message)
 {
@@ -643,7 +646,7 @@ void testFollowerCompletionUsesPageLocalElapsedTime()
     page.samples[0].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
     page.samples[1].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
 
-    Follower::AgentState agent;
+    FollowerAgent agent;
     agent.positionMapMeters = page.samples[1].positionMapMeters;
     agent.velocityMapMetersPerSecond =
         page.samples[1].velocityMapMetersPerSecond;
@@ -651,7 +654,7 @@ void testFollowerCompletionUsesPageLocalElapsedTime()
     agent.rightMap = page.samples[1].rightMap;
     agent.upMap = page.samples[1].upMap;
 
-    const game::navigation::ManeuverTrackingController::Policy policy;
+    const FollowerPolicy policy;
     const auto beforeLocalEnd = Follower::follow(
         page,
         106.0,
@@ -659,7 +662,7 @@ void testFollowerCompletionUsesPageLocalElapsedTime()
         policy
     );
     require(
-        beforeLocalEnd.status == Follower::Status::Following,
+        beforeLocalEnd.status == FollowerStatus::Following,
         "Follower completed a later storage page using global maneuver age"
     );
 
@@ -670,7 +673,7 @@ void testFollowerCompletionUsesPageLocalElapsedTime()
         policy
     );
     require(
-        atLocalEnd.status == Follower::Status::Complete,
+        atLocalEnd.status == FollowerStatus::Complete,
         "Follower did not complete at the page-local nominal end"
     );
 }

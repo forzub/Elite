@@ -1,3 +1,20 @@
+## 2026-10-03 — verify button-level autopilot boundary before further tuning
+
+Do not tune Follower or DynamicMotionSystem before validating the new ownership boundary.
+
+Required order:
+1. Run the automatic-docking architecture contract / architecture suite and verify GameServer cannot use direct navigation actuator demands.
+2. Build/run navigation_runtime_control to validate ShipControlAdapter:
+   - Assisted uses targetSpeedRate + pitch/yaw/roll only;
+   - Newtonian uses ordinary primary-main throttle and END for stop;
+   - authored STOP at 0.045 m/s uses keypad RCS;
+   - no adapter result enables navigation* direct-demand fields.
+3. Run maneuver_tracking_controller unchanged.
+4. Run navigation_composite_proving_ground, now using the same pilot-input execution path as production.
+5. Only after those results decide whether Planner/Follower references are physically suitable for the manual control law.
+
+Do not weaken corridor, 3-second Assisted alignment, or STOP thresholds merely to get green.
+
 ## 2026-10-03 — verify Assisted scalar-speed/steering decoupling
 
 Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. The new runtime regression must pass first. In composite, portal_102 Assisted should no longer stall when look-ahead steering exceeds 90 deg; final_pos_error_m should collapse from ~47 m and tracking_exceeded_ticks should fall sharply/zero. Keep the 3-second nose/VREL lag guard unchanged.

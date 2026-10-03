@@ -2972,9 +2972,9 @@ void SystemMapRenderer::applyDockingAction(
             true
         );
 
-        // Route presentation is independent from control authority. Guidance
-        // and Automatic must use the same visible advisory corridor; Automatic
-        // remains server-owned for execution but must never hide the route.
+        // Route presentation and execution are both client-owned. Guidance
+        // and Automatic use the same local RoutePlan and visible corridor;
+        // the server receives only ordinary ShipControlState samples.
         m_navigationWorkspace.modules().setEnabled(
             game::navigation::NavigationModuleId::LocalGuidance,
             true
@@ -4527,6 +4527,19 @@ SystemMapRenderer::handleInput(
                         localMy
                     )
             );
+
+        if (leftDown && overlayPointer.consumed)
+        {
+            std::cout
+                << "[DockUi] pointer-consumed"
+                << " action_object=" << overlayPointer.actionObjectId
+                << " action_key=" << overlayPointer.actionKey
+                << " activated_object=" << overlayPointer.activatedObjectId
+                << " closed_object=" << overlayPointer.closedObjectId
+                << " mouse_x=" << localMx
+                << " mouse_y=" << localMy
+                << std::endl;
+        }
 
         if (overlayPointer.consumed)
         {

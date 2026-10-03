@@ -1725,6 +1725,24 @@ void SpaceState::updateDockingAdvisory()
     const auto& pending = requests.pending();
     auto& guidance = workspace.guidance();
 
+    if (pending.valid() &&
+        pending.serial != m_lastDockingRequestTraceSerial)
+    {
+        m_lastDockingRequestTraceSerial = pending.serial;
+        std::cout
+            << "[DockClientFlow] observed-request"
+            << " serial=" << pending.serial
+            << " mode="
+            << (pending.mode == DockingRouteRequest::Mode::Automatic
+                    ? "automatic"
+                    : "guidance")
+            << " last_path_serial=" << m_lastDockingPathRequestSerial
+            << " phase=" << static_cast<int>(m_clientDockingPhase)
+            << " target=" << pending.target.stableObjectId
+            << ":" << pending.target.semanticAnchorId
+            << std::endl;
+    }
+
     const auto eraseVisibleRoute = [&]()
     {
         if (!m_activeDockingGuidanceCorridorId.empty())

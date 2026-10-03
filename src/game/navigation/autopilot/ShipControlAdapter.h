@@ -188,19 +188,31 @@ public:
             }
             else if (!precisionStop)
             {
-                const double forwardAuthority =
+                const double aftPrimaryAuthority =
                     game::ship::forwardMainAccelerationLimitMps2(params);
-                if (forwardAuthority > 1.0e-12)
+                const double foreFallbackAuthority =
+                    game::ship::reverseMainAccelerationLimitMps2(params);
+
+                const bool aftPrimaryAvailable =
+                    aftPrimaryAuthority > 1.0e-12;
+                const double primaryAuthority =
+                    aftPrimaryAvailable
+                        ? aftPrimaryAuthority
+                        : foreFallbackAuthority;
+                const glm::dvec3 primaryThrustDirection =
+                    aftPrimaryAvailable ? forward : -forward;
+
+                if (primaryAuthority > 1.0e-12)
                 {
-                    const double alongNose =
+                    const double alongPrimary =
                         glm::dot(
                             request.desiredLinearAccelerationMapMps2,
-                            forward
+                            primaryThrustDirection
                         );
                     out.targetSpeedRate = static_cast<float>(
                         std::clamp(
-                            std::isfinite(alongNose)
-                                ? alongNose / forwardAuthority
+                            std::isfinite(alongPrimary)
+                                ? alongPrimary / primaryAuthority
                                 : 0.0,
                             0.0,
                             1.0

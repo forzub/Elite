@@ -1,3 +1,11 @@
+## Continue from 2026-10-03 virtual-pilot architecture reset
+
+Production automatic docking is no longer allowed to control engines/accelerations directly. GameServer uses navigation::autopilot::ShipControlAdapter, which outputs only ordinary ShipControlState controls (pitch/yaw/roll, targetSpeedRate, keypad RCS, END/BrakeToStop). The real ship flight law owns propulsion and physical response. Composite execution uses the same path. Direct navigation demand fields remain legacy diagnostic/lab only and are forbidden in automatic docking by check_automatic_docking.py.
+
+DynamicMotionSystem direct Assisted helper was restored to the last known-good pre-regression implementation. New live marker is dock-auto-20261003-pilot-input-controls.
+
+Next: architecture contract + navigation_runtime_control + maneuver_tracking_controller + composite. Do not patch actuator physics in response to composite until the new control boundary is verified.
+
 ## Continue from 2026-10-03 Assisted scalar speed fix
 
 Current main fixes the portal stall: applyNavigationAssistedFlightModel no longer projects Follower target velocity onto the current hull to derive speed. Assisted scalar speed is now the target-vector magnitude; the current hull nose owns travel direction and the attitude loop owns steering. This prevents sharp look-ahead turns from zeroing throttle. New runtime regression covers a 120-degree off-nose target while requiring preserved scalar speed and main thrust. Next evidence: runtime_control + tracking_controller + composite rerun.

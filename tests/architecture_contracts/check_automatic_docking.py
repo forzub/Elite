@@ -152,6 +152,8 @@ try:
         "validation=needs-refinement",
         "trajectoryRequest.pointSpeedConstraints",
         "planner-refinement-budget-exhausted",
+        "phase=refinement-replan",
+        "action=keep-autopilot-and-replan",
         "build.referenceMode =",
         "ReferenceMode::SpatialCorridor",
         "ReferenceMode::TimeScheduled",
@@ -270,6 +272,14 @@ try:
         "RefinementKind::IncreaseTurnRadius",
         "recommendedScale < 1.0",
     )
+
+    if (
+        'reason.rfind(\n                        "planner-refinement-budget-exhausted"' not in server or
+        "action=keep-autopilot-and-replan" not in server
+    ):
+        raise AssertionError(
+            "refinement budget exhaustion may again restore Human control instead of replanning"
+        )
 
     if "ShipControlAdapter" in server:
         raise AssertionError(

@@ -1,3 +1,30 @@
+## 2026-10-03 — future Emergency Damage-Minimization Planner
+
+Add a separate emergency-navigation module after the normal route-refinement loop is mature.
+
+Normal mode and emergency mode must interpret "physically impossible" differently:
+- normal mode may stop/hold/return control when no collision-free route exists within ordinary vehicle limits;
+- emergency mode must continue searching for the least-damaging survivable outcome instead of treating an unavoidable collision as a terminal planner failure.
+
+Emergency module scope:
+- compute whether collision is truly unavoidable under all available thrust/rotation options;
+- choose evasive continuation rather than braking when that reduces impact severity;
+- choose contact point / hull attitude that minimizes expected structural, crew and critical-system damage;
+- allow extreme turn/burn profiles outside ordinary comfort/game-flight doctrine while remaining inside hard physical capability;
+- orient expendable/armored structure toward impact where appropriate;
+- trigger subsystem isolation / shutdown where available;
+- as final escalation, support pilot escape-capsule / ejection decision when modeled by ship systems.
+
+This module is explicitly separate from ordinary RoutePlanner/Autopilot V2. Ordinary validation feedback must first request route refinement. PhysicallyImpossible is a planner outcome only after meaningful route alternatives have been exhausted or the world/vehicle geometry proves impossibility.
+
+Planner critical outcomes must remain structured and user-readable:
+- InvalidWorldData;
+- HullDoesNotFit;
+- GoalGeometricallyIsolated;
+- UnavoidableCollision;
+- PropulsionInsufficient;
+- DynamicWindowUnavailable / WaitForWindow.
+
 ## 2026-09-28 — build/test command ownership is now explicit
 
 Root `BUILD_TEST_LAYOUT.md` is the authoritative developer command map.

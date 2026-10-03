@@ -1,3 +1,35 @@
+## 2026-10-03 — current task: validate fully client-owned player autopilot
+
+The player docking/navigation architecture is now client-owned.
+
+Production control path:
+- SystemMap/UI creates only a local DockingRouteRequest;
+- SpaceState owns Stabilizing -> Planning -> RouteReady -> Executing;
+- RoutePlanner runs on the client from replicated authoritative world/ship state;
+- temporary SHOW ROUTE stabilization uses ClientRouteAutopilot::stabilize -> PredictivePilot -> ordinary ShipControlState;
+- Automatic executes the same RoutePlan through ClientRouteAutopilot -> RouteFollower V2 -> PredictivePilot V2;
+- both Human and ClientAutopilot use GameClient::submitInput(ShipControlState);
+- Human input is suppressed while m_clientAutopilotControlActive is true;
+- GameServer receives only ordinary ShipControlState and applies the normal fixed-step ship physics.
+
+Forbidden production server ownership:
+- docking/navigation task commands on the wire;
+- Begin/Complete/Cancel docking-guidance preparation;
+- Begin/Cancel automatic docking;
+- DockingAutomaticRuntime;
+- server RoutePlanner/TrajectoryGenerator/AcceptedManeuverProgram/RouteFollower/PredictivePilot for the player;
+- replicated automatic route/result/control-authority state.
+
+Current Windows acceptance order:
+1. python tests/architecture_contracts/check_automatic_docking.py
+2. python tests/architecture_contracts/check_navigation_live_runtime_control.py
+3. python tests/architecture_contracts/check_docking_module_boundaries.py
+4. build/run client_route_autopilot, route_planner_api, route_follower_api, navigation_runtime_control and navigation_v2_tunnel_proving_ground
+5. bash verify_docking.sh
+6. build EliteGame and live-test SHOW ROUTE first, then STЫKOVKA.
+
+Live logs should now use [DockClient] / [DockClientTrack]. There must be no [DockAuto], [DockPrep], manual-guidance-request or server docking task traffic.
+
 ## 2026-10-03 — current task: validator-driven replanning
 
 Current change target is the Planner/AcceptedProgram feedback loop.

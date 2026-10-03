@@ -1,3 +1,41 @@
+## 2026-10-03 — production autopilot is a virtual pilot
+
+This section supersedes the older direct-demand production descriptions below.
+
+Production automatic docking and ordinary NPC navigation now execute through
+the same ordinary ship controls as a human pilot:
+
+```text
+Planner / accepted route
+    -> Follower guidance
+    -> optional PilotSkillExecutor timing/filtering
+    -> ShipControlAdapter
+    -> ShipControlState pitch/yaw/roll, +/-, keypad RCS, END
+    -> SharedShipPhysics / ShipController
+    -> DynamicMotionSystem::applyLocalFrameInput
+    -> authoritative ship state
+```
+
+The autopilot does not select engines, inject acceleration into physics, or
+need propulsion lever arms. It only needs the causal response of the standard
+controls.
+
+Assisted uses the ordinary forward-speed setpoint control; the hull nose owns
+travel direction and the normal Assisted law owns acceleration/braking and
+VREL alignment.
+
+Newtonian uses ordinary positive primary-main throttle. STOP uses the same
+END/autobrake action as the player, and small authored STOP residuals use
+ordinary keypad RCS.
+
+The old navigationAccelerationDemand/navigationVelocityTarget fields remain
+temporarily for the explicit navigation runtime lab and older diagnostics only.
+They are not a production automatic-docking or ordinary-NPC control API.
+
+Measured near-zero values are observations, not phase identity. An authored
+STOP is explicit; for example 0.045 m/s during STOP is residual velocity to be
+removed, not a transition back to MOVING.
+
 ## 2026-09-27 — current vehicle-motion contract
 
 The 2026-09-26 actuator-schedule description below is historical and is

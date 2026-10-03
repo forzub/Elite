@@ -34,6 +34,10 @@ enum class RoutePlanFailureCode : std::uint8_t
     BackendFailure
 };
 
+[[nodiscard]] const char* routePlanFailureMessage(
+    RoutePlanFailureCode code
+) noexcept;
+
 struct RoutePlanRequest
 {
     glm::dvec3 startMeters {0.0};

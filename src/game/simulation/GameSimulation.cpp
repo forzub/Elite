@@ -51,6 +51,7 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
+#include "src/game/navigation/autopilot/ShipControlAdapter.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
@@ -983,7 +984,46 @@ bool GameSimulation::updateNpcNavigationControl(
     if (!stepped)
         return false;
 
-    ship.setControlState(latest.control);
+    if (isNavigationRuntimeLabShip(id))
+    {
+        // The runtime lab intentionally preserves the legacy direct-demand
+        // seam as a diagnostic specimen until its dedicated migration. It is
+        // not production NPC/autopilot behavior.
+        ship.setControlState(latest.control);
+    }
+    else
+    {
+        game::navigation::autopilot::ShipControlAdapter::Request
+            pilotRequest;
+        pilotRequest.law = tr.motion.localControlLaw;
+        pilotRequest.desiredVelocityMapMps =
+            goal.mode == NpcNavigationGoalMode::MaintainForwardCruise
+                ? navigationState.forwardSystem *
+                    std::max(0.0, goal.desiredForwardSpeedMps)
+                : glm::dvec3(0.0);
+        pilotRequest.desiredLinearAccelerationMapMps2 =
+            latest.snapshot.executedLinearAccelerationDemandSystemMps2;
+        pilotRequest.desiredAngularAccelerationMapRadPerSec2 =
+            latest.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
+        pilotRequest.actualVelocityMapMps =
+            navigationState.relativeSystemVelocityMps;
+        pilotRequest.forwardMap = navigationState.forwardSystem;
+        pilotRequest.rightMap = navigationState.rightSystem;
+        pilotRequest.upMap = navigationState.upSystem;
+        pilotRequest.currentAssistedTargetSpeedMps =
+            tr.motion.targetForwardSpeedMps;
+        pilotRequest.stopRequested =
+            goal.mode == NpcNavigationGoalMode::Hold;
+        pilotRequest.deltaSeconds = executionDeltaSeconds;
+
+        ship.setControlState(
+            game::navigation::autopilot::ShipControlAdapter::make(
+                pilotRequest,
+                ship.core().effectivePhysics()
+            )
+        );
+    }
+
     m_npcNavigationExecutionSnapshots[id] = latest.snapshot;
 
     if (isNavigationRuntimeLabShip(id) && latest.snapshot.valid)

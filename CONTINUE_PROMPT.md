@@ -1,3 +1,7 @@
+## Continue from 2026-10-03 low-speed bypass START correction
+
+Current main: production Assisted nose-coupling fix is holding (earlier phases show zero prolonged slip). Remaining composite failure was a low-speed TimeScheduled continuation authored from v0=0,a0=0 after a full STOP. fitAuthorityBoundedReplacement now uses explicit moving START v0=0.25 m/s along actual hull forward, with a0=0, and validates that exact curve. Continuation logs expose component envelope maxima. Next evidence: runtime_control + tracking_controller + composite rerun.
+
 ## Continue from 2026-10-03 Assisted nose-coupling fix
 
 Current main removes the production bug where autopilot lateral target velocity established a second sideways Assisted equilibrium. VREL direction is again coupled to the actual current hull nose; lateral feed-forward can only assist an existing alignment correction and cannot create/oppose slip. New runtime-control regressions enforce this, and composite logs slip duration per phase. Next evidence: runtime_control + tracking_controller + composite Windows rerun; then full suite if green.

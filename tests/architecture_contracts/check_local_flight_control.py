@@ -209,28 +209,43 @@ for token in (
     if token not in shared:
         fail(f"shared server/client attitude path lost state transition: {token}")
 
-for token in (
-    "navigationVelocityTargetValid",
-    "navigationTargetVelocitySystemMps",
-):
-    if token not in control_state:
-        fail(f"Assisted autopilot control channel lost: {token}")
+predictive_pilot = read("src/game/navigation/autopilot/PredictivePilot.h")
+server = read("src/game/server/GameServer.cpp")
 
 for token in (
+    "class PredictivePilot final",
+    "targetSpeedRate",
+    "VelocityAlignmentMode::BrakeToStop",
+    "navigationAccelerationDemandValid = false",
+    "navigationVelocityTargetValid = false",
+    "navigationPrecisionTranslationOnly = false",
+):
+    if token not in predictive_pilot:
+        fail(f"PredictivePilot V2 ordinary-control contract lost: {token}")
+
+for token in (
+    "PredictivePilot::Request",
+    "PredictivePilot::make(",
+    "ship->setControlState(automaticControl)",
+):
+    if token not in server:
+        fail(f"production automatic docking V2 path lost: {token}")
+
+for forbidden in (
+    "ShipControlAdapter",
     "applyNavigationAssistedFlightModel(",
+    "applySystemAccelerationDemand(",
+):
+    if forbidden in server:
+        fail(f"production automatic docking regained legacy actuator path: {forbidden}")
+
+for token in (
     "requestAssistedTargetSpeed(",
     "applyLocalFrameInput(",
     "motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0)",
 ):
     if token not in system:
-        fail(f"Assisted autopilot stopped sharing the manual game flight law: {token}")
-
-for token in (
-    "control.navigationVelocityTargetValid",
-    "applyNavigationAssistedFlightModel(",
-):
-    if token not in simulation:
-        fail(f"server Assisted execution path lost: {token}")
+        fail(f"ordinary Assisted manual flight law lost: {token}")
 
 if "motion.localControlLaw = control.requestedLocalControlLaw" in shared:
     fail("SharedShipPhysics bypassed the flight state machine")

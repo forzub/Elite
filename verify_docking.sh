@@ -14,14 +14,14 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" \
     -B "${TEST_BUILD_DIR}" \
     -G Ninja
 
-echo "[DOCK-VERIFY] build docking + exact-geometry + accepted-program + sampler + live-control native gates"
+echo "[DOCK-VERIFY] build docking + exact-geometry + accepted-program + PredictivePilot V2 native gates"
 cmake --build "${TEST_BUILD_DIR}" \
     --target docking_advisory_tests \
              navigation_hit_volume_adapter_tests \
              accepted_maneuver_program_builder_tests \
              maneuver_program_sampler_tests \
              navigation_runtime_control_tests \
-             maneuver_tracking_controller_tests \
+             navigation_v2_tunnel_proving_ground_tests \
              route_planner_api_tests \
              route_follower_api_tests \
              docking_infrastructure_api_tests \
@@ -29,7 +29,7 @@ cmake --build "${TEST_BUILD_DIR}" \
 
 echo "[DOCK-VERIFY] run native docking + execution gates"
 ctest --test-dir "${TEST_BUILD_DIR}" \
-    -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|maneuver_tracking_controller|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
+    -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|navigation_v2_tunnel_proving_ground|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
     --output-on-failure
 
 echo "[DOCK-VERIFY] configure rotating-terminal trajectory gate"

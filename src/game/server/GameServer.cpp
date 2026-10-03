@@ -3180,7 +3180,8 @@ void GameServer::applyAutomaticDockingControls(
             const ShipControlState alignmentControl =
                 game::navigation::autopilot::PredictivePilot::make(
                     alignmentPilot,
-                    ship->core().effectivePhysics()
+                    ship->core().effectivePhysics(),
+                    runtime.pilotState
                 );
             ship->setControlState(alignmentControl);
 
@@ -3667,7 +3668,8 @@ void GameServer::applyAutomaticDockingControls(
         const ShipControlState automaticControl =
             game::navigation::autopilot::PredictivePilot::make(
                 pilotRequest,
-                ship->core().effectivePhysics()
+                ship->core().effectivePhysics(),
+                runtime.pilotState
             );
 
         // One sample per second: correlate the immutable trajectory, follower

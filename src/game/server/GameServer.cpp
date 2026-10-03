@@ -977,15 +977,34 @@ bool GameServer::beginDockingGuidancePreparation(
             m_dockingAutomaticRuntimes.find(controlledEntityId.value);
         automatic != m_dockingAutomaticRuntimes.end())
     {
-        const PlayerId automaticPlayer = automatic->second.playerId;
         const std::uint64_t automaticSerial =
             automatic->second.requestSerial;
+
+        if (requestSerial <= automaticSerial)
+        {
+            std::cerr
+                << "[DockFlow] server-ignore-stale-manual"
+                << " entity=" << controlledEntityId.value
+                << " manual_serial=" << requestSerial
+                << " automatic_serial=" << automaticSerial
+                << " reason=automatic-request-is-newer-or-equal"
+                << std::endl;
+            return false;
+        }
+
+        const PlayerId automaticPlayer = automatic->second.playerId;
+        std::cout
+            << "[DockFlow] server-supersede-automatic-with-manual"
+            << " entity=" << controlledEntityId.value
+            << " old_automatic_serial=" << automaticSerial
+            << " new_manual_serial=" << requestSerial
+            << std::endl;
         (void)finishAutomaticDocking(
             automaticPlayer,
             controlledEntityId,
             automaticSerial,
             false,
-            "manual-guidance-request"
+            "superseded-by-newer-manual-guidance"
         );
     }
 
@@ -1238,6 +1257,31 @@ bool GameServer::beginAutomaticDocking(
         manual != m_dockingGuidancePreparations.end())
     {
         const auto prep = manual->second;
+
+        if (command.requestSerial <= prep.requestSerial)
+        {
+            std::cerr
+                << "[DockFlow] server-ignore-stale-automatic"
+                << " entity=" << controlledEntityId.value
+                << " automatic_serial=" << command.requestSerial
+                << " manual_serial=" << prep.requestSerial
+                << " reason=manual-request-is-newer-or-equal"
+                << std::endl;
+            recordDockingResult(
+                controlledEntityId,
+                command.requestSerial,
+                false,
+                "stale-automatic-request"
+            );
+            return false;
+        }
+
+        std::cout
+            << "[DockFlow] server-supersede-manual-with-automatic"
+            << " entity=" << controlledEntityId.value
+            << " old_manual_serial=" << prep.requestSerial
+            << " new_automatic_serial=" << command.requestSerial
+            << std::endl;
         (void)finishDockingGuidancePreparation(
             prep.playerId,
             prep.entityId,

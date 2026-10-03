@@ -184,7 +184,7 @@ int main()
     world::navigation::NavigationObstacle station;
     station.id="station";
     station.shape=world::navigation::NavigationObstacleShape::Box;
-    station.halfExtentsMeters={1100.0,1200.0,1100.0};
+    station.halfExtentsMeters={1150.0,1200.0,1100.0};
     r.obstacles={station};
     const auto result=DockingAdvisoryPlanner::plan(r);
     if (!result.valid() || result.gates.size()<3 ||
@@ -306,8 +306,8 @@ int main()
         expectedDesignTurnSpeed/
         curved.maxAngularVelocityRadPerSecond;
     const double expectedTerminalRadius=std::max({
-        100.0,
-        20.0*curved.hullRadiusMeters,
+        150.0,
+        30.0*curved.hullRadiusMeters,
         expectedDesignLateralRadius,
         expectedDesignAngularRadius
     });

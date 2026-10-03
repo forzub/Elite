@@ -1,3 +1,7 @@
+## 2026-10-03 — verify Assisted scalar-speed/steering decoupling
+
+Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. The new runtime regression must pass first. In composite, portal_102 Assisted should no longer stall when look-ahead steering exceeds 90 deg; final_pos_error_m should collapse from ~47 m and tracking_exceeded_ticks should fall sharply/zero. Keep the 3-second nose/VREL lag guard unchanged.
+
 ## 2026-10-03 — rerun low-speed bypass START fix
 
 Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Expected: low-speed Assisted continuation after braking should report start_ref_speed_mps=0.25 and start_tangent_to_hull_deg~0. If tracking still exceeds, use max_env_pos_m/max_env_vel_mps/max_env_course_deg from COMPOSITE-CONTINUATION to identify the exact remaining contract mismatch. Keep the 3 s Assisted lag guard unchanged.

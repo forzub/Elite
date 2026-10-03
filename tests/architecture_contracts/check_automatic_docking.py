@@ -163,6 +163,8 @@ try:
         "upperSpeed",
         "centerlinePoint",
         "inward * correctionSpeed",
+        "targetVelocity / targetSpeed",
+        "reference.forwardMap = desiredForward",
     )
     for token in ("TrajectoryFollower", "lookAhead", "steeringRay"):
         if token in follower:

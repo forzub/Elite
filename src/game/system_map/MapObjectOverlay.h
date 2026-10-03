@@ -496,7 +496,10 @@ public:
                     if (panel->collapsed || panelItem == frame.items.end())
                         return nullptr;
 
-                    constexpr double buttonHeight = 22.0;
+                    // Must exactly match MapObjectOverlayRenderer.
+                    // A one-pixel mismatch made the visible bottom edge of the
+                    // lower docking action non-interactive.
+                    constexpr double buttonHeight = 23.0;
                     constexpr double buttonGap = 5.0;
                     double buttonTop =
                         panelHeight(*panel) - 8.0 - buttonHeight;

@@ -5,9 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include <memory>
 #include <string>
-#include <atomic>
 
 
 #include "src/game/simulation/GameSimulation.h"
@@ -35,11 +33,6 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/equipment/radar/TestIdealRadarUnit.h"
 #include "src/game/simulation/ClientNavigationSensorSnapshot.h"
-#include "src/game/navigation/autopilot/PredictivePilot.h"
-#include "src/game/navigation/AcceptedManeuverProgram.h"
-#include "src/game/navigation/autopilot/RouteFollowerApi.h"
-#include "src/game/navigation/HubSemanticAnchorCatalog.h"
-#include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 
 struct ServerQueueDiagnostics
 {
@@ -267,59 +260,6 @@ private:
         SimulationSnapshot& snapshot
     ) const;
 
-    struct DockingAutomaticRuntime;
-
-    bool beginDockingGuidancePreparation(
-        PlayerId playerId,
-        EntityId controlledEntityId,
-        std::uint64_t requestSerial
-    );
-    bool finishDockingGuidancePreparation(
-        PlayerId playerId,
-        EntityId controlledEntityId,
-        std::uint64_t requestSerial,
-        bool routePublished
-    );
-    void applyDockingGuidancePreparationControls();
-
-    bool beginAutomaticDocking(
-        PlayerId playerId,
-        EntityId controlledEntityId,
-        const ClientShipCommand& command
-    );
-    void applyAutomaticDockingControls(
-        const game::server::ServerTimeContext& time
-    );
-    bool planAutomaticDocking(
-        DockingAutomaticRuntime& runtime,
-        Ship& ship,
-        double universeTimeSeconds
-    );
-    bool finishAutomaticDocking(
-        PlayerId playerId,
-        EntityId controlledEntityId,
-        std::uint64_t requestSerial,
-        bool completed,
-        const char* reason
-    );
-
-    void resetSessionControlState(
-        EntityId controlledEntityId,
-        const char* reason
-    );
-    bool controlledEntityAutopilotActiveForSession(
-        game::network::ServerSessionId sessionId
-    ) const noexcept;
-    void copyDockingResultForSession(
-        game::network::ServerSessionId sessionId,
-        game::simulation::ClientSessionSnapshot& outSession
-    ) const;
-    void recordDockingResult(
-        EntityId entityId,
-        std::uint64_t serial,
-        bool succeeded,
-        const char* reason
-    );
     world::celestial::PlayerNavigationState navigationStateForEntity(
         EntityId entityId
     ) const;
@@ -341,121 +281,6 @@ private:
     static constexpr std::size_t MaxCompletedMapResponses = 64;
 
     ServerQueueDiagnostics m_queueDiagnostics;
-
-    struct DockingGuidancePreparation
-    {
-        std::uint64_t requestSerial = 0;
-        PlayerId playerId {};
-        EntityId entityId {};
-        std::string hubId;
-    };
-
-    std::unordered_map<std::uint32_t, DockingGuidancePreparation>
-        m_dockingGuidancePreparations;
-
-    struct DockingAutomaticRuntime
-    {
-        enum class Stage : std::uint8_t
-        {
-            ApproachHold = 0,
-            FinalIngress
-        };
-
-        enum class Phase : std::uint8_t
-        {
-            Stabilizing = 0,
-            Planning,
-            Aligning,
-            Executing
-        };
-
-        std::uint64_t requestSerial = 0;
-        PlayerId playerId {};
-        EntityId entityId {};
-        int systemId = -1;
-        std::string hubId;
-        std::string targetModuleId;
-        std::string targetAnchorId;
-
-        Stage stage = Stage::ApproachHold;
-        Phase phase = Phase::Stabilizing;
-        double settledSinceUniverseTimeSeconds = -1.0;
-        std::string lastPlanFailureReason;
-
-        struct PlanningJob
-        {
-            std::atomic<bool> ready {false};
-            bool success = false;
-            std::string failureReason;
-
-            double executionStartUniverseTimeSeconds = 0.0;
-            double trajectoryDurationSeconds = 0.0;
-            std::size_t gateCount = 0;
-            std::size_t executionPointCount = 0;
-            bool advisoryDetourUsed = false;
-            double initialTurnRadiusMeters = 0.0;
-            double finalAxisMeters = 0.0;
-            double terminalRadiusMeters = 0.0;
-            double requestedTerminalRadiusMeters = 0.0;
-            double terminalArcRotationDegrees = 0.0;
-            int terminalArcCandidatesTested = 0;
-            int terminalArcRouteable = 0;
-            int terminalArcRouteRejected = 0;
-            int terminalArcTransitReady = 0;
-            int terminalArcTransitRejected = 0;
-            int terminalArcCollisionRejected = 0;
-            int terminalArcAcceptedCandidates = 0;
-            std::string terminalArcLastRejection;
-            double maxPlannedAccelerationMps2 = 0.0;
-            double preCaptureDepthMeters = 0.0;
-            double captureDepthMeters = 0.0;
-            double terminalUniverseTimeSeconds = 0.0;
-            double terminalAngularVelocityRadPerSec = 0.0;
-
-            std::vector<game::navigation::AcceptedManeuverProgram> programs;
-        };
-        std::shared_ptr<PlanningJob> planningJob;
-
-        // First accepted-program attitude. If the stabilized hull is outside
-        // the tracking envelope, Autopilot physically aligns to this basis,
-        // then replans from the new real state/time before execution begins.
-        glm::dvec3 alignmentForwardMap {0.0, 0.0, -1.0};
-        glm::dvec3 alignmentRightMap {1.0, 0.0, 0.0};
-        glm::dvec3 alignmentUpMap {0.0, 1.0, 0.0};
-        double alignedSinceUniverseTimeSeconds = -1.0;
-        std::uint64_t lastDiagnosticTick = 0;
-        std::uint64_t lastTrackingDiagnosticTick = 0;
-
-        std::vector<game::navigation::AcceptedManeuverProgram> programs;
-        std::size_t currentProgramPage = 0;
-        std::size_t currentSpatialSegment = 0;
-        // Automatic docking executes Follower output directly through the
-        // ship control law. PilotSkillExecutor is reserved for human/NPC skill
-        // simulation and is intentionally not part of docking-computer control.
-        // Count recovery cycles for one docking request, across replans.
-        std::uint32_t trackingFailureCount = 0;
-        glm::dvec3 lastObservedVelocityMapMps {0.0};
-        std::uint64_t lastObservedVelocityTick = 0;
-        game::navigation::autopilot::RouteFollowerPolicy trackingPolicy {};
-        game::navigation::autopilot::PredictivePilot::State pilotState {};
-        std::uint64_t nextProgramRevision = 1;
-    };
-
-    std::unordered_map<std::uint32_t, DockingAutomaticRuntime>
-        m_dockingAutomaticRuntimes;
-
-    struct DockingResult
-    {
-        std::uint64_t serial = 0;
-        bool succeeded = false;
-        std::string reason;
-    };
-    std::unordered_map<std::uint32_t, DockingResult> m_dockingResults;
-
-    game::navigation::HubSemanticAnchorCatalog
-        m_serverHubSemanticAnchorCatalog;
-    game::navigation::DockingPortRuntimeStateCatalog
-        m_serverDockingPortRuntimeStateCatalog;
 
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;

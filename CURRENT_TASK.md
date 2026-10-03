@@ -1,3 +1,18 @@
+## 2026-10-03 — current task: validator-driven replanning
+
+Current change target is the Planner/AcceptedProgram feedback loop.
+
+Requirements:
+- AcceptedManeuverProgramBuilder must never turn a recoverable speed/acceleration/radius violation directly into restore-human.
+- It returns structured ValidationFeedback with disposition, refinement kind, page/sample, required/available values and a recommended numerical scale.
+- GameServer planning job retries trajectory generation on NeedsRefinement.
+- Braking overflow => BrakeEarlier / lower speed.
+- Lateral acceleration overflow => IncreaseTurnRadius or lower speed.
+- Angular overflow => ReduceAngularRate / lower speed / larger radius.
+- Only non-recoverable InvalidInput or explicitly proven planner-level PhysicallyImpossible may end planning.
+- RoutePlanner owns structured failure taxonomy and human-readable messages.
+- Emergency/unavoidable-collision mitigation is a separate future module, not an excuse to weaken normal planner validation.
+
 ## 2026-10-03 — run the modernized PredictivePilot V2 gate
 
 Do not run legacy_navigation_lab tests as acceptance.

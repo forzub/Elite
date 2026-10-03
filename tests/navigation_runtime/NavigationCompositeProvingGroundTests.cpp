@@ -3,6 +3,7 @@
 #include "src/game/navigation/TrajectoryFollower.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/navigation/autopilot/ShipControlAdapter.h"
 #include "src/game/navigation/ManeuverPhaseGate.h"
 #include "src/game/navigation/NavigationExecutionReplanPolicy.h"
 #include "src/game/navigation/NavigationRuntimePlanner.h"
@@ -416,6 +417,83 @@ game::navigation::NavigationSystemControlIntent toSystemIntent(
     system.emergency = local.emergency;
     system.hazardUrgency01 = local.hazardUrgency01;
     return system;
+}
+
+bool applyPilotInputStep(
+    Vehicle& v,
+    const Bridge::StepResult& bridgeResult,
+    const glm::dvec3& desiredVelocityMapMps,
+    bool stopRequested
+)
+{
+    game::navigation::autopilot::ShipControlAdapter::Request request;
+    request.law = v.transform.motion.localControlLaw;
+    request.desiredVelocityMapMps = desiredVelocityMapMps;
+    request.desiredLinearAccelerationMapMps2 =
+        bridgeResult.snapshot.
+            executedLinearAccelerationDemandSystemMps2;
+    request.desiredAngularAccelerationMapRadPerSec2 =
+        bridgeResult.snapshot.
+            executedAngularAccelerationDemandSystemRadPerSec2;
+    request.actualVelocityMapMps =
+        v.transform.motion.localVelocityMps;
+
+    const Basis basis = actualBasis(v);
+    request.forwardMap = basis.forward;
+    request.rightMap = basis.right;
+    request.upMap = basis.up;
+    request.currentAssistedTargetSpeedMps =
+        v.transform.motion.targetForwardSpeedMps;
+    request.stopRequested = stopRequested;
+    request.deltaSeconds = kDt;
+
+    const ShipControlState control =
+        game::navigation::autopilot::ShipControlAdapter::make(
+            request,
+            v.params
+        );
+
+    if (control.navigationAccelerationDemandValid ||
+        control.navigationVelocityTargetValid ||
+        control.navigationPrecisionTranslationOnly)
+    {
+        return false;
+    }
+
+    SharedShipPhysics::integrate(
+        v.transform,
+        v.params,
+        control,
+        v.world,
+        static_cast<float>(kDt)
+    );
+
+    // Match production GameSimulation: pilot inputs are interpreted by the
+    // ordinary ship flight law. No navigation-specific actuator function is
+    // called here.
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        v.transform.motion,
+        v.frame,
+        v.params,
+        static_cast<float>(kDt),
+        control.targetSpeedRate,
+        control.cruiseActive,
+        control.forwardInput,
+        control.liftInput,
+        control.strafeInput,
+        v.transform.forward(),
+        v.transform.right(),
+        v.transform.up()
+    );
+
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        v.transform.motion,
+        v.transform.worldPosition,
+        v.frame,
+        v.params,
+        kDt
+    );
+    return true;
 }
 
 struct QuinticCurve
@@ -1510,62 +1588,15 @@ ExecutionMetrics executeProgram(
             break;
         }
 
-        SharedShipPhysics::integrate(
-            v.transform,
-            v.params,
-            bridgeResult.control,
-            v.world,
-            static_cast<float>(kDt)
-        );
-
-        if (bridgeResult.control.navigationPrecisionTranslationOnly &&
-            bridgeResult.control.navigationVelocityTargetValid)
+        if (!applyPilotInputStep(
+                v,
+                bridgeResult,
+                follower.targetVelocityMapMps,
+                glm::length(follower.targetVelocityMapMps) <= 1.0e-9))
         {
-            game::navigation::DynamicMotionSystem::
-                applyNavigationPrecisionVelocityTrim(
-                    v.transform.motion,
-                    v.frame,
-                    v.params,
-                    static_cast<float>(kDt),
-                    bridgeResult.control.navigationTargetVelocitySystemMps
-                );
+            m.valid = false;
+            break;
         }
-        else if (v.transform.motion.localControlLaw == Law::Assisted &&
-            bridgeResult.control.navigationVelocityTargetValid)
-        {
-            game::navigation::DynamicMotionSystem::
-                applyNavigationAssistedFlightModel(
-                    v.transform.motion,
-                    v.frame,
-                    v.params,
-                    static_cast<float>(kDt),
-                    bridgeResult.control.navigationTargetVelocitySystemMps,
-                    bridgeResult.control.
-                        navigationLinearAccelerationDemandSystemMps2,
-                    v.transform.forward(),
-                    v.transform.right(),
-                    v.transform.up()
-                );
-        }
-        else
-        {
-            game::navigation::DynamicMotionSystem::
-                applySystemAccelerationDemand(
-                    v.transform.motion,
-                    v.params,
-                    bridgeResult.control.
-                        navigationLinearAccelerationDemandSystemMps2,
-                    v.transform.forward()
-                );
-        }
-
-        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-            v.transform.motion,
-            v.transform.worldPosition,
-            v.frame,
-            v.params,
-            kDt
-        );
 
         v.transform.syncLegacyPositionFromWorld();
         v.timeSeconds += kDt;
@@ -2007,62 +2038,15 @@ ExecutionMetrics executeActiveBraking(
             break;
         }
 
-        SharedShipPhysics::integrate(
-            v.transform,
-            v.params,
-            bridgeResult.control,
-            v.world,
-            static_cast<float>(kDt)
-        );
-
-        if (bridgeResult.control.navigationPrecisionTranslationOnly &&
-            bridgeResult.control.navigationVelocityTargetValid)
+        if (!applyPilotInputStep(
+                v,
+                bridgeResult,
+                glm::dvec3(0.0),
+                true))
         {
-            game::navigation::DynamicMotionSystem::
-                applyNavigationPrecisionVelocityTrim(
-                    v.transform.motion,
-                    v.frame,
-                    v.params,
-                    static_cast<float>(kDt),
-                    bridgeResult.control.navigationTargetVelocitySystemMps
-                );
+            m.valid = false;
+            break;
         }
-        else if (v.transform.motion.localControlLaw == Law::Assisted &&
-            bridgeResult.control.navigationVelocityTargetValid)
-        {
-            game::navigation::DynamicMotionSystem::
-                applyNavigationAssistedFlightModel(
-                    v.transform.motion,
-                    v.frame,
-                    v.params,
-                    static_cast<float>(kDt),
-                    bridgeResult.control.navigationTargetVelocitySystemMps,
-                    bridgeResult.control.
-                        navigationLinearAccelerationDemandSystemMps2,
-                    v.transform.forward(),
-                    v.transform.right(),
-                    v.transform.up()
-                );
-        }
-        else
-        {
-            game::navigation::DynamicMotionSystem::
-                applySystemAccelerationDemand(
-                    v.transform.motion,
-                    v.params,
-                    bridgeResult.control.
-                        navigationLinearAccelerationDemandSystemMps2,
-                    v.transform.forward()
-                );
-        }
-
-        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-            v.transform.motion,
-            v.transform.worldPosition,
-            v.frame,
-            v.params,
-            kDt
-        );
 
         v.transform.syncLegacyPositionFromWorld();
         v.timeSeconds += kDt;

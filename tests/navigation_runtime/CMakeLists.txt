@@ -649,6 +649,50 @@ set_tests_properties(
 )
 
 add_executable(
+    client_route_autopilot_tests
+    ClientRouteAutopilotTests.cpp
+)
+
+target_include_directories(
+    client_route_autopilot_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    client_route_autopilot_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    client_route_autopilot_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        client_route_autopilot_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        client_route_autopilot_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME client_route_autopilot
+    COMMAND client_route_autopilot_tests
+)
+
+set_tests_properties(
+    client_route_autopilot
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     navigation_v2_tunnel_proving_ground_tests
     NavigationV2TunnelProvingGroundTests.cpp
 )

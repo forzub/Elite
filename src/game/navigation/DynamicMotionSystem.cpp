@@ -261,35 +261,41 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
         shipUp
     );
 
-    // The ordinary Assisted law already damps measured lateral velocity
-    // toward zero. Shift that physical equilibrium toward the requested
-    // lateral velocity; leave the response and authority limit to the ship.
-    // This is Assisted stabilization, never a keypad or manoeuvre RCS burn.
+    // Assisted doctrine is nose-coupled: the current hull forward axis is
+    // the velocity-direction target. The vector target supplied by Follower
+    // controls requested speed and steering through the attitude loop; its
+    // lateral component must NOT become a second sideways velocity equilibrium.
+    // Otherwise VREL can keep chasing a future look-ahead direction while the
+    // hull is still turning, which makes FA-on behave like a weak Newtonian
+    // drift controller.
     const glm::dvec3 f = forward;
-    const glm::dvec3 lateralTarget =
-        targetVelocitySystemMps - f * targetForwardSpeedMps;
-    const double lateralGain = std::max(
-        0.0, static_cast<double>(params.strafeDamping)
-    );
-    const glm::dvec3 lateralFeedback = lateralTarget * lateralGain;
 
     const double assistedAuthority =
         game::ship::assistedLateralStabilizationAccelerationLimitMps2(params);
     const double totalLinearEnvelope =
         game::ship::mainAccelerationLimitMps2(params);
 
-    // The trajectory budgets turn acceleration. Nose-coupled stabilization
-    // alone has to accumulate a sideways velocity error before producing it.
-    // Apply the pilot-executed lateral demand as feed-forward, subject to the
-    // same physical stabilization and shared load limits as manual Assisted.
-    const glm::dvec3 lateralFeedForward =
+    // Retain authored lateral acceleration only as feed-forward assistance to
+    // an already-needed nose-alignment correction. Never allow feed-forward
+    // to create/increase sideways VREL relative to the current nose.
+    const glm::dvec3 lateralVelocity =
+        frame.localToWorldVector(motion.localVelocityMps) -
+        f * glm::dot(
+            frame.localToWorldVector(motion.localVelocityMps),
+            f
+        );
+
+    glm::dvec3 lateralFeedForward =
         executedAccelerationDemandSystemMps2 -
         f * requestedForwardAcceleration;
+
+    if (glm::dot(lateralFeedForward, lateralVelocity) > 0.0)
+        lateralFeedForward = glm::dvec3(0.0);
 
     motion.assistedStabilizationAccelerationMps2 =
         clampMagnitude(
             motion.assistedStabilizationAccelerationMps2 +
-                lateralFeedForward + lateralFeedback,
+                lateralFeedForward,
             assistedAuthority
         );
 

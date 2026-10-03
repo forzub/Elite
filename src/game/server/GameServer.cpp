@@ -2470,7 +2470,7 @@ bool GameServer::planAutomaticDocking(
                         MaximumValidationRefinementAttempts)
                     {
                         std::string reason =
-                            "planner-physically-impossible-after-refinement"
+                            "planner-refinement-budget-exhausted"
                             " detail=" + feedback.message +
                             " required=" +
                                 std::to_string(feedback.requiredValue) +
@@ -2544,7 +2544,7 @@ bool GameServer::planAutomaticDocking(
                     accepted.pages.empty())
                 {
                     finishFailure(
-                        "planner-physically-impossible-after-refinement"
+                        "planner-refinement-budget-exhausted"
                     );
                     return;
                 }

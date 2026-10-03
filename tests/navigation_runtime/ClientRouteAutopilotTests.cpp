@@ -69,6 +69,14 @@ void testClientAutopilotEmitsOrdinaryControls()
         Autopilot::start(
             state,
             route,
+            Agent{
+                {0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0},
+                {1.0, 0.0, 0.0},
+                {0.0, 0.0, 1.0},
+                {0.0, 1.0, 0.0},
+                0.0, 0.0, 0.0
+            },
             game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,

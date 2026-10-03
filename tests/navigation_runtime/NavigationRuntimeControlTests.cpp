@@ -2,7 +2,7 @@
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/ReplicatedNavigationExecutionState.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
-#include "src/game/navigation/autopilot/ShipControlAdapter.h"
+#include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
@@ -75,7 +75,7 @@ ShipParams capabilityParams()
     return params;
 }
 
-void testAutopilotAdapterUsesOnlyOrdinaryAssistedControls()
+void testPredictivePilotUsesOnlyOrdinaryAssistedControls()
 {
     ShipParams params = capabilityParams();
     params.assistedMinimumTargetSpeedChangeRateMps2 = 1.0f;
@@ -85,19 +85,19 @@ void testAutopilotAdapterUsesOnlyOrdinaryAssistedControls()
     params.forwardMainEngineAccelerationMps2 = 10.0f;
     params.reverseMainEngineAccelerationMps2 = 10.0f;
 
-    game::navigation::autopilot::ShipControlAdapter::Request request;
+    game::navigation::autopilot::PredictivePilot::Request request;
     request.law = game::navigation::LocalFlightControlLaw::Assisted;
-    request.desiredVelocityMapMps = {0.0, 0.0, -20.0};
-    request.desiredAngularAccelerationMapRadPerSec2 = {1.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {0.0, 20.0, 0.0};
+    request.desiredForwardMap = {0.0, 1.0, 0.0};
+    request.desiredUpMap = {0.0, 0.0, 1.0};
     request.actualVelocityMapMps = {0.0, 0.0, -5.0};
     request.forwardMap = {0.0, 0.0, -1.0};
     request.rightMap = {1.0, 0.0, 0.0};
     request.upMap = {0.0, 1.0, 0.0};
-    request.currentAssistedTargetSpeedMps = 5.0;
     request.deltaSeconds = 0.1;
 
     const ShipControlState control =
-        game::navigation::autopilot::ShipControlAdapter::make(
+        game::navigation::autopilot::PredictivePilot::make(
             request,
             params
         );
@@ -106,36 +106,69 @@ void testAutopilotAdapterUsesOnlyOrdinaryAssistedControls()
         !control.navigationAccelerationDemandValid &&
         !control.navigationVelocityTargetValid &&
         !control.navigationPrecisionTranslationOnly,
-        "Assisted autopilot escaped through the direct navigation actuator seam"
+        "PredictivePilot escaped through the direct navigation actuator seam"
     );
     require(
         control.targetSpeedRate > 0.0f,
-        "Assisted autopilot did not press the ordinary + speed control"
+        "PredictivePilot did not press the ordinary + speed control"
     );
     require(
-        std::abs(control.pitchInput) > 0.0f,
-        "Assisted autopilot did not express turn demand through pitch/yaw/roll"
+        control.pitchInput > 0.0f,
+        "PredictivePilot did not turn the hull toward the requested course"
     );
 }
 
-void testAutopilotAdapterUsesOrdinaryNewtonianThrottle()
+void testPredictivePilotBrakesAngularMotionBeforeOvershoot()
+{
+    ShipParams params = capabilityParams();
+    params.angularAccel = 2.0f;
+    params.maxPitchRate = 10.0f;
+
+    constexpr double angle = 0.05;
+    game::navigation::autopilot::PredictivePilot::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Assisted;
+    request.desiredForwardMap =
+        {0.0, std::sin(angle), -std::cos(angle)};
+    request.desiredUpMap =
+        {0.0, std::cos(angle), std::sin(angle)};
+    request.forwardMap = {0.0, 0.0, -1.0};
+    request.rightMap = {1.0, 0.0, 0.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.pitchRateRadPerSec = 0.8;
+    request.deltaSeconds = 0.02;
+
+    const ShipControlState control =
+        game::navigation::autopilot::PredictivePilot::make(
+            request,
+            params
+        );
+
+    require(
+        control.pitchInput < 0.0f,
+        "PredictivePilot failed to counter-steer inside the angular braking envelope"
+    );
+}
+
+void testPredictivePilotUsesOrdinaryNewtonianThrottle()
 {
     ShipParams params = capabilityParams();
     params.forwardMainEngineAvailable = true;
     params.reverseMainEngineAvailable = false;
     params.forwardMainEngineAccelerationMps2 = 10.0f;
 
-    game::navigation::autopilot::ShipControlAdapter::Request request;
+    game::navigation::autopilot::PredictivePilot::Request request;
     request.law = game::navigation::LocalFlightControlLaw::Newtonian;
     request.desiredVelocityMapMps = {10.0, 0.0, 0.0};
     request.desiredLinearAccelerationMapMps2 = {5.0, 0.0, 0.0};
+    request.desiredForwardMap = {1.0, 0.0, 0.0};
+    request.desiredUpMap = {0.0, 1.0, 0.0};
     request.forwardMap = {1.0, 0.0, 0.0};
     request.rightMap = {0.0, 0.0, 1.0};
     request.upMap = {0.0, 1.0, 0.0};
     request.deltaSeconds = 0.02;
 
     const ShipControlState control =
-        game::navigation::autopilot::ShipControlAdapter::make(
+        game::navigation::autopilot::PredictivePilot::make(
             request,
             params
         );
@@ -144,66 +177,64 @@ void testAutopilotAdapterUsesOrdinaryNewtonianThrottle()
         control.targetSpeedRate,
         0.5,
         1.0e-6,
-        "Newtonian autopilot did not convert requested acceleration to ordinary main-throttle input"
-    );
-    require(
-        control.velocityAlignmentCommand ==
-            game::navigation::VelocityAlignmentMode::None,
-        "Newtonian transit unexpectedly requested END/autobrake"
+        "PredictivePilot did not convert Newtonian acceleration to ordinary main throttle"
     );
     require(
         !control.navigationAccelerationDemandValid &&
         !control.navigationVelocityTargetValid,
-        "Newtonian autopilot used direct navigation actuator control"
+        "PredictivePilot Newtonian path used direct navigation actuator control"
     );
 }
 
-void testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual()
+void testPredictivePilotUsesRcsForSmallAuthoredStopResidual()
 {
     ShipParams params = capabilityParams();
     params.manoeuvreThrusterAccel = 2.0f;
-    params.assistedMinimumTargetSpeedChangeRateMps2 = 1.0f;
-    params.assistedTargetSpeedChangeRateFractionPerSecond = 0.10f;
 
-    game::navigation::autopilot::ShipControlAdapter::Request request;
+    game::navigation::autopilot::PredictivePilot::Request request;
     request.law = game::navigation::LocalFlightControlLaw::Assisted;
     request.desiredVelocityMapMps = glm::dvec3(0.0);
     request.actualVelocityMapMps = {0.045, 0.0, 0.0};
+    request.desiredForwardMap = {1.0, 0.0, 0.0};
+    request.desiredUpMap = {0.0, 1.0, 0.0};
     request.forwardMap = {1.0, 0.0, 0.0};
     request.rightMap = {0.0, 0.0, 1.0};
     request.upMap = {0.0, 1.0, 0.0};
-    request.currentAssistedTargetSpeedMps = 0.045;
     request.stopRequested = true;
     request.deltaSeconds = 0.02;
 
     const ShipControlState control =
-        game::navigation::autopilot::ShipControlAdapter::make(
+        game::navigation::autopilot::PredictivePilot::make(
             request,
             params
         );
 
     require(
         control.forwardInput < -0.9f,
-        "0.045 m/s STOP residual was not removed through ordinary keypad RCS"
+        "PredictivePilot did not remove a 0.045 m/s STOP residual through ordinary keypad RCS"
     );
     require(
         !control.navigationAccelerationDemandValid &&
         !control.navigationVelocityTargetValid &&
         !control.navigationPrecisionTranslationOnly,
-        "precision STOP bypassed ordinary ship controls"
+        "PredictivePilot precision STOP bypassed ordinary ship controls"
     );
 }
 
-void testAutopilotAdapterUsesEndForNewtonianAuthoredStop()
+void testPredictivePilotUsesEndForAuthoredStop()
 {
     ShipParams params = capabilityParams();
     params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
     params.forwardMainEngineAccelerationMps2 = 10.0f;
+    params.reverseMainEngineAccelerationMps2 = 10.0f;
 
-    game::navigation::autopilot::ShipControlAdapter::Request request;
-    request.law = game::navigation::LocalFlightControlLaw::Newtonian;
+    game::navigation::autopilot::PredictivePilot::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Assisted;
     request.desiredVelocityMapMps = glm::dvec3(0.0);
     request.actualVelocityMapMps = {8.0, 0.0, 0.0};
+    request.desiredForwardMap = {1.0, 0.0, 0.0};
+    request.desiredUpMap = {0.0, 1.0, 0.0};
     request.forwardMap = {1.0, 0.0, 0.0};
     request.rightMap = {0.0, 0.0, 1.0};
     request.upMap = {0.0, 1.0, 0.0};
@@ -211,7 +242,7 @@ void testAutopilotAdapterUsesEndForNewtonianAuthoredStop()
     request.deltaSeconds = 0.02;
 
     const ShipControlState control =
-        game::navigation::autopilot::ShipControlAdapter::make(
+        game::navigation::autopilot::PredictivePilot::make(
             request,
             params
         );
@@ -219,13 +250,13 @@ void testAutopilotAdapterUsesEndForNewtonianAuthoredStop()
     require(
         control.velocityAlignmentCommand ==
             game::navigation::VelocityAlignmentMode::BrakeToStop,
-        "Newtonian authored STOP did not use the ordinary END/autobrake command"
+        "PredictivePilot authored STOP did not use ordinary END/autobrake"
     );
     requireNear(
         control.targetSpeedRate,
         0.0,
         1.0e-12,
-        "Newtonian STOP simultaneously commanded main throttle"
+        "PredictivePilot STOP simultaneously commanded longitudinal trim"
     );
 }
 
@@ -1184,10 +1215,11 @@ int main()
 {
     try
     {
-        testAutopilotAdapterUsesOnlyOrdinaryAssistedControls();
-        testAutopilotAdapterUsesOrdinaryNewtonianThrottle();
-        testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual();
-        testAutopilotAdapterUsesEndForNewtonianAuthoredStop();
+        testPredictivePilotUsesOnlyOrdinaryAssistedControls();
+        testPredictivePilotBrakesAngularMotionBeforeOvershoot();
+        testPredictivePilotUsesOrdinaryNewtonianThrottle();
+        testPredictivePilotUsesRcsForSmallAuthoredStopResidual();
+        testPredictivePilotUsesEndForAuthoredStop();
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testPrecisionVelocityTrimUsesOnlyPhysicalRcs();

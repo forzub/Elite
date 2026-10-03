@@ -264,6 +264,17 @@ try:
         "UnavoidableCollision",
         "PropulsionInsufficient",
         "userMessage",
+        "routePlanFailureMessage",
+    )
+    require(
+        "src/game/navigation/planner/RoutePlanner.cpp",
+        "HullDoesNotFit",
+        "GoalGeometricallyIsolated",
+        "UnavoidableCollision",
+        "PropulsionInsufficient",
+        "DynamicWindowUnavailable",
+        "search another sector, radius, lead length or approach geometry",
+        "wait for a valid movement window and replan",
     )
     require(
         "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",

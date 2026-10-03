@@ -381,6 +381,74 @@ RouteFollowerResult RouteFollower::follow(
         }
     }
 
+    // SpatialCorridor has one guidance source.  The same accepted
+    // centerline vector that owns target velocity also owns the nose target.
+    // Assisted flight is "where the nose points, the craft flies"; keeping an
+    // independently authored orientation reference here causes the exact
+    // failure seen live: velocity asks for the turn while pitch/yaw remain
+    // zero until a later orientation sample suddenly changes.
+    //
+    // Do not create a look-ahead/private route.  Use the already-computed
+    // targetVelocity from the current accepted centerline segment plus its
+    // bounded inward correction.
+    if (spatialCorridor)
+    {
+        const double targetSpeed = glm::length(targetVelocity);
+        if (std::isfinite(targetSpeed) && targetSpeed > 1.0e-9)
+        {
+            const glm::dvec3 desiredForward =
+                targetVelocity / targetSpeed;
+
+            glm::dvec3 desiredUp =
+                reference.upMap -
+                desiredForward *
+                    glm::dot(reference.upMap, desiredForward);
+            double desiredUpLength = glm::length(desiredUp);
+
+            if (!(std::isfinite(desiredUpLength) &&
+                  desiredUpLength > 1.0e-9))
+            {
+                desiredUp =
+                    agent.upMap -
+                    desiredForward *
+                        glm::dot(agent.upMap, desiredForward);
+                desiredUpLength = glm::length(desiredUp);
+            }
+
+            if (!(std::isfinite(desiredUpLength) &&
+                  desiredUpLength > 1.0e-9))
+            {
+                const glm::dvec3 seed =
+                    std::abs(desiredForward.y) < 0.90
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                desiredUp =
+                    seed -
+                    desiredForward *
+                        glm::dot(seed, desiredForward);
+                desiredUpLength = glm::length(desiredUp);
+            }
+
+            if (std::isfinite(desiredUpLength) &&
+                desiredUpLength > 1.0e-9)
+            {
+                desiredUp /= desiredUpLength;
+                const glm::dvec3 desiredRight =
+                    glm::normalize(
+                        glm::cross(desiredForward, desiredUp)
+                    );
+                desiredUp =
+                    glm::normalize(
+                        glm::cross(desiredRight, desiredForward)
+                    );
+
+                reference.forwardMap = desiredForward;
+                reference.rightMap = desiredRight;
+                reference.upMap = desiredUp;
+            }
+        }
+    }
+
     auto tracking =
         game::navigation::ManeuverTrackingController::track(
             program,

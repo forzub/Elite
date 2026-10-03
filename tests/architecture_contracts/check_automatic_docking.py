@@ -517,6 +517,16 @@ try:
     require(
         "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",
         "automatic docking recovery policy lost safe in-place correction semantics",
+        "stop-and-settle incorrectly collapsed the authored terminal turn",
+        "expectedDesignTurnSpeed",
+        "20.0*curved.hullRadiusMeters",
+    )
+    require(
+        "src/game/navigation/DockingAdvisoryPlanner.cpp",
+        "designTurnSpeedMps",
+        "0.50 * r.maxSpeedMps",
+        "20.0 * r.hullRadiusMeters",
+        "must not shrink",
     )
 
     header = require(

@@ -1,3 +1,30 @@
+## 2026-10-03 — player navigation/autopilot moved fully to client
+
+Architecture boundary changed after the live Manual/Automatic ownership race.
+
+Player docking/navigation is now client-owned:
+- SystemMap/UI creates only local DockingRouteRequest intent.
+- SpaceState client state machine owns Stabilizing -> Planning -> RouteReady -> Executing.
+- temporary route-planning stabilization uses ClientRouteAutopilot::stabilize -> PredictivePilot -> ordinary ShipControlState.
+- Manual "SHOW ROUTE" stops/stabilizes through ordinary controls, plans from authoritative replicated ship/world state, publishes the tunnel, then stops overriding Human input.
+- Automatic uses the SAME client RoutePlanner product, adapts executionGates to AcceptedManeuverProgram SpatialCorridor, then executes RouteFollower V2 -> PredictivePilot V2 -> ordinary ShipControlState.
+- client virtual-pilot control is submitted with the exact normal GameClient::submitInput path; map/UI state does not interrupt autopilot sampling.
+- authoritative server snapshots remain the feedback source for real position, velocity, attitude and angular rates.
+
+GameServer is deliberately blind to player navigation intent:
+- no Begin/Cancel Automatic docking commands;
+- no docking-guidance preparation commands;
+- no DockingAutomaticRuntime;
+- no player docking RoutePlanner/TrajectoryGenerator/AcceptedManeuverProgram/RouteFollower/PredictivePilot;
+- no replicated automatic route/result/authority state.
+GameServer receives ordinary numbered ShipControlState, applies it through the normal fixed-step control/physics path and publishes authoritative state.
+
+ClientShipCommand docking task payload was removed. WireProtocolVersion is 13. SimulationSnapshotWireSchemaVersion is 11.
+
+Server-side NPC navigation remains a separate authoritative AI concern and may still link shared navigation libraries; it is not player autopilot ownership.
+
+New regression: client_route_autopilot proves RoutePlan -> SpatialCorridor -> RouteFollower V2 -> PredictivePilot -> ordinary ShipControlState with direct navigation demand flags disabled.
+
 ## 2026-10-03 — live map exposed stop-speed terminal hairpin and docking-action hitbox mismatch
 
 Live Hub-map evidence showed a terminal docking arc with an absurd ~pivot-sized radius after stop-and-settle. Root cause: DockingAdvisoryPlanner derived preferred terminal radius from initialSpeedMps; Automatic deliberately stops before planning, so the radius collapsed to the hull floor (~69 m for Cobra).

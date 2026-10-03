@@ -2166,6 +2166,10 @@ void SpaceState::updateDockingAdvisory()
         m_clientDockingPhase =
             ClientDockingPhase::Planning;
 
+        const double planningMaxSpeedMps = request.maxSpeedMps;
+        const double planningInitialForwardLeadMeters =
+            request.initialForwardLeadMeters;
+
         std::thread(
             [job,
              count = m_dockWorkerCount,
@@ -2204,9 +2208,9 @@ void SpaceState::updateDockingAdvisory()
             << "[DockClient] request=" << pending.serial
             << " phase=planning"
             << " route_source=client"
-            << " max_speed_mps=" << request.maxSpeedMps
+            << " max_speed_mps=" << planningMaxSpeedMps
             << " initial_forward_lead_m="
-            << request.initialForwardLeadMeters
+            << planningInitialForwardLeadMeters
             << std::endl;
         return;
     }

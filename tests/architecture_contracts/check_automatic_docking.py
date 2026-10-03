@@ -282,6 +282,7 @@ try:
         "tests/navigation_runtime/NavigationRuntimeControlTests.cpp",
         "testPredictivePilotUsesOnlyOrdinaryAssistedControls",
         "testPredictivePilotBrakesAngularMotionBeforeOvershoot",
+        "testPredictivePilotLearnsMeasuredPitchAuthority",
         "testPredictivePilotUsesRcsForSmallAuthoredStopResidual",
         "testPredictivePilotUsesEndForAuthoredStop",
     )

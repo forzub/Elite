@@ -2324,6 +2324,7 @@ void SpaceState::updateDockingAdvisory()
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
+                    makeAgent(),
                     controlLaw,
                     effectivePhysics,
                     universeTimeSeconds,

@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
@@ -17,6 +18,8 @@
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/navigation/NavigationVehicleProfile.h"
 
 namespace game::navigation::autopilot
 {
@@ -59,6 +62,7 @@ public:
     [[nodiscard]] static bool start(
         State& state,
         const planner::RoutePlan& plan,
+        const RouteFollowerAgentState& initialAgent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,
@@ -68,9 +72,11 @@ public:
     {
         auto programs = buildPrograms(
             plan,
+            initialAgent,
             law,
             params,
             acceptedAtUniverseTimeSeconds,
+            requestSerial,
             trackingPositionToleranceMeters
         );
         if (programs.empty())
@@ -261,26 +267,21 @@ private:
     [[nodiscard]] static std::vector<AcceptedManeuverProgram>
     buildPrograms(
         const planner::RoutePlan& plan,
+        const RouteFollowerAgentState& initialAgent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,
+        std::uint64_t requestSerial,
         double trackingPositionToleranceMeters
     )
     {
-        std::vector<AcceptedManeuverProgram> out;
         if (!plan.valid() ||
             plan.executionGates.size() < 2 ||
-            !std::isfinite(acceptedAtUniverseTimeSeconds))
+            !std::isfinite(acceptedAtUniverseTimeSeconds) ||
+            requestSerial == 0)
         {
-            return out;
+            return {};
         }
-
-        const auto& gates = plan.executionGates;
-        const std::size_t maxSamples =
-            AcceptedManeuverProgram::kMaxSamples;
-        std::size_t first = 0;
-        std::uint64_t revision = 1;
-        double sequenceOffsetSeconds = 0.0;
 
         const double forwardAuthority =
             game::ship::forwardMainAccelerationLimitMps2(params);
@@ -301,170 +302,166 @@ private:
                 brakingAuthority,
                 lateralAuthority
             );
-        const double positionTolerance =
-            std::max(5.0, trackingPositionToleranceMeters);
 
-        while (first + 1 < gates.size())
+        world::navigation::NavigationVehicleProfile vehicle;
+        vehicle.collisionRadiusMeters = 0.0;
+        vehicle.preferredClearanceMeters = 0.0;
+        vehicle.maxSpeedMps =
+            std::max(
+                0.5,
+                game::ship::controlledSpeedLimitMps(params) * 0.90
+            );
+        vehicle.maxForwardAccelerationMps2 =
+            std::max(0.1, (forwardAuthority - feedbackReserve) * 0.90);
+        vehicle.maxBrakingAccelerationMps2 =
+            std::max(0.1, (brakingAuthority - feedbackReserve) * 0.90);
+        vehicle.maxLateralAccelerationMps2 =
+            std::max(0.1, (lateralAuthority - feedbackReserve) * 0.90);
+        vehicle.maxAngularVelocityRadPerSecond =
+            game::ship::maximumAngularSpeedRadPerSec(params);
+        vehicle.maxAngularAccelerationRadPerSecond2 =
+            std::max(
+                0.1,
+                game::ship::angularAccelerationLimitRadPerSec2(params) *
+                    0.90
+            );
+
+        world::navigation::TrajectoryGenerationRequest trajectoryRequest;
+        trajectoryRequest.systemId = 0;
+        trajectoryRequest.frameId = "client-docking";
+        trajectoryRequest.startUniverseTimeSeconds =
+            acceptedAtUniverseTimeSeconds;
+        trajectoryRequest.universeTimeScale = 1.0;
+        trajectoryRequest.pathGeometryAlreadyAuthored = true;
+        trajectoryRequest.vehicle = vehicle;
+        trajectoryRequest.initialVelocityMps =
+            initialAgent.velocityMapMetersPerSecond;
+        trajectoryRequest.initialAccelerationMps2 = glm::dvec3(0.0);
+        trajectoryRequest.hasInitialOrientation = true;
+        trajectoryRequest.initialForward = initialAgent.forwardMap;
+        trajectoryRequest.initialUp = initialAgent.upMap;
+        trajectoryRequest.hasInitialAngularVelocity = true;
+        trajectoryRequest.initialAngularVelocityRadPerSecond =
+            glm::dvec3(
+                initialAgent.pitchRateRadPerSec,
+                initialAgent.yawRateRadPerSec,
+                initialAgent.rollRateRadPerSec
+            );
+        trajectoryRequest.hasRouteUpReference = true;
+        trajectoryRequest.routeUpReference = initialAgent.upMap;
+        trajectoryRequest.hasTerminalVelocity = true;
+        trajectoryRequest.terminalVelocityMps = glm::dvec3(0.0);
+
+        trajectoryRequest.pathPointsMeters.reserve(
+            plan.executionGates.size()
+        );
+        trajectoryRequest.pointSpeedConstraints.reserve(
+            plan.executionGates.size()
+        );
+
+        double sourceProgressMeters = 0.0;
+        for (std::size_t i = 0;
+             i < plan.executionGates.size();
+             ++i)
         {
-            const std::size_t last =
-                std::min(gates.size() - 1, first + maxSamples - 1);
-            const std::size_t count = last - first + 1;
+            const auto& gate = plan.executionGates[i];
+            trajectoryRequest.pathPointsMeters.push_back(
+                gate.positionMeters
+            );
 
-            AcceptedManeuverProgram page;
-            page.valid = true;
-            page.revision = revision++;
-            page.objectiveRevision = 1;
-            page.family =
-                last + 1 == gates.size()
-                    ? AcceptedManeuverProgram::ManeuverFamily::PrecisionTransit
-                    : AcceptedManeuverProgram::ManeuverFamily::FreeTransit;
-            page.referenceMode =
-                AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
-            page.controlLaw = law;
-            page.translationMode =
-                law == LocalFlightControlLaw::Assisted
-                    ? AcceptedManeuverProgram::TranslationMode::AssistedVelocity
-                    : AcceptedManeuverProgram::TranslationMode::NewtonianMainEngine;
-            page.acceptedAtUniverseTimeSeconds =
-                acceptedAtUniverseTimeSeconds;
-            page.sequenceStartOffsetSeconds =
-                sequenceOffsetSeconds;
-            page.sampleCount = static_cast<std::uint8_t>(count);
-
-            double localTime = 0.0;
-            for (std::size_t i = 0; i < count; ++i)
+            if (i > 0)
             {
-                const std::size_t gateIndex = first + i;
-                const auto& gate = gates[gateIndex];
-                auto& sample = page.samples[i];
-
-                if (i > 0)
-                {
-                    const auto& previous = gates[gateIndex - 1];
-                    const double distance =
-                        glm::length(gate.positionMeters -
-                                    previous.positionMeters);
-                    const double averageSpeed =
-                        std::max(
-                            0.5,
-                            0.5 * (
-                                std::max(0.0, previous.speedMps) +
-                                std::max(0.0, gate.speedMps)
-                            )
-                        );
-                    localTime += distance / averageSpeed;
-                }
-
-                sample.timeOffsetSeconds = localTime;
-                sample.positionMapMeters = gate.positionMeters;
-
-                glm::dvec3 tangent = gate.forward;
-                if (gateIndex + 1 < gates.size())
-                {
-                    tangent = gates[gateIndex + 1].positionMeters -
-                        gate.positionMeters;
-                }
-                else if (gateIndex > 0)
-                {
-                    tangent = gate.positionMeters -
-                        gates[gateIndex - 1].positionMeters;
-                }
-
-                glm::dvec3 forward;
-                glm::dvec3 right;
-                glm::dvec3 up;
-                makeBasis(
-                    normalizedOr(gate.forward, tangent),
-                    forward,
-                    right,
-                    up
+                sourceProgressMeters += glm::length(
+                    gate.positionMeters -
+                    plan.executionGates[i - 1].positionMeters
                 );
-
-                double authoredSpeedMps =
-                    std::max(0.0, gate.speedMps);
-
-                // SpatialCorridor is position-driven, not time-driven.  A
-                // stopped first checkpoint is an initial condition ("start
-                // here from rest"), not an instruction to remain stopped.
-                // If sample[0] is exactly zero while the next checkpoint is
-                // moving, sampling at the exact route origin otherwise forms
-                // a deadlock: zero target speed -> zero control -> zero spatial
-                // progress -> the same zero-speed sample forever.
-                //
-                // Seed only a zero-speed departure into a moving segment.
-                // Braking into a genuine zero-speed terminal checkpoint is
-                // untouched because its following gate is not moving.
-                if (authoredSpeedMps <= 1.0e-9 &&
-                    gateIndex + 1 < gates.size())
-                {
-                    const double nextSpeedMps =
-                        std::max(0.0, gates[gateIndex + 1].speedMps);
-                    if (nextSpeedMps > 1.0e-6)
-                    {
-                        constexpr double SpatialLaunchSpeedMps = 0.25;
-                        authoredSpeedMps =
-                            std::min(SpatialLaunchSpeedMps, nextSpeedMps);
-                    }
-                }
-
-                sample.velocityMapMetersPerSecond =
-                    normalizedOr(tangent, forward) * authoredSpeedMps;
-                sample.linearAccelerationFeedForwardMapMps2 =
-                    glm::dvec3(0.0);
-                sample.forwardMap = forward;
-                sample.rightMap = right;
-                sample.upMap = up;
-                sample.angularVelocityMapRadPerSecond =
-                    glm::dvec3(0.0);
-                sample.angularAccelerationFeedForwardMapRadPerSec2 =
-                    glm::dvec3(0.0);
             }
 
-            if (!(localTime > 0.0))
+            world::navigation::TrajectoryPointSpeedConstraint limit;
+            limit.sourcePathProgressMeters = sourceProgressMeters;
+            limit.maxSpeedMps = std::min(
+                vehicle.maxSpeedMps,
+                std::max(0.5, gate.speedMps)
+            );
+            trajectoryRequest.pointSpeedConstraints.push_back(limit);
+        }
+
+        constexpr int MaximumRefinementAttempts = 6;
+        for (int attempt = 0;
+             attempt < MaximumRefinementAttempts;
+             ++attempt)
+        {
+            const auto trajectory =
+                world::navigation::TrajectoryGenerator::generate(
+                    trajectoryRequest
+                );
+            if (!trajectory.ready())
                 return {};
 
-            page.validUntilUniverseTimeSeconds =
-                acceptedAtUniverseTimeSeconds +
-                sequenceOffsetSeconds +
-                localTime +
-                3600.0;
-
-            page.terminalTolerance.positionMeters =
-                std::max(3.0, positionTolerance * 0.25);
-            page.terminalTolerance.linearVelocityMps = 1.0;
-            page.terminalTolerance.forwardAngleRad =
-                0.17453292519943295;
-            page.terminalTolerance.angularVelocityRadPerSec = 0.10;
-
-            page.tracking.positionErrorMeters = positionTolerance;
-            page.tracking.linearVelocityErrorMps = 10.0;
-            page.tracking.forwardAngleErrorRad =
-                1.3962634015954636; // 80 deg: recover, don't abort.
-            page.tracking.angularVelocityErrorRadPerSec = 2.0;
-            page.tracking.alongTrackPositionDeadbandMeters = 10.0;
-            page.tracking.alongTrackSpeedDeadbandMps = 1.0;
-            page.tracking.linearFeedbackReserveMps2 = feedbackReserve;
-            page.tracking.angularFeedbackReserveRadPerSec2 =
+            AcceptedManeuverProgramBuilder::Request build;
+            build.trajectory = &trajectory.trajectory;
+            build.shipPhysics = &params;
+            build.controlLaw = law;
+            build.referenceMode =
+                AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+            build.objectiveRevision = requestSerial;
+            build.firstProgramRevision = 1;
+            build.capabilityRevision = requestSerial;
+            build.mapRevision = requestSerial;
+            build.mapSourceRevision = requestSerial;
+            build.spaceRevision = requestSerial;
+            build.spaceSourceRevision = requestSerial;
+            build.minimumClearanceMeters = 0.0;
+            build.hasInitialAngularVelocity = true;
+            build.initialAngularVelocityMapRadPerSec =
+                trajectoryRequest.initialAngularVelocityRadPerSecond;
+            build.policy.trackingPositionErrorMeters =
+                std::max(5.0, trackingPositionToleranceMeters);
+            build.policy.trackingLinearVelocityErrorMps = 10.0;
+            build.policy.trackingForwardAngleErrorRad =
+                1.3962634015954636; // 80 deg: recover, do not abort.
+            build.policy.trackingAngularVelocityErrorRadPerSec = 2.0;
+            build.policy.alongTrackPositionDeadbandMeters = 10.0;
+            build.policy.alongTrackSpeedDeadbandMps = 1.0;
+            build.policy.linearFeedbackReserveMps2 = feedbackReserve;
+            build.policy.angularFeedbackReserveRadPerSec2 =
                 std::min(
                     0.5,
                     game::ship::angularAccelerationLimitRadPerSec2(params) *
                         0.15
                 );
-            page.capability =
-                makeManeuverCapabilitySnapshot(params, revision);
 
-            out.push_back(page);
-            sequenceOffsetSeconds += localTime;
+            auto accepted =
+                AcceptedManeuverProgramBuilder::build(build);
+            if (accepted.valid && !accepted.pages.empty())
+                return accepted.pages;
 
-            if (last + 1 >= gates.size())
-                break;
+            if (accepted.feedback.disposition !=
+                AcceptedManeuverProgramBuilder::
+                    ValidationDisposition::NeedsRefinement)
+            {
+                return {};
+            }
 
-            // Keep one shared boundary sample so spatial page selection has a
-            // continuous centerline with no geometric gap.
-            first = last;
+            const double scale = std::clamp(
+                accepted.feedback.recommendedScale,
+                0.50,
+                0.98
+            );
+            trajectoryRequest.vehicle.maxSpeedMps =
+                std::max(
+                    0.5,
+                    trajectoryRequest.vehicle.maxSpeedMps * scale
+                );
+            for (auto& limit :
+                 trajectoryRequest.pointSpeedConstraints)
+            {
+                limit.maxSpeedMps =
+                    std::max(0.5, limit.maxSpeedMps * scale);
+            }
         }
 
-        return out;
+        return {};
     }
 };
 

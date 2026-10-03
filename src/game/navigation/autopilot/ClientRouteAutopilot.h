@@ -10,6 +10,7 @@
 
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
@@ -281,10 +282,25 @@ private:
         std::uint64_t revision = 1;
         double sequenceOffsetSeconds = 0.0;
 
+        const double forwardAuthority =
+            game::ship::forwardMainAccelerationLimitMps2(params);
+        const double reverseAuthority =
+            game::ship::reverseMainAccelerationLimitMps2(params);
         const double lateralAuthority =
-            game::ship::manoeuvreAccelerationLimitMps2(params);
+            law == LocalFlightControlLaw::Assisted
+                ? game::ship::
+                    assistedLateralStabilizationAccelerationLimitMps2(params)
+                : game::ship::manoeuvreAccelerationLimitMps2(params);
+        const double brakingAuthority =
+            law == LocalFlightControlLaw::Assisted
+                ? std::max(reverseAuthority, lateralAuthority)
+                : forwardAuthority;
         const double feedbackReserve =
-            std::clamp(lateralAuthority * 0.25, 0.5, 8.0);
+            DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+                forwardAuthority,
+                brakingAuthority,
+                lateralAuthority
+            );
         const double positionTolerance =
             std::max(5.0, trackingPositionToleranceMeters);
 

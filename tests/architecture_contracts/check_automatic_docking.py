@@ -146,6 +146,12 @@ try:
         "VelocityAlignmentMode::BrakeToStop",
         "TrajectoryGenerator::generate(",
         "AcceptedManeuverProgramBuilder::build(",
+        "MaximumValidationRefinementAttempts = 6",
+        "ValidationDisposition::NeedsRefinement",
+        "feedback.recommendedScale",
+        "validation=needs-refinement",
+        "trajectoryRequest.pointSpeedConstraints",
+        "planner-physically-impossible-after-refinement",
         "build.referenceMode =",
         "ReferenceMode::SpatialCorridor",
         "ReferenceMode::TimeScheduled",
@@ -230,6 +236,40 @@ try:
         "request.roundTurns =\n                            assisted && !nearHoldRecovery",
     )
 
+
+    builder = require(
+        "src/game/navigation/AcceptedManeuverProgramBuilder.h",
+        "enum class ValidationDisposition",
+        "NeedsRefinement",
+        "enum class RefinementKind",
+        "ReduceSpeed",
+        "IncreaseTurnRadius",
+        "BrakeEarlier",
+        "ReduceAngularRate",
+        "requiredValue",
+        "availableValue",
+        "recommendedScale",
+    )
+    require(
+        "src/game/navigation/planner/RoutePlannerApi.h",
+        "RoutePlanDisposition",
+        "WaitForWindow",
+        "PhysicallyImpossible",
+        "InvalidWorldData",
+        "RoutePlanFailureCode",
+        "HullDoesNotFit",
+        "GoalGeometricallyIsolated",
+        "UnavoidableCollision",
+        "PropulsionInsufficient",
+        "userMessage",
+    )
+    require(
+        "tests/navigation_runtime/AcceptedManeuverProgramBuilderTests.cpp",
+        "testAssistedRequestsRefinementForMotionEnvelope",
+        "ValidationDisposition::NeedsRefinement",
+        "RefinementKind::IncreaseTurnRadius",
+        "recommendedScale < 1.0",
+    )
 
     if "ShipControlAdapter" in server:
         raise AssertionError(

@@ -104,22 +104,73 @@ public:
         Policy policy {};
     };
 
+    enum class ValidationDisposition : std::uint8_t
+    {
+        Accepted = 0,
+        NeedsRefinement,
+        PhysicallyImpossible,
+        InvalidInput
+    };
+
+    enum class RefinementKind : std::uint8_t
+    {
+        None = 0,
+        ReduceSpeed,
+        IncreaseTurnRadius,
+        BrakeEarlier,
+        ReduceAngularRate
+    };
+
+    struct ValidationFeedback
+    {
+        ValidationDisposition disposition =
+            ValidationDisposition::InvalidInput;
+        RefinementKind refinement = RefinementKind::None;
+        std::size_t pageIndex = 0;
+        std::size_t sampleIndex = 0;
+        double requiredValue = 0.0;
+        double availableValue = 0.0;
+        double recommendedScale = 1.0;
+        std::string message;
+    };
+
     struct Result
     {
         bool valid = false;
         std::string failureReason;
+        ValidationFeedback feedback {};
         std::vector<AcceptedManeuverProgram> pages;
     };
 
     [[nodiscard]] static Result build(const Request& request)
     {
         Result out;
-        const auto fail = [](const std::string& reason)
-        {
-            Result failed;
-            failed.failureReason = reason;
-            return failed;
-        };
+        const auto fail =
+            [](const std::string& reason,
+               ValidationDisposition disposition =
+                   ValidationDisposition::InvalidInput,
+               RefinementKind refinement = RefinementKind::None,
+               std::size_t pageIndex = 0,
+               std::size_t sampleIndex = 0,
+               double requiredValue = 0.0,
+               double availableValue = 0.0,
+               double recommendedScale = 1.0,
+               const std::string& message = std::string())
+            {
+                Result failed;
+                failed.failureReason = reason;
+                failed.feedback.disposition = disposition;
+                failed.feedback.refinement = refinement;
+                failed.feedback.pageIndex = pageIndex;
+                failed.feedback.sampleIndex = sampleIndex;
+                failed.feedback.requiredValue = requiredValue;
+                failed.feedback.availableValue = availableValue;
+                failed.feedback.recommendedScale =
+                    std::clamp(recommendedScale, 0.10, 1.0);
+                failed.feedback.message =
+                    message.empty() ? reason : message;
+                return failed;
+            };
         if (!request.trajectory ||
             !request.shipPhysics ||
             !request.trajectory->ready() ||
@@ -275,7 +326,19 @@ public:
             );
 
             if (!angularKinematicsFeasible(page))
-                return fail("angular-kinematics-infeasible");
+            {
+                return fail(
+                    "angular-kinematics-infeasible",
+                    ValidationDisposition::NeedsRefinement,
+                    RefinementKind::ReduceAngularRate,
+                    out.pages.size(),
+                    0,
+                    1.0,
+                    0.0,
+                    0.85,
+                    "angular motion exceeds vehicle authority; reduce route speed or increase turn radius"
+                );
+            }
 
             page.proof.mapRevision = request.mapRevision;
             page.proof.mapSourceRevision = request.mapSourceRevision;
@@ -321,10 +384,27 @@ public:
                     const auto& sample = page.samples[i];
                     const double speed =
                         glm::length(sample.velocityMapMetersPerSecond);
-                    if (!std::isfinite(speed) ||
-                        speed > controlledSpeed + 1.0e-6)
+                    if (!std::isfinite(speed))
                     {
-                        return fail("assisted-speed-program-infeasible");
+                        return fail("assisted-speed-program-invalid");
+                    }
+                    if (speed > controlledSpeed + 1.0e-6)
+                    {
+                        const double scale =
+                            controlledSpeed > 1.0e-9
+                                ? 0.95 * controlledSpeed / speed
+                                : 0.50;
+                        return fail(
+                            "assisted-speed-program-infeasible",
+                            ValidationDisposition::NeedsRefinement,
+                            RefinementKind::ReduceSpeed,
+                            out.pages.size(),
+                            i,
+                            speed,
+                            controlledSpeed,
+                            scale,
+                            "route speed exceeds controlled-speed envelope; lower local route speed"
+                        );
                     }
 
                     const glm::dvec3 forward = normalizedOr(
@@ -363,6 +443,52 @@ public:
                         transverseMagnitude >
                             lateralAuthority + 1.0e-6)
                     {
+                        const bool brakingViolation =
+                            along < -brakingAuthority - 1.0e-6;
+                        const bool forwardViolation =
+                            along > forwardAuthority + 1.0e-6;
+                        const bool lateralViolation =
+                            transverseMagnitude >
+                                lateralAuthority + 1.0e-6;
+
+                        double required = 0.0;
+                        double available = 0.0;
+                        RefinementKind refinement =
+                            RefinementKind::ReduceSpeed;
+                        std::string recommendation =
+                            "reduce local route speed";
+
+                        if (brakingViolation)
+                        {
+                            required = -along;
+                            available = brakingAuthority;
+                            refinement = RefinementKind::BrakeEarlier;
+                            recommendation =
+                                "begin braking earlier and lower speed before this segment";
+                        }
+                        else if (forwardViolation)
+                        {
+                            required = along;
+                            available = forwardAuthority;
+                        }
+                        else if (lateralViolation)
+                        {
+                            required = transverseMagnitude;
+                            available = lateralAuthority;
+                            refinement = RefinementKind::IncreaseTurnRadius;
+                            recommendation =
+                                "increase turn radius or lower speed through this bend";
+                        }
+
+                        const double scale =
+                            required > 1.0e-9 && available > 0.0
+                                ? std::clamp(
+                                      0.95 * std::sqrt(available / required),
+                                      0.50,
+                                      0.98
+                                  )
+                                : 0.80;
+
                         return fail(
                             "assisted-motion-envelope-infeasible"
                             " page=" + std::to_string(out.pages.size()) +
@@ -377,7 +503,15 @@ public:
                             " braking_authority_mps2=" +
                                 std::to_string(brakingAuthority) +
                             " lateral_authority_mps2=" +
-                                std::to_string(lateralAuthority)
+                                std::to_string(lateralAuthority),
+                            ValidationDisposition::NeedsRefinement,
+                            refinement,
+                            out.pages.size(),
+                            i,
+                            required,
+                            available,
+                            scale,
+                            recommendation
                         );
                     }
                 }
@@ -425,6 +559,12 @@ public:
         }
 
         out.valid = !out.pages.empty();
+        if (out.valid)
+        {
+            out.feedback.disposition =
+                ValidationDisposition::Accepted;
+            out.feedback.message = "accepted";
+        }
         return out;
     }
 

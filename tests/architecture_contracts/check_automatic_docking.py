@@ -213,7 +213,7 @@ try:
     require(
         "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "designTurnSpeedMps",
-        "0.50 * r.maxSpeedMps",
+        "0.80 * r.maxSpeedMps",
         "30.0 * r.hullRadiusMeters",
     )
     require(

@@ -499,11 +499,11 @@ void testAssistedProgramTracksPhysicallyFeasibleAcceleration()
             "Assisted compensation bypassed the physical main-engine limit");
 }
 
-void testAssistedProgramAppliesTurnFeedForward()
+void testAssistedProgramFeedForwardOnlyAssistsNoseAlignment()
 {
     game::navigation::DynamicMotionState motion;
     motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
-    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -98.0);
+    motion.localVelocityMps = glm::dvec3(2.0, 0.0, -98.0);
 
     game::navigation::KinematicFrame frame;
     frame.systemId = 0;
@@ -514,6 +514,7 @@ void testAssistedProgramAppliesTurnFeedForward()
     params.throttleAccel = 5.0f;
     params.maxLinearGs = 7.5f;
     params.strafeAccel = 8.0f;
+    params.strafeDamping = 1.0f;
     params.forwardMainEngineAvailable = true;
     params.reverseMainEngineAvailable = true;
     params.forwardMainEngineAccelerationMps2 = 73.549875f;
@@ -522,6 +523,31 @@ void testAssistedProgramAppliesTurnFeedForward()
     const glm::vec3 forward(0.0f, 0.0f, -1.0f);
     const glm::vec3 right(1.0f, 0.0f, 0.0f);
     const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+    // Measured VREL is +X of the nose, so the ordinary Assisted stabilizer
+    // correctly demands -X. A -X trajectory feed-forward may assist it.
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion, frame, params, 0.02f,
+            glm::dvec3(0.0, 0.0, -98.0),
+            glm::dvec3(-4.0, 0.0, 0.0),
+            forward, right, up
+        );
+
+    requireNear(
+        motion.assistedStabilizationAccelerationMps2.x,
+        -6.0,
+        1.0e-5,
+        "Assisted alignment did not accept same-direction lateral feed-forward"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "Assisted turn improperly spent precision RCS"
+    );
+
+    // Opposite feed-forward must not weaken or reverse nose alignment.
     game::navigation::DynamicMotionSystem::
         applyNavigationAssistedFlightModel(
             motion, frame, params, 0.02f,
@@ -530,24 +556,29 @@ void testAssistedProgramAppliesTurnFeedForward()
             forward, right, up
         );
 
-    requireNear(motion.assistedStabilizationAccelerationMps2.x, 4.0,
-                1.0e-5,
-                "Assisted docking turn lost the planned lateral acceleration");
-    requireNear(motion.engineAccelerationMps2.x, 4.0, 1.0e-5,
-                "Assisted turn demand did not reach the actual motion actuator");
-    requireNear(motion.manoeuvreAccelerationMps2.x, 0.0, 1.0e-6,
-                "Assisted turn improperly spent precision RCS");
+    requireNear(
+        motion.assistedStabilizationAccelerationMps2.x,
+        -2.0,
+        1.0e-5,
+        "Assisted feed-forward was allowed to oppose nose alignment"
+    );
 
+    // With no sideways VREL, planner feed-forward must not manufacture one.
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -98.0);
     game::navigation::DynamicMotionSystem::
         applyNavigationAssistedFlightModel(
             motion, frame, params, 0.02f,
             glm::dvec3(0.0, 0.0, -98.0),
-            glm::dvec3(100.0, 0.0, 0.0),
+            glm::dvec3(4.0, 0.0, 0.0),
             forward, right, up
         );
-    requireNear(motion.assistedStabilizationAccelerationMps2.x, 8.0,
-                1.0e-5,
-                "Assisted turn exceeded installed stabilization authority");
+
+    requireNear(
+        motion.assistedStabilizationAccelerationMps2.x,
+        0.0,
+        1.0e-12,
+        "Assisted feed-forward created sideways VREL from an aligned state"
+    );
 }
 
 void testAssistedVehicleCorrectsMeasuredLateralMotion()
@@ -885,7 +916,7 @@ int main()
         testVehicleBridgeRejectsInvalidVelocityAndClock();
         testAssistedAutopilotUsesCanonicalFlightLaw();
         testAssistedProgramTracksPhysicallyFeasibleAcceleration();
-        testAssistedProgramAppliesTurnFeedForward();
+        testAssistedProgramFeedForwardOnlyAssistsNoseAlignment();
         testAssistedVehicleCorrectsMeasuredLateralMotion();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();

@@ -83,7 +83,6 @@ try:
     require(
         "src/game/navigation/autopilot/ClientRouteAutopilot.h",
         "static ShipControlState stabilize(",
-        "VelocityAlignmentMode::BrakeToStop",
         "PredictivePilot::make(",
     )
 

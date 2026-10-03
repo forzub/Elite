@@ -96,10 +96,12 @@ void testPredictivePilotUsesOnlyOrdinaryAssistedControls()
     request.upMap = {0.0, 1.0, 0.0};
     request.deltaSeconds = 0.1;
 
+    game::navigation::autopilot::PredictivePilot::State pilotState;
     const ShipControlState control =
         game::navigation::autopilot::PredictivePilot::make(
             request,
-            params
+            params,
+            pilotState
         );
 
     require(
@@ -137,10 +139,12 @@ void testPredictivePilotBrakesAngularMotionBeforeOvershoot()
     request.pitchRateRadPerSec = 0.8;
     request.deltaSeconds = 0.02;
 
+    game::navigation::autopilot::PredictivePilot::State pilotState;
     const ShipControlState control =
         game::navigation::autopilot::PredictivePilot::make(
             request,
-            params
+            params,
+            pilotState
         );
 
     require(
@@ -167,10 +171,12 @@ void testPredictivePilotUsesOrdinaryNewtonianThrottle()
     request.upMap = {0.0, 1.0, 0.0};
     request.deltaSeconds = 0.02;
 
+    game::navigation::autopilot::PredictivePilot::State pilotState;
     const ShipControlState control =
         game::navigation::autopilot::PredictivePilot::make(
             request,
-            params
+            params,
+            pilotState
         );
 
     requireNear(
@@ -203,10 +209,12 @@ void testPredictivePilotUsesRcsForSmallAuthoredStopResidual()
     request.stopRequested = true;
     request.deltaSeconds = 0.02;
 
+    game::navigation::autopilot::PredictivePilot::State pilotState;
     const ShipControlState control =
         game::navigation::autopilot::PredictivePilot::make(
             request,
-            params
+            params,
+            pilotState
         );
 
     require(
@@ -241,10 +249,12 @@ void testPredictivePilotUsesEndForAuthoredStop()
     request.stopRequested = true;
     request.deltaSeconds = 0.02;
 
+    game::navigation::autopilot::PredictivePilot::State pilotState;
     const ShipControlState control =
         game::navigation::autopilot::PredictivePilot::make(
             request,
-            params
+            params,
+            pilotState
         );
 
     require(

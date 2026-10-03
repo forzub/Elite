@@ -994,32 +994,6 @@ bool GameServer::disconnectPlayerSession(
         return false;
     }
 
-    if (const auto prepIt =
-            m_dockingGuidancePreparations.find(controlledEntityId.value);
-        prepIt != m_dockingGuidancePreparations.end())
-    {
-        const auto prep = prepIt->second;
-        (void)finishDockingGuidancePreparation(
-            prep.playerId, prep.entityId, prep.requestSerial, false);
-    }
-
-    if (const auto automaticIt =
-            m_dockingAutomaticRuntimes.find(controlledEntityId.value);
-        automaticIt != m_dockingAutomaticRuntimes.end())
-    {
-        const PlayerId automaticPlayer =
-            automaticIt->second.playerId;
-        const std::uint64_t automaticSerial =
-            automaticIt->second.requestSerial;
-        (void)finishAutomaticDocking(
-            automaticPlayer,
-            controlledEntityId,
-            automaticSerial,
-            false,
-            "session-disconnect"
-        );
-    }
-
     // Persistent player->ship control identity survives a disconnect, but
     // transport input does not. Once the last live session for this player is
     // gone, discard its numbered-input epoch and neutralize continuous pilot

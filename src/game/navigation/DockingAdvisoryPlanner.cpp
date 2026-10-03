@@ -596,22 +596,43 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     // on straights and will cap the turn speed by lateral/angular authority.
     const double planningOriginSpeedMps =
         std::clamp(r.initialSpeedMps, 0.0, r.maxSpeedMps);
-    const double minimumTerminalRadiusMeters =
-        std::max(20.0, 4.0 * r.hullRadiusMeters);
-    const double originLateralRadiusMeters =
-        planningOriginSpeedMps * planningOriginSpeedMps /
-        r.lateralMps2;
-    const double originAngularRadiusMeters =
+
+    // A stopped planning origin says nothing about the radius that is pleasant
+    // or even sensible once the craft has accelerated into the route. The old
+    // rule derived R from initialSpeedMps, so stop-and-settle collapsed Cobra's
+    // terminal arc to roughly four hull radii (~69 m): effectively a hairpin.
+    //
+    // Author geometry from a design turn speed instead. The speed profile may
+    // still slow further for obstacles or refinement, but it must not shrink
+    // the authored curve merely because planning began at v=0.
+    const double designTurnSpeedMps =
         r.deriveTerminalTurnRadiusFromVehicle
-            ? planningOriginSpeedMps /
+            ? std::clamp(
+                  std::max(
+                      planningOriginSpeedMps,
+                      0.50 * r.maxSpeedMps
+                  ),
+                  0.5,
+                  r.maxSpeedMps
+              )
+            : std::max(0.5, 0.8 * r.maxSpeedMps);
+
+    const double minimumTerminalRadiusMeters =
+        std::max(100.0, 20.0 * r.hullRadiusMeters);
+    const double designLateralRadiusMeters =
+        designTurnSpeedMps * designTurnSpeedMps /
+        r.lateralMps2;
+    const double designAngularRadiusMeters =
+        r.deriveTerminalTurnRadiusFromVehicle
+            ? designTurnSpeedMps /
                 r.maxAngularVelocityRadPerSecond
             : 0.0;
     const double preferredTerminalRadius =
         r.deriveTerminalTurnRadiusFromVehicle
             ? std::max({
                   minimumTerminalRadiusMeters,
-                  originLateralRadiusMeters,
-                  originAngularRadiusMeters
+                  designLateralRadiusMeters,
+                  designAngularRadiusMeters
               })
             : r.preferredTerminalTurnRadiusMeters;
 
@@ -620,7 +641,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             ? std::max(
                   0.5,
                   std::min({
-                      r.maxSpeedMps,
+                      designTurnSpeedMps,
                       std::sqrt(
                           r.lateralMps2 *
                           preferredTerminalRadius
@@ -629,7 +650,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                           preferredTerminalRadius
                   })
               )
-            : std::max(0.5, 0.8 * r.maxSpeedMps);
+            : designTurnSpeedMps;
     const double lateralTerminalRadiusMeters =
         terminalTurnSpeedMps * terminalTurnSpeedMps /
         r.lateralMps2;

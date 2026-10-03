@@ -1,3 +1,13 @@
+## Continue from 2026-10-03 PredictivePilot V2 second layer
+
+Current main has a completely isolated production autopilot V2. GameServer calls PredictivePilot only; ShipControlAdapter/direct navigation demands are forbidden by architecture contract. PredictivePilot now persists per-docking learning state, estimates real pitch/yaw/roll authority and Assisted response from measured ship behavior, and chooses ordinary-control candidates through short-horizon prediction.
+
+RouteFollower V2 no longer calls legacy TrajectoryFollower and no longer creates a private 50-250 m look-ahead steering ray. For SpatialCorridor the accepted centerline is the only path: target velocity is current-segment tangent plus bounded inward correction to the closest point on that exact segment. Architecture checks forbid TrajectoryFollower/lookAhead/steeringRay in V2.
+
+Live logs expose learned_pitch_alpha, learned_yaw_alpha, learned_roll_alpha, assisted_course_tau_s and assisted_speed_response_mps2.
+
+Next evidence must come from Windows: architecture contract, navigation_runtime_control, maneuver_tracking_controller, navigation_composite_proving_ground, then EliteGame live docking. Do not mix or fall back to the legacy pilot if V2 fails.
+
 ## Continue from 2026-10-03 virtual-pilot architecture reset
 
 Production automatic docking is no longer allowed to control engines/accelerations directly. GameServer uses navigation::autopilot::ShipControlAdapter, which outputs only ordinary ShipControlState controls (pitch/yaw/roll, targetSpeedRate, keypad RCS, END/BrakeToStop). The real ship flight law owns propulsion and physical response. Composite execution uses the same path. Direct navigation demand fields remain legacy diagnostic/lab only and are forbidden in automatic docking by check_automatic_docking.py.

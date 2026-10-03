@@ -291,22 +291,30 @@ int main()
         });
     const auto curvedFinalDirection=glm::normalize(curvedStop-curvedAlign);
 
-    const double expectedOriginLateralRadius=
-        curved.initialSpeedMps*curved.initialSpeedMps/
+    const double expectedDesignTurnSpeed=std::clamp(
+        std::max(
+            curved.initialSpeedMps,
+            0.50*curved.maxSpeedMps
+        ),
+        0.5,
+        curved.maxSpeedMps
+    );
+    const double expectedDesignLateralRadius=
+        expectedDesignTurnSpeed*expectedDesignTurnSpeed/
         curved.lateralMps2;
-    const double expectedOriginAngularRadius=
-        curved.initialSpeedMps/
+    const double expectedDesignAngularRadius=
+        expectedDesignTurnSpeed/
         curved.maxAngularVelocityRadPerSecond;
     const double expectedTerminalRadius=std::max({
-        20.0,
-        4.0*curved.hullRadiusMeters,
-        expectedOriginLateralRadius,
-        expectedOriginAngularRadius
+        100.0,
+        20.0*curved.hullRadiusMeters,
+        expectedDesignLateralRadius,
+        expectedDesignAngularRadius
     });
     const double expectedTurnSpeed=std::max(
         0.5,
         std::min({
-            curved.maxSpeedMps,
+            expectedDesignTurnSpeed,
             std::sqrt(
                 curved.lateralMps2*expectedTerminalRadius
             ),
@@ -371,26 +379,30 @@ int main()
         return 24;
     }
 
-    auto slowerCurved=curved;
-    slowerCurved.initialSpeedMps=10.0;
-    const auto slowerCurvedPlan=
-        DockingAdvisoryPlanner::plan(slowerCurved);
-    if(!slowerCurvedPlan.valid() ||
-       !(slowerCurvedPlan.terminalTurnRadiusMeters + 1.0e-6 <
-         curvedPlan.terminalTurnRadiusMeters) ||
-       !(slowerCurvedPlan.terminalTurnSpeedMps + 1.0e-6 <
-         curvedPlan.terminalTurnSpeedMps))
+    auto stoppedCurved=curved;
+    stoppedCurved.initialSpeedMps=0.0;
+    const auto stoppedCurvedPlan=
+        DockingAdvisoryPlanner::plan(stoppedCurved);
+    if(!stoppedCurvedPlan.valid() ||
+       std::abs(
+           stoppedCurvedPlan.terminalTurnRadiusMeters-
+           curvedPlan.terminalTurnRadiusMeters
+       )>1.0e-6 ||
+       std::abs(
+           stoppedCurvedPlan.terminalTurnSpeedMps-
+           curvedPlan.terminalTurnSpeedMps
+       )>1.0e-6)
     {
         std::cerr
-            << "terminal turn did not adapt to planning-origin speed"
-            << " fast_radius="
+            << "stop-and-settle incorrectly collapsed the authored terminal turn"
+            << " moving_radius="
             << curvedPlan.terminalTurnRadiusMeters
-            << " slow_radius="
-            << slowerCurvedPlan.terminalTurnRadiusMeters
-            << " fast_speed="
+            << " stopped_radius="
+            << stoppedCurvedPlan.terminalTurnRadiusMeters
+            << " moving_speed="
             << curvedPlan.terminalTurnSpeedMps
-            << " slow_speed="
-            << slowerCurvedPlan.terminalTurnSpeedMps
+            << " stopped_speed="
+            << stoppedCurvedPlan.terminalTurnSpeedMps
             << "\n";
         return 41;
     }

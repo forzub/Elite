@@ -210,6 +210,9 @@ for token in (
         fail(f"shared server/client attitude path lost state transition: {token}")
 
 predictive_pilot = read("src/game/navigation/autopilot/PredictivePilot.h")
+client_autopilot = read(
+    "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+)
 server = read("src/game/server/GameServer.cpp")
 
 for token in (
@@ -224,20 +227,33 @@ for token in (
         fail(f"PredictivePilot V2 ordinary-control contract lost: {token}")
 
 for token in (
-    "PredictivePilot::Request",
+    "class ClientRouteAutopilot final",
+    "RouteFollower::follow(",
     "PredictivePilot::make(",
-    "ship->setControlState(automaticControl)",
+    "ShipControlState",
 ):
-    if token not in server:
-        fail(f"production automatic docking V2 path lost: {token}")
+    if token not in client_autopilot:
+        fail(f"client automatic docking V2 path lost: {token}")
+
+for token in (
+    "ClientAutopilot::stabilize(",
+    "ClientAutopilot::update(",
+    "m_client->submitInput(m_clientAutopilotControl)",
+):
+    if token not in space:
+        fail(f"SpaceState client autopilot input path lost: {token}")
 
 for forbidden in (
     "ShipControlAdapter",
     "applyNavigationAssistedFlightModel(",
     "applySystemAccelerationDemand(",
+    "PredictivePilot",
+    "RouteFollower",
+    "RoutePlanner",
+    "DockingAutomaticRuntime",
 ):
     if forbidden in server:
-        fail(f"production automatic docking regained legacy actuator path: {forbidden}")
+        fail(f"server regained navigation/autopilot ownership: {forbidden}")
 
 for token in (
     "requestAssistedTargetSpeed(",

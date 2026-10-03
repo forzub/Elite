@@ -1097,3 +1097,26 @@ set_tests_properties(
     accepted_maneuver_program_builder
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+# Legacy comparison/lab suite.
+#
+# These tests intentionally exercise retired execution seams such as
+# TrajectoryFollower, NavigationRuntimeControlBridge or the old Assisted
+# actuator helper. They remain useful as historical diagnostics/oracles, but
+# they MUST NOT participate in the production PredictivePilot V2 acceptance
+# gate or in the default navigation-runtime run.
+set_tests_properties(
+    maneuver_phase_gate
+    maneuver_program_sampler
+    maneuver_tracking_controller
+    maneuver_program_execution_lab
+    maneuver_corridor_matrix
+    maneuver_rigid_body_corridor
+    maneuver_corner_family_matrix
+    maneuver_fly_through_3d
+    maneuver_speed_doctrine_matrix
+    maneuver_chained_limit_matrix
+    navigation_runtime_planner
+    PROPERTIES LABELS "legacy_navigation_lab"
+)

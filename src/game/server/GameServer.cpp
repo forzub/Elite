@@ -31,7 +31,7 @@
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
-#include "src/game/navigation/autopilot/ShipControlAdapter.h"
+#include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -43,7 +43,7 @@
 namespace {
 
 constexpr const char* DockingAutomaticImplementationRevision =
-    "dock-auto-20261003-pilot-input-controls";
+    "dock-auto-20261003-predictive-pilot-v2";
 
 std::string dockingAdvisoryTrace(
     const game::navigation::planner::RoutePlan& plan
@@ -3152,27 +3152,33 @@ void GameServer::applyAutomaticDockingControls(
                 continue;
             }
 
-            game::navigation::autopilot::ShipControlAdapter::Request
+            game::navigation::autopilot::PredictivePilot::Request
                 alignmentPilot;
             alignmentPilot.law = baseProgram.controlLaw;
             alignmentPilot.desiredVelocityMapMps = glm::dvec3(0.0);
             alignmentPilot.desiredLinearAccelerationMapMps2 =
-                alignment.intent.idealLinearAccelerationLocalMps2;
-            alignmentPilot.desiredAngularAccelerationMapRadPerSec2 =
-                alignment.intent.idealAngularAccelerationLocalRadPerSec2;
+                glm::dvec3(0.0);
+            alignmentPilot.desiredForwardMap =
+                runtime.alignmentForwardMap;
+            alignmentPilot.desiredUpMap =
+                runtime.alignmentUpMap;
             alignmentPilot.actualVelocityMapMps =
                 agent.velocityMapMetersPerSecond;
             alignmentPilot.forwardMap = agent.forwardMap;
             alignmentPilot.rightMap = agent.rightMap;
             alignmentPilot.upMap = agent.upMap;
-            alignmentPilot.currentAssistedTargetSpeedMps =
-                motion.targetForwardSpeedMps;
+            alignmentPilot.pitchRateRadPerSec =
+                agent.pitchRateRadPerSec;
+            alignmentPilot.yawRateRadPerSec =
+                agent.yawRateRadPerSec;
+            alignmentPilot.rollRateRadPerSec =
+                agent.rollRateRadPerSec;
             alignmentPilot.stopRequested = true;
             alignmentPilot.deltaSeconds =
                 time.gameplayDeltaSeconds;
 
             const ShipControlState alignmentControl =
-                game::navigation::autopilot::ShipControlAdapter::make(
+                game::navigation::autopilot::PredictivePilot::make(
                     alignmentPilot,
                     ship->core().effectivePhysics()
                 );
@@ -3613,29 +3619,53 @@ void GameServer::applyAutomaticDockingControls(
                 followed.intent
             );
 
-        game::navigation::autopilot::ShipControlAdapter::Request
+        const auto pilotReference =
+            Follower::sampleReference(
+                program,
+                time.universeTimeSeconds,
+                agent.positionMapMeters,
+                runtime.currentSpatialSegment
+            );
+
+        game::navigation::autopilot::PredictivePilot::Request
             pilotRequest;
         pilotRequest.law = program.controlLaw;
         pilotRequest.desiredVelocityMapMps =
             followed.targetVelocityMapMps;
         pilotRequest.desiredLinearAccelerationMapMps2 =
             followed.intent.idealLinearAccelerationLocalMps2;
-        pilotRequest.desiredAngularAccelerationMapRadPerSec2 =
-            followed.intent.idealAngularAccelerationLocalRadPerSec2;
+
+        const double targetSpeedMps =
+            glm::length(followed.targetVelocityMapMps);
+        pilotRequest.desiredForwardMap =
+            targetSpeedMps > 1.0e-9
+                ? followed.targetVelocityMapMps / targetSpeedMps
+                : (pilotReference.valid
+                    ? pilotReference.reference.forwardMap
+                    : agent.forwardMap);
+        pilotRequest.desiredUpMap =
+            pilotReference.valid
+                ? pilotReference.reference.upMap
+                : agent.upMap;
+
         pilotRequest.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
         pilotRequest.forwardMap = agent.forwardMap;
         pilotRequest.rightMap = agent.rightMap;
         pilotRequest.upMap = agent.upMap;
-        pilotRequest.currentAssistedTargetSpeedMps =
-            motion.targetForwardSpeedMps;
+        pilotRequest.pitchRateRadPerSec =
+            agent.pitchRateRadPerSec;
+        pilotRequest.yawRateRadPerSec =
+            agent.yawRateRadPerSec;
+        pilotRequest.rollRateRadPerSec =
+            agent.rollRateRadPerSec;
         pilotRequest.stopRequested =
-            glm::length(followed.targetVelocityMapMps) <= 1.0e-9;
+            targetSpeedMps <= 1.0e-9;
         pilotRequest.deltaSeconds =
             time.gameplayDeltaSeconds;
 
         const ShipControlState automaticControl =
-            game::navigation::autopilot::ShipControlAdapter::make(
+            game::navigation::autopilot::PredictivePilot::make(
                 pilotRequest,
                 ship->core().effectivePhysics()
             );

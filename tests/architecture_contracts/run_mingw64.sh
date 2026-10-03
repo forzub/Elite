@@ -59,6 +59,8 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_geometric_path_planner.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_trajectory_generator.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_automatic_docking.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_docking_module_boundaries.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_guidance_test_geometry.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_recent_navigation_regressions.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_model_asset_editor.py"

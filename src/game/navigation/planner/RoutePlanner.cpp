@@ -1,5 +1,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <utility>
 
@@ -75,6 +77,60 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
     out.failure = planned.failure;
     out.diagnosticSummary =
         game::navigation::dockingAdvisoryPlanDiagnosticSummary(planned);
+
+    if (planned.valid())
+    {
+        out.disposition = RoutePlanDisposition::Ready;
+        out.failureCode = RoutePlanFailureCode::None;
+        out.userMessage = "Route is ready.";
+    }
+    else
+    {
+        const std::string failureLower = [&]()
+        {
+            std::string value = planned.failure;
+            std::transform(
+                value.begin(),
+                value.end(),
+                value.begin(),
+                [](unsigned char ch)
+                {
+                    return static_cast<char>(std::tolower(ch));
+                }
+            );
+            return value;
+        }();
+
+        if (failureLower.find("invalid") != std::string::npos ||
+            failureLower.find("nan") != std::string::npos ||
+            failureLower.find("non-finite") != std::string::npos)
+        {
+            out.disposition = RoutePlanDisposition::InvalidWorldData;
+            out.failureCode = RoutePlanFailureCode::InvalidWorldGeometry;
+            out.userMessage =
+                "Navigation data are invalid or incomplete; route construction cannot proceed until the world/vehicle data are corrected.";
+        }
+        else if (failureLower.find("blocked") != std::string::npos ||
+                 failureLower.find("obstruct") != std::string::npos ||
+                 failureLower.find("collision-free") != std::string::npos ||
+                 failureLower.find("route") != std::string::npos)
+        {
+            // One blocked candidate is not proof that the route is impossible.
+            // Ask the planner/orchestrator for a different sector, radius or
+            // approach geometry first.
+            out.disposition = RoutePlanDisposition::NeedsRefinement;
+            out.failureCode = RoutePlanFailureCode::NoCollisionFreeCandidate;
+            out.userMessage =
+                "The current route candidate is blocked. Search another sector, turn radius, lead length or approach geometry.";
+        }
+        else
+        {
+            out.disposition = RoutePlanDisposition::NeedsRefinement;
+            out.failureCode = RoutePlanFailureCode::BackendFailure;
+            out.userMessage =
+                "The current route candidate is not acceptable; refine route geometry or speed limits and try again.";
+        }
+    }
 
     out.gates.reserve(planned.gates.size());
     for (const auto& gate : planned.gates)

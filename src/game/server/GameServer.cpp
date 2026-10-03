@@ -3010,6 +3010,28 @@ void GameServer::applyAutomaticDockingControls(
                 runtime.lastPlanFailureReason = reason;
                 runtime.planningJob.reset();
 
+                const bool refinementBudgetExhausted =
+                    reason.rfind(
+                        "planner-refinement-budget-exhausted",
+                        0
+                    ) == 0;
+
+                if (refinementBudgetExhausted)
+                {
+                    runtime.phase =
+                        DockingAutomaticRuntime::Phase::Stabilizing;
+                    runtime.settledSinceUniverseTimeSeconds = -1.0;
+
+                    std::cerr
+                        << "[DockAuto] request="
+                        << runtime.requestSerial
+                        << " phase=refinement-replan"
+                        << " reason=" << reason
+                        << " action=keep-autopilot-and-replan"
+                        << "\n";
+                    continue;
+                }
+
                 std::cerr
                     << "[DockAuto] request="
                     << runtime.requestSerial

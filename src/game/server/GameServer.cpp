@@ -868,14 +868,6 @@ void GameServer::resetSessionControlState(
     if (controlledEntityId.value == 0)
         return;
 
-    m_dockingGuidancePreparations.erase(
-        controlledEntityId.value
-    );
-    m_dockingAutomaticRuntimes.erase(
-        controlledEntityId.value
-    );
-    m_dockingResults.erase(controlledEntityId.value);
-
     std::uint64_t previousLastReceived = 0;
     std::uint64_t previousLastProcessed = 0;
     std::size_t previousPendingControls = 0;
@@ -1097,29 +1089,6 @@ void GameServer::receiveClientMessage(
     game::network::ServerSessionId sessionId,
     const game::network::ClientMessage& msg)
 {
-    if (const auto* dock =
-            std::get_if<ClientShipCommand>(&msg.payload))
-    {
-        if (dock->type == ClientShipCommand::BeginDockingGuidancePreparation ||
-            dock->type == ClientShipCommand::CompleteDockingGuidancePreparation ||
-            dock->type == ClientShipCommand::CancelDockingGuidancePreparation ||
-            dock->type == ClientShipCommand::BeginAutomaticDocking ||
-            dock->type == ClientShipCommand::CancelAutomaticDocking)
-        {
-            std::cout << "[DockRequest] server-recv serial="
-                      << dock->requestSerial
-                      << " command="
-                      << (dock->type == ClientShipCommand::BeginAutomaticDocking
-                              ? "begin-automatic"
-                              : dock->type == ClientShipCommand::CancelAutomaticDocking
-                                  ? "cancel-automatic"
-                                  : dock->type == ClientShipCommand::BeginDockingGuidancePreparation
-                                      ? "begin-preparation"
-                                      : dock->type == ClientShipCommand::CompleteDockingGuidancePreparation
-                                          ? "complete-preparation" : "cancel-preparation")
-                      << std::endl;
-        }
-    }
     const PlayerId playerId = m_sessions.player(sessionId);
     const EntityId controlledEntityId =
         controlledEntityForSession(sessionId);
@@ -1127,73 +1096,24 @@ void GameServer::receiveClientMessage(
     if (!playerId || controlledEntityId.value == 0)
     {
         ++m_queueDiagnostics.rejectedSessionMessages;
-        if (const auto* dock =
-                std::get_if<ClientShipCommand>(&msg.payload))
-        {
-            if (dock->type == ClientShipCommand::BeginDockingGuidancePreparation ||
-                dock->type == ClientShipCommand::CompleteDockingGuidancePreparation ||
-                dock->type == ClientShipCommand::CancelDockingGuidancePreparation ||
-                dock->type == ClientShipCommand::BeginAutomaticDocking ||
-                dock->type == ClientShipCommand::CancelAutomaticDocking)
-            {
-                std::cerr << "[DockRequest] server-reject serial="
-                          << dock->requestSerial
-                          << " reason=no-controlled-entity" << std::endl;
-            }
-        }
         return;
     }
 
     std::visit(
-        [this, controlledEntityId, playerId](const auto& payload)
+        [this, controlledEntityId](const auto& payload)
         {
             using PayloadT = std::decay_t<decltype(payload)>;
 
             if constexpr (std::is_same_v<PayloadT, ShipControlState>)
             {
+                // Server sees only ordinary ship controls. It deliberately
+                // does not know whether Human or a client virtual pilot
+                // produced this numbered input sample.
                 submitCommand(controlledEntityId, payload);
             }
             else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
             {
-                if (payload.type == ClientShipCommand::BeginDockingGuidancePreparation)
-                {
-                    (void)beginDockingGuidancePreparation(
-                        playerId, controlledEntityId, payload.requestSerial);
-                    return;
-                }
-                if (payload.type == ClientShipCommand::CancelDockingGuidancePreparation)
-                {
-                    (void)finishDockingGuidancePreparation(
-                        playerId, controlledEntityId, payload.requestSerial, false);
-                    return;
-                }
-                if (payload.type == ClientShipCommand::CompleteDockingGuidancePreparation)
-                {
-                    (void)finishDockingGuidancePreparation(
-                        playerId, controlledEntityId, payload.requestSerial, true);
-                    return;
-                }
-                if (payload.type == ClientShipCommand::BeginAutomaticDocking)
-                {
-                    (void)beginAutomaticDocking(
-                        playerId,
-                        controlledEntityId,
-                        payload
-                    );
-                    return;
-                }
-                if (payload.type == ClientShipCommand::CancelAutomaticDocking)
-                {
-                    (void)finishAutomaticDocking(
-                        playerId,
-                        controlledEntityId,
-                        payload.requestSerial,
-                        false,
-                        "client-cancel"
-                    );
-                    return;
-                }
-
+                // Non-navigation service/debug commands remain explicit.
                 auto& queue =
                     m_pendingClientShipCommands[controlledEntityId.value];
                 if (queue.size() >= MaxShipCommandsPerShip)
@@ -1207,11 +1127,6 @@ void GameServer::receiveClientMessage(
         msg.payload
     );
 }
-
-
-
-
-
 
 
 void GameServer::debugRefreshSnapshot()
@@ -1481,9 +1396,6 @@ bool GameServer::copySnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
-    outSnapshot.session.controlledEntityAutopilotActive =
-        controlledEntityAutopilotActiveForSession(sessionId);
-    copyDockingResultForSession(sessionId, outSnapshot.session);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -1515,9 +1427,6 @@ bool GameServer::copyHydratedSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
-    outSnapshot.session.controlledEntityAutopilotActive =
-        controlledEntityAutopilotActiveForSession(sessionId);
-    copyDockingResultForSession(sessionId, outSnapshot.session);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -1542,9 +1451,6 @@ bool GameServer::copySparseSnapshotForSession(
         ownedNavigationAssetsForSession(sessionId);
     outSnapshot.session.navigationSensors =
         navigationSensorsForSession(sessionId);
-    outSnapshot.session.controlledEntityAutopilotActive =
-        controlledEntityAutopilotActiveForSession(sessionId);
-    copyDockingResultForSession(sessionId, outSnapshot.session);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

@@ -1059,6 +1059,8 @@ struct ReplacementFit
         std::numeric_limits<double>::infinity();
     double minimumPlannedDynamicClearanceMeters =
         std::numeric_limits<double>::infinity();
+    double authoredStartSpeedMps = 0.0;
+    double authoredStartTangentToHullDeg = 0.0;
 };
 
 ReplacementFit fitAuthorityBoundedReplacement(
@@ -1084,6 +1086,21 @@ ReplacementFit fitAuthorityBoundedReplacement(
     const bool launchingFromLowSpeed =
         startingSpeed < MinimumPlannedSpeedMps;
 
+    // STOP -> START is explicit here too. If the previous bounded action
+    // physically stopped the craft, do not author the next moving bypass with
+    // v0=0 and a0=0: a TimeScheduled reference would immediately run away from
+    // a vehicle that has no initial motion command. Start the new curve with a
+    // small non-zero reference speed along the ACTUAL hull heading while
+    // preserving a(0)=0. The curve may then bend toward the selected bypass.
+    VehicleState authoredStart = start;
+    if (launchingFromLowSpeed)
+    {
+        constexpr double LaunchReferenceSpeedMps = 0.25;
+        authoredStart.velocity =
+            glm::normalize(start.basis.forward) *
+            LaunchReferenceSpeedMps;
+    }
+
     // Prefer the shortest physically bounded pass.  Try a modest 4 m/s exit
     // first, then a slower 2 m/s pass. A low-speed entry may accelerate from
     // below 0.5 m/s, but it must make non-reversing progress, reach the transit
@@ -1100,8 +1117,8 @@ ReplacementFit fitAuthorityBoundedReplacement(
                 direction * exitSpeedMps;
             const QuinticCurve curve =
                 makeCurve(
-                    start.position,
-                    start.velocity,
+                    authoredStart.position,
+                    authoredStart.velocity,
                     target,
                     endVelocity,
                     static_cast<double>(durationSeconds)
@@ -1227,11 +1244,18 @@ ReplacementFit fitAuthorityBoundedReplacement(
             result.minimumPlannedSpeedMps = minimumSpeed;
             result.minimumPlannedDynamicClearanceMeters =
                 minimumDynamicClearance;
+            result.authoredStartSpeedMps =
+                glm::length(authoredStart.velocity);
+            result.authoredStartTangentToHullDeg =
+                angleRad(
+                    authoredStart.velocity,
+                    authoredStart.basis.forward
+                ) * 180.0 / kPi;
             result.program =
                 makeProgram(
                     12020,
                     v.timeSeconds,
-                    start,
+                    authoredStart,
                     target,
                     endVelocity,
                     terminal,
@@ -2507,6 +2531,10 @@ CompositeMetrics runComposite(Law law)
                 << fit.minimumPlannedSpeedMps
                 << " min_planned_dynamic_clearance_m="
                 << fit.minimumPlannedDynamicClearanceMeters
+                << " start_ref_speed_mps="
+                << fit.authoredStartSpeedMps
+                << " start_tangent_to_hull_deg="
+                << fit.authoredStartTangentToHullDeg
                 << "\n";
 
             const auto phase =
@@ -2763,6 +2791,16 @@ CompositeMetrics runComposite(Law law)
                 << continuation.minimumPlannedDynamicClearanceMeters
                 << " min_actual_dynamic_clearance_m="
                 << continuationPhase.minDynamicClearanceMeters
+                << " start_ref_speed_mps="
+                << continuation.authoredStartSpeedMps
+                << " start_tangent_to_hull_deg="
+                << continuation.authoredStartTangentToHullDeg
+                << " max_env_pos_m="
+                << continuationPhase.maxEnvelopePositionErrorMeters
+                << " max_env_vel_mps="
+                << continuationPhase.maxEnvelopeVelocityErrorMps
+                << " max_env_course_deg="
+                << continuationPhase.maxEnvelopeCourseErrorDeg
                 << " max_continuous_assisted_slip_s="
                 << continuationPhase.maxContinuousAssistedSlipSeconds
                 << " tracking_exceeded_ticks="

@@ -1,3 +1,31 @@
+## 2026-10-03 — production autopilot is now a virtual pilot, not an actuator controller
+
+Architecture reset after repeated tunnel regressions.
+
+Production automatic docking no longer writes navigationAccelerationDemandValid / navigationVelocityTargetValid and no longer commands DynamicMotionSystem through navigation-only acceleration/velocity helpers. GameServer now converts Follower guidance into ordinary ShipControlState pilot inputs via src/game/navigation/autopilot/ShipControlAdapter.h.
+
+New ownership:
+- Planner owns route geometry, speed schedule, STOP points and physically feasible reference.
+- Follower measures route error and produces guidance/correction intent.
+- ShipControlAdapter is the autopilot pilot: pitch/yaw/roll, targetSpeedRate, keypad RCS and ordinary END/BrakeToStop only.
+- ShipController + LocalFlightControlStateMachine + DynamicMotionSystem::applyLocalFrameInput exclusively own how those controls become physical motion and engine usage.
+
+Control-law semantics:
+- Assisted: autopilot changes the same persistent forward-speed target as player +/- input. Direction remains hull nose; the ship's ordinary Assisted law handles acceleration/braking and VREL-to-nose stabilization.
+- Newtonian: autopilot commands ordinary positive primary-main throttle; explicit stop uses ordinary END/autobrake (turn-and-burn); no reverse-throttle fantasy is injected.
+- Authored STOP with small residual motion (including cases such as 0.045 m/s) uses ordinary keypad RCS through forward/strafe/lift inputs. Measured near-zero speed is not itself a maneuver-state selector.
+
+The composite proving ground was migrated to the same pilot-input path so synthetic success can no longer depend on a different actuator API than production docking.
+
+DynamicMotionSystem::applyNavigationAssistedFlightModel was restored to the last known-good implementation from commit 737852c8ff76346eb8a90c5c3d8d2bc57c1dc0e9. It remains only for legacy diagnostics/labs while those seams are migrated; production automatic docking does not call it.
+
+Architecture guard: tests/architecture_contracts/check_automatic_docking.py now fails if GameServer automatic docking writes direct navigation demand fields or calls direct navigation propulsion helpers.
+
+New implementation marker:
+dock-auto-20261003-pilot-input-controls
+
+Windows compile/test verification pending.
+
 ## 2026-10-03 — Assisted scalar speed decoupled from steering vector direction
 
 Latest Windows evidence: navigation_runtime_control and maneuver_tracking_controller pass. The low-speed bypass START fix no longer produces tracking failure; the planner safely holds through several AdjustedClear iterations until the moving hazard clears. The remaining composite failure is now portal_102 Assisted: the portal program begins tangent to the hull, but execution stalls with final position error ~47.36 m, final velocity error ~6 m/s, max course error ~124.8 deg and 500 tracking ticks.

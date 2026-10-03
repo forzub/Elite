@@ -120,24 +120,34 @@ def main() -> None:
         "docking/traffic",
     )
 
-    require(
+    forbid(
         "src/game/server/GameServer.cpp",
         "navigation/planner/RoutePlannerApi.h",
         "navigation/autopilot/RouteFollowerApi.h",
-    )
-    forbid(
-        "src/game/server/GameServer.cpp",
+        "navigation/autopilot/PredictivePilot.h",
         "navigation/DockingAdvisoryPlanner.h",
+        "navigation/AcceptedManeuverProgram",
         "navigation/TrajectoryFollower.h",
         "navigation/ManeuverProgramSampler.h",
         "navigation/ManeuverProgramTimeline.h",
         "ManeuverProgramSampler::",
         "ManeuverProgramTimeline::",
         "ManeuverTrackingController",
+        "DockingAutomaticRuntime",
     )
     require(
         "src/game/SpaceState.cpp",
         "navigation/planner/RoutePlannerApi.h",
+        "ClientAutopilot::start(",
+        "ClientAutopilot::update(",
+        "m_client->submitInput(m_clientAutopilotControl)",
+    )
+    require(
+        "src/game/navigation/autopilot/ClientRouteAutopilot.h",
+        "class ClientRouteAutopilot final",
+        "RouteFollower::follow(",
+        "PredictivePilot::make(",
+        "ShipControlState",
     )
     forbid(
         "src/game/SpaceState.cpp",

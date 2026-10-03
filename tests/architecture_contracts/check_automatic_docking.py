@@ -136,7 +136,6 @@ try:
         "beginAutomaticDocking(",
         "applyAutomaticDockingControls(",
         "automaticDockingPreparationControl(",
-        "mode=coast",
         "coastToExecution",
         "startVelocityMps * PlanningLeadSeconds",
         "AutomaticPlanningAuthorityFraction = 0.90",

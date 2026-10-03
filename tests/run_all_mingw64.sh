@@ -49,6 +49,10 @@ run_suite \
     "tests/architecture_contracts/run_mingw64.sh"
 
 run_suite \
+    "NAVIGATION RUNTIME + PREDICTIVE AUTOPILOT V2" \
+    "tests/navigation_runtime/run_mingw64.sh"
+
+run_suite \
     "SHARED TRAJECTORY PREDICTOR" \
     "tests/trajectory_prediction/run_mingw64.sh"
 

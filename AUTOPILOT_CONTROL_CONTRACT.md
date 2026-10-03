@@ -34,11 +34,11 @@ Owns:
 
 The Follower does not select engines and does not create a second global route.
 
-### Autopilot pilot adapter
+### Autopilot V2 virtual pilot
 
-`src/game/navigation/autopilot/ShipControlAdapter.h`
+`src/game/navigation/autopilot/PredictivePilot.h`
 
-Converts guidance into ordinary `ShipControlState` pilot inputs only:
+This is the only production automatic-docking pilot. It converts desired vehicle state into ordinary `ShipControlState` pilot inputs only and predicts control against the measured ship response:
 
 - `pitchInput`, `yawInput`, `rollInput`;
 - `targetSpeedRate`;

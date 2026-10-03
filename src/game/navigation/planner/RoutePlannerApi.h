@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,29 @@
 
 namespace game::navigation::planner
 {
+
+enum class RoutePlanDisposition : std::uint8_t
+{
+    Ready = 0,
+    NeedsRefinement,
+    WaitForWindow,
+    PhysicallyImpossible,
+    InvalidWorldData
+};
+
+enum class RoutePlanFailureCode : std::uint8_t
+{
+    None = 0,
+    InvalidRequest,
+    InvalidWorldGeometry,
+    HullDoesNotFit,
+    GoalGeometricallyIsolated,
+    UnavoidableCollision,
+    PropulsionInsufficient,
+    NoCollisionFreeCandidate,
+    DynamicWindowUnavailable,
+    BackendFailure
+};
 
 struct RoutePlanRequest
 {
@@ -57,7 +81,10 @@ struct RouteGate
 
 struct RoutePlan
 {
+    RoutePlanDisposition disposition = RoutePlanDisposition::NeedsRefinement;
+    RoutePlanFailureCode failureCode = RoutePlanFailureCode::BackendFailure;
     std::string failure;
+    std::string userMessage;
     std::string diagnosticSummary;
 
     // Presentation and execution are two samplings of the same route geometry.
@@ -104,9 +131,18 @@ struct RoutePlan
 
     [[nodiscard]] bool valid() const noexcept
     {
-        return failure.empty() &&
+        return
+            disposition == RoutePlanDisposition::Ready &&
+            failure.empty() &&
             gates.size() >= 2 &&
             executionGates.size() >= 2;
+    }
+
+    [[nodiscard]] bool retryable() const noexcept
+    {
+        return
+            disposition == RoutePlanDisposition::NeedsRefinement ||
+            disposition == RoutePlanDisposition::WaitForWindow;
     }
 };
 

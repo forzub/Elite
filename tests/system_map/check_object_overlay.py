@@ -54,6 +54,7 @@ def main() -> int:
         "item.kind == MapObjectGlyphKind::DockingPort",
         "nearerDock",
         "picked->kind == MapObjectGlyphKind::DockingPort",
+        "constexpr double buttonHeight = 23.0",
     )
     require("std::optional<MapObjectInfoPanelState>" not in overlay,
             "overlay regressed to a single-card state")
@@ -79,6 +80,7 @@ def main() -> int:
         "continuous and time-invariant",
         "Never invent samples here",
         "previousGlState",
+        "constexpr double actionHeight = 23.0",
     )
     require("frame.trajectories.push_back" not in renderer,
             "renderer must not synthesize trajectory samples")

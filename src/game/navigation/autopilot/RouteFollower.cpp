@@ -3,7 +3,6 @@
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
-#include "src/game/navigation/TrajectoryFollower.h"
 
 #include <algorithm>
 #include <cmath>
@@ -227,68 +226,220 @@ RouteFollowerResult RouteFollower::follow(
     std::size_t minimumSpatialSegmentIndex
 ) noexcept
 {
-    game::navigation::TrajectoryFollower::AgentState legacyAgent;
-    const auto trackingAgent = adaptAgent(agent);
-    legacyAgent.positionMapMeters = trackingAgent.positionMapMeters;
-    legacyAgent.velocityMapMetersPerSecond =
-        trackingAgent.velocityMapMetersPerSecond;
-    legacyAgent.forwardMap = trackingAgent.forwardMap;
-    legacyAgent.rightMap = trackingAgent.rightMap;
-    legacyAgent.upMap = trackingAgent.upMap;
-    legacyAgent.pitchRateRadPerSec = trackingAgent.pitchRateRadPerSec;
-    legacyAgent.yawRateRadPerSec = trackingAgent.yawRateRadPerSec;
-    legacyAgent.rollRateRadPerSec = trackingAgent.rollRateRadPerSec;
-
-    const auto legacyPolicy = adaptPolicy(policy);
-
-    const auto legacy = game::navigation::TrajectoryFollower::follow(
-        program,
-        universeTimeSeconds,
-        legacyAgent,
-        legacyPolicy,
-        minimumSpatialSegmentIndex
-    );
-
     RouteFollowerResult out;
-    switch (legacy.status)
+
+    const bool spatialCorridor =
+        program.referenceMode ==
+            AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+
+    const auto sampled =
+        spatialCorridor
+            ? game::navigation::ManeuverProgramSampler::sampleSpatial(
+                  program,
+                  universeTimeSeconds,
+                  agent.positionMapMeters,
+                  minimumSpatialSegmentIndex
+              )
+            : game::navigation::ManeuverProgramSampler::sample(
+                  program,
+                  universeTimeSeconds
+              );
+
+    if (sampled.status ==
+            game::navigation::ManeuverProgramSampler::Status::InvalidInput ||
+        sampled.status ==
+            game::navigation::ManeuverProgramSampler::Status::BeforeStart)
     {
-        case game::navigation::TrajectoryFollower::Status::Following:
-            out.status = RouteFollowerStatus::Following;
-            break;
-        case game::navigation::TrajectoryFollower::Status::Complete:
-            out.status = RouteFollowerStatus::Complete;
-            break;
-        default:
-            out.status = RouteFollowerStatus::InvalidInput;
-            break;
+        return out;
     }
 
-    out.intent = legacy.intent;
-    out.remainingDistanceMeters = legacy.remainingDistanceMeters;
-    out.targetVelocityMapMps = legacy.targetVelocityMapMps;
-    out.crossTrackErrorMeters = legacy.crossTrackErrorMeters;
-    out.linearVelocityErrorMps = legacy.linearVelocityErrorMps;
+    auto reference = sampled.reference;
+    glm::dvec3 targetVelocity =
+        reference.velocityMapMetersPerSecond;
+
+    // V2 corridor doctrine:
+    // - the accepted centerline is the ONLY path;
+    // - no look-ahead ray may invent a second local route;
+    // - correction is a velocity component directed from the real craft
+    //   straight back toward the current centerline segment.
+    //
+    // This can move diagonally inside the authored corridor, but it can never
+    // place a steering target beside the corridor or skip across a corner.
+    if (spatialCorridor &&
+        sampled.lowerSampleIndex < sampled.upperSampleIndex &&
+        sampled.upperSampleIndex < program.sampleCount)
+    {
+        const auto& lower =
+            program.samples[sampled.lowerSampleIndex];
+        const auto& upper =
+            program.samples[sampled.upperSampleIndex];
+
+        const glm::dvec3 segment =
+            upper.positionMapMeters - lower.positionMapMeters;
+        const double segmentLength = glm::length(segment);
+        const double referenceSpeed =
+            glm::length(reference.velocityMapMetersPerSecond);
+
+        if (std::isfinite(segmentLength) &&
+            segmentLength > 1.0e-12 &&
+            std::isfinite(referenceSpeed) &&
+            referenceSpeed > 1.0e-9)
+        {
+            const glm::dvec3 tangent = segment / segmentLength;
+
+            const double progress = std::clamp(
+                glm::dot(
+                    agent.positionMapMeters - lower.positionMapMeters,
+                    segment
+                ) / (segmentLength * segmentLength),
+                0.0,
+                1.0
+            );
+            const glm::dvec3 centerlinePoint =
+                lower.positionMapMeters + segment * progress;
+
+            glm::dvec3 inward =
+                centerlinePoint - agent.positionMapMeters;
+            inward -= tangent * glm::dot(inward, tangent);
+            const double crossTrack = glm::length(inward);
+
+            if (std::isfinite(crossTrack) && crossTrack > 1.0e-6)
+            {
+                inward /= crossTrack;
+
+                // Use only the feedback authority already reserved by the
+                // accepted program. The correction speed is braking-limited:
+                // if correction stopped now, the ship can still arrest that
+                // lateral motion before crossing the same error distance.
+                const double reserve = std::max(
+                    0.0,
+                    program.tracking.linearFeedbackReserveMps2
+                );
+                const double brakingLimitedCorrection =
+                    reserve > 1.0e-9
+                        ? std::sqrt(2.0 * reserve * crossTrack)
+                        : 0.0;
+
+                // Never spend more than 35% of route speed laterally. Forward
+                // progress remains monotonic and corner cutting cannot become
+                // a substitute for following the authored centerline.
+                const double correctionSpeed = std::min(
+                    referenceSpeed * 0.35,
+                    brakingLimitedCorrection
+                );
+                const double forwardSpeed = std::sqrt(
+                    std::max(
+                        0.0,
+                        referenceSpeed * referenceSpeed -
+                            correctionSpeed * correctionSpeed
+                    )
+                );
+
+                targetVelocity =
+                    tangent * forwardSpeed +
+                    inward * correctionSpeed;
+            }
+            else
+            {
+                targetVelocity = tangent * referenceSpeed;
+            }
+        }
+    }
+
+    auto tracking =
+        game::navigation::ManeuverTrackingController::track(
+            program,
+            reference,
+            adaptAgent(agent),
+            adaptPolicy(policy)
+        );
+
+    const double authoredReferenceSpeed =
+        glm::length(reference.velocityMapMetersPerSecond);
+    const double measuredSpeed =
+        glm::length(agent.velocityMapMetersPerSecond);
+
+    if (std::isfinite(authoredReferenceSpeed) &&
+        std::isfinite(measuredSpeed) &&
+        authoredReferenceSpeed <= 1.0e-12 &&
+        measuredSpeed <= policy.velocityGainPerSecond)
+    {
+        tracking.intent.precisionTranslationOnly = true;
+    }
+
+    if (tracking.status ==
+        game::navigation::ManeuverTrackingController::Status::InvalidInput)
+    {
+        return out;
+    }
+
+    out.status = RouteFollowerStatus::Following;
+    out.intent = tracking.intent;
+    out.targetVelocityMapMps = targetVelocity;
+    out.crossTrackErrorMeters = tracking.positionErrorMeters;
+    out.linearVelocityErrorMps = tracking.linearVelocityErrorMps;
     out.envelopePositionErrorMeters =
-        legacy.envelopePositionErrorMeters;
+        tracking.envelopePositionErrorMeters;
     out.envelopeVelocityErrorMps =
-        legacy.envelopeVelocityErrorMps;
-    out.forwardAngleErrorRad = legacy.forwardAngleErrorRad;
+        tracking.envelopeVelocityErrorMps;
+    out.forwardAngleErrorRad = tracking.forwardAngleErrorRad;
     out.envelopeForwardAngleErrorRad =
-        legacy.envelopeForwardAngleErrorRad;
+        tracking.envelopeForwardAngleErrorRad;
     out.angularVelocityErrorRadPerSec =
-        legacy.angularVelocityErrorRadPerSec;
-    out.trackingErrorExceeded = legacy.trackingErrorExceeded;
-    out.angularCorrectionOnly = legacy.angularCorrectionOnly;
-    out.spatialReference = legacy.spatialReference;
-    out.referenceLowerSampleIndex =
-        legacy.referenceLowerSampleIndex;
-    out.referenceUpperSampleIndex =
-        legacy.referenceUpperSampleIndex;
-    out.referenceInterpolation01 =
-        legacy.referenceInterpolation01;
-    out.referenceSpatialDistanceMeters =
-        legacy.referenceSpatialDistanceMeters;
-    out.spatialSpeedScale = legacy.spatialSpeedScale;
+        tracking.angularVelocityErrorRadPerSec;
+    out.trackingErrorExceeded =
+        tracking.status ==
+            game::navigation::ManeuverTrackingController::Status::EnvelopeExceeded;
+    out.angularCorrectionOnly = tracking.angularCorrectionOnly;
+    out.spatialReference = sampled.spatialReference;
+    out.referenceLowerSampleIndex = sampled.lowerSampleIndex;
+    out.referenceUpperSampleIndex = sampled.upperSampleIndex;
+    out.referenceInterpolation01 = sampled.interpolation01;
+    out.referenceSpatialDistanceMeters = sampled.spatialDistanceMeters;
+    out.spatialSpeedScale = 1.0;
+
+    const std::size_t lastIndex =
+        static_cast<std::size_t>(program.sampleCount - 1);
+    out.remainingDistanceMeters = glm::length(
+        program.samples[lastIndex].positionMapMeters -
+        agent.positionMapMeters
+    );
+
+    if (!std::isfinite(out.remainingDistanceMeters))
+        return RouteFollowerResult {};
+
+    const double elapsed =
+        game::navigation::ManeuverProgramTimeline::elapsedPageSeconds(
+            program,
+            universeTimeSeconds
+        );
+    if (!std::isfinite(elapsed))
+        return RouteFollowerResult {};
+
+    const bool atOrAfterProgramEnd =
+        elapsed >=
+        program.samples[lastIndex].timeOffsetSeconds - 1.0e-12;
+
+    const bool terminalSatisfied =
+        out.remainingDistanceMeters <=
+            program.terminalTolerance.positionMeters &&
+        out.linearVelocityErrorMps <=
+            program.terminalTolerance.linearVelocityMps &&
+        out.forwardAngleErrorRad <=
+            program.terminalTolerance.forwardAngleRad &&
+        out.angularVelocityErrorRadPerSec <=
+            program.terminalTolerance.angularVelocityRadPerSec;
+
+    const bool completionClockSatisfied =
+        spatialCorridor || atOrAfterProgramEnd;
+
+    if (program.completionTriggersReplan &&
+        completionClockSatisfied &&
+        terminalSatisfied)
+    {
+        out.status = RouteFollowerStatus::Complete;
+    }
+
     return out;
 }
 

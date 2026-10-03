@@ -233,7 +233,12 @@ try:
     )
 
 
-    if "ShipControlAdapter" in server:\n        raise AssertionError(\n            "Automatic docking mixed legacy ShipControlAdapter into PredictivePilot V2"\n        )\n\n    for forbidden in (
+    if "ShipControlAdapter" in server:
+        raise AssertionError(
+            "Automatic docking mixed legacy ShipControlAdapter into PredictivePilot V2"
+        )
+
+    for forbidden in (
         "automaticControl.navigationAccelerationDemandValid = true",
         "automaticControl.navigationVelocityTargetValid = true",
         "alignmentControl.navigationAccelerationDemandValid = true",

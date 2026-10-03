@@ -2996,6 +2996,66 @@ struct TestCase
 
 } // namespace
 
+
+void testDockingStartActionUsesFullRenderedButtonHitbox()
+{
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+
+    MapObjectOverlayItem dock;
+    dock.objectId = "dock:test:port";
+    dock.infoKind = MapObjectInfoKind::DockingPort;
+    dock.visible = true;
+    dock.pointerInteractive = true;
+    dock.screenPx = {300.0, 300.0};
+
+    game::system_map::MapObjectPanelAction calculate;
+    calculate.key = "show_docking_route";
+    calculate.labelKey = "show_docking_route";
+    calculate.enabled = true;
+    dock.panelActions.push_back(calculate);
+
+    game::system_map::MapObjectPanelAction automatic;
+    automatic.key = "start_docking";
+    automatic.labelKey = "start_docking";
+    automatic.enabled = true;
+    dock.panelActions.push_back(automatic);
+
+    frame.items.push_back(dock);
+
+    const glm::dvec2 viewport(1000.0, 700.0);
+    state.open(frame.items.front(), viewport);
+    const auto panels = state.orderedPanels();
+    REQUIRE(panels.size() == 1);
+
+    const auto& panel = panels.front();
+    constexpr double renderedButtonHeight = 23.0;
+    const double buttonTop =
+        panel.topLeftPx.y +
+        panel.expandedHeightPx -
+        8.0 -
+        renderedButtonHeight;
+
+    // Probe the final half-pixel of the visibly rendered lower button.
+    // This used to be drawn but not clickable because hit testing used 22 px.
+    const glm::dvec2 click(
+        panel.topLeftPx.x + 20.0,
+        buttonTop + renderedButtonHeight - 0.5
+    );
+
+    const auto result = state.handlePointer(
+        frame,
+        viewport,
+        click,
+        true,
+        true
+    );
+
+    REQUIRE(result.consumed);
+    REQUIRE(result.actionObjectId == dock.objectId);
+    REQUIRE(result.actionKey == "start_docking");
+}
+
 int main()
 {
     const std::vector<TestCase> tests =
@@ -3031,7 +3091,8 @@ int main()
         {"tactical overlay trajectory seam does not invent samples", testTacticalOverlayTrajectorySeamDoesNotInventSamples},
         {"Hub map orbit keeps captured pivot on screen", testHubMapOrbitKeepsCapturedPivotOnScreen},
         {"Hub map orbit pivot prefers direct then nearest object", testHubMapOrbitPivotPrefersDirectThenNearestObject},
-        {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection}
+        {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection},
+        {"docking start action uses full rendered button hitbox", testDockingStartActionUsesFullRenderedButtonHitbox}
     };
 
     int failed = 0;

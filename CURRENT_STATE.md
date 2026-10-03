@@ -1,3 +1,22 @@
+## 2026-10-03 — live map exposed stop-speed terminal hairpin and docking-action hitbox mismatch
+
+Live Hub-map evidence showed a terminal docking arc with an absurd ~pivot-sized radius after stop-and-settle. Root cause: DockingAdvisoryPlanner derived preferred terminal radius from initialSpeedMps; Automatic deliberately stops before planning, so the radius collapsed to the hull floor (~69 m for Cobra).
+
+Fix:
+- terminal geometry now uses a designTurnSpeedMps = max(initial speed, 0.5 * planned max speed), bounded by max speed;
+- minimum authored radius is max(100 m, 20 * hull radius);
+- lateral/angular radius terms are derived from design turn speed;
+- stopping before planning no longer shrinks the authored curve;
+- regression requires the stopped and moving-origin fixtures to preserve the same design turn when both are below design speed.
+
+The same live run contained no [DockRequest] ui-action=start_docking / [DockAuto] request lines, proving Automatic never reached SpaceState/server ownership. A concrete UI mismatch was found: map action buttons were rendered at 23 px but hit-tested at 22 px. Hit testing now exactly matches 23 px and SystemMapBehaviorTests covers the final visible half-pixel of the lower start_docking button.
+
+Next Windows evidence:
+1. docking_advisory;
+2. system_map_behavior + object-overlay contract;
+3. automatic-docking architecture contract;
+4. EliteGame live run. The new route should have a visibly broad terminal arc and clicking STЫKOVKA must emit [DockRequest] ui-action=start_docking immediately.
+
 ## 2026-10-03 — navigation test suite realigned to PredictivePilot V2
 
 Full navigation-test audit completed after the V2 autopilot split.

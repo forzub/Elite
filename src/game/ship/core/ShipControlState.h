@@ -44,16 +44,17 @@ struct ShipControlState
     game::navigation::VelocityAlignmentMode velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
 
-    // Navigation v2 / autopilot direct SYSTEM-frame control seam.
+    // Legacy navigation-v2 diagnostic/lab seam.
+    //
+    // Production autopilot MUST NOT use this path. It is a virtual pilot and
+    // must emit the ordinary controls above through
+    // navigation::autopilot::ShipControlAdapter. These fields remain only
+    // while older navigation labs/bridges are migrated and are guarded out of
+    // automatic docking by architecture contracts.
     //
     // Vectors below are in authoritative system/world axes after the explicit
-    // NavigationFrameBoundary. This is an acceleration DEMAND, not an applied force and not a physics
-    // override. SharedShipPhysics / ShipController / DynamicMotionSystem still
-    // enforce the authoritative vehicle capability and speed/resource limits.
-    //
-    // Manual input fields above take precedence when they are materially
-    // non-zero; the live bridge emits a clean control state when autopilot owns
-    // the ship.
+    // NavigationFrameBoundary. SharedShipPhysics / DynamicMotionSystem still
+    // enforce vehicle capability when a legacy diagnostic uses them.
     bool navigationAccelerationDemandValid = false;
     glm::dvec3 navigationLinearAccelerationDemandSystemMps2 {0.0};
     glm::dvec3 navigationAngularAccelerationDemandSystemRadPerSec2 {0.0};

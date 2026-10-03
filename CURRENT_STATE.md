@@ -1,3 +1,26 @@
+## 2026-10-03 — PredictivePilot V2 second layer: adaptive dynamics + centerline-locked corridor following
+
+Production automatic docking now uses only PredictivePilot V2. ShipControlAdapter and direct navigation actuator demand are forbidden in the production server path.
+
+Second-layer pilot state is persistent per DockingAutomaticRuntime and learns from measured response:
+- effective pitch/yaw/roll authority from observed delta-omega after ordinary pilot inputs;
+- Assisted forward-speed response from measured delta-V after +/- input;
+- Assisted course-response time from measured VREL-to-nose error closure.
+These learned values are bounded by ShipParams and feed the next control decision.
+
+Attitude control now evaluates discrete ordinary-control candidates (-1,-0.5,0,+0.5,+1) over a short prediction horizon and penalizes predicted angular overshoot/braking debt. It no longer assumes the configured angular authority is exact.
+
+SpatialCorridor execution no longer delegates to legacy TrajectoryFollower. RouteFollower V2 samples the accepted program directly. There is no 50-250 m private look-ahead point and no steeringRay. The accepted centerline is the only path. Course correction is constructed from:
+- tangent of the CURRENT accepted centerline segment;
+- bounded inward velocity component from the real craft to the closest point on that same segment.
+The correction preserves route-speed magnitude and is limited to 35% lateral share plus the accepted program's feedback/braking authority. It cannot target a point beside the corridor or skip across a corner.
+
+Architecture test now fails if V2 RouteFollower contains TrajectoryFollower, lookAhead or steeringRay, or if GameServer contains ShipControlAdapter.
+
+DockAutoTrack logs now expose learned_pitch_alpha, learned_yaw_alpha, learned_roll_alpha, assisted_course_tau_s and assisted_speed_response_mps2.
+
+Windows compile/test verification pending.
+
 ## 2026-10-03 — production autopilot is now a virtual pilot, not an actuator controller
 
 Architecture reset after repeated tunnel regressions.

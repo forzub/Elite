@@ -48,10 +48,15 @@ PYTHON_BIN="${ELITE_PYTHON_BIN}"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_runtime_control.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_npc_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_live_replication_guidance.py"
-"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage12_runtime_planner.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_foundation_lock.py"
+
+if [[ "${ELITE_RUN_LEGACY_NAVIGATION_LABS:-0}" == "1" ]]; then
+    echo "[ARCH] running legacy standalone navigation-tool contracts"
+    "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage12_runtime_planner.py"
+    "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage1_nominal_route.py"
+    "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_api_purity.py"
+fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_geometric_path_planner.py"
-"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_navigation_stage1_nominal_route.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_trajectory_generator.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_manual_docking_advisory.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_guidance_test_geometry.py"

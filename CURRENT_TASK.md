@@ -1,3 +1,17 @@
+## 2026-10-03 — run the modernized PredictivePilot V2 gate
+
+Do not run legacy_navigation_lab tests as acceptance.
+
+Required Windows sequence:
+1. pull current main;
+2. configure build/tests/navigation_runtime;
+3. build navigation_runtime_control_tests, maneuver_program_sampler_tests, route_follower_api_tests and navigation_v2_tunnel_proving_ground_tests;
+4. run those CTest names;
+5. run bash verify_docking.sh;
+6. only if green, build EliteGame and live-run automatic docking.
+
+The V2 tunnel proving ground is the current behavioral corridor test. The old navigation_composite_proving_ground is legacy-only until explicitly rewritten.
+
 ## 2026-10-03 — verify isolated adaptive PredictivePilot V2
 
 Pull current main only after this second-layer slice is complete.

@@ -9,6 +9,37 @@
 
 namespace game::navigation::planner
 {
+
+const char* routePlanFailureMessage(
+    RoutePlanFailureCode code
+) noexcept
+{
+    switch (code)
+    {
+        case RoutePlanFailureCode::None:
+            return "Route is ready.";
+        case RoutePlanFailureCode::InvalidRequest:
+            return "Navigation request is invalid.";
+        case RoutePlanFailureCode::InvalidWorldGeometry:
+            return "Navigation world geometry is invalid or incomplete.";
+        case RoutePlanFailureCode::HullDoesNotFit:
+            return "The ship and required clearance do not fit through any available passage.";
+        case RoutePlanFailureCode::GoalGeometricallyIsolated:
+            return "The destination is geometrically isolated from the ship by impassable obstacles.";
+        case RoutePlanFailureCode::UnavoidableCollision:
+            return "Given the current state and hard vehicle limits, every reachable trajectory collides.";
+        case RoutePlanFailureCode::PropulsionInsufficient:
+            return "Available propulsion or control authority is insufficient to reach a safe route.";
+        case RoutePlanFailureCode::NoCollisionFreeCandidate:
+            return "The current route candidate is blocked; search another sector, radius, lead length or approach geometry.";
+        case RoutePlanFailureCode::DynamicWindowUnavailable:
+            return "No safe dynamic passage is available now; wait for a valid movement window and replan.";
+        case RoutePlanFailureCode::BackendFailure:
+        default:
+            return "The current route candidate is not acceptable; refine route geometry or speed limits and try again.";
+    }
+}
+
 namespace
 {
 
@@ -82,7 +113,7 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
     {
         out.disposition = RoutePlanDisposition::Ready;
         out.failureCode = RoutePlanFailureCode::None;
-        out.userMessage = "Route is ready.";
+        out.userMessage = routePlanFailureMessage(out.failureCode);
     }
     else
     {
@@ -108,7 +139,7 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
             out.disposition = RoutePlanDisposition::InvalidWorldData;
             out.failureCode = RoutePlanFailureCode::InvalidWorldGeometry;
             out.userMessage =
-                "Navigation data are invalid or incomplete; route construction cannot proceed until the world/vehicle data are corrected.";
+                routePlanFailureMessage(out.failureCode);
         }
         else if (failureLower.find("blocked") != std::string::npos ||
                  failureLower.find("obstruct") != std::string::npos ||
@@ -121,14 +152,14 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
             out.disposition = RoutePlanDisposition::NeedsRefinement;
             out.failureCode = RoutePlanFailureCode::NoCollisionFreeCandidate;
             out.userMessage =
-                "The current route candidate is blocked. Search another sector, turn radius, lead length or approach geometry.";
+                routePlanFailureMessage(out.failureCode);
         }
         else
         {
             out.disposition = RoutePlanDisposition::NeedsRefinement;
             out.failureCode = RoutePlanFailureCode::BackendFailure;
             out.userMessage =
-                "The current route candidate is not acceptable; refine route geometry or speed limits and try again.";
+                routePlanFailureMessage(out.failureCode);
         }
     }
 

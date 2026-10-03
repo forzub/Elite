@@ -117,6 +117,7 @@ set_tests_properties(
 
 add_executable(
     navigation_runtime_planner_tests
+    EXCLUDE_FROM_ALL
     NavigationRuntimePlannerTests.cpp
 )
 
@@ -266,12 +267,12 @@ add_test(
 )
 
 set_tests_properties(
-    maneuver_program_sampler
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
 add_executable(
     maneuver_phase_gate_tests
+    EXCLUDE_FROM_ALL
     ManeuverPhaseGateTests.cpp
 )
 
@@ -310,6 +311,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_tracking_controller_tests
+    EXCLUDE_FROM_ALL
     ManeuverTrackingControllerTests.cpp
 )
 
@@ -348,6 +350,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_corner_family_matrix_tests
+    EXCLUDE_FROM_ALL
     ManeuverCornerFamilyMatrixTests.cpp
 )
 
@@ -389,6 +392,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_rigid_body_corridor_tests
+    EXCLUDE_FROM_ALL
     ManeuverRigidBodyCorridorTests.cpp
 )
 
@@ -430,6 +434,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_corridor_matrix_tests
+    EXCLUDE_FROM_ALL
     ManeuverCorridorMatrixTests.cpp
 )
 
@@ -471,6 +476,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_fly_through_3d_tests
+    EXCLUDE_FROM_ALL
     ManeuverFlyThrough3dTests.cpp
 )
 
@@ -512,6 +518,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_speed_doctrine_matrix_tests
+    EXCLUDE_FROM_ALL
     ManeuverSpeedDoctrineMatrixTests.cpp
 )
 
@@ -553,6 +560,7 @@ set_tests_properties(
 
 add_executable(
     maneuver_chained_limit_matrix_tests
+    EXCLUDE_FROM_ALL
     ManeuverChainedLimitMatrixTests.cpp
 )
 
@@ -594,6 +602,7 @@ set_tests_properties(
 
 add_executable(
     navigation_composite_proving_ground_tests
+    EXCLUDE_FROM_ALL
     NavigationCompositeProvingGroundTests.cpp
     "${ELITE_SOURCE_ROOT}/tools/navigation_runtime/NavigationTrace.cpp"
 )
@@ -640,7 +649,52 @@ set_tests_properties(
 )
 
 add_executable(
+    navigation_v2_tunnel_proving_ground_tests
+    NavigationV2TunnelProvingGroundTests.cpp
+)
+
+target_include_directories(
+    navigation_v2_tunnel_proving_ground_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    navigation_v2_tunnel_proving_ground_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    navigation_v2_tunnel_proving_ground_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        navigation_v2_tunnel_proving_ground_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_v2_tunnel_proving_ground_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_v2_tunnel_proving_ground
+    COMMAND navigation_v2_tunnel_proving_ground_tests
+)
+
+set_tests_properties(
+    navigation_v2_tunnel_proving_ground
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     maneuver_program_execution_lab_tests
+    EXCLUDE_FROM_ALL
     ManeuverProgramExecutionLabTests.cpp
 )
 

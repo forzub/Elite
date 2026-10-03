@@ -208,9 +208,14 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
         game::ship::controlledSpeedLimitMps(params);
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(shipForward));
-    const double targetForwardSpeedMps = std::max(
-        0.0, glm::dot(targetVelocitySystemMps, forward)
-    );
+
+    // Assisted separates speed from direction. Follower's velocity vector
+    // supplies the requested SPEED magnitude, while hull attitude supplies the
+    // current travel direction. Projecting the future/look-ahead velocity onto
+    // the current nose can collapse the requested speed to zero on a sharp
+    // bend (>90 deg steering lead), deadlocking SpatialCorridor progress.
+    const double targetForwardSpeedMps =
+        glm::length(targetVelocitySystemMps);
     const double responseGain =
         static_cast<double>(params.throttleAccel) > 0.0
             ? static_cast<double>(params.throttleAccel)

@@ -816,11 +816,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         const double authoredCruiseSpeed =
             terminalTurnSpeedMps;
-        const double transitComfortRadius=std::max(
-            20.0,
-            0.50 * authoredCruiseSpeed * authoredCruiseSpeed /
-                r.lateralMps2
-        );
         const double terminalPrimitiveRadius=
             preferredTerminalRadius;
 

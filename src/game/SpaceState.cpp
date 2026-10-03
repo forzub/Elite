@@ -72,6 +72,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/ship/ShipPropulsionState.h"

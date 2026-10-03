@@ -1,3 +1,18 @@
+## 2026-10-03 — Assisted controller: remove lateral target-velocity equilibrium
+
+Latest Windows evidence: Newtonian remains fully green. Assisted physically completes the constrained portal and final capture with tracking_exceeded_ticks=0, but the new temporal guard correctly exposed a real control-law issue: nose/VREL slip above 8 deg persists beyond the agreed 3-second window.
+
+Root cause in production DynamicMotionSystem::applyNavigationAssistedFlightModel: after the ordinary nose-coupled Assisted law had already damped measured lateral VREL toward zero relative to the current hull, autopilot code added a second lateral velocity equilibrium derived from targetVelocitySystemMps. Because Follower target velocity points toward a future look-ahead direction while the hull is still turning, VREL could chase that future direction instead of the current nose.
+
+Current main fixes this at the flight-law layer:
+- targetVelocitySystemMps no longer creates a lateral velocity equilibrium; direction remains owned by the actual current hull nose.
+- trajectory lateral feed-forward may only assist an already-existing Assisted nose-alignment acceleration and is suppressed when it would oppose alignment or create sideways VREL from an aligned state.
+- ordinary route execution still uses Assisted stabilization, never precision RCS.
+- navigation_runtime_control regression coverage now proves that lateral target velocity alone cannot manufacture slip, same-direction feed-forward may assist alignment, opposite feed-forward cannot weaken alignment, and aligned VREL cannot be pushed sideways by feed-forward.
+- composite phase logs now print max_continuous_assisted_slip_s so any remaining >3 s violation is localized immediately.
+
+Windows verification pending.
+
 ## 2026-10-02 — Assisted composite now judged by velocity-alignment lag duration, not peak slip angle
 
 Latest Windows evidence: Newtonian remains fully green. Assisted now traverses portal_102 with tracking_exceeded_ticks=0, hull half-width 17.293 m inside the 19 m portal, safe dynamic clearance, sub-meter terminal position error, and successful final capture. The only remaining failure was the legacy aggregate assertion maxSlipDeg <= 8.0. That metric records the single largest instantaneous angle between hull nose and VREL over the whole scenario, so it rejects legitimate transient turning even when the velocity catches up promptly.

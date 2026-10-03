@@ -2926,7 +2926,7 @@ void SystemMapRenderer::applyDockingAction(
         return;
     }
 
-    std::cout << "[DockRequest] ui-action=" << actionKey
+    std::cerr << "[DockRequest] ui-action=" << actionKey
               << " object=" << objectId << std::endl;
 
     const auto* item = currentOverlayItem(objectId);
@@ -2959,7 +2959,7 @@ void SystemMapRenderer::applyDockingAction(
         );
     if (serial != 0)
     {
-        std::cout << "[DockRequest] ui serial=" << serial
+        std::cerr << "[DockRequest] ui serial=" << serial
                   << " mode="
                   << (requestMode == game::navigation::DockingRouteRequest::Mode::Automatic
                           ? "automatic" : "guidance")
@@ -3004,7 +3004,7 @@ void SystemMapRenderer::cancelDockingTaskForClosedCard(
     if (pending.target.stableObjectId == moduleId &&
         pending.target.semanticAnchorId == anchorId)
     {
-        std::cout << "[DockRequest] ui-clear serial=" << pending.serial
+        std::cerr << "[DockRequest] ui-clear serial=" << pending.serial
                   << " reason=card-closed" << std::endl;
         // Docking guidance is intentionally card-scoped. Closing the dock
         // information card means the pilot has cancelled that advisory task;
@@ -4530,7 +4530,7 @@ SystemMapRenderer::handleInput(
 
         if (leftDown && overlayPointer.consumed)
         {
-            std::cout
+            std::cerr
                 << "[DockUi] pointer-consumed"
                 << " action_object=" << overlayPointer.actionObjectId
                 << " action_key=" << overlayPointer.actionKey

@@ -362,7 +362,7 @@ RouteFollowerResult RouteFollower::follow(
     if (std::isfinite(authoredReferenceSpeed) &&
         std::isfinite(measuredSpeed) &&
         authoredReferenceSpeed <= 1.0e-12 &&
-        measuredSpeed <= policy.velocityGainPerSecond)
+        measuredSpeed <= 0.50)
     {
         tracking.intent.precisionTranslationOnly = true;
     }

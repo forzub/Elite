@@ -227,11 +227,13 @@ void testPredictivePilotUsesOrdinaryNewtonianThrottle()
             pilotState
         );
 
+    const double expectedThrottle =
+        5.0 / game::ship::forwardMainAccelerationLimitMps2(params);
     requireNear(
         control.targetSpeedRate,
-        0.5,
+        expectedThrottle,
         1.0e-6,
-        "PredictivePilot did not convert Newtonian acceleration to ordinary main throttle"
+        "PredictivePilot did not normalize Newtonian throttle against the real main-engine/load authority"
     );
     require(
         !control.navigationAccelerationDemandValid &&

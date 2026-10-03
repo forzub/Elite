@@ -1,3 +1,13 @@
+## Continue from 2026-10-03 validator-driven replanning
+
+A recoverable AcceptedManeuverProgram validation failure is now feedback, not a terminal docking failure. AcceptedManeuverProgramBuilder returns ValidationDisposition + RefinementKind + page/sample + required/available + recommendedScale. GameServer retries TrajectoryGenerator up to a bounded number of refinement attempts, scaling speed constraints instead of restoring human control immediately. Logs expose [DockAutoPlan] validation=needs-refinement with the quantitative correction.
+
+RoutePlanner public API now has structured outcomes: Ready, NeedsRefinement, WaitForWindow, PhysicallyImpossible, InvalidWorldData plus failure codes and userMessage. A blocked single candidate is NeedsRefinement, never proof of impossibility.
+
+Future stage: Emergency Damage-Minimization Planner. In emergency mode, an otherwise "unavoidable" state must search for least-damage outcomes, including evasive continuation, impact attitude/contact optimization, extreme hard-limit maneuvers and eventual escape-capsule/ejection support. Keep this module separate from normal RoutePlanner/Autopilot V2.
+
+Next evidence: rebuild accepted_maneuver_program_builder_tests, route_planner_api_tests, navigation_runtime_control_tests, navigation_v2_tunnel_proving_ground_tests, run check_automatic_docking.py, then verify_docking.sh and live EliteGame docking.
+
 ## Continue from 2026-10-03 V2 test-suite audit
 
 The navigation test suite has been separated into current V2 acceptance and opt-in legacy labs.

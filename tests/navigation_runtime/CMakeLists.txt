@@ -1118,5 +1118,6 @@ set_tests_properties(
     maneuver_speed_doctrine_matrix
     maneuver_chained_limit_matrix
     navigation_runtime_planner
+    navigation_composite_proving_ground
     PROPERTIES LABELS "legacy_navigation_lab"
 )

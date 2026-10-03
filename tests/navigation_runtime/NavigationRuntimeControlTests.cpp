@@ -153,6 +153,54 @@ void testPredictivePilotBrakesAngularMotionBeforeOvershoot()
     );
 }
 
+void testPredictivePilotLearnsMeasuredPitchAuthority()
+{
+    ShipParams params = capabilityParams();
+    params.angularAccel = 2.0f;
+    params.maxPitchRate = 10.0f;
+
+    game::navigation::autopilot::PredictivePilot::State state;
+
+    game::navigation::autopilot::PredictivePilot::Request first;
+    first.law = game::navigation::LocalFlightControlLaw::Assisted;
+    first.desiredForwardMap = {0.0, 1.0, 0.0};
+    first.desiredUpMap = {0.0, 0.0, 1.0};
+    first.forwardMap = {0.0, 0.0, -1.0};
+    first.rightMap = {1.0, 0.0, 0.0};
+    first.upMap = {0.0, 1.0, 0.0};
+    first.deltaSeconds = 0.1;
+
+    const ShipControlState firstControl =
+        game::navigation::autopilot::PredictivePilot::make(
+            first,
+            params,
+            state
+        );
+
+    require(
+        std::abs(firstControl.pitchInput) >= 0.5f,
+        "PredictivePilot learning fixture did not excite pitch control"
+    );
+
+    auto second = first;
+    second.pitchRateRadPerSec = 0.05;
+    (void)game::navigation::autopilot::PredictivePilot::make(
+        second,
+        params,
+        state
+    );
+
+    require(
+        state.effectivePitchAuthorityRadPerSec2 > 0.0,
+        "PredictivePilot did not learn measured pitch authority"
+    );
+    require(
+        state.effectivePitchAuthorityRadPerSec2 <
+            game::ship::angularAccelerationLimitRadPerSec2(params),
+        "PredictivePilot ignored weaker measured pitch response"
+    );
+}
+
 void testPredictivePilotUsesOrdinaryNewtonianThrottle()
 {
     ShipParams params = capabilityParams();
@@ -1227,6 +1275,7 @@ int main()
     {
         testPredictivePilotUsesOnlyOrdinaryAssistedControls();
         testPredictivePilotBrakesAngularMotionBeforeOvershoot();
+        testPredictivePilotLearnsMeasuredPitchAuthority();
         testPredictivePilotUsesOrdinaryNewtonianThrottle();
         testPredictivePilotUsesRcsForSmallAuthoredStopResidual();
         testPredictivePilotUsesEndForAuthoredStop();

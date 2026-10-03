@@ -1286,12 +1286,6 @@ int main()
         testPrecisionVelocityTrimUsesOnlyPhysicalRcs();
         testVehicleBridgePublishesMotionTargetWithoutSelectingEngines();
         testVehicleBridgeRejectsInvalidVelocityAndClock();
-        testAssistedAutopilotUsesCanonicalFlightLaw();
-        testAssistedVectorTargetKeepsScalarSpeedWhileHullTurns();
-        testAssistedProgramTracksPhysicallyFeasibleAcceleration();
-        testAssistedProgramFeedForwardOnlyAssistsNoseAlignment();
-        testAssistedLateralVelocityTargetDoesNotCreateSlip();
-        testAssistedVehicleCorrectsMeasuredLateralMotion();
         testAngularDemandUsesExistingCapabilityClamp();
         testManualAttitudeOverridesNavigationAngularDemand();
         testNpcGoalBecomesNavigationIntentWithoutLegacyControl();

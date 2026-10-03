@@ -1,4 +1,3 @@
-#include "src/game/navigation/NavigationRuntimeControlBridge.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/ReplicatedNavigationExecutionState.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
@@ -18,8 +17,6 @@
 namespace
 {
 
-using Bridge = game::navigation::NavigationRuntimeControlBridge;
-
 void require(bool condition, const std::string& message)
 {
     if (!condition)
@@ -35,20 +32,6 @@ void requireNear(
 {
     if (std::abs(actual - expected) > tolerance)
         throw std::runtime_error(message);
-}
-
-Bridge::PilotSkillProfile expertProfile()
-{
-    Bridge::PilotSkillProfile profile;
-    profile.execution.reactionDelaySeconds = 0.0;
-    profile.execution.perceptionDecisionRateHz = 100.0;
-    profile.execution.commandLatencySeconds = 0.0;
-    profile.execution.responseFrequencyHz = 4.0;
-    profile.execution.dampingRatio = 1.0;
-    profile.execution.commandGain = 1.0;
-    profile.execution.maxLinearCommandSlewMetersPerSec3 = 1000.0;
-    profile.execution.maxAngularCommandSlewRadPerSec3 = 1000.0;
-    return profile;
 }
 
 ShipParams capabilityParams()

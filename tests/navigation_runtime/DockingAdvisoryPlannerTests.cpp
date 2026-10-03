@@ -294,7 +294,7 @@ int main()
     const double expectedDesignTurnSpeed=std::clamp(
         std::max(
             curved.initialSpeedMps,
-            0.50*curved.maxSpeedMps
+            0.80*curved.maxSpeedMps
         ),
         0.5,
         curved.maxSpeedMps

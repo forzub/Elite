@@ -1665,7 +1665,18 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 playerIt->second.transform.motion.localControlLaw;
     }
 
-    m_inputMapper.update(m_playerControl, currentLocalControlLaw);
+    if (m_clientAutopilotControlActive)
+    {
+        // Client autopilot is a virtual pilot, not a server navigation mode.
+        // It owns the same control surface as the keyboard mapper and sends
+        // exactly one ordinary ShipControlState through the normal input path.
+        m_playerControl = m_clientAutopilotControl;
+    }
+    else
+    {
+        m_inputMapper.update(m_playerControl, currentLocalControlLaw);
+    }
+
     m_client->submitInput(m_playerControl);
 
 

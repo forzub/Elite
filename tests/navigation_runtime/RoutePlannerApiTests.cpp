@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace
@@ -44,6 +45,16 @@ int main()
 
         require(plan.valid(), "generic RoutePlanner API did not produce a route");
         require(
+            plan.disposition ==
+                game::navigation::planner::RoutePlanDisposition::Ready,
+            "valid route did not report Ready disposition"
+        );
+        require(
+            plan.failureCode ==
+                game::navigation::planner::RoutePlanFailureCode::None,
+            "valid route exposed a failure code"
+        );
+        require(
             plan.executionGates.size() >= 2,
             "generic RoutePlanner API returned no executable geometry"
         );
@@ -55,6 +66,24 @@ int main()
             0.0,
             1.0e-6,
             "generic RoutePlanner changed the requested terminal point"
+        );
+
+        game::navigation::planner::RoutePlanRequest invalid = request;
+        invalid.maxSpeedMps = std::numeric_limits<double>::quiet_NaN();
+        const auto invalidPlan =
+            game::navigation::planner::RoutePlanner::plan(invalid);
+        require(
+            !invalidPlan.valid(),
+            "invalid planner request unexpectedly produced a route"
+        );
+        require(
+            invalidPlan.disposition !=
+                game::navigation::planner::RoutePlanDisposition::Ready,
+            "invalid planner request reported Ready"
+        );
+        require(
+            !invalidPlan.userMessage.empty(),
+            "planner failure did not expose a human-readable message"
         );
 
         std::cout << "ROUTE PLANNER API TESTS: PASS\n";

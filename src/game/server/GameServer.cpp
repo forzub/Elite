@@ -31,6 +31,7 @@
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
+#include "src/game/navigation/autopilot/ShipControlAdapter.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -3151,30 +3152,30 @@ void GameServer::applyAutomaticDockingControls(
                 continue;
             }
 
-            const game::navigation::NavigationFrameBoundary boundary(
-                hub->kinematicFrame()
-            );
-            if (!boundary.valid())
-            {
-                runtime.phase =
-                    DockingAutomaticRuntime::Phase::Stabilizing;
-                runtime.programs.clear();
-                runtime.settledSinceUniverseTimeSeconds = -1.0;
-                continue;
-            }
+            game::navigation::autopilot::ShipControlAdapter::Request
+                alignmentPilot;
+            alignmentPilot.law = baseProgram.controlLaw;
+            alignmentPilot.desiredVelocityMapMps = glm::dvec3(0.0);
+            alignmentPilot.desiredLinearAccelerationMapMps2 =
+                alignment.intent.idealLinearAccelerationLocalMps2;
+            alignmentPilot.desiredAngularAccelerationMapRadPerSec2 =
+                alignment.intent.idealAngularAccelerationLocalRadPerSec2;
+            alignmentPilot.actualVelocityMapMps =
+                agent.velocityMapMetersPerSecond;
+            alignmentPilot.forwardMap = agent.forwardMap;
+            alignmentPilot.rightMap = agent.rightMap;
+            alignmentPilot.upMap = agent.upMap;
+            alignmentPilot.currentAssistedTargetSpeedMps =
+                motion.targetForwardSpeedMps;
+            alignmentPilot.stopRequested = true;
+            alignmentPilot.deltaSeconds =
+                time.gameplayDeltaSeconds;
 
-            const auto systemIntent =
-                boundary.toSystemControlIntent(
-                    alignment.intent
+            const ShipControlState alignmentControl =
+                game::navigation::autopilot::ShipControlAdapter::make(
+                    alignmentPilot,
+                    ship->core().effectivePhysics()
                 );
-            ShipControlState alignmentControl;
-            alignmentControl.navigationAccelerationDemandValid = true;
-            alignmentControl.navigationLinearAccelerationDemandSystemMps2 =
-                systemIntent.idealLinearAccelerationSystemMps2;
-            alignmentControl.navigationAngularAccelerationDemandSystemRadPerSec2 =
-                systemIntent.idealAngularAccelerationSystemRadPerSec2;
-            alignmentControl.navigationIntentRevision =
-                systemIntent.revision;
             ship->setControlState(alignmentControl);
 
             const double entryToleranceRad =
@@ -3612,23 +3613,32 @@ void GameServer::applyAutomaticDockingControls(
                 followed.intent
             );
 
-        const glm::dvec3 targetVelocitySystemMps =
-            boundary.toSystemVector(
-                game::navigation::NavigationFrameBoundary::
-                    NavVector {followed.targetVelocityMapMps}
-            ).value;
+        game::navigation::autopilot::ShipControlAdapter::Request
+            pilotRequest;
+        pilotRequest.law = program.controlLaw;
+        pilotRequest.desiredVelocityMapMps =
+            followed.targetVelocityMapMps;
+        pilotRequest.desiredLinearAccelerationMapMps2 =
+            followed.intent.idealLinearAccelerationLocalMps2;
+        pilotRequest.desiredAngularAccelerationMapRadPerSec2 =
+            followed.intent.idealAngularAccelerationLocalRadPerSec2;
+        pilotRequest.actualVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        pilotRequest.forwardMap = agent.forwardMap;
+        pilotRequest.rightMap = agent.rightMap;
+        pilotRequest.upMap = agent.upMap;
+        pilotRequest.currentAssistedTargetSpeedMps =
+            motion.targetForwardSpeedMps;
+        pilotRequest.stopRequested =
+            glm::length(followed.targetVelocityMapMps) <= 1.0e-9;
+        pilotRequest.deltaSeconds =
+            time.gameplayDeltaSeconds;
 
-        ShipControlState automaticControl;
-        automaticControl.navigationAccelerationDemandValid = true;
-        automaticControl.navigationLinearAccelerationDemandSystemMps2 =
-            systemIntent.idealLinearAccelerationSystemMps2;
-        automaticControl.navigationAngularAccelerationDemandSystemRadPerSec2 =
-            systemIntent.idealAngularAccelerationSystemRadPerSec2;
-        automaticControl.navigationIntentRevision =
-            systemIntent.revision;
-        automaticControl.navigationVelocityTargetValid = true;
-        automaticControl.navigationTargetVelocitySystemMps =
-            targetVelocitySystemMps;
+        const ShipControlState automaticControl =
+            game::navigation::autopilot::ShipControlAdapter::make(
+                pilotRequest,
+                ship->core().effectivePhysics()
+            );
 
         // One sample per second: correlate the immutable trajectory, follower
         // feedback, pilot command and measured ship response on Windows.
@@ -3704,7 +3714,14 @@ void GameServer::applyAutomaticDockingControls(
                       << " actual_rates_radps=(" << agent.pitchRateRadPerSec
                       << "," << agent.yawRateRadPerSec << ","
                       << agent.rollRateRadPerSec << ")"
-                      << " direct_follower_control=1"
+                      << " pilot_inputs=1"
+                      << " pitch_input=" << automaticControl.pitchInput
+                      << " yaw_input=" << automaticControl.yawInput
+                      << " roll_input=" << automaticControl.rollInput
+                      << " longitudinal_input=" << automaticControl.targetSpeedRate
+                      << " rcs_fwd=" << automaticControl.forwardInput
+                      << " rcs_strafe=" << automaticControl.strafeInput
+                      << " rcs_lift=" << automaticControl.liftInput
                       << std::endl;
             runtime.lastTrackingDiagnosticTick =
                 time.serverTick;

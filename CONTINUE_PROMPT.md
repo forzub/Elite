@@ -1,3 +1,13 @@
+## Continue from 2026-10-03 V2 test-suite audit
+
+The navigation test suite has been separated into current V2 acceptance and opt-in legacy labs.
+
+Current automatic-docking execution tests must use only RouteFollower V2 + PredictivePilot V2 + ordinary ShipControlState/physics. navigation_runtime_control is V2-only. ManeuverProgramSamplerTests has been migrated to public RouteFollower V2. A new navigation_v2_tunnel_proving_ground validates physical progress through an authored SpatialCorridor, accepted-tunnel containment, <=3 s Assisted nose/VREL lag and PredictivePilot learned angular authority.
+
+Old TrajectoryFollower/NavigationRuntimeControlBridge/ShipControlAdapter execution matrices and the old navigation_composite_proving_ground are labeled legacy_navigation_lab, EXCLUDE_FROM_ALL, and skipped by the default runtime runner. They are available only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1.
+
+verify_docking.sh and tests/run_all_mingw64.sh now use the V2 suite. Next evidence must be Windows compile/test output from navigation_runtime_control + maneuver_program_sampler + route_follower_api + navigation_v2_tunnel_proving_ground, then verify_docking.sh.
+
 ## Continue from 2026-10-03 PredictivePilot V2 second layer
 
 Current main has a completely isolated production autopilot V2. GameServer calls PredictivePilot only; ShipControlAdapter/direct navigation demands are forbidden by architecture contract. PredictivePilot now persists per-docking learning state, estimates real pitch/yaw/roll authority and Assisted response from measured ship behavior, and chooses ordinary-control candidates through short-horizon prediction.

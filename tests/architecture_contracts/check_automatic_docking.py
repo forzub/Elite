@@ -137,7 +137,6 @@ try:
         "applyAutomaticDockingControls(",
         "automaticDockingPreparationControl(",
         "coastToExecution",
-        "startVelocityMps * PlanningLeadSeconds",
         "AutomaticPlanningAuthorityFraction = 0.90",
         "canCaptureHoldWhileBraking(",
         "standoff-braking-envelope",

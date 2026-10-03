@@ -28,6 +28,7 @@ try:
     renderer = require(
         "src/game/system_map/SystemMapRenderer.cpp",
         'automatic.key = "start_docking"',
+        "[DockUi] pointer-consumed",
         "DockingRouteRequest::Mode::Automatic",
         "dockingRouteRequests().request(",
         "NavigationModuleId::LocalGuidance",
@@ -124,6 +125,7 @@ try:
         "execution=client-input",
         "route_source=client",
         "control_path=ShipControlState",
+        "[DockClientFlow] observed-request",
         "phase=manual",
         "phase=executing",
     )
@@ -212,7 +214,7 @@ try:
         "src/game/navigation/DockingAdvisoryPlanner.cpp",
         "designTurnSpeedMps",
         "0.50 * r.maxSpeedMps",
-        "20.0 * r.hullRadiusMeters",
+        "30.0 * r.hullRadiusMeters",
     )
     require(
         "tests/navigation_runtime/DockingAdvisoryPlannerTests.cpp",

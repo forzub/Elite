@@ -480,6 +480,22 @@ public:
                                 "increase turn radius or lower speed through this bend";
                         }
 
+                        if (required > 1.0e-9 &&
+                            !(available > 1.0e-9))
+                        {
+                            return fail(
+                                "assisted-motion-physically-impossible",
+                                ValidationDisposition::PhysicallyImpossible,
+                                refinement,
+                                out.pages.size(),
+                                i,
+                                required,
+                                available,
+                                1.0,
+                                "required acceleration has zero available vehicle authority"
+                            );
+                        }
+
                         const double scale =
                             required > 1.0e-9 && available > 0.0
                                 ? std::clamp(

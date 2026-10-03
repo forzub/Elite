@@ -1,3 +1,18 @@
+## 2026-10-03 — low-speed dynamic bypass now uses explicit moving START
+
+Latest Windows evidence after the Assisted nose-coupling production fix: navigation_runtime_control and maneuver_tracking_controller pass; Assisted replacement and first continuation now keep max continuous >8 deg slip at 0.0 s. The remaining composite failure moved to dynamic_bypass_3 after a full braking stop: an 8 s continuation accumulated 105 tracking-envelope ticks despite zero excessive slip.
+
+Root cause: test-side fitAuthorityBoundedReplacement still authored low-speed continuations directly from the measured stopped state (v0=0) while makeCurve also imposes a0=0. For a TimeScheduled moving program that creates the same STOP/START ambiguity already fixed for portal_102: the reference clock advances while the real vehicle has no explicit non-zero launch state.
+
+Current main applies the same explicit contract to low-speed bypass reauthoring:
+- if measured start speed is below the transit floor, the authored moving start uses v0=0.25 m/s along the actual hull forward axis;
+- makeCurve and all dense physical/dynamic proof sampling use that authored start, so proof and execution describe the same moving boundary condition;
+- feed-forward acceleration at t=0 remains zero by the quintic construction;
+- ReplacementFit records authoredStartSpeedMps and authoredStartTangentToHullDeg;
+- continuation logs now include start_ref_speed_mps, start_tangent_to_hull_deg, max_env_pos_m, max_env_vel_mps and max_env_course_deg.
+
+Windows verification pending.
+
 ## 2026-10-03 — Assisted controller: remove lateral target-velocity equilibrium
 
 Latest Windows evidence: Newtonian remains fully green. Assisted physically completes the constrained portal and final capture with tracking_exceeded_ticks=0, but the new temporal guard correctly exposed a real control-law issue: nose/VREL slip above 8 deg persists beyond the agreed 3-second window.

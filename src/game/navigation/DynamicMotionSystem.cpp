@@ -208,14 +208,9 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
         game::ship::controlledSpeedLimitMps(params);
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(shipForward));
-
-    // Assisted separates speed from direction. Follower's velocity vector
-    // supplies the requested SPEED magnitude, while hull attitude supplies the
-    // current travel direction. Projecting the future/look-ahead velocity onto
-    // the current nose can collapse the requested speed to zero on a sharp
-    // bend (>90 deg steering lead), deadlocking SpatialCorridor progress.
-    const double targetForwardSpeedMps =
-        glm::length(targetVelocitySystemMps);
+    const double targetForwardSpeedMps = std::max(
+        0.0, glm::dot(targetVelocitySystemMps, forward)
+    );
     const double responseGain =
         static_cast<double>(params.throttleAccel) > 0.0
             ? static_cast<double>(params.throttleAccel)
@@ -266,46 +261,35 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
         shipUp
     );
 
-    // Assisted doctrine is nose-coupled: the current hull forward axis is
-    // the velocity-direction target. The vector target supplied by Follower
-    // controls requested speed and steering through the attitude loop; its
-    // lateral component must NOT become a second sideways velocity equilibrium.
-    // Otherwise VREL can keep chasing a future look-ahead direction while the
-    // hull is still turning, which makes FA-on behave like a weak Newtonian
-    // drift controller.
+    // The ordinary Assisted law already damps measured lateral velocity
+    // toward zero. Shift that physical equilibrium toward the requested
+    // lateral velocity; leave the response and authority limit to the ship.
+    // This is Assisted stabilization, never a keypad or manoeuvre RCS burn.
     const glm::dvec3 f = forward;
+    const glm::dvec3 lateralTarget =
+        targetVelocitySystemMps - f * targetForwardSpeedMps;
+    const double lateralGain = std::max(
+        0.0, static_cast<double>(params.strafeDamping)
+    );
+    const glm::dvec3 lateralFeedback = lateralTarget * lateralGain;
 
     const double assistedAuthority =
         game::ship::assistedLateralStabilizationAccelerationLimitMps2(params);
     const double totalLinearEnvelope =
         game::ship::mainAccelerationLimitMps2(params);
 
-    // Retain authored lateral acceleration only as feed-forward assistance to
-    // an already-needed nose-alignment correction. Never allow feed-forward
-    // to create/increase sideways VREL relative to the current nose.
-    glm::dvec3 lateralFeedForward =
+    // The trajectory budgets turn acceleration. Nose-coupled stabilization
+    // alone has to accumulate a sideways velocity error before producing it.
+    // Apply the pilot-executed lateral demand as feed-forward, subject to the
+    // same physical stabilization and shared load limits as manual Assisted.
+    const glm::dvec3 lateralFeedForward =
         executedAccelerationDemandSystemMps2 -
         f * requestedForwardAcceleration;
-
-    const double alignmentDemandSquared =
-        glm::dot(
-            motion.assistedStabilizationAccelerationMps2,
-            motion.assistedStabilizationAccelerationMps2
-        );
-
-    if (alignmentDemandSquared <= 1.0e-12 ||
-        glm::dot(
-            lateralFeedForward,
-            motion.assistedStabilizationAccelerationMps2
-        ) <= 0.0)
-    {
-        lateralFeedForward = glm::dvec3(0.0);
-    }
 
     motion.assistedStabilizationAccelerationMps2 =
         clampMagnitude(
             motion.assistedStabilizationAccelerationMps2 +
-                lateralFeedForward,
+                lateralFeedForward + lateralFeedback,
             assistedAuthority
         );
 

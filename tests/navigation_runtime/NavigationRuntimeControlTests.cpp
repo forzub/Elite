@@ -452,6 +452,74 @@ void testAssistedAutopilotUsesCanonicalFlightLaw()
                 "Assisted autopilot incorrectly spent precision RCS during ordinary transit");
 }
 
+void testAssistedVectorTargetKeepsScalarSpeedWhileHullTurns()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = glm::dvec3(0.0);
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 0;
+    frame.frameId = "assisted-steering-speed";
+    frame.valid = true;
+
+    ShipParams params = capabilityParams();
+    params.throttleAccel = 5.0f;
+    params.maxLinearGs = 7.5f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 20.0f;
+    params.reverseMainEngineAccelerationMps2 = 20.0f;
+
+    const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+    const glm::vec3 right(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+    // This target direction is 120 degrees away from the current nose.
+    // Steering owns that direction change. Assisted propulsion must preserve
+    // the requested 6 m/s scalar speed instead of projecting it to zero.
+    const double angle = 120.0 * 3.14159265358979323846 / 180.0;
+    const glm::dvec3 targetVelocity(
+        6.0 * std::sin(angle),
+        0.0,
+        -6.0 * std::cos(angle)
+    );
+
+    game::navigation::DynamicMotionSystem::
+        applyNavigationAssistedFlightModel(
+            motion,
+            frame,
+            params,
+            0.02f,
+            targetVelocity,
+            glm::dvec3(0.0),
+            forward,
+            right,
+            up
+        );
+
+    requireNear(
+        motion.targetForwardSpeedMps,
+        6.0,
+        1.0e-9,
+        "Assisted steering vector collapsed scalar speed while hull was turning"
+    );
+    require(
+        glm::dot(
+            motion.mainEngineAccelerationMps2,
+            glm::dvec3(forward)
+        ) > 0.0,
+        "Assisted main engine stopped merely because steering target was off-nose"
+    );
+    requireNear(
+        glm::length(motion.manoeuvreAccelerationMps2),
+        0.0,
+        1.0e-12,
+        "Assisted steering-speed regression spent precision RCS"
+    );
+}
+
 void testAssistedProgramTracksPhysicallyFeasibleAcceleration()
 {
     game::navigation::DynamicMotionState motion;
@@ -967,6 +1035,7 @@ int main()
         testVehicleBridgePublishesMotionTargetWithoutSelectingEngines();
         testVehicleBridgeRejectsInvalidVelocityAndClock();
         testAssistedAutopilotUsesCanonicalFlightLaw();
+        testAssistedVectorTargetKeepsScalarSpeedWhileHullTurns();
         testAssistedProgramTracksPhysicallyFeasibleAcceleration();
         testAssistedProgramFeedForwardOnlyAssistsNoseAlignment();
         testAssistedLateralVelocityTargetDoesNotCreateSlip();

@@ -2,6 +2,7 @@
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/ReplicatedNavigationExecutionState.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/navigation/autopilot/ShipControlAdapter.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
@@ -72,6 +73,160 @@ ShipParams capabilityParams()
     params.maxLinearGs = 1.0f;
     params.turnRadius = 1.0f;
     return params;
+}
+
+void testAutopilotAdapterUsesOnlyOrdinaryAssistedControls()
+{
+    ShipParams params = capabilityParams();
+    params.assistedMinimumTargetSpeedChangeRateMps2 = 1.0f;
+    params.assistedTargetSpeedChangeRateFractionPerSecond = 0.10f;
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 10.0f;
+    params.reverseMainEngineAccelerationMps2 = 10.0f;
+
+    game::navigation::autopilot::ShipControlAdapter::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Assisted;
+    request.desiredVelocityMapMps = {0.0, 0.0, -20.0};
+    request.desiredAngularAccelerationMapRadPerSec2 = {1.0, 0.0, 0.0};
+    request.actualVelocityMapMps = {0.0, 0.0, -5.0};
+    request.forwardMap = {0.0, 0.0, -1.0};
+    request.rightMap = {1.0, 0.0, 0.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.currentAssistedTargetSpeedMps = 5.0;
+    request.deltaSeconds = 0.1;
+
+    const ShipControlState control =
+        game::navigation::autopilot::ShipControlAdapter::make(
+            request,
+            params
+        );
+
+    require(
+        !control.navigationAccelerationDemandValid &&
+        !control.navigationVelocityTargetValid &&
+        !control.navigationPrecisionTranslationOnly,
+        "Assisted autopilot escaped through the direct navigation actuator seam"
+    );
+    require(
+        control.targetSpeedRate > 0.0f,
+        "Assisted autopilot did not press the ordinary + speed control"
+    );
+    require(
+        std::abs(control.pitchInput) > 0.0f,
+        "Assisted autopilot did not express turn demand through pitch/yaw/roll"
+    );
+}
+
+void testAutopilotAdapterUsesOrdinaryNewtonianThrottle()
+{
+    ShipParams params = capabilityParams();
+    params.forwardMainEngineAvailable = true;
+    params.reverseMainEngineAvailable = false;
+    params.forwardMainEngineAccelerationMps2 = 10.0f;
+
+    game::navigation::autopilot::ShipControlAdapter::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Newtonian;
+    request.desiredVelocityMapMps = {10.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {5.0, 0.0, 0.0};
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.deltaSeconds = 0.02;
+
+    const ShipControlState control =
+        game::navigation::autopilot::ShipControlAdapter::make(
+            request,
+            params
+        );
+
+    requireNear(
+        control.targetSpeedRate,
+        0.5,
+        1.0e-6,
+        "Newtonian autopilot did not convert requested acceleration to ordinary main-throttle input"
+    );
+    require(
+        control.velocityAlignmentCommand ==
+            game::navigation::VelocityAlignmentMode::None,
+        "Newtonian transit unexpectedly requested END/autobrake"
+    );
+    require(
+        !control.navigationAccelerationDemandValid &&
+        !control.navigationVelocityTargetValid,
+        "Newtonian autopilot used direct navigation actuator control"
+    );
+}
+
+void testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual()
+{
+    ShipParams params = capabilityParams();
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.assistedMinimumTargetSpeedChangeRateMps2 = 1.0f;
+    params.assistedTargetSpeedChangeRateFractionPerSecond = 0.10f;
+
+    game::navigation::autopilot::ShipControlAdapter::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Assisted;
+    request.desiredVelocityMapMps = glm::dvec3(0.0);
+    request.actualVelocityMapMps = {0.045, 0.0, 0.0};
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.currentAssistedTargetSpeedMps = 0.045;
+    request.stopRequested = true;
+    request.deltaSeconds = 0.02;
+
+    const ShipControlState control =
+        game::navigation::autopilot::ShipControlAdapter::make(
+            request,
+            params
+        );
+
+    require(
+        control.forwardInput < -0.9f,
+        "0.045 m/s STOP residual was not removed through ordinary keypad RCS"
+    );
+    require(
+        !control.navigationAccelerationDemandValid &&
+        !control.navigationVelocityTargetValid &&
+        !control.navigationPrecisionTranslationOnly,
+        "precision STOP bypassed ordinary ship controls"
+    );
+}
+
+void testAutopilotAdapterUsesEndForNewtonianAuthoredStop()
+{
+    ShipParams params = capabilityParams();
+    params.forwardMainEngineAvailable = true;
+    params.forwardMainEngineAccelerationMps2 = 10.0f;
+
+    game::navigation::autopilot::ShipControlAdapter::Request request;
+    request.law = game::navigation::LocalFlightControlLaw::Newtonian;
+    request.desiredVelocityMapMps = glm::dvec3(0.0);
+    request.actualVelocityMapMps = {8.0, 0.0, 0.0};
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.stopRequested = true;
+    request.deltaSeconds = 0.02;
+
+    const ShipControlState control =
+        game::navigation::autopilot::ShipControlAdapter::make(
+            request,
+            params
+        );
+
+    require(
+        control.velocityAlignmentCommand ==
+            game::navigation::VelocityAlignmentMode::BrakeToStop,
+        "Newtonian authored STOP did not use the ordinary END/autobrake command"
+    );
+    requireNear(
+        control.targetSpeedRate,
+        0.0,
+        1.0e-12,
+        "Newtonian STOP simultaneously commanded main throttle"
+    );
 }
 
 void testBridgePublishesOneDirectDemandSample()
@@ -1029,6 +1184,10 @@ int main()
 {
     try
     {
+        testAutopilotAdapterUsesOnlyOrdinaryAssistedControls();
+        testAutopilotAdapterUsesOrdinaryNewtonianThrottle();
+        testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual();
+        testAutopilotAdapterUsesEndForNewtonianAuthoredStop();
         testBridgePublishesOneDirectDemandSample();
         testLinearDemandUsesRealMainAndManoeuvreAuthority();
         testPrecisionVelocityTrimUsesOnlyPhysicalRcs();

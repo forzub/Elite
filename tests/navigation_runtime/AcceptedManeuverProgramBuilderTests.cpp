@@ -245,7 +245,7 @@ void testAssistedUsesGameFlightLawInsteadOfRcsAllocation()
     );
 }
 
-void testAssistedRejectsImpossibleMotionEnvelope()
+void testAssistedRequestsRefinementForMotionEnvelope()
 {
     ShipParams params = makeParams();
     params.strafeAccel = 20.0f;
@@ -270,6 +270,23 @@ void testAssistedRejectsImpossibleMotionEnvelope()
 
     require(!result.valid,
             "Assisted accepted a lateral acceleration it cannot execute");
+    require(
+        result.feedback.disposition ==
+            game::navigation::AcceptedManeuverProgramBuilder::
+                ValidationDisposition::NeedsRefinement,
+        "recoverable Assisted envelope violation became a hard failure"
+    );
+    require(
+        result.feedback.refinement ==
+            game::navigation::AcceptedManeuverProgramBuilder::
+                RefinementKind::IncreaseTurnRadius,
+        "lateral Assisted envelope violation did not request radius/speed refinement"
+    );
+    require(
+        result.feedback.requiredValue > result.feedback.availableValue &&
+        result.feedback.recommendedScale < 1.0,
+        "refinement feedback lost quantitative required/available guidance"
+    );
     require(
         result.failureReason.rfind(
             "assisted-motion-envelope-infeasible",
@@ -375,7 +392,7 @@ int main()
         testTerminalAngularVelocityIsAcceptedAndPreserved();
         testStoragePageBoundaryPreservesAngularState();
         testAssistedUsesGameFlightLawInsteadOfRcsAllocation();
-        testAssistedRejectsImpossibleMotionEnvelope();
+        testAssistedRequestsRefinementForMotionEnvelope();
         testNewtonianTransitDoesNotSpendPrecisionRcs();
         testNewtonianReverseDemandRequiresInstalledAuthority();
         testImpossibleTerminalSpinIsRejected();
@@ -386,7 +403,7 @@ int main()
             << " - rotating terminal angular velocity retained\n"
             << " - storage-page angular state remains continuous\n"
             << " - Assisted uses game-flight velocity control, not route RCS\n"
-            << " - impossible Assisted acceleration is rejected before Follower\n"
+            << " - recoverable Assisted acceleration violation requests planner refinement\n"
             << " - Newtonian ordinary transit cannot spend precision RCS\n"
             << " - impossible terminal spin rejected before Follower\n";
         return 0;

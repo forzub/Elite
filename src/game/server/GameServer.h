@@ -226,6 +226,11 @@ void setDiagnosticsSettings(
     double debugUniverseTimeConfiguredScale() const;
 
 private:
+    void resetSessionControlState(
+        EntityId controlledEntityId,
+        const char* reason
+    );
+
     void updateNavigationSensorDevices(double universeTimeSeconds);
 
     struct PlayerRadarRuntime

@@ -648,13 +648,6 @@ inline bool encodeClientShipCommand(
     writer.u8(static_cast<std::uint8_t>(value.type));
     writer.i32(value.index);
     writer.f64(value.amount);
-    writer.u64(value.requestSerial);
-    writer.i32(value.dockingTargetSystemId);
-    if (!writer.string(value.dockingTargetModuleId) ||
-        !writer.string(value.dockingTargetAnchorId))
-    {
-        return false;
-    }
     return true;
 }
 
@@ -665,27 +658,21 @@ inline bool decodeClientShipCommand(
 {
     std::uint8_t type = 0;
     std::int32_t index = 0;
-    std::int32_t dockingTargetSystemId = -1;
     if (!reader.u8(type) ||
         !reader.i32(index) ||
-        !reader.f64(outValue.amount) ||
-        !reader.u64(outValue.requestSerial) ||
-        !reader.i32(dockingTargetSystemId) ||
-        !reader.string(outValue.dockingTargetModuleId) ||
-        !reader.string(outValue.dockingTargetAnchorId))
+        !reader.f64(outValue.amount))
     {
         return false;
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::CancelAutomaticDocking))
+            ClientShipCommand::StartBestRepairJob))
     {
         return false;
     }
 
     outValue.type = static_cast<ClientShipCommand::Type>(type);
     outValue.index = index;
-    outValue.dockingTargetSystemId = dockingTargetSystemId;
     return true;
 }
 

@@ -188,6 +188,62 @@ void testStoppedSpatialOriginLaunches()
     );
 }
 
+void testSpatialTurnUsesSameVelocityAndNoseTarget()
+{
+    auto route = plan();
+    require(route.executionGates.size() >= 3,
+        "test route needs at least three execution gates");
+
+    route.executionGates[0].positionMeters = {0.0, 0.0, 0.0};
+    route.executionGates[1].positionMeters = {100.0, 0.0, 0.0};
+    route.executionGates[2].positionMeters = {100.0, 0.0, 100.0};
+    route.executionGates[0].speedMps = 20.0;
+    route.executionGates[1].speedMps = 20.0;
+    route.executionGates[2].speedMps = 20.0;
+
+    Autopilot::State state;
+    const auto vehicle = params();
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            9,
+            25.0
+        ),
+        "client autopilot rejected turning route"
+    );
+
+    Agent nearTurn = initial;
+    nearTurn.positionMapMeters = {99.0, 0.0, 1.0};
+
+    const auto output = Autopilot::update(
+        state,
+        nearTurn,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "turning route emitted invalid output");
+    require(
+        std::abs(output.control.pitchInput) > 1.0e-6 ||
+        std::abs(output.control.yawInput) > 1.0e-6,
+        "spatial turn changed velocity target without rotating the nose"
+    );
+}
+
 void testClientStabilizerUsesOrdinaryControls()
 {
     Autopilot::State routeState;
@@ -228,12 +284,14 @@ int main()
     {
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
+        testSpatialTurnUsesSameVelocityAndNoseTarget();
         testClientStabilizerUsesOrdinaryControls();
         std::cout
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
             << " - RoutePlan is adapted to SpatialCorridor on the client\n"
             << " - execution emits only ordinary ShipControlState inputs\n"
             << " - stopped spatial origin launches from next accepted control speed\n"
+            << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;
     }

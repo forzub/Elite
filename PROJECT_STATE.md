@@ -1,3 +1,29 @@
+## 2026-10-03 — player navigation ownership boundary
+
+Player navigation/autopilot is a client concern.
+
+The authoritative server owns:
+- world state;
+- collisions/damage;
+- ship physics;
+- application of ordinary ShipControlState;
+- authoritative replicated position/velocity/orientation/angular rates.
+
+The client owns:
+- route intent and UI;
+- RoutePlanner;
+- route validation/refinement;
+- visible corridor/HUD;
+- RouteFollower V2;
+- PredictivePilot V2;
+- Human vs ClientAutopilot selection.
+
+The server must not need to know whether an ordinary control sample was chosen by a human or by the client virtual pilot. An optional diagnostic source flag may be added later, but it must not change physics or navigation ownership.
+
+SHOW ROUTE is local navigation functionality. If stabilization is required before planning, the client virtual pilot performs it through the same ShipControlState surface as keyboard control and waits for authoritative snapshot feedback before calculating the route.
+
+Automatic docking similarly sends no navigation task to the server; it continuously converts the client route into ordinary control samples.
+
 ## 2026-10-03 — future Emergency Damage-Minimization Planner
 
 Add a separate emergency-navigation module after the normal route-refinement loop is mature.

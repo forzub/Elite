@@ -1,3 +1,22 @@
+## 2026-10-03 — verify isolated adaptive PredictivePilot V2
+
+Pull current main only after this second-layer slice is complete.
+
+Required Windows order:
+1. python tests/architecture_contracts/check_automatic_docking.py
+2. build/run navigation_runtime_control
+3. build/run maneuver_tracking_controller
+4. build/run navigation_composite_proving_ground
+5. build EliteGame and live automatic docking only if the above are green.
+
+Acceptance:
+- GameServer production path contains PredictivePilot only; no ShipControlAdapter/direct navigation demand fallback.
+- PredictivePilot learns non-zero measured control authority after excitation.
+- Spatial Corridor V2 contains no TrajectoryFollower/lookAhead/steeringRay.
+- tunnel correction always points to the current accepted centerline segment, never to a private side route.
+- live DockAutoTrack shows pilot inputs plus learned authority/Assisted response.
+- do not widen tunnel/corridor tolerances to obtain green.
+
 ## 2026-10-03 — verify button-level autopilot boundary before further tuning
 
 Do not tune Follower or DynamicMotionSystem before validating the new ownership boundary.

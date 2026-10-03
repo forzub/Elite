@@ -617,8 +617,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
               )
             : std::max(0.5, 0.8 * r.maxSpeedMps);
 
+    // Manual flight needs a visually and physically comfortable arc,
+    // not merely a dynamically feasible fillet.  Thirty hull radii keeps the
+    // tunnel broad enough to hand-fly while still scaling naturally from
+    // Cobra-sized craft to 100-150 m ships. Planner may still search another
+    // sector/approach when this preferred radius is obstructed.
     const double minimumTerminalRadiusMeters =
-        std::max(100.0, 20.0 * r.hullRadiusMeters);
+        std::max(150.0, 30.0 * r.hullRadiusMeters);
     const double designLateralRadiusMeters =
         designTurnSpeedMps * designTurnSpeedMps /
         r.lateralMps2;

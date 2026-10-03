@@ -278,19 +278,24 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
     // Retain authored lateral acceleration only as feed-forward assistance to
     // an already-needed nose-alignment correction. Never allow feed-forward
     // to create/increase sideways VREL relative to the current nose.
-    const glm::dvec3 lateralVelocity =
-        frame.localToWorldVector(motion.localVelocityMps) -
-        f * glm::dot(
-            frame.localToWorldVector(motion.localVelocityMps),
-            f
-        );
-
     glm::dvec3 lateralFeedForward =
         executedAccelerationDemandSystemMps2 -
         f * requestedForwardAcceleration;
 
-    if (glm::dot(lateralFeedForward, lateralVelocity) > 0.0)
+    const double alignmentDemandSquared =
+        glm::dot(
+            motion.assistedStabilizationAccelerationMps2,
+            motion.assistedStabilizationAccelerationMps2
+        );
+
+    if (alignmentDemandSquared <= 1.0e-12 ||
+        glm::dot(
+            lateralFeedForward,
+            motion.assistedStabilizationAccelerationMps2
+        ) <= 0.0)
+    {
         lateralFeedForward = glm::dvec3(0.0);
+    }
 
     motion.assistedStabilizationAccelerationMps2 =
         clampMagnitude(

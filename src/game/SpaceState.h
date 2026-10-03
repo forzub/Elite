@@ -48,6 +48,7 @@
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
@@ -301,19 +302,26 @@ private:
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::uint64_t m_lastDockingRequestTraceSerial = 0;
-    std::uint64_t m_dockingPreparationSerial = 0;
-    double m_dockingPreparationRequestedServerSeconds = -1.0;
-    double m_dockingPreparationSettledSinceServerSeconds = -1.0;
-    bool m_dockingPreparationReleasePending = false;
-    bool m_dockingPreparationReleasePublishesRoute = false;
 
-    // Client-side request/ack tracking only. The server owns automatic
-    // execution state and accepted maneuver programs.
-    std::uint64_t m_automaticDockingSerial = 0;
-    double m_automaticDockingRequestedServerSeconds = -1.0;
-    bool m_automaticDockingAuthoritySeen = false;
-    bool m_automaticDockingCancelPending = false;
-    std::uint64_t m_presentedAutomaticDockingRouteRevision = 0;
+    enum class ClientDockingPhase : std::uint8_t
+    {
+        Idle = 0,
+        Stabilizing,
+        Planning,
+        RouteReady,
+        Executing
+    };
+
+    ClientDockingPhase m_clientDockingPhase =
+        ClientDockingPhase::Idle;
+    bool m_clientAutopilotControlActive = false;
+    ShipControlState m_clientAutopilotControl {};
+    double m_clientDockingSettledSinceServerSeconds = -1.0;
+    std::uint64_t m_clientDockingTraceTick = 0;
+    game::navigation::autopilot::PredictivePilot::State
+        m_clientDockingStabilizePilotState {};
+    game::navigation::autopilot::ClientRouteAutopilot::State
+        m_clientRouteAutopilot {};
 
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;

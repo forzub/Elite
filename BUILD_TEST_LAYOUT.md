@@ -75,6 +75,7 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Accepted maneuver builder | `accepted_maneuver_program_builder_tests` | `accepted_maneuver_program_builder` |
 | Maneuver sampler | `maneuver_program_sampler_tests` | `maneuver_program_sampler` |
 | Runtime control V2 | `navigation_runtime_control_tests` | `navigation_runtime_control` |
+| Client route autopilot | `client_route_autopilot_tests` | `client_route_autopilot` |
 | Predictive V2 tunnel proving ground | `navigation_v2_tunnel_proving_ground_tests` | `navigation_v2_tunnel_proving_ground` |
 | Tracking controller legacy lab | `maneuver_tracking_controller_tests` | `maneuver_tracking_controller` |
 | Maneuver phase gate | `maneuver_phase_gate_tests` | `maneuver_phase_gate` |
@@ -96,11 +97,13 @@ When a target/test name is not in this table, inspect the current owning
 The default navigation-runtime and docking gates validate the production V2 chain:
 
 ```text
-AcceptedManeuverProgram
-→ RouteFollower V2
+Client RoutePlan
+→ ClientRouteAutopilot
+→ SpatialCorridor / RouteFollower V2
 → PredictivePilot V2
 → ordinary ShipControlState
-→ SharedShipPhysics / DynamicMotionSystem::applyLocalFrameInput
+→ GameClient::submitInput
+→ server SharedShipPhysics / DynamicMotionSystem::applyLocalFrameInput
 ```
 
 Tests labeled `legacy_navigation_lab` intentionally exercise retired comparison paths such as `TrajectoryFollower`, `NavigationRuntimeControlBridge`, `ShipControlAdapter`, or the old direct Assisted helper. They are retained only as opt-in diagnostic/oracle tests and must not define production V2 acceptance.
@@ -137,6 +140,7 @@ cmake --build build/tests/navigation_runtime \
            accepted_maneuver_program_builder_tests \
            maneuver_program_sampler_tests \
            navigation_runtime_control_tests \
+           client_route_autopilot_tests \
            navigation_v2_tunnel_proving_ground_tests \
            route_planner_api_tests \
            route_follower_api_tests \
@@ -148,7 +152,7 @@ Run those CTest cases:
 
 ```bash
 ctest --test-dir build/tests/navigation_runtime \
-  -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|navigation_v2_tunnel_proving_ground|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
+  -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|client_route_autopilot|navigation_v2_tunnel_proving_ground|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
   --output-on-failure
 ```
 

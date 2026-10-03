@@ -162,8 +162,8 @@ try:
         "NavigationFrameBoundary boundary",
         "toSystemControlIntent(",
         "followed.targetVelocityMapMps",
-        "ShipControlAdapter::Request",
-        "ShipControlAdapter::make(",
+        "PredictivePilot::Request",
+        "PredictivePilot::make(",
         "pilot_inputs=1",
         "ship->setControlState(automaticControl)",
         "terminalAngularVelocityMapRadPerSec",
@@ -233,7 +233,7 @@ try:
     )
 
 
-    for forbidden in (
+    if "ShipControlAdapter" in server:\n        raise AssertionError(\n            "Automatic docking mixed legacy ShipControlAdapter into PredictivePilot V2"\n        )\n\n    for forbidden in (
         "automaticControl.navigationAccelerationDemandValid = true",
         "automaticControl.navigationVelocityTargetValid = true",
         "alignmentControl.navigationAccelerationDemandValid = true",
@@ -248,7 +248,7 @@ try:
             )
 
     adapter = require(
-        "src/game/navigation/autopilot/ShipControlAdapter.h",
+        "src/game/navigation/autopilot/PredictivePilot.h",
         "pitchInput",
         "yawInput",
         "rollInput",
@@ -264,10 +264,10 @@ try:
 
     runtime_control_tests = require(
         "tests/navigation_runtime/NavigationRuntimeControlTests.cpp",
-        "testAutopilotAdapterUsesOnlyOrdinaryAssistedControls",
-        "testAutopilotAdapterUsesOrdinaryNewtonianThrottle",
-        "testAutopilotAdapterUsesRcsForSmallAuthoredStopResidual",
-        "testAutopilotAdapterUsesEndForNewtonianAuthoredStop",
+        "testPredictivePilotUsesOnlyOrdinaryAssistedControls",
+        "testPredictivePilotBrakesAngularMotionBeforeOvershoot",
+        "testPredictivePilotUsesRcsForSmallAuthoredStopResidual",
+        "testPredictivePilotUsesEndForAuthoredStop",
     )
 
     if "ShipControlState automaticDockingPreparationControl()" not in server:
@@ -287,9 +287,9 @@ try:
             "Automatic docking startup regressed to coast instead of stop-and-settle"
         )
 
-    if "dock-auto-20261003-pilot-input-controls" not in server:
+    if "dock-auto-20261003-predictive-pilot-v2" not in server:
         raise AssertionError(
-            "Automatic docking pilot-input implementation revision marker is missing"
+            "Automatic docking predictive-pilot implementation revision marker is missing"
         )
 
     if "pathPointsMeters.\n                            push_back(\n                                preCaptureCenterMeters" in server:

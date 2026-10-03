@@ -610,7 +610,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             ? std::clamp(
                   std::max(
                       planningOriginSpeedMps,
-                      0.50 * r.maxSpeedMps
+                      0.80 * r.maxSpeedMps
                   ),
                   0.5,
                   r.maxSpeedMps
@@ -843,7 +843,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         const double preArcStraightMeters =
             std::max({
                 1000.0,
-                2.0 * transitComfortRadius,
                 angularRampDistanceMeters,
                 2.0 * r.hullRadiusMeters
             });

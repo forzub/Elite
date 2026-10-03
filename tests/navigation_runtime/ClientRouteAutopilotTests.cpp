@@ -175,8 +175,8 @@ void testStoppedSpatialOriginLaunches()
         glm::length(
             state.programs.front().
                 samples[0].velocityMapMetersPerSecond
-        ) > 0.0,
-        "stopped route origin was not converted into a moving departure seed"
+        ) <= 1.0e-9,
+        "trajectory compiler no longer preserves the physical stopped start"
     );
 }
 
@@ -225,7 +225,7 @@ int main()
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
             << " - RoutePlan is adapted to SpatialCorridor on the client\n"
             << " - execution emits only ordinary ShipControlState inputs\n"
-            << " - stopped spatial origin launches instead of deadlocking\n"
+            << " - stopped spatial origin launches from next accepted control speed\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;
     }

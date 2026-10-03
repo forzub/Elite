@@ -1711,6 +1711,11 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 void SpaceState::updateDockingAdvisory()
 {
     using namespace game::navigation;
+    using ClientAutopilot =
+        game::navigation::autopilot::ClientRouteAutopilot;
+    using FollowerAgent =
+        game::navigation::autopilot::RouteFollowerAgentState;
+
     if (!m_client)
         return;
 
@@ -1719,123 +1724,7 @@ void SpaceState::updateDockingAdvisory()
     const auto& pending = requests.pending();
     auto& guidance = workspace.guidance();
 
-    const auto sendPreparationCommand = [&](ClientShipCommand::Type type,
-                                            std::uint64_t serial)
-    {
-        if (serial == 0)
-            return;
-
-        ClientShipCommand command;
-        command.type = type;
-        command.requestSerial = serial;
-
-        game::network::ClientMessage message;
-        message.clientTick = 0;
-        message.payload = command;
-        std::cout << "[DockRequest] client-send serial=" << serial
-                  << " command="
-                  << (type == ClientShipCommand::BeginDockingGuidancePreparation
-                          ? "begin-preparation"
-                          : type == ClientShipCommand::CompleteDockingGuidancePreparation
-                              ? "complete-preparation" : "cancel-preparation")
-                  << std::endl;
-        m_client->sendMessage(message);
-    };
-
-    const auto sendAutomaticCommand =
-        [&](ClientShipCommand::Type type,
-            std::uint64_t serial,
-            const RouteTargetRef* target)
-        {
-            if (serial == 0)
-                return;
-
-            ClientShipCommand command;
-            command.type = type;
-            command.requestSerial = serial;
-
-            if (target)
-            {
-                command.dockingTargetSystemId =
-                    target->systemId;
-                command.dockingTargetModuleId =
-                    target->stableObjectId;
-                command.dockingTargetAnchorId =
-                    target->semanticAnchorId;
-            }
-
-        game::network::ClientMessage message;
-        message.clientTick = 0;
-        message.payload = std::move(command);
-        std::cout << "[DockRequest] client-send serial=" << serial
-                  << " command="
-                  << (type == ClientShipCommand::BeginAutomaticDocking
-                          ? "begin-automatic" : "cancel-automatic")
-                  << std::endl;
-        m_client->sendMessage(message);
-        };
-
-    const auto serverAutopilotActive = [&]() -> bool
-    {
-        return m_client->hasSessionSnapshot() &&
-            m_client->sessionSnapshot().controlledEntityAutopilotActive;
-    };
-
-    const auto confirmReleasedAuthority = [&]()
-    {
-        if (!m_dockingPreparationReleasePending ||
-            serverAutopilotActive())
-        {
-            return;
-        }
-
-        const std::uint64_t releasedSerial =
-            m_dockingPreparationSerial;
-        const bool published =
-            m_dockingPreparationReleasePublishesRoute;
-
-        m_dockingPreparationSerial = 0;
-        m_dockingPreparationRequestedServerSeconds = -1.0;
-        m_dockingPreparationSettledSinceServerSeconds = -1.0;
-        m_dockingPreparationReleasePending = false;
-        m_dockingPreparationReleasePublishesRoute = false;
-        m_client->setExternalControlPredictionSuppressed(false);
-
-        std::cout << "[DockAdvisory] request=" << releasedSerial
-                  << " phase="
-                  << (published ? "manual" : "cancelled")
-                  << " human_control=1\n";
-    };
-
-    const auto finishLocalPreparation = [&](bool routePublished)
-    {
-        if (m_dockingPreparationSerial == 0)
-        {
-            m_client->setExternalControlPredictionSuppressed(false);
-            return;
-        }
-
-        if (!m_dockingPreparationReleasePending)
-        {
-            sendPreparationCommand(
-                routePublished
-                    ? ClientShipCommand::CompleteDockingGuidancePreparation
-                    : ClientShipCommand::CancelDockingGuidancePreparation,
-                m_dockingPreparationSerial
-            );
-            m_dockingPreparationReleasePending = true;
-            m_dockingPreparationReleasePublishesRoute = routePublished;
-            m_dockingPreparationSettledSinceServerSeconds = -1.0;
-        }
-
-        // If takeover was never accepted, or the server already released it,
-        // there is no authoritative ownership transition left to await.
-        confirmReleasedAuthority();
-    };
-
-    confirmReleasedAuthority();
-
-    const auto clear = [&]()
+    const auto eraseVisibleRoute = [&]()
     {
         if (!m_activeDockingGuidanceCorridorId.empty())
         {
@@ -1847,773 +1736,206 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdviceJob.reset();
     };
 
-    constexpr double AutomaticDockingRequestTimeoutSeconds = 3.0;
-    constexpr double AutomaticDockingCancelSettleSeconds = 0.25;
-
-    const bool automaticPending =
-        pending.valid() &&
-        pending.mode == DockingRouteRequest::Mode::Automatic;
-
-    const std::string automaticCorridorId =
-        automaticPending
-            ? "dock:" + pending.target.stableObjectId +
-                ":" + pending.target.semanticAnchorId
-            : std::string {};
-    const bool hasVisibleRouteForAutomaticTarget =
-        automaticPending &&
-        !automaticCorridorId.empty() &&
-        m_activeDockingGuidanceCorridorId == automaticCorridorId &&
-        m_dockAdvice.serial != 0;
-    if (pending.valid() &&
-        pending.serial != m_lastDockingRequestTraceSerial)
+    const auto releaseClientAutopilot = [&]()
     {
-        m_lastDockingRequestTraceSerial = pending.serial;
-        std::cout
-            << "[DockRequest] serial=" << pending.serial
-            << " mode="
-            << (pending.mode == DockingRouteRequest::Mode::Automatic
-                    ? "automatic"
-                    : "guidance")
-            << " last_path=" << m_lastDockingPathRequestSerial
-            << " prep_serial=" << m_dockingPreparationSerial
-            << " auto_serial=" << m_automaticDockingSerial
-            << " visible_route="
-            << (hasVisibleRouteForAutomaticTarget ? 1 : 0)
-            << " automatic_route_source=server"
-            << std::endl;
-    }
-
-    const auto resetAutomaticTracking = [&]()
-    {
-        m_automaticDockingSerial = 0;
-        m_automaticDockingRequestedServerSeconds = -1.0;
-        m_automaticDockingAuthoritySeen = false;
-        m_automaticDockingCancelPending = false;
-        m_presentedAutomaticDockingRouteRevision = 0;
-
-        if (m_dockingPreparationSerial == 0 &&
-            !m_dockingPreparationReleasePending)
-        {
-            m_client->setExternalControlPredictionSuppressed(false);
-        }
+        m_clientAutopilotControlActive = false;
+        m_clientAutopilotControl = {};
+        m_clientDockingSettledSinceServerSeconds = -1.0;
+        m_clientDockingStabilizePilotState = {};
+        ClientAutopilot::stop(m_clientRouteAutopilot);
     };
-
-    const double automaticNowServerSeconds =
-        m_client->estimatedServerTimeSeconds();
-
-    if (m_automaticDockingSerial != 0 &&
-        m_client->hasSessionSnapshot() &&
-        m_client->sessionSnapshot().dockingResultSerial ==
-            m_automaticDockingSerial)
-    {
-        const auto& result = m_client->sessionSnapshot();
-        const std::uint64_t finishedSerial = m_automaticDockingSerial;
-        const bool samePending = automaticPending &&
-            pending.serial == finishedSerial;
-        const bool routeRetained =
-            !m_activeDockingGuidanceCorridorId.empty() &&
-            m_dockAdvice.serial != 0;
-        const std::string reason = result.dockingResultReason;
-        if (serverAutopilotActive())
-        {
-            const std::string failure =
-                "automatic docking: " + reason +
-                " (server still owns control)";
-            if (m_dockingGuidanceFailureReason != failure)
-            {
-                std::cerr << "[DockResult] client serial="
-                          << finishedSerial << " failed=" << reason
-                          << " human_control=0" << std::endl;
-            }
-            m_dockingGuidanceFailureReason = failure;
-            m_client->setExternalControlPredictionSuppressed(true);
-            return;
-        }
-        std::cout << "[DockResult] client serial=" << finishedSerial
-                  << " success=" << (result.dockingResultSucceeded ? 1 : 0)
-                  << " reason=" << reason
-                  << " route_retained=" << (routeRetained ? 1 : 0)
-                  << std::endl;
-        resetAutomaticTracking();
-        if (samePending)
-        {
-            if (routeRetained)
-            {
-                const auto target = pending.target;
-                const auto guidanceSerial = requests.request(
-                    target, DockingRouteRequest::Mode::Guidance
-                );
-                m_lastDockingPathRequestSerial = guidanceSerial;
-                m_dockAdvice.serial = guidanceSerial;
-            }
-            else
-            {
-                requests.clear();
-            }
-        }
-        if (!result.dockingResultSucceeded)
-        {
-            m_dockingGuidanceFailureReason =
-                "automatic docking: " + reason;
-            std::cerr << "[DockAuto] request=" << finishedSerial
-                      << " failed=" << reason
-                      << " human_control="
-                      << (serverAutopilotActive() ? 0 : 1)
-                      << std::endl;
-        }
-        return;
-    }
-
-    if (m_automaticDockingSerial != 0)
-    {
-        if (serverAutopilotActive())
-        {
-            m_automaticDockingAuthoritySeen = true;
-            m_client->setExternalControlPredictionSuppressed(true);
-        }
-        else if (m_automaticDockingAuthoritySeen)
-        {
-            const std::uint64_t completedSerial =
-                m_automaticDockingSerial;
-            const bool samePending =
-                automaticPending &&
-                pending.serial == completedSerial;
-
-            resetAutomaticTracking();
-
-            if (samePending)
-            {
-                // If Automatic started from an already calculated tunnel,
-                // return to ordinary Guidance ownership instead of deleting
-                // the route together with the control hand-off. This also
-                // keeps the dock card able to cancel/erase the retained route.
-                if (!m_activeDockingGuidanceCorridorId.empty() &&
-                    m_dockAdvice.serial != 0)
-                {
-                    const auto target = pending.target;
-                    const auto guidanceSerial = requests.request(
-                        target,
-                        DockingRouteRequest::Mode::Guidance
-                    );
-                    m_lastDockingPathRequestSerial = guidanceSerial;
-                    m_dockAdvice.serial = guidanceSerial;
-                }
-                else
-                {
-                    std::cout << "[DockRequest] client-clear serial="
-                              << completedSerial
-                              << " reason=automatic-handoff-no-route"
-                              << std::endl;
-                    requests.clear();
-                }
-            }
-
-            std::cout
-                << "[DockAuto] request=" << completedSerial
-                << " phase=server-handoff human_control=1"
-                << " route_retained="
-                << (!m_activeDockingGuidanceCorridorId.empty() ? 1 : 0)
-                << "\n";
-
-            if (samePending)
-                return;
-        }
-        else if (m_automaticDockingCancelPending)
-        {
-            if (automaticNowServerSeconds -
-                    m_automaticDockingRequestedServerSeconds <
-                AutomaticDockingCancelSettleSeconds)
-            {
-                return;
-            }
-
-            resetAutomaticTracking();
-            clear();
-        }
-        else if (!automaticPending ||
-                 pending.serial != m_automaticDockingSerial)
-        {
-            sendAutomaticCommand(
-                ClientShipCommand::CancelAutomaticDocking,
-                m_automaticDockingSerial,
-                nullptr
-            );
-            m_automaticDockingCancelPending = true;
-            m_automaticDockingRequestedServerSeconds =
-                automaticNowServerSeconds;
-            return;
-        }
-        else if (automaticNowServerSeconds -
-                    m_automaticDockingRequestedServerSeconds >
-                 AutomaticDockingRequestTimeoutSeconds)
-        {
-            const std::uint64_t rejectedSerial =
-                m_automaticDockingSerial;
-            sendAutomaticCommand(
-                ClientShipCommand::CancelAutomaticDocking,
-                rejectedSerial,
-                nullptr
-            );
-            resetAutomaticTracking();
-            std::cout << "[DockRequest] client-clear serial="
-                      << rejectedSerial
-                      << " reason=automatic-authority-timeout"
-                      << std::endl;
-            requests.clear();
-            m_dockingGuidanceFailureReason =
-                "server did not accept automatic docking authority";
-
-            std::cerr
-                << "[DockAuto] request=" << rejectedSerial
-                << " failed="
-                << m_dockingGuidanceFailureReason << '\n';
-            return;
-        }
-    }
-
-    if (automaticPending)
-    {
-        // If a Manual preparation still owns the craft, release that
-        // temporary authority first. Automatic itself never consumes or
-        // reuses the client-planned route.
-        if (m_dockingPreparationSerial != 0 ||
-            m_dockingPreparationReleasePending)
-        {
-            if (!m_dockingPreparationReleasePending)
-            {
-                finishLocalPreparation(
-                    hasVisibleRouteForAutomaticTarget
-                );
-            }
-            return;
-        }
-
-        if (m_automaticDockingSerial == 0)
-        {
-            m_noSafeDockingGuidanceSolution = false;
-            m_dockingGuidanceFailureReason.clear();
-
-            sendAutomaticCommand(
-                ClientShipCommand::BeginAutomaticDocking,
-                pending.serial,
-                &pending.target
-            );
-
-            m_automaticDockingSerial = pending.serial;
-            m_automaticDockingRequestedServerSeconds =
-                automaticNowServerSeconds;
-            m_automaticDockingAuthoritySeen = false;
-            m_automaticDockingCancelPending = false;
-
-            // Keep normal local prediction until the authoritative session
-            // snapshot confirms ControllerKind::Autopilot. If the server
-            // rejects the request, the pilot must not lose local controls for
-            // the request timeout window.
-            m_client->setExternalControlPredictionSuppressed(false);
-
-            // Automatic has one route owner: the server. Remove any client
-            // preflight/manual corridor now; the AcceptedProgram corridor will
-            // be published from the session snapshot after planning.
-            if (!m_activeDockingGuidanceCorridorId.empty())
-            {
-                guidance.erase(m_activeDockingGuidanceCorridorId);
-                guidance.erase(
-                    m_activeDockingGuidanceCorridorId + ":frames"
-                );
-            }
-            m_activeDockingGuidanceCorridorId.clear();
-            m_dockAdvice = {};
-            m_dockAdviceJob.reset();
-
-            std::cout
-                << "[DockAuto] request=" << pending.serial
-                << " phase=requested system="
-                << pending.target.systemId
-                << " module=" << pending.target.stableObjectId
-                << " anchor=" << pending.target.semanticAnchorId
-                << std::endl;
-            return;
-        }
-    }
-
-    const auto publishAuthoritativeAutomaticCorridor = [&]() -> bool
-    {
-        if (!automaticPending ||
-            m_automaticDockingSerial == 0 ||
-            !m_client->hasSessionSnapshot())
-        {
-            return false;
-        }
-
-        const auto& session = m_client->sessionSnapshot();
-        if (!session.automaticDockingRouteValid ||
-            session.automaticDockingRouteRequestSerial !=
-                m_automaticDockingSerial ||
-            session.automaticDockingRouteSystemId !=
-                pending.target.systemId ||
-            session.automaticDockingRoute.size() < 2)
-        {
-            return false;
-        }
-
-        const auto player =
-            m_client->world().ships().find(m_playerId.value);
-        if (player == m_client->world().ships().end() ||
-            !player->second.descriptor)
-        {
-            return false;
-        }
-
-        const auto& renderReference =
-            player->second.renderReferenceFrame;
-        if (!renderReference.valid ||
-            renderReference.type != MotionMode::HubTactical ||
-            renderReference.systemId !=
-                session.automaticDockingRouteSystemId ||
-            renderReference.hubId !=
-                session.automaticDockingRouteHubId)
-        {
-            return false;
-        }
-
-        auto renderFrame = renderReference.kinematicFrame();
-        renderFrame.frameId =
-            session.automaticDockingRouteHubId;
-
-        const auto& dimensions =
-            player->second.descriptor->logicalDimensions();
-        const double shipWidth =
-            dimensions.enabled
-                ? std::max(
-                      1.0,
-                      static_cast<double>(dimensions.width)
-                  )
-                : 1.0;
-        const double shipHeight =
-            dimensions.enabled
-                ? std::max(
-                      1.0,
-                      static_cast<double>(dimensions.height)
-                  )
-                : 1.0;
-        const double tolerance = std::max(
-            1.0,
-            session.automaticDockingRouteToleranceMeters
-        );
-        const double frameWidth =
-            shipWidth + 2.0 * tolerance;
-        const double frameHeight =
-            shipHeight + 2.0 * tolerance;
-        const double renderTime =
-            renderReference.universeTimeSeconds;
-
-        const auto makeFrame =
-            [&](const game::simulation::AutomaticDockingRoutePoint& point,
-                double displayedSpeedMps,
-                bool terminal)
-                -> GuidanceFrame
-            {
-                GuidanceFrame frame;
-                frame.universeTimeSeconds = renderTime;
-                frame.centerMeters =
-                    renderFrame.localToWorldPosition(
-                        point.positionHubLocalMeters
-                    );
-
-                glm::dvec3 forward =
-                    renderFrame.localToWorldVector(
-                        point.forwardHubLocal
-                    );
-                if (glm::length(forward) <= 1.0e-9)
-                    forward = glm::dvec3(0.0, 0.0, -1.0);
-                forward = glm::normalize(forward);
-
-                glm::dvec3 up =
-                    renderFrame.localToWorldVector(
-                        point.upHubLocal
-                    );
-                up -= forward * glm::dot(up, forward);
-                if (glm::length(up) <= 1.0e-9)
-                {
-                    const glm::dvec3 seed =
-                        std::abs(forward.y) < 0.90
-                            ? glm::dvec3(0.0, 1.0, 0.0)
-                            : glm::dvec3(1.0, 0.0, 0.0);
-                    up =
-                        seed -
-                        forward * glm::dot(seed, forward);
-                }
-                up = glm::normalize(up);
-
-                const glm::dvec3 right =
-                    glm::normalize(glm::cross(forward, up));
-                up =
-                    glm::normalize(glm::cross(right, forward));
-
-                frame.orientation =
-                    glm::normalize(
-                        glm::quat_cast(
-                            glm::dmat3(
-                                right,
-                                up,
-                                -forward
-                            )
-                        )
-                    );
-                frame.widthMeters = frameWidth;
-                frame.heightMeters = frameHeight;
-                frame.lateralToleranceMeters = tolerance;
-                frame.verticalToleranceMeters = tolerance;
-                frame.recommendedSpeedMps =
-                    std::max(0.0, displayedSpeedMps);
-                frame.requiredVehiclePose = terminal;
-                return frame;
-            };
-
-        const std::string corridorId =
-            "dock:" + pending.target.stableObjectId +
-            ":" + pending.target.semanticAnchorId;
-        const auto& accepted =
-            session.automaticDockingRoute;
-
-        GuidanceCorridor dense;
-        dense.id = corridorId;
-        dense.systemId =
-            session.automaticDockingRouteSystemId;
-        dense.source = GuidanceSource::DockingComputer;
-        dense.purpose =
-            session.automaticDockingRouteFinalIngress
-                ? GuidancePurpose::Docking
-                : GuidancePurpose::Approach;
-        dense.generatedAtUniverseTimeSeconds = renderTime;
-        dense.confidence = 1.0;
-        dense.priority = 100;
-        dense.advisoryOnly = false;
-        dense.spatialAdvisoryGates = false;
-        dense.hubLocalFrameId =
-            session.automaticDockingRouteHubId;
-        dense.frames.reserve(accepted.size());
-        dense.hubLocalGatePositionsMeters.reserve(
-            accepted.size()
-        );
-
-        for (std::size_t i = 0; i < accepted.size(); ++i)
-        {
-            dense.hubLocalGatePositionsMeters.push_back(
-                accepted[i].positionHubLocalMeters
-            );
-            dense.frames.push_back(
-                makeFrame(
-                    accepted[i],
-                    accepted[i].speedMps,
-                    i + 1 == accepted.size()
-                )
-            );
-        }
-
-        // Cockpit frames are only a sparse presentation of the SAME accepted
-        // route. They do not become another planning product.
-        std::vector<double> progress(accepted.size(), 0.0);
-        for (std::size_t i = 1; i < accepted.size(); ++i)
-        {
-            progress[i] =
-                progress[i - 1] +
-                glm::length(
-                    accepted[i].positionHubLocalMeters -
-                    accepted[i - 1].positionHubLocalMeters
-                );
-        }
-
-        GuidanceCorridor sparse = dense;
-        sparse.id += ":frames";
-        sparse.spatialAdvisoryGates = true;
-        sparse.frames.clear();
-        sparse.hubLocalGatePositionsMeters.clear();
-
-        const auto appendSparse =
-            [&](std::size_t index, double speed)
-            {
-                sparse.hubLocalGatePositionsMeters.push_back(
-                    accepted[index].positionHubLocalMeters
-                );
-                sparse.frames.push_back(
-                    makeFrame(
-                        accepted[index],
-                        speed,
-                        index + 1 == accepted.size()
-                    )
-                );
-            };
-
-        appendSparse(0, accepted.front().speedMps);
-        std::size_t previous = 0;
-        while (previous + 1 < accepted.size())
-        {
-            const double remaining =
-                progress.back() - progress[previous];
-            const double spacing =
-                remaining <= 2500.0 ? 250.0 : 500.0;
-
-            std::size_t next = previous + 1;
-            while (next + 1 < accepted.size() &&
-                   progress[next + 1] - progress[previous] <=
-                       spacing + 1.0e-6)
-            {
-                ++next;
-            }
-
-            double recommended =
-                accepted[next].speedMps;
-            for (std::size_t i = previous + 1;
-                 i <= next;
-                 ++i)
-            {
-                recommended = std::min(
-                    recommended,
-                    accepted[i].speedMps
-                );
-            }
-
-            appendSparse(next, recommended);
-            previous = next;
-        }
-
-        const std::size_t hudGateCount =
-            sparse.frames.size();
-        guidance.publish(std::move(dense));
-        guidance.publish(std::move(sparse));
-        m_activeDockingGuidanceCorridorId =
-            corridorId;
-
-        const bool revisionChanged =
-            m_presentedAutomaticDockingRouteRevision !=
-                session.automaticDockingRouteRevision;
-        m_presentedAutomaticDockingRouteRevision =
-            session.automaticDockingRouteRevision;
-
-        if (revisionChanged)
-        {
-            std::cout
-                << "[DockAutoRoute] request="
-                << session.automaticDockingRouteRequestSerial
-                << " revision="
-                << session.automaticDockingRouteRevision
-                << " stage="
-                << (session.automaticDockingRouteFinalIngress
-                        ? "final-ingress"
-                        : "approach-hold")
-                << " accepted_points="
-                << accepted.size()
-                << " hud_gates="
-                << hudGateCount
-                << " source=accepted-program"
-                << std::endl;
-        }
-
-        return true;
-    };
-
-    if (automaticPending &&
-        m_automaticDockingSerial != 0)
-    {
-        const bool published =
-            publishAuthoritativeAutomaticCorridor();
-
-        if (!published &&
-            m_presentedAutomaticDockingRouteRevision != 0)
-        {
-            const std::string corridorId =
-                "dock:" + pending.target.stableObjectId +
-                ":" + pending.target.semanticAnchorId;
-            guidance.erase(corridorId);
-            guidance.erase(corridorId + ":frames");
-            if (m_activeDockingGuidanceCorridorId == corridorId)
-                m_activeDockingGuidanceCorridorId.clear();
-            m_presentedAutomaticDockingRouteRevision = 0;
-
-            std::cout
-                << "[DockAutoRoute] request="
-                << m_automaticDockingSerial
-                << " source=accepted-program"
-                << " state=withdrawn-for-replan"
-                << std::endl;
-        }
-
-        // No client planner is permitted for Automatic. While the server is
-        // stabilizing/planning there simply is no executable tunnel; once a
-        // new AcceptedManeuverProgram exists it is published above.
-        return;
-    }
 
     const auto fail = [&](const std::string& reason)
     {
-        if (automaticPending && m_automaticDockingSerial != 0 &&
-            m_dockAdvice.serial != 0)
-        {
-            // A client advisory failure cannot cancel a server maneuver.
-            // Retain the last visible route but mark it unsafe.
-            if (m_dockingGuidanceFailureReason != reason)
-            {
-                std::cerr << "[DockAdvisory] request=" << pending.serial
-                          << " failed=" << reason
-                          << " action=retain-unsafe-route-server-owns-control"
-                          << std::endl;
-            }
-            m_dockingGuidanceFailureReason = reason;
-            m_noSafeDockingGuidanceSolution = true;
-            return;
-        }
-        finishLocalPreparation(false);
-        clear();
+        std::cerr
+            << "[DockClient] request="
+            << (pending.valid() ? pending.serial : 0)
+            << " phase=failed reason=" << reason
+            << std::endl;
         m_dockingGuidanceFailureReason = reason;
-        std::cerr << "[DockAdvisory] request=" << pending.serial
-                  << " failed=" << reason << '\n';
-        requests.clear();
+        m_noSafeDockingGuidanceSolution = true;
+        releaseClientAutopilot();
+        m_clientDockingPhase = ClientDockingPhase::Idle;
+        m_dockAdviceJob.reset();
     };
 
-    // Client-side route construction exists only for Manual/Guidance.
-    // Automatic is planned exactly once by the authoritative server and its
-    // AcceptedManeuverProgram is replicated back for presentation.
-    const bool localRoutePreparationPending =
-        pending.valid() &&
-        pending.mode == DockingRouteRequest::Mode::Guidance;
-
-    if (!localRoutePreparationPending)
+    if (!pending.valid())
     {
-        if (!m_dockingPreparationReleasePending)
-            finishLocalPreparation(false);
-        clear();
-        if (pending.valid())
+        if (m_clientDockingPhase != ClientDockingPhase::Idle ||
+            m_clientAutopilotControlActive)
         {
-            std::cout << "[DockRequest] client-clear serial="
-                      << pending.serial
-                      << " reason=route-preparation-inactive"
-                      << std::endl;
+            std::cout
+                << "[DockClient] phase=idle reason=no-pending-request"
+                << std::endl;
         }
+        releaseClientAutopilot();
+        m_clientDockingPhase = ClientDockingPhase::Idle;
         m_lastDockingPathRequestSerial = 0;
-        m_noSafeDockingGuidanceSolution = false;
+        eraseVisibleRoute();
         return;
     }
 
-    if (m_dockingPreparationSerial == pending.serial &&
-        !m_dockingPreparationReleasePending &&
-        !serverAutopilotActive() &&
-        m_dockingPreparationRequestedServerSeconds >= 0.0 &&
-        automaticNowServerSeconds -
-            m_dockingPreparationRequestedServerSeconds > 3.0)
+    const bool automatic =
+        pending.mode == DockingRouteRequest::Mode::Automatic;
+
+    const auto playerIt =
+        m_client->world().ships().find(m_playerId.value);
+    if (playerIt == m_client->world().ships().end() ||
+        !playerIt->second.descriptor)
     {
-        fail("server did not accept docking preparation authority");
+        fail("authoritative ship state unavailable");
         return;
     }
 
-    if (m_lastDockingPathRequestSerial != pending.serial)
+    const auto& player = playerIt->second;
+    const auto& transform = player.transform;
+    const auto& motion = transform.motion;
+
+    if (motion.systemId != pending.target.systemId ||
+        !motion.matchedToReferenceFrame ||
+        motion.matchedReferenceFrameId.empty() ||
+        motion.hubId.empty() ||
+        motion.matchedReferenceFrameId != motion.hubId ||
+        !player.referenceFrame.valid)
     {
-        if (m_dockingPreparationSerial != 0)
+        fail("ship is not matched to target Hub frame");
+        return;
+    }
+
+    const auto* definition = m_hubSemanticAnchorCatalog.find(
+        pending.target.stableObjectId,
+        pending.target.semanticAnchorId
+    );
+    const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
+        pending.target.stableObjectId,
+        pending.target.semanticAnchorId
+    );
+    if (!definition || !runtime ||
+        !definition->enabled ||
+        definition->kind != HubSemanticAnchorKind::DockingPort)
+    {
+        fail("dock state unavailable");
+        return;
+    }
+
+    const auto& dim =
+        player.descriptor->logicalDimensions();
+    ShipDockingEnvelope hull;
+    hull.valid =
+        dim.enabled &&
+        dim.length > 0 &&
+        dim.width > 0 &&
+        dim.height > 0;
+    hull.lengthMeters = dim.length;
+    hull.widthMeters = dim.width;
+    hull.heightMeters = dim.height;
+
+    const auto fit =
+        evaluateDockingCompatibility(
+            hull,
+            *definition,
+            *runtime
+        );
+    if (!fit.routeAvailable)
+    {
+        fail("dock unavailable or hull does not fit");
+        return;
+    }
+
+    const ShipParams effectivePhysics =
+        game::ship::effectiveShipPhysics(
+            *player.descriptor,
+            player.modules
+        );
+    const auto controlLaw =
+        motion.localControlLaw;
+
+    const auto frame =
+        player.referenceFrame.kinematicFrame();
+
+    const auto makeAgent = [&]() -> FollowerAgent
+    {
+        FollowerAgent agent;
+        agent.positionMapMeters =
+            motion.localPositionMeters;
+        agent.velocityMapMetersPerSecond =
+            motion.localVelocityMps;
+        agent.forwardMap = glm::normalize(
+            frame.worldToLocalVector(
+                glm::dvec3(transform.forward())
+            )
+        );
+        agent.rightMap = glm::normalize(
+            frame.worldToLocalVector(
+                glm::dvec3(transform.right())
+            )
+        );
+        agent.upMap = glm::normalize(
+            frame.worldToLocalVector(
+                glm::dvec3(transform.up())
+            )
+        );
+        agent.pitchRateRadPerSec = transform.pitchRate;
+        agent.yawRateRadPerSec = transform.yawRate;
+        agent.rollRateRadPerSec = transform.rollRate;
+        return agent;
+    };
+
+    const auto submitAutopilotControl =
+        [&](const ShipControlState& control)
         {
-            if (!m_dockingPreparationReleasePending)
-                finishLocalPreparation(false);
-            clear();
-            return;
-        }
+            m_clientAutopilotControl = control;
+            m_clientAutopilotControlActive = true;
 
-        clear();
+            // This is deliberately the same input path used by the keyboard.
+            // Server physics does not know whether the sample came from a
+            // human or from the client virtual pilot.
+            m_client->submitInput(m_clientAutopilotControl);
+        };
+
+    if (pending.serial != m_lastDockingPathRequestSerial)
+    {
+        eraseVisibleRoute();
+        releaseClientAutopilot();
+
         m_lastDockingPathRequestSerial = pending.serial;
+        m_lastDockingRequestTraceSerial = pending.serial;
+        m_clientDockingPhase =
+            ClientDockingPhase::Stabilizing;
+        m_noSafeDockingGuidanceSolution = false;
+        m_dockingGuidanceFailureReason.clear();
 
-        const auto* definition = m_hubSemanticAnchorCatalog.find(
-            pending.target.stableObjectId,
-            pending.target.semanticAnchorId
-        );
-        const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
-            pending.target.stableObjectId,
-            pending.target.semanticAnchorId
-        );
-        const auto player =
-            m_client->world().ships().find(m_playerId.value);
-
-        if (!definition || !runtime ||
-            player == m_client->world().ships().end() ||
-            !player->second.descriptor ||
-            !definition->enabled ||
-            definition->kind != HubSemanticAnchorKind::DockingPort)
-        {
-            fail("dock or ship unavailable");
-            return;
-        }
-
-        const auto& dim = player->second.descriptor->logicalDimensions();
-        ShipDockingEnvelope hull;
-        hull.valid = dim.enabled && dim.length > 0 &&
-            dim.width > 0 && dim.height > 0;
-        hull.lengthMeters = dim.length;
-        hull.widthMeters = dim.width;
-        hull.heightMeters = dim.height;
-
-        const auto fit =
-            evaluateDockingCompatibility(hull, *definition, *runtime);
-        if (!fit.routeAvailable)
-        {
-            fail("dock unavailable or hull does not fit");
-            return;
-        }
-
-        const auto& motion = player->second.transform.motion;
-        if (motion.systemId != pending.target.systemId ||
-            !motion.matchedToReferenceFrame ||
-            motion.matchedReferenceFrameId.empty() ||
-            motion.hubId.empty() ||
-            motion.matchedReferenceFrameId != motion.hubId)
-        {
-            fail("ship is not matched to target Hub frame");
-            return;
-        }
-
-        sendPreparationCommand(
-            ClientShipCommand::BeginDockingGuidancePreparation,
-            pending.serial
-        );
-        m_dockingPreparationSerial = pending.serial;
-        m_dockingPreparationRequestedServerSeconds =
-            automaticNowServerSeconds;
-        m_dockingPreparationSettledSinceServerSeconds = -1.0;
-        m_dockingPreparationReleasePending = false;
-        m_dockingPreparationReleasePublishesRoute = false;
-        m_client->setExternalControlPredictionSuppressed(true);
-
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=stabilizing hub=" << motion.hubId << '\n';
-        return;
+        std::cout
+            << "[DockClient] request=" << pending.serial
+            << " phase=stabilizing"
+            << " mode=" << (automatic ? "automatic" : "guidance")
+            << " system=" << pending.target.systemId
+            << " module=" << pending.target.stableObjectId
+            << " anchor=" << pending.target.semanticAnchorId
+            << " execution=client-input"
+            << std::endl;
     }
 
-    // Plan only from a canonical accepted snapshot after the temporary
-    // Autopilot has physically stopped the craft in the Hub co-moving frame
-    // and normal bounded angular damping has settled all three body rates.
-    if (m_dockingPreparationSerial == pending.serial &&
-        !m_dockingPreparationReleasePending &&
-        !m_dockAdviceJob &&
-        m_dockAdvice.serial == 0)
+    const double fixedDt =
+        std::max(1.0e-4, m_client->serverFixedStepSeconds());
+    const double authoritativeServerSeconds =
+        m_client->lastSimulationMetadata().serverTimeSeconds;
+    const double universeTimeSeconds =
+        m_client->lastSimulationMetadata().universeTimeSeconds;
+
+    if (m_clientDockingPhase ==
+        ClientDockingPhase::Stabilizing)
     {
-        if (!serverAutopilotActive())
-            return;
-
-        const auto player =
-            m_client->world().ships().find(m_playerId.value);
-        if (player == m_client->world().ships().end() ||
-            !player->second.descriptor)
-        {
-            fail("authoritative ship state unavailable");
-            return;
-        }
-
-        const auto& transform = player->second.transform;
-        const auto& motion = transform.motion;
-        if (motion.systemId != pending.target.systemId ||
-            !motion.matchedToReferenceFrame ||
-            motion.matchedReferenceFrameId.empty() ||
-            motion.matchedReferenceFrameId != motion.hubId)
-        {
-            fail("ship left Hub reference frame during preparation");
-            return;
-        }
+        const auto agent = makeAgent();
+        submitAutopilotControl(
+            ClientAutopilot::stabilize(
+                agent,
+                controlLaw,
+                effectivePhysics,
+                m_clientDockingStabilizePilotState,
+                fixedDt
+            )
+        );
 
         const double relativeSpeedMps =
             glm::length(motion.localVelocityMps);
@@ -2625,75 +1947,61 @@ void SpaceState::updateDockingAdvisory()
             static_cast<double>(transform.rollRate) *
                 static_cast<double>(transform.rollRate)
         );
-        const double speedThresholdMps = std::max(
-            0.05,
-            static_cast<double>(
-                player->second.descriptor->physics.stopSpeedEpsilonMps
-            )
-        );
+
+        const double speedThresholdMps =
+            std::max(
+                0.05,
+                static_cast<double>(
+                    player.descriptor->physics.stopSpeedEpsilonMps
+                )
+            );
         constexpr double AngularRateThresholdRadPerSec = 0.01;
         constexpr double SettleHoldSeconds = 0.25;
-        const double authoritativeServerSeconds =
-            m_client->lastSimulationMetadata().serverTimeSeconds;
 
         if (relativeSpeedMps > speedThresholdMps ||
             angularRateRadPerSec > AngularRateThresholdRadPerSec)
         {
-            m_dockingPreparationSettledSinceServerSeconds = -1.0;
+            m_clientDockingSettledSinceServerSeconds = -1.0;
+
+            if (m_clientDockingTraceTick == 0 ||
+                m_client->lastSimulationMetadata().serverTick -
+                    m_clientDockingTraceTick >= 60)
+            {
+                m_clientDockingTraceTick =
+                    m_client->lastSimulationMetadata().serverTick;
+                std::cout
+                    << "[DockClient] request=" << pending.serial
+                    << " phase=stabilizing"
+                    << " vrel_mps=" << relativeSpeedMps
+                    << " omega_radps=" << angularRateRadPerSec
+                    << std::endl;
+            }
             return;
         }
 
-        if (m_dockingPreparationSettledSinceServerSeconds < 0.0)
+        if (m_clientDockingSettledSinceServerSeconds < 0.0)
         {
-            m_dockingPreparationSettledSinceServerSeconds =
+            m_clientDockingSettledSinceServerSeconds =
                 authoritativeServerSeconds;
             return;
         }
 
         if (authoritativeServerSeconds -
-                m_dockingPreparationSettledSinceServerSeconds <
+                m_clientDockingSettledSinceServerSeconds <
             SettleHoldSeconds)
         {
             return;
         }
 
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=settled"
-                  << " vrel_mps=" << relativeSpeedMps
-                  << " omega_radps=" << angularRateRadPerSec
-                  << " hold_s="
-                  << (authoritativeServerSeconds -
-                      m_dockingPreparationSettledSinceServerSeconds)
-                  << " hub=" << motion.hubId << '\n';
-
-        const auto* definition = m_hubSemanticAnchorCatalog.find(
-            pending.target.stableObjectId,
-            pending.target.semanticAnchorId
-        );
-        const auto* runtime = m_dockingPortRuntimeStateCatalog.find(
-            pending.target.stableObjectId,
-            pending.target.semanticAnchorId
-        );
-        if (!definition || !runtime)
-        {
-            fail("dock state unavailable after stabilization");
-            return;
-        }
-
-        const auto& dim = player->second.descriptor->logicalDimensions();
-        ShipDockingEnvelope hull;
-        hull.valid = dim.enabled && dim.length > 0 &&
-            dim.width > 0 && dim.height > 0;
-        hull.lengthMeters = dim.length;
-        hull.widthMeters = dim.width;
-        hull.heightMeters = dim.height;
-        const auto fit =
-            evaluateDockingCompatibility(hull, *definition, *runtime);
-        if (!fit.routeAvailable)
-        {
-            fail("dock unavailable after stabilization");
-            return;
-        }
+        std::cout
+            << "[DockClient] request=" << pending.serial
+            << " phase=settled"
+            << " vrel_mps=" << relativeSpeedMps
+            << " omega_radps=" << angularRateRadPerSec
+            << " hold_s="
+            << (authoritativeServerSeconds -
+                m_clientDockingSettledSinceServerSeconds)
+            << std::endl;
 
         const auto snapshot =
             game::client::ClientNavigationPlanningSnapshotFactory::
@@ -2710,11 +2018,12 @@ void SpaceState::updateDockingAdvisory()
             return;
         }
 
-        const auto& frame = snapshot.planningFrame;
-        const auto localPort = resolveDockingAdvisoryLocalPortAt(
-            snapshot.targetObject.hubAttachment,
-            *definition, snapshot.epoch.universeTimeSeconds
-        );
+        const auto localPort =
+            resolveDockingAdvisoryLocalPortAt(
+                snapshot.targetObject.hubAttachment,
+                *definition,
+                snapshot.epoch.universeTimeSeconds
+            );
         if (!localPort.valid)
         {
             fail("dock local pose unavailable at planning epoch");
@@ -2726,60 +2035,31 @@ void SpaceState::updateDockingAdvisory()
         envelope.widthMeters = hull.widthMeters;
         envelope.heightMeters = hull.heightMeters;
         envelope.valid = true;
-        const ShipParams effectivePhysics =
-            game::ship::effectiveShipPhysics(
-                *player->second.descriptor,
-                player->second.modules
+
+        const auto shipProfile =
+            makeNavigationVehicleProfile(
+                effectivePhysics,
+                envelope,
+                controlLaw
             );
-        const auto guidanceControlLaw =
-            player->second.transform.motion.localControlLaw;
-        const auto shipProfile = makeNavigationVehicleProfile(
-            effectivePhysics,
-            envelope,
-            guidanceControlLaw
-        );
 
         game::navigation::planner::RoutePlanRequest request;
-        if (snapshot.controlledShip.motionMode != MotionMode::HubTactical ||
-            snapshot.controlledShip.hubId != snapshot.hubPredictionSource.hubId)
-        {
-            fail("planning ship not in target Hub local frame");
-            return;
-        }
-        request.startMeters = snapshot.controlledShip.localPositionMeters;
+        request.startMeters =
+            snapshot.controlledShip.localPositionMeters;
         request.hasInitialForward = true;
         request.initialForward = glm::normalize(
-            frame.worldToLocalVector(
-                glm::dvec3(player->second.transform.forward())
+            snapshot.planningFrame.worldToLocalVector(
+                glm::dvec3(transform.forward())
             )
         );
-        request.initialForwardLeadMeters = std::max(
-            1000.0,
-            hull.lengthMeters * 10.0
-        );
-        const auto startFromWorld = frame.worldToLocalPosition(
-            world::coordinates::fullMeters(
-                snapshot.controlledShip.worldPosition
-            )
-        );
-        const double startFrameErrorMeters =
-            glm::length(startFromWorld - request.startMeters);
-        if (!std::isfinite(startFrameErrorMeters) ||
-            startFrameErrorMeters > 2.0)
-        {
-            std::cerr << "[DockAdvisory] start frame mismatch request="
-                      << pending.serial
-                      << " tick=" << snapshot.epoch.sourceTick
-                      << " universe_t=" << snapshot.epoch.universeTimeSeconds
-                      << " local_error_m=" << startFrameErrorMeters << '\n';
-            fail("ship start disagrees with Hub local frame");
-            return;
-        }
-        request.terminalReferenceDistanceMeters = std::max(
-            300.0,
-            hull.lengthMeters * 10.0 +
-                definition->requiredClearanceMeters * 4.0
-        );
+        request.initialForwardLeadMeters =
+            std::max(1000.0, hull.lengthMeters * 10.0);
+        request.terminalReferenceDistanceMeters =
+            std::max(
+                300.0,
+                hull.lengthMeters * 10.0 +
+                    definition->requiredClearanceMeters * 4.0
+            );
         request.goalMeters =
             localPort.positionMeters +
             localPort.forward *
@@ -2787,62 +2067,56 @@ void SpaceState::updateDockingAdvisory()
         request.terminalOutward = localPort.forward;
         request.agentRadiusMeters =
             envelope.conservativeSafetyRadiusMeters();
-        request.maxSpeedMps = shipProfile.maxSpeedMps;
+
+        // Keep execution reserve on the client exactly where the virtual pilot
+        // lives. Planner never assumes all installed authority is available.
+        const double linearReserve =
+            game::navigation::DockingAutomaticRecoveryPolicy::
+                linearFeedbackReserveMps2(
+                    shipProfile.maxForwardAccelerationMps2,
+                    shipProfile.maxBrakingAccelerationMps2,
+                    shipProfile.maxLateralAccelerationMps2
+                );
+        request.maxSpeedMps =
+            shipProfile.maxSpeedMps * 0.90;
         request.acceleratingMps2 =
-            shipProfile.maxForwardAccelerationMps2;
+            std::max(
+                0.1,
+                (shipProfile.maxForwardAccelerationMps2 -
+                 linearReserve) * 0.90
+            );
         request.brakingMps2 =
-            shipProfile.maxBrakingAccelerationMps2;
+            std::max(
+                0.1,
+                (shipProfile.maxBrakingAccelerationMps2 -
+                 linearReserve) * 0.90
+            );
         request.lateralMps2 =
-            shipProfile.maxLateralAccelerationMps2;
+            std::max(
+                0.1,
+                (shipProfile.maxLateralAccelerationMps2 -
+                 linearReserve) * 0.90
+            );
         request.maxAngularVelocityRadPerSecond =
             shipProfile.maxAngularVelocityRadPerSecond;
         request.maxAngularAccelerationRadPerSecond2 =
-            shipProfile.maxAngularAccelerationRadPerSecond2;
-        // USER-CONTRACT: manual docking corridor frame cadence is fixed.
-        // Do not change without an explicit user request.
+            shipProfile.maxAngularAccelerationRadPerSecond2 * 0.90;
+        request.initialSpeedMps = relativeSpeedMps;
+
+        // USER CONTRACT: visual tunnel cadence.
         request.gateSpacingMeters = 500.0;
         request.terminalGateSpacingMeters = 250.0;
 
-        // Manual Assisted guidance must be realistically flyable by the SAME
-        // game flight law used by the ship.
-        // Enter the docking axis much earlier and preserve a broad circular
-        // turn. Newtonian guidance intentionally keeps the sharper legacy
-        // geometry because the ship can rotate independently of velocity.
-        const bool guidanceAssisted =
-            guidanceControlLaw ==
+        const bool assisted =
+            controlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
-        request.roundTurns = guidanceAssisted;
-        if (guidanceAssisted)
+        request.roundTurns = assisted;
+        if (assisted)
         {
             request.terminalApproachLengthMeters = 9000.0;
             request.terminalTurnSegmentFraction = 0.85;
             request.deriveTerminalTurnRadiusFromVehicle = true;
         }
-
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " profile="
-                  << (guidanceAssisted ? "assisted" : "newtonian")
-                  << " final_axis_m="
-                  << std::max({
-                         700.0,
-                         3*request.terminalReferenceDistanceMeters,
-                         request.terminalApproachLengthMeters
-                     })
-                  << " turn_fraction="
-                  << request.terminalTurnSegmentFraction
-                  << " turn_radius_policy="
-                  << (request.deriveTerminalTurnRadiusFromVehicle
-                          ? "vehicle-derived"
-                          : "generic")
-                  << " max_omega_radps="
-                  << request.maxAngularVelocityRadPerSecond
-                  << " max_alpha_radps2="
-                  << request.maxAngularAccelerationRadPerSecond2
-                  << " agent_radius_m="
-                  << request.agentRadiusMeters
-                  << " initial_forward_lead_m="
-                  << request.initialForwardLeadMeters
-                  << '\n';
 
         request.obstacles = snapshot.navigationObstacles;
 
@@ -2859,570 +2133,458 @@ void SpaceState::updateDockingAdvisory()
             snapshot.epoch.serverTimeSeconds;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
-        job->context.hubId = snapshot.hubPredictionSource.hubId;
-        job->context.targetObjectId = snapshot.targetObject.id.value;
-        job->context.timelineRevision = snapshot.epoch.universeTimelineRevision;
+        job->context.hubId =
+            snapshot.hubPredictionSource.hubId;
+        job->context.targetObjectId =
+            snapshot.targetObject.id.value;
+        job->context.timelineRevision =
+            snapshot.epoch.universeTimelineRevision;
         job->context.portDefinition = *definition;
-        job->context.portAttachment = snapshot.targetObject.hubAttachment;
-        job->context.standoffMeters = request.terminalReferenceDistanceMeters;
-        job->context.widthMeters = fit.openingWidthMeters;
-        job->context.heightMeters = fit.openingHeightMeters;
-        job->context.shipWidthMeters = hull.widthMeters;
-        job->context.shipHeightMeters = hull.heightMeters;
+        job->context.portAttachment =
+            snapshot.targetObject.hubAttachment;
+        job->context.standoffMeters =
+            request.terminalReferenceDistanceMeters;
+        job->context.widthMeters =
+            fit.openingWidthMeters;
+        job->context.heightMeters =
+            fit.openingHeightMeters;
+        job->context.shipWidthMeters =
+            hull.widthMeters;
+        job->context.shipHeightMeters =
+            hull.heightMeters;
         job->context.lateralToleranceMeters =
             fit.widthMarginMeters * 0.5;
         job->context.verticalToleranceMeters =
             fit.heightMarginMeters * 0.5;
 
-        const glm::dvec3 capturedStart = request.startMeters;
-        m_dockWorkerCount->fetch_add(1, std::memory_order_acq_rel);
+        m_dockWorkerCount->fetch_add(
+            1,
+            std::memory_order_acq_rel
+        );
         m_dockAdviceJob = job;
+        m_clientDockingPhase =
+            ClientDockingPhase::Planning;
+
         std::thread(
-            [job, count = m_dockWorkerCount,
+            [job,
+             count = m_dockWorkerCount,
              request = std::move(request)]() mutable
             {
                 try
                 {
-                    job->plan = game::navigation::planner::RoutePlanner::plan(request);
+                    job->plan =
+                        game::navigation::planner::
+                            RoutePlanner::plan(request);
                 }
                 catch (const std::exception& error)
                 {
                     job->plan.failure =
-                        std::string("planner exception: ") + error.what();
+                        std::string("planner exception: ") +
+                        error.what();
                 }
                 catch (...)
                 {
-                    job->plan.failure = "planner unknown exception";
+                    job->plan.failure =
+                        "planner unknown exception";
                 }
-                job->ready.store(true, std::memory_order_release);
-                count->fetch_sub(1, std::memory_order_acq_rel);
+
+                job->ready.store(
+                    true,
+                    std::memory_order_release
+                );
+                count->fetch_sub(
+                    1,
+                    std::memory_order_acq_rel
+                );
             }
         ).detach();
 
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=planning vrel_mps=" << relativeSpeedMps
-                  << " omega_radps=" << angularRateRadPerSec
-                  << " source_tick=" << snapshot.epoch.sourceTick
-                  << " universe_t=" << snapshot.epoch.universeTimeSeconds
-                  << " timeline=" << snapshot.epoch.universeTimelineRevision
-                  << " hub=" << job->context.hubId
-                  << " start_local=(" << capturedStart.x << ","
-                  << capturedStart.y << "," << capturedStart.z << ")\n";
+        std::cout
+            << "[DockClient] request=" << pending.serial
+            << " phase=planning"
+            << " route_source=client"
+            << " max_speed_mps=" << request.maxSpeedMps
+            << " initial_forward_lead_m="
+            << request.initialForwardLeadMeters
+            << std::endl;
         return;
     }
 
-    if (m_dockAdviceJob &&
-        m_dockAdviceJob->ready.load(std::memory_order_acquire))
+    if (m_clientDockingPhase ==
+        ClientDockingPhase::Planning)
     {
+        // Continue to hold the craft stationary while planning.
+        submitAutopilotControl(
+            ClientAutopilot::stabilize(
+                makeAgent(),
+                controlLaw,
+                effectivePhysics,
+                m_clientDockingStabilizePilotState,
+                fixedDt
+            )
+        );
+
+        if (!m_dockAdviceJob ||
+            !m_dockAdviceJob->ready.load(
+                std::memory_order_acquire
+            ))
+        {
+            return;
+        }
+
         auto job = std::move(m_dockAdviceJob);
-        if (m_client->lastSimulationMetadata().universeTimelineRevision !=
-                job->timelineRevision ||
-            m_client->estimatedServerTimeSeconds() -
-                    job->startedServerSeconds > 2.0)
+
+        if (m_client->lastSimulationMetadata().
+                universeTimelineRevision !=
+                job->timelineRevision)
         {
             fail("planning snapshot expired");
             return;
         }
+
         if (!job->plan.valid())
         {
-            fail(
-                job->plan.failure +
-                job->plan.diagnosticSummary
-            );
+            const std::string reason =
+                !job->plan.userMessage.empty()
+                    ? job->plan.userMessage
+                    : job->plan.failure;
+
+            if (job->plan.retryable())
+            {
+                std::cerr
+                    << "[DockClient] request=" << pending.serial
+                    << " phase=replan"
+                    << " reason=" << reason
+                    << std::endl;
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+
+            fail(reason);
             return;
         }
-
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " route="
-                  << (job->plan.terminalDetourUsed ? "detour" : "nominal")
-                  << job->plan.diagnosticSummary
-                  << " execution_points="
-                  << job->plan.executionGates.size()
-                  << " hud_gates="
-                  << job->plan.gates.size()
-                  << '\n';
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);
         m_activeDockingGuidanceCorridorId =
-            "dock:" + pending.target.stableObjectId +
-            ":" + pending.target.semanticAnchorId;
+            "dock:" +
+            pending.target.stableObjectId +
+            ":" +
+            pending.target.semanticAnchorId;
         m_dockingGuidanceFailureReason.clear();
+        m_noSafeDockingGuidanceSolution = false;
+
+        std::cout
+            << "[DockClient] request=" << pending.serial
+            << " phase=route-ready"
+            << " execution_points="
+            << m_dockAdvice.plan.executionGates.size()
+            << " hud_gates="
+            << m_dockAdvice.plan.gates.size()
+            << " terminal_radius_m="
+            << m_dockAdvice.plan.terminalTurnRadiusMeters
+            << std::endl;
+
+        if (automatic)
+        {
+            const double tolerance =
+                std::max(
+                    20.0,
+                    std::max(
+                        m_dockAdvice.lateralToleranceMeters,
+                        m_dockAdvice.verticalToleranceMeters
+                    )
+                );
+
+            if (!ClientAutopilot::start(
+                    m_clientRouteAutopilot,
+                    m_dockAdvice.plan,
+                    controlLaw,
+                    effectivePhysics,
+                    universeTimeSeconds,
+                    pending.serial,
+                    tolerance
+                ))
+            {
+                fail("client autopilot could not accept planner route");
+                return;
+            }
+
+            m_clientDockingPhase =
+                ClientDockingPhase::Executing;
+            std::cout
+                << "[DockClient] request=" << pending.serial
+                << " phase=executing"
+                << " control_path=ShipControlState"
+                << std::endl;
+        }
+        else
+        {
+            m_clientDockingPhase =
+                ClientDockingPhase::RouteReady;
+            m_clientAutopilotControlActive = false;
+            m_clientAutopilotControl = {};
+            std::cout
+                << "[DockClient] request=" << pending.serial
+                << " phase=manual"
+                << " human_control=1"
+                << std::endl;
+        }
     }
+
+    if (m_clientDockingPhase ==
+        ClientDockingPhase::Executing)
+    {
+        const auto output =
+            ClientAutopilot::update(
+                m_clientRouteAutopilot,
+                makeAgent(),
+                controlLaw,
+                effectivePhysics,
+                universeTimeSeconds,
+                fixedDt
+            );
+
+        if (!output.valid)
+        {
+            std::cerr
+                << "[DockClient] request=" << pending.serial
+                << " phase=execution-replan"
+                << " reason=follower-invalid"
+                << std::endl;
+            ClientAutopilot::stop(m_clientRouteAutopilot);
+            m_clientDockingPhase =
+                ClientDockingPhase::Stabilizing;
+            m_clientDockingSettledSinceServerSeconds = -1.0;
+            submitAutopilotControl(
+                ClientAutopilot::stabilize(
+                    makeAgent(),
+                    controlLaw,
+                    effectivePhysics,
+                    m_clientDockingStabilizePilotState,
+                    fixedDt
+                )
+            );
+            return;
+        }
+
+        if (output.complete)
+        {
+            releaseClientAutopilot();
+            m_clientDockingPhase =
+                ClientDockingPhase::RouteReady;
+
+            std::cout
+                << "[DockClient] request=" << pending.serial
+                << " phase=complete"
+                << " human_control=1"
+                << std::endl;
+        }
+        else
+        {
+            submitAutopilotControl(output.control);
+
+            if (m_clientDockingTraceTick == 0 ||
+                m_client->lastSimulationMetadata().serverTick -
+                    m_clientDockingTraceTick >= 60)
+            {
+                m_clientDockingTraceTick =
+                    m_client->lastSimulationMetadata().serverTick;
+
+                std::cout
+                    << "[DockClientTrack] request="
+                    << pending.serial
+                    << " page=" << output.pageIndex
+                    << " segment=" << output.segmentIndex
+                    << " cross_track_m="
+                    << output.crossTrackErrorMeters
+                    << " remaining_m="
+                    << output.remainingDistanceMeters
+                    << " pitch=" << output.control.pitchInput
+                    << " yaw=" << output.control.yawInput
+                    << " roll=" << output.control.rollInput
+                    << " speed_rate="
+                    << output.control.targetSpeedRate
+                    << std::endl;
+            }
+        }
+    }
+
     auto& active = m_dockAdvice;
-    if (!active.serial)
+    if (!active.serial || !active.plan.valid())
         return;
 
-    const auto& metadata = m_client->lastSimulationMetadata();
-    if (metadata.universeTimelineRevision != active.timelineRevision)
-    {
-        fail("docking universe timeline changed");
-        return;
-    }
-
-    const auto ship = m_client->world().ships().find(m_playerId.value);
-    if (ship == m_client->world().ships().end())
-    {
-        fail("ship unavailable");
-        return;
-    }
-
-    const auto& gates = active.plan.gates;
-    // Flight decisions are made only from a complete authoritative sample at
-    // one server tick. No local prediction or render interpolation enters the
-    // axis, corridor, or progress decisions.
-    if (metadata.serverTick != active.lastValidatedTick)
-    {
-        const auto observed = m_client->world().sampleHubMapRuntimeAtServerTime(
-            active.systemId, metadata.serverTimeSeconds
-        );
-        if (observed.status !=
-            game::client::DetailMapRuntimeSampleStatus::Ready)
-            return;
-
-        const auto observedShip = std::find_if(
-            observed.ships.begin(), observed.ships.end(),
-            [&](const auto& candidate) { return candidate.id == m_playerId; }
-        );
-        const auto observedModule = std::find_if(
-            observed.objects.begin(), observed.objects.end(),
-            [&](const auto& candidate)
-            { return candidate.id.value == active.targetObjectId; }
-        );
-        if (observedShip == observed.ships.end() ||
-            observedShip->motionMode != MotionMode::HubTactical ||
-            observedShip->hubId != active.hubId ||
-            observedModule == observed.objects.end())
-        {
-            fail("ship or dock left Hub reference frame");
-            return;
-        }
-
-        const auto& attachment = observedModule->hubAttachment;
-        const auto& authored = active.portAttachment;
-        if (!attachment.valid ||
-            attachment.systemId != authored.systemId ||
-            attachment.hubId != authored.hubId ||
-            attachment.moduleId != authored.moduleId ||
-            attachment.inheritHubOrientation !=
-                authored.inheritHubOrientation ||
-            glm::length(attachment.localOffsetMeters -
-                        authored.localOffsetMeters) > 1.0e-6 ||
-            glm::length(attachment.localRotationDeg -
-                        authored.localRotationDeg) > 1.0e-6 ||
-            glm::length(attachment.localAngularVelocityDegPerSecond -
-                        authored.localAngularVelocityDegPerSecond) > 1.0e-6)
-        {
-            fail("dock attachment changed after planning");
-            return;
-        }
-
-        const auto port = resolveDockingAdvisoryLocalPortAt(
-            attachment, active.portDefinition, metadata.universeTimeSeconds
-        );
-        if (!port.valid)
-        {
-            fail("dock local pose unavailable");
-            return;
-        }
-        const auto dockStandoffLocal =
-            port.positionMeters + port.forward * active.standoffMeters;
-        const auto axisDeltaLocal =
-            gates.back().positionMeters - dockStandoffLocal;
-        const double axisErrorMeters = glm::length(axisDeltaLocal);
-        if (!std::isfinite(axisErrorMeters) ||
-            axisErrorMeters > 2.0)
-        {
-            std::cerr << "[DockAdvisory] axis request=" << pending.serial
-                      << " tick=" << metadata.serverTick
-                      << " timeline=" << metadata.universeTimelineRevision
-                      << " universe_t=" << metadata.universeTimeSeconds
-                      << " hub=" << active.hubId
-                      << " module=" << attachment.moduleId
-                      << " delta_local_m=(" << axisDeltaLocal.x << ','
-                      << axisDeltaLocal.y << ',' << axisDeltaLocal.z << ')'
-                      << " delta_m=" << axisErrorMeters
-                      << " gate_local_m=(" << gates.back().positionMeters.x
-                      << ',' << gates.back().positionMeters.y << ','
-                      << gates.back().positionMeters.z << ')'
-                      << " dock_local_m=(" << port.positionMeters.x << ','
-                      << port.positionMeters.y << ','
-                      << port.positionMeters.z << ')'
-                      << " forward_local=(" << port.forward.x << ','
-                      << port.forward.y << ',' << port.forward.z << ")\n";
-            fail("dock moved off approach axis");
-            return;
-        }
-
-        const auto position = observedShip->localPositionMeters;
-        if (!std::isfinite(position.x) || !std::isfinite(position.y) ||
-            !std::isfinite(position.z))
-        {
-            fail("ship local position invalid");
-            return;
-        }
-
-        // HUD progress is monotonic, but it must be allowed to catch up after
-        // the craft temporarily leaves the visible tunnel. Otherwise a ship
-        // that rejoins farther downstream is forever measured against an old
-        // gate and can appear kilometres outside a corridor it is actually in.
-        if (active.nextGate + 1 < gates.size())
-        {
-            std::size_t nearestForwardSegment = active.nextGate;
-            double nearestForwardDistance2 =
-                std::numeric_limits<double>::infinity();
-
-            for (std::size_t index = active.nextGate;
-                 index + 1 < gates.size();
-                 ++index)
-            {
-                const glm::dvec3 start =
-                    gates[index].positionMeters;
-                const glm::dvec3 end =
-                    gates[index + 1].positionMeters;
-                const glm::dvec3 segment = end - start;
-                const double segmentLength2 =
-                    glm::dot(segment, segment);
-                if (!(segmentLength2 > 1.0e-12))
-                    continue;
-
-                const double projection = std::clamp(
-                    glm::dot(position - start, segment) /
-                        segmentLength2,
-                    0.0,
-                    1.0
-                );
-                const glm::dvec3 delta =
-                    position - (start + projection * segment);
-                const double distance2 = glm::dot(delta, delta);
-                if (distance2 < nearestForwardDistance2)
-                {
-                    nearestForwardDistance2 = distance2;
-                    nearestForwardSegment = index;
-                }
-            }
-
-            active.nextGate =
-                std::max(active.nextGate, nearestForwardSegment);
-        }
-
-        if (active.nextGate + 1 < gates.size())
-        {
-            const auto a = gates[active.nextGate].positionMeters;
-            const auto b = gates[active.nextGate + 1].positionMeters;
-            const auto ab = b - a;
-            const double t = std::clamp(
-                glm::dot(position - a, ab) / glm::dot(ab, ab),
-                0.0,
-                1.0
-            );
-            const auto delta = position - (a + t * ab);
-            const auto forward = glm::normalize(ab);
-            auto up = port.up;
-            up -= forward * glm::dot(up, forward);
-            if (glm::length(up) < 0.01)
-            {
-                const auto fallback =
-                    std::abs(forward.y) < 0.8
-                        ? glm::dvec3(0.0, 1.0, 0.0)
-                        : glm::dvec3(1.0, 0.0, 0.0);
-                up = fallback - forward * glm::dot(fallback, forward);
-            }
-            up = glm::normalize(up);
-            const auto right = glm::normalize(glm::cross(forward, up));
-            const auto section = dockingAdvisoryCrossSection(
-                glm::length(
-                    gates.back().positionMeters - (a + t * ab)
-                ),
-                active.lateralToleranceMeters,
-                active.verticalToleranceMeters
-            );
-            const double lateralOffsetMeters = glm::dot(delta, right);
-            const double verticalOffsetMeters = glm::dot(delta, up);
-            const double longitudinalOffsetMeters = glm::dot(delta, forward);
-            const double longitudinalToleranceMeters =
-                std::max(5.0, active.widthMeters);
-            const auto releaseSection =
-                dockingAdvisoryReleaseCrossSection(section);
-            const double releaseLongitudinalToleranceMeters =
-                longitudinalToleranceMeters + std::max(
-                    30.0,
-                    longitudinalToleranceMeters
-                );
-            const bool insideNominal =
-                std::abs(lateralOffsetMeters) <=
-                    section.lateralToleranceMeters &&
-                std::abs(verticalOffsetMeters) <=
-                    section.verticalToleranceMeters &&
-                std::abs(longitudinalOffsetMeters) <=
-                    longitudinalToleranceMeters;
-            const bool insideRelease =
-                std::abs(lateralOffsetMeters) <=
-                    releaseSection.lateralToleranceMeters &&
-                std::abs(verticalOffsetMeters) <=
-                    releaseSection.verticalToleranceMeters &&
-                std::abs(longitudinalOffsetMeters) <=
-                    releaseLongitudinalToleranceMeters;
-
-            const bool wasWarning = active.deviationWarning;
-            const bool wasCritical = active.deviationCritical;
-            const auto tracking = active.tracker.observe(
-                insideNominal,
-                insideRelease,
-                metadata.serverTimeSeconds
-            );
-            active.deviationWarning =
-                active.tracker.entered() &&
-                tracking != DockingAdvisoryTrackingResult::Left &&
-                (tracking == DockingAdvisoryTrackingResult::Warning ||
-                 dockingAdvisoryNearBoundary(
-                     lateralOffsetMeters,
-                     verticalOffsetMeters,
-                     longitudinalOffsetMeters,
-                     section,
-                     longitudinalToleranceMeters
-                 ));
-            active.deviationCritical =
-                tracking == DockingAdvisoryTrackingResult::Left;
-
-            if (active.deviationWarning != wasWarning ||
-                active.deviationCritical != wasCritical)
-            {
-                std::cout << "[DockAdvisory] corridor-warning request="
-                          << pending.serial
-                          << " tick=" << metadata.serverTick
-                          << " active=" << (active.deviationWarning ? 1 : 0)
-                          << " critical=" << (active.deviationCritical ? 1 : 0)
-                          << " lateral_m=" << lateralOffsetMeters
-                          << " vertical_m=" << verticalOffsetMeters
-                          << " nominal_m="
-                          << section.lateralToleranceMeters << ','
-                          << section.verticalToleranceMeters
-                          << " release_m="
-                          << releaseSection.lateralToleranceMeters << ','
-                          << releaseSection.verticalToleranceMeters << '\n';
-            }
-
-            if (tracking == DockingAdvisoryTrackingResult::Left)
-            {
-                if (!automaticPending ||
-                    m_dockingGuidanceFailureReason !=
-                        "automatic off visible advisory corridor")
-                {
-                    std::cerr << "[DockAdvisory] left request=" << pending.serial
-                          << " tick=" << metadata.serverTick
-                          << " universe_t=" << metadata.universeTimeSeconds
-                          << " hub=" << active.hubId
-                          << " gate=" << active.nextGate
-                          << " ship_local_m=(" << position.x << ','
-                          << position.y << ',' << position.z << ')'
-                          << " lateral_m=" << lateralOffsetMeters
-                          << " vertical_m=" << verticalOffsetMeters
-                          << " nominal_m=" << section.lateralToleranceMeters
-                          << "," << section.verticalToleranceMeters
-                          << " release_m="
-                          << releaseSection.lateralToleranceMeters << ","
-                          << releaseSection.verticalToleranceMeters << '\n';
-                }
-                if (!automaticPending)
-                {
-                    fail("ship left guidance corridor");
-                    return;
-                }
-                else
-                {
-                    // Legacy client preflight route: presentation only.
-                    active.corridorDeparted = true;
-                    guidance.erase(
-                        m_activeDockingGuidanceCorridorId + ":frames"
-                    );
-                    m_dockingGuidanceFailureReason =
-                        "automatic off visible advisory corridor";
-                }
-            }
-            else if (tracking == DockingAdvisoryTrackingResult::Inside &&
-                     active.corridorDeparted)
-            {
-                active.corridorDeparted = false;
-                active.deviationWarning = false;
-                active.deviationCritical = false;
-                if (m_dockingGuidanceFailureReason ==
-                    "automatic off visible advisory corridor")
-                {
-                    m_dockingGuidanceFailureReason.clear();
-                    m_noSafeDockingGuidanceSolution = false;
-                }
-                std::cout << "[DockAdvisory] reentered request="
-                          << pending.serial
-                          << " tick=" << metadata.serverTick
-                          << " gate=" << active.nextGate
-                          << " ship_local_m=(" << position.x << ','
-                          << position.y << ',' << position.z << ')'
-                          << '\n';
-            }
-
-            if ((tracking == DockingAdvisoryTrackingResult::Inside ||
-                 tracking == DockingAdvisoryTrackingResult::Warning) &&
-                t >= 1.0 &&
-                glm::dot(position - b, ab) >= 0.0 &&
-                active.nextGate + 2 < gates.size())
-                ++active.nextGate;
-        }
-        active.lastValidatedTick = metadata.serverTick;
-    }
-
-    // Only the final presentation adapter leaves Hub-local coordinates.
-    // Cockpit uses sparse 500/250 m gates; Hub Map uses the dense exact
-    // Planner-authored geometry. They represent the same route but must not
-    // share presentation sampling, otherwise the map turns arcs into chords.
-    const auto& playerRenderFrame = ship->second.renderReferenceFrame;
+    // Presentation uses the exact same client Planner product that Automatic
+    // executes. Server navigation state is not involved.
+    const auto& playerRenderFrame =
+        player.renderReferenceFrame;
     if (!playerRenderFrame.valid ||
         playerRenderFrame.systemId != active.systemId ||
         playerRenderFrame.hubId != active.hubId ||
         playerRenderFrame.type != MotionMode::HubTactical)
     {
-        // A render interpolation sample may temporarily be unavailable while
-        // snapshots rotate. Keep the accepted local route and wait for a
-        // coherent sample rather than cancelling navigation on a UI clock.
         return;
     }
-    const double renderTime = playerRenderFrame.universeTimeSeconds;
-    auto renderFrame = playerRenderFrame.kinematicFrame();
-    // A ship travel frame may have a ship-specific frameId; its Hub membership
-    // names the attachment coordinate domain shared with the dock.
-    renderFrame.frameId = playerRenderFrame.hubId;
-    const auto renderPort = resolveDockingAdvisoryLocalPortAt(
-        active.portAttachment, active.portDefinition, renderTime
-    );
+
+    const double renderTime =
+        playerRenderFrame.universeTimeSeconds;
+    auto renderFrame =
+        playerRenderFrame.kinematicFrame();
+    renderFrame.frameId =
+        playerRenderFrame.hubId;
+
+    const auto renderPort =
+        resolveDockingAdvisoryLocalPortAt(
+            active.portAttachment,
+            active.portDefinition,
+            renderTime
+        );
     if (!renderPort.valid)
-    {
-        // Presentation cannot invalidate a route already proved in the
-        // authoritative/current Hub frame above.
         return;
-    }
 
     const auto makeRoute =
-        [&](const std::vector<game::navigation::planner::RouteGate>& routeGates)
-    {
-        GuidanceCorridor route;
-        route.id = m_activeDockingGuidanceCorridorId;
-        route.systemId = active.systemId;
-        route.source = GuidanceSource::DockingComputer;
-        route.purpose = GuidancePurpose::Approach;
-        route.advisoryOnly = true;
-        route.noSafePrimarySolution = m_noSafeDockingGuidanceSolution;
-        route.deviationWarning = active.deviationWarning;
-        route.deviationCritical = active.deviationCritical;
-        route.priority = 50;
-        route.generatedAtUniverseTimeSeconds = renderTime;
-        route.frames.reserve(routeGates.size());
-        route.hubLocalFrameId = active.hubId;
-        route.hubLocalGatePositionsMeters.reserve(routeGates.size());
-        for (std::size_t index = 0; index < routeGates.size(); ++index)
+        [&](const std::vector<
+                game::navigation::planner::RouteGate>& routeGates,
+            const std::string& id,
+            bool sparseFrames)
         {
-            const auto& gate = routeGates[index];
-            route.hubLocalGatePositionsMeters.push_back(gate.positionMeters);
-            GuidanceFrame f;
-            f.universeTimeSeconds = renderTime;
-            f.centerMeters =
-                renderFrame.localToWorldPosition(gate.positionMeters);
-
-            const auto forward = glm::normalize(
-                renderFrame.localToWorldVector(gate.forward)
+            GuidanceCorridor route;
+            route.id = id;
+            route.systemId = active.systemId;
+            route.source = GuidanceSource::DockingComputer;
+            route.purpose = GuidancePurpose::Approach;
+            route.advisoryOnly = !automatic;
+            route.noSafePrimarySolution =
+                m_noSafeDockingGuidanceSolution;
+            route.priority = automatic ? 100 : 50;
+            route.generatedAtUniverseTimeSeconds =
+                renderTime;
+            route.spatialAdvisoryGates = sparseFrames;
+            route.hubLocalFrameId = active.hubId;
+            route.frames.reserve(routeGates.size());
+            route.hubLocalGatePositionsMeters.reserve(
+                routeGates.size()
             );
-            const auto worldUp = renderFrame.localToWorldVector(renderPort.up);
-            auto up = worldUp - forward * glm::dot(worldUp, forward);
-            if (glm::length(up) < 0.01)
+
+            for (std::size_t index = 0;
+                 index < routeGates.size();
+                 ++index)
             {
-                const auto fallback =
-                    std::abs(forward.y) < 0.8
-                        ? glm::dvec3(0.0, 1.0, 0.0)
-                        : glm::dvec3(1.0, 0.0, 0.0);
-                up = fallback - forward * glm::dot(fallback, forward);
+                const auto& gate = routeGates[index];
+                route.hubLocalGatePositionsMeters.push_back(
+                    gate.positionMeters
+                );
+
+                GuidanceFrame frameView;
+                frameView.universeTimeSeconds = renderTime;
+                frameView.centerMeters =
+                    renderFrame.localToWorldPosition(
+                        gate.positionMeters
+                    );
+
+                glm::dvec3 forward =
+                    renderFrame.localToWorldVector(
+                        gate.forward
+                    );
+                if (glm::length(forward) <= 1.0e-9)
+                    forward =
+                        glm::dvec3(0.0, 0.0, -1.0);
+                forward = glm::normalize(forward);
+
+                glm::dvec3 up =
+                    renderFrame.localToWorldVector(
+                        renderPort.up
+                    );
+                up -=
+                    forward * glm::dot(up, forward);
+                if (glm::length(up) <= 1.0e-9)
+                {
+                    const glm::dvec3 seed =
+                        std::abs(forward.y) < 0.90
+                            ? glm::dvec3(0.0, 1.0, 0.0)
+                            : glm::dvec3(1.0, 0.0, 0.0);
+                    up =
+                        seed -
+                        forward *
+                            glm::dot(seed, forward);
+                }
+                up = glm::normalize(up);
+                const glm::dvec3 right =
+                    glm::normalize(
+                        glm::cross(forward, up)
+                    );
+                up =
+                    glm::normalize(
+                        glm::cross(right, forward)
+                    );
+
+                frameView.orientation =
+                    glm::normalize(
+                        glm::quat_cast(
+                            glm::dmat3(
+                                right,
+                                up,
+                                -forward
+                            )
+                        )
+                    );
+
+                const double remainingMeters =
+                    glm::length(
+                        routeGates.back().positionMeters -
+                        gate.positionMeters
+                    );
+                const auto section =
+                    dockingAdvisoryCrossSection(
+                        remainingMeters,
+                        active.lateralToleranceMeters,
+                        active.verticalToleranceMeters
+                    );
+
+                frameView.widthMeters =
+                    dockingAdvisoryFrameExtentMeters(
+                        active.shipWidthMeters,
+                        section.lateralToleranceMeters
+                    );
+                frameView.heightMeters =
+                    dockingAdvisoryFrameExtentMeters(
+                        active.shipHeightMeters,
+                        section.verticalToleranceMeters
+                    );
+                frameView.lateralToleranceMeters =
+                    section.lateralToleranceMeters;
+                frameView.verticalToleranceMeters =
+                    section.verticalToleranceMeters;
+                frameView.recommendedSpeedMps =
+                    std::max(0.0, gate.speedMps);
+                frameView.requiredVehiclePose =
+                    index + 1 == routeGates.size();
+
+                route.frames.push_back(
+                    std::move(frameView)
+                );
             }
-            up = glm::normalize(up);
-            const auto right = glm::normalize(glm::cross(forward, up));
-            f.orientation = glm::normalize(
-                glm::quat_cast(
-                    glm::dmat3(
-                        right,
-                        glm::normalize(glm::cross(right, forward)),
-                        -forward
-                    )
-                )
-            );
 
-            const auto section = dockingAdvisoryCrossSection(
-                glm::length(
-                    routeGates.back().positionMeters - gate.positionMeters
-                ),
-                active.lateralToleranceMeters,
-                active.verticalToleranceMeters
-            );
-            f.widthMeters = dockingAdvisoryFrameExtentMeters(
-                active.shipWidthMeters,
-                section.lateralToleranceMeters
-            );
-            f.heightMeters = dockingAdvisoryFrameExtentMeters(
-                active.shipHeightMeters,
-                section.verticalToleranceMeters
-            );
-            f.lateralToleranceMeters = section.lateralToleranceMeters;
-            f.verticalToleranceMeters = section.verticalToleranceMeters;
-            f.recommendedSpeedMps = gate.speedMps;
-            f.requiredVehiclePose =
-                index + 1 == routeGates.size();
-            route.frames.push_back(f);
-        }
-        return route;
-    };
+            return route;
+        };
 
-    const auto& mapRouteGates =
-        active.plan.executionGates;
+    guidance.publish(
+        makeRoute(
+            active.plan.executionGates,
+            m_activeDockingGuidanceCorridorId,
+            false
+        )
+    );
 
-    auto route = makeRoute(mapRouteGates);
-    guidance.publish(route);
-
-    if (!active.corridorDeparted)
-    {
-        auto frameRoute = makeRoute(gates);
-        frameRoute.id += ":frames";
-        frameRoute.spatialAdvisoryGates = true;
-        frameRoute.frames.erase(
-            frameRoute.frames.begin(),
-            frameRoute.frames.begin() +
-                static_cast<std::ptrdiff_t>(active.nextGate)
-        );
-        frameRoute.hubLocalGatePositionsMeters.erase(
-            frameRoute.hubLocalGatePositionsMeters.begin(),
-            frameRoute.hubLocalGatePositionsMeters.begin() +
-                static_cast<std::ptrdiff_t>(active.nextGate)
-        );
-        guidance.publish(std::move(frameRoute));
-    }
-    else
-    {
-        guidance.erase(
-            m_activeDockingGuidanceCorridorId + ":frames"
-        );
-    }
-
-    if (m_dockingPreparationSerial == pending.serial &&
-        !m_dockingPreparationReleasePending)
-    {
-        // Route + HUD frames now exist. Ask the server to hand authority back,
-        // but keep local prediction fenced until a newer per-session snapshot
-        // confirms controlledEntityAutopilotActive=false.
-        finishLocalPreparation(true);
-        std::cout << "[DockAdvisory] request=" << pending.serial
-                  << " phase=handoff_wait snapshot_tick="
-                  << active.lastValidatedTick
-                  << " render_t=" << renderTime
-                  << " hub=" << active.hubId
-                  << " hud_gates=" << gates.size()
-                  << " map_points=" << mapRouteGates.size()
-                  << '\n';
-    }
+    guidance.publish(
+        makeRoute(
+            active.plan.gates,
+            m_activeDockingGuidanceCorridorId + ":frames",
+            true
+        )
+    );
 }
 
 void SpaceState::update(float dt)

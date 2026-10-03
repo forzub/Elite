@@ -1,3 +1,7 @@
+## 2026-10-03 — rerun low-speed bypass START fix
+
+Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Expected: low-speed Assisted continuation after braking should report start_ref_speed_mps=0.25 and start_tangent_to_hull_deg~0. If tracking still exceeds, use max_env_pos_m/max_env_vel_mps/max_env_course_deg from COMPOSITE-CONTINUATION to identify the exact remaining contract mismatch. Keep the 3 s Assisted lag guard unchanged.
+
 ## 2026-10-03 — verify nose-coupled Assisted production fix
 
 Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Do not loosen the 3-second guard. If composite still fails the lag-duration contract, use the new per-phase max_continuous_assisted_slip_s fields to identify the exact phase, then fix the controller/authoring that phase uses. If all three pass, run the full navigation-runtime suite.

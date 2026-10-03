@@ -3467,16 +3467,14 @@ m_systemMapRenderer.render(
                     m_navigationWorkspace.
                         dockingRouteRequests().pending();
                 const bool automaticDockingRequested =
-                    m_automaticDockingSerial != 0 ||
-                    (dockingRequest.valid() &&
-                     dockingRequest.mode ==
+                    dockingRequest.valid() &&
+                    dockingRequest.mode ==
                         game::navigation::
-                            DockingRouteRequest::Mode::Automatic);
+                            DockingRouteRequest::Mode::Automatic;
                 const bool automaticDockingActive =
-                    m_automaticDockingSerial != 0 &&
-                    m_automaticDockingAuthoritySeen &&
-                    m_client->hasSessionSnapshot() &&
-                    m_client->sessionSnapshot().controlledEntityAutopilotActive;
+                    automaticDockingRequested &&
+                    m_clientDockingPhase ==
+                        ClientDockingPhase::Executing;
 
                 const double dockingBlinkPhase = std::fmod(
                     std::max(

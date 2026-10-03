@@ -94,12 +94,16 @@ def main() -> None:
 
     require(
         "src/game/navigation/autopilot/RouteFollower.cpp",
-        "TrajectoryFollower.h",
+        "ManeuverProgramSampler.h",
         "ManeuverTrackingController.h",
         "RouteFollower::follow",
+        "the accepted centerline is the ONLY path",
     )
     forbid(
         "src/game/navigation/autopilot/RouteFollower.cpp",
+        "TrajectoryFollower.h",
+        "lookAhead",
+        "steeringRay",
         "navigation/planner",
         "docking/traffic",
         "docking/landing",
@@ -162,7 +166,7 @@ def main() -> None:
         )
 
     print("DOCKING MODULE BOUNDARIES: PASS")
-    print(" - Planner and Autopilot expose public APIs over private legacy backends")
+    print(" - Planner and Autopilot expose public APIs without leaking private execution internals")
     print(" - Traffic and Landing compile as a separate infrastructure module")
     print(" - server/client production callers no longer include planner/follower internals")
     print(" - public APIs reject forbidden cross-module dependencies")

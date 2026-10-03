@@ -1,3 +1,7 @@
+## Continue from 2026-10-03 Assisted scalar speed fix
+
+Current main fixes the portal stall: applyNavigationAssistedFlightModel no longer projects Follower target velocity onto the current hull to derive speed. Assisted scalar speed is now the target-vector magnitude; the current hull nose owns travel direction and the attitude loop owns steering. This prevents sharp look-ahead turns from zeroing throttle. New runtime regression covers a 120-degree off-nose target while requiring preserved scalar speed and main thrust. Next evidence: runtime_control + tracking_controller + composite rerun.
+
 ## Continue from 2026-10-03 low-speed bypass START correction
 
 Current main: production Assisted nose-coupling fix is holding (earlier phases show zero prolonged slip). Remaining composite failure was a low-speed TimeScheduled continuation authored from v0=0,a0=0 after a full STOP. fitAuthorityBoundedReplacement now uses explicit moving START v0=0.25 m/s along actual hull forward, with a0=0, and validates that exact curve. Continuation logs expose component envelope maxima. Next evidence: runtime_control + tracking_controller + composite rerun.

@@ -380,6 +380,114 @@ void testSpatialTurnStartsBeforeArcEntry()
     );
 }
 
+void testHighSpeedPreviewCrossesProgramPages()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    constexpr double StraightEndMeters = 900.0;
+    constexpr double RadiusMeters = 250.0;
+    constexpr int ArcSteps = 24;
+    constexpr double StraightSpeedMps = 100.0;
+    constexpr double TurnSpeedMps = 25.0;
+    constexpr double HalfPi =
+        1.5707963267948966192313216916398;
+
+    route.executionGates.push_back(
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, StraightSpeedMps}
+    );
+    route.executionGates.push_back(
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, StraightSpeedMps}
+    );
+    route.executionGates.push_back(
+        RouteGate{{StraightEndMeters, 0.0, 0.0}, {1.0, 0.0, 0.0}, TurnSpeedMps}
+    );
+
+    for (int i = 1; i <= ArcSteps; ++i)
+    {
+        const double t =
+            HalfPi * static_cast<double>(i) /
+            static_cast<double>(ArcSteps);
+
+        RouteGate gate;
+        gate.positionMeters = {
+            StraightEndMeters + RadiusMeters * std::sin(t),
+            0.0,
+            RadiusMeters * (1.0 - std::cos(t))
+        };
+        gate.forward = glm::normalize(glm::dvec3(
+            std::cos(t),
+            0.0,
+            std::sin(t)
+        ));
+        gate.speedMps = TurnSpeedMps;
+        route.executionGates.push_back(gate);
+    }
+    route.executionGates.back().speedMps = 0.0;
+    route.gates = route.executionGates;
+
+    auto vehicle = params();
+    vehicle.maxCombatSpeed = 120.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond =
+        {StraightSpeedMps, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            13,
+            25.0
+        ),
+        "client autopilot rejected high-speed preview route"
+    );
+    require(
+        state.programs.size() > 1,
+        "high-speed preview test did not span storage pages"
+    );
+
+    // Still 500 m before the authored turn. At 100 m/s the five-second
+    // preview must already reach into the next pages and see the bend and its
+    // lower speed.
+    Agent approaching = initial;
+    approaching.positionMapMeters = {400.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        approaching,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "high-speed preview emitted invalid output");
+    require(
+        std::abs(output.control.pitchInput) > 1.0e-6 ||
+        std::abs(output.control.yawInput) > 1.0e-6,
+        "autopilot could not see bend across program-page boundary"
+    );
+    require(
+        output.targetSpeedMps < StraightSpeedMps - 1.0,
+        "autopilot did not propagate future turn-speed braking backward"
+    );
+}
+
 void testClientTrajectoryPreservesPlannerTurnSpeedConstraint()
 {
     using game::navigation::planner::RouteGate;
@@ -742,6 +850,7 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
+        testHighSpeedPreviewCrossesProgramPages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
@@ -755,6 +864,7 @@ int main()
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
+            << " - high-speed preview crosses storage pages and brakes before bend\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"

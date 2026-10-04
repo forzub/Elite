@@ -53,6 +53,7 @@ public:
         std::vector<double> checkpointProgressMeters;
         std::size_t currentContinuousSegment = 0;
         std::size_t nextCheckpointIndex = 1;
+        std::uint64_t speedProfileRevision = 0;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -69,6 +70,8 @@ public:
         double targetSpeedMps = 0.0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
+        std::size_t checkpointIndex = 0;
+        std::uint64_t speedProfileRevision = 0;
     };
 
     static void stop(State& state) noexcept
@@ -193,17 +196,17 @@ public:
                 continuous.lowerSampleIndex
             );
 
-        const double forwardAuthority =
+        const double rawForwardAuthority =
             std::max(
                 0.0,
                 game::ship::forwardMainAccelerationLimitMps2(params)
             );
-        const double reverseAuthority =
+        const double rawReverseAuthority =
             std::max(
                 0.0,
                 game::ship::reverseMainAccelerationLimitMps2(params)
             );
-        const double lateralAuthorityForBraking =
+        const double rawLateralAuthority =
             law == LocalFlightControlLaw::Assisted
                 ? std::max(
                     0.0,
@@ -216,10 +219,26 @@ public:
                     0.0,
                     game::ship::manoeuvreAccelerationLimitMps2(params)
                   );
-        const double brakingAuthority =
+        const double rawBrakingAuthority =
             law == LocalFlightControlLaw::Assisted
-                ? std::max(reverseAuthority, lateralAuthorityForBraking)
-                : forwardAuthority;
+                ? std::max(rawReverseAuthority, rawLateralAuthority)
+                : rawForwardAuthority;
+        const double feedbackReserve =
+            DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+                rawForwardAuthority,
+                rawBrakingAuthority,
+                rawLateralAuthority
+            );
+        const double forwardAuthority =
+            std::max(
+                0.1,
+                (rawForwardAuthority - feedbackReserve) * 0.90
+            );
+        const double brakingAuthority =
+            std::max(
+                0.1,
+                (rawBrakingAuthority - feedbackReserve) * 0.90
+            );
 
         while (state.nextCheckpointIndex <
                    state.checkpointProgressMeters.size() &&
@@ -238,6 +257,7 @@ public:
                 state.runtimeSpeedProfileMps,
                 state.runtimeLongitudinalAccelerationMps2
             );
+            ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;
         }
 
@@ -407,6 +427,11 @@ public:
         out.targetSpeedMps = targetSpeed;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
+        out.checkpointIndex =
+            state.nextCheckpointIndex > 0
+                ? state.nextCheckpointIndex - 1
+                : 0;
+        out.speedProfileRevision = state.speedProfileRevision;
 
         const auto& finalReference =
             state.continuousSamples.back();

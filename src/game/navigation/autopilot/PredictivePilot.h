@@ -189,13 +189,14 @@ public:
         {
             const double desiredSpeed =
                 finiteLength(request.desiredVelocityMapMps);
-            const double actualForwardSpeed =
-                std::max(
-                    0.0,
-                    finiteOrZero(
-                        glm::dot(request.actualVelocityMapMps, forward)
-                    )
-                );
+            // Scalar speed control must use actual speed magnitude.
+            // During a turn Assisted intentionally allows the velocity vector
+            // to lag behind the nose for a short time. Projecting velocity on
+            // the new nose direction makes the measured speed collapse even
+            // though the craft is still moving fast, which falsely commands
+            // full acceleration exactly when the route is asking us to brake.
+            const double actualSpeed =
+                finiteLength(request.actualVelocityMapMps);
 
             const double maxSpeed =
                 game::ship::controlledSpeedLimitMps(params);
@@ -226,7 +227,7 @@ public:
             );
 
             out.targetSpeedRate = finiteClamp(
-                (desiredSpeed - actualForwardSpeed) /
+                (desiredSpeed - actualSpeed) /
                 (effectiveTargetRate * horizon)
             );
         }
@@ -399,13 +400,17 @@ private:
 
             if (std::abs(state.previousTargetSpeedRate) > 0.15)
             {
-                const double previousForwardSpeed =
-                    glm::dot(state.previousVelocityMapMps, forward);
-                const double currentForwardSpeed =
-                    glm::dot(request.actualVelocityMapMps, forward);
+                // Learn longitudinal response from scalar speed,
+                // not from a heading-dependent projection. Otherwise merely
+                // turning the nose looks like a huge acceleration/deceleration
+                // event and corrupts the learned speed authority.
+                const double previousSpeed =
+                    finiteLength(state.previousVelocityMapMps);
+                const double currentSpeed =
+                    finiteLength(request.actualVelocityMapMps);
                 const double measuredResponse =
                     std::abs(
-                        (currentForwardSpeed - previousForwardSpeed) / dt
+                        (currentSpeed - previousSpeed) / dt
                     ) /
                     std::max(
                         0.15,

@@ -653,6 +653,179 @@ void testClientTrajectoryPreservesPlannerTurnSpeedConstraint()
     );
 }
 
+void testCheckpointReanchorsFutureSpeedFromMeasuredState()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 80.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 80.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 80.0},
+        RouteGate{{1500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    auto vehicle = params();
+    vehicle.forwardMainEngineAccelerationMps2 = 4.0f;
+    vehicle.reverseMainEngineAccelerationMps2 = 8.0f;
+    vehicle.throttleAccel = 4.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {80.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            15,
+            25.0
+        ),
+        "client autopilot rejected checkpoint-reanchor route"
+    );
+
+    const auto nominalBefore = state.nominalSpeedProfileMps;
+    require(
+        state.checkpointProgressMeters.size() >= 3,
+        "checkpoint route did not produce visual checkpoint progress"
+    );
+
+    Agent slowAtCheckpoint = initial;
+    slowAtCheckpoint.positionMapMeters = {505.0, 0.0, 0.0};
+    slowAtCheckpoint.velocityMapMetersPerSecond = {10.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        slowAtCheckpoint,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "checkpoint re-anchor emitted invalid output");
+    require(
+        state.nextCheckpointIndex >= 2,
+        "crossing visual checkpoint did not trigger suffix re-anchor"
+    );
+
+    bool loweredFutureSpeed = false;
+    for (std::size_t i = state.currentContinuousSegment + 1;
+         i < state.runtimeSpeedProfileMps.size();
+         ++i)
+    {
+        if (state.runtimeSpeedProfileMps[i] + 1.0e-6 <
+            nominalBefore[i])
+        {
+            loweredFutureSpeed = true;
+            break;
+        }
+    }
+    require(
+        loweredFutureSpeed,
+        "measured slow checkpoint state did not lower unreachable future speed"
+    );
+}
+
+void testCheckpointReanchorPreservesFutureBrakingConstraint()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 100.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 100.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 20.0},
+        RouteGate{{1500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    auto vehicle = params();
+    vehicle.forwardMainEngineAccelerationMps2 = 40.0f;
+    vehicle.reverseMainEngineAccelerationMps2 = 4.0f;
+    vehicle.throttleAccel = 40.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {100.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            16,
+            25.0
+        ),
+        "client autopilot rejected braking-checkpoint route"
+    );
+
+    Agent fastAtCheckpoint = initial;
+    fastAtCheckpoint.positionMapMeters = {505.0, 0.0, 0.0};
+    fastAtCheckpoint.velocityMapMetersPerSecond = {100.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        fastAtCheckpoint,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(output.valid, "braking checkpoint emitted invalid output");
+
+    double nearestDistance = 1.0e100;
+    double constrainedSpeed = 1.0e100;
+    for (std::size_t i = 0;
+         i < state.continuousProgressMeters.size();
+         ++i)
+    {
+        const double d =
+            std::abs(
+                state.continuousSamples[i].positionMapMeters.x -
+                1000.0
+            );
+        if (d < nearestDistance)
+        {
+            nearestDistance = d;
+            constrainedSpeed = state.runtimeSpeedProfileMps[i];
+        }
+    }
+
+    require(
+        nearestDistance < 5.0,
+        "runtime profile lost future braking station"
+    );
+    require(
+        constrainedSpeed <= 20.5,
+        "checkpoint re-anchor weakened future planner speed constraint"
+    );
+}
+
 void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
 {
     using Pilot =
@@ -951,6 +1124,8 @@ int main()
         testContinuousProgramCorrectsCrossTrackError();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
+        testCheckpointReanchorsFutureSpeedFromMeasuredState();
+        testCheckpointReanchorPreservesFutureBrakingConstraint();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
         testPredictivePilotCapturesTurnsWithoutOvershoot();
@@ -966,6 +1141,8 @@ int main()
             << " - physical cross-track servo returns craft toward centerline\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
+            << " - checkpoint re-anchor lowers unreachable future speed\n"
+            << " - checkpoint re-anchor preserves future braking constraints\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"
             << " - 5/15/45/90 degree turns settle without overshoot\n"

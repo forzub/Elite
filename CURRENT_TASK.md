@@ -2136,3 +2136,24 @@ Published commits:
 - 9f91cfac / 25952477 — regressions for continuous page boundaries and servo contract
 
 Next gate: Windows MinGW build + client_route_autopilot CTest. Do not add checkpoint suffix re-generation yet; first establish that the full authored program plus bounded servo follows the live tunnel without page-driven resets. If this base is stable, the next layer is event/checkpoint re-anchoring of the remaining trajectory from the measured state.
+
+
+## 2026-10-04 — checkpoint re-anchor updates only the remaining speed profile
+
+Continuous client execution now keeps immutable authored geometry/orientation plus a mutable runtime speed profile. Sparse Planner/HUD gates are mapped once onto the continuous accepted path and act as execution checkpoints; their 500/250 m presentation cadence is not used as a steering look-ahead distance.
+
+When real spatial progress crosses a checkpoint, the remaining runtime speed profile is re-anchored from the measured ship speed without rebuilding route geometry. A forward kinematic pass limits future speeds by available main-engine acceleration, and a backward pass preserves all future Planner speed constraints using braking authority. Runtime longitudinal feed-forward is reconstructed from v^2(s). The calculation uses the same feedback reserve and 0.90 planning authority fraction as initial client trajectory generation, so checkpoint correction cannot assume authority that was intentionally reserved for tracking.
+
+Small/medium checkpoint error does not request a replan. If the measured checkpoint speed is already above the maximum speed from which the future constraints are physically reachable under braking, ClientRouteAutopilot marks replanRequired. SpaceState applies the current braking/control sample, stops that accepted execution and returns to the existing stabilization/replan path with reason=checkpoint-suffix-infeasible.
+
+Live DockClientTrack telemetry now includes checkpoint=<index> and profile_rev=<revision>; the revision increments only when a checkpoint re-anchor actually occurs.
+
+Published commits:
+- 3377d208 — re-anchor speed profile at corridor checkpoints
+- 729d462a — keep checkpoint re-anchor inside reserved authority
+- a820bbdf — detect physically infeasible checkpoint suffix
+- dcf1d643 — replan only for infeasible checkpoint suffix
+- a99674b6 — trace checkpoint/profile revision in live telemetry
+- 2a331b8e / 6a25f6c5 — regression coverage for recoverable vs infeasible checkpoint states
+
+Next gate: Windows MinGW build and client_route_autopilot tests, then live automatic docking. Expected evidence: profile_rev increments at sparse frames; ordinary errors continue on the same route; checkpoint-suffix-infeasible appears only for genuinely unreachable future speed constraints.

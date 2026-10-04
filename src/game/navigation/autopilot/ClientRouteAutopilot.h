@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -46,7 +47,12 @@ public:
         std::vector<AcceptedManeuverProgram::ReferenceSample>
             continuousSamples;
         std::vector<double> continuousProgressMeters;
+        std::vector<double> nominalSpeedProfileMps;
+        std::vector<double> runtimeSpeedProfileMps;
+        std::vector<double> runtimeLongitudinalAccelerationMps2;
+        std::vector<double> checkpointProgressMeters;
         std::size_t currentContinuousSegment = 0;
+        std::size_t nextCheckpointIndex = 1;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -103,11 +109,25 @@ public:
                 state.programs,
                 state.continuousSamples,
                 state.continuousProgressMeters
+            ) ||
+            !initializeRuntimeProfile(
+                state.continuousSamples,
+                state.nominalSpeedProfileMps,
+                state.runtimeSpeedProfileMps,
+                state.runtimeLongitudinalAccelerationMps2
+            ) ||
+            !buildCheckpointProgress(
+                plan.gates,
+                state.continuousSamples,
+                state.continuousProgressMeters,
+                state.checkpointProgressMeters
             ))
         {
             state = {};
             return false;
         }
+        state.nextCheckpointIndex =
+            state.checkpointProgressMeters.size() > 1 ? 1 : 0;
         return true;
     }
 
@@ -158,7 +178,7 @@ public:
             return out;
         }
 
-        const auto continuous = sampleContinuousReference(
+        auto continuous = sampleContinuousReference(
             state.continuousSamples,
             state.continuousProgressMeters,
             agent.positionMapMeters,
@@ -172,6 +192,60 @@ public:
                 state.currentContinuousSegment,
                 continuous.lowerSampleIndex
             );
+
+        const double forwardAuthority =
+            std::max(
+                0.0,
+                game::ship::forwardMainAccelerationLimitMps2(params)
+            );
+        const double reverseAuthority =
+            std::max(
+                0.0,
+                game::ship::reverseMainAccelerationLimitMps2(params)
+            );
+        const double lateralAuthorityForBraking =
+            law == LocalFlightControlLaw::Assisted
+                ? std::max(
+                    0.0,
+                    game::ship::
+                        assistedLateralStabilizationAccelerationLimitMps2(
+                            params
+                        )
+                  )
+                : std::max(
+                    0.0,
+                    game::ship::manoeuvreAccelerationLimitMps2(params)
+                  );
+        const double brakingAuthority =
+            law == LocalFlightControlLaw::Assisted
+                ? std::max(reverseAuthority, lateralAuthorityForBraking)
+                : forwardAuthority;
+
+        while (state.nextCheckpointIndex <
+                   state.checkpointProgressMeters.size() &&
+               continuous.spatialProgressMeters + 1.0e-9 >=
+                   state.checkpointProgressMeters[
+                       state.nextCheckpointIndex
+                   ])
+        {
+            recomputeRuntimeSpeedSuffix(
+                state.nominalSpeedProfileMps,
+                state.continuousProgressMeters,
+                state.currentContinuousSegment,
+                glm::length(agent.velocityMapMetersPerSecond),
+                forwardAuthority,
+                brakingAuthority,
+                state.runtimeSpeedProfileMps,
+                state.runtimeLongitudinalAccelerationMps2
+            );
+            ++state.nextCheckpointIndex;
+        }
+
+        applyRuntimeProfile(
+            state.runtimeSpeedProfileMps,
+            state.runtimeLongitudinalAccelerationMps2,
+            continuous
+        );
 
         // Map the continuous segment back to storage metadata only. Pages are
         // no longer allowed to select, reset or invalidate the execution
@@ -544,6 +618,242 @@ private:
                 );
             return out;
         }
+    }
+
+    [[nodiscard]] static bool initializeRuntimeProfile(
+        const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        std::vector<double>& nominalSpeeds,
+        std::vector<double>& runtimeSpeeds,
+        std::vector<double>& runtimeAccelerations
+    )
+    {
+        if (samples.size() < 2)
+            return false;
+
+        nominalSpeeds.resize(samples.size(), 0.0);
+        runtimeSpeeds.resize(samples.size(), 0.0);
+        runtimeAccelerations.resize(samples.size(), 0.0);
+
+        for (std::size_t i = 0; i < samples.size(); ++i)
+        {
+            const double speed =
+                glm::length(samples[i].velocityMapMetersPerSecond);
+            if (!std::isfinite(speed) || speed < 0.0)
+                return false;
+            nominalSpeeds[i] = speed;
+            runtimeSpeeds[i] = speed;
+        }
+        return true;
+    }
+
+    [[nodiscard]] static bool buildCheckpointProgress(
+        const std::vector<planner::RouteGate>& gates,
+        const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        const std::vector<double>& progress,
+        std::vector<double>& checkpoints
+    )
+    {
+        checkpoints.clear();
+        if (gates.empty() ||
+            samples.size() < 2 ||
+            progress.size() != samples.size())
+        {
+            return false;
+        }
+
+        std::size_t minimumSegment = 0;
+        for (const auto& gate : gates)
+        {
+            double bestDistance2 =
+                std::numeric_limits<double>::infinity();
+            double bestProgress = progress[minimumSegment];
+            std::size_t bestSegment = minimumSegment;
+
+            for (std::size_t segment = minimumSegment;
+                 segment + 1 < samples.size();
+                 ++segment)
+            {
+                const glm::dvec3 a =
+                    samples[segment].positionMapMeters;
+                const glm::dvec3 b =
+                    samples[segment + 1].positionMapMeters;
+                const glm::dvec3 delta = b - a;
+                const double length2 = glm::dot(delta, delta);
+                if (!(std::isfinite(length2) && length2 > 1.0e-18))
+                    continue;
+
+                const double u = std::clamp(
+                    glm::dot(gate.positionMeters - a, delta) / length2,
+                    0.0,
+                    1.0
+                );
+                const glm::dvec3 projected = a + delta * u;
+                const glm::dvec3 error =
+                    gate.positionMeters - projected;
+                const double distance2 = glm::dot(error, error);
+
+                if (distance2 < bestDistance2)
+                {
+                    bestDistance2 = distance2;
+                    bestSegment = segment;
+                    bestProgress =
+                        progress[segment] +
+                        (progress[segment + 1] - progress[segment]) * u;
+                }
+            }
+
+            if (!std::isfinite(bestDistance2) ||
+                !std::isfinite(bestProgress))
+            {
+                return false;
+            }
+
+            if (!checkpoints.empty())
+                bestProgress = std::max(checkpoints.back(), bestProgress);
+
+            checkpoints.push_back(bestProgress);
+            minimumSegment = bestSegment;
+        }
+
+        return !checkpoints.empty();
+    }
+
+    static void recomputeRuntimeSpeedSuffix(
+        const std::vector<double>& nominalSpeeds,
+        const std::vector<double>& progress,
+        std::size_t anchorIndex,
+        double actualSpeedMps,
+        double acceleratingMps2,
+        double brakingMps2,
+        std::vector<double>& runtimeSpeeds,
+        std::vector<double>& runtimeAccelerations
+    ) noexcept
+    {
+        if (nominalSpeeds.size() < 2 ||
+            progress.size() != nominalSpeeds.size() ||
+            runtimeSpeeds.size() != nominalSpeeds.size() ||
+            runtimeAccelerations.size() != nominalSpeeds.size())
+        {
+            return;
+        }
+
+        anchorIndex = std::min(anchorIndex, nominalSpeeds.size() - 1);
+
+        for (std::size_t i = anchorIndex;
+             i < nominalSpeeds.size();
+             ++i)
+        {
+            runtimeSpeeds[i] = nominalSpeeds[i];
+        }
+
+        // Forward reachability from the measured checkpoint speed. If the
+        // craft arrived slower than nominal, later targets are lowered until
+        // main-engine acceleration can physically catch the nominal profile.
+        double reachableFromActual =
+            std::max(0.0, std::isfinite(actualSpeedMps) ? actualSpeedMps : 0.0);
+        for (std::size_t i = anchorIndex + 1;
+             i < runtimeSpeeds.size();
+             ++i)
+        {
+            const double ds = progress[i] - progress[i - 1];
+            if (!(std::isfinite(ds) && ds >= 0.0))
+                return;
+
+            if (acceleratingMps2 > 1.0e-9)
+            {
+                reachableFromActual =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            reachableFromActual * reachableFromActual +
+                            2.0 * acceleratingMps2 * ds
+                        )
+                    );
+                runtimeSpeeds[i] =
+                    std::min(runtimeSpeeds[i], reachableFromActual);
+            }
+        }
+
+        // Backward braking feasibility preserves every future nominal speed
+        // restriction and propagates it toward the checkpoint.
+        if (brakingMps2 > 1.0e-9)
+        {
+            for (std::size_t i = runtimeSpeeds.size() - 1;
+                 i > anchorIndex;
+                 --i)
+            {
+                const double ds = progress[i] - progress[i - 1];
+                if (!(std::isfinite(ds) && ds >= 0.0))
+                    return;
+
+                const double reachable =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            runtimeSpeeds[i] * runtimeSpeeds[i] +
+                            2.0 * brakingMps2 * ds
+                        )
+                    );
+                runtimeSpeeds[i - 1] =
+                    std::min(runtimeSpeeds[i - 1], reachable);
+            }
+        }
+
+        // Reconstruct longitudinal feed-forward from v^2 relation. Geometry
+        // and lateral/angular references remain exactly the accepted program.
+        for (std::size_t i = anchorIndex;
+             i < runtimeAccelerations.size();
+             ++i)
+        {
+            runtimeAccelerations[i] = 0.0;
+        }
+        for (std::size_t i = anchorIndex;
+             i + 1 < runtimeSpeeds.size();
+             ++i)
+        {
+            const double ds = progress[i + 1] - progress[i];
+            if (ds > 1.0e-9)
+            {
+                runtimeAccelerations[i] =
+                    (runtimeSpeeds[i + 1] * runtimeSpeeds[i + 1] -
+                     runtimeSpeeds[i] * runtimeSpeeds[i]) /
+                    (2.0 * ds);
+            }
+        }
+    }
+
+    static void applyRuntimeProfile(
+        const std::vector<double>& runtimeSpeeds,
+        const std::vector<double>& runtimeAccelerations,
+        ContinuousReferenceDiagnostic& reference
+    ) noexcept
+    {
+        if (!reference.valid ||
+            reference.lowerSampleIndex >= runtimeSpeeds.size() ||
+            reference.upperSampleIndex >= runtimeSpeeds.size() ||
+            runtimeAccelerations.size() != runtimeSpeeds.size())
+        {
+            return;
+        }
+
+        const double u = reference.interpolation01;
+        const double speed =
+            runtimeSpeeds[reference.lowerSampleIndex] * (1.0 - u) +
+            runtimeSpeeds[reference.upperSampleIndex] * u;
+
+        const glm::dvec3 tangent =
+            normalizedOr(
+                reference.reference.velocityMapMetersPerSecond,
+                reference.reference.forwardMap
+            );
+        reference.reference.velocityMapMetersPerSecond =
+            tangent * std::max(0.0, speed);
+
+        const double longitudinalAcceleration =
+            runtimeAccelerations[reference.lowerSampleIndex] * (1.0 - u) +
+            runtimeAccelerations[reference.upperSampleIndex] * u;
+        reference.reference.linearAccelerationFeedForwardMapMps2 =
+            tangent * longitudinalAcceleration;
     }
 
     [[nodiscard]] static double angleBetween(

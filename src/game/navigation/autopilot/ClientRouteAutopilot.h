@@ -38,6 +38,15 @@ public:
         std::uint64_t requestSerial = 0;
         std::size_t currentPage = 0;
         std::size_t currentSpatialSegment = 0;
+
+        // AcceptedManeuverProgram pages are fixed-capacity storage only.
+        // Execution owns one continuous spatial reference assembled from all
+        // pages, with their duplicated boundary sample removed.
+        std::vector<AcceptedManeuverProgram::ReferenceSample>
+            continuousSamples;
+        std::vector<double> continuousProgressMeters;
+        std::size_t currentContinuousSegment = 0;
+
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
         std::vector<AcceptedManeuverProgram> programs;
@@ -89,6 +98,15 @@ public:
         state.active = true;
         state.requestSerial = requestSerial;
         state.programs = std::move(programs);
+        if (!buildContinuousReference(
+                state.programs,
+                state.continuousSamples,
+                state.continuousProgressMeters
+            ))
+        {
+            state = {};
+            return false;
+        }
         return true;
     }
 
@@ -193,64 +211,42 @@ public:
         if (!reference.valid)
             return out;
 
-        double targetSpeed =
-            glm::length(followed.targetVelocityMapMps);
-
-        glm::dvec3 desiredForward =
-            targetSpeed > 1.0e-6
-                ? followed.targetVelocityMapMps / targetSpeed
-                : reference.reference.forwardMap;
-        glm::dvec3 desiredUp = reference.reference.upMap;
-
-        // Spatial execution must look across AcceptedManeuverProgram page
-        // boundaries. Each page is only fixed-capacity storage (16 samples),
-        // not a semantic "wait until crossed, then discover the next frame"
-        // boundary. At flight speed the pilot must already know the geometry
-        // and speed restrictions several seconds ahead.
-        const double actualSpeed =
-            glm::length(agent.velocityMapMetersPerSecond);
-        const double previewDistanceMeters = std::clamp(
-            actualSpeed * 5.0,
-            250.0,
-            2000.0
-        );
-
-        const double reverseAuthority =
-            game::ship::reverseMainAccelerationLimitMps2(params);
-        const double lateralAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? game::ship::
-                    assistedLateralStabilizationAccelerationLimitMps2(params)
-                : game::ship::manoeuvreAccelerationLimitMps2(params);
-        const double brakingAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? std::max(reverseAuthority, lateralAuthority)
-                : game::ship::forwardMainAccelerationLimitMps2(params);
-
-        const auto preview = previewAcrossPages(
-            state.programs,
-            state.currentPage,
-            state.currentSpatialSegment,
+        const auto continuous = sampleContinuousReference(
+            state.continuousSamples,
+            state.continuousProgressMeters,
             agent.positionMapMeters,
-            desiredForward,
-            desiredUp,
-            targetSpeed,
-            previewDistanceMeters,
-            brakingAuthority
+            state.currentContinuousSegment
         );
-        if (preview.valid)
-        {
-            desiredForward = preview.forwardMap;
-            desiredUp = preview.upMap;
-            targetSpeed = std::min(targetSpeed, preview.safeSpeedMps);
-        }
+        if (!continuous.valid)
+            return out;
+
+        state.currentContinuousSegment =
+            std::max(
+                state.currentContinuousSegment,
+                continuous.lowerSampleIndex
+            );
+
+        const double targetSpeed =
+            glm::length(
+                continuous.reference.velocityMapMetersPerSecond
+            );
+        const glm::dvec3 desiredForward =
+            normalizedOr(
+                continuous.reference.forwardMap,
+                reference.reference.forwardMap
+            );
+        const glm::dvec3 desiredUp =
+            normalizedOr(
+                continuous.reference.upMap,
+                reference.reference.upMap
+            );
 
         PredictivePilot::Request request;
         request.law = law;
         request.desiredVelocityMapMps =
-            desiredForward * targetSpeed;
+            continuous.reference.velocityMapMetersPerSecond;
         request.desiredLinearAccelerationMapMps2 =
-            followed.intent.idealLinearAccelerationLocalMps2;
+            continuous.reference.linearAccelerationFeedForwardMapMps2;
         request.desiredForwardMap = desiredForward;
         request.desiredUpMap = desiredUp;
         request.actualVelocityMapMps =
@@ -261,16 +257,24 @@ public:
         request.pitchRateRadPerSec = agent.pitchRateRadPerSec;
         request.yawRateRadPerSec = agent.yawRateRadPerSec;
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
+        const bool atFinalContinuousSegment =
+            state.currentContinuousSegment + 1 >=
+                state.continuousSamples.size();
         request.stopRequested =
             targetSpeed <= 0.05 &&
-            state.currentPage + 1 == state.programs.size();
+            atFinalContinuousSegment;
         request.deltaSeconds = deltaSeconds;
 
         out.control =
             PredictivePilot::make(request, params, state.pilotState);
         out.valid = true;
         out.crossTrackErrorMeters = followed.crossTrackErrorMeters;
-        out.remainingDistanceMeters = followed.remainingDistanceMeters;
+        out.remainingDistanceMeters =
+            std::max(
+                0.0,
+                state.continuousProgressMeters.back() -
+                    continuous.spatialProgressMeters
+            );
         out.targetSpeedMps = targetSpeed;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
@@ -278,137 +282,175 @@ public:
     }
 
 private:
-    struct SpatialPreview
+    struct ContinuousReferenceDiagnostic
     {
         bool valid = false;
-        glm::dvec3 forwardMap {0.0, 0.0, -1.0};
-        glm::dvec3 upMap {0.0, 1.0, 0.0};
-        double safeSpeedMps = 0.0;
+        AcceptedManeuverProgram::ReferenceSample reference {};
+        std::size_t lowerSampleIndex = 0;
+        std::size_t upperSampleIndex = 0;
+        double interpolation01 = 0.0;
+        double spatialProgressMeters = 0.0;
     };
 
-    [[nodiscard]] static SpatialPreview previewAcrossPages(
+    [[nodiscard]] static bool buildContinuousReference(
         const std::vector<AcceptedManeuverProgram>& programs,
-        std::size_t currentPage,
-        std::size_t currentSegment,
-        const glm::dvec3& positionMapMeters,
-        const glm::dvec3& fallbackForward,
-        const glm::dvec3& fallbackUp,
-        double currentTargetSpeedMps,
-        double previewDistanceMeters,
-        double brakingAccelerationMps2
-    ) noexcept
+        std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        std::vector<double>& progress
+    )
     {
-        SpatialPreview out;
-        if (programs.empty() ||
-            currentPage >= programs.size() ||
-            !(previewDistanceMeters > 0.0))
+        samples.clear();
+        progress.clear();
+
+        for (std::size_t pageIndex = 0;
+             pageIndex < programs.size();
+             ++pageIndex)
         {
-            return out;
-        }
+            const auto& page = programs[pageIndex];
+            if (!page.valid || page.sampleCount < 2)
+                return false;
 
-        glm::dvec3 previous = positionMapMeters;
-        glm::dvec3 targetPoint = positionMapMeters;
-        glm::dvec3 targetUp = fallbackUp;
-        double accumulated = 0.0;
-        double safeSpeed = std::max(0.0, currentTargetSpeedMps);
-        bool havePoint = false;
-
-        for (std::size_t page = currentPage;
-             page < programs.size() &&
-             accumulated < previewDistanceMeters;
-             ++page)
-        {
-            const auto& program = programs[page];
-            if (!program.valid || program.sampleCount == 0)
-                continue;
-
-            std::size_t first = 0;
-            if (page == currentPage)
-            {
-                first = std::min(
-                    currentSegment + 1,
-                    static_cast<std::size_t>(program.sampleCount - 1)
-                );
-            }
-
+            const std::size_t first =
+                pageIndex == 0 ? 0 : 1;
             for (std::size_t i = first;
-                 i < program.sampleCount;
+                 i < page.sampleCount;
                  ++i)
             {
-                const auto& sample = program.samples[i];
-                const glm::dvec3 delta =
-                    sample.positionMapMeters - previous;
-                const double ds = glm::length(delta);
-                if (!std::isfinite(ds) || ds <= 1.0e-9)
-                {
-                    previous = sample.positionMapMeters;
-                    continue;
-                }
-
-                const double nextDistance = accumulated + ds;
-
-                // Any lower speed already authored later in the accepted
-                // route constrains today's speed by the physical braking
-                // distance. This deliberately works across storage pages.
-                const double futureSpeed =
-                    glm::length(sample.velocityMapMetersPerSecond);
-                if (std::isfinite(futureSpeed) &&
-                    std::isfinite(brakingAccelerationMps2) &&
-                    brakingAccelerationMps2 > 1.0e-9)
-                {
-                    const double reachable =
-                        std::sqrt(
-                            std::max(
-                                0.0,
-                                futureSpeed * futureSpeed +
-                                2.0 *
-                                    brakingAccelerationMps2 *
-                                    nextDistance
-                            )
-                        );
-                    safeSpeed = std::min(safeSpeed, reachable);
-                }
-
-                if (nextDistance >= previewDistanceMeters)
-                {
-                    const double u = std::clamp(
-                        (previewDistanceMeters - accumulated) / ds,
-                        0.0,
-                        1.0
-                    );
-                    targetPoint =
-                        previous + delta * u;
-                    targetUp = sample.upMap;
-                    accumulated = previewDistanceMeters;
-                    havePoint = true;
-                    break;
-                }
-
-                accumulated = nextDistance;
-                previous = sample.positionMapMeters;
-                targetPoint = sample.positionMapMeters;
-                targetUp = sample.upMap;
-                havePoint = true;
+                samples.push_back(page.samples[i]);
             }
         }
 
-        if (!havePoint)
-            return out;
+        if (samples.size() < 2)
+            return false;
 
-        const glm::dvec3 ray = targetPoint - positionMapMeters;
-        const double rayLength = glm::length(ray);
-        if (!(std::isfinite(rayLength) && rayLength > 1.0e-9))
-            return out;
+        progress.resize(samples.size(), 0.0);
+        for (std::size_t i = 1; i < samples.size(); ++i)
+        {
+            const double ds = glm::length(
+                samples[i].positionMapMeters -
+                samples[i - 1].positionMapMeters
+            );
+            if (!std::isfinite(ds) || ds <= 1.0e-9)
+                return false;
+            progress[i] = progress[i - 1] + ds;
+        }
+        return true;
+    }
 
-        out.valid = true;
-        out.forwardMap = ray / rayLength;
-        glm::dvec3 projectedUp =
-            targetUp -
-            out.forwardMap * glm::dot(targetUp, out.forwardMap);
-        out.upMap = normalizedOr(projectedUp, fallbackUp);
-        out.safeSpeedMps =
-            std::max(0.0, std::isfinite(safeSpeed) ? safeSpeed : 0.0);
-        return out;
+    [[nodiscard]] static ContinuousReferenceDiagnostic
+    sampleContinuousReference(
+        const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        const std::vector<double>& progress,
+        const glm::dvec3& positionMapMeters,
+        std::size_t minimumSegmentIndex
+    ) noexcept
+    {
+        ContinuousReferenceDiagnostic out;
+        if (samples.size() < 2 ||
+            progress.size() != samples.size())
+        {
+            return out;
+        }
+
+        std::size_t segment = std::min(
+            minimumSegmentIndex,
+            samples.size() - 2
+        );
+
+        // Advance strictly along the already accepted centerline. Crossing
+        // the plane beyond a sample advances to the next segment; nearest
+        // global-point search is deliberately avoided so a route that passes
+        // near itself cannot jump to a later branch.
+        for (;;)
+        {
+            const glm::dvec3 a =
+                samples[segment].positionMapMeters;
+            const glm::dvec3 b =
+                samples[segment + 1].positionMapMeters;
+            const glm::dvec3 delta = b - a;
+            const double length2 = glm::dot(delta, delta);
+            if (!(std::isfinite(length2) && length2 > 1.0e-18))
+                return out;
+
+            const double raw =
+                glm::dot(positionMapMeters - a, delta) / length2;
+
+            if (raw > 1.0 &&
+                segment + 2 < samples.size())
+            {
+                ++segment;
+                continue;
+            }
+
+            const double u = std::clamp(raw, 0.0, 1.0);
+            const auto& lower = samples[segment];
+            const auto& upper = samples[segment + 1];
+
+            out.valid = true;
+            out.lowerSampleIndex = segment;
+            out.upperSampleIndex = segment + 1;
+            out.interpolation01 = u;
+            out.spatialProgressMeters =
+                progress[segment] +
+                (progress[segment + 1] - progress[segment]) * u;
+
+            auto& ref = out.reference;
+            ref.timeOffsetSeconds =
+                lower.timeOffsetSeconds * (1.0 - u) +
+                upper.timeOffsetSeconds * u;
+            ref.positionMapMeters =
+                glm::mix(
+                    lower.positionMapMeters,
+                    upper.positionMapMeters,
+                    u
+                );
+            ref.velocityMapMetersPerSecond =
+                glm::mix(
+                    lower.velocityMapMetersPerSecond,
+                    upper.velocityMapMetersPerSecond,
+                    u
+                );
+            ref.linearAccelerationFeedForwardMapMps2 =
+                glm::mix(
+                    lower.linearAccelerationFeedForwardMapMps2,
+                    upper.linearAccelerationFeedForwardMapMps2,
+                    u
+                );
+
+            ref.forwardMap = normalizedOr(
+                glm::mix(lower.forwardMap, upper.forwardMap, u),
+                lower.forwardMap
+            );
+
+            glm::dvec3 up = glm::mix(
+                lower.upMap,
+                upper.upMap,
+                u
+            );
+            up -= ref.forwardMap * glm::dot(up, ref.forwardMap);
+            ref.upMap = normalizedOr(up, lower.upMap);
+            ref.rightMap = normalizedOr(
+                glm::cross(ref.forwardMap, ref.upMap),
+                lower.rightMap
+            );
+            ref.upMap = normalizedOr(
+                glm::cross(ref.rightMap, ref.forwardMap),
+                ref.upMap
+            );
+
+            ref.angularVelocityMapRadPerSecond =
+                glm::mix(
+                    lower.angularVelocityMapRadPerSecond,
+                    upper.angularVelocityMapRadPerSecond,
+                    u
+                );
+            ref.angularAccelerationFeedForwardMapRadPerSec2 =
+                glm::mix(
+                    lower.angularAccelerationFeedForwardMapRadPerSec2,
+                    upper.angularAccelerationFeedForwardMapRadPerSec2,
+                    u
+                );
+            return out;
+        }
     }
 
     static glm::dvec3 normalizedOr(
@@ -568,7 +610,7 @@ private:
             limit.sourcePathProgressMeters = sourceProgressMeters;
             limit.maxSpeedMps = std::min(
                 vehicle.maxSpeedMps,
-                std::max(0.5, gate.speedMps)
+                std::max(0.0, gate.speedMps)
             );
             trajectoryRequest.pointSpeedConstraints.push_back(limit);
         }
@@ -644,7 +686,7 @@ private:
                  trajectoryRequest.pointSpeedConstraints)
             {
                 limit.maxSpeedMps =
-                    std::max(0.5, limit.maxSpeedMps * scale);
+                    std::max(0.0, limit.maxSpeedMps * scale);
             }
         }
 

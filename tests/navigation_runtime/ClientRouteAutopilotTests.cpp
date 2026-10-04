@@ -380,6 +380,38 @@ void testSpatialTurnStartsBeforeArcEntry()
     );
 }
 
+void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
+{
+    using Pilot =
+        game::navigation::autopilot::PredictivePilot;
+
+    Pilot::State state;
+    Pilot::Request request;
+    request.law =
+        game::navigation::LocalFlightControlLaw::Assisted;
+
+    // Nose already turned toward +X, but velocity still lags 90 degrees along
+    // +Z. The craft is physically moving at 40 m/s while the route wants 20.
+    // A projection-based controller sees zero forward speed and accelerates;
+    // correct scalar-speed control must brake.
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.desiredForwardMap = request.forwardMap;
+    request.desiredUpMap = request.upMap;
+    request.actualVelocityMapMps = {0.0, 0.0, 40.0};
+    request.desiredVelocityMapMps = {20.0, 0.0, 0.0};
+    request.deltaSeconds = 0.02;
+
+    const auto control =
+        Pilot::make(request, params(), state);
+
+    require(
+        control.targetSpeedRate < -1.0e-6f,
+        "Assisted pilot accelerated because velocity lagged nose direction"
+    );
+}
+
 void testPredictivePilotBrakesAngularRateBeforeTarget()
 {
     using Pilot =
@@ -643,6 +675,7 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
+        testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
         testPredictivePilotCapturesTurnsWithoutOvershoot();
         testClientAutopilotUsesDockUpReferenceForRoll();
@@ -654,6 +687,7 @@ int main()
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
+            << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"
             << " - 5/15/45/90 degree turns settle without overshoot\n"
             << " - docking up reference drives roll orientation\n"

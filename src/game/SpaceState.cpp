@@ -2439,6 +2439,10 @@ void SpaceState::updateDockingAdvisory()
                     << output.crossTrackErrorMeters
                     << " remaining_m="
                     << output.remainingDistanceMeters
+                    << " target_speed_mps="
+                    << output.targetSpeedMps
+                    << " actual_speed_mps="
+                    << glm::length(motion.localVelocityMps)
                     << " pitch=" << output.control.pitchInput
                     << " yaw=" << output.control.yawInput
                     << " roll=" << output.control.rollInput

@@ -67,7 +67,8 @@ public:
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,
         std::uint64_t requestSerial,
-        double trackingPositionToleranceMeters
+        double trackingPositionToleranceMeters,
+        const glm::dvec3& routeUpReference = glm::dvec3(0.0)
     )
     {
         auto programs = buildPrograms(
@@ -77,7 +78,8 @@ public:
             params,
             acceptedAtUniverseTimeSeconds,
             requestSerial,
-            trackingPositionToleranceMeters
+            trackingPositionToleranceMeters,
+            routeUpReference
         );
         if (programs.empty())
             return false;
@@ -272,7 +274,8 @@ private:
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,
         std::uint64_t requestSerial,
-        double trackingPositionToleranceMeters
+        double trackingPositionToleranceMeters,
+        const glm::dvec3& routeUpReference
     )
     {
         if (!plan.valid() ||
@@ -348,7 +351,10 @@ private:
                 initialAgent.rollRateRadPerSec
             );
         trajectoryRequest.hasRouteUpReference = true;
-        trajectoryRequest.routeUpReference = initialAgent.upMap;
+        trajectoryRequest.routeUpReference =
+            glm::length(routeUpReference) > 1.0e-9
+                ? normalizedOr(routeUpReference, initialAgent.upMap)
+                : initialAgent.upMap;
         trajectoryRequest.hasTerminalVelocity = true;
         trajectoryRequest.terminalVelocityMps = glm::dvec3(0.0);
 

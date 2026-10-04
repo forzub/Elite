@@ -2321,6 +2321,18 @@ void SpaceState::updateDockingAdvisory()
                     )
                 );
 
+            const auto executionPort =
+                resolveDockingAdvisoryLocalPortAt(
+                    m_dockAdvice.portAttachment,
+                    m_dockAdvice.portDefinition,
+                    universeTimeSeconds
+                );
+            if (!executionPort.valid)
+            {
+                fail("dock local pose unavailable at execution start");
+                return;
+            }
+
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
@@ -2329,7 +2341,8 @@ void SpaceState::updateDockingAdvisory()
                     effectivePhysics,
                     universeTimeSeconds,
                     pending.serial,
-                    tolerance
+                    tolerance,
+                    executionPort.up
                 ))
             {
                 fail("client autopilot could not accept planner route");

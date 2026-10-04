@@ -282,7 +282,7 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
     );
 }
 
-void testSpatialTurnStartsBeforeArcEntry()
+void testContinuousProgramDoesNotInventEarlyTurn()
 {
     using game::navigation::planner::RouteGate;
 
@@ -374,9 +374,65 @@ void testSpatialTurnStartsBeforeArcEntry()
     require(output.valid,
         "straight-to-arc route emitted invalid output");
     require(
+        std::abs(output.control.pitchInput) < 1.0e-5 &&
+        std::abs(output.control.yawInput) < 1.0e-5,
+        "follower invented an early turn not authored by trajectory"
+    );
+}
+
+void testContinuousProgramCorrectsCrossTrackError()
+{
+    auto route = plan();
+    for (auto& gate : route.executionGates)
+        gate.speedMps = 20.0;
+    route.executionGates.back().speedMps = 0.0;
+    route.gates = route.executionGates;
+
+    Autopilot::State state;
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            14,
+            25.0
+        ),
+        "client autopilot rejected cross-track route"
+    );
+
+    Agent offset = initial;
+    offset.positionMapMeters = {50.0, 0.0, 10.0};
+
+    const auto output = Autopilot::update(
+        state,
+        offset,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "cross-track correction emitted invalid output");
+    require(
+        output.crossTrackErrorMeters > 9.0,
+        "continuous follower did not measure cross-track displacement"
+    );
+    require(
         std::abs(output.control.pitchInput) > 1.0e-6 ||
         std::abs(output.control.yawInput) > 1.0e-6,
-        "follower waited for arc entry instead of steering ahead into bend"
+        "continuous follower did not steer back toward centerline"
     );
 }
 
@@ -891,7 +947,8 @@ int main()
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
-        testSpatialTurnStartsBeforeArcEntry();
+        testContinuousProgramDoesNotInventEarlyTurn();
+        testContinuousProgramCorrectsCrossTrackError();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
@@ -905,7 +962,8 @@ int main()
             << " - execution emits only ordinary ShipControlState inputs\n"
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
-            << " - follower starts steering before straight-to-arc entry\n"
+            << " - follower does not invent turns outside authored trajectory\n"
+            << " - physical cross-track servo returns craft toward centerline\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"

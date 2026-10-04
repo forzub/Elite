@@ -226,11 +226,12 @@ public:
                 continuous.lowerSampleIndex
             );
 
-        const double targetSpeed =
+        double targetSpeed =
             glm::length(
                 continuous.reference.velocityMapMetersPerSecond
             );
-        const glm::dvec3 desiredForward =
+
+        const glm::dvec3 nominalForward =
             normalizedOr(
                 continuous.reference.forwardMap,
                 reference.reference.forwardMap
@@ -241,13 +242,68 @@ public:
                 reference.reference.upMap
             );
 
+        // Position feedback is a servo around the already-authored program,
+        // not another path planner. Derive the lateral capture velocity from
+        // the ship's real lateral acceleration authority:
+        //
+        //     v_capture^2 = 2 * a_lateral * cross_track_distance
+        //
+        // This naturally commands a large correction far from centerline and
+        // bleeds it to zero as the craft reaches the corridor center. No
+        // fixed look-ahead distance or arbitrary response time is involved.
+        const glm::dvec3 referenceTangent =
+            targetSpeed > 1.0e-9
+                ? continuous.reference.velocityMapMetersPerSecond /
+                    targetSpeed
+                : nominalForward;
+        const glm::dvec3 positionError =
+            agent.positionMapMeters -
+            continuous.reference.positionMapMeters;
+        const glm::dvec3 crossPositionError =
+            positionError -
+            referenceTangent *
+                glm::dot(positionError, referenceTangent);
+        const double crossTrackErrorMeters =
+            glm::length(crossPositionError);
+
+        const double lateralAuthority =
+            law == LocalFlightControlLaw::Assisted
+                ? game::ship::
+                    assistedLateralStabilizationAccelerationLimitMps2(params)
+                : game::ship::manoeuvreAccelerationLimitMps2(params);
+
+        glm::dvec3 steeringForward = nominalForward;
+        if (crossTrackErrorMeters > 1.0e-9 &&
+            lateralAuthority > 1.0e-9 &&
+            targetSpeed > 1.0e-9)
+        {
+            const glm::dvec3 towardCenter =
+                -crossPositionError / crossTrackErrorMeters;
+            const double captureSpeed =
+                std::sqrt(
+                    2.0 *
+                    lateralAuthority *
+                    crossTrackErrorMeters
+                );
+
+            const glm::dvec3 steeringVelocity =
+                nominalForward * targetSpeed +
+                towardCenter * captureSpeed;
+            steeringForward =
+                normalizedOr(steeringVelocity, nominalForward);
+        }
+
+        // Preserve the authored scalar speed. Cross-track recovery changes
+        // direction, not the planner's speed schedule.
+        const glm::dvec3 desiredVelocity =
+            steeringForward * targetSpeed;
+
         PredictivePilot::Request request;
         request.law = law;
-        request.desiredVelocityMapMps =
-            continuous.reference.velocityMapMetersPerSecond;
+        request.desiredVelocityMapMps = desiredVelocity;
         request.desiredLinearAccelerationMapMps2 =
             continuous.reference.linearAccelerationFeedForwardMapMps2;
-        request.desiredForwardMap = desiredForward;
+        request.desiredForwardMap = steeringForward;
         request.desiredUpMap = desiredUp;
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
@@ -258,7 +314,7 @@ public:
         request.yawRateRadPerSec = agent.yawRateRadPerSec;
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
         const bool atFinalContinuousSegment =
-            state.currentContinuousSegment + 1 >=
+            continuous.upperSampleIndex + 1 >=
                 state.continuousSamples.size();
         request.stopRequested =
             targetSpeed <= 0.05 &&
@@ -268,7 +324,7 @@ public:
         out.control =
             PredictivePilot::make(request, params, state.pilotState);
         out.valid = true;
-        out.crossTrackErrorMeters = followed.crossTrackErrorMeters;
+        out.crossTrackErrorMeters = crossTrackErrorMeters;
         out.remainingDistanceMeters =
             std::max(
                 0.0,

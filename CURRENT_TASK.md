@@ -2117,3 +2117,22 @@ Pull main and run the navigation runtime tracking test plus the full docking ver
 
 During Stage-1 ApproachHold, nominal trajectory timestamps must not advance the route reference. Verify `reference_mode=spatial`; `ref_segment/ref_alpha` should change only with physical progress. The ship should follow the current segment course and remain inside the cross-track/forward-angle corridor. Angular-rate error above the old 0.25 rad/s soft limit must be corrected in place and must not by itself produce `phase=recovery reason=follower-rejected` or `tracking-envelope-exceeded`. Preserve all `[DockAutoTrack]`, recovery and result lines. FinalIngress remains TimeScheduled by design. Do not declare acceptance until the Windows native gates and live flight pass.
 
+
+
+## 2026-10-04 — client autopilot executes one continuous accepted program
+
+The client docking autopilot no longer treats fixed-capacity AcceptedManeuverProgram pages as semantic flight phases. At start it flattens all accepted pages into one monotonic spatial reference, removing the intentionally duplicated page-boundary sample. Runtime progress advances sequentially along this continuous centerline; storage page/segment indices are reconstructed only for capability/tolerance metadata and cannot reset or invalidate the flight reference.
+
+The command target now comes directly from the authored program at current spatial progress: velocity, forward/up attitude and feed-forward acceleration. The previous client-side multi-page look-ahead steering heuristic is no longer part of the command path. Planner/TrajectoryGenerator therefore own how to fly the route; client execution only tracks that program.
+
+Assisted cross-track recovery is a bounded servo around the program. It derives a capture velocity from the real lateral authority using v_capture^2 = 2*a_lateral*cross_track_distance, changes steering direction while preserving the authored scalar speed, and tends continuously to zero at the centerline. Small tracking-envelope errors no longer cause storage-page selection to discard the execution program.
+
+Planner speed constraints are preserved down to zero; the former client floor max(0.5, gate.speedMps) was removed so an authored near-stop/full-stop checkpoint can survive compilation.
+
+Published commits:
+- 8b7f7607 — assemble and execute one continuous accepted route
+- 71503579 — physical cross-track servo around continuous program
+- 7c450f44 — remove storage-page selection from the control path
+- 9f91cfac / 25952477 — regressions for continuous page boundaries and servo contract
+
+Next gate: Windows MinGW build + client_route_autopilot CTest. Do not add checkpoint suffix re-generation yet; first establish that the full authored program plus bounded servo follows the live tunnel without page-driven resets. If this base is stable, the next layer is event/checkpoint re-anchoring of the remaining trajectory from the measured state.

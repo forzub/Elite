@@ -2443,6 +2443,10 @@ void SpaceState::updateDockingAdvisory()
                     << output.targetSpeedMps
                     << " actual_speed_mps="
                     << glm::length(motion.localVelocityMps)
+                    << " checkpoint="
+                    << output.checkpointIndex
+                    << " profile_rev="
+                    << output.speedProfileRevision
                     << " pitch=" << output.control.pitchInput
                     << " yaw=" << output.control.yawInput
                     << " roll=" << output.control.rollInput

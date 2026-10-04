@@ -420,6 +420,121 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
     );
 }
 
+void testPredictivePilotCapturesTurnsWithoutOvershoot()
+{
+    using Pilot =
+        game::navigation::autopilot::PredictivePilot;
+
+    const auto vehicle = params();
+    constexpr double Dt = 0.02;
+    constexpr double Pi =
+        3.1415926535897932384626433832795;
+
+    const auto runTurn =
+        [&](double targetDegrees)
+        {
+            Pilot::State state;
+            double angle = 0.0;
+            double yawRate = 0.0;
+            double holdSeconds = 0.0;
+            double maximumAngle = 0.0;
+            double minimumAngle = 0.0;
+
+            for (int step = 0; step < 400; ++step)
+            {
+                const double c = std::cos(angle);
+                const double sn = std::sin(angle);
+
+                // Positive simulated yaw follows ShipController's +Y rotation:
+                // +X turns toward -Z.
+                const glm::dvec3 forward(c, 0.0, -sn);
+                const glm::dvec3 right(sn, 0.0, c);
+                const glm::dvec3 up(0.0, 1.0, 0.0);
+
+                const double target =
+                    targetDegrees * Pi / 180.0;
+                const glm::dvec3 desiredForward(
+                    std::cos(target),
+                    0.0,
+                    -std::sin(target)
+                );
+
+                Pilot::Request request;
+                request.law =
+                    game::navigation::LocalFlightControlLaw::Assisted;
+                request.forwardMap = forward;
+                request.rightMap = right;
+                request.upMap = up;
+                request.desiredForwardMap = desiredForward;
+                request.desiredUpMap = up;
+                request.yawRateRadPerSec = yawRate;
+                request.deltaSeconds = Dt;
+
+                const auto control =
+                    Pilot::make(request, vehicle, state);
+
+                // Reproduce the ordinary-keyboard angular path used by the
+                // live client autopilot: held input ramps from 18% to full
+                // authority over 0.25 s; neutral Assisted input damps rate.
+                double acceleration = 0.0;
+                if (std::abs(control.yawInput) < 0.001f)
+                {
+                    holdSeconds = 0.0;
+                    acceleration =
+                        -yawRate *
+                        static_cast<double>(vehicle.angularDamping);
+                }
+                else
+                {
+                    const double authorityScale =
+                        0.18 +
+                        (1.0 - 0.18) *
+                        std::clamp(holdSeconds / 0.25, 0.0, 1.0);
+                    acceleration =
+                        static_cast<double>(control.yawInput) *
+                        authorityScale *
+                        game::ship::
+                            angularAccelerationLimitRadPerSec2(vehicle);
+                    holdSeconds =
+                        std::min(0.25, holdSeconds + Dt);
+                }
+
+                yawRate += acceleration * Dt;
+                yawRate = std::clamp(
+                    yawRate,
+                    -static_cast<double>(vehicle.maxYawRate),
+                    static_cast<double>(vehicle.maxYawRate)
+                );
+                angle += yawRate * Dt;
+
+                maximumAngle = std::max(maximumAngle, angle);
+                minimumAngle = std::min(minimumAngle, angle);
+            }
+
+            const double finalDegrees = angle * 180.0 / Pi;
+            const double overshootDegrees =
+                targetDegrees >= 0.0
+                    ? maximumAngle * 180.0 / Pi - targetDegrees
+                    : targetDegrees - minimumAngle * 180.0 / Pi;
+
+            require(
+                std::abs(finalDegrees - targetDegrees) < 0.25,
+                "predictive pilot failed to settle on commanded turn angle"
+            );
+            require(
+                overshootDegrees < 0.25,
+                "predictive pilot overshot commanded turn angle"
+            );
+        };
+
+    runTurn(5.0);
+    runTurn(15.0);
+    runTurn(45.0);
+    runTurn(90.0);
+    runTurn(-45.0);
+    runTurn(-90.0);
+}
+
 void testClientAutopilotUsesDockUpReferenceForRoll()
 {
     Autopilot::State state;
@@ -529,6 +644,7 @@ int main()
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
         testPredictivePilotBrakesAngularRateBeforeTarget();
+        testPredictivePilotCapturesTurnsWithoutOvershoot();
         testClientAutopilotUsesDockUpReferenceForRoll();
         testClientStabilizerUsesOrdinaryControls();
         std::cout
@@ -539,6 +655,7 @@ int main()
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
             << " - angular controller brakes before attitude overshoot\n"
+            << " - 5/15/45/90 degree turns settle without overshoot\n"
             << " - docking up reference drives roll orientation\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;

@@ -11,6 +11,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
@@ -145,71 +146,17 @@ public:
         double deltaSeconds
     ) noexcept
     {
+        (void)universeTimeSeconds;
+
         Output out;
-        if (!state.active || state.programs.empty())
-            return out;
-
-        const auto selection = RouteFollower::selectPage(
-            state.programs,
-            universeTimeSeconds,
-            agent.positionMapMeters,
-            state.currentPage
-        );
-        if (selection.status != RouteProgramSelectionStatus::Active ||
-            selection.pageIndex >= state.programs.size())
+        if (!state.active ||
+            state.programs.empty() ||
+            state.continuousSamples.size() < 2 ||
+            state.continuousProgressMeters.size() !=
+                state.continuousSamples.size())
         {
             return out;
         }
-
-        if (selection.pageIndex != state.currentPage)
-        {
-            state.currentPage = selection.pageIndex;
-            state.currentSpatialSegment = 0;
-        }
-
-        const auto& program = state.programs[state.currentPage];
-        const auto followed = RouteFollower::follow(
-            program,
-            universeTimeSeconds,
-            agent,
-            state.followerPolicy,
-            state.currentSpatialSegment
-        );
-        if (followed.status == RouteFollowerStatus::InvalidInput)
-            return out;
-
-        if (followed.spatialReference)
-        {
-            state.currentSpatialSegment = std::max(
-                state.currentSpatialSegment,
-                followed.referenceLowerSampleIndex
-            );
-        }
-
-        if (followed.status == RouteFollowerStatus::Complete)
-        {
-            if (state.currentPage + 1 < state.programs.size())
-            {
-                ++state.currentPage;
-                state.currentSpatialSegment = 0;
-            }
-            else
-            {
-                out.valid = true;
-                out.complete = true;
-                state.active = false;
-                return out;
-            }
-        }
-
-        const auto reference = RouteFollower::sampleReference(
-            state.programs[state.currentPage],
-            universeTimeSeconds,
-            agent.positionMapMeters,
-            state.currentSpatialSegment
-        );
-        if (!reference.valid)
-            return out;
 
         const auto continuous = sampleContinuousReference(
             state.continuousSamples,
@@ -226,6 +173,53 @@ public:
                 continuous.lowerSampleIndex
             );
 
+        // Map the continuous segment back to storage metadata only. Pages are
+        // no longer allowed to select, reset or invalidate the execution
+        // reference.
+        constexpr std::size_t PageStride =
+            AcceptedManeuverProgram::kMaxSamples - 1;
+        state.currentPage = std::min(
+            state.currentContinuousSegment / PageStride,
+            state.programs.size() - 1
+        );
+        state.currentSpatialSegment = std::min(
+            state.currentContinuousSegment -
+                state.currentPage * PageStride,
+            static_cast<std::size_t>(
+                state.programs[state.currentPage].sampleCount - 2
+            )
+        );
+        const auto& contract = state.programs[state.currentPage];
+
+        ManeuverTrackingController::AgentState trackingAgent;
+        trackingAgent.positionMapMeters = agent.positionMapMeters;
+        trackingAgent.velocityMapMetersPerSecond =
+            agent.velocityMapMetersPerSecond;
+        trackingAgent.forwardMap = agent.forwardMap;
+        trackingAgent.rightMap = agent.rightMap;
+        trackingAgent.upMap = agent.upMap;
+        trackingAgent.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+        trackingAgent.yawRateRadPerSec = agent.yawRateRadPerSec;
+        trackingAgent.rollRateRadPerSec = agent.rollRateRadPerSec;
+
+        ManeuverTrackingController::Policy trackingPolicy;
+        trackingPolicy.positionGainPerSecond2 =
+            state.followerPolicy.positionGainPerSecond2;
+        trackingPolicy.velocityGainPerSecond =
+            state.followerPolicy.velocityGainPerSecond;
+        trackingPolicy.attitudeGainPerSecond2 =
+            state.followerPolicy.attitudeGainPerSecond2;
+        trackingPolicy.angularVelocityGainPerSecond =
+            state.followerPolicy.angularVelocityGainPerSecond;
+
+        const auto tracking =
+            ManeuverTrackingController::track(
+                contract,
+                continuous.reference,
+                trackingAgent,
+                trackingPolicy
+            );
+
         double targetSpeed =
             glm::length(
                 continuous.reference.velocityMapMetersPerSecond
@@ -234,12 +228,12 @@ public:
         const glm::dvec3 nominalForward =
             normalizedOr(
                 continuous.reference.forwardMap,
-                reference.reference.forwardMap
+                agent.forwardMap
             );
         const glm::dvec3 desiredUp =
             normalizedOr(
                 continuous.reference.upMap,
-                reference.reference.upMap
+                agent.upMap
             );
 
         // Position feedback is a servo around the already-authored program,
@@ -302,7 +296,11 @@ public:
         request.law = law;
         request.desiredVelocityMapMps = desiredVelocity;
         request.desiredLinearAccelerationMapMps2 =
-            continuous.reference.linearAccelerationFeedForwardMapMps2;
+            tracking.status !=
+                    ManeuverTrackingController::Status::InvalidInput
+                ? tracking.intent.idealLinearAccelerationLocalMps2
+                : continuous.reference.
+                    linearAccelerationFeedForwardMapMps2;
         request.desiredForwardMap = steeringForward;
         request.desiredUpMap = desiredUp;
         request.actualVelocityMapMps =
@@ -313,6 +311,7 @@ public:
         request.pitchRateRadPerSec = agent.pitchRateRadPerSec;
         request.yawRateRadPerSec = agent.yawRateRadPerSec;
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
+
         const bool atFinalContinuousSegment =
             continuous.upperSampleIndex + 1 >=
                 state.continuousSamples.size();
@@ -334,8 +333,46 @@ public:
         out.targetSpeedMps = targetSpeed;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
+
+        const auto& finalReference =
+            state.continuousSamples.back();
+        const auto& terminal =
+            state.programs.back().terminalTolerance;
+        const double terminalPositionError =
+            glm::length(
+                finalReference.positionMapMeters -
+                agent.positionMapMeters
+            );
+        const double terminalVelocityError =
+            glm::length(
+                finalReference.velocityMapMetersPerSecond -
+                agent.velocityMapMetersPerSecond
+            );
+        const double terminalForwardError =
+            angleBetween(
+                agent.forwardMap,
+                finalReference.forwardMap
+            );
+        const double terminalAngularRate =
+            std::sqrt(
+                agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +
+                agent.yawRateRadPerSec * agent.yawRateRadPerSec +
+                agent.rollRateRadPerSec * agent.rollRateRadPerSec
+            );
+
+        if (atFinalContinuousSegment &&
+            terminalPositionError <= terminal.positionMeters &&
+            terminalVelocityError <= terminal.linearVelocityMps &&
+            terminalForwardError <= terminal.forwardAngleRad &&
+            terminalAngularRate <= terminal.angularVelocityRadPerSec)
+        {
+            out.complete = true;
+            state.active = false;
+        }
+
         return out;
     }
+
 
 private:
     struct ContinuousReferenceDiagnostic
@@ -507,6 +544,28 @@ private:
                 );
             return out;
         }
+    }
+
+    [[nodiscard]] static double angleBetween(
+        const glm::dvec3& a,
+        const glm::dvec3& b
+    ) noexcept
+    {
+        const double la = glm::length(a);
+        const double lb = glm::length(b);
+        if (!(std::isfinite(la) && std::isfinite(lb)) ||
+            la <= 1.0e-12 ||
+            lb <= 1.0e-12)
+        {
+            return 3.1415926535897932384626433832795;
+        }
+        return std::acos(
+            std::clamp(
+                glm::dot(a / la, b / lb),
+                -1.0,
+                1.0
+            )
+        );
     }
 
     static glm::dvec3 normalizedOr(

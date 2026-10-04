@@ -380,6 +380,73 @@ void testSpatialTurnStartsBeforeArcEntry()
     );
 }
 
+void testClientTrajectoryPreservesPlannerTurnSpeedConstraint()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 80.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 8.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 80.0},
+        RouteGate{{1500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            12,
+            25.0
+        ),
+        "client autopilot rejected speed-profile route"
+    );
+
+    double nearestDistance = 1.0e100;
+    double nearestSpeed = 1.0e100;
+    for (const auto& program : state.programs)
+    {
+        for (std::size_t i = 0; i < program.sampleCount; ++i)
+        {
+            const auto& sample = program.samples[i];
+            const double distance =
+                std::abs(sample.positionMapMeters.x - 500.0);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestSpeed =
+                    glm::length(sample.velocityMapMetersPerSecond);
+            }
+        }
+    }
+
+    require(
+        nearestDistance < 5.0,
+        "accepted trajectory did not sample planner turn-speed station"
+    );
+    require(
+        nearestSpeed <= 8.5,
+        "planner turn-speed constraint was lost before client follower"
+    );
+}
+
 void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
 {
     using Pilot =
@@ -675,6 +742,7 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
+        testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
         testPredictivePilotCapturesTurnsWithoutOvershoot();
@@ -687,6 +755,7 @@ int main()
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
+            << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"
             << " - 5/15/45/90 degree turns settle without overshoot\n"

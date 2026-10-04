@@ -292,159 +292,182 @@ RouteFollowerResult RouteFollower::follow(
     glm::dvec3 targetVelocity =
         reference.velocityMapMetersPerSecond;
 
-    // V2 corridor doctrine:
-    // - the accepted centerline is the ONLY path;
-    // - no look-ahead ray may invent a second local route;
-    // - correction is a velocity component directed from the real craft
-    //   straight back toward the current centerline segment.
+    // SpatialCorridor is geometric guidance. Use the proven corridor
+    // look-ahead steering law: choose a point AHEAD ON THE SAME accepted
+    // centerline, aim the hull at it, and give Assisted the same velocity
+    // direction. This is not a second/private route; the target point is
+    // constrained to the authored corridor itself.
     //
-    // This can move diagonally inside the authored corridor, but it can never
-    // place a steering target beside the corridor or skip across a corner.
+    // Crucially, this produces anticipatory steering before a bend. The
+    // local-segment tangent + perpendicular correction law that replaced this
+    // behaviour waits until the active segment itself turns, which is too late
+    // for a ship with finite angular response.
     if (spatialCorridor &&
         sampled.lowerSampleIndex < sampled.upperSampleIndex &&
         sampled.upperSampleIndex < program.sampleCount)
     {
-        const auto& lower =
-            program.samples[sampled.lowerSampleIndex];
-        const auto& upper =
-            program.samples[sampled.upperSampleIndex];
+        const double actualSpeed =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const double lookAheadMeters = std::clamp(
+            std::max(50.0, actualSpeed * 1.5),
+            50.0,
+            250.0
+        );
 
-        const glm::dvec3 segment =
-            upper.positionMapMeters - lower.positionMapMeters;
-        const double segmentLength = glm::length(segment);
+        glm::dvec3 lookAheadPoint =
+            program.samples[sampled.upperSampleIndex].
+                positionMapMeters;
+        double accumulated = glm::length(
+            lookAheadPoint - reference.positionMapMeters
+        );
+
+        for (std::size_t i = sampled.upperSampleIndex;
+             i + 1 < program.sampleCount &&
+             accumulated < lookAheadMeters;
+             ++i)
+        {
+            const glm::dvec3 a =
+                program.samples[i].positionMapMeters;
+            const glm::dvec3 b =
+                program.samples[i + 1].positionMapMeters;
+            const double segmentLength = glm::length(b - a);
+            if (!(segmentLength > 1.0e-12) ||
+                !std::isfinite(segmentLength))
+            {
+                continue;
+            }
+
+            const double remaining =
+                lookAheadMeters - accumulated;
+            if (remaining < segmentLength)
+            {
+                lookAheadPoint =
+                    a + (b - a) * (remaining / segmentLength);
+                accumulated = lookAheadMeters;
+                break;
+            }
+
+            accumulated += segmentLength;
+            lookAheadPoint = b;
+        }
+
+        const glm::dvec3 steeringRay =
+            lookAheadPoint - agent.positionMapMeters;
+        const double steeringDistance =
+            glm::length(steeringRay);
         const double referenceSpeed =
             glm::length(reference.velocityMapMetersPerSecond);
 
-        if (std::isfinite(segmentLength) &&
-            segmentLength > 1.0e-12 &&
-            std::isfinite(referenceSpeed) &&
-            referenceSpeed > 1.0e-9)
+        if (steeringDistance > 1.0e-12 &&
+            std::isfinite(steeringDistance) &&
+            std::isfinite(referenceSpeed))
         {
-            const glm::dvec3 tangent = segment / segmentLength;
+            glm::dvec3 desiredForward =
+                steeringRay / steeringDistance;
 
-            const double progress = std::clamp(
-                glm::dot(
-                    agent.positionMapMeters - lower.positionMapMeters,
-                    segment
-                ) / (segmentLength * segmentLength),
-                0.0,
-                1.0
-            );
-            const glm::dvec3 centerlinePoint =
-                lower.positionMapMeters + segment * progress;
+            // On a straight, tiny projection noise must not make the nose
+            // hunt. Inside the central deadband retain the current segment
+            // tangent exactly. Outside it, the look-ahead point pulls the ship
+            // back through the visible tunnel just as the old follower did.
+            const auto& lower =
+                program.samples[sampled.lowerSampleIndex];
+            const auto& upper =
+                program.samples[sampled.upperSampleIndex];
+            const glm::dvec3 segment =
+                upper.positionMapMeters -
+                lower.positionMapMeters;
+            const double segmentLength =
+                glm::length(segment);
 
-            glm::dvec3 inward =
-                centerlinePoint - agent.positionMapMeters;
-            inward -= tangent * glm::dot(inward, tangent);
-            const double crossTrack = glm::length(inward);
-
-            if (std::isfinite(crossTrack) && crossTrack > 1.0e-6)
+            if (segmentLength > 1.0e-12 &&
+                std::isfinite(segmentLength))
             {
-                inward /= crossTrack;
+                const glm::dvec3 tangent =
+                    segment / segmentLength;
+                const double rawProgress =
+                    glm::dot(
+                        agent.positionMapMeters -
+                            lower.positionMapMeters,
+                        segment
+                    ) / (segmentLength * segmentLength);
+                const double clampedProgress =
+                    std::clamp(rawProgress, 0.0, 1.0);
+                const glm::dvec3 projected =
+                    lower.positionMapMeters +
+                    segment * clampedProgress;
+                const double crossTrackMeters =
+                    glm::length(
+                        agent.positionMapMeters - projected
+                    );
+                const double centerDeadbandMeters =
+                    std::clamp(
+                        program.tracking.positionErrorMeters * 0.10,
+                        1.0,
+                        4.0
+                    );
 
-                // Use only the feedback authority already reserved by the
-                // accepted program. The correction speed is braking-limited:
-                // if correction stopped now, the ship can still arrest that
-                // lateral motion before crossing the same error distance.
-                const double reserve = std::max(
-                    0.0,
-                    program.tracking.linearFeedbackReserveMps2
-                );
-                const double brakingLimitedCorrection =
-                    reserve > 1.0e-9
-                        ? std::sqrt(2.0 * reserve * crossTrack)
-                        : 0.0;
+                // Preserve the exact tangent only when the look-ahead target
+                // is still effectively collinear. Near an upcoming bend the
+                // point ahead has already moved off that tangent, so allow the
+                // anticipatory steering angle even while cross-track is tiny.
+                const double lookAheadOffTangent =
+                    glm::length(
+                        steeringRay -
+                        tangent * glm::dot(steeringRay, tangent)
+                    );
 
-                // Never spend more than 35% of route speed laterally. Forward
-                // progress remains monotonic and corner cutting cannot become
-                // a substitute for following the authored centerline.
-                const double correctionSpeed = std::min(
-                    referenceSpeed * 0.35,
-                    brakingLimitedCorrection
-                );
-                const double forwardSpeed = std::sqrt(
-                    std::max(
-                        0.0,
-                        referenceSpeed * referenceSpeed -
-                            correctionSpeed * correctionSpeed
-                    )
-                );
-
-                targetVelocity =
-                    tangent * forwardSpeed +
-                    inward * correctionSpeed;
+                if (std::isfinite(crossTrackMeters) &&
+                    std::isfinite(lookAheadOffTangent) &&
+                    crossTrackMeters <= centerDeadbandMeters &&
+                    lookAheadOffTangent <= centerDeadbandMeters)
+                {
+                    desiredForward = tangent;
+                }
             }
-            else
-            {
-                targetVelocity = tangent * referenceSpeed;
-            }
-        }
-    }
 
-    // SpatialCorridor has one guidance source.  The same accepted
-    // centerline vector that owns target velocity also owns the nose target.
-    // Assisted flight is "where the nose points, the craft flies"; keeping an
-    // independently authored orientation reference here causes the exact
-    // failure seen live: velocity asks for the turn while pitch/yaw remain
-    // zero until a later orientation sample suddenly changes.
-    //
-    // Do not create a look-ahead/private route.  Use the already-computed
-    // targetVelocity from the current accepted centerline segment plus its
-    // bounded inward correction.
-    if (spatialCorridor)
-    {
-        const double targetSpeed = glm::length(targetVelocity);
-        if (std::isfinite(targetSpeed) && targetSpeed > 1.0e-9)
-        {
-            const glm::dvec3 desiredForward =
-                targetVelocity / targetSpeed;
+            targetVelocity =
+                desiredForward * referenceSpeed;
 
-            glm::dvec3 desiredUp =
+            glm::dvec3 up =
                 reference.upMap -
                 desiredForward *
                     glm::dot(reference.upMap, desiredForward);
-            double desiredUpLength = glm::length(desiredUp);
-
-            if (!(std::isfinite(desiredUpLength) &&
-                  desiredUpLength > 1.0e-9))
+            double upLength = glm::length(up);
+            if (!(upLength > 1.0e-12))
             {
-                desiredUp =
+                up =
                     agent.upMap -
                     desiredForward *
                         glm::dot(agent.upMap, desiredForward);
-                desiredUpLength = glm::length(desiredUp);
+                upLength = glm::length(up);
             }
-
-            if (!(std::isfinite(desiredUpLength) &&
-                  desiredUpLength > 1.0e-9))
+            if (!(upLength > 1.0e-12))
             {
                 const glm::dvec3 seed =
                     std::abs(desiredForward.y) < 0.90
                         ? glm::dvec3(0.0, 1.0, 0.0)
                         : glm::dvec3(1.0, 0.0, 0.0);
-                desiredUp =
+                up =
                     seed -
                     desiredForward *
                         glm::dot(seed, desiredForward);
-                desiredUpLength = glm::length(desiredUp);
+                upLength = glm::length(up);
             }
 
-            if (std::isfinite(desiredUpLength) &&
-                desiredUpLength > 1.0e-9)
+            if (upLength > 1.0e-12)
             {
-                desiredUp /= desiredUpLength;
-                const glm::dvec3 desiredRight =
+                up /= upLength;
+                const glm::dvec3 right =
                     glm::normalize(
-                        glm::cross(desiredForward, desiredUp)
+                        glm::cross(desiredForward, up)
                     );
-                desiredUp =
-                    glm::normalize(
-                        glm::cross(desiredRight, desiredForward)
-                    );
+                up = glm::normalize(
+                    glm::cross(right, desiredForward)
+                );
 
                 reference.forwardMap = desiredForward;
-                reference.rightMap = desiredRight;
-                reference.upMap = desiredUp;
+                reference.rightMap = right;
+                reference.upMap = up;
             }
         }
     }

@@ -589,6 +589,7 @@ private:
             -1.0,
             1.0
         );
-    }};
+    }
+};
 
 } // namespace game::navigation::autopilot

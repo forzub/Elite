@@ -718,6 +718,10 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
 
     require(output.valid, "checkpoint re-anchor emitted invalid output");
     require(
+        !output.replanRequired,
+        "slow but recoverable checkpoint incorrectly requested replan"
+    );
+    require(
         state.nextCheckpointIndex >= 2,
         "crossing visual checkpoint did not trigger suffix re-anchor"
     );
@@ -797,6 +801,10 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
         0.02
     );
     require(output.valid, "braking checkpoint emitted invalid output");
+    require(
+        output.replanRequired,
+        "physically unreachable future speed did not request recovery replan"
+    );
 
     double nearestDistance = 1.0e100;
     double constrainedSpeed = 1.0e100;

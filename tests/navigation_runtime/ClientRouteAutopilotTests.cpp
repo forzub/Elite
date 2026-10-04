@@ -190,22 +190,55 @@ void testStoppedSpatialOriginLaunches()
 
 void testSpatialTurnUsesSameVelocityAndNoseTarget()
 {
-    auto route = plan();
-    require(route.executionGates.size() >= 3,
-        "test route needs at least three execution gates");
+    using game::navigation::planner::RouteGate;
 
-    route.executionGates[0].positionMeters = {0.0, 0.0, 0.0};
-    route.executionGates[1].positionMeters = {100.0, 0.0, 0.0};
-    route.executionGates[2].positionMeters = {100.0, 0.0, 100.0};
-    route.executionGates[0].speedMps = 20.0;
-    route.executionGates[1].speedMps = 20.0;
-    route.executionGates[2].speedMps = 20.0;
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    // Real planner output never contains an instantaneous 90-degree corner.
+    // Exercise the client compiler/follower with a smooth quarter-circle whose
+    // tangent rotates continuously from +X to +Z.
+    constexpr double RadiusMeters = 200.0;
+    constexpr int ArcSteps = 16;
+    constexpr double SpeedMps = 12.0;
+    constexpr double HalfPi =
+        1.5707963267948966192313216916398;
+
+    route.executionGates.reserve(ArcSteps + 1);
+    for (int i = 0; i <= ArcSteps; ++i)
+    {
+        const double t =
+            HalfPi * static_cast<double>(i) /
+            static_cast<double>(ArcSteps);
+
+        RouteGate gate;
+        gate.positionMeters = {
+            RadiusMeters * std::sin(t),
+            0.0,
+            RadiusMeters * (1.0 - std::cos(t))
+        };
+        gate.forward = glm::normalize(glm::dvec3(
+            std::cos(t),
+            0.0,
+            std::sin(t)
+        ));
+        gate.speedMps = SpeedMps;
+        route.executionGates.push_back(gate);
+    }
+    route.gates = route.executionGates;
 
     Autopilot::State state;
     const auto vehicle = params();
+
     Agent initial;
-    initial.positionMapMeters = {0.0, 0.0, 0.0};
-    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.positionMapMeters =
+        route.executionGates.front().positionMeters;
+    initial.velocityMapMetersPerSecond = {
+        SpeedMps, 0.0, 0.0
+    };
     initial.forwardMap = {1.0, 0.0, 0.0};
     initial.rightMap = {0.0, 0.0, 1.0};
     initial.upMap = {0.0, 1.0, 0.0};
@@ -221,11 +254,16 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
             9,
             25.0
         ),
-        "client autopilot rejected turning route"
+        "client autopilot rejected smooth turning route"
     );
 
     Agent nearTurn = initial;
-    nearTurn.positionMapMeters = {99.0, 0.0, 1.0};
+    nearTurn.positionMapMeters =
+        route.executionGates[ArcSteps / 2].positionMeters;
+    nearTurn.velocityMapMetersPerSecond =
+        glm::normalize(
+            route.executionGates[ArcSteps / 2].forward
+        ) * SpeedMps;
 
     const auto output = Autopilot::update(
         state,
@@ -236,7 +274,7 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
         0.02
     );
 
-    require(output.valid, "turning route emitted invalid output");
+    require(output.valid, "smooth turning route emitted invalid output");
     require(
         std::abs(output.control.pitchInput) > 1.0e-6 ||
         std::abs(output.control.yawInput) > 1.0e-6,

@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -102,6 +104,7 @@ public:
         const glm::dvec3 rotationErrorMap =
             orientationErrorVector(
                 forward,
+                right,
                 up,
                 desiredForward,
                 desiredUp
@@ -110,49 +113,38 @@ public:
         const double configuredAngularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
 
-        const double pitchAuthority =
-            learnedAuthority(
-                state.effectivePitchAuthorityRadPerSec2,
-                configuredAngularAuthority
-            );
-        const double yawAuthority =
-            learnedAuthority(
-                state.effectiveYawAuthorityRadPerSec2,
-                configuredAngularAuthority
-            );
-        const double rollAuthority =
-            learnedAuthority(
-                state.effectiveRollAuthorityRadPerSec2,
-                configuredAngularAuthority
+        // The real ship has one shared angular-acceleration envelope. Do not
+        // solve pitch/yaw/roll as three independent actuators each owning
+        // 100% of alpha; ShipController normalizes their combined request.
+        // Solve the complete local rotation vector once.
+        const glm::dvec3 localRotationError(
+            glm::dot(rotationErrorMap, right),
+            glm::dot(rotationErrorMap, up),
+            glm::dot(rotationErrorMap, forward)
+        );
+        const glm::dvec3 currentLocalRate(
+            finiteOrZero(request.pitchRateRadPerSec),
+            finiteOrZero(request.yawRateRadPerSec),
+            finiteOrZero(request.rollRateRadPerSec)
+        );
+        const glm::dvec3 maxLocalRate(
+            std::max(0.0, static_cast<double>(params.maxPitchRate)),
+            std::max(0.0, static_cast<double>(params.maxYawRate)),
+            std::max(0.0, static_cast<double>(params.maxRollRate))
+        );
+
+        const glm::dvec3 angularInput =
+            choosePredictiveRotationInput(
+                localRotationError,
+                currentLocalRate,
+                maxLocalRate,
+                configuredAngularAuthority,
+                dt
             );
 
-        out.pitchInput = static_cast<float>(
-            choosePredictiveAxisInput(
-                glm::dot(rotationErrorMap, right),
-                finiteOrZero(request.pitchRateRadPerSec),
-                std::max(0.0, static_cast<double>(params.maxPitchRate)),
-                pitchAuthority,
-                dt
-            )
-        );
-        out.yawInput = static_cast<float>(
-            choosePredictiveAxisInput(
-                glm::dot(rotationErrorMap, up),
-                finiteOrZero(request.yawRateRadPerSec),
-                std::max(0.0, static_cast<double>(params.maxYawRate)),
-                yawAuthority,
-                dt
-            )
-        );
-        out.rollInput = static_cast<float>(
-            choosePredictiveAxisInput(
-                glm::dot(rotationErrorMap, forward),
-                finiteOrZero(request.rollRateRadPerSec),
-                std::max(0.0, static_cast<double>(params.maxRollRate)),
-                rollAuthority,
-                dt
-            )
-        );
+        out.pitchInput = static_cast<float>(angularInput.x);
+        out.yawInput = static_cast<float>(angularInput.y);
+        out.rollInput = static_cast<float>(angularInput.z);
 
         const double actualSpeed = finiteLength(request.actualVelocityMapMps);
         constexpr double PrecisionStopEntrySpeedMps = 0.50;
@@ -475,121 +467,186 @@ private:
 
     [[nodiscard]] static glm::dvec3 orientationErrorVector(
         const glm::dvec3& forward,
+        const glm::dvec3& right,
         const glm::dvec3& up,
         const glm::dvec3& desiredForward,
         const glm::dvec3& desiredUp
     ) noexcept
     {
-        glm::dvec3 rotation(0.0);
-
-        const double forwardDot =
-            std::clamp(glm::dot(forward, desiredForward), -1.0, 1.0);
-        const double forwardAngle = std::acos(forwardDot);
-        glm::dvec3 forwardAxis = glm::cross(forward, desiredForward);
-        double axisLength = glm::length(forwardAxis);
-
-        if (forwardAngle > 1.0e-9)
-        {
-            if (!(axisLength > 1.0e-12))
-            {
-                forwardAxis = glm::cross(forward, up);
-                axisLength = glm::length(forwardAxis);
-            }
-            if (axisLength > 1.0e-12)
-                rotation += forwardAxis / axisLength * forwardAngle;
-        }
-
-        glm::dvec3 currentUpProjected =
-            up - desiredForward * glm::dot(up, desiredForward);
-        glm::dvec3 desiredUpProjected =
-            desiredUp -
-            desiredForward * glm::dot(desiredUp, desiredForward);
-
-        const double currentUpLength = glm::length(currentUpProjected);
-        const double desiredUpLength = glm::length(desiredUpProjected);
-        if (currentUpLength > 1.0e-12 && desiredUpLength > 1.0e-12)
-        {
-            currentUpProjected /= currentUpLength;
-            desiredUpProjected /= desiredUpLength;
-            const double sinRoll = glm::dot(
-                glm::cross(currentUpProjected, desiredUpProjected),
-                desiredForward
+        const glm::dvec3 currentForward =
+            normalizedOr(forward, glm::dvec3(0.0, 0.0, -1.0));
+        const glm::dvec3 currentUp =
+            normalizedOr(
+                up - currentForward * glm::dot(up, currentForward),
+                glm::dvec3(0.0, 1.0, 0.0)
             );
-            const double cosRoll = std::clamp(
-                glm::dot(currentUpProjected, desiredUpProjected),
-                -1.0,
-                1.0
+        const glm::dvec3 currentRight =
+            normalizedOr(
+                right,
+                glm::cross(currentForward, currentUp)
             );
-            rotation += desiredForward * std::atan2(sinRoll, cosRoll);
-        }
 
-        return rotation;
+        const glm::dvec3 targetForward =
+            normalizedOr(desiredForward, currentForward);
+        glm::dvec3 targetUp =
+            desiredUp - targetForward * glm::dot(desiredUp, targetForward);
+        targetUp = normalizedOr(targetUp, currentUp);
+        const glm::dvec3 targetRight =
+            normalizedOr(
+                glm::cross(targetForward, targetUp),
+                currentRight
+            );
+        targetUp =
+            normalizedOr(
+                glm::cross(targetRight, targetForward),
+                targetUp
+            );
+
+        // Exact shortest-arc SO(3) delta. The former "forward error + roll"
+        // construction was only a small-angle approximation and can assign
+        // the wrong combined delta on simultaneous pitch/yaw/roll turns.
+        const glm::dquat current = glm::normalize(
+            glm::quat_cast(
+                glm::dmat3(
+                    currentRight,
+                    currentUp,
+                    -currentForward
+                )
+            )
+        );
+        const glm::dquat target = glm::normalize(
+            glm::quat_cast(
+                glm::dmat3(
+                    targetRight,
+                    targetUp,
+                    -targetForward
+                )
+            )
+        );
+
+        glm::dquat delta =
+            glm::normalize(target * glm::conjugate(current));
+        if (delta.w < 0.0)
+            delta = -delta;
+
+        const glm::dvec3 vectorPart(delta.x, delta.y, delta.z);
+        const double vectorLength = glm::length(vectorPart);
+        if (!std::isfinite(vectorLength) || vectorLength <= 1.0e-12)
+            return glm::dvec3(0.0);
+
+        const double angle =
+            2.0 * std::atan2(
+                vectorLength,
+                std::clamp(delta.w, 0.0, 1.0)
+            );
+        if (!std::isfinite(angle))
+            return glm::dvec3(0.0);
+
+        return vectorPart * (angle / vectorLength);
     }
 
-    [[nodiscard]] static double choosePredictiveAxisInput(
-        double angleErrorRad,
-        double angularRateRadPerSec,
-        double maxRateRadPerSec,
+    [[nodiscard]] static double directionalRateLimit(
+        const glm::dvec3& direction,
+        const glm::dvec3& maxRate
+    ) noexcept
+    {
+        double limit = std::numeric_limits<double>::infinity();
+
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const double component = std::abs(direction[axis]);
+            if (component <= 1.0e-12)
+                continue;
+
+            if (maxRate[axis] > 1.0e-9)
+                limit = std::min(limit, maxRate[axis] / component);
+        }
+
+        return std::isfinite(limit)
+            ? std::max(0.0, limit)
+            : std::numeric_limits<double>::infinity();
+    }
+
+    [[nodiscard]] static glm::dvec3 choosePredictiveRotationInput(
+        const glm::dvec3& rotationErrorLocalRad,
+        const glm::dvec3& angularRateLocalRadPerSec,
+        const glm::dvec3& maxRateLocalRadPerSec,
         double angularAuthorityRadPerSec2,
         double dt
     ) noexcept
     {
         constexpr double AngleDeadbandRad = 0.0015;
         constexpr double RateDeadbandRadPerSec = 0.004;
-        constexpr double ResponseHorizonSeconds = 0.18;
 
-        if (!std::isfinite(angleErrorRad) ||
-            !std::isfinite(angularRateRadPerSec) ||
+        const double remainingAngle = glm::length(rotationErrorLocalRad);
+        const double rateMagnitude = glm::length(angularRateLocalRadPerSec);
+
+        if (!std::isfinite(remainingAngle) ||
+            !std::isfinite(rateMagnitude) ||
+            !(dt > 0.0) ||
             angularAuthorityRadPerSec2 <= 1.0e-9)
         {
-            return 0.0;
+            return glm::dvec3(0.0);
         }
 
-        if (std::abs(angleErrorRad) <= AngleDeadbandRad &&
-            std::abs(angularRateRadPerSec) <= RateDeadbandRadPerSec)
+        if (remainingAngle <= AngleDeadbandRad &&
+            rateMagnitude <= RateDeadbandRadPerSec)
         {
-            return 0.0;
+            return glm::dvec3(0.0);
         }
 
-        // Physical angular braking law restored from the original predictive
-        // pilot. The commanded angular rate is limited to the largest rate
-        // that can still be arrested inside the remaining angle:
-        //
-        //     omega^2 <= 2 * alpha * theta
-        //
-        // This makes counter-steer begin BEFORE the target attitude instead
-        // of after overshoot.
-        const double brakingLimitedRate = std::sqrt(
-            std::max(
-                0.0,
+        if (remainingAngle <= 1.0e-12)
+        {
+            // No angle remains: spend the full shared authority only on
+            // arresting residual angular velocity.
+            const glm::dvec3 requested =
+                -angularRateLocalRadPerSec /
+                (angularAuthorityRadPerSec2 * dt);
+            const double magnitude = glm::length(requested);
+            return magnitude > 1.0
+                ? requested / magnitude
+                : requested;
+        }
+
+        const glm::dvec3 direction =
+            rotationErrorLocalRad / remainingAngle;
+        const double rateTowardTarget =
+            glm::dot(angularRateLocalRadPerSec, direction);
+
+        // Exact fixed-step braking envelope used by the proven alignment
+        // controller. Account for the angular travel that will occur during
+        // this very simulation step before new torque can change the result.
+        const double reactionTravel =
+            std::max(0.0, rateTowardTarget) * dt;
+        const double brakingAngleBudget =
+            std::max(0.0, remainingAngle - reactionTravel);
+        const double brakingLimitedRate =
+            std::sqrt(
                 2.0 * angularAuthorityRadPerSec2 *
-                    std::abs(angleErrorRad)
-            )
-        );
+                brakingAngleBudget
+            );
+
         const double rateLimit =
-            maxRateRadPerSec > 1.0e-9
-                ? maxRateRadPerSec
-                : brakingLimitedRate;
-        const double desiredRate =
-            std::copysign(
-                std::min(rateLimit, brakingLimitedRate),
-                angleErrorRad
-            );
+            directionalRateLimit(direction, maxRateLocalRadPerSec);
+        const double targetRateMagnitude =
+            std::min(rateLimit, brakingLimitedRate);
+        const glm::dvec3 targetRate =
+            direction * targetRateMagnitude;
 
-        const double horizon =
-            std::max(
-                ResponseHorizonSeconds,
-                std::min(0.50, dt * 4.0)
-            );
-        const double requiredAcceleration =
-            (desiredRate - angularRateRadPerSec) / horizon;
+        // Important: this is /dt, not a 0.18..0.50 s response horizon.
+        // The latter was the overshoot regression: it intentionally delayed
+        // counter-torque after the stopping boundary had already been crossed.
+        glm::dvec3 requestedInput =
+            (targetRate - angularRateLocalRadPerSec) /
+            (angularAuthorityRadPerSec2 * dt);
 
-        return std::clamp(
-            requiredAcceleration / angularAuthorityRadPerSec2,
-            -1.0,
-            1.0
-        );
+        const double inputMagnitude = glm::length(requestedInput);
+        if (inputMagnitude > 1.0)
+            requestedInput /= inputMagnitude;
+
+        return requestedInput;
     }
+
 };
 
 } // namespace game::navigation::autopilot

@@ -536,10 +536,7 @@ private:
     {
         constexpr double AngleDeadbandRad = 0.0015;
         constexpr double RateDeadbandRadPerSec = 0.004;
-        constexpr double HorizonSeconds = 0.75;
-        constexpr std::array<double, 5> Candidates {
-            -1.0, -0.5, 0.0, 0.5, 1.0
-        };
+        constexpr double ResponseHorizonSeconds = 0.18;
 
         if (!std::isfinite(angleErrorRad) ||
             !std::isfinite(angularRateRadPerSec) ||
@@ -554,59 +551,44 @@ private:
             return 0.0;
         }
 
+        // Physical angular braking law restored from the original predictive
+        // pilot. The commanded angular rate is limited to the largest rate
+        // that can still be arrested inside the remaining angle:
+        //
+        //     omega^2 <= 2 * alpha * theta
+        //
+        // This makes counter-steer begin BEFORE the target attitude instead
+        // of after overshoot.
+        const double brakingLimitedRate = std::sqrt(
+            std::max(
+                0.0,
+                2.0 * angularAuthorityRadPerSec2 *
+                    std::abs(angleErrorRad)
+            )
+        );
+        const double rateLimit =
+            maxRateRadPerSec > 1.0e-9
+                ? maxRateRadPerSec
+                : brakingLimitedRate;
+        const double desiredRate =
+            std::copysign(
+                std::min(rateLimit, brakingLimitedRate),
+                angleErrorRad
+            );
+
         const double horizon =
-            std::max(HorizonSeconds, std::min(1.25, dt * 6.0));
+            std::max(
+                ResponseHorizonSeconds,
+                std::min(0.50, dt * 4.0)
+            );
+        const double requiredAcceleration =
+            (desiredRate - angularRateRadPerSec) / horizon;
 
-        double bestInput = 0.0;
-        double bestCost = 1.0e100;
-
-        for (const double input : Candidates)
-        {
-            const double acceleration =
-                input * angularAuthorityRadPerSec2;
-            double predictedRate =
-                angularRateRadPerSec + acceleration * horizon;
-
-            if (maxRateRadPerSec > 1.0e-9)
-            {
-                predictedRate = std::clamp(
-                    predictedRate,
-                    -maxRateRadPerSec,
-                    maxRateRadPerSec
-                );
-            }
-
-            const double predictedAngle =
-                angleErrorRad -
-                angularRateRadPerSec * horizon -
-                0.5 * acceleration * horizon * horizon;
-
-            const double brakingAngle =
-                predictedRate * predictedRate /
-                (2.0 * angularAuthorityRadPerSec2);
-
-            const bool movingPastTarget =
-                predictedAngle * predictedRate < 0.0;
-            const double overshootPenalty =
-                movingPastTarget
-                    ? brakingAngle * 4.0
-                    : 0.0;
-
-            const double cost =
-                std::abs(predictedAngle) * 8.0 +
-                std::abs(predictedRate) * 1.5 +
-                overshootPenalty +
-                std::abs(input) * 0.02;
-
-            if (cost < bestCost)
-            {
-                bestCost = cost;
-                bestInput = input;
-            }
-        }
-
-        return bestInput;
-    }
-};
+        return std::clamp(
+            requiredAcceleration / angularAuthorityRadPerSec2,
+            -1.0,
+            1.0
+        );
+    }};
 
 } // namespace game::navigation::autopilot

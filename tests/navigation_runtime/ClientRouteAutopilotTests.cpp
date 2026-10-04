@@ -380,7 +380,7 @@ void testSpatialTurnStartsBeforeArcEntry()
     );
 }
 
-void testHighSpeedPreviewCrossesProgramPages()
+void testContinuousProgramCrossesStoragePages()
 {
     using game::navigation::planner::RouteGate;
 
@@ -454,37 +454,79 @@ void testHighSpeedPreviewCrossesProgramPages()
             13,
             25.0
         ),
-        "client autopilot rejected high-speed preview route"
+        "client autopilot rejected multi-page route"
     );
     require(
         state.programs.size() > 1,
-        "high-speed preview test did not span storage pages"
+        "continuous-program test did not span storage pages"
+    );
+    require(
+        state.continuousSamples.size() >
+            game::navigation::AcceptedManeuverProgram::kMaxSamples,
+        "client did not assemble pages into one continuous spatial program"
     );
 
-    // Still 500 m before the authored turn. At 100 m/s the five-second
-    // preview must already reach into the next pages and see the bend and its
-    // lower speed.
-    Agent approaching = initial;
-    approaching.positionMapMeters = {400.0, 0.0, 0.0};
+    // Builder pages deliberately overlap one boundary sample. The execution
+    // program must remove that storage duplication: every adjacent continuous
+    // sample must make positive spatial progress.
+    for (std::size_t i = 1;
+         i < state.continuousProgressMeters.size();
+         ++i)
+    {
+        require(
+            state.continuousProgressMeters[i] >
+                state.continuousProgressMeters[i - 1],
+            "continuous program retained a duplicate page-boundary sample"
+        );
+    }
+
+    // Move to a point beyond the first storage page. The command target must
+    // come from the continuous program and progress monotonically rather than
+    // resetting because a fixed-capacity page changed.
+    const std::size_t probe =
+        game::navigation::AcceptedManeuverProgram::kMaxSamples + 2;
+    require(
+        probe < state.continuousSamples.size(),
+        "continuous-program route too short for boundary probe"
+    );
+
+    Agent beyondBoundary = initial;
+    beyondBoundary.positionMapMeters =
+        state.continuousSamples[probe].positionMapMeters;
+    beyondBoundary.velocityMapMetersPerSecond =
+        state.continuousSamples[probe].velocityMapMetersPerSecond;
+    beyondBoundary.forwardMap =
+        state.continuousSamples[probe].forwardMap;
+    beyondBoundary.rightMap =
+        state.continuousSamples[probe].rightMap;
+    beyondBoundary.upMap =
+        state.continuousSamples[probe].upMap;
 
     const auto output = Autopilot::update(
         state,
-        approaching,
+        beyondBoundary,
         game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
     );
 
-    require(output.valid, "high-speed preview emitted invalid output");
+    require(output.valid, "continuous program emitted invalid output");
     require(
-        std::abs(output.control.pitchInput) > 1.0e-6 ||
-        std::abs(output.control.yawInput) > 1.0e-6,
-        "autopilot could not see bend across program-page boundary"
+        state.currentContinuousSegment >=
+            game::navigation::AcceptedManeuverProgram::kMaxSamples,
+        "continuous spatial progress reset at storage page boundary"
     );
+
+    const double expectedSpeed =
+        glm::length(
+            state.continuousSamples[
+                state.currentContinuousSegment
+            ].velocityMapMetersPerSecond
+        );
     require(
-        output.targetSpeedMps < StraightSpeedMps - 1.0,
-        "autopilot did not propagate future turn-speed braking backward"
+        std::abs(output.targetSpeedMps - expectedSpeed) < 5.0,
+        "storage page transition changed the authored speed target"
     );
 }
 
@@ -850,7 +892,7 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
-        testHighSpeedPreviewCrossesProgramPages();
+        testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
@@ -864,7 +906,7 @@ int main()
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
-            << " - high-speed preview crosses storage pages and brakes before bend\n"
+            << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"

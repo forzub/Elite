@@ -380,6 +380,112 @@ void testSpatialTurnStartsBeforeArcEntry()
     );
 }
 
+void testPredictivePilotBrakesAngularRateBeforeTarget()
+{
+    using Pilot =
+        game::navigation::autopilot::PredictivePilot;
+
+    Pilot::State state;
+    Pilot::Request request;
+    request.law =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.desiredForwardMap =
+        glm::normalize(glm::dvec3(1.0, 0.0, 0.08));
+    request.desiredUpMap = {0.0, 1.0, 0.0};
+    request.deltaSeconds = 0.02;
+
+    const auto accelerate =
+        Pilot::make(request, params(), state);
+    require(
+        std::abs(accelerate.yawInput) > 1.0e-6,
+        "predictive pilot did not begin yaw toward target"
+    );
+
+    const double turnSign =
+        accelerate.yawInput > 0.0f ? 1.0 : -1.0;
+
+    // The hull is still on the same side of the target, but its angular rate
+    // is already too high to stop inside the remaining angle. A correct
+    // braking-envelope controller must counter-steer NOW, before overshoot.
+    request.yawRateRadPerSec = turnSign * 1.5;
+    const auto brake =
+        Pilot::make(request, params(), state);
+
+    require(
+        static_cast<double>(brake.yawInput) * turnSign < -1.0e-6,
+        "predictive pilot waited for angular overshoot before braking"
+    );
+}
+
+void testClientAutopilotUsesDockUpReferenceForRoll()
+{
+    Autopilot::State state;
+    const auto vehicle = params();
+    const auto route = plan();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    const glm::dvec3 dockUp(0.0, 0.0, 1.0);
+
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            11,
+            25.0,
+            dockUp
+        ),
+        "client autopilot rejected explicit dock up reference"
+    );
+
+    require(
+        !state.programs.empty(),
+        "dock-up test produced no accepted program"
+    );
+
+    const auto& finalSample =
+        state.programs.back().samples[
+            state.programs.back().sampleCount - 1
+        ];
+    require(
+        glm::dot(
+            glm::normalize(finalSample.upMap),
+            glm::normalize(dockUp)
+        ) > 0.95,
+        "accepted trajectory discarded dock up reference"
+    );
+
+    Agent mid = initial;
+    mid.positionMapMeters = {100.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        mid,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "dock-up route emitted invalid output");
+    require(
+        std::abs(output.control.rollInput) > 1.0e-6,
+        "client autopilot ignored dock bottom/up roll reference"
+    );
+}
+
 void testClientStabilizerUsesOrdinaryControls()
 {
     Autopilot::State routeState;
@@ -422,6 +528,8 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testSpatialTurnStartsBeforeArcEntry();
+        testPredictivePilotBrakesAngularRateBeforeTarget();
+        testClientAutopilotUsesDockUpReferenceForRoll();
         testClientStabilizerUsesOrdinaryControls();
         std::cout
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
@@ -430,6 +538,8 @@ int main()
             << " - stopped spatial origin launches from next accepted control speed\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower starts steering before straight-to-arc entry\n"
+            << " - angular controller brakes before attitude overshoot\n"
+            << " - docking up reference drives roll orientation\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;
     }

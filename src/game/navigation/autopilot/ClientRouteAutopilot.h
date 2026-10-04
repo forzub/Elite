@@ -50,6 +50,7 @@ public:
         ShipControlState control {};
         double crossTrackErrorMeters = 0.0;
         double remainingDistanceMeters = 0.0;
+        double targetSpeedMps = 0.0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
     };
@@ -224,6 +225,7 @@ public:
         out.valid = true;
         out.crossTrackErrorMeters = followed.crossTrackErrorMeters;
         out.remainingDistanceMeters = followed.remainingDistanceMeters;
+        out.targetSpeedMps = targetSpeed;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         return out;

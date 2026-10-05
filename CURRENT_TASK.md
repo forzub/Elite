@@ -2157,3 +2157,27 @@ Published commits:
 - 2a331b8e / 6a25f6c5 — regression coverage for recoverable vs infeasible checkpoint states
 
 Next gate: Windows MinGW build and client_route_autopilot tests, then live automatic docking. Expected evidence: profile_rev increments at sparse frames; ordinary errors continue on the same route; checkpoint-suffix-infeasible appears only for genuinely unreachable future speed constraints.
+
+
+## 2026-10-05 — stopped checkpoint semantics corrected: v=0 does not imply a=0
+
+Live client evidence showed continuous execution parked forever at the first spatial sample with target_speed_mps=0, actual_speed_mps=0 and no translational speed command. The underlying issue was semantic, not geometric: code treated a zero-speed reference sample as if it also meant zero acceleration.
+
+The motion contract is now explicit. A checkpoint speed is only a boundary condition. For two adjacent spatial samples with non-zero distance, longitudinal acceleration is derived from v1^2 = v0^2 + 2*a*ds. Therefore a stopped sample followed by a moving sample correctly has positive acceleration.
+
+TrajectoryGenerator now preserves the first leg's acceleration on the t=0 sample instead of hardcoding initial acceleration to zero. ClientRouteAutopilot runtime profiles reconstruct longitudinal acceleration from adjacent speed states and path distance. The temporary stoppedCheckpointLaunch special case was removed.
+
+PredictivePilot Assisted speed control now uses standard feed-forward + feedback:
+a_cmd = a_ref + (v_ref - v_actual)/horizon.
+Thus v_ref=0 at a boundary no longer deadlocks if the authored trajectory requires positive acceleration.
+
+Live telemetry now reports target_accel_mps2. Regression test requires the first stopped accepted sample to retain v=0 while carrying positive forward acceleration and requires Assisted to emit positive targetSpeedRate from that state.
+
+Published commits:
+- c605a102 — preserve initial acceleration at stopped trajectory boundary
+- 2cb6a96f — derive runtime checkpoint acceleration from adjacent speed states
+- 0407c203 — execute Assisted speed with acceleration feed-forward
+- a76f8242 / 758ae9d0 — expose target longitudinal acceleration in live diagnostics
+- 707d0250 — regression for v=0 with non-zero acceleration
+
+The previous stoppedCheckpointLaunch workaround is obsolete and removed.

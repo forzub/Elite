@@ -2328,3 +2328,41 @@ Published commits:
 - 212d0fbe — require parametric geometry for valid production docking route
 
 Next gate: Windows MinGW build plus docking_advisory and client_route_autopilot tests, then a live turn-only run. On a circular bend radius_m must remain the Planner-authored radius throughout the primitive and cross-track must remain bounded without chord-cutting.
+
+
+## 2026-10-05 — live parametric-curve run exposed three execution-control defects
+
+The latest live run proved that authoritative routeCurves reached ClientRouteAutopilot, but execution still failed for three independent reasons.
+
+1. Curve-boundary phase error. Exact curve progress was temporarily obtained by one global scale between dense sampled route length and exact parametric route length. This shifted internal Line->Arc boundaries. Live evidence showed cross-track already ~13 m while still reporting curve=0, then ~53 m when curve=1 finally activated. ClientRouteAutopilot now builds a monotonic per-primitive correspondence between exact curve endpoints and continuous sampled progress. Route progress is mapped piecewise within each primitive, so an authored arc activates at its actual endpoint instead of after accumulated global length error.
+
+2. Terminal stop had zero response margin. The live route stayed at ~288 m/s with 788 m remaining and still had ~102 m/s at 98 m remaining: almost exactly the ideal v^2/(2a) boundary, leaving no room for speed-controller/engine response. Terminal hold now applies a dynamic safe-speed ceiling obtained from d=v^2/(2a)+tau*v. This begins braking before the ideal mathematical boundary.
+
+3. Angular execution was still consuming sampled angular-rate feed-forward even after spatial geometry moved to exact routeCurves. Live straights had curvature=0 and sub-degree orientation error but large yaw/roll commands. Non-terminal angular reference is now derived from exact curve geometry: desired course angular rate is omega=v*kappa along the curve's turn normal. Authoritative lines therefore request omega=0. Circular arcs request v/R; Bezier segments use the local binormal from p' x p''.
+
+Assisted steering was also reformulated to use curvature phase lead instead of future-tangent look-ahead. Required steady nose lead on a curve is delta ~= tau*v*kappa. On a straight kappa=0, so the nose no longer starts changing course merely because a future arc lies v*tau metres ahead. Before a discontinuous Line->Arc transition, only hull ATTITUDE may prepare early; its preparation distance is derived from angular acceleration required to acquire the upcoming phase-lead angle. The actual desired course remains the authored straight until the curve begins.
+
+Fine cross-track correction remains local and meter-scale; it does not create a new route.
+
+Terminal HOLD now ignores trajectory angular feed-forward and locks to the final reference forward/up with zero desired angular rate/acceleration. A dedicated stopping-envelope attitude capture uses omega_target=min(omega_max,sqrt(2*alpha*angle)); therefore a 40-50 degree final error cannot decay to near-zero control while unresolved.
+
+The fixed dock up vector passed from executionPort.up is now used directly as the non-terminal roll/up reference rather than sampled attitude-up states. This should make hull bottom alignment correspond continuously to the same dock up/down axis used to render the guidance frames.
+
+New live telemetry includes exact_remaining_m, desired_omega_radps, actual_omega_radps and phase_lead_deg.
+
+Published commits:
+- 1b03506d — local exact-curve boundary mapping + response-margin terminal braking
+- e3b25216 — GLM-core compatible curve mapping helper
+- f8a46422 — physical large-error terminal attitude capture
+- 9e8dc86e — terminal HOLD locks final dock pose
+- 92494857 — exact-curvature angular-rate tracking
+- b46be8bc — Assisted curvature/phase-lead steering, no future-tangent route shift
+- 01d7d976 / fd50cd6e — exact remaining / angular-rate / phase-lead diagnostics
+- 647615ef / df2355ab — regression coverage for exact curve entry, terminal response margin and strong HOLD capture
+
+Next gate: Windows MinGW client_route_autopilot + docking_advisory tests, then live turn/terminal validation. Primary checks:
+- curve index switches at the physical primitive boundary;
+- on a straight desired_omega_radps=0;
+- on an arc desired_omega_radps ~= actual_speed/radius;
+- braking begins earlier than the old v^2/(2a) boundary;
+- terminal HOLD reaches forward_err/up_err near zero with non-negligible rotation commands while errors are large.

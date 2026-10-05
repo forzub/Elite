@@ -2468,6 +2468,8 @@ void SpaceState::updateDockingAdvisory()
                     << output.checkpointIndex
                     << " profile_rev="
                     << output.speedProfileRevision
+                    << " launch="
+                    << (output.stoppedCheckpointLaunch ? 1 : 0)
                     << " pitch=" << output.control.pitchInput
                     << " yaw=" << output.control.yawInput
                     << " roll=" << output.control.rollInput

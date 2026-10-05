@@ -2366,3 +2366,35 @@ Next gate: Windows MinGW client_route_autopilot + docking_advisory tests, then l
 - on an arc desired_omega_radps ~= actual_speed/radius;
 - braking begins earlier than the old v^2/(2a) boundary;
 - terminal HOLD reaches forward_err/up_err near zero with non-negligible rotation commands while errors are large.
+
+
+## 2026-10-05 — terminal braking now uses measured longitudinal response and early full-brake trigger
+
+Inspection of the real Assisted flight law showed that targetSpeedRate is not an instantaneous speed command. It slews the persistent targetForwardSpeedMps, and the Assisted flight controller then applies first-order speed-error feedback bounded by installed forward/reverse main authority and the shared linear-load envelope. throttleAccel is therefore a longitudinal response gain, not a direct thrust command.
+
+The previous autopilot terminal logic only partially modeled this. It lowered target speed using a stopping envelope, but BrakeToStop itself still activated only after entering the last continuous segment. Live overshoot was therefore consistent with a controller that waited too long before bypassing the normal speed-following loop.
+
+PredictivePilot now learns positive acceleration response and negative braking response separately from measured scalar-speed change per normalized ordinary control input. ClientRouteAutopilot uses the measured braking response conservatively (never above nominal braking authority) when available.
+
+Terminal stopping now computes:
+
+    d_required = v^2/(2*a_effective) + v*t_response
+
+where t_response = 1/longitudinalResponseGain + dt. If d_required >= exactRemainingRouteMeters, terminalBrakeActive becomes true and BrakeToStop is requested immediately, even before the last continuous segment. The target-speed ceiling remains active as a softer outer layer.
+
+This is equivalent to treating the final stop point as dynamically closer by the controller-response reserve, rather than multiplying all distances by an arbitrary fixed safety factor.
+
+Mass/cargo audit: current propulsion descriptors expose main-engine authority in acceleration units (m/s^2), and ShipParams::massKg is not used to derate ordinary forward/reverse acceleration. Runtime engine damage changes availability but not thrust-to-mass ratio. No current cargo/payload-mass term was found in the effective propulsion path. Therefore loaded ships do NOT yet become systematically more inertial through cargo mass in ordinary local-flight acceleration; that is a separate physics-model task and should not be faked inside navigation. The measured-response braking estimator will nevertheless adapt to any future runtime mechanism that makes actual acceleration lower.
+
+New telemetry:
+- brake_a_mps2
+- stop_need_m
+- terminal_brake
+
+Published commits:
+- 4c36e4b4 — learn acceleration and braking response separately
+- a00f0c60 — enter terminal brake from measured stopping envelope
+- 030c3a6f — trace measured terminal stopping envelope
+- 9eb1360f — regression requires early full brake at stopping envelope
+
+Next gate: build/test client_route_autopilot, then live terminal run. Verify that terminal_brake=1 appears while exact_remaining_m is still greater than zero and before the old near-point overshoot region. Compare stop_need_m with exact_remaining_m at the trigger.

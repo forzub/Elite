@@ -4972,3 +4972,25 @@ Published commits:
 - 7ba5223f — initial overspeed must be accepted and command braking
 
 Next gate: Windows native client_route_autopilot build/test, then live docking. Expected behavior: no checkpoint-suffix-infeasible recovery for speed alone; targetSpeedRate becomes negative on overspeed; checkpoint/profile revision advances forward; missed gates are skipped and never reacquired behind the craft.
+
+
+## 2026-10-05 — trajectory-cleanup pass: damp lateral capture and stop at final guidance frame
+
+Live automatic docking now traverses the route and speed profile, but showed two distinct execution defects. First, the position-only cross-track servo used v_capture=sqrt(2*a*d) without accounting for already accumulated lateral velocity. This could accelerate the craft toward center, cross the centerline with residual side speed, flip the error sign, and command the opposite turn. Second, runtime checkpoint repair could overwrite the authored terminal zero-speed constraint with a non-zero physically reachable fly-through speed, causing oscillation after remaining_m reached zero.
+
+ClientRouteAutopilot cross-track capture now includes lateral stopping distance. It measures current cross-track closing speed, computes d_stop=v_in^2/(2*a_lateral), and only commands capture velocity from the remaining capture distance max(0,d-d_stop). Thus lateral steering is reduced before the centerline rather than after crossing it.
+
+A zero terminal speed is now treated as a hard HOLD boundary. Checkpoint overspeed repair may raise intermediate speeds but must preserve nominalSpeedProfileMps.back()==0. When the final continuous segment is reached, PredictivePilot enters stop mode for an authored terminal stop. Automatic docking starts ClientRouteAutopilot with holdAtTerminal=true: after arriving/stopping it remains active instead of completing/releasing control.
+
+Dock orientation alignment already uses the real docking-port up vector: SpaceState passes executionPort.up into ClientRouteAutopilot, and the HUD frames are built from the same renderPort.up. During terminal HOLD the ship therefore remains stopped while PredictivePilot continues forward/up attitude correction, including roll, until hull bottom aligns with the dock-bottom mark. Dock ingress itself is deliberately disabled for this phase.
+
+Live telemetry now includes cross_closing_mps, cross_capture_mps, forward_err_deg, up_err_deg and terminal_hold so the next run can separate centerline-control error from angular-control error.
+
+Published commits:
+- 05e7a1b9 — damp cross-track capture and hold at terminal frame
+- 012daf17 — automatic docking stops/holds at final guidance frame
+- d3479adf — regressions for braking before center and terminal HOLD
+- 75f64626 — HOLD continues dock-bottom roll alignment after translation stops
+- 366b348e / 01f1b3be — diagnostic cross-track and attitude errors
+
+Next gate: Windows MinGW client_route_autopilot test and live run. Do not implement dock ingress yet. Evaluate only centerline cleanliness, monotonic lateral damping, full stop at final frame, and continuing dock-up/bottom alignment.

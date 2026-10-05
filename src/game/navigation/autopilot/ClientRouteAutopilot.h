@@ -1176,8 +1176,9 @@ private:
                         std::numeric_limits<double>::infinity();
                     for (std::size_t i = from; i < samples.size(); ++i)
                     {
-                        const double d =
-                            glm::length2(samples[i].positionMapMeters - point);
+                        const glm::dvec3 delta =
+                            samples[i].positionMapMeters - point;
+                        const double d = glm::dot(delta, delta);
                         if (d < bestDistance)
                         {
                             bestDistance = d;

@@ -313,6 +313,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         double lengthMeters = 0.0;
         std::string failure;
         std::vector<glm::dvec3> samples;
+        std::vector<planner::RouteCurveSegment> curves;
     };
 
     const auto roundGeometry =
@@ -326,6 +327,77 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             candidate.failure = "geometric route has too few points";
             return candidate;
         }
+
+        const auto appendLineCurve =
+            [&](const glm::dvec3& start, const glm::dvec3& end)
+            {
+                const double length=glm::length(end-start);
+                if(length<=1.0e-9)
+                    return;
+
+                planner::RouteCurveSegment curve;
+                curve.kind=planner::RouteCurveKind::Line;
+                curve.startProgressMeters=
+                    candidate.curves.empty()
+                        ? 0.0
+                        : candidate.curves.back().endProgressMeters;
+                curve.endProgressMeters=
+                    curve.startProgressMeters+length;
+                curve.maxSpeedMps=0.8*r.maxSpeedMps;
+                curve.startMeters=start;
+                curve.endMeters=end;
+                curve.startForward=(end-start)/length;
+                curve.endForward=curve.startForward;
+                candidate.curves.push_back(std::move(curve));
+            };
+
+        const auto appendArcCurve =
+            [&](const glm::dvec3& start,
+                const glm::dvec3& end,
+                const glm::dvec3& center,
+                const glm::dvec3& normal,
+                double radius,
+                double sweep)
+            {
+                if(radius<=1.0e-9 || std::abs(sweep)<=1.0e-12)
+                    return;
+
+                planner::RouteCurveSegment curve;
+                curve.kind=planner::RouteCurveKind::CircularArc;
+                curve.startProgressMeters=
+                    candidate.curves.empty()
+                        ? 0.0
+                        : candidate.curves.back().endProgressMeters;
+                curve.endProgressMeters=
+                    curve.startProgressMeters+
+                    radius*std::abs(sweep);
+                const double lateralLimit=
+                    std::sqrt(std::max(0.0,r.lateralMps2*radius));
+                const double angularLimit=
+                    r.maxAngularVelocityRadPerSecond>1.0e-9
+                        ? r.maxAngularVelocityRadPerSecond*radius
+                        : r.maxSpeedMps;
+                curve.maxSpeedMps=std::min({
+                    0.8*r.maxSpeedMps,
+                    lateralLimit,
+                    angularLimit
+                });
+                curve.startMeters=start;
+                curve.endMeters=end;
+                curve.arcCenterMeters=center;
+                curve.arcNormal=normal;
+                curve.arcRadiusMeters=radius;
+                curve.arcSweepRadians=sweep;
+                const glm::dvec3 startRadial=start-center;
+                const glm::dvec3 endRadial=end-center;
+                curve.startForward=glm::normalize(
+                    glm::cross(normal,startRadial)
+                );
+                curve.endForward=glm::normalize(
+                    glm::cross(normal,endRadial)
+                );
+                candidate.curves.push_back(std::move(curve));
+            };
 
         auto vertices = geometryPoints;
         if (vertices.empty() ||
@@ -359,6 +431,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     return candidate;
                 }
 
+                appendLineCurve(
+                    candidate.samples[i - 1],
+                    candidate.samples[i]
+                );
                 candidate.lengthMeters += glm::length(
                     candidate.samples[i] - candidate.samples[i - 1]
                 );
@@ -441,6 +517,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 // metres for a smooth first turn.
                 if(tangentDistance<0.25)
                 {
+                    appendLineCurve(
+                        candidate.samples.back(),
+                        vertices[i]
+                    );
                     candidate.samples.push_back(vertices[i]);
                     continue;
                 }
@@ -515,6 +595,18 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 if (safe && !arc.empty() &&
                     glm::length(arc.back()-exit)<=1.0e-5)
                 {
+                    appendLineCurve(
+                        candidate.samples.back(),
+                        entry
+                    );
+                    appendArcCurve(
+                        entry,
+                        exit,
+                        center,
+                        turnNormal,
+                        radius,
+                        turnAngle
+                    );
                     candidate.samples.insert(
                         candidate.samples.end(),arc.begin(),arc.end());
                     if(initialForwardLeadActive && i==1)
@@ -552,6 +644,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         if(candidate.samples.empty() ||
            glm::length(candidate.samples.back()-finalPoint)>1.0e-6)
         {
+            if(!candidate.samples.empty())
+                appendLineCurve(candidate.samples.back(),finalPoint);
             candidate.samples.push_back(finalPoint);
         }
         for (std::size_t i=1;i<candidate.samples.size();++i)
@@ -1050,6 +1144,29 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     glm::normalize(
                         glm::cross(incoming,finalDirection)
                     );
+                // Preserve the exact terminal primitive before sampling it.
+                // transitCandidate.curves already ends at ENTRY.
+                {
+                    planner::RouteCurveSegment curve;
+                    curve.kind=planner::RouteCurveKind::CircularArc;
+                    curve.startProgressMeters=
+                        candidate.curves.empty()
+                            ? 0.0
+                            : candidate.curves.back().endProgressMeters;
+                    curve.endProgressMeters=
+                        curve.startProgressMeters+
+                        terminalPrimitiveRadius*halfPi;
+                    curve.maxSpeedMps=terminalTurnSpeedMps;
+                    curve.startMeters=entry;
+                    curve.endMeters=candidateAlign;
+                    curve.startForward=incoming;
+                    curve.endForward=finalDirection;
+                    curve.arcCenterMeters=center;
+                    curve.arcNormal=turnNormal;
+                    curve.arcRadiusMeters=terminalPrimitiveRadius;
+                    curve.arcSweepRadians=halfPi;
+                    candidate.curves.push_back(std::move(curve));
+                }
                 const glm::dvec3 startRadial =
                     entry-center;
                 const double arcLength =
@@ -1119,6 +1236,27 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                        candidate.samples.back()-stop
                    )>1.0e-6)
                 {
+                    const glm::dvec3 lineStart=
+                        candidate.samples.back();
+                    const double lineLength=
+                        glm::length(stop-lineStart);
+                    if(lineLength>1.0e-9)
+                    {
+                        planner::RouteCurveSegment curve;
+                        curve.kind=planner::RouteCurveKind::Line;
+                        curve.startProgressMeters=
+                            candidate.curves.empty()
+                                ? 0.0
+                                : candidate.curves.back().endProgressMeters;
+                        curve.endProgressMeters=
+                            curve.startProgressMeters+lineLength;
+                        curve.maxSpeedMps=0.8*r.maxSpeedMps;
+                        curve.startMeters=lineStart;
+                        curve.endMeters=stop;
+                        curve.startForward=(stop-lineStart)/lineLength;
+                        curve.endForward=curve.startForward;
+                        candidate.curves.push_back(std::move(curve));
+                    }
                     candidate.samples.push_back(stop);
                 }
 
@@ -1323,6 +1461,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     // sparse public gates below are only presentation samples of this same
     // product and must never be reinterpreted into a different flight path.
     out.executionGates = dense;
+    out.routeCurves = selected.curves;
 
     std::vector<double> denseProgress(dense.size(),0.0);
     for(std::size_t i=1;i<dense.size();++i)

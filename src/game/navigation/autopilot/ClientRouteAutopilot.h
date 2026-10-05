@@ -93,6 +93,9 @@ public:
         double desiredCourseAngularRateRadPerSec = 0.0;
         double actualAngularRateRadPerSec = 0.0;
         double coursePhaseLeadAngleRad = 0.0;
+        double effectiveBrakingAuthorityMps2 = 0.0;
+        double requiredTerminalStopDistanceMeters = 0.0;
+        bool terminalBrakeActive = false;
         std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
@@ -606,32 +609,56 @@ public:
         const double courseLeadDistanceMeters =
             attitudeLeadDistanceMeters;
 
-        // Terminal stop must include controller/engine response distance, not
-        // only the ideal v^2/(2a) boundary. Solve
-        //
-        //   d = v^2/(2a) + tau*v
-        //
-        // for the maximum safe reference speed at the remaining route distance.
-        // This starts braking early enough that the real craft stops in the
-        // final frame instead of crossing it and braking afterwards.
-        if (state.holdAtTerminal && brakingAuthority > 1.0e-9)
+        // Terminal stop uses a conservative *measured* braking envelope.
+        // Ordinary Assisted speed following has a first-order controller and a
+        // slew-limited speed setpoint; BrakeToStop bypasses that setpoint and
+        // owns the full reverse-main envelope. Enter BrakeToStop before the
+        // ideal v^2/(2a) boundary by subtracting the controller response
+        // distance from the usable route length.
+        const double measuredBrakingResponse =
+            state.pilotState.assistedBrakingResponseMps2;
+        const double effectiveBrakingAuthority =
+            measuredBrakingResponse > 1.0e-6
+                ? std::min(brakingAuthority, measuredBrakingResponse)
+                : brakingAuthority;
+        const double longitudinalResponseGain =
+            std::max(
+                1.0e-6,
+                static_cast<double>(params.throttleAccel) > 0.0
+                    ? static_cast<double>(params.throttleAccel)
+                    : static_cast<double>(
+                        params.fallbackThrottleResponsePerSecond
+                      )
+            );
+        const double controllerResponseSeconds =
+            1.0 / longitudinalResponseGain + deltaSeconds;
+        const double remainingRouteMeters =
+            std::max(0.0, routeTotalProgress - routeProgressMeters);
+        const double requiredTerminalStopDistanceMeters =
+            effectiveBrakingAuthority > 1.0e-9
+                ? actualSpeed * actualSpeed /
+                      (2.0 * effectiveBrakingAuthority) +
+                  actualSpeed * controllerResponseSeconds
+                : std::numeric_limits<double>::infinity();
+        const bool terminalBrakeActive =
+            state.holdAtTerminal &&
+            requiredTerminalStopDistanceMeters + 1.0e-9 >=
+                remainingRouteMeters;
+
+        if (state.holdAtTerminal &&
+            effectiveBrakingAuthority > 1.0e-9)
         {
-            const double remainingRouteMeters =
-                std::max(0.0, routeTotalProgress - routeProgressMeters);
-            const double speedResponseSeconds =
-                std::clamp(
-                    state.pilotState.assistedCourseResponseSeconds * 0.35,
-                    0.35,
-                    1.25
-                );
-            const double at = brakingAuthority * speedResponseSeconds;
+            const double at =
+                effectiveBrakingAuthority * controllerResponseSeconds;
             const double terminalSafeSpeed =
                 std::max(
                     0.0,
                     -at +
                     std::sqrt(
                         at * at +
-                        2.0 * brakingAuthority * remainingRouteMeters
+                        2.0 *
+                            effectiveBrakingAuthority *
+                            remainingRouteMeters
                     )
                 );
             targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
@@ -726,7 +753,8 @@ public:
         request.yawRateRadPerSec = agent.yawRateRadPerSec;
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
         request.stopRequested =
-            atFinalContinuousSegment && terminalStopAuthored;
+            terminalStopAuthored &&
+            (atFinalContinuousSegment || terminalBrakeActive);
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
 
@@ -799,6 +827,11 @@ public:
                 agent.rollRateRadPerSec * agent.rollRateRadPerSec
             );
         out.coursePhaseLeadAngleRad = coursePhaseLeadAngleRad;
+        out.effectiveBrakingAuthorityMps2 =
+            effectiveBrakingAuthority;
+        out.requiredTerminalStopDistanceMeters =
+            requiredTerminalStopDistanceMeters;
+        out.terminalBrakeActive = terminalBrakeActive;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =

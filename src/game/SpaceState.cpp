@@ -2463,6 +2463,12 @@ void SpaceState::updateDockingAdvisory()
                     << output.routeCurvaturePerMeter
                     << " radius_m="
                     << output.routeRadiusMeters
+                    << " exact_remaining_m="
+                    << output.exactRemainingRouteMeters
+                    << " desired_omega_radps="
+                    << output.desiredCourseAngularRateRadPerSec
+                    << " actual_omega_radps="
+                    << output.actualAngularRateRadPerSec
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

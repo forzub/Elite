@@ -864,6 +864,32 @@ void testApproachBrakesBeforeDynamicTurnLimit()
         output.targetSpeedMps < 200.0,
         "autopilot waited until curve entry to reduce speed"
     );
+
+    Agent preTurn = approaching;
+    preTurn.positionMapMeters = {950.0, 0.0, 0.0};
+    preTurn.velocityMapMetersPerSecond = {150.0, 0.0, 0.0};
+
+    const auto preTurnOutput = Autopilot::update(
+        state,
+        preTurn,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(preTurnOutput.valid, "pre-turn ramp update invalid");
+
+    const double fullTurnRate =
+        preTurnOutput.turnSpeedCeilingMps / 1000.0;
+    require(
+        preTurnOutput.desiredCourseAngularRateRadPerSec > 1.0e-6,
+        "pre-turn preparation did not begin angular-rate ramp"
+    );
+    require(
+        preTurnOutput.desiredCourseAngularRateRadPerSec <
+            fullTurnRate - 1.0e-6,
+        "pre-turn angular-rate command jumped directly to full curve rate"
+    );
 }
 
 void testExactCurveBoundaryActivatesAtAuthoredEntry()

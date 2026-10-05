@@ -1875,6 +1875,15 @@ KeyframedProgressResult keyframedGuideProgress(
         out.samples.back().progressMeters = arc[i + 1];
         out.samples.back().speedMps = v1;
     }
+    // The initial speed is a boundary condition, not a command to hold
+    // zero acceleration. If the first non-zero-length leg accelerates or
+    // brakes, the t=0 sample must carry that physical acceleration too.
+    // Otherwise a spatial follower parked exactly at s=0 sees v=0,a=0 and
+    // has no command that can start motion.
+    if (out.samples.size() >= 2)
+        out.samples.front().accelerationMps2 =
+            out.samples[1].accelerationMps2;
+
     out.durationSeconds = clock;
     out.ready = out.samples.size() >= 2 && finite(clock);
     if (!out.ready)

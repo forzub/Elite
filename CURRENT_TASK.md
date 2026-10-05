@@ -2284,3 +2284,18 @@ Published commits:
 - 02057ec6 — regression forbids chord cutting through a curved tunnel
 
 Next gate: Windows client_route_autopilot test and live bend-only validation. Primary invariant: centerline tracking may use phase lead in attitude, but the commanded path must remain topologically inside the authored corridor and must not shorten curved sections with straight intercepts.
+
+
+## 2026-10-05 — route geometry contract generalized beyond circular arcs
+
+The Planner->Follower contract must not assume routes consist only of straight lines and circular fillets. Future route backends may author cubic Bezier, spline or other parametric curves. Follower must therefore execute authoritative parameterized geometry rather than reconstruct a route from dense sampled points.
+
+RoutePlannerApi now exposes RouteCurveSegment with Line, CircularArc and CubicBezier kinds, explicit path-progress interval [startProgressMeters,endProgressMeters], speed ceiling, endpoint frame data, circular-arc parameters, cubic-Bezier control points, and optional arc-length inversion knots for non-uniform parameterizations.
+
+RouteCurveSegment evaluates position, first/second derivatives, tangent and scalar curvature. Cubic Bezier curvature uses |p' x p''|/|p'|^3. Arc-length knots map physical progress s to Bezier parameter t; they parameterize the exact curve but do not define its geometry.
+
+Published commits:
+- 76c917fd — add generic parameterized route-curve contract
+- 14836c42 — make route curves evaluable by progress and curvature
+
+Important: this establishes the API only. Current docking Planner still publishes dense executionGates as the active execution geometry; routeCurves are not yet populated/consumed. Next implementation step is to preserve authored primitives from DockingAdvisoryPlanner into RoutePlan.routeCurves and make ClientRouteAutopilot use those authoritative curves for tangent/curvature/speed-limit queries, leaving dense gates only for HUD/collision/proof.

@@ -103,6 +103,8 @@ public:
         double signedRollErrorRad = 0.0;
         double desiredRollRateRadPerSec = 0.0;
         bool terminalBrakeActive = false;
+        bool terminalAttitudeCaptureActive = false;
+        bool brakeAttitudeLockActive = false;
         std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
@@ -931,10 +933,20 @@ public:
                     1.0e-6,
                     static_cast<double>(params.stopSpeedEpsilonMps)
                 );
+        const double terminalAttitudeCaptureSpeedMps =
+            std::max(
+                0.50,
+                static_cast<double>(params.stopSpeedEpsilonMps)
+            );
         const bool terminalAttitudeHold =
             state.holdAtTerminal &&
             atFinalContinuousSegment &&
-            terminalStopAuthored;
+            terminalStopAuthored &&
+            actualSpeed <= terminalAttitudeCaptureSpeedMps;
+        const bool brakeAttitudeLock =
+            terminalStopAuthored &&
+            (atFinalContinuousSegment || terminalBrakeActive) &&
+            !terminalAttitudeHold;
 
         PredictivePilot::Request request;
         request.law = law;
@@ -992,13 +1004,23 @@ public:
                     finalReference.forwardMap,
                     steeringForward
                 );
-            request.desiredUpMap =
-                normalizedOr(
-                    finalReference.upMap,
-                    desiredUp
-                );
+            request.desiredUpMap = desiredUp;
             request.desiredAngularVelocityMapRadPerSec =
                 glm::dvec3(0.0);
+            request.desiredAngularAccelerationMapRadPerSec2 =
+                glm::dvec3(0.0);
+        }
+        else if (brakeAttitudeLock)
+        {
+            // During terminal braking translation owns the maneuver. Keep the
+            // hull level in the final corridor and do not start a terminal
+            // pose capture while significant forward speed remains. If we
+            // crossed the nominal stop plane, continue braking straight; never
+            // pitch/yaw back toward the point.
+            request.desiredForwardMap = referenceTangent;
+            request.desiredUpMap = desiredUp;
+            request.desiredAngularVelocityMapRadPerSec =
+                rollAngularRateMap;
             request.desiredAngularAccelerationMapRadPerSec2 =
                 glm::dvec3(0.0);
         }
@@ -1130,6 +1152,8 @@ public:
         out.desiredRollRateRadPerSec =
             desiredRollRateRadPerSec;
         out.terminalBrakeActive = terminalBrakeActive;
+        out.terminalAttitudeCaptureActive = terminalAttitudeHold;
+        out.brakeAttitudeLockActive = brakeAttitudeLock;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =

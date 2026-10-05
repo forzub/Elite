@@ -955,3 +955,39 @@ Next gate: Windows MinGW client_route_autopilot test, then live run. Key telemet
 - roll_err_deg must converge toward zero with a consistent roll_target_omega_radps;
 - terminal_brake=1 with brake_attitude_lock=1 must occur while terminal_attitude_capture=0 and pitch/yaw remain small;
 - terminal_attitude_capture becomes 1 only after speed is nearly zero.
+
+
+## 2026-10-05 — Assisted turn slowdown now includes speed-setpoint slew and corridor-loss speed cap
+
+The latest live log showed that the follower could compute a low dynamic turn ceiling yet continue at cruise until too late. Example pattern: turn_vmax around 169 m/s with ~607 m to the curve while target/actual speed stayed near 288 m/s; only ~266 m before the curve did target speed begin to drop, and the craft entered the curve still roughly 50 m/s above the dynamic ceiling.
+
+Root cause: pre-turn braking included physical braking authority and a small feedback-response term, but it did not include the finite Assisted target-speed setpoint slew. targetSpeedRate changes targetForwardSpeedMps at a configured rate (for Cobra-class current parameters about 90 m/s^2), so moving the speed handle from 288 to 169 itself takes roughly 1.3 s and hundreds of metres at cruise speed.
+
+The pre-turn slowdown horizon now includes:
+- speed-handle slew time: deltaV / targetSetpointRate;
+- conservative distance travelled during that slew at current speed;
+- measured/nominal physical braking distance from current speed to turn ceiling;
+- longitudinal feedback response distance.
+
+Required turn slowdown distance is therefore:
+
+    d_turn =
+        v * t_slew
+        + (v^2 - v_turn^2)/(2*a_effective)
+        + v * t_feedback
+
+When d_turn >= distanceToTurn, the follower commands the full curve speed ceiling immediately. The Assisted setpoint slew and physical propulsion still make the actual deceleration smooth; the important change is that the command is no longer delayed until the ideal braking-only boundary.
+
+The follower also now reduces cruise speed when substantial cross-track error already consumes corridor authority. Cross-track occupancy between the central deadband and the route tolerance smoothly blends the current target speed toward the next known controllable turn-speed ceiling. A craft that is tens/hundreds of metres off-center therefore cannot continue at unrestricted straight-line cruise while attempting recovery.
+
+New telemetry:
+- turn_need_m
+- turn_slew_s
+
+Published commits:
+- 6e8ecf82 — include speed-handle slew in turn braking horizon
+- f1d079d8 — make actual speed available to pre-turn slew model
+- 78a2b56b — log turn slowdown horizon and speed-handle slew
+- 81bd52dd — regression requires Assisted speed-setpoint slew in turn slowdown
+
+Next gate: build/test client_route_autopilot, then live first-turn validation. Expected behavior: target speed begins falling while turn_distance_m is still on the order of the full turn_need_m; actual speed should be near turn_vmax at curve entry rather than tens of m/s above it. If cross-track exceeds corridor tolerance, target speed should remain capped until centerline recovery is substantially complete.

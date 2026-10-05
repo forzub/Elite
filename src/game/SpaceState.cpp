@@ -2478,6 +2478,10 @@ void SpaceState::updateDockingAdvisory()
                     << output.requiredTerminalStopDistanceMeters
                     << " terminal_brake="
                     << (output.terminalBrakeActive ? 1 : 0)
+                    << " turn_vmax_mps="
+                    << output.turnSpeedCeilingMps
+                    << " turn_distance_m="
+                    << output.distanceToTurnMeters
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

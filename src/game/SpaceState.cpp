@@ -2452,8 +2452,12 @@ void SpaceState::updateDockingAdvisory()
                     << output.targetLongitudinalAccelerationMps2
                     << " cross_closing_mps="
                     << output.crossTrackClosingSpeedMps
-                    << " cross_capture_mps="
-                    << output.crossTrackCaptureSpeedMps
+                    << " course_lead_m="
+                    << output.courseLeadDistanceMeters
+                    << " predicted_cross_m="
+                    << output.predictedCrossTrackMeters
+                    << " center_deadband_m="
+                    << output.centeringDeadbandMeters
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

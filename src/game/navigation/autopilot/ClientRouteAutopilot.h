@@ -360,10 +360,9 @@ public:
 
         // Assisted course response is not instantaneous: the velocity vector
         // follows the nose with a measured first-order lag tau. Predict where
-        // the craft will be after one response time and steer the nose toward
-        // the route state that should be reached after another response time.
-        // This makes the correction depend on actual speed and measured course
-        // dynamics instead of chasing the current center point.
+        // the craft will be after one response time and use the authored
+        // tangent of that future route section. Never replace the curve with
+        // a straight intercept chord.
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
         const double courseResponseSeconds =
@@ -385,18 +384,6 @@ public:
         );
         if (!attitudeLead.valid)
             attitudeLead = continuous;
-
-        auto interceptReference = sampleContinuousReferenceAtProgress(
-            state.continuousSamples,
-            state.continuousProgressMeters,
-            std::min(
-                state.continuousProgressMeters.back(),
-                continuous.spatialProgressMeters +
-                    2.0 * courseLeadDistanceMeters
-            )
-        );
-        if (!interceptReference.valid)
-            interceptReference = attitudeLead;
 
         const glm::dvec3 leadTangent =
             normalizedOr(
@@ -432,11 +419,18 @@ public:
                 static_cast<double>(params.stopSpeedEpsilonMps)) &&
             predictedCrossTrackMeters > centeringDeadbandMeters)
         {
-            const glm::dvec3 interceptVector =
-                interceptReference.reference.positionMapMeters -
-                predictedPosition;
+            // Never aim at a distant point on a curve: that creates a chord
+            // through the inside of the tunnel. Course correction is local to
+            // the future route section. Keep the authored future tangent and
+            // add only the lateral velocity needed to remove predicted
+            // cross-track error over one measured course-response time.
+            const glm::dvec3 correctionVelocity =
+                -predictedCrossError / courseResponseSeconds;
+            const glm::dvec3 desiredCourseVelocity =
+                leadTangent * actualSpeed +
+                correctionVelocity;
             steeringForward =
-                normalizedOr(interceptVector, leadTangent);
+                normalizedOr(desiredCourseVelocity, leadTangent);
         }
 
         const glm::dvec3 desiredUp =

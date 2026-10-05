@@ -369,25 +369,35 @@ public:
                     assistedLateralStabilizationAccelerationLimitMps2(params)
                 : game::ship::manoeuvreAccelerationLimitMps2(params);
 
-        glm::dvec3 steeringForward = nominalForward;
+        // Hull attitude follows the authored route tangent. Fine cross-track
+        // correction belongs to lateral RCS, not to nose steering. Rotating
+        // the whole craft for centimetre-scale position error was the source
+        // of the straight-line left/right twitch.
+        const glm::dvec3 steeringForward = nominalForward;
+
         double crossTrackClosingSpeedMps = 0.0;
         double crossTrackCaptureSpeedMps = 0.0;
+        glm::dvec3 desiredCrossVelocity(0.0);
+        glm::dvec3 actualCrossVelocity(0.0);
+
         if (crossTrackErrorMeters > 1.0e-9 &&
-            lateralAuthority > 1.0e-9 &&
-            targetSpeed > 1.0e-9)
+            lateralAuthority > 1.0e-9)
         {
             const glm::dvec3 towardCenter =
                 -crossPositionError / crossTrackErrorMeters;
-            const glm::dvec3 crossVelocity =
+
+            actualCrossVelocity =
                 agent.velocityMapMetersPerSecond -
                 referenceTangent *
                     glm::dot(
                         agent.velocityMapMetersPerSecond,
                         referenceTangent
                     );
+
             const double closingSpeed =
-                glm::dot(crossVelocity, towardCenter);
+                glm::dot(actualCrossVelocity, towardCenter);
             crossTrackClosingSpeedMps = closingSpeed;
+
             const double inwardSpeed =
                 std::max(0.0, closingSpeed);
             const double stoppingDistance =
@@ -404,19 +414,16 @@ public:
                     lateralAuthority *
                     captureDistance
                 );
-            crossTrackCaptureSpeedMps = captureSpeed;
 
-            const glm::dvec3 steeringVelocity =
-                nominalForward * targetSpeed +
+            crossTrackCaptureSpeedMps = captureSpeed;
+            desiredCrossVelocity =
                 towardCenter * captureSpeed;
-            steeringForward =
-                normalizedOr(steeringVelocity, nominalForward);
         }
 
         // Preserve the authored scalar speed. Cross-track recovery changes
         // direction, not the planner's speed schedule.
         const glm::dvec3 desiredVelocity =
-            steeringForward * targetSpeed;
+            nominalForward * targetSpeed;
 
         PredictivePilot::Request request;
         request.law = law;
@@ -454,6 +461,46 @@ public:
 
         out.control =
             PredictivePilot::make(request, params, state.pilotState);
+
+        // Ordinary lateral RCS closes cross-track error without disturbing the
+        // route-tangent attitude. Velocity error is converted to the bounded
+        // acceleration required this tick; ShipControlState strafe/lift are
+        // the same physical controls available to the human pilot.
+        if (lateralAuthority > 1.0e-9 && deltaSeconds > 1.0e-9)
+        {
+            glm::dvec3 lateralAcceleration =
+                (desiredCrossVelocity - actualCrossVelocity) /
+                deltaSeconds;
+
+            const double lateralMagnitude =
+                glm::length(lateralAcceleration);
+            if (std::isfinite(lateralMagnitude) &&
+                lateralMagnitude > lateralAuthority)
+            {
+                lateralAcceleration *=
+                    lateralAuthority / lateralMagnitude;
+            }
+
+            out.control.strafeInput =
+                static_cast<float>(
+                    std::clamp(
+                        glm::dot(lateralAcceleration, agent.rightMap) /
+                            lateralAuthority,
+                        -1.0,
+                        1.0
+                    )
+                );
+            out.control.liftInput =
+                static_cast<float>(
+                    std::clamp(
+                        glm::dot(lateralAcceleration, agent.upMap) /
+                            lateralAuthority,
+                        -1.0,
+                        1.0
+                    )
+                );
+        }
+
         out.valid = true;
         out.crossTrackErrorMeters = crossTrackErrorMeters;
         out.remainingDistanceMeters =
@@ -508,19 +555,20 @@ public:
                 agent.rollRateRadPerSec * agent.rollRateRadPerSec
             );
 
-        if (atFinalContinuousSegment &&
+        if (state.holdAtTerminal &&
+            atFinalContinuousSegment &&
+            terminalStopAuthored)
+        {
+            out.terminalHold = true;
+        }
+        else if (atFinalContinuousSegment &&
             terminalPositionError <= terminal.positionMeters &&
             terminalVelocityError <= terminal.linearVelocityMps &&
             terminalForwardError <= terminal.forwardAngleRad &&
             terminalAngularRate <= terminal.angularVelocityRadPerSec)
         {
-            if (state.holdAtTerminal)
-                out.terminalHold = true;
-            else
-            {
-                out.complete = true;
-                state.active = false;
-            }
+            out.complete = true;
+            state.active = false;
         }
 
         return out;

@@ -740,8 +740,8 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
 
     require(output.valid, "curved-tunnel update invalid");
     require(
-        output.courseLeadDistanceMeters > 0.0,
-        "curved-tunnel course lead was not active"
+        output.coursePhaseLeadAngleRad > 0.0,
+        "curved-tunnel phase lead was not active"
     );
     require(
         std::abs(output.routeRadiusMeters - RadiusMeters) < 1.0,
@@ -762,6 +762,107 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
         std::abs(output.control.strafeInput) < 1.0e-6 &&
         std::abs(output.control.liftInput) < 1.0e-6,
         "curved-tunnel tracking incorrectly used manoeuvre thrusters"
+    );
+}
+
+void testApproachBrakesBeforeDynamicTurnLimit()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1100.0, 0.0, 5.0}, {0.995, 0.0, 0.1}, 120.0},
+        RouteGate{{1200.0, 0.0, 20.0}, {0.98, 0.0, 0.2}, 120.0},
+        RouteGate{{1300.0, 0.0, 45.0}, {0.95, 0.0, 0.31}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment line;
+    line.kind = RouteCurveKind::Line;
+    line.startProgressMeters = 0.0;
+    line.endProgressMeters = 1000.0;
+    line.maxSpeedMps = 200.0;
+    line.startMeters = {0.0, 0.0, 0.0};
+    line.endMeters = {1000.0, 0.0, 0.0};
+    line.startForward = line.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(line);
+
+    RouteCurveSegment arc;
+    arc.kind = RouteCurveKind::CircularArc;
+    arc.startProgressMeters = 1000.0;
+    arc.endProgressMeters = 1000.0 + 1000.0 * 0.5;
+    arc.maxSpeedMps = 200.0;
+    arc.startMeters = {1000.0, 0.0, 0.0};
+    arc.arcCenterMeters = {1000.0, 0.0, 1000.0};
+    arc.arcNormal = {0.0, -1.0, 0.0};
+    arc.arcRadiusMeters = 1000.0;
+    arc.arcSweepRadians = 0.5;
+    arc.endMeters = arc.positionAtParameter(1.0);
+    arc.startForward = {1.0, 0.0, 0.0};
+    arc.endForward = arc.tangentAtProgress(arc.endProgressMeters);
+    route.routeCurves.push_back(arc);
+
+    auto vehicle = params();
+    vehicle.maxCombatSpeed = 250.0f;
+    vehicle.maxCruiseSpeed = 250.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {200.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            27,
+            20.0
+        ),
+        "dynamic-turn-speed route rejected"
+    );
+
+    Agent approaching = initial;
+    approaching.positionMapMeters = {850.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        approaching,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "dynamic-turn-speed update invalid");
+    require(
+        output.distanceToTurnMeters > 0.0,
+        "approach did not identify upcoming authored turn"
+    );
+    require(
+        output.turnSpeedCeilingMps > 0.0 &&
+        output.turnSpeedCeilingMps < 200.0,
+        "Assisted course dynamics did not reduce curve speed ceiling"
+    );
+    require(
+        output.targetSpeedMps < 200.0,
+        "autopilot waited until curve entry to reduce speed"
     );
 }
 
@@ -1854,6 +1955,7 @@ int main()
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
+        testApproachBrakesBeforeDynamicTurnLimit();
         testExactCurveBoundaryActivatesAtAuthoredEntry();
         testTerminalBrakingIncludesControllerResponseMargin();
         testTerminalHoldKeepsStrongAttitudeCaptureForLargeError();
@@ -1877,6 +1979,7 @@ int main()
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - turn lead distance follows measured nose-to-course lag\n"
             << " - course lead preserves curved tunnel instead of cutting a chord\n"
+            << " - approach brakes before the Assisted dynamic turn limit\n"
             << " - exact curve boundary activates at authored entry\n"
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"

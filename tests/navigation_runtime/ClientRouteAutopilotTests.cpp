@@ -958,6 +958,12 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     Agent approaching = initial;
     approaching.positionMapMeters = {850.0, 0.0, 0.0};
 
+    // The route preview must use the same learned Assisted speed-handle
+    // response as PredictivePilot. A slow measured response must move the
+    // slowdown horizon outward instead of silently falling back to the
+    // configured nominal setpoint rate.
+    state.pilotState.assistedSpeedResponseMps2 = 1.0;
+
     const auto output = Autopilot::update(
         state,
         approaching,
@@ -984,6 +990,22 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     require(
         output.turnSpeedSetpointSlewSeconds > 0.0,
         "pre-turn model ignored Assisted speed-handle slew"
+    );
+    const double effectiveSetpointRate =
+        game::navigation::autopilot::PredictivePilot::
+            effectiveAssistedTargetSpeedChangeRateMps2(
+                vehicle,
+                state.pilotState
+            );
+    const double expectedSlewSeconds =
+        std::max(0.0, 200.0 - output.turnSpeedCeilingMps) /
+        effectiveSetpointRate;
+    require(
+        std::abs(
+            output.turnSpeedSetpointSlewSeconds -
+            expectedSlewSeconds
+        ) < 1.0e-6,
+        "turn preview and PredictivePilot disagree on learned Assisted setpoint response"
     );
     require(
         output.requiredTurnSlowdownDistanceMeters >

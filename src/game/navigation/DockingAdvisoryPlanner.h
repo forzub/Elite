@@ -144,7 +144,8 @@ struct DockingAdvisoryPlan
     {
         return failure.empty() &&
             gates.size() >= 2 &&
-            executionGates.size() >= 2;
+            executionGates.size() >= 2 &&
+            !routeCurves.empty();
     }
 };
 

@@ -54,7 +54,6 @@ public:
         std::size_t currentContinuousSegment = 0;
         std::size_t nextCheckpointIndex = 1;
         std::uint64_t speedProfileRevision = 0;
-        bool runtimeSuffixFeasible = true;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -74,7 +73,6 @@ public:
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
         std::uint64_t speedProfileRevision = 0;
-        bool replanRequired = false;
     };
 
     static void stop(State& state) noexcept
@@ -250,8 +248,7 @@ public:
                        state.nextCheckpointIndex
                    ])
         {
-            state.runtimeSuffixFeasible =
-                recomputeRuntimeSpeedSuffix(
+            recomputeRuntimeSpeedSuffix(
                     state.nominalSpeedProfileMps,
                     state.continuousProgressMeters,
                     state.currentContinuousSegment,
@@ -441,7 +438,6 @@ public:
                 ? state.nextCheckpointIndex - 1
                 : 0;
         out.speedProfileRevision = state.speedProfileRevision;
-        out.replanRequired = !state.runtimeSuffixFeasible;
 
         const auto& finalReference =
             state.continuousSamples.back();
@@ -774,7 +770,7 @@ private:
         return !checkpoints.empty();
     }
 
-    [[nodiscard]] static bool recomputeRuntimeSpeedSuffix(
+    static void recomputeRuntimeSpeedSuffix(
         const std::vector<double>& nominalSpeeds,
         const std::vector<double>& progress,
         std::size_t anchorIndex,
@@ -790,7 +786,7 @@ private:
             runtimeSpeeds.size() != nominalSpeeds.size() ||
             runtimeAccelerations.size() != nominalSpeeds.size())
         {
-            return false;
+            return;
         }
 
         anchorIndex = std::min(anchorIndex, nominalSpeeds.size() - 1);
@@ -813,7 +809,7 @@ private:
         {
             const double ds = progress[i] - progress[i - 1];
             if (!(std::isfinite(ds) && ds >= 0.0))
-                return false;
+                return;
 
             if (acceleratingMps2 > 1.0e-9)
             {
@@ -832,8 +828,6 @@ private:
 
         // Backward braking feasibility preserves every future nominal speed
         // restriction and propagates it toward the checkpoint.
-        double maximumSpeedAllowedByFuture =
-            std::numeric_limits<double>::infinity();
         if (brakingMps2 > 1.0e-9)
         {
             for (std::size_t i = runtimeSpeeds.size() - 1;
@@ -842,7 +836,7 @@ private:
             {
                 const double ds = progress[i] - progress[i - 1];
                 if (!(std::isfinite(ds) && ds >= 0.0))
-                    return false;
+                    return;
 
                 const double reachable =
                     std::sqrt(
@@ -852,10 +846,42 @@ private:
                             2.0 * brakingMps2 * ds
                         )
                     );
-                if (i - 1 == anchorIndex)
-                    maximumSpeedAllowedByFuture = reachable;
                 runtimeSpeeds[i - 1] =
                     std::min(runtimeSpeeds[i - 1], reachable);
+            }
+        }
+
+        // The measured checkpoint speed is authoritative. If it is above
+        // the speed from which a future route limit is reachable, do not
+        // invalidate the route: propagate the fastest physically possible
+        // braking profile forward until the authored limits are caught again.
+        double physicalSpeed =
+            std::max(
+                0.0,
+                std::isfinite(actualSpeedMps) ? actualSpeedMps : 0.0
+            );
+        runtimeSpeeds[anchorIndex] = physicalSpeed;
+        if (brakingMps2 > 1.0e-9)
+        {
+            for (std::size_t i = anchorIndex + 1;
+                 i < runtimeSpeeds.size();
+                 ++i)
+            {
+                const double ds = progress[i] - progress[i - 1];
+                if (!(std::isfinite(ds) && ds >= 0.0))
+                    return;
+
+                const double minimumReachable =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            physicalSpeed * physicalSpeed -
+                            2.0 * brakingMps2 * ds
+                        )
+                    );
+                runtimeSpeeds[i] =
+                    std::max(runtimeSpeeds[i], minimumReachable);
+                physicalSpeed = runtimeSpeeds[i];
             }
         }
 
@@ -881,9 +907,6 @@ private:
             }
         }
 
-        return
-            !std::isfinite(maximumSpeedAllowedByFuture) ||
-            actualSpeedMps <= maximumSpeedAllowedByFuture + 1.0e-6;
     }
 
     static void applyRuntimeProfile(

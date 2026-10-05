@@ -1193,6 +1193,21 @@ void testTerminalBrakingIncludesControllerResponseMargin()
         output.requiredTerminalStopDistanceMeters >= 800.0,
         "terminal stopping envelope did not include response reserve"
     );
+    require(
+        output.brakeAttitudeLockActive,
+        "terminal braking did not lock hull to final corridor attitude"
+    );
+    require(
+        !output.terminalAttitudeCaptureActive,
+        "terminal attitude capture started before translational stop"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) < 0.05,
+        "terminal braking pitched/yawed an already aligned hull"
+    );
 }
 
 void testTerminalHoldKeepsStrongAttitudeCaptureForLargeError()

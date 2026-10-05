@@ -55,6 +55,7 @@ public:
         std::size_t nextCheckpointIndex = 1;
         std::uint64_t speedProfileRevision = 0;
         bool holdAtTerminal = false;
+        double trackingPositionToleranceMeters = 0.0;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -74,6 +75,9 @@ public:
         double crossTrackCaptureSpeedMps = 0.0;
         double forwardErrorRad = 0.0;
         double upErrorRad = 0.0;
+        double courseLeadDistanceMeters = 0.0;
+        double predictedCrossTrackMeters = 0.0;
+        double centeringDeadbandMeters = 0.0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
@@ -116,6 +120,8 @@ public:
         state.active = true;
         state.requestSerial = requestSerial;
         state.holdAtTerminal = holdAtTerminal;
+        state.trackingPositionToleranceMeters =
+            std::max(0.0, trackingPositionToleranceMeters);
         state.programs = std::move(programs);
         if (!buildContinuousReference(
                 state.programs,
@@ -333,12 +339,6 @@ public:
                 continuous.reference.forwardMap,
                 agent.forwardMap
             );
-        const glm::dvec3 desiredUp =
-            normalizedOr(
-                continuous.reference.upMap,
-                agent.upMap
-            );
-
         // Position feedback is a servo around the already-authored program,
         // not another path planner. Derive the lateral capture velocity from
         // the ship's real lateral acceleration authority:
@@ -369,59 +369,95 @@ public:
                     assistedLateralStabilizationAccelerationLimitMps2(params)
                 : game::ship::manoeuvreAccelerationLimitMps2(params);
 
-        // Hull attitude follows the authored route tangent. Fine cross-track
-        // correction belongs to lateral RCS, not to nose steering. Rotating
-        // the whole craft for centimetre-scale position error was the source
-        // of the straight-line left/right twitch.
-        const glm::dvec3 steeringForward = nominalForward;
+        // Assisted course response is not instantaneous: the velocity vector
+        // follows the nose with a measured first-order lag tau. Predict where
+        // the craft will be after one response time and steer the nose toward
+        // the route state that should be reached after another response time.
+        // This makes the correction depend on actual speed and measured course
+        // dynamics instead of chasing the current center point.
+        const double actualSpeed =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const double courseResponseSeconds =
+            std::max(
+                deltaSeconds,
+                state.pilotState.assistedCourseResponseSeconds
+            );
+        const double courseLeadDistanceMeters =
+            actualSpeed * courseResponseSeconds;
 
-        double crossTrackClosingSpeedMps = 0.0;
-        double crossTrackCaptureSpeedMps = 0.0;
-        glm::dvec3 desiredCrossVelocity(0.0);
-        glm::dvec3 actualCrossVelocity(0.0);
+        auto attitudeLead = sampleContinuousReferenceAtProgress(
+            state.continuousSamples,
+            state.continuousProgressMeters,
+            std::min(
+                state.continuousProgressMeters.back(),
+                continuous.spatialProgressMeters +
+                    courseLeadDistanceMeters
+            )
+        );
+        if (!attitudeLead.valid)
+            attitudeLead = continuous;
 
-        if (crossTrackErrorMeters > 1.0e-9 &&
-            lateralAuthority > 1.0e-9)
+        auto interceptReference = sampleContinuousReferenceAtProgress(
+            state.continuousSamples,
+            state.continuousProgressMeters,
+            std::min(
+                state.continuousProgressMeters.back(),
+                continuous.spatialProgressMeters +
+                    2.0 * courseLeadDistanceMeters
+            )
+        );
+        if (!interceptReference.valid)
+            interceptReference = attitudeLead;
+
+        const glm::dvec3 leadTangent =
+            normalizedOr(
+                attitudeLead.reference.forwardMap,
+                nominalForward
+            );
+        const glm::dvec3 predictedPosition =
+            agent.positionMapMeters +
+            agent.velocityMapMetersPerSecond *
+                courseResponseSeconds;
+        const glm::dvec3 predictedError =
+            predictedPosition -
+            attitudeLead.reference.positionMapMeters;
+        const glm::dvec3 predictedCrossError =
+            predictedError -
+            leadTangent *
+                glm::dot(predictedError, leadTangent);
+        const double predictedCrossTrackMeters =
+            glm::length(predictedCrossError);
+
+        // Do not correct centimetres. Tracking tolerance is the corridor-scale
+        // quantity already supplied by docking guidance; reserve the central
+        // tenth as a neutral centering band. With the current 20 m minimum
+        // docking tolerance this means a 2 m deadband.
+        constexpr double CenteringBandFraction = 0.10;
+        const double centeringDeadbandMeters =
+            state.trackingPositionToleranceMeters *
+            CenteringBandFraction;
+
+        glm::dvec3 steeringForward = leadTangent;
+        if (actualSpeed > std::max(
+                1.0e-6,
+                static_cast<double>(params.stopSpeedEpsilonMps)) &&
+            predictedCrossTrackMeters > centeringDeadbandMeters)
         {
-            const glm::dvec3 towardCenter =
-                -crossPositionError / crossTrackErrorMeters;
-
-            actualCrossVelocity =
-                agent.velocityMapMetersPerSecond -
-                referenceTangent *
-                    glm::dot(
-                        agent.velocityMapMetersPerSecond,
-                        referenceTangent
-                    );
-
-            const double closingSpeed =
-                glm::dot(actualCrossVelocity, towardCenter);
-            crossTrackClosingSpeedMps = closingSpeed;
-
-            const double inwardSpeed =
-                std::max(0.0, closingSpeed);
-            const double stoppingDistance =
-                inwardSpeed * inwardSpeed /
-                (2.0 * lateralAuthority);
-            const double captureDistance =
-                std::max(
-                    0.0,
-                    crossTrackErrorMeters - stoppingDistance
-                );
-            const double captureSpeed =
-                std::sqrt(
-                    2.0 *
-                    lateralAuthority *
-                    captureDistance
-                );
-
-            crossTrackCaptureSpeedMps = captureSpeed;
-            desiredCrossVelocity =
-                towardCenter * captureSpeed;
+            const glm::dvec3 interceptVector =
+                interceptReference.reference.positionMapMeters -
+                predictedPosition;
+            steeringForward =
+                normalizedOr(interceptVector, leadTangent);
         }
 
-        // Preserve the authored scalar speed. Cross-track recovery changes
-        // direction, not the planner's speed schedule.
+        const glm::dvec3 desiredUp =
+            normalizedOr(
+                attitudeLead.reference.upMap,
+                continuous.reference.upMap
+            );
+
+        // Scalar speed comes from the authored profile; heading is controlled
+        // separately through the nose/course-lag model above.
         const glm::dvec3 desiredVelocity =
             nominalForward * targetSpeed;
 
@@ -436,6 +472,11 @@ public:
                     linearAccelerationFeedForwardMapMps2;
         request.desiredForwardMap = steeringForward;
         request.desiredUpMap = desiredUp;
+        request.desiredAngularVelocityMapRadPerSec =
+            attitudeLead.reference.angularVelocityMapRadPerSecond;
+        request.desiredAngularAccelerationMapRadPerSec2 =
+            attitudeLead.reference.
+                angularAccelerationFeedForwardMapRadPerSec2;
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
         request.forwardMap = agent.forwardMap;
@@ -462,45 +503,6 @@ public:
         out.control =
             PredictivePilot::make(request, params, state.pilotState);
 
-        // Ordinary lateral RCS closes cross-track error without disturbing the
-        // route-tangent attitude. Velocity error is converted to the bounded
-        // acceleration required this tick; ShipControlState strafe/lift are
-        // the same physical controls available to the human pilot.
-        if (lateralAuthority > 1.0e-9 && deltaSeconds > 1.0e-9)
-        {
-            glm::dvec3 lateralAcceleration =
-                (desiredCrossVelocity - actualCrossVelocity) /
-                deltaSeconds;
-
-            const double lateralMagnitude =
-                glm::length(lateralAcceleration);
-            if (std::isfinite(lateralMagnitude) &&
-                lateralMagnitude > lateralAuthority)
-            {
-                lateralAcceleration *=
-                    lateralAuthority / lateralMagnitude;
-            }
-
-            out.control.strafeInput =
-                static_cast<float>(
-                    std::clamp(
-                        glm::dot(lateralAcceleration, agent.rightMap) /
-                            lateralAuthority,
-                        -1.0,
-                        1.0
-                    )
-                );
-            out.control.liftInput =
-                static_cast<float>(
-                    std::clamp(
-                        glm::dot(lateralAcceleration, agent.upMap) /
-                            lateralAuthority,
-                        -1.0,
-                        1.0
-                    )
-                );
-        }
-
         out.valid = true;
         out.crossTrackErrorMeters = crossTrackErrorMeters;
         out.remainingDistanceMeters =
@@ -515,12 +517,28 @@ public:
                 continuous.reference.linearAccelerationFeedForwardMapMps2,
                 referenceTangent
             );
-        out.crossTrackClosingSpeedMps = crossTrackClosingSpeedMps;
-        out.crossTrackCaptureSpeedMps = crossTrackCaptureSpeedMps;
+        const glm::dvec3 actualCrossVelocity =
+            agent.velocityMapMetersPerSecond -
+            referenceTangent *
+                glm::dot(
+                    agent.velocityMapMetersPerSecond,
+                    referenceTangent
+                );
+        out.crossTrackClosingSpeedMps =
+            crossTrackErrorMeters > 1.0e-9
+                ? glm::dot(
+                    actualCrossVelocity,
+                    -crossPositionError / crossTrackErrorMeters
+                  )
+                : 0.0;
+        out.crossTrackCaptureSpeedMps = 0.0;
         out.forwardErrorRad =
             angleBetween(agent.forwardMap, steeringForward);
         out.upErrorRad =
             angleBetween(agent.upMap, desiredUp);
+        out.courseLeadDistanceMeters = courseLeadDistanceMeters;
+        out.predictedCrossTrackMeters = predictedCrossTrackMeters;
+        out.centeringDeadbandMeters = centeringDeadbandMeters;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =
@@ -1043,6 +1061,113 @@ private:
             runtimeAccelerations[reference.upperSampleIndex] * u;
         reference.reference.linearAccelerationFeedForwardMapMps2 =
             tangent * longitudinalAcceleration;
+    }
+
+    [[nodiscard]] static ContinuousReferenceDiagnostic
+    sampleContinuousReferenceAtProgress(
+        const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        const std::vector<double>& progress,
+        double spatialProgressMeters
+    ) noexcept
+    {
+        ContinuousReferenceDiagnostic out;
+        if (samples.size() < 2 ||
+            progress.size() != samples.size() ||
+            !std::isfinite(spatialProgressMeters))
+        {
+            return out;
+        }
+
+        const double clamped =
+            std::clamp(
+                spatialProgressMeters,
+                progress.front(),
+                progress.back()
+            );
+        auto upperIt =
+            std::upper_bound(
+                progress.begin(),
+                progress.end(),
+                clamped
+            );
+        std::size_t upper =
+            upperIt == progress.end()
+                ? progress.size() - 1
+                : static_cast<std::size_t>(
+                    std::distance(progress.begin(), upperIt)
+                  );
+        if (upper == 0)
+            upper = 1;
+        const std::size_t lower = upper - 1;
+
+        const double ds = progress[upper] - progress[lower];
+        const double u =
+            ds > 1.0e-12
+                ? std::clamp(
+                    (clamped - progress[lower]) / ds,
+                    0.0,
+                    1.0
+                  )
+                : 0.0;
+
+        out.valid = true;
+        out.lowerSampleIndex = lower;
+        out.upperSampleIndex = upper;
+        out.interpolation01 = u;
+        out.spatialProgressMeters = clamped;
+
+        const auto& a = samples[lower];
+        const auto& b = samples[upper];
+        auto& ref = out.reference;
+        ref.timeOffsetSeconds =
+            a.timeOffsetSeconds * (1.0 - u) +
+            b.timeOffsetSeconds * u;
+        ref.positionMapMeters =
+            glm::mix(a.positionMapMeters, b.positionMapMeters, u);
+        ref.velocityMapMetersPerSecond =
+            glm::mix(
+                a.velocityMapMetersPerSecond,
+                b.velocityMapMetersPerSecond,
+                u
+            );
+        ref.linearAccelerationFeedForwardMapMps2 =
+            glm::mix(
+                a.linearAccelerationFeedForwardMapMps2,
+                b.linearAccelerationFeedForwardMapMps2,
+                u
+            );
+        ref.forwardMap =
+            normalizedOr(
+                glm::mix(a.forwardMap, b.forwardMap, u),
+                a.forwardMap
+            );
+        glm::dvec3 up =
+            glm::mix(a.upMap, b.upMap, u);
+        up -= ref.forwardMap * glm::dot(up, ref.forwardMap);
+        ref.upMap = normalizedOr(up, a.upMap);
+        ref.rightMap =
+            normalizedOr(
+                glm::cross(ref.forwardMap, ref.upMap),
+                a.rightMap
+            );
+        ref.upMap =
+            normalizedOr(
+                glm::cross(ref.rightMap, ref.forwardMap),
+                ref.upMap
+            );
+        ref.angularVelocityMapRadPerSecond =
+            glm::mix(
+                a.angularVelocityMapRadPerSecond,
+                b.angularVelocityMapRadPerSecond,
+                u
+            );
+        ref.angularAccelerationFeedForwardMapRadPerSec2 =
+            glm::mix(
+                a.angularAccelerationFeedForwardMapRadPerSec2,
+                b.angularAccelerationFeedForwardMapRadPerSec2,
+                u
+            );
+        return out;
     }
 
     [[nodiscard]] static double angleBetween(

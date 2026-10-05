@@ -4948,3 +4948,27 @@ Published commits:
 - 707d0250 — regression for v=0 with non-zero acceleration
 
 The previous stoppedCheckpointLaunch workaround is obsolete and removed.
+
+
+## 2026-10-05 — route speed is a ceiling; overspeed brakes, missed gates stay missed
+
+RouteGate.speedMps is now explicitly defined as a route-local maximum/recommended speed ceiling, not a mandatory vehicle state. Execution may be slower. If measured speed is above the ceiling, the correct response is braking while continuing forward along the accepted route.
+
+TrajectoryGenerator no longer rejects an otherwise valid route because the measured initial speed is above vehicle/route limits or above the backward reachable speed for a future constraint. Measured initial speed is authoritative state. A forward physical repair pass propagates the fastest speed achievable under maximum braking until the authored ceiling can be caught again. Temporary unavoidable overspeed is therefore represented in the runtime profile rather than treated as route failure.
+
+When entering a segment already above its ceiling, keyframed progress now begins braking immediately. The previous peak-speed construction could coast at the excessive speed and postpone braking; that behavior is removed.
+
+Checkpoint suffix re-anchoring follows the same contract. Overspeed never sets a replan-required flag by itself. The remaining runtime profile is raised where necessary to the minimum physically reachable speed under braking, then continues converging toward the authored ceilings. SpaceState no longer leaves Automatic mode for checkpoint speed overshoot alone.
+
+Spatial progress is monotonic. If the craft has already crossed one or more route/checkpoint planes, ClientRouteAutopilot advances through those missed gates and aligns to the future route. A later positional wobble cannot move currentContinuousSegment backward, so the ship is never commanded to return to an already missed gate.
+
+Published commits:
+- 076fd813 — recover initial overspeed by braking instead of rejecting route
+- ed5eeb7b — keep checkpoint overspeed on route and brake through suffix
+- 8e543ac0 — never abandon docking route for speed overshoot alone
+- adb3572d — define RouteGate speed as ceiling, not state
+- 75e8e4f3 — brake immediately when entering route overspeed
+- 6e9a6c73 — regressions for overspeed braking and monotonic missed-gate progress
+- 7ba5223f — initial overspeed must be accepted and command braking
+
+Next gate: Windows native client_route_autopilot build/test, then live docking. Expected behavior: no checkpoint-suffix-infeasible recovery for speed alone; targetSpeedRate becomes negative on overspeed; checkpoint/profile revision advances forward; missed gates are skipped and never reacquired behind the craft.

@@ -1134,8 +1134,10 @@ private:
             curve.kind = planner::RouteCurveKind::Line;
             curve.startProgressMeters = progress;
             curve.endProgressMeters = progress + length;
-            curve.maxSpeedMps =
-                std::min(gates[i - 1].speedMps, gates[i].speedMps);
+            // Compatibility-only fallback has no independent geometric speed
+            // ceiling. The accepted trajectory remains authoritative for
+            // speed until Planner publishes real routeCurves.
+            curve.maxSpeedMps = 0.0;
             curve.startMeters = gates[i - 1].positionMeters;
             curve.endMeters = gates[i].positionMeters;
             curve.startForward = delta / length;

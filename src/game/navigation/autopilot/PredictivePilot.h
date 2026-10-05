@@ -75,6 +75,34 @@ public:
         double deltaSeconds = 0.0;
     };
 
+    [[nodiscard]] static double effectiveAssistedTargetSpeedChangeRateMps2(
+        const ShipParams& params,
+        const State& state
+    ) noexcept
+    {
+        const double maxSpeed =
+            game::ship::controlledSpeedLimitMps(params);
+        const double configuredTargetRate = std::max(
+            static_cast<double>(
+                params.assistedMinimumTargetSpeedChangeRateMps2
+            ),
+            maxSpeed *
+                static_cast<double>(
+                    params.assistedTargetSpeedChangeRateFractionPerSecond
+                )
+        );
+        const double learnedTargetRate =
+            state.assistedSpeedResponseMps2 > 1.0e-6
+                ? state.assistedSpeedResponseMps2
+                : configuredTargetRate;
+
+        return std::clamp(
+            learnedTargetRate,
+            std::max(1.0, configuredTargetRate * 0.25),
+            std::max(1.0, configuredTargetRate * 2.0)
+        );
+    }
+
     [[nodiscard]] static ShipControlState make(
         const Request& request,
         const ShipParams& params,
@@ -223,26 +251,10 @@ public:
             const double actualSpeed =
                 finiteLength(request.actualVelocityMapMps);
 
-            const double maxSpeed =
-                game::ship::controlledSpeedLimitMps(params);
-            const double configuredTargetRate = std::max(
-                static_cast<double>(
-                    params.assistedMinimumTargetSpeedChangeRateMps2
-                ),
-                maxSpeed *
-                    static_cast<double>(
-                        params.assistedTargetSpeedChangeRateFractionPerSecond
-                    )
-            );
-            const double learnedTargetRate =
-                state.assistedSpeedResponseMps2 > 1.0e-6
-                    ? state.assistedSpeedResponseMps2
-                    : configuredTargetRate;
             const double effectiveTargetRate =
-                std::clamp(
-                    learnedTargetRate,
-                    std::max(1.0, configuredTargetRate * 0.25),
-                    std::max(1.0, configuredTargetRate * 2.0)
+                effectiveAssistedTargetSpeedChangeRateMps2(
+                    params,
+                    state
                 );
 
             const double horizon = std::clamp(

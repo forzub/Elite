@@ -7261,3 +7261,35 @@ Published commits:
 - 9eb1360f — regression requires early full brake at stopping envelope
 
 Next gate: build/test client_route_autopilot, then live terminal run. Verify that terminal_brake=1 appears while exact_remaining_m is still greater than zero and before the old near-point overshoot region. Compare stop_need_m with exact_remaining_m at the trigger.
+
+
+## 2026-10-05 — smooth Assisted turn entry, dynamic curve speed ceiling, damped cross-track recovery
+
+Latest live evidence showed terminal braking now works, but turn execution remained novice-like: small bends triggered abrupt hull commands, actual angular rate overshot desired curve rate by 2–4x, cross-track then alternated sign and produced prolonged left/right shuttle. Speed reduction also began too late, frequently after the craft had already entered the curve.
+
+The exact route geometry was correct. The remaining defects were in control dynamics.
+
+1. Non-terminal attitude tracking is now paced by the measured Assisted course-response time, not the fastest mechanical hull-response time. PredictivePilot::Request carries angularTrackingResponseSeconds and the continuous route attitude servo uses max(actuator response, Assisted course response). Natural frequency is 1/responseSeconds. Desired angular-rate feed-forward carries the steady curve turn, while attitude error closes smoothly instead of commanding a near time-optimal stick pull.
+
+2. Curve speed now has a dynamic Assisted limit in addition to Planner maxSpeed and hull angular-rate limits. For a curve radius R and measured course-response tau, one response interval bends the authored curve away from its tangent by a sagitta. The allowed sagitta is bounded by the existing docking tracking tolerance, yielding a speed ceiling from geometry and measured response rather than a hard-coded turn-speed percentage. On a straight before a curve, the follower solves the braking equation with controller response reserve to obtain the largest safe approach speed, so deceleration begins BEFORE curve entry.
+
+3. The steady Assisted nose/course phase relation now uses the first-order vector relation sin(delta)=tau*omega rather than the small-angle approximation delta=tau*omega. Phase lead is therefore delta=asin(clamp(tau*v*kappa,-1,1)).
+
+4. Pre-turn preparation ramps smoothly. The preparation distance considers both angle-capture time and time required to build the target angular rate from real angular acceleration. The blend uses smoothstep, giving zero slope at the start and end of the preparation interval. Desired hull angular rate ramps from zero to v*kappa instead of jumping at the curve boundary.
+
+5. Cross-track recovery is now critically damped using both position error and measured closing velocity. The scalar model is e''+2/tau*e'+e/tau^2=0. The required lateral/course correction is converted into a nose/course correction angle through the Assisted response law. If the craft is already crossing toward center too fast, the correction reverses before centerline crossing, preventing the previous shuttle behavior.
+
+New diagnostics:
+- turn_vmax_mps
+- turn_distance_m
+- course_tau_s
+
+Published commits:
+- 04c6405c — smooth route attitude tracking on Assisted response time
+- 6ea1508e — brake before curves and ramp Assisted turn rate smoothly
+- 1deba040 — critically damp cross-track recovery and smooth turn entry
+- 2d99e584 / 4c945772 — expose measured Assisted course-response time
+- 9faf5e1a — regression: brake before dynamic turn limit
+- 42d09688 — regression: pre-turn angular-rate ramp must be gradual
+
+Next gate: Windows MinGW build/test and live first-turn validation. Expected telemetry before a bend: turn_vmax_mps below straight cruise when course dynamics require it, target_speed begins decreasing while turn_distance_m is still positive, desired_omega rises smoothly from zero, and actual_omega follows without 2–4x overshoot.

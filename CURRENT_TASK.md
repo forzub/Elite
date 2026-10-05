@@ -2470,3 +2470,38 @@ Next live validation:
 - roll_err_deg should monotonically approach zero during cruise, not only after terminal HOLD;
 - roll_target_omega_radps must remain non-zero while roll error is material;
 - no manoeuvre-thruster strafe/lift may be used.
+
+
+## 2026-10-05 — corridor capture gets explicit angular-rate demand; braking and final attitude are separate phases
+
+Latest live run improved curve tracking and exit braking, but exposed two remaining control defects.
+
+1. After curve exit the craft could fly almost parallel to the final straight while remaining tens of metres off centerline. Live telemetry showed cross-track around 80–90 m with only ~1–2 m/s closing speed at ~289 m/s forward speed. The critically damped position law already produced a non-zero capture angle, but the angular reference on a straight still published desired omega=0. This created a contradictory command: hold a few degrees toward center while also asking angular rate to be zero, so the hull converged too slowly and effectively cruised beside the tunnel.
+
+ClientRouteAutopilot now publishes an explicit capture angular-rate component:
+    omega_capture ~= correction_angle / course_tau
+clamped by physical max angular rate. This component is added to route curvature omega and roll omega. Position and lateral closing speed still determine the correction angle, so the controller can reverse the correction before center crossing instead of shuttling.
+
+2. Dock-bottom alignment is now an explicit roll task throughout route execution. The follower projects actual hull up and the authoritative docking routeUpReference onto the plane normal to the desired nose, computes a signed roll error, derives a desired roll rate, and adds that rate around the desired nose axis. Therefore bottom of hull to bottom marker is no longer expected to emerge indirectly from the combined 3-D attitude error while pitch/yaw are busy tracking the route.
+
+HUD corridor orientation and autopilot both use the same resolved docking-port up vector. If future live logs show roll_err_deg converging near zero while the rendered hull is still visually misaligned with the bottom marker, the remaining defect is likely a visual-model/body-axis basis mismatch rather than navigation control. New telemetry exposes roll_err_deg and roll_target_omega_radps to distinguish those cases.
+
+3. Terminal braking and final attitude capture are now hard-separated:
+- TRACK: follow route geometry and continuously align roll/up to docking-frame up.
+- BRAKE: on the final route primitive, BrakeToStop owns translation; desired forward remains the final straight tangent, desired up remains docking-frame up, and final pose capture is disabled while speed > max(0.5 m/s, stop epsilon). If the craft crosses the nominal stop plane, it continues braking straight and does not pitch/yaw back toward the point.
+- HOLD: only after near-zero translational speed does terminal attitude capture lock to final forward/up and finish orientation.
+
+Brake-attitude lock is restricted to the final geometric primitive so early braking on a preceding curve cannot suppress required curvature tracking.
+
+Published commits:
+- 4c1a1d56 — actively capture corridor center and dock-bottom roll
+- f64d2753 — separate straight braking from terminal attitude capture
+- 4de34fef — restrict braking attitude lock to final route primitive
+- 94ef227c — trace brake-attitude / terminal-capture phases
+- de0b3b8c — regression: terminal braking stays straight until translational stop
+
+Next gate: Windows MinGW client_route_autopilot test, then live run. Key telemetry:
+- on a parallel-offset straight, capture_angle_deg and capture_omega_radps must remain materially non-zero until cross_track returns toward the center band;
+- roll_err_deg must converge toward zero with a consistent roll_target_omega_radps;
+- terminal_brake=1 with brake_attitude_lock=1 must occur while terminal_attitude_capture=0 and pitch/yaw remain small;
+- terminal_attitude_capture becomes 1 only after speed is nearly zero.

@@ -54,6 +54,7 @@ public:
         std::size_t currentContinuousSegment = 0;
         std::size_t nextCheckpointIndex = 1;
         std::uint64_t speedProfileRevision = 0;
+        bool holdAtTerminal = false;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -73,6 +74,7 @@ public:
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
         std::uint64_t speedProfileRevision = 0;
+        bool terminalHold = false;
     };
 
     static void stop(State& state) noexcept
@@ -89,7 +91,8 @@ public:
         double acceptedAtUniverseTimeSeconds,
         std::uint64_t requestSerial,
         double trackingPositionToleranceMeters,
-        const glm::dvec3& routeUpReference = glm::dvec3(0.0)
+        const glm::dvec3& routeUpReference = glm::dvec3(0.0),
+        bool holdAtTerminal = false
     )
     {
         auto programs = buildPrograms(
@@ -108,6 +111,7 @@ public:
         state = {};
         state.active = true;
         state.requestSerial = requestSerial;
+        state.holdAtTerminal = holdAtTerminal;
         state.programs = std::move(programs);
         if (!buildContinuousReference(
                 state.programs,
@@ -368,11 +372,30 @@ public:
         {
             const glm::dvec3 towardCenter =
                 -crossPositionError / crossTrackErrorMeters;
+            const glm::dvec3 crossVelocity =
+                agent.velocityMapMetersPerSecond -
+                referenceTangent *
+                    glm::dot(
+                        agent.velocityMapMetersPerSecond,
+                        referenceTangent
+                    );
+            const double closingSpeed =
+                glm::dot(crossVelocity, towardCenter);
+            const double inwardSpeed =
+                std::max(0.0, closingSpeed);
+            const double stoppingDistance =
+                inwardSpeed * inwardSpeed /
+                (2.0 * lateralAuthority);
+            const double captureDistance =
+                std::max(
+                    0.0,
+                    crossTrackErrorMeters - stoppingDistance
+                );
             const double captureSpeed =
                 std::sqrt(
                     2.0 *
                     lateralAuthority *
-                    crossTrackErrorMeters
+                    captureDistance
                 );
 
             const glm::dvec3 steeringVelocity =
@@ -410,9 +433,15 @@ public:
         const bool atFinalContinuousSegment =
             continuous.upperSampleIndex + 1 >=
                 state.continuousSamples.size();
+        const bool terminalStopAuthored =
+            !state.nominalSpeedProfileMps.empty() &&
+            state.nominalSpeedProfileMps.back() <=
+                std::max(
+                    1.0e-6,
+                    static_cast<double>(params.stopSpeedEpsilonMps)
+                );
         request.stopRequested =
-            targetSpeed <= 0.05 &&
-            atFinalContinuousSegment;
+            atFinalContinuousSegment && terminalStopAuthored;
         request.deltaSeconds = deltaSeconds;
 
         out.control =
@@ -471,8 +500,13 @@ public:
             terminalForwardError <= terminal.forwardAngleRad &&
             terminalAngularRate <= terminal.angularVelocityRadPerSec)
         {
-            out.complete = true;
-            state.active = false;
+            if (state.holdAtTerminal)
+                out.terminalHold = true;
+            else
+            {
+                out.complete = true;
+                state.active = false;
+            }
         }
 
         return out;
@@ -883,6 +917,12 @@ private:
                     std::max(runtimeSpeeds[i], minimumReachable);
                 physicalSpeed = runtimeSpeeds[i];
             }
+        }
+
+        if (!nominalSpeeds.empty() &&
+            nominalSpeeds.back() <= 1.0e-9)
+        {
+            runtimeSpeeds.back() = 0.0;
         }
 
         // Reconstruct longitudinal feed-forward from v^2 relation. Geometry

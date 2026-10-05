@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -110,6 +112,15 @@ enum class RouteCurveKind : std::uint8_t
 // Current docking Planner authors Line/CircularArc segments. CubicBezier is
 // part of the public contract now so later route backends can publish Bezier
 // geometry without forcing the Follower back to point-cloud reconstruction.
+struct RouteCurveArcLengthKnot
+{
+    // Curve parameter in [0,1].
+    double parameter01 = 0.0;
+
+    // Distance in metres from this segment's start.
+    double localProgressMeters = 0.0;
+};
+
 struct RouteCurveSegment
 {
     RouteCurveKind kind = RouteCurveKind::Line;
@@ -139,6 +150,209 @@ struct RouteCurveSegment
     // P0/P3 are startMeters/endMeters; P1/P2 are these control points.
     glm::dvec3 bezierControl1Meters {0.0};
     glm::dvec3 bezierControl2Meters {0.0};
+
+    // Optional arc-length inversion support for non-uniform parametric
+    // curves such as Bezier. These knots do NOT define route geometry; they
+    // only map physical progress s to the curve parameter t. Line and circle
+    // segments can evaluate s<->t analytically and need no knots.
+    std::vector<RouteCurveArcLengthKnot> arcLengthKnots;
+
+    [[nodiscard]] double parameterAtProgress(
+        double routeProgressMeters
+    ) const noexcept
+    {
+        const double length =
+            std::max(0.0, endProgressMeters - startProgressMeters);
+        if (length <= 1.0e-12)
+            return 0.0;
+
+        const double local =
+            std::clamp(
+                routeProgressMeters - startProgressMeters,
+                0.0,
+                length
+            );
+
+        if (kind != RouteCurveKind::CubicBezier ||
+            arcLengthKnots.size() < 2)
+        {
+            return std::clamp(local / length, 0.0, 1.0);
+        }
+
+        auto upper = std::upper_bound(
+            arcLengthKnots.begin(),
+            arcLengthKnots.end(),
+            local,
+            [](double value, const RouteCurveArcLengthKnot& knot)
+            {
+                return value < knot.localProgressMeters;
+            }
+        );
+        if (upper == arcLengthKnots.begin())
+            return upper->parameter01;
+        if (upper == arcLengthKnots.end())
+            return arcLengthKnots.back().parameter01;
+
+        const auto& b = *upper;
+        const auto& a = *(upper - 1);
+        const double ds =
+            b.localProgressMeters - a.localProgressMeters;
+        const double u =
+            ds > 1.0e-12
+                ? std::clamp(
+                    (local - a.localProgressMeters) / ds,
+                    0.0,
+                    1.0
+                  )
+                : 0.0;
+        return std::clamp(
+            a.parameter01 * (1.0 - u) +
+            b.parameter01 * u,
+            0.0,
+            1.0
+        );
+    }
+
+    [[nodiscard]] glm::dvec3 positionAtParameter(
+        double parameter01
+    ) const noexcept
+    {
+        const double t = std::clamp(parameter01, 0.0, 1.0);
+
+        if (kind == RouteCurveKind::CircularArc)
+        {
+            const glm::dvec3 radial0 =
+                startMeters - arcCenterMeters;
+            const double normalLength = glm::length(arcNormal);
+            if (normalLength <= 1.0e-12)
+                return startMeters * (1.0 - t) + endMeters * t;
+
+            const glm::dvec3 n = arcNormal / normalLength;
+            const double angle = arcSweepRadians * t;
+            const double c = std::cos(angle);
+            const double si = std::sin(angle);
+            const glm::dvec3 radial =
+                radial0 * c +
+                glm::cross(n, radial0) * si +
+                n * glm::dot(n, radial0) * (1.0 - c);
+            return arcCenterMeters + radial;
+        }
+
+        if (kind == RouteCurveKind::CubicBezier)
+        {
+            const double u = 1.0 - t;
+            return
+                startMeters * (u * u * u) +
+                bezierControl1Meters * (3.0 * u * u * t) +
+                bezierControl2Meters * (3.0 * u * t * t) +
+                endMeters * (t * t * t);
+        }
+
+        return startMeters * (1.0 - t) + endMeters * t;
+    }
+
+    [[nodiscard]] glm::dvec3 derivativeAtParameter(
+        double parameter01
+    ) const noexcept
+    {
+        const double t = std::clamp(parameter01, 0.0, 1.0);
+
+        if (kind == RouteCurveKind::CircularArc)
+        {
+            const glm::dvec3 p = positionAtParameter(t);
+            const double normalLength = glm::length(arcNormal);
+            if (normalLength <= 1.0e-12)
+                return endMeters - startMeters;
+            const glm::dvec3 n = arcNormal / normalLength;
+            return
+                glm::cross(n, p - arcCenterMeters) *
+                arcSweepRadians;
+        }
+
+        if (kind == RouteCurveKind::CubicBezier)
+        {
+            const double u = 1.0 - t;
+            return
+                (bezierControl1Meters - startMeters) *
+                    (3.0 * u * u) +
+                (bezierControl2Meters - bezierControl1Meters) *
+                    (6.0 * u * t) +
+                (endMeters - bezierControl2Meters) *
+                    (3.0 * t * t);
+        }
+
+        return endMeters - startMeters;
+    }
+
+    [[nodiscard]] glm::dvec3 secondDerivativeAtParameter(
+        double parameter01
+    ) const noexcept
+    {
+        const double t = std::clamp(parameter01, 0.0, 1.0);
+
+        if (kind == RouteCurveKind::CircularArc)
+        {
+            const glm::dvec3 p = positionAtParameter(t);
+            const double w = arcSweepRadians;
+            return
+                -(p - arcCenterMeters) * (w * w);
+        }
+
+        if (kind == RouteCurveKind::CubicBezier)
+        {
+            const double u = 1.0 - t;
+            return
+                (bezierControl2Meters -
+                 2.0 * bezierControl1Meters +
+                 startMeters) *
+                    (6.0 * u) +
+                (endMeters -
+                 2.0 * bezierControl2Meters +
+                 bezierControl1Meters) *
+                    (6.0 * t);
+        }
+
+        return glm::dvec3(0.0);
+    }
+
+    [[nodiscard]] glm::dvec3 tangentAtProgress(
+        double routeProgressMeters
+    ) const noexcept
+    {
+        const glm::dvec3 d =
+            derivativeAtParameter(
+                parameterAtProgress(routeProgressMeters)
+            );
+        const double length = glm::length(d);
+        if (length <= 1.0e-12)
+            return startForward;
+        return d / length;
+    }
+
+    [[nodiscard]] double curvatureAtProgress(
+        double routeProgressMeters
+    ) const noexcept
+    {
+        if (kind == RouteCurveKind::Line)
+            return 0.0;
+
+        if (kind == RouteCurveKind::CircularArc)
+            return
+                arcRadiusMeters > 1.0e-12
+                    ? 1.0 / arcRadiusMeters
+                    : 0.0;
+
+        const double t = parameterAtProgress(routeProgressMeters);
+        const glm::dvec3 d1 = derivativeAtParameter(t);
+        const glm::dvec3 d2 = secondDerivativeAtParameter(t);
+        const double speed = glm::length(d1);
+        if (speed <= 1.0e-12)
+            return 0.0;
+
+        return
+            glm::length(glm::cross(d1, d2)) /
+            (speed * speed * speed);
+    }
 };
 
 struct RoutePlan

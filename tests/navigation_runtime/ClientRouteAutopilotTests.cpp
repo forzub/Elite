@@ -637,6 +637,107 @@ void testTerminalFrameHoldsStoppedAndAligned()
     );
 }
 
+void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    constexpr double RadiusMeters = 1000.0;
+    constexpr double SpeedMps = 200.0;
+    constexpr int ArcSteps = 48;
+    constexpr double HalfPi =
+        1.5707963267948966192313216916398;
+
+    for (int i = 0; i <= ArcSteps; ++i)
+    {
+        const double t =
+            HalfPi * static_cast<double>(i) /
+            static_cast<double>(ArcSteps);
+
+        RouteGate gate;
+        gate.positionMeters = {
+            RadiusMeters * std::sin(t),
+            0.0,
+            RadiusMeters * (1.0 - std::cos(t))
+        };
+        gate.forward = glm::normalize(glm::dvec3(
+            std::cos(t),
+            0.0,
+            std::sin(t)
+        ));
+        gate.speedMps = SpeedMps;
+        route.executionGates.push_back(gate);
+    }
+    route.executionGates.back().speedMps = 0.0;
+    route.gates = route.executionGates;
+
+    Agent initial;
+    initial.positionMapMeters =
+        route.executionGates.front().positionMeters;
+    initial.velocityMapMetersPerSecond =
+        route.executionGates.front().forward * SpeedMps;
+    initial.forwardMap =
+        route.executionGates.front().forward;
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            23,
+            20.0
+        ),
+        "curved-tunnel course-lead route rejected"
+    );
+
+    Agent onCurve = initial;
+    const auto& probeGate =
+        route.executionGates[ArcSteps / 4];
+    onCurve.positionMapMeters = probeGate.positionMeters;
+    onCurve.velocityMapMetersPerSecond =
+        probeGate.forward * SpeedMps;
+    onCurve.forwardMap = probeGate.forward;
+    onCurve.rightMap =
+        glm::normalize(
+            glm::cross(onCurve.forwardMap, onCurve.upMap)
+        );
+
+    const auto output = Autopilot::update(
+        state,
+        onCurve,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "curved-tunnel update invalid");
+    require(
+        output.courseLeadDistanceMeters > 0.0,
+        "curved-tunnel course lead was not active"
+    );
+    require(
+        output.predictedCrossTrackMeters < 80.0,
+        "future-tangent prediction departed too far from curved centerline"
+    );
+    require(
+        std::abs(output.control.strafeInput) < 1.0e-6 &&
+        std::abs(output.control.liftInput) < 1.0e-6,
+        "curved-tunnel tracking incorrectly used manoeuvre thrusters"
+    );
+}
+
 void testContinuousProgramCrossesStoragePages()
 {
     using game::navigation::planner::RouteGate;
@@ -1470,6 +1571,7 @@ int main()
         testCourseLagLeadsIntoUpcomingTurn();
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
+        testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
         testTerminalFrameHoldsStoppedAndAligned();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
@@ -1489,6 +1591,7 @@ int main()
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - turn lead distance follows measured nose-to-course lag\n"
+            << " - course lead preserves curved tunnel instead of cutting a chord\n"
             << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
             << " - centimetres are ignored while predicted future misses are corrected\n"
             << " - final guidance frame is a stopped alignment HOLD\n"

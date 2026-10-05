@@ -95,6 +95,8 @@ public:
         double coursePhaseLeadAngleRad = 0.0;
         double effectiveBrakingAuthorityMps2 = 0.0;
         double requiredTerminalStopDistanceMeters = 0.0;
+        double turnSpeedCeilingMps = 0.0;
+        double distanceToTurnMeters = 0.0;
         bool terminalBrakeActive = false;
         std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
@@ -402,6 +404,131 @@ public:
             targetSpeed =
                 std::min(targetSpeed, curveNow.maxSpeedMps);
 
+        const double courseResponseSeconds =
+            std::max(
+                deltaSeconds,
+                state.pilotState.assistedCourseResponseSeconds
+            );
+        const double angularRateLimit =
+            game::ship::maximumAngularSpeedRadPerSec(params);
+
+        double turnSpeedCeilingMps = 0.0;
+        double distanceToTurnMeters = 0.0;
+        RouteCurveDiagnostic speedGuide = curveNow;
+
+        if (curveNow.valid &&
+            curveNow.curvaturePerMeter <= 1.0e-12 &&
+            curveNow.curveIndex + 1 < state.routeCurves.size())
+        {
+            const auto& nextCurve =
+                state.routeCurves[curveNow.curveIndex + 1];
+            auto upcoming =
+                sampleRouteCurveAtProgress(
+                    state.routeCurves,
+                    std::min(
+                        nextCurve.endProgressMeters,
+                        nextCurve.startProgressMeters + 1.0e-6
+                    )
+                );
+            if (upcoming.valid &&
+                upcoming.curvaturePerMeter > 1.0e-12)
+            {
+                speedGuide = upcoming;
+                distanceToTurnMeters =
+                    std::max(
+                        0.0,
+                        nextCurve.startProgressMeters -
+                            routeProgressMeters
+                    );
+            }
+        }
+
+        if (speedGuide.valid &&
+            speedGuide.curvaturePerMeter > 1.0e-12 &&
+            courseResponseSeconds > 1.0e-9)
+        {
+            const double kappa = speedGuide.curvaturePerMeter;
+            const double radius = 1.0 / kappa;
+
+            // During one Assisted course-response time, the authored curve
+            // bends away from its tangent by the sagitta below. Bound that
+            // one-response deviation by the already-authoritative corridor
+            // tracking tolerance. This yields a speed limit from route
+            // geometry and measured course lag, not from a tuned corner-speed
+            // percentage.
+            const double corridorTolerance =
+                std::max(
+                    0.0,
+                    state.trackingPositionToleranceMeters
+                );
+            const double cosineArgument =
+                std::clamp(
+                    1.0 - corridorTolerance / radius,
+                    -1.0,
+                    1.0
+                );
+            const double corridorAngle =
+                std::acos(cosineArgument);
+            const double speedByCourseLag =
+                corridorAngle > 1.0e-9
+                    ? corridorAngle /
+                        (kappa * courseResponseSeconds)
+                    : 0.0;
+            const double speedByAngularRate =
+                angularRateLimit > 1.0e-9
+                    ? angularRateLimit / kappa
+                    : std::numeric_limits<double>::infinity();
+
+            turnSpeedCeilingMps =
+                std::min(
+                    speedByCourseLag,
+                    speedByAngularRate
+                );
+            if (speedGuide.maxSpeedMps > 0.0)
+                turnSpeedCeilingMps =
+                    std::min(
+                        turnSpeedCeilingMps,
+                        speedGuide.maxSpeedMps
+                    );
+
+            if (curveNow.valid &&
+                curveNow.curvaturePerMeter > 1.0e-12)
+            {
+                targetSpeed =
+                    std::min(targetSpeed, turnSpeedCeilingMps);
+            }
+            else if (distanceToTurnMeters > 0.0 &&
+                brakingAuthority > 1.0e-9)
+            {
+                const double longitudinalResponseGain =
+                    std::max(
+                        1.0e-6,
+                        static_cast<double>(params.throttleAccel) > 0.0
+                            ? static_cast<double>(params.throttleAccel)
+                            : static_cast<double>(
+                                params.fallbackThrottleResponsePerSecond
+                              )
+                    );
+                const double brakingResponseSeconds =
+                    1.0 / longitudinalResponseGain + deltaSeconds;
+
+                // Solve:
+                // d = (v^2-v_turn^2)/(2a) + t_response*(v-v_turn)
+                // for the largest safe speed v at the current point.
+                const double base =
+                    turnSpeedCeilingMps +
+                    brakingAuthority * brakingResponseSeconds;
+                const double safeApproachSpeed =
+                    -brakingAuthority * brakingResponseSeconds +
+                    std::sqrt(
+                        base * base +
+                        2.0 * brakingAuthority * distanceToTurnMeters
+                    );
+                targetSpeed =
+                    std::min(targetSpeed, safeApproachSpeed);
+            }
+        }
+
         const glm::dvec3 referencePosition =
             curveNow.valid
                 ? curveNow.positionMapMeters
@@ -429,12 +556,6 @@ public:
         // local curve.
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
-        const double courseResponseSeconds =
-            std::max(
-                deltaSeconds,
-                state.pilotState.assistedCourseResponseSeconds
-            );
-
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
@@ -482,10 +603,22 @@ public:
             if (upcoming.valid &&
                 upcoming.curvaturePerMeter > 1.0e-12)
             {
-                const double leadAngle =
-                    courseResponseSeconds *
-                    actualSpeed *
+                const double steadyCourseRate =
+                    std::min(
+                        actualSpeed,
+                        turnSpeedCeilingMps > 0.0
+                            ? turnSpeedCeilingMps
+                            : actualSpeed
+                    ) *
                     upcoming.curvaturePerMeter;
+                const double leadArgument =
+                    std::clamp(
+                        courseResponseSeconds * steadyCourseRate,
+                        -1.0,
+                        1.0
+                    );
+                const double leadAngle =
+                    std::asin(leadArgument);
                 const double angularAuthority =
                     game::ship::
                         angularAccelerationLimitRadPerSec2(params);
@@ -535,10 +668,20 @@ public:
             glm::length(curvatureGuide.turnNormalMap) > 1.0e-12 &&
             actualSpeed > 1.0e-6)
         {
+            const double guideSpeed =
+                turnSpeedCeilingMps > 0.0
+                    ? std::min(actualSpeed, turnSpeedCeilingMps)
+                    : actualSpeed;
+            const double leadArgument =
+                std::clamp(
+                    courseResponseSeconds *
+                        guideSpeed *
+                        curvatureGuide.curvaturePerMeter,
+                    -1.0,
+                    1.0
+                );
             coursePhaseLeadAngleRad =
-                courseResponseSeconds *
-                actualSpeed *
-                curvatureGuide.curvaturePerMeter *
+                std::asin(leadArgument) *
                 curvatureBlend;
             steeringForward =
                 rotateAroundAxis(
@@ -716,19 +859,25 @@ public:
             request.desiredForwardMap = steeringForward;
             request.desiredUpMap = desiredUp;
 
-            if (curveNow.valid &&
-                curveNow.curvaturePerMeter > 1.0e-12 &&
-                glm::length(curveNow.turnNormalMap) > 1.0e-12)
+            if (curvatureGuide.valid &&
+                curvatureGuide.curvaturePerMeter > 1.0e-12 &&
+                glm::length(curvatureGuide.turnNormalMap) > 1.0e-12)
             {
+                const double guideSpeed =
+                    turnSpeedCeilingMps > 0.0
+                        ? std::min(actualSpeed, turnSpeedCeilingMps)
+                        : actualSpeed;
+                const double targetHullRate =
+                    guideSpeed *
+                    curvatureGuide.curvaturePerMeter *
+                    curvatureBlend;
                 request.desiredAngularVelocityMapRadPerSec =
-                    curveNow.turnNormalMap *
-                    (actualSpeed * curveNow.curvaturePerMeter);
+                    curvatureGuide.turnNormalMap * targetHullRate;
                 request.desiredAngularAccelerationMapRadPerSec2 =
                     glm::dvec3(0.0);
             }
             else if (!state.routeCurves.empty())
             {
-                // Authoritative straight means zero course angular rate.
                 request.desiredAngularVelocityMapRadPerSec =
                     glm::dvec3(0.0);
                 request.desiredAngularAccelerationMapRadPerSec2 =
@@ -744,6 +893,8 @@ public:
             }
         }
 
+        request.angularTrackingResponseSeconds =
+            courseResponseSeconds;
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
         request.forwardMap = agent.forwardMap;
@@ -831,6 +982,8 @@ public:
             effectiveBrakingAuthority;
         out.requiredTerminalStopDistanceMeters =
             requiredTerminalStopDistanceMeters;
+        out.turnSpeedCeilingMps = turnSpeedCeilingMps;
+        out.distanceToTurnMeters = distanceToTurnMeters;
         out.terminalBrakeActive = terminalBrakeActive;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;

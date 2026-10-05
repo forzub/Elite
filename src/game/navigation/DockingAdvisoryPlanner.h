@@ -4,6 +4,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "src/world/navigation/NavigationObstacle.h"
+#include "src/game/navigation/planner/RoutePlannerApi.h"
 
 namespace game::navigation
 {
@@ -81,6 +82,10 @@ struct DockingAdvisoryPlan
     // profile. Automatic execution consumes this product instead of asking a
     // second planner to reinterpret sparse display gates into another curve.
     std::vector<DockingAdvisoryGate> executionGates;
+
+    // Authoritative parameterized execution geometry. Dense gates above are
+    // only sampled views of these curves.
+    std::vector<planner::RouteCurveSegment> routeCurves;
 
     // Diagnostics for route-selection policy. A detour means Planner changed
     // coarse geometry before conceding turn radius. relaxed means no route

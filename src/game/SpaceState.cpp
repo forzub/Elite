@@ -2458,6 +2458,11 @@ void SpaceState::updateDockingAdvisory()
                     << output.predictedCrossTrackMeters
                     << " center_deadband_m="
                     << output.centeringDeadbandMeters
+                    << " curve=" << output.routeCurveIndex
+                    << " curvature_1pm="
+                    << output.routeCurvaturePerMeter
+                    << " radius_m="
+                    << output.routeRadiusMeters
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

@@ -64,6 +64,7 @@ public:
         std::vector<planner::RouteCurveSegment> routeCurves;
         std::vector<double> curveSampleStartProgressMeters;
         std::vector<double> curveSampleEndProgressMeters;
+        glm::dvec3 routeUpReference {0.0};
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -88,6 +89,9 @@ public:
         double centeringDeadbandMeters = 0.0;
         double routeCurvaturePerMeter = 0.0;
         double routeRadiusMeters = 0.0;
+        double exactRemainingRouteMeters = 0.0;
+        double desiredCourseAngularRateRadPerSec = 0.0;
+        double actualAngularRateRadPerSec = 0.0;
         std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
@@ -133,6 +137,7 @@ public:
         state.holdAtTerminal = holdAtTerminal;
         state.trackingPositionToleranceMeters =
             std::max(0.0, trackingPositionToleranceMeters);
+        state.routeUpReference = routeUpReference;
         state.routeCurves = plan.routeCurves;
         if (state.routeCurves.empty())
             state.routeCurves = buildFallbackRouteCurves(plan.executionGates);
@@ -496,10 +501,18 @@ public:
                 normalizedOr(desiredCourseVelocity, leadTangent);
         }
 
-        const glm::dvec3 desiredUp =
+        glm::dvec3 desiredUpSource =
+            glm::length(state.routeUpReference) > 1.0e-9
+                ? state.routeUpReference
+                : attitudeLead.reference.upMap;
+        glm::dvec3 desiredUp =
+            desiredUpSource -
+            steeringForward *
+                glm::dot(desiredUpSource, steeringForward);
+        desiredUp =
             normalizedOr(
-                attitudeLead.reference.upMap,
-                continuous.reference.upMap
+                desiredUp,
+                attitudeLead.reference.upMap
             );
 
         // Terminal stop must include controller/engine response distance, not
@@ -584,11 +597,33 @@ public:
         {
             request.desiredForwardMap = steeringForward;
             request.desiredUpMap = desiredUp;
-            request.desiredAngularVelocityMapRadPerSec =
-                attitudeLead.reference.angularVelocityMapRadPerSecond;
-            request.desiredAngularAccelerationMapRadPerSec2 =
-                attitudeLead.reference.
-                    angularAccelerationFeedForwardMapRadPerSec2;
+
+            if (curveLead.valid &&
+                curveLead.curvaturePerMeter > 1.0e-12 &&
+                glm::length(curveLead.turnNormalMap) > 1.0e-12)
+            {
+                request.desiredAngularVelocityMapRadPerSec =
+                    curveLead.turnNormalMap *
+                    (actualSpeed * curveLead.curvaturePerMeter);
+                request.desiredAngularAccelerationMapRadPerSec2 =
+                    glm::dvec3(0.0);
+            }
+            else if (!state.routeCurves.empty())
+            {
+                // Authoritative straight means zero course angular rate.
+                request.desiredAngularVelocityMapRadPerSec =
+                    glm::dvec3(0.0);
+                request.desiredAngularAccelerationMapRadPerSec2 =
+                    glm::dvec3(0.0);
+            }
+            else
+            {
+                request.desiredAngularVelocityMapRadPerSec =
+                    attitudeLead.reference.angularVelocityMapRadPerSecond;
+                request.desiredAngularAccelerationMapRadPerSec2 =
+                    attitudeLead.reference.
+                        angularAccelerationFeedForwardMapRadPerSec2;
+            }
         }
 
         request.actualVelocityMapMps =
@@ -657,6 +692,21 @@ public:
                 : 0.0;
         out.routeCurveIndex =
             curveNow.valid ? curveNow.curveIndex : 0;
+        out.exactRemainingRouteMeters =
+            std::max(
+                0.0,
+                routeTotalProgress - routeProgressMeters
+            );
+        out.desiredCourseAngularRateRadPerSec =
+            glm::length(
+                request.desiredAngularVelocityMapRadPerSec
+            );
+        out.actualAngularRateRadPerSec =
+            std::sqrt(
+                agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +
+                agent.yawRateRadPerSec * agent.yawRateRadPerSec +
+                agent.rollRateRadPerSec * agent.rollRateRadPerSec
+            );
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =
@@ -1329,6 +1379,7 @@ private:
         std::size_t curveIndex = 0;
         glm::dvec3 positionMapMeters {0.0};
         glm::dvec3 tangentMap {0.0, 0.0, -1.0};
+        glm::dvec3 turnNormalMap {0.0};
         double curvaturePerMeter = 0.0;
         double maxSpeedMps = 0.0;
     };
@@ -1402,6 +1453,30 @@ private:
             curve.tangentAtProgress(routeProgressMeters);
         out.curvaturePerMeter =
             curve.curvatureAtProgress(routeProgressMeters);
+
+        if (curve.kind == planner::RouteCurveKind::CircularArc)
+        {
+            const double normalLength = glm::length(curve.arcNormal);
+            if (normalLength > 1.0e-12 &&
+                std::abs(curve.arcSweepRadians) > 1.0e-12)
+            {
+                out.turnNormalMap =
+                    curve.arcNormal / normalLength *
+                    (curve.arcSweepRadians >= 0.0 ? 1.0 : -1.0);
+            }
+        }
+        else if (curve.kind == planner::RouteCurveKind::CubicBezier)
+        {
+            const glm::dvec3 d1 =
+                curve.derivativeAtParameter(parameter);
+            const glm::dvec3 d2 =
+                curve.secondDerivativeAtParameter(parameter);
+            const glm::dvec3 cross = glm::cross(d1, d2);
+            const double crossLength = glm::length(cross);
+            if (crossLength > 1.0e-12)
+                out.turnNormalMap = cross / crossLength;
+        }
+
         out.maxSpeedMps = curve.maxSpeedMps;
         return out;
     }

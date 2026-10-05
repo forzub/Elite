@@ -41,6 +41,8 @@ public:
         // planner property; it is learned from the real craft while V2 flies.
         double assistedCourseResponseSeconds = 2.0;
         double assistedSpeedResponseMps2 = 0.0;
+        double assistedAccelerationResponseMps2 = 0.0;
+        double assistedBrakingResponseMps2 = 0.0;
 
         double lastMeasuredCourseErrorRad = 0.0;
         bool hasMeasuredCourseError = false;
@@ -467,6 +469,17 @@ private:
                         state.assistedSpeedResponseMps2 =
                             state.assistedSpeedResponseMps2 * 0.95 +
                             measuredResponse * 0.05;
+
+                    double& directionalEstimate =
+                        state.previousTargetSpeedRate < 0.0f
+                            ? state.assistedBrakingResponseMps2
+                            : state.assistedAccelerationResponseMps2;
+                    if (!(directionalEstimate > 1.0e-6))
+                        directionalEstimate = measuredResponse;
+                    else
+                        directionalEstimate =
+                            directionalEstimate * 0.90 +
+                            measuredResponse * 0.10;
                 }
             }
         }

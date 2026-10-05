@@ -426,32 +426,91 @@ public:
 
         double turnSpeedCeilingMps = 0.0;
         double distanceToTurnMeters = 0.0;
+        double requiredTurnSlowdownDistanceMeters = 0.0;
+        double turnSpeedSetpointSlewSeconds = 0.0;
         RouteCurveDiagnostic speedGuide = curveNow;
 
         if (curveNow.valid &&
             curveNow.curvaturePerMeter <= 1.0e-12 &&
             curveNow.curveIndex + 1 < state.routeCurves.size())
         {
-            const auto& nextCurve =
-                state.routeCurves[curveNow.curveIndex + 1];
-            auto upcoming =
-                sampleRouteCurveAtProgress(
-                    state.routeCurves,
+            // Preview the authored route, not merely the immediately adjacent
+            // storage primitive. A straight may be followed by another
+            // straight before the next real bend; waiting for that final
+            // straight to become current throws away braking distance.
+            //
+            // For CubicBezier the curvature can be zero at the endpoint and
+            // rise inside the curve, so inspect its arc-length knots as well
+            // as the segment boundaries. The knots are only an s<->t map;
+            // geometry and curvature still come from the parametric curve.
+            bool foundUpcomingTurn = false;
+            for (std::size_t curveIndex = curveNow.curveIndex + 1;
+                 curveIndex < state.routeCurves.size() &&
+                 !foundUpcomingTurn;
+                 ++curveIndex)
+            {
+                const auto& candidateCurve =
+                    state.routeCurves[curveIndex];
+
+                auto considerProgress =
+                    [&](double progressMeters) noexcept
+                    {
+                        const auto candidate =
+                            sampleRouteCurveAtProgress(
+                                state.routeCurves,
+                                progressMeters
+                            );
+                        if (!candidate.valid ||
+                            candidate.curvaturePerMeter <= 1.0e-12)
+                        {
+                            return;
+                        }
+
+                        speedGuide = candidate;
+                        distanceToTurnMeters =
+                            std::max(
+                                0.0,
+                                progressMeters -
+                                    routeProgressMeters
+                            );
+                        foundUpcomingTurn = true;
+                    };
+
+                considerProgress(
                     std::min(
-                        nextCurve.endProgressMeters,
-                        nextCurve.startProgressMeters + 1.0e-6
+                        candidateCurve.endProgressMeters,
+                        candidateCurve.startProgressMeters + 1.0e-6
                     )
                 );
-            if (upcoming.valid &&
-                upcoming.curvaturePerMeter > 1.0e-12)
-            {
-                speedGuide = upcoming;
-                distanceToTurnMeters =
-                    std::max(
-                        0.0,
-                        nextCurve.startProgressMeters -
-                            routeProgressMeters
-                    );
+
+                if (!foundUpcomingTurn &&
+                    candidateCurve.kind ==
+                        planner::RouteCurveKind::CubicBezier)
+                {
+                    for (const auto& knot :
+                         candidateCurve.arcLengthKnots)
+                    {
+                        if (foundUpcomingTurn)
+                            break;
+                        considerProgress(
+                            std::clamp(
+                                candidateCurve.startProgressMeters +
+                                    knot.localProgressMeters,
+                                candidateCurve.startProgressMeters,
+                                candidateCurve.endProgressMeters
+                            )
+                        );
+                    }
+
+                    if (!foundUpcomingTurn)
+                    {
+                        considerProgress(
+                            0.5 *
+                            (candidateCurve.startProgressMeters +
+                             candidateCurve.endProgressMeters)
+                        );
+                    }
+                }
             }
         }
 

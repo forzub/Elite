@@ -943,8 +943,12 @@ public:
             atFinalContinuousSegment &&
             terminalStopAuthored &&
             actualSpeed <= terminalAttitudeCaptureSpeedMps;
+        const bool onFinalRoutePrimitive =
+            curveNow.valid &&
+            curveNow.curveIndex + 1 >= state.routeCurves.size();
         const bool brakeAttitudeLock =
             terminalStopAuthored &&
+            onFinalRoutePrimitive &&
             (atFinalContinuousSegment || terminalBrakeActive) &&
             !terminalAttitudeHold;
 

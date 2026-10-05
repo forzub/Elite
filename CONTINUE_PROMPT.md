@@ -695,3 +695,27 @@ Published commits:
 - 1ad1061c — log strafe/lift controls
 
 Next gate: Windows client_route_autopilot test and live automatic docking. Evaluate straight-line hull stability, cross-track convergence, final-frame centering, and pre-HOLD behavior. Do not change Planner geometry or speed profile until this RCS split is validated.
+
+
+## 2026-10-05 — Assisted steering now models nose-to-course lag; no manoeuvre-thruster path correction
+
+The RCS cross-track experiment was rejected by live evidence. With the hull held almost perfectly on route tangent, strafe/lift saturated near full input while cross-track diverged from tens to hundreds of metres. Assisted route following therefore must be modeled primarily as nose direction driving velocity-course direction with finite lag, not as lateral translation.
+
+ClientRouteAutopilot now uses the measured PredictivePilot::State.assistedCourseResponseSeconds (tau) as the steering horizon. Dynamic lead distance is L=v*tau using actual scalar speed. The follower predicts the craft's ballistic position after tau, samples authored route attitude at s+L, and samples an intercept point at approximately s+2L. If the predicted lateral miss is outside the centering band, the nose is aimed toward that future intercept; otherwise it follows the lead route tangent. This makes turn anticipation and correction depend on speed and measured course response instead of fixed 250/500 m look-ahead.
+
+Fine centering no longer reacts to centimetres. The neutral band is defined as 10% of the already supplied docking tracking tolerance; with the current 20 m minimum tolerance this is a 2 m deadband. Sub-band error does not alter nose direction.
+
+PredictivePilot angular execution is no longer time-optimal bang-bang for every attitude error. It now consumes the trajectory's authored angular velocity and angular acceleration feed-forward and tracks attitude/rate with a critically damped servo. Its response time is derived from configured angular rate limit divided by angular acceleration authority. This prevents fraction-of-a-degree errors on straights from commanding full pitch/yaw while preserving strong commands for large turns.
+
+Automatic path correction and terminal HOLD no longer use strafe/lift/forward manoeuvre-thruster translation. HOLD arrests translational speed and continues attitude alignment only.
+
+Published commits:
+- 3d7946f2 — damped attitude/rate servo with authored angular-rate feed-forward
+- 2301d127 — speed-and-tau-derived course lead with predicted intercept and meter-scale deadband
+- a2962e3e — remove manoeuvre-thruster translation from terminal HOLD
+- af7c84c5 — remove obsolete RCS authority from course follower
+- 35c34334 — regressions for meter-scale deadband and predicted future miss
+- c8a6b8b5 — require turn anticipation from measured course lag
+- 0a29e2ae — log course_lead_m / predicted_cross_m / center_deadband_m
+
+Next gate: Windows client_route_autopilot test and live run. Evaluate straight-line twitch, onset of pre-turn nose lead, predicted_cross_m versus center_deadband_m, and final dock-up alignment. Do not reintroduce lateral RCS for route tracking.

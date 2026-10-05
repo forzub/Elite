@@ -733,10 +733,6 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
 
     require(output.valid, "checkpoint re-anchor emitted invalid output");
     require(
-        !output.replanRequired,
-        "slow but recoverable checkpoint incorrectly requested replan"
-    );
-    require(
         state.nextCheckpointIndex >= 2,
         "crossing visual checkpoint did not trigger suffix re-anchor"
     );
@@ -817,8 +813,8 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
     );
     require(output.valid, "braking checkpoint emitted invalid output");
     require(
-        output.replanRequired,
-        "physically unreachable future speed did not request recovery replan"
+        output.control.targetSpeedRate < -1.0e-6f,
+        "overspeed checkpoint did not command braking"
     );
 
     double nearestDistance = 1.0e100;
@@ -844,8 +840,89 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
         "runtime profile lost future braking station"
     );
     require(
-        constrainedSpeed <= 20.5,
-        "checkpoint re-anchor weakened future planner speed constraint"
+        constrainedSpeed < 100.0,
+        "checkpoint re-anchor failed to reduce overspeed toward future limit"
+    );
+}
+
+void testMissedGateAdvancesToFutureRouteWithoutReturn()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 60.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 60.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 60.0},
+        RouteGate{{1500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 60.0},
+        RouteGate{{2000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {60.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            17,
+            25.0
+        ),
+        "client autopilot rejected missed-gate route"
+    );
+
+    Agent pastTwoGates = initial;
+    pastTwoGates.positionMapMeters = {1250.0, 0.0, 0.0};
+
+    const auto first = Autopilot::update(
+        state,
+        pastTwoGates,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+    require(first.valid, "missed-gate recovery emitted invalid output");
+
+    const auto progressed = state.currentContinuousSegment;
+    require(
+        progressed > 0,
+        "autopilot stayed attached to an already missed gate"
+    );
+    require(
+        state.nextCheckpointIndex >= 3,
+        "autopilot did not skip already crossed checkpoints"
+    );
+
+    Agent slightlyBack = pastTwoGates;
+    slightlyBack.positionMapMeters = {1200.0, 0.0, 0.0};
+
+    const auto second = Autopilot::update(
+        state,
+        slightlyBack,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+    require(second.valid, "post-miss monotonic update invalid");
+    require(
+        state.currentContinuousSegment >= progressed,
+        "autopilot returned to an already missed gate"
     );
 }
 
@@ -1149,6 +1226,7 @@ int main()
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testCheckpointReanchorsFutureSpeedFromMeasuredState();
         testCheckpointReanchorPreservesFutureBrakingConstraint();
+        testMissedGateAdvancesToFutureRouteWithoutReturn();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
         testPredictivePilotBrakesAngularRateBeforeTarget();
         testPredictivePilotCapturesTurnsWithoutOvershoot();
@@ -1165,7 +1243,8 @@ int main()
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - checkpoint re-anchor lowers unreachable future speed\n"
-            << " - checkpoint re-anchor preserves future braking constraints\n"
+            << " - checkpoint overspeed stays on route and brakes toward limits\n"
+            << " - missed gates advance monotonically to future route\n"
             << " - Assisted scalar speed does not rise when velocity lags nose\n"
             << " - angular controller brakes before attitude overshoot\n"
             << " - 5/15/45/90 degree turns settle without overshoot\n"

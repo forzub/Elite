@@ -880,3 +880,43 @@ Published commits:
 - 42d09688 — regression: pre-turn angular-rate ramp must be gradual
 
 Next gate: Windows MinGW build/test and live first-turn validation. Expected telemetry before a bend: turn_vmax_mps below straight cruise when course dynamics require it, target_speed begins decreasing while turn_distance_m is still positive, desired_omega rises smoothly from zero, and actual_omega follows without 2–4x overshoot.
+
+
+## 2026-10-05 — active corridor recentering and explicit dock-bottom roll tracking
+
+Latest live run showed the authored curve is now followed substantially better, but the craft may exit a bend with a large lateral offset and then fly almost parallel to the tunnel for kilometres. Example: on final straight curve=8, cross-track reached ~88 m while cross-closing speed was only ~1-2.3 m/s at ~289 m/s forward. This is not a geometry failure; the cross-track controller was too soft after the earlier anti-oscillation changes.
+
+Root cause: on an authoritative straight the controller requested desired_omega=0 even while asking for a non-zero course correction angle to return to center. The attitude servo therefore received "hold this offset heading" but also "angular rate zero", so it approached the new heading too slowly and allowed long parallel offset flight.
+
+ClientRouteAutopilot now retains the critically damped cross-track position/velocity law but also publishes an explicit capture angular-rate component:
+
+    omega_capture ~= delta_capture / tau_course
+
+bounded by physical maximum angular rate. The non-terminal desired angular velocity is the vector sum of:
+1. authored route curvature rate;
+2. cross-track capture rate;
+3. dock-bottom roll-alignment rate.
+
+This gives the attitude controller the missing derivative target while preserving damping and avoiding bang-bang steering.
+
+Dock-bottom alignment is now an explicit continuous roll task. Desired up remains the authoritative dock port up vector projected into the plane normal to the desired nose direction. ClientRouteAutopilot computes signed roll error around the desired nose axis and publishes a desired roll rate using the physical roll actuator response time (maxRollRate/angularAccelerationAuthority). This prevents dock-bottom alignment from disappearing inside the combined SO(3) error while pitch/yaw track the route.
+
+HUD semantics were audited. GuidanceCorridorRenderer constructs corners[0..1] on the semantic -up edge and explicitly labels that edge as DOCK BOTTOM. Therefore aligning ship +up to port +up is the correct sign: the hull bottom (-up) then aligns with the HUD bottom marker. The remaining live defect was control authority/rate, not a sign inversion.
+
+New live diagnostics:
+- capture_angle_deg
+- capture_omega_radps
+- roll_err_deg
+- roll_target_omega_radps
+
+Published commits:
+- 2c493e28 — actively capture corridor center and dock-bottom roll
+- 402c1f81 — trace corridor capture and dock-bottom roll targets
+- 0e974246 — regressions require active parallel-offset capture and continuous roll alignment
+
+Next live validation:
+- after an arc exit, capture_omega_radps must remain non-zero while cross_track is outside the centering band;
+- cross_closing_mps should rise enough to recover centerline, then decay before crossing it;
+- roll_err_deg should monotonically approach zero during cruise, not only after terminal HOLD;
+- roll_target_omega_radps must remain non-zero while roll error is material;
+- no manoeuvre-thruster strafe/lift may be used.

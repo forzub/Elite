@@ -98,6 +98,8 @@ public:
         double requiredTerminalStopDistanceMeters = 0.0;
         double turnSpeedCeilingMps = 0.0;
         double distanceToTurnMeters = 0.0;
+        double requiredTurnSlowdownDistanceMeters = 0.0;
+        double turnSpeedSetpointSlewSeconds = 0.0;
         double crossTrackCorrectionAngleRad = 0.0;
         double desiredCaptureAngularRateRadPerSec = 0.0;
         double signedRollErrorRad = 0.0;
@@ -507,6 +509,40 @@ public:
             else if (distanceToTurnMeters > 0.0 &&
                 brakingAuthority > 1.0e-9)
             {
+                const double controlledSpeedLimit =
+                    game::ship::controlledSpeedLimitMps(params);
+                const double targetSetpointRate =
+                    std::max(
+                        static_cast<double>(
+                            params.assistedMinimumTargetSpeedChangeRateMps2
+                        ),
+                        controlledSpeedLimit *
+                            static_cast<double>(
+                                params.
+                                    assistedTargetSpeedChangeRateFractionPerSecond
+                            )
+                    );
+
+                const double deltaSpeed =
+                    std::max(
+                        0.0,
+                        actualSpeed - turnSpeedCeilingMps
+                    );
+                turnSpeedSetpointSlewSeconds =
+                    targetSetpointRate > 1.0e-9
+                        ? deltaSpeed / targetSetpointRate
+                        : 0.0;
+
+                const double measuredBrakingResponse =
+                    state.pilotState.assistedBrakingResponseMps2;
+                const double effectiveTurnBraking =
+                    measuredBrakingResponse > 1.0e-6
+                        ? std::min(
+                            brakingAuthority,
+                            measuredBrakingResponse
+                          )
+                        : brakingAuthority;
+
                 const double longitudinalResponseGain =
                     std::max(
                         1.0e-6,
@@ -516,23 +552,38 @@ public:
                                 params.fallbackThrottleResponsePerSecond
                               )
                     );
-                const double brakingResponseSeconds =
+                const double feedbackResponseSeconds =
                     1.0 / longitudinalResponseGain + deltaSeconds;
 
-                // Solve:
-                // d = (v^2-v_turn^2)/(2a) + t_response*(v-v_turn)
-                // for the largest safe speed v at the current point.
-                const double base =
-                    turnSpeedCeilingMps +
-                    brakingAuthority * brakingResponseSeconds;
-                const double safeApproachSpeed =
-                    -brakingAuthority * brakingResponseSeconds +
-                    std::sqrt(
-                        base * base +
-                        2.0 * brakingAuthority * distanceToTurnMeters
-                    );
-                targetSpeed =
-                    std::min(targetSpeed, safeApproachSpeed);
+                const double idealBrakeDistance =
+                    effectiveTurnBraking > 1.0e-9 &&
+                    actualSpeed > turnSpeedCeilingMps
+                        ? (
+                            actualSpeed * actualSpeed -
+                            turnSpeedCeilingMps * turnSpeedCeilingMps
+                          ) /
+                          (2.0 * effectiveTurnBraking)
+                        : 0.0;
+
+                // Conservative by design: during setpoint slew assume the ship
+                // still covers distance at current speed. Real braking begins
+                // gradually before the setpoint reaches v_turn, so this is a
+                // safety reserve rather than an optimistic cancellation.
+                requiredTurnSlowdownDistanceMeters =
+                    actualSpeed * turnSpeedSetpointSlewSeconds +
+                    idealBrakeDistance +
+                    actualSpeed * feedbackResponseSeconds;
+
+                if (requiredTurnSlowdownDistanceMeters + 1.0e-9 >=
+                    distanceToTurnMeters)
+                {
+                    // Move the speed handle all the way to the curve ceiling
+                    // now. The Assisted setpoint slew and physical engines
+                    // provide the smooth deceleration; delaying the command is
+                    // what caused previous overspeed entries.
+                    targetSpeed =
+                        std::min(targetSpeed, turnSpeedCeilingMps);
+                }
             }
         }
 
@@ -550,6 +601,41 @@ public:
                 glm::dot(positionError, referenceTangent);
         const double crossTrackErrorMeters =
             glm::length(crossPositionError);
+
+        // If the craft is already using a meaningful share of the corridor,
+        // do not keep full straight-line cruise merely because the next curve
+        // is distant. Blend down toward the next known controllable curve
+        // speed as corridor occupancy grows. This gives steering authority
+        // back to the follower while it recaptures centerline.
+        const double corridorToleranceMeters =
+            std::max(
+                state.trackingPositionToleranceMeters,
+                1.0e-6
+            );
+        const double corridorDeadbandMeters =
+            corridorToleranceMeters * 0.10;
+        if (turnSpeedCeilingMps > 0.0 &&
+            crossTrackErrorMeters > corridorDeadbandMeters)
+        {
+            const double occupancy =
+                std::clamp(
+                    (crossTrackErrorMeters - corridorDeadbandMeters) /
+                    std::max(
+                        1.0e-6,
+                        corridorToleranceMeters - corridorDeadbandMeters
+                    ),
+                    0.0,
+                    1.0
+                );
+            const double smoothOccupancy =
+                occupancy * occupancy *
+                (3.0 - 2.0 * occupancy);
+            const double recoveryCeiling =
+                targetSpeed * (1.0 - smoothOccupancy) +
+                turnSpeedCeilingMps * smoothOccupancy;
+            targetSpeed =
+                std::min(targetSpeed, recoveryCeiling);
+        }
 
         // Assisted course dynamics are first-order: velocity/course follows
         // the hull nose with measured lag tau. Geometry itself remains the
@@ -1148,6 +1234,10 @@ public:
             requiredTerminalStopDistanceMeters;
         out.turnSpeedCeilingMps = turnSpeedCeilingMps;
         out.distanceToTurnMeters = distanceToTurnMeters;
+        out.requiredTurnSlowdownDistanceMeters =
+            requiredTurnSlowdownDistanceMeters;
+        out.turnSpeedSetpointSlewSeconds =
+            turnSpeedSetpointSlewSeconds;
         out.crossTrackCorrectionAngleRad =
             crossTrackCorrectionAngleRad;
         out.desiredCaptureAngularRateRadPerSec =

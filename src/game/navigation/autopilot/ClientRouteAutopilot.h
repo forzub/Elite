@@ -58,6 +58,11 @@ public:
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
 
+        // Authoritative spatial geometry. Accepted maneuver samples still own
+        // timing/speed/attitude feed-forward, but they no longer define the
+        // route shape when Planner supplied parametric curves.
+        std::vector<planner::RouteCurveSegment> routeCurves;
+
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
         std::vector<AcceptedManeuverProgram> programs;
@@ -79,6 +84,9 @@ public:
         double courseLeadDistanceMeters = 0.0;
         double predictedCrossTrackMeters = 0.0;
         double centeringDeadbandMeters = 0.0;
+        double routeCurvaturePerMeter = 0.0;
+        double routeRadiusMeters = 0.0;
+        std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
@@ -123,6 +131,9 @@ public:
         state.holdAtTerminal = holdAtTerminal;
         state.trackingPositionToleranceMeters =
             std::max(0.0, trackingPositionToleranceMeters);
+        state.routeCurves = plan.routeCurves;
+        if (state.routeCurves.empty())
+            state.routeCurves = buildFallbackRouteCurves(plan.executionGates);
         state.programs = std::move(programs);
         if (!buildContinuousReference(
                 state.programs,
@@ -335,22 +346,50 @@ public:
                 continuous.reference.velocityMapMetersPerSecond
             );
 
-        const glm::dvec3 nominalForward =
+        const double continuousTotalProgress =
+            state.continuousProgressMeters.back();
+        const double routeTotalProgress =
+            state.routeCurves.empty()
+                ? continuousTotalProgress
+                : state.routeCurves.back().endProgressMeters;
+        const double progressScale =
+            continuousTotalProgress > 1.0e-9
+                ? routeTotalProgress / continuousTotalProgress
+                : 1.0;
+        const double routeProgressMeters =
+            std::clamp(
+                continuous.spatialProgressMeters * progressScale,
+                0.0,
+                routeTotalProgress
+            );
+
+        auto curveNow =
+            sampleRouteCurveAtProgress(
+                state.routeCurves,
+                routeProgressMeters
+            );
+
+        const glm::dvec3 sampledFallbackForward =
             normalizedOr(
                 continuous.reference.forwardMap,
                 agent.forwardMap
             );
-        // Position error is interpreted through the measured Assisted
-        // nose-to-course response below. It is not translated directly by RCS
-        // and it does not rotate the hull for sub-meter noise.
+        const glm::dvec3 nominalForward =
+            curveNow.valid
+                ? curveNow.tangentMap
+                : sampledFallbackForward;
+        if (curveNow.valid && curveNow.maxSpeedMps > 0.0)
+            targetSpeed =
+                std::min(targetSpeed, curveNow.maxSpeedMps);
+
+        const glm::dvec3 referencePosition =
+            curveNow.valid
+                ? curveNow.positionMapMeters
+                : continuous.reference.positionMapMeters;
         const glm::dvec3 referenceTangent =
-            targetSpeed > 1.0e-9
-                ? continuous.reference.velocityMapMetersPerSecond /
-                    targetSpeed
-                : nominalForward;
+            nominalForward;
         const glm::dvec3 positionError =
-            agent.positionMapMeters -
-            continuous.reference.positionMapMeters;
+            agent.positionMapMeters - referencePosition;
         const glm::dvec3 crossPositionError =
             positionError -
             referenceTangent *
@@ -358,11 +397,10 @@ public:
         const double crossTrackErrorMeters =
             glm::length(crossPositionError);
 
-        // Assisted course response is not instantaneous: the velocity vector
-        // follows the nose with a measured first-order lag tau. Predict where
-        // the craft will be after one response time and use the authored
-        // tangent of that future route section. Never replace the curve with
-        // a straight intercept chord.
+        // Assisted course response is not instantaneous. Advance only along
+        // the AUTHORITATIVE curve by v*tau; this is phase lead, not a new
+        // geometric route. The tangent/curvature come from Planner's primitive
+        // (line, circle, Bezier, ...), never from a chord to a future point.
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
         const double courseResponseSeconds =
@@ -372,6 +410,17 @@ public:
             );
         const double courseLeadDistanceMeters =
             actualSpeed * courseResponseSeconds;
+        const double routeLeadProgressMeters =
+            std::min(
+                routeTotalProgress,
+                routeProgressMeters + courseLeadDistanceMeters
+            );
+
+        auto curveLead =
+            sampleRouteCurveAtProgress(
+                state.routeCurves,
+                routeLeadProgressMeters
+            );
 
         auto attitudeLead = sampleContinuousReferenceAtProgress(
             state.continuousSamples,
@@ -379,24 +428,30 @@ public:
             std::min(
                 state.continuousProgressMeters.back(),
                 continuous.spatialProgressMeters +
-                    courseLeadDistanceMeters
+                    courseLeadDistanceMeters / std::max(1.0e-9, progressScale)
             )
         );
         if (!attitudeLead.valid)
             attitudeLead = continuous;
 
         const glm::dvec3 leadTangent =
-            normalizedOr(
-                attitudeLead.reference.forwardMap,
-                nominalForward
-            );
+            curveLead.valid
+                ? curveLead.tangentMap
+                : normalizedOr(
+                    attitudeLead.reference.forwardMap,
+                    nominalForward
+                );
+        const glm::dvec3 leadPosition =
+            curveLead.valid
+                ? curveLead.positionMapMeters
+                : attitudeLead.reference.positionMapMeters;
+
         const glm::dvec3 predictedPosition =
             agent.positionMapMeters +
             agent.velocityMapMetersPerSecond *
                 courseResponseSeconds;
         const glm::dvec3 predictedError =
-            predictedPosition -
-            attitudeLead.reference.positionMapMeters;
+            predictedPosition - leadPosition;
         const glm::dvec3 predictedCrossError =
             predictedError -
             leadTangent *
@@ -404,10 +459,6 @@ public:
         const double predictedCrossTrackMeters =
             glm::length(predictedCrossError);
 
-        // Do not correct centimetres. Tracking tolerance is the corridor-scale
-        // quantity already supplied by docking guidance; reserve the central
-        // tenth as a neutral centering band. With the current 20 m minimum
-        // docking tolerance this means a 2 m deadband.
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
@@ -419,16 +470,13 @@ public:
                 static_cast<double>(params.stopSpeedEpsilonMps)) &&
             predictedCrossTrackMeters > centeringDeadbandMeters)
         {
-            // Never aim at a distant point on a curve: that creates a chord
-            // through the inside of the tunnel. Course correction is local to
-            // the future route section. Keep the authored future tangent and
-            // add only the lateral velocity needed to remove predicted
-            // cross-track error over one measured course-response time.
+            // Correction is local to the curve's normal plane. It changes the
+            // desired course around the authored tangent but never substitutes
+            // a straight intercept for the curve itself.
             const glm::dvec3 correctionVelocity =
                 -predictedCrossError / courseResponseSeconds;
             const glm::dvec3 desiredCourseVelocity =
-                leadTangent * actualSpeed +
-                correctionVelocity;
+                leadTangent * actualSpeed + correctionVelocity;
             steeringForward =
                 normalizedOr(desiredCourseVelocity, leadTangent);
         }
@@ -439,8 +487,6 @@ public:
                 continuous.reference.upMap
             );
 
-        // Scalar speed comes from the authored profile; heading is controlled
-        // separately through the nose/course-lag model above.
         const glm::dvec3 desiredVelocity =
             nominalForward * targetSpeed;
 
@@ -522,6 +568,14 @@ public:
         out.courseLeadDistanceMeters = courseLeadDistanceMeters;
         out.predictedCrossTrackMeters = predictedCrossTrackMeters;
         out.centeringDeadbandMeters = centeringDeadbandMeters;
+        out.routeCurvaturePerMeter =
+            curveNow.valid ? curveNow.curvaturePerMeter : 0.0;
+        out.routeRadiusMeters =
+            out.routeCurvaturePerMeter > 1.0e-12
+                ? 1.0 / out.routeCurvaturePerMeter
+                : 0.0;
+        out.routeCurveIndex =
+            curveNow.valid ? curveNow.curveIndex : 0;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =
@@ -1044,6 +1098,87 @@ private:
             runtimeAccelerations[reference.upperSampleIndex] * u;
         reference.reference.linearAccelerationFeedForwardMapMps2 =
             tangent * longitudinalAcceleration;
+    }
+
+    struct RouteCurveDiagnostic
+    {
+        bool valid = false;
+        std::size_t curveIndex = 0;
+        glm::dvec3 positionMapMeters {0.0};
+        glm::dvec3 tangentMap {0.0, 0.0, -1.0};
+        double curvaturePerMeter = 0.0;
+        double maxSpeedMps = 0.0;
+    };
+
+    [[nodiscard]] static std::vector<planner::RouteCurveSegment>
+    buildFallbackRouteCurves(
+        const std::vector<planner::RouteGate>& gates
+    )
+    {
+        std::vector<planner::RouteCurveSegment> curves;
+        if (gates.size() < 2)
+            return curves;
+
+        double progress = 0.0;
+        curves.reserve(gates.size() - 1);
+        for (std::size_t i = 1; i < gates.size(); ++i)
+        {
+            const glm::dvec3 delta =
+                gates[i].positionMeters -
+                gates[i - 1].positionMeters;
+            const double length = glm::length(delta);
+            if (length <= 1.0e-9)
+                continue;
+
+            planner::RouteCurveSegment curve;
+            curve.kind = planner::RouteCurveKind::Line;
+            curve.startProgressMeters = progress;
+            curve.endProgressMeters = progress + length;
+            curve.maxSpeedMps =
+                std::min(gates[i - 1].speedMps, gates[i].speedMps);
+            curve.startMeters = gates[i - 1].positionMeters;
+            curve.endMeters = gates[i].positionMeters;
+            curve.startForward = delta / length;
+            curve.endForward = curve.startForward;
+            curves.push_back(curve);
+            progress += length;
+        }
+        return curves;
+    }
+
+    [[nodiscard]] static RouteCurveDiagnostic sampleRouteCurveAtProgress(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        double routeProgressMeters
+    ) noexcept
+    {
+        RouteCurveDiagnostic out;
+        if (curves.empty() || !std::isfinite(routeProgressMeters))
+            return out;
+
+        std::size_t index = curves.size() - 1;
+        for (std::size_t i = 0; i < curves.size(); ++i)
+        {
+            if (routeProgressMeters <=
+                curves[i].endProgressMeters + 1.0e-9)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        const auto& curve = curves[index];
+        const double parameter =
+            curve.parameterAtProgress(routeProgressMeters);
+        out.valid = true;
+        out.curveIndex = index;
+        out.positionMapMeters =
+            curve.positionAtParameter(parameter);
+        out.tangentMap =
+            curve.tangentAtProgress(routeProgressMeters);
+        out.curvaturePerMeter =
+            curve.curvatureAtProgress(routeProgressMeters);
+        out.maxSpeedMps = curve.maxSpeedMps;
+        return out;
     }
 
     [[nodiscard]] static ContinuousReferenceDiagnostic

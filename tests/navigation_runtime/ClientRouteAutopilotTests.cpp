@@ -668,6 +668,67 @@ void testClientTrajectoryPreservesPlannerTurnSpeedConstraint()
     );
 }
 
+void testInitialOverspeedBrakesWithoutRejectingRoute()
+{
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 40.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 40.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 40.0},
+        RouteGate{{1500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {100.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            18,
+            25.0
+        ),
+        "initial overspeed incorrectly rejected valid route"
+    );
+
+    const auto output = Autopilot::update(
+        state,
+        initial,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "initial overspeed produced invalid execution");
+    require(
+        output.control.targetSpeedRate < -1.0e-6f,
+        "initial overspeed did not command braking"
+    );
+    require(
+        state.currentContinuousSegment == 0,
+        "initial overspeed changed route progress instead of speed control"
+    );
+}
+
 void testCheckpointReanchorsFutureSpeedFromMeasuredState()
 {
     using game::navigation::planner::RouteGate;
@@ -1224,6 +1285,7 @@ int main()
         testContinuousProgramCorrectsCrossTrackError();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
+        testInitialOverspeedBrakesWithoutRejectingRoute();
         testCheckpointReanchorsFutureSpeedFromMeasuredState();
         testCheckpointReanchorPreservesFutureBrakingConstraint();
         testMissedGateAdvancesToFutureRouteWithoutReturn();
@@ -1242,6 +1304,7 @@ int main()
             << " - physical cross-track servo returns craft toward centerline\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
+            << " - initial overspeed stays on route and commands braking\n"
             << " - checkpoint re-anchor lowers unreachable future speed\n"
             << " - checkpoint overspeed stays on route and brakes toward limits\n"
             << " - missed gates advance monotonically to future route\n"

@@ -69,6 +69,7 @@ public:
         double crossTrackErrorMeters = 0.0;
         double remainingDistanceMeters = 0.0;
         double targetSpeedMps = 0.0;
+        double targetLongitudinalAccelerationMps2 = 0.0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
@@ -428,6 +429,11 @@ public:
                     continuous.spatialProgressMeters
             );
         out.targetSpeedMps = targetSpeed;
+        out.targetLongitudinalAccelerationMps2 =
+            glm::dot(
+                continuous.reference.linearAccelerationFeedForwardMapMps2,
+                referenceTangent
+            );
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =

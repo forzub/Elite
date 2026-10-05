@@ -2484,6 +2484,16 @@ void SpaceState::updateDockingAdvisory()
                     << output.turnSpeedCeilingMps
                     << " turn_distance_m="
                     << output.distanceToTurnMeters
+                    << " capture_angle_deg="
+                    << output.crossTrackCorrectionAngleRad *
+                        57.2957795130823208768
+                    << " capture_omega_radps="
+                    << output.desiredCaptureAngularRateRadPerSec
+                    << " roll_err_deg="
+                    << output.signedRollErrorRad *
+                        57.2957795130823208768
+                    << " roll_target_omega_radps="
+                    << output.desiredRollRateRadPerSec
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

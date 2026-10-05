@@ -7404,3 +7404,57 @@ Published commits:
 - 81bd52dd — regression requires Assisted speed-setpoint slew in turn slowdown
 
 Next gate: build/test client_route_autopilot, then live first-turn validation. Expected behavior: target speed begins falling while turn_distance_m is still on the order of the full turn_need_m; actual speed should be near turn_vmax at curve entry rather than tens of m/s above it. If cross-track exceeds corridor tolerance, target speed should remain capped until centerline recovery is substantially complete.
+
+
+## 2026-10-05 — Route execution contract audit: exact curves + shared Assisted response
+
+The route/autopilot implementation was audited against the hard execution
+contract in `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
+
+Confirmed active automatic-docking execution path:
+`SpaceState::updateDockingAdvisory -> planner::RoutePlanner ->
+ClientRouteAutopilot -> PredictivePilot -> ordinary ShipControlState`.
+The older sampled `autopilot/RouteFollower.cpp` look-ahead implementation is
+not the active docking control path and was deliberately not used to redefine
+the current route geometry.
+
+Fixes published:
+- `0cd1c984` — declare the missing turn-slowdown diagnostics that broke the
+  build; preview authored future curves beyond an immediately adjacent straight;
+  inspect CubicBezier interior arc-length knots when endpoint curvature is zero.
+- `382d7212` — regression coverage for a bend beyond an intermediate straight
+  and for Bezier interior curvature.
+- `e0d6d908` + `bfeafa83` — make PredictivePilot expose one canonical
+  effective Assisted target-speed change rate and make turn preview use that
+  same learned/measured rate instead of a separate configured-only estimate.
+- `2865e476` — regression requires turn preview and PredictivePilot to agree
+  on the learned Assisted speed-handle response.
+- `8e1e40fb` — repository hard contract for route geometry, global speed
+  envelope, Assisted delay, arcs/radii, Bezier/splines, look-ahead and
+  anti-regression rules.
+
+Important architecture preserved:
+- `RouteCurveSegment` remains the authoritative Line/CircularArc/CubicBezier
+  geometry; sampled gates are representation, not a replacement route.
+- runtime speed profile retains its forward acceleration and backward braking
+  feasibility passes;
+- the new Assisted response model is composed with that profile instead of
+  replacing it;
+- actual scalar speed remains the speed feedback during a turn;
+- course phase lead follows the authored curve rather than cutting a waypoint
+  chord.
+
+Remaining design item, not changed blindly in this audit:
+terminal Assisted radius selection still begins from a design-speed policy
+(roughly 0.8 of route max speed) and then derives lateral/angular radius. This
+is physically bounded but can make a fast small ship request an excessively
+large terminal arc. The next geometry change should solve the pair
+`turn radius <-> turn speed` together from hull/corridor scale plus
+lateral/angular authority, with its existing docking radius tests updated in
+the same change. Do not replace it with another fixed radius.
+
+Verification gate:
+run the Windows MinGW `client_route_autopilot` test first, then
+`docking_advisory`, then the live first-turn run. No CI runner is present in
+the repository, so these commits have been source-audited and regression tests
+added but have not been executed in this environment.

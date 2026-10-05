@@ -71,6 +71,7 @@ public:
 
         bool stopRequested = false;
         bool terminalAttitudeHold = false;
+        double angularTrackingResponseSeconds = 0.0;
         double deltaSeconds = 0.0;
     };
 
@@ -183,6 +184,7 @@ public:
                     desiredLocalAcceleration,
                     maxLocalRate,
                     configuredAngularAuthority,
+                    request.angularTrackingResponseSeconds,
                     dt
                   );
 
@@ -714,6 +716,7 @@ private:
         const glm::dvec3& desiredAngularAccelerationLocalRadPerSec2,
         const glm::dvec3& maxRateLocalRadPerSec,
         double angularAuthorityRadPerSec2,
+        double trackingResponseSeconds,
         double dt
     ) noexcept
     {
@@ -758,7 +761,7 @@ private:
                 maxRateLocalRadPerSec.y,
                 maxRateLocalRadPerSec.z
             });
-        const double responseSeconds =
+        const double actuatorResponseSeconds =
             std::max(
                 dt,
                 characteristicRate > 1.0e-9
@@ -766,8 +769,21 @@ private:
                         angularAuthorityRadPerSec2
                     : dt
             );
+        const double responseSeconds =
+            std::max(
+                actuatorResponseSeconds,
+                std::isfinite(trackingResponseSeconds) &&
+                    trackingResponseSeconds > 0.0
+                    ? trackingResponseSeconds
+                    : actuatorResponseSeconds
+            );
+
+        // Continuous route tracking is deliberately slower than the old
+        // time-optimal capture. One natural time constant should close the
+        // ordinary attitude error; desired angular-rate feed-forward carries
+        // the steady turn. This avoids full-stick oscillation around a curve.
         const double naturalFrequency =
-            2.0 / responseSeconds;
+            1.0 / responseSeconds;
 
         glm::dvec3 requestedAcceleration =
             desiredAngularAccelerationLocalRadPerSec2 +

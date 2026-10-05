@@ -895,6 +895,8 @@ void testTerminalBrakingIncludesControllerResponseMargin()
     initial.upMap = {0.0, 1.0, 0.0};
 
     auto vehicle = params();
+    vehicle.maxCombatSpeed = 400.0f;
+    vehicle.maxCruiseSpeed = 400.0f;
     Autopilot::State state;
     require(
         Autopilot::start(

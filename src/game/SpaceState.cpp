@@ -2494,6 +2494,10 @@ void SpaceState::updateDockingAdvisory()
                         57.2957795130823208768
                     << " roll_target_omega_radps="
                     << output.desiredRollRateRadPerSec
+                    << " brake_attitude_lock="
+                    << (output.brakeAttitudeLockActive ? 1 : 0)
+                    << " terminal_attitude_capture="
+                    << (output.terminalAttitudeCaptureActive ? 1 : 0)
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

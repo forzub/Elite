@@ -2299,3 +2299,32 @@ Published commits:
 - 14836c42 — make route curves evaluable by progress and curvature
 
 Important: this establishes the API only. Current docking Planner still publishes dense executionGates as the active execution geometry; routeCurves are not yet populated/consumed. Next implementation step is to preserve authored primitives from DockingAdvisoryPlanner into RoutePlan.routeCurves and make ClientRouteAutopilot use those authoritative curves for tangent/curvature/speed-limit queries, leaving dense gates only for HUD/collision/proof.
+
+
+## 2026-10-05 — docking execution now carries and follows authoritative parametric route curves
+
+The docking backend no longer discards exact curve geometry after sampling. RoundedCandidate now stores both authoritative routeCurves and sampled points. Straight sections are preserved as Line primitives. Each circular fillet is preserved before sampling with exact start/end, center, normal, radius, sweep and curve-local speed ceiling. The exact terminal quarter-circle is preserved the same way, followed by the final straight.
+
+DockingAdvisoryPlan carries routeCurves and a production docking plan is no longer valid if that vector is empty. This prevents silent fallback to sampled-only geometry in the real docking path.
+
+RoutePlanner propagates routeCurves unchanged into RoutePlan.
+
+ClientRouteAutopilot stores those curves. Accepted maneuver samples still provide timing, speed profile, linear/angular feed-forward and terminal state, but when routeCurves exist the follower now takes spatial position, tangent and curvature from Planner's parametric geometry. Course-lag phase lead advances along the authoritative curve by s+v*tau; it does not infer shape from continuousSamples. Current/future cross-track planes are also based on the exact curve position/tangent. Curve-local maxSpeed is applied as an additional ceiling.
+
+Because accepted trajectory progress is still measured on dense sampled geometry, current implementation maps sampled progress to exact curve progress by total-length scale. Dense sampling is ~10 m, so circle chord-length error is small; a future refinement may project directly onto the active primitive.
+
+Compatibility-only RoutePlans that contain no routeCurves synthesize speed-neutral line primitives from executionGates; this path exists for old tests/generic callers only and never imposes a fake zero speed ceiling.
+
+Live telemetry now reports curve=<index>, curvature_1pm and radius_m. Regression coverage constructs a sampled quarter-circle plus an exact CircularArc primitive and requires the follower to report the Planner radius/curvature rather than sampled chord geometry.
+
+Published commits:
+- c4090ebf — carry authored route curves through docking backend
+- f7db8f6d — preserve exact lines and arcs before route sampling
+- 63336f08 — propagate authored route curves through planner API
+- 0cc00e0f — follow Planner curves instead of sampled route geometry
+- 092bc28e — trace authoritative route curvature
+- be5c7cf5 — regression requires exact Planner radius in follower
+- c501e852 — keep sampled compatibility fallback speed-neutral
+- 212d0fbe — require parametric geometry for valid production docking route
+
+Next gate: Windows MinGW build plus docking_advisory and client_route_autopilot tests, then a live turn-only run. On a circular bend radius_m must remain the Planner-authored radius throughout the primitive and cross-track must remain bounded without chord-cutting.

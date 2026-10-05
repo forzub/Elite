@@ -451,6 +451,165 @@ void testContinuousProgramCorrectsCrossTrackError()
     );
 }
 
+void testCrossTrackCaptureBrakesBeforeCenter()
+{
+    const auto route = plan();
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State noLateralVelocity;
+    require(
+        Autopilot::start(
+            noLateralVelocity,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            19,
+            25.0
+        ),
+        "cross-track damping route rejected"
+    );
+
+    Agent offset = initial;
+    offset.positionMapMeters = {50.0, 0.0, 10.0};
+
+    const auto accelerateTowardCenter = Autopilot::update(
+        noLateralVelocity,
+        offset,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(
+        accelerateTowardCenter.valid,
+        "cross-track damping baseline emitted invalid output"
+    );
+
+    Autopilot::State fastClosingState;
+    require(
+        Autopilot::start(
+            fastClosingState,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            20,
+            25.0
+        ),
+        "cross-track fast-closing route rejected"
+    );
+
+    Agent fastClosing = offset;
+    fastClosing.velocityMapMetersPerSecond = {20.0, 0.0, -20.0};
+
+    const auto brakeBeforeCenter = Autopilot::update(
+        fastClosingState,
+        fastClosing,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(
+        brakeBeforeCenter.valid,
+        "cross-track fast-closing update invalid"
+    );
+
+    const double baselineTurn =
+        std::hypot(
+            accelerateTowardCenter.control.pitchInput,
+            accelerateTowardCenter.control.yawInput
+        );
+    const double brakingTurn =
+        std::hypot(
+            brakeBeforeCenter.control.pitchInput,
+            brakeBeforeCenter.control.yawInput
+        );
+
+    require(
+        baselineTurn > 1.0e-4,
+        "position-only cross-track case did not steer toward center"
+    );
+    require(
+        brakingTurn < baselineTurn * 0.25,
+        "cross-track servo kept turning inward after braking distance was spent"
+    );
+}
+
+void testTerminalFrameHoldsStoppedAndAligned()
+{
+    const auto route = plan();
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    const glm::dvec3 dockUp(0.0, 1.0, 0.0);
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            21,
+            25.0,
+            dockUp,
+            true
+        ),
+        "terminal-hold route rejected"
+    );
+
+    require(
+        !state.continuousSamples.empty(),
+        "terminal-hold route produced no samples"
+    );
+
+    const auto& final = state.continuousSamples.back();
+
+    Agent atHold;
+    atHold.positionMapMeters = final.positionMapMeters;
+    atHold.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    atHold.forwardMap = final.forwardMap;
+    atHold.rightMap = final.rightMap;
+    atHold.upMap = final.upMap;
+
+    const auto output = Autopilot::update(
+        state,
+        atHold,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "terminal hold emitted invalid output");
+    require(output.terminalHold, "terminal frame did not enter HOLD");
+    require(!output.complete, "terminal HOLD incorrectly released autopilot");
+    require(state.active, "terminal HOLD deactivated autopilot");
+    require(
+        output.targetSpeedMps <= 1.0e-6,
+        "terminal HOLD retained non-zero translational target"
+    );
+}
+
 void testContinuousProgramCrossesStoragePages()
 {
     using game::navigation::planner::RouteGate;
@@ -1283,6 +1442,8 @@ int main()
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testContinuousProgramDoesNotInventEarlyTurn();
         testContinuousProgramCorrectsCrossTrackError();
+        testCrossTrackCaptureBrakesBeforeCenter();
+        testTerminalFrameHoldsStoppedAndAligned();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
         testInitialOverspeedBrakesWithoutRejectingRoute();
@@ -1298,10 +1459,12 @@ int main()
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
             << " - RoutePlan is adapted to SpatialCorridor on the client\n"
             << " - execution emits only ordinary ShipControlState inputs\n"
-            << " - stopped spatial origin launches from next accepted control speed\n"
+            << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower does not invent turns outside authored trajectory\n"
             << " - physical cross-track servo returns craft toward centerline\n"
+            << " - cross-track capture brakes before crossing centerline\n"
+            << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"
             << " - initial overspeed stays on route and commands braking\n"

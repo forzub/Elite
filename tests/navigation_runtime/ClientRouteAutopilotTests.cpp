@@ -765,6 +765,251 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
     );
 }
 
+void testExactCurveBoundaryActivatesAtAuthoredEntry()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 120.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 120.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 120.0},
+        RouteGate{{1100.0, 0.0, 5.0}, {0.995, 0.0, 0.1}, 80.0},
+        RouteGate{{1200.0, 0.0, 20.0}, {0.98, 0.0, 0.2}, 80.0},
+        RouteGate{{1300.0, 0.0, 45.0}, {0.95, 0.0, 0.31}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment line;
+    line.kind = RouteCurveKind::Line;
+    line.startProgressMeters = 0.0;
+    line.endProgressMeters = 1000.0;
+    line.maxSpeedMps = 120.0;
+    line.startMeters = {0.0, 0.0, 0.0};
+    line.endMeters = {1000.0, 0.0, 0.0};
+    line.startForward = line.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(line);
+
+    RouteCurveSegment arc;
+    arc.kind = RouteCurveKind::CircularArc;
+    arc.startProgressMeters = 1000.0;
+    arc.endProgressMeters =
+        1000.0 + 500.0 * 0.6435011087932844;
+    arc.maxSpeedMps = 80.0;
+    arc.startMeters = {1000.0, 0.0, 0.0};
+    arc.arcCenterMeters = {1000.0, 0.0, 500.0};
+    arc.arcNormal = {0.0, -1.0, 0.0};
+    arc.arcRadiusMeters = 500.0;
+    arc.arcSweepRadians = 0.6435011087932844;
+    arc.endMeters = arc.positionAtParameter(1.0);
+    arc.startForward = {1.0, 0.0, 0.0};
+    arc.endForward = arc.tangentAtProgress(arc.endProgressMeters);
+    route.routeCurves.push_back(arc);
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {120.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            24,
+            20.0
+        ),
+        "exact curve-boundary route rejected"
+    );
+
+    Agent atArcEntry = initial;
+    atArcEntry.positionMapMeters = {1000.5, 0.0, 0.001};
+    atArcEntry.velocityMapMetersPerSecond = {80.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        atArcEntry,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "exact curve-boundary update invalid");
+    require(
+        output.routeCurveIndex == 1,
+        "follower stayed on previous straight after authored arc entry"
+    );
+    require(
+        output.routeCurvaturePerMeter > 1.0e-6,
+        "authored arc entry did not activate curvature"
+    );
+}
+
+void testTerminalBrakingIncludesControllerResponseMargin()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 288.0},
+        RouteGate{{2000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 288.0},
+        RouteGate{{3000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment line;
+    line.kind = RouteCurveKind::Line;
+    line.startProgressMeters = 0.0;
+    line.endProgressMeters = 3000.0;
+    line.maxSpeedMps = 288.0;
+    line.startMeters = {0.0, 0.0, 0.0};
+    line.endMeters = {3000.0, 0.0, 0.0};
+    line.startForward = line.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(line);
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {288.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    auto vehicle = params();
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            25,
+            20.0,
+            {0.0, 1.0, 0.0},
+            true
+        ),
+        "terminal-margin route rejected"
+    );
+
+    Agent nearStop = initial;
+    nearStop.positionMapMeters = {2200.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        nearStop,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(output.valid, "terminal-margin update invalid");
+
+    const double braking =
+        std::max(
+            0.1,
+            static_cast<double>(
+                game::ship::reverseMainAccelerationLimitMps2(vehicle)
+            )
+        );
+    const double idealBoundary =
+        std::sqrt(2.0 * braking * 800.0);
+
+    require(
+        output.targetSpeedMps + 1.0 < idealBoundary,
+        "terminal target still rides the ideal no-response braking boundary"
+    );
+}
+
+void testTerminalHoldKeepsStrongAttitudeCaptureForLargeError()
+{
+    auto route = plan();
+    auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            26,
+            20.0,
+            {0.0, 1.0, 0.0},
+            true
+        ),
+        "large-error terminal hold route rejected"
+    );
+
+    const auto& final = state.continuousSamples.back();
+    Agent stoppedWrong = initial;
+    stoppedWrong.positionMapMeters = final.positionMapMeters;
+    stoppedWrong.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
+
+    // Deliberately rotate about up by roughly 45 degrees from final forward.
+    const glm::dvec3 f = glm::normalize(final.forwardMap);
+    const glm::dvec3 u = glm::normalize(final.upMap);
+    const glm::dvec3 r = glm::normalize(glm::cross(f, u));
+    stoppedWrong.forwardMap =
+        glm::normalize(f * 0.7071067811865476 + r * 0.7071067811865476);
+    stoppedWrong.upMap = u;
+    stoppedWrong.rightMap =
+        glm::normalize(
+            glm::cross(stoppedWrong.forwardMap, stoppedWrong.upMap)
+        );
+
+    const auto output = Autopilot::update(
+        state,
+        stoppedWrong,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(output.valid, "large-error terminal hold invalid");
+    require(output.terminalHold, "large-error final pose did not stay in HOLD");
+
+    const double commandMagnitude =
+        std::sqrt(
+            output.control.pitchInput * output.control.pitchInput +
+            output.control.yawInput * output.control.yawInput +
+            output.control.rollInput * output.control.rollInput
+        );
+    require(
+        commandMagnitude > 0.20,
+        "terminal HOLD nearly stopped rotating despite large attitude error"
+    );
+}
+
 void testContinuousProgramCrossesStoragePages()
 {
     using game::navigation::planner::RouteGate;
@@ -1599,6 +1844,9 @@ int main()
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
+        testExactCurveBoundaryActivatesAtAuthoredEntry();
+        testTerminalBrakingIncludesControllerResponseMargin();
+        testTerminalHoldKeepsStrongAttitudeCaptureForLargeError();
         testTerminalFrameHoldsStoppedAndAligned();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
@@ -1619,6 +1867,9 @@ int main()
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - turn lead distance follows measured nose-to-course lag\n"
             << " - course lead preserves curved tunnel instead of cutting a chord\n"
+            << " - exact curve boundary activates at authored entry\n"
+            << " - terminal braking includes controller response distance\n"
+            << " - terminal HOLD keeps strong attitude capture for large errors\n"
             << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
             << " - centimetres are ignored while predicted future misses are corrected\n"
             << " - final guidance frame is a stopped alignment HOLD\n"

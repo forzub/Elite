@@ -413,6 +413,9 @@ public:
             targetSpeed =
                 std::min(targetSpeed, curveNow.maxSpeedMps);
 
+        const double actualSpeed =
+            glm::length(agent.velocityMapMetersPerSecond);
+
         const double courseResponseSeconds =
             std::max(
                 deltaSeconds,
@@ -647,8 +650,6 @@ public:
         // This is fundamentally different from aiming at a point v*tau ahead:
         // the latter moves the path; this rotates the hull around the SAME
         // local curve.
-        const double actualSpeed =
-            glm::length(agent.velocityMapMetersPerSecond);
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *

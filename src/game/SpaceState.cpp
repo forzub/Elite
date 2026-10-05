@@ -2450,6 +2450,16 @@ void SpaceState::updateDockingAdvisory()
                     << output.speedProfileRevision
                     << " target_accel_mps2="
                     << output.targetLongitudinalAccelerationMps2
+                    << " cross_closing_mps="
+                    << output.crossTrackClosingSpeedMps
+                    << " cross_capture_mps="
+                    << output.crossTrackCaptureSpeedMps
+                    << " forward_err_deg="
+                    << output.forwardErrorRad *
+                        57.2957795130823208768
+                    << " up_err_deg="
+                    << output.upErrorRad *
+                        57.2957795130823208768
                     << " terminal_hold="
                     << (output.terminalHold ? 1 : 0)
                     << " pitch=" << output.control.pitchInput

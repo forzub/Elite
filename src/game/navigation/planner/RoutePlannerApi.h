@@ -80,6 +80,15 @@ struct RouteGate
 {
     glm::dvec3 positionMeters {0.0};
     glm::dvec3 forward {0.0, 0.0, -1.0};
+
+    // Route-local speed ceiling at this station, NOT a mandatory vehicle
+    // state. Execution may be below it; if the measured craft is already
+    // above it, the correct response is braking while continuing forward
+    // along the route. A zero value means a real zero-speed constraint only
+    // when the Planner intentionally authored one (for example HOLD/final).
+    //
+    // Field name is retained for source compatibility; semantically this is
+    // maxSpeedMps.
     double speedMps = 0.0;
 };
 

@@ -70,6 +70,10 @@ public:
         double remainingDistanceMeters = 0.0;
         double targetSpeedMps = 0.0;
         double targetLongitudinalAccelerationMps2 = 0.0;
+        double crossTrackClosingSpeedMps = 0.0;
+        double crossTrackCaptureSpeedMps = 0.0;
+        double forwardErrorRad = 0.0;
+        double upErrorRad = 0.0;
         std::size_t pageIndex = 0;
         std::size_t segmentIndex = 0;
         std::size_t checkpointIndex = 0;
@@ -366,6 +370,8 @@ public:
                 : game::ship::manoeuvreAccelerationLimitMps2(params);
 
         glm::dvec3 steeringForward = nominalForward;
+        double crossTrackClosingSpeedMps = 0.0;
+        double crossTrackCaptureSpeedMps = 0.0;
         if (crossTrackErrorMeters > 1.0e-9 &&
             lateralAuthority > 1.0e-9 &&
             targetSpeed > 1.0e-9)
@@ -381,6 +387,7 @@ public:
                     );
             const double closingSpeed =
                 glm::dot(crossVelocity, towardCenter);
+            crossTrackClosingSpeedMps = closingSpeed;
             const double inwardSpeed =
                 std::max(0.0, closingSpeed);
             const double stoppingDistance =
@@ -397,6 +404,7 @@ public:
                     lateralAuthority *
                     captureDistance
                 );
+            crossTrackCaptureSpeedMps = captureSpeed;
 
             const glm::dvec3 steeringVelocity =
                 nominalForward * targetSpeed +
@@ -460,6 +468,12 @@ public:
                 continuous.reference.linearAccelerationFeedForwardMapMps2,
                 referenceTangent
             );
+        out.crossTrackClosingSpeedMps = crossTrackClosingSpeedMps;
+        out.crossTrackCaptureSpeedMps = crossTrackCaptureSpeedMps;
+        out.forwardErrorRad =
+            angleBetween(agent.forwardMap, steeringForward);
+        out.upErrorRad =
+            angleBetween(agent.upMap, desiredUp);
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;
         out.checkpointIndex =

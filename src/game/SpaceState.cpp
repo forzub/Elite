@@ -2342,7 +2342,8 @@ void SpaceState::updateDockingAdvisory()
                     universeTimeSeconds,
                     pending.serial,
                     tolerance,
-                    executionPort.up
+                    executionPort.up,
+                    true
                 ))
             {
                 fail("client autopilot could not accept planner route");
@@ -2449,6 +2450,8 @@ void SpaceState::updateDockingAdvisory()
                     << output.speedProfileRevision
                     << " target_accel_mps2="
                     << output.targetLongitudinalAccelerationMps2
+                    << " terminal_hold="
+                    << (output.terminalHold ? 1 : 0)
                     << " pitch=" << output.control.pitchInput
                     << " yaw=" << output.control.yawInput
                     << " roll=" << output.control.rollInput

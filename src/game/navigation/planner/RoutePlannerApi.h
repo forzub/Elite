@@ -92,6 +92,55 @@ struct RouteGate
     double speedMps = 0.0;
 };
 
+enum class RouteCurveKind : std::uint8_t
+{
+    Line = 0,
+    CircularArc,
+    CubicBezier
+};
+
+// Authoritative Planner -> Follower route geometry.
+//
+// A segment is NOT merely a set of sampled waypoints. It is a parameterized
+// curve with a stable path-progress interval [startProgressMeters,
+// endProgressMeters]. Dense samples may still be generated for rendering,
+// collision proof and diagnostics, but they are a representation of this
+// geometry rather than the geometry itself.
+//
+// Current docking Planner authors Line/CircularArc segments. CubicBezier is
+// part of the public contract now so later route backends can publish Bezier
+// geometry without forcing the Follower back to point-cloud reconstruction.
+struct RouteCurveSegment
+{
+    RouteCurveKind kind = RouteCurveKind::Line;
+
+    double startProgressMeters = 0.0;
+    double endProgressMeters = 0.0;
+
+    // Route-local speed ceiling over this primitive.
+    double maxSpeedMps = 0.0;
+
+    // Endpoint frame. For Line these are sufficient.
+    glm::dvec3 startMeters {0.0};
+    glm::dvec3 endMeters {0.0};
+    glm::dvec3 startForward {0.0, 0.0, -1.0};
+    glm::dvec3 endForward {0.0, 0.0, -1.0};
+    glm::dvec3 startUp {0.0, 1.0, 0.0};
+    glm::dvec3 endUp {0.0, 1.0, 0.0};
+
+    // CircularArc representation.
+    glm::dvec3 arcCenterMeters {0.0};
+    glm::dvec3 arcNormal {0.0, 1.0, 0.0};
+    double arcRadiusMeters = 0.0;
+    double arcSweepRadians = 0.0;
+
+    // Cubic Bezier representation:
+    // B(t)=(1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t)t^2 P2 + t^3 P3.
+    // P0/P3 are startMeters/endMeters; P1/P2 are these control points.
+    glm::dvec3 bezierControl1Meters {0.0};
+    glm::dvec3 bezierControl2Meters {0.0};
+};
+
 struct RoutePlan
 {
     RoutePlanDisposition disposition = RoutePlanDisposition::NeedsRefinement;
@@ -100,7 +149,11 @@ struct RoutePlan
     std::string userMessage;
     std::string diagnosticSummary;
 
-    // Presentation and execution are two samplings of the same route geometry.
+    // Presentation and execution are samplings of the same authoritative
+    // parameterized route geometry. routeCurves carries the geometry itself;
+    // gates/executionGates remain sampled views for HUD, collision proof and
+    // compatibility while consumers migrate.
+    std::vector<RouteCurveSegment> routeCurves;
     std::vector<RouteGate> gates;
     std::vector<RouteGate> executionGates;
 

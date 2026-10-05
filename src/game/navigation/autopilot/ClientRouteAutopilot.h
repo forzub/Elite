@@ -74,7 +74,6 @@ public:
         std::size_t checkpointIndex = 0;
         std::uint64_t speedProfileRevision = 0;
         bool replanRequired = false;
-        bool stoppedCheckpointLaunch = false;
     };
 
     static void stop(State& state) noexcept
@@ -271,61 +270,6 @@ public:
             continuous
         );
 
-        // Spatial launch singularity:
-        // the physically correct first accepted sample is often a stopped
-        // state. Spatial progress cannot advance until the craft moves, so
-        // sampling v(s) literally at s=0 would command v=0 forever. Keep the
-        // reference POSITION at the real checkpoint, but borrow the next
-        // accepted moving sample's scalar speed along the current segment.
-        // This is the same launch contract that the old RouteFollower had;
-        // continuous execution must preserve it explicitly.
-        const double stopSpeedEpsilon =
-            std::max(
-                1.0e-6,
-                static_cast<double>(params.stopSpeedEpsilonMps)
-            );
-        const double sampledTargetSpeed =
-            glm::length(
-                continuous.reference.velocityMapMetersPerSecond
-            );
-        const double actualSpeed =
-            glm::length(agent.velocityMapMetersPerSecond);
-
-        bool stoppedCheckpointLaunch = false;
-        if (sampledTargetSpeed <= stopSpeedEpsilon &&
-            actualSpeed <= stopSpeedEpsilon &&
-            continuous.interpolation01 <= 1.0e-9 &&
-            continuous.lowerSampleIndex <
-                continuous.upperSampleIndex &&
-            continuous.upperSampleIndex <
-                state.runtimeSpeedProfileMps.size())
-        {
-            const double launchSpeed =
-                state.runtimeSpeedProfileMps[
-                    continuous.upperSampleIndex
-                ];
-            if (std::isfinite(launchSpeed) &&
-                launchSpeed > stopSpeedEpsilon)
-            {
-                const glm::dvec3 segment =
-                    state.continuousSamples[
-                        continuous.upperSampleIndex
-                    ].positionMapMeters -
-                    state.continuousSamples[
-                        continuous.lowerSampleIndex
-                    ].positionMapMeters;
-                const glm::dvec3 tangent =
-                    normalizedOr(
-                        segment,
-                        continuous.reference.forwardMap
-                    );
-                continuous.reference.velocityMapMetersPerSecond =
-                    tangent * launchSpeed;
-                continuous.reference.forwardMap = tangent;
-                stoppedCheckpointLaunch = true;
-            }
-        }
-
         // Map the continuous segment back to storage metadata only. Pages are
         // no longer allowed to select, reset or invalidate the execution
         // reference.
@@ -492,7 +436,6 @@ public:
                 : 0;
         out.speedProfileRevision = state.speedProfileRevision;
         out.replanRequired = !state.runtimeSuffixFeasible;
-        out.stoppedCheckpointLaunch = stoppedCheckpointLaunch;
 
         const auto& finalReference =
             state.continuousSamples.back();
@@ -729,6 +672,27 @@ private:
             nominalSpeeds[i] = speed;
             runtimeSpeeds[i] = speed;
         }
+
+        // A speed sample is a boundary condition. Derive the acceleration
+        // needed over each non-zero spatial interval from v^2 = v0^2 + 2*a*ds
+        // instead of assuming that a zero-speed checkpoint means a=0.
+        for (std::size_t i = 0; i + 1 < samples.size(); ++i)
+        {
+            const double ds = glm::length(
+                samples[i + 1].positionMapMeters -
+                samples[i].positionMapMeters
+            );
+            if (!(std::isfinite(ds) && ds > 1.0e-9))
+                return false;
+
+            runtimeAccelerations[i] =
+                (runtimeSpeeds[i + 1] * runtimeSpeeds[i + 1] -
+                 runtimeSpeeds[i] * runtimeSpeeds[i]) /
+                (2.0 * ds);
+        }
+        runtimeAccelerations.back() =
+            runtimeAccelerations[runtimeAccelerations.size() - 2];
+
         return true;
     }
 

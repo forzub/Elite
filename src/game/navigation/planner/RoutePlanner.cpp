@@ -171,6 +171,8 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
     for (const auto& gate : planned.executionGates)
         out.executionGates.push_back(adaptGate(gate));
 
+    out.routeCurves = planned.routeCurves;
+
     out.terminalDetourUsed = planned.terminalDetourUsed;
     out.terminalTurnRadiusRelaxed =
         planned.terminalTurnRadiusRelaxed;

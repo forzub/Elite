@@ -2465,6 +2465,8 @@ void SpaceState::updateDockingAdvisory()
                     << " pitch=" << output.control.pitchInput
                     << " yaw=" << output.control.yawInput
                     << " roll=" << output.control.rollInput
+                    << " strafe=" << output.control.strafeInput
+                    << " lift=" << output.control.liftInput
                     << " speed_rate="
                     << output.control.targetSpeedRate
                     << std::endl;

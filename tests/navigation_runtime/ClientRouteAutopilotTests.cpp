@@ -559,6 +559,123 @@ void testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss()
     );
 }
 
+void testParallelOffsetActivelyCapturesCorridorCenter()
+{
+    const auto route = plan();
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {120.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            28,
+            20.0
+        ),
+        "parallel-offset capture route rejected"
+    );
+
+    Agent offset = initial;
+    offset.positionMapMeters = {200.0, 0.0, 80.0};
+    offset.velocityMapMetersPerSecond = {120.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        offset,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "parallel-offset capture update invalid");
+    require(
+        output.crossTrackErrorMeters > 60.0,
+        "parallel-offset test did not create a material corridor error"
+    );
+    require(
+        std::abs(output.crossTrackCorrectionAngleRad) > 1.0e-3,
+        "parallel-offset state did not request a course capture angle"
+    );
+    require(
+        output.desiredCaptureAngularRateRadPerSec > 1.0e-3,
+        "parallel-offset state still requested zero capture angular rate"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) > 1.0e-3,
+        "parallel-offset state did not actively rotate back toward center"
+    );
+}
+
+void testCruiseRollAlignsToDockBottomReference()
+{
+    const auto route = plan();
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {50.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    const glm::dvec3 dockUp(0.0, 0.0, 1.0);
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            29,
+            20.0,
+            dockUp,
+            true
+        ),
+        "cruise roll-alignment route rejected"
+    );
+
+    const auto output = Autopilot::update(
+        state,
+        initial,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "cruise roll-alignment update invalid");
+    require(
+        std::abs(output.signedRollErrorRad) > 0.5,
+        "dock-bottom roll test did not see the wrong hull roll"
+    );
+    require(
+        std::abs(output.desiredRollRateRadPerSec) > 1.0e-3,
+        "dock-bottom alignment did not publish a roll-rate target"
+    );
+    require(
+        std::abs(output.control.rollInput) > 1.0e-4,
+        "dock-bottom alignment did not command hull roll during cruise"
+    );
+}
+
 void testTerminalFrameHoldsStoppedAndAligned()
 {
     const auto route = plan();
@@ -1980,6 +2097,8 @@ int main()
         testCourseLagLeadsIntoUpcomingTurn();
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
+        testParallelOffsetActivelyCapturesCorridorCenter();
+        testCruiseRollAlignsToDockBottomReference();
         testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
         testApproachBrakesBeforeDynamicTurnLimit();
         testExactCurveBoundaryActivatesAtAuthoredEntry();
@@ -2004,6 +2123,8 @@ int main()
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - turn lead distance follows measured nose-to-course lag\n"
+            << " - parallel offset actively captures corridor center\n"
+            << " - cruise roll aligns to dock-bottom reference\n"
             << " - course lead preserves curved tunnel instead of cutting a chord\n"
             << " - approach brakes before the Assisted dynamic turn limit\n"
             << " - exact curve boundary activates at authored entry\n"

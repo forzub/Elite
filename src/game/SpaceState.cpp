@@ -2472,6 +2472,12 @@ void SpaceState::updateDockingAdvisory()
                     << " phase_lead_deg="
                     << output.coursePhaseLeadAngleRad *
                         57.2957795130823208768
+                    << " brake_a_mps2="
+                    << output.effectiveBrakingAuthorityMps2
+                    << " stop_need_m="
+                    << output.requiredTerminalStopDistanceMeters
+                    << " terminal_brake="
+                    << (output.terminalBrakeActive ? 1 : 0)
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

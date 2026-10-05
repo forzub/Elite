@@ -676,6 +676,22 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
     route.executionGates.back().speedMps = 0.0;
     route.gates = route.executionGates;
 
+    game::navigation::planner::RouteCurveSegment exactArc;
+    exactArc.kind =
+        game::navigation::planner::RouteCurveKind::CircularArc;
+    exactArc.startProgressMeters = 0.0;
+    exactArc.endProgressMeters = RadiusMeters * HalfPi;
+    exactArc.maxSpeedMps = SpeedMps;
+    exactArc.startMeters = {0.0, 0.0, 0.0};
+    exactArc.endMeters = {RadiusMeters, 0.0, RadiusMeters};
+    exactArc.startForward = {1.0, 0.0, 0.0};
+    exactArc.endForward = {0.0, 0.0, 1.0};
+    exactArc.arcCenterMeters = {0.0, 0.0, RadiusMeters};
+    exactArc.arcNormal = {0.0, -1.0, 0.0};
+    exactArc.arcRadiusMeters = RadiusMeters;
+    exactArc.arcSweepRadians = HalfPi;
+    route.routeCurves.push_back(exactArc);
+
     Agent initial;
     initial.positionMapMeters =
         route.executionGates.front().positionMeters;
@@ -726,6 +742,17 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
     require(
         output.courseLeadDistanceMeters > 0.0,
         "curved-tunnel course lead was not active"
+    );
+    require(
+        std::abs(output.routeRadiusMeters - RadiusMeters) < 1.0,
+        "follower ignored authoritative circular radius and fell back to sampled chords"
+    );
+    require(
+        std::abs(
+            output.routeCurvaturePerMeter -
+            1.0 / RadiusMeters
+        ) < 1.0e-6,
+        "follower did not execute Planner curvature"
     );
     require(
         output.predictedCrossTrackMeters < 80.0,

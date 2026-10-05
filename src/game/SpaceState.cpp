@@ -2469,6 +2469,9 @@ void SpaceState::updateDockingAdvisory()
                     << output.desiredCourseAngularRateRadPerSec
                     << " actual_omega_radps="
                     << output.actualAngularRateRadPerSec
+                    << " phase_lead_deg="
+                    << output.coursePhaseLeadAngleRad *
+                        57.2957795130823208768
                     << " forward_err_deg="
                     << output.forwardErrorRad *
                         57.2957795130823208768

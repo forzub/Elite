@@ -174,10 +174,18 @@ void testStoppedSpatialOriginLaunches()
 
     require(output.valid, "stopped-start route emitted invalid output");
     require(
-        std::abs(output.control.targetSpeedRate) > 1.0e-6 ||
-        std::abs(output.control.pitchInput) > 1.0e-6 ||
-        std::abs(output.control.yawInput) > 1.0e-6,
-        "stopped spatial origin deadlocked at zero control"
+        output.targetSpeedMps >
+            std::max(
+                1.0e-6,
+                static_cast<double>(
+                    vehicle.stopSpeedEpsilonMps
+                )
+            ),
+        "stopped spatial origin kept a zero translational target"
+    );
+    require(
+        output.control.targetSpeedRate > 1.0e-6f,
+        "stopped spatial origin did not command forward acceleration"
     );
     require(
         glm::length(

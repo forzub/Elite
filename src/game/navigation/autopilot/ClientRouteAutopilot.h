@@ -62,6 +62,8 @@ public:
         // timing/speed/attitude feed-forward, but they no longer define the
         // route shape when Planner supplied parametric curves.
         std::vector<planner::RouteCurveSegment> routeCurves;
+        std::vector<double> curveSampleStartProgressMeters;
+        std::vector<double> curveSampleEndProgressMeters;
 
         RouteFollowerPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -156,6 +158,18 @@ public:
             state = {};
             return false;
         }
+        if (!buildCurveSampleProgressMap(
+                state.routeCurves,
+                state.continuousSamples,
+                state.continuousProgressMeters,
+                state.curveSampleStartProgressMeters,
+                state.curveSampleEndProgressMeters
+            ))
+        {
+            state = {};
+            return false;
+        }
+
         state.nextCheckpointIndex =
             state.checkpointProgressMeters.size() > 1 ? 1 : 0;
         return true;
@@ -352,15 +366,12 @@ public:
             state.routeCurves.empty()
                 ? continuousTotalProgress
                 : state.routeCurves.back().endProgressMeters;
-        const double progressScale =
-            continuousTotalProgress > 1.0e-9
-                ? routeTotalProgress / continuousTotalProgress
-                : 1.0;
         const double routeProgressMeters =
-            std::clamp(
-                continuous.spatialProgressMeters * progressScale,
-                0.0,
-                routeTotalProgress
+            mapSampleProgressToRouteProgress(
+                state.routeCurves,
+                state.curveSampleStartProgressMeters,
+                state.curveSampleEndProgressMeters,
+                continuous.spatialProgressMeters
             );
 
         auto curveNow =
@@ -427,8 +438,12 @@ public:
             state.continuousProgressMeters,
             std::min(
                 state.continuousProgressMeters.back(),
-                continuous.spatialProgressMeters +
-                    courseLeadDistanceMeters / std::max(1.0e-9, progressScale)
+                mapRouteProgressToSampleProgress(
+                    state.routeCurves,
+                    state.curveSampleStartProgressMeters,
+                    state.curveSampleEndProgressMeters,
+                    routeLeadProgressMeters
+                )
             )
         );
         if (!attitudeLead.valid)
@@ -486,6 +501,37 @@ public:
                 attitudeLead.reference.upMap,
                 continuous.reference.upMap
             );
+
+        // Terminal stop must include controller/engine response distance, not
+        // only the ideal v^2/(2a) boundary. Solve
+        //
+        //   d = v^2/(2a) + tau*v
+        //
+        // for the maximum safe reference speed at the remaining route distance.
+        // This starts braking early enough that the real craft stops in the
+        // final frame instead of crossing it and braking afterwards.
+        if (state.holdAtTerminal && brakingAuthority > 1.0e-9)
+        {
+            const double remainingRouteMeters =
+                std::max(0.0, routeTotalProgress - routeProgressMeters);
+            const double speedResponseSeconds =
+                std::clamp(
+                    state.pilotState.assistedCourseResponseSeconds * 0.35,
+                    0.35,
+                    1.25
+                );
+            const double at = brakingAuthority * speedResponseSeconds;
+            const double terminalSafeSpeed =
+                std::max(
+                    0.0,
+                    -at +
+                    std::sqrt(
+                        at * at +
+                        2.0 * brakingAuthority * remainingRouteMeters
+                    )
+                );
+            targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
+        }
 
         const glm::dvec3 desiredVelocity =
             nominalForward * targetSpeed;
@@ -1098,6 +1144,147 @@ private:
             runtimeAccelerations[reference.upperSampleIndex] * u;
         reference.reference.linearAccelerationFeedForwardMapMps2 =
             tangent * longitudinalAcceleration;
+    }
+
+    [[nodiscard]] static bool buildCurveSampleProgressMap(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const std::vector<AcceptedManeuverProgram::ReferenceSample>& samples,
+        const std::vector<double>& progress,
+        std::vector<double>& starts,
+        std::vector<double>& ends
+    )
+    {
+        starts.clear();
+        ends.clear();
+
+        if (curves.empty())
+            return true;
+        if (samples.size() < 2 || progress.size() != samples.size())
+            return false;
+
+        starts.reserve(curves.size());
+        ends.reserve(curves.size());
+
+        std::size_t searchFrom = 0;
+        for (const auto& curve : curves)
+        {
+            auto nearestProgress =
+                [&](const glm::dvec3& point, std::size_t from)
+                {
+                    std::size_t best = from;
+                    double bestDistance =
+                        std::numeric_limits<double>::infinity();
+                    for (std::size_t i = from; i < samples.size(); ++i)
+                    {
+                        const double d =
+                            glm::length2(samples[i].positionMapMeters - point);
+                        if (d < bestDistance)
+                        {
+                            bestDistance = d;
+                            best = i;
+                        }
+                        if (i > best + 8 && d > bestDistance * 4.0)
+                            break;
+                    }
+                    return best;
+                };
+
+            const std::size_t startIndex =
+                nearestProgress(curve.startMeters, searchFrom);
+            const std::size_t endIndex =
+                nearestProgress(
+                    curve.endMeters,
+                    std::min(startIndex + 1, samples.size() - 1)
+                );
+
+            if (endIndex <= startIndex)
+                return false;
+
+            starts.push_back(progress[startIndex]);
+            ends.push_back(progress[endIndex]);
+            searchFrom = endIndex;
+        }
+
+        return starts.size() == curves.size() &&
+            ends.size() == curves.size();
+    }
+
+    [[nodiscard]] static double mapSampleProgressToRouteProgress(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const std::vector<double>& starts,
+        const std::vector<double>& ends,
+        double sampleProgressMeters
+    ) noexcept
+    {
+        if (curves.empty() ||
+            starts.size() != curves.size() ||
+            ends.size() != curves.size())
+        {
+            return std::max(0.0, sampleProgressMeters);
+        }
+
+        std::size_t index = curves.size() - 1;
+        for (std::size_t i = 0; i < curves.size(); ++i)
+        {
+            if (sampleProgressMeters <= ends[i] + 1.0e-9)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        const double ds = ends[index] - starts[index];
+        const double u =
+            ds > 1.0e-12
+                ? std::clamp(
+                    (sampleProgressMeters - starts[index]) / ds,
+                    0.0,
+                    1.0
+                  )
+                : 0.0;
+        return
+            curves[index].startProgressMeters * (1.0 - u) +
+            curves[index].endProgressMeters * u;
+    }
+
+    [[nodiscard]] static double mapRouteProgressToSampleProgress(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const std::vector<double>& starts,
+        const std::vector<double>& ends,
+        double routeProgressMeters
+    ) noexcept
+    {
+        if (curves.empty() ||
+            starts.size() != curves.size() ||
+            ends.size() != curves.size())
+        {
+            return std::max(0.0, routeProgressMeters);
+        }
+
+        std::size_t index = curves.size() - 1;
+        for (std::size_t i = 0; i < curves.size(); ++i)
+        {
+            if (routeProgressMeters <=
+                curves[i].endProgressMeters + 1.0e-9)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        const double dr =
+            curves[index].endProgressMeters -
+            curves[index].startProgressMeters;
+        const double u =
+            dr > 1.0e-12
+                ? std::clamp(
+                    (routeProgressMeters -
+                     curves[index].startProgressMeters) / dr,
+                    0.0,
+                    1.0
+                  )
+                : 0.0;
+        return starts[index] * (1.0 - u) + ends[index] * u;
     }
 
     struct RouteCurveDiagnostic

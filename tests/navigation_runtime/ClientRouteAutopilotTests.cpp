@@ -1018,6 +1018,216 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     );
 }
 
+
+void testTurnPreviewCrossesIntermediateStraight()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1100.0, 0.0, 5.0}, {0.995, 0.0, 0.1}, 120.0},
+        RouteGate{{1200.0, 0.0, 20.0}, {0.98, 0.0, 0.2}, 120.0},
+        RouteGate{{1300.0, 0.0, 45.0}, {0.95, 0.0, 0.31}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment firstStraight;
+    firstStraight.kind = RouteCurveKind::Line;
+    firstStraight.startProgressMeters = 0.0;
+    firstStraight.endProgressMeters = 500.0;
+    firstStraight.maxSpeedMps = 200.0;
+    firstStraight.startMeters = {0.0, 0.0, 0.0};
+    firstStraight.endMeters = {500.0, 0.0, 0.0};
+    firstStraight.startForward =
+        firstStraight.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(firstStraight);
+
+    RouteCurveSegment secondStraight = firstStraight;
+    secondStraight.startProgressMeters = 500.0;
+    secondStraight.endProgressMeters = 1000.0;
+    secondStraight.startMeters = {500.0, 0.0, 0.0};
+    secondStraight.endMeters = {1000.0, 0.0, 0.0};
+    route.routeCurves.push_back(secondStraight);
+
+    RouteCurveSegment arc;
+    arc.kind = RouteCurveKind::CircularArc;
+    arc.startProgressMeters = 1000.0;
+    arc.endProgressMeters = 1500.0;
+    arc.maxSpeedMps = 200.0;
+    arc.startMeters = {1000.0, 0.0, 0.0};
+    arc.arcCenterMeters = {1000.0, 0.0, 1000.0};
+    arc.arcNormal = {0.0, -1.0, 0.0};
+    arc.arcRadiusMeters = 1000.0;
+    arc.arcSweepRadians = 0.5;
+    arc.endMeters = arc.positionAtParameter(1.0);
+    arc.startForward = {1.0, 0.0, 0.0};
+    arc.endForward = arc.tangentAtProgress(arc.endProgressMeters);
+    route.routeCurves.push_back(arc);
+
+    auto vehicle = params();
+    vehicle.maxCombatSpeed = 250.0f;
+    vehicle.maxCruiseSpeed = 250.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {200.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            31,
+            20.0
+        ),
+        "multi-straight turn-preview route rejected"
+    );
+
+    Agent approaching = initial;
+    approaching.positionMapMeters = {400.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        approaching,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "multi-straight turn-preview update invalid");
+    require(
+        output.distanceToTurnMeters > 500.0,
+        "turn preview stopped at the adjacent straight instead of the authored bend"
+    );
+    require(
+        output.turnSpeedCeilingMps > 0.0 &&
+        output.turnSpeedCeilingMps < 200.0,
+        "future bend beyond an intermediate straight produced no dynamic speed ceiling"
+    );
+}
+
+void testBezierInteriorCurvatureParticipatesInPreview()
+{
+    using game::navigation::planner::RouteCurveArcLengthKnot;
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{500.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1000.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, 200.0},
+        RouteGate{{1100.0, 0.0, 3.0}, {1.0, 0.0, 0.05}, 140.0},
+        RouteGate{{1200.0, 0.0, 25.0}, {0.98, 0.0, 0.2}, 120.0},
+        RouteGate{{1300.0, 0.0, 200.0}, {0.6, 0.0, 0.8}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment line;
+    line.kind = RouteCurveKind::Line;
+    line.startProgressMeters = 0.0;
+    line.endProgressMeters = 1000.0;
+    line.maxSpeedMps = 200.0;
+    line.startMeters = {0.0, 0.0, 0.0};
+    line.endMeters = {1000.0, 0.0, 0.0};
+    line.startForward = line.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(line);
+
+    RouteCurveSegment bezier;
+    bezier.kind = RouteCurveKind::CubicBezier;
+    bezier.startProgressMeters = 1000.0;
+    bezier.endProgressMeters = 1400.0;
+    bezier.maxSpeedMps = 200.0;
+    bezier.startMeters = {1000.0, 0.0, 0.0};
+    bezier.bezierControl1Meters = {1100.0, 0.0, 0.0};
+    bezier.bezierControl2Meters = {1200.0, 0.0, 0.0};
+    bezier.endMeters = {1300.0, 0.0, 200.0};
+    bezier.startForward = {1.0, 0.0, 0.0};
+    bezier.endForward =
+        bezier.tangentAtProgress(bezier.endProgressMeters);
+    bezier.arcLengthKnots = {
+        RouteCurveArcLengthKnot{0.00, 0.0},
+        RouteCurveArcLengthKnot{0.25, 100.0},
+        RouteCurveArcLengthKnot{0.50, 200.0},
+        RouteCurveArcLengthKnot{0.75, 300.0},
+        RouteCurveArcLengthKnot{1.00, 400.0}
+    };
+    route.routeCurves.push_back(bezier);
+
+    auto vehicle = params();
+    vehicle.maxCombatSpeed = 250.0f;
+    vehicle.maxCruiseSpeed = 250.0f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {200.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            32,
+            20.0
+        ),
+        "Bezier turn-preview route rejected"
+    );
+
+    Agent approaching = initial;
+    approaching.positionMapMeters = {850.0, 0.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        approaching,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "Bezier turn-preview update invalid");
+    require(
+        output.distanceToTurnMeters > 150.0,
+        "Bezier preview ignored interior curvature after a zero-curvature endpoint"
+    );
+    require(
+        output.turnSpeedCeilingMps > 0.0 &&
+        output.turnSpeedCeilingMps < 200.0,
+        "Bezier interior curvature produced no dynamic speed ceiling"
+    );
+}
+
 void testExactCurveBoundaryActivatesAtAuthoredEntry()
 {
     using game::navigation::planner::RouteCurveKind;
@@ -2125,6 +2335,8 @@ int main()
         testCruiseRollAlignsToDockBottomReference();
         testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
         testApproachBrakesBeforeDynamicTurnLimit();
+        testTurnPreviewCrossesIntermediateStraight();
+        testBezierInteriorCurvatureParticipatesInPreview();
         testExactCurveBoundaryActivatesAtAuthoredEntry();
         testTerminalBrakingIncludesControllerResponseMargin();
         testTerminalHoldKeepsStrongAttitudeCaptureForLargeError();
@@ -2151,6 +2363,8 @@ int main()
             << " - cruise roll aligns to dock-bottom reference\n"
             << " - course lead preserves curved tunnel instead of cutting a chord\n"
             << " - approach brakes before the Assisted dynamic turn limit\n"
+            << " - turn preview crosses intermediate straight primitives\n"
+            << " - Bezier interior curvature participates in turn preview\n"
             << " - exact curve boundary activates at authored entry\n"
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"

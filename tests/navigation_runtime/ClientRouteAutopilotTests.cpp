@@ -174,25 +174,32 @@ void testStoppedSpatialOriginLaunches()
 
     require(output.valid, "stopped-start route emitted invalid output");
     require(
-        output.targetSpeedMps >
-            std::max(
-                1.0e-6,
-                static_cast<double>(
-                    vehicle.stopSpeedEpsilonMps
-                )
-            ),
-        "stopped spatial origin kept a zero translational target"
-    );
-    require(
-        output.control.targetSpeedRate > 1.0e-6f,
-        "stopped spatial origin did not command forward acceleration"
-    );
-    require(
         glm::length(
             state.programs.front().
                 samples[0].velocityMapMetersPerSecond
         ) <= 1.0e-9,
         "trajectory compiler no longer preserves the physical stopped start"
+    );
+    require(
+        output.targetLongitudinalAccelerationMps2 > 1.0e-6,
+        "stopped spatial origin lost the acceleration required by the next point"
+    );
+    require(
+        glm::dot(
+            state.programs.front().
+                samples[0].linearAccelerationFeedForwardMapMps2,
+            glm::normalize(
+                state.programs.front().
+                    samples[1].positionMapMeters -
+                state.programs.front().
+                    samples[0].positionMapMeters
+            )
+        ) > 1.0e-6,
+        "accepted first sample incorrectly encoded v=0 as a=0"
+    );
+    require(
+        output.control.targetSpeedRate > 1.0e-6f,
+        "Assisted pilot ignored positive trajectory acceleration at v=0"
     );
 }
 

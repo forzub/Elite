@@ -226,9 +226,26 @@ public:
                 1.25
             );
 
+            // Track the authored 1-D motion program, not just its
+            // instantaneous speed sample. A reference state with v=0 may
+            // still require non-zero acceleration toward the next spatial
+            // point. Standard feed-forward + feedback:
+            //
+            //   a_cmd = a_ref + (v_ref - v_actual) / horizon
+            //
+            // This is what lets a physically stopped boundary launch without
+            // inventing a special-case target speed from a future sample.
+            const double feedForwardAcceleration =
+                glm::dot(
+                    request.desiredLinearAccelerationMapMps2,
+                    desiredForward
+                );
+            const double feedbackAcceleration =
+                (desiredSpeed - actualSpeed) / horizon;
+
             out.targetSpeedRate = finiteClamp(
-                (desiredSpeed - actualSpeed) /
-                (effectiveTargetRate * horizon)
+                (feedForwardAcceleration + feedbackAcceleration) /
+                effectiveTargetRate
             );
         }
         else

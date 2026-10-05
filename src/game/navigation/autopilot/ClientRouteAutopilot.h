@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <iterator>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -339,15 +340,9 @@ public:
                 continuous.reference.forwardMap,
                 agent.forwardMap
             );
-        // Position feedback is a servo around the already-authored program,
-        // not another path planner. Derive the lateral capture velocity from
-        // the ship's real lateral acceleration authority:
-        //
-        //     v_capture^2 = 2 * a_lateral * cross_track_distance
-        //
-        // This naturally commands a large correction far from centerline and
-        // bleeds it to zero as the craft reaches the corridor center. No
-        // fixed look-ahead distance or arbitrary response time is involved.
+        // Position error is interpreted through the measured Assisted
+        // nose-to-course response below. It is not translated directly by RCS
+        // and it does not rotate the hull for sub-meter noise.
         const glm::dvec3 referenceTangent =
             targetSpeed > 1.0e-9
                 ? continuous.reference.velocityMapMetersPerSecond /
@@ -362,12 +357,6 @@ public:
                 glm::dot(positionError, referenceTangent);
         const double crossTrackErrorMeters =
             glm::length(crossPositionError);
-
-        const double lateralAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? game::ship::
-                    assistedLateralStabilizationAccelerationLimitMps2(params)
-                : game::ship::manoeuvreAccelerationLimitMps2(params);
 
         // Assisted course response is not instantaneous: the velocity vector
         // follows the nose with a measured first-order lag tau. Predict where

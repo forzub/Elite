@@ -941,6 +941,14 @@ void testTerminalBrakingIncludesControllerResponseMargin()
         output.targetSpeedMps + 1.0 < idealBoundary,
         "terminal target still rides the ideal no-response braking boundary"
     );
+    require(
+        output.terminalBrakeActive,
+        "terminal full brake did not engage at measured stopping envelope"
+    );
+    require(
+        output.requiredTerminalStopDistanceMeters >= 800.0,
+        "terminal stopping envelope did not include response reserve"
+    );
 }
 
 void testTerminalHoldKeepsStrongAttitudeCaptureForLargeError()

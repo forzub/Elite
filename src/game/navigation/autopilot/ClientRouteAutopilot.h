@@ -536,31 +536,6 @@ public:
         const glm::dvec3 desiredVelocity =
             nominalForward * targetSpeed;
 
-        PredictivePilot::Request request;
-        request.law = law;
-        request.desiredVelocityMapMps = desiredVelocity;
-        request.desiredLinearAccelerationMapMps2 =
-            tracking.status !=
-                    ManeuverTrackingController::Status::InvalidInput
-                ? tracking.intent.idealLinearAccelerationLocalMps2
-                : continuous.reference.
-                    linearAccelerationFeedForwardMapMps2;
-        request.desiredForwardMap = steeringForward;
-        request.desiredUpMap = desiredUp;
-        request.desiredAngularVelocityMapRadPerSec =
-            attitudeLead.reference.angularVelocityMapRadPerSecond;
-        request.desiredAngularAccelerationMapRadPerSec2 =
-            attitudeLead.reference.
-                angularAccelerationFeedForwardMapRadPerSec2;
-        request.actualVelocityMapMps =
-            agent.velocityMapMetersPerSecond;
-        request.forwardMap = agent.forwardMap;
-        request.rightMap = agent.rightMap;
-        request.upMap = agent.upMap;
-        request.pitchRateRadPerSec = agent.pitchRateRadPerSec;
-        request.yawRateRadPerSec = agent.yawRateRadPerSec;
-        request.rollRateRadPerSec = agent.rollRateRadPerSec;
-
         const bool atFinalContinuousSegment =
             continuous.upperSampleIndex + 1 >=
                 state.continuousSamples.size();
@@ -571,8 +546,62 @@ public:
                     1.0e-6,
                     static_cast<double>(params.stopSpeedEpsilonMps)
                 );
+        const bool terminalAttitudeHold =
+            state.holdAtTerminal &&
+            atFinalContinuousSegment &&
+            terminalStopAuthored;
+
+        PredictivePilot::Request request;
+        request.law = law;
+        request.desiredVelocityMapMps = desiredVelocity;
+        request.desiredLinearAccelerationMapMps2 =
+            tracking.status !=
+                    ManeuverTrackingController::Status::InvalidInput
+                ? tracking.intent.idealLinearAccelerationLocalMps2
+                : continuous.reference.
+                    linearAccelerationFeedForwardMapMps2;
+
+        if (terminalAttitudeHold)
+        {
+            const auto& finalReference =
+                state.continuousSamples.back();
+            request.desiredForwardMap =
+                normalizedOr(
+                    finalReference.forwardMap,
+                    steeringForward
+                );
+            request.desiredUpMap =
+                normalizedOr(
+                    finalReference.upMap,
+                    desiredUp
+                );
+            request.desiredAngularVelocityMapRadPerSec =
+                glm::dvec3(0.0);
+            request.desiredAngularAccelerationMapRadPerSec2 =
+                glm::dvec3(0.0);
+        }
+        else
+        {
+            request.desiredForwardMap = steeringForward;
+            request.desiredUpMap = desiredUp;
+            request.desiredAngularVelocityMapRadPerSec =
+                attitudeLead.reference.angularVelocityMapRadPerSecond;
+            request.desiredAngularAccelerationMapRadPerSec2 =
+                attitudeLead.reference.
+                    angularAccelerationFeedForwardMapRadPerSec2;
+        }
+
+        request.actualVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        request.forwardMap = agent.forwardMap;
+        request.rightMap = agent.rightMap;
+        request.upMap = agent.upMap;
+        request.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+        request.yawRateRadPerSec = agent.yawRateRadPerSec;
+        request.rollRateRadPerSec = agent.rollRateRadPerSec;
         request.stopRequested =
             atFinalContinuousSegment && terminalStopAuthored;
+        request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
 
         out.control =
@@ -608,9 +637,15 @@ public:
                 : 0.0;
         out.crossTrackCaptureSpeedMps = 0.0;
         out.forwardErrorRad =
-            angleBetween(agent.forwardMap, steeringForward);
+            angleBetween(
+                agent.forwardMap,
+                request.desiredForwardMap
+            );
         out.upErrorRad =
-            angleBetween(agent.upMap, desiredUp);
+            angleBetween(
+                agent.upMap,
+                request.desiredUpMap
+            );
         out.courseLeadDistanceMeters = courseLeadDistanceMeters;
         out.predictedCrossTrackMeters = predictedCrossTrackMeters;
         out.centeringDeadbandMeters = centeringDeadbandMeters;

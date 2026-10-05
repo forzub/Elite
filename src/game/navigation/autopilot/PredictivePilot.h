@@ -68,6 +68,7 @@ public:
         double rollRateRadPerSec = 0.0;
 
         bool stopRequested = false;
+        bool terminalAttitudeHold = false;
         double deltaSeconds = 0.0;
     };
 
@@ -165,15 +166,23 @@ public:
         );
 
         const glm::dvec3 angularInput =
-            choosePredictiveRotationInput(
-                localRotationError,
-                currentLocalRate,
-                desiredLocalRate,
-                desiredLocalAcceleration,
-                maxLocalRate,
-                configuredAngularAuthority,
-                dt
-            );
+            request.terminalAttitudeHold
+                ? chooseTerminalHoldRotationInput(
+                    localRotationError,
+                    currentLocalRate,
+                    maxLocalRate,
+                    configuredAngularAuthority,
+                    dt
+                  )
+                : choosePredictiveRotationInput(
+                    localRotationError,
+                    currentLocalRate,
+                    desiredLocalRate,
+                    desiredLocalAcceleration,
+                    maxLocalRate,
+                    configuredAngularAuthority,
+                    dt
+                  );
 
         out.pitchInput = static_cast<float>(angularInput.x);
         out.yawInput = static_cast<float>(angularInput.y);
@@ -599,6 +608,90 @@ private:
         return std::isfinite(limit)
             ? std::max(0.0, limit)
             : std::numeric_limits<double>::infinity();
+    }
+
+    [[nodiscard]] static glm::dvec3 chooseTerminalHoldRotationInput(
+        const glm::dvec3& rotationErrorLocalRad,
+        const glm::dvec3& angularRateLocalRadPerSec,
+        const glm::dvec3& maxRateLocalRadPerSec,
+        double angularAuthorityRadPerSec2,
+        double dt
+    ) noexcept
+    {
+        const double angle = glm::length(rotationErrorLocalRad);
+        if (!std::isfinite(angle) ||
+            !(dt > 0.0) ||
+            angularAuthorityRadPerSec2 <= 1.0e-9)
+        {
+            return glm::dvec3(0.0);
+        }
+
+        constexpr double AngleDeadbandRad = 0.0015;
+        constexpr double RateDeadbandRadPerSec = 0.004;
+        const double rateMagnitude =
+            glm::length(angularRateLocalRadPerSec);
+
+        if (angle <= AngleDeadbandRad &&
+            rateMagnitude <= RateDeadbandRadPerSec)
+        {
+            return glm::dvec3(0.0);
+        }
+
+        glm::dvec3 targetRate(0.0);
+        if (angle > AngleDeadbandRad)
+        {
+            const glm::dvec3 direction =
+                rotationErrorLocalRad / angle;
+            const double directionalLimit =
+                directionalRateLimit(direction, maxRateLocalRadPerSec);
+            const double stoppingEnvelopeRate =
+                std::sqrt(
+                    std::max(
+                        0.0,
+                        2.0 * angularAuthorityRadPerSec2 * angle
+                    )
+                );
+            const double targetMagnitude =
+                std::min(
+                    directionalLimit,
+                    stoppingEnvelopeRate
+                );
+            targetRate = direction * targetMagnitude;
+        }
+
+        const glm::dvec3 rateError =
+            targetRate - angularRateLocalRadPerSec;
+        const double rateErrorMagnitude = glm::length(rateError);
+        if (!std::isfinite(rateErrorMagnitude) ||
+            rateErrorMagnitude <= 1.0e-12)
+        {
+            return glm::dvec3(0.0);
+        }
+
+        // Use exactly the time full angular authority would need to close the
+        // current rate error. At rest with a large attitude error this yields
+        // full acceleration; as the stopping envelope collapses near target,
+        // the sign reverses early enough to kill angular rate before capture.
+        const double responseSeconds =
+            std::max(
+                dt,
+                rateErrorMagnitude /
+                    angularAuthorityRadPerSec2
+            );
+        glm::dvec3 requestedAcceleration =
+            rateError / responseSeconds;
+
+        const double requestedMagnitude =
+            glm::length(requestedAcceleration);
+        if (requestedMagnitude > angularAuthorityRadPerSec2)
+        {
+            requestedAcceleration *=
+                angularAuthorityRadPerSec2 /
+                requestedMagnitude;
+        }
+
+        return requestedAcceleration /
+            angularAuthorityRadPerSec2;
     }
 
     [[nodiscard]] static glm::dvec3 choosePredictiveRotationInput(

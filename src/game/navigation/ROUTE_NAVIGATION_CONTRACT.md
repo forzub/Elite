@@ -273,3 +273,121 @@ reserve cost, gravity-aware long-leg validation, ephemeris/timing effects and
 inter-system replanning. It preserves this document's three-layer product rule:
 RoutePlan -> accepted Navigation/Trajectory Solution -> ManualGuidance or
 Autopilot execution.
+
+
+## Execution geometry, speed-envelope and Assisted-response contract
+
+This section is a hard implementation contract for Planner/Follower/Assisted
+changes. New navigation work must compose with these rules rather than replacing
+one already-working layer with another.
+
+### Authoritative route geometry
+
+A route is not a waypoint cloud. Every execution segment carries its actual
+geometry and stable path-progress interval. Supported primitives include Line,
+CircularArc and CubicBezier; future spline primitives follow the same contract.
+
+For each primitive the execution layer must be able to obtain, directly or by
+evaluation, position, tangent/body-forward reference, local curvature, radius
+where meaningful, start/end progress, corridor ownership and route-local speed
+ceiling. Circular arcs preserve their authored center, normal, radius and sweep.
+Cubic Bezier preserves P0..P3 and an arc-length mapping so spatial progress can
+be converted to curve parameter without redefining the geometry.
+
+Samples/gates may be used for HUD rendering, collision proof, bounded storage
+and compatibility, but they never replace the parameterized route. Follower
+must not cut an arc/Bezier by steering directly toward an unrelated sampled
+point or rebuild a private route between samples.
+
+### Speed ownership and global envelope
+
+Keep these concepts separate:
+
+- route speed limit: geometric / authored ceiling;
+- requested speed: target chosen by the route execution layer;
+- Assisted commanded/setpoint speed: what the flight law can currently ask for;
+- actual speed: measured craft state.
+
+The route speed profile is a full-route envelope. Future restrictions propagate
+backward through physical braking reachability; measured checkpoint state
+propagates forward through physical acceleration/braking reachability. A local
+Follower may lower a target for recovery but must never raise it above the
+already-authoritative route envelope.
+
+A lower speed required by an upcoming bend is not useful if it is requested
+only after curve entry. The physical craft must reach the permitted entry speed
+by the authored start of that curvature.
+
+### Assisted response is part of feasibility
+
+Assisted speed commands do not move instantaneously. Turn preparation therefore
+accounts for both command/setpoint slew and real longitudinal response:
+
+    preparation distance =
+        speed-command response distance
+        + physical braking distance
+        + closed-loop response margin
+
+The same measured/effective Assisted speed-handle response used by
+PredictivePilot must be used by turn preview. Do not maintain two independent
+estimates.
+
+Course response is also finite. Assisted remains the aircraft-like law
+"velocity follows the nose", but a short measured velocity-to-nose lag is
+expected. Route tracking predicts that lag and leads hull attitude around the
+same authored curve; it does not move the route.
+
+Manoeuvre/RCS authority is reserved for bounded stabilization/fine correction.
+It must not be treated as a substitute for rotating the hull and using the main
+longitudinal propulsion model to negotiate an ordinary route turn.
+
+### Arc/radius rules
+
+Turn radius is a vehicle-and-route result, not a universal constant. It is
+derived from the applicable combination of hull size/clearance, requested
+speed, lateral authority, angular-rate authority, angular acceleration/ramp
+distance, longitudinal acceleration/braking and available corridor geometry.
+
+A curve publishes where the bend begins and ends and what curvature/radius and
+speed ceiling apply there. Follower tracks that curve. Large ships naturally
+receive larger required geometry because the inputs scale with hull and
+dynamics; no Cobra-sized radius is silently reused for a 100-150 m craft.
+
+### Bezier/spline rules
+
+Bezier/splines are first-class route geometry. Follower/preview must be able to
+evaluate position, tangent and curvature as functions of spatial progress.
+Speed restrictions are derived from local curvature along the curve, not only
+from its endpoints. A zero-curvature Bezier endpoint does not mean the interior
+is straight; preview must inspect the interior arc-length domain.
+
+### Look-ahead and corridor tracking
+
+Look-ahead is measured along the accepted route. Its effective horizon follows
+speed, braking/response distance and upcoming curvature rather than a fixed
+number of metres or a fixed number of sampled points. HUD frames may retain
+their presentation cadence, but frame spacing is not the control law.
+
+Normal tracking aims to keep the craft near the corridor center with a bounded
+deadband. Corrections use measured position and velocity error and may be
+updated every control tick. They may change control commands, not the accepted
+route geometry. A route replan is reserved for a real planning/recovery event,
+not ordinary tracking error.
+
+### Anti-regression rule
+
+A new useful control feature is added to the existing useful layers:
+
+Route Geometry
+-> curvature/radius/tangent/corridor
+-> physical route speed limits
+-> full-route speed envelope
+-> Assisted response (speed slew + longitudinal response + course lag)
+-> preview/braking envelope
+-> exact-geometry Follower
+-> LocalFlightControlLaw
+
+Fixing turn geometry must not delete early braking or Assisted response.
+Fixing speed control must not degrade exact arc/Bezier following. Fixing
+tracking must not recreate the route from waypoints. Each repaired boundary
+requires a regression/contract test before later work is considered complete.

@@ -565,15 +565,63 @@ public:
         if (actualSpeed > std::max(
                 1.0e-6,
                 static_cast<double>(params.stopSpeedEpsilonMps)) &&
-            crossTrackErrorMeters > centeringDeadbandMeters)
+            crossTrackErrorMeters > 1.0e-9)
         {
-            const glm::dvec3 correctionVelocity =
-                -crossPositionError / courseResponseSeconds;
-            desiredCourse =
+            const glm::dvec3 towardCenter =
+                -crossPositionError / crossTrackErrorMeters;
+            const glm::dvec3 crossVelocity =
+                agent.velocityMapMetersPerSecond -
+                referenceTangent *
+                    glm::dot(
+                        agent.velocityMapMetersPerSecond,
+                        referenceTangent
+                    );
+            const double closingSpeed =
+                glm::dot(crossVelocity, towardCenter);
+
+            // Critically damped cross-track recovery:
+            //
+            //   e'' + 2/tau e' + e/tau^2 = 0
+            //
+            // with e'=-closingSpeed. The Assisted nose/course law produces
+            // lateral acceleration approximately v*sin(delta)/tau, so solve
+            // directly for the small course correction angle. This uses BOTH
+            // position and lateral velocity: if the craft is already closing
+            // too fast, the sign reverses before centerline crossing.
+            const double effectiveError =
+                std::max(
+                    0.0,
+                    crossTrackErrorMeters - centeringDeadbandMeters
+                );
+            const double requiredCenterAcceleration =
+                effectiveError /
+                    (courseResponseSeconds * courseResponseSeconds) -
+                2.0 * closingSpeed / courseResponseSeconds;
+
+            const double correctionArgument =
+                std::clamp(
+                    requiredCenterAcceleration *
+                        courseResponseSeconds /
+                        actualSpeed,
+                    -1.0,
+                    1.0
+                );
+            const double correctionAngle =
+                std::asin(correctionArgument);
+
+            const glm::dvec3 correctionAxis =
                 normalizedOr(
-                    referenceTangent * actualSpeed +
-                        correctionVelocity,
-                    referenceTangent
+                    glm::cross(referenceTangent, towardCenter),
+                    normalizedOr(
+                        state.routeUpReference,
+                        glm::dvec3(0.0, 1.0, 0.0)
+                    )
+                );
+            desiredCourse =
+                rotateAroundAxis(
+                    referenceTangent,
+                    correctionAxis,
+                    correctionAngle
                 );
         }
 
@@ -625,10 +673,19 @@ public:
                 if (leadAngle > 1.0e-9 &&
                     angularAuthority > 1.0e-9)
                 {
-                    const double captureSeconds =
+                    const double targetTurnRate =
+                        steadyCourseRate;
+                    const double angleCaptureSeconds =
                         2.0 *
                         std::sqrt(
                             leadAngle / angularAuthority
+                        );
+                    const double rateCaptureSeconds =
+                        targetTurnRate / angularAuthority;
+                    const double captureSeconds =
+                        std::max(
+                            angleCaptureSeconds,
+                            rateCaptureSeconds
                         );
                     attitudeLeadDistanceMeters =
                         actualSpeed * captureSeconds;
@@ -638,7 +695,7 @@ public:
                             nextCurve.startProgressMeters -
                                 routeProgressMeters
                         );
-                    curvatureBlend =
+                    const double rawBlend =
                         attitudeLeadDistanceMeters > 1.0e-9
                             ? std::clamp(
                                 1.0 -
@@ -648,6 +705,11 @@ public:
                                 1.0
                               )
                             : 0.0;
+                    // Smoothstep gives zero slope at both ends: no stick jerk
+                    // when pre-turn preparation starts or when the arc begins.
+                    curvatureBlend =
+                        rawBlend * rawBlend *
+                        (3.0 - 2.0 * rawBlend);
                     curvatureGuide = upcoming;
                 }
                 else

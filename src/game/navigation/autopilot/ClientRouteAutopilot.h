@@ -571,19 +571,12 @@ public:
             else if (distanceToTurnMeters > 0.0 &&
                 brakingAuthority > 1.0e-9)
             {
-                const double controlledSpeedLimit =
-                    game::ship::controlledSpeedLimitMps(params);
                 const double targetSetpointRate =
-                    std::max(
-                        static_cast<double>(
-                            params.assistedMinimumTargetSpeedChangeRateMps2
-                        ),
-                        controlledSpeedLimit *
-                            static_cast<double>(
-                                params.
-                                    assistedTargetSpeedChangeRateFractionPerSecond
-                            )
-                    );
+                    PredictivePilot::
+                        effectiveAssistedTargetSpeedChangeRateMps2(
+                            params,
+                            state.pilotState
+                        );
 
                 const double deltaSpeed =
                     std::max(

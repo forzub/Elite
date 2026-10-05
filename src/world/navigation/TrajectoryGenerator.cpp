@@ -1839,27 +1839,7 @@ KeyframedProgressResult keyframedGuideProgress(
     {
         const double distance = arc[i + 1] - arc[i];
         const double v0 = speeds[i], v1 = speeds[i + 1];
-        const double vmax = std::max({v0, v1, edgeLimits[i]});
-        const double accelerateDistance =
-            std::max(0.0, (vmax * vmax - v0 * v0) /
-                (2.0 * accelerating));
-        const double brakeDistance =
-            std::max(0.0, (vmax * vmax - v1 * v1) /
-                (2.0 * braking));
-        double peak = vmax;
-        if (accelerateDistance + brakeDistance > distance)
-            peak = std::sqrt(std::max(0.0,
-                (2.0 * accelerating * braking * distance +
-                 braking * v0 * v0 + accelerating * v1 * v1) /
-                (accelerating + braking)));
-        const double upDistance =
-            std::max(0.0, (peak * peak - v0 * v0) /
-                (2.0 * accelerating));
-        const double downDistance =
-            std::max(0.0, (peak * peak - v1 * v1) /
-                (2.0 * braking));
-        const double coastDistance =
-            std::max(0.0, distance - upDistance - downDistance);
+        const double segmentCeiling = edgeLimits[i];
 
         const auto leg = [&](double length, double from, double acceleration)
         {
@@ -1886,9 +1866,83 @@ KeyframedProgressResult keyframedGuideProgress(
             out.samples.push_back({clock, startProgress + length,
                 to, acceleration});
         };
-        leg(upDistance, v0, accelerating);
-        leg(coastDistance, peak, 0.0);
-        leg(downDistance, peak, -braking);
+
+        double remainingDistance = distance;
+        double currentSpeed = v0;
+
+        // If the measured state is already over this segment's ceiling,
+        // braking starts immediately. Do not coast above the route limit just
+        // because the old peak-speed construction could postpone braking.
+        if (currentSpeed > segmentCeiling + Epsilon &&
+            braking > Epsilon)
+        {
+            const double distanceToCeiling =
+                (currentSpeed * currentSpeed -
+                 segmentCeiling * segmentCeiling) /
+                (2.0 * braking);
+            const double brakeNow =
+                std::min(remainingDistance, distanceToCeiling);
+            leg(brakeNow, currentSpeed, -braking);
+            currentSpeed = std::sqrt(
+                std::max(
+                    0.0,
+                    currentSpeed * currentSpeed -
+                    2.0 * braking * brakeNow
+                )
+            );
+            remainingDistance -= brakeNow;
+        }
+
+        if (remainingDistance > 1.0e-8)
+        {
+            const double vmax =
+                std::max({currentSpeed, v1, segmentCeiling});
+            const double accelerateDistance =
+                std::max(
+                    0.0,
+                    (vmax * vmax - currentSpeed * currentSpeed) /
+                        (2.0 * accelerating)
+                );
+            const double brakeDistance =
+                std::max(
+                    0.0,
+                    (vmax * vmax - v1 * v1) /
+                        (2.0 * braking)
+                );
+
+            double peak = vmax;
+            if (accelerateDistance + brakeDistance > remainingDistance)
+            {
+                peak = std::sqrt(std::max(0.0,
+                    (2.0 * accelerating * braking * remainingDistance +
+                     braking * currentSpeed * currentSpeed +
+                     accelerating * v1 * v1) /
+                    (accelerating + braking)));
+            }
+
+            const double upDistance =
+                std::max(
+                    0.0,
+                    (peak * peak - currentSpeed * currentSpeed) /
+                        (2.0 * accelerating)
+                );
+            const double downDistance =
+                std::max(
+                    0.0,
+                    (peak * peak - v1 * v1) /
+                        (2.0 * braking)
+                );
+            const double coastDistance =
+                std::max(
+                    0.0,
+                    remainingDistance - upDistance - downDistance
+                );
+
+            leg(upDistance, currentSpeed, accelerating);
+            leg(coastDistance, peak, 0.0);
+            leg(downDistance, peak, -braking);
+        }
+
         out.samples.back().progressMeters = arc[i + 1];
         out.samples.back().speedMps = v1;
     }

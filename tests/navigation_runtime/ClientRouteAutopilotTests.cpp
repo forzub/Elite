@@ -981,6 +981,15 @@ void testApproachBrakesBeforeDynamicTurnLimit()
         output.targetSpeedMps < 200.0,
         "autopilot waited until curve entry to reduce speed"
     );
+    require(
+        output.turnSpeedSetpointSlewSeconds > 0.0,
+        "pre-turn model ignored Assisted speed-handle slew"
+    );
+    require(
+        output.requiredTurnSlowdownDistanceMeters >
+            output.distanceToTurnMeters,
+        "pre-turn slowdown horizon still assumes instant speed setpoint"
+    );
 
     Agent preTurn = approaching;
     preTurn.positionMapMeters = {950.0, 0.0, 0.0};

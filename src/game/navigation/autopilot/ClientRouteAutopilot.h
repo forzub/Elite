@@ -74,6 +74,7 @@ public:
         std::size_t checkpointIndex = 0;
         std::uint64_t speedProfileRevision = 0;
         bool replanRequired = false;
+        bool stoppedCheckpointLaunch = false;
     };
 
     static void stop(State& state) noexcept
@@ -290,6 +291,7 @@ public:
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
 
+        bool stoppedCheckpointLaunch = false;
         if (sampledTargetSpeed <= stopSpeedEpsilon &&
             actualSpeed <= stopSpeedEpsilon &&
             continuous.interpolation01 <= 1.0e-9 &&
@@ -320,6 +322,7 @@ public:
                 continuous.reference.velocityMapMetersPerSecond =
                     tangent * launchSpeed;
                 continuous.reference.forwardMap = tangent;
+                stoppedCheckpointLaunch = true;
             }
         }
 
@@ -489,6 +492,7 @@ public:
                 : 0;
         out.speedProfileRevision = state.speedProfileRevision;
         out.replanRequired = !state.runtimeSuffixFeasible;
+        out.stoppedCheckpointLaunch = stoppedCheckpointLaunch;
 
         const auto& finalReference =
             state.continuousSamples.back();

@@ -5036,3 +5036,18 @@ Published commits:
 - 0a29e2ae — log course_lead_m / predicted_cross_m / center_deadband_m
 
 Next gate: Windows client_route_autopilot test and live run. Evaluate straight-line twitch, onset of pre-turn nose lead, predicted_cross_m versus center_deadband_m, and final dock-up alignment. Do not reintroduce lateral RCS for route tracking.
+
+
+## 2026-10-05 — course lead may advance tangent, never replace a curve with an intercept chord
+
+The first live run of speed-and-tau course prediction flew straights well but cut the inside of the first bend and exited the tunnel. Root cause: the follower sampled a future route state and then aimed directly at a still farther intercept point. On curved geometry that line is a chord, so the guidance law mathematically commanded shortcutting through the inside wall.
+
+The course-lag model is retained, but its geometry contract is now strict: L=v*tau may advance the authored tangent/orientation reference only. It may never create a direct position target across a bend.
+
+For position correction, the follower predicts the craft position after tau, measures cross-track error in the local plane of the future authored tangent, and adds only the lateral course-velocity component required to remove that local predicted error over one response time. Steering therefore remains tangent-following plus local normal correction; there is no future-point chord.
+
+Published commits:
+- f5e78af6 — preserve tunnel curvature in course-lag steering
+- 02057ec6 — regression forbids chord cutting through a curved tunnel
+
+Next gate: Windows client_route_autopilot test and live bend-only validation. Primary invariant: centerline tracking may use phase lead in attitude, but the commanded path must remain topologically inside the authored corridor and must not shorten curved sections with straight intercepts.

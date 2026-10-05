@@ -93,6 +93,7 @@ public:
         double desiredCourseAngularRateRadPerSec = 0.0;
         double actualAngularRateRadPerSec = 0.0;
         double coursePhaseLeadAngleRad = 0.0;
+        double courseResponseSeconds = 0.0;
         double effectiveBrakingAuthorityMps2 = 0.0;
         double requiredTerminalStopDistanceMeters = 0.0;
         double turnSpeedCeilingMps = 0.0;
@@ -1040,6 +1041,7 @@ public:
                 agent.rollRateRadPerSec * agent.rollRateRadPerSec
             );
         out.coursePhaseLeadAngleRad = coursePhaseLeadAngleRad;
+        out.courseResponseSeconds = courseResponseSeconds;
         out.effectiveBrakingAuthorityMps2 =
             effectiveBrakingAuthority;
         out.requiredTerminalStopDistanceMeters =

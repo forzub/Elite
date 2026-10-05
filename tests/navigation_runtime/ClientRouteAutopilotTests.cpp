@@ -445,9 +445,16 @@ void testContinuousProgramCorrectsCrossTrackError()
         "continuous follower did not measure cross-track displacement"
     );
     require(
-        std::abs(output.control.pitchInput) > 1.0e-6 ||
-        std::abs(output.control.yawInput) > 1.0e-6,
-        "continuous follower did not steer back toward centerline"
+        std::abs(output.control.strafeInput) > 1.0e-6 ||
+        std::abs(output.control.liftInput) > 1.0e-6,
+        "continuous follower did not use lateral RCS toward centerline"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) < 1.0e-3,
+        "cross-track correction incorrectly rotated the hull on a straight"
     );
 }
 
@@ -525,24 +532,42 @@ void testCrossTrackCaptureBrakesBeforeCenter()
         "cross-track fast-closing update invalid"
     );
 
-    const double baselineTurn =
+    const double baselineRcs =
         std::hypot(
-            accelerateTowardCenter.control.pitchInput,
-            accelerateTowardCenter.control.yawInput
+            accelerateTowardCenter.control.strafeInput,
+            accelerateTowardCenter.control.liftInput
         );
-    const double brakingTurn =
+    const double brakingRcs =
         std::hypot(
-            brakeBeforeCenter.control.pitchInput,
-            brakeBeforeCenter.control.yawInput
+            brakeBeforeCenter.control.strafeInput,
+            brakeBeforeCenter.control.liftInput
         );
 
     require(
-        baselineTurn > 1.0e-4,
-        "position-only cross-track case did not steer toward center"
+        baselineRcs > 1.0e-4,
+        "position-only cross-track case did not command lateral RCS"
     );
     require(
-        brakingTurn < baselineTurn * 0.25,
-        "cross-track servo kept turning inward after braking distance was spent"
+        brakingRcs > 1.0e-4,
+        "fast-closing cross-track case did not command braking RCS"
+    );
+    require(
+        accelerateTowardCenter.control.strafeInput *
+            brakeBeforeCenter.control.strafeInput < 0.0f ||
+        accelerateTowardCenter.control.liftInput *
+            brakeBeforeCenter.control.liftInput < 0.0f,
+        "cross-track servo did not reverse RCS before centerline overshoot"
+    );
+    require(
+        std::hypot(
+            accelerateTowardCenter.control.pitchInput,
+            accelerateTowardCenter.control.yawInput
+        ) < 1.0e-3 &&
+        std::hypot(
+            brakeBeforeCenter.control.pitchInput,
+            brakeBeforeCenter.control.yawInput
+        ) < 1.0e-3,
+        "cross-track braking still polluted hull attitude"
     );
 }
 
@@ -615,6 +640,46 @@ void testTerminalFrameHoldsStoppedAndAligned()
     require(
         std::abs(output.control.rollInput) > 1.0e-6,
         "terminal HOLD stopped translating but did not continue dock-bottom alignment"
+    );
+
+    Autopilot::State offsetHoldState;
+    require(
+        Autopilot::start(
+            offsetHoldState,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            22,
+            25.0,
+            dockUp,
+            true
+        ),
+        "offset terminal-hold route rejected"
+    );
+
+    Agent offsetHold = atHold;
+    offsetHold.positionMapMeters =
+        final.positionMapMeters + glm::dvec3(0.0, 0.0, 5.0);
+    offsetHold.forwardMap = final.forwardMap;
+    offsetHold.rightMap = final.rightMap;
+    offsetHold.upMap = final.upMap;
+
+    const auto offsetOutput = Autopilot::update(
+        offsetHoldState,
+        offsetHold,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+    require(offsetOutput.valid, "offset terminal HOLD invalid");
+    require(offsetOutput.terminalHold, "offset terminal frame left HOLD mode");
+    require(
+        std::abs(offsetOutput.control.strafeInput) > 1.0e-6 ||
+        std::abs(offsetOutput.control.liftInput) > 1.0e-6,
+        "terminal HOLD did not use RCS to center the final frame"
     );
 }
 
@@ -1470,7 +1535,7 @@ int main()
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower does not invent turns outside authored trajectory\n"
-            << " - physical cross-track servo returns craft toward centerline\n"
+            << " - physical cross-track servo uses lateral RCS toward centerline\n"
             << " - cross-track capture brakes before crossing centerline\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"

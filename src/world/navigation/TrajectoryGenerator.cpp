@@ -1785,8 +1785,10 @@ KeyframedProgressResult keyframedGuideProgress(
     std::vector<double> speeds = limits;
     speeds.front() = std::max(0.0, initialSpeed);
     speeds.back() = std::max(0.0, terminalSpeed);
-    if (speeds.front() > request.vehicle.maxSpeedMps + Epsilon ||
-        speeds.back() > request.vehicle.maxSpeedMps + Epsilon)
+    // Initial speed is measured state, not a route constraint. It may already
+    // exceed the route/vehicle limit; that means brake, not reject the route.
+    // Terminal speed remains an authored boundary and must be feasible.
+    if (speeds.back() > request.vehicle.maxSpeedMps + Epsilon)
         return out;
     for (std::size_t i = count - 1; i > 0; --i)
     {
@@ -1797,19 +1799,34 @@ KeyframedProgressResult keyframedGuideProgress(
             speeds[i] * speeds[i] + 2.0 * braking * distance);
         if (i > 1)
             speeds[i - 1] = std::min(speeds[i - 1], reachable);
-        else if (speeds.front() > reachable + 1.0e-5)
-            return out;
+        // i==1 reaches the measured initial state. Never rewrite or reject
+        // it: an excessive actual speed is handled by the forward braking
+        // repair pass below.
     }
     for (std::size_t i = 1; i < count; ++i)
     {
         const double distance = arc[i] - arc[i - 1];
-        const double reachable = std::sqrt(
+
+        // Upper reachable speed when accelerating.
+        const double maxReachable = std::sqrt(
             speeds[i - 1] * speeds[i - 1] +
             2.0 * accelerating * distance);
-        if (i + 1 < count)
-            speeds[i] = std::min(speeds[i], reachable);
-        else if (speeds.back() > reachable + 1.0e-5)
-            return out;
+
+        // Lower reachable speed when braking at full available authority.
+        // If this is still above the authored route limit, the craft is
+        // temporarily overspeed but remains on the route and keeps braking.
+        const double minReachable = std::sqrt(
+            std::max(
+                0.0,
+                speeds[i - 1] * speeds[i - 1] -
+                2.0 * braking * distance
+            )
+        );
+
+        if (speeds[i] > maxReachable)
+            speeds[i] = maxReachable;
+        if (speeds[i] < minReachable)
+            speeds[i] = minReachable;
     }
 
     out.samples.push_back({0.0, 0.0, speeds.front(), 0.0});

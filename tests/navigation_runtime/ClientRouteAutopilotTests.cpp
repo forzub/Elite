@@ -445,20 +445,20 @@ void testContinuousProgramCorrectsCrossTrackError()
         "continuous follower did not measure cross-track displacement"
     );
     require(
-        std::abs(output.control.strafeInput) > 1.0e-6 ||
-        std::abs(output.control.liftInput) > 1.0e-6,
-        "continuous follower did not use lateral RCS toward centerline"
-    );
-    require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) < 1.0e-3,
-        "cross-track correction incorrectly rotated the hull on a straight"
+        ) > 1.0e-4,
+        "continuous follower did not steer nose to correct meter-scale cross-track error"
+    );
+    require(
+        std::abs(output.control.strafeInput) < 1.0e-6 &&
+        std::abs(output.control.liftInput) < 1.0e-6,
+        "continuous follower incorrectly used manoeuvre thrusters for cross-track correction"
     );
 }
 
-void testCrossTrackCaptureBrakesBeforeCenter()
+void testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss()
 {
     const auto route = plan();
     const auto vehicle = params();
@@ -470,104 +470,88 @@ void testCrossTrackCaptureBrakesBeforeCenter()
     initial.rightMap = {0.0, 0.0, 1.0};
     initial.upMap = {0.0, 1.0, 0.0};
 
-    Autopilot::State noLateralVelocity;
+    Autopilot::State quietState;
     require(
         Autopilot::start(
-            noLateralVelocity,
+            quietState,
             route,
             initial,
             game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             19,
-            25.0
+            20.0
         ),
-        "cross-track damping route rejected"
+        "course-lag deadband route rejected"
     );
 
-    Agent offset = initial;
-    offset.positionMapMeters = {50.0, 0.0, 10.0};
+    Agent centimetreError = initial;
+    centimetreError.positionMapMeters = {50.0, 0.0, 0.5};
 
-    const auto accelerateTowardCenter = Autopilot::update(
-        noLateralVelocity,
-        offset,
+    const auto quiet = Autopilot::update(
+        quietState,
+        centimetreError,
         game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
     );
+    require(quiet.valid, "course-lag deadband update invalid");
     require(
-        accelerateTowardCenter.valid,
-        "cross-track damping baseline emitted invalid output"
+        quiet.centeringDeadbandMeters >= 1.9,
+        "meter-scale centering deadband was not derived from corridor tolerance"
+    );
+    require(
+        std::hypot(
+            quiet.control.pitchInput,
+            quiet.control.yawInput
+        ) < 1.0e-3,
+        "sub-deadband position error caused hull twitch"
     );
 
-    Autopilot::State fastClosingState;
+    Autopilot::State driftingState;
     require(
         Autopilot::start(
-            fastClosingState,
+            driftingState,
             route,
             initial,
             game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             20,
-            25.0
+            20.0
         ),
-        "cross-track fast-closing route rejected"
+        "course-lag drift route rejected"
     );
 
-    Agent fastClosing = offset;
-    fastClosing.velocityMapMetersPerSecond = {20.0, 0.0, -20.0};
+    Agent futureMiss = centimetreError;
+    futureMiss.velocityMapMetersPerSecond = {20.0, 0.0, 5.0};
 
-    const auto brakeBeforeCenter = Autopilot::update(
-        fastClosingState,
-        fastClosing,
+    const auto correcting = Autopilot::update(
+        driftingState,
+        futureMiss,
         game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
     );
+    require(correcting.valid, "course-lag drift update invalid");
     require(
-        brakeBeforeCenter.valid,
-        "cross-track fast-closing update invalid"
-    );
-
-    const double baselineRcs =
-        std::hypot(
-            accelerateTowardCenter.control.strafeInput,
-            accelerateTowardCenter.control.liftInput
-        );
-    const double brakingRcs =
-        std::hypot(
-            brakeBeforeCenter.control.strafeInput,
-            brakeBeforeCenter.control.liftInput
-        );
-
-    require(
-        baselineRcs > 1.0e-4,
-        "position-only cross-track case did not command lateral RCS"
-    );
-    require(
-        brakingRcs > 1.0e-4,
-        "fast-closing cross-track case did not command braking RCS"
-    );
-    require(
-        accelerateTowardCenter.control.strafeInput *
-            brakeBeforeCenter.control.strafeInput < 0.0f ||
-        accelerateTowardCenter.control.liftInput *
-            brakeBeforeCenter.control.liftInput < 0.0f,
-        "cross-track servo did not reverse RCS before centerline overshoot"
+        correcting.predictedCrossTrackMeters >
+            correcting.centeringDeadbandMeters,
+        "velocity-lag prediction failed to see future cross-track miss"
     );
     require(
         std::hypot(
-            accelerateTowardCenter.control.pitchInput,
-            accelerateTowardCenter.control.yawInput
-        ) < 1.0e-3 &&
-        std::hypot(
-            brakeBeforeCenter.control.pitchInput,
-            brakeBeforeCenter.control.yawInput
-        ) < 1.0e-3,
-        "cross-track braking still polluted hull attitude"
+            correcting.control.pitchInput,
+            correcting.control.yawInput
+        ) > 1.0e-4,
+        "predicted future miss did not produce anticipatory nose correction"
+    );
+    require(
+        std::abs(correcting.control.strafeInput) < 1.0e-6 &&
+        std::abs(correcting.control.liftInput) < 1.0e-6,
+        "course-lag correction used manoeuvre thrusters"
     );
 }
 
@@ -642,44 +626,10 @@ void testTerminalFrameHoldsStoppedAndAligned()
         "terminal HOLD stopped translating but did not continue dock-bottom alignment"
     );
 
-    Autopilot::State offsetHoldState;
     require(
-        Autopilot::start(
-            offsetHoldState,
-            route,
-            initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
-            vehicle,
-            1000.0,
-            22,
-            25.0,
-            dockUp,
-            true
-        ),
-        "offset terminal-hold route rejected"
-    );
-
-    Agent offsetHold = atHold;
-    offsetHold.positionMapMeters =
-        final.positionMapMeters + glm::dvec3(0.0, 0.0, 5.0);
-    offsetHold.forwardMap = final.forwardMap;
-    offsetHold.rightMap = final.rightMap;
-    offsetHold.upMap = final.upMap;
-
-    const auto offsetOutput = Autopilot::update(
-        offsetHoldState,
-        offsetHold,
-        game::navigation::LocalFlightControlLaw::Assisted,
-        vehicle,
-        1000.0,
-        0.02
-    );
-    require(offsetOutput.valid, "offset terminal HOLD invalid");
-    require(offsetOutput.terminalHold, "offset terminal frame left HOLD mode");
-    require(
-        std::abs(offsetOutput.control.strafeInput) > 1.0e-6 ||
-        std::abs(offsetOutput.control.liftInput) > 1.0e-6,
-        "terminal HOLD did not use RCS to center the final frame"
+        std::abs(output.control.strafeInput) < 1.0e-6 &&
+        std::abs(output.control.liftInput) < 1.0e-6,
+        "terminal HOLD incorrectly used manoeuvre thrusters"
     );
 }
 
@@ -1515,7 +1465,7 @@ int main()
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testContinuousProgramDoesNotInventEarlyTurn();
         testContinuousProgramCorrectsCrossTrackError();
-        testCrossTrackCaptureBrakesBeforeCenter();
+        testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testTerminalFrameHoldsStoppedAndAligned();
         testContinuousProgramCrossesStoragePages();
         testClientTrajectoryPreservesPlannerTurnSpeedConstraint();
@@ -1535,8 +1485,8 @@ int main()
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
             << " - follower does not invent turns outside authored trajectory\n"
-            << " - physical cross-track servo uses lateral RCS toward centerline\n"
-            << " - cross-track capture brakes before crossing centerline\n"
+            << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
+            << " - centimetres are ignored while predicted future misses are corrected\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"

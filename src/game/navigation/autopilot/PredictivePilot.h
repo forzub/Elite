@@ -190,33 +190,12 @@ public:
             out.velocityAlignmentCommand =
                 VelocityAlignmentMode::BrakeToStop;
         }
-        else if (precisionStop && dt > 1.0e-9)
+        else if (precisionStop)
         {
-            const double rcsAuthority =
-                game::ship::manoeuvreAccelerationLimitMps2(params);
-            if (rcsAuthority > 1.0e-9)
-            {
-                glm::dvec3 wantedAcceleration =
-                    (request.desiredVelocityMapMps -
-                     request.actualVelocityMapMps) / dt;
-                const double wantedMagnitude =
-                    glm::length(wantedAcceleration);
-                if (std::isfinite(wantedMagnitude) &&
-                    wantedMagnitude > rcsAuthority)
-                {
-                    wantedAcceleration *= rcsAuthority / wantedMagnitude;
-                }
-
-                out.forwardInput = finiteClamp(
-                    glm::dot(wantedAcceleration, forward) / rcsAuthority
-                );
-                out.strafeInput = finiteClamp(
-                    glm::dot(wantedAcceleration, right) / rcsAuthority
-                );
-                out.liftInput = finiteClamp(
-                    glm::dot(wantedAcceleration, up) / rcsAuthority
-                );
-            }
+            // Final docking HOLD is translationally neutral. Do not wake RCS
+            // to chase centimetres/metres after the main velocity has been
+            // arrested; only the attitude loop remains active.
+            out.targetSpeedRate = 0.0f;
         }
         else if (request.law == LocalFlightControlLaw::Assisted)
         {

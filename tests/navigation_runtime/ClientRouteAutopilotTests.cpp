@@ -558,7 +558,7 @@ void testTerminalFrameHoldsStoppedAndAligned()
     initial.rightMap = {0.0, 0.0, 1.0};
     initial.upMap = {0.0, 1.0, 0.0};
 
-    const glm::dvec3 dockUp(0.0, 1.0, 0.0);
+    const glm::dvec3 dockUp(0.0, 0.0, 1.0);
 
     Autopilot::State state;
     require(
@@ -588,8 +588,12 @@ void testTerminalFrameHoldsStoppedAndAligned()
     atHold.positionMapMeters = final.positionMapMeters;
     atHold.velocityMapMetersPerSecond = {0.0, 0.0, 0.0};
     atHold.forwardMap = final.forwardMap;
-    atHold.rightMap = final.rightMap;
-    atHold.upMap = final.upMap;
+
+    // Deliberately arrive stopped with the wrong roll. HOLD must not release;
+    // it must keep rotating the hull until ship up matches dock up ("bottom"
+    // mark alignment).
+    atHold.rightMap = {0.0, 0.0, 1.0};
+    atHold.upMap = {0.0, 1.0, 0.0};
 
     const auto output = Autopilot::update(
         state,
@@ -607,6 +611,10 @@ void testTerminalFrameHoldsStoppedAndAligned()
     require(
         output.targetSpeedMps <= 1.0e-6,
         "terminal HOLD retained non-zero translational target"
+    );
+    require(
+        std::abs(output.control.rollInput) > 1.0e-6,
+        "terminal HOLD stopped translating but did not continue dock-bottom alignment"
     );
 }
 

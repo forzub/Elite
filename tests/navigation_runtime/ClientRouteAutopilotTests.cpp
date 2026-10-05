@@ -297,7 +297,7 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
     );
 }
 
-void testContinuousProgramDoesNotInventEarlyTurn()
+void testCourseLagLeadsIntoUpcomingTurn()
 {
     using game::navigation::planner::RouteGate;
 
@@ -389,9 +389,13 @@ void testContinuousProgramDoesNotInventEarlyTurn()
     require(output.valid,
         "straight-to-arc route emitted invalid output");
     require(
-        std::abs(output.control.pitchInput) < 1.0e-5 &&
-        std::abs(output.control.yawInput) < 1.0e-5,
-        "follower invented an early turn not authored by trajectory"
+        output.courseLeadDistanceMeters > 0.0,
+        "course-lag follower produced no dynamic lead distance"
+    );
+    require(
+        std::abs(output.control.pitchInput) > 1.0e-5 ||
+        std::abs(output.control.yawInput) > 1.0e-5,
+        "course-lag follower waited until arc entry instead of leading the turn"
     );
 }
 
@@ -1463,7 +1467,7 @@ int main()
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
-        testContinuousProgramDoesNotInventEarlyTurn();
+        testCourseLagLeadsIntoUpcomingTurn();
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testTerminalFrameHoldsStoppedAndAligned();
@@ -1484,7 +1488,7 @@ int main()
             << " - execution emits only ordinary ShipControlState inputs\n"
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
-            << " - follower does not invent turns outside authored trajectory\n"
+            << " - turn lead distance follows measured nose-to-course lag\n"
             << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
             << " - centimetres are ignored while predicted future misses are corrected\n"
             << " - final guidance frame is a stopped alignment HOLD\n"

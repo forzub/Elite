@@ -2227,3 +2227,21 @@ Published commits:
 - 366b348e / 01f1b3be — diagnostic cross-track and attitude errors
 
 Next gate: Windows MinGW client_route_autopilot test and live run. Do not implement dock ingress yet. Evaluate only centerline cleanliness, monotonic lateral damping, full stop at final frame, and continuing dock-up/bottom alignment.
+
+
+## 2026-10-05 — cross-track correction moved from hull steering to lateral RCS
+
+The latest live run proved that straight-line twitch was not primarily path geometry error. Cross-track was often only centimetres while forward error stayed below about one degree, yet pitch/yaw repeatedly saturated near full input. The cause was architectural: ClientRouteAutopilot converted fine cross-track correction into steeringForward, forcing the entire hull to rotate for centimetre-scale position trimming. Curves looked better because continuous tangent rotation masked this defect.
+
+ClientRouteAutopilot now keeps hull desiredForward on the authored route tangent. Cross-track capture is executed through ordinary ShipControlState strafe/lift inputs using the ship's bounded lateral authority. The servo retains stopping-distance logic: it computes current cross velocity, target capture velocity, and reverses RCS before centerline overshoot. Fine trajectory correction therefore no longer pollutes pitch/yaw.
+
+The same lateral RCS servo remains active at terminal targetSpeed=0, so terminal HOLD can center the craft in the final frame instead of freezing several metres off-center. terminal_hold telemetry now represents the actual final hold mode once the final stopped segment is reached, rather than only a fully satisfied completion tolerance.
+
+The previous live run also showed the pre-HOLD storm: at ~14 m remaining, target speed ~39 m/s, forward error reached ~30 degrees while cross-track itself was only ~0.4 m. This was a direct consequence of nose-steering cross-track capture and is expected to disappear with the RCS split.
+
+Published commits:
+- 58955637 — move cross-track correction from nose steering to RCS
+- 8dc2f89d — regressions require RCS correction without hull twitch
+- 1ad1061c — log strafe/lift controls
+
+Next gate: Windows client_route_autopilot test and live automatic docking. Evaluate straight-line hull stability, cross-track convergence, final-frame centering, and pre-HOLD behavior. Do not change Planner geometry or speed profile until this RCS split is validated.

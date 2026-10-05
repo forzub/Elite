@@ -2407,27 +2407,6 @@ void SpaceState::updateDockingAdvisory()
             return;
         }
 
-        if (output.replanRequired)
-        {
-            submitAutopilotControl(output.control);
-            std::cerr
-                << "[DockClient] request=" << pending.serial
-                << " phase=execution-replan"
-                << " reason=checkpoint-suffix-infeasible"
-                << " checkpoint=" << output.checkpointIndex
-                << " profile_rev=" << output.speedProfileRevision
-                << " target_speed_mps=" << output.targetSpeedMps
-                << " actual_speed_mps="
-                << glm::length(motion.localVelocityMps)
-                << std::endl;
-
-            ClientAutopilot::stop(m_clientRouteAutopilot);
-            m_clientDockingPhase =
-                ClientDockingPhase::Stabilizing;
-            m_clientDockingSettledSinceServerSeconds = -1.0;
-            return;
-        }
-
         if (output.complete)
         {
             releaseClientAutopilot();

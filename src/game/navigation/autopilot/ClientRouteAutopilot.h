@@ -98,6 +98,10 @@ public:
         double requiredTerminalStopDistanceMeters = 0.0;
         double turnSpeedCeilingMps = 0.0;
         double distanceToTurnMeters = 0.0;
+        double crossTrackCorrectionAngleRad = 0.0;
+        double desiredCaptureAngularRateRadPerSec = 0.0;
+        double signedRollErrorRad = 0.0;
+        double desiredRollRateRadPerSec = 0.0;
         bool terminalBrakeActive = false;
         std::size_t routeCurveIndex = 0;
         std::size_t pageIndex = 0;
@@ -563,6 +567,8 @@ public:
             CenteringBandFraction;
 
         glm::dvec3 desiredCourse = referenceTangent;
+        double crossTrackCorrectionAngleRad = 0.0;
+        glm::dvec3 crossTrackCorrectionAxisMap {0.0};
         if (actualSpeed > std::max(
                 1.0e-6,
                 static_cast<double>(params.stopSpeedEpsilonMps)) &&
@@ -607,10 +613,10 @@ public:
                     -1.0,
                     1.0
                 );
-            const double correctionAngle =
+            crossTrackCorrectionAngleRad =
                 std::asin(correctionArgument);
 
-            const glm::dvec3 correctionAxis =
+            crossTrackCorrectionAxisMap =
                 normalizedOr(
                     glm::cross(referenceTangent, towardCenter),
                     normalizedOr(
@@ -621,8 +627,8 @@ public:
             desiredCourse =
                 rotateAroundAxis(
                     referenceTangent,
-                    correctionAxis,
-                    correctionAngle
+                    crossTrackCorrectionAxisMap,
+                    crossTrackCorrectionAngleRad
                 );
         }
 
@@ -812,6 +818,48 @@ public:
                 attitudeLead.reference.upMap
             );
 
+        // Dock-bottom alignment is an explicit roll task, not something that
+        // should disappear inside the combined SO(3) error while pitch/yaw
+        // are busy tracking the route. Measure signed roll error around the
+        // current desired nose axis and publish a smooth desired roll rate.
+        glm::dvec3 currentUpProjected =
+            agent.upMap -
+            steeringForward *
+                glm::dot(agent.upMap, steeringForward);
+        currentUpProjected =
+            normalizedOr(currentUpProjected, desiredUp);
+        const double signedRollErrorRad =
+            std::atan2(
+                glm::dot(
+                    steeringForward,
+                    glm::cross(currentUpProjected, desiredUp)
+                ),
+                std::clamp(
+                    glm::dot(currentUpProjected, desiredUp),
+                    -1.0,
+                    1.0
+                )
+            );
+        const double angularAuthority =
+            game::ship::angularAccelerationLimitRadPerSec2(params);
+        const double rollRateLimit =
+            std::max(0.0, static_cast<double>(params.maxRollRate));
+        const double rollActuatorResponseSeconds =
+            angularAuthority > 1.0e-9 && rollRateLimit > 1.0e-9
+                ? std::max(
+                    deltaSeconds,
+                    rollRateLimit / angularAuthority
+                  )
+                : courseResponseSeconds;
+        const double desiredRollRateRadPerSec =
+            rollRateLimit > 1.0e-9
+                ? std::clamp(
+                    signedRollErrorRad / rollActuatorResponseSeconds,
+                    -rollRateLimit,
+                    rollRateLimit
+                  )
+                : 0.0;
+
         const double courseLeadDistanceMeters =
             attitudeLeadDistanceMeters;
 
@@ -898,6 +946,43 @@ public:
                 : continuous.reference.
                     linearAccelerationFeedForwardMapMps2;
 
+        glm::dvec3 routeAngularRateMap(0.0);
+        if (curvatureGuide.valid &&
+            curvatureGuide.curvaturePerMeter > 1.0e-12 &&
+            glm::length(curvatureGuide.turnNormalMap) > 1.0e-12)
+        {
+            const double guideSpeed =
+                turnSpeedCeilingMps > 0.0
+                    ? std::min(actualSpeed, turnSpeedCeilingMps)
+                    : actualSpeed;
+            const double targetHullRate =
+                guideSpeed *
+                curvatureGuide.curvaturePerMeter *
+                curvatureBlend;
+            routeAngularRateMap =
+                curvatureGuide.turnNormalMap * targetHullRate;
+        }
+
+        glm::dvec3 captureAngularRateMap(0.0);
+        if (std::abs(crossTrackCorrectionAngleRad) > 1.0e-9 &&
+            glm::length(crossTrackCorrectionAxisMap) > 1.0e-12)
+        {
+            const double maxAngularRate =
+                game::ship::maximumAngularSpeedRadPerSec(params);
+            const double captureRate =
+                std::clamp(
+                    crossTrackCorrectionAngleRad /
+                        courseResponseSeconds,
+                    -maxAngularRate,
+                    maxAngularRate
+                );
+            captureAngularRateMap =
+                crossTrackCorrectionAxisMap * captureRate;
+        }
+
+        const glm::dvec3 rollAngularRateMap =
+            steeringForward * desiredRollRateRadPerSec;
+
         if (terminalAttitudeHold)
         {
             const auto& finalReference =
@@ -922,27 +1007,16 @@ public:
             request.desiredForwardMap = steeringForward;
             request.desiredUpMap = desiredUp;
 
-            if (curvatureGuide.valid &&
-                curvatureGuide.curvaturePerMeter > 1.0e-12 &&
-                glm::length(curvatureGuide.turnNormalMap) > 1.0e-12)
+            if (!state.routeCurves.empty())
             {
-                const double guideSpeed =
-                    turnSpeedCeilingMps > 0.0
-                        ? std::min(actualSpeed, turnSpeedCeilingMps)
-                        : actualSpeed;
-                const double targetHullRate =
-                    guideSpeed *
-                    curvatureGuide.curvaturePerMeter *
-                    curvatureBlend;
+                // Angular reference has three explicit jobs:
+                // 1) follow authored curvature,
+                // 2) capture corridor center,
+                // 3) align ship bottom/up with dock marking.
                 request.desiredAngularVelocityMapRadPerSec =
-                    curvatureGuide.turnNormalMap * targetHullRate;
-                request.desiredAngularAccelerationMapRadPerSec2 =
-                    glm::dvec3(0.0);
-            }
-            else if (!state.routeCurves.empty())
-            {
-                request.desiredAngularVelocityMapRadPerSec =
-                    glm::dvec3(0.0);
+                    routeAngularRateMap +
+                    captureAngularRateMap +
+                    rollAngularRateMap;
                 request.desiredAngularAccelerationMapRadPerSec2 =
                     glm::dvec3(0.0);
             }
@@ -1048,6 +1122,13 @@ public:
             requiredTerminalStopDistanceMeters;
         out.turnSpeedCeilingMps = turnSpeedCeilingMps;
         out.distanceToTurnMeters = distanceToTurnMeters;
+        out.crossTrackCorrectionAngleRad =
+            crossTrackCorrectionAngleRad;
+        out.desiredCaptureAngularRateRadPerSec =
+            glm::length(captureAngularRateMap);
+        out.signedRollErrorRad = signedRollErrorRad;
+        out.desiredRollRateRadPerSec =
+            desiredRollRateRadPerSec;
         out.terminalBrakeActive = terminalBrakeActive;
         out.pageIndex = state.currentPage;
         out.segmentIndex = state.currentSpatialSegment;

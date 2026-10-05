@@ -2472,6 +2472,8 @@ void SpaceState::updateDockingAdvisory()
                     << " phase_lead_deg="
                     << output.coursePhaseLeadAngleRad *
                         57.2957795130823208768
+                    << " course_tau_s="
+                    << output.courseResponseSeconds
                     << " brake_a_mps2="
                     << output.effectiveBrakingAuthorityMps2
                     << " stop_need_m="

@@ -1959,7 +1959,16 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
 
     auto vehicle = params();
     vehicle.forwardMainEngineAccelerationMps2 = 40.0f;
-    vehicle.reverseMainEngineAccelerationMps2 = 4.0f;
+
+    // This scenario is about checkpoint re-anchoring, not about accepting an
+    // impossible braking plan. From 100 m/s to 20 m/s over the authored
+    // 500 m interval requires 9.6 m/s^2. With the production 20% feedback
+    // reserve (limited here by 10 m/s^2 lateral authority) and the planner's
+    // 0.90 execution margin, 12.75 m/s^2 reverse main yields ~9.675 m/s^2:
+    // just enough for the nominal 500 m plan, but not enough once the craft
+    // is observed 5 m late at x=505. The runtime re-anchor must therefore
+    // preserve the future 20 m/s constraint and command immediate braking.
+    vehicle.reverseMainEngineAccelerationMps2 = 12.75f;
     vehicle.throttleAccel = 40.0f;
 
     Agent initial;

@@ -120,6 +120,7 @@ public:
         double routeRadiusMeters = 0.0;
         double exactRemainingRouteMeters = 0.0;
         double desiredCourseAngularRateRadPerSec = 0.0;
+        double actualCourseAngularRateRadPerSec = 0.0;
         double actualAngularRateRadPerSec = 0.0;
         double coursePhaseLeadAngleRad = 0.0;
         double courseResponseSeconds = 0.0;
@@ -1131,6 +1132,24 @@ public:
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
 
+        double actualCourseAngularRateRadPerSec = 0.0;
+        const double previousCourseSpeed =
+            glm::length(state.pilotState.previousVelocityMapMps);
+        if (state.pilotState.initialized &&
+            previousCourseSpeed > 0.5 &&
+            actualSpeed > 0.5 &&
+            deltaSeconds > 1.0e-9)
+        {
+            const glm::dvec3 previousCourse =
+                state.pilotState.previousVelocityMapMps /
+                previousCourseSpeed;
+            const glm::dvec3 currentCourse =
+                agent.velocityMapMetersPerSecond / actualSpeed;
+            actualCourseAngularRateRadPerSec =
+                angleBetween(previousCourse, currentCourse) /
+                deltaSeconds;
+        }
+
         out.control =
             PredictivePilot::make(request, params, state.pilotState);
 
@@ -1211,7 +1230,9 @@ public:
                 routeTotalProgress - routeProgressMeters
             );
         out.desiredCourseAngularRateRadPerSec =
-            glm::length(diagnosticDesiredAngularRateMap);
+            glm::length(desiredCourseAngularRateMap);
+        out.actualCourseAngularRateRadPerSec =
+            actualCourseAngularRateRadPerSec;
         out.actualAngularRateRadPerSec =
             std::sqrt(
                 agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +

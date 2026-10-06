@@ -336,6 +336,14 @@ private:
         std::uint64_t lastValidatedTick = 0;
         game::navigation::HubSemanticAnchorDefinition portDefinition;
         game::simulation::HubAttachmentSnapshot portAttachment;
+
+        // Frozen orientation reference from the SAME planning epoch as the
+        // accepted route geometry. Automatic roll control and corridor
+        // presentation must consume this exact vector; re-resolving the port
+        // at execution/render time would rotate the frames independently of
+        // the already-authored route.
+        glm::dvec3 routeUpReference {0.0, 1.0, 0.0};
+
         // SpaceState owns presentation/tracking state only. Planner output is
         // stored intact and consumed read-only: sparse HUD gates and dense map
         // geometry remain Planner-owned products.

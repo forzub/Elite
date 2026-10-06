@@ -1778,8 +1778,19 @@ KeyframedProgressResult keyframedGuideProgress(
         // A low speed at the *end* of a long straight is a braking target,
         // never a cruise cap over the entire straight.
         if (arc[i + 1] - arc[i] <= 30.0)
-            edgeLimits[i] = std::min({edgeLimits[i],
-                limits[i], limits[i + 1]});
+        {
+            // Point limits are boundary conditions. In particular, a zero
+            // speed at HOLD means "arrive here stopped"; it is NOT a zero
+            // cruise-speed limit over the whole adjacent edge. Applying zero
+            // to edgeLimits makes the profile stop early and then attempt to
+            // coast the remaining distance at v=0.
+            if (limits[i] > Epsilon)
+                edgeLimits[i] =
+                    std::min(edgeLimits[i], limits[i]);
+            if (limits[i + 1] > Epsilon)
+                edgeLimits[i] =
+                    std::min(edgeLimits[i], limits[i + 1]);
+        }
     }
 
     std::vector<double> speeds = limits;
@@ -1847,10 +1858,28 @@ KeyframedProgressResult keyframedGuideProgress(
                 return;
             const double to = std::sqrt(std::max(0.0,
                 from * from + 2.0 * acceleration * length));
+            const double denominator =
+                std::abs(acceleration) > Epsilon
+                    ? from + to
+                    : from;
+
+            // Never turn an infeasible zero-speed coast into an unbounded
+            // sample loop. A stop is a boundary at a route station; movement
+            // over non-zero distance requires either non-zero speed or
+            // acceleration.
+            if (!(denominator > Epsilon) ||
+                !finite(denominator))
+            {
+                return;
+            }
+
             const double duration =
                 std::abs(acceleration) > Epsilon
-                    ? 2.0 * length / (from + to)
-                    : length / from;
+                    ? 2.0 * length / denominator
+                    : length / denominator;
+            if (!(duration >= 0.0) || !finite(duration))
+                return;
+
             const double startClock = clock;
             const double startProgress = out.samples.back().progressMeters;
             while (clock + interval < startClock + duration - 1.0e-8)

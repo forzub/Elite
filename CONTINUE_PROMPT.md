@@ -14,14 +14,14 @@ Hard invariants:
 - Assisted braking authority = reverse main, not lateral stabilization;
 - pitch/yaw and roll are independent;
 - PredictivePilot alone owns ordinary pilot-control conversion;
-- direct navigation demand seams and ShipControlAdapter are forbidden in production player execution.
+- direct navigation demand seams and  are forbidden in production player execution.
 
 Canonical acceptance:
 `python tests/architecture_contracts/check_automatic_docking.py`
 then `bash tests/navigation_runtime/run_mingw64.sh`.
 That runner excludes `legacy_navigation_lab`.
 
-The old `navigation_composite_proving_ground`, old TrajectoryFollower matrices and CorridorCaptureGuidance are historical diagnostics only. Do not tune current production behavior to satisfy them.
+The old ``, old TrajectoryFollower matrices and  are historical diagnostics only. Do not tune current production behavior to satisfy them.
 
 ## Continue from 2026-10-03 fully client-owned player navigation
 
@@ -54,23 +54,23 @@ The navigation test suite has been separated into current V2 acceptance and opt-
 
 Current automatic-docking execution tests must use only RouteFollower V2 + PredictivePilot V2 + ordinary ShipControlState/physics. navigation_runtime_control is V2-only. ManeuverProgramSamplerTests has been migrated to public RouteFollower V2. A new navigation_v2_tunnel_proving_ground validates physical progress through an authored SpatialCorridor, accepted-tunnel containment, <=3 s Assisted nose/VREL lag and PredictivePilot learned angular authority.
 
-Old TrajectoryFollower/NavigationRuntimeControlBridge/ShipControlAdapter execution matrices and the old navigation_composite_proving_ground are labeled legacy_navigation_lab, EXCLUDE_FROM_ALL, and skipped by the default runtime runner. They are available only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1.
+Old TrajectoryFollower/NavigationRuntimeControlBridge/ execution matrices and the old  are labeled legacy_navigation_lab, EXCLUDE_FROM_ALL, and skipped by the default runtime runner. They are available only with ELITE_RUN_LEGACY_NAVIGATION_LABS=1.
 
 verify_docking.sh and tests/run_all_mingw64.sh now use the V2 suite. Next evidence must be Windows compile/test output from navigation_runtime_control + maneuver_program_sampler + route_follower_api + navigation_v2_tunnel_proving_ground, then verify_docking.sh.
 
 ## Continue from 2026-10-03 PredictivePilot V2 second layer
 
-Current main has a completely isolated production autopilot V2. GameServer calls PredictivePilot only; ShipControlAdapter/direct navigation demands are forbidden by architecture contract. PredictivePilot now persists per-docking learning state, estimates real pitch/yaw/roll authority and Assisted response from measured ship behavior, and chooses ordinary-control candidates through short-horizon prediction.
+Current main has a completely isolated production autopilot V2. GameServer calls PredictivePilot only; /direct navigation demands are forbidden by architecture contract. PredictivePilot now persists per-docking learning state, estimates real pitch/yaw/roll authority and Assisted response from measured ship behavior, and chooses ordinary-control candidates through short-horizon prediction.
 
 RouteFollower V2 no longer calls legacy TrajectoryFollower and no longer creates a private 50-250 m look-ahead steering ray. For SpatialCorridor the accepted centerline is the only path: target velocity is current-segment tangent plus bounded inward correction to the closest point on that exact segment. Architecture checks forbid TrajectoryFollower/lookAhead/steeringRay in V2.
 
 Live logs expose learned_pitch_alpha, learned_yaw_alpha, learned_roll_alpha, assisted_course_tau_s and assisted_speed_response_mps2.
 
-Next evidence must come from Windows: architecture contract, navigation_runtime_control, maneuver_tracking_controller, navigation_composite_proving_ground, then EliteGame live docking. Do not mix or fall back to the legacy pilot if V2 fails.
+Next evidence must come from Windows: architecture contract, navigation_runtime_control, maneuver_tracking_controller, then EliteGame live docking. Do not mix or fall back to the legacy pilot if V2 fails.
 
 ## Continue from 2026-10-03 virtual-pilot architecture reset
 
-Production automatic docking is no longer allowed to control engines/accelerations directly. GameServer uses navigation::autopilot::ShipControlAdapter, which outputs only ordinary ShipControlState controls (pitch/yaw/roll, targetSpeedRate, keypad RCS, END/BrakeToStop). The real ship flight law owns propulsion and physical response. Composite execution uses the same path. Direct navigation demand fields remain legacy diagnostic/lab only and are forbidden in automatic docking by check_automatic_docking.py.
+Production automatic docking is no longer allowed to control engines/accelerations directly. GameServer uses navigation::autopilot::, which outputs only ordinary ShipControlState controls (pitch/yaw/roll, targetSpeedRate, keypad RCS, END/BrakeToStop). The real ship flight law owns propulsion and physical response. Composite execution uses the same path. Direct navigation demand fields remain legacy diagnostic/lab only and are forbidden in automatic docking by check_automatic_docking.py.
 
 DynamicMotionSystem direct Assisted helper was restored to the last known-good pre-regression implementation. New live marker is dock-auto-20261003-pilot-input-controls.
 
@@ -100,7 +100,7 @@ Latest Windows run proves Newtonian composite end-to-end green. Assisted physica
 
 Current main now enforces the user's original geometry rule: the constrained tunnel starts along the ship's actual current forward direction. The previous bug came from STOP leaving start.velocity=0, after which makeCurve had no heading derivative and authored the first segment directly toward the portal; post-hoc sample[0] velocity rewriting plus Newtonian FixedStart made hull and tunnel diverge. Zero-speed spatial samples are now STOP only; moving START is explicitly v>0,a_ff=0 along start.basis.forward; constrained Newtonian orientation follows the curve.
 
-Next evidence: maneuver_tracking_controller + navigation_composite_proving_ground Windows rerun.
+Next evidence: maneuver_tracking_controller +  Windows rerun.
 
 ## Continue from 2026-10-02 STOP/START navigation contract
 
@@ -132,7 +132,7 @@ Next evidence required: composite-only Windows rerun. Read BUILD_TEST_LAYOUT.md 
 
 ## Continue from 2026-09-28 composite-only rerun
 
-Latest target evidence: navigation_runtime_planner, maneuver_corner_family_matrix, maneuver_rigid_body_corridor, maneuver_chained_limit_matrix, and physical_maneuver_search_coordinator pass. Only navigation_composite_proving_ground remains pending.
+Latest target evidence: navigation_runtime_planner, maneuver_corner_family_matrix, maneuver_rigid_body_corridor, maneuver_chained_limit_matrix, and physical_maneuver_search_coordinator pass. Only  remains pending.
 
 The latest fix does not widen the 19 m corridor or disable the moving hazard. It settles residual entry velocity before the constrained portal and routes Assisted active braking through the same velocity-target flight model used by production.
 

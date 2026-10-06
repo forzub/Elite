@@ -2444,9 +2444,11 @@ void SpaceState::updateDockingAdvisory()
                     << output.routeRadiusMeters
                     << " exact_remaining_m="
                     << output.exactRemainingRouteMeters
-                    << " desired_omega_radps="
+                    << " desired_course_omega_radps="
                     << output.desiredCourseAngularRateRadPerSec
-                    << " actual_omega_radps="
+                    << " actual_course_omega_radps="
+                    << output.actualCourseAngularRateRadPerSec
+                    << " hull_omega_radps="
                     << output.actualAngularRateRadPerSec
                     << " phase_lead_deg="
                     << output.coursePhaseLeadAngleRad *

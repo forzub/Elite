@@ -318,9 +318,13 @@ public:
                     0.0,
                     game::ship::manoeuvreAccelerationLimitMps2(params)
                   );
+        // Longitudinal braking is a fore/aft propulsion task. Assisted
+        // lateral stabilization authority may rotate/realign the velocity
+        // vector, but it must never be counted as extra reverse-main braking
+        // authority along the route.
         const double rawBrakingAuthority =
             law == LocalFlightControlLaw::Assisted
-                ? std::max(rawReverseAuthority, rawLateralAuthority)
+                ? rawReverseAuthority
                 : rawForwardAuthority;
         const double feedbackReserve =
             DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
@@ -2280,9 +2284,12 @@ private:
                 ? game::ship::
                     assistedLateralStabilizationAccelerationLimitMps2(params)
                 : game::ship::manoeuvreAccelerationLimitMps2(params);
+        // Keep trajectory generation on the same physical model as
+        // AcceptedManeuverProgramBuilder: Assisted longitudinal braking is
+        // bounded by reverse main, not by lateral stabilization authority.
         const double brakingAuthority =
             law == LocalFlightControlLaw::Assisted
-                ? std::max(reverseAuthority, lateralAuthority)
+                ? reverseAuthority
                 : forwardAuthority;
         const double feedbackReserve =
             DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(

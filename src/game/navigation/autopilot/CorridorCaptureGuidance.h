@@ -79,9 +79,15 @@ public:
         const double deadband =
             std::max(0.0, request.centeringDeadbandMeters);
 
+        // Route curvature is not a corridor error. A future point on any
+        // real arc/Bezier segment is naturally off the CURRENT tangent, so
+        // using lookAheadOffTangentMeters to activate capture makes a centered
+        // craft steer along a chord and cut the authored curve.
+        //
+        // Capture exists only to recover actual cross-track displacement.
+        // While centered, Assisted flight follows the exact local tangent.
         out.captureActive =
-            out.crossTrackErrorMeters > deadband ||
-            out.lookAheadOffTangentMeters > deadband;
+            out.crossTrackErrorMeters > deadband;
 
         out.desiredForwardMap =
             out.captureActive ? rayDirection : tangent;

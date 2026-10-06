@@ -618,11 +618,15 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
         "parallel-offset route pose did not detect a material capture angle"
     );
     require(
+        output.forwardErrorRad > 0.05,
+        "parallel-offset capture did not alter the commanded hull direction"
+    );
+    require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) > 1.0e-3,
-        "parallel-offset state did not actively rotate back toward center"
+        ) > 0.5,
+        "parallel-offset state did not strongly rotate back toward center"
     );
 }
 
@@ -864,14 +868,14 @@ void testHullForwardTracksAuthoredTunnelTangent()
     require(output.valid, "authored tangent update invalid");
     require(
         output.forwardErrorRad > 0.20,
-        "hull target ignored authored tunnel tangent"
+        "on-center curved route did not command the hull into the authored bend"
     );
     require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
         ) > 0.5,
-        "hull did not command a strong turn toward authored tunnel tangent"
+        "on-center curved route did not strongly rotate the hull into the bend"
     );
 }
 

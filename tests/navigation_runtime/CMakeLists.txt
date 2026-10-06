@@ -58,7 +58,6 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/autopilot/RouteFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverPhaseGate.cpp"
@@ -1166,16 +1165,6 @@ target_include_directories(route_planner_api_tests PRIVATE
 target_compile_features(route_planner_api_tests PRIVATE cxx_std_17)
 target_link_libraries(route_planner_api_tests PRIVATE EliteNavigationRuntimeControl)
 add_test(NAME route_planner_api COMMAND route_planner_api_tests)
-
-add_executable(
-    route_follower_api_tests
-    RouteFollowerApiTests.cpp
-)
-target_include_directories(route_follower_api_tests PRIVATE
-    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
-target_compile_features(route_follower_api_tests PRIVATE cxx_std_17)
-target_link_libraries(route_follower_api_tests PRIVATE EliteNavigationRuntimeControl)
-add_test(NAME route_follower_api COMMAND route_follower_api_tests)
 
 add_executable(
     docking_infrastructure_api_tests

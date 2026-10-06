@@ -22,7 +22,7 @@ namespace
 using Autopilot =
     game::navigation::autopilot::ClientRouteAutopilot;
 using Agent =
-    game::navigation::autopilot::RouteFollowerAgentState;
+    game::navigation::autopilot::AutopilotAgentState;
 
 glm::dvec3 normalizedOr(
     const glm::dvec3& value,

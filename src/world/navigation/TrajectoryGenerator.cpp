@@ -2205,14 +2205,16 @@ buildPathProgressTrajectory(
         }
     }
 
-    // Preserve the exact authored initial state; the path-progress solve owns
-    // subsequent motion, not the input seed itself.
+    // Preserve the exact authored initial position and measured velocity.
+    // Acceleration is different: this trajectory sample is an executable
+    // feed-forward command, so it must keep the acceleration of the first
+    // physical path-progress leg. Overwriting it with the measured/seed
+    // initial acceleration (commonly zero at a stopped start) creates the
+    // dead state v=0,a=0 and the follower has no command that can launch.
     out.trajectory.samples.front().positionMeters =
         request.pathPointsMeters.front();
     out.trajectory.samples.front().velocityMps =
         request.initialVelocityMps;
-    out.trajectory.samples.front().accelerationMps2 =
-        request.initialAccelerationMps2;
     out.trajectory.samples.front().speedMps =
         magnitude(request.initialVelocityMps);
 

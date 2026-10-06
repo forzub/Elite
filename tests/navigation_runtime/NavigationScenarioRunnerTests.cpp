@@ -92,6 +92,21 @@ void testPlannerFeedsFollowerWithoutSyntheticRoutePlan()
 
     const auto result = Runner::run(request);
 
+    const std::string report = result.reportText();
+    require(
+        result.saveReport(
+            "build/test-logs/navigation-scenario-smoke.log"
+        ),
+        "scenario report file could not be written"
+    );
+
+    if (!result.plannerAccepted ||
+        !result.followerAccepted ||
+        result.frames.empty())
+    {
+        std::cerr << report;
+    }
+
     require(
         result.plannerAccepted,
         "production RoutePlanner rejected scenario"
@@ -109,18 +124,10 @@ void testPlannerFeedsFollowerWithoutSyntheticRoutePlan()
         "production navigation chain emitted no runtime frames"
     );
 
-    const std::string report = result.reportText();
     require(
         report.find("route_curves=") != std::string::npos &&
         report.find("transition[") != std::string::npos,
         "scenario report omitted planner geometry/transition diagnostics"
-    );
-
-    require(
-        result.saveReport(
-            "build/test-logs/navigation-scenario-smoke.log"
-        ),
-        "scenario report file could not be written"
     );
 }
 

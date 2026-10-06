@@ -224,7 +224,7 @@ try:
         "tests/navigation_runtime/CMakeLists.txt",
         "client_route_autopilot_tests",
         "NAME client_route_autopilot",
-        "NAME course_capture_guidance",
+        "course_capture_guidance",
         "NAME navigation_scenario_runner",
         "NAME navigation_v2_tunnel_proving_ground",
         "navigation_composite_proving_ground",

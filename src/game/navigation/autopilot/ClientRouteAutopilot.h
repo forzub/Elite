@@ -2365,6 +2365,13 @@ private:
                 return failPrograms(
                     "trajectory-generation-failed attempt=" +
                     std::to_string(attempt) +
+                    " status=" +
+                    std::to_string(
+                        static_cast<int>(trajectory.trajectory.status)
+                    ) +
+                    " message="" +
+                    trajectory.trajectory.message +
+                    """ +
                     " guide_points=" +
                     std::to_string(
                         trajectory.diagnostics.executionGuidePoints

@@ -257,18 +257,22 @@ private:
         const double brakingLimitedRate =
             std::sqrt(2.0 * authority * brakingAngleBudget);
 
-        const double correctiveRate =
+        const double fallbackRate =
             direction *
             std::min(
                 std::max(0.0, maxRate),
                 brakingLimitedRate
             );
+
+        // If an upstream guidance layer supplied a desired roll rate, that
+        // rate already encodes how quickly the hull should settle toward the
+        // frame-up target. Track it directly instead of stacking another
+        // bang-bang rate on top. The predictive envelope remains the fallback
+        // for callers that provide only an angle target.
         const double targetRate =
-            std::clamp(
-                boundedDesiredRate + correctiveRate,
-                -std::max(0.0, maxRate),
-                std::max(0.0, maxRate)
-            );
+            std::abs(boundedDesiredRate) > 1.0e-9
+                ? boundedDesiredRate
+                : fallbackRate;
 
         return std::clamp(
             (targetRate - rate) / (authority * dt),

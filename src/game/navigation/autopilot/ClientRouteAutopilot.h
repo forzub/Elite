@@ -692,215 +692,143 @@ public:
                 std::min(targetSpeed, recoveryCeiling);
         }
 
-        // Assisted course dynamics are first-order: velocity/course follows
-        // the hull nose with measured lag tau. Geometry itself remains the
-        // Planner curve. For a curve with curvature kappa, the desired course
-        // rotates at omega = v*kappa, so the required steady nose phase lead is
+        // Unified route-pose follower.
         //
-        //      delta ~= tau * v * kappa.
+        // The previously proven SpatialCorridor follower did not solve
+        // translation, course and hull attitude as unrelated tasks.  It chose
+        // one point ahead ON THE ACCEPTED ROUTE and used that route state for
+        // both the Assisted velocity direction and the hull pose.  Preserve
+        // that contract here, but evaluate the point on Planner's exact
+        // line/arc/Bezier geometry instead of the old fixed-capacity samples.
         //
-        // This is fundamentally different from aiming at a point v*tau ahead:
-        // the latter moves the path; this rotates the hull around the SAME
-        // local curve.
+        // The preview horizon comes from the measured Assisted course response
+        // time.  There is no "N frames" or fixed look-ahead distance.
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
             CenteringBandFraction;
 
-        glm::dvec3 desiredCourse = referenceTangent;
-        double crossTrackCorrectionAngleRad = 0.0;
-        glm::dvec3 crossTrackCorrectionAxisMap {0.0};
-        if (actualSpeed > std::max(
+        const double routeLookAheadMeters =
+            std::max(
+                0.0,
+                actualSpeed * courseResponseSeconds
+            );
+        const double poseProgressMeters =
+            std::min(
+                routeTotalProgress,
+                routeProgressMeters + routeLookAheadMeters
+            );
+
+        auto poseGuide =
+            sampleRouteCurveAtProgress(
+                state.routeCurves,
+                poseProgressMeters
+            );
+        if (!poseGuide.valid)
+            poseGuide = curveNow;
+
+        const glm::dvec3 posePoint =
+            poseGuide.valid
+                ? poseGuide.positionMapMeters
+                : continuous.reference.positionMapMeters;
+        const glm::dvec3 poseTangent =
+            poseGuide.valid
+                ? poseGuide.tangentMap
+                : referenceTangent;
+
+        glm::dvec3 steeringForward = referenceTangent;
+        const glm::dvec3 steeringRay =
+            posePoint - agent.positionMapMeters;
+        const double steeringDistanceMeters =
+            glm::length(steeringRay);
+
+        if (std::isfinite(steeringDistanceMeters) &&
+            steeringDistanceMeters > 1.0e-9 &&
+            actualSpeed > std::max(
                 1.0e-6,
-                static_cast<double>(params.stopSpeedEpsilonMps)) &&
-            crossTrackErrorMeters > 1.0e-9)
+                static_cast<double>(params.stopSpeedEpsilonMps)))
         {
-            const glm::dvec3 towardCenter =
-                -crossPositionError / crossTrackErrorMeters;
-            const glm::dvec3 crossVelocity =
-                agent.velocityMapMetersPerSecond -
+            steeringForward =
+                steeringRay / steeringDistanceMeters;
+
+            // On a straight, preserve exact tangent inside the central band so
+            // numerical projection noise cannot make the hull hunt.  As soon
+            // as the authored route bends, posePoint leaves that tangent and
+            // the same rule naturally starts the turn before curve entry.
+            const glm::dvec3 offTangent =
+                steeringRay -
                 referenceTangent *
-                    glm::dot(
-                        agent.velocityMapMetersPerSecond,
-                        referenceTangent
-                    );
-            const double closingSpeed =
-                glm::dot(crossVelocity, towardCenter);
+                    glm::dot(steeringRay, referenceTangent);
+            if (crossTrackErrorMeters <= centeringDeadbandMeters &&
+                glm::length(offTangent) <= centeringDeadbandMeters)
+            {
+                steeringForward = referenceTangent;
+            }
+        }
+        else
+        {
+            steeringForward = poseTangent;
+        }
 
-            // Critically damped cross-track recovery:
-            //
-            //   e'' + 2/tau e' + e/tau^2 = 0
-            //
-            // with e'=-closingSpeed. The Assisted nose/course law produces
-            // lateral acceleration approximately v*sin(delta)/tau, so solve
-            // directly for the small course correction angle. This uses BOTH
-            // position and lateral velocity: if the craft is already closing
-            // too fast, the sign reverses before centerline crossing.
-            const double effectiveError =
-                std::max(
-                    0.0,
-                    crossTrackErrorMeters - centeringDeadbandMeters
-                );
-            const double requiredCenterAcceleration =
-                effectiveError /
-                    (courseResponseSeconds * courseResponseSeconds) -
-                2.0 * closingSpeed / courseResponseSeconds;
-
-            const double correctionArgument =
-                std::clamp(
-                    requiredCenterAcceleration *
-                        courseResponseSeconds /
-                        actualSpeed,
-                    -1.0,
-                    1.0
-                );
-            crossTrackCorrectionAngleRad =
-                std::asin(correctionArgument);
-
+        // Diagnostics/feed-forward for the same single steering solution.
+        // There is no second private capture course.
+        double crossTrackCorrectionAngleRad =
+            angleBetween(referenceTangent, steeringForward);
+        glm::dvec3 crossTrackCorrectionAxisMap =
+            glm::cross(referenceTangent, steeringForward);
+        const double correctionAxisLength =
+            glm::length(crossTrackCorrectionAxisMap);
+        if (correctionAxisLength > 1.0e-12)
+            crossTrackCorrectionAxisMap /= correctionAxisLength;
+        else
+        {
             crossTrackCorrectionAxisMap =
                 normalizedOr(
-                    glm::cross(referenceTangent, towardCenter),
-                    normalizedOr(
-                        state.routeUpReference,
-                        glm::dvec3(0.0, 1.0, 0.0)
-                    )
+                    state.routeUpReference,
+                    glm::dvec3(0.0, 1.0, 0.0)
                 );
-            desiredCourse =
-                rotateAroundAxis(
-                    referenceTangent,
-                    crossTrackCorrectionAxisMap,
-                    crossTrackCorrectionAngleRad
-                );
+            crossTrackCorrectionAngleRad = 0.0;
         }
 
-        RouteCurveDiagnostic curvatureGuide = curveNow;
+        // Body orientation comes from the SAME future route pose.  This is
+        // the piece that was lost when course/capture/roll were split into
+        // independent controllers.
+        const double poseSampleProgressMeters =
+            mapRouteProgressToSampleProgress(
+                state.routeCurves,
+                state.curveSampleStartProgressMeters,
+                state.curveSampleEndProgressMeters,
+                poseProgressMeters
+            );
+        auto attitudeLead =
+            sampleContinuousReferenceAtProgress(
+                state.continuousSamples,
+                state.continuousProgressMeters,
+                poseSampleProgressMeters
+            );
+        if (!attitudeLead.valid)
+            attitudeLead = continuous;
+
+        glm::dvec3 desiredUpSource =
+            glm::length(state.routeUpReference) > 1.0e-9
+                ? state.routeUpReference
+                : attitudeLead.reference.upMap;
+        glm::dvec3 desiredUp =
+            desiredUpSource -
+            steeringForward *
+                glm::dot(desiredUpSource, steeringForward);
+        desiredUp =
+            normalizedOr(
+                desiredUp,
+                attitudeLead.reference.upMap
+            );
+
+        RouteCurveDiagnostic curvatureGuide = poseGuide;
         double curvatureBlend = 1.0;
-        double attitudeLeadDistanceMeters = 0.0;
-
-        // Circular/Bezier curvature may start discontinuously after a line.
-        // The course itself must remain on the straight until the authored
-        // curve begins. Only the HULL attitude may start preparing early, and
-        // that preparation distance comes from real angular acceleration.
-        if (curveNow.valid &&
-            curveNow.curvaturePerMeter <= 1.0e-12 &&
-            curveNow.curveIndex + 1 < state.routeCurves.size())
-        {
-            const auto& nextCurve =
-                state.routeCurves[curveNow.curveIndex + 1];
-            auto upcoming =
-                sampleRouteCurveAtProgress(
-                    state.routeCurves,
-                    std::min(
-                        nextCurve.endProgressMeters,
-                        nextCurve.startProgressMeters + 1.0e-6
-                    )
-                );
-
-            if (upcoming.valid &&
-                upcoming.curvaturePerMeter > 1.0e-12)
-            {
-                const double steadyCourseRate =
-                    std::min(
-                        actualSpeed,
-                        turnSpeedCeilingMps > 0.0
-                            ? turnSpeedCeilingMps
-                            : actualSpeed
-                    ) *
-                    upcoming.curvaturePerMeter;
-                const double leadArgument =
-                    std::clamp(
-                        courseResponseSeconds * steadyCourseRate,
-                        -1.0,
-                        1.0
-                    );
-                const double leadAngle =
-                    std::asin(leadArgument);
-                const double angularAuthority =
-                    game::ship::
-                        angularAccelerationLimitRadPerSec2(params);
-                if (leadAngle > 1.0e-9 &&
-                    angularAuthority > 1.0e-9)
-                {
-                    const double targetTurnRate =
-                        steadyCourseRate;
-                    const double angleCaptureSeconds =
-                        2.0 *
-                        std::sqrt(
-                            leadAngle / angularAuthority
-                        );
-                    const double rateCaptureSeconds =
-                        targetTurnRate / angularAuthority;
-                    const double captureSeconds =
-                        std::max(
-                            angleCaptureSeconds,
-                            rateCaptureSeconds
-                        );
-                    attitudeLeadDistanceMeters =
-                        actualSpeed * captureSeconds;
-                    const double distanceToCurve =
-                        std::max(
-                            0.0,
-                            nextCurve.startProgressMeters -
-                                routeProgressMeters
-                        );
-                    const double rawBlend =
-                        attitudeLeadDistanceMeters > 1.0e-9
-                            ? std::clamp(
-                                1.0 -
-                                distanceToCurve /
-                                    attitudeLeadDistanceMeters,
-                                0.0,
-                                1.0
-                              )
-                            : 0.0;
-                    // Smoothstep gives zero slope at both ends: no stick jerk
-                    // when pre-turn preparation starts or when the arc begins.
-                    curvatureBlend =
-                        rawBlend * rawBlend *
-                        (3.0 - 2.0 * rawBlend);
-                    curvatureGuide = upcoming;
-                }
-                else
-                {
-                    curvatureBlend = 0.0;
-                }
-            }
-            else
-            {
-                curvatureBlend = 0.0;
-            }
-        }
+        const double attitudeLeadDistanceMeters =
+            routeLookAheadMeters;
 
         double coursePhaseLeadAngleRad = 0.0;
-        glm::dvec3 steeringForward = desiredCourse;
-        if (curvatureGuide.valid &&
-            curvatureGuide.curvaturePerMeter > 1.0e-12 &&
-            glm::length(curvatureGuide.turnNormalMap) > 1.0e-12 &&
-            actualSpeed > 1.0e-6)
-        {
-            const double guideSpeed =
-                turnSpeedCeilingMps > 0.0
-                    ? std::min(actualSpeed, turnSpeedCeilingMps)
-                    : actualSpeed;
-            const double leadArgument =
-                std::clamp(
-                    courseResponseSeconds *
-                        guideSpeed *
-                        curvatureGuide.curvaturePerMeter,
-                    -1.0,
-                    1.0
-                );
-            coursePhaseLeadAngleRad =
-                std::asin(leadArgument) *
-                curvatureBlend;
-            steeringForward =
-                rotateAroundAxis(
-                    desiredCourse,
-                    curvatureGuide.turnNormalMap,
-                    coursePhaseLeadAngleRad
-                );
-        }
-
         // Prediction remains diagnostic only. It can tell us that current
         // velocity will miss the future curve, but it is never itself a
         // steering target.
@@ -936,28 +864,6 @@ public:
                 glm::dot(predictedError, diagnosticTangent);
         const double predictedCrossTrackMeters =
             glm::length(predictedCrossError);
-
-        auto attitudeLead = sampleContinuousReferenceAtProgress(
-            state.continuousSamples,
-            state.continuousProgressMeters,
-            continuous.spatialProgressMeters
-        );
-        if (!attitudeLead.valid)
-            attitudeLead = continuous;
-
-        glm::dvec3 desiredUpSource =
-            glm::length(state.routeUpReference) > 1.0e-9
-                ? state.routeUpReference
-                : attitudeLead.reference.upMap;
-        glm::dvec3 desiredUp =
-            desiredUpSource -
-            steeringForward *
-                glm::dot(desiredUpSource, steeringForward);
-        desiredUp =
-            normalizedOr(
-                desiredUp,
-                attitudeLead.reference.upMap
-            );
 
         // Dock-bottom alignment is an explicit roll task, not something that
         // should disappear inside the combined SO(3) error while pitch/yaw
@@ -1059,8 +965,11 @@ public:
             targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
         }
 
+        // Assisted contract: where the hull points is where commanded
+        // velocity points.  Never give PredictivePilot one direction for the
+        // nose and another for translation.
         const glm::dvec3 desiredVelocity =
-            nominalForward * targetSpeed;
+            steeringForward * targetSpeed;
 
         const bool atFinalContinuousSegment =
             continuous.upperSampleIndex + 1 >=

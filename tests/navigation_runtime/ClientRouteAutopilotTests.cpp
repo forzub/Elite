@@ -2455,9 +2455,13 @@ void testHullAttitudeControlIsNotSlowedByCourseLag()
     };
     request.desiredUpMap = {0.0, 1.0, 0.0};
 
-    // Deliberately huge course-response lag. This describes how long
-    // velocity takes to follow the nose, NOT how slowly the hull may rotate.
-    request.angularTrackingResponseSeconds = 5.0;
+    // Deliberately huge measured course-response lag. This describes how
+    // long velocity takes to follow the nose, NOT how slowly the hull may rotate.
+    state.assistedCourseResponseSeconds = 5.0;
+    request.desiredVelocityMapMps =
+        request.desiredForwardMap * 10.0;
+    request.actualVelocityMapMps =
+        request.forwardMap * 10.0;
     request.deltaSeconds = 0.02;
 
     const auto control =

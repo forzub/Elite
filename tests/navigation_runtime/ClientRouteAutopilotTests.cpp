@@ -2321,6 +2321,44 @@ void testClientAutopilotUsesDockUpReferenceForRoll()
     );
 }
 
+void testHullAttitudeControlIsNotSlowedByCourseLag()
+{
+    using Pilot =
+        game::navigation::autopilot::PredictivePilot;
+
+    Pilot::State state;
+    const auto vehicle = params();
+
+    constexpr double FiveDegreesRad =
+        5.0 * 3.1415926535897932384626433832795 / 180.0;
+
+    Pilot::Request request;
+    request.law =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    request.upMap = {0.0, 1.0, 0.0};
+    request.desiredForwardMap = {
+        std::cos(FiveDegreesRad),
+        0.0,
+        -std::sin(FiveDegreesRad)
+    };
+    request.desiredUpMap = {0.0, 1.0, 0.0};
+
+    // Deliberately huge course-response lag. This describes how long
+    // velocity takes to follow the nose, NOT how slowly the hull may rotate.
+    request.angularTrackingResponseSeconds = 5.0;
+    request.deltaSeconds = 0.02;
+
+    const auto control =
+        Pilot::make(request, vehicle, state);
+
+    require(
+        std::abs(control.yawInput) > 0.5f,
+        "Assisted course-response lag incorrectly throttled hull attitude control"
+    );
+}
+
 void testClientStabilizerUsesOrdinaryControls()
 {
     Autopilot::State routeState;
@@ -2385,6 +2423,7 @@ int main()
         testPredictivePilotBrakesAngularRateBeforeTarget();
         testPredictivePilotCapturesTurnsWithoutOvershoot();
         testClientAutopilotUsesDockUpReferenceForRoll();
+        testHullAttitudeControlIsNotSlowedByCourseLag();
         testClientStabilizerUsesOrdinaryControls();
         std::cout
             << "CLIENT ROUTE AUTOPILOT TESTS: PASS\n"
@@ -2415,6 +2454,7 @@ int main()
             << " - angular controller brakes before attitude overshoot\n"
             << " - 5/15/45/90 degree turns settle without overshoot\n"
             << " - docking up reference drives roll orientation\n"
+            << " - hull attitude control is independent of Assisted course lag\n"
             << " - stabilization uses the same BrakeToStop control surface\n";
         return 0;
     }

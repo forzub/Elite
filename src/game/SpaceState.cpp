@@ -1715,7 +1715,7 @@ void SpaceState::updateDockingAdvisory()
     using ClientAutopilot =
         game::navigation::autopilot::ClientRouteAutopilot;
     using FollowerAgent =
-        game::navigation::autopilot::RouteFollowerAgentState;
+        game::navigation::autopilot::AutopilotAgentState;
 
     if (!m_client)
         return;

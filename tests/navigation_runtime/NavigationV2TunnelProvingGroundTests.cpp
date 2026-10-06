@@ -1,7 +1,5 @@
-#include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
-#include "src/game/navigation/autopilot/PredictivePilot.h"
-#include "src/game/navigation/autopilot/RouteFollowerApi.h"
+#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
@@ -16,17 +14,17 @@
 namespace
 {
 
-using Program = game::navigation::AcceptedManeuverProgram;
-using Follower = game::navigation::autopilot::RouteFollower;
-using FollowerAgent = game::navigation::autopilot::RouteFollowerAgentState;
-using FollowerPolicy = game::navigation::autopilot::RouteFollowerPolicy;
-using FollowerStatus = game::navigation::autopilot::RouteFollowerStatus;
-using Pilot = game::navigation::autopilot::PredictivePilot;
+using Autopilot =
+    game::navigation::autopilot::ClientRouteAutopilot;
+using Agent =
+    game::navigation::autopilot::AutopilotAgentState;
 
 constexpr double kPi = 3.14159265358979323846;
 constexpr double kDt = 0.02;
 constexpr double kTunnelHalfWidthMeters = 12.0;
 constexpr double kRouteSpeedMps = 8.0;
+constexpr double kRadiusMeters = 300.0;
+constexpr double kSweepRadians = 0.5 * kPi;
 
 void require(bool condition, const std::string& message)
 {
@@ -96,6 +94,7 @@ ShipParams cobraAssistedParams()
     p.maxGs = 5.0f;
     p.maxLinearGs = 7.5f;
     p.turnRadius = 20.0f;
+    p.stopSpeedEpsilonMps = 0.05f;
 
     p.massKg = 260000.0;
     p.pitchInertiaKgM2 = 11219866.6666667;
@@ -104,124 +103,88 @@ ShipParams cobraAssistedParams()
     return p;
 }
 
-glm::dvec3 centerlinePosition(double x)
+game::navigation::planner::RoutePlan tunnelPlan()
 {
-    return {
-        x,
-        0.0,
-        30.0 * std::sin(2.0 * kPi * x / 300.0)
-    };
-}
+    using namespace game::navigation::planner;
 
-glm::dvec3 centerlineTangent(double x)
-{
-    const double dzdx =
-        30.0 * (2.0 * kPi / 300.0) *
-        std::cos(2.0 * kPi * x / 300.0);
-    return glm::normalize(glm::dvec3(1.0, 0.0, dzdx));
-}
+    RoutePlan plan;
+    plan.disposition = RoutePlanDisposition::Ready;
+    plan.failureCode = RoutePlanFailureCode::None;
 
-Program tunnelProgram()
-{
-    Program p;
-    p.valid = true;
-    p.revision = 2001;
-    p.objectiveRevision = 2000;
-    p.family = Program::ManeuverFamily::FreeTransit;
-    p.referenceMode = Program::ReferenceMode::SpatialCorridor;
-    p.controlLaw = game::navigation::LocalFlightControlLaw::Assisted;
-    p.translationMode = Program::TranslationMode::AssistedVelocity;
-    p.acceptedAtUniverseTimeSeconds = 0.0;
-    p.validUntilUniverseTimeSeconds = 120.0;
-    p.sampleCount = Program::kMaxSamples;
-    p.completionTriggersReplan = false;
+    constexpr int GateCount = 65;
+    plan.gates.reserve(GateCount);
+    plan.executionGates.reserve(GateCount);
 
-    p.tracking.positionErrorMeters = kTunnelHalfWidthMeters;
-    p.tracking.linearVelocityErrorMps = 10.0;
-    p.tracking.forwardAngleErrorRad = glm::radians(80.0);
-    p.tracking.angularVelocityErrorRadPerSec = 2.0;
-    p.tracking.linearFeedbackReserveMps2 = 6.0;
-    p.tracking.angularFeedbackReserveRadPerSec2 = 1.5;
-
-    p.terminalTolerance.positionMeters = 5.0;
-    p.terminalTolerance.linearVelocityMps = 3.0;
-    p.terminalTolerance.forwardAngleRad = glm::radians(15.0);
-    p.terminalTolerance.angularVelocityRadPerSec = 0.4;
-
-    p.capability.revision = 1;
-    p.capability.maxForwardAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxReverseAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxLateralAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxVerticalAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxForwardMainAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxReverseMainAccelerationMetersPerSec2 = 73.549875;
-    p.capability.maxAngularAccelerationRadPerSec2 = 3.0;
-    p.capability.maxAngularSpeedRadPerSec = 2.5;
-
-    for (std::size_t i = 0; i < Program::kMaxSamples; ++i)
+    for (int i = 0; i < GateCount; ++i)
     {
-        const double x =
-            300.0 * static_cast<double>(i) /
-            static_cast<double>(Program::kMaxSamples - 1);
-        const glm::dvec3 tangent = centerlineTangent(x);
-        const Basis basis = basisForForward(tangent);
+        const double t =
+            kSweepRadians *
+            static_cast<double>(i) /
+            static_cast<double>(GateCount - 1);
 
-        auto& s = p.samples[i];
-        s.timeOffsetSeconds = x / kRouteSpeedMps;
-        s.positionMapMeters = centerlinePosition(x);
-        s.velocityMapMetersPerSecond = tangent * kRouteSpeedMps;
-        s.linearAccelerationFeedForwardMapMps2 = glm::dvec3(0.0);
-        s.forwardMap = basis.forward;
-        s.rightMap = basis.right;
-        s.upMap = basis.up;
-        s.angularVelocityMapRadPerSecond = glm::dvec3(0.0);
-        s.angularAccelerationFeedForwardMapRadPerSec2 = glm::dvec3(0.0);
-    }
-
-    return p;
-}
-
-double distanceToCenterline(
-    const Program& program,
-    const glm::dvec3& position
-)
-{
-    double best = 1.0e100;
-    for (std::size_t i = 0; i + 1 < program.sampleCount; ++i)
-    {
-        const glm::dvec3 a = program.samples[i].positionMapMeters;
-        const glm::dvec3 b = program.samples[i + 1].positionMapMeters;
-        const glm::dvec3 ab = b - a;
-        const double ab2 = glm::dot(ab, ab);
-        if (!(ab2 > 1.0e-12))
-            continue;
-        const double u = std::clamp(
-            glm::dot(position - a, ab) / ab2,
+        RouteGate gate;
+        gate.positionMeters = {
+            kRadiusMeters * std::sin(t),
             0.0,
-            1.0
-        );
-        best = std::min(best, glm::length(position - (a + ab * u)));
+            kRadiusMeters * (1.0 - std::cos(t))
+        };
+        gate.forward = glm::normalize(glm::dvec3(
+            std::cos(t),
+            0.0,
+            std::sin(t)
+        ));
+        gate.speedMps = kRouteSpeedMps;
+        plan.gates.push_back(gate);
+        plan.executionGates.push_back(gate);
     }
-    return best;
+
+    RouteCurveSegment arc;
+    arc.kind = RouteCurveKind::CircularArc;
+    arc.startProgressMeters = 0.0;
+    arc.endProgressMeters = kRadiusMeters * kSweepRadians;
+    arc.maxSpeedMps = kRouteSpeedMps;
+    arc.startMeters = plan.executionGates.front().positionMeters;
+    arc.endMeters = plan.executionGates.back().positionMeters;
+    arc.startForward = plan.executionGates.front().forward;
+    arc.endForward = plan.executionGates.back().forward;
+    arc.arcCenterMeters = {0.0, 0.0, kRadiusMeters};
+    arc.arcNormal = {0.0, -1.0, 0.0};
+    arc.arcRadiusMeters = kRadiusMeters;
+    arc.arcSweepRadians = kSweepRadians;
+    plan.routeCurves.push_back(arc);
+
+    return plan;
 }
 
-FollowerAgent followerAgent(const ShipTransform& transform)
+Agent makeAgent(const ShipTransform& transform)
 {
-    FollowerAgent a;
-    a.positionMapMeters = transform.motion.localPositionMeters;
-    a.velocityMapMetersPerSecond = transform.motion.localVelocityMps;
-    a.forwardMap = glm::dvec3(transform.forward());
-    a.rightMap = glm::dvec3(transform.right());
-    a.upMap = glm::dvec3(transform.up());
-    a.pitchRateRadPerSec = transform.pitchRate;
-    a.yawRateRadPerSec = transform.yawRate;
-    a.rollRateRadPerSec = transform.rollRate;
-    return a;
+    Agent out;
+    out.positionMapMeters = transform.motion.localPositionMeters;
+    out.velocityMapMetersPerSecond = transform.motion.localVelocityMps;
+    out.forwardMap = glm::dvec3(transform.forward());
+    out.rightMap = glm::dvec3(transform.right());
+    out.upMap = glm::dvec3(transform.up());
+    out.pitchRateRadPerSec = transform.pitchRate;
+    out.yawRateRadPerSec = transform.yawRate;
+    out.rollRateRadPerSec = transform.rollRate;
+    return out;
 }
 
-void testAssistedV2StaysInsideAcceptedTunnel()
+double distanceToAuthoredArc(const glm::dvec3& position)
 {
-    const Program program = tunnelProgram();
+    const glm::dvec3 center(0.0, 0.0, kRadiusMeters);
+    const glm::dvec3 radial = position - center;
+    const double radialXZ =
+        std::hypot(radial.x, radial.z);
+    return std::hypot(
+        radialXZ - kRadiusMeters,
+        position.y
+    );
+}
+
+void testCurrentAutopilotStaysInsideAcceptedTunnel()
+{
+    const auto plan = tunnelPlan();
     const ShipParams params = cobraAssistedParams();
     WorldParams world {};
 
@@ -239,102 +202,74 @@ void testAssistedV2StaysInsideAcceptedTunnel()
     transform.motion.localControlLaw =
         game::navigation::LocalFlightControlLaw::Assisted;
     transform.motion.localPositionMeters =
-        program.samples[0].positionMapMeters;
+        plan.executionGates.front().positionMeters;
     transform.motion.localVelocityMps =
-        program.samples[0].velocityMapMetersPerSecond;
+        plan.executionGates.front().forward * kRouteSpeedMps;
+    transform.motion.targetForwardSpeedMps = kRouteSpeedMps;
     transform.setWorldPositionMeters(
         transform.motion.localPositionMeters
     );
-    setBasis(transform, basisForForward(
-        program.samples[0].velocityMapMetersPerSecond
-    ));
+    setBasis(
+        transform,
+        basisForForward(plan.executionGates.front().forward)
+    );
 
-    Pilot::State pilotState;
-    FollowerPolicy followerPolicy;
+    Agent initial = makeAgent(transform);
 
-    std::size_t spatialCursor = 0;
-    std::size_t maximumSegment = 0;
+    Autopilot::State autopilot;
+    std::string failureReason;
+    require(
+        Autopilot::start(
+            autopilot,
+            plan,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params,
+            0.0,
+            2001,
+            kTunnelHalfWidthMeters,
+            glm::dvec3(0.0, 1.0, 0.0),
+            false,
+            &failureReason
+        ),
+        "ClientRouteAutopilot rejected accepted tunnel: " + failureReason
+    );
+
     double maxCrossTrack = 0.0;
     double maxContinuousSlipSeconds = 0.0;
     double currentSlipSeconds = 0.0;
-    bool reachedLastSegment = false;
+    double minimumRemainingRouteMeters =
+        plan.routeCurves.back().endProgressMeters;
+    bool reachedEnd = false;
 
-    for (int tick = 0; tick < 4000; ++tick)
+    for (int tick = 0; tick < 5000; ++tick)
     {
-        const double now = tick * kDt;
-        const FollowerAgent agent = followerAgent(transform);
-        const auto followed = Follower::follow(
-            program,
-            now,
-            agent,
-            followerPolicy,
-            spatialCursor
-        );
+        const Agent agent = makeAgent(transform);
+        const auto output =
+            Autopilot::update(
+                autopilot,
+                agent,
+                game::navigation::LocalFlightControlLaw::Assisted,
+                params,
+                static_cast<double>(tick) * kDt,
+                kDt
+            );
 
         require(
-            followed.status != FollowerStatus::InvalidInput,
-            "RouteFollower V2 rejected the accepted tunnel"
+            output.valid,
+            "ClientRouteAutopilot emitted invalid tunnel output"
         );
-
-        if (followed.spatialReference)
-        {
-            spatialCursor = std::max(
-                spatialCursor,
-                followed.referenceLowerSampleIndex
-            );
-            maximumSegment = std::max(
-                maximumSegment,
-                followed.referenceLowerSampleIndex
-            );
-        }
-
-        const auto reference = Follower::sampleReference(
-            program,
-            now,
-            agent.positionMapMeters,
-            spatialCursor
-        );
-        require(reference.valid, "V2 reference sampling failed");
-
-        Pilot::Request request;
-        request.law = program.controlLaw;
-        request.desiredVelocityMapMps = followed.targetVelocityMapMps;
-        request.desiredLinearAccelerationMapMps2 =
-            followed.intent.idealLinearAccelerationLocalMps2;
-
-        const double targetSpeed =
-            glm::length(followed.targetVelocityMapMps);
-        request.desiredForwardMap =
-            targetSpeed > 1.0e-9
-                ? followed.targetVelocityMapMps / targetSpeed
-                : reference.reference.forwardMap;
-        request.desiredUpMap = reference.reference.upMap;
-
-        request.actualVelocityMapMps =
-            transform.motion.localVelocityMps;
-        request.forwardMap = glm::dvec3(transform.forward());
-        request.rightMap = glm::dvec3(transform.right());
-        request.upMap = glm::dvec3(transform.up());
-        request.pitchRateRadPerSec = transform.pitchRate;
-        request.yawRateRadPerSec = transform.yawRate;
-        request.rollRateRadPerSec = transform.rollRate;
-        request.stopRequested = targetSpeed <= 1.0e-9;
-        request.deltaSeconds = kDt;
-
-        const ShipControlState control =
-            Pilot::make(request, params, pilotState);
-
         require(
-            !control.navigationAccelerationDemandValid &&
-            !control.navigationVelocityTargetValid &&
-            !control.navigationPrecisionTranslationOnly,
-            "PredictivePilot V2 escaped through a legacy direct-demand seam"
+            !output.control.navigationAccelerationDemandValid &&
+            !output.control.navigationVelocityTargetValid &&
+            !output.control.navigationPrecisionTranslationOnly,
+            "current autopilot escaped through a retired direct-demand seam"
         );
 
         SharedShipPhysics::integrate(
             transform,
             params,
-            control,
+            output.control,
             world,
             static_cast<float>(kDt)
         );
@@ -344,11 +279,11 @@ void testAssistedV2StaysInsideAcceptedTunnel()
             frame,
             params,
             static_cast<float>(kDt),
-            control.targetSpeedRate,
-            control.cruiseActive,
-            control.forwardInput,
-            control.liftInput,
-            control.strafeInput,
+            output.control.targetSpeedRate,
+            output.control.cruiseActive,
+            output.control.forwardInput,
+            output.control.liftInput,
+            output.control.strafeInput,
             transform.forward(),
             transform.right(),
             transform.up()
@@ -364,8 +299,7 @@ void testAssistedV2StaysInsideAcceptedTunnel()
         transform.syncLegacyPositionFromWorld();
 
         const double crossTrack =
-            distanceToCenterline(
-                program,
+            distanceToAuthoredArc(
                 transform.motion.localPositionMeters
             );
         maxCrossTrack = std::max(maxCrossTrack, crossTrack);
@@ -382,12 +316,16 @@ void testAssistedV2StaysInsideAcceptedTunnel()
                 -1.0,
                 1.0
             );
-            const double slipDeg = std::acos(alignment) * 180.0 / kPi;
+            const double slipDeg =
+                std::acos(alignment) * 180.0 / kPi;
             if (slipDeg > 8.0)
             {
                 currentSlipSeconds += kDt;
                 maxContinuousSlipSeconds =
-                    std::max(maxContinuousSlipSeconds, currentSlipSeconds);
+                    std::max(
+                        maxContinuousSlipSeconds,
+                        currentSlipSeconds
+                    );
             }
             else
             {
@@ -395,43 +333,50 @@ void testAssistedV2StaysInsideAcceptedTunnel()
             }
         }
 
+        minimumRemainingRouteMeters =
+            std::min(
+                minimumRemainingRouteMeters,
+                output.exactRemainingRouteMeters
+            );
+
         require(
             crossTrack <= kTunnelHalfWidthMeters + 1.0e-6,
-            "PredictivePilot V2 left the accepted tunnel"
+            "ClientRouteAutopilot left the accepted tunnel"
         );
 
-        if (maximumSegment + 2 >= program.sampleCount)
+        if (output.complete ||
+            output.exactRemainingRouteMeters <= 1.0)
         {
-            reachedLastSegment = true;
+            reachedEnd = true;
             break;
         }
     }
 
     require(
-        reachedLastSegment,
-        "PredictivePilot V2 failed to make physical progress through the tunnel"
+        reachedEnd,
+        "ClientRouteAutopilot failed to make physical progress through the tunnel"
     );
     require(
         maxContinuousSlipSeconds <= 3.0 + 1.0e-9,
-        "Assisted V2 velocity-to-nose lag exceeded three seconds"
+        "Assisted velocity-to-nose lag exceeded three seconds"
     );
     require(
-        pilotState.effectivePitchAuthorityRadPerSec2 > 0.0 ||
-        pilotState.effectiveYawAuthorityRadPerSec2 > 0.0 ||
-        pilotState.effectiveRollAuthorityRadPerSec2 > 0.0,
-        "PredictivePilot V2 learned no angular authority while negotiating the tunnel"
+        autopilot.pilotState.effectivePitchAuthorityRadPerSec2 > 0.0 ||
+        autopilot.pilotState.effectiveYawAuthorityRadPerSec2 > 0.0 ||
+        autopilot.pilotState.effectiveRollAuthorityRadPerSec2 > 0.0,
+        "PredictivePilot learned no angular authority while negotiating the tunnel"
     );
 
     std::cout
         << "[V2-TUNNEL] max_cross_track_m=" << maxCrossTrack
         << " max_continuous_slip_s=" << maxContinuousSlipSeconds
-        << " max_segment=" << maximumSegment
+        << " min_remaining_m=" << minimumRemainingRouteMeters
         << " learned_pitch_alpha="
-        << pilotState.effectivePitchAuthorityRadPerSec2
+        << autopilot.pilotState.effectivePitchAuthorityRadPerSec2
         << " learned_yaw_alpha="
-        << pilotState.effectiveYawAuthorityRadPerSec2
+        << autopilot.pilotState.effectiveYawAuthorityRadPerSec2
         << " learned_roll_alpha="
-        << pilotState.effectiveRollAuthorityRadPerSec2
+        << autopilot.pilotState.effectiveRollAuthorityRadPerSec2
         << "\n";
 }
 
@@ -441,7 +386,7 @@ int main()
 {
     try
     {
-        testAssistedV2StaysInsideAcceptedTunnel();
+        testCurrentAutopilotStaysInsideAcceptedTunnel();
         std::cout << "NAVIGATION V2 TUNNEL PROVING GROUND: PASS\n";
         return 0;
     }

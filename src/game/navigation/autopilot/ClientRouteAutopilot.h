@@ -19,7 +19,6 @@
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
-#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -29,6 +28,26 @@
 
 namespace game::navigation::autopilot
 {
+
+struct AutopilotTrackingPolicy
+{
+    double positionGainPerSecond2 = 0.50;
+    double velocityGainPerSecond = 1.00;
+    double attitudeGainPerSecond2 = 2.00;
+    double angularVelocityGainPerSecond = 3.00;
+};
+
+struct AutopilotAgentState
+{
+    glm::dvec3 positionMapMeters {0.0};
+    glm::dvec3 velocityMapMetersPerSecond {0.0};
+    glm::dvec3 forwardMap {0.0, 0.0, -1.0};
+    glm::dvec3 rightMap {1.0, 0.0, 0.0};
+    glm::dvec3 upMap {0.0, 1.0, 0.0};
+    double pitchRateRadPerSec = 0.0;
+    double yawRateRadPerSec = 0.0;
+    double rollRateRadPerSec = 0.0;
+};
 
 // Client-side virtual pilot.
 //
@@ -69,7 +88,7 @@ public:
         std::vector<double> curveSampleEndProgressMeters;
         glm::dvec3 routeUpReference {0.0};
 
-        RouteFollowerPolicy followerPolicy {};
+        AutopilotTrackingPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
         std::vector<AcceptedManeuverProgram> programs;
     };
@@ -136,7 +155,7 @@ public:
     [[nodiscard]] static bool start(
         State& state,
         const planner::RoutePlan& plan,
-        const RouteFollowerAgentState& initialAgent,
+        const AutopilotAgentState& initialAgent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,
@@ -234,7 +253,7 @@ public:
     }
 
     [[nodiscard]] static ShipControlState stabilize(
-        const RouteFollowerAgentState& agent,
+        const AutopilotAgentState& agent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         PredictivePilot::State& pilotState,
@@ -261,7 +280,7 @@ public:
 
     [[nodiscard]] static Output update(
         State& state,
-        const RouteFollowerAgentState& agent,
+        const AutopilotAgentState& agent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         double universeTimeSeconds,
@@ -2180,7 +2199,7 @@ private:
     [[nodiscard]] static std::vector<AcceptedManeuverProgram>
     buildPrograms(
         const planner::RoutePlan& plan,
-        const RouteFollowerAgentState& initialAgent,
+        const AutopilotAgentState& initialAgent,
         LocalFlightControlLaw law,
         const ShipParams& params,
         double acceptedAtUniverseTimeSeconds,

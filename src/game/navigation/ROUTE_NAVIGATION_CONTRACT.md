@@ -391,3 +391,123 @@ Fixing turn geometry must not delete early braking or Assisted response.
 Fixing speed control must not degrade exact arc/Bezier following. Fixing
 tracking must not recreate the route from waypoints. Each repaired boundary
 requires a regression/contract test before later work is considered complete.
+
+
+## Strict execution-layer responsibility split
+
+Automatic route execution is divided into independently testable layers. A
+change in one layer must not redefine the contract of another layer.
+
+### HullPoseGuidance
+
+Pure geometry only.
+
+Inputs:
+- current hull forward/right/up basis;
+- requested target forward;
+- requested tunnel/dock up reference.
+
+Outputs:
+- pitch/yaw forward-alignment error;
+- roll alignment error.
+
+Hard rule: pitch/yaw and roll are mathematically separate channels. Forward
+alignment must never create roll demand. Tunnel up/down alignment must never
+create pitch/yaw demand.
+
+### HullAttitudeControl
+
+Pure angular actuator control only.
+
+Inputs:
+- pitch/yaw error and rates;
+- roll error and rate;
+- angular acceleration and rate limits;
+- fixed-step dt.
+
+Outputs:
+- pitch/yaw control input;
+- roll control input.
+
+Hard rule: roll authority is independent from pitch/yaw authority. Full roll
+must not reduce available pitch/yaw command, and full pitch/yaw must not
+reduce available roll command.
+
+### CorridorCaptureGuidance
+
+Pure positional capture geometry only.
+
+Inputs:
+- current position;
+- current route point/tangent;
+- authored look-ahead point;
+- centering deadband.
+
+Output:
+- desired forward direction for return to corridor center.
+
+It owns no roll, speed, throttle, engine or angular-actuator policy.
+
+### RouteSpeedGuidance
+
+Pure scalar longitudinal envelope only.
+
+Inputs:
+- actual scalar speed;
+- future turn speed ceiling;
+- distance to restriction;
+- Assisted speed-handle slew rate;
+- physical braking response;
+- longitudinal feedback delay.
+
+Outputs:
+- preparation distance;
+- whether slowdown must start now.
+
+It must never modify forward/up orientation or corridor capture.
+
+### Composition
+
+The execution pipeline is:
+
+```text
+Planner authored route geometry
+        |
+        +--> CorridorCaptureGuidance --> desired forward (pitch/yaw task)
+        |
+        +--> route up/down -----------> roll task
+        |
+        +--> RouteSpeedGuidance ------> scalar speed task
+        |
+        v
+HullPoseGuidance
+        |
+        v
+HullAttitudeControl
+        |
+        v
+PredictivePilot / ShipControlState
+        |
+        v
+ShipController
+```
+
+ShipController must preserve the same separation: pitch/yaw share the
+nose-steering plane authority; roll is a separate longitudinal-axis authority.
+A 3-D normalization of (pitch,yaw,roll) that lets roll consume nose-steering
+authority is forbidden.
+
+### Isolated regression gates
+
+These tests are first-class gates and should be run before composite/live
+flight:
+
+```bash
+ctest --test-dir build/tests/navigation_runtime -R "^hull_pose_guidance$" --output-on-failure
+ctest --test-dir build/tests/navigation_runtime -R "^hull_attitude_control$" --output-on-failure
+ctest --test-dir build/tests/navigation_runtime -R "^corridor_capture_guidance$" --output-on-failure
+ctest --test-dir build/tests/navigation_runtime -R "^route_speed_guidance$" --output-on-failure
+```
+
+Once a layer is green, later work on another layer must not weaken or replace
+its contract. Composite autopilot tests come after all isolated layer gates.

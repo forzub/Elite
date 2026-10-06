@@ -11,7 +11,6 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
-#include "src/game/navigation/autopilot/VelocityCourseGuidance.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -131,10 +130,10 @@ public:
 
         ShipControlState out;
 
-        // Route steering is translational: while moving, the authoritative
-        // "where are we pointing?" vector is velocity, not hull nose.
-        // This is shared by Assisted and Newtonian flight. Hull attitude is
-        // merely the actuator used to change that course.
+        // Navigation course is owned by desired velocity. The hull is an
+        // actuator: pitch/yaw must still rotate the real body toward that
+        // desired course, otherwise Assisted physics would drag an initially
+        // correct velocity vector toward a misaligned nose.
         const double desiredSpeed =
             finiteLength(request.desiredVelocityMapMps);
         const glm::dvec3 desiredCourse =
@@ -145,23 +144,27 @@ public:
                     forward
                   );
 
-        VelocityCourseGuidance::Request courseRequest;
-        courseRequest.actualVelocityMapMps =
-            request.actualVelocityMapMps;
-        courseRequest.currentForward = forward;
-        courseRequest.currentRight = right;
-        courseRequest.currentUp = up;
-        courseRequest.targetCourseMap = desiredCourse;
-        courseRequest.velocityDirectionThresholdMps = 0.5;
+        const glm::dvec3 actuatorForward =
+            request.terminalAttitudeHold
+                ? normalizedOr(
+                    request.desiredForwardMap,
+                    desiredCourse
+                  )
+                : desiredCourse;
 
-        const auto course =
-            VelocityCourseGuidance::evaluate(courseRequest);
-        if (!course.valid)
+        HullPoseGuidance::Request pitchYawPoseRequest;
+        pitchYawPoseRequest.currentForward = forward;
+        pitchYawPoseRequest.currentRight = right;
+        pitchYawPoseRequest.currentUp = up;
+        pitchYawPoseRequest.targetForward = actuatorForward;
+        pitchYawPoseRequest.targetUp = up;
+
+        const auto pitchYawPose =
+            HullPoseGuidance::evaluate(pitchYawPoseRequest);
+        if (!pitchYawPose.valid)
             return {};
 
-        // Roll remains a hull property. Compute it independently around the
-        // real hull longitudinal axis so route-course correction can never
-        // leak into roll.
+        // Roll remains an independent hull channel.
         HullPoseGuidance::Request rollRequest;
         rollRequest.currentForward = forward;
         rollRequest.currentRight = right;
@@ -174,31 +177,10 @@ public:
         if (!rollPose.valid)
             return {};
 
-        // At final stopped docking pose velocity has no direction. Only there
-        // do pitch/yaw revert to explicit hull-attitude capture.
-        glm::dvec2 pitchYawError =
-            course.pitchYawErrorLocalRad;
-        if (request.terminalAttitudeHold)
-        {
-            HullPoseGuidance::Request terminalPoseRequest;
-            terminalPoseRequest.currentForward = forward;
-            terminalPoseRequest.currentRight = right;
-            terminalPoseRequest.currentUp = up;
-            terminalPoseRequest.targetForward =
-                request.desiredForwardMap;
-            terminalPoseRequest.targetUp =
-                request.desiredUpMap;
-
-            const auto terminalPose =
-                HullPoseGuidance::evaluate(terminalPoseRequest);
-            if (!terminalPose.valid)
-                return {};
-
-            pitchYawError = {
-                terminalPose.pitchYawErrorLocalRad.x,
-                terminalPose.pitchYawErrorLocalRad.y
-            };
-        }
+        const glm::dvec2 pitchYawError = {
+            pitchYawPose.pitchYawErrorLocalRad.x,
+            pitchYawPose.pitchYawErrorLocalRad.y
+        };
 
         const double configuredAngularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);

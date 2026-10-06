@@ -1049,6 +1049,8 @@ public:
         const glm::dvec3 rollAngularRateMap =
             steeringForward * desiredRollRateRadPerSec;
 
+        glm::dvec3 diagnosticDesiredAngularRateMap(0.0);
+
         if (terminalAttitudeHold)
         {
             const auto& finalReference =
@@ -1059,60 +1061,34 @@ public:
                     steeringForward
                 );
             request.desiredUpMap = desiredUp;
-            request.desiredAngularVelocityMapRadPerSec =
-                glm::dvec3(0.0);
-            request.desiredAngularAccelerationMapRadPerSec2 =
-                glm::dvec3(0.0);
         }
         else if (brakeAttitudeLock)
         {
             // During terminal braking the authoritative COURSE is the final
-            // corridor tangent. Since moving navigation now takes direction
-            // from desiredVelocityMapMps, lock that vector as well as the hull
-            // actuator target. Otherwise capture guidance could bend the
-            // braking course away from the final straight.
+            // corridor tangent. Since moving navigation takes direction from
+            // desiredVelocityMapMps, lock that vector as well as the hull
+            // actuator target. No separate angular program is allowed.
             request.desiredVelocityMapMps =
                 referenceTangent * targetSpeed;
             request.desiredForwardMap = referenceTangent;
             request.desiredUpMap = desiredUp;
-            request.desiredAngularVelocityMapRadPerSec =
-                rollAngularRateMap;
-            request.desiredAngularAccelerationMapRadPerSec2 =
-                glm::dvec3(0.0);
+            diagnosticDesiredAngularRateMap = rollAngularRateMap;
         }
         else
         {
             request.desiredForwardMap = steeringForward;
             request.desiredUpMap = desiredUp;
 
-            if (!state.routeCurves.empty())
-            {
-                // Angular reference has three explicit jobs:
-                // 1) follow authored curvature,
-                // 2) capture corridor center,
-                // 3) align ship bottom/up with dock marking.
-                // Center capture is already encoded by the unified
-                // route-pose desiredForward. Do not command a second angular
-                // controller for the same error; that was the source of
-                // overshoot/oscillation after the client migration.
-                request.desiredAngularVelocityMapRadPerSec =
-                    routeAngularRateMap +
-                    rollAngularRateMap;
-                request.desiredAngularAccelerationMapRadPerSec2 =
-                    glm::dvec3(0.0);
-            }
-            else
-            {
-                request.desiredAngularVelocityMapRadPerSec =
-                    attitudeLead.reference.angularVelocityMapRadPerSecond;
-                request.desiredAngularAccelerationMapRadPerSec2 =
-                    attitudeLead.reference.
-                        angularAccelerationFeedForwardMapRadPerSec2;
-            }
+            // Route/capture/roll angular-rate estimates are diagnostics only.
+            // PredictivePilot owns the single physical attitude-control path
+            // from desired course/up to ordinary pitch/yaw/roll inputs.
+            diagnosticDesiredAngularRateMap =
+                !state.routeCurves.empty()
+                    ? routeAngularRateMap + rollAngularRateMap
+                    : attitudeLead.reference.
+                        angularVelocityMapRadPerSecond;
         }
 
-        request.angularTrackingResponseSeconds =
-            courseResponseSeconds;
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;
         request.forwardMap = agent.forwardMap;
@@ -1207,9 +1183,7 @@ public:
                 routeTotalProgress - routeProgressMeters
             );
         out.desiredCourseAngularRateRadPerSec =
-            glm::length(
-                request.desiredAngularVelocityMapRadPerSec
-            );
+            glm::length(diagnosticDesiredAngularRateMap);
         out.actualAngularRateRadPerSec =
             std::sqrt(
                 agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +

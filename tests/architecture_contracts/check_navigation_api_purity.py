@@ -67,7 +67,7 @@ timeline_h = read("src/game/navigation/ManeuverProgramTimeline.h")
 tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
 follower_h = read("src/game/navigation/TrajectoryFollower.h")
 route_planner_api = read("src/game/navigation/planner/RoutePlannerApi.h")
-route_follower_api = read("src/game/navigation/autopilot/RouteFollowerApi.h")
+client_route_autopilot = read("src/game/navigation/autopilot/ClientRouteAutopilot.h")
 bridge_h = read("src/game/navigation/NavigationRuntimeControlBridge.h")
 phase_gate_h = read("src/game/navigation/ManeuverPhaseGate.h")
 phase_gate_cpp = read("src/game/navigation/ManeuverPhaseGate.cpp")
@@ -258,27 +258,27 @@ for forbidden in (
             f"RoutePlanner public API leaks private/cross-domain type {forbidden!r}")
 
 for token in (
-    "struct RouteFollowerPolicy",
-    "struct RouteFollowerAgentState",
-    "struct RouteFollowerResult",
-    "struct RouteAlignmentResult",
-    "selectPage(",
-    "sampleReference(",
-    "alignToAttitude(",
-    "class RouteFollower",
+    "struct AutopilotAgentState",
+    "class ClientRouteAutopilot final",
+    "struct State",
+    "struct Output",
+    "ShipControlState control",
+    "static bool start(",
+    "static Output update(",
 ):
-    require(token in route_follower_api,
-            f"RouteFollower public API missing explicit boundary token {token!r}")
+    require(token in client_route_autopilot,
+            f"ClientRouteAutopilot public API missing explicit boundary token {token!r}")
 
 for forbidden in (
-    "TrajectoryFollower.h",
-    "ManeuverTrackingController.h",
-    "RoutePlannerApi.h",
-    "docking/traffic",
-    "docking/landing",
+    "RouteFollowerApi.h",
+    "RouteFollower::",
+    "ShipControlAdapter",
+    "GameServer",
+    "ClientShipCommand",
+    "WireProtocol",
 ):
-    require(forbidden not in route_follower_api,
-            f"RouteFollower public API leaks private/cross-domain dependency {forbidden!r}")
+    require(forbidden not in client_route_autopilot,
+            f"ClientRouteAutopilot public API leaks retired/server boundary {forbidden!r}")
 
 for token in (
     "const AcceptedManeuverProgram& program",

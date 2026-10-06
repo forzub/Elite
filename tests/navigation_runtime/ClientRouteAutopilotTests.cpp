@@ -671,7 +671,7 @@ void testHullForwardTracksAuthoredTunnelTangent()
     constexpr double HalfPi =
         1.5707963267948966192313216916398;
     constexpr double ProbeAngle = HalfPi * 0.25;
-    constexpr double SpeedMps = 120.0;
+    constexpr double SpeedMps = 60.0;
 
     game::navigation::planner::RoutePlan route;
     route.disposition =
@@ -788,7 +788,7 @@ void testCenteredArcUsesExactLocalTangent()
         game::navigation::planner::RoutePlanFailureCode::None;
 
     constexpr double RadiusMeters = 1000.0;
-    constexpr double SpeedMps = 200.0;
+    constexpr double SpeedMps = 60.0;
     constexpr int ArcSteps = 48;
     constexpr double HalfPi =
         1.5707963267948966192313216916398;

@@ -1087,9 +1087,12 @@ public:
                 // 1) follow authored curvature,
                 // 2) capture corridor center,
                 // 3) align ship bottom/up with dock marking.
+                // Center capture is already encoded by the unified
+                // route-pose desiredForward. Do not command a second angular
+                // controller for the same error; that was the source of
+                // overshoot/oscillation after the client migration.
                 request.desiredAngularVelocityMapRadPerSec =
                     routeAngularRateMap +
-                    captureAngularRateMap +
                     rollAngularRateMap;
                 request.desiredAngularAccelerationMapRadPerSec2 =
                     glm::dvec3(0.0);

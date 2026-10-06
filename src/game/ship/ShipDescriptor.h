@@ -30,6 +30,7 @@
 #include "src/game/equipment/types/RadarMountPoint.h"
 #include "src/game/ship/ShipAttachmentPoint.h"
 #include "src/world/descriptors/LogicalDimensions.h"
+#include "src/game/navigation/LocalFlightControlLaw.h"
 
 
 struct ShipIdentity
@@ -206,6 +207,14 @@ public:
 
     ObjectType          typeId;
     ShipIdentity        identity;
+
+    // Native local-flight doctrine of this hull. Runtime instances start from
+    // this descriptor value. Debug/UI may temporarily switch the live
+    // DynamicMotionState, but planners/autopilots must consume the current
+    // runtime law rather than a global hard-coded default.
+    game::navigation::LocalFlightControlLaw localFlightControlLaw =
+        game::navigation::defaultLocalFlightControlLaw();
+
     ShipParams          physics;
     ShipHudProfile      hud;
 

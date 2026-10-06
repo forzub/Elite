@@ -31,7 +31,8 @@ public:
         glm::dvec2 maxPitchYawRateRadPerSec {0.0};
         double maxRollRateRadPerSec = 0.0;
 
-        double angularAccelerationAuthorityRadPerSec2 = 0.0;
+        double pitchYawAngularAccelerationAuthorityRadPerSec2 = 0.0;
+        double rollAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double deltaSeconds = 0.0;
     };
 
@@ -49,8 +50,11 @@ public:
         if (!(std::isfinite(request.deltaSeconds) &&
               request.deltaSeconds > 0.0) ||
             !(std::isfinite(
-                request.angularAccelerationAuthorityRadPerSec2) &&
-              request.angularAccelerationAuthorityRadPerSec2 > 0.0))
+                request.pitchYawAngularAccelerationAuthorityRadPerSec2) &&
+              request.pitchYawAngularAccelerationAuthorityRadPerSec2 > 0.0) ||
+            !(std::isfinite(
+                request.rollAngularAccelerationAuthorityRadPerSec2) &&
+              request.rollAngularAccelerationAuthorityRadPerSec2 > 0.0))
         {
             return out;
         }
@@ -60,7 +64,7 @@ public:
             request.pitchYawRateRadPerSec,
             request.desiredPitchYawRateRadPerSec,
             request.maxPitchYawRateRadPerSec,
-            request.angularAccelerationAuthorityRadPerSec2,
+            request.pitchYawAngularAccelerationAuthorityRadPerSec2,
             request.deltaSeconds
         );
 
@@ -68,7 +72,7 @@ public:
             request.rollErrorRad,
             request.rollRateRadPerSec,
             request.maxRollRateRadPerSec,
-            request.angularAccelerationAuthorityRadPerSec2,
+            request.rollAngularAccelerationAuthorityRadPerSec2,
             request.deltaSeconds
         );
 

@@ -67,6 +67,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/PhysicalManeuverSearchCoordinator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/diagnostics/NavigationScenarioRunner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
@@ -750,6 +751,50 @@ add_test(
 
 set_tests_properties(
     hull_roll_alignment_contract
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    navigation_scenario_runner_tests
+    NavigationScenarioRunnerTests.cpp
+)
+
+target_include_directories(
+    navigation_scenario_runner_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    navigation_scenario_runner_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    navigation_scenario_runner_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        navigation_scenario_runner_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        navigation_scenario_runner_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME navigation_scenario_runner
+    COMMAND navigation_scenario_runner_tests
+)
+
+set_tests_properties(
+    navigation_scenario_runner
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

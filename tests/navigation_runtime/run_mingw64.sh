@@ -23,7 +23,7 @@ ctest     --test-dir "${BUILD_DIR}"     -R "^navigation_v2_tunnel_proving_ground
 
 if [[ "${ELITE_RUN_LEGACY_NAVIGATION_LABS:-0}" == "1" ]]; then
     echo "[NAV-RUNTIME] build explicitly requested legacy comparison labs"
-    cmake --build "${BUILD_DIR}"         --target navigation_runtime_planner_tests                  maneuver_phase_gate_tests                  maneuver_tracking_controller_tests                  maneuver_corner_family_matrix_tests                  maneuver_rigid_body_corridor_tests                  maneuver_corridor_matrix_tests                  maneuver_fly_through_3d_tests                  maneuver_speed_doctrine_matrix_tests                  maneuver_chained_limit_matrix_tests                  navigation_composite_proving_ground_tests                  maneuver_program_execution_lab_tests
+    cmake --build "${BUILD_DIR}"         --target navigation_runtime_planner_tests                  maneuver_phase_gate_tests                  maneuver_tracking_controller_tests                  maneuver_corner_family_matrix_tests                  maneuver_rigid_body_corridor_tests                  maneuver_corridor_matrix_tests                  maneuver_fly_through_3d_tests                  maneuver_speed_doctrine_matrix_tests                  maneuver_chained_limit_matrix_tests                  navigation_composite_proving_ground_tests                  maneuver_program_execution_lab_tests                  corridor_capture_guidance_tests
 
     echo "[NAV-RUNTIME] run explicitly requested legacy comparison labs"
     ctest         --test-dir "${BUILD_DIR}"         -L legacy_navigation_lab         --output-on-failure

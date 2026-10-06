@@ -4,19 +4,19 @@
 #include <cmath>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 namespace game::navigation::autopilot
 {
 
-// Pure hull-attitude geometry.
+// Pure, axis-separated hull-pose geometry.
 //
-// Responsibility:
-//   current rigid-body basis + authored target forward/up
-//       -> orthonormal target basis + exact SO(3) error.
+// Contract:
+//   * forward alignment owns pitch/yaw only;
+//   * tunnel up/down alignment owns roll only.
 //
-// It knows nothing about route position, corridor capture, speed, engines,
-// Assisted course lag, angular authority or ShipControlState.
+// No SO(3) combined-error solve is allowed here because this craft is not an
+// airplane: rolling the hull around its longitudinal axis must not alter the
+// commanded flight direction or corridor capture.
 class HullPoseGuidance final
 {
 public:
@@ -35,12 +35,13 @@ public:
         bool valid = false;
 
         glm::dvec3 targetForward {0.0, 0.0, -1.0};
-        glm::dvec3 targetRight {1.0, 0.0, 0.0};
-        glm::dvec3 targetUp {0.0, 1.0, 0.0};
+        glm::dvec3 targetUpForRoll {0.0, 1.0, 0.0};
 
-        glm::dvec3 rotationErrorMapRad {0.0};
-        glm::dvec3 rotationErrorLocalRad {0.0};
+        // Local body axes: X=pitch, Y=yaw, Z=roll.
+        // pitchYawErrorLocalRad.z is always exactly zero.
+        glm::dvec3 pitchYawErrorLocalRad {0.0};
 
+        double rollErrorRad = 0.0;
         double forwardErrorRad = 0.0;
         double upErrorRad = 0.0;
     };
@@ -57,95 +58,72 @@ public:
             currentForward * glm::dot(request.currentUp, currentForward);
         currentUp = normalizedOr(currentUp, {0.0, 1.0, 0.0});
 
-        glm::dvec3 currentRight =
+        const glm::dvec3 currentRight =
             normalizedOr(
                 glm::cross(currentForward, currentUp),
                 request.currentRight
-            );
-        currentUp =
-            normalizedOr(
-                glm::cross(currentRight, currentForward),
-                currentUp
             );
 
         out.targetForward =
             normalizedOr(request.targetForward, currentForward);
 
-        glm::dvec3 targetUp =
-            request.targetUp -
-            out.targetForward *
-                glm::dot(request.targetUp, out.targetForward);
-        out.targetUp = normalizedOr(targetUp, currentUp);
-
-        out.targetRight =
-            normalizedOr(
-                glm::cross(out.targetForward, out.targetUp),
-                currentRight
-            );
-        out.targetUp =
-            normalizedOr(
-                glm::cross(out.targetRight, out.targetForward),
-                out.targetUp
-            );
-
-        const glm::dquat current = glm::normalize(
-            glm::quat_cast(
-                glm::dmat3(
-                    currentRight,
-                    currentUp,
-                    -currentForward
-                )
-            )
-        );
-        const glm::dquat target = glm::normalize(
-            glm::quat_cast(
-                glm::dmat3(
-                    out.targetRight,
-                    out.targetUp,
-                    -out.targetForward
-                )
-            )
-        );
-
-        glm::dquat delta =
-            glm::normalize(target * glm::conjugate(current));
-        if (delta.w < 0.0)
-            delta = -delta;
-
-        const glm::dvec3 vectorPart(delta.x, delta.y, delta.z);
-        const double vectorLength = glm::length(vectorPart);
-
-        if (std::isfinite(vectorLength) && vectorLength > 1.0e-12)
-        {
-            const double angle =
-                2.0 * std::atan2(
-                    vectorLength,
-                    std::clamp(delta.w, 0.0, 1.0)
-                );
-            if (!std::isfinite(angle))
-                return {};
-
-            out.rotationErrorMapRad =
-                vectorPart * (angle / vectorLength);
-        }
-
-        out.rotationErrorLocalRad = {
-            glm::dot(out.rotationErrorMapRad, currentRight),
-            glm::dot(out.rotationErrorMapRad, currentUp),
-            glm::dot(out.rotationErrorMapRad, currentForward)
-        };
-
+        // ----- Pitch/yaw channel: forward vector only. -----
         out.forwardErrorRad =
             angleBetween(currentForward, out.targetForward);
-        out.upErrorRad =
-            angleBetween(currentUp, out.targetUp);
+
+        const glm::dvec3 forwardCross =
+            glm::cross(currentForward, out.targetForward);
+        const double forwardCrossLength = glm::length(forwardCross);
+
+        glm::dvec3 forwardErrorMap(0.0);
+        if (out.forwardErrorRad > 1.0e-12 &&
+            std::isfinite(forwardCrossLength) &&
+            forwardCrossLength > 1.0e-12)
+        {
+            forwardErrorMap =
+                forwardCross / forwardCrossLength *
+                out.forwardErrorRad;
+        }
+        else if (out.forwardErrorRad > 3.14159265358979323846 - 1.0e-9)
+        {
+            // 180 degrees has no unique cross-product axis. Choose current up
+            // deterministically; still never introduce roll.
+            forwardErrorMap = currentUp * out.forwardErrorRad;
+        }
+
+        out.pitchYawErrorLocalRad = {
+            glm::dot(forwardErrorMap, currentRight),
+            glm::dot(forwardErrorMap, currentUp),
+            0.0
+        };
+
+        // ----- Roll channel: up/down around CURRENT longitudinal axis only. -----
+        glm::dvec3 targetUp =
+            request.targetUp -
+            currentForward * glm::dot(request.targetUp, currentForward);
+        out.targetUpForRoll =
+            normalizedOr(targetUp, currentUp);
+
+        out.rollErrorRad =
+            std::atan2(
+                glm::dot(
+                    currentForward,
+                    glm::cross(currentUp, out.targetUpForRoll)
+                ),
+                std::clamp(
+                    glm::dot(currentUp, out.targetUpForRoll),
+                    -1.0,
+                    1.0
+                )
+            );
+
+        out.upErrorRad = std::abs(out.rollErrorRad);
 
         out.valid =
             finiteVec(out.targetForward) &&
-            finiteVec(out.targetRight) &&
-            finiteVec(out.targetUp) &&
-            finiteVec(out.rotationErrorMapRad) &&
-            finiteVec(out.rotationErrorLocalRad) &&
+            finiteVec(out.targetUpForRoll) &&
+            finiteVec(out.pitchYawErrorLocalRad) &&
+            std::isfinite(out.rollErrorRad) &&
             std::isfinite(out.forwardErrorRad) &&
             std::isfinite(out.upErrorRad);
 

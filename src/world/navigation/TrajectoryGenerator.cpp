@@ -2251,12 +2251,46 @@ buildPathProgressTrajectory(
         const double lateralMagnitude =
             magnitude(lateralAcceleration);
 
+        // This is a numerical feasibility check over sampled/interpolated
+        // geometry, not a hardware calibration bench. Comparing against the
+        // physical envelope with a 1e-5 m/s^2 absolute epsilon makes harmless
+        // interpolation noise reject an otherwise identical executable path.
+        //
+        // Use a small engineering tolerance: 0.2% of each installed limit,
+        // with only a tiny absolute floor for near-zero authorities. Material
+        // envelope violations still fail and may trigger the slower-profile
+        // retry below.
+        const auto envelopeTolerance =
+            [](double limit)
+            {
+                return std::max(
+                    1.0e-4,
+                    std::abs(limit) * 2.0e-3
+                );
+            };
+
+        const double forwardTolerance =
+            envelopeTolerance(
+                request.vehicle.maxForwardAccelerationMps2
+            );
+        const double brakeTolerance =
+            envelopeTolerance(
+                request.vehicle.maxBrakingAccelerationMps2
+            );
+        const double lateralTolerance =
+            envelopeTolerance(
+                request.vehicle.maxLateralAccelerationMps2
+            );
+
         if (along >
-                request.vehicle.maxForwardAccelerationMps2 + 1.0e-5 ||
+                request.vehicle.maxForwardAccelerationMps2 +
+                    forwardTolerance ||
             along <
-                -request.vehicle.maxBrakingAccelerationMps2 - 1.0e-5 ||
+                -request.vehicle.maxBrakingAccelerationMps2 -
+                    brakeTolerance ||
             lateralMagnitude >
-                request.vehicle.maxLateralAccelerationMps2 + 1.0e-5)
+                request.vehicle.maxLateralAccelerationMps2 +
+                    lateralTolerance)
         {
             return failure(
                 request,
@@ -2268,15 +2302,21 @@ buildPathProgressTrajectory(
                     std::to_string(
                         request.vehicle.maxForwardAccelerationMps2
                     ) +
+                " forward_tol=" +
+                    std::to_string(forwardTolerance) +
                 " brake_limit=" +
                     std::to_string(
                         request.vehicle.maxBrakingAccelerationMps2
                     ) +
+                " brake_tol=" +
+                    std::to_string(brakeTolerance) +
                 " lateral=" + std::to_string(lateralMagnitude) +
                 " lateral_limit=" +
                     std::to_string(
                         request.vehicle.maxLateralAccelerationMps2
                     ) +
+                " lateral_tol=" +
+                    std::to_string(lateralTolerance) +
                 " speed=" + std::to_string(sample.speedMps)
             );
         }

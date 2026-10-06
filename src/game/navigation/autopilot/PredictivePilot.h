@@ -11,6 +11,7 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
+#include "src/game/navigation/autopilot/VelocityCourseGuidance.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -130,32 +131,81 @@ public:
 
         ShipControlState out;
 
-        HullPoseGuidance::Request poseRequest;
-        poseRequest.currentForward = forward;
-        poseRequest.currentRight = right;
-        poseRequest.currentUp = up;
-        poseRequest.targetForward = request.desiredForwardMap;
-        poseRequest.targetUp = request.desiredUpMap;
+        // Route steering is translational: while moving, the authoritative
+        // "where are we pointing?" vector is velocity, not hull nose.
+        // This is shared by Assisted and Newtonian flight. Hull attitude is
+        // merely the actuator used to change that course.
+        const double desiredSpeed =
+            finiteLength(request.desiredVelocityMapMps);
+        const glm::dvec3 desiredCourse =
+            desiredSpeed > 1.0e-9
+                ? request.desiredVelocityMapMps / desiredSpeed
+                : normalizedOr(
+                    request.desiredForwardMap,
+                    forward
+                  );
 
-        const auto pose = HullPoseGuidance::evaluate(poseRequest);
-        if (!pose.valid)
+        VelocityCourseGuidance::Request courseRequest;
+        courseRequest.actualVelocityMapMps =
+            request.actualVelocityMapMps;
+        courseRequest.currentForward = forward;
+        courseRequest.currentRight = right;
+        courseRequest.currentUp = up;
+        courseRequest.targetCourseMap = desiredCourse;
+        courseRequest.velocityDirectionThresholdMps = 0.5;
+
+        const auto course =
+            VelocityCourseGuidance::evaluate(courseRequest);
+        if (!course.valid)
             return {};
 
-        const glm::dvec3 desiredForward = pose.targetForward;
-        const glm::dvec3 desiredUp = pose.targetUpForRoll;
+        // Roll remains a hull property. Compute it independently around the
+        // real hull longitudinal axis so route-course correction can never
+        // leak into roll.
+        HullPoseGuidance::Request rollRequest;
+        rollRequest.currentForward = forward;
+        rollRequest.currentRight = right;
+        rollRequest.currentUp = up;
+        rollRequest.targetForward = forward;
+        rollRequest.targetUp = request.desiredUpMap;
+
+        const auto rollPose =
+            HullPoseGuidance::evaluate(rollRequest);
+        if (!rollPose.valid)
+            return {};
+
+        // At final stopped docking pose velocity has no direction. Only there
+        // do pitch/yaw revert to explicit hull-attitude capture.
+        glm::dvec2 pitchYawError =
+            course.pitchYawErrorLocalRad;
+        if (request.terminalAttitudeHold)
+        {
+            HullPoseGuidance::Request terminalPoseRequest;
+            terminalPoseRequest.currentForward = forward;
+            terminalPoseRequest.currentRight = right;
+            terminalPoseRequest.currentUp = up;
+            terminalPoseRequest.targetForward =
+                request.desiredForwardMap;
+            terminalPoseRequest.targetUp =
+                request.desiredUpMap;
+
+            const auto terminalPose =
+                HullPoseGuidance::evaluate(terminalPoseRequest);
+            if (!terminalPose.valid)
+                return {};
+
+            pitchYawError = {
+                terminalPose.pitchYawErrorLocalRad.x,
+                terminalPose.pitchYawErrorLocalRad.y
+            };
+        }
 
         const double configuredAngularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
 
-        // Pitch/yaw and roll are intentionally independent control channels.
-        // HullPoseGuidance guarantees forward error never leaks into roll and
-        // roll alignment never changes the nose-steering error.
         HullAttitudeControl::Request attitudeRequest;
-        attitudeRequest.pitchYawErrorRad = {
-            pose.pitchYawErrorLocalRad.x,
-            pose.pitchYawErrorLocalRad.y
-        };
-        attitudeRequest.rollErrorRad = pose.rollErrorRad;
+        attitudeRequest.pitchYawErrorRad = pitchYawError;
+        attitudeRequest.rollErrorRad = rollPose.rollErrorRad;
         attitudeRequest.pitchYawRateRadPerSec = {
             finiteOrZero(request.pitchRateRadPerSec),
             finiteOrZero(request.yawRateRadPerSec)
@@ -204,8 +254,6 @@ public:
         }
         else if (request.law == LocalFlightControlLaw::Assisted)
         {
-            const double desiredSpeed =
-                finiteLength(request.desiredVelocityMapMps);
             // Scalar speed control must use actual speed magnitude.
             // During a turn Assisted intentionally allows the velocity vector
             // to lag behind the nose for a short time. Projecting velocity on
@@ -239,7 +287,7 @@ public:
             const double feedForwardAcceleration =
                 glm::dot(
                     request.desiredLinearAccelerationMapMps2,
-                    desiredForward
+                    desiredCourse
                 );
             const double feedbackAcceleration =
                 (desiredSpeed - actualSpeed) / horizon;

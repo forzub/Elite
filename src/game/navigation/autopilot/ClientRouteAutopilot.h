@@ -736,30 +736,51 @@ public:
                 ? poseGuide.tangentMap
                 : referenceTangent;
 
-        // Hull orientation is authoritative route pose, never an intercept
-        // ray. The tunnel already publishes the orientation the ship must have
-        // at each route progress. Position capture may influence speed, but it
-        // must not redefine the body frame.
-        glm::dvec3 steeringForward =
-            normalizedOr(poseTangent, referenceTangent);
-
-        // Keep the old look-ahead ray only as a diagnostic of positional
-        // capture demand. It is deliberately NOT used as desiredForward.
+        // Restore the proven corridor-capture composition:
+        // - the target point is ON the authored route;
+        // - the hull aims at that point so Assisted naturally returns to the
+        //   corridor center without manoeuvre translation;
+        // - up/right still come from the same authored route pose.
+        //
+        // This is intentionally NOT "always tangent". A craft that is already
+        // offset from the corridor cannot recapture the centerline while
+        // remaining exactly parallel to it.
         const glm::dvec3 steeringRay =
             posePoint - agent.positionMapMeters;
         const double steeringDistanceMeters =
             glm::length(steeringRay);
-        glm::dvec3 captureDirection = steeringForward;
+
+        glm::dvec3 steeringForward =
+            normalizedOr(poseTangent, referenceTangent);
+
         if (std::isfinite(steeringDistanceMeters) &&
-            steeringDistanceMeters > 1.0e-9)
+            steeringDistanceMeters > 1.0e-9 &&
+            actualSpeed > std::max(
+                1.0e-6,
+                static_cast<double>(params.stopSpeedEpsilonMps)))
         {
-            captureDirection = steeringRay / steeringDistanceMeters;
+            steeringForward =
+                steeringRay / steeringDistanceMeters;
+
+            // On a straight and already centered, keep exact tunnel tangent.
+            // Outside the deadband, the same look-ahead point creates the
+            // temporary intercept angle needed to return to centerline.
+            const glm::dvec3 offTangent =
+                steeringRay -
+                referenceTangent *
+                    glm::dot(steeringRay, referenceTangent);
+            if (crossTrackErrorMeters <= centeringDeadbandMeters &&
+                glm::length(offTangent) <= centeringDeadbandMeters)
+            {
+                steeringForward =
+                    referenceTangent;
+            }
         }
 
         double crossTrackCorrectionAngleRad =
-            angleBetween(referenceTangent, captureDirection);
+            angleBetween(referenceTangent, steeringForward);
         glm::dvec3 crossTrackCorrectionAxisMap =
-            glm::cross(referenceTangent, captureDirection);
+            glm::cross(referenceTangent, steeringForward);
         const double correctionAxisLength =
             glm::length(crossTrackCorrectionAxisMap);
         if (correctionAxisLength > 1.0e-12)

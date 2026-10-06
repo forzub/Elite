@@ -164,7 +164,6 @@ try:
         "courseCaptureActive",
     )
     for token in (
-        "",
         "TrajectoryFollower::follow(",
         "RouteFollower::follow(",
         "RouteFollower::sampleReference(",
@@ -227,8 +226,6 @@ try:
         "course_capture_guidance",
         "NAME navigation_scenario_runner",
         "NAME navigation_v2_tunnel_proving_ground",
-        "",
-        "",
         'PROPERTIES LABELS "legacy_navigation_lab"',
     )
     runtime_runner = require(

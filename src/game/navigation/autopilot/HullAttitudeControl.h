@@ -27,6 +27,7 @@ public:
         glm::dvec2 pitchYawRateRadPerSec {0.0};
         glm::dvec2 desiredPitchYawRateRadPerSec {0.0};
         double rollRateRadPerSec = 0.0;
+        double desiredRollRateRadPerSec = 0.0;
 
         glm::dvec2 maxPitchYawRateRadPerSec {0.0};
         double maxRollRateRadPerSec = 0.0;
@@ -71,6 +72,7 @@ public:
         out.rollInput = predictiveAxisInput(
             request.rollErrorRad,
             request.rollRateRadPerSec,
+            request.desiredRollRateRadPerSec,
             request.maxRollRateRadPerSec,
             request.rollAngularAccelerationAuthorityRadPerSec2,
             request.deltaSeconds
@@ -204,6 +206,7 @@ private:
     [[nodiscard]] static double predictiveAxisInput(
         double error,
         double rate,
+        double desiredRate,
         double maxRate,
         double authority,
         double dt
@@ -214,14 +217,22 @@ private:
 
         if (!std::isfinite(error) ||
             !std::isfinite(rate) ||
+            !std::isfinite(desiredRate) ||
             !std::isfinite(maxRate))
         {
             return 0.0;
         }
 
+        const double boundedDesiredRate =
+            std::clamp(
+                desiredRate,
+                -std::max(0.0, maxRate),
+                std::max(0.0, maxRate)
+            );
+
         const double angle = std::abs(error);
         if (angle <= AngleDeadband &&
-            std::abs(rate) <= RateDeadband)
+            std::abs(rate - boundedDesiredRate) <= RateDeadband)
         {
             return 0.0;
         }
@@ -229,7 +240,7 @@ private:
         if (angle <= 1.0e-12)
         {
             return std::clamp(
-                -rate / (authority * dt),
+                (boundedDesiredRate - rate) / (authority * dt),
                 -1.0,
                 1.0
             );
@@ -246,11 +257,17 @@ private:
         const double brakingLimitedRate =
             std::sqrt(2.0 * authority * brakingAngleBudget);
 
-        const double targetRate =
+        const double correctiveRate =
             direction *
             std::min(
                 std::max(0.0, maxRate),
                 brakingLimitedRate
+            );
+        const double targetRate =
+            std::clamp(
+                boundedDesiredRate + correctiveRate,
+                -std::max(0.0, maxRate),
+                std::max(0.0, maxRate)
             );
 
         return std::clamp(

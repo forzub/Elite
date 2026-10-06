@@ -2378,6 +2378,7 @@ private:
         }
 
         constexpr int MaximumRefinementAttempts = 6;
+        std::string lastRefinementDiagnostic;
         for (int attempt = 0;
              attempt < MaximumRefinementAttempts;
              ++attempt)
@@ -2480,6 +2481,32 @@ private:
                 0.50,
                 0.98
             );
+
+            lastRefinementDiagnostic =
+                " attempt=" + std::to_string(attempt) +
+                " refinement=" +
+                    std::to_string(
+                        static_cast<int>(accepted.feedback.refinement)
+                    ) +
+                " message=\"" +
+                    (!accepted.feedback.message.empty()
+                        ? accepted.feedback.message
+                        : accepted.failureReason) +
+                    "\"" +
+                " page=" +
+                    std::to_string(accepted.feedback.pageIndex) +
+                " sample=" +
+                    std::to_string(accepted.feedback.sampleIndex) +
+                " required=" +
+                    std::to_string(accepted.feedback.requiredValue) +
+                " available=" +
+                    std::to_string(accepted.feedback.availableValue) +
+                " recommended_scale=" +
+                    std::to_string(accepted.feedback.recommendedScale) +
+                " applied_scale=" +
+                    std::to_string(scale) +
+                " vehicle_max_speed=" +
+                    std::to_string(trajectoryRequest.vehicle.maxSpeedMps);
             trajectoryRequest.vehicle.maxSpeedMps =
                 std::max(
                     0.5,
@@ -2494,7 +2521,8 @@ private:
         }
 
         return failPrograms(
-            "accepted-program-refinement-exhausted"
+            "accepted-program-refinement-exhausted" +
+            lastRefinementDiagnostic
         );
     }
 };

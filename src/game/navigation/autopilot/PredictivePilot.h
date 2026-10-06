@@ -57,6 +57,11 @@ public:
         glm::dvec3 desiredVelocityMapMps {0.0};
         glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
 
+        // Angular velocity of the desired NAVIGATION COURSE (velocity
+        // direction), in map coordinates. This is feed-forward for the hull
+        // actuator; route ownership remains with desiredVelocityMapMps.
+        glm::dvec3 desiredCourseAngularRateMapRadPerSec {0.0};
+
         glm::dvec3 desiredForwardMap {0.0, 0.0, -1.0};
         glm::dvec3 desiredUpMap {0.0, 1.0, 0.0};
 
@@ -189,6 +194,16 @@ public:
             finiteOrZero(request.pitchRateRadPerSec),
             finiteOrZero(request.yawRateRadPerSec)
         };
+
+        const glm::dvec3 desiredCourseAngularRateMap =
+            finiteVecOrZero(
+                request.desiredCourseAngularRateMapRadPerSec
+            );
+        attitudeRequest.desiredPitchYawRateRadPerSec = {
+            glm::dot(desiredCourseAngularRateMap, right),
+            glm::dot(desiredCourseAngularRateMap, up)
+        };
+
         attitudeRequest.rollRateRadPerSec =
             finiteOrZero(request.rollRateRadPerSec);
         attitudeRequest.maxPitchYawRateRadPerSec = {
@@ -359,6 +374,18 @@ private:
     {
         const double length = glm::length(value);
         return std::isfinite(length) ? length : 0.0;
+    }
+
+    [[nodiscard]] static glm::dvec3 finiteVecOrZero(
+        const glm::dvec3& value
+    ) noexcept
+    {
+        return
+            std::isfinite(value.x) &&
+            std::isfinite(value.y) &&
+            std::isfinite(value.z)
+                ? value
+                : glm::dvec3(0.0);
     }
 
     [[nodiscard]] static glm::dvec3 normalizedOr(

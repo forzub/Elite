@@ -56,6 +56,12 @@ void ShipCore::init(
     m_desc = &descriptor;
     m_transform.setWorldPositionMeters(glm::dvec3(position));
 
+    // The hull descriptor owns the native local-flight doctrine. The live
+    // state may later be switched by the existing debug control, but every
+    // fresh ship starts from its descriptor rather than a global default.
+    m_transform.motion.localControlLaw =
+        descriptor.localFlightControlLaw;
+
 
     // собираем корабль
     // Устанавливаем оборудование по умолчанию из дескриптора

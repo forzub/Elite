@@ -94,8 +94,9 @@ private:
             const double component = std::abs(direction[axis]);
             if (component <= 1.0e-12)
                 continue;
-            if (maxRate[axis] > 1.0e-9)
-                limit = std::min(limit, maxRate[axis] / component);
+            if (maxRate[axis] <= 1.0e-9)
+                return 0.0;
+            limit = std::min(limit, maxRate[axis] / component);
         }
         return std::isfinite(limit)
             ? std::max(0.0, limit)

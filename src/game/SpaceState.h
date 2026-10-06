@@ -358,6 +358,7 @@ private:
         std::atomic<bool> ready {false};
         std::uint64_t timelineRevision = 0;
         double startedServerSeconds = 0.0;
+        double executionStartUniverseTimeSeconds = 0.0;
         DockAdvice context;
         game::navigation::planner::RoutePlan plan;
     };

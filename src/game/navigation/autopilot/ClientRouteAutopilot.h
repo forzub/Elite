@@ -1068,6 +1068,7 @@ public:
         const glm::dvec3 rollAngularRateMap =
             steeringForward * desiredRollRateRadPerSec;
 
+        glm::dvec3 desiredCourseAngularRateMap(0.0);
         glm::dvec3 diagnosticDesiredAngularRateMap(0.0);
 
         if (terminalAttitudeHold)
@@ -1098,15 +1099,23 @@ public:
             request.desiredForwardMap = steeringForward;
             request.desiredUpMap = desiredUp;
 
-            // Route/capture/roll angular-rate estimates are diagnostics only.
-            // PredictivePilot owns the single physical attitude-control path
-            // from desired course/up to ordinary pitch/yaw/roll inputs.
-            diagnosticDesiredAngularRateMap =
+            // Navigation is owned by the desired VELOCITY direction.  On a
+            // smooth authored bend that direction is itself rotating, so give
+            // PredictivePilot its continuous course-rate feed-forward instead
+            // of forcing the hull controller to rediscover the turn from a
+            // sequence of accumulated angle errors.
+            desiredCourseAngularRateMap =
                 !state.routeCurves.empty()
-                    ? routeAngularRateMap + rollAngularRateMap
+                    ? routeAngularRateMap + captureAngularRateMap
                     : attitudeLead.reference.
                         angularVelocityMapRadPerSecond;
+
+            diagnosticDesiredAngularRateMap =
+                desiredCourseAngularRateMap + rollAngularRateMap;
         }
+
+        request.desiredCourseAngularRateMapRadPerSec =
+            desiredCourseAngularRateMap;
 
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;

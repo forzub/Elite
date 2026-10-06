@@ -25,6 +25,7 @@ public:
         double rollErrorRad = 0.0;
 
         glm::dvec2 pitchYawRateRadPerSec {0.0};
+        glm::dvec2 desiredPitchYawRateRadPerSec {0.0};
         double rollRateRadPerSec = 0.0;
 
         glm::dvec2 maxPitchYawRateRadPerSec {0.0};
@@ -57,6 +58,7 @@ public:
         out.pitchYawInput = predictivePlanarInput(
             request.pitchYawErrorRad,
             request.pitchYawRateRadPerSec,
+            request.desiredPitchYawRateRadPerSec,
             request.maxPitchYawRateRadPerSec,
             request.angularAccelerationAuthorityRadPerSec2,
             request.deltaSeconds
@@ -106,6 +108,7 @@ private:
     [[nodiscard]] static glm::dvec2 predictivePlanarInput(
         const glm::dvec2& error,
         const glm::dvec2& rate,
+        const glm::dvec2& desiredRate,
         const glm::dvec2& maxRate,
         double authority,
         double dt
@@ -118,13 +121,27 @@ private:
         const double rateMagnitude = glm::length(rate);
 
         if (!std::isfinite(angle) ||
-            !std::isfinite(rateMagnitude))
+            !std::isfinite(rateMagnitude) ||
+            !finiteVec(desiredRate))
         {
             return {};
         }
 
+        const glm::dvec2 boundedDesiredRate = {
+            std::clamp(
+                desiredRate.x,
+                -std::max(0.0, maxRate.x),
+                std::max(0.0, maxRate.x)
+            ),
+            std::clamp(
+                desiredRate.y,
+                -std::max(0.0, maxRate.y),
+                std::max(0.0, maxRate.y)
+            )
+        };
+
         if (angle <= AngleDeadband &&
-            rateMagnitude <= RateDeadband)
+            glm::length(rate - boundedDesiredRate) <= RateDeadband)
         {
             return {};
         }
@@ -132,7 +149,7 @@ private:
         if (angle <= 1.0e-12)
         {
             glm::dvec2 requested =
-                -rate / (authority * dt);
+                (boundedDesiredRate - rate) / (authority * dt);
             const double magnitude = glm::length(requested);
             if (magnitude > 1.0)
                 requested /= magnitude;
@@ -153,8 +170,24 @@ private:
                 directionalRateLimit(direction, maxRate),
                 brakingLimitedRate
             );
-        const glm::dvec2 targetRate =
-            direction * targetMagnitude;
+
+        // Follow the moving course continuously. The feed-forward rate is the
+        // angular velocity of the desired VELOCITY direction; the braking
+        // envelope contributes only the additional rate needed to remove
+        // residual pose error. This avoids treating every frame on a smooth
+        // arc as a fresh stationary attitude target.
+        glm::dvec2 targetRate =
+            boundedDesiredRate + direction * targetMagnitude;
+        targetRate.x = std::clamp(
+            targetRate.x,
+            -std::max(0.0, maxRate.x),
+            std::max(0.0, maxRate.x)
+        );
+        targetRate.y = std::clamp(
+            targetRate.y,
+            -std::max(0.0, maxRate.y),
+            std::max(0.0, maxRate.y)
+        );
 
         glm::dvec2 requested =
             (targetRate - rate) / (authority * dt);

@@ -1442,10 +1442,15 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         );
     }
 
-    // The preparation phase starts this route from a stopped ship. Forward
-    // limits keep the visible speed recommendation consistent with actual
-    // acceleration, while the previous pass reserves braking for every arc.
-    dense.front().speedMps = 0.0;
+    // The route starts from the measured moving state used by the planning
+    // hand-off. Initial speed is a fact, not a requirement to stop first.
+    // Preserve any stricter geometric ceiling already authored at the first
+    // sample; otherwise seed the forward reachability pass from the measured
+    // local speed.
+    dense.front().speedMps = std::min(
+        dense.front().speedMps,
+        std::max(0.0, r.initialSpeedMps)
+    );
     for (std::size_t i=1;i<dense.size();++i)
     {
         const double ds=glm::length(

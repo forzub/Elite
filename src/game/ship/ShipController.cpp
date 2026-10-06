@@ -372,14 +372,28 @@ void applyRequestedAngularAcceleration(
             game::ship::rollRateLimitRadPerSec(params)
         );
 
-    const float requestedAccelLength =
-        glm::length(requestedAngularAcceleration);
-    if (requestedAccelLength > safeAngularAccel &&
-        requestedAccelLength > 1.0e-6f)
+    // Pitch/yaw steer the nose and share one planar authority envelope.
+    // Roll is a separate longitudinal-axis actuator and must not consume
+    // pitch/yaw authority (or vice versa).
+    glm::vec2 requestedPitchYaw(
+        requestedAngularAcceleration.x,
+        requestedAngularAcceleration.y
+    );
+    const float pitchYawAccelLength = glm::length(requestedPitchYaw);
+    if (pitchYawAccelLength > safeAngularAccel &&
+        pitchYawAccelLength > 1.0e-6f)
     {
-        requestedAngularAcceleration *=
-            safeAngularAccel / requestedAccelLength;
+        requestedPitchYaw *=
+            safeAngularAccel / pitchYawAccelLength;
     }
+    requestedAngularAcceleration.x = requestedPitchYaw.x;
+    requestedAngularAcceleration.y = requestedPitchYaw.y;
+    requestedAngularAcceleration.z =
+        std::clamp(
+            requestedAngularAcceleration.z,
+            -safeAngularAccel,
+            safeAngularAccel
+        );
 
     requestedAngularAcceleration.x = limitAxisControlAcceleration(
         ship.pitchRate, requestedAngularAcceleration.x, maxPitchRate, dt
@@ -397,13 +411,27 @@ void applyRequestedAngularAcceleration(
         ship.rollRate
     );
 
-    requestedAngularAcceleration =
+    // Global controlled angular-load magnitude applies only to the
+    // nose-steering plane. Roll has its own maxRollRate clamp above.
+    const glm::vec3 planarRate(
+        currentRate.x,
+        currentRate.y,
+        0.0f
+    );
+    const glm::vec3 planarAcceleration(
+        requestedAngularAcceleration.x,
+        requestedAngularAcceleration.y,
+        0.0f
+    );
+    const glm::vec3 limitedPlanarAcceleration =
         limitAngularDeltaToControlledMagnitude(
-            currentRate,
-            requestedAngularAcceleration,
+            planarRate,
+            planarAcceleration,
             safeAngularRate,
             dt
         );
+    requestedAngularAcceleration.x = limitedPlanarAcceleration.x;
+    requestedAngularAcceleration.y = limitedPlanarAcceleration.y;
 
     ship.pitchRate += requestedAngularAcceleration.x * dt;
     ship.yawRate   += requestedAngularAcceleration.y * dt;
@@ -488,9 +516,13 @@ void ShipController::updateControlRates(
                 std::min(fullAuthorityAfterSeconds, held + std::max(0.0f, dt));
         }
     }
-    const float angularInputLength = glm::length(angularInput);
-    if (angularInputLength > 1.0f)
-        angularInput /= angularInputLength;
+    glm::vec2 pitchYawInput(angularInput.x, angularInput.y);
+    const float pitchYawInputLength = glm::length(pitchYawInput);
+    if (pitchYawInputLength > 1.0f)
+        pitchYawInput /= pitchYawInputLength;
+    angularInput.x = pitchYawInput.x;
+    angularInput.y = pitchYawInput.y;
+    angularInput.z = std::clamp(angularInput.z, -1.0f, 1.0f);
 
     glm::vec3 requestedAngularAcceleration =
         angularInput * safeAngularAccel;

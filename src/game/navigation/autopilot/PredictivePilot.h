@@ -229,9 +229,41 @@ public:
         }
         else if (precisionStop)
         {
-            // Final docking HOLD is translationally neutral. Do not wake RCS
-            // to chase centimetres/metres after the main velocity has been
-            // arrested; only the attitude loop remains active.
+            // Below the END/autobrake envelope the velocity direction is no
+            // longer a useful navigation observable. Remove the remaining
+            // authored STOP residual with the same ordinary keypad RCS
+            // controls available to the player; do not wake a main engine and
+            // do not use the legacy direct-navigation actuator seam.
+            const double rcsAuthority =
+                game::ship::manoeuvreAccelerationLimitMps2(params);
+            if (rcsAuthority > 1.0e-12)
+            {
+                glm::dvec3 wantedAcceleration =
+                    (request.desiredVelocityMapMps -
+                     request.actualVelocityMapMps) / dt;
+
+                const double wantedMagnitude =
+                    glm::length(wantedAcceleration);
+                if (std::isfinite(wantedMagnitude) &&
+                    wantedMagnitude > rcsAuthority)
+                {
+                    wantedAcceleration *=
+                        rcsAuthority / wantedMagnitude;
+                }
+
+                out.forwardInput = finiteClamp(
+                    glm::dot(wantedAcceleration, forward) /
+                    rcsAuthority
+                );
+                out.strafeInput = finiteClamp(
+                    glm::dot(wantedAcceleration, right) /
+                    rcsAuthority
+                );
+                out.liftInput = finiteClamp(
+                    glm::dot(wantedAcceleration, up) /
+                    rcsAuthority
+                );
+            }
             out.targetSpeedRate = 0.0f;
         }
         else if (request.law == LocalFlightControlLaw::Assisted)

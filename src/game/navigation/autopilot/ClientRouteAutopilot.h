@@ -1102,7 +1102,7 @@ public:
             // sequence of accumulated angle errors.
             desiredCourseAngularRateMap =
                 !state.routeCurves.empty()
-                    ? routeAngularRateMap + captureAngularRateMap
+                    ? routeAngularRateMap
                     : attitudeLead.reference.
                         angularVelocityMapRadPerSecond;
 

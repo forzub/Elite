@@ -10,7 +10,7 @@ namespace
 using Autopilot =
     game::navigation::autopilot::ClientRouteAutopilot;
 using Agent =
-    game::navigation::autopilot::RouteFollowerAgentState;
+    game::navigation::autopilot::AutopilotAgentState;
 
 void require(bool condition, const char* message)
 {

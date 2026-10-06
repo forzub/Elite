@@ -9,6 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -149,74 +150,39 @@ public:
         // Pitch/yaw and roll are intentionally independent control channels.
         // HullPoseGuidance guarantees forward error never leaks into roll and
         // roll alignment never changes the nose-steering error.
-        const glm::dvec3 localRotationError(
+        HullAttitudeControl::Request attitudeRequest;
+        attitudeRequest.pitchYawErrorRad = {
             pose.pitchYawErrorLocalRad.x,
-            pose.pitchYawErrorLocalRad.y,
-            pose.rollErrorRad
-        );
-        const glm::dvec3 currentLocalRate(
+            pose.pitchYawErrorLocalRad.y
+        };
+        attitudeRequest.rollErrorRad = pose.rollErrorRad;
+        attitudeRequest.pitchYawRateRadPerSec = {
             finiteOrZero(request.pitchRateRadPerSec),
-            finiteOrZero(request.yawRateRadPerSec),
-            finiteOrZero(request.rollRateRadPerSec)
-        );
-        const glm::dvec3 maxLocalRate(
+            finiteOrZero(request.yawRateRadPerSec)
+        };
+        attitudeRequest.rollRateRadPerSec =
+            finiteOrZero(request.rollRateRadPerSec);
+        attitudeRequest.maxPitchYawRateRadPerSec = {
             std::max(0.0, static_cast<double>(params.maxPitchRate)),
-            std::max(0.0, static_cast<double>(params.maxYawRate)),
-            std::max(0.0, static_cast<double>(params.maxRollRate))
-        );
+            std::max(0.0, static_cast<double>(params.maxYawRate))
+        };
+        attitudeRequest.maxRollRateRadPerSec =
+            std::max(0.0, static_cast<double>(params.maxRollRate));
+        attitudeRequest.angularAccelerationAuthorityRadPerSec2 =
+            configuredAngularAuthority;
+        attitudeRequest.deltaSeconds = dt;
 
-        const glm::dvec3 desiredLocalRate(
-            glm::dot(
-                request.desiredAngularVelocityMapRadPerSec,
-                right
-            ),
-            glm::dot(
-                request.desiredAngularVelocityMapRadPerSec,
-                up
-            ),
-            glm::dot(
-                request.desiredAngularVelocityMapRadPerSec,
-                forward
-            )
-        );
-        const glm::dvec3 desiredLocalAcceleration(
-            glm::dot(
-                request.desiredAngularAccelerationMapRadPerSec2,
-                right
-            ),
-            glm::dot(
-                request.desiredAngularAccelerationMapRadPerSec2,
-                up
-            ),
-            glm::dot(
-                request.desiredAngularAccelerationMapRadPerSec2,
-                forward
-            )
-        );
+        const auto attitude =
+            HullAttitudeControl::evaluate(attitudeRequest);
+        if (!attitude.valid)
+            return {};
 
-        const glm::dvec3 angularInput =
-            request.terminalAttitudeHold
-                ? chooseTerminalHoldRotationInput(
-                    localRotationError,
-                    currentLocalRate,
-                    maxLocalRate,
-                    configuredAngularAuthority,
-                    dt
-                  )
-                : choosePredictiveRotationInput(
-                    localRotationError,
-                    currentLocalRate,
-                    desiredLocalRate,
-                    desiredLocalAcceleration,
-                    maxLocalRate,
-                    configuredAngularAuthority,
-                    request.angularTrackingResponseSeconds,
-                    dt
-                  );
-
-        out.pitchInput = static_cast<float>(angularInput.x);
-        out.yawInput = static_cast<float>(angularInput.y);
-        out.rollInput = static_cast<float>(angularInput.z);
+        out.pitchInput =
+            static_cast<float>(attitude.pitchYawInput.x);
+        out.yawInput =
+            static_cast<float>(attitude.pitchYawInput.y);
+        out.rollInput =
+            static_cast<float>(attitude.rollInput);
 
         const double actualSpeed = finiteLength(request.actualVelocityMapMps);
         constexpr double PrecisionStopEntrySpeedMps = 0.50;
@@ -533,197 +499,7 @@ private:
         }
     }
 
-    [[nodiscard]] static double directionalRateLimit(
-        const glm::dvec3& direction,
-        const glm::dvec3& maxRate
-    ) noexcept
-    {
-        double limit = std::numeric_limits<double>::infinity();
 
-        for (int axis = 0; axis < 3; ++axis)
-        {
-            const double component = std::abs(direction[axis]);
-            if (component <= 1.0e-12)
-                continue;
-
-            if (maxRate[axis] > 1.0e-9)
-                limit = std::min(limit, maxRate[axis] / component);
-        }
-
-        return std::isfinite(limit)
-            ? std::max(0.0, limit)
-            : std::numeric_limits<double>::infinity();
-    }
-
-    [[nodiscard]] static glm::dvec3 chooseTerminalHoldRotationInput(
-        const glm::dvec3& rotationErrorLocalRad,
-        const glm::dvec3& angularRateLocalRadPerSec,
-        const glm::dvec3& maxRateLocalRadPerSec,
-        double angularAuthorityRadPerSec2,
-        double dt
-    ) noexcept
-    {
-        const double angle = glm::length(rotationErrorLocalRad);
-        if (!std::isfinite(angle) ||
-            !(dt > 0.0) ||
-            angularAuthorityRadPerSec2 <= 1.0e-9)
-        {
-            return glm::dvec3(0.0);
-        }
-
-        constexpr double AngleDeadbandRad = 0.0015;
-        constexpr double RateDeadbandRadPerSec = 0.004;
-        const double rateMagnitude =
-            glm::length(angularRateLocalRadPerSec);
-
-        if (angle <= AngleDeadbandRad &&
-            rateMagnitude <= RateDeadbandRadPerSec)
-        {
-            return glm::dvec3(0.0);
-        }
-
-        glm::dvec3 targetRate(0.0);
-        if (angle > AngleDeadbandRad)
-        {
-            const glm::dvec3 direction =
-                rotationErrorLocalRad / angle;
-            const double directionalLimit =
-                directionalRateLimit(direction, maxRateLocalRadPerSec);
-            const double stoppingEnvelopeRate =
-                std::sqrt(
-                    std::max(
-                        0.0,
-                        2.0 * angularAuthorityRadPerSec2 * angle
-                    )
-                );
-            const double targetMagnitude =
-                std::min(
-                    directionalLimit,
-                    stoppingEnvelopeRate
-                );
-            targetRate = direction * targetMagnitude;
-        }
-
-        const glm::dvec3 rateError =
-            targetRate - angularRateLocalRadPerSec;
-        const double rateErrorMagnitude = glm::length(rateError);
-        if (!std::isfinite(rateErrorMagnitude) ||
-            rateErrorMagnitude <= 1.0e-12)
-        {
-            return glm::dvec3(0.0);
-        }
-
-        // Use exactly the time full angular authority would need to close the
-        // current rate error. At rest with a large attitude error this yields
-        // full acceleration; as the stopping envelope collapses near target,
-        // the sign reverses early enough to kill angular rate before capture.
-        const double responseSeconds =
-            std::max(
-                dt,
-                rateErrorMagnitude /
-                    angularAuthorityRadPerSec2
-            );
-        glm::dvec3 requestedAcceleration =
-            rateError / responseSeconds;
-
-        const double requestedMagnitude =
-            glm::length(requestedAcceleration);
-        if (requestedMagnitude > angularAuthorityRadPerSec2)
-        {
-            requestedAcceleration *=
-                angularAuthorityRadPerSec2 /
-                requestedMagnitude;
-        }
-
-        return requestedAcceleration /
-            angularAuthorityRadPerSec2;
-    }
-
-    [[nodiscard]] static glm::dvec3 choosePredictiveRotationInput(
-        const glm::dvec3& rotationErrorLocalRad,
-        const glm::dvec3& angularRateLocalRadPerSec,
-        const glm::dvec3& desiredAngularRateLocalRadPerSec,
-        const glm::dvec3& desiredAngularAccelerationLocalRadPerSec2,
-        const glm::dvec3& maxRateLocalRadPerSec,
-        double angularAuthorityRadPerSec2,
-        double trackingResponseSeconds,
-        double dt
-    ) noexcept
-    {
-        // Restore the proven hull-attitude controller.  Course-response tau is
-        // the delay between hull heading and Assisted velocity direction; it
-        // must never be used as the body rotation servo time constant.
-        (void)desiredAngularRateLocalRadPerSec;
-        (void)desiredAngularAccelerationLocalRadPerSec2;
-        (void)trackingResponseSeconds;
-
-        constexpr double AngleDeadbandRad = 0.0015;
-        constexpr double RateDeadbandRadPerSec = 0.004;
-
-        const double remainingAngle = glm::length(rotationErrorLocalRad);
-        const double rateMagnitude = glm::length(angularRateLocalRadPerSec);
-
-        if (!std::isfinite(remainingAngle) ||
-            !std::isfinite(rateMagnitude) ||
-            !(dt > 0.0) ||
-            angularAuthorityRadPerSec2 <= 1.0e-9)
-        {
-            return glm::dvec3(0.0);
-        }
-
-        if (remainingAngle <= AngleDeadbandRad &&
-            rateMagnitude <= RateDeadbandRadPerSec)
-        {
-            return glm::dvec3(0.0);
-        }
-
-        if (remainingAngle <= 1.0e-12)
-        {
-            const glm::dvec3 requested =
-                -angularRateLocalRadPerSec /
-                (angularAuthorityRadPerSec2 * dt);
-            const double magnitude = glm::length(requested);
-            return magnitude > 1.0
-                ? requested / magnitude
-                : requested;
-        }
-
-        const glm::dvec3 direction =
-            rotationErrorLocalRad / remainingAngle;
-        const double rateTowardTarget =
-            glm::dot(angularRateLocalRadPerSec, direction);
-
-        // Fixed-step physical braking envelope.  Account for the angular
-        // travel that occurs during this simulation step before new torque can
-        // change the rate.  This is the controller that previously passed the
-        // 5/15/45/90 degree closed-loop no-overshoot tests.
-        const double reactionTravel =
-            std::max(0.0, rateTowardTarget) * dt;
-        const double brakingAngleBudget =
-            std::max(0.0, remainingAngle - reactionTravel);
-        const double brakingLimitedRate =
-            std::sqrt(
-                2.0 * angularAuthorityRadPerSec2 *
-                brakingAngleBudget
-            );
-
-        const double rateLimit =
-            directionalRateLimit(direction, maxRateLocalRadPerSec);
-        const double targetRateMagnitude =
-            std::min(rateLimit, brakingLimitedRate);
-        const glm::dvec3 targetRate =
-            direction * targetRateMagnitude;
-
-        glm::dvec3 requestedInput =
-            (targetRate - angularRateLocalRadPerSec) /
-            (angularAuthorityRadPerSec2 * dt);
-
-        const double inputMagnitude = glm::length(requestedInput);
-        if (inputMagnitude > 1.0)
-            requestedInput /= inputMagnitude;
-
-        return requestedInput;
-    }
 };
 
 } // namespace game::navigation::autopilot

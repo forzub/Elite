@@ -490,64 +490,90 @@ public:
                 const auto& candidateCurve =
                     state.routeCurves[curveIndex];
 
-                auto considerProgress =
+                RouteCurveDiagnostic strongestCandidate;
+                double strongestProgressMeters = 0.0;
+                double strongestCurvature = 0.0;
+
+                const auto considerProgress =
                     [&](double progressMeters) noexcept
                     {
+                        const double clampedProgress =
+                            std::clamp(
+                                progressMeters,
+                                candidateCurve.startProgressMeters,
+                                candidateCurve.endProgressMeters
+                            );
                         const auto candidate =
                             sampleRouteCurveAtProgress(
                                 state.routeCurves,
-                                progressMeters
+                                clampedProgress
                             );
                         if (!candidate.valid ||
-                            candidate.curvaturePerMeter <= 1.0e-12)
+                            candidate.curveIndex != curveIndex ||
+                            candidate.curvaturePerMeter <=
+                                strongestCurvature)
                         {
                             return;
                         }
 
-                        speedGuide = candidate;
-                        distanceToTurnMeters =
-                            std::max(
-                                0.0,
-                                progressMeters -
-                                    routeProgressMeters
-                            );
-                        foundUpcomingTurn = true;
+                        strongestCandidate = candidate;
+                        strongestProgressMeters = clampedProgress;
+                        strongestCurvature =
+                            candidate.curvaturePerMeter;
                     };
 
-                considerProgress(
-                    std::min(
-                        candidateCurve.endProgressMeters,
-                        candidateCurve.startProgressMeters + 1.0e-6
-                    )
-                );
-
-                if (!foundUpcomingTurn &&
-                    candidateCurve.kind ==
-                        planner::RouteCurveKind::CubicBezier)
+                // Circular arcs have constant curvature, so one interior
+                // sample is sufficient. Bezier/spline-like primitives can
+                // start with exactly zero curvature and then tighten inside;
+                // never let numerical curvature at start+epsilon terminate
+                // the preview before inspecting the interior.
+                if (candidateCurve.kind ==
+                    planner::RouteCurveKind::CircularArc)
                 {
+                    considerProgress(
+                        0.5 *
+                        (candidateCurve.startProgressMeters +
+                         candidateCurve.endProgressMeters)
+                    );
+                }
+                else
+                {
+                    constexpr int InteriorSamples = 16;
+                    for (int sampleIndex = 1;
+                         sampleIndex < InteriorSamples;
+                         ++sampleIndex)
+                    {
+                        const double u =
+                            static_cast<double>(sampleIndex) /
+                            static_cast<double>(InteriorSamples);
+                        considerProgress(
+                            candidateCurve.startProgressMeters +
+                            (candidateCurve.endProgressMeters -
+                             candidateCurve.startProgressMeters) * u
+                        );
+                    }
+
                     for (const auto& knot :
                          candidateCurve.arcLengthKnots)
                     {
-                        if (foundUpcomingTurn)
-                            break;
                         considerProgress(
-                            std::clamp(
-                                candidateCurve.startProgressMeters +
-                                    knot.localProgressMeters,
-                                candidateCurve.startProgressMeters,
-                                candidateCurve.endProgressMeters
-                            )
+                            candidateCurve.startProgressMeters +
+                            knot.localProgressMeters
                         );
                     }
+                }
 
-                    if (!foundUpcomingTurn)
-                    {
-                        considerProgress(
-                            0.5 *
-                            (candidateCurve.startProgressMeters +
-                             candidateCurve.endProgressMeters)
+                if (strongestCandidate.valid &&
+                    strongestCurvature > 1.0e-12)
+                {
+                    speedGuide = strongestCandidate;
+                    distanceToTurnMeters =
+                        std::max(
+                            0.0,
+                            strongestProgressMeters -
+                                routeProgressMeters
                         );
-                    }
+                    foundUpcomingTurn = true;
                 }
             }
         }

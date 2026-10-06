@@ -971,7 +971,8 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     initial.upMap = {0.0, 1.0, 0.0};
 
     Autopilot::State state;
-    require(
+    std::string startFailure;
+    const bool started =
         Autopilot::start(
             state,
             route,
@@ -980,8 +981,19 @@ void testApproachBrakesBeforeDynamicTurnLimit()
             vehicle,
             1000.0,
             27,
-            20.0
-        ),
+            20.0,
+            glm::dvec3(0.0),
+            false,
+            &startFailure
+        );
+    if (!started)
+    {
+        std::cerr
+            << "[dynamic-turn-speed] start failure: "
+            << startFailure << '\n';
+    }
+    require(
+        started,
         "dynamic-turn-speed route rejected"
     );
 

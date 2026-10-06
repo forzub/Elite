@@ -779,7 +779,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const std::size_t count = candidate.samples.size();
             const double cruiseSpeed = std::max(0.5, 0.8 * r.maxSpeedMps);
             std::vector<double> speeds(count, cruiseSpeed);
-            speeds.front() = 0.0;
+            speeds.front() =
+                std::max(0.0, r.initialSpeedMps);
             speeds.back() = 0.0;
 
             for (std::size_t i = 1; i + 1 < count; ++i)
@@ -1374,7 +1375,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         dense.push_back({
             samples.front(),
             firstForward,
-            0.0
+            r.maxSpeedMps * 0.8
         });
     }
 
@@ -1442,24 +1443,28 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         );
     }
 
-    // The route starts from the measured moving state used by the planning
-    // hand-off. Initial speed is a fact, not a requirement to stop first.
-    // Preserve any stricter geometric ceiling already authored at the first
-    // sample; otherwise seed the forward reachability pass from the measured
-    // local speed.
-    dense.front().speedMps = std::min(
-        dense.front().speedMps,
-        std::max(0.0, r.initialSpeedMps)
-    );
+    // Initial speed is measured state, NOT the speed constraint at s=0.
+    // Keep the first gate's geometric/braking ceiling intact. Use measured
+    // speed only as the seed for forward reachability of later route samples.
+    // If the craft is already above the first ceiling, execution must brake
+    // while continuing along the accepted route; it must not reinterpret that
+    // fact as an impossible zero-speed boundary.
+    double reachableSpeedMps =
+        std::max(0.0, r.initialSpeedMps);
     for (std::size_t i=1;i<dense.size();++i)
     {
         const double ds=glm::length(
             dense[i].positionMeters-dense[i-1].positionMeters);
+        reachableSpeedMps =
+            std::sqrt(
+                reachableSpeedMps*reachableSpeedMps+
+                2*r.acceleratingMps2*ds
+            );
         dense[i].speedMps=std::min(
             dense[i].speedMps,
-            std::sqrt(dense[i-1].speedMps*dense[i-1].speedMps+
-                      2*r.acceleratingMps2*ds)
+            reachableSpeedMps
         );
+        reachableSpeedMps=dense[i].speedMps;
     }
 
     // Preserve the exact accepted dense route for Automatic execution. The

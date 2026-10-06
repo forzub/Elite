@@ -1077,11 +1077,13 @@ public:
         }
         else if (brakeAttitudeLock)
         {
-            // During terminal braking translation owns the maneuver. Keep the
-            // hull level in the final corridor and do not start a terminal
-            // pose capture while significant forward speed remains. If we
-            // crossed the nominal stop plane, continue braking straight; never
-            // pitch/yaw back toward the point.
+            // During terminal braking the authoritative COURSE is the final
+            // corridor tangent. Since moving navigation now takes direction
+            // from desiredVelocityMapMps, lock that vector as well as the hull
+            // actuator target. Otherwise capture guidance could bend the
+            // braking course away from the final straight.
+            request.desiredVelocityMapMps =
+                referenceTangent * targetSpeed;
             request.desiredForwardMap = referenceTangent;
             request.desiredUpMap = desiredUp;
             request.desiredAngularVelocityMapRadPerSec =

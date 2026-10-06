@@ -1,3 +1,18 @@
+## 2026-10-06 — current Navigation V2 execution contract
+
+The authoritative current execution description is
+`src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`.
+
+Key project decision:
+- Planner publishes exact parametric route geometry and physical speed constraints;
+- ClientRouteAutopilot owns current player-route composition and monotonic spatial progress;
+- CourseCaptureGuidance uses actual velocity direction and a temporary smooth capture curve only when materially off-center;
+- PredictivePilot treats hull attitude as an actuator problem and outputs only ordinary ShipControlState;
+- server remains blind to player navigation intent and owns only authoritative physics/world state.
+
+Production acceptance and historical navigation labs are now explicitly separated.
+`legacy_navigation_lab` is diagnostic history, not a release gate.
+
 ## 2026-10-03 — player navigation ownership boundary
 
 Player navigation/autopilot is a client concern.

@@ -295,6 +295,11 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
         std::abs(output.control.yawInput) > 1.0e-6,
         "spatial turn changed velocity target without rotating the nose"
     );
+    require(
+        std::abs(output.control.strafeInput) < 1.0e-6 &&
+        std::abs(output.control.liftInput) < 1.0e-6,
+        "spatial turn used manoeuvre translation instead of hull attitude"
+    );
 }
 
 void testCourseLagLeadsIntoUpcomingTurn()
@@ -857,8 +862,15 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
 
     require(output.valid, "curved-tunnel update invalid");
     require(
-        output.coursePhaseLeadAngleRad > 0.0,
-        "curved-tunnel phase lead was not active"
+        output.courseLeadDistanceMeters > 0.0,
+        "curved-tunnel route-pose look-ahead was not active"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) > 1.0e-5,
+        "curved-tunnel route pose did not rotate the hull along the authored curve"
     );
     require(
         std::abs(output.routeRadiusMeters - RadiusMeters) < 1.0,

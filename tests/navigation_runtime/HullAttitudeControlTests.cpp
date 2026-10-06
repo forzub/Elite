@@ -117,6 +117,28 @@ void testMovingCourseRateIsTrackedWithoutWaitingForAngleError()
     );
 }
 
+
+void testDesiredRollRateTracksFrameWithoutWaitingForAngleKick()
+{
+    auto r = base();
+    r.desiredRollRateRadPerSec = 0.30;
+
+    const auto accelerate = Control::evaluate(r);
+    require(accelerate.valid, "desired-roll-rate control invalid");
+    require(
+        accelerate.rollInput > 0.1,
+        "desired roll rate did not command frame-alignment roll"
+    );
+
+    r.rollRateRadPerSec = 0.30;
+    const auto matched = Control::evaluate(r);
+    require(matched.valid, "matched desired-roll-rate control invalid");
+    require(
+        std::abs(matched.rollInput) < 1.0e-9,
+        "matched desired roll rate still produced an impulse"
+    );
+}
+
 void testResidualYawRateDoesNotCreateRoll()
 {
     auto r = base();
@@ -145,6 +167,7 @@ int main()
         testResidualRollRateDoesNotCreatePitchYaw();
         testResidualYawRateDoesNotCreateRoll();
         testMovingCourseRateIsTrackedWithoutWaitingForAngleError();
+        testDesiredRollRateTracksFrameWithoutWaitingForAngleKick();
 
         std::cout
             << "HULL ATTITUDE CONTROL TESTS: PASS\n"
@@ -152,7 +175,8 @@ int main()
             << " - pitch/yaw cannot consume roll authority\n"
             << " - roll-rate damping cannot create pitch/yaw\n"
             << " - yaw/pitch damping cannot create roll\n"
-            << " - moving velocity-course rate is tracked continuously\n";
+            << " - moving velocity-course rate is tracked continuously\n"
+            << " - dock-frame roll rate is tracked continuously\n";
         return 0;
     }
     catch (const std::exception& e)

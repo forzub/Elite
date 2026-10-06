@@ -615,7 +615,7 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
     );
     require(
         output.desiredCaptureAngularRateRadPerSec > 1.0e-3,
-        "parallel-offset state still requested zero capture angular rate"
+        "parallel-offset route pose did not detect a material capture angle"
     );
     require(
         std::hypot(

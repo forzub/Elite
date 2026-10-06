@@ -38,6 +38,7 @@
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
 #include "src/game/navigation/NavigationRuntimeControlBridge.h"
+#include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/NavigationRuntimePlanner.h"
 #include "src/game/navigation/AcceptedShortSegment.h"
 #include "src/game/navigation/TrajectoryFollower.h"
@@ -412,6 +413,11 @@ private:
 
     std::unordered_map<EntityId, double>
         m_npcNavigationLastExecutionTimeSeconds;
+
+    std::unordered_map<
+        EntityId,
+        game::navigation::autopilot::PredictivePilot::State
+    > m_npcPredictivePilotStates;
 
     // Snapshot graph payload control.
     // Heavy structural data is sent only on first sight / explicit dirty events.

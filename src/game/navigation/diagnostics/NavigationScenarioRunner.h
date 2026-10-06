@@ -68,6 +68,9 @@ public:
         double targetSpeedMps = 0.0;
         double courseErrorRad = 0.0;
         double hullForwardErrorRad = 0.0;
+        bool courseCaptureActive = false;
+        double captureMeetingRouteProgressMeters = 0.0;
+        double captureMeetingJoinAngleRad = 0.0;
         double rollErrorRad = 0.0;
 
         double forwardInput = 0.0;

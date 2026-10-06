@@ -681,10 +681,18 @@ foreach(guidance_test
         set(guidance_source CourseCaptureGuidanceTests.cpp)
     endif()
 
-    add_executable(
-        ${guidance_test}_tests
-        ${guidance_source}
-    )
+    if(guidance_test STREQUAL "corridor_capture_guidance")
+        add_executable(
+            ${guidance_test}_tests
+            EXCLUDE_FROM_ALL
+            ${guidance_source}
+        )
+    else()
+        add_executable(
+            ${guidance_test}_tests
+            ${guidance_source}
+        )
+    endif()
 
     target_include_directories(
         ${guidance_test}_tests

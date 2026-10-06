@@ -289,7 +289,9 @@ NavigationScenarioRunner::run(const Request& source)
         trace.crossTrackErrorMeters =
             output.crossTrackErrorMeters;
         trace.targetSpeedMps = output.targetSpeedMps;
-        trace.forwardErrorRad = output.forwardErrorRad;
+        trace.courseErrorRad = output.courseErrorRad;
+        trace.hullForwardErrorRad =
+            output.hullForwardErrorRad;
         trace.rollErrorRad = output.signedRollErrorRad;
         trace.forwardInput = output.control.forwardInput;
         trace.pitchInput = output.control.pitchInput;
@@ -426,7 +428,8 @@ std::string NavigationScenarioRunner::Result::reportText() const
             << " R=" << frame.routeRadiusMeters
             << " cross=" << frame.crossTrackErrorMeters
             << " target_v=" << frame.targetSpeedMps
-            << " forward_err=" << frame.forwardErrorRad
+            << " course_err=" << frame.courseErrorRad
+            << " hull_err=" << frame.hullForwardErrorRad
             << " roll_err=" << frame.rollErrorRad
             << " input=("
             << frame.forwardInput << ","

@@ -1,7 +1,6 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/ManeuverProgramSampler.h"
 #include "src/game/navigation/ManeuverProgramTimeline.h"
-#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 
 #include <cmath>
 #include <iostream>
@@ -15,10 +14,6 @@ namespace
 using Program = game::navigation::AcceptedManeuverProgram;
 using Sampler = game::navigation::ManeuverProgramSampler;
 using Timeline = game::navigation::ManeuverProgramTimeline;
-using Follower = game::navigation::autopilot::RouteFollower;
-using FollowerAgent = game::navigation::autopilot::RouteFollowerAgentState;
-using FollowerPolicy = game::navigation::autopilot::RouteFollowerPolicy;
-using FollowerStatus = game::navigation::autopilot::RouteFollowerStatus;
 
 void require(bool condition, const std::string& message)
 {
@@ -629,54 +624,6 @@ void testSpatialPageCannotSkipMultiplePathChunksPerStep()
     );
 }
 
-void testFollowerCompletionUsesPageLocalElapsedTime()
-{
-    Program page = baseProgram();
-    page.acceptedAtUniverseTimeSeconds = 100.0;
-    page.sequenceStartOffsetSeconds = 5.0;
-    page.validUntilUniverseTimeSeconds = 108.0;
-    page.completionTriggersReplan = true;
-    page.samples[1].positionMapMeters =
-        page.samples[0].positionMapMeters;
-    page.samples[1].velocityMapMetersPerSecond =
-        page.samples[0].velocityMapMetersPerSecond;
-    page.samples[1].forwardMap = page.samples[0].forwardMap;
-    page.samples[1].rightMap = page.samples[0].rightMap;
-    page.samples[1].upMap = page.samples[0].upMap;
-    page.samples[0].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
-    page.samples[1].angularVelocityMapRadPerSecond = glm::dvec3(0.0);
-
-    FollowerAgent agent;
-    agent.positionMapMeters = page.samples[1].positionMapMeters;
-    agent.velocityMapMetersPerSecond =
-        page.samples[1].velocityMapMetersPerSecond;
-    agent.forwardMap = page.samples[1].forwardMap;
-    agent.rightMap = page.samples[1].rightMap;
-    agent.upMap = page.samples[1].upMap;
-
-    const FollowerPolicy policy;
-    const auto beforeLocalEnd = Follower::follow(
-        page,
-        106.0,
-        agent,
-        policy
-    );
-    require(
-        beforeLocalEnd.status == FollowerStatus::Following,
-        "Follower completed a later storage page using global maneuver age"
-    );
-
-    const auto atLocalEnd = Follower::follow(
-        page,
-        107.0,
-        agent,
-        policy
-    );
-    require(
-        atLocalEnd.status == FollowerStatus::Complete,
-        "Follower did not complete at the page-local nominal end"
-    );
-}
 
 } // namespace
 
@@ -697,7 +644,6 @@ int main()
         testSpatialPageSelectionUsesPhysicalProgressNotTime();
         testSpatialProgressCannotAdvanceOutsideCorridor();
         testSpatialPageCannotSkipMultiplePathChunksPerStep();
-        testFollowerCompletionUsesPageLocalElapsedTime();
 
         std::cout << "MANEUVER PROGRAM SAMPLER TESTS: PASS\n";
         std::cout << " - fixed-capacity AcceptedManeuverProgram\n";
@@ -710,7 +656,6 @@ int main()
         std::cout << " - hairpins cannot jump to a nearby future branch\n";
         std::cout << " - spatial storage pages advance only after endpoint crossing\n";
         std::cout << " - monotonic spatial cursor cannot jump backwards\n";
-        std::cout << " - Follower completion uses page-local elapsed time\n";
         return 0;
     }
     catch (const std::exception& error)

@@ -35,6 +35,11 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
             "COBRETTY-FNR1"
         };
 
+        // Native flight doctrine of this hull. Ctrl+F10 remains a debug-only
+        // runtime override; ordinary initialization and navigation start here.
+        desc.localFlightControlLaw =
+            game::navigation::LocalFlightControlLaw::Assisted;
+
         // -------------------------
         // Physics
         // -------------------------

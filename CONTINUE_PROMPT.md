@@ -1,3 +1,28 @@
+## Continue from 2026-10-06 frozen Navigation V2 execution architecture
+
+Read `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` before changing navigation code.
+
+Current player execution chain:
+`RoutePlanner -> RoutePlan.routeCurves -> TrajectoryGenerator -> AcceptedManeuverProgram -> ClientRouteAutopilot -> RouteSpeedGuidance + CourseCaptureGuidance -> PredictivePilot -> ordinary ShipControlState -> authoritative server physics`.
+
+Hard invariants:
+- moving navigation direction = actual velocity direction, never hull nose;
+- centered desired course = exact current Planner tangent;
+- displaced recapture = temporary smooth CourseCaptureGuidance geometry, never a new route;
+- no fixed 50/250 m steering look-ahead;
+- initial speed is measured state and cannot be refined downward;
+- Assisted braking authority = reverse main, not lateral stabilization;
+- pitch/yaw and roll are independent;
+- PredictivePilot alone owns ordinary pilot-control conversion;
+- direct navigation demand seams and ShipControlAdapter are forbidden in production player execution.
+
+Canonical acceptance:
+`python tests/architecture_contracts/check_automatic_docking.py`
+then `bash tests/navigation_runtime/run_mingw64.sh`.
+That runner excludes `legacy_navigation_lab`.
+
+The old `navigation_composite_proving_ground`, old TrajectoryFollower matrices and CorridorCaptureGuidance are historical diagnostics only. Do not tune current production behavior to satisfy them.
+
 ## Continue from 2026-10-03 fully client-owned player navigation
 
 Player docking/navigation no longer belongs to GameServer.

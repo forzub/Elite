@@ -85,7 +85,14 @@ public:
         double targetLongitudinalAccelerationMps2 = 0.0;
         double crossTrackClosingSpeedMps = 0.0;
         double crossTrackCaptureSpeedMps = 0.0;
+        // Authoritative navigation-direction error. While moving this is
+        // angle(actual velocity direction, desired route course).
         double forwardErrorRad = 0.0;
+        double courseErrorRad = 0.0;
+
+        // Hull nose is actuator state only; keep it separate from route
+        // tracking so Assisted and Newtonian share one navigation metric.
+        double hullForwardErrorRad = 0.0;
         double upErrorRad = 0.0;
         double courseLeadDistanceMeters = 0.0;
         double predictedCrossTrackMeters = 0.0;
@@ -1149,7 +1156,28 @@ public:
                   )
                 : 0.0;
         out.crossTrackCaptureSpeedMps = 0.0;
-        out.forwardErrorRad =
+
+        const double navigationSpeed =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const glm::dvec3 actualCourse =
+            navigationSpeed > 0.5
+                ? agent.velocityMapMetersPerSecond / navigationSpeed
+                : normalizedOr(agent.forwardMap, referenceTangent);
+        const double desiredNavigationSpeed =
+            glm::length(request.desiredVelocityMapMps);
+        const glm::dvec3 desiredCourse =
+            desiredNavigationSpeed > 1.0e-9
+                ? request.desiredVelocityMapMps /
+                    desiredNavigationSpeed
+                : normalizedOr(
+                    request.desiredForwardMap,
+                    referenceTangent
+                  );
+
+        out.courseErrorRad =
+            angleBetween(actualCourse, desiredCourse);
+        out.forwardErrorRad = out.courseErrorRad;
+        out.hullForwardErrorRad =
             angleBetween(
                 agent.forwardMap,
                 request.desiredForwardMap

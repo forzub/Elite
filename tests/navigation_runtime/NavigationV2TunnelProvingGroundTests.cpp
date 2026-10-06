@@ -240,6 +240,9 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
     double currentSlipSeconds = 0.0;
     double minimumRemainingRouteMeters =
         plan.routeCurves.back().endProgressMeters;
+    double maxHullTurnFromStartDeg = 0.0;
+    const glm::dvec3 initialHullForward =
+        glm::normalize(glm::dvec3(transform.forward()));
     bool reachedEnd = false;
 
     for (int tick = 0; tick < 5000; ++tick)
@@ -304,6 +307,19 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
             );
         maxCrossTrack = std::max(maxCrossTrack, crossTrack);
 
+        const glm::dvec3 hullForward =
+            glm::normalize(glm::dvec3(transform.forward()));
+        const double hullTurnDeg =
+            std::acos(
+                std::clamp(
+                    glm::dot(initialHullForward, hullForward),
+                    -1.0,
+                    1.0
+                )
+            ) * 180.0 / kPi;
+        maxHullTurnFromStartDeg =
+            std::max(maxHullTurnFromStartDeg, hullTurnDeg);
+
         const double speed =
             glm::length(transform.motion.localVelocityMps);
         if (speed > 0.25)
@@ -366,11 +382,16 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
         autopilot.pilotState.effectiveRollAuthorityRadPerSec2 > 0.0,
         "PredictivePilot learned no angular authority while negotiating the tunnel"
     );
+    require(
+        maxHullTurnFromStartDeg > 45.0,
+        "physical hull did not visibly rotate while following the 90-degree tunnel arc"
+    );
 
     std::cout
         << "[V2-TUNNEL] max_cross_track_m=" << maxCrossTrack
         << " max_continuous_slip_s=" << maxContinuousSlipSeconds
         << " min_remaining_m=" << minimumRemainingRouteMeters
+        << " max_hull_turn_deg=" << maxHullTurnFromStartDeg
         << " learned_pitch_alpha="
         << autopilot.pilotState.effectivePitchAuthorityRadPerSec2
         << " learned_yaw_alpha="

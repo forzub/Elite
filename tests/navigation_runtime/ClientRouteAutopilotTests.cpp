@@ -759,6 +759,122 @@ void testTerminalFrameHoldsStoppedAndAligned()
     );
 }
 
+void testHullForwardTracksAuthoredTunnelTangent()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    constexpr double RadiusMeters = 1000.0;
+    constexpr double HalfPi =
+        1.5707963267948966192313216916398;
+    constexpr double ProbeAngle = HalfPi * 0.25;
+    constexpr double SpeedMps = 120.0;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    constexpr int Steps = 48;
+    for (int i = 0; i <= Steps; ++i)
+    {
+        const double t =
+            HalfPi * static_cast<double>(i) /
+            static_cast<double>(Steps);
+
+        RouteGate gate;
+        gate.positionMeters = {
+            RadiusMeters * std::sin(t),
+            0.0,
+            RadiusMeters * (1.0 - std::cos(t))
+        };
+        gate.forward = glm::normalize(glm::dvec3(
+            std::cos(t),
+            0.0,
+            std::sin(t)
+        ));
+        gate.speedMps = SpeedMps;
+        route.executionGates.push_back(gate);
+    }
+    route.executionGates.back().speedMps = 0.0;
+    route.gates = route.executionGates;
+
+    RouteCurveSegment arc;
+    arc.kind = RouteCurveKind::CircularArc;
+    arc.startProgressMeters = 0.0;
+    arc.endProgressMeters = RadiusMeters * HalfPi;
+    arc.maxSpeedMps = SpeedMps;
+    arc.startMeters = {0.0, 0.0, 0.0};
+    arc.endMeters = {RadiusMeters, 0.0, RadiusMeters};
+    arc.startForward = {1.0, 0.0, 0.0};
+    arc.endForward = {0.0, 0.0, 1.0};
+    arc.arcCenterMeters = {0.0, 0.0, RadiusMeters};
+    arc.arcNormal = {0.0, -1.0, 0.0};
+    arc.arcRadiusMeters = RadiusMeters;
+    arc.arcSweepRadians = HalfPi;
+    route.routeCurves.push_back(arc);
+
+    Agent initial;
+    initial.positionMapMeters = route.executionGates.front().positionMeters;
+    initial.velocityMapMetersPerSecond = {SpeedMps, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            31,
+            20.0
+        ),
+        "authored tangent route rejected"
+    );
+
+    Agent probe = initial;
+    probe.positionMapMeters = {
+        RadiusMeters * std::sin(ProbeAngle),
+        0.0,
+        RadiusMeters * (1.0 - std::cos(ProbeAngle))
+    };
+
+    // Intentionally keep hull pointing along +X although the authored tunnel
+    // tangent has already rotated materially.
+    probe.velocityMapMetersPerSecond = {SpeedMps, 0.0, 0.0};
+    probe.forwardMap = {1.0, 0.0, 0.0};
+    probe.rightMap = {0.0, 0.0, 1.0};
+    probe.upMap = {0.0, 1.0, 0.0};
+
+    const auto output = Autopilot::update(
+        state,
+        probe,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "authored tangent update invalid");
+    require(
+        output.forwardErrorRad > 0.20,
+        "hull target ignored authored tunnel tangent"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) > 0.5,
+        "hull did not command a strong turn toward authored tunnel tangent"
+    );
+}
+
 void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
 {
     using game::navigation::planner::RouteGate;
@@ -2405,6 +2521,7 @@ int main()
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testParallelOffsetActivelyCapturesCorridorCenter();
         testCruiseRollAlignsToDockBottomReference();
+        testHullForwardTracksAuthoredTunnelTangent();
         testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
         testApproachBrakesBeforeDynamicTurnLimit();
         testTurnPreviewCrossesIntermediateStraight();
@@ -2434,6 +2551,7 @@ int main()
             << " - turn lead distance follows measured nose-to-course lag\n"
             << " - parallel offset actively captures corridor center\n"
             << " - cruise roll aligns to dock-bottom reference\n"
+            << " - hull forward follows the authored tunnel tangent\n"
             << " - course lead preserves curved tunnel instead of cutting a chord\n"
             << " - approach brakes before the Assisted dynamic turn limit\n"
             << " - turn preview crosses intermediate straight primitives\n"

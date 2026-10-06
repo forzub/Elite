@@ -42,13 +42,13 @@ SystemMap / local route intent
 ```
 
 The current production composition is inside `ClientRouteAutopilot`.
-`RouteFollowerApi` remains a useful public/lower-level compatibility seam and
-is exercised independently, but `ClientRouteAutopilot` does not delegate its
-current route-course execution to `RouteFollower::follow`.
+The older `RouteFollower` generation and its fixed-distance look-ahead
+implementation have been deleted. There is one player follower/execution owner.
 
 Removed/forbidden execution seams:
 - `ShipControlAdapter` — deleted; NPC and player ordinary controls use `PredictivePilot`;
 - `CorridorCaptureGuidance` — deleted; recapture is `CourseCaptureGuidance`;
+- old `RouteFollower` fixed-look-ahead execution path — deleted;
 - old composite proving-ground execution path — deleted;
 - direct `navigationAccelerationDemand*` / `navigationVelocityTarget*` actuator paths remain migration debt and may not be reintroduced into the player autopilot;
 - fixed-distance steering look-ahead;
@@ -304,8 +304,6 @@ These are not contradictions to the architecture, but they remain cleanup work:
 - `ClientRouteAutopilot` is currently a large composition/orchestration header;
   pure responsibilities are separated, but composition may later be split into
   smaller files without changing behavior;
-- `RouteFollowerApi` remains a transitional/public lower-level seam while the
-  current player path owns continuous route progress inside `ClientRouteAutopilot`;
 - the standalone navigation-runtime test build recompiles production source
   files into its own static test library; source identity is preserved, but a
   future build cleanup should reduce compile-definition/link drift risk;

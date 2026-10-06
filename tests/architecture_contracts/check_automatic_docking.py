@@ -275,7 +275,7 @@ try:
     )
 
     print("[PASS] client-owned automatic docking architecture")
-    print(" - Planner/Follower/PredictivePilot live on the client")
+    print(" - Planner/ClientRouteAutopilot/PredictivePilot live on the client")
     print(" - Manual route and Automatic use one client Planner product")
     print(" - server receives only ordinary ShipControlState execution input")
     print(" - docking/navigation task intent is absent from the network protocol")

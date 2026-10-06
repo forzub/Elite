@@ -20,7 +20,8 @@ Control::Request base()
     Control::Request r;
     r.maxPitchYawRateRadPerSec = {2.5, 2.5};
     r.maxRollRateRadPerSec = 3.0;
-    r.angularAccelerationAuthorityRadPerSec2 = 3.0;
+    r.pitchYawAngularAccelerationAuthorityRadPerSec2 = 3.0;
+    r.rollAngularAccelerationAuthorityRadPerSec2 = 3.0;
     r.deltaSeconds = 0.02;
     return r;
 }

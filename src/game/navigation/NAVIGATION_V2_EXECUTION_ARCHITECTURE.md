@@ -46,10 +46,11 @@ The current production composition is inside `ClientRouteAutopilot`.
 is exercised independently, but `ClientRouteAutopilot` does not delegate its
 current route-course execution to `RouteFollower::follow`.
 
-Retired execution seams are not production authority:
-- `TrajectoryFollower`;
-- `;
-- direct `navigationAccelerationDemand*` / `navigationVelocityTarget*` actuator paths;
+Removed/forbidden execution seams:
+- `ShipControlAdapter` — deleted; NPC and player ordinary controls use `PredictivePilot`;
+- `CorridorCaptureGuidance` — deleted; recapture is `CourseCaptureGuidance`;
+- old composite proving-ground execution path — deleted;
+- direct `navigationAccelerationDemand*` / `navigationVelocityTarget*` actuator paths remain migration debt and may not be reintroduced into the player autopilot;
 - fixed-distance steering look-ahead;
 - a separately authored follower route.
 
@@ -115,9 +116,6 @@ Materially displaced:
 The capture curve is a control/recovery construction only. It does not mutate
 `RoutePlan.routeCurves`, does not become HUD route truth and does not authorize
 a shortcut through the accepted corridor.
-
-`` is retained only as a historical comparison layer and
-is labelled `legacy_navigation_lab`.
 
 ## 5. Speed ownership and physical envelope
 
@@ -263,23 +261,12 @@ Current acceptance coverage includes:
 `NavigationExecutionReplanPolicyTests` is a scheduling/invalidation test only;
 retired `TrajectoryFollower` execution assertions are not part of that production gate.
 
-### 9.2 Legacy comparison labs
+### 9.2 Remaining legacy labs
 
-Tests labelled `legacy_navigation_lab` are historical diagnostics/oracles.
-They are intentionally excluded from production acceptance unless
-`ELITE_RUN_LEGACY_NAVIGATION_LABS=1` is explicitly requested.
-
-This class includes old `TrajectoryFollower`/bridge execution matrices and
-``. The old composite currently uses
-`` and an independently authored angular program; therefore
-an Assisted failure there is not evidence that the current velocity-course
-`ClientRouteAutopilot -> PredictivePilot` path regressed.
-
-`` is also legacy because production recapture is now
-`CourseCaptureGuidance`.
-
-A raw unfiltered `ctest` can still execute registered legacy tests if their
-binaries exist. That command is not the production V2 acceptance definition.
+Only legacy tests whose underlying production components still exist may remain.
+Deleted navigation generations are removed from CMake and the repository rather
+than preserved as runnable comparison code. The remaining `legacy_navigation_lab`
+label is therefore a temporary migration bucket, not an archive.
 
 ## 10. Architecture-contract locks
 
@@ -289,30 +276,27 @@ binaries exist. That command is not the production V2 acceptance definition.
 - velocity-owned course in `PredictivePilot`;
 - separate HullPose/HullAttitude layers;
 - shared executable authority;
-- no ``, `TrajectoryFollower` or private follower route in
-  `ClientRouteAutopilot`;
+- no retired adapter/direct-demand/private follower route in `ClientRouteAutopilot`;
 - production/legacy test-gate separation.
 
 The current runtime architecture must not be inferred from historical
 `CURRENT_*` paragraphs that predate this document.
 
-## 11. Audit verdict, 2026-10-06
+## 11. Cleanup status, 2026-10-06
 
-Static architecture/test audit result: **accepted with cleanup applied**.
+The repository is being collapsed to one execution generation.
+Completed in this cleanup:
+- `ShipControlAdapter` deleted and production NPC ordinary control migrated to `PredictivePilot`;
+- obsolete `CorridorCaptureGuidance` and its test deleted;
+- obsolete composite proving-ground test deleted;
+- current architecture contract remains `ClientRouteAutopilot -> PredictivePilot -> ShipControlState -> ShipController/DynamicMotionSystem`.
 
-Corrections made by this audit:
-- removed retired `TrajectoryFollower` execution from the production
-  `navigation_execution_replan_policy` test;
-- reclassified `` as legacy;
-- made the old Stage-1 follower diagnostic explicitly opt-in;
-- updated the automatic-docking architecture contract to the actual
-  `CourseCaptureGuidance -> PredictivePilot` execution path;
-- preserved the failing old composite as a legacy diagnostic instead of tuning
-  production code to satisfy obsolete actuator semantics.
+Still to migrate before direct-demand removal:
+- the old NavigationRuntimeControlBridge/runtime-lab path;
+- any remaining `TrajectoryFollower`-based runtime-lab execution;
+- direct navigation-demand fields in `ShipControlState` and the corresponding `ShipController` overload, once no caller remains.
 
-One target-machine rerun is still required after these test-boundary changes.
-Passing the canonical V2 runner plus the architecture contract is the acceptance
-criterion; passing every opt-in legacy lab is not.
+Target-machine build/test evidence is required after each deletion slice.
 
 ## 12. Known implementation debt
 

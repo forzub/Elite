@@ -80,7 +80,6 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Tracking controller legacy lab | `maneuver_tracking_controller_tests` | `maneuver_tracking_controller` |
 | Maneuver phase gate legacy lab | `maneuver_phase_gate_tests` | `maneuver_phase_gate` |
 | Public RoutePlanner API | `route_planner_api_tests` | `route_planner_api` |
-| Public RouteFollower API | `route_follower_api_tests` | `route_follower_api` |
 | Docking infrastructure API | `docking_infrastructure_api_tests` | `docking_infrastructure_api` |
 | Runtime planner | `navigation_runtime_planner_tests` | `navigation_runtime_planner` |
 | Corner-family matrix | `maneuver_corner_family_matrix_tests` | `maneuver_corner_family_matrix` |
@@ -108,7 +107,7 @@ Client RoutePlan
 
 Tests labeled `legacy_navigation_lab` intentionally exercise older comparison paths that have not yet been migrated to the single current execution chain. Deleted generations are not retained as runnable tests. They are retained only as opt-in diagnostic/oracle tests and must not define production V2 acceptance.
 
-For current execution semantics, `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` has precedence over older navigation notes. `RouteFollowerApi` remains a lower-level/public compatibility seam and dedicated test surface, but the current player `ClientRouteAutopilot` does not delegate its moving course/capture composition to `RouteFollower::follow`.
+For current execution semantics, `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` has precedence over older navigation notes. `ClientRouteAutopilot` is the sole current player follower/execution composition. The retired `RouteFollower` generation has been deleted.
 
 ## Verified navigation-runtime configure/build/test commands
 
@@ -145,7 +144,6 @@ cmake --build build/tests/navigation_runtime \
            client_route_autopilot_tests \
            navigation_v2_tunnel_proving_ground_tests \
            route_planner_api_tests \
-           route_follower_api_tests \
            docking_infrastructure_api_tests \
   -j 8
 ```
@@ -154,7 +152,7 @@ Run those CTest cases:
 
 ```bash
 ctest --test-dir build/tests/navigation_runtime \
-  -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|client_route_autopilot|navigation_v2_tunnel_proving_ground|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
+  -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|client_route_autopilot|navigation_v2_tunnel_proving_ground|route_planner_api|docking_infrastructure_api)$" \
   --output-on-failure
 ```
 

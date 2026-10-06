@@ -28,7 +28,7 @@ class NavigationScenarioRunner final
 {
 public:
     using AgentState =
-        game::navigation::autopilot::RouteFollowerAgentState;
+        game::navigation::autopilot::AutopilotAgentState;
 
     struct Request
     {

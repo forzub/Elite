@@ -1110,6 +1110,8 @@ public:
 
         request.desiredCourseAngularRateMapRadPerSec =
             desiredCourseAngularRateMap;
+        request.desiredRollRateRadPerSec =
+            desiredRollRateRadPerSec;
 
         request.actualVelocityMapMps =
             agent.velocityMapMetersPerSecond;

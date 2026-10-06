@@ -11,16 +11,16 @@ Static audit result:
 - `makeManeuverExecutionAuthority` is the shared executable-authority source;
 - initial speed is measured immutable state; future speed constraints may be refined/re-anchored;
 - pitch/yaw and roll remain independent through `HullPoseGuidance` and `HullAttitudeControl`;
-- direct navigation actuator demands, `ShipControlAdapter`, fixed-distance look-ahead and retired `TrajectoryFollower` execution are forbidden in the production player path.
+- direct navigation actuator demands, ``, fixed-distance look-ahead and retired `TrajectoryFollower` execution are forbidden in the production player path.
 
 Test audit cleanup:
 - production `NavigationExecutionReplanPolicyTests` no longer executes retired `TrajectoryFollower`;
-- `CorridorCaptureGuidance` is now legacy-only; production recapture is `CourseCaptureGuidance`;
+- `` is now legacy-only; production recapture is `CourseCaptureGuidance`;
 - old Stage-1 follower diagnostic is opt-in;
 - `check_automatic_docking.py` now locks the current velocity-course/CourseCapture/PredictivePilot path;
 - canonical navigation acceptance is `tests/navigation_runtime/run_mingw64.sh`, which excludes `legacy_navigation_lab`.
 
-The old `navigation_composite_proving_ground` remains an opt-in legacy diagnostic and may fail under obsolete `ShipControlAdapter` semantics without indicating a V2 regression.
+The old `` remains an opt-in legacy diagnostic and may fail under obsolete `` semantics without indicating a V2 regression.
 
 Target-machine rerun is required after this audit cleanup.
 
@@ -97,7 +97,7 @@ Windows compile/runtime verification is pending.
 
 ## 2026-10-03 — PredictivePilot V2 second layer: adaptive dynamics + centerline-locked corridor following
 
-Production automatic docking now uses only PredictivePilot V2. ShipControlAdapter and direct navigation actuator demand are forbidden in the production server path.
+Production automatic docking now uses only PredictivePilot V2.  and direct navigation actuator demand are forbidden in the production server path.
 
 Second-layer pilot state is persistent per DockingAutomaticRuntime and learns from measured response:
 - effective pitch/yaw/roll authority from observed delta-omega after ordinary pilot inputs;
@@ -112,7 +112,7 @@ SpatialCorridor execution no longer delegates to legacy TrajectoryFollower. Rout
 - bounded inward velocity component from the real craft to the closest point on that same segment.
 The correction preserves route-speed magnitude and is limited to 35% lateral share plus the accepted program's feedback/braking authority. It cannot target a point beside the corridor or skip across a corner.
 
-Architecture test now fails if V2 RouteFollower contains TrajectoryFollower, lookAhead or steeringRay, or if GameServer contains ShipControlAdapter.
+Architecture test now fails if V2 RouteFollower contains TrajectoryFollower, lookAhead or steeringRay, or if GameServer contains .
 
 DockAutoTrack logs now expose learned_pitch_alpha, learned_yaw_alpha, learned_roll_alpha, assisted_course_tau_s and assisted_speed_response_mps2.
 
@@ -122,12 +122,12 @@ Windows compile/test verification pending.
 
 Architecture reset after repeated tunnel regressions.
 
-Production automatic docking no longer writes navigationAccelerationDemandValid / navigationVelocityTargetValid and no longer commands DynamicMotionSystem through navigation-only acceleration/velocity helpers. GameServer now converts Follower guidance into ordinary ShipControlState pilot inputs via src/game/navigation/autopilot/ShipControlAdapter.h.
+Production automatic docking no longer writes navigationAccelerationDemandValid / navigationVelocityTargetValid and no longer commands DynamicMotionSystem through navigation-only acceleration/velocity helpers. GameServer now converts Follower guidance into ordinary ShipControlState pilot inputs via src/game/navigation/autopilot/.h.
 
 New ownership:
 - Planner owns route geometry, speed schedule, STOP points and physically feasible reference.
 - Follower measures route error and produces guidance/correction intent.
-- ShipControlAdapter is the autopilot pilot: pitch/yaw/roll, targetSpeedRate, keypad RCS and ordinary END/BrakeToStop only.
+-  is the autopilot pilot: pitch/yaw/roll, targetSpeedRate, keypad RCS and ordinary END/BrakeToStop only.
 - ShipController + LocalFlightControlStateMachine + DynamicMotionSystem::applyLocalFrameInput exclusively own how those controls become physical motion and engine usage.
 
 Control-law semantics:
@@ -278,7 +278,7 @@ Windows rerun pending; do not mark composite green yet.
 
 ## 2026-09-28 — composite long-segment dynamic proof
 
-Latest target evidence still had only `navigation_composite_proving_ground` red. The new log showed safe dynamic clearance during replacement (4.747 m), continuation (22.821 m), and portal-entry settle (30.597 m), so the remaining failure had to occur in the later long accepted segments.
+Latest target evidence still had only `` red. The new log showed safe dynamic clearance during replacement (4.747 m), continuation (22.821 m), and portal-entry settle (30.597 m), so the remaining failure had to occur in the later long accepted segments.
 
 Root cause: the fixture's runtime planner horizon is 4 s, but it then executed a 16 s narrow-portal program and an 18 s final-capture program without a whole-program moving-hazard proof. `NominalClear` for the bounded horizon was being misused as authority for a much longer future segment.
 
@@ -293,7 +293,7 @@ Windows rerun pending; do not mark composite green yet.
 
 ## 2026-09-28 — composite portal settle after 5/6 targeted rerun
 
-Target-machine evidence: 5 of the 6 audited tests now pass; only `navigation_composite_proving_ground` remains red. The narrow 19 m passage itself now passes, exposing a later aggregate dynamic-clearance failure.
+Target-machine evidence: 5 of the 6 audited tests now pass; only `` remains red. The narrow 19 m passage itself now passes, exposing a later aggregate dynamic-clearance failure.
 
 Root cause in the synthetic proving-ground authoring: stretching the narrow quintic from 10 s to 16 s while preserving non-zero entry velocity increases the `v0*T` boundary term and can enlarge geometric overshoot. The fix keeps the hazard active, settles residual velocity before entering constrained topology, then authors the narrow precision segment from a stable state. `executeActiveBraking` now uses the production-style `stepVehicle(..., targetVelocity=0)` path so Assisted braking reaches the real fore/reverse main engine.
 
@@ -2738,7 +2738,7 @@ Observed evidence:
 - 17/19 runtime tests PASS;
 - `navigation_runtime_planner` FAIL:
   `fixture must retain the future oriented portal as route context`;
-- `navigation_composite_proving_ground` FAIL:
+- `` FAIL:
   `composite dynamic clearance lost for newtonian`.
 
 ### Planner fixture interpretation
@@ -7488,4 +7488,4 @@ added but have not been executed in this environment.
 
 ## 2026-10-06 — navigation execution layer split
 
-The client autopilot is being decomposed to stop cross-layer regressions. Pure layers now exist for hull pose geometry, hull attitude actuation, corridor capture and scalar route-speed preparation. Roll is explicitly independent from pitch/yaw in both guidance and ShipController authority. Production paths use these layers. Dedicated CTest targets: hull_pose_guidance, hull_attitude_control, corridor_capture_guidance, route_speed_guidance. These must pass independently before client_route_autopilot/docking_advisory or live flight are considered.
+The client autopilot is being decomposed to stop cross-layer regressions. Pure layers now exist for hull pose geometry, hull attitude actuation, corridor capture and scalar route-speed preparation. Roll is explicitly independent from pitch/yaw in both guidance and ShipController authority. Production paths use these layers. Dedicated CTest targets: hull_pose_guidance, hull_attitude_control, route_speed_guidance. These must pass independently before client_route_autopilot/docking_advisory or live flight are considered.

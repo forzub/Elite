@@ -48,7 +48,7 @@ current route-course execution to `RouteFollower::follow`.
 
 Retired execution seams are not production authority:
 - `TrajectoryFollower`;
-- `ShipControlAdapter`;
+- `;
 - direct `navigationAccelerationDemand*` / `navigationVelocityTarget*` actuator paths;
 - fixed-distance steering look-ahead;
 - a separately authored follower route.
@@ -116,7 +116,7 @@ The capture curve is a control/recovery construction only. It does not mutate
 `RoutePlan.routeCurves`, does not become HUD route truth and does not authorize
 a shortcut through the accepted corridor.
 
-`CorridorCaptureGuidance` is retained only as a historical comparison layer and
+`` is retained only as a historical comparison layer and
 is labelled `legacy_navigation_lab`.
 
 ## 5. Speed ownership and physical envelope
@@ -270,12 +270,12 @@ They are intentionally excluded from production acceptance unless
 `ELITE_RUN_LEGACY_NAVIGATION_LABS=1` is explicitly requested.
 
 This class includes old `TrajectoryFollower`/bridge execution matrices and
-`navigation_composite_proving_ground`. The old composite currently uses
-`ShipControlAdapter` and an independently authored angular program; therefore
+``. The old composite currently uses
+`` and an independently authored angular program; therefore
 an Assisted failure there is not evidence that the current velocity-course
 `ClientRouteAutopilot -> PredictivePilot` path regressed.
 
-`corridor_capture_guidance` is also legacy because production recapture is now
+`` is also legacy because production recapture is now
 `CourseCaptureGuidance`.
 
 A raw unfiltered `ctest` can still execute registered legacy tests if their
@@ -289,7 +289,7 @@ binaries exist. That command is not the production V2 acceptance definition.
 - velocity-owned course in `PredictivePilot`;
 - separate HullPose/HullAttitude layers;
 - shared executable authority;
-- no `ShipControlAdapter`, `TrajectoryFollower` or private follower route in
+- no ``, `TrajectoryFollower` or private follower route in
   `ClientRouteAutopilot`;
 - production/legacy test-gate separation.
 
@@ -303,7 +303,7 @@ Static architecture/test audit result: **accepted with cleanup applied**.
 Corrections made by this audit:
 - removed retired `TrajectoryFollower` execution from the production
   `navigation_execution_replan_policy` test;
-- reclassified `CorridorCaptureGuidance` as legacy;
+- reclassified `` as legacy;
 - made the old Stage-1 follower diagnostic explicitly opt-in;
 - updated the automatic-docking architecture contract to the actual
   `CourseCaptureGuidance -> PredictivePilot` execution path;

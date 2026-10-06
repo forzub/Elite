@@ -662,6 +662,7 @@ foreach(guidance_test
     hull_pose_guidance
     hull_attitude_control
     corridor_capture_guidance
+    course_lead_guidance
     route_speed_guidance
 )
     if(guidance_test STREQUAL "hull_pose_guidance")
@@ -670,6 +671,8 @@ foreach(guidance_test
         set(guidance_source HullAttitudeControlTests.cpp)
     elseif(guidance_test STREQUAL "corridor_capture_guidance")
         set(guidance_source CorridorCaptureGuidanceTests.cpp)
+    elseif(guidance_test STREQUAL "course_lead_guidance")
+        set(guidance_source CourseLeadGuidanceTests.cpp)
     else()
         set(guidance_source RouteSpeedGuidanceTests.cpp)
     endif()

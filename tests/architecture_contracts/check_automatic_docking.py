@@ -153,31 +153,52 @@ try:
         "TrajectoryGenerator::generate(",
         "AcceptedManeuverProgramBuilder::build(",
         "pathGeometryAlreadyAuthored = true",
-        "RouteFollower::follow(",
-        "RouteFollower::sampleReference(",
+        "CourseCaptureGuidance::evaluate(",
+        "RouteSpeedGuidance::evaluate(",
+        "sampleRouteCurveAtProgress(",
+        "makeManeuverExecutionAuthority(params, law)",
         "PredictivePilot::make(",
         "ReferenceMode::SpatialCorridor",
         "ShipControlState",
+        "actualCourseForCapture",
+        "courseCaptureActive",
     )
-
-    follower = require(
-        "src/game/navigation/autopilot/RouteFollower.cpp",
-        "the accepted centerline is the ONLY path",
-        "2608765f48",
-        "upperSpeed",
-        "centerlinePoint",
-        "inward * correctionSpeed",
-        "targetVelocity / targetSpeed",
-        "reference.forwardMap = desiredForward",
-    )
-    for token in ("TrajectoryFollower", "lookAhead", "steeringRay"):
-        if token in follower:
+    for token in (
+        "ShipControlAdapter",
+        "TrajectoryFollower::follow(",
+        "RouteFollower::follow(",
+        "RouteFollower::sampleReference(",
+        "steeringRay",
+    ):
+        if token in client_auto:
             raise AssertionError(
-                "RouteFollower V2 regained a private route mechanism: " + token
+                "ClientRouteAutopilot regained a retired execution seam: " + token
+            )
+
+    capture = require(
+        "src/game/navigation/autopilot/CourseCaptureGuidance.h",
+        "actualVelocityMapMps",
+        "routeCurves",
+        "desiredCourseMap = current.tangent",
+        "captureP1",
+        "captureP2",
+        "meetingRouteProgressMeters",
+        "courseResponseSeconds",
+        "start tangent is the ACTUAL velocity direction",
+        "there is no fixed 50-250 m lookahead",
+    )
+    for token in ("ShipControlState", "HullPoseGuidance", "HullAttitudeControl"):
+        if token in capture:
+            raise AssertionError(
+                "CourseCaptureGuidance is no longer pure route geometry: " + token
             )
 
     pilot = require(
         "src/game/navigation/autopilot/PredictivePilot.h",
+        "Navigation course is owned by desired velocity",
+        "request.desiredVelocityMapMps / desiredSpeed",
+        "HullPoseGuidance::evaluate(",
+        "HullAttitudeControl::evaluate(",
         "pitchInput",
         "yawInput",
         "rollInput",
@@ -237,7 +258,7 @@ try:
     print(" - Manual route and Automatic use one client Planner product")
     print(" - server receives only ordinary ShipControlState execution input")
     print(" - docking/navigation task intent is absent from the network protocol")
-    print(" - RouteFollower V2 executes the exact authored centerline")
+    print(" - velocity course, smooth recapture and PredictivePilot are separate frozen layers")
 except AssertionError as exc:
     print(f"[FAIL] {exc}")
     raise SystemExit(1)

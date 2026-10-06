@@ -15,7 +15,9 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
+#include "src/game/navigation/autopilot/CorridorCaptureGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
+#include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -578,16 +580,6 @@ public:
                             state.pilotState
                         );
 
-                const double deltaSpeed =
-                    std::max(
-                        0.0,
-                        actualSpeed - turnSpeedCeilingMps
-                    );
-                turnSpeedSetpointSlewSeconds =
-                    targetSetpointRate > 1.0e-9
-                        ? deltaSpeed / targetSetpointRate
-                        : 0.0;
-
                 const double measuredBrakingResponse =
                     state.pilotState.assistedBrakingResponseMps2;
                 const double effectiveTurnBraking =
@@ -610,34 +602,36 @@ public:
                 const double feedbackResponseSeconds =
                     1.0 / longitudinalResponseGain + deltaSeconds;
 
-                const double idealBrakeDistance =
-                    effectiveTurnBraking > 1.0e-9 &&
-                    actualSpeed > turnSpeedCeilingMps
-                        ? (
-                            actualSpeed * actualSpeed -
-                            turnSpeedCeilingMps * turnSpeedCeilingMps
-                          ) /
-                          (2.0 * effectiveTurnBraking)
-                        : 0.0;
+                RouteSpeedGuidance::TurnSlowdownRequest slowdownRequest;
+                slowdownRequest.actualSpeedMps = actualSpeed;
+                slowdownRequest.turnSpeedCeilingMps =
+                    turnSpeedCeilingMps;
+                slowdownRequest.distanceToTurnMeters =
+                    distanceToTurnMeters;
+                slowdownRequest.targetSetpointRateMps2 =
+                    targetSetpointRate;
+                slowdownRequest.effectiveBrakingMps2 =
+                    effectiveTurnBraking;
+                slowdownRequest.feedbackResponseSeconds =
+                    feedbackResponseSeconds;
 
-                // Conservative by design: during setpoint slew assume the ship
-                // still covers distance at current speed. Real braking begins
-                // gradually before the setpoint reaches v_turn, so this is a
-                // safety reserve rather than an optimistic cancellation.
-                requiredTurnSlowdownDistanceMeters =
-                    actualSpeed * turnSpeedSetpointSlewSeconds +
-                    idealBrakeDistance +
-                    actualSpeed * feedbackResponseSeconds;
+                const auto slowdown =
+                    RouteSpeedGuidance::evaluateTurnSlowdown(
+                        slowdownRequest
+                    );
 
-                if (requiredTurnSlowdownDistanceMeters + 1.0e-9 >=
-                    distanceToTurnMeters)
+                if (slowdown.valid)
                 {
-                    // Move the speed handle all the way to the curve ceiling
-                    // now. The Assisted setpoint slew and physical engines
-                    // provide the smooth deceleration; delaying the command is
-                    // what caused previous overspeed entries.
-                    targetSpeed =
-                        std::min(targetSpeed, turnSpeedCeilingMps);
+                    turnSpeedSetpointSlewSeconds =
+                        slowdown.setpointSlewSeconds;
+                    requiredTurnSlowdownDistanceMeters =
+                        slowdown.requiredPreparationDistanceMeters;
+
+                    if (slowdown.slowdownRequiredNow)
+                    {
+                        targetSpeed =
+                            std::min(targetSpeed, turnSpeedCeilingMps);
+                    }
                 }
             }
         }
@@ -736,49 +730,28 @@ public:
                 ? poseGuide.tangentMap
                 : referenceTangent;
 
-        // Restore the proven corridor-capture composition:
-        // - the target point is ON the authored route;
-        // - the hull aims at that point so Assisted naturally returns to the
-        //   corridor center without manoeuvre translation;
-        // - up/right still come from the same authored route pose.
-        //
-        // This is intentionally NOT "always tangent". A craft that is already
-        // offset from the corridor cannot recapture the centerline while
-        // remaining exactly parallel to it.
-        const glm::dvec3 steeringRay =
-            posePoint - agent.positionMapMeters;
-        const double steeringDistanceMeters =
-            glm::length(steeringRay);
+        CorridorCaptureGuidance::Request captureRequest;
+        captureRequest.positionMapMeters =
+            agent.positionMapMeters;
+        captureRequest.currentRoutePointMapMeters =
+            referencePosition;
+        captureRequest.currentRouteTangentMap =
+            referenceTangent;
+        captureRequest.lookAheadPointMapMeters =
+            posePoint;
+        captureRequest.centeringDeadbandMeters =
+            centeringDeadbandMeters;
 
-        glm::dvec3 steeringForward =
-            normalizedOr(poseTangent, referenceTangent);
+        const auto capture =
+            CorridorCaptureGuidance::evaluate(captureRequest);
 
-        if (std::isfinite(steeringDistanceMeters) &&
-            steeringDistanceMeters > 1.0e-9 &&
-            actualSpeed > std::max(
-                1.0e-6,
-                static_cast<double>(params.stopSpeedEpsilonMps)))
-        {
-            steeringForward =
-                steeringRay / steeringDistanceMeters;
-
-            // On a straight and already centered, keep exact tunnel tangent.
-            // Outside the deadband, the same look-ahead point creates the
-            // temporary intercept angle needed to return to centerline.
-            const glm::dvec3 offTangent =
-                steeringRay -
-                referenceTangent *
-                    glm::dot(steeringRay, referenceTangent);
-            if (crossTrackErrorMeters <= centeringDeadbandMeters &&
-                glm::length(offTangent) <= centeringDeadbandMeters)
-            {
-                steeringForward =
-                    referenceTangent;
-            }
-        }
+        const glm::dvec3 steeringForward =
+            capture.valid
+                ? capture.desiredForwardMap
+                : normalizedOr(poseTangent, referenceTangent);
 
         double crossTrackCorrectionAngleRad =
-            angleBetween(referenceTangent, steeringForward);
+            capture.valid ? capture.captureAngleRad : 0.0;
         glm::dvec3 crossTrackCorrectionAxisMap =
             glm::cross(referenceTangent, steeringForward);
         const double correctionAxisLength =

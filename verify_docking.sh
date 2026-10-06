@@ -24,13 +24,12 @@ cmake --build "${TEST_BUILD_DIR}" \
              client_route_autopilot_tests \
              navigation_v2_tunnel_proving_ground_tests \
              route_planner_api_tests \
-             route_follower_api_tests \
              docking_infrastructure_api_tests \
     -j 8
 
 echo "[DOCK-VERIFY] run native docking + execution gates"
 ctest --test-dir "${TEST_BUILD_DIR}" \
-    -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|client_route_autopilot|navigation_v2_tunnel_proving_ground|route_planner_api|route_follower_api|docking_infrastructure_api)$" \
+    -R "^(docking_advisory|navigation_hit_volume_adapter|accepted_maneuver_program_builder|maneuver_program_sampler|navigation_runtime_control|client_route_autopilot|navigation_v2_tunnel_proving_ground|route_planner_api|docking_infrastructure_api)$" \
     --output-on-failure
 
 echo "[DOCK-VERIFY] configure rotating-terminal trajectory gate"

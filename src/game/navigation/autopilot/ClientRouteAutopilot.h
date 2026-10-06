@@ -736,46 +736,30 @@ public:
                 ? poseGuide.tangentMap
                 : referenceTangent;
 
-        glm::dvec3 steeringForward = referenceTangent;
+        // Hull orientation is authoritative route pose, never an intercept
+        // ray. The tunnel already publishes the orientation the ship must have
+        // at each route progress. Position capture may influence speed, but it
+        // must not redefine the body frame.
+        glm::dvec3 steeringForward =
+            normalizedOr(poseTangent, referenceTangent);
+
+        // Keep the old look-ahead ray only as a diagnostic of positional
+        // capture demand. It is deliberately NOT used as desiredForward.
         const glm::dvec3 steeringRay =
             posePoint - agent.positionMapMeters;
         const double steeringDistanceMeters =
             glm::length(steeringRay);
-
+        glm::dvec3 captureDirection = steeringForward;
         if (std::isfinite(steeringDistanceMeters) &&
-            steeringDistanceMeters > 1.0e-9 &&
-            actualSpeed > std::max(
-                1.0e-6,
-                static_cast<double>(params.stopSpeedEpsilonMps)))
+            steeringDistanceMeters > 1.0e-9)
         {
-            steeringForward =
-                steeringRay / steeringDistanceMeters;
-
-            // On a straight, preserve exact tangent inside the central band so
-            // numerical projection noise cannot make the hull hunt.  As soon
-            // as the authored route bends, posePoint leaves that tangent and
-            // the same rule naturally starts the turn before curve entry.
-            const glm::dvec3 offTangent =
-                steeringRay -
-                referenceTangent *
-                    glm::dot(steeringRay, referenceTangent);
-            if (crossTrackErrorMeters <= centeringDeadbandMeters &&
-                glm::length(offTangent) <= centeringDeadbandMeters)
-            {
-                steeringForward = referenceTangent;
-            }
-        }
-        else
-        {
-            steeringForward = poseTangent;
+            captureDirection = steeringRay / steeringDistanceMeters;
         }
 
-        // Diagnostics/feed-forward for the same single steering solution.
-        // There is no second private capture course.
         double crossTrackCorrectionAngleRad =
-            angleBetween(referenceTangent, steeringForward);
+            angleBetween(referenceTangent, captureDirection);
         glm::dvec3 crossTrackCorrectionAxisMap =
-            glm::cross(referenceTangent, steeringForward);
+            glm::cross(referenceTangent, captureDirection);
         const double correctionAxisLength =
             glm::length(crossTrackCorrectionAxisMap);
         if (correctionAxisLength > 1.0e-12)

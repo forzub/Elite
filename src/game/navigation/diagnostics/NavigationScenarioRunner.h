@@ -66,7 +66,8 @@ public:
         double routeRadiusMeters = 0.0;
         double crossTrackErrorMeters = 0.0;
         double targetSpeedMps = 0.0;
-        double forwardErrorRad = 0.0;
+        double courseErrorRad = 0.0;
+        double hullForwardErrorRad = 0.0;
         double rollErrorRad = 0.0;
 
         double forwardInput = 0.0;

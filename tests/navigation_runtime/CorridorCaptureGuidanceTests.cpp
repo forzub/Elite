@@ -34,6 +34,31 @@ void testCenteredStraightKeepsTangent()
         "centered straight produced capture angle");
 }
 
+void testCenteredCurveKeepsExactTangent()
+{
+    Guidance::Request request;
+    request.positionMapMeters = {0.0, 0.0, 0.0};
+    request.currentRoutePointMapMeters = {0.0, 0.0, 0.0};
+    request.currentRouteTangentMap = {1.0, 0.0, 0.0};
+
+    // A future point on a real arc is necessarily off the current tangent.
+    // Being centered on the authored curve must still mean: fly the tangent,
+    // not the chord to that future point.
+    request.lookAheadPointMapMeters = {40.0, 0.0, 20.0};
+    request.centeringDeadbandMeters = 2.0;
+
+    const auto out = Guidance::evaluate(request);
+    require(out.valid, "centered curve invalid");
+    require(!out.captureActive,
+        "centered curve incorrectly activated chord capture");
+    require(std::abs(out.desiredForwardMap.x - 1.0) < 1.0e-12 &&
+            std::abs(out.desiredForwardMap.y) < 1.0e-12 &&
+            std::abs(out.desiredForwardMap.z) < 1.0e-12,
+        "centered curve did not keep exact authored tangent");
+    require(std::abs(out.captureAngleRad) < 1.0e-12,
+        "centered curve produced a chord steering angle");
+}
+
 void testParallelOffsetCreatesReturnDirection()
 {
     Guidance::Request request;
@@ -79,12 +104,14 @@ int main()
     try
     {
         testCenteredStraightKeepsTangent();
+        testCenteredCurveKeepsExactTangent();
         testParallelOffsetCreatesReturnDirection();
         testDeadbandDoesNotHunt();
 
         std::cout
             << "CORRIDOR CAPTURE GUIDANCE TESTS: PASS\n"
-            << " - centered flight keeps route tangent\n"
+            << " - centered straight keeps route tangent\n"
+            << " - centered curve keeps exact tangent, never a chord\n"
             << " - parallel offset produces return heading\n"
             << " - deadband prevents centerline hunting\n";
         return 0;

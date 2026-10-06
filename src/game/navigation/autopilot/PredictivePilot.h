@@ -212,8 +212,33 @@ public:
         };
         attitudeRequest.maxRollRateRadPerSec =
             std::max(0.0, static_cast<double>(params.maxRollRate));
-        attitudeRequest.angularAccelerationAuthorityRadPerSec2 =
-            configuredAngularAuthority;
+
+        const double effectivePitchAuthority =
+            learnedAuthority(
+                state.effectivePitchAuthorityRadPerSec2,
+                configuredAngularAuthority
+            );
+        const double effectiveYawAuthority =
+            learnedAuthority(
+                state.effectiveYawAuthorityRadPerSec2,
+                configuredAngularAuthority
+            );
+        attitudeRequest.pitchYawAngularAccelerationAuthorityRadPerSec2 =
+            std::max(
+                1.0e-9,
+                std::min(
+                    effectivePitchAuthority,
+                    effectiveYawAuthority
+                )
+            );
+        attitudeRequest.rollAngularAccelerationAuthorityRadPerSec2 =
+            std::max(
+                1.0e-9,
+                learnedAuthority(
+                    state.effectiveRollAuthorityRadPerSec2,
+                    configuredAngularAuthority
+                )
+            );
         attitudeRequest.deltaSeconds = dt;
 
         const auto attitude =

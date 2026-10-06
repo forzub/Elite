@@ -163,6 +163,22 @@ target_link_libraries(EliteNavigationWorldRuntime
            EliteNavigationTrajectory
 )
 
+# Headless production navigation scenario harness. This is intentionally a
+# real runtime library, not test-owned helper code: tests and debug tools drive
+# RoutePlanner -> ClientRouteAutopilot -> ordinary ship controls through this
+# same implementation and can emit a shareable text trace.
+add_library(EliteNavigationScenarioRuntime STATIC
+    src/game/navigation/diagnostics/NavigationScenarioRunner.cpp
+)
+target_include_directories(EliteNavigationScenarioRuntime PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_compile_features(EliteNavigationScenarioRuntime PUBLIC cxx_std_17)
+target_link_libraries(EliteNavigationScenarioRuntime
+    PUBLIC EliteNavigationWorldRuntime
+)
+
 add_library(EliteDockingInfrastructure STATIC
     src/game/docking/traffic/DockTrafficController.cpp
     src/game/docking/landing/DockLandingController.cpp
@@ -1063,6 +1079,7 @@ target_link_libraries(EliteGame PRIVATE
     EliteModelAsset
     EliteNavigationGeometry
     EliteNavigationWorldRuntime
+    EliteNavigationScenarioRuntime
     EliteDockingInfrastructure
     EliteManeuverDecision
     EliteNavigationRuckig

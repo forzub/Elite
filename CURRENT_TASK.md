@@ -2595,3 +2595,8 @@ run the Windows MinGW `client_route_autopilot` test first, then
 `docking_advisory`, then the live first-turn run. No CI runner is present in
 the repository, so these commits have been source-audited and regression tests
 added but have not been executed in this environment.
+
+
+## 2026-10-06 — isolate navigation execution responsibilities
+
+Active task is no longer to tune the monolithic client follower. Execution is being split into independently testable pure layers: HullPoseGuidance (forward vs roll geometry), HullAttitudeControl (independent pitch/yaw and roll actuator commands), CorridorCaptureGuidance (position-to-centerline steering only), and RouteSpeedGuidance (scalar slowdown envelope only). PredictivePilot now consumes HullPoseGuidance/HullAttitudeControl; ClientRouteAutopilot consumes CorridorCaptureGuidance/RouteSpeedGuidance; ShipController no longer lets roll consume pitch/yaw authority through 3-D normalization. Next gate: build and run the four isolated CTest targets before any composite/live flight. If an isolated layer is green, later work must not change its contract while fixing another layer.

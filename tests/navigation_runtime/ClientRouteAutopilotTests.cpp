@@ -884,11 +884,22 @@ void testCenteredArcUsesExactLocalTangent()
         "fixed-distance course lead remained active on authored arc"
     );
     require(
+        output.desiredCourseAngularRateRadPerSec > 1.0e-3,
+        "centered Assisted arc did not publish continuous course-rate feed-forward"
+    );
+    require(
+        std::abs(
+            output.desiredCourseAngularRateRadPerSec -
+            SpeedMps / RadiusMeters
+        ) < 5.0e-3,
+        "centered Assisted arc course-rate does not match v/r"
+    );
+    require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) < 1.0e-3,
-        "centered Assisted arc did not keep the exact local tangent"
+        ) > 1.0e-3,
+        "centered Assisted arc waited for heading error instead of beginning continuous turn"
     );
     require(
         std::abs(output.routeRadiusMeters - RadiusMeters) < 1.0,

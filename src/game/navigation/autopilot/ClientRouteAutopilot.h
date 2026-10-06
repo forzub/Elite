@@ -16,6 +16,7 @@
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/CorridorCaptureGuidance.h"
+#include "src/game/navigation/autopilot/CourseLeadGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
@@ -702,11 +703,16 @@ public:
             state.trackingPositionToleranceMeters *
             CenteringBandFraction;
 
+        CourseLeadGuidance::Request courseLeadRequest;
+        courseLeadRequest.actualSpeedMps = actualSpeed;
+        courseLeadRequest.courseResponseSeconds =
+            courseResponseSeconds;
+        const auto courseLead =
+            CourseLeadGuidance::evaluate(courseLeadRequest);
         const double routeLookAheadMeters =
-            std::max(
-                0.0,
-                actualSpeed * courseResponseSeconds
-            );
+            courseLead.valid
+                ? courseLead.lookAheadMeters
+                : 0.0;
         const double poseProgressMeters =
             std::min(
                 routeTotalProgress,

@@ -292,6 +292,12 @@ NavigationScenarioRunner::run(const Request& source)
         trace.courseErrorRad = output.courseErrorRad;
         trace.hullForwardErrorRad =
             output.hullForwardErrorRad;
+        trace.courseCaptureActive =
+            output.courseCaptureActive;
+        trace.captureMeetingRouteProgressMeters =
+            output.captureMeetingRouteProgressMeters;
+        trace.captureMeetingJoinAngleRad =
+            output.captureMeetingJoinAngleRad;
         trace.rollErrorRad = output.signedRollErrorRad;
         trace.forwardInput = output.control.forwardInput;
         trace.pitchInput = output.control.pitchInput;
@@ -430,6 +436,9 @@ std::string NavigationScenarioRunner::Result::reportText() const
             << " target_v=" << frame.targetSpeedMps
             << " course_err=" << frame.courseErrorRad
             << " hull_err=" << frame.hullForwardErrorRad
+            << " capture=" << (frame.courseCaptureActive ? 1 : 0)
+            << " meet_s=" << frame.captureMeetingRouteProgressMeters
+            << " meet_join=" << frame.captureMeetingJoinAngleRad
             << " roll_err=" << frame.rollErrorRad
             << " input=("
             << frame.forwardInput << ","

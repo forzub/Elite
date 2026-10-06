@@ -17,6 +17,7 @@
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
+#include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
@@ -832,14 +833,21 @@ public:
         if (!attitudeLead.valid)
             attitudeLead = continuous;
 
-        glm::dvec3 desiredUpSource =
+        // Roll orientation belongs to the authored tunnel frame,
+        // not to the temporary capture/steering course.  The HUD corridor
+        // constructs each frame by projecting the docking up reference onto
+        // the plane normal to the authored tangent; use the same geometry
+        // here so the hull belly tracks the visible frame bottom.
+        const glm::dvec3 tunnelFrameForward =
+            normalizedOr(poseTangent, referenceTangent);
+        const glm::dvec3 desiredUpSource =
             glm::length(state.routeUpReference) > 1.0e-9
                 ? state.routeUpReference
                 : attitudeLead.reference.upMap;
         glm::dvec3 desiredUp =
             desiredUpSource -
-            steeringForward *
-                glm::dot(desiredUpSource, steeringForward);
+            tunnelFrameForward *
+                glm::dot(desiredUpSource, tunnelFrameForward);
         desiredUp =
             normalizedOr(
                 desiredUp,
@@ -887,28 +895,24 @@ public:
         const double predictedCrossTrackMeters =
             glm::length(predictedCrossError);
 
-        // Dock-bottom alignment is an explicit roll task, not something that
-        // should disappear inside the combined SO(3) error while pitch/yaw
-        // are busy tracking the route. Measure signed roll error around the
-        // current desired nose axis and publish a smooth desired roll rate.
-        glm::dvec3 currentUpProjected =
-            agent.upMap -
-            steeringForward *
-                glm::dot(agent.upMap, steeringForward);
-        currentUpProjected =
-            normalizedOr(currentUpProjected, desiredUp);
+        // Dock-bottom alignment is an explicit roll task.  Use the same
+        // HullPoseGuidance geometry as PredictivePilot so roll error and the
+        // published desired roll rate are defined around the SAME current
+        // physical hull axis.  Previously the rate was derived around
+        // steeringForward while PredictivePilot recomputed error around
+        // agent.forwardMap, so capture corrections could desynchronise the
+        // hull from the visible tunnel frame.
+        HullPoseGuidance::Request rollPoseRequest;
+        rollPoseRequest.currentForward = agent.forwardMap;
+        rollPoseRequest.currentRight = agent.rightMap;
+        rollPoseRequest.currentUp = agent.upMap;
+        rollPoseRequest.targetForward = agent.forwardMap;
+        rollPoseRequest.targetUp = desiredUp;
+        const auto rollPose =
+            HullPoseGuidance::evaluate(rollPoseRequest);
         const double signedRollErrorRad =
-            std::atan2(
-                glm::dot(
-                    steeringForward,
-                    glm::cross(currentUpProjected, desiredUp)
-                ),
-                std::clamp(
-                    glm::dot(currentUpProjected, desiredUp),
-                    -1.0,
-                    1.0
-                )
-            );
+            rollPose.valid ? rollPose.rollErrorRad : 0.0;
+
         const double angularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
         const double rollRateLimit =

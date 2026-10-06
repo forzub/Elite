@@ -9,6 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -128,33 +129,30 @@ public:
 
         ShipControlState out;
 
-        const glm::dvec3 desiredForward =
-            normalizedOr(request.desiredForwardMap, forward);
-        glm::dvec3 desiredUp =
-            request.desiredUpMap -
-            desiredForward * glm::dot(request.desiredUpMap, desiredForward);
-        desiredUp = normalizedOr(desiredUp, up);
+        HullPoseGuidance::Request poseRequest;
+        poseRequest.currentForward = forward;
+        poseRequest.currentRight = right;
+        poseRequest.currentUp = up;
+        poseRequest.targetForward = request.desiredForwardMap;
+        poseRequest.targetUp = request.desiredUpMap;
 
-        const glm::dvec3 rotationErrorMap =
-            orientationErrorVector(
-                forward,
-                right,
-                up,
-                desiredForward,
-                desiredUp
-            );
+        const auto pose = HullPoseGuidance::evaluate(poseRequest);
+        if (!pose.valid)
+            return {};
+
+        const glm::dvec3 desiredForward = pose.targetForward;
+        const glm::dvec3 desiredUp = pose.targetUpForRoll;
 
         const double configuredAngularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
 
-        // The real ship has one shared angular-acceleration envelope. Do not
-        // solve pitch/yaw/roll as three independent actuators each owning
-        // 100% of alpha; ShipController normalizes their combined request.
-        // Solve the complete local rotation vector once.
+        // Pitch/yaw and roll are intentionally independent control channels.
+        // HullPoseGuidance guarantees forward error never leaks into roll and
+        // roll alignment never changes the nose-steering error.
         const glm::dvec3 localRotationError(
-            glm::dot(rotationErrorMap, right),
-            glm::dot(rotationErrorMap, up),
-            glm::dot(rotationErrorMap, forward)
+            pose.pitchYawErrorLocalRad.x,
+            pose.pitchYawErrorLocalRad.y,
+            pose.rollErrorRad
         );
         const glm::dvec3 currentLocalRate(
             finiteOrZero(request.pitchRateRadPerSec),
@@ -533,86 +531,6 @@ private:
             state.lastMeasuredCourseErrorRad = courseError;
             state.hasMeasuredCourseError = true;
         }
-    }
-
-    [[nodiscard]] static glm::dvec3 orientationErrorVector(
-        const glm::dvec3& forward,
-        const glm::dvec3& right,
-        const glm::dvec3& up,
-        const glm::dvec3& desiredForward,
-        const glm::dvec3& desiredUp
-    ) noexcept
-    {
-        const glm::dvec3 currentForward =
-            normalizedOr(forward, glm::dvec3(0.0, 0.0, -1.0));
-        const glm::dvec3 currentUp =
-            normalizedOr(
-                up - currentForward * glm::dot(up, currentForward),
-                glm::dvec3(0.0, 1.0, 0.0)
-            );
-        const glm::dvec3 currentRight =
-            normalizedOr(
-                right,
-                glm::cross(currentForward, currentUp)
-            );
-
-        const glm::dvec3 targetForward =
-            normalizedOr(desiredForward, currentForward);
-        glm::dvec3 targetUp =
-            desiredUp - targetForward * glm::dot(desiredUp, targetForward);
-        targetUp = normalizedOr(targetUp, currentUp);
-        const glm::dvec3 targetRight =
-            normalizedOr(
-                glm::cross(targetForward, targetUp),
-                currentRight
-            );
-        targetUp =
-            normalizedOr(
-                glm::cross(targetRight, targetForward),
-                targetUp
-            );
-
-        // Exact shortest-arc SO(3) delta. The former "forward error + roll"
-        // construction was only a small-angle approximation and can assign
-        // the wrong combined delta on simultaneous pitch/yaw/roll turns.
-        const glm::dquat current = glm::normalize(
-            glm::quat_cast(
-                glm::dmat3(
-                    currentRight,
-                    currentUp,
-                    -currentForward
-                )
-            )
-        );
-        const glm::dquat target = glm::normalize(
-            glm::quat_cast(
-                glm::dmat3(
-                    targetRight,
-                    targetUp,
-                    -targetForward
-                )
-            )
-        );
-
-        glm::dquat delta =
-            glm::normalize(target * glm::conjugate(current));
-        if (delta.w < 0.0)
-            delta = -delta;
-
-        const glm::dvec3 vectorPart(delta.x, delta.y, delta.z);
-        const double vectorLength = glm::length(vectorPart);
-        if (!std::isfinite(vectorLength) || vectorLength <= 1.0e-12)
-            return glm::dvec3(0.0);
-
-        const double angle =
-            2.0 * std::atan2(
-                vectorLength,
-                std::clamp(delta.w, 0.0, 1.0)
-            );
-        if (!std::isfinite(angle))
-            return glm::dvec3(0.0);
-
-        return vectorPart * (angle / vectorLength);
     }
 
     [[nodiscard]] static double directionalRateLimit(

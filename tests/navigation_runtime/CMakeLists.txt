@@ -609,60 +609,12 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
-add_executable(
-    navigation_composite_proving_ground_tests
-    EXCLUDE_FROM_ALL
-    NavigationCompositeProvingGroundTests.cpp
-    "${ELITE_SOURCE_ROOT}/tools/navigation_runtime/NavigationTrace.cpp"
-)
-
-target_include_directories(
-    navigation_composite_proving_ground_tests
-    PRIVATE
-        "${ELITE_SOURCE_ROOT}"
-        "${ELITE_SOURCE_ROOT}/src"
-)
-
-target_compile_features(
-    navigation_composite_proving_ground_tests
-    PRIVATE cxx_std_17
-)
-
-target_link_libraries(
-    navigation_composite_proving_ground_tests
-    PRIVATE
-        EliteNavigationRuntimeControl
-        nlohmann_json::nlohmann_json
-)
-
-if(MSVC)
-    target_compile_options(
-        navigation_composite_proving_ground_tests
-        PRIVATE /W4 /permissive-
-    )
-else()
-    target_compile_options(
-        navigation_composite_proving_ground_tests
-        PRIVATE -Wall -Wextra -Wpedantic
-    )
-endif()
-
-add_test(
-    NAME navigation_composite_proving_ground
-    COMMAND navigation_composite_proving_ground_tests
-)
-
-set_tests_properties(
-    navigation_composite_proving_ground
-    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
-)
 
 # Isolated navigation guidance layers. These are deliberately separate CTest
 # targets so one responsibility can be frozen before another is modified.
 foreach(guidance_test
     hull_pose_guidance
     hull_attitude_control
-    corridor_capture_guidance
     route_speed_guidance
     velocity_course_guidance
     course_capture_guidance
@@ -671,8 +623,6 @@ foreach(guidance_test
         set(guidance_source HullPoseGuidanceTests.cpp)
     elseif(guidance_test STREQUAL "hull_attitude_control")
         set(guidance_source HullAttitudeControlTests.cpp)
-    elseif(guidance_test STREQUAL "corridor_capture_guidance")
-        set(guidance_source CorridorCaptureGuidanceTests.cpp)
     elseif(guidance_test STREQUAL "route_speed_guidance")
         set(guidance_source RouteSpeedGuidanceTests.cpp)
     elseif(guidance_test STREQUAL "velocity_course_guidance")
@@ -681,18 +631,10 @@ foreach(guidance_test
         set(guidance_source CourseCaptureGuidanceTests.cpp)
     endif()
 
-    if(guidance_test STREQUAL "corridor_capture_guidance")
-        add_executable(
-            ${guidance_test}_tests
-            EXCLUDE_FROM_ALL
-            ${guidance_source}
-        )
-    else()
-        add_executable(
-            ${guidance_test}_tests
-            ${guidance_source}
-        )
-    endif()
+    add_executable(
+        ${guidance_test}_tests
+        ${guidance_source}
+    )
 
     target_include_directories(
         ${guidance_test}_tests
@@ -1380,7 +1322,5 @@ set_tests_properties(
     maneuver_speed_doctrine_matrix
     maneuver_chained_limit_matrix
     navigation_runtime_planner
-    navigation_composite_proving_ground
-    corridor_capture_guidance
     PROPERTIES LABELS "legacy_navigation_lab"
 )

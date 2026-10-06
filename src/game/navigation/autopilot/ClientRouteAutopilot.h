@@ -1070,7 +1070,6 @@ public:
             steeringForward * desiredRollRateRadPerSec;
 
         glm::dvec3 desiredCourseAngularRateMap(0.0);
-        glm::dvec3 diagnosticDesiredAngularRateMap(0.0);
 
         if (terminalAttitudeHold)
         {
@@ -1093,7 +1092,6 @@ public:
                 referenceTangent * targetSpeed;
             request.desiredForwardMap = referenceTangent;
             request.desiredUpMap = desiredUp;
-            diagnosticDesiredAngularRateMap = rollAngularRateMap;
         }
         else
         {
@@ -1111,8 +1109,6 @@ public:
                     : attitudeLead.reference.
                         angularVelocityMapRadPerSecond;
 
-            diagnosticDesiredAngularRateMap =
-                desiredCourseAngularRateMap + rollAngularRateMap;
         }
 
         request.desiredCourseAngularRateMapRadPerSec =

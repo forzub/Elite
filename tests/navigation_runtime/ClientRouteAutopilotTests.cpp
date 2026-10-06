@@ -490,7 +490,7 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
     );
 
     Agent offset = initial;
-    offset.positionMapMeters = {200.0, 0.0, 80.0};
+    offset.positionMapMeters = {100.0, 0.0, 80.0};
     offset.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
 
     const auto output = Autopilot::update(
@@ -1788,7 +1788,7 @@ void testInitialOverspeedBrakesWithoutRejectingRoute()
 
     Agent initial;
     initial.positionMapMeters = {0.0, 0.0, 0.0};
-    initial.velocityMapMetersPerSecond = {100.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {120.0, 0.0, 0.0};
     initial.forwardMap = {1.0, 0.0, 0.0};
     initial.rightMap = {0.0, 0.0, 1.0};
     initial.upMap = {0.0, 1.0, 0.0};

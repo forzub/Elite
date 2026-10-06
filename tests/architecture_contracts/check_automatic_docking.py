@@ -224,7 +224,28 @@ try:
         "tests/navigation_runtime/CMakeLists.txt",
         "client_route_autopilot_tests",
         "NAME client_route_autopilot",
+        "NAME course_capture_guidance",
+        "NAME navigation_scenario_runner",
+        "NAME navigation_v2_tunnel_proving_ground",
+        "navigation_composite_proving_ground",
+        "corridor_capture_guidance",
+        'PROPERTIES LABELS "legacy_navigation_lab"',
     )
+    runtime_runner = require(
+        "tests/navigation_runtime/run_mingw64.sh",
+        "-LE legacy_navigation_lab",
+        "navigation_v2_tunnel_proving_ground",
+        "ELITE_RUN_LEGACY_NAVIGATION_LABS",
+    )
+    replan_tests = require(
+        "tests/navigation_runtime/NavigationExecutionReplanPolicyTests.cpp",
+        "testAutomaticDoesNotReplanEveryFrame",
+        "testTrackingErrorInvalidatesAutomaticSegment",
+    )
+    if "TrajectoryFollower" in replan_tests:
+        raise AssertionError(
+            "production replan-policy gate regained retired TrajectoryFollower execution"
+        )
 
     # Planner remains responsible for understandable failure taxonomy.
     require(

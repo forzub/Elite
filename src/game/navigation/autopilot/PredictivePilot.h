@@ -59,8 +59,6 @@ public:
 
         glm::dvec3 desiredForwardMap {0.0, 0.0, -1.0};
         glm::dvec3 desiredUpMap {0.0, 1.0, 0.0};
-        glm::dvec3 desiredAngularVelocityMapRadPerSec {0.0};
-        glm::dvec3 desiredAngularAccelerationMapRadPerSec2 {0.0};
 
         glm::dvec3 actualVelocityMapMps {0.0};
         glm::dvec3 forwardMap {0.0, 0.0, -1.0};
@@ -73,7 +71,6 @@ public:
 
         bool stopRequested = false;
         bool terminalAttitudeHold = false;
-        double angularTrackingResponseSeconds = 0.0;
         double deltaSeconds = 0.0;
     };
 

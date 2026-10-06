@@ -1429,7 +1429,7 @@ Observed evidence:
 - 17/19 runtime tests PASS;
 - `navigation_runtime_planner` FAIL:
   `fixture must retain the future oriented portal as route context`;
-- `navigation_composite_proving_ground` FAIL:
+- `` FAIL:
   `composite dynamic clearance lost for newtonian`.
 
 ### Planner fixture interpretation

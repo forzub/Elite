@@ -154,7 +154,7 @@ try:
         "AcceptedManeuverProgramBuilder::build(",
         "pathGeometryAlreadyAuthored = true",
         "CourseCaptureGuidance::evaluate(",
-        "RouteSpeedGuidance::evaluate(",
+        "RouteSpeedGuidance::evaluateTurnSlowdown(",
         "sampleRouteCurveAtProgress(",
         "makeManeuverExecutionAuthority(params, law)",
         "PredictivePilot::make(",

@@ -51,7 +51,7 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
-#include "src/game/navigation/autopilot/ShipControlAdapter.h"
+#include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
@@ -993,8 +993,10 @@ bool GameSimulation::updateNpcNavigationControl(
     }
     else
     {
-        game::navigation::autopilot::ShipControlAdapter::Request
-            pilotRequest;
+        using Pilot =
+            game::navigation::autopilot::PredictivePilot;
+
+        Pilot::Request pilotRequest;
         pilotRequest.law = tr.motion.localControlLaw;
         pilotRequest.desiredVelocityMapMps =
             goal.mode == NpcNavigationGoalMode::MaintainForwardCruise
@@ -1003,23 +1005,36 @@ bool GameSimulation::updateNpcNavigationControl(
                 : glm::dvec3(0.0);
         pilotRequest.desiredLinearAccelerationMapMps2 =
             latest.snapshot.executedLinearAccelerationDemandSystemMps2;
-        pilotRequest.desiredAngularAccelerationMapRadPerSec2 =
-            latest.snapshot.executedAngularAccelerationDemandSystemRadPerSec2;
+
+        const double desiredSpeed =
+            glm::length(pilotRequest.desiredVelocityMapMps);
+        pilotRequest.desiredForwardMap =
+            desiredSpeed > 1.0e-9
+                ? pilotRequest.desiredVelocityMapMps / desiredSpeed
+                : navigationState.forwardSystem;
+        pilotRequest.desiredUpMap = navigationState.upSystem;
+
         pilotRequest.actualVelocityMapMps =
             navigationState.relativeSystemVelocityMps;
         pilotRequest.forwardMap = navigationState.forwardSystem;
         pilotRequest.rightMap = navigationState.rightSystem;
         pilotRequest.upMap = navigationState.upSystem;
-        pilotRequest.currentAssistedTargetSpeedMps =
-            tr.motion.targetForwardSpeedMps;
+        pilotRequest.pitchRateRadPerSec =
+            navigationState.pitchRateRadPerSec;
+        pilotRequest.yawRateRadPerSec =
+            navigationState.yawRateRadPerSec;
+        pilotRequest.rollRateRadPerSec =
+            navigationState.rollRateRadPerSec;
         pilotRequest.stopRequested =
             goal.mode == NpcNavigationGoalMode::Hold;
         pilotRequest.deltaSeconds = executionDeltaSeconds;
 
+        auto& pilotState = m_npcPredictivePilotStates[id];
         ship.setControlState(
-            game::navigation::autopilot::ShipControlAdapter::make(
+            Pilot::make(
                 pilotRequest,
-                ship.core().effectivePhysics()
+                ship.core().effectivePhysics(),
+                pilotState
             )
         );
     }
@@ -4511,6 +4526,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 m_npcNavigationControlBridges.erase(id);
                 m_npcNavigationExecutionSnapshots.erase(id);
                 m_npcNavigationLastExecutionTimeSeconds.erase(id);
+                m_npcPredictivePilotStates.erase(id);
                 continue;
             }
 
@@ -4556,6 +4572,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 m_npcNavigationControlBridges.erase(id);
                 m_npcNavigationExecutionSnapshots.erase(id);
                 m_npcNavigationLastExecutionTimeSeconds.erase(id);
+                m_npcPredictivePilotStates.erase(id);
             }
         }
 

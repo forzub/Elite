@@ -1912,6 +1912,20 @@ void SpaceState::updateDockingAdvisory()
             m_client->submitInput(m_clientAutopilotControl);
         };
 
+    const auto coastForPlanningControl = [&]()
+    {
+        ShipControlState control;
+        // Planning hand-off contract: remove commanded linear acceleration
+        // but preserve measured local velocity. This bypasses Assisted
+        // translational recapture while the asynchronous planner works.
+        control.navigationAccelerationDemandValid = true;
+        control.navigationLinearAccelerationDemandSystemMps2 =
+            glm::dvec3(0.0);
+        return control;
+    };
+
+    constexpr double PlanningLeadSeconds = 1.0;
+
     if (pending.serial != m_lastDockingPathRequestSerial)
     {
         eraseVisibleRoute();
@@ -1945,81 +1959,20 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Stabilizing)
     {
-        const auto agent = makeAgent();
-        submitAutopilotControl(
-            ClientAutopilot::stabilize(
-                agent,
-                controlLaw,
-                effectivePhysics,
-                m_clientDockingStabilizePilotState,
-                fixedDt
-            )
-        );
+        // Do not stop the ship before planning. The measured local velocity is
+        // an initial condition, not an error. While planning, command zero
+        // linear acceleration and project the route origin along the resulting
+        // coast so the async plan starts where the craft will actually be.
+        submitAutopilotControl(coastForPlanningControl());
 
         const double relativeSpeedMps =
             glm::length(motion.localVelocityMps);
-        const double angularRateRadPerSec = std::sqrt(
-            static_cast<double>(transform.pitchRate) *
-                static_cast<double>(transform.pitchRate) +
-            static_cast<double>(transform.yawRate) *
-                static_cast<double>(transform.yawRate) +
-            static_cast<double>(transform.rollRate) *
-                static_cast<double>(transform.rollRate)
-        );
-
-        const double speedThresholdMps =
-            std::max(
-                0.05,
-                static_cast<double>(
-                    player.descriptor->physics.stopSpeedEpsilonMps
-                )
-            );
-        constexpr double AngularRateThresholdRadPerSec = 0.01;
-        constexpr double SettleHoldSeconds = 0.25;
-
-        if (relativeSpeedMps > speedThresholdMps ||
-            angularRateRadPerSec > AngularRateThresholdRadPerSec)
-        {
-            m_clientDockingSettledSinceServerSeconds = -1.0;
-
-            if (m_clientDockingTraceTick == 0 ||
-                m_client->lastSimulationMetadata().serverTick -
-                    m_clientDockingTraceTick >= 60)
-            {
-                m_clientDockingTraceTick =
-                    m_client->lastSimulationMetadata().serverTick;
-                std::cerr
-                    << "[DockClient] request=" << pending.serial
-                    << " phase=stabilizing"
-                    << " vrel_mps=" << relativeSpeedMps
-                    << " omega_radps=" << angularRateRadPerSec
-                    << std::endl;
-            }
-            return;
-        }
-
-        if (m_clientDockingSettledSinceServerSeconds < 0.0)
-        {
-            m_clientDockingSettledSinceServerSeconds =
-                authoritativeServerSeconds;
-            return;
-        }
-
-        if (authoritativeServerSeconds -
-                m_clientDockingSettledSinceServerSeconds <
-            SettleHoldSeconds)
-        {
-            return;
-        }
 
         std::cout
             << "[DockClient] request=" << pending.serial
-            << " phase=settled"
+            << " phase=coast-planning"
             << " vrel_mps=" << relativeSpeedMps
-            << " omega_radps=" << angularRateRadPerSec
-            << " hold_s="
-            << (authoritativeServerSeconds -
-                m_clientDockingSettledSinceServerSeconds)
+            << " lead_s=" << PlanningLeadSeconds
             << std::endl;
 
         const auto snapshot =
@@ -2063,8 +2016,11 @@ void SpaceState::updateDockingAdvisory()
             );
 
         game::navigation::planner::RoutePlanRequest request;
+        const glm::dvec3 startVelocityMps =
+            snapshot.controlledShip.localVelocityMps;
         request.startMeters =
-            snapshot.controlledShip.localPositionMeters;
+            snapshot.controlledShip.localPositionMeters +
+            startVelocityMps * PlanningLeadSeconds;
         request.hasInitialForward = true;
         request.initialForward = glm::normalize(
             snapshot.planningFrame.worldToLocalVector(
@@ -2120,7 +2076,7 @@ void SpaceState::updateDockingAdvisory()
             shipProfile.maxAngularVelocityRadPerSecond;
         request.maxAngularAccelerationRadPerSecond2 =
             shipProfile.maxAngularAccelerationRadPerSecond2 * 0.90;
-        request.initialSpeedMps = relativeSpeedMps;
+        request.initialSpeedMps = glm::length(startVelocityMps);
 
         // USER CONTRACT: visual tunnel cadence.
         request.gateSpacingMeters = 500.0;
@@ -2150,6 +2106,8 @@ void SpaceState::updateDockingAdvisory()
             snapshot.epoch.universeTimelineRevision;
         job->startedServerSeconds =
             snapshot.epoch.serverTimeSeconds;
+        job->executionStartUniverseTimeSeconds =
+            snapshot.epoch.universeTimeSeconds + PlanningLeadSeconds;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
         job->context.hubId =
@@ -2187,6 +2145,10 @@ void SpaceState::updateDockingAdvisory()
         const double planningMaxSpeedMps = request.maxSpeedMps;
         const double planningInitialForwardLeadMeters =
             request.initialForwardLeadMeters;
+        const glm::dvec3 planningProjectedStartMeters =
+            request.startMeters;
+        const double planningInitialSpeedMps =
+            request.initialSpeedMps;
 
         std::thread(
             [job,
@@ -2229,6 +2191,13 @@ void SpaceState::updateDockingAdvisory()
             << " max_speed_mps=" << planningMaxSpeedMps
             << " initial_forward_lead_m="
             << planningInitialForwardLeadMeters
+            << " projected_start_m=("
+            << planningProjectedStartMeters.x << ","
+            << planningProjectedStartMeters.y << ","
+            << planningProjectedStartMeters.z << ")"
+            << " initial_speed_mps="
+            << planningInitialSpeedMps
+            << " lead_s=" << PlanningLeadSeconds
             << std::endl;
         return;
     }
@@ -2236,16 +2205,9 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Planning)
     {
-        // Continue to hold the craft stationary while planning.
-        submitAutopilotControl(
-            ClientAutopilot::stabilize(
-                makeAgent(),
-                controlLaw,
-                effectivePhysics,
-                m_clientDockingStabilizePilotState,
-                fixedDt
-            )
-        );
+        // Continue the same zero-acceleration coast used for the projected
+        // planning origin. Velocity is preserved until execution takes over.
+        submitAutopilotControl(coastForPlanningControl());
 
         if (!m_dockAdviceJob ||
             !m_dockAdviceJob->ready.load(
@@ -2256,6 +2218,32 @@ void SpaceState::updateDockingAdvisory()
         }
 
         auto job = std::move(m_dockAdviceJob);
+
+        const double executionStartUniverseTimeSeconds =
+            job->executionStartUniverseTimeSeconds;
+        const double executionLatenessSeconds =
+            universeTimeSeconds - executionStartUniverseTimeSeconds;
+
+        if (executionLatenessSeconds < -fixedDt)
+        {
+            // Planner finished early. Keep coasting to the projected origin
+            // instead of starting the route before its authored start state.
+            m_dockAdviceJob = std::move(job);
+            return;
+        }
+
+        if (executionLatenessSeconds > 0.25)
+        {
+            std::cerr
+                << "[DockClient] request=" << pending.serial
+                << " phase=replan"
+                << " reason=projected-start-expired"
+                << " late_s=" << executionLatenessSeconds
+                << std::endl;
+            m_clientDockingPhase =
+                ClientDockingPhase::Stabilizing;
+            return;
+        }
 
         if (m_client->lastSimulationMetadata().
                 universeTimelineRevision !=
@@ -2395,16 +2383,7 @@ void SpaceState::updateDockingAdvisory()
             ClientAutopilot::stop(m_clientRouteAutopilot);
             m_clientDockingPhase =
                 ClientDockingPhase::Stabilizing;
-            m_clientDockingSettledSinceServerSeconds = -1.0;
-            submitAutopilotControl(
-                ClientAutopilot::stabilize(
-                    makeAgent(),
-                    controlLaw,
-                    effectivePhysics,
-                    m_clientDockingStabilizePilotState,
-                    fixedDt
-                )
-            );
+            submitAutopilotControl(coastForPlanningControl());
             return;
         }
 

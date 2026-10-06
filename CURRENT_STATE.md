@@ -7458,3 +7458,8 @@ run the Windows MinGW `client_route_autopilot` test first, then
 `docking_advisory`, then the live first-turn run. No CI runner is present in
 the repository, so these commits have been source-audited and regression tests
 added but have not been executed in this environment.
+
+
+## 2026-10-06 — navigation execution layer split
+
+The client autopilot is being decomposed to stop cross-layer regressions. Pure layers now exist for hull pose geometry, hull attitude actuation, corridor capture and scalar route-speed preparation. Roll is explicitly independent from pitch/yaw in both guidance and ShipController authority. Production paths use these layers. Dedicated CTest targets: hull_pose_guidance, hull_attitude_control, corridor_capture_guidance, route_speed_guidance. These must pass independently before client_route_autopilot/docking_advisory or live flight are considered.

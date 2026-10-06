@@ -61,6 +61,7 @@ public:
         // direction), in map coordinates. This is feed-forward for the hull
         // actuator; route ownership remains with desiredVelocityMapMps.
         glm::dvec3 desiredCourseAngularRateMapRadPerSec {0.0};
+        double desiredRollRateRadPerSec = 0.0;
 
         glm::dvec3 desiredForwardMap {0.0, 0.0, -1.0};
         glm::dvec3 desiredUpMap {0.0, 1.0, 0.0};
@@ -206,6 +207,8 @@ public:
 
         attitudeRequest.rollRateRadPerSec =
             finiteOrZero(request.rollRateRadPerSec);
+        attitudeRequest.desiredRollRateRadPerSec =
+            finiteOrZero(request.desiredRollRateRadPerSec);
         attitudeRequest.maxPitchYawRateRadPerSec = {
             std::max(0.0, static_cast<double>(params.maxPitchRate)),
             std::max(0.0, static_cast<double>(params.maxYawRate))

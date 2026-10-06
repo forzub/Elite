@@ -1871,7 +1871,8 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
     initial.upMap = {0.0, 1.0, 0.0};
 
     Autopilot::State state;
-    require(
+    std::string checkpointStartFailure;
+    const bool checkpointStarted =
         Autopilot::start(
             state,
             route,
@@ -1880,8 +1881,19 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
             vehicle,
             1000.0,
             15,
-            25.0
-        ),
+            25.0,
+            glm::dvec3(0.0),
+            false,
+            &checkpointStartFailure
+        );
+    if (!checkpointStarted)
+    {
+        std::cerr
+            << "[checkpoint-reanchor] start failure: "
+            << checkpointStartFailure << '\n';
+    }
+    require(
+        checkpointStarted,
         "client autopilot rejected checkpoint-reanchor route"
     );
 

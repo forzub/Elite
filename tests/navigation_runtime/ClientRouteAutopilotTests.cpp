@@ -302,108 +302,6 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
     );
 }
 
-void testCourseLagLeadsIntoUpcomingTurn()
-{
-    using game::navigation::planner::RouteGate;
-
-    game::navigation::planner::RoutePlan route;
-    route.disposition =
-        game::navigation::planner::RoutePlanDisposition::Ready;
-    route.failureCode =
-        game::navigation::planner::RoutePlanFailureCode::None;
-
-    constexpr double StraightEndMeters = 200.0;
-    constexpr double RadiusMeters = 200.0;
-    constexpr int ArcSteps = 16;
-    constexpr double SpeedMps = 12.0;
-    constexpr double HalfPi =
-        1.5707963267948966192313216916398;
-
-    RouteGate origin;
-    origin.positionMeters = {0.0, 0.0, 0.0};
-    origin.forward = {1.0, 0.0, 0.0};
-    origin.speedMps = SpeedMps;
-    route.executionGates.push_back(origin);
-
-    RouteGate straight;
-    straight.positionMeters = {StraightEndMeters, 0.0, 0.0};
-    straight.forward = {1.0, 0.0, 0.0};
-    straight.speedMps = SpeedMps;
-    route.executionGates.push_back(straight);
-
-    for (int i = 1; i <= ArcSteps; ++i)
-    {
-        const double t =
-            HalfPi * static_cast<double>(i) /
-            static_cast<double>(ArcSteps);
-
-        RouteGate gate;
-        gate.positionMeters = {
-            StraightEndMeters + RadiusMeters * std::sin(t),
-            0.0,
-            RadiusMeters * (1.0 - std::cos(t))
-        };
-        gate.forward = glm::normalize(glm::dvec3(
-            std::cos(t),
-            0.0,
-            std::sin(t)
-        ));
-        gate.speedMps = SpeedMps;
-        route.executionGates.push_back(gate);
-    }
-    route.gates = route.executionGates;
-
-    Autopilot::State state;
-    const auto vehicle = params();
-
-    Agent initial;
-    initial.positionMapMeters = {0.0, 0.0, 0.0};
-    initial.velocityMapMetersPerSecond = {SpeedMps, 0.0, 0.0};
-    initial.forwardMap = {1.0, 0.0, 0.0};
-    initial.rightMap = {0.0, 0.0, 1.0};
-    initial.upMap = {0.0, 1.0, 0.0};
-
-    require(
-        Autopilot::start(
-            state,
-            route,
-            initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
-            vehicle,
-            1000.0,
-            10,
-            25.0
-        ),
-        "client autopilot rejected straight-to-arc route"
-    );
-
-    Agent beforeTurn = initial;
-    beforeTurn.positionMapMeters = {
-        StraightEndMeters - 25.0, 0.0, 0.0
-    };
-
-    const auto output = Autopilot::update(
-        state,
-        beforeTurn,
-        game::navigation::LocalFlightControlLaw::Assisted,
-        vehicle,
-        1000.0,
-        0.02
-    );
-
-    require(output.valid,
-        "straight-to-arc route emitted invalid output");
-    require(
-        output.courseLeadDistanceMeters > 0.0,
-        "course-lag follower produced no dynamic lead distance"
-    );
-    require(
-        std::abs(output.control.pitchInput) > 1.0e-5 ||
-        std::abs(output.control.yawInput) > 1.0e-5,
-        "course-lag follower waited until arc entry instead of leading the turn"
-    );
-}
-
 void testContinuousProgramCorrectsCrossTrackError()
 {
     auto route = plan();
@@ -879,7 +777,7 @@ void testHullForwardTracksAuthoredTunnelTangent()
     );
 }
 
-void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
+void testCenteredArcUsesExactLocalTangent()
 {
     using game::navigation::planner::RouteGate;
 
@@ -956,7 +854,7 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
             23,
             20.0
         ),
-        "curved-tunnel course-lead route rejected"
+        "centered-arc exact-tangent route rejected"
     );
 
     Agent onCurve = initial;
@@ -982,15 +880,15 @@ void testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting()
 
     require(output.valid, "curved-tunnel update invalid");
     require(
-        output.courseLeadDistanceMeters > 0.0,
-        "curved-tunnel route-pose look-ahead was not active"
+        std::abs(output.courseLeadDistanceMeters) < 1.0e-12,
+        "fixed-distance course lead remained active on authored arc"
     );
     require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) > 1.0e-5,
-        "curved-tunnel route pose did not rotate the hull along the authored curve"
+        ) < 1.0e-3,
+        "centered Assisted arc did not keep the exact local tangent"
     );
     require(
         std::abs(output.routeRadiusMeters - RadiusMeters) < 1.0,
@@ -2520,13 +2418,12 @@ int main()
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
-        testCourseLagLeadsIntoUpcomingTurn();
         testContinuousProgramCorrectsCrossTrackError();
         testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
         testParallelOffsetActivelyCapturesCorridorCenter();
         testCruiseRollAlignsToDockBottomReference();
         testHullForwardTracksAuthoredTunnelTangent();
-        testCourseLeadPreservesCurvedTunnelInsteadOfChordCutting();
+        testCenteredArcUsesExactLocalTangent();
         testApproachBrakesBeforeDynamicTurnLimit();
         testTurnPreviewCrossesIntermediateStraight();
         testBezierInteriorCurvatureParticipatesInPreview();
@@ -2552,11 +2449,10 @@ int main()
             << " - execution emits only ordinary ShipControlState inputs\n"
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
             << " - spatial turn drives velocity and nose from one centerline source\n"
-            << " - turn lead distance follows measured nose-to-course lag\n"
             << " - parallel offset actively captures corridor center\n"
             << " - cruise roll aligns to dock-bottom reference\n"
             << " - hull forward follows the authored tunnel tangent\n"
-            << " - course lead preserves curved tunnel instead of cutting a chord\n"
+            << " - centered Assisted arc follows exact local tangent with no fixed lead\n"
             << " - approach brakes before the Assisted dynamic turn limit\n"
             << " - turn preview crosses intermediate straight primitives\n"
             << " - Bezier interior curvature participates in turn preview\n"

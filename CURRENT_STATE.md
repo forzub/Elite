@@ -1,3 +1,29 @@
+## 2026-10-06 — Navigation V2 execution architecture audited and frozen
+
+Current authoritative execution contract is now
+`src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`.
+
+Static audit result:
+- production player path is `RoutePlanner -> TrajectoryGenerator -> AcceptedManeuverProgram -> ClientRouteAutopilot -> CourseCaptureGuidance/RouteSpeedGuidance -> PredictivePilot -> ordinary ShipControlState -> server physics`;
+- while moving, navigation course is owned by actual/desired velocity direction; hull forward is actuator state, not route truth;
+- centered course follows the exact Planner tangent; displaced recovery uses `CourseCaptureGuidance` temporary Bezier geometry and never mutates the accepted route;
+- Assisted longitudinal braking uses reverse main only; lateral stabilization is not extra braking authority;
+- `makeManeuverExecutionAuthority` is the shared executable-authority source;
+- initial speed is measured immutable state; future speed constraints may be refined/re-anchored;
+- pitch/yaw and roll remain independent through `HullPoseGuidance` and `HullAttitudeControl`;
+- direct navigation actuator demands, `ShipControlAdapter`, fixed-distance look-ahead and retired `TrajectoryFollower` execution are forbidden in the production player path.
+
+Test audit cleanup:
+- production `NavigationExecutionReplanPolicyTests` no longer executes retired `TrajectoryFollower`;
+- `CorridorCaptureGuidance` is now legacy-only; production recapture is `CourseCaptureGuidance`;
+- old Stage-1 follower diagnostic is opt-in;
+- `check_automatic_docking.py` now locks the current velocity-course/CourseCapture/PredictivePilot path;
+- canonical navigation acceptance is `tests/navigation_runtime/run_mingw64.sh`, which excludes `legacy_navigation_lab`.
+
+The old `navigation_composite_proving_ground` remains an opt-in legacy diagnostic and may fail under obsolete `ShipControlAdapter` semantics without indicating a V2 regression.
+
+Target-machine rerun is required after this audit cleanup.
+
 ## 2026-10-03 — player navigation/autopilot moved fully to client
 
 Architecture boundary changed after the live Manual/Automatic ownership race.

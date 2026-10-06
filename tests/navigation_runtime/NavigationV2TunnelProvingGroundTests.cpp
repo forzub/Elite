@@ -54,6 +54,21 @@ Basis basisForForward(const glm::dvec3& requested)
     return {forward, right, up};
 }
 
+glm::dvec3 rotateAroundAxis(
+    const glm::dvec3& value,
+    const glm::dvec3& axisRequested,
+    double angle
+)
+{
+    const glm::dvec3 axis = glm::normalize(axisRequested);
+    const double c = std::cos(angle);
+    const double s = std::sin(angle);
+    return
+        value * c +
+        glm::cross(axis, value) * s +
+        axis * glm::dot(axis, value) * (1.0 - c);
+}
+
 void setBasis(ShipTransform& transform, const Basis& basis)
 {
     transform.orientation = glm::mat4(1.0f);
@@ -209,10 +224,32 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
     transform.setWorldPositionMeters(
         transform.motion.localPositionMeters
     );
-    setBasis(
-        transform,
-        basisForForward(plan.executionGates.front().forward)
-    );
+    {
+        Basis initialBasis =
+            basisForForward(plan.executionGates.front().forward);
+
+        // Reproduce the live docking case: enter Automatic with the hull
+        // materially rolled relative to the authored frame. The physical
+        // autopilot must rotate the visible/body basis until ship up matches
+        // the frame up; a non-zero roll command alone is not sufficient.
+        constexpr double InitialRollRadians =
+            55.0 * kPi / 180.0;
+        initialBasis.up =
+            rotateAroundAxis(
+                initialBasis.up,
+                initialBasis.forward,
+                InitialRollRadians
+            );
+        initialBasis.right =
+            glm::normalize(
+                glm::cross(initialBasis.forward, initialBasis.up)
+            );
+        initialBasis.up =
+            glm::normalize(
+                glm::cross(initialBasis.right, initialBasis.forward)
+            );
+        setBasis(transform, initialBasis);
+    }
 
     Agent initial = makeAgent(transform);
 
@@ -241,6 +278,8 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
     double minimumRemainingRouteMeters =
         plan.routeCurves.back().endProgressMeters;
     double maxHullTurnFromStartDeg = 0.0;
+    double minimumRollAlignmentErrorDeg = 180.0;
+    double finalRollAlignmentErrorDeg = 180.0;
     const glm::dvec3 initialHullForward =
         glm::normalize(glm::dvec3(transform.forward()));
     bool reachedEnd = false;
@@ -320,6 +359,26 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
         maxHullTurnFromStartDeg =
             std::max(maxHullTurnFromStartDeg, hullTurnDeg);
 
+        const glm::dvec3 frameUp(0.0, 1.0, 0.0);
+        const double rollAlignmentErrorDeg =
+            std::acos(
+                std::clamp(
+                    glm::dot(
+                        glm::normalize(glm::dvec3(transform.up())),
+                        frameUp
+                    ),
+                    -1.0,
+                    1.0
+                )
+            ) * 180.0 / kPi;
+        minimumRollAlignmentErrorDeg =
+            std::min(
+                minimumRollAlignmentErrorDeg,
+                rollAlignmentErrorDeg
+            );
+        finalRollAlignmentErrorDeg =
+            rollAlignmentErrorDeg;
+
         const double speed =
             glm::length(transform.motion.localVelocityMps);
         if (speed > 0.25)
@@ -386,12 +445,22 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
         maxHullTurnFromStartDeg > 45.0,
         "physical hull did not visibly rotate while following the 90-degree tunnel arc"
     );
+    require(
+        minimumRollAlignmentErrorDeg < 3.0,
+        "physical hull never aligned its belly/up axis to the docking frame"
+    );
+    require(
+        finalRollAlignmentErrorDeg < 5.0,
+        "physical hull lost docking-frame roll alignment by tunnel exit"
+    );
 
     std::cout
         << "[V2-TUNNEL] max_cross_track_m=" << maxCrossTrack
         << " max_continuous_slip_s=" << maxContinuousSlipSeconds
         << " min_remaining_m=" << minimumRemainingRouteMeters
         << " max_hull_turn_deg=" << maxHullTurnFromStartDeg
+        << " min_roll_err_deg=" << minimumRollAlignmentErrorDeg
+        << " final_roll_err_deg=" << finalRollAlignmentErrorDeg
         << " learned_pitch_alpha="
         << autopilot.pilotState.effectivePitchAuthorityRadPerSec2
         << " learned_yaw_alpha="

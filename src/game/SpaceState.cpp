@@ -2515,15 +2515,6 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
-    const auto renderPort =
-        resolveDockingAdvisoryLocalPortAt(
-            active.portAttachment,
-            active.portDefinition,
-            renderTime
-        );
-    if (!renderPort.valid)
-        return;
-
     const auto makeRoute =
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,

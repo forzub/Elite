@@ -25,6 +25,22 @@ def forbid(rel: str, *tokens: str) -> str:
     return body
 
 try:
+    for deleted in (
+        "src/game/navigation/autopilot/ShipControlAdapter.h",
+        "src/game/navigation/autopilot/RouteFollowerApi.h",
+        "src/game/navigation/autopilot/RouteFollower.cpp",
+        "src/game/navigation/autopilot/CorridorCaptureGuidance.h",
+        "src/game/navigation/autopilot/VelocityCourseGuidance.h",
+        "tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp",
+        "tests/navigation_runtime/RouteFollowerApiTests.cpp",
+        "tests/navigation_runtime/CorridorCaptureGuidanceTests.cpp",
+        "tests/navigation_runtime/VelocityCourseGuidanceTests.cpp",
+    ):
+        if (ROOT / deleted).is_file():
+            raise AssertionError(
+                "retired navigation generation returned: " + deleted
+            )
+
     renderer = require(
         "src/game/system_map/SystemMapRenderer.cpp",
         'automatic.key = "start_docking"',

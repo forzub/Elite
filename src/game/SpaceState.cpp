@@ -2119,6 +2119,7 @@ void SpaceState::updateDockingAdvisory()
         job->context.portDefinition = *definition;
         job->context.portAttachment =
             snapshot.targetObject.hubAttachment;
+        job->context.routeUpReference = localPort.up;
         job->context.standoffMeters =
             request.terminalReferenceDistanceMeters;
         job->context.widthMeters =
@@ -2309,18 +2310,6 @@ void SpaceState::updateDockingAdvisory()
                     )
                 );
 
-            const auto executionPort =
-                resolveDockingAdvisoryLocalPortAt(
-                    m_dockAdvice.portAttachment,
-                    m_dockAdvice.portDefinition,
-                    universeTimeSeconds
-                );
-            if (!executionPort.valid)
-            {
-                fail("dock local pose unavailable at execution start");
-                return;
-            }
-
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
@@ -2330,7 +2319,7 @@ void SpaceState::updateDockingAdvisory()
                     universeTimeSeconds,
                     pending.serial,
                     tolerance,
-                    executionPort.up,
+                    m_dockAdvice.routeUpReference,
                     true
                 ))
             {
@@ -2586,7 +2575,7 @@ void SpaceState::updateDockingAdvisory()
 
                 glm::dvec3 up =
                     renderFrame.localToWorldVector(
-                        renderPort.up
+                        active.routeUpReference
                     );
                 up -=
                     forward * glm::dot(up, forward);

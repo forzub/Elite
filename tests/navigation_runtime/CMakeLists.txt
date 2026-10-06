@@ -656,6 +656,61 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+# Isolated navigation guidance layers. These are deliberately separate CTest
+# targets so one responsibility can be frozen before another is modified.
+foreach(guidance_test
+    hull_pose_guidance
+    corridor_capture_guidance
+    route_speed_guidance
+)
+    if(guidance_test STREQUAL "hull_pose_guidance")
+        set(guidance_source HullPoseGuidanceTests.cpp)
+    elseif(guidance_test STREQUAL "corridor_capture_guidance")
+        set(guidance_source CorridorCaptureGuidanceTests.cpp)
+    else()
+        set(guidance_source RouteSpeedGuidanceTests.cpp)
+    endif()
+
+    add_executable(
+        ${guidance_test}_tests
+        ${guidance_source}
+    )
+
+    target_include_directories(
+        ${guidance_test}_tests
+        PRIVATE
+            "${ELITE_SOURCE_ROOT}"
+            "${ELITE_SOURCE_ROOT}/src"
+    )
+
+    target_compile_features(
+        ${guidance_test}_tests
+        PRIVATE cxx_std_17
+    )
+
+    if(MSVC)
+        target_compile_options(
+            ${guidance_test}_tests
+            PRIVATE /W4 /permissive-
+        )
+    else()
+        target_compile_options(
+            ${guidance_test}_tests
+            PRIVATE -Wall -Wextra -Wpedantic
+        )
+    endif()
+
+    add_test(
+        NAME ${guidance_test}
+        COMMAND ${guidance_test}_tests
+    )
+
+    set_tests_properties(
+        ${guidance_test}
+        PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+    )
+endforeach()
+
 add_executable(
     client_route_autopilot_tests
     ClientRouteAutopilotTests.cpp

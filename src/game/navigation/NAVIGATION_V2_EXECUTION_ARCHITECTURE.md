@@ -249,7 +249,6 @@ Current acceptance coverage includes:
 - `hull_pose_guidance`;
 - `hull_attitude_control`;
 - `route_speed_guidance`;
-- `velocity_course_guidance` — pure navigation-course invariant;
 - `course_capture_guidance`;
 - `hull_roll_alignment_contract`;
 - `client_route_autopilot` — production composition and curve/speed/capture regressions;

@@ -2781,18 +2781,33 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
             if (result.ready())
                 return result;
 
-            if (result.trajectory.message.rfind(
+            const bool angularNeedsMoreTime =
+                result.trajectory.message.rfind(
                     "angular trajectory cannot reach requested terminal state",
                     0
-                ) != 0)
+                ) == 0;
+
+            const bool translationalEnvelopeNeedsSlowerProfile =
+                result.trajectory.message.rfind(
+                    "path-progress acceleration exceeds vehicle envelope",
+                    0
+                ) == 0;
+
+            // Both failures can be repaired without changing geometry:
+            // execute the same authored path more slowly. Do not treat a
+            // first-pass curvature-speed overshoot as a route rejection when
+            // the existing speed-relaxation ladder can produce a physically
+            // valid profile.
+            if (!angularNeedsMoreTime &&
+                !translationalEnvelopeNeedsSlowerProfile)
             {
                 return result;
             }
         }
 
         result.trajectory.message =
-            "angular trajectory cannot reach requested terminal state "
-            "after translation-speed relaxation";
+            "authored path remains infeasible after translation-speed "
+            "relaxation: " + result.trajectory.message;
         return result;
     }
 

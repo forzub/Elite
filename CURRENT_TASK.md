@@ -20,7 +20,7 @@ Acceptance focus:
 - roll remains independent from pitch/yaw;
 - no fixed steering look-ahead or retired follower/adapter seam returns.
 
-Do not tune production to make `navigation_composite_proving_ground` green; it is legacy-only until explicitly rewritten against the current composition.
+Do not tune production to make `` green; it is legacy-only until explicitly rewritten against the current composition.
 
 ## 2026-10-03 — current task: validate fully client-owned player autopilot
 
@@ -81,7 +81,7 @@ Required Windows sequence:
 5. run bash verify_docking.sh;
 6. only if green, build EliteGame and live-run automatic docking.
 
-The V2 tunnel proving ground is the current behavioral corridor test. The old navigation_composite_proving_ground is legacy-only until explicitly rewritten.
+The V2 tunnel proving ground is the current behavioral corridor test. The old  is legacy-only until explicitly rewritten.
 
 ## 2026-10-03 — verify isolated adaptive PredictivePilot V2
 
@@ -91,11 +91,11 @@ Required Windows order:
 1. python tests/architecture_contracts/check_automatic_docking.py
 2. build/run navigation_runtime_control
 3. build/run maneuver_tracking_controller
-4. build/run navigation_composite_proving_ground
+4. build/run 
 5. build EliteGame and live automatic docking only if the above are green.
 
 Acceptance:
-- GameServer production path contains PredictivePilot only; no ShipControlAdapter/direct navigation demand fallback.
+- GameServer production path contains PredictivePilot only; no /direct navigation demand fallback.
 - PredictivePilot learns non-zero measured control authority after excitation.
 - Spatial Corridor V2 contains no TrajectoryFollower/lookAhead/steeringRay.
 - tunnel correction always points to the current accepted centerline segment, never to a private side route.
@@ -108,64 +108,64 @@ Do not tune Follower or DynamicMotionSystem before validating the new ownership 
 
 Required order:
 1. Run the automatic-docking architecture contract / architecture suite and verify GameServer cannot use direct navigation actuator demands.
-2. Build/run navigation_runtime_control to validate ShipControlAdapter:
+2. Build/run navigation_runtime_control to validate :
    - Assisted uses targetSpeedRate + pitch/yaw/roll only;
    - Newtonian uses ordinary primary-main throttle and END for stop;
    - authored STOP at 0.045 m/s uses keypad RCS;
    - no adapter result enables navigation* direct-demand fields.
 3. Run maneuver_tracking_controller unchanged.
-4. Run navigation_composite_proving_ground, now using the same pilot-input execution path as production.
+4. Run , now using the same pilot-input execution path as production.
 5. Only after those results decide whether Planner/Follower references are physically suitable for the manual control law.
 
 Do not weaken corridor, 3-second Assisted alignment, or STOP thresholds merely to get green.
 
 ## 2026-10-03 — verify Assisted scalar-speed/steering decoupling
 
-Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. The new runtime regression must pass first. In composite, portal_102 Assisted should no longer stall when look-ahead steering exceeds 90 deg; final_pos_error_m should collapse from ~47 m and tracking_exceeded_ticks should fall sharply/zero. Keep the 3-second nose/VREL lag guard unchanged.
+Build/run navigation_runtime_control, maneuver_tracking_controller, and . The new runtime regression must pass first. In composite, portal_102 Assisted should no longer stall when look-ahead steering exceeds 90 deg; final_pos_error_m should collapse from ~47 m and tracking_exceeded_ticks should fall sharply/zero. Keep the 3-second nose/VREL lag guard unchanged.
 
 ## 2026-10-03 — rerun low-speed bypass START fix
 
-Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Expected: low-speed Assisted continuation after braking should report start_ref_speed_mps=0.25 and start_tangent_to_hull_deg~0. If tracking still exceeds, use max_env_pos_m/max_env_vel_mps/max_env_course_deg from COMPOSITE-CONTINUATION to identify the exact remaining contract mismatch. Keep the 3 s Assisted lag guard unchanged.
+Build/run navigation_runtime_control, maneuver_tracking_controller, and . Expected: low-speed Assisted continuation after braking should report start_ref_speed_mps=0.25 and start_tangent_to_hull_deg~0. If tracking still exceeds, use max_env_pos_m/max_env_vel_mps/max_env_course_deg from COMPOSITE-CONTINUATION to identify the exact remaining contract mismatch. Keep the 3 s Assisted lag guard unchanged.
 
 ## 2026-10-03 — verify nose-coupled Assisted production fix
 
-Build/run navigation_runtime_control, maneuver_tracking_controller, and navigation_composite_proving_ground. Do not loosen the 3-second guard. If composite still fails the lag-duration contract, use the new per-phase max_continuous_assisted_slip_s fields to identify the exact phase, then fix the controller/authoring that phase uses. If all three pass, run the full navigation-runtime suite.
+Build/run navigation_runtime_control, maneuver_tracking_controller, and . Do not loosen the 3-second guard. If composite still fails the lag-duration contract, use the new per-phase max_continuous_assisted_slip_s fields to identify the exact phase, then fix the controller/authoring that phase uses. If all three pass, run the full navigation-runtime suite.
 
 ## 2026-10-02 — verify Assisted 3-second velocity-alignment lag contract
 
-Rebuild/run maneuver_tracking_controller and navigation_composite_proving_ground. If composite passes, run the full navigation-runtime suite. If it fails with the new message 'velocity-to-nose lag persisted beyond 3 seconds', inspect max_continuous_assisted_slip_s; that is now a genuine Assisted-response problem rather than a route-loss or geometry problem.
+Rebuild/run maneuver_tracking_controller and . If composite passes, run the full navigation-runtime suite. If it fails with the new message 'velocity-to-nose lag persisted beyond 3 seconds', inspect max_continuous_assisted_slip_s; that is now a genuine Assisted-response problem rather than a route-loss or geometry problem.
 
 ## 2026-10-02 — rerun Assisted spatial course fix
 
-Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests, then run their two CTest cases. Expected: unit regressions green; Assisted COMPOSITE-PORTAL-ACTUAL should keep hull_half_width_m < 19 and tracking_exceeded_ticks should drop to 0. If tracking still exceeds, inspect max_env_pos_m, max_env_vel_mps and the now-VREL-based max_env_course_deg separately.
+Rebuild maneuver_tracking_controller_tests and , then run their two CTest cases. Expected: unit regressions green; Assisted COMPOSITE-PORTAL-ACTUAL should keep hull_half_width_m < 19 and tracking_exceeded_ticks should drop to 0. If tracking still exceeds, inspect max_env_pos_m, max_env_vel_mps and the now-VREL-based max_env_course_deg separately.
 
 ## 2026-10-02 — verify tunnel begins along ship heading
 
-Rebuild maneuver_tracking_controller_tests and navigation_composite_proving_ground_tests. Run those two CTest cases first. In COMPOSITE-PORTAL-PROOF verify start_tangent_to_hull_deg is approximately 0. If composite still fails, inspect hull_half_width_m, final_pos_error_m and final_vel_error_mps; do not reintroduce FixedStart or a zero-speed launch heuristic.
+Rebuild maneuver_tracking_controller_tests and . Run those two CTest cases first. In COMPOSITE-PORTAL-PROOF verify start_tangent_to_hull_deg is approximately 0. If composite still fails, inspect hull_half_width_m, final_pos_error_m and final_vel_error_mps; do not reintroduce FixedStart or a zero-speed launch heuristic.
 
 ## 2026-10-02 — verify physical RCS STOP and non-zero spatial START
 
-Build navigation_runtime_control_tests, maneuver_tracking_controller_tests, maneuver_phase_gate_tests, and navigation_composite_proving_ground_tests. Run their four CTest cases. If the three unit contracts pass but composite fails, inspect COMPOSITE-PORTAL-ACTUAL; the previous 47 m deadlock should be gone. Do not loosen corridor or tracking tolerances to make it pass.
+Build navigation_runtime_control_tests, maneuver_tracking_controller_tests, maneuver_phase_gate_tests, and . Run their four CTest cases. If the three unit contracts pass but composite fails, inspect COMPOSITE-PORTAL-ACTUAL; the previous 47 m deadlock should be gone. Do not loosen corridor or tracking tolerances to make it pass.
 
 ## 2026-09-29 — rerun composite after spatial validity-window fix
 
-Rebuild/run only navigation_composite_proving_ground. If portal_102 completes, inspect final capture next. If portal_102 still fails, use the new final_pos_error_m, final_vel_error_mps, simulated_s and validity_budget_s fields to decide whether the accepted spatial profile itself is physically under-authorized or the validity budget is wrong. After composite passes, run maneuver_phase_gate + maneuver_tracking_controller regressions and then the full navigation-runtime suite.
+Rebuild/run only . If portal_102 completes, inspect final capture next. If portal_102 still fails, use the new final_pos_error_m, final_vel_error_mps, simulated_s and validity_budget_s fields to decide whether the accepted spatial profile itself is physically under-authorized or the validity budget is wrong. After composite passes, run maneuver_phase_gate + maneuver_tracking_controller regressions and then the full navigation-runtime suite.
 
 ## 2026-09-28 — verify spatial gate + Newtonian drift before composite
 
-Next Windows step: build and run only maneuver_phase_gate and maneuver_tracking_controller first. If both pass, rebuild/run navigation_composite_proving_ground. Only after all three pass should the full navigation-runtime suite be run.
+Next Windows step: build and run only maneuver_phase_gate and maneuver_tracking_controller first. If both pass, rebuild/run . Only after all three pass should the full navigation-runtime suite be run.
 
 ## 2026-09-28 — rerun composite with SpatialCorridor portal
 
-Rebuild and run only navigation_composite_proving_ground. Inspect COMPOSITE-PORTAL-ACTUAL, especially tracking_exceeded_ticks plus max_env_pos_m, max_env_vel_mps, max_env_course_deg and max_ang_vel_err_radps. If green, run the complete navigation-runtime suite and then verify_docking.sh.
+Rebuild and run only . Inspect COMPOSITE-PORTAL-ACTUAL, especially tracking_exceeded_ticks plus max_env_pos_m, max_env_vel_mps, max_env_course_deg and max_ang_vel_err_radps. If green, run the complete navigation-runtime suite and then verify_docking.sh.
 
 ## 2026-09-28 — rerun composite after whole-program hazard proof
 
-Rebuild only `navigation_composite_proving_ground_tests` in `build/tests/navigation_runtime`, then run CTest `navigation_composite_proving_ground`. Inspect the new PORTAL/CAPTURE PROOF and ACTUAL lines. If green, run the complete navigation-runtime suite and then `bash verify_docking.sh`.
+Rebuild only `` in `build/tests/navigation_runtime`, then run CTest ``. Inspect the new PORTAL/CAPTURE PROOF and ACTUAL lines. If green, run the complete navigation-runtime suite and then `bash verify_docking.sh`.
 
 ## 2026-09-28 — rerun composite only
 
-The previous targeted rerun is now 5/6 green. Rebuild and run only `navigation_composite_proving_ground_tests` / CTest `navigation_composite_proving_ground`. If green, rerun the complete navigation-runtime CTest suite and then the docking gate.
+The previous targeted rerun is now 5/6 green. Rebuild and run only `` / CTest ``. If green, rerun the complete navigation-runtime CTest suite and then the docking gate.
 
 ## 2026-09-28 — rerun six audited navigation-runtime failures
 
@@ -174,7 +174,7 @@ After pulling current main, rebuild the standalone `build/tests/navigation_runti
 - `maneuver_corner_family_matrix`;
 - `maneuver_rigid_body_corridor`;
 - `maneuver_chained_limit_matrix`;
-- `navigation_composite_proving_ground`;
+- `;
 - `physical_maneuver_search_coordinator`.
 
 If all six pass, rerun the complete navigation-runtime CTest suite, then `bash verify_docking.sh`. Command ownership is in root `BUILD_TEST_LAYOUT.md` and must be rechecked against CMake before future command changes.
@@ -2623,4 +2623,4 @@ added but have not been executed in this environment.
 
 ## 2026-10-06 — isolate navigation execution responsibilities
 
-Active task is no longer to tune the monolithic client follower. Execution is being split into independently testable pure layers: HullPoseGuidance (forward vs roll geometry), HullAttitudeControl (independent pitch/yaw and roll actuator commands), CorridorCaptureGuidance (position-to-centerline steering only), and RouteSpeedGuidance (scalar slowdown envelope only). PredictivePilot now consumes HullPoseGuidance/HullAttitudeControl; ClientRouteAutopilot consumes CorridorCaptureGuidance/RouteSpeedGuidance; ShipController no longer lets roll consume pitch/yaw authority through 3-D normalization. Next gate: build and run the four isolated CTest targets before any composite/live flight. If an isolated layer is green, later work must not change its contract while fixing another layer.
+Active task is no longer to tune the monolithic client follower. Execution is being split into independently testable pure layers: HullPoseGuidance (forward vs roll geometry), HullAttitudeControl (independent pitch/yaw and roll actuator commands),  (position-to-centerline steering only), and RouteSpeedGuidance (scalar slowdown envelope only). PredictivePilot now consumes HullPoseGuidance/HullAttitudeControl; ClientRouteAutopilot consumes /RouteSpeedGuidance; ShipController no longer lets roll consume pitch/yaw authority through 3-D normalization. Next gate: build and run the four isolated CTest targets before any composite/live flight. If an isolated layer is green, later work must not change its contract while fixing another layer.

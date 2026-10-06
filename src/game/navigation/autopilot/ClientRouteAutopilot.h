@@ -16,7 +16,6 @@
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/autopilot/CorridorCaptureGuidance.h"
-#include "src/game/navigation/autopilot/CourseLeadGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
@@ -687,45 +686,31 @@ public:
                 std::min(targetSpeed, recoveryCeiling);
         }
 
-        // Unified route-pose follower.
+        // Exact local-route follower.
         //
-        // The previously proven SpatialCorridor follower did not solve
-        // translation, course and hull attitude as unrelated tasks.  It chose
-        // one point ahead ON THE ACCEPTED ROUTE and used that route state for
-        // both the Assisted velocity direction and the hull pose.  Preserve
-        // that contract here, but evaluate the point on Planner's exact
-        // line/arc/Bezier geometry instead of the old fixed-capacity samples.
-        //
-        // The preview horizon comes from the measured Assisted course response
-        // time.  There is no "N frames" or fixed look-ahead distance.
+        // Route curvature is known geometry, not a surprise to be discovered
+        // with a distance look-ahead.  While executing an authored segment,
+        // Assisted nose/course guidance is based on the exact LOCAL tangent at
+        // the ship's current route progress.  Segment-transition preparation
+        // is a separate responsibility and must inspect adjacent primitives
+        // explicitly; no fixed 50/250 m preview is allowed to steer the hull.
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
             CenteringBandFraction;
 
-        CourseLeadGuidance::Request courseLeadRequest;
-        courseLeadRequest.actualSpeedMps = actualSpeed;
-        courseLeadRequest.courseResponseSeconds =
-            courseResponseSeconds;
-        const auto courseLead =
-            CourseLeadGuidance::evaluate(courseLeadRequest);
-        const double routeLookAheadMeters =
-            courseLead.valid
-                ? courseLead.lookAheadMeters
-                : 0.0;
         const double poseProgressMeters =
-            std::min(
-                routeTotalProgress,
-                routeProgressMeters + routeLookAheadMeters
-            );
+            routeProgressMeters;
 
-        auto poseGuide =
-            sampleRouteCurveAtProgress(
-                state.routeCurves,
-                poseProgressMeters
-            );
+        auto poseGuide = curveNow;
         if (!poseGuide.valid)
-            poseGuide = curveNow;
+        {
+            poseGuide =
+                sampleRouteCurveAtProgress(
+                    state.routeCurves,
+                    poseProgressMeters
+                );
+        }
 
         const glm::dvec3 posePoint =
             poseGuide.valid
@@ -809,8 +794,7 @@ public:
 
         RouteCurveDiagnostic curvatureGuide = poseGuide;
         double curvatureBlend = 1.0;
-        const double attitudeLeadDistanceMeters =
-            routeLookAheadMeters;
+        const double attitudeLeadDistanceMeters = 0.0;
 
         double coursePhaseLeadAngleRad = 0.0;
         // Prediction remains diagnostic only. It can tell us that current

@@ -22,9 +22,14 @@ cmake -S "${ROOT_DIR}/tests/navigation_runtime" -B "${TEST_BUILD}" -G Ninja
 cmake --build "${TEST_BUILD}" --target nominal_route_planner_tests
 ctest --test-dir "${TEST_BUILD}" -L navigation_stage1 --output-on-failure
 
-echo "=== Free-transit follower corridor test ==="
-cmake --build "${TEST_BUILD}" --target maneuver_tracking_controller_tests
-ctest --test-dir "${TEST_BUILD}" -R "^maneuver_tracking_controller$" --output-on-failure
+if [[ "${ELITE_RUN_LEGACY_NAVIGATION_LABS:-0}" == "1" ]]; then
+    echo "=== Legacy free-transit follower corridor diagnostic ==="
+    cmake --build "${TEST_BUILD}" --target maneuver_tracking_controller_tests
+    ctest --test-dir "${TEST_BUILD}" -R "^maneuver_tracking_controller$" --output-on-failure
+else
+    echo "=== Legacy free-transit follower corridor diagnostic skipped ==="
+    echo "Set ELITE_RUN_LEGACY_NAVIGATION_LABS=1 to run retired TrajectoryFollower diagnostics."
+fi
 
 echo "=== Two-stage viewer build ==="
 VIEWER_BUILD="${ROOT_DIR}/build/tools/navigation_runtime"

@@ -660,11 +660,14 @@ set_tests_properties(
 # targets so one responsibility can be frozen before another is modified.
 foreach(guidance_test
     hull_pose_guidance
+    hull_attitude_control
     corridor_capture_guidance
     route_speed_guidance
 )
     if(guidance_test STREQUAL "hull_pose_guidance")
         set(guidance_source HullPoseGuidanceTests.cpp)
+    elseif(guidance_test STREQUAL "hull_attitude_control")
+        set(guidance_source HullAttitudeControlTests.cpp)
     elseif(guidance_test STREQUAL "corridor_capture_guidance")
         set(guidance_source CorridorCaptureGuidanceTests.cpp)
     else()

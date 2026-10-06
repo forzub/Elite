@@ -143,7 +143,6 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/game/navigation/DockingAdvisoryPlanner.cpp
     src/game/navigation/planner/RoutePlanner.cpp
     src/game/navigation/TrajectoryFollower.cpp
-    src/game/navigation/autopilot/RouteFollower.cpp
     src/game/navigation/ManeuverProgramSampler.cpp
     src/game/navigation/ManeuverTrackingController.cpp
     src/game/navigation/ManeuverPhaseGate.cpp

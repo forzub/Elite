@@ -78,7 +78,6 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Client route autopilot | `client_route_autopilot_tests` | `client_route_autopilot` |
 | Predictive V2 tunnel proving ground | `navigation_v2_tunnel_proving_ground_tests` | `navigation_v2_tunnel_proving_ground` |
 | Tracking controller legacy lab | `maneuver_tracking_controller_tests` | `maneuver_tracking_controller` |
-| Corridor-capture guidance legacy lab | `` | `` |
 | Maneuver phase gate legacy lab | `maneuver_phase_gate_tests` | `maneuver_phase_gate` |
 | Public RoutePlanner API | `route_planner_api_tests` | `route_planner_api` |
 | Public RouteFollower API | `route_follower_api_tests` | `route_follower_api` |
@@ -87,7 +86,6 @@ CMake **build target** and CTest **test name** are not interchangeable.
 | Corner-family matrix | `maneuver_corner_family_matrix_tests` | `maneuver_corner_family_matrix` |
 | Rigid-body corridor | `maneuver_rigid_body_corridor_tests` | `maneuver_rigid_body_corridor` |
 | Chained-limit matrix | `maneuver_chained_limit_matrix_tests` | `maneuver_chained_limit_matrix` |
-| Composite proving ground legacy lab | `` | `` |
 | Physical maneuver search coordinator | `physical_maneuver_search_coordinator_tests` | `physical_maneuver_search_coordinator` |
 
 When a target/test name is not in this table, inspect the current owning
@@ -108,7 +106,7 @@ Client RoutePlan
 → server SharedShipPhysics / DynamicMotionSystem::applyLocalFrameInput
 ```
 
-Tests labeled `legacy_navigation_lab` intentionally exercise retired comparison paths such as `TrajectoryFollower`, `NavigationRuntimeControlBridge`, ``, the old  path, or the old direct Assisted helper. They are retained only as opt-in diagnostic/oracle tests and must not define production V2 acceptance.
+Tests labeled `legacy_navigation_lab` intentionally exercise older comparison paths that have not yet been migrated to the single current execution chain. Deleted generations are not retained as runnable tests. They are retained only as opt-in diagnostic/oracle tests and must not define production V2 acceptance.
 
 For current execution semantics, `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` has precedence over older navigation notes. `RouteFollowerApi` remains a lower-level/public compatibility seam and dedicated test surface, but the current player `ClientRouteAutopilot` does not delegate its moving course/capture composition to `RouteFollower::follow`.
 

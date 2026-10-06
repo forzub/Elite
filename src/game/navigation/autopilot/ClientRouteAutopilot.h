@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string>
 #include <iterator>
 #include <vector>
 
@@ -132,9 +133,13 @@ public:
         std::uint64_t requestSerial,
         double trackingPositionToleranceMeters,
         const glm::dvec3& routeUpReference = glm::dvec3(0.0),
-        bool holdAtTerminal = false
+        bool holdAtTerminal = false,
+        std::string* failureReason = nullptr
     )
     {
+        if (failureReason)
+            failureReason->clear();
+
         auto programs = buildPrograms(
             plan,
             initialAgent,
@@ -143,10 +148,15 @@ public:
             acceptedAtUniverseTimeSeconds,
             requestSerial,
             trackingPositionToleranceMeters,
-            routeUpReference
+            routeUpReference,
+            failureReason
         );
         if (programs.empty())
+        {
+            if (failureReason && failureReason->empty())
+                *failureReason = "program-build-returned-empty";
             return false;
+        }
 
         state = {};
         state.active = true;
@@ -163,20 +173,34 @@ public:
                 state.programs,
                 state.continuousSamples,
                 state.continuousProgressMeters
-            ) ||
-            !initializeRuntimeProfile(
+            ))
+        {
+            if (failureReason)
+                *failureReason = "continuous-reference-build-failed";
+            state = {};
+            return false;
+        }
+        if (!initializeRuntimeProfile(
                 state.continuousSamples,
                 state.nominalSpeedProfileMps,
                 state.runtimeSpeedProfileMps,
                 state.runtimeLongitudinalAccelerationMps2
-            ) ||
-            !buildCheckpointProgress(
+            ))
+        {
+            if (failureReason)
+                *failureReason = "runtime-speed-profile-init-failed";
+            state = {};
+            return false;
+        }
+        if (!buildCheckpointProgress(
                 plan.gates,
                 state.continuousSamples,
                 state.continuousProgressMeters,
                 state.checkpointProgressMeters
             ))
         {
+            if (failureReason)
+                *failureReason = "checkpoint-progress-build-failed";
             state = {};
             return false;
         }
@@ -188,6 +212,8 @@ public:
                 state.curveSampleEndProgressMeters
             ))
         {
+            if (failureReason)
+                *failureReason = "curve-sample-progress-map-failed";
             state = {};
             return false;
         }
@@ -2147,16 +2173,27 @@ private:
         double acceptedAtUniverseTimeSeconds,
         std::uint64_t requestSerial,
         double trackingPositionToleranceMeters,
-        const glm::dvec3& routeUpReference
+        const glm::dvec3& routeUpReference,
+        std::string* failureReason
     )
     {
-        if (!plan.valid() ||
-            plan.executionGates.size() < 2 ||
-            !std::isfinite(acceptedAtUniverseTimeSeconds) ||
-            requestSerial == 0)
-        {
-            return {};
-        }
+        const auto failPrograms =
+            [&](const std::string& reason)
+                -> std::vector<AcceptedManeuverProgram>
+            {
+                if (failureReason)
+                    *failureReason = reason;
+                return {};
+            };
+
+        if (!plan.valid())
+            return failPrograms("planner-route-invalid-at-follower-boundary");
+        if (plan.executionGates.size() < 2)
+            return failPrograms("planner-route-has-too-few-execution-gates");
+        if (!std::isfinite(acceptedAtUniverseTimeSeconds))
+            return failPrograms("accepted-time-non-finite");
+        if (requestSerial == 0)
+            return failPrograms("request-serial-zero");
 
         const double forwardAuthority =
             game::ship::forwardMainAccelerationLimitMps2(params);
@@ -2274,7 +2311,28 @@ private:
                     trajectoryRequest
                 );
             if (!trajectory.ready())
-                return {};
+            {
+                return failPrograms(
+                    "trajectory-generation-failed attempt=" +
+                    std::to_string(attempt) +
+                    " guide_points=" +
+                    std::to_string(
+                        trajectory.diagnostics.executionGuidePoints
+                    ) +
+                    " max_curvature=" +
+                    std::to_string(
+                        trajectory.diagnostics.maxCurvaturePerMeter
+                    ) +
+                    " initial_along_mps=" +
+                    std::to_string(
+                        trajectory.diagnostics.initialAlongPathSpeedMps
+                    ) +
+                    " initial_cross_mps=" +
+                    std::to_string(
+                        trajectory.diagnostics.initialCrossTrackSpeedMps
+                    )
+                );
+            }
 
             AcceptedManeuverProgramBuilder::Request build;
             build.trajectory = &trajectory.trajectory;
@@ -2318,7 +2376,20 @@ private:
                 AcceptedManeuverProgramBuilder::
                     ValidationDisposition::NeedsRefinement)
             {
-                return {};
+                return failPrograms(
+                    "accepted-program-rejected: " +
+                    (!accepted.feedback.message.empty()
+                        ? accepted.feedback.message
+                        : accepted.failureReason) +
+                    " page=" +
+                    std::to_string(accepted.feedback.pageIndex) +
+                    " sample=" +
+                    std::to_string(accepted.feedback.sampleIndex) +
+                    " required=" +
+                    std::to_string(accepted.feedback.requiredValue) +
+                    " available=" +
+                    std::to_string(accepted.feedback.availableValue)
+                );
             }
 
             const double scale = std::clamp(
@@ -2339,7 +2410,9 @@ private:
             }
         }
 
-        return {};
+        return failPrograms(
+            "accepted-program-refinement-exhausted"
+        );
     }
 };
 

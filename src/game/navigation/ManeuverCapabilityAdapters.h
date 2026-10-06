@@ -4,11 +4,78 @@
 #include <cstdint>
 
 #include "src/game/navigation/AcceptedManeuverProgram.h"
+#include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
+#include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
 
 namespace game::navigation
 {
+
+struct ManeuverExecutionAuthority
+{
+    double forwardAccelerationMps2 = 0.0;
+    double brakingAccelerationMps2 = 0.0;
+    double lateralAccelerationMps2 = 0.0;
+    double feedbackReserveMps2 = 0.0;
+};
+
+[[nodiscard]] inline ManeuverExecutionAuthority
+makeManeuverExecutionAuthority(
+    const ShipParams& params,
+    LocalFlightControlLaw law,
+    double executionFraction = 0.90
+) noexcept
+{
+    const double forward =
+        std::max(
+            0.0,
+            game::ship::forwardMainAccelerationLimitMps2(params)
+        );
+    const double reverse =
+        std::max(
+            0.0,
+            game::ship::reverseMainAccelerationLimitMps2(params)
+        );
+    const double lateral =
+        law == LocalFlightControlLaw::Assisted
+            ? std::max(
+                0.0,
+                game::ship::
+                    assistedLateralStabilizationAccelerationLimitMps2(params)
+              )
+            : std::max(
+                0.0,
+                game::ship::manoeuvreAccelerationLimitMps2(params)
+              );
+
+    // Longitudinal braking and lateral course authority are distinct physical
+    // channels. Assisted must never spend lateral stabilization as extra
+    // reverse-main braking authority.
+    const double braking =
+        law == LocalFlightControlLaw::Assisted
+            ? reverse
+            : forward;
+
+    const double reserve =
+        DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
+            forward,
+            braking,
+            lateral
+        );
+    const double fraction =
+        std::clamp(executionFraction, 0.0, 1.0);
+
+    ManeuverExecutionAuthority out;
+    out.feedbackReserveMps2 = reserve;
+    out.forwardAccelerationMps2 =
+        std::max(0.1, (forward - reserve) * fraction);
+    out.brakingAccelerationMps2 =
+        std::max(0.1, (braking - reserve) * fraction);
+    out.lateralAccelerationMps2 =
+        std::max(0.1, (lateral - reserve) * fraction);
+    return out;
+}
 
 [[nodiscard]] inline AcceptedManeuverProgram::CapabilitySnapshot
 makeManeuverCapabilitySnapshot(

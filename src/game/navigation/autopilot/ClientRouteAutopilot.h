@@ -2512,9 +2512,23 @@ private:
                     0.5,
                     trajectoryRequest.vehicle.maxSpeedMps * scale
                 );
-            for (auto& limit :
-                 trajectoryRequest.pointSpeedConstraints)
+            // The first route station is a measured initial state,
+            // not a future planning constraint. Refinement must never lower
+            // it below the velocity with which the craft actually enters the
+            // accepted route; doing so creates an artificial acceleration
+            // discontinuity at sample zero and can make "brake earlier"
+            // refinement self-defeating.
+            //
+            // Only future speed constraints are refinable. The generator
+            // already treats initialVelocityMps as authoritative and will
+            // brake an initial overspeed over physically available distance.
+            for (std::size_t limitIndex = 1;
+                 limitIndex <
+                     trajectoryRequest.pointSpeedConstraints.size();
+                 ++limitIndex)
             {
+                auto& limit =
+                    trajectoryRequest.pointSpeedConstraints[limitIndex];
                 limit.maxSpeedMps =
                     std::max(0.0, limit.maxSpeedMps * scale);
             }

@@ -16,7 +16,7 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
-#include "src/game/navigation/autopilot/CorridorCaptureGuidance.h"
+#include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/autopilot/RouteFollowerApi.h"
@@ -112,6 +112,9 @@ public:
         double turnSpeedSetpointSlewSeconds = 0.0;
         double crossTrackCorrectionAngleRad = 0.0;
         double desiredCaptureAngularRateRadPerSec = 0.0;
+        bool courseCaptureActive = false;
+        double captureMeetingRouteProgressMeters = 0.0;
+        double captureMeetingJoinAngleRad = 0.0;
         double signedRollErrorRad = 0.0;
         double desiredRollRateRadPerSec = 0.0;
         bool terminalBrakeActive = false;
@@ -719,14 +722,14 @@ public:
                 std::min(targetSpeed, recoveryCeiling);
         }
 
-        // Exact local-route follower.
+        // Exact route-course follower.
         //
-        // Route curvature is known geometry, not a surprise to be discovered
-        // with a distance look-ahead.  While executing an authored segment,
-        // Assisted nose/course guidance is based on the exact LOCAL tangent at
-        // the ship's current route progress.  Segment-transition preparation
-        // is a separate responsibility and must inspect adjacent primitives
-        // explicitly; no fixed 50/250 m preview is allowed to steer the hull.
+        // While centered, navigation follows the exact LOCAL tangent at the
+        // current route progress. If translation drifts outside the centering
+        // band, CourseCaptureGuidance authors a temporary smooth capture curve
+        // from the ACTUAL velocity direction to a future near-tangent meeting
+        // station on the Planner route. No fixed 50/250 m look-ahead and no
+        // hull-nose direction are allowed to define route course.
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
@@ -745,39 +748,48 @@ public:
                 );
         }
 
-        const glm::dvec3 posePoint =
-            poseGuide.valid
-                ? poseGuide.positionMapMeters
-                : continuous.reference.positionMapMeters;
         const glm::dvec3 poseTangent =
             poseGuide.valid
                 ? poseGuide.tangentMap
                 : referenceTangent;
 
-        CorridorCaptureGuidance::Request captureRequest;
+        CourseCaptureGuidance::Request captureRequest;
         captureRequest.positionMapMeters =
             agent.positionMapMeters;
-        captureRequest.currentRoutePointMapMeters =
-            referencePosition;
-        captureRequest.currentRouteTangentMap =
-            referenceTangent;
-        captureRequest.lookAheadPointMapMeters =
-            posePoint;
+        captureRequest.actualVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        captureRequest.routeCurves =
+            &state.routeCurves;
+        captureRequest.currentRouteProgressMeters =
+            routeProgressMeters;
         captureRequest.centeringDeadbandMeters =
             centeringDeadbandMeters;
+        captureRequest.courseResponseSeconds =
+            courseResponseSeconds;
 
         const auto capture =
-            CorridorCaptureGuidance::evaluate(captureRequest);
+            CourseCaptureGuidance::evaluate(captureRequest);
 
+        // steeringForward is retained as a compatibility name for the
+        // desired translational COURSE. It is no longer derived from hull
+        // forward and it is no longer a chord to an arbitrary future point.
         const glm::dvec3 steeringForward =
             capture.valid
-                ? capture.desiredForwardMap
+                ? capture.desiredCourseMap
                 : normalizedOr(poseTangent, referenceTangent);
 
+        const double navigationSpeedForCapture =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const glm::dvec3 actualCourseForCapture =
+            navigationSpeedForCapture > 0.5
+                ? agent.velocityMapMetersPerSecond /
+                    navigationSpeedForCapture
+                : normalizedOr(agent.forwardMap, referenceTangent);
+
         double crossTrackCorrectionAngleRad =
-            capture.valid ? capture.captureAngleRad : 0.0;
+            capture.valid ? capture.courseErrorRad : 0.0;
         glm::dvec3 crossTrackCorrectionAxisMap =
-            glm::cross(referenceTangent, steeringForward);
+            glm::cross(actualCourseForCapture, steeringForward);
         const double correctionAxisLength =
             glm::length(crossTrackCorrectionAxisMap);
         if (correctionAxisLength > 1.0e-12)
@@ -1229,6 +1241,14 @@ public:
             crossTrackCorrectionAngleRad;
         out.desiredCaptureAngularRateRadPerSec =
             glm::length(captureAngularRateMap);
+        out.courseCaptureActive =
+            capture.valid && capture.captureActive;
+        out.captureMeetingRouteProgressMeters =
+            capture.valid
+                ? capture.meetingRouteProgressMeters
+                : routeProgressMeters;
+        out.captureMeetingJoinAngleRad =
+            capture.valid ? capture.meetingJoinAngleRad : 0.0;
         out.signedRollErrorRad = signedRollErrorRad;
         out.desiredRollRateRadPerSec =
             desiredRollRateRadPerSec;

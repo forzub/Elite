@@ -732,89 +732,79 @@ private:
         double dt
     ) noexcept
     {
+        // Restore the proven hull-attitude controller.  Course-response tau is
+        // the delay between hull heading and Assisted velocity direction; it
+        // must never be used as the body rotation servo time constant.
+        (void)desiredAngularRateLocalRadPerSec;
+        (void)desiredAngularAccelerationLocalRadPerSec2;
+        (void)trackingResponseSeconds;
+
         constexpr double AngleDeadbandRad = 0.0015;
         constexpr double RateDeadbandRadPerSec = 0.004;
 
         const double remainingAngle = glm::length(rotationErrorLocalRad);
-        const glm::dvec3 rateError =
-            desiredAngularRateLocalRadPerSec -
-            angularRateLocalRadPerSec;
-        const double rateErrorMagnitude = glm::length(rateError);
+        const double rateMagnitude = glm::length(angularRateLocalRadPerSec);
 
         if (!std::isfinite(remainingAngle) ||
-            !std::isfinite(rateErrorMagnitude) ||
+            !std::isfinite(rateMagnitude) ||
             !(dt > 0.0) ||
             angularAuthorityRadPerSec2 <= 1.0e-9)
         {
             return glm::dvec3(0.0);
         }
 
-        const double feedForwardMagnitude =
-            glm::length(desiredAngularAccelerationLocalRadPerSec2);
         if (remainingAngle <= AngleDeadbandRad &&
-            rateErrorMagnitude <= RateDeadbandRadPerSec &&
-            (!std::isfinite(feedForwardMagnitude) ||
-             feedForwardMagnitude <= 1.0e-9))
+            rateMagnitude <= RateDeadbandRadPerSec)
         {
             return glm::dvec3(0.0);
         }
 
-        // The previous controller was time-optimal bang-bang: even a fraction
-        // of a degree could demand full torque. That is appropriate for an
-        // isolated capture test but wrong for continuous path tracking.
-        //
-        // Use a critically damped attitude/rate servo whose time scale comes
-        // from the real actuator envelope: time required to ramp from zero to
-        // the configured angular-rate limit at full angular acceleration.
-        // No arbitrary "turn harder" constant is needed.
-        const double characteristicRate =
-            std::max({
-                maxRateLocalRadPerSec.x,
-                maxRateLocalRadPerSec.y,
-                maxRateLocalRadPerSec.z
-            });
-        const double actuatorResponseSeconds =
-            std::max(
-                dt,
-                characteristicRate > 1.0e-9
-                    ? characteristicRate /
-                        angularAuthorityRadPerSec2
-                    : dt
-            );
-        const double responseSeconds =
-            std::max(
-                actuatorResponseSeconds,
-                std::isfinite(trackingResponseSeconds) &&
-                    trackingResponseSeconds > 0.0
-                    ? trackingResponseSeconds
-                    : actuatorResponseSeconds
-            );
-
-        // Continuous route tracking is deliberately slower than the old
-        // time-optimal capture. One natural time constant should close the
-        // ordinary attitude error; desired angular-rate feed-forward carries
-        // the steady turn. This avoids full-stick oscillation around a curve.
-        const double naturalFrequency =
-            1.0 / responseSeconds;
-
-        glm::dvec3 requestedAcceleration =
-            desiredAngularAccelerationLocalRadPerSec2 +
-            rotationErrorLocalRad *
-                (naturalFrequency * naturalFrequency) +
-            rateError *
-                (2.0 * naturalFrequency);
-
-        // Never request more than the shared physical angular envelope.
-        const double requestedMagnitude =
-            glm::length(requestedAcceleration);
-        if (std::isfinite(requestedMagnitude) &&
-            requestedMagnitude > angularAuthorityRadPerSec2)
+        if (remainingAngle <= 1.0e-12)
         {
-            requestedAcceleration *=
-                angularAuthorityRadPerSec2 / requestedMagnitude;
+            const glm::dvec3 requested =
+                -angularRateLocalRadPerSec /
+                (angularAuthorityRadPerSec2 * dt);
+            const double magnitude = glm::length(requested);
+            return magnitude > 1.0
+                ? requested / magnitude
+                : requested;
         }
 
-        return requestedAcceleration / angularAuthorityRadPerSec2;
+        const glm::dvec3 direction =
+            rotationErrorLocalRad / remainingAngle;
+        const double rateTowardTarget =
+            glm::dot(angularRateLocalRadPerSec, direction);
+
+        // Fixed-step physical braking envelope.  Account for the angular
+        // travel that occurs during this simulation step before new torque can
+        // change the rate.  This is the controller that previously passed the
+        // 5/15/45/90 degree closed-loop no-overshoot tests.
+        const double reactionTravel =
+            std::max(0.0, rateTowardTarget) * dt;
+        const double brakingAngleBudget =
+            std::max(0.0, remainingAngle - reactionTravel);
+        const double brakingLimitedRate =
+            std::sqrt(
+                2.0 * angularAuthorityRadPerSec2 *
+                brakingAngleBudget
+            );
+
+        const double rateLimit =
+            directionalRateLimit(direction, maxRateLocalRadPerSec);
+        const double targetRateMagnitude =
+            std::min(rateLimit, brakingLimitedRate);
+        const glm::dvec3 targetRate =
+            direction * targetRateMagnitude;
+
+        glm::dvec3 requestedInput =
+            (targetRate - angularRateLocalRadPerSec) /
+            (angularAuthorityRadPerSec2 * dt);
+
+        const double inputMagnitude = glm::length(requestedInput);
+        if (inputMagnitude > 1.0)
+            requestedInput /= inputMagnitude;
+
+        return requestedInput;
     }
 };
 

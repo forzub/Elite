@@ -151,7 +151,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // +Z = up
         // +Y = right
         desc.meshForwardAxisValue = glm::vec3(-1.0f, 0.0f, 0.0f);
-        desc.meshUpAxisValue      = glm::vec3( 0.0f, 1.0f, 0.0f);
+        desc.meshUpAxisValue      = glm::vec3( 0.0f, 0.0f, 1.0f);
 
         // LEGACY: оставляем временно только для старого single-mesh fallback path
         desc.visualBasisRotationDegValue = glm::vec3(0.0f, -90.0f, 0.0f);    

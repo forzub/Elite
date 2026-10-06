@@ -718,6 +718,45 @@ foreach(guidance_test
 endforeach()
 
 add_executable(
+    hull_roll_alignment_contract_tests
+    HullRollAlignmentContractTests.cpp
+)
+
+target_include_directories(
+    hull_roll_alignment_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    hull_roll_alignment_contract_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        hull_roll_alignment_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        hull_roll_alignment_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME hull_roll_alignment_contract
+    COMMAND hull_roll_alignment_contract_tests
+)
+
+set_tests_properties(
+    hull_roll_alignment_contract
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     client_route_autopilot_tests
     ClientRouteAutopilotTests.cpp
 )

@@ -1705,6 +1705,12 @@ KeyframedProgressResult keyframedGuideProgress(
         request.vehicle.maxLateralAccelerationMps2;
     std::vector<double> limits(count, cruise);
 
+    // Curvature limits are geometric edge limits, not merely point-speed
+    // boundary conditions. Keep them separate so a zero terminal/waypoint
+    // speed can remain a station boundary without accidentally turning a long
+    // straight into a zero-speed edge.
+    std::vector<double> curvatureLimits(count, cruise);
+
     // A restriction belongs to its local route station. A slow docking arc
     // must never set the cruise speed of a straight kilometre away.
     for (const auto& range : request.speedLimitRanges)
@@ -1762,19 +1768,34 @@ KeyframedProgressResult keyframedGuideProgress(
         );
         if (curvature > 1.0e-9)
         {
-            limits[i] = std::min(
-                limits[i],
-                std::sqrt(lateral / curvature)
-            );
+            const double curvatureSpeed =
+                std::sqrt(lateral / curvature);
+            curvatureLimits[i] =
+                std::min(curvatureLimits[i], curvatureSpeed);
+            limits[i] =
+                std::min(limits[i], curvatureSpeed);
         }
     }
-    // Keep each curved chord within the speed admitted at either end.
+    // Keep each curved chord within the speed admitted by the local
+    // curvature at either end. This must apply regardless of chord length:
+    // the previous implementation only propagated generic point limits onto
+    // short edges, so a long authored curve edge could accelerate slightly
+    // above its curvature envelope between keyframes.
     std::vector<double> edgeLimits(count - 1, cruise);
     for (std::size_t i = 0; i + 1 < count; ++i)
     {
-        edgeLimits[i] = std::min(cruise,
-            segmentSpeedLimit(request, guide.sourceProgress[i],
-                              guide.sourceProgress[i + 1]));
+        edgeLimits[i] = std::min(
+            {
+                cruise,
+                segmentSpeedLimit(
+                    request,
+                    guide.sourceProgress[i],
+                    guide.sourceProgress[i + 1]
+                ),
+                curvatureLimits[i],
+                curvatureLimits[i + 1]
+            }
+        );
         // A low speed at the *end* of a long straight is a braking target,
         // never a cruise cap over the entire straight.
         if (arc[i + 1] - arc[i] <= 30.0)

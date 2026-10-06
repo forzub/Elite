@@ -62,7 +62,8 @@ void testLargeRollErrorCommandsOnlyRoll()
     controlRequest.rollRateRadPerSec = 0.0;
     controlRequest.maxPitchYawRateRadPerSec = {1.0, 1.0};
     controlRequest.maxRollRateRadPerSec = 1.0;
-    controlRequest.angularAccelerationAuthorityRadPerSec2 = 1.0;
+    controlRequest.pitchYawAngularAccelerationAuthorityRadPerSec2 = 1.0;
+    controlRequest.rollAngularAccelerationAuthorityRadPerSec2 = 1.0;
     controlRequest.deltaSeconds = 0.02;
 
     const auto control = Control::evaluate(controlRequest);
@@ -111,7 +112,8 @@ void testClosedLoopRollConvergesAndStops()
         controlRequest.rollRateRadPerSec = rollRate;
         controlRequest.maxPitchYawRateRadPerSec = {1.0, 1.0};
         controlRequest.maxRollRateRadPerSec = MaxRollRate;
-        controlRequest.angularAccelerationAuthorityRadPerSec2 = Authority;
+        controlRequest.pitchYawAngularAccelerationAuthorityRadPerSec2 = Authority;
+        controlRequest.rollAngularAccelerationAuthorityRadPerSec2 = Authority;
         controlRequest.deltaSeconds = Dt;
 
         const auto control = Control::evaluate(controlRequest);

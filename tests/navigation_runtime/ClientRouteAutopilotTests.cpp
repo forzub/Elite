@@ -365,7 +365,7 @@ void testContinuousProgramCorrectsCrossTrackError()
     );
 }
 
-void testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss()
+void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
 {
     const auto route = plan();
     const auto vehicle = params();
@@ -452,8 +452,8 @@ void testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss()
         std::hypot(
             correcting.control.pitchInput,
             correcting.control.yawInput
-        ) > 1.0e-4,
-        "predicted future miss did not produce anticipatory nose correction"
+        ) < 1.0e-3,
+        "Assisted velocity drift incorrectly bent the authored tangent"
     );
     require(
         std::abs(correcting.control.strafeInput) < 1.0e-6 &&
@@ -2419,7 +2419,7 @@ int main()
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesSameVelocityAndNoseTarget();
         testContinuousProgramCorrectsCrossTrackError();
-        testCourseLagPredictionIgnoresCentimetresButCorrectsFutureMiss();
+        testAssistedVelocityDriftDoesNotBendAuthoredTangent();
         testParallelOffsetActivelyCapturesCorridorCenter();
         testCruiseRollAlignsToDockBottomReference();
         testHullForwardTracksAuthoredTunnelTangent();
@@ -2460,7 +2460,7 @@ int main()
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
             << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
-            << " - centimetres are ignored while predicted future misses are corrected\n"
+            << " - Assisted velocity drift stays diagnostic and does not bend route tangent\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"

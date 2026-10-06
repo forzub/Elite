@@ -1,3 +1,27 @@
+## 2026-10-06 — verify the frozen Navigation V2 architecture gate
+
+Read `src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md` first.
+
+Do not use raw unfiltered `ctest` as the production acceptance definition.
+The canonical current gate excludes `legacy_navigation_lab`.
+
+Required Windows verification:
+1. `python tests/architecture_contracts/check_automatic_docking.py`
+2. `bash tests/navigation_runtime/run_mingw64.sh`
+3. if those are green, `bash verify_docking.sh`
+4. then build `EliteGame` and run one live Automatic docking/tunnel pass.
+
+Acceptance focus:
+- exact Planner curve remains route truth;
+- actual velocity direction owns moving course;
+- CourseCaptureGuidance only performs bounded recapture;
+- PredictivePilot outputs ordinary controls only;
+- reverse main owns Assisted braking;
+- roll remains independent from pitch/yaw;
+- no fixed steering look-ahead or retired follower/adapter seam returns.
+
+Do not tune production to make `navigation_composite_proving_ground` green; it is legacy-only until explicitly rewritten against the current composition.
+
 ## 2026-10-03 — current task: validate fully client-owned player autopilot
 
 The player docking/navigation architecture is now client-owned.

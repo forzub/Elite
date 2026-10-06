@@ -1066,9 +1066,6 @@ public:
                 crossTrackCorrectionAxisMap * captureRate;
         }
 
-        const glm::dvec3 rollAngularRateMap =
-            steeringForward * desiredRollRateRadPerSec;
-
         glm::dvec3 desiredCourseAngularRateMap(0.0);
 
         if (terminalAttitudeHold)

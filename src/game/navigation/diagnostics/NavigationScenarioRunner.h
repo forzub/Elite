@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
-#include "src/game/navigation/autopilot/RouteFollower.h"
+#include "src/game/navigation/autopilot/RouteFollowerApi.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipParams.h"
 

@@ -1,5 +1,11 @@
 # Planner / Follower architecture hypothesis
 
+> **Current execution precedence (2026-10-06):** for the live Navigation V2
+> course/capture/speed/PredictivePilot execution contract and test-gate
+> classification, use `NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`. Historical
+> sections below remain product/design history and must not override that file.
+
+
 **Status:** architecture decision candidate
 **Updated:** 2026-09-19 Europe/Kyiv
 **Repository:** `forzub/Elite`

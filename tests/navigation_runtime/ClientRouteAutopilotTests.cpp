@@ -1069,16 +1069,17 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     );
     require(preTurnOutput.valid, "pre-turn ramp update invalid");
 
-    const double fullTurnRate =
-        preTurnOutput.turnSpeedCeilingMps / 1000.0;
+    // Navigation course remains the exact authored tangent until the
+    // geometric turn actually begins. Pre-turn preparation is speed-only;
+    // Assisted phase-lag compensation belongs below RouteFollower and must
+    // never bend the route course ahead of the authored curve.
     require(
-        preTurnOutput.desiredCourseAngularRateRadPerSec > 1.0e-6,
-        "pre-turn preparation did not begin angular-rate ramp"
+        preTurnOutput.desiredCourseAngularRateRadPerSec < 1.0e-9,
+        "pre-turn preparation bent route course before authored curve entry"
     );
     require(
-        preTurnOutput.desiredCourseAngularRateRadPerSec <
-            fullTurnRate - 1.0e-6,
-        "pre-turn angular-rate command jumped directly to full curve rate"
+        preTurnOutput.courseErrorRad < 1.0e-6,
+        "pre-turn straight acquired a false course error"
     );
 }
 

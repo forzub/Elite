@@ -295,53 +295,12 @@ public:
                 continuous.lowerSampleIndex
             );
 
-        const double rawForwardAuthority =
-            std::max(
-                0.0,
-                game::ship::forwardMainAccelerationLimitMps2(params)
-            );
-        const double rawReverseAuthority =
-            std::max(
-                0.0,
-                game::ship::reverseMainAccelerationLimitMps2(params)
-            );
-        const double rawLateralAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? std::max(
-                    0.0,
-                    game::ship::
-                        assistedLateralStabilizationAccelerationLimitMps2(
-                            params
-                        )
-                  )
-                : std::max(
-                    0.0,
-                    game::ship::manoeuvreAccelerationLimitMps2(params)
-                  );
-        // Longitudinal braking is a fore/aft propulsion task. Assisted
-        // lateral stabilization authority may rotate/realign the velocity
-        // vector, but it must never be counted as extra reverse-main braking
-        // authority along the route.
-        const double rawBrakingAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? rawReverseAuthority
-                : rawForwardAuthority;
-        const double feedbackReserve =
-            DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
-                rawForwardAuthority,
-                rawBrakingAuthority,
-                rawLateralAuthority
-            );
+        const auto executionAuthority =
+            makeManeuverExecutionAuthority(params, law);
         const double forwardAuthority =
-            std::max(
-                0.1,
-                (rawForwardAuthority - feedbackReserve) * 0.90
-            );
+            executionAuthority.forwardAccelerationMps2;
         const double brakingAuthority =
-            std::max(
-                0.1,
-                (rawBrakingAuthority - feedbackReserve) * 0.90
-            );
+            executionAuthority.brakingAccelerationMps2;
 
         while (state.nextCheckpointIndex <
                    state.checkpointProgressMeters.size() &&
@@ -2275,28 +2234,10 @@ private:
         if (requestSerial == 0)
             return failPrograms("request-serial-zero");
 
-        const double forwardAuthority =
-            game::ship::forwardMainAccelerationLimitMps2(params);
-        const double reverseAuthority =
-            game::ship::reverseMainAccelerationLimitMps2(params);
-        const double lateralAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? game::ship::
-                    assistedLateralStabilizationAccelerationLimitMps2(params)
-                : game::ship::manoeuvreAccelerationLimitMps2(params);
-        // Keep trajectory generation on the same physical model as
-        // AcceptedManeuverProgramBuilder: Assisted longitudinal braking is
-        // bounded by reverse main, not by lateral stabilization authority.
-        const double brakingAuthority =
-            law == LocalFlightControlLaw::Assisted
-                ? reverseAuthority
-                : forwardAuthority;
+        const auto executionAuthority =
+            makeManeuverExecutionAuthority(params, law);
         const double feedbackReserve =
-            DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
-                forwardAuthority,
-                brakingAuthority,
-                lateralAuthority
-            );
+            executionAuthority.feedbackReserveMps2;
 
         world::navigation::NavigationVehicleProfile vehicle;
         vehicle.collisionRadiusMeters = 0.0;
@@ -2307,11 +2248,11 @@ private:
                 game::ship::controlledSpeedLimitMps(params) * 0.90
             );
         vehicle.maxForwardAccelerationMps2 =
-            std::max(0.1, (forwardAuthority - feedbackReserve) * 0.90);
+            executionAuthority.forwardAccelerationMps2;
         vehicle.maxBrakingAccelerationMps2 =
-            std::max(0.1, (brakingAuthority - feedbackReserve) * 0.90);
+            executionAuthority.brakingAccelerationMps2;
         vehicle.maxLateralAccelerationMps2 =
-            std::max(0.1, (lateralAuthority - feedbackReserve) * 0.90);
+            executionAuthority.lateralAccelerationMps2;
         vehicle.maxAngularVelocityRadPerSecond =
             game::ship::maximumAngularSpeedRadPerSec(params);
         vehicle.maxAngularAccelerationRadPerSecond2 =

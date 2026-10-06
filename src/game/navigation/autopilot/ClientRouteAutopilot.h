@@ -2369,9 +2369,9 @@ private:
                     std::to_string(
                         static_cast<int>(trajectory.trajectory.status)
                     ) +
-                    " message="" +
+                    " message=\"" +
                     trajectory.trajectory.message +
-                    """ +
+                    "\"" +
                     " guide_points=" +
                     std::to_string(
                         trajectory.diagnostics.executionGuidePoints

@@ -178,6 +178,7 @@ NavigationScenarioRunner::run(const Request& source)
             ? request.routeUpReference
             : glm::dvec3(0.0);
 
+    std::string followerStartFailure;
     if (!Autopilot::start(
             autopilot,
             result.plan,
@@ -189,11 +190,15 @@ NavigationScenarioRunner::run(const Request& source)
             1,
             request.trackingToleranceMeters,
             routeUp,
-            request.enforceTerminalStop
+            request.enforceTerminalStop,
+            &followerStartFailure
         ))
     {
         result.failure =
-            "follower rejected planner-produced route";
+            "follower rejected planner-produced route: " +
+            (followerStartFailure.empty()
+                ? std::string("unknown")
+                : followerStartFailure);
         return result;
     }
     result.followerAccepted = true;

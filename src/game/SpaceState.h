@@ -337,20 +337,11 @@ private:
         game::navigation::HubSemanticAnchorDefinition portDefinition;
         game::simulation::HubAttachmentSnapshot portAttachment;
 
-        // Frozen orientation reference from the SAME planning epoch as the
-        // accepted route geometry. Automatic roll control and corridor
-        // presentation must consume this exact vector; re-resolving the port
-        // at execution/render time would rotate the frames independently of
-        // the already-authored route.
+        // Initial docking-frame up reference captured with the accepted route.
+        // During execution/presentation the live port roll may advance around
+        // the unchanged docking axis; consumers update this phase from the
+        // same resolved port pose.
         glm::dvec3 routeUpReference {0.0, 1.0, 0.0};
-
-        // Port pose at the exact planning epoch.  The accepted route is
-        // authored in this co-frame.  Presentation can rigidly carry the
-        // whole tunnel with a rotating dock by mapping this basis to the
-        // current port basis; never rotate individual gates independently.
-        glm::dvec3 plannedPortPositionMeters {0.0};
-        glm::dvec3 plannedPortForward {0.0, 0.0, -1.0};
-        glm::dvec3 plannedPortUp {0.0, 1.0, 0.0};
 
         // SpaceState owns presentation/tracking state only. Planner output is
         // stored intact and consumed read-only: sparse HUD gates and dense map

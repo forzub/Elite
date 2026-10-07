@@ -2310,6 +2310,10 @@ void SpaceState::updateDockingAdvisory()
                     )
                 );
 
+            const bool alignAtTerminal =
+                runtime->terminalHoldPolicy ==
+                    DockingTerminalHoldPolicy::HoldPositionAndAlign;
+
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
@@ -2320,7 +2324,9 @@ void SpaceState::updateDockingAdvisory()
                     pending.serial,
                     tolerance,
                     m_dockAdvice.routeUpReference,
-                    true
+                    true,
+                    nullptr,
+                    alignAtTerminal
                 ))
             {
                 fail("client autopilot could not accept planner route");
@@ -2366,6 +2372,12 @@ void SpaceState::updateDockingAdvisory()
         {
             m_clientRouteAutopilot.routeUpReference =
                 liveExecutionPort.up;
+            m_clientRouteAutopilot.routeUpAngularRateRadPerSec =
+                dockingAdvisorySignedRollRateRadPerSec(
+                    m_dockAdvice.portAttachment,
+                    m_dockAdvice.portDefinition,
+                    universeTimeSeconds
+                );
         }
 
         const auto output =

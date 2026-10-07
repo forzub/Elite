@@ -72,7 +72,6 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
-#include "src/game/navigation/DockingCorridorFrameField.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
@@ -2311,10 +2310,6 @@ void SpaceState::updateDockingAdvisory()
                     )
                 );
 
-            const bool alignAtTerminal =
-                runtime->terminalHoldPolicy ==
-                    DockingTerminalHoldPolicy::HoldPositionAndAlign;
-
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
@@ -2325,9 +2320,7 @@ void SpaceState::updateDockingAdvisory()
                     pending.serial,
                     tolerance,
                     m_dockAdvice.routeUpReference,
-                    true,
-                    nullptr,
-                    alignAtTerminal
+                    true
                 ))
             {
                 fail("client autopilot could not accept planner route");
@@ -2340,10 +2333,6 @@ void SpaceState::updateDockingAdvisory()
                 << "[DockClient] request=" << pending.serial
                 << " phase=executing"
                 << " control_path=ShipControlState"
-                << " terminal_hold="
-                << (alignAtTerminal
-                        ? "position_and_align"
-                        : "position")
                 << std::endl;
         }
         else
@@ -2363,28 +2352,6 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Executing)
     {
-        // Keep the independent roll channel phase-locked to the live docking
-        // aperture. The route centerline remains Planner-authored; this only
-        // updates which side of each frame is "up" as the dock rolls around
-        // its unchanged entry axis.
-        const auto liveExecutionPort =
-            resolveDockingAdvisoryLocalPortAt(
-                m_dockAdvice.portAttachment,
-                m_dockAdvice.portDefinition,
-                universeTimeSeconds
-            );
-        if (liveExecutionPort.valid)
-        {
-            m_clientRouteAutopilot.routeUpReference =
-                liveExecutionPort.up;
-            m_clientRouteAutopilot.routeUpAngularRateRadPerSec =
-                dockingAdvisorySignedRollRateRadPerSec(
-                    m_dockAdvice.portAttachment,
-                    m_dockAdvice.portDefinition,
-                    universeTimeSeconds
-                );
-        }
-
         const auto output =
             ClientAutopilot::update(
                 m_clientRouteAutopilot,
@@ -2501,9 +2468,6 @@ void SpaceState::updateDockingAdvisory()
                         57.2957795130823208768
                     << " roll_target_omega_radps="
                     << output.desiredRollRateRadPerSec
-                    << " dock_roll_omega_radps="
-                    << m_clientRouteAutopilot.
-                        routeUpAngularRateRadPerSec
                     << " brake_attitude_lock="
                     << (output.brakeAttitudeLockActive ? 1 : 0)
                     << " terminal_attitude_capture="
@@ -2551,15 +2515,6 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
-    const auto currentPort =
-        resolveDockingAdvisoryLocalPortAt(
-            active.portAttachment,
-            active.portDefinition,
-            renderTime
-        );
-    if (!currentPort.valid)
-        return;
-
     const auto makeRoute =
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
@@ -2584,18 +2539,11 @@ void SpaceState::updateDockingAdvisory()
                 routeGates.size()
             );
 
-            const std::vector<glm::dvec3> transportedUpLocal =
-                DockingCorridorFrameField::buildUpVectors(
-                    routeGates,
-                    currentPort.up
-                );
-
             for (std::size_t index = 0;
                  index < routeGates.size();
                  ++index)
             {
                 const auto& gate = routeGates[index];
-
                 route.hubLocalGatePositionsMeters.push_back(
                     gate.positionMeters
                 );
@@ -2618,18 +2566,30 @@ void SpaceState::updateDockingAdvisory()
 
                 glm::dvec3 up =
                     renderFrame.localToWorldVector(
-                        transportedUpLocal[index]
+                        active.routeUpReference
                     );
                 up -=
                     forward * glm::dot(up, forward);
                 if (glm::length(up) <= 1.0e-9)
-                    up = glm::dvec3(0.0, 1.0, 0.0);
+                {
+                    const glm::dvec3 seed =
+                        std::abs(forward.y) < 0.90
+                            ? glm::dvec3(0.0, 1.0, 0.0)
+                            : glm::dvec3(1.0, 0.0, 0.0);
+                    up =
+                        seed -
+                        forward *
+                            glm::dot(seed, forward);
+                }
                 up = glm::normalize(up);
-
-                glm::dvec3 right =
-                    glm::normalize(glm::cross(forward, up));
+                const glm::dvec3 right =
+                    glm::normalize(
+                        glm::cross(forward, up)
+                    );
                 up =
-                    glm::normalize(glm::cross(right, forward));
+                    glm::normalize(
+                        glm::cross(right, forward)
+                    );
 
                 frameView.orientation =
                     glm::normalize(

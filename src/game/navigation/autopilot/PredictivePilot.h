@@ -77,7 +77,6 @@ public:
 
         bool stopRequested = false;
         bool terminalAttitudeHold = false;
-        bool terminalAttitudeDampOnly = false;
         double deltaSeconds = 0.0;
     };
 
@@ -149,14 +148,12 @@ public:
                   );
 
         const glm::dvec3 actuatorForward =
-            request.terminalAttitudeDampOnly
-                ? forward
-                : request.terminalAttitudeHold
-                    ? normalizedOr(
-                        request.desiredForwardMap,
-                        desiredCourse
-                      )
-                    : desiredCourse;
+            request.terminalAttitudeHold
+                ? normalizedOr(
+                    request.desiredForwardMap,
+                    desiredCourse
+                  )
+                : desiredCourse;
 
         HullPoseGuidance::Request pitchYawPoseRequest;
         pitchYawPoseRequest.currentForward = forward;
@@ -176,10 +173,7 @@ public:
         rollRequest.currentRight = right;
         rollRequest.currentUp = up;
         rollRequest.targetForward = forward;
-        rollRequest.targetUp =
-            request.terminalAttitudeDampOnly
-                ? up
-                : request.desiredUpMap;
+        rollRequest.targetUp = request.desiredUpMap;
 
         const auto rollPose =
             HullPoseGuidance::evaluate(rollRequest);
@@ -203,11 +197,9 @@ public:
         };
 
         const glm::dvec3 desiredCourseAngularRateMap =
-            request.terminalAttitudeDampOnly
-                ? glm::dvec3(0.0)
-                : finiteVecOrZero(
-                    request.desiredCourseAngularRateMapRadPerSec
-                  );
+            finiteVecOrZero(
+                request.desiredCourseAngularRateMapRadPerSec
+            );
         attitudeRequest.desiredPitchYawRateRadPerSec = {
             glm::dot(desiredCourseAngularRateMap, right),
             glm::dot(desiredCourseAngularRateMap, up)
@@ -216,9 +208,7 @@ public:
         attitudeRequest.rollRateRadPerSec =
             finiteOrZero(request.rollRateRadPerSec);
         attitudeRequest.desiredRollRateRadPerSec =
-            request.terminalAttitudeDampOnly
-                ? 0.0
-                : finiteOrZero(request.desiredRollRateRadPerSec);
+            finiteOrZero(request.desiredRollRateRadPerSec);
         attitudeRequest.maxPitchYawRateRadPerSec = {
             std::max(0.0, static_cast<double>(params.maxPitchRate)),
             std::max(0.0, static_cast<double>(params.maxYawRate))

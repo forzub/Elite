@@ -337,10 +337,11 @@ private:
         game::navigation::HubSemanticAnchorDefinition portDefinition;
         game::simulation::HubAttachmentSnapshot portAttachment;
 
-        // Initial docking-frame up reference captured with the accepted route.
-        // During execution/presentation the live port roll may advance around
-        // the unchanged docking axis; consumers update this phase from the
-        // same resolved port pose.
+        // Frozen orientation reference from the SAME planning epoch as the
+        // accepted route geometry. Automatic roll control and corridor
+        // presentation must consume this exact vector; re-resolving the port
+        // at execution/render time would rotate the frames independently of
+        // the already-authored route.
         glm::dvec3 routeUpReference {0.0, 1.0, 0.0};
 
         // SpaceState owns presentation/tracking state only. Planner output is

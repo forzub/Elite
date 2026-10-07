@@ -7,32 +7,28 @@
       "anchor_id": "dock_gate_front",
       "operational": "online",
       "occupancy": "free",
-      "access": "allowed",
-      "terminal_hold": "position_and_align"
+      "access": "allowed"
     },
     {
       "module_id": "guidance_dock_cube_a",
       "anchor_id": "dock_gate_rear",
       "operational": "online",
       "occupancy": "occupied",
-      "access": "allowed",
-      "terminal_hold": "position"
+      "access": "allowed"
     },
     {
       "module_id": "guidance_dock_cylinder_b",
       "anchor_id": "dock_gate_front",
       "operational": "online",
       "occupancy": "free",
-      "access": "denied",
-      "terminal_hold": "position"
+      "access": "denied"
     },
     {
       "module_id": "guidance_dock_cylinder_b",
       "anchor_id": "dock_gate_rear",
       "operational": "online",
       "occupancy": "free",
-      "access": "allowed",
-      "terminal_hold": "position"
+      "access": "allowed"
     }
   ]
 }

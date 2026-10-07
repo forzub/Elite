@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cmath>
 
 #include "src/game/navigation/HubFrameBasis.h"
@@ -78,56 +77,6 @@ inline DockingAdvisoryLocalPort resolveDockingAdvisoryLocalPortAt(
     out.up = glm::normalize(orthogonalUp);
     out.valid = true;
     return out;
-}
-
-
-inline double dockingAdvisorySignedRollRateRadPerSec(
-    const simulation::HubAttachmentSnapshot& attachment,
-    const HubSemanticAnchorDefinition& definition,
-    double universeTimeSeconds,
-    double sampleSeconds = 0.01
-)
-{
-    const double dt =
-        std::max(1.0e-4, std::abs(sampleSeconds));
-    const auto now =
-        resolveDockingAdvisoryLocalPortAt(
-            attachment,
-            definition,
-            universeTimeSeconds
-        );
-    const auto next =
-        resolveDockingAdvisoryLocalPortAt(
-            attachment,
-            definition,
-            universeTimeSeconds + dt
-        );
-    if (!now.valid || !next.valid)
-        return 0.0;
-
-    const glm::dvec3 axis =
-        glm::normalize(now.forward);
-    glm::dvec3 up0 =
-        now.up - axis * glm::dot(now.up, axis);
-    glm::dvec3 up1 =
-        next.up - axis * glm::dot(next.up, axis);
-    if (glm::length(up0) <= 1.0e-9 ||
-        glm::length(up1) <= 1.0e-9)
-    {
-        return 0.0;
-    }
-
-    up0 = glm::normalize(up0);
-    up1 = glm::normalize(up1);
-
-    const double signedAngle =
-        std::atan2(
-            glm::dot(axis, glm::cross(up0, up1)),
-            std::clamp(glm::dot(up0, up1), -1.0, 1.0)
-        );
-    return std::isfinite(signedAngle)
-        ? signedAngle / dt
-        : 0.0;
 }
 
 } // namespace game::navigation

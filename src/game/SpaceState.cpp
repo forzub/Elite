@@ -72,6 +72,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/DockingCorridorFrameField.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
@@ -2576,81 +2577,11 @@ void SpaceState::updateDockingAdvisory()
                 routeGates.size()
             );
 
-            // The dock cube spins around its own docking axis.  That
-            // changes the frame roll phase, not the already-authored route
-            // centerline. Anchor the FINAL tunnel frame to the live port up
-            // vector, then parallel-transport that orientation backwards
-            // through every authored tangent. This guarantees both:
-            //   * the entrance frame has the same bottom/top as the dock;
-            //   * no intermediate gate can jump by 180 degrees.
-            std::vector<glm::dvec3> transportedUpLocal(
-                routeGates.size(),
-                glm::dvec3(0.0, 1.0, 0.0)
-            );
-
-            if (!routeGates.empty())
-            {
-                const auto normalizedForward =
-                    [](const glm::dvec3& requested)
-                    {
-                        const double length = glm::length(requested);
-                        return length > 1.0e-9
-                            ? requested / length
-                            : glm::dvec3(0.0, 0.0, -1.0);
-                    };
-
-                const auto projectedUp =
-                    [&](const glm::dvec3& upRequested,
-                        const glm::dvec3& forward,
-                        const glm::dvec3& continuityReference)
-                    {
-                        glm::dvec3 up =
-                            upRequested -
-                            forward * glm::dot(upRequested, forward);
-                        if (glm::length(up) <= 1.0e-9)
-                        {
-                            const glm::dvec3 seed =
-                                std::abs(forward.y) < 0.90
-                                    ? glm::dvec3(0.0, 1.0, 0.0)
-                                    : glm::dvec3(1.0, 0.0, 0.0);
-                            up =
-                                seed -
-                                forward * glm::dot(seed, forward);
-                        }
-                        up = glm::normalize(up);
-                        if (glm::length(continuityReference) > 1.0e-9 &&
-                            glm::dot(up, continuityReference) < 0.0)
-                        {
-                            up = -up;
-                        }
-                        return up;
-                    };
-
-                const std::size_t last =
-                    routeGates.size() - 1;
-                const glm::dvec3 lastForward =
-                    normalizedForward(routeGates[last].forward);
-                transportedUpLocal[last] =
-                    projectedUp(
-                        currentPort.up,
-                        lastForward,
-                        currentPort.up
-                    );
-
-                for (std::size_t index = last; index > 0; --index)
-                {
-                    const glm::dvec3 previousForward =
-                        normalizedForward(
-                            routeGates[index - 1].forward
-                        );
-                    transportedUpLocal[index - 1] =
-                        projectedUp(
-                            transportedUpLocal[index],
-                            previousForward,
-                            transportedUpLocal[index]
-                        );
-                }
-            }
+            const std::vector<glm::dvec3> transportedUpLocal =
+                DockingCorridorFrameField::buildUpVectors(
+                    routeGates,
+                    currentPort.up
+                );
 
             for (std::size_t index = 0;
                  index < routeGates.size();

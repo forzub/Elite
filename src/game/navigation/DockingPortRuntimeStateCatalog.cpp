@@ -35,6 +35,13 @@ DockingAccessState parseAccess(const std::string& value)
     return DockingAccessState::Unknown;
 }
 
+DockingTerminalHoldPolicy parseTerminalHoldPolicy(const std::string& value)
+{
+    if (value == "position_and_align")
+        return DockingTerminalHoldPolicy::HoldPositionAndAlign;
+    return DockingTerminalHoldPolicy::HoldPosition;
+}
+
 } // namespace
 
 std::string DockingPortRuntimeStateCatalog::key(
@@ -82,6 +89,10 @@ bool DockingPortRuntimeStateCatalog::load(const std::string& path)
         state.operational = parseOperational(item.value("operational", "unknown"));
         state.occupancy = parseOccupancy(item.value("occupancy", "unknown"));
         state.access = parseAccess(item.value("access", "unknown"));
+        state.terminalHoldPolicy =
+            parseTerminalHoldPolicy(
+                item.value("terminal_hold", "position")
+            );
 
         if (state.hubModuleId.empty() || state.anchorId.empty())
             continue;

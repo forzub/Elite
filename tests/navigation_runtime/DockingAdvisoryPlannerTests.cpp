@@ -5,6 +5,7 @@
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/DockingCorridorFrameField.h"
 #include "src/game/navigation/HubCoMovingFrame.h"
 #include <glm/gtx/quaternion.hpp>
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -29,6 +30,92 @@ void printTerminalArcDiagnostics(
 int main()
 {
     using namespace game::navigation;
+
+    // Dock-owned rotation contract: the same port kinematics must produce
+    // equal/opposite signed roll feed-forward when its authored angular
+    // velocity reverses. No autopilot-side CW/CCW special case is allowed.
+    HubSemanticAnchorDefinition rollPortDefinition;
+    rollPortDefinition.id = "dock_gate_front";
+    rollPortDefinition.hubModuleId = "roll_fixture";
+    rollPortDefinition.kind = HubSemanticAnchorKind::DockingPort;
+    rollPortDefinition.localForward = {0.0, 0.0, -1.0};
+    rollPortDefinition.localUp = {0.0, 1.0, 0.0};
+
+    game::simulation::HubAttachmentSnapshot rollAttachment;
+    rollAttachment.systemId = 0;
+    rollAttachment.hubId = "fixture_hub";
+    rollAttachment.moduleId = "roll_fixture";
+    rollAttachment.inheritHubOrientation = true;
+    rollAttachment.valid = true;
+    rollAttachment.localAngularVelocityDegPerSecond = {0.0, 0.0, 2.0};
+
+    const double clockwiseFixtureRate =
+        dockingAdvisorySignedRollRateRadPerSec(
+            rollAttachment,
+            rollPortDefinition,
+            1234.0
+        );
+    rollAttachment.localAngularVelocityDegPerSecond = {0.0, 0.0, -2.0};
+    const double counterClockwiseFixtureRate =
+        dockingAdvisorySignedRollRateRadPerSec(
+            rollAttachment,
+            rollPortDefinition,
+            1234.0
+        );
+    const double expectedRollMagnitude = glm::radians(2.0);
+    if (!(clockwiseFixtureRate * counterClockwiseFixtureRate < 0.0) ||
+        std::abs(std::abs(clockwiseFixtureRate) - expectedRollMagnitude) > 1.0e-5 ||
+        std::abs(std::abs(counterClockwiseFixtureRate) - expectedRollMagnitude) > 1.0e-5)
+    {
+        std::cerr
+            << "dock roll-rate sign/magnitude contract failed: +2="
+            << clockwiseFixtureRate
+            << " -2=" << counterClockwiseFixtureRate << "\n";
+        return 101;
+    }
+
+    // Frame-field contract: the dock owns terminal roll phase. Transport that
+    // phase through the route without allowing any adjacent 180-degree flip.
+    std::vector<planner::RouteGate> frameFieldGates(5);
+    frameFieldGates[0].forward = glm::normalize(glm::dvec3(0.0, 0.0, -1.0));
+    frameFieldGates[1].forward = glm::normalize(glm::dvec3(0.0, 0.35, -0.94));
+    frameFieldGates[2].forward = glm::normalize(glm::dvec3(0.0, 0.70, -0.71));
+    frameFieldGates[3].forward = glm::normalize(glm::dvec3(0.0, 0.94, -0.35));
+    frameFieldGates[4].forward = glm::normalize(glm::dvec3(0.0, 1.0, -0.05));
+
+    const glm::dvec3 terminalDockUp =
+        glm::normalize(glm::dvec3(1.0, 0.0, 0.0));
+    const auto frameFieldUp =
+        DockingCorridorFrameField::buildUpVectors(
+            frameFieldGates,
+            terminalDockUp
+        );
+    if (frameFieldUp.size() != frameFieldGates.size())
+    {
+        std::cerr << "dock frame-field size mismatch\n";
+        return 102;
+    }
+
+    const glm::dvec3 finalForward =
+        glm::normalize(frameFieldGates.back().forward);
+    const glm::dvec3 expectedTerminalUp =
+        glm::normalize(
+            terminalDockUp -
+            finalForward * glm::dot(terminalDockUp, finalForward)
+        );
+    if (glm::dot(frameFieldUp.back(), expectedTerminalUp) < 0.999999)
+    {
+        std::cerr << "terminal tunnel frame did not inherit dock roll phase\n";
+        return 103;
+    }
+    for (std::size_t i = 1; i < frameFieldUp.size(); ++i)
+    {
+        if (glm::dot(frameFieldUp[i - 1], frameFieldUp[i]) < -1.0e-9)
+        {
+            std::cerr << "tunnel frame-field flipped 180 degrees\n";
+            return 104;
+        }
+    }
 
     // Manual guidance must leave a stopped ship through the windshield. The
     // route may turn later, but its first published segment must preserve the

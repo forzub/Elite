@@ -33,6 +33,14 @@ enum class DockingAccessState : std::uint8_t
     Denied
 };
 
+// Dock-owned terminal behavior. The autopilot does not choose this policy; it
+// only executes the contract published by the selected docking port.
+enum class DockingTerminalHoldPolicy : std::uint8_t
+{
+    HoldPosition = 0,
+    HoldPositionAndAlign
+};
+
 struct DockingPortRuntimeState
 {
     std::string hubModuleId;
@@ -40,6 +48,8 @@ struct DockingPortRuntimeState
     DockingOperationalState operational = DockingOperationalState::Unknown;
     DockingOccupancyState occupancy = DockingOccupancyState::Unknown;
     DockingAccessState access = DockingAccessState::Unknown;
+    DockingTerminalHoldPolicy terminalHoldPolicy =
+        DockingTerminalHoldPolicy::HoldPosition;
 
     bool operationalNow() const noexcept
     {

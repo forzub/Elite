@@ -79,6 +79,7 @@ public:
         std::size_t nextCheckpointIndex = 1;
         std::uint64_t speedProfileRevision = 0;
         bool holdAtTerminal = false;
+        bool alignAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
 
         // Authoritative spatial geometry. Accepted maneuver samples still own
@@ -88,6 +89,7 @@ public:
         std::vector<double> curveSampleStartProgressMeters;
         std::vector<double> curveSampleEndProgressMeters;
         glm::dvec3 routeUpReference {0.0};
+        double routeUpAngularRateRadPerSec = 0.0;
 
         AutopilotTrackingPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -165,7 +167,8 @@ public:
         double trackingPositionToleranceMeters,
         const glm::dvec3& routeUpReference = glm::dvec3(0.0),
         bool holdAtTerminal = false,
-        std::string* failureReason = nullptr
+        std::string* failureReason = nullptr,
+        bool alignAtTerminal = false
     )
     {
         if (failureReason)
@@ -193,6 +196,7 @@ public:
         state.active = true;
         state.requestSerial = requestSerial;
         state.holdAtTerminal = holdAtTerminal;
+        state.alignAtTerminal = alignAtTerminal;
         state.trackingPositionToleranceMeters =
             std::max(0.0, trackingPositionToleranceMeters);
         state.routeUpReference = routeUpReference;
@@ -927,6 +931,7 @@ public:
         const double desiredRollRateRadPerSec =
             rollRateLimit > 1.0e-9
                 ? std::clamp(
+                    state.routeUpAngularRateRadPerSec +
                     signedRollErrorRad / rollActuatorResponseSeconds,
                     -rollRateLimit,
                     rollRateLimit

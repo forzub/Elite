@@ -2120,6 +2120,9 @@ void SpaceState::updateDockingAdvisory()
         job->context.portAttachment =
             snapshot.targetObject.hubAttachment;
         job->context.routeUpReference = localPort.up;
+        job->context.plannedPortPositionMeters = localPort.positionMeters;
+        job->context.plannedPortForward = localPort.forward;
+        job->context.plannedPortUp = localPort.up;
         job->context.standoffMeters =
             request.terminalReferenceDistanceMeters;
         job->context.widthMeters =

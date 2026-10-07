@@ -2340,6 +2340,10 @@ void SpaceState::updateDockingAdvisory()
                 << "[DockClient] request=" << pending.serial
                 << " phase=executing"
                 << " control_path=ShipControlState"
+                << " terminal_hold="
+                << (alignAtTerminal
+                        ? "position_and_align"
+                        : "position")
                 << std::endl;
         }
         else
@@ -2497,6 +2501,9 @@ void SpaceState::updateDockingAdvisory()
                         57.2957795130823208768
                     << " roll_target_omega_radps="
                     << output.desiredRollRateRadPerSec
+                    << " dock_roll_omega_radps="
+                    << m_clientRouteAutopilot.
+                        routeUpAngularRateRadPerSec
                     << " brake_attitude_lock="
                     << (output.brakeAttitudeLockActive ? 1 : 0)
                     << " terminal_attitude_capture="

@@ -1017,11 +1017,36 @@ public:
                 0.50,
                 static_cast<double>(params.stopSpeedEpsilonMps)
             );
-        const bool terminalAttitudeHold =
+
+        const auto& terminalToleranceForHold =
+            state.programs.back().terminalTolerance;
+        const auto& terminalReferenceForHold =
+            state.continuousSamples.back();
+        const double terminalPositionErrorForHold =
+            glm::length(
+                terminalReferenceForHold.positionMapMeters -
+                agent.positionMapMeters
+            );
+        const double terminalHoldPositionToleranceMeters =
+            std::max(
+                10.0,
+                terminalToleranceForHold.positionMeters
+            );
+
+        const bool terminalStoppedHold =
             state.holdAtTerminal &&
-            atFinalContinuousSegment &&
             terminalStopAuthored &&
-            actualSpeed <= terminalAttitudeCaptureSpeedMps;
+            actualSpeed <= terminalAttitudeCaptureSpeedMps &&
+            terminalPositionErrorForHold <=
+                terminalHoldPositionToleranceMeters;
+
+        const bool terminalAttitudeHold =
+            terminalStoppedHold &&
+            state.alignAtTerminal;
+        const bool terminalAttitudeDampOnly =
+            terminalStoppedHold &&
+            !state.alignAtTerminal;
+
         const bool onFinalRoutePrimitive =
             curveNow.valid &&
             curveNow.curveIndex + 1 >= state.routeCurves.size();
@@ -1029,17 +1054,22 @@ public:
             terminalStopAuthored &&
             onFinalRoutePrimitive &&
             (atFinalContinuousSegment || terminalBrakeActive) &&
-            !terminalAttitudeHold;
+            !terminalStoppedHold;
 
         PredictivePilot::Request request;
         request.law = law;
-        request.desiredVelocityMapMps = desiredVelocity;
+        request.desiredVelocityMapMps =
+            terminalStoppedHold
+                ? glm::dvec3(0.0)
+                : desiredVelocity;
         request.desiredLinearAccelerationMapMps2 =
-            tracking.status !=
-                    ManeuverTrackingController::Status::InvalidInput
-                ? tracking.intent.idealLinearAccelerationLocalMps2
-                : continuous.reference.
-                    linearAccelerationFeedForwardMapMps2;
+            terminalStoppedHold
+                ? glm::dvec3(0.0)
+                : tracking.status !=
+                        ManeuverTrackingController::Status::InvalidInput
+                    ? tracking.intent.idealLinearAccelerationLocalMps2
+                    : continuous.reference.
+                        linearAccelerationFeedForwardMapMps2;
 
         glm::dvec3 routeAngularRateMap(0.0);
         if (curvatureGuide.valid &&
@@ -1131,9 +1161,12 @@ public:
         request.yawRateRadPerSec = agent.yawRateRadPerSec;
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
         request.stopRequested =
-            terminalStopAuthored &&
-            (atFinalContinuousSegment || terminalBrakeActive);
+            terminalStoppedHold ||
+            (terminalStopAuthored &&
+             (atFinalContinuousSegment || terminalBrakeActive));
         request.terminalAttitudeHold = terminalAttitudeHold;
+        request.terminalAttitudeDampOnly =
+            terminalAttitudeDampOnly;
         request.deltaSeconds = deltaSeconds;
 
         double actualCourseAngularRateRadPerSec = 0.0;
@@ -1307,9 +1340,7 @@ public:
                 agent.rollRateRadPerSec * agent.rollRateRadPerSec
             );
 
-        if (state.holdAtTerminal &&
-            atFinalContinuousSegment &&
-            terminalStopAuthored)
+        if (terminalStoppedHold)
         {
             out.terminalHold = true;
         }

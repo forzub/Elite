@@ -2352,6 +2352,22 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Executing)
     {
+        // Keep the independent roll channel phase-locked to the live docking
+        // aperture. The route centerline remains Planner-authored; this only
+        // updates which side of each frame is "up" as the dock rolls around
+        // its unchanged entry axis.
+        const auto liveExecutionPort =
+            resolveDockingAdvisoryLocalPortAt(
+                m_dockAdvice.portAttachment,
+                m_dockAdvice.portDefinition,
+                universeTimeSeconds
+            );
+        if (liveExecutionPort.valid)
+        {
+            m_clientRouteAutopilot.routeUpReference =
+                liveExecutionPort.up;
+        }
+
         const auto output =
             ClientAutopilot::update(
                 m_clientRouteAutopilot,

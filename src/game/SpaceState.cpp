@@ -2518,6 +2518,54 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
+    const auto currentPort =
+        resolveDockingAdvisoryLocalPortAt(
+            active.portAttachment,
+            active.portDefinition,
+            renderTime
+        );
+    if (!currentPort.valid)
+        return;
+
+    const auto makeBasis =
+        [](const glm::dvec3& forwardRequested,
+           const glm::dvec3& upRequested)
+        {
+            const glm::dvec3 forward =
+                glm::normalize(forwardRequested);
+            glm::dvec3 up =
+                upRequested -
+                forward * glm::dot(upRequested, forward);
+            if (glm::length(up) <= 1.0e-9)
+            {
+                const glm::dvec3 seed =
+                    std::abs(forward.y) < 0.90
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                up =
+                    seed -
+                    forward * glm::dot(seed, forward);
+            }
+            up = glm::normalize(up);
+            const glm::dvec3 right =
+                glm::normalize(glm::cross(forward, up));
+            up = glm::normalize(glm::cross(right, forward));
+            return glm::dmat3(right, up, -forward);
+        };
+
+    const glm::dmat3 plannedPortBasis =
+        makeBasis(
+            active.plannedPortForward,
+            active.plannedPortUp
+        );
+    const glm::dmat3 currentPortBasis =
+        makeBasis(
+            currentPort.forward,
+            currentPort.up
+        );
+    const glm::dmat3 plannedToCurrentPortRotation =
+        currentPortBasis * glm::transpose(plannedPortBasis);
+
     const auto makeRoute =
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
@@ -2542,37 +2590,72 @@ void SpaceState::updateDockingAdvisory()
                 routeGates.size()
             );
 
+            glm::dvec3 previousUpWorld(0.0);
+            bool havePreviousUpWorld = false;
+
             for (std::size_t index = 0;
                  index < routeGates.size();
                  ++index)
             {
                 const auto& gate = routeGates[index];
+
+                const glm::dvec3 plannedRelativePosition =
+                    gate.positionMeters -
+                    active.plannedPortPositionMeters;
+                const glm::dvec3 currentGatePosition =
+                    currentPort.positionMeters +
+                    plannedToCurrentPortRotation *
+                        plannedRelativePosition;
+                const glm::dvec3 currentGateForward =
+                    plannedToCurrentPortRotation *
+                    gate.forward;
+
                 route.hubLocalGatePositionsMeters.push_back(
-                    gate.positionMeters
+                    currentGatePosition
                 );
 
                 GuidanceFrame frameView;
                 frameView.universeTimeSeconds = renderTime;
                 frameView.centerMeters =
                     renderFrame.localToWorldPosition(
-                        gate.positionMeters
+                        currentGatePosition
                     );
 
                 glm::dvec3 forward =
                     renderFrame.localToWorldVector(
-                        gate.forward
+                        currentGateForward
                     );
                 if (glm::length(forward) <= 1.0e-9)
                     forward =
                         glm::dvec3(0.0, 0.0, -1.0);
                 forward = glm::normalize(forward);
 
-                glm::dvec3 up =
-                    renderFrame.localToWorldVector(
-                        active.routeUpReference
-                    );
-                up -=
-                    forward * glm::dot(up, forward);
+                // Parallel-transport the corridor's up vector along the
+                // authored path.  Rebuilding every gate independently from a
+                // global seed can cross a projection singularity and flip a
+                // frame by 180 degrees.  Continuity is part of the tunnel
+                // contract: adjacent frames may rotate smoothly, never invert.
+                glm::dvec3 up;
+                if (havePreviousUpWorld)
+                {
+                    up =
+                        previousUpWorld -
+                        forward *
+                            glm::dot(previousUpWorld, forward);
+                }
+                else
+                {
+                    const glm::dvec3 currentTunnelUp =
+                        plannedToCurrentPortRotation *
+                        active.routeUpReference;
+                    up =
+                        renderFrame.localToWorldVector(
+                            currentTunnelUp
+                        );
+                    up -=
+                        forward * glm::dot(up, forward);
+                }
+
                 if (glm::length(up) <= 1.0e-9)
                 {
                     const glm::dvec3 seed =
@@ -2584,15 +2667,21 @@ void SpaceState::updateDockingAdvisory()
                         forward *
                             glm::dot(seed, forward);
                 }
+
                 up = glm::normalize(up);
-                const glm::dvec3 right =
-                    glm::normalize(
-                        glm::cross(forward, up)
-                    );
+                if (havePreviousUpWorld &&
+                    glm::dot(up, previousUpWorld) < 0.0)
+                {
+                    up = -up;
+                }
+
+                glm::dvec3 right =
+                    glm::normalize(glm::cross(forward, up));
                 up =
-                    glm::normalize(
-                        glm::cross(right, forward)
-                    );
+                    glm::normalize(glm::cross(right, forward));
+
+                previousUpWorld = up;
+                havePreviousUpWorld = true;
 
                 frameView.orientation =
                     glm::normalize(

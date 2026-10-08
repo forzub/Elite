@@ -70,6 +70,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationVolumeCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraph.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/RouteStageCompiler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/diagnostics/NavigationScenarioRunner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
@@ -129,6 +130,45 @@ add_test(
 
 set_tests_properties(
     traffic_route_graph
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
+    route_stage_compiler_tests
+    RouteStageCompilerTests.cpp
+)
+
+target_include_directories(route_stage_compiler_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(route_stage_compiler_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    route_stage_compiler_tests
+    PRIVATE EliteNavigationRuntimeControl nlohmann_json::nlohmann_json
+)
+
+if(MSVC)
+    target_compile_options(
+        route_stage_compiler_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        route_stage_compiler_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME route_stage_compiler
+    COMMAND route_stage_compiler_tests
+)
+
+set_tests_properties(
+    route_stage_compiler
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

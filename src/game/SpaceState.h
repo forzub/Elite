@@ -381,6 +381,16 @@ private:
         double executionStartUniverseTimeSeconds = 0.0;
         DockAdvice context;
         game::navigation::planner::RoutePlan plan;
+
+        // ASYNC CONTRACT: Planner + expensive client route compilation are
+        // completed entirely in the worker. The main thread only adopts these
+        // already-built products; it must never run TrajectoryGenerator /
+        // AcceptedManeuverProgramBuilder during a frame.
+        bool autopilotCompileRequested = false;
+        bool autopilotCompiled = false;
+        std::string autopilotCompileFailure;
+        game::navigation::autopilot::ClientRouteAutopilot::State
+            compiledAutopilotState {};
     };
     std::shared_ptr<DockAdviceJob> m_dockAdviceJob;
     std::shared_ptr<std::atomic<int>> m_dockWorkerCount =

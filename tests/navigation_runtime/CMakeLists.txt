@@ -66,6 +66,9 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/PhysicalManeuverSearchCoordinator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/HubSemanticAnchorCatalog.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraph.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/diagnostics/NavigationScenarioRunner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
@@ -87,6 +90,44 @@ target_link_libraries(
         EliteNavigationLocal
         EliteNavigationTrajectory
         EliteNavigationRuckig
+)
+
+add_executable(
+    traffic_route_graph_tests
+    TrafficRouteGraphTests.cpp
+)
+
+target_include_directories(traffic_route_graph_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(traffic_route_graph_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    traffic_route_graph_tests
+    PRIVATE EliteNavigationRuntimeControl nlohmann_json::nlohmann_json
+)
+
+if(MSVC)
+    target_compile_options(
+        traffic_route_graph_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        traffic_route_graph_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME traffic_route_graph
+    COMMAND traffic_route_graph_tests
+)
+
+set_tests_properties(
+    traffic_route_graph
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
 add_executable(

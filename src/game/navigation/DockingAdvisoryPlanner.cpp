@@ -57,6 +57,85 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         }
     }
 
+    auto plannerViaPoints = r.requiredViaPointsMeters;
+    const auto samePoint =
+        [](const glm::dvec3& a, const glm::dvec3& b)
+        {
+            return glm::length(a - b) <= 1.0e-6;
+        };
+
+    for (const auto& straight : r.mandatoryTangentStraights)
+    {
+        if (!finite(straight.startMeters) ||
+            !finite(straight.endMeters) ||
+            !std::isfinite(straight.minimumStraightMeters) ||
+            straight.minimumStraightMeters <= 0.0)
+        {
+            out.failure = "invalid mandatory tangent straight";
+            return out;
+        }
+
+        const glm::dvec3 delta =
+            straight.endMeters - straight.startMeters;
+        const double hardLength = glm::length(delta);
+        if (hardLength + 1.0e-6 < straight.minimumStraightMeters ||
+            hardLength <= 1.0e-6)
+        {
+            out.failure = "mandatory tangent straight shorter than minimum";
+            return out;
+        }
+
+        const glm::dvec3 axis = delta / hardLength;
+        const double workingExtensionMeters = std::max({
+            500.0,
+            straight.minimumStraightMeters,
+            30.0 * r.hullRadiusMeters
+        });
+
+        if (straight.inbound)
+        {
+            const auto it = std::find_if(
+                plannerViaPoints.begin(),
+                plannerViaPoints.end(),
+                [&](const glm::dvec3& p)
+                {
+                    return samePoint(p, straight.startMeters);
+                }
+            );
+            if (it == plannerViaPoints.end())
+            {
+                out.failure =
+                    "mandatory inbound straight start missing from via route";
+                return out;
+            }
+
+            const glm::dvec3 workingJoin =
+                straight.startMeters - axis * workingExtensionMeters;
+            plannerViaPoints.insert(it, workingJoin);
+        }
+        else
+        {
+            const auto it = std::find_if(
+                plannerViaPoints.begin(),
+                plannerViaPoints.end(),
+                [&](const glm::dvec3& p)
+                {
+                    return samePoint(p, straight.endMeters);
+                }
+            );
+            if (it == plannerViaPoints.end())
+            {
+                out.failure =
+                    "mandatory outbound straight end missing from via route";
+                return out;
+            }
+
+            const glm::dvec3 workingJoin =
+                straight.endMeters + axis * workingExtensionMeters;
+            plannerViaPoints.insert(std::next(it), workingJoin);
+        }
+    }
+
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
 
@@ -231,7 +310,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 return world::navigation::GeometricPathPlanner::plan(query);
             };
 
-        if (r.requiredViaPointsMeters.empty())
+        if (plannerViaPoints.empty())
             return planOneLeg(search.startMeters, search.goalMeters);
 
         world::navigation::GeometricPathResult combined;
@@ -272,7 +351,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 return true;
             };
 
-        for (const auto& via : r.requiredViaPointsMeters)
+        for (const auto& via : plannerViaPoints)
         {
             if (glm::length(via - legStart) <= 1.0e-6)
                 continue;
@@ -1572,6 +1651,84 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     // product and must never be reinterpreted into a different flight path.
     out.executionGates = dense;
     out.routeCurves = selected.curves;
+
+    const auto pointOnProtectedLine =
+        [&](const glm::dvec3& point,
+            const glm::dvec3& axis)
+        {
+            for (const auto& curve : out.routeCurves)
+            {
+                if (curve.kind != planner::RouteCurveKind::Line)
+                    continue;
+
+                const glm::dvec3 segment =
+                    curve.endMeters - curve.startMeters;
+                const double segmentLength = glm::length(segment);
+                if (segmentLength <= 1.0e-9)
+                    continue;
+
+                const glm::dvec3 direction = segment / segmentLength;
+                if (std::abs(glm::dot(direction, axis)) < 0.999999)
+                    continue;
+
+                const glm::dvec3 rel = point - curve.startMeters;
+                const double along = glm::dot(rel, direction);
+                if (along < -1.0e-5 ||
+                    along > segmentLength + 1.0e-5)
+                {
+                    continue;
+                }
+
+                const glm::dvec3 crossTrack =
+                    rel - direction * along;
+                if (glm::length(crossTrack) <= 1.0e-5)
+                    return true;
+            }
+            return false;
+        };
+
+    for (const auto& straight : r.mandatoryTangentStraights)
+    {
+        const glm::dvec3 delta =
+            straight.endMeters - straight.startMeters;
+        const double length = glm::length(delta);
+        if (length <= 1.0e-9)
+        {
+            out.failure = "accepted route lost mandatory tangent straight";
+            out.gates.clear();
+            out.executionGates.clear();
+            out.routeCurves.clear();
+            return out;
+        }
+
+        const glm::dvec3 axis = delta / length;
+        const std::size_t samples = std::max<std::size_t>(
+            2,
+            static_cast<std::size_t>(
+                std::ceil(length / 25.0)
+            ) + 1
+        );
+
+        for (std::size_t i = 0; i < samples; ++i)
+        {
+            const double t =
+                static_cast<double>(i) /
+                static_cast<double>(samples - 1);
+            const glm::dvec3 point =
+                straight.startMeters * (1.0 - t) +
+                straight.endMeters * t;
+
+            if (!pointOnProtectedLine(point, axis))
+            {
+                out.failure =
+                    "accepted route bent or removed mandatory tangent straight";
+                out.gates.clear();
+                out.executionGates.clear();
+                out.routeCurves.clear();
+                return out;
+            }
+        }
+    }
 
     std::vector<double> denseProgress(dense.size(),0.0);
     for(std::size_t i=1;i<dense.size();++i)

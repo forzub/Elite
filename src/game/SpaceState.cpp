@@ -72,6 +72,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
@@ -2280,6 +2281,26 @@ void SpaceState::updateDockingAdvisory()
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);
+
+        // Presentation-only orientation field. Build it once from the
+        // authoritative parametric route geometry; do not let HUD gate
+        // spacing redefine frame roll, and do not feed it back into flight.
+        const auto visualFrameField =
+            game::navigation::RouteFrameField::build(
+                m_dockAdvice.plan.routeCurves,
+                m_dockAdvice.routeUpReference
+            );
+        m_dockAdvice.visualGateUp =
+            game::navigation::RouteFrameField::sampleUpForGates(
+                visualFrameField,
+                m_dockAdvice.plan.gates
+            );
+        m_dockAdvice.visualExecutionGateUp =
+            game::navigation::RouteFrameField::sampleUpForGates(
+                visualFrameField,
+                m_dockAdvice.plan.executionGates
+            );
+
         m_activeDockingGuidanceCorridorId =
             "dock:" +
             pending.target.stableObjectId +
@@ -2518,6 +2539,7 @@ void SpaceState::updateDockingAdvisory()
     const auto makeRoute =
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
+            const std::vector<glm::dvec3>& routeFrameUp,
             const std::string& id,
             bool sparseFrames)
         {
@@ -2564,9 +2586,13 @@ void SpaceState::updateDockingAdvisory()
                         glm::dvec3(0.0, 0.0, -1.0);
                 forward = glm::normalize(forward);
 
+                const glm::dvec3 localFrameUp =
+                    index < routeFrameUp.size()
+                        ? routeFrameUp[index]
+                        : active.routeUpReference;
                 glm::dvec3 up =
                     renderFrame.localToWorldVector(
-                        active.routeUpReference
+                        localFrameUp
                     );
                 up -=
                     forward * glm::dot(up, forward);
@@ -2644,6 +2670,7 @@ void SpaceState::updateDockingAdvisory()
     guidance.publish(
         makeRoute(
             active.plan.executionGates,
+            active.visualExecutionGateUp,
             m_activeDockingGuidanceCorridorId,
             false
         )
@@ -2652,6 +2679,7 @@ void SpaceState::updateDockingAdvisory()
     guidance.publish(
         makeRoute(
             active.plan.gates,
+            active.visualGateUp,
             m_activeDockingGuidanceCorridorId + ":frames",
             true
         )

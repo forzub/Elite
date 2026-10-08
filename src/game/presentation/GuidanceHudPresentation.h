@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -181,48 +182,101 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     const bool spatialGates = corridor->spatialAdvisoryGates;
     const double maxTime = universeTimeSeconds + std::max(0.5, lookAheadSeconds);
 
-    for (const auto& frame : corridor->frames)
-    {
-        const double timeAheadSeconds =
-            frame.universeTimeSeconds - universeTimeSeconds;
-        const glm::dvec3 relativeCenter = frame.centerMeters - playerMeters;
-        const double frameDistanceMeters = glm::length(relativeCenter);
-        const double frameScaleMeters = std::max(
-            1.0,
-            std::max(frame.widthMeters, frame.heightMeters)
-        );
+    const std::size_t frameLimit = spatialGates
+        ? std::max<std::size_t>(maxFrames, 96)
+        : std::max<std::size_t>(1, maxFrames);
 
-        // Static route gates share the current Hub epoch. Time filtering only
-        // applies to predicted flight samples; gates near the cockpit are
-        // suppressed to avoid an oversized close frame.
-        const double nearCullMeters = spatialGates
-            ? 30.0
-            : std::max(30.0, frameScaleMeters * 0.75);
-        if (frameDistanceMeters < nearCullMeters)
-            continue;
-        if (!spatialGates &&
-            (timeAheadSeconds < 0.75 || frame.universeTimeSeconds > maxTime))
+    if (spatialGates)
+    {
+        // STABLE SPATIAL-GATE CONTRACT.
+        //
+        // Never derive the decimation phase from the *current* filtered
+        // candidate count. As the ship passes a gate, near-culling changes
+        // that count by one; the old candidates[0], candidates[stride], ...
+        // selection then shifted every visible rib to a neighbouring gate.
+        //
+        // Anchor decimation to immutable corridor frame indices instead.
+        // Start at the closest route station and keep only forward route
+        // indices from there. This also prevents already-passed gates from
+        // re-entering the candidate set merely because they are now >30 m
+        // behind the cockpit.
+        std::size_t closestIndex = 0;
+        double closestDistance2 = std::numeric_limits<double>::infinity();
+        for (std::size_t i = 0; i < corridor->frames.size(); ++i)
         {
-            continue;
+            const glm::dvec3 delta =
+                corridor->frames[i].centerMeters - playerMeters;
+            const double distance2 = glm::dot(delta, delta);
+            if (std::isfinite(distance2) &&
+                distance2 < closestDistance2)
+            {
+                closestDistance2 = distance2;
+                closestIndex = i;
+            }
         }
-        candidates.push_back(&frame);
+
+        const std::size_t stableStride = std::max<std::size_t>(
+            1,
+            (corridor->frames.size() + frameLimit - 1) / frameLimit
+        );
+        std::size_t firstIndex =
+            ((closestIndex + stableStride - 1) / stableStride) *
+            stableStride;
+        firstIndex =
+            std::min(firstIndex, corridor->frames.size() - 1);
+
+        for (std::size_t i = firstIndex;
+             i < corridor->frames.size();
+             i += stableStride)
+        {
+            const auto& frame = corridor->frames[i];
+            const glm::dvec3 relativeCenter =
+                frame.centerMeters - playerMeters;
+            const double frameDistanceMeters =
+                glm::length(relativeCenter);
+            if (frameDistanceMeters < 30.0)
+                continue;
+
+            candidates.push_back(&frame);
+            if (candidates.size() >= frameLimit)
+                break;
+        }
+    }
+    else
+    {
+        for (const auto& frame : corridor->frames)
+        {
+            const double timeAheadSeconds =
+                frame.universeTimeSeconds - universeTimeSeconds;
+            const glm::dvec3 relativeCenter =
+                frame.centerMeters - playerMeters;
+            const double frameDistanceMeters =
+                glm::length(relativeCenter);
+            const double frameScaleMeters = std::max(
+                1.0,
+                std::max(frame.widthMeters, frame.heightMeters)
+            );
+            const double nearCullMeters =
+                std::max(30.0, frameScaleMeters * 0.75);
+
+            if (frameDistanceMeters < nearCullMeters)
+                continue;
+            if (timeAheadSeconds < 0.75 ||
+                frame.universeTimeSeconds > maxTime)
+            {
+                continue;
+            }
+            candidates.push_back(&frame);
+        }
     }
 
     if (candidates.empty())
         return out;
 
-    const std::size_t frameLimit = spatialGates
-        ? std::max<std::size_t>(maxFrames, 96)
-        : std::max<std::size_t>(1, maxFrames);
-    const std::size_t stride = std::max<std::size_t>(
-        1,
-        (candidates.size() + frameLimit - 1) / frameLimit
-    );
-
     out.frames.reserve(std::min(frameLimit, candidates.size()));
-    for (std::size_t i = 0; i < candidates.size(); i += stride)
+    for (const auto* candidate : candidates)
     {
-        const auto& frame = *candidates[i];
+        const auto& frame = *candidate;
         GuidanceHudFramePresentation item;
         item.timeAheadSeconds =
             frame.universeTimeSeconds - universeTimeSeconds;

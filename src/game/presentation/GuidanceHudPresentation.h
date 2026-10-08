@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -190,42 +189,21 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     {
         // STABLE SPATIAL-GATE CONTRACT.
         //
-        // Never derive the decimation phase from the *current* filtered
-        // candidate count. As the ship passes a gate, near-culling changes
-        // that count by one; the old candidates[0], candidates[stride], ...
-        // selection then shifted every visible rib to a neighbouring gate.
+        // Never derive either stride OR phase from the current player
+        // position / filtered candidate count. A passing gate, near-cull, or
+        // route self-intersection must not reindex every visible tunnel rib.
         //
-        // Anchor decimation to immutable corridor frame indices instead.
-        // Start at the closest route station and keep only forward route
-        // indices from there. This also prevents already-passed gates from
-        // re-entering the candidate set merely because they are now >30 m
-        // behind the cockpit.
-        std::size_t closestIndex = 0;
-        double closestDistance2 = std::numeric_limits<double>::infinity();
-        for (std::size_t i = 0; i < corridor->frames.size(); ++i)
-        {
-            const glm::dvec3 delta =
-                corridor->frames[i].centerMeters - playerMeters;
-            const double distance2 = glm::dot(delta, delta);
-            if (std::isfinite(distance2) &&
-                distance2 < closestDistance2)
-            {
-                closestDistance2 = distance2;
-                closestIndex = i;
-            }
-        }
-
+        // Select one immutable modulo grid over the authored corridor:
+        //   0, stride, 2*stride, ...
+        // The renderer already rejects frames behind the camera. A near frame
+        // may disappear individually, but every other rib keeps the same
+        // authored gate identity for the entire route lifetime.
         const std::size_t stableStride = std::max<std::size_t>(
             1,
             (corridor->frames.size() + frameLimit - 1) / frameLimit
         );
-        std::size_t firstIndex =
-            ((closestIndex + stableStride - 1) / stableStride) *
-            stableStride;
-        firstIndex =
-            std::min(firstIndex, corridor->frames.size() - 1);
 
-        for (std::size_t i = firstIndex;
+        for (std::size_t i = 0;
              i < corridor->frames.size();
              i += stableStride)
         {

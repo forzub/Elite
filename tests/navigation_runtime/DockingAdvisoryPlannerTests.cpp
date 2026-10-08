@@ -122,6 +122,42 @@ int main()
         }
     }
 
+    // Dynamic visual roll contract: the same dock phase must rotate every
+    // tunnel frame by the same signed angle around that frame's own tangent.
+    const double quarterTurn = glm::radians(90.0);
+    const glm::dvec3 forwardA = glm::normalize(glm::dvec3(0.0, 0.0, -1.0));
+    const glm::dvec3 upA = glm::dvec3(0.0, 1.0, 0.0);
+    const glm::dvec3 rotatedA =
+        RouteFrameField::rotateUpAroundForward(
+            forwardA,
+            upA,
+            quarterTurn
+        );
+    if (glm::dot(rotatedA, glm::dvec3(1.0, 0.0, 0.0)) < 0.999999)
+    {
+        std::cerr << "visual tunnel roll phase used wrong sign/axis on straight frame\n";
+        return 109;
+    }
+
+    const glm::dvec3 forwardB =
+        glm::normalize(glm::dvec3(1.0, 1.0, -1.0));
+    glm::dvec3 upB =
+        glm::dvec3(0.0, 1.0, 0.0) -
+        forwardB * glm::dot(glm::dvec3(0.0, 1.0, 0.0), forwardB);
+    upB = glm::normalize(upB);
+    const glm::dvec3 rotatedB =
+        RouteFrameField::rotateUpAroundForward(
+            forwardB,
+            upB,
+            quarterTurn
+        );
+    if (std::abs(glm::dot(rotatedB, forwardB)) > 1.0e-9 ||
+        std::abs(glm::dot(rotatedB, upB)) > 1.0e-6)
+    {
+        std::cerr << "visual tunnel roll phase was not local to frame tangent\n";
+        return 110;
+    }
+
     // Manual guidance must leave a stopped ship through the windshield. The
     // route may turn later, but its first published segment must preserve the
     // authored hull-forward axis.

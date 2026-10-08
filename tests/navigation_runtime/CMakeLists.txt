@@ -90,6 +90,7 @@ target_link_libraries(
         EliteNavigationLocal
         EliteNavigationTrajectory
         EliteNavigationRuckig
+        nlohmann_json::nlohmann_json
 )
 
 add_executable(

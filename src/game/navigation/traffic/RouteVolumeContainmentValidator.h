@@ -34,6 +34,16 @@ public:
         double agentRadiusMeters
     );
 
+    // Validate only the canonical route interval between semantic volume
+    // boundaries. Boundary points may lie inside a longer Line primitive.
+    static RouteVolumeContainmentResult validateKeepInsideRouteInterval(
+        const CompiledTrafficStage& stage,
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const glm::dvec3& entryWorldMeters,
+        const glm::dvec3& exitWorldMeters,
+        double agentRadiusMeters
+    );
+
     static bool pointInsideErodedVolume(
         const CompiledTrafficStage& stage,
         const glm::dvec3& pointWorldMeters,

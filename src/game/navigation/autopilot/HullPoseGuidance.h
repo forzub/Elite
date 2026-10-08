@@ -10,6 +10,11 @@ namespace game::navigation::autopilot
 
 // Pure, axis-separated hull-pose geometry.
 //
+// WORKING CONTRACT — keep this separation unless a concrete regression proves
+// it wrong. This code currently gives stable tunnel flight: nose steering and
+// hull roll are different problems and must not be collapsed into one generic
+// SO(3) correction.
+//
 // Contract:
 //   * forward alignment owns pitch/yaw only;
 //   * tunnel up/down alignment owns roll only.

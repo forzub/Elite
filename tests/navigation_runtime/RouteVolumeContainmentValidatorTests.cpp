@@ -99,6 +99,22 @@ int main()
             );
         require(validAxis.valid, "axis route rejected inside blue cylinder");
 
+        // Production boundary case: one canonical Line may extend outside
+        // BLUE on both sides because tangent-straight working leads are part
+        // of the same primitive. Validate only the semantic portal interval.
+        const auto extendedAxis =
+            RouteVolumeContainmentValidator::validateKeepInsideRouteInterval(
+                blue,
+                {line({0.0, 0.0, -1300.0}, {0.0, 0.0, 1300.0})},
+                {0.0, 0.0, -600.0},
+                {0.0, 0.0, 600.0},
+                10.0
+            );
+        require(
+            extendedAxis.valid,
+            "BLUE interval rejected valid route with external tangent leads"
+        );
+
         // Endpoints are legal and exactly the same traffic portals, but the
         // Bezier bows 120 m sideways. A via-point-only system would accept
         // this topology; hard BLUE containment must reject it.
@@ -138,6 +154,7 @@ int main()
 
         std::cout << "ROUTE VOLUME CONTAINMENT TESTS: PASS\n";
         std::cout << " - centerline transit remains valid\n";
+        std::cout << " - portal interval ignores legal external tangent leads\n";
         std::cout << " - Bezier cannot bow outside mandatory BLUE volume\n";
         std::cout << " - hull plus infrastructure clearance erodes aperture\n";
         return 0;

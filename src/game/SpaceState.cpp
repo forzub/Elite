@@ -2696,6 +2696,24 @@ void SpaceState::updateDockingAdvisory()
             if (job->plan.retryable())
             {
                 std::cerr
+                    << "[DockPlanFailure]"
+                    << " request=" << pending.serial
+                    << " failure_code="
+                    << static_cast<int>(job->plan.failureCode)
+                    << " disposition="
+                    << static_cast<int>(job->plan.disposition)
+                    << " raw_failure=\"" << job->plan.failure << "\""
+                    << " terminal_last_rejection=\""
+                    << job->plan.terminalArcLastRejection << "\""
+                    << " dominant_blocker=\""
+                    << job->plan.terminalArcDominantBlockerId << "\""
+                    << " blocker_hits="
+                    << job->plan.terminalArcDominantBlockerHits
+                    << " diagnostics=\""
+                    << job->plan.diagnosticSummary << "\""
+                    << std::endl;
+
+                std::cerr
                     << "[DockClient] request=" << pending.serial
                     << " phase=replan"
                     << " reason=" << reason

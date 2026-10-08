@@ -2421,7 +2421,8 @@ void SpaceState::updateDockingAdvisory()
     {
         ClientAutopilot::setLiveTunnelRollPhase(
             m_clientRouteAutopilot,
-            currentTunnelRollPhase(universeTimeSeconds)
+            currentTunnelRollPhase(universeTimeSeconds),
+            fixedDt
         );
 
         const auto output =
@@ -2540,6 +2541,11 @@ void SpaceState::updateDockingAdvisory()
                         57.2957795130823208768
                     << " roll_target_omega_radps="
                     << output.desiredRollRateRadPerSec
+                    << " tunnel_roll_phase_deg="
+                    << output.liveTunnelRollPhaseRad *
+                        57.2957795130823208768
+                    << " tunnel_roll_omega_radps="
+                    << output.liveTunnelRollRateRadPerSec
                     << " brake_attitude_lock="
                     << (output.brakeAttitudeLockActive ? 1 : 0)
                     << " terminal_attitude_capture="

@@ -21,7 +21,8 @@ namespace game::navigation
 // The field is built from the authoritative parametric routeCurves, not from
 // HUD gate spacing.  Sparse/dense gate sets therefore sample one canonical
 // orientation field instead of reconstructing "up" independently at every
-// visible marker.
+// visible marker. Absolute roll phase is anchored at the terminal docking
+// frame and transported backwards through the route.
 class RouteFrameField
 {
 public:
@@ -37,7 +38,7 @@ public:
 
     [[nodiscard]] static std::vector<Sample> build(
         const std::vector<planner::RouteCurveSegment>& curves,
-        const glm::dvec3& initialUpReference,
+        const glm::dvec3& terminalUpReference,
         double canonicalStepMeters = 25.0
     )
     {
@@ -89,41 +90,43 @@ public:
         if (out.empty())
             return out;
 
-        glm::dvec3 firstUp = initialUpReference;
-        if (glm::length(firstUp) <= 1.0e-9)
-            firstUp = glm::dvec3(0.0, 1.0, 0.0);
+        // The docking aperture owns the absolute roll phase.
+        // Anchor the FINAL route frame to the dock and transport that frame
+        // backwards.  Starting from the ship end would make the terminal
+        // frame an arbitrary consequence of route curvature.
+        glm::dvec3 terminalUp = terminalUpReference;
+        if (glm::length(terminalUp) <= 1.0e-9)
+            terminalUp = glm::dvec3(0.0, 1.0, 0.0);
 
-        firstUp -= out.front().forward *
-            glm::dot(firstUp, out.front().forward);
-        if (glm::length(firstUp) <= 1.0e-9)
-            firstUp = perpendicularSeed(out.front().forward);
-        firstUp = glm::normalize(firstUp);
+        terminalUp -= out.back().forward *
+            glm::dot(terminalUp, out.back().forward);
+        if (glm::length(terminalUp) <= 1.0e-9)
+            terminalUp = perpendicularSeed(out.back().forward);
+        terminalUp = glm::normalize(terminalUp);
 
-        setFrame(out.front(), firstUp);
+        setFrame(out.back(), terminalUp);
 
-        for (std::size_t i = 1; i < out.size(); ++i)
+        for (std::size_t i = out.size() - 1; i > 0; --i)
         {
             const glm::dvec3 transported =
                 minimalRotate(
-                    out[i - 1].forward,
                     out[i].forward,
-                    out[i - 1].up
+                    out[i - 1].forward,
+                    out[i].up
                 );
 
             glm::dvec3 up =
                 transported -
-                out[i].forward *
-                    glm::dot(transported, out[i].forward);
+                out[i - 1].forward *
+                    glm::dot(transported, out[i - 1].forward);
             if (glm::length(up) <= 1.0e-9)
-                up = perpendicularSeed(out[i].forward);
+                up = perpendicularSeed(out[i - 1].forward);
             up = glm::normalize(up);
 
-            // Quaternion/vector signs are arbitrary representations, but the
-            // visible basis must not switch to its opposite branch.
-            if (glm::dot(up, out[i - 1].up) < 0.0)
+            if (glm::dot(up, out[i].up) < 0.0)
                 up = -up;
 
-            setFrame(out[i], up);
+            setFrame(out[i - 1], up);
         }
 
         return out;

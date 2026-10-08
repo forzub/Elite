@@ -2098,7 +2098,9 @@ void SpaceState::updateDockingAdvisory()
 
         game::navigation::planner::RoutePlanRequest request;
         const glm::dvec3 startVelocityMps =
-            snapshot.controlledShip.localVelocityMps;
+            automatic
+                ? snapshot.controlledShip.localVelocityMps
+                : glm::dvec3(0.0);
         request.startMeters =
             snapshot.controlledShip.localPositionMeters +
             startVelocityMps * PlanningLeadSeconds;

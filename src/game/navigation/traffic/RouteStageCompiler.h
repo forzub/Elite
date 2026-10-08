@@ -47,6 +47,18 @@ struct CompiledNavigationVolumeSection
     double halfHeightMeters = 0.0;
 };
 
+struct CompiledMandatoryTangentStraight
+{
+    std::string portalId;
+    bool inbound = true;
+
+    glm::dvec3 startWorldMeters {0.0};
+    glm::dvec3 endWorldMeters {0.0};
+    glm::dvec3 forwardWorld {0.0, 0.0, 1.0};
+
+    double lengthMeters = 0.0;
+};
+
 struct CompiledTrafficStage
 {
     TrafficRouteStageKind kind = TrafficRouteStageKind::FreeSpace;
@@ -76,6 +88,11 @@ struct CompiledTrafficRoute
     std::string failure;
 
     std::vector<CompiledTrafficStage> stages;
+
+    // Boundary straights are protected geometric contracts. They are not
+    // ordinary via-point hints: the planner must preserve each segment exactly
+    // and attach adjacent free geometry tangentially.
+    std::vector<CompiledMandatoryTangentStraight> mandatoryTangentStraights;
 
     // Direct adapter for RoutePlanRequest::requiredViaPointsMeters.
     // It contains traffic portals and authored volume centerline stations in

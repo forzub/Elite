@@ -344,6 +344,13 @@ private:
         // the already-authored route.
         glm::dvec3 routeUpReference {0.0, 1.0, 0.0};
 
+        // Planning-epoch dock roll reference expressed as TWO points in the
+        // same hub-local frame: aperture center and a unit "bottom" point.
+        // Dynamic tunnel roll must preserve this center->bottom radial
+        // direction, evaluated around the terminal ROUTE axis.
+        glm::dvec3 dockCenterReference {0.0};
+        glm::dvec3 dockBottomReference {0.0, -1.0, 0.0};
+
         // SpaceState owns presentation/tracking state only. Planner output is
         // stored intact and consumed read-only: sparse HUD gates and dense map
         // geometry remain Planner-owned products.

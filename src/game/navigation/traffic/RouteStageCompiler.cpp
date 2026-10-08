@@ -1,6 +1,7 @@
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
 
 #include <cmath>
+#include <utility>
 
 namespace game::navigation::traffic
 {

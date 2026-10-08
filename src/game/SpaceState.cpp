@@ -71,6 +71,9 @@
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/traffic/TrafficRouteGraphCatalog.h"
+#include "src/game/navigation/NavigationVolumeCatalog.h"
+#include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
+#include "src/game/navigation/traffic/RouteStageCompiler.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"
@@ -2212,6 +2215,9 @@ void SpaceState::updateDockingAdvisory()
 
         request.obstacles = snapshot.navigationObstacles;
 
+        game::navigation::traffic::CompiledTrafficRoute
+            compiledTrafficRoute;
+
         if (pending.target.stableObjectId == "guidance_dock_cube_a" &&
             pending.target.semanticAnchorId == "dock_gate_front")
         {
@@ -2223,37 +2229,120 @@ void SpaceState::updateDockingAdvisory()
                 return;
             }
 
+            game::navigation::NavigationVolumeCatalog volumeCatalog;
+            if (!volumeCatalog.load(
+                    "src/assets/data/navigation/hub_navigation_volumes.json"))
+            {
+                fail("navigation volume catalog unavailable");
+                return;
+            }
+
             const auto trafficGraph = trafficCatalog.graph();
             const auto trafficRoute = trafficGraph->resolve(
                 "cylinder_b.entry_front",
                 "cube_a.dock_front"
             );
-            const auto* entryPortal =
-                trafficGraph->portal("cylinder_b.entry_front");
-            const auto* exitPortal =
-                trafficGraph->portal("cylinder_b.exit_rear");
-            const auto* lane =
-                trafficGraph->lane("cylinder_b.blue_lane");
-
-            if (!trafficRoute.valid || !entryPortal || !exitPortal ||
-                !lane ||
-                lane->policy !=
-                    world::navigation::NavigationVolumePolicy::KeepInside)
+            if (!trafficRoute.valid)
             {
-                fail("assigned blue traffic route is invalid");
+                fail(
+                    "assigned blue traffic route is invalid: " +
+                    trafficRoute.failure
+                );
                 return;
             }
 
-            const auto* entryDefinition =
-                m_hubSemanticAnchorCatalog.find(
-                    entryPortal->hubModuleId,
-                    entryPortal->semanticAnchorId
+            game::navigation::traffic::RouteStageCompiler::
+                ReferenceFrameMap trafficFrames;
+
+            for (const auto& object : snapshot.objects)
+            {
+                const auto& attachment = object.hubAttachment;
+                if (!attachment.valid ||
+                    !attachment.inheritHubOrientation ||
+                    attachment.moduleId.empty())
+                {
+                    continue;
+                }
+
+                const glm::dvec3 angles =
+                    attachment.localRotationDeg +
+                    attachment.localAngularVelocityDegPerSecond *
+                        snapshot.epoch.universeTimeSeconds;
+                const glm::dmat3 visualRotation(
+                    glm::mat3(
+                        game::navigation::hubLocalEulerDegToMatrix(angles)
+                    )
                 );
-            const auto* exitDefinition =
-                m_hubSemanticAnchorCatalog.find(
-                    exitPortal->hubModuleId,
-                    exitPortal->semanticAnchorId
+
+                game::navigation::traffic::NavigationReferenceFramePose
+                    framePose;
+                framePose.originWorldMeters =
+                    game::navigation::hubVisualToTacticalVector(
+                        attachment.localOffsetMeters
+                    );
+
+                framePose.localToWorldBasis = glm::dmat3(
+                    game::navigation::hubVisualToTacticalVector(
+                        visualRotation * glm::dvec3(1.0, 0.0, 0.0)
+                    ),
+                    game::navigation::hubVisualToTacticalVector(
+                        visualRotation * glm::dvec3(0.0, 1.0, 0.0)
+                    ),
+                    game::navigation::hubVisualToTacticalVector(
+                        visualRotation * glm::dvec3(0.0, 0.0, 1.0)
+                    )
                 );
+
+                trafficFrames[attachment.moduleId] = framePose;
+            }
+
+            compiledTrafficRoute =
+                game::navigation::traffic::RouteStageCompiler::compile(
+                    trafficRoute,
+                    *trafficGraph,
+                    m_hubSemanticAnchorCatalog,
+                    volumeCatalog,
+                    trafficFrames
+                );
+
+            if (!compiledTrafficRoute.valid)
+            {
+                fail(
+                    "traffic route compilation failed: " +
+                    compiledTrafficRoute.failure
+                );
+                return;
+            }
+
+            request.requiredViaPointsMeters =
+                compiledTrafficRoute.requiredViaPointsMeters;
+
+            request.mandatoryTangentStraights.clear();
+            request.mandatoryTangentStraights.reserve(
+                compiledTrafficRoute.mandatoryTangentStraights.size()
+            );
+
+            for (const auto& straight :
+                 compiledTrafficRoute.mandatoryTangentStraights)
+            {
+                game::navigation::planner::
+                    MandatoryTangentStraightConstraint constraint;
+                constraint.startMeters = straight.startWorldMeters;
+                constraint.endMeters = straight.endWorldMeters;
+                constraint.minimumStraightMeters = straight.lengthMeters;
+                constraint.inbound = straight.inbound;
+                request.mandatoryTangentStraights.push_back(constraint);
+            }
+
+            const auto* lane =
+                trafficGraph->lane("cylinder_b.blue_lane");
+            if (!lane ||
+                lane->policy !=
+                    world::navigation::NavigationVolumePolicy::KeepInside)
+            {
+                fail("assigned blue lane lost KeepInside policy");
+                return;
+            }
 
             const auto transitObjectIt = std::find_if(
                 snapshot.objects.begin(),
@@ -2262,49 +2351,20 @@ void SpaceState::updateDockingAdvisory()
                 {
                     return object.hubAttachment.valid &&
                         object.hubAttachment.moduleId ==
-                            entryPortal->hubModuleId;
+                            "guidance_dock_cylinder_b";
                 }
             );
 
-            if (!entryDefinition || !exitDefinition ||
-                transitObjectIt == snapshot.objects.end())
+            if (transitObjectIt == snapshot.objects.end())
             {
-                fail("blue traffic portal infrastructure unavailable");
+                fail("blue transit module unavailable in planning snapshot");
                 return;
             }
 
-            const auto entryPose = resolveDockingAdvisoryLocalPortAt(
-                transitObjectIt->hubAttachment,
-                *entryDefinition,
-                snapshot.epoch.universeTimeSeconds
-            );
-            const auto exitPose = resolveDockingAdvisoryLocalPortAt(
-                transitObjectIt->hubAttachment,
-                *exitDefinition,
-                snapshot.epoch.universeTimeSeconds
-            );
-
-            const glm::dvec3 delta =
-                exitPose.positionMeters - entryPose.positionMeters;
-            const double laneLength = glm::length(delta);
-            if (!entryPose.valid || !exitPose.valid ||
-                !(laneLength > 1.0))
-            {
-                fail("blue traffic portal geometry invalid");
-                return;
-            }
-
-            const glm::dvec3 laneForward = delta / laneLength;
-            const double leadMeters =
-                std::max(1000.0, hull.lengthMeters * 10.0);
-
-            request.requiredViaPointsMeters = {
-                entryPose.positionMeters - laneForward * leadMeters,
-                entryPose.positionMeters,
-                exitPose.positionMeters,
-                exitPose.positionMeters + laneForward * leadMeters
-            };
-
+            // Cylinder B render/collision solid surrounds an authored physical
+            // passage. The semantic BLUE volume owns navigation inside that
+            // passage, therefore the enclosing module must not simultaneously
+            // appear as a solid obstacle to the route planner.
             const std::uint32_t transitEntityId =
                 transitObjectIt->id.value;
             request.obstacles.erase(
@@ -2321,17 +2381,14 @@ void SpaceState::updateDockingAdvisory()
 
             std::cout
                 << "[TrafficRoute] request=" << pending.serial
+                << " stages=" << compiledTrafficRoute.stages.size()
+                << " via_points="
+                << compiledTrafficRoute.requiredViaPointsMeters.size()
+                << " tangent_straights="
+                << compiledTrafficRoute.mandatoryTangentStraights.size()
                 << " lane=" << lane->id
                 << " volume=" << lane->navigationVolumeId
                 << " policy=KeepInside"
-                << " entry=("
-                << entryPose.positionMeters.x << ","
-                << entryPose.positionMeters.y << ","
-                << entryPose.positionMeters.z << ")"
-                << " exit=("
-                << exitPose.positionMeters.x << ","
-                << exitPose.positionMeters.y << ","
-                << exitPose.positionMeters.z << ")"
                 << " void_bridge_entity=" << transitEntityId
                 << std::endl;
         }

@@ -5,6 +5,7 @@
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
+#include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/HubCoMovingFrame.h"
 #include <glm/gtx/quaternion.hpp>
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -29,6 +30,97 @@ void printTerminalArcDiagnostics(
 int main()
 {
     using namespace game::navigation;
+
+    // Visual frame-field regression: one authoritative route must produce a
+    // continuous rotation-minimizing frame independent of HUD sample cadence.
+    std::vector<planner::RouteCurveSegment> frameCurves;
+
+    planner::RouteCurveSegment frameLineA;
+    frameLineA.kind = planner::RouteCurveKind::Line;
+    frameLineA.startProgressMeters = 0.0;
+    frameLineA.endProgressMeters = 100.0;
+    frameLineA.startMeters = {0.0, 0.0, 0.0};
+    frameLineA.endMeters = {100.0, 0.0, 0.0};
+    frameLineA.startForward = {1.0, 0.0, 0.0};
+    frameLineA.endForward = {1.0, 0.0, 0.0};
+    frameCurves.push_back(frameLineA);
+
+    planner::RouteCurveSegment frameBezier;
+    frameBezier.kind = planner::RouteCurveKind::CubicBezier;
+    frameBezier.startProgressMeters = 100.0;
+    frameBezier.endProgressMeters = 250.0;
+    frameBezier.startMeters = {100.0, 0.0, 0.0};
+    frameBezier.endMeters = {200.0, 100.0, 0.0};
+    frameBezier.bezierControl1Meters = {140.0, 0.0, 0.0};
+    frameBezier.bezierControl2Meters = {200.0, 60.0, 0.0};
+    frameBezier.startForward = {1.0, 0.0, 0.0};
+    frameBezier.endForward = {0.0, 1.0, 0.0};
+    frameCurves.push_back(frameBezier);
+
+    planner::RouteCurveSegment frameLineB;
+    frameLineB.kind = planner::RouteCurveKind::Line;
+    frameLineB.startProgressMeters = 250.0;
+    frameLineB.endProgressMeters = 350.0;
+    frameLineB.startMeters = {200.0, 100.0, 0.0};
+    frameLineB.endMeters = {200.0, 200.0, 0.0};
+    frameLineB.startForward = {0.0, 1.0, 0.0};
+    frameLineB.endForward = {0.0, 1.0, 0.0};
+    frameCurves.push_back(frameLineB);
+
+    const auto frameFieldFine =
+        RouteFrameField::build(
+            frameCurves,
+            glm::dvec3(0.0, 0.0, 1.0),
+            5.0
+        );
+    const auto frameFieldCoarse =
+        RouteFrameField::build(
+            frameCurves,
+            glm::dvec3(0.0, 0.0, 1.0),
+            25.0
+        );
+
+    if (frameFieldFine.size() < 10 || frameFieldCoarse.size() < 4)
+    {
+        std::cerr << "route frame field did not sample test geometry\n";
+        return 105;
+    }
+
+    for (std::size_t i = 1; i < frameFieldFine.size(); ++i)
+    {
+        if (glm::dot(frameFieldFine[i - 1].up, frameFieldFine[i].up) <= 0.0)
+        {
+            std::cerr << "route frame field changed to opposite up branch\n";
+            return 106;
+        }
+        if (std::abs(
+                glm::dot(
+                    frameFieldFine[i].forward,
+                    frameFieldFine[i].up
+                )
+            ) > 1.0e-9)
+        {
+            std::cerr << "route frame field lost orthogonality\n";
+            return 107;
+        }
+    }
+
+    for (double s :
+         {0.0, 50.0, 100.0, 125.0, 175.0, 225.0, 250.0, 300.0, 350.0})
+    {
+        const glm::dvec3 fineUp =
+            RouteFrameField::upAtProgress(frameFieldFine, s);
+        const glm::dvec3 coarseUp =
+            RouteFrameField::upAtProgress(frameFieldCoarse, s);
+        if (glm::dot(glm::normalize(fineUp), glm::normalize(coarseUp)) <
+            0.9999)
+        {
+            std::cerr
+                << "route frame orientation depends on sampling cadence at s="
+                << s << "\n";
+            return 108;
+        }
+    }
 
     // Manual guidance must leave a stopped ship through the windshield. The
     // route may turn later, but its first published segment must preserve the

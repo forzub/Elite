@@ -111,26 +111,69 @@ int main()
         );
 
         require(
-            compiled.requiredViaPointsMeters.size() == 3,
-            "compiled route should de-duplicate portal/section coincidences"
+            compiled.mandatoryTangentStraights.size() == 2,
+            "blue cylinder should compile inbound and outbound tangent straights"
+        );
+        require(
+            compiled.mandatoryTangentStraights[0].inbound &&
+            near(
+                compiled.mandatoryTangentStraights[0].startWorldMeters,
+                glm::dvec3(0.0, 0.0, -1300.0)
+            ) &&
+            near(
+                compiled.mandatoryTangentStraights[0].endWorldMeters,
+                glm::dvec3(0.0, 0.0, -600.0)
+            ),
+            "blue entry mandatory tangent straight is wrong"
+        );
+        require(
+            !compiled.mandatoryTangentStraights[1].inbound &&
+            near(
+                compiled.mandatoryTangentStraights[1].startWorldMeters,
+                glm::dvec3(0.0, 0.0, 600.0)
+            ) &&
+            near(
+                compiled.mandatoryTangentStraights[1].endWorldMeters,
+                glm::dvec3(0.0, 0.0, 1300.0)
+            ),
+            "blue exit mandatory tangent straight is wrong"
+        );
+
+        require(
+            compiled.requiredViaPointsMeters.size() == 5,
+            "compiled route lost tangent-straight boundary stations"
         );
         require(
             near(
                 compiled.requiredViaPointsMeters[0],
+                glm::dvec3(0.0, 0.0, -1300.0)
+            ),
+            "compiled route does not begin blue entry alignment straight"
+        );
+        require(
+            near(
+                compiled.requiredViaPointsMeters[1],
                 glm::dvec3(0.0, 0.0, -600.0)
             ),
             "compiled route does not enter cylinder B at front portal"
         );
         require(
             near(
-                compiled.requiredViaPointsMeters[1],
+                compiled.requiredViaPointsMeters[2],
                 glm::dvec3(0.0, 0.0, 600.0)
             ),
             "compiled route does not leave cylinder B at rear portal"
         );
         require(
             near(
-                compiled.requiredViaPointsMeters[2],
+                compiled.requiredViaPointsMeters[3],
+                glm::dvec3(0.0, 0.0, 1300.0)
+            ),
+            "compiled route does not preserve blue exit departure straight"
+        );
+        require(
+            near(
+                compiled.requiredViaPointsMeters[4],
                 glm::dvec3(2500.0, 0.0, 150.0)
             ),
             "compiled route did not continue to cube A dock portal"
@@ -154,6 +197,7 @@ int main()
 
         std::cout << "ROUTE STAGE COMPILER TESTS: PASS\n";
         std::cout << " - blue cylinder becomes ordered planner via-points\n";
+        std::cout << " - blue entry/exit compile protected tangent straights\n";
         std::cout << " - KeepInside survives topology -> geometry compilation\n";
         std::cout << " - missing mandatory frame fails closed\n";
         return 0;

@@ -376,6 +376,13 @@ private:
     struct DockAdviceJob
     {
         std::atomic<bool> ready {false};
+
+        // Coarse asynchronous planning progress for HUD presentation.
+        // This is phase completion, not an ETA. The expensive geometric
+        // search is data-dependent and therefore intentionally does not claim
+        // a continuously predictable remaining time.
+        std::atomic<int> planningProgressPermille {0};
+        std::atomic<std::uint8_t> planningProgressStage {0};
         std::uint64_t timelineRevision = 0;
         double startedServerSeconds = 0.0;
         double executionStartUniverseTimeSeconds = 0.0;

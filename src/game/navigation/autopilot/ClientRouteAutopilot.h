@@ -2336,7 +2336,7 @@ private:
         vehicle.maxSpeedMps =
             std::max(
                 0.5,
-                game::ship::controlledSpeedLimitMps(params) * 0.90
+                game::ship::controlledSpeedLimitMps(params)
             );
         vehicle.maxForwardAccelerationMps2 =
             executionAuthority.forwardAccelerationMps2;

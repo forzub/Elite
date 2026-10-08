@@ -173,7 +173,7 @@ int main()
             ) * baseBottom;
 
         const double routePhase =
-            RouteFrameField::signedPhaseFromReferencePoints(
+            RouteFrameField::synchronizedTunnelRollPhase(
                 terminalRouteAxis,
                 center,
                 baseBottom,

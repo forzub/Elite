@@ -157,6 +157,64 @@
           "display_name": "DOCK REAR",
           "orientation_policy": "upright",
           "capture_depth_m": 600
+        },
+        {
+          "id": "traffic_entry_front",
+          "kind": "transit_gate",
+          "local_position_m": [
+            0,
+            0,
+            -600
+          ],
+          "local_forward": [
+            0,
+            0,
+            1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            200,
+            120,
+            0
+          ],
+          "required_clearance_m": 22,
+          "max_entry_speed_mps": 220,
+          "enabled": true,
+          "display_name": "TRAFFIC ENTRY FRONT",
+          "orientation_policy": "upright"
+        },
+        {
+          "id": "traffic_exit_rear",
+          "kind": "transit_gate",
+          "local_position_m": [
+            0,
+            0,
+            600
+          ],
+          "local_forward": [
+            0,
+            0,
+            1
+          ],
+          "local_up": [
+            0,
+            1,
+            0
+          ],
+          "extent_m": [
+            200,
+            120,
+            0
+          ],
+          "required_clearance_m": 22,
+          "max_entry_speed_mps": 220,
+          "enabled": true,
+          "display_name": "TRAFFIC EXIT REAR",
+          "orientation_policy": "upright"
         }
       ]
     }

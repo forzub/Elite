@@ -96,6 +96,9 @@ public:
         // "up" convention.
         std::vector<RouteFrameField::Sample> routeFrameField;
         double liveTunnelRollPhaseRad = 0.0;
+        double previousLiveTunnelRollPhaseRad = 0.0;
+        double liveTunnelRollRateRadPerSec = 0.0;
+        bool hasLiveTunnelRollPhase = false;
 
         AutopilotTrackingPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
@@ -146,6 +149,8 @@ public:
         double captureMeetingJoinAngleRad = 0.0;
         double signedRollErrorRad = 0.0;
         double desiredRollRateRadPerSec = 0.0;
+        double liveTunnelRollPhaseRad = 0.0;
+        double liveTunnelRollRateRadPerSec = 0.0;
         bool terminalBrakeActive = false;
         bool terminalAttitudeCaptureActive = false;
         bool brakeAttitudeLockActive = false;
@@ -164,11 +169,39 @@ public:
 
     static void setLiveTunnelRollPhase(
         State& state,
-        double phaseRad
+        double phaseRad,
+        double deltaSeconds
     ) noexcept
     {
-        state.liveTunnelRollPhaseRad =
+        const double phase =
             std::isfinite(phaseRad) ? phaseRad : 0.0;
+
+        if (state.hasLiveTunnelRollPhase &&
+            std::isfinite(deltaSeconds) &&
+            deltaSeconds > 1.0e-9)
+        {
+            const double delta =
+                std::atan2(
+                    std::sin(
+                        phase -
+                        state.previousLiveTunnelRollPhaseRad
+                    ),
+                    std::cos(
+                        phase -
+                        state.previousLiveTunnelRollPhaseRad
+                    )
+                );
+            state.liveTunnelRollRateRadPerSec =
+                delta / deltaSeconds;
+        }
+        else
+        {
+            state.liveTunnelRollRateRadPerSec = 0.0;
+        }
+
+        state.previousLiveTunnelRollPhaseRad = phase;
+        state.liveTunnelRollPhaseRad = phase;
+        state.hasLiveTunnelRollPhase = true;
     }
 
     [[nodiscard]] static bool start(
@@ -960,6 +993,7 @@ public:
         const double desiredRollRateRadPerSec =
             rollRateLimit > 1.0e-9
                 ? std::clamp(
+                    state.liveTunnelRollRateRadPerSec +
                     signedRollErrorRad / rollActuatorResponseSeconds,
                     -rollRateLimit,
                     rollRateLimit
@@ -1298,6 +1332,10 @@ public:
         out.signedRollErrorRad = signedRollErrorRad;
         out.desiredRollRateRadPerSec =
             desiredRollRateRadPerSec;
+        out.liveTunnelRollPhaseRad =
+            state.liveTunnelRollPhaseRad;
+        out.liveTunnelRollRateRadPerSec =
+            state.liveTunnelRollRateRadPerSec;
         out.terminalBrakeActive = terminalBrakeActive;
         out.terminalAttitudeCaptureActive = terminalAttitudeHold;
         out.brakeAttitudeLockActive = brakeAttitudeLock;

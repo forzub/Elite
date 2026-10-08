@@ -1,4 +1,5 @@
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
+#include "src/game/navigation/NavigationVolumeCatalog.h"
 #include "src/game/navigation/traffic/TrafficRouteGraph.h"
 #include "src/game/navigation/traffic/TrafficRouteGraphCatalog.h"
 
@@ -87,20 +88,52 @@ int main()
             "unexpected protected traffic graph id"
         );
 
-        const auto* zone =
-            graph->mandatoryZone("cylinder_b.blue_transit");
-        require(zone, "blue mandatory transit zone is missing");
+        NavigationVolumeCatalog volumes;
         require(
-            zone->directionPolicy == TransitDirectionPolicy::OneWay,
+            volumes.load(
+                "src/assets/data/navigation/hub_navigation_volumes.json"
+            ),
+            "navigation volume catalog failed to load"
+        );
+        const auto* cylinderVolume =
+            volumes.find("cylinder_b.transit_volume");
+        require(
+            cylinderVolume,
+            "cylinder B navigation volume is missing"
+        );
+        require(
+            cylinderVolume->kind ==
+                world::navigation::NavigationVolumeKind::SweptCorridor,
+            "cylinder B stopped being generic swept-corridor geometry"
+        );
+        require(
+            cylinderVolume->sections.size() == 2,
+            "straight cylinder B should currently have two corridor sections"
+        );
+
+        const auto* lane =
+            graph->lane("cylinder_b.blue_lane");
+        require(lane, "blue cylinder traffic lane is missing");
+        require(
+            lane->directionPolicy == TransitDirectionPolicy::OneWay,
             "blue cylinder unexpectedly stopped being one-way"
         );
         require(
-            zone->entryPortalId == "cylinder_b.entry_front",
+            lane->entryPortalId == "cylinder_b.entry_front",
             "blue cylinder entry portal changed"
         );
         require(
-            zone->exitPortalId == "cylinder_b.exit_rear",
+            lane->exitPortalId == "cylinder_b.exit_rear",
             "blue cylinder exit portal changed"
+        );
+        require(
+            lane->navigationVolumeId == "cylinder_b.transit_volume",
+            "traffic lane lost its physical navigation volume"
+        );
+        require(
+            lane->policy ==
+                world::navigation::NavigationVolumePolicy::KeepInside,
+            "blue traffic lane stopped being hard containment"
         );
 
         const auto route =
@@ -130,13 +163,13 @@ int main()
             "ship-to-blue-zone stage is no longer free approach"
         );
         require(
-            route.stages[1].kind == TrafficRouteStageKind::MandatoryTransit,
-            "blue-zone stage is no longer mandatory transit"
+            route.stages[1].kind == TrafficRouteStageKind::VolumeTransit,
+            "blue-zone stage is no longer volume transit"
         );
         require(
-            route.stages[1].mandatoryZoneId ==
-                "cylinder_b.blue_transit",
-            "mandatory transit stage lost blue-zone ownership"
+            route.stages[1].laneId ==
+                "cylinder_b.blue_lane",
+            "volume-transit stage lost blue-lane ownership"
         );
         require(
             route.stages[2].kind == TrafficRouteStageKind::TerminalApproach,
@@ -164,19 +197,19 @@ int main()
         onlyPortal.semanticAnchorId = "entry_anchor";
         invalid.portals.push_back(onlyPortal);
 
-        MandatoryTransitZoneDefinition invalidZone;
-        invalidZone.id = "zone";
-        invalidZone.hubModuleId = "module";
-        invalidZone.entryPortalId = "entry";
-        invalidZone.exitPortalId = "missing_exit";
-        invalidZone.radiusMeters = 100.0;
-        invalidZone.halfLengthMeters = 500.0;
-        invalid.mandatoryZones.push_back(invalidZone);
+        TrafficLaneDefinition invalidLane;
+        invalidLane.id = "lane";
+        invalidLane.navigationVolumeId = "volume";
+        invalidLane.entryPortalId = "entry";
+        invalidLane.exitPortalId = "missing_exit";
+        invalidLane.policy =
+            world::navigation::NavigationVolumePolicy::KeepInside;
+        invalid.lanes.push_back(invalidLane);
 
         std::string failure;
         require(
             !TrafficRouteGraph::build(std::move(invalid), &failure),
-            "invalid mandatory topology was accepted"
+            "invalid traffic topology was accepted"
         );
         require(
             !failure.empty(),

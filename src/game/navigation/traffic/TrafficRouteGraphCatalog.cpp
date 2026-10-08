@@ -23,16 +23,18 @@ NavigationPortalRole parsePortalRole(const std::string& value)
 TrafficRouteStageKind parseStageKind(const std::string& value)
 {
     if (value == "free_approach") return TrafficRouteStageKind::FreeApproach;
-    if (value == "mandatory_transit") return TrafficRouteStageKind::MandatoryTransit;
+    if (value == "volume_transit") return TrafficRouteStageKind::VolumeTransit;
     if (value == "terminal_approach") return TrafficRouteStageKind::TerminalApproach;
     return TrafficRouteStageKind::FreeSpace;
 }
 
-TransitVolumeKind parseVolumeKind(const std::string& value)
+world::navigation::NavigationVolumePolicy parseVolumePolicy(
+    const std::string& value
+)
 {
-    return value == "box"
-        ? TransitVolumeKind::Box
-        : TransitVolumeKind::Cylinder;
+    if (value == "preferred")
+        return world::navigation::NavigationVolumePolicy::PreferInside;
+    return world::navigation::NavigationVolumePolicy::KeepInside;
 }
 
 TransitDirectionPolicy parseDirectionPolicy(const std::string& value)
@@ -155,40 +157,35 @@ bool TrafficRouteGraphCatalog::load(const std::string& path)
         }
     }
 
-    if (root.contains("mandatory_zones") &&
-        root["mandatory_zones"].is_array())
+    if (root.contains("lanes") &&
+        root["lanes"].is_array())
     {
-        for (const auto& item : root["mandatory_zones"])
+        for (const auto& item : root["lanes"])
         {
             if (!item.is_object())
                 continue;
 
-            MandatoryTransitZoneDefinition zone;
-            zone.id = item.value("id", "");
-            zone.hubModuleId = item.value("module_id", "");
-            zone.volumeKind =
-                parseVolumeKind(item.value("volume_kind", "cylinder"));
-            zone.directionPolicy =
+            TrafficLaneDefinition lane;
+            lane.id = item.value("id", "");
+            lane.navigationVolumeId =
+                item.value("navigation_volume_id", "");
+            lane.directionPolicy =
                 parseDirectionPolicy(
                     item.value("direction_policy", "one_way")
                 );
-            zone.entryPortalId = item.value("entry_portal_id", "");
-            zone.exitPortalId = item.value("exit_portal_id", "");
-            zone.radiusMeters = item.value("radius_m", 0.0);
-            zone.halfLengthMeters = item.value("half_length_m", 0.0);
-            zone.halfExtentsMeters =
-                readVec3(
-                    item,
-                    "half_extents_m",
-                    glm::dvec3(0.0)
+            lane.entryPortalId =
+                item.value("entry_portal_id", "");
+            lane.exitPortalId =
+                item.value("exit_portal_id", "");
+            lane.policy =
+                parseVolumePolicy(
+                    item.value("policy", "required")
                 );
-            zone.requiredClearanceMeters =
-                item.value("required_clearance_m", 0.0);
-            zone.maxTransitSpeedMps =
+            lane.maxTransitSpeedMps =
                 item.value("max_transit_speed_mps", 0.0);
-            zone.internalDockPortalIds =
+            lane.internalDockPortalIds =
                 readStringArray(item, "internal_dock_portal_ids");
-            definition.mandatoryZones.push_back(std::move(zone));
+            definition.lanes.push_back(std::move(lane));
         }
     }
 
@@ -205,8 +202,8 @@ bool TrafficRouteGraphCatalog::load(const std::string& path)
             edge.toPortalId = item.value("to_portal_id", "");
             edge.kind =
                 parseStageKind(item.value("kind", "free_space"));
-            edge.mandatoryZoneId =
-                item.value("mandatory_zone_id", "");
+            edge.laneId =
+                item.value("lane_id", "");
             definition.edges.push_back(std::move(edge));
         }
     }

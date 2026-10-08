@@ -2644,10 +2644,12 @@ void SpaceState::updateDockingAdvisory()
                 // Rotate the already-stable base frame around this frame's
                 // own normal/tangent by the dock's current roll phase.
                 localFrameUp =
-                    glm::angleAxis(
-                        dockRollPhaseRad,
-                        localForward
-                    ) * localFrameUp;
+                    game::navigation::RouteFrameField::
+                        rotateUpAroundForward(
+                            localForward,
+                            localFrameUp,
+                            dockRollPhaseRad
+                        );
 
                 glm::dvec3 up =
                     renderFrame.localToWorldVector(

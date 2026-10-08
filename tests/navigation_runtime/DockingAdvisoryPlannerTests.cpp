@@ -1,6 +1,7 @@
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
+#include "src/game/navigation/DockingRouteEntryPolicy.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
@@ -31,6 +32,72 @@ void printTerminalArcDiagnostics(
 int main()
 {
     using namespace game::navigation;
+
+    // Moving-start entry contract: navigation starts from VELOCITY, not
+    // hull nose, and high initial speed must reserve real braking/turn room.
+    {
+        const glm::dvec3 velocity(300.0, 400.0, 0.0); // 500 m/s
+        const glm::dvec3 hullForward(1.0, 0.0, 0.0);
+        const auto course =
+            DockingRouteEntryPolicy::initialCourse(
+                velocity,
+                hullForward
+            );
+        const glm::dvec3 expectedCourse =
+            glm::normalize(velocity);
+
+        if (glm::dot(course, expectedCourse) < 0.999999)
+        {
+            std::cerr
+                << "moving-start route entry used hull nose instead of velocity course\n";
+            return 118;
+        }
+
+        const double lead =
+            DockingRouteEntryPolicy::
+                requiredInitialForwardLeadMeters(
+                    500.0,
+                    450.0,
+                    52.9559,
+                    52.9559,
+                    2.5,
+                    26.0
+                );
+
+        const double designTurnSpeed = 360.0;
+        const double brakingDistance =
+            (500.0 * 500.0 -
+             designTurnSpeed * designTurnSpeed) /
+            (2.0 * 52.9559);
+        const double designRadius =
+            designTurnSpeed * designTurnSpeed / 52.9559;
+        const double required =
+            2.0 * (brakingDistance + designRadius);
+
+        if (lead + 1.0e-6 < required)
+        {
+            std::cerr
+                << "high-speed route entry did not reserve braking plus turn-radius distance\n";
+            return 119;
+        }
+
+        const double stoppedLead =
+            DockingRouteEntryPolicy::
+                requiredInitialForwardLeadMeters(
+                    0.0,
+                    450.0,
+                    52.9559,
+                    52.9559,
+                    2.5,
+                    26.0
+                );
+        if (std::abs(stoppedLead - 1000.0) > 1.0e-9)
+        {
+            std::cerr
+                << "moving-start policy changed known-good stopped launch geometry\n";
+            return 120;
+        }
+    }
 
     // Visual frame-field regression: one authoritative route must produce a
     // continuous rotation-minimizing frame independent of HUD sample cadence.

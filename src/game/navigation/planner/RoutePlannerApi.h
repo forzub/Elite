@@ -40,6 +40,22 @@ enum class RoutePlanFailureCode : std::uint8_t
     RoutePlanFailureCode code
 ) noexcept;
 
+struct MandatoryTangentStraightConstraint
+{
+    glm::dvec3 startMeters {0.0};
+    glm::dvec3 endMeters {0.0};
+
+    // Protected minimum straight. Planner may extend the same axis outward
+    // beyond this segment to obtain room for a tangent fillet, but may never
+    // shorten, bend or round away this authored segment.
+    double minimumStraightMeters = 0.0;
+
+    // True when route order is free-space -> start -> end -> constrained
+    // portal/volume. False for constrained portal/volume -> start -> end ->
+    // free-space.
+    bool inbound = true;
+};
+
 struct RoutePlanRequest
 {
     glm::dvec3 startMeters {0.0};
@@ -80,6 +96,12 @@ struct RoutePlanRequest
     // This is the first bridge from protected traffic topology into authored
     // route geometry. Follower still receives one continuous RoutePlan.
     std::vector<glm::dvec3> requiredViaPointsMeters;
+
+    // Hard route-boundary straights compiled from semantic traffic portals.
+    // These are stronger than via-points: rounding may use an outward axis
+    // extension, but the protected segment itself must survive unchanged.
+    std::vector<MandatoryTangentStraightConstraint>
+        mandatoryTangentStraights;
 
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };

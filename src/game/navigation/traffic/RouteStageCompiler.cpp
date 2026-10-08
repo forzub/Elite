@@ -36,6 +36,7 @@ bool resolvePortalWorld(
     const HubSemanticAnchorCatalog& anchors,
     const RouteStageCompiler::ReferenceFrameMap& frames,
     glm::dvec3& position,
+    glm::dvec3* crossingForwardWorld,
     std::string& failure
 )
 {
@@ -71,6 +72,24 @@ bool resolvePortalWorld(
             "traffic portal resolved to non-finite world position: " +
             portalId;
         return false;
+    }
+
+    if (crossingForwardWorld)
+    {
+        *crossingForwardWorld =
+            frameIt->second.directionToWorld(
+                portal->crossingForwardLocal
+            );
+        if (!finite3(*crossingForwardWorld) ||
+            glm::length(*crossingForwardWorld) <= 1.0e-9)
+        {
+            failure =
+                "traffic portal resolved invalid crossing direction: " +
+                portalId;
+            return false;
+        }
+        *crossingForwardWorld =
+            glm::normalize(*crossingForwardWorld);
     }
 
     return true;
@@ -209,6 +228,7 @@ CompiledTrafficRoute RouteStageCompiler::compile(
                     anchors,
                     referenceFrames,
                     compiled.fromWorldMeters,
+                    nullptr,
                     out.failure))
             {
                 return out;
@@ -223,6 +243,7 @@ CompiledTrafficRoute RouteStageCompiler::compile(
                     anchors,
                     referenceFrames,
                     compiled.toWorldMeters,
+                    nullptr,
                     out.failure))
             {
                 return out;
@@ -256,6 +277,50 @@ CompiledTrafficRoute RouteStageCompiler::compile(
             // Keep topology authoritative at the boundaries. The authored
             // corridor may contain the same points as its first/last section,
             // but the semantic portals still own entry/exit ordering.
+            const auto* entryPortal =
+                graph.portal(stage.fromPortalId);
+            if (!entryPortal)
+            {
+                out.failure =
+                    "volume transit lost entry portal definition";
+                return out;
+            }
+
+            if (entryPortal->inboundConnection.kind ==
+                PortalConnectionKind::MandatoryTangentStraight)
+            {
+                glm::dvec3 portalPosition(0.0);
+                glm::dvec3 crossingForward(0.0);
+                if (!resolvePortalWorld(
+                        stage.fromPortalId,
+                        graph,
+                        anchors,
+                        referenceFrames,
+                        portalPosition,
+                        &crossingForward,
+                        out.failure))
+                {
+                    return out;
+                }
+
+                CompiledMandatoryTangentStraight straight;
+                straight.portalId = stage.fromPortalId;
+                straight.inbound = true;
+                straight.endWorldMeters = portalPosition;
+                straight.forwardWorld = crossingForward;
+                straight.lengthMeters =
+                    entryPortal->inboundConnection.mandatoryStraightMeters;
+                straight.startWorldMeters =
+                    portalPosition -
+                    crossingForward * straight.lengthMeters;
+
+                out.mandatoryTangentStraights.push_back(straight);
+                appendUnique(
+                    out.requiredViaPointsMeters,
+                    straight.startWorldMeters
+                );
+            }
+
             appendUnique(
                 out.requiredViaPointsMeters,
                 compiled.fromWorldMeters
@@ -266,6 +331,50 @@ CompiledTrafficRoute RouteStageCompiler::compile(
                 out.requiredViaPointsMeters,
                 compiled.toWorldMeters
             );
+
+            const auto* exitPortal =
+                graph.portal(stage.toPortalId);
+            if (!exitPortal)
+            {
+                out.failure =
+                    "volume transit lost exit portal definition";
+                return out;
+            }
+
+            if (exitPortal->outboundConnection.kind ==
+                PortalConnectionKind::MandatoryTangentStraight)
+            {
+                glm::dvec3 portalPosition(0.0);
+                glm::dvec3 crossingForward(0.0);
+                if (!resolvePortalWorld(
+                        stage.toPortalId,
+                        graph,
+                        anchors,
+                        referenceFrames,
+                        portalPosition,
+                        &crossingForward,
+                        out.failure))
+                {
+                    return out;
+                }
+
+                CompiledMandatoryTangentStraight straight;
+                straight.portalId = stage.toPortalId;
+                straight.inbound = false;
+                straight.startWorldMeters = portalPosition;
+                straight.forwardWorld = crossingForward;
+                straight.lengthMeters =
+                    exitPortal->outboundConnection.mandatoryStraightMeters;
+                straight.endWorldMeters =
+                    portalPosition +
+                    crossingForward * straight.lengthMeters;
+
+                out.mandatoryTangentStraights.push_back(straight);
+                appendUnique(
+                    out.requiredViaPointsMeters,
+                    straight.endWorldMeters
+                );
+            }
         }
         else if (!stage.toPortalId.empty())
         {

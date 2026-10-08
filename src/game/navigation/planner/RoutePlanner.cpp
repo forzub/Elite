@@ -101,6 +101,8 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
         input.preferredTerminalTurnRadiusMeters;
     legacy.requiredViaPointsMeters =
         input.requiredViaPointsMeters;
+    legacy.mandatoryTangentStraights =
+        input.mandatoryTangentStraights;
     legacy.obstacles = input.obstacles;
 
     const auto planned =

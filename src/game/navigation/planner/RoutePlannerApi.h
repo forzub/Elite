@@ -75,6 +75,12 @@ struct RoutePlanRequest
     bool deriveTerminalTurnRadiusFromVehicle = false;
     double preferredTerminalTurnRadiusMeters = 0.0;
 
+    // Ordered semantic transit constraints resolved before geometric planning.
+    // Planner must visit these points in order; they are not optional hints.
+    // This is the first bridge from protected traffic topology into authored
+    // route geometry. Follower still receives one continuous RoutePlan.
+    std::vector<glm::dvec3> requiredViaPointsMeters;
+
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 

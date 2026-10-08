@@ -74,6 +74,7 @@
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
+#include "src/game/navigation/DockingRouteEntryPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/ship/ShipPropulsionState.h"
@@ -2023,11 +2024,17 @@ void SpaceState::updateDockingAdvisory()
             snapshot.controlledShip.localPositionMeters +
             startVelocityMps * PlanningLeadSeconds;
         request.hasInitialForward = true;
-        request.initialForward = glm::normalize(
-            snapshot.planningFrame.worldToLocalVector(
-                glm::dvec3(transform.forward())
-            )
-        );
+        const glm::dvec3 hullForwardLocal =
+            glm::normalize(
+                snapshot.planningFrame.worldToLocalVector(
+                    glm::dvec3(transform.forward())
+                )
+            );
+        request.initialForward =
+            game::navigation::DockingRouteEntryPolicy::initialCourse(
+                startVelocityMps,
+                hullForwardLocal
+            );
         request.initialForwardLeadMeters =
             std::max(1000.0, hull.lengthMeters * 10.0);
         request.terminalReferenceDistanceMeters =
@@ -2078,6 +2085,30 @@ void SpaceState::updateDockingAdvisory()
         request.maxAngularAccelerationRadPerSecond2 =
             shipProfile.maxAngularAccelerationRadPerSecond2 * 0.90;
         request.initialSpeedMps = glm::length(startVelocityMps);
+
+        request.initialForwardLeadMeters =
+            game::navigation::DockingRouteEntryPolicy::
+                requiredInitialForwardLeadMeters(
+                    request.initialSpeedMps,
+                    request.maxSpeedMps,
+                    request.brakingMps2,
+                    request.lateralMps2,
+                    request.maxAngularVelocityRadPerSecond,
+                    hull.lengthMeters
+                );
+
+        std::cout
+            << "[DockEntryPolicy]"
+            << " request=" << pending.serial
+            << " initial_speed_mps=" << request.initialSpeedMps
+            << " route_max_mps=" << request.maxSpeedMps
+            << " forward_lead_m="
+            << request.initialForwardLeadMeters
+            << " initial_course=("
+            << request.initialForward.x << ","
+            << request.initialForward.y << ","
+            << request.initialForward.z << ")"
+            << std::endl;
 
         // USER CONTRACT: visual tunnel cadence.
         request.gateSpacingMeters = 500.0;

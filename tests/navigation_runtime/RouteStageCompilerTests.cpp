@@ -144,6 +144,13 @@ int main()
             "compiled route lost tangent-straight boundary stations"
         );
         require(
+            !near(
+                compiled.requiredViaPointsMeters.front(),
+                glm::dvec3(0.0, 0.0, -600.0)
+            ),
+            "entry portal was emitted before its mandatory alignment start"
+        );
+        require(
             near(
                 compiled.requiredViaPointsMeters[0],
                 glm::dvec3(0.0, 0.0, -1300.0)

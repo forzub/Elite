@@ -216,6 +216,105 @@ int main()
             "invalid mandatory topology failed without diagnosis"
         );
 
+        // BLUE and GREEN are policies over the SAME physical volume.
+        // Geometry must not be duplicated merely because traffic policy differs.
+        {
+            TrafficRouteGraphDefinition preferredGraph;
+            preferredGraph.graphId = "preferred-volume-policy";
+
+            NavigationPortalDefinition a;
+            a.id = "a";
+            a.hubModuleId = "module";
+            a.semanticAnchorId = "a_anchor";
+            a.crossingForwardLocal = {0.0, 0.0, 1.0};
+            a.upLocal = {0.0, 1.0, 0.0};
+
+            NavigationPortalDefinition b = a;
+            b.id = "b";
+            b.semanticAnchorId = "b_anchor";
+
+            preferredGraph.portals = {a, b};
+
+            TrafficLaneDefinition lane;
+            lane.id = "green_lane";
+            lane.navigationVolumeId = "shared_volume";
+            lane.entryPortalId = "a";
+            lane.exitPortalId = "b";
+            lane.policy =
+                world::navigation::NavigationVolumePolicy::PreferInside;
+            preferredGraph.lanes.push_back(lane);
+
+            TrafficRouteEdgeDefinition edge;
+            edge.id = "a_to_b";
+            edge.fromPortalId = "a";
+            edge.toPortalId = "b";
+            edge.kind = TrafficRouteStageKind::VolumeTransit;
+            edge.laneId = "green_lane";
+            preferredGraph.edges.push_back(edge);
+
+            std::string preferredFailure;
+            const auto preferred =
+                TrafficRouteGraph::build(
+                    std::move(preferredGraph),
+                    &preferredFailure
+                );
+
+            require(
+                static_cast<bool>(preferred),
+                "preferred/green lane over shared volume was rejected"
+            );
+
+            const auto preferredRoute =
+                preferred->resolve("a", "b");
+            require(
+                preferredRoute.valid &&
+                preferredRoute.stages.size() == 2,
+                "preferred/green lane route did not resolve"
+            );
+            require(
+                preferredRoute.stages[1].volumeConstraint.volumeId ==
+                    "shared_volume",
+                "preferred/green lane duplicated or lost physical volume identity"
+            );
+            require(
+                preferredRoute.stages[1].volumeConstraint.policy ==
+                    world::navigation::NavigationVolumePolicy::PreferInside,
+                "preferred/green lane did not preserve soft-inside policy"
+            );
+        }
+
+        // A bent tunnel/canyon is the same physical concept: one swept
+        // navigation volume with more cross-sections, not a new zone type.
+        {
+            world::navigation::NavigationVolumeDefinition bent;
+            bent.id = "bent_test_volume";
+            bent.referenceFrameId = "test_frame";
+            bent.kind =
+                world::navigation::NavigationVolumeKind::SweptCorridor;
+
+            world::navigation::NavigationVolumeSection s0;
+            s0.centerLocalMeters = {0.0, 0.0, 0.0};
+            s0.forwardLocal = {1.0, 0.0, 0.0};
+            s0.upLocal = {0.0, 1.0, 0.0};
+            s0.radiusMeters = 50.0;
+
+            auto s1 = s0;
+            s1.centerLocalMeters = {100.0, 0.0, 0.0};
+            s1.forwardLocal =
+                glm::normalize(glm::dvec3(1.0, 0.0, 1.0));
+
+            auto s2 = s0;
+            s2.centerLocalMeters = {170.0, 0.0, 70.0};
+            s2.forwardLocal = {0.0, 0.0, 1.0};
+
+            bent.sections = {s0, s1, s2};
+
+            require(
+                bent.finite(),
+                "bent swept navigation volume was rejected"
+            );
+        }
+
         // ARCHITECTURE GUARD: geometric RoutePlanner must not own or mutate
         // semantic traffic topology. A dedicated resolver/stage compiler is
         // the only legal bridge between these layers.
@@ -242,6 +341,8 @@ int main()
         std::cout << " - cylinder B entry -> exit remains mandatory and one-way\n";
         std::cout << " - cube A terminal approach stays downstream of blue transit\n";
         std::cout << " - malformed topology fails closed\n";
+        std::cout << " - blue/green share one physical volume model\n";
+        std::cout << " - bent tunnels use the same swept-volume primitive\n";
         std::cout << " - RoutePlanner remains outside protected topology ownership\n";
         return 0;
     }

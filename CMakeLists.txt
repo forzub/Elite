@@ -603,6 +603,9 @@ add_executable(EliteGame
     src/game/navigation/NavigationWorldPredictor.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
+    src/game/navigation/NavigationVolumeCatalog.cpp
+    src/game/navigation/traffic/TrafficRouteGraph.cpp
+    src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
     src/game/navigation/GalacticReferenceFrame.cpp
     src/game/navigation/CoordinateDisplayService.cpp

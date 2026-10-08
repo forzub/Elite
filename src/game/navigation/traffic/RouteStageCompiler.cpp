@@ -76,11 +76,13 @@ bool resolvePortalWorld(
     return true;
 }
 
-bool compileVolumeCenterline(
+bool compileVolumeGeometry(
     const TrafficRouteStage& stage,
     const NavigationVolumeCatalog& volumes,
     const RouteStageCompiler::ReferenceFrameMap& frames,
-    std::vector<glm::dvec3>& out,
+    std::vector<CompiledNavigationVolumeSection>& sections,
+    std::vector<glm::dvec3>& centerline,
+    double& requiredClearanceMeters,
     std::string& failure
 )
 {
@@ -119,20 +121,43 @@ bool compileVolumeCenterline(
         return false;
     }
 
-    out.clear();
-    out.reserve(volume->sections.size());
+    sections.clear();
+    centerline.clear();
+    sections.reserve(volume->sections.size());
+    centerline.reserve(volume->sections.size());
+    requiredClearanceMeters = volume->requiredClearanceMeters;
+
     for (const auto& section : volume->sections)
     {
-        const glm::dvec3 world =
+        CompiledNavigationVolumeSection resolved;
+        resolved.centerWorldMeters =
             frameIt->second.pointToWorld(section.centerLocalMeters);
-        if (!finite3(world))
+        resolved.forwardWorld =
+            frameIt->second.directionToWorld(section.forwardLocal);
+        resolved.upWorld =
+            frameIt->second.directionToWorld(section.upLocal);
+        resolved.crossSection = section.crossSection;
+        resolved.radiusMeters = section.radiusMeters;
+        resolved.halfWidthMeters = section.halfWidthMeters;
+        resolved.halfHeightMeters = section.halfHeightMeters;
+
+        if (!finite3(resolved.centerWorldMeters) ||
+            !finite3(resolved.forwardWorld) ||
+            !finite3(resolved.upWorld) ||
+            glm::length(resolved.forwardWorld) <= 1.0e-9 ||
+            glm::length(resolved.upWorld) <= 1.0e-9)
         {
             failure =
                 "navigation volume section resolved non-finite: " +
                 volume->id;
             return false;
         }
-        appendUnique(out, world);
+
+        resolved.forwardWorld = glm::normalize(resolved.forwardWorld);
+        resolved.upWorld = glm::normalize(resolved.upWorld);
+
+        sections.push_back(resolved);
+        appendUnique(centerline, resolved.centerWorldMeters);
     }
 
     return true;
@@ -216,11 +241,13 @@ CompiledTrafficRoute RouteStageCompiler::compile(
                 return out;
             }
 
-            if (!compileVolumeCenterline(
+            if (!compileVolumeGeometry(
                     stage,
                     volumes,
                     referenceFrames,
+                    compiled.volumeSections,
                     compiled.requiredCenterlineMeters,
+                    compiled.volumeRequiredClearanceMeters,
                     out.failure))
             {
                 return out;

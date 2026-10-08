@@ -17,6 +17,8 @@ namespace world::navigation
 
 struct TrajectoryGenerationPolicy
 {
+    static constexpr double DefaultPlanningAuthorityFraction = 0.85;
+
     // Numeric/solver floors. These are explicit because they change accepted
     // motion rather than being implementation-only epsilons.
     double minimumAccelerationMps2 = 0.1;
@@ -76,7 +78,8 @@ struct TrajectoryGenerationPolicy
     // hard runtime rejection threshold: measured overspeed may be tolerated
     // while the craft remains inside the corridor and can still satisfy the
     // next hard braking/curvature constraint.
-    double planningAuthorityFraction = 0.85;
+    double planningAuthorityFraction =
+        DefaultPlanningAuthorityFraction;
 
     // Scalar path-progress timing / curvature sampling.
     double curvatureProbeFraction = 0.0025;

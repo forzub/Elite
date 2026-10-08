@@ -2401,9 +2401,18 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Planning)
     {
-        // Continue the same zero-acceleration coast used for the projected
-        // planning origin. Velocity is preserved until execution takes over.
-        submitAutopilotControl(coastForPlanningControl());
+        if (automatic)
+        {
+            // Continue the same zero-acceleration coast used for the projected
+            // Automatic planning origin.
+            submitAutopilotControl(coastForPlanningControl());
+        }
+        else
+        {
+            // Manual route was authored from a settled zero state. Keep that
+            // state while asynchronous planning finishes.
+            submitAutopilotControl(manualStopControl());
+        }
 
         if (!m_dockAdviceJob ||
             !m_dockAdviceJob->ready.load(

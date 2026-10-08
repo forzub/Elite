@@ -1705,12 +1705,25 @@ KeyframedProgressResult keyframedGuideProgress(
         request.vehicle.maxSpeedMps * 0.8;
     const double terminalAngularScale =
         std::clamp(speedScale, 0.01, 1.0);
+    const double planningAuthority =
+        std::clamp(
+            request.policy.planningAuthorityFraction,
+            0.01,
+            1.0
+        );
+
+    // Planner uses a conservative working envelope. The physical vehicle
+    // limits remain untouched and are still used by the hard feasibility
+    // validator below.
     const double accelerating =
-        request.vehicle.maxForwardAccelerationMps2;
+        request.vehicle.maxForwardAccelerationMps2 *
+        planningAuthority;
     const double braking =
-        request.vehicle.maxBrakingAccelerationMps2;
+        request.vehicle.maxBrakingAccelerationMps2 *
+        planningAuthority;
     const double lateral =
-        request.vehicle.maxLateralAccelerationMps2;
+        request.vehicle.maxLateralAccelerationMps2 *
+        planningAuthority;
     std::vector<double> limits(count, cruise);
 
     // A restriction belongs to its local route station. A slow docking arc

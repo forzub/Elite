@@ -67,6 +67,22 @@ The current ship position is not a topology node. A resolved route prepends a sy
 A volume-transit stage carries a `NavigationVolumeConstraint` into a later stage compiler.
 That compiler may create one final continuous `RoutePlan`, but it may not discard the stage's containment/preference semantics.
 
+## RouteStageCompiler bridge
+
+`RouteStageCompiler` is the only current bridge from protected traffic topology into geometric planning input.
+
+It resolves portal semantic anchors and navigation-volume sections through explicit runtime reference-frame poses. For each `VolumeTransit` stage it preserves the lane's `NavigationVolumeConstraint` and emits ordered centerline stations. Those stations are then exposed as `requiredViaPointsMeters` for the existing geometric planner adapter.
+
+For the current straight Cylinder B BLUE lane this compiles to:
+
+`entry_front -> [swept-corridor section centers] -> exit_rear -> cube_a.dock_front`
+
+Adjacent coincident portal/section points are de-duplicated, but their semantic order is not changed.
+
+This is intentionally a first execution bridge, not the final containment proof. A future hard-volume validator must still prove that every curve segment belonging to a `KeepInside` stage remains inside the eroded allowed volume (hull envelope + authored clearance). A planner is never allowed to treat the via-points alone as permission to cut outside a BLUE volume between stations.
+
+Missing portal anchors, reference-frame poses, volume definitions or invalid containment policy fail closed. They must never degrade into a free-space shortcut around a mandatory BLUE lane.
+
 ## Current protected test topology
 
 `earth_orbital_hub_test_traffic_v1`

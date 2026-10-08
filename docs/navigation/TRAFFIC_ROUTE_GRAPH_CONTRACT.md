@@ -1,52 +1,92 @@
-# Traffic Route Graph Contract
+# Traffic Route Graph and Navigation Volume Contract
 
 Status: **PROTECTED NAVIGATION CONTRACT**
 
-This layer owns semantic hub-traffic topology. It answers **which portals must be crossed, in which order, and which transit volume owns a constrained stage**.
+## Separation of responsibilities
 
-It does **not** own sampled route geometry, follower control, speed-controller gains, docking visuals, or obstacle-search internals.
+`NavigationVolume` owns physical navigable geometry only.
+`TrafficLane` references a volume and assigns traversal policy/direction.
+`TrafficRouteGraph` owns semantic portal/lane connectivity only.
+`RoutePlanner` owns geometric route construction only and must not mutate topology.
 
-## Hard rules
+## One geometry, multiple policies
 
-1. `TrafficRouteGraph` is immutable after validated construction.
-2. `RoutePlanner` must not directly own or mutate `TrafficRouteGraph`.
-3. Traffic topology is resolved before geometric planning.
-4. A blue / mandatory-transit zone is represented by:
-   - an explicit entry portal;
-   - an explicit exit portal;
-   - a constrained transit volume;
-   - a mandatory graph edge that references that volume.
-5. One-way mandatory transit may not be reversed by generic graph search.
-6. Docking ports and transit gates are separate semantic anchors even when they occupy similar physical geometry.
-7. A mandatory transit stage must remain inside its authored volume after hull clearance.
-8. The current ship position is not a graph node. It creates a synthetic `FreeApproach` stage to the first required portal.
-9. Geometric stage outputs may later be concatenated into one continuous `RoutePlan`, but stage semantics may not be discarded.
-10. Invalid topology fails closed. Missing IDs, duplicate IDs, broken portal references, orphan mandatory zones, or wrong portal order must reject graph construction.
+A navigation volume has no color by itself. Runtime/planning policy assigns meaning:
+
+- `KeepOutside` — RED: hard exclusion; hull + clearance must remain outside.
+- `KeepInside` — BLUE: hard containment; hull + clearance must remain inside.
+- `PreferInside` — GREEN: soft preference; leaving is allowed but increases route cost.
+- `None` — unrestricted.
+
+Red and blue are inverse uses of the same volume-membership geometry. Green uses the same inside test as blue but as a cost rather than a hard rejection.
+
+## Clearance rule
+
+For forbidden/red space, inflate the forbidden volume by hull envelope + authored clearance.
+For required/blue space, erode the allowed volume by hull envelope + authored clearance.
+Therefore the planner never intentionally flies the hull surface on a boundary.
+
+## Physical representation
+
+A simple straight cylinder may be represented as a swept corridor with two circular sections.
+A bent tunnel, canyon or cave uses the same `SweptCorridor` representation with additional ordered sections.
+Each section owns center, forward, up and circle/rectangle dimensions.
+Interior shaping sections are geometry only; they do not need to be public traffic graph nodes.
+
+Render meshes are never authoritative navigation geometry.
+
+## Ownership
+
+Hub-module navigation volumes are authored in module-local coordinates and move with the module reference frame.
+Terrain/canyon/cave volumes use an appropriate world-region or kinematic reference frame.
+The traffic graph does not duplicate volume geometry; it references volume IDs.
+
+## Portals
+
+Entry/exit portals are semantic crossing planes, not merely points.
+A crossing contract includes aperture/frame, crossing direction, clearance and optional speed ceiling.
+Docking ports and transit gates remain distinct semantic anchors even if they are physically co-located.
+
+## Traffic lanes
+
+A lane binds:
+
+- entry portal;
+- exit portal;
+- navigation volume;
+- one-way/two-way direction policy;
+- `KeepInside` (blue) or `PreferInside` (green) policy;
+- optional lane speed ceiling;
+- future traffic-resource/conflict IDs.
+
+`KeepOutside` red zones are global planning constraints and are not represented as traversable graph edges.
+
+## Stage compilation
+
+The current ship position is not a topology node. A resolved route prepends a synthetic `FreeApproach` stage.
+A volume-transit stage carries a `NavigationVolumeConstraint` into a later stage compiler.
+That compiler may create one final continuous `RoutePlan`, but it may not discard the stage's containment/preference semantics.
 
 ## Current protected test topology
 
 `earth_orbital_hub_test_traffic_v1`
 
-Flow:
-
 `FREE SPACE`
 → `cylinder_b.entry_front`
-→ **MANDATORY** `cylinder_b.blue_transit`
+→ `cylinder_b.blue_lane` using `cylinder_b.transit_volume` with `KeepInside`
 → `cylinder_b.exit_rear`
 → `cube_a.dock_front`
 
-The cylinder transit is currently one-way.
+The physical cylinder volume is currently a straight swept corridor with two circular sections. Turning it into a bent tunnel must require only additional volume sections, not a traffic-graph redesign.
 
-## Change policy
+## Hard architecture rules
 
-Do not change this contract as part of unrelated work on:
+1. Built `TrafficRouteGraph` is immutable.
+2. `RoutePlanner` may not directly own or mutate `TrafficRouteGraph`.
+3. Traffic topology is resolved before geometric stage planning.
+4. Invalid IDs, portal order, lane direction or broken graph references fail closed.
+5. Physical volume definitions and traffic policy remain separate.
+6. A future dynamic traffic controller may change lane availability/policy without changing physical volume geometry.
+7. Unrelated work on follower gains, speed profiles, roll, rendering or docking UI must not modify this contract.
 
-- autopilot tuning;
-- trajectory sampling;
-- roll synchronization;
-- tunnel rendering;
-- speed profiles;
-- obstacle avoidance;
-- docking UI.
-
-A topology-contract change requires a concrete traffic use case and matching regression-test updates in `TrafficRouteGraphTests.cpp`.
+Any contract change requires a concrete traffic/navigation use case and regression-test updates.

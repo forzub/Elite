@@ -462,8 +462,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     int trafficPlanGeometryCall = 0;
 
-    const auto planGeometry = [&](double additionalClearanceMeters,
-                                  std::size_t maxConsideredObstacles)
+    const auto planGeometryToGoal =
+        [&](const glm::dvec3& routeGoalMeters,
+            double additionalClearanceMeters,
+            std::size_t maxConsideredObstacles)
     {
         const int traceCall = ++trafficPlanGeometryCall;
         if (traceTraffic)
@@ -478,9 +480,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 << search.startMeters.y << ","
                 << search.startMeters.z << ")"
                 << " search_goal=("
-                << search.goalMeters.x << ","
-                << search.goalMeters.y << ","
-                << search.goalMeters.z << ")"
+                << routeGoalMeters.x << ","
+                << routeGoalMeters.y << ","
+                << routeGoalMeters.z << ")"
                 << std::endl;
         }
         const auto planOneLeg =
@@ -498,7 +500,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             };
 
         if (plannerViaPoints.empty())
-            return planOneLeg(search.startMeters, search.goalMeters);
+            return planOneLeg(search.startMeters, routeGoalMeters);
 
         world::navigation::GeometricPathResult combined;
         combined.valid = true;
@@ -618,10 +620,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             legStart = via;
         }
 
-        if (glm::length(search.goalMeters - legStart) > 1.0e-6)
+        if (glm::length(routeGoalMeters - legStart) > 1.0e-6)
         {
             const auto leg =
-                planOneLeg(legStart, search.goalMeters);
+                planOneLeg(legStart, routeGoalMeters);
             if (!appendLeg(leg))
             {
                 combined.valid = false;
@@ -640,6 +642,17 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             combined.message = "mandatory traffic route too short";
         return combined;
     };
+
+    const auto planGeometry =
+        [&](double additionalClearanceMeters,
+            std::size_t maxConsideredObstacles)
+        {
+            return planGeometryToGoal(
+                search.goalMeters,
+                additionalClearanceMeters,
+                maxConsideredObstacles
+            );
+        };
 
     auto nominalGeometry = planGeometry(0.0, 48);
     // The geometric planner's obstacle cap is a work bound, never proof that
@@ -1505,12 +1518,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     entry -
                     incoming*preArcStraightMeters;
 
-                auto ingressSearch=search;
-                ingressSearch.goalMeters=preEntry;
-                ingressSearch.params.maxConsideredObstacles=0;
-                const auto ingressGeometry=
-                    world::navigation::GeometricPathPlanner::plan(
-                        ingressSearch
+                // Terminal-arc search MUST preserve the already
+                // assigned traffic topology. Calling the bare geometric
+                // planner here used to route directly from start to preEntry,
+                // silently discarding BLUE via points and mandatory tangent
+                // straights before candidate selection.
+                const auto ingressGeometry =
+                    planGeometryToGoal(
+                        preEntry,
+                        0.0,
+                        0
                     );
                 if(!ingressGeometry.valid ||
                    ingressGeometry.pointsMeters.size()<2)

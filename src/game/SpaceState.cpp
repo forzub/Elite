@@ -4347,6 +4347,152 @@ m_systemMapRenderer.render(
 
         uiRoot->render(vp);
 
+        // Small, non-blocking route-planning popup. Percentages are coarse
+        // phase completion rather than an ETA; the geometric search itself is
+        // data-dependent. A moving highlight communicates liveness while one
+        // expensive phase is active.
+        if (m_clientDockingPhase == ClientDockingPhase::Planning &&
+            m_dockAdviceJob)
+        {
+            const int permille = std::clamp(
+                m_dockAdviceJob->planningProgressPermille.load(
+                    std::memory_order_acquire
+                ),
+                0,
+                1000
+            );
+            const std::uint8_t stage =
+                m_dockAdviceJob->planningProgressStage.load(
+                    std::memory_order_acquire
+                );
+
+            std::string stageText;
+            switch (stage)
+            {
+                case 0:
+                    stageText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.route_planning.preparing",
+                        "PREPARING ROUTE"
+                    );
+                    break;
+                case 1:
+                    stageText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.route_planning.geometry",
+                        "CALCULATING ROUTE"
+                    );
+                    break;
+                case 2:
+                    stageText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.route_planning.frames",
+                        "BUILDING GUIDANCE"
+                    );
+                    break;
+                case 3:
+                    stageText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.route_planning.autopilot",
+                        "PREPARING AUTOPILOT"
+                    );
+                    break;
+                default:
+                    stageText = localizedUiText(
+                        context().app,
+                        "cockpit.docking.route_planning.ready",
+                        "ROUTE READY"
+                    );
+                    break;
+            }
+
+            const int percent = permille / 10;
+            stageText += "  " + std::to_string(percent) + "%";
+
+            auto& text = TextRenderer::instance();
+            constexpr float panelWidth = 360.0f;
+            constexpr float panelHeight = 66.0f;
+            constexpr float barInset = 14.0f;
+            constexpr float barHeight = 9.0f;
+            constexpr int labelPx = 16;
+
+            const float x =
+                static_cast<float>(vp.width) * 0.5f -
+                panelWidth * 0.5f;
+            const float y = 86.0f;
+            const float barX = x + barInset;
+            const float barY = y + 42.0f;
+            const float barWidth =
+                panelWidth - 2.0f * barInset;
+            const float fillWidth =
+                barWidth *
+                (static_cast<float>(permille) / 1000.0f);
+
+            text.solidRectPx(
+                x,
+                y,
+                panelWidth,
+                panelHeight,
+                glm::vec4(0.015f, 0.035f, 0.045f, 0.86f)
+            );
+            text.solidRectPx(
+                barX,
+                barY,
+                barWidth,
+                barHeight,
+                glm::vec4(0.10f, 0.16f, 0.18f, 0.95f)
+            );
+            if (fillWidth > 0.0f)
+            {
+                text.solidRectPx(
+                    barX,
+                    barY,
+                    fillWidth,
+                    barHeight,
+                    glm::vec4(0.40f, 0.86f, 0.96f, 0.95f)
+                );
+            }
+
+            // Indeterminate highlight inside the unfinished portion. It does
+            // not alter the displayed percentage.
+            if (permille < 1000)
+            {
+                const double timeSeconds =
+                    m_client
+                        ? m_client->universeTimeSeconds()
+                        : 0.0;
+                const float pulse =
+                    static_cast<float>(
+                        std::fmod(
+                            std::max(0.0, timeSeconds) * 0.65,
+                            1.0
+                        )
+                    );
+                constexpr float markerWidth = 28.0f;
+                const float markerTravel =
+                    std::max(0.0f, barWidth - markerWidth);
+                const float markerX =
+                    barX + markerTravel * pulse;
+                text.solidRectPx(
+                    markerX,
+                    barY,
+                    markerWidth,
+                    barHeight,
+                    glm::vec4(0.82f, 0.98f, 1.0f, 0.72f)
+                );
+            }
+
+            const float labelWidth =
+                text.measureTextPx(stageText, labelPx);
+            text.textDrawPx(
+                stageText,
+                x + panelWidth * 0.5f - labelWidth * 0.5f,
+                y + 13.0f,
+                labelPx,
+                glm::vec4(0.76f, 0.94f, 1.0f, 1.0f)
+            );
+        }
+
 
 
         TextRenderer::instance().endFrame();

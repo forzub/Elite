@@ -48,6 +48,15 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
              r.maxAngularAccelerationRadPerSecond2 <= 0.0)))
     { out.failure = "invalid dock advisory input"; return out; }
 
+    for (const auto& via : r.requiredViaPointsMeters)
+    {
+        if (!finite(via))
+        {
+            out.failure = "invalid mandatory traffic via point";
+            return out;
+        }
+    }
+
     const auto outward = glm::normalize(r.outward);
     const auto stop = r.entranceMeters + outward * r.standoffMeters;
 
@@ -208,11 +217,102 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const auto planGeometry = [&](double additionalClearanceMeters,
                                   std::size_t maxConsideredObstacles)
     {
-        auto query = search;
-        query.params.additionalClearanceMeters =
-            std::max(0.0, additionalClearanceMeters);
-        query.params.maxConsideredObstacles = maxConsideredObstacles;
-        return world::navigation::GeometricPathPlanner::plan(query);
+        const auto planOneLeg =
+            [&](const glm::dvec3& legStart,
+                const glm::dvec3& legGoal)
+            {
+                auto query = search;
+                query.startMeters = legStart;
+                query.goalMeters = legGoal;
+                query.params.additionalClearanceMeters =
+                    std::max(0.0, additionalClearanceMeters);
+                query.params.maxConsideredObstacles =
+                    maxConsideredObstacles;
+                return world::navigation::GeometricPathPlanner::plan(query);
+            };
+
+        if (r.requiredViaPointsMeters.empty())
+            return planOneLeg(search.startMeters, search.goalMeters);
+
+        world::navigation::GeometricPathResult combined;
+        combined.valid = true;
+        glm::dvec3 legStart = search.startMeters;
+
+        const auto appendLeg =
+            [&](const world::navigation::GeometricPathResult& leg)
+            {
+                if (!leg.valid || leg.pointsMeters.size() < 2)
+                    return false;
+
+                combined.obstacleDetourUsed =
+                    combined.obstacleDetourUsed ||
+                    leg.obstacleDetourUsed;
+                combined.startEscaped =
+                    combined.startEscaped || leg.startEscaped;
+                combined.goalEscaped =
+                    combined.goalEscaped || leg.goalEscaped;
+                combined.lengthMeters += leg.lengthMeters;
+
+                for (std::size_t i = 0;
+                     i < leg.pointsMeters.size();
+                     ++i)
+                {
+                    if (!combined.pointsMeters.empty() &&
+                        glm::length(
+                            combined.pointsMeters.back() -
+                            leg.pointsMeters[i]
+                        ) <= 1.0e-6)
+                    {
+                        continue;
+                    }
+                    combined.pointsMeters.push_back(
+                        leg.pointsMeters[i]
+                    );
+                }
+                return true;
+            };
+
+        for (const auto& via : r.requiredViaPointsMeters)
+        {
+            if (glm::length(via - legStart) <= 1.0e-6)
+                continue;
+
+            const auto leg = planOneLeg(legStart, via);
+            if (!appendLeg(leg))
+            {
+                combined.valid = false;
+                combined.message =
+                    "mandatory traffic leg failed: " +
+                    (leg.message.empty()
+                        ? std::string("no geometric route")
+                        : leg.message);
+                combined.pointsMeters.clear();
+                return combined;
+            }
+            legStart = via;
+        }
+
+        if (glm::length(search.goalMeters - legStart) > 1.0e-6)
+        {
+            const auto leg =
+                planOneLeg(legStart, search.goalMeters);
+            if (!appendLeg(leg))
+            {
+                combined.valid = false;
+                combined.message =
+                    "terminal leg after mandatory traffic failed: " +
+                    (leg.message.empty()
+                        ? std::string("no geometric route")
+                        : leg.message);
+                combined.pointsMeters.clear();
+                return combined;
+            }
+        }
+
+        combined.valid = combined.pointsMeters.size() >= 2;
+        if (!combined.valid && combined.message.empty())
+            combined.message = "mandatory traffic route too short";
+        return combined;
     };
 
     auto nominalGeometry = planGeometry(0.0, 48);

@@ -1695,8 +1695,16 @@ KeyframedProgressResult keyframedGuideProgress(
     if (count < 2 || arc.size() != count)
         return out;
 
-    const double cruise = request.vehicle.maxSpeedMps *
-        0.8 * std::clamp(speedScale, 0.01, 1.0);
+    // SINGLE GLOBAL SPEED POLICY:
+    // cruise = 0.8 * physical max speed.
+    //
+    // speedScale is NOT allowed to reduce cruise globally. It is retained only
+    // as a local terminal-attitude time scale applied inside the terminal
+    // orientation blend below.
+    const double cruise =
+        request.vehicle.maxSpeedMps * 0.8;
+    const double terminalAngularScale =
+        std::clamp(speedScale, 0.01, 1.0);
     const double accelerating =
         request.vehicle.maxForwardAccelerationMps2;
     const double braking =
@@ -1749,6 +1757,40 @@ KeyframedProgressResult keyframedGuideProgress(
             --nearest;
         limits[nearest] = std::min(limits[nearest],
                                    constraint.maxSpeedMps);
+    }
+
+    // If terminal hull attitude needs extra time, buy that time ONLY inside
+    // the authored terminal-orientation blend. Never reduce cruise on remote
+    // straights or unrelated turns.
+    const double terminalBlendDistance =
+        request.hasTerminalOrientation
+            ? std::max(
+                0.0,
+                request.terminalOrientationBlendDistanceMeters
+              )
+            : 0.0;
+    const double terminalBlendStart =
+        !guide.sourceProgress.empty()
+            ? std::max(
+                0.0,
+                guide.sourceProgress.back() -
+                    terminalBlendDistance
+              )
+            : 0.0;
+    if (terminalAngularScale < 0.999 &&
+        terminalBlendDistance > Epsilon)
+    {
+        const double terminalCruise =
+            cruise * terminalAngularScale;
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            if (guide.sourceProgress[i] + Epsilon >=
+                terminalBlendStart)
+            {
+                limits[i] =
+                    std::min(limits[i], terminalCruise);
+            }
+        }
     }
     for (std::size_t i = 1; i + 1 < count; ++i)
     {
@@ -1812,9 +1854,19 @@ KeyframedProgressResult keyframedGuideProgress(
                 ? std::sqrt(lateral / edgeCurvature)
                 : cruise;
 
+        double localCruise = cruise;
+        if (terminalAngularScale < 0.999 &&
+            terminalBlendDistance > Epsilon &&
+            guide.sourceProgress[i + 1] + Epsilon >=
+                terminalBlendStart)
+        {
+            localCruise =
+                cruise * terminalAngularScale;
+        }
+
         edgeLimits[i] = std::min(
             {
-                cruise,
+                localCruise,
                 segmentSpeedLimit(
                     request,
                     guide.sourceProgress[i],
@@ -2116,7 +2168,7 @@ buildPathProgressTrajectory(
         request.startUniverseTimeSeconds;
     out.trajectory.message =
         speedScale < 0.999
-            ? "keyframed path-progress trajectory; angular-speed-relaxed"
+            ? "keyframed path-progress trajectory; terminal-angular-speed-relaxed"
             : "keyframed path-progress trajectory";
     out.trajectory.durationSeconds =
         progress.durationSeconds;
@@ -2778,12 +2830,11 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
     // The 3-D Ruckig leg solver remains useful for a true single leg.
     if (request.pathPointsMeters.size() > 2)
     {
-        // Translation and attitude share one clock. A route that is linearly
-        // feasible at maximum speed may still be too short in time for the
-        // hull to reach an exact rotating terminal pose/omega. In that case
-        // the correct planner response is to fly the SAME safe geometry more
-        // slowly, not to reject Autopilot or widen angular limits.
-        constexpr double AngularTimeScales[] = {
+        // Translation and attitude share one clock only near the terminal
+        // attitude blend. If terminal pose/omega needs extra time, slow ONLY
+        // that local blend. Remote straights and unrelated turns keep their
+        // own physical/local speed limits.
+        constexpr double TerminalAngularTimeScales[] = {
             1.00,
             0.80,
             0.64,
@@ -2801,13 +2852,14 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
         };
 
         world::navigation::TrajectoryGenerationResult result;
-        for (const double speedScale : AngularTimeScales)
+        for (const double terminalAngularScale :
+             TerminalAngularTimeScales)
         {
             result = buildPathProgressTrajectory(
                 request,
                 coarseSourceProgress,
                 guide,
-                speedScale
+                terminalAngularScale
             );
             result.executionGuidePointsMeters =
                 guide.points;
@@ -2827,27 +2879,15 @@ world::navigation::TrajectoryGenerationResult RuckigRoutePlanner::plan(
                     0
                 ) == 0;
 
-            const bool translationalEnvelopeNeedsSlowerProfile =
-                result.trajectory.message.rfind(
-                    "path-progress acceleration exceeds vehicle envelope",
-                    0
-                ) == 0;
-
-            // Both failures can be repaired without changing geometry:
-            // execute the same authored path more slowly. Do not treat a
-            // first-pass curvature-speed overshoot as a route rejection when
-            // the existing speed-relaxation ladder can produce a physically
-            // valid profile.
-            if (!angularNeedsMoreTime &&
-                !translationalEnvelopeNeedsSlowerProfile)
-            {
+            // Translational envelope violations are local geometry/profile
+            // defects. Do not hide them by globally slowing the route.
+            if (!angularNeedsMoreTime)
                 return result;
-            }
         }
 
         result.trajectory.message =
-            "authored path remains infeasible after translation-speed "
-            "relaxation: " + result.trajectory.message;
+            "terminal attitude remains infeasible after local time relaxation: " +
+            result.trajectory.message;
         return result;
     }
 

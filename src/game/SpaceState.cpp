@@ -2121,6 +2121,10 @@ void SpaceState::updateDockingAdvisory()
         job->context.portAttachment =
             snapshot.targetObject.hubAttachment;
         job->context.routeUpReference = localPort.up;
+        job->context.dockCenterReference =
+            localPort.positionMeters;
+        job->context.dockBottomReference =
+            localPort.positionMeters - localPort.up;
         job->context.standoffMeters =
             request.terminalReferenceDistanceMeters;
         job->context.widthMeters =
@@ -2536,9 +2540,12 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
-    // Dynamic visual roll phase comes from the dock itself.  The canonical
-    // route frame remains static; every visible tunnel frame receives the
-    // SAME signed dock-roll phase, but around its OWN local tangent.
+    // Dynamic visual roll phase comes from a TWO-POINT dock reference:
+    // aperture center + a radial "bottom" point.  IMPORTANT: the terminal
+    // route tangent points INTO the dock and is therefore opposite to the
+    // dock's outward axis.  Measure the signed phase around the TERMINAL ROUTE
+    // axis so clockwise/counter-clockwise semantics match what the tunnel
+    // renderer actually rotates around.
     double dockRollPhaseRad = 0.0;
     const auto currentVisualPort =
         resolveDockingAdvisoryLocalPortAt(
@@ -2546,38 +2553,29 @@ void SpaceState::updateDockingAdvisory()
             active.portDefinition,
             renderTime
         );
-    if (currentVisualPort.valid)
+    if (currentVisualPort.valid &&
+        !active.plan.gates.empty())
     {
-        const glm::dvec3 dockAxis =
-            glm::normalize(currentVisualPort.forward);
-
-        glm::dvec3 baseDockUp =
-            active.routeUpReference -
-            dockAxis *
-                glm::dot(active.routeUpReference, dockAxis);
-        glm::dvec3 liveDockUp =
-            currentVisualPort.up -
-            dockAxis *
-                glm::dot(currentVisualPort.up, dockAxis);
-
-        if (glm::length(baseDockUp) > 1.0e-9 &&
-            glm::length(liveDockUp) > 1.0e-9)
+        glm::dvec3 terminalRouteAxis =
+            active.plan.gates.back().forward;
+        if (glm::length(terminalRouteAxis) > 1.0e-9)
         {
-            baseDockUp = glm::normalize(baseDockUp);
-            liveDockUp = glm::normalize(liveDockUp);
+            terminalRouteAxis =
+                glm::normalize(terminalRouteAxis);
+
+            const glm::dvec3 liveDockBottom =
+                currentVisualPort.positionMeters -
+                currentVisualPort.up;
 
             dockRollPhaseRad =
-                std::atan2(
-                    glm::dot(
-                        dockAxis,
-                        glm::cross(baseDockUp, liveDockUp)
-                    ),
-                    std::clamp(
-                        glm::dot(baseDockUp, liveDockUp),
-                        -1.0,
-                        1.0
-                    )
-                );
+                game::navigation::RouteFrameField::
+                    signedPhaseFromReferencePoints(
+                        terminalRouteAxis,
+                        active.dockCenterReference,
+                        active.dockBottomReference,
+                        currentVisualPort.positionMeters,
+                        liveDockBottom
+                    );
         }
     }
 

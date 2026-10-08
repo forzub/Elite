@@ -186,6 +186,43 @@ public:
         return result;
     }
 
+    [[nodiscard]] static double signedPhaseFromReferencePoints(
+        const glm::dvec3& axisRequested,
+        const glm::dvec3& baseCenter,
+        const glm::dvec3& baseRadialPoint,
+        const glm::dvec3& liveCenter,
+        const glm::dvec3& liveRadialPoint
+    )
+    {
+        const glm::dvec3 axis =
+            normalizedOr(
+                axisRequested,
+                glm::dvec3(0.0, 0.0, -1.0)
+            );
+
+        glm::dvec3 base =
+            baseRadialPoint - baseCenter;
+        glm::dvec3 live =
+            liveRadialPoint - liveCenter;
+
+        base -= axis * glm::dot(base, axis);
+        live -= axis * glm::dot(live, axis);
+
+        if (glm::length(base) <= 1.0e-9 ||
+            glm::length(live) <= 1.0e-9)
+        {
+            return 0.0;
+        }
+
+        base = glm::normalize(base);
+        live = glm::normalize(live);
+
+        return std::atan2(
+            glm::dot(axis, glm::cross(base, live)),
+            std::clamp(glm::dot(base, live), -1.0, 1.0)
+        );
+    }
+
     [[nodiscard]] static glm::dvec3 rotateUpAroundForward(
         const glm::dvec3& forwardRequested,
         const glm::dvec3& upRequested,

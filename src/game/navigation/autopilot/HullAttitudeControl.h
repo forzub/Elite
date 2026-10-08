@@ -11,6 +11,10 @@ namespace game::navigation::autopilot
 
 // Pure angular actuator controller.
 //
+// WORKING CONTRACT — this controller is currently part of the known-good
+// tunnel-following path. Do not merge roll into the pitch/yaw planar channel
+// or add route/dock geometry here without a specific failing case.
+//
 // Pitch/yaw and roll are separate channels:
 //   * pitch/yaw share only the nose-steering planar authority;
 //   * roll uses an independent longitudinal-axis authority.

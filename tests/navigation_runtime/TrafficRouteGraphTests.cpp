@@ -2,7 +2,9 @@
 #include "src/game/navigation/traffic/TrafficRouteGraph.h"
 #include "src/game/navigation/traffic/TrafficRouteGraphCatalog.h"
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -181,11 +183,33 @@ int main()
             "invalid mandatory topology failed without diagnosis"
         );
 
+        // ARCHITECTURE GUARD: geometric RoutePlanner must not own or mutate
+        // semantic traffic topology. A dedicated resolver/stage compiler is
+        // the only legal bridge between these layers.
+        {
+            std::ifstream plannerSource(
+                "src/game/navigation/planner/RoutePlanner.cpp"
+            );
+            require(
+                plannerSource.is_open(),
+                "cannot inspect RoutePlanner architecture boundary"
+            );
+
+            std::ostringstream source;
+            source << plannerSource.rdbuf();
+            require(
+                source.str().find("TrafficRouteGraph") ==
+                    std::string::npos,
+                "RoutePlanner directly depends on protected traffic topology"
+            );
+        }
+
         std::cout << "TRAFFIC ROUTE GRAPH TESTS: PASS\n";
         std::cout << " - topology is immutable after validated build\n";
         std::cout << " - cylinder B entry -> exit remains mandatory and one-way\n";
         std::cout << " - cube A terminal approach stays downstream of blue transit\n";
         std::cout << " - malformed topology fails closed\n";
+        std::cout << " - RoutePlanner remains outside protected topology ownership\n";
         return 0;
     }
     catch (const std::exception& error)

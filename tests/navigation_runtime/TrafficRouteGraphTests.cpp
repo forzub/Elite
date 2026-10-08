@@ -357,6 +357,37 @@ int main()
             );
         }
 
+        // LIVE INTEGRATION GUARD: Cube A docking must consume the semantic
+        // traffic compiler and hard BLUE validator. Do not regress to the old
+        // hand-authored entryPose/exitPose via-point bridge in SpaceState.
+        {
+            std::ifstream liveSource("src/game/SpaceState.cpp");
+            require(
+                liveSource.is_open(),
+                "cannot inspect live docking traffic integration"
+            );
+
+            std::ostringstream source;
+            source << liveSource.rdbuf();
+            const std::string text = source.str();
+
+            require(
+                text.find("RouteStageCompiler::compile") !=
+                    std::string::npos,
+                "live docking stopped using RouteStageCompiler"
+            );
+            require(
+                text.find("validateKeepInsideRouteInterval") !=
+                    std::string::npos,
+                "live docking stopped validating BLUE containment"
+            );
+            require(
+                text.find("request.requiredViaPointsMeters = {") ==
+                    std::string::npos,
+                "live docking regressed to hand-authored traffic via points"
+            );
+        }
+
         std::cout << "TRAFFIC ROUTE GRAPH TESTS: PASS\n";
         std::cout << " - topology is immutable after validated build\n";
         std::cout << " - cylinder B entry -> exit remains mandatory and one-way\n";
@@ -366,6 +397,7 @@ int main()
         std::cout << " - blue/green share one physical volume model\n";
         std::cout << " - bent tunnels use the same swept-volume primitive\n";
         std::cout << " - RoutePlanner remains outside protected topology ownership\n";
+        std::cout << " - live docking consumes compiler + BLUE containment validator\n";
         return 0;
     }
     catch (const std::exception& error)

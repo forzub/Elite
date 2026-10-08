@@ -68,6 +68,12 @@ struct DockingAdvisoryRequest
     // bypass an assigned traffic portal or mandatory transit corridor.
     std::vector<glm::dvec3> requiredViaPointsMeters;
 
+    // Hard semantic boundary straights. Backend may extend their axis outward
+    // to make room for a tangent fillet, but these exact segments must remain
+    // present and straight in the accepted route.
+    std::vector<planner::MandatoryTangentStraightConstraint>
+        mandatoryTangentStraights;
+
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 struct DockingAdvisoryGate

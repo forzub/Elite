@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace
 {
@@ -31,6 +32,14 @@ int main()
                 const std::shared_ptr<const TrafficRouteGraph>&
             >,
             "traffic graph catalog no longer exposes immutable graph ownership"
+        );
+
+        static_assert(
+            !std::is_copy_constructible_v<TrafficRouteGraph> &&
+            !std::is_copy_assignable_v<TrafficRouteGraph> &&
+            !std::is_move_constructible_v<TrafficRouteGraph> &&
+            !std::is_move_assignable_v<TrafficRouteGraph>,
+            "built traffic topology became copyable/mutable by accident"
         );
 
         HubSemanticAnchorCatalog anchors;

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <iterator>
 #include <utility>
 #include <unordered_map>
 #include "src/world/navigation/GeometricPathPlanner.h"

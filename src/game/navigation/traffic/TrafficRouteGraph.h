@@ -57,6 +57,22 @@ enum class TransitDirectionPolicy : std::uint8_t
     TwoWay
 };
 
+enum class PortalConnectionKind : std::uint8_t
+{
+    Direct = 0,
+    MandatoryTangentStraight
+};
+
+struct PortalConnectionDefinition
+{
+    PortalConnectionKind kind = PortalConnectionKind::Direct;
+
+    // Minimum authored straight aligned to portal crossing direction.
+    // Inbound: [portal - forward * length] -> portal.
+    // Outbound: portal -> [portal + forward * length].
+    double mandatoryStraightMeters = 0.0;
+};
+
 struct NavigationPortalDefinition
 {
     std::string id;
@@ -70,6 +86,13 @@ struct NavigationPortalDefinition
 
     double requiredClearanceMeters = 0.0;
     double maxCrossingSpeedMps = 0.0;
+
+    // Boundary connection semantics are separate from curve primitives.
+    // MandatoryTangentStraight means the free route must join/leave this
+    // portal through an authored straight and attach to that straight
+    // tangentially (normally by a circular fillet).
+    PortalConnectionDefinition inboundConnection {};
+    PortalConnectionDefinition outboundConnection {};
 };
 
 struct TrafficLaneDefinition

@@ -69,6 +69,15 @@ struct TrajectoryGenerationPolicy
     double peakSpeedToleranceFraction = 0.01;
     double durationRetryFactor = 1.45;
 
+    // Planned execution reserve.
+    //
+    // Speed/acceleration profiles are authored below the installed physical
+    // envelope so feedback has room to correct tracking error. This is NOT a
+    // hard runtime rejection threshold: measured overspeed may be tolerated
+    // while the craft remains inside the corridor and can still satisfy the
+    // next hard braking/curvature constraint.
+    double planningAuthorityFraction = 0.85;
+
     // Scalar path-progress timing / curvature sampling.
     double curvatureProbeFraction = 0.0025;
     double curvatureProbeMinimumMeters = 0.20;
@@ -141,6 +150,8 @@ struct TrajectoryGenerationPolicy
             nonNegative(peakSpeedToleranceMps) &&
             nonNegative(peakSpeedToleranceFraction) &&
             durationRetryFactor > 1.0 &&
+            planningAuthorityFraction > 0.0 &&
+            planningAuthorityFraction <= 1.0 &&
             nonNegative(curvatureProbeFraction) &&
             positive(curvatureProbeMinimumMeters) &&
             curvatureProbeMaximumMeters >= curvatureProbeMinimumMeters &&

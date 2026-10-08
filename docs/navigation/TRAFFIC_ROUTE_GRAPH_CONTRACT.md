@@ -147,3 +147,30 @@ Alongside the existing HIT VOLUMES stage/tools, the editor must gain explicit au
 - entry/exit portals and ordered swept-corridor sections.
 
 Viewport overlays must distinguish these categories, but their stored semantics must not depend on display color.
+
+
+## What makes a BLUE volume mandatory
+
+A BLUE/KeepInside volume is not globally mandatory merely because the volume exists. Mandatory traversal is selected by the semantic traffic route / clearance for the current navigation task.
+
+The traffic resolver chooses an ordered portal/lane sequence for a destination. If that resolved route contains a KeepInside lane, geometric planning must cross that lane's entry portal, remain in its navigation volume, and cross an allowed exit portal before continuing.
+
+A navigation volume may expose one, two or many public portals. The traffic graph decides which directed portal pair or portal sequence is legal for the current clearance. The physical volume geometry does not encode that decision.
+
+GREEN/PreferInside uses the same physical volume and portals, but contributes routing preference/cost unless traffic clearance explicitly upgrades that lane to a required stage.
+
+Current test assignment:
+
+`ship -> cylinder_b.entry_front -> cylinder_b.blue_lane -> cylinder_b.exit_rear -> cube_a.dock_front`
+
+For this assignment, bypassing Cylinder B is not a valid route to Cube A front.
+
+## Manual vs Automatic route ownership
+
+Manual guidance and Automatic must consume the same resolved traffic topology and the same Planner geometry.
+
+The only intentional difference before planning is initial state:
+- Automatic plans from the measured moving state and continues zero-acceleration coast during asynchronous compilation.
+- Manual temporarily hands control to the virtual pilot, brakes translational velocity to zero, damps angular velocity, holds the stopped state, and only then calculates the same traffic route.
+
+Manual mode must never receive a shortcut that bypasses mandatory traffic volumes merely because a human will fly the resulting tunnel.

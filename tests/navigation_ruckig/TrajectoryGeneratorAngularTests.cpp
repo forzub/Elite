@@ -447,6 +447,69 @@ void testAuthoredArcStaysInsideAccelerationEnvelope()
     }
 }
 
+void testPlanningReserveStaysBelowHardLateralEnvelope()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "planning-reserve-test";
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.maxSpeedMps = 500.0;
+    request.vehicle.maxForwardAccelerationMps2 = 20.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 20.0;
+    request.vehicle.maxLateralAccelerationMps2 = 10.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 5.0;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 10.0;
+    request.policy.planningAuthorityFraction = 0.85;
+    request.pathGeometryAlreadyAuthored = true;
+
+    constexpr double Radius = 1000.0;
+    constexpr int Samples = 65;
+    for (int i = 0; i < Samples; ++i)
+    {
+        const double a =
+            (0.5 * 3.14159265358979323846) *
+            static_cast<double>(i) /
+            static_cast<double>(Samples - 1);
+        request.pathPointsMeters.push_back({
+            Radius * std::sin(a),
+            0.0,
+            Radius * (1.0 - std::cos(a))
+        });
+    }
+
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "planning-reserve arc failed hard-envelope validation: " +
+            result.trajectory.message
+    );
+
+    double peak = 0.0;
+    for (const auto& sample : result.trajectory.samples)
+        peak = std::max(peak, sample.speedMps);
+
+    const double plannedLateral =
+        request.vehicle.maxLateralAccelerationMps2 *
+        request.policy.planningAuthorityFraction;
+    const double plannedLimit =
+        std::sqrt(plannedLateral * Radius);
+    const double hardLimit =
+        std::sqrt(
+            request.vehicle.maxLateralAccelerationMps2 * Radius
+        );
+
+    require(
+        peak <= plannedLimit + 1.0,
+        "planned arc consumed hard lateral authority instead of reserve"
+    );
+    require(
+        plannedLimit < hardLimit - 1.0,
+        "planning reserve did not leave measurable hard-envelope headroom"
+    );
+}
+
 void testLongStraightCruisesBeforeLocalTurnAndStop()
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -501,6 +564,7 @@ int main()
         testTerminalAngularRelaxationDoesNotCapRemoteStraight();
         testAuthoredPathGeometryIsNotRedrawn();
         testAuthoredArcStaysInsideAccelerationEnvelope();
+        testPlanningReserveStaysBelowHardLateralEnvelope();
         testLongStraightCruisesBeforeLocalTurnAndStop();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";

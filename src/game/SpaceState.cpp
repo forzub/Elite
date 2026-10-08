@@ -2335,6 +2335,7 @@ void SpaceState::updateDockingAdvisory()
                     )
                 );
 
+            std::string autopilotStartFailure;
             if (!ClientAutopilot::start(
                     m_clientRouteAutopilot,
                     m_dockAdvice.plan,
@@ -2345,10 +2346,37 @@ void SpaceState::updateDockingAdvisory()
                     pending.serial,
                     tolerance,
                     m_dockAdvice.routeUpReference,
-                    true
+                    true,
+                    &autopilotStartFailure
                 ))
             {
-                fail("client autopilot could not accept planner route");
+                const auto agent = makeAgent();
+                std::cerr
+                    << "[DockClientStartFailure]"
+                    << " request=" << pending.serial
+                    << " reason=\"" << autopilotStartFailure << "\""
+                    << " speed_mps="
+                    << glm::length(agent.velocityMapMetersPerSecond)
+                    << " velocity=("
+                    << agent.velocityMapMetersPerSecond.x << ","
+                    << agent.velocityMapMetersPerSecond.y << ","
+                    << agent.velocityMapMetersPerSecond.z << ")"
+                    << " forward=("
+                    << agent.forwardMap.x << ","
+                    << agent.forwardMap.y << ","
+                    << agent.forwardMap.z << ")"
+                    << " route_first_forward=("
+                    << m_dockAdvice.plan.executionGates.front().forward.x << ","
+                    << m_dockAdvice.plan.executionGates.front().forward.y << ","
+                    << m_dockAdvice.plan.executionGates.front().forward.z << ")"
+                    << std::endl;
+
+                fail(
+                    "client autopilot could not accept planner route: " +
+                    (autopilotStartFailure.empty()
+                        ? std::string("unknown-start-failure")
+                        : autopilotStartFailure)
+                );
                 return;
             }
 

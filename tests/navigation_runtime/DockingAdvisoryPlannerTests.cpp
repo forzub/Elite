@@ -242,6 +242,30 @@ int main()
         }
     }
 
+    // Phase-rate feed-forward must remain continuous across the +/-pi
+    // representation seam. +179 -> -179 degrees is a +2 degree motion, not
+    // a -358 degree impulse.
+    {
+        const double deltaForward =
+            TwoPointRollGeometry::shortestPhaseDelta(
+                glm::radians(179.0),
+                glm::radians(-179.0)
+            );
+        const double deltaReverse =
+            TwoPointRollGeometry::shortestPhaseDelta(
+                glm::radians(-179.0),
+                glm::radians(179.0)
+            );
+
+        if (std::abs(deltaForward - glm::radians(2.0)) > 1.0e-12 ||
+            std::abs(deltaReverse + glm::radians(2.0)) > 1.0e-12)
+        {
+            std::cerr
+                << "two-point roll phase wrap produced a 360-degree rate impulse\n";
+            return 115;
+        }
+    }
+
     // Dynamic visual roll contract: the same dock phase must rotate every
     // tunnel frame by the same signed angle around that frame's own tangent.
     const double quarterTurn = glm::radians(90.0);

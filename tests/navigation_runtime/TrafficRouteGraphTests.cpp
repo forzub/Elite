@@ -81,7 +81,7 @@ int main()
         );
 
         const auto graph = catalog.graph();
-        require(graph, "protected traffic graph is null");
+        require(static_cast<bool>(graph), "protected traffic graph is null");
         require(
             graph->graphId() == "earth_orbital_hub_test_traffic_v1",
             "unexpected protected traffic graph id"

@@ -217,9 +217,9 @@ void testTranslationSlowsWhenAngularTerminalNeedsMoreTime()
         "angular-time relaxation failed: " + result.trajectory.message
     );
     require(
-        result.trajectory.message.find("angular-speed-relaxed") !=
+        result.trajectory.message.find("terminal-angular-speed-relaxed") !=
             std::string::npos,
-        "planner did not slow translation for the angular boundary"
+        "planner did not locally slow the terminal attitude blend"
     );
     require(
         result.trajectory.durationSeconds > 4.0,
@@ -233,6 +233,73 @@ void testTranslationSlowsWhenAngularTerminalNeedsMoreTime()
             request.terminalAngularVelocityRadPerSecond
         ) <= 0.05 + 1.0e-6,
         "relaxed route still missed terminal angular velocity"
+    );
+}
+
+void testTerminalAngularRelaxationDoesNotCapRemoteStraight()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "terminal-angular-local-only";
+    request.startUniverseTimeSeconds = 2500.0;
+
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.preferredClearanceMeters = 0.0;
+    request.vehicle.maxSpeedMps = 500.0;
+    request.vehicle.maxForwardAccelerationMps2 = 100.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 100.0;
+    request.vehicle.maxLateralAccelerationMps2 = 100.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 0.6;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 0.15;
+
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(6000.0, 0.0, 0.0),
+        glm::dvec3(10000.0, 0.0, 0.0)
+    };
+
+    request.initialVelocityMps = glm::dvec3(0.0);
+    request.initialAccelerationMps2 = glm::dvec3(0.0);
+    request.hasInitialOrientation = true;
+    request.initialForward = glm::dvec3(0.0, 0.0, -1.0);
+    request.initialUp = glm::dvec3(0.0, 1.0, 0.0);
+    request.hasInitialAngularVelocity = true;
+    request.initialAngularVelocityRadPerSecond = glm::dvec3(0.0);
+
+    request.hasTerminalVelocity = true;
+    request.terminalVelocityMps = glm::dvec3(0.0);
+    request.hasTerminalOrientation = true;
+    request.terminalForward = glm::dvec3(1.0, 0.0, 0.0);
+    request.terminalUp = glm::dvec3(0.0, 1.0, 0.0);
+    request.terminalOrientationBlendDistanceMeters = 400.0;
+    request.hasTerminalAngularVelocity = true;
+    request.terminalAngularVelocityRadPerSecond =
+        glm::dvec3(0.0, 0.1, 0.0);
+
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "local terminal angular relaxation failed: " +
+            result.trajectory.message
+    );
+
+    double remoteStraightPeak = 0.0;
+    for (const auto& sample : result.trajectory.samples)
+    {
+        if (sample.sourcePathProgressMeters < 8000.0)
+            remoteStraightPeak =
+                std::max(remoteStraightPeak, sample.speedMps);
+    }
+
+    require(
+        remoteStraightPeak > 390.0,
+        "terminal angular timing globally capped a remote straight below 0.8 max speed"
+    );
+    require(
+        remoteStraightPeak <= 400.001,
+        "remote straight exceeded the single 0.8 cruise policy"
     );
 }
 
@@ -431,6 +498,7 @@ int main()
     {
         testRotatingTerminalAngularProgramIsPhysicallyBounded();
         testTranslationSlowsWhenAngularTerminalNeedsMoreTime();
+        testTerminalAngularRelaxationDoesNotCapRemoteStraight();
         testAuthoredPathGeometryIsNotRedrawn();
         testAuthoredArcStaysInsideAccelerationEnvelope();
         testLongStraightCruisesBeforeLocalTurnAndStop();

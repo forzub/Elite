@@ -1894,6 +1894,25 @@ KeyframedProgressResult keyframedGuideProgress(
     }
 
     std::vector<double> speeds = limits;
+
+    // LOCAL EDGE CONTRACT.
+    //
+    // edgeLimits[i] is a physical speed ceiling over the whole edge
+    // [i, i+1]. Therefore both route-station speeds bordering that edge must
+    // respect it (except the measured initial state, which may legitimately
+    // start overspeed and then brake). Previously edgeLimits constrained only
+    // the analytic peak inside the edge while speeds[i+1] could remain above
+    // the same edge's curvature ceiling. Global speedScale happened to hide
+    // that defect; with the global reserve removed it becomes visible as a
+    // small lateral-acceleration envelope violation at the edge boundary.
+    for (std::size_t i = 0; i + 1 < count; ++i)
+    {
+        if (i > 0)
+            speeds[i] = std::min(speeds[i], edgeLimits[i]);
+        speeds[i + 1] =
+            std::min(speeds[i + 1], edgeLimits[i]);
+    }
+
     speeds.front() = std::max(0.0, initialSpeed);
     speeds.back() = std::max(0.0, terminalSpeed);
     // Initial speed is measured state, not a route constraint. It may already

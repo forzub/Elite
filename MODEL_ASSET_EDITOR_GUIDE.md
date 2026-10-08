@@ -46,6 +46,31 @@ Physical extraction is allowed only when dependency closure is explicit. For eac
 
 The editor's logical decomposition is complete when a block can be reconstructed as real ES modules using only `MODULE_OWNERSHIP_CONTRACT.json` / `PORTABLE_BLOCK_CONTRACT.json`, imported without editor globals, and run against the frozen behavioural oracle. This proof is now enforced by `tests/architecture_contracts/check_model_asset_extraction_proof.py`. Internal transitive helper calls are valid; hidden runtime wiring is not. Browser/editor effects (`state`, DOM, backend commands, THREE scene mutation, raycast, prompts/status, timers/storage) remain in owned adapters/infrastructure. The next architectural work is physical file extraction, not further decomposition for purity-count purposes.
 
+## Future spatial-authoring contract — collision voids + navigation volumes
+
+The Model Asset Editor must eventually author **physical occupancy** and **navigation/traffic/legal space** as separate persisted layers.
+
+Physical layer:
+- CollisionSolid / existing physical collision-hit volume = occupied matter.
+- CollisionVoid / PhysicalPassageVolume = subtractive physical hole through occupied matter.
+- Conceptual occupancy: `union(solids) - union(voids)`.
+
+Navigation layer:
+- NAV RED = hard KeepOutside / forbidden route volume.
+- NAV BLUE = hard KeepInside / assigned corridor.
+- NAV GREEN = soft PreferInside / preferred corridor.
+- NAV NONE = unrestricted.
+
+Navigation volumes are semantic, not physical. Planner, Autopilot, NPC traffic, HUD and future law/security systems consume them. Violations may later trigger warnings, fines, interception, hostile response or clearance/reputation consequences without any physical collision.
+
+A passage such as a hollow dock/tunnel may deliberately contain both:
+1. a CollisionVoid describing the real physical opening;
+2. a NavigationVolume describing how traffic is allowed or expected to use that opening.
+
+These layers may share editor placement/alignment tools, but neither may be inferred automatically from the other. The viewport color is presentation only; persisted type/policy is authoritative.
+
+The same NavigationVolume geometry must support straight cylinders, bent tunnels, canyons and caves through ordered cross-sections/portals rather than render-mesh inference.
+
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
 **Актуально:** 2026-09-11 · 0.10.66 portable-block decomposition + complete module ownership through wave6D

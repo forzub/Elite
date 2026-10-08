@@ -2223,7 +2223,7 @@ void SpaceState::updateDockingAdvisory()
         {
             game::navigation::traffic::TrafficRouteGraphCatalog trafficCatalog;
             if (!trafficCatalog.load(
-                    "src/assets/data/navigation/hub_traffic_route_graph.json"))
+                    "assets/data/navigation/hub_traffic_route_graph.json"))
             {
                 fail("traffic graph unavailable: " + trafficCatalog.failure());
                 return;
@@ -2231,7 +2231,7 @@ void SpaceState::updateDockingAdvisory()
 
             game::navigation::NavigationVolumeCatalog volumeCatalog;
             if (!volumeCatalog.load(
-                    "src/assets/data/navigation/hub_navigation_volumes.json"))
+                    "assets/data/navigation/hub_navigation_volumes.json"))
             {
                 fail("navigation volume catalog unavailable");
                 return;

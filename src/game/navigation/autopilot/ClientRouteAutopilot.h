@@ -20,6 +20,7 @@
 #include "src/game/navigation/TwoPointRollGeometry.h"
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
+#include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
@@ -892,20 +893,13 @@ public:
         const glm::dvec3 tunnelFrameForward =
             normalizedOr(poseTangent, referenceTangent);
 
-        glm::dvec3 desiredUp =
+        const glm::dvec3 canonicalTunnelUp =
             !state.routeFrameField.empty()
                 ? RouteFrameField::upAtProgress(
                     state.routeFrameField,
                     poseProgressMeters
                   )
                 : attitudeLead.reference.upMap;
-
-        desiredUp =
-            RouteFrameField::rotateUpAroundForward(
-                tunnelFrameForward,
-                desiredUp,
-                state.liveTunnelRollPhaseRad
-            );
 
         RouteCurveDiagnostic curvatureGuide = poseGuide;
         double curvatureBlend = 1.0;
@@ -948,31 +942,6 @@ public:
         const double predictedCrossTrackMeters =
             glm::length(predictedCrossError);
 
-        // TWO-POINT HULL ROLL CONTRACT.
-        //
-        // Compare the ship's center->bottom radial direction with the current
-        // tunnel frame center->bottom direction around the PHYSICAL hull
-        // longitudinal axis. This is the exact same geometry used to lock the
-        // tunnel to the rotating dock, so it remains repeatable for arbitrary
-        // world orientation, route curvature and clockwise/counter-clockwise
-        // dock rotation.
-        const auto shipRollReference =
-            TwoPointRollGeometry::fromCenterAndUp(
-                agent.positionMapMeters,
-                agent.upMap
-            );
-        const auto tunnelRollReference =
-            TwoPointRollGeometry::fromCenterAndUp(
-                referencePosition,
-                desiredUp
-            );
-        const double signedRollErrorRad =
-            TwoPointRollGeometry::signedPhase(
-                agent.forwardMap,
-                shipRollReference,
-                tunnelRollReference
-            );
-
         const double angularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);
         const double rollRateLimit =
@@ -984,15 +953,38 @@ public:
                     rollRateLimit / angularAuthority
                   )
                 : courseResponseSeconds;
+
+        // VERIFIED WORKING CONTRACT.
+        //
+        // Do not reproduce this math locally. HullTunnelRollGuidance is the
+        // single owner of hull<->live-tunnel roll geometry and rate tracking.
+        HullTunnelRollGuidance::Request hullRollRequest;
+        hullRollRequest.hullCenter = agent.positionMapMeters;
+        hullRollRequest.hullForward = agent.forwardMap;
+        hullRollRequest.hullUp = agent.upMap;
+        hullRollRequest.tunnelCenter = referencePosition;
+        hullRollRequest.tunnelForward = tunnelFrameForward;
+        hullRollRequest.canonicalTunnelUp = canonicalTunnelUp;
+        hullRollRequest.liveTunnelRollPhaseRad =
+            state.liveTunnelRollPhaseRad;
+        hullRollRequest.liveTunnelRollRateRadPerSec =
+            state.liveTunnelRollRateRadPerSec;
+        hullRollRequest.rollResponseSeconds =
+            rollActuatorResponseSeconds;
+        hullRollRequest.maxRollRateRadPerSec =
+            rollRateLimit;
+
+        const auto hullRoll =
+            HullTunnelRollGuidance::evaluate(hullRollRequest);
+        if (!hullRoll.valid)
+            return out;
+
+        const glm::dvec3 desiredUp =
+            hullRoll.desiredTunnelUp;
+        const double signedRollErrorRad =
+            hullRoll.signedRollErrorRad;
         const double desiredRollRateRadPerSec =
-            rollRateLimit > 1.0e-9
-                ? std::clamp(
-                    state.liveTunnelRollRateRadPerSec +
-                    signedRollErrorRad / rollActuatorResponseSeconds,
-                    -rollRateLimit,
-                    rollRateLimit
-                  )
-                : 0.0;
+            hullRoll.desiredRollRateRadPerSec;
 
         const double courseLeadDistanceMeters =
             attitudeLeadDistanceMeters;

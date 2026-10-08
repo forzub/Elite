@@ -1996,19 +1996,63 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Stabilizing)
     {
-        // Do not stop the ship before planning. The measured local velocity is
-        // an initial condition, not an error. While planning, command zero
-        // linear acceleration and project the route origin along the resulting
-        // coast so the async plan starts where the craft will actually be.
-        submitAutopilotControl(coastForPlanningControl());
-
         const double relativeSpeedMps =
             glm::length(motion.localVelocityMps);
+        const double angularSpeedRadPerSec =
+            std::sqrt(
+                transform.pitchRate * transform.pitchRate +
+                transform.yawRate * transform.yawRate +
+                transform.rollRate * transform.rollRate
+            );
+
+        // MANUAL GUIDANCE CONTRACT:
+        // Manual and Automatic consume the SAME route topology/geometry.
+        // Manual differs only by reaching a real zero translational/angular
+        // state before route calculation.
+        if (!automatic)
+        {
+            constexpr double ManualStoppedSpeedMps = 0.05;
+            constexpr double ManualStoppedAngularRadPerSec = 0.01;
+            constexpr double ManualSettledSeconds = 0.50;
+
+            submitAutopilotControl(manualStopControl());
+
+            const bool stopped =
+                relativeSpeedMps <= ManualStoppedSpeedMps &&
+                angularSpeedRadPerSec <=
+                    ManualStoppedAngularRadPerSec;
+
+            if (!stopped)
+            {
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+
+            if (m_clientDockingSettledSinceServerSeconds < 0.0)
+            {
+                m_clientDockingSettledSinceServerSeconds =
+                    authoritativeServerSeconds;
+                return;
+            }
+
+            if (authoritativeServerSeconds -
+                    m_clientDockingSettledSinceServerSeconds <
+                ManualSettledSeconds)
+            {
+                return;
+            }
+        }
+        else
+        {
+            submitAutopilotControl(coastForPlanningControl());
+        }
 
         std::cout
             << "[DockClient] request=" << pending.serial
-            << " phase=coast-planning"
+            << " phase="
+            << (automatic ? "coast-planning" : "stopped-planning")
             << " vrel_mps=" << relativeSpeedMps
+            << " omega_radps=" << angularSpeedRadPerSec
             << " lead_s=" << PlanningLeadSeconds
             << std::endl;
 

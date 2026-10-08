@@ -11,11 +11,6 @@ namespace game::navigation::traffic
 namespace
 {
 
-bool finitePositive(double value) noexcept
-{
-    return std::isfinite(value) && value > 0.0;
-}
-
 bool validVector(const glm::dvec3& value) noexcept
 {
     return
@@ -39,20 +34,10 @@ TrafficRouteGraph::TrafficRouteGraph(
     : m_definition(std::move(definition))
 {
     for (std::size_t i = 0; i < m_definition.portals.size(); ++i)
-    {
-        m_portalIndex.emplace(
-            m_definition.portals[i].id,
-            i
-        );
-    }
+        m_portalIndex.emplace(m_definition.portals[i].id, i);
 
     for (std::size_t i = 0; i < m_definition.lanes.size(); ++i)
-    {
-        m_laneIndex.emplace(
-            m_definition.lanes[i].id,
-            i
-        );
-    }
+        m_laneIndex.emplace(m_definition.lanes[i].id, i);
 
     for (std::size_t i = 0; i < m_definition.edges.size(); ++i)
     {
@@ -135,8 +120,8 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
         }
     }
 
-    std::unordered_set<std::string> zoneIds;
-    for (const auto& zone : definition.lanes)
+    std::unordered_set<std::string> laneIds;
+    for (const auto& lane : definition.lanes)
     {
         if (lane.id.empty())
         {
@@ -144,11 +129,20 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             return {};
         }
 
-        if (!zoneIds.insert(lane.id).second)
+        if (!laneIds.insert(lane.id).second)
         {
             setFailure(
                 failure,
                 "duplicate traffic lane id: " + lane.id
+            );
+            return {};
+        }
+
+        if (lane.navigationVolumeId.empty())
+        {
+            setFailure(
+                failure,
+                "traffic lane has no navigation volume: " + lane.id
             );
             return {};
         }
@@ -174,27 +168,6 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             return {};
         }
 
-        if (zone.requiredClearanceMeters < 0.0 ||
-            zone.maxTransitSpeedMps < 0.0 ||
-            !std::isfinite(zone.requiredClearanceMeters) ||
-            !std::isfinite(zone.maxTransitSpeedMps))
-        {
-            setFailure(
-                failure,
-                "traffic lane has invalid limits: " + lane.id
-            );
-            return {};
-        }
-
-        if (if (lane.navigationVolumeId.empty())
-        {
-            setFailure(
-                failure,
-                "traffic lane has no navigation volume: " + lane.id
-            );
-            return {};
-        }
-
         if (lane.policy !=
                 world::navigation::NavigationVolumePolicy::KeepInside &&
             lane.policy !=
@@ -202,7 +175,8 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
         {
             setFailure(
                 failure,
-                "traffic lane has invalid volume policy: " + lane.id
+                "traffic lane policy must be KeepInside or PreferInside: " +
+                    lane.id
             );
             return {};
         }
@@ -274,7 +248,7 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
                 std::find_if(
                     definition.lanes.begin(),
                     definition.lanes.end(),
-                    [&](const TrafficLaneDefinition& zone)
+                    [&](const TrafficLaneDefinition& lane)
                     {
                         return lane.id == edge.laneId;
                     }
@@ -284,13 +258,13 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             {
                 setFailure(
                     failure,
-                    "volume-transit edge references unknown zone: " +
+                    "volume-transit edge references unknown lane: " +
                         edge.id
                 );
                 return {};
             }
 
-            const auto& zone = *laneIt;
+            const auto& lane = *laneIt;
             const bool authoredForward =
                 edge.fromPortalId == lane.entryPortalId &&
                 edge.toPortalId == lane.exitPortalId;
@@ -304,7 +278,7 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             {
                 setFailure(
                     failure,
-                    "volume-transit edge violates zone portal ordering: " +
+                    "volume-transit edge violates lane portal ordering: " +
                         edge.id
                 );
                 return {};
@@ -314,15 +288,14 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
         {
             setFailure(
                 failure,
-                "non-volume-transit edge unexpectedly owns a zone: " +
+                "non-volume-transit edge unexpectedly references a lane: " +
                     edge.id
             );
             return {};
         }
     }
 
-    // Every traffic lane must be represented by at least one mandatory edge.
-    for (const auto& zone : definition.lanes)
+    for (const auto& lane : definition.lanes)
     {
         const bool represented =
             std::any_of(
@@ -331,8 +304,7 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
                 [&](const TrafficRouteEdgeDefinition& edge)
                 {
                     return
-                        edge.kind ==
-                            TrafficRouteStageKind::VolumeTransit &&
+                        edge.kind == TrafficRouteStageKind::VolumeTransit &&
                         edge.laneId == lane.id;
                 }
             );
@@ -466,35 +438,38 @@ ResolvedTrafficRoute TrafficRouteGraph::resolve(
 
     out.portalSequence.push_back(firstRequiredPortalId);
 
-    // The current ship position is intentionally outside immutable topology.
-    // Resolver therefore prepends one synthetic free-approach stage.
-    out.stages.push_back({
-        TrafficRouteStageKind::FreeApproach,
-        std::string(),
-        firstRequiredPortalId,
-        std::string()
-    });
+    TrafficRouteStage approach;
+    approach.kind = TrafficRouteStageKind::FreeApproach;
+    approach.toPortalId = firstRequiredPortalId;
+    out.stages.push_back(std::move(approach));
 
     for (const std::size_t edgeIndex : reversedEdges)
     {
         const auto& edge = m_definition.edges[edgeIndex];
+
         TrafficRouteStage stage;
         stage.kind = edge.kind;
         stage.fromPortalId = edge.fromPortalId;
         stage.toPortalId = edge.toPortalId;
         stage.laneId = edge.laneId;
+
         if (!edge.laneId.empty())
         {
             const auto* laneDef = lane(edge.laneId);
-            if (laneDef)
+            if (!laneDef)
             {
-                stage.volumeConstraint.volumeId =
-                    laneDef->navigationVolumeId;
-                stage.volumeConstraint.policy = laneDef->policy;
-                stage.volumeConstraint.maxSpeedMps =
-                    laneDef->maxTransitSpeedMps;
+                out.failure =
+                    "resolved edge lost lane definition: " + edge.id;
+                return out;
             }
+
+            stage.volumeConstraint.volumeId =
+                laneDef->navigationVolumeId;
+            stage.volumeConstraint.policy = laneDef->policy;
+            stage.volumeConstraint.maxSpeedMps =
+                laneDef->maxTransitSpeedMps;
         }
+
         out.stages.push_back(std::move(stage));
         out.portalSequence.push_back(edge.toPortalId);
     }

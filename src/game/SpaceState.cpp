@@ -2536,6 +2536,51 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
+    // Dynamic visual roll phase comes from the dock itself.  The canonical
+    // route frame remains static; every visible tunnel frame receives the
+    // SAME signed dock-roll phase, but around its OWN local tangent.
+    double dockRollPhaseRad = 0.0;
+    const auto currentVisualPort =
+        resolveDockingAdvisoryLocalPortAt(
+            active.portAttachment,
+            active.portDefinition,
+            renderTime
+        );
+    if (currentVisualPort.valid)
+    {
+        const glm::dvec3 dockAxis =
+            glm::normalize(currentVisualPort.forward);
+
+        glm::dvec3 baseDockUp =
+            active.routeUpReference -
+            dockAxis *
+                glm::dot(active.routeUpReference, dockAxis);
+        glm::dvec3 liveDockUp =
+            currentVisualPort.up -
+            dockAxis *
+                glm::dot(currentVisualPort.up, dockAxis);
+
+        if (glm::length(baseDockUp) > 1.0e-9 &&
+            glm::length(liveDockUp) > 1.0e-9)
+        {
+            baseDockUp = glm::normalize(baseDockUp);
+            liveDockUp = glm::normalize(liveDockUp);
+
+            dockRollPhaseRad =
+                std::atan2(
+                    glm::dot(
+                        dockAxis,
+                        glm::cross(baseDockUp, liveDockUp)
+                    ),
+                    std::clamp(
+                        glm::dot(baseDockUp, liveDockUp),
+                        -1.0,
+                        1.0
+                    )
+                );
+        }
+    }
+
     const auto makeRoute =
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
@@ -2586,10 +2631,24 @@ void SpaceState::updateDockingAdvisory()
                         glm::dvec3(0.0, 0.0, -1.0);
                 forward = glm::normalize(forward);
 
-                const glm::dvec3 localFrameUp =
+                glm::dvec3 localFrameUp =
                     index < routeFrameUp.size()
                         ? routeFrameUp[index]
                         : active.routeUpReference;
+
+                glm::dvec3 localForward = gate.forward;
+                if (glm::length(localForward) <= 1.0e-9)
+                    localForward = glm::dvec3(0.0, 0.0, -1.0);
+                localForward = glm::normalize(localForward);
+
+                // Rotate the already-stable base frame around this frame's
+                // own normal/tangent by the dock's current roll phase.
+                localFrameUp =
+                    glm::angleAxis(
+                        dockRollPhaseRad,
+                        localForward
+                    ) * localFrameUp;
+
                 glm::dvec3 up =
                     renderFrame.localToWorldVector(
                         localFrameUp

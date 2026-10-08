@@ -510,6 +510,60 @@ void testPlanningReserveStaysBelowHardLateralEnvelope()
     );
 }
 
+void testHighSpeedTinyGuideEdgesDoNotEmitZeroDtSamples()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "tiny-edge-time-grid";
+    request.startUniverseTimeSeconds = 3000.0;
+
+    request.vehicle.collisionRadiusMeters = 1.0;
+    request.vehicle.maxSpeedMps = 500.0;
+    request.vehicle.maxForwardAccelerationMps2 = 100.0;
+    request.vehicle.maxBrakingAccelerationMps2 = 100.0;
+    request.vehicle.maxLateralAccelerationMps2 = 100.0;
+    request.vehicle.maxAngularVelocityRadPerSecond = 2.0;
+    request.vehicle.maxAngularAccelerationRadPerSecond2 = 2.0;
+    request.pathGeometryAlreadyAuthored = true;
+
+    // Intentionally insert a sub-micrometre edge into an otherwise ordinary
+    // high-speed path. At 400-500 m/s its physical duration is below the
+    // trajectory epsilon and must be merged, never emitted as dt=0.
+    request.pathPointsMeters = {
+        {0.0, 0.0, 0.0},
+        {1000.0, 0.0, 0.0},
+        {1000.0 + 1.0e-10, 0.0, 0.0},
+        {2000.0, 0.0, 0.0}
+    };
+
+    request.initialVelocityMps = {400.0, 0.0, 0.0};
+    request.hasInitialOrientation = true;
+    request.initialForward = {1.0, 0.0, 0.0};
+    request.initialUp = {0.0, 1.0, 0.0};
+    request.hasInitialAngularVelocity = true;
+    request.initialAngularVelocityRadPerSecond = {0.0, 0.0, 0.0};
+
+    const auto result =
+        world::navigation::TrajectoryGenerator::generate(request);
+
+    require(
+        result.ready(),
+        "tiny-edge high-speed trajectory failed: " +
+            result.trajectory.message
+    );
+
+    for (std::size_t i = 1; i < result.trajectory.samples.size(); ++i)
+    {
+        const double dt =
+            result.trajectory.samples[i].timeOffsetSeconds -
+            result.trajectory.samples[i - 1].timeOffsetSeconds;
+        require(
+            dt > 1.0e-9,
+            "tiny high-speed guide edge emitted a zero/sub-epsilon dt sample"
+        );
+    }
+}
+
 void testLongStraightCruisesBeforeLocalTurnAndStop()
 {
     world::navigation::TrajectoryGenerationRequest request;
@@ -565,6 +619,7 @@ int main()
         testAuthoredPathGeometryIsNotRedrawn();
         testAuthoredArcStaysInsideAccelerationEnvelope();
         testPlanningReserveStaysBelowHardLateralEnvelope();
+        testHighSpeedTinyGuideEdgesDoNotEmitZeroDtSamples();
         testLongStraightCruisesBeforeLocalTurnAndStop();
         std::cout
             << "TRAJECTORY GENERATOR ANGULAR TESTS: PASS\n";

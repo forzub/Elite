@@ -122,6 +122,40 @@ int main()
         }
     }
 
+    // Terminal anchoring contract: the final frame is not arbitrary.
+    // It must inherit the docking aperture up direction at the planning epoch.
+    const glm::dvec3 terminalAnchor =
+        glm::normalize(glm::dvec3(1.0, 0.0, 1.0));
+    const auto terminalAnchoredField =
+        RouteFrameField::build(
+            frameCurves,
+            terminalAnchor,
+            10.0
+        );
+    if (terminalAnchoredField.empty())
+    {
+        std::cerr << "terminal-anchored route frame field is empty\n";
+        return 109;
+    }
+
+    const glm::dvec3 terminalForward =
+        terminalAnchoredField.back().forward;
+    glm::dvec3 expectedTerminalUp =
+        terminalAnchor -
+        terminalForward *
+            glm::dot(terminalAnchor, terminalForward);
+    expectedTerminalUp = glm::normalize(expectedTerminalUp);
+
+    if (glm::dot(
+            terminalAnchoredField.back().up,
+            expectedTerminalUp
+        ) < 0.999999)
+    {
+        std::cerr
+            << "terminal route frame is not phase-locked to dock aperture\n";
+        return 110;
+    }
+
     // Dynamic visual roll contract: the same dock phase must rotate every
     // tunnel frame by the same signed angle around that frame's own tangent.
     const double quarterTurn = glm::radians(90.0);
@@ -136,7 +170,7 @@ int main()
     if (glm::dot(rotatedA, glm::dvec3(1.0, 0.0, 0.0)) < 0.999999)
     {
         std::cerr << "visual tunnel roll phase used wrong sign/axis on straight frame\n";
-        return 109;
+        return 111;
     }
 
     const glm::dvec3 forwardB =
@@ -155,7 +189,7 @@ int main()
         std::abs(glm::dot(rotatedB, upB)) > 1.0e-6)
     {
         std::cerr << "visual tunnel roll phase was not local to frame tangent\n";
-        return 110;
+        return 112;
     }
 
     // Manual guidance must leave a stopped ship through the windshield. The

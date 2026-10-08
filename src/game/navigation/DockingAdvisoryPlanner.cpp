@@ -294,6 +294,22 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     search.params.agentRadiusMeters = r.hullRadiusMeters;
     search.params.maxConsideredObstacles = 48;
 
+    const auto protectedStraightForLeg =
+        [&](const glm::dvec3& legStart,
+            const glm::dvec3& legGoal)
+            -> const planner::MandatoryTangentStraightConstraint*
+        {
+            for (const auto& straight : r.mandatoryTangentStraights)
+            {
+                if (glm::length(legStart - straight.startMeters) <= 1.0e-6 &&
+                    glm::length(legGoal - straight.endMeters) <= 1.0e-6)
+                {
+                    return &straight;
+                }
+            }
+            return nullptr;
+        };
+
     const auto planGeometry = [&](double additionalClearanceMeters,
                                   std::size_t maxConsideredObstacles)
     {
@@ -357,7 +373,35 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             if (glm::length(via - legStart) <= 1.0e-6)
                 continue;
 
-            const auto leg = planOneLeg(legStart, via);
+            world::navigation::GeometricPathResult leg;
+            if (const auto* protectedStraight =
+                    protectedStraightForLeg(legStart, via))
+            {
+                (void)protectedStraight;
+
+                if (!clear(legStart, via))
+                {
+                    const auto* blocker =
+                        firstBlockingObstacle(legStart, via);
+                    combined.valid = false;
+                    combined.message =
+                        "mandatory tangent straight blocked blocker=" +
+                        (blocker && !blocker->id.empty()
+                            ? blocker->id
+                            : std::string("unknown"));
+                    combined.pointsMeters.clear();
+                    return combined;
+                }
+
+                leg.valid = true;
+                leg.pointsMeters = {legStart, via};
+                leg.lengthMeters = glm::length(via - legStart);
+            }
+            else
+            {
+                leg = planOneLeg(legStart, via);
+            }
+
             if (!appendLeg(leg))
             {
                 combined.valid = false;

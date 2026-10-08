@@ -2220,6 +2220,9 @@ void SpaceState::updateDockingAdvisory()
              compileTolerance,
              compileExecutionUniverseTimeSeconds]() mutable
             {
+                const auto workerStarted =
+                    std::chrono::steady_clock::now();
+
                 try
                 {
                     job->plan =
@@ -2277,6 +2280,12 @@ void SpaceState::updateDockingAdvisory()
                     job->plan.failure =
                         "planner/compile unknown exception";
                 }
+
+                job->workerDurationMs =
+                    std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() -
+                        workerStarted
+                    ).count();
 
                 job->ready.store(
                     true,
@@ -2406,6 +2415,8 @@ void SpaceState::updateDockingAdvisory()
             << m_dockAdvice.plan.gates.size()
             << " terminal_radius_m="
             << m_dockAdvice.plan.terminalTurnRadiusMeters
+            << " worker_ms="
+            << job->workerDurationMs
             << std::endl;
 
         if (automatic)

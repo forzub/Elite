@@ -2569,7 +2569,7 @@ void SpaceState::updateDockingAdvisory()
 
             dockRollPhaseRad =
                 game::navigation::RouteFrameField::
-                    signedPhaseFromReferencePoints(
+                    synchronizedTunnelRollPhase(
                         terminalRouteAxis,
                         active.dockCenterReference,
                         active.dockBottomReference,

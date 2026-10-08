@@ -453,16 +453,24 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
         "velocity-lag prediction failed to see future cross-track miss"
     );
     require(
+        !correcting.courseCaptureActive,
+        "in-corridor velocity drift incorrectly replaced authored tangent with capture geometry"
+    );
+    require(
+        correcting.courseErrorRad > 0.10,
+        "velocity drift did not produce the expected velocity-course error"
+    );
+    require(
         std::hypot(
             correcting.control.pitchInput,
             correcting.control.yawInput
-        ) < 1.0e-3,
-        "Assisted velocity drift incorrectly bent the authored tangent"
+        ) > 1.0e-3,
+        "velocity-course controller did not correct drift back toward authored tangent"
     );
     require(
         std::abs(correcting.control.strafeInput) < 1.0e-6 &&
         std::abs(correcting.control.liftInput) < 1.0e-6,
-        "course-lag correction used manoeuvre thrusters"
+        "velocity-course correction used manoeuvre thrusters"
     );
 }
 
@@ -2681,7 +2689,7 @@ int main()
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
             << " - in-corridor cross-track does not replace authored tangent\n"
-            << " - Assisted velocity drift stays diagnostic and does not bend route tangent\n"
+            << " - Assisted velocity drift corrects velocity back to unchanged authored tangent\n"
             << " - aligned velocity ignores a deliberately misaligned hull nose\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"

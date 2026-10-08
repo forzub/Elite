@@ -786,14 +786,15 @@ public:
                 std::min(targetSpeed, recoveryCeiling);
         }
 
-        // Exact route-course follower.
+        // VELOCITY-COURSE CONTRACT.
         //
-        // While centered, navigation follows the exact LOCAL tangent at the
-        // current route progress. If translation drifts outside the centering
-        // band, CourseCaptureGuidance authors a temporary smooth capture curve
-        // from the ACTUAL velocity direction to a future near-tangent meeting
-        // station on the Planner route. No fixed 50/250 m look-ahead and no
-        // hull-nose direction are allowed to define route course.
+        // Inside the authored corridor the navigation course is ALWAYS the
+        // exact local route tangent. Do not replace it with a temporary
+        // capture curve just because cross-track exceeded a small centering
+        // band: that causes the old sharp correction / nose-return oscillation.
+        //
+        // CourseCaptureGuidance is retained only as an OUT-OF-CORRIDOR
+        // recovery mechanism. Hull nose is never a navigation reference.
         constexpr double CenteringBandFraction = 0.10;
         const double centeringDeadbandMeters =
             state.trackingPositionToleranceMeters *
@@ -834,11 +835,17 @@ public:
         const auto capture =
             CourseCaptureGuidance::evaluate(captureRequest);
 
-        // steeringForward is retained as a compatibility name for the
-        // desired translational COURSE. It is no longer derived from hull
-        // forward and it is no longer a chord to an arbitrary future point.
+        const bool emergencyCourseRecovery =
+            capture.valid &&
+            crossTrackErrorMeters >
+                state.trackingPositionToleranceMeters;
+
+        // Compatibility name only: this is the desired VELOCITY direction.
+        // Under normal in-corridor flight it is exactly the authored tangent.
+        // Temporary capture geometry may own it only after the craft has
+        // actually left the allowed corridor.
         const glm::dvec3 steeringForward =
-            capture.valid
+            emergencyCourseRecovery
                 ? capture.desiredCourseMap
                 : normalizedOr(poseTangent, referenceTangent);
 
@@ -851,7 +858,9 @@ public:
                 : normalizedOr(agent.forwardMap, referenceTangent);
 
         double crossTrackCorrectionAngleRad =
-            capture.valid ? capture.courseErrorRad : 0.0;
+            emergencyCourseRecovery
+                ? capture.courseErrorRad
+                : 0.0;
         glm::dvec3 crossTrackCorrectionAxisMap =
             glm::cross(actualCourseForCapture, steeringForward);
         const double correctionAxisLength =
@@ -1044,9 +1053,10 @@ public:
             targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
         }
 
-        // Assisted contract: where the hull points is where commanded
-        // velocity points.  Never give PredictivePilot one direction for the
-        // nose and another for translation.
+        // Navigation owns velocity, not hull attitude. The desired velocity
+        // vector is the authored route tangent (except explicit out-of-corridor
+        // recovery). PredictivePilot may move the hull however the actuator
+        // needs, but it may not redefine this course from nose direction.
         const glm::dvec3 desiredVelocity =
             steeringForward * targetSpeed;
 
@@ -1094,12 +1104,14 @@ public:
             curvatureGuide.curvaturePerMeter > 1.0e-12 &&
             glm::length(curvatureGuide.turnNormalMap) > 1.0e-12)
         {
-            const double guideSpeed =
-                turnSpeedCeilingMps > 0.0
-                    ? std::min(actualSpeed, turnSpeedCeilingMps)
-                    : actualSpeed;
+            // Required angular velocity of the ACTUAL velocity vector.
+            //
+            // This must use actualSpeed, never the planned/limited turn speed.
+            // If the craft enters a bend too fast, the geometric requirement
+            // v*kappa becomes larger, not smaller. Speed guidance brakes
+            // separately; course guidance must still follow the curve.
             const double targetHullRate =
-                guideSpeed *
+                actualSpeed *
                 curvatureGuide.curvaturePerMeter *
                 curvatureBlend;
             routeAngularRateMap =
@@ -1308,7 +1320,7 @@ public:
         out.desiredCaptureAngularRateRadPerSec =
             glm::length(captureAngularRateMap);
         out.courseCaptureActive =
-            capture.valid && capture.captureActive;
+            emergencyCourseRecovery;
         out.captureMeetingRouteProgressMeters =
             capture.valid
                 ? capture.meetingRouteProgressMeters

@@ -203,7 +203,7 @@ void testStoppedSpatialOriginLaunches()
     );
 }
 
-void testSpatialTurnUsesSameVelocityAndNoseTarget()
+void testSpatialTurnUsesVelocityCourseRate()
 {
     using game::navigation::planner::RouteGate;
 
@@ -293,7 +293,7 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
     require(
         std::abs(output.control.pitchInput) > 1.0e-6 ||
         std::abs(output.control.yawInput) > 1.0e-6,
-        "spatial turn changed velocity target without rotating the nose"
+        "spatial turn did not begin continuous velocity-course rotation"
     );
     require(
         std::abs(output.control.strafeInput) < 1.0e-6 &&
@@ -302,7 +302,7 @@ void testSpatialTurnUsesSameVelocityAndNoseTarget()
     );
 }
 
-void testContinuousProgramCorrectsCrossTrackError()
+void testInCorridorCrossTrackDoesNotReplaceAuthoredCourse()
 {
     auto route = plan();
     for (auto& gate : route.executionGates)
@@ -352,16 +352,20 @@ void testContinuousProgramCorrectsCrossTrackError()
         "continuous follower did not measure cross-track displacement"
     );
     require(
+        !output.courseCaptureActive,
+        "in-corridor cross-track error incorrectly replaced authored tangent with capture geometry"
+    );
+    require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) > 1.0e-4,
-        "continuous follower did not steer nose to correct meter-scale cross-track error"
+        ) < 1.0e-3,
+        "in-corridor parallel offset caused a sharp course correction"
     );
     require(
         std::abs(output.control.strafeInput) < 1.0e-6 &&
         std::abs(output.control.liftInput) < 1.0e-6,
-        "continuous follower incorrectly used manoeuvre thrusters for cross-track correction"
+        "in-corridor course hold incorrectly used manoeuvre thrusters"
     );
 }
 
@@ -459,6 +463,73 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
         std::abs(correcting.control.strafeInput) < 1.0e-6 &&
         std::abs(correcting.control.liftInput) < 1.0e-6,
         "course-lag correction used manoeuvre thrusters"
+    );
+}
+
+void testAlignedVelocityIgnoresMisalignedNose()
+{
+    const auto route = plan();
+    const auto vehicle = params();
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {20.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle,
+            1000.0,
+            33,
+            20.0
+        ),
+        "velocity-only nose-independence route rejected"
+    );
+
+    Agent noseWrong = initial;
+    constexpr double Angle = 0.52359877559829887308; // 30 deg
+    noseWrong.forwardMap = {
+        std::cos(Angle),
+        0.0,
+        std::sin(Angle)
+    };
+    noseWrong.upMap = {0.0, 1.0, 0.0};
+    noseWrong.rightMap =
+        glm::normalize(
+            glm::cross(noseWrong.forwardMap, noseWrong.upMap)
+        );
+
+    // Velocity is already exactly on the authored tangent. A navigation
+    // controller that still uses hull forward as its reference will try to
+    // "correct" this deliberately wrong nose. Velocity-course guidance must
+    // leave pitch/yaw alone.
+    const auto output = Autopilot::update(
+        state,
+        noseWrong,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(output.valid, "velocity-only nose-independence update invalid");
+    require(
+        output.courseErrorRad < 1.0e-6,
+        "aligned velocity acquired a false navigation course error from hull nose"
+    );
+    require(
+        std::hypot(
+            output.control.pitchInput,
+            output.control.yawInput
+        ) < 1.0e-3,
+        "navigation tried to align hull nose although velocity was already on course"
     );
 }
 
@@ -661,7 +732,7 @@ void testTerminalFrameHoldsStoppedAndAligned()
     );
 }
 
-void testHullForwardTracksAuthoredTunnelTangent()
+void testVelocityCourseTracksAuthoredTunnelTangent()
 {
     using game::navigation::planner::RouteCurveKind;
     using game::navigation::planner::RouteCurveSegment;
@@ -766,14 +837,14 @@ void testHullForwardTracksAuthoredTunnelTangent()
     require(output.valid, "authored tangent update invalid");
     require(
         output.forwardErrorRad > 0.20,
-        "on-center curved route did not command the hull into the authored bend"
+        "on-center curved route did not detect velocity-course error against authored bend"
     );
     require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
         ) > 0.5,
-        "on-center curved route did not strongly rotate the hull into the bend"
+        "on-center curved route did not actuate strongly enough to rotate velocity into the bend"
     );
 }
 
@@ -920,6 +991,47 @@ void testCenteredArcUsesExactLocalTangent()
         std::abs(output.control.strafeInput) < 1.0e-6 &&
         std::abs(output.control.liftInput) < 1.0e-6,
         "curved-tunnel tracking incorrectly used manoeuvre thrusters"
+    );
+
+    // If the craft enters the same curve too fast, the required course rate
+    // is based on ACTUAL speed. The speed controller may brake separately,
+    // but course guidance may not under-rotate because a lower turn-speed
+    // ceiling exists.
+    Autopilot::State overspeedState;
+    require(
+        Autopilot::start(
+            overspeedState,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params(),
+            1000.0,
+            34,
+            20.0
+        ),
+        "overspeed arc route rejected"
+    );
+
+    Agent overspeed = onCurve;
+    overspeed.velocityMapMetersPerSecond =
+        probeGate.forward * (SpeedMps * 2.0);
+
+    const auto overspeedOutput = Autopilot::update(
+        overspeedState,
+        overspeed,
+        game::navigation::LocalFlightControlLaw::Assisted,
+        params(),
+        1000.0,
+        0.02
+    );
+
+    require(overspeedOutput.valid, "overspeed arc update invalid");
+    require(
+        std::abs(
+            overspeedOutput.desiredCourseAngularRateRadPerSec -
+            (SpeedMps * 2.0) / RadiusMeters
+        ) < 5.0e-3,
+        "overspeed arc used turn-speed ceiling instead of actual v*kappa"
     );
 }
 
@@ -2524,12 +2636,13 @@ int main()
     {
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
-        testSpatialTurnUsesSameVelocityAndNoseTarget();
-        testContinuousProgramCorrectsCrossTrackError();
+        testSpatialTurnUsesVelocityCourseRate();
+        testInCorridorCrossTrackDoesNotReplaceAuthoredCourse();
         testAssistedVelocityDriftDoesNotBendAuthoredTangent();
+        testAlignedVelocityIgnoresMisalignedNose();
         testParallelOffsetActivelyCapturesCorridorCenter();
         testCruiseRollAlignsToDockBottomReference();
-        testHullForwardTracksAuthoredTunnelTangent();
+        testVelocityCourseTracksAuthoredTunnelTangent();
         testCenteredArcUsesExactLocalTangent();
         testApproachBrakesBeforeDynamicTurnLimit();
         testTurnPreviewCrossesIntermediateStraight();
@@ -2555,19 +2668,21 @@ int main()
             << " - RoutePlan is adapted to SpatialCorridor on the client\n"
             << " - execution emits only ordinary ShipControlState inputs\n"
             << " - stopped spatial origin accelerates from adjacent trajectory state\n"
-            << " - spatial turn drives velocity and nose from one centerline source\n"
+            << " - spatial turn drives continuous velocity-course rate\n"
             << " - parallel offset actively captures corridor center\n"
             << " - cruise roll aligns to dock-bottom reference\n"
-            << " - hull forward follows the authored tunnel tangent\n"
+            << " - velocity course follows the authored tunnel tangent\n"
             << " - centered Assisted arc follows exact local tangent with no fixed lead\n"
+            << " - overspeed arc uses actual velocity magnitude for v*kappa\n"
             << " - approach brakes before the Assisted dynamic turn limit\n"
             << " - turn preview crosses intermediate straight primitives\n"
             << " - Bezier interior curvature participates in turn preview\n"
             << " - exact curve boundary activates at authored entry\n"
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
-            << " - meter-scale cross-track error is corrected by nose/course dynamics\n"
+            << " - in-corridor cross-track does not replace authored tangent\n"
             << " - Assisted velocity drift stays diagnostic and does not bend route tangent\n"
+            << " - aligned velocity ignores a deliberately misaligned hull nose\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"

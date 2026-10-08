@@ -156,6 +156,51 @@ int main()
         return 110;
     }
 
+    // Two-point dock synchronization contract. The dock outward axis and
+    // terminal route axis point in opposite directions. Measuring the phase
+    // around the terminal route axis must therefore reverse the raw dock-axis
+    // sign so that rotating the terminal tunnel frame follows the dock.
+    {
+        const glm::dvec3 dockOutward(0.0, 0.0, 1.0);
+        const glm::dvec3 terminalRouteAxis(0.0, 0.0, -1.0);
+        const glm::dvec3 center(0.0);
+        const glm::dvec3 baseBottom(0.0, -1.0, 0.0);
+
+        const glm::dvec3 liveBottom =
+            glm::angleAxis(
+                glm::radians(30.0),
+                dockOutward
+            ) * baseBottom;
+
+        const double routePhase =
+            RouteFrameField::signedPhaseFromReferencePoints(
+                terminalRouteAxis,
+                center,
+                baseBottom,
+                center,
+                liveBottom
+            );
+
+        const glm::dvec3 baseUp = -baseBottom;
+        const glm::dvec3 rotatedUp =
+            RouteFrameField::rotateUpAroundForward(
+                terminalRouteAxis,
+                baseUp,
+                routePhase
+            );
+
+        const glm::dvec3 expectedLiveUp = -liveBottom;
+        if (glm::dot(
+                glm::normalize(rotatedUp),
+                glm::normalize(expectedLiveUp)
+            ) < 0.999999)
+        {
+            std::cerr
+                << "two-point tunnel/dock synchronization reversed roll direction\n";
+            return 113;
+        }
+    }
+
     // Dynamic visual roll contract: the same dock phase must rotate every
     // tunnel frame by the same signed angle around that frame's own tangent.
     const double quarterTurn = glm::radians(90.0);

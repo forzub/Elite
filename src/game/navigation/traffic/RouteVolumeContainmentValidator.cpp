@@ -136,6 +136,126 @@ double estimatedCurveLength(
     return length;
 }
 
+
+bool progressAtPoint(
+    const std::vector<planner::RouteCurveSegment>& curves,
+    const glm::dvec3& point,
+    double& progressMeters
+) noexcept
+{
+    constexpr double toleranceMeters = 1.0e-4;
+    double bestDistance = std::numeric_limits<double>::infinity();
+    double bestProgress = 0.0;
+
+    for (const auto& curve : curves)
+    {
+        if (curve.kind == planner::RouteCurveKind::Line)
+        {
+            const glm::dvec3 delta = curve.endMeters - curve.startMeters;
+            const double length2 = glm::dot(delta, delta);
+            if (length2 <= 1.0e-12)
+                continue;
+
+            const double t = std::clamp(
+                glm::dot(point - curve.startMeters, delta) / length2,
+                0.0,
+                1.0
+            );
+            const glm::dvec3 candidate =
+                curve.startMeters + delta * t;
+            const double distance = glm::length(candidate - point);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestProgress =
+                    curve.startProgressMeters +
+                    (curve.endProgressMeters -
+                     curve.startProgressMeters) * t;
+            }
+            continue;
+        }
+
+        // Arc/Bezier boundaries are uncommon for authored portals, but keep
+        // the locator generic. Coarse search followed by local ternary
+        // refinement is deterministic and works on the canonical curve.
+        constexpr int coarseSamples = 256;
+        int bestIndex = 0;
+        double localBest = std::numeric_limits<double>::infinity();
+        for (int i = 0; i <= coarseSamples; ++i)
+        {
+            const double t =
+                static_cast<double>(i) /
+                static_cast<double>(coarseSamples);
+            const double distance =
+                glm::length(curve.positionAtParameter(t) - point);
+            if (distance < localBest)
+            {
+                localBest = distance;
+                bestIndex = i;
+            }
+        }
+
+        double lo = std::max(
+            0.0,
+            static_cast<double>(bestIndex - 1) / coarseSamples
+        );
+        double hi = std::min(
+            1.0,
+            static_cast<double>(bestIndex + 1) / coarseSamples
+        );
+        for (int iteration = 0; iteration < 32; ++iteration)
+        {
+            const double a = lo + (hi - lo) / 3.0;
+            const double b = hi - (hi - lo) / 3.0;
+            const double da =
+                glm::length(curve.positionAtParameter(a) - point);
+            const double db =
+                glm::length(curve.positionAtParameter(b) - point);
+            if (da <= db)
+                hi = b;
+            else
+                lo = a;
+        }
+
+        const double t = 0.5 * (lo + hi);
+        const double distance =
+            glm::length(curve.positionAtParameter(t) - point);
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestProgress =
+                curve.startProgressMeters +
+                (curve.endProgressMeters -
+                 curve.startProgressMeters) * t;
+        }
+    }
+
+    if (!std::isfinite(bestDistance) ||
+        bestDistance > toleranceMeters)
+    {
+        return false;
+    }
+
+    progressMeters = bestProgress;
+    return true;
+}
+
+const planner::RouteCurveSegment* curveAtProgress(
+    const std::vector<planner::RouteCurveSegment>& curves,
+    double progressMeters
+) noexcept
+{
+    for (const auto& curve : curves)
+    {
+        if (progressMeters + 1.0e-9 >= curve.startProgressMeters &&
+            progressMeters - 1.0e-9 <= curve.endProgressMeters)
+        {
+            return &curve;
+        }
+    }
+    return nullptr;
+}
+
 } // namespace
 
 bool RouteVolumeContainmentValidator::pointInsideErodedVolume(
@@ -173,6 +293,100 @@ bool RouteVolumeContainmentValidator::pointInsideErodedVolume(
     }
 
     return false;
+}
+
+RouteVolumeContainmentResult
+RouteVolumeContainmentValidator::validateKeepInsideRouteInterval(
+    const CompiledTrafficStage& stage,
+    const std::vector<planner::RouteCurveSegment>& curves,
+    const glm::dvec3& entryWorldMeters,
+    const glm::dvec3& exitWorldMeters,
+    double agentRadiusMeters
+)
+{
+    RouteVolumeContainmentResult out;
+
+    if (stage.kind != TrafficRouteStageKind::VolumeTransit ||
+        stage.volumeConstraint.policy !=
+            world::navigation::NavigationVolumePolicy::KeepInside)
+    {
+        out.failure =
+            "route interval containment requires KeepInside volume transit";
+        return out;
+    }
+
+    if (curves.empty() ||
+        !finite3(entryWorldMeters) ||
+        !finite3(exitWorldMeters) ||
+        !std::isfinite(agentRadiusMeters) ||
+        agentRadiusMeters < 0.0)
+    {
+        out.failure = "invalid route interval containment input";
+        return out;
+    }
+
+    double entryProgress = 0.0;
+    double exitProgress = 0.0;
+    if (!progressAtPoint(curves, entryWorldMeters, entryProgress))
+    {
+        out.failure = "BLUE entry is not on canonical route geometry";
+        return out;
+    }
+    if (!progressAtPoint(curves, exitWorldMeters, exitProgress))
+    {
+        out.failure = "BLUE exit is not on canonical route geometry";
+        return out;
+    }
+    if (exitProgress <= entryProgress + 1.0e-6)
+    {
+        out.failure = "BLUE route interval has invalid boundary order";
+        return out;
+    }
+
+    out.requiredInsetMeters =
+        agentRadiusMeters + stage.volumeRequiredClearanceMeters;
+
+    const double length = exitProgress - entryProgress;
+    const std::size_t sampleCount = std::clamp<std::size_t>(
+        static_cast<std::size_t>(
+            std::ceil(length / kMaxSampleSpacingMeters)
+        ) + 1,
+        2,
+        kMaxSamplesPerCurve
+    );
+
+    for (std::size_t i = 0; i < sampleCount; ++i)
+    {
+        const double u =
+            static_cast<double>(i) /
+            static_cast<double>(sampleCount - 1);
+        const double progress =
+            entryProgress + length * u;
+        const auto* curve = curveAtProgress(curves, progress);
+        if (!curve)
+        {
+            out.failure = "BLUE interval has a gap in canonical route curves";
+            return out;
+        }
+
+        const double t = curve->parameterAtProgress(progress);
+        const glm::dvec3 point = curve->positionAtParameter(t);
+        if (!pointInsideErodedVolume(
+                stage,
+                point,
+                agentRadiusMeters,
+                kNumericalInsetMeters))
+        {
+            out.failure =
+                "canonical route leaves eroded KeepInside interval";
+            out.parameter01 = t;
+            out.offendingPointMeters = point;
+            return out;
+        }
+    }
+
+    out.valid = true;
+    return out;
 }
 
 RouteVolumeContainmentResult

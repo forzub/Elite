@@ -16,6 +16,8 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
+#include "src/game/navigation/RouteFrameField.h"
+#include "src/game/navigation/TwoPointRollGeometry.h"
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/PredictivePilot.h"
@@ -89,6 +91,12 @@ public:
         std::vector<double> curveSampleEndProgressMeters;
         glm::dvec3 routeUpReference {0.0};
 
+        // Same canonical frame field used by tunnel presentation. The hull
+        // must align to this field, never to an independently reconstructed
+        // "up" convention.
+        std::vector<RouteFrameField::Sample> routeFrameField;
+        double liveTunnelRollPhaseRad = 0.0;
+
         AutopilotTrackingPolicy followerPolicy {};
         PredictivePilot::State pilotState {};
         std::vector<AcceptedManeuverProgram> programs;
@@ -154,6 +162,15 @@ public:
         state = {};
     }
 
+    static void setLiveTunnelRollPhase(
+        State& state,
+        double phaseRad
+    ) noexcept
+    {
+        state.liveTunnelRollPhaseRad =
+            std::isfinite(phaseRad) ? phaseRad : 0.0;
+    }
+
     [[nodiscard]] static bool start(
         State& state,
         const planner::RoutePlan& plan,
@@ -199,6 +216,15 @@ public:
         state.routeCurves = plan.routeCurves;
         if (state.routeCurves.empty())
             state.routeCurves = buildFallbackRouteCurves(plan.executionGates);
+
+        // WORKING CONTRACT: hull and HUD consume the same canonical route
+        // orientation field. Dynamic dock roll is applied later as one phase.
+        state.routeFrameField =
+            RouteFrameField::build(
+                state.routeCurves,
+                routeUpReference
+            );
+
         state.programs = std::move(programs);
         if (!buildContinuousReference(
                 state.programs,
@@ -833,25 +859,25 @@ public:
         if (!attitudeLead.valid)
             attitudeLead = continuous;
 
-        // Roll orientation belongs to the authored tunnel frame,
-        // not to the temporary capture/steering course.  The HUD corridor
-        // constructs each frame by projecting the docking up reference onto
-        // the plane normal to the authored tangent; use the same geometry
-        // here so the hull belly tracks the visible frame bottom.
+        // Roll orientation belongs to the SAME authored/live tunnel frame
+        // that the player sees.  Never reconstruct a separate hull-only up
+        // vector: that lets ship and tunnel drift into different conventions.
         const glm::dvec3 tunnelFrameForward =
             normalizedOr(poseTangent, referenceTangent);
-        const glm::dvec3 desiredUpSource =
-            glm::length(state.routeUpReference) > 1.0e-9
-                ? state.routeUpReference
-                : attitudeLead.reference.upMap;
+
         glm::dvec3 desiredUp =
-            desiredUpSource -
-            tunnelFrameForward *
-                glm::dot(desiredUpSource, tunnelFrameForward);
+            !state.routeFrameField.empty()
+                ? RouteFrameField::upAtProgress(
+                    state.routeFrameField,
+                    poseProgressMeters
+                  )
+                : attitudeLead.reference.upMap;
+
         desiredUp =
-            normalizedOr(
+            RouteFrameField::rotateUpAroundForward(
+                tunnelFrameForward,
                 desiredUp,
-                attitudeLead.reference.upMap
+                state.liveTunnelRollPhaseRad
             );
 
         RouteCurveDiagnostic curvatureGuide = poseGuide;
@@ -895,23 +921,30 @@ public:
         const double predictedCrossTrackMeters =
             glm::length(predictedCrossError);
 
-        // Dock-bottom alignment is an explicit roll task.  Use the same
-        // HullPoseGuidance geometry as PredictivePilot so roll error and the
-        // published desired roll rate are defined around the SAME current
-        // physical hull axis.  Previously the rate was derived around
-        // steeringForward while PredictivePilot recomputed error around
-        // agent.forwardMap, so capture corrections could desynchronise the
-        // hull from the visible tunnel frame.
-        HullPoseGuidance::Request rollPoseRequest;
-        rollPoseRequest.currentForward = agent.forwardMap;
-        rollPoseRequest.currentRight = agent.rightMap;
-        rollPoseRequest.currentUp = agent.upMap;
-        rollPoseRequest.targetForward = agent.forwardMap;
-        rollPoseRequest.targetUp = desiredUp;
-        const auto rollPose =
-            HullPoseGuidance::evaluate(rollPoseRequest);
+        // TWO-POINT HULL ROLL CONTRACT.
+        //
+        // Compare the ship's center->bottom radial direction with the current
+        // tunnel frame center->bottom direction around the PHYSICAL hull
+        // longitudinal axis. This is the exact same geometry used to lock the
+        // tunnel to the rotating dock, so it remains repeatable for arbitrary
+        // world orientation, route curvature and clockwise/counter-clockwise
+        // dock rotation.
+        const auto shipRollReference =
+            TwoPointRollGeometry::fromCenterAndUp(
+                agent.positionMapMeters,
+                agent.upMap
+            );
+        const auto tunnelRollReference =
+            TwoPointRollGeometry::fromCenterAndUp(
+                referencePosition,
+                desiredUp
+            );
         const double signedRollErrorRad =
-            rollPose.valid ? rollPose.rollErrorRad : 0.0;
+            TwoPointRollGeometry::signedPhase(
+                agent.forwardMap,
+                shipRollReference,
+                tunnelRollReference
+            );
 
         const double angularAuthority =
             game::ship::angularAccelerationLimitRadPerSec2(params);

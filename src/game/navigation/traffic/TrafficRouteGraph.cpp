@@ -46,10 +46,10 @@ TrafficRouteGraph::TrafficRouteGraph(
         );
     }
 
-    for (std::size_t i = 0; i < m_definition.mandatoryZones.size(); ++i)
+    for (std::size_t i = 0; i < m_definition.lanes.size(); ++i)
     {
-        m_zoneIndex.emplace(
-            m_definition.mandatoryZones[i].id,
+        m_laneIndex.emplace(
+            m_definition.lanes[i].id,
             i
         );
     }
@@ -136,40 +136,40 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
     }
 
     std::unordered_set<std::string> zoneIds;
-    for (const auto& zone : definition.mandatoryZones)
+    for (const auto& zone : definition.lanes)
     {
-        if (zone.id.empty())
+        if (lane.id.empty())
         {
-            setFailure(failure, "mandatory transit zone id is empty");
+            setFailure(failure, "traffic lane id is empty");
             return {};
         }
 
-        if (!zoneIds.insert(zone.id).second)
+        if (!zoneIds.insert(lane.id).second)
         {
             setFailure(
                 failure,
-                "duplicate mandatory transit zone id: " + zone.id
+                "duplicate traffic lane id: " + lane.id
             );
             return {};
         }
 
-        if (!portalIds.count(zone.entryPortalId) ||
-            !portalIds.count(zone.exitPortalId))
+        if (!portalIds.count(lane.entryPortalId) ||
+            !portalIds.count(lane.exitPortalId))
         {
             setFailure(
                 failure,
-                "mandatory transit zone references unknown entry/exit portal: " +
-                    zone.id
+                "traffic lane references unknown entry/exit portal: " +
+                    lane.id
             );
             return {};
         }
 
-        if (zone.entryPortalId == zone.exitPortalId)
+        if (lane.entryPortalId == lane.exitPortalId)
         {
             setFailure(
                 failure,
-                "mandatory transit zone entry and exit are identical: " +
-                    zone.id
+                "traffic lane entry and exit are identical: " +
+                    lane.id
             );
             return {};
         }
@@ -181,49 +181,49 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
         {
             setFailure(
                 failure,
-                "mandatory transit zone has invalid limits: " + zone.id
+                "traffic lane has invalid limits: " + lane.id
             );
             return {};
         }
 
-        if (zone.volumeKind == TransitVolumeKind::Cylinder)
+        if (if (lane.navigationVolumeId.empty())
         {
-            if (!finitePositive(zone.radiusMeters) ||
-                !finitePositive(zone.halfLengthMeters))
-            {
-                setFailure(
-                    failure,
-                    "cylindrical mandatory transit zone has invalid dimensions: " +
-                        zone.id
-                );
-                return {};
-            }
-        }
-        else
-        {
-            if (!(zone.halfExtentsMeters.x > 0.0 &&
-                  zone.halfExtentsMeters.y > 0.0 &&
-                  zone.halfExtentsMeters.z > 0.0) ||
-                !std::isfinite(zone.halfExtentsMeters.x) ||
-                !std::isfinite(zone.halfExtentsMeters.y) ||
-                !std::isfinite(zone.halfExtentsMeters.z))
-            {
-                setFailure(
-                    failure,
-                    "box mandatory transit zone has invalid dimensions: " +
-                        zone.id
-                );
-                return {};
-            }
+            setFailure(
+                failure,
+                "traffic lane has no navigation volume: " + lane.id
+            );
+            return {};
         }
 
-        for (const auto& dockPortalId : zone.internalDockPortalIds)
+        if (lane.policy !=
+                world::navigation::NavigationVolumePolicy::KeepInside &&
+            lane.policy !=
+                world::navigation::NavigationVolumePolicy::PreferInside)
+        {
+            setFailure(
+                failure,
+                "traffic lane has invalid volume policy: " + lane.id
+            );
+            return {};
+        }
+
+        if (lane.maxTransitSpeedMps < 0.0 ||
+            !std::isfinite(lane.maxTransitSpeedMps))
+        {
+            setFailure(
+                failure,
+                "traffic lane has invalid speed limit: " + lane.id
+            );
+            return {};
+        }
+
+        for (const auto& dockPortalId : lane.internalDockPortalIds)
         {
             if (!portalIds.count(dockPortalId))
             {
                 setFailure(
                     failure,
-                    "mandatory transit zone references unknown internal dock portal: " +
+                    "traffic lane references unknown internal dock portal: " +
                         dockPortalId
                 );
                 return {};
@@ -268,61 +268,61 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             return {};
         }
 
-        if (edge.kind == TrafficRouteStageKind::MandatoryTransit)
+        if (edge.kind == TrafficRouteStageKind::VolumeTransit)
         {
-            const auto zoneIt =
+            const auto laneIt =
                 std::find_if(
-                    definition.mandatoryZones.begin(),
-                    definition.mandatoryZones.end(),
-                    [&](const MandatoryTransitZoneDefinition& zone)
+                    definition.lanes.begin(),
+                    definition.lanes.end(),
+                    [&](const TrafficLaneDefinition& zone)
                     {
-                        return zone.id == edge.mandatoryZoneId;
+                        return lane.id == edge.laneId;
                     }
                 );
 
-            if (zoneIt == definition.mandatoryZones.end())
+            if (laneIt == definition.lanes.end())
             {
                 setFailure(
                     failure,
-                    "mandatory traffic edge references unknown zone: " +
+                    "volume-transit edge references unknown zone: " +
                         edge.id
                 );
                 return {};
             }
 
-            const auto& zone = *zoneIt;
+            const auto& zone = *laneIt;
             const bool authoredForward =
-                edge.fromPortalId == zone.entryPortalId &&
-                edge.toPortalId == zone.exitPortalId;
+                edge.fromPortalId == lane.entryPortalId &&
+                edge.toPortalId == lane.exitPortalId;
             const bool authoredReverse =
-                edge.fromPortalId == zone.exitPortalId &&
-                edge.toPortalId == zone.entryPortalId;
+                edge.fromPortalId == lane.exitPortalId &&
+                edge.toPortalId == lane.entryPortalId;
 
             if (!authoredForward &&
-                !(zone.directionPolicy == TransitDirectionPolicy::TwoWay &&
+                !(lane.directionPolicy == TransitDirectionPolicy::TwoWay &&
                   authoredReverse))
             {
                 setFailure(
                     failure,
-                    "mandatory traffic edge violates zone portal ordering: " +
+                    "volume-transit edge violates zone portal ordering: " +
                         edge.id
                 );
                 return {};
             }
         }
-        else if (!edge.mandatoryZoneId.empty())
+        else if (!edge.laneId.empty())
         {
             setFailure(
                 failure,
-                "non-mandatory traffic edge unexpectedly owns a zone: " +
+                "non-volume-transit edge unexpectedly owns a zone: " +
                     edge.id
             );
             return {};
         }
     }
 
-    // Every mandatory zone must be represented by at least one mandatory edge.
-    for (const auto& zone : definition.mandatoryZones)
+    // Every traffic lane must be represented by at least one mandatory edge.
+    for (const auto& zone : definition.lanes)
     {
         const bool represented =
             std::any_of(
@@ -332,8 +332,8 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
                 {
                     return
                         edge.kind ==
-                            TrafficRouteStageKind::MandatoryTransit &&
-                        edge.mandatoryZoneId == zone.id;
+                            TrafficRouteStageKind::VolumeTransit &&
+                        edge.laneId == lane.id;
                 }
             );
 
@@ -341,7 +341,7 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
         {
             setFailure(
                 failure,
-                "mandatory transit zone has no route edge: " + zone.id
+                "traffic lane has no route edge: " + lane.id
             );
             return {};
         }
@@ -363,15 +363,15 @@ const NavigationPortalDefinition* TrafficRouteGraph::portal(
     return &m_definition.portals[it->second];
 }
 
-const MandatoryTransitZoneDefinition* TrafficRouteGraph::mandatoryZone(
+const TrafficLaneDefinition* TrafficRouteGraph::lane(
     const std::string& id
 ) const noexcept
 {
-    const auto it = m_zoneIndex.find(id);
-    if (it == m_zoneIndex.end())
+    const auto it = m_laneIndex.find(id);
+    if (it == m_laneIndex.end())
         return nullptr;
 
-    return &m_definition.mandatoryZones[it->second];
+    return &m_definition.lanes[it->second];
 }
 
 ResolvedTrafficRoute TrafficRouteGraph::resolve(
@@ -478,12 +478,24 @@ ResolvedTrafficRoute TrafficRouteGraph::resolve(
     for (const std::size_t edgeIndex : reversedEdges)
     {
         const auto& edge = m_definition.edges[edgeIndex];
-        out.stages.push_back({
-            edge.kind,
-            edge.fromPortalId,
-            edge.toPortalId,
-            edge.mandatoryZoneId
-        });
+        TrafficRouteStage stage;
+        stage.kind = edge.kind;
+        stage.fromPortalId = edge.fromPortalId;
+        stage.toPortalId = edge.toPortalId;
+        stage.laneId = edge.laneId;
+        if (!edge.laneId.empty())
+        {
+            const auto* laneDef = lane(edge.laneId);
+            if (laneDef)
+            {
+                stage.volumeConstraint.volumeId =
+                    laneDef->navigationVolumeId;
+                stage.volumeConstraint.policy = laneDef->policy;
+                stage.volumeConstraint.maxSpeedMps =
+                    laneDef->maxTransitSpeedMps;
+            }
+        }
+        out.stages.push_back(std::move(stage));
         out.portalSequence.push_back(edge.toPortalId);
     }
 

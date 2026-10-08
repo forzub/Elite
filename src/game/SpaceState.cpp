@@ -1927,6 +1927,37 @@ void SpaceState::updateDockingAdvisory()
         return control;
     };
 
+    const auto manualStopControl = [&]()
+    {
+        const auto agent = makeAgent();
+
+        game::navigation::autopilot::PredictivePilot::Request stop;
+        stop.law = controlLaw;
+        stop.desiredVelocityMapMps = glm::dvec3(0.0);
+        stop.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
+        stop.desiredForwardMap = agent.forwardMap;
+        stop.desiredUpMap = agent.upMap;
+        stop.actualVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        stop.forwardMap = agent.forwardMap;
+        stop.rightMap = agent.rightMap;
+        stop.upMap = agent.upMap;
+        stop.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+        stop.yawRateRadPerSec = agent.yawRateRadPerSec;
+        stop.rollRateRadPerSec = agent.rollRateRadPerSec;
+        stop.stopRequested = true;
+        stop.deltaSeconds = std::max(
+            1.0e-4,
+            m_client->serverFixedStepSeconds()
+        );
+
+        return game::navigation::autopilot::PredictivePilot::make(
+            stop,
+            effectivePhysics,
+            m_clientDockingStabilizePilotState
+        );
+    };
+
     // Planner + route compiler run asynchronously. Reserve enough coast time
     // for BOTH stages so the main thread never has to block at handoff.
     // The ship keeps its measured velocity with zero commanded acceleration.

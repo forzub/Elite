@@ -2014,7 +2014,32 @@ KeyframedProgressResult keyframedGuideProgress(
 
             const double startClock = clock;
             const double startProgress = out.samples.back().progressMeters;
-            while (clock + interval < startClock + duration - 1.0e-8)
+
+            // TIME-GRID CONTRACT.
+            //
+            // Dense authored guides can contain extremely short spatial edges.
+            // At high speed their physical duration may be <= the trajectory
+            // time epsilon, or may round to the same double as startClock.
+            // Publishing a second sample with the same timestamp later makes
+            // angular compilation fail with "invalid-angular-step dt=0".
+            //
+            // Such a leg is below the temporal resolution of the trajectory.
+            // Merge it into the current keyframe instead of inventing a
+            // zero-duration state transition. Geometry/progress and terminal
+            // speed are still advanced; only the meaningless duplicate time
+            // sample is suppressed.
+            const double endClock = startClock + duration;
+            if (duration <= Epsilon ||
+                !(endClock > startClock + Epsilon))
+            {
+                auto& merged = out.samples.back();
+                merged.progressMeters = startProgress + length;
+                merged.speedMps = to;
+                merged.accelerationMps2 = acceleration;
+                return;
+            }
+
+            while (clock + interval < endClock - 1.0e-8)
             {
                 clock += interval;
                 const double t = clock - startClock;
@@ -2023,7 +2048,7 @@ KeyframedProgressResult keyframedGuideProgress(
                         0.5 * acceleration * t * t,
                     from + acceleration * t, acceleration});
             }
-            clock = startClock + duration;
+            clock = endClock;
             out.samples.push_back({clock, startProgress + length,
                 to, acceleration});
         };

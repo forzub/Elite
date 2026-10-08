@@ -59,6 +59,21 @@ public:
         );
     }
 
+    [[nodiscard]] static double shortestPhaseDelta(
+        double previousPhaseRad,
+        double currentPhaseRad
+    ) noexcept
+    {
+        if (!std::isfinite(previousPhaseRad) ||
+            !std::isfinite(currentPhaseRad))
+        {
+            return 0.0;
+        }
+
+        const double raw = currentPhaseRad - previousPhaseRad;
+        return std::atan2(std::sin(raw), std::cos(raw));
+    }
+
     [[nodiscard]] static Reference fromCenterAndUp(
         const glm::dvec3& center,
         const glm::dvec3& up,

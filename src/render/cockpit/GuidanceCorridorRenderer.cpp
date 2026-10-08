@@ -209,7 +209,14 @@ void GuidanceCorridorRenderer::render(
             viewport
         );
         if (!projected.valid)
+        {
+            // A clipped/behind-camera frame is a real break in the visible
+            // corridor. Never bridge connectors across that gap: doing so can
+            // send the four tunnel side lines toward an unrelated frame when
+            // a just-passed rib drops behind the camera.
+            havePrevious = false;
             continue;
+        }
 
         const float frameOpacity = (
             spatialGates

@@ -378,10 +378,24 @@ CompiledTrafficRoute RouteStageCompiler::compile(
         }
         else if (!stage.toPortalId.empty())
         {
-            appendUnique(
-                out.requiredViaPointsMeters,
-                compiled.toWorldMeters
-            );
+            // A portal with an authored inbound tangent-straight is owned by
+            // the following constrained stage as one indivisible boundary
+            // block: alignment-start -> portal -> constrained volume.
+            // Emitting the portal here would create the invalid order
+            // portal -> alignment-start -> portal.
+            const auto* toPortal = graph.portal(stage.toPortalId);
+            const bool boundaryOwnedByFollowingStage =
+                toPortal &&
+                toPortal->inboundConnection.kind ==
+                    PortalConnectionKind::MandatoryTangentStraight;
+
+            if (!boundaryOwnedByFollowingStage)
+            {
+                appendUnique(
+                    out.requiredViaPointsMeters,
+                    compiled.toWorldMeters
+                );
+            }
         }
 
         out.stages.push_back(std::move(compiled));

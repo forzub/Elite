@@ -8,6 +8,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/world/navigation/NavigationVolume.h"
+
 namespace game::navigation::traffic
 {
 
@@ -45,14 +47,8 @@ enum class TrafficRouteStageKind : std::uint8_t
 {
     FreeApproach = 0,
     FreeSpace,
-    MandatoryTransit,
+    VolumeTransit,
     TerminalApproach
-};
-
-enum class TransitVolumeKind : std::uint8_t
-{
-    Cylinder = 0,
-    Box
 };
 
 enum class TransitDirectionPolicy : std::uint8_t
@@ -76,27 +72,24 @@ struct NavigationPortalDefinition
     double maxCrossingSpeedMps = 0.0;
 };
 
-struct MandatoryTransitZoneDefinition
+struct TrafficLaneDefinition
 {
     std::string id;
-    std::string hubModuleId;
-    TransitVolumeKind volumeKind = TransitVolumeKind::Cylinder;
-    TransitDirectionPolicy directionPolicy = TransitDirectionPolicy::OneWay;
 
+    // Physical geometry is owned elsewhere by NavigationVolume. Traffic
+    // topology only references it and assigns traversal policy.
+    std::string navigationVolumeId;
+
+    TransitDirectionPolicy directionPolicy = TransitDirectionPolicy::OneWay;
     std::string entryPortalId;
     std::string exitPortalId;
 
-    // Local volume contract. For Cylinder, axis is the module-local Z axis and
-    // radius/halfLength define the legal centerline tube after hull clearance.
-    double radiusMeters = 0.0;
-    double halfLengthMeters = 0.0;
-    glm::dvec3 halfExtentsMeters {0.0};
+    // BLUE = KeepInside, GREEN = PreferInside.
+    // KeepOutside belongs to the global planning constraint set, not a lane.
+    world::navigation::NavigationVolumePolicy policy =
+        world::navigation::NavigationVolumePolicy::KeepInside;
 
-    double requiredClearanceMeters = 0.0;
     double maxTransitSpeedMps = 0.0;
-
-    // Future internal docks may terminate or originate a mandatory-transit
-    // stage without weakening the entry/exit portal contract.
     std::vector<std::string> internalDockPortalIds;
 };
 
@@ -107,8 +100,8 @@ struct TrafficRouteEdgeDefinition
     std::string toPortalId;
     TrafficRouteStageKind kind = TrafficRouteStageKind::FreeSpace;
 
-    // Required only for MandatoryTransit.
-    std::string mandatoryZoneId;
+    // Required only for VolumeTransit.
+    std::string laneId;
 };
 
 struct TrafficRouteGraphDefinition
@@ -116,7 +109,7 @@ struct TrafficRouteGraphDefinition
     std::string graphId;
     std::uint32_t schemaVersion = 1;
     std::vector<NavigationPortalDefinition> portals;
-    std::vector<MandatoryTransitZoneDefinition> mandatoryZones;
+    std::vector<TrafficLaneDefinition> lanes;
     std::vector<TrafficRouteEdgeDefinition> edges;
 };
 
@@ -125,7 +118,8 @@ struct TrafficRouteStage
     TrafficRouteStageKind kind = TrafficRouteStageKind::FreeSpace;
     std::string fromPortalId;
     std::string toPortalId;
-    std::string mandatoryZoneId;
+    std::string laneId;
+    world::navigation::NavigationVolumeConstraint volumeConstraint {};
 };
 
 struct ResolvedTrafficRoute
@@ -163,7 +157,7 @@ public:
         const std::string& id
     ) const noexcept;
 
-    const MandatoryTransitZoneDefinition* mandatoryZone(
+    const TrafficLaneDefinition* lane(
         const std::string& id
     ) const noexcept;
 
@@ -179,7 +173,7 @@ private:
 
     TrafficRouteGraphDefinition m_definition;
     std::unordered_map<std::string, std::size_t> m_portalIndex;
-    std::unordered_map<std::string, std::size_t> m_zoneIndex;
+    std::unordered_map<std::string, std::size_t> m_laneIndex;
     std::unordered_map<std::string, std::vector<std::size_t>> m_outgoingEdges;
 };
 

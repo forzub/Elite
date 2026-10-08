@@ -70,6 +70,7 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/traffic/TrafficRouteGraphCatalog.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"

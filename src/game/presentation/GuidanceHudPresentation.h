@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -187,37 +188,62 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
 
     if (spatialGates)
     {
-        // STABLE SPATIAL-GATE CONTRACT.
+        // SPATIAL TUNNEL VISIBILITY CONTRACT.
         //
-        // Never derive either stride OR phase from the current player
-        // position / filtered candidate count. A passing gate, near-cull, or
-        // route self-intersection must not reindex every visible tunnel rib.
+        // Show only the forward, not-yet-passed part of the authored gate
+        // sequence. Once the ship crosses a gate plane, that rib disappears
+        // permanently from the visible tunnel; nothing is drawn behind the
+        // ship.
         //
-        // Select one immutable modulo grid over the authored corridor:
-        //   0, stride, 2*stride, ...
-        // The renderer already rejects frames behind the camera. A near frame
-        // may disappear individually, but every other rib keeps the same
-        // authored gate identity for the entire route lifetime.
-        const std::size_t stableStride = std::max<std::size_t>(
-            1,
-            (corridor->frames.size() + frameLimit - 1) / frameLimit
-        );
+        // Also do NOT stride/decimate the remaining list here. plan.gates is
+        // already the sparse HUD representation. Re-striding it caused
+        // connector lines to jump between different gate identities whenever
+        // the visible set changed.
+        std::size_t closestIndex = 0;
+        double closestDistance2 =
+            std::numeric_limits<double>::infinity();
 
-        for (std::size_t i = 0;
-             i < corridor->frames.size();
-             i += stableStride)
+        for (std::size_t i = 0; i < corridor->frames.size(); ++i)
+        {
+            const glm::dvec3 delta =
+                playerMeters - corridor->frames[i].centerMeters;
+            const double distance2 = glm::dot(delta, delta);
+            if (std::isfinite(distance2) &&
+                distance2 < closestDistance2)
+            {
+                closestDistance2 = distance2;
+                closestIndex = i;
+            }
+        }
+
+        std::size_t firstFutureIndex = closestIndex;
+        if (firstFutureIndex < corridor->frames.size())
+        {
+            const auto& nearest = corridor->frames[firstFutureIndex];
+            const glm::dvec3 forward =
+                nearest.orientation * glm::dvec3(0.0, 0.0, -1.0);
+            const glm::dvec3 fromGateToPlayer =
+                playerMeters - nearest.centerMeters;
+
+            if (glm::dot(fromGateToPlayer, forward) > 0.0)
+                ++firstFutureIndex;
+        }
+
+        for (std::size_t i = firstFutureIndex;
+             i < corridor->frames.size() &&
+             candidates.size() < frameLimit;
+             ++i)
         {
             const auto& frame = corridor->frames[i];
-            const glm::dvec3 relativeCenter =
-                frame.centerMeters - playerMeters;
             const double frameDistanceMeters =
-                glm::length(relativeCenter);
+                glm::length(frame.centerMeters - playerMeters);
+
+            // Suppress only the gate currently intersecting the cockpit.
+            // All already-passed gates were removed by firstFutureIndex.
             if (frameDistanceMeters < 30.0)
                 continue;
 
             candidates.push_back(&frame);
-            if (candidates.size() >= frameLimit)
-                break;
         }
     }
     else

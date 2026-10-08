@@ -183,6 +183,33 @@ public:
         return result;
     }
 
+    [[nodiscard]] static glm::dvec3 rotateUpAroundForward(
+        const glm::dvec3& forwardRequested,
+        const glm::dvec3& upRequested,
+        double phaseRad
+    )
+    {
+        const glm::dvec3 forward =
+            normalizedOr(
+                forwardRequested,
+                glm::dvec3(0.0, 0.0, -1.0)
+            );
+
+        glm::dvec3 up =
+            upRequested -
+            forward * glm::dot(upRequested, forward);
+        if (glm::length(up) <= 1.0e-9)
+            up = perpendicularSeed(forward);
+        up = glm::normalize(up);
+
+        const glm::dvec3 rotated =
+            glm::angleAxis(phaseRad, forward) * up;
+        return glm::normalize(
+            rotated -
+            forward * glm::dot(rotated, forward)
+        );
+    }
+
     [[nodiscard]] static glm::dvec3 upAtProgress(
         const std::vector<Sample>& field,
         double progressMeters

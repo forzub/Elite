@@ -139,6 +139,11 @@ struct ResolvedTrafficRoute
 class TrafficRouteGraph final
 {
 public:
+    TrafficRouteGraph(const TrafficRouteGraph&) = delete;
+    TrafficRouteGraph& operator=(const TrafficRouteGraph&) = delete;
+    TrafficRouteGraph(TrafficRouteGraph&&) = delete;
+    TrafficRouteGraph& operator=(TrafficRouteGraph&&) = delete;
+
     static std::shared_ptr<const TrafficRouteGraph> build(
         TrafficRouteGraphDefinition definition,
         std::string* failure = nullptr

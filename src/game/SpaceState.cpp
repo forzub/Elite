@@ -4347,154 +4347,6 @@ m_systemMapRenderer.render(
 
         uiRoot->render(vp);
 
-        // Small, non-blocking route-planning popup. Percentages are coarse
-        // phase completion rather than an ETA; the geometric search itself is
-        // data-dependent. A moving highlight communicates liveness while one
-        // expensive phase is active.
-        if (m_clientDockingPhase == ClientDockingPhase::Planning &&
-            m_dockAdviceJob)
-        {
-            const int permille = std::clamp(
-                m_dockAdviceJob->planningProgressPermille.load(
-                    std::memory_order_acquire
-                ),
-                0,
-                1000
-            );
-            const std::uint8_t stage =
-                m_dockAdviceJob->planningProgressStage.load(
-                    std::memory_order_acquire
-                );
-
-            std::string stageText;
-            switch (stage)
-            {
-                case 0:
-                    stageText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.route_planning.preparing",
-                        "PREPARING ROUTE"
-                    );
-                    break;
-                case 1:
-                    stageText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.route_planning.geometry",
-                        "CALCULATING ROUTE"
-                    );
-                    break;
-                case 2:
-                    stageText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.route_planning.frames",
-                        "BUILDING GUIDANCE"
-                    );
-                    break;
-                case 3:
-                    stageText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.route_planning.autopilot",
-                        "PREPARING AUTOPILOT"
-                    );
-                    break;
-                default:
-                    stageText = localizedUiText(
-                        context().app,
-                        "cockpit.docking.route_planning.ready",
-                        "ROUTE READY"
-                    );
-                    break;
-            }
-
-            const int percent = permille / 10;
-            stageText += "  " + std::to_string(percent) + "%";
-
-            auto& text = TextRenderer::instance();
-            constexpr float panelWidth = 360.0f;
-            constexpr float panelHeight = 66.0f;
-            constexpr float barInset = 14.0f;
-            constexpr float barHeight = 9.0f;
-            constexpr int labelPx = 16;
-
-            const float x =
-                static_cast<float>(vp.width) * 0.5f -
-                panelWidth * 0.5f;
-            const float y = 86.0f;
-            const float barX = x + barInset;
-            const float barY = y + 42.0f;
-            const float barWidth =
-                panelWidth - 2.0f * barInset;
-            const float fillWidth =
-                barWidth *
-                (static_cast<float>(permille) / 1000.0f);
-
-            text.solidRectPx(
-                x,
-                y,
-                panelWidth,
-                panelHeight,
-                glm::vec4(0.015f, 0.035f, 0.045f, 0.86f)
-            );
-            text.solidRectPx(
-                barX,
-                barY,
-                barWidth,
-                barHeight,
-                glm::vec4(0.10f, 0.16f, 0.18f, 0.95f)
-            );
-            if (fillWidth > 0.0f)
-            {
-                text.solidRectPx(
-                    barX,
-                    barY,
-                    fillWidth,
-                    barHeight,
-                    glm::vec4(0.40f, 0.86f, 0.96f, 0.95f)
-                );
-            }
-
-            // Indeterminate highlight inside the unfinished portion. It does
-            // not alter the displayed percentage.
-            if (permille < 1000)
-            {
-                const double timeSeconds =
-                    m_client
-                        ? m_client->universeTimeSeconds()
-                        : 0.0;
-                const float pulse =
-                    static_cast<float>(
-                        std::fmod(
-                            std::max(0.0, timeSeconds) * 0.65,
-                            1.0
-                        )
-                    );
-                constexpr float markerWidth = 28.0f;
-                const float markerTravel =
-                    std::max(0.0f, barWidth - markerWidth);
-                const float markerX =
-                    barX + markerTravel * pulse;
-                text.solidRectPx(
-                    markerX,
-                    barY,
-                    markerWidth,
-                    barHeight,
-                    glm::vec4(0.82f, 0.98f, 1.0f, 0.72f)
-                );
-            }
-
-            const float labelWidth =
-                text.measureTextPx(stageText, labelPx);
-            text.textDrawPx(
-                stageText,
-                x + panelWidth * 0.5f - labelWidth * 0.5f,
-                y + 13.0f,
-                labelPx,
-                glm::vec4(0.76f, 0.94f, 1.0f, 1.0f)
-            );
-        }
-
-
-
         TextRenderer::instance().endFrame();
 
 
@@ -4744,9 +4596,164 @@ void SpaceState::renderInSessionPresentationOverlay()
 
     const auto panel = buildNativeSystemMapPanelPresentation();
     m_inSessionPresentationRenderer.renderSystemMapPanel(vp, loc, panel);
+    renderRoutePlanningModal(vp);
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
 }
+
+void SpaceState::renderRoutePlanningModal(
+    const Viewport& viewport
+)
+{
+    if (m_clientDockingPhase != ClientDockingPhase::Planning ||
+        !m_dockAdviceJob ||
+        viewport.width <= 0 ||
+        viewport.height <= 0)
+    {
+        return;
+    }
+
+    const int permille = std::clamp(
+        m_dockAdviceJob->planningProgressPermille.load(
+            std::memory_order_acquire
+        ),
+        0,
+        1000
+    );
+    const std::uint8_t stage =
+        m_dockAdviceJob->planningProgressStage.load(
+            std::memory_order_acquire
+        );
+
+    std::string stageText;
+    switch (stage)
+    {
+        case 0:
+            stageText = localizedUiText(
+                context().app,
+                "map.route_planning.preparing",
+                "PREPARING ROUTE"
+            );
+            break;
+        case 1:
+            stageText = localizedUiText(
+                context().app,
+                "map.route_planning.geometry",
+                "CALCULATING ROUTE"
+            );
+            break;
+        case 2:
+            stageText = localizedUiText(
+                context().app,
+                "map.route_planning.guidance",
+                "BUILDING GUIDANCE"
+            );
+            break;
+        case 3:
+            stageText = localizedUiText(
+                context().app,
+                "map.route_planning.autopilot",
+                "PREPARING AUTOPILOT"
+            );
+            break;
+        default:
+            stageText = localizedUiText(
+                context().app,
+                "map.route_planning.ready",
+                "ROUTE READY"
+            );
+            break;
+    }
+
+    stageText += "  " + std::to_string(permille / 10) + "%";
+
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+
+    const float screenW = static_cast<float>(viewport.width);
+    const float screenH = static_cast<float>(viewport.height);
+
+    const float modalWidth =
+        std::clamp(screenW * 0.28f, 360.0f, 520.0f);
+    constexpr float modalHeight = 118.0f;
+    const float x = (screenW - modalWidth) * 0.5f;
+    const float y = (screenH - modalHeight) * 0.5f;
+
+    // Passive modal: no controls, no close button. The map remains visible
+    // behind it and the window disappears only when planning completes/fails.
+    text.solidRectPx(
+        x - 2.0f,
+        y - 2.0f,
+        modalWidth + 4.0f,
+        modalHeight + 4.0f,
+        glm::vec4(0.22f, 0.52f, 0.72f, 0.72f)
+    );
+    text.solidRectPx(
+        x,
+        y,
+        modalWidth,
+        modalHeight,
+        glm::vec4(0.018f, 0.035f, 0.052f, 0.96f)
+    );
+
+    const std::string title = localizedUiText(
+        context().app,
+        "map.route_planning.title",
+        "ROUTE CALCULATION"
+    );
+
+    constexpr int titlePx = 20;
+    constexpr int stagePx = 15;
+    const float titleWidth =
+        text.measureTextPx(title, titlePx);
+    text.textDrawPx(
+        title,
+        x + (modalWidth - titleWidth) * 0.5f,
+        y + 18.0f,
+        titlePx,
+        glm::vec4(0.90f, 0.96f, 1.0f, 1.0f)
+    );
+
+    const float stageWidth =
+        text.measureTextPx(stageText, stagePx);
+    text.textDrawPx(
+        stageText,
+        x + (modalWidth - stageWidth) * 0.5f,
+        y + 52.0f,
+        stagePx,
+        glm::vec4(0.66f, 0.84f, 0.94f, 0.96f)
+    );
+
+    constexpr float inset = 24.0f;
+    constexpr float barHeight = 12.0f;
+    const float barX = x + inset;
+    const float barY = y + 87.0f;
+    const float barWidth = modalWidth - inset * 2.0f;
+    const float fillWidth =
+        barWidth * (static_cast<float>(permille) / 1000.0f);
+
+    text.solidRectPx(
+        barX,
+        barY,
+        barWidth,
+        barHeight,
+        glm::vec4(0.08f, 0.13f, 0.17f, 1.0f)
+    );
+
+    if (fillWidth > 0.0f)
+    {
+        text.solidRectPx(
+            barX,
+            barY,
+            fillWidth,
+            barHeight,
+            glm::vec4(0.35f, 0.78f, 0.94f, 1.0f)
+        );
+    }
+
+    text.endFrame();
+}
+
 
 void SpaceState::renderUiLanguageIndicator(const Viewport& viewport)
 {

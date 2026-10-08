@@ -348,6 +348,11 @@ private:
         // stored intact and consumed read-only: sparse HUD gates and dense map
         // geometry remain Planner-owned products.
         game::navigation::planner::RoutePlan plan;
+
+        // Visual-only sampling of one canonical rotation-minimizing frame
+        // field built from plan.routeCurves. Autopilot does not consume these.
+        std::vector<glm::dvec3> visualGateUp;
+        std::vector<glm::dvec3> visualExecutionGateUp;
         double standoffMeters = 0.0;
         double widthMeters = 0.0;
         double heightMeters = 0.0;

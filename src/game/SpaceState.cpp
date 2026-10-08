@@ -2223,7 +2223,7 @@ void SpaceState::updateDockingAdvisory()
         // This leaves the legacy-normal RoutePlanner -> dock approach path
         // untouched so we can prove whether the regression belongs to the
         // traffic boundary layer rather than the base planner/autopilot.
-        constexpr bool EnableMandatoryBlueTransit = false;
+        constexpr bool EnableMandatoryBlueTransit = true;
 
         if (EnableMandatoryBlueTransit &&
             pending.target.stableObjectId == "guidance_dock_cube_a" &&
@@ -2320,6 +2320,79 @@ void SpaceState::updateDockingAdvisory()
                     compiledTrafficRoute.failure
                 );
                 return;
+            }
+
+            std::cout
+                << "[TrafficRouteCompile]"
+                << " request=" << pending.serial
+                << " stages=" << compiledTrafficRoute.stages.size()
+                << " via_points="
+                << compiledTrafficRoute.requiredViaPointsMeters.size()
+                << " hard_straights="
+                << compiledTrafficRoute.mandatoryTangentStraights.size()
+                << std::endl;
+
+            for (std::size_t i = 0;
+                 i < compiledTrafficRoute.stages.size();
+                 ++i)
+            {
+                const auto& stage = compiledTrafficRoute.stages[i];
+                std::cout
+                    << "[TrafficStage]"
+                    << " request=" << pending.serial
+                    << " i=" << i
+                    << " kind=" << static_cast<int>(stage.kind)
+                    << " from=("
+                    << stage.fromWorldMeters.x << ","
+                    << stage.fromWorldMeters.y << ","
+                    << stage.fromWorldMeters.z << ")"
+                    << " to=("
+                    << stage.toWorldMeters.x << ","
+                    << stage.toWorldMeters.y << ","
+                    << stage.toWorldMeters.z << ")"
+                    << " volume=" << stage.volumeConstraint.volumeId
+                    << " policy="
+                    << static_cast<int>(stage.volumeConstraint.policy)
+                    << std::endl;
+            }
+
+            for (std::size_t i = 0;
+                 i < compiledTrafficRoute.requiredViaPointsMeters.size();
+                 ++i)
+            {
+                const auto& p =
+                    compiledTrafficRoute.requiredViaPointsMeters[i];
+                std::cout
+                    << "[TrafficVia]"
+                    << " request=" << pending.serial
+                    << " i=" << i
+                    << " p=("
+                    << p.x << "," << p.y << "," << p.z << ")"
+                    << std::endl;
+            }
+
+            for (std::size_t i = 0;
+                 i < compiledTrafficRoute.mandatoryTangentStraights.size();
+                 ++i)
+            {
+                const auto& straight =
+                    compiledTrafficRoute.mandatoryTangentStraights[i];
+                std::cout
+                    << "[TrafficHardStraight]"
+                    << " request=" << pending.serial
+                    << " i=" << i
+                    << " portal=" << straight.portalId
+                    << " inbound=" << (straight.inbound ? 1 : 0)
+                    << " length_m=" << straight.lengthMeters
+                    << " start=("
+                    << straight.startWorldMeters.x << ","
+                    << straight.startWorldMeters.y << ","
+                    << straight.startWorldMeters.z << ")"
+                    << " end=("
+                    << straight.endWorldMeters.x << ","
+                    << straight.endWorldMeters.y << ","
+                    << straight.endWorldMeters.z << ")"
+                    << std::endl;
             }
 
             request.requiredViaPointsMeters =

@@ -11,6 +11,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "src/game/navigation/TwoPointRollGeometry.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 
 namespace game::navigation
@@ -213,32 +214,16 @@ public:
         const glm::dvec3& liveDockBottom
     )
     {
-        const glm::dvec3 axis =
-            normalizedOr(
-                terminalRouteAxisRequested,
-                glm::dvec3(0.0, 0.0, -1.0)
-            );
-
-        glm::dvec3 base =
-            planningDockBottom - planningDockCenter;
-        glm::dvec3 live =
-            liveDockBottom - liveDockCenter;
-
-        base -= axis * glm::dot(base, axis);
-        live -= axis * glm::dot(live, axis);
-
-        if (glm::length(base) <= 1.0e-9 ||
-            glm::length(live) <= 1.0e-9)
-        {
-            return 0.0;
-        }
-
-        base = glm::normalize(base);
-        live = glm::normalize(live);
-
-        return std::atan2(
-            glm::dot(axis, glm::cross(base, live)),
-            std::clamp(glm::dot(base, live), -1.0, 1.0)
+        return TwoPointRollGeometry::signedPhase(
+            terminalRouteAxisRequested,
+            {
+                planningDockCenter,
+                planningDockBottom
+            },
+            {
+                liveDockCenter,
+                liveDockBottom
+            }
         );
     }
 

@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "graph_id": "earth_orbital_hub_test_traffic_v1",
+  "description": "PROTECTED traffic topology. RoutePlanner must not mutate portal order or mandatory transit semantics.",
+  "portals": [
+    {
+      "id": "cylinder_b.entry_front",
+      "module_id": "guidance_dock_cylinder_b",
+      "semantic_anchor_id": "traffic_entry_front",
+      "role": "transit_entry",
+      "crossing_forward_local": [0, 0, 1],
+      "up_local": [0, 1, 0],
+      "required_clearance_m": 22,
+      "max_crossing_speed_mps": 220
+    },
+    {
+      "id": "cylinder_b.exit_rear",
+      "module_id": "guidance_dock_cylinder_b",
+      "semantic_anchor_id": "traffic_exit_rear",
+      "role": "transit_exit",
+      "crossing_forward_local": [0, 0, 1],
+      "up_local": [0, 1, 0],
+      "required_clearance_m": 22,
+      "max_crossing_speed_mps": 220
+    },
+    {
+      "id": "cube_a.dock_front",
+      "module_id": "guidance_dock_cube_a",
+      "semantic_anchor_id": "dock_gate_front",
+      "role": "docking_port",
+      "crossing_forward_local": [0, 0, 1],
+      "up_local": [0, 1, 0],
+      "required_clearance_m": 18,
+      "max_crossing_speed_mps": 18
+    }
+  ],
+  "mandatory_zones": [
+    {
+      "id": "cylinder_b.blue_transit",
+      "module_id": "guidance_dock_cylinder_b",
+      "volume_kind": "cylinder",
+      "direction_policy": "one_way",
+      "entry_portal_id": "cylinder_b.entry_front",
+      "exit_portal_id": "cylinder_b.exit_rear",
+      "radius_m": 100,
+      "half_length_m": 600,
+      "required_clearance_m": 22,
+      "max_transit_speed_mps": 220,
+      "internal_dock_portal_ids": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "cylinder_b.through_blue_zone",
+      "from_portal_id": "cylinder_b.entry_front",
+      "to_portal_id": "cylinder_b.exit_rear",
+      "kind": "mandatory_transit",
+      "mandatory_zone_id": "cylinder_b.blue_transit"
+    },
+    {
+      "id": "cylinder_b.exit_to_cube_a.front",
+      "from_portal_id": "cylinder_b.exit_rear",
+      "to_portal_id": "cube_a.dock_front",
+      "kind": "terminal_approach"
+    }
+  ]
+}

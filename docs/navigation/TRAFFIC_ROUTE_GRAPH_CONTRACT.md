@@ -90,3 +90,60 @@ The physical cylinder volume is currently a straight swept corridor with two cir
 7. Unrelated work on follower gains, speed profiles, roll, rendering or docking UI must not modify this contract.
 
 Any contract change requires a concrete traffic/navigation use case and regression-test updates.
+
+
+## Model Asset Editor authoring contract
+
+The Model Asset Editor must eventually author two independent spatial layers in addition to render geometry.
+
+### Physical occupancy
+
+- **CollisionSolid** / existing physical hit/collision volume: physical matter that a ship cannot pass through.
+- **CollisionVoid** / **PhysicalPassageVolume**: subtractive physical space. It carves a real traversable hole through collision occupancy.
+
+Conceptually:
+
+`PhysicalOccupiedSpace = union(CollisionSolid) - union(CollisionVoid)`
+
+A CollisionVoid is **not** a traffic permission and has no red/blue/green meaning. It only answers whether physical matter exists there.
+
+This is required for hollow stations, docking apertures, hangars, tunnels, arches, pipe interiors and cave openings without forcing collision geometry to be hand-split into many boxes.
+
+### Navigation / traffic / legal volumes
+
+The editor must also author semantic autopilot/planner volumes independently from physical occupancy:
+
+- **NAV RED** = `KeepOutside`: hard navigation/legal exclusion.
+- **NAV BLUE** = `KeepInside`: hard assigned corridor/volume.
+- **NAV GREEN** = `PreferInside`: preferred corridor/volume, soft planning cost.
+- **NAV NONE** = no route policy.
+
+These volumes are consumed by Planner, Autopilot, NPC AI, traffic control, HUD and future law/security systems. They are not physical barriers.
+
+Entering/leaving a semantic navigation volume may later generate gameplay consequences independently of collision:
+- fine;
+- warning;
+- security interception;
+- hostile response;
+- traffic-clearance revocation;
+- reputation/legal-state changes.
+
+Therefore physical occupancy and navigation policy must never be inferred from one another automatically.
+
+A common authored passage may intentionally overlap:
+- one `CollisionVoid` defining the real physical hole;
+- one `NavigationVolume` defining the legal/autopilot corridor through that hole.
+
+The geometries may share editing tools or be cloned/aligned in the editor, but they remain separate persisted authorities.
+
+### Editor UX requirement
+
+Alongside the existing HIT VOLUMES stage/tools, the editor must gain explicit authoring for:
+- collision solids;
+- collision voids / physical passages;
+- red navigation volumes;
+- blue navigation volumes;
+- green navigation volumes;
+- entry/exit portals and ordered swept-corridor sections.
+
+Viewport overlays must distinguish these categories, but their stored semantics must not depend on display color.

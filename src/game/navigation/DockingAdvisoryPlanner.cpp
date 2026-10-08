@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <iterator>
+#include <iostream>
 #include <utility>
 #include <unordered_map>
 #include "src/world/navigation/GeometricPathPlanner.h"
@@ -59,6 +60,57 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     }
 
     auto plannerViaPoints = r.requiredViaPointsMeters;
+    const bool traceTraffic =
+        !r.mandatoryTangentStraights.empty();
+
+    if (traceTraffic)
+    {
+        std::cerr
+            << "[TrafficPlannerInput]"
+            << " start=("
+            << r.startMeters.x << ","
+            << r.startMeters.y << ","
+            << r.startMeters.z << ")"
+            << " via_points=" << r.requiredViaPointsMeters.size()
+            << " hard_straights=" << r.mandatoryTangentStraights.size()
+            << " obstacles=" << r.obstacles.size()
+            << " hull_radius_m=" << r.hullRadiusMeters
+            << std::endl;
+
+        for (std::size_t i = 0;
+             i < r.requiredViaPointsMeters.size();
+             ++i)
+        {
+            const auto& p = r.requiredViaPointsMeters[i];
+            std::cerr
+                << "[TrafficPlannerInputVia]"
+                << " i=" << i
+                << " p=("
+                << p.x << "," << p.y << "," << p.z << ")"
+                << std::endl;
+        }
+
+        for (std::size_t i = 0;
+             i < r.mandatoryTangentStraights.size();
+             ++i)
+        {
+            const auto& straight = r.mandatoryTangentStraights[i];
+            std::cerr
+                << "[TrafficPlannerInputStraight]"
+                << " i=" << i
+                << " inbound=" << (straight.inbound ? 1 : 0)
+                << " minimum_m=" << straight.minimumStraightMeters
+                << " start=("
+                << straight.startMeters.x << ","
+                << straight.startMeters.y << ","
+                << straight.startMeters.z << ")"
+                << " end=("
+                << straight.endMeters.x << ","
+                << straight.endMeters.y << ","
+                << straight.endMeters.z << ")"
+                << std::endl;
+        }
+    }
 
     struct ExactPlannerStraight
     {
@@ -130,6 +182,26 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 {workingJoin, straight.endMeters}
             );
 
+            if (traceTraffic)
+            {
+                std::cerr
+                    << "[TrafficWorkingAxis]"
+                    << " inbound=1"
+                    << " working_join=("
+                    << workingJoin.x << ","
+                    << workingJoin.y << ","
+                    << workingJoin.z << ")"
+                    << " hard_start=("
+                    << straight.startMeters.x << ","
+                    << straight.startMeters.y << ","
+                    << straight.startMeters.z << ")"
+                    << " portal_end=("
+                    << straight.endMeters.x << ","
+                    << straight.endMeters.y << ","
+                    << straight.endMeters.z << ")"
+                    << std::endl;
+            }
+
             plannerViaPoints.insert(it, workingJoin);
         }
         else
@@ -156,7 +228,41 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 {straight.startMeters, workingJoin}
             );
 
+            if (traceTraffic)
+            {
+                std::cerr
+                    << "[TrafficWorkingAxis]"
+                    << " inbound=0"
+                    << " portal_start=("
+                    << straight.startMeters.x << ","
+                    << straight.startMeters.y << ","
+                    << straight.startMeters.z << ")"
+                    << " hard_end=("
+                    << straight.endMeters.x << ","
+                    << straight.endMeters.y << ","
+                    << straight.endMeters.z << ")"
+                    << " working_join=("
+                    << workingJoin.x << ","
+                    << workingJoin.y << ","
+                    << workingJoin.z << ")"
+                    << std::endl;
+            }
+
             plannerViaPoints.insert(std::next(it), workingJoin);
+        }
+    }
+
+    if (traceTraffic)
+    {
+        for (std::size_t i = 0; i < plannerViaPoints.size(); ++i)
+        {
+            const auto& p = plannerViaPoints[i];
+            std::cerr
+                << "[TrafficPlannerVia]"
+                << " i=" << i
+                << " p=("
+                << p.x << "," << p.y << "," << p.z << ")"
+                << std::endl;
         }
     }
 
@@ -354,9 +460,29 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             return nullptr;
         };
 
+    int trafficPlanGeometryCall = 0;
+
     const auto planGeometry = [&](double additionalClearanceMeters,
                                   std::size_t maxConsideredObstacles)
     {
+        const int traceCall = ++trafficPlanGeometryCall;
+        if (traceTraffic)
+        {
+            std::cerr
+                << "[TrafficPlanGeometry]"
+                << " call=" << traceCall
+                << " clearance_extra_m=" << additionalClearanceMeters
+                << " max_obstacles=" << maxConsideredObstacles
+                << " search_start=("
+                << search.startMeters.x << ","
+                << search.startMeters.y << ","
+                << search.startMeters.z << ")"
+                << " search_goal=("
+                << search.goalMeters.x << ","
+                << search.goalMeters.y << ","
+                << search.goalMeters.z << ")"
+                << std::endl;
+        }
         const auto planOneLeg =
             [&](const glm::dvec3& legStart,
                 const glm::dvec3& legGoal)
@@ -457,6 +583,38 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 combined.pointsMeters.clear();
                 return combined;
             }
+            if (traceTraffic)
+            {
+                std::cerr
+                    << "[TrafficLeg]"
+                    << " call=" << traceCall
+                    << " from=("
+                    << legStart.x << "," << legStart.y << ","
+                    << legStart.z << ")"
+                    << " to=("
+                    << via.x << "," << via.y << "," << via.z << ")"
+                    << " exact_axis="
+                    << (exactStraightForLeg(legStart, via) ? 1 : 0)
+                    << " points=" << leg.pointsMeters.size()
+                    << " length_m=" << leg.lengthMeters
+                    << " detour=" << (leg.obstacleDetourUsed ? 1 : 0)
+                    << std::endl;
+
+                for (std::size_t pi = 0;
+                     pi < leg.pointsMeters.size();
+                     ++pi)
+                {
+                    const auto& p = leg.pointsMeters[pi];
+                    std::cerr
+                        << "[TrafficLegPoint]"
+                        << " call=" << traceCall
+                        << " i=" << pi
+                        << " p=("
+                        << p.x << "," << p.y << "," << p.z << ")"
+                        << std::endl;
+                }
+            }
+
             legStart = via;
         }
 
@@ -1741,6 +1899,73 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     out.executionGates = dense;
     out.routeCurves = selected.curves;
 
+    if (traceTraffic)
+    {
+        std::cerr
+            << "[TrafficSelectedRoute]"
+            << " curves=" << out.routeCurves.size()
+            << " dense_gates=" << out.executionGates.size()
+            << std::endl;
+
+        for (std::size_t i = 0; i < out.routeCurves.size(); ++i)
+        {
+            const auto& curve = out.routeCurves[i];
+            const char* kind = "unknown";
+            switch (curve.kind)
+            {
+                case planner::RouteCurveKind::Line:
+                    kind = "line";
+                    break;
+                case planner::RouteCurveKind::CircularArc:
+                    kind = "arc";
+                    break;
+                case planner::RouteCurveKind::CubicBezier:
+                    kind = "bezier";
+                    break;
+            }
+
+            std::cerr
+                << "[TrafficCurve]"
+                << " i=" << i
+                << " kind=" << kind
+                << " s0=" << curve.startProgressMeters
+                << " s1=" << curve.endProgressMeters
+                << " start=("
+                << curve.startMeters.x << ","
+                << curve.startMeters.y << ","
+                << curve.startMeters.z << ")"
+                << " end=("
+                << curve.endMeters.x << ","
+                << curve.endMeters.y << ","
+                << curve.endMeters.z << ")";
+
+            if (curve.kind == planner::RouteCurveKind::CircularArc)
+            {
+                std::cerr
+                    << " center=("
+                    << curve.arcCenterMeters.x << ","
+                    << curve.arcCenterMeters.y << ","
+                    << curve.arcCenterMeters.z << ")"
+                    << " radius_m=" << curve.arcRadiusMeters
+                    << " sweep_rad=" << curve.arcSweepRadians;
+            }
+            else if (curve.kind == planner::RouteCurveKind::CubicBezier)
+            {
+                std::cerr
+                    << " c1=("
+                    << curve.bezierControl1Meters.x << ","
+                    << curve.bezierControl1Meters.y << ","
+                    << curve.bezierControl1Meters.z << ")"
+                    << " c2=("
+                    << curve.bezierControl2Meters.x << ","
+                    << curve.bezierControl2Meters.y << ","
+                    << curve.bezierControl2Meters.z << ")";
+            }
+
+            std::cerr << std::endl;
+        }
+    }
+
     const auto pointOnProtectedLine =
         [&](const glm::dvec3& point,
             const glm::dvec3& axis)
@@ -1776,8 +2001,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             return false;
         };
 
-    for (const auto& straight : r.mandatoryTangentStraights)
+    for (std::size_t straightIndex = 0;
+         straightIndex < r.mandatoryTangentStraights.size();
+         ++straightIndex)
     {
+        const auto& straight =
+            r.mandatoryTangentStraights[straightIndex];
         const glm::dvec3 delta =
             straight.endMeters - straight.startMeters;
         const double length = glm::length(delta);
@@ -1807,8 +2036,44 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 straight.startMeters * (1.0 - t) +
                 straight.endMeters * t;
 
-            if (!pointOnProtectedLine(point, axis))
+            const bool covered =
+                pointOnProtectedLine(point, axis);
+
+            if (traceTraffic)
             {
+                std::cerr
+                    << "[TrafficStraightCheck]"
+                    << " straight=" << straightIndex
+                    << " sample=" << i
+                    << "/" << (samples - 1)
+                    << " t=" << t
+                    << " covered=" << (covered ? 1 : 0)
+                    << " point=("
+                    << point.x << "," << point.y << "," << point.z << ")"
+                    << std::endl;
+            }
+
+            if (!covered)
+            {
+                std::cerr
+                    << "[TrafficStraightFailure]"
+                    << " straight=" << straightIndex
+                    << " inbound=" << (straight.inbound ? 1 : 0)
+                    << " minimum_m=" << straight.minimumStraightMeters
+                    << " failed_sample=" << i
+                    << " t=" << t
+                    << " point=("
+                    << point.x << "," << point.y << "," << point.z << ")"
+                    << " hard_start=("
+                    << straight.startMeters.x << ","
+                    << straight.startMeters.y << ","
+                    << straight.startMeters.z << ")"
+                    << " hard_end=("
+                    << straight.endMeters.x << ","
+                    << straight.endMeters.y << ","
+                    << straight.endMeters.z << ")"
+                    << std::endl;
+
                 out.failure =
                     "accepted route bent or removed mandatory tangent straight";
                 out.gates.clear();

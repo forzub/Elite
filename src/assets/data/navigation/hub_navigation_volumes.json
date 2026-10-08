@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "description": "Semantic navigation volumes. Geometry only: traffic policy is applied separately by traffic topology.",
+  "volumes": [
+    {
+      "id": "cylinder_b.transit_volume",
+      "reference_frame_id": "guidance_dock_cylinder_b",
+      "kind": "swept_corridor",
+      "required_clearance_m": 22,
+      "sections": [
+        {
+          "center_local_m": [
+            0,
+            0,
+            -600
+          ],
+          "forward_local": [
+            0,
+            0,
+            1
+          ],
+          "up_local": [
+            0,
+            1,
+            0
+          ],
+          "cross_section": "circle",
+          "radius_m": 100
+        },
+        {
+          "center_local_m": [
+            0,
+            0,
+            600
+          ],
+          "forward_local": [
+            0,
+            0,
+            1
+          ],
+          "up_local": [
+            0,
+            1,
+            0
+          ],
+          "cross_section": "circle",
+          "radius_m": 100
+        }
+      ]
+    }
+  ]
+}

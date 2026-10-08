@@ -201,6 +201,47 @@ int main()
         }
     }
 
+    // Generic two-point roll geometry must be repeatable regardless of
+    // translation, radial scale, arbitrary 3-D axis, and rotation direction.
+    {
+        const glm::dvec3 axis =
+            glm::normalize(glm::dvec3(1.0, 2.0, -3.0));
+        glm::dvec3 radial =
+            glm::dvec3(0.3, -0.8, 0.1);
+        radial -= axis * glm::dot(radial, axis);
+        radial = glm::normalize(radial);
+
+        const glm::dvec3 translatedCenter(123.0, -456.0, 789.0);
+        const auto from =
+            TwoPointRollGeometry::Reference{
+                translatedCenter,
+                translatedCenter + radial * 7.5
+            };
+
+        for (double angleDeg : {-120.0, -35.0, 35.0, 120.0})
+        {
+            const glm::dvec3 rotatedRadial =
+                glm::angleAxis(glm::radians(angleDeg), axis) * radial;
+            const auto to =
+                TwoPointRollGeometry::Reference{
+                    translatedCenter + glm::dvec3(50.0, 20.0, -10.0),
+                    translatedCenter + glm::dvec3(50.0, 20.0, -10.0) +
+                        rotatedRadial * 0.25
+                };
+
+            const double measured =
+                TwoPointRollGeometry::signedPhase(axis, from, to);
+
+            if (std::abs(measured - glm::radians(angleDeg)) > 1.0e-9)
+            {
+                std::cerr
+                    << "two-point roll geometry lost translation/scale/direction invariance angle_deg="
+                    << angleDeg << "\n";
+                return 114;
+            }
+        }
+    }
+
     // Dynamic visual roll contract: the same dock phase must rotate every
     // tunnel frame by the same signed angle around that frame's own tangent.
     const double quarterTurn = glm::radians(90.0);

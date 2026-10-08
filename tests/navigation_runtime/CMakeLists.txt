@@ -67,6 +67,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/PhysicalManeuverSearchCoordinator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationHitVolumeAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/HubSemanticAnchorCatalog.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationVolumeCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraph.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/diagnostics/NavigationScenarioRunner.cpp"

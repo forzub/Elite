@@ -2398,6 +2398,36 @@ void SpaceState::updateDockingAdvisory()
             request.requiredViaPointsMeters =
                 compiledTrafficRoute.requiredViaPointsMeters;
 
+            // The compiled traffic route is generic and therefore includes
+            // its destination portal. For docking, however, the terminal
+            // docking portal/approach is owned by DockingAdvisoryPlanner:
+            // it authors preEntry -> exact terminal arc -> final axis -> dock.
+            // Keeping the dock portal as a mandatory transit via would force
+            // the route to visit the dock first and then fly back out to
+            // preEntry before entering the terminal arc.
+            if (!request.requiredViaPointsMeters.empty())
+            {
+                const glm::dvec3& terminalTrafficVia =
+                    request.requiredViaPointsMeters.back();
+
+                if (glm::length(
+                        terminalTrafficVia - localPort.positionMeters
+                    ) <= 1.0e-3)
+                {
+                    std::cout
+                        << "[TrafficDockAdapter]"
+                        << " request=" << pending.serial
+                        << " drop_terminal_via=("
+                        << terminalTrafficVia.x << ","
+                        << terminalTrafficVia.y << ","
+                        << terminalTrafficVia.z << ")"
+                        << " reason=docking-terminal-owned-by-planner"
+                        << std::endl;
+
+                    request.requiredViaPointsMeters.pop_back();
+                }
+            }
+
             request.mandatoryTangentStraights.clear();
             request.mandatoryTangentStraights.reserve(
                 compiledTrafficRoute.mandatoryTangentStraights.size()

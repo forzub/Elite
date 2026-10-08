@@ -36,6 +36,9 @@ public:
         glm::dquat orientation {1.0, 0.0, 0.0, 0.0};
     };
 
+    // WORKING CONTRACT: canonical visual frame field is built from authored
+    // routeCurves, anchored at the terminal dock frame, then transported
+    // backwards. HUD sampling density must not redefine tunnel orientation.
     [[nodiscard]] static std::vector<Sample> build(
         const std::vector<planner::RouteCurveSegment>& curves,
         const glm::dvec3& terminalUpReference,
@@ -186,24 +189,40 @@ public:
         return result;
     }
 
-    [[nodiscard]] static double signedPhaseFromReferencePoints(
-        const glm::dvec3& axisRequested,
-        const glm::dvec3& baseCenter,
-        const glm::dvec3& baseRadialPoint,
-        const glm::dvec3& liveCenter,
-        const glm::dvec3& liveRadialPoint
+    // WORKING CONTRACT — DO NOT "SIMPLIFY" WITHOUT A REPRODUCING FAILURE.
+    //
+    // The visual docking tunnel is phase-locked to the rotating dock by TWO
+    // geometric points in the same frame:
+    //   1) aperture center;
+    //   2) a radial reference point that means "dock bottom".
+    //
+    // The signed phase is measured around the TERMINAL ROUTE axis, not around
+    // dock.forward.  Those axes are opposite on approach, so measuring around
+    // dock.forward and then applying the angle around route.forward reverses
+    // clockwise/counter-clockwise motion.
+    //
+    // This two-point contract is intentional.  It keeps dock and tunnel as one
+    // kinematic object.  Do not replace it with an independent Euler angle,
+    // arbitrary up-vector projection, or a separately integrated tunnel roll
+    // unless there is a concrete bug that requires it.
+    [[nodiscard]] static double synchronizedTunnelRollPhase(
+        const glm::dvec3& terminalRouteAxisRequested,
+        const glm::dvec3& planningDockCenter,
+        const glm::dvec3& planningDockBottom,
+        const glm::dvec3& liveDockCenter,
+        const glm::dvec3& liveDockBottom
     )
     {
         const glm::dvec3 axis =
             normalizedOr(
-                axisRequested,
+                terminalRouteAxisRequested,
                 glm::dvec3(0.0, 0.0, -1.0)
             );
 
         glm::dvec3 base =
-            baseRadialPoint - baseCenter;
+            planningDockBottom - planningDockCenter;
         glm::dvec3 live =
-            liveRadialPoint - liveCenter;
+            liveDockBottom - liveDockCenter;
 
         base -= axis * glm::dot(base, axis);
         live -= axis * glm::dot(live, axis);
@@ -223,6 +242,8 @@ public:
         );
     }
 
+    // WORKING CONTRACT: dynamic dock roll changes frame orientation only
+    // around each frame's own route tangent; centerline geometry is untouched.
     [[nodiscard]] static glm::dvec3 rotateUpAroundForward(
         const glm::dvec3& forwardRequested,
         const glm::dvec3& upRequested,

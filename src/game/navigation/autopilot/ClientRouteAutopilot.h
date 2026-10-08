@@ -181,15 +181,9 @@ public:
             deltaSeconds > 1.0e-9)
         {
             const double delta =
-                std::atan2(
-                    std::sin(
-                        phase -
-                        state.previousLiveTunnelRollPhaseRad
-                    ),
-                    std::cos(
-                        phase -
-                        state.previousLiveTunnelRollPhaseRad
-                    )
+                TwoPointRollGeometry::shortestPhaseDelta(
+                    state.previousLiveTunnelRollPhaseRad,
+                    phase
                 );
             state.liveTunnelRollRateRadPerSec =
                 delta / deltaSeconds;

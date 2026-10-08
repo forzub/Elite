@@ -2063,8 +2063,12 @@ void SpaceState::updateDockingAdvisory()
                     shipProfile.maxBrakingAccelerationMps2,
                     shipProfile.maxLateralAccelerationMps2
                 );
+        // Speed is not an execution authority reserve. Publish the real
+        // physical maximum to the route layer; cruise policy applies its
+        // single explicit 0.8 factor later. Curvature/braking/terminal limits
+        // are local and must not be hidden behind stacked global margins.
         request.maxSpeedMps =
-            shipProfile.maxSpeedMps * 0.90;
+            shipProfile.maxSpeedMps;
         request.acceleratingMps2 =
             std::max(
                 0.1,

@@ -63,6 +63,11 @@ struct DockingAdvisoryRequest
     bool deriveTerminalTurnRadiusFromVehicle = false;
     double preferredTerminalTurnRadiusMeters = 0.0;
 
+    // Ordered mandatory points supplied by the semantic traffic layer.
+    // Geometric search is performed leg-by-leg so simplification cannot
+    // bypass an assigned traffic portal or mandatory transit corridor.
+    std::vector<glm::dvec3> requiredViaPointsMeters;
+
     std::vector<world::navigation::NavigationObstacle> obstacles;
 };
 struct DockingAdvisoryGate

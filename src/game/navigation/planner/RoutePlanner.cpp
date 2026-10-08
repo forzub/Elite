@@ -99,6 +99,8 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
         input.deriveTerminalTurnRadiusFromVehicle;
     legacy.preferredTerminalTurnRadiusMeters =
         input.preferredTerminalTurnRadiusMeters;
+    legacy.requiredViaPointsMeters =
+        input.requiredViaPointsMeters;
     legacy.obstacles = input.obstacles;
 
     const auto planned =

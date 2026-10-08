@@ -118,6 +118,36 @@ std::shared_ptr<const TrafficRouteGraph> TrafficRouteGraph::build(
             );
             return {};
         }
+
+        const auto validConnection =
+            [](const PortalConnectionDefinition& connection)
+            {
+                if (!std::isfinite(connection.mandatoryStraightMeters) ||
+                    connection.mandatoryStraightMeters < 0.0)
+                {
+                    return false;
+                }
+
+                if (connection.kind ==
+                        PortalConnectionKind::MandatoryTangentStraight &&
+                    connection.mandatoryStraightMeters <= 0.0)
+                {
+                    return false;
+                }
+
+                return true;
+            };
+
+        if (!validConnection(portal.inboundConnection) ||
+            !validConnection(portal.outboundConnection))
+        {
+            setFailure(
+                failure,
+                "traffic portal has invalid connection contract: " +
+                    portal.id
+            );
+            return {};
+        }
     }
 
     std::unordered_set<std::string> laneIds;

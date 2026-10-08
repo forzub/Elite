@@ -47,6 +47,24 @@ Entry/exit portals are semantic crossing planes, not merely points.
 A crossing contract includes aperture/frame, crossing direction, clearance and optional speed ceiling.
 Docking ports and transit gates remain distinct semantic anchors even if they are physically co-located.
 
+## Mandatory tangent-straight portal connections
+
+A portal may require an authored boundary straight before or after crossing.
+
+This is a semantic route-boundary constraint, not a new curve primitive:
+- route geometry remains Line / CircularArc / CubicBezier;
+- the boundary contract is `MandatoryTangentStraight`.
+
+Inbound contract:
+`free route -> tangent arc -> mandatory straight -> portal`
+
+Outbound contract:
+`portal -> mandatory straight -> tangent arc -> free route`
+
+The mandatory straight is aligned with the portal crossing direction. The planner must preserve this segment exactly. It may not replace it with an obstacle detour, bend it, or round away the portal crossing. If the protected straight is blocked, orchestration must select another legal portal/lane or report that the assigned route needs refinement.
+
+This same boundary primitive is intended for docking ingress, BLUE transit gates, hangar mouths, canyon gates, tunnel entries and similar constrained passages.
+
 ## Traffic lanes
 
 A lane binds:

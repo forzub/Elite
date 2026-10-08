@@ -1926,7 +1926,10 @@ void SpaceState::updateDockingAdvisory()
         return control;
     };
 
-    constexpr double PlanningLeadSeconds = 1.0;
+    // Planner + route compiler run asynchronously. Reserve enough coast time
+    // for BOTH stages so the main thread never has to block at handoff.
+    // The ship keeps its measured velocity with zero commanded acceleration.
+    constexpr double PlanningLeadSeconds = 3.0;
 
     if (pending.serial != m_lastDockingPathRequestSerial)
     {
@@ -2171,6 +2174,25 @@ void SpaceState::updateDockingAdvisory()
         job->context.verticalToleranceMeters =
             fit.heightMarginMeters * 0.5;
 
+        auto compileAgent = makeAgent();
+        compileAgent.positionMapMeters = request.startMeters;
+        compileAgent.velocityMapMetersPerSecond = startVelocityMps;
+
+        const double compileTolerance =
+            std::max(
+                20.0,
+                std::max(
+                    job->context.lateralToleranceMeters,
+                    job->context.verticalToleranceMeters
+                )
+            );
+        const auto compileControlLaw = controlLaw;
+        const auto compilePhysics = effectivePhysics;
+        const std::uint64_t compileRequestSerial = pending.serial;
+        const double compileExecutionUniverseTimeSeconds =
+            job->executionStartUniverseTimeSeconds;
+        job->autopilotCompileRequested = automatic;
+
         m_dockWorkerCount->fetch_add(
             1,
             std::memory_order_acq_rel
@@ -2190,24 +2212,70 @@ void SpaceState::updateDockingAdvisory()
         std::thread(
             [job,
              count = m_dockWorkerCount,
-             request = std::move(request)]() mutable
+             request = std::move(request),
+             compileAgent,
+             compileControlLaw,
+             compilePhysics,
+             compileRequestSerial,
+             compileTolerance,
+             compileExecutionUniverseTimeSeconds]() mutable
             {
                 try
                 {
                     job->plan =
                         game::navigation::planner::
                             RoutePlanner::plan(request);
+
+                    if (job->plan.valid())
+                    {
+                        const auto visualFrameField =
+                            game::navigation::RouteFrameField::build(
+                                job->plan.routeCurves,
+                                job->context.routeUpReference
+                            );
+                        job->context.visualGateUp =
+                            game::navigation::RouteFrameField::
+                                sampleUpForGates(
+                                    visualFrameField,
+                                    job->plan.gates
+                                );
+                        job->context.visualExecutionGateUp =
+                            game::navigation::RouteFrameField::
+                                sampleUpForGates(
+                                    visualFrameField,
+                                    job->plan.executionGates
+                                );
+
+                        if (job->autopilotCompileRequested)
+                        {
+                            job->autopilotCompiled =
+                                game::navigation::autopilot::
+                                    ClientRouteAutopilot::start(
+                                        job->compiledAutopilotState,
+                                        job->plan,
+                                        compileAgent,
+                                        compileControlLaw,
+                                        compilePhysics,
+                                        compileExecutionUniverseTimeSeconds,
+                                        compileRequestSerial,
+                                        compileTolerance,
+                                        job->context.routeUpReference,
+                                        true,
+                                        &job->autopilotCompileFailure
+                                    );
+                        }
+                    }
                 }
                 catch (const std::exception& error)
                 {
                     job->plan.failure =
-                        std::string("planner exception: ") +
+                        std::string("planner/compile exception: ") +
                         error.what();
                 }
                 catch (...)
                 {
                     job->plan.failure =
-                        "planner unknown exception";
+                        "planner/compile unknown exception";
                 }
 
                 job->ready.store(
@@ -2317,24 +2385,9 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);
 
-        // Presentation-only orientation field. Build it once from the
-        // authoritative parametric route geometry; do not let HUD gate
-        // spacing redefine frame roll, and do not feed it back into flight.
-        const auto visualFrameField =
-            game::navigation::RouteFrameField::build(
-                m_dockAdvice.plan.routeCurves,
-                m_dockAdvice.routeUpReference
-            );
-        m_dockAdvice.visualGateUp =
-            game::navigation::RouteFrameField::sampleUpForGates(
-                visualFrameField,
-                m_dockAdvice.plan.gates
-            );
-        m_dockAdvice.visualExecutionGateUp =
-            game::navigation::RouteFrameField::sampleUpForGates(
-                visualFrameField,
-                m_dockAdvice.plan.executionGates
-            );
+        // WORKING ASYNC CONTRACT: expensive route compilation and visual
+        // frame-field construction completed in the worker. Main thread only
+        // adopts ready-to-use products here.
 
         m_activeDockingGuidanceCorridorId =
             "dock:" +
@@ -2357,35 +2410,13 @@ void SpaceState::updateDockingAdvisory()
 
         if (automatic)
         {
-            const double tolerance =
-                std::max(
-                    20.0,
-                    std::max(
-                        m_dockAdvice.lateralToleranceMeters,
-                        m_dockAdvice.verticalToleranceMeters
-                    )
-                );
-
-            std::string autopilotStartFailure;
-            if (!ClientAutopilot::start(
-                    m_clientRouteAutopilot,
-                    m_dockAdvice.plan,
-                    makeAgent(),
-                    controlLaw,
-                    effectivePhysics,
-                    universeTimeSeconds,
-                    pending.serial,
-                    tolerance,
-                    m_dockAdvice.routeUpReference,
-                    true,
-                    &autopilotStartFailure
-                ))
+            if (!job->autopilotCompiled)
             {
                 const auto agent = makeAgent();
                 std::cerr
                     << "[DockClientStartFailure]"
                     << " request=" << pending.serial
-                    << " reason=\"" << autopilotStartFailure << "\""
+                    << " reason=\"" << job->autopilotCompileFailure << "\""
                     << " speed_mps="
                     << glm::length(agent.velocityMapMetersPerSecond)
                     << " velocity=("
@@ -2404,12 +2435,15 @@ void SpaceState::updateDockingAdvisory()
 
                 fail(
                     "client autopilot could not accept planner route: " +
-                    (autopilotStartFailure.empty()
+                    (job->autopilotCompileFailure.empty()
                         ? std::string("unknown-start-failure")
-                        : autopilotStartFailure)
+                        : job->autopilotCompileFailure)
                 );
                 return;
             }
+
+            m_clientRouteAutopilot =
+                std::move(job->compiledAutopilotState);
 
             m_clientDockingPhase =
                 ClientDockingPhase::Executing;

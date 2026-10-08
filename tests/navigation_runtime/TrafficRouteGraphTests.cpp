@@ -136,6 +136,27 @@ int main()
             "blue traffic lane stopped being hard containment"
         );
 
+        const auto* entryPortal =
+            graph->portal("cylinder_b.entry_front");
+        const auto* exitPortal =
+            graph->portal("cylinder_b.exit_rear");
+        require(
+            entryPortal && exitPortal,
+            "blue cylinder traffic portals are missing"
+        );
+        require(
+            entryPortal->inboundConnection.kind ==
+                PortalConnectionKind::MandatoryTangentStraight &&
+            entryPortal->inboundConnection.mandatoryStraightMeters == 700.0,
+            "blue entry lost mandatory tangent-straight approach"
+        );
+        require(
+            exitPortal->outboundConnection.kind ==
+                PortalConnectionKind::MandatoryTangentStraight &&
+            exitPortal->outboundConnection.mandatoryStraightMeters == 700.0,
+            "blue exit lost mandatory tangent-straight departure"
+        );
+
         const auto route =
             graph->resolve(
                 "cylinder_b.entry_front",
@@ -339,6 +360,7 @@ int main()
         std::cout << "TRAFFIC ROUTE GRAPH TESTS: PASS\n";
         std::cout << " - topology is immutable after validated build\n";
         std::cout << " - cylinder B entry -> exit remains mandatory and one-way\n";
+        std::cout << " - blue portals preserve tangent-straight boundary contracts\n";
         std::cout << " - cube A terminal approach stays downstream of blue transit\n";
         std::cout << " - malformed topology fails closed\n";
         std::cout << " - blue/green share one physical volume model\n";

@@ -19,7 +19,11 @@
         0
       ],
       "required_clearance_m": 22,
-      "max_crossing_speed_mps": 220
+      "max_crossing_speed_mps": 220,
+      "inbound_connection": {
+        "kind": "mandatory_tangent_straight",
+        "mandatory_straight_m": 700
+      }
     },
     {
       "id": "cylinder_b.exit_rear",
@@ -37,7 +41,11 @@
         0
       ],
       "required_clearance_m": 22,
-      "max_crossing_speed_mps": 220
+      "max_crossing_speed_mps": 220,
+      "outbound_connection": {
+        "kind": "mandatory_tangent_straight",
+        "mandatory_straight_m": 700
+      }
     },
     {
       "id": "cube_a.dock_front",

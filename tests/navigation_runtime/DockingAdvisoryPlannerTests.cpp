@@ -6,6 +6,7 @@
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"
+#include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/HubCoMovingFrame.h"
 #include <glm/gtx/quaternion.hpp>
 #include "src/world/navigation/NavigationObstacleGeometry.h"
@@ -263,6 +264,66 @@ int main()
             std::cerr
                 << "two-point roll phase wrap produced a 360-degree rate impulse\n";
             return 115;
+        }
+    }
+
+    // Verified hull/tunnel roll contract: the pure guidance function must
+    // track the exact same live phase/rate used by the visible tunnel.
+    {
+        using game::navigation::autopilot::HullTunnelRollGuidance;
+
+        HullTunnelRollGuidance::Request request;
+        request.hullCenter = glm::dvec3(10.0, 20.0, 30.0);
+        request.hullForward =
+            glm::normalize(glm::dvec3(0.2, 0.1, -1.0));
+        request.tunnelForward = request.hullForward;
+        request.canonicalTunnelUp =
+            glm::normalize(glm::dvec3(-0.1, 1.0, 0.08));
+        request.tunnelCenter = glm::dvec3(-40.0, 5.0, 70.0);
+        request.liveTunnelRollPhaseRad = glm::radians(35.0);
+        request.liveTunnelRollRateRadPerSec = glm::radians(2.0);
+        request.rollResponseSeconds = 0.5;
+        request.maxRollRateRadPerSec = glm::radians(180.0);
+
+        const glm::dvec3 targetUp =
+            RouteFrameField::rotateUpAroundForward(
+                request.tunnelForward,
+                request.canonicalTunnelUp,
+                request.liveTunnelRollPhaseRad
+            );
+
+        request.hullUp = targetUp;
+        const auto matched =
+            HullTunnelRollGuidance::evaluate(request);
+        if (!matched.valid ||
+            std::abs(matched.signedRollErrorRad) > 1.0e-9 ||
+            std::abs(
+                matched.desiredRollRateRadPerSec -
+                request.liveTunnelRollRateRadPerSec
+            ) > 1.0e-9)
+        {
+            std::cerr
+                << "verified hull/tunnel roll guidance does not preserve matched live phase/rate\n";
+            return 116;
+        }
+
+        request.hullUp =
+            RouteFrameField::rotateUpAroundForward(
+                request.hullForward,
+                targetUp,
+                glm::radians(-10.0)
+            );
+        const auto lagged =
+            HullTunnelRollGuidance::evaluate(request);
+        if (!lagged.valid ||
+            std::abs(lagged.signedRollErrorRad - glm::radians(10.0)) >
+                1.0e-8 ||
+            lagged.desiredRollRateRadPerSec <=
+                request.liveTunnelRollRateRadPerSec)
+        {
+            std::cerr
+                << "verified hull/tunnel roll guidance lost two-point catch-up behavior\n";
+            return 117;
         }
     }
 

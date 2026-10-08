@@ -2476,6 +2476,7 @@ void SpaceState::updateDockingAdvisory()
             [job,
              count = m_dockWorkerCount,
              request = std::move(request),
+             compiledTrafficRoute = std::move(compiledTrafficRoute),
              compileAgent,
              compileControlLaw,
              compilePhysics,
@@ -2491,6 +2492,52 @@ void SpaceState::updateDockingAdvisory()
                     job->plan =
                         game::navigation::planner::
                             RoutePlanner::plan(request);
+
+                    if (job->plan.valid() &&
+                        compiledTrafficRoute.valid)
+                    {
+                        for (const auto& stage :
+                             compiledTrafficRoute.stages)
+                        {
+                            if (stage.kind !=
+                                    game::navigation::traffic::
+                                        TrafficRouteStageKind::VolumeTransit ||
+                                stage.volumeConstraint.policy !=
+                                    world::navigation::
+                                        NavigationVolumePolicy::KeepInside)
+                            {
+                                continue;
+                            }
+
+                            const auto containment =
+                                game::navigation::traffic::
+                                    RouteVolumeContainmentValidator::
+                                        validateKeepInsideRouteInterval(
+                                            stage,
+                                            job->plan.routeCurves,
+                                            stage.fromWorldMeters,
+                                            stage.toWorldMeters,
+                                            request.agentRadiusMeters
+                                        );
+
+                            if (!containment.valid)
+                            {
+                                job->plan.disposition =
+                                    game::navigation::planner::
+                                        RoutePlanDisposition::NeedsRefinement;
+                                job->plan.failureCode =
+                                    game::navigation::planner::
+                                        RoutePlanFailureCode::
+                                            NoCollisionFreeCandidate;
+                                job->plan.failure =
+                                    "assigned BLUE corridor containment failed: " +
+                                    containment.failure;
+                                job->plan.userMessage =
+                                    job->plan.failure;
+                                break;
+                            }
+                        }
+                    }
 
                     if (job->plan.valid())
                     {

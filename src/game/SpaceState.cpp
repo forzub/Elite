@@ -2408,6 +2408,8 @@ void SpaceState::updateDockingAdvisory()
         }
 
         auto job = std::make_shared<DockAdviceJob>();
+        job->planningProgressStage.store(0, std::memory_order_release);
+        job->planningProgressPermille.store(100, std::memory_order_release);
         job->timelineRevision =
             snapshot.epoch.universeTimelineRevision;
         job->startedServerSeconds =
@@ -2497,9 +2499,23 @@ void SpaceState::updateDockingAdvisory()
 
                 try
                 {
+                    job->planningProgressStage.store(
+                        1,
+                        std::memory_order_release
+                    );
+                    job->planningProgressPermille.store(
+                        200,
+                        std::memory_order_release
+                    );
+
                     job->plan =
                         game::navigation::planner::
                             RoutePlanner::plan(request);
+
+                    job->planningProgressPermille.store(
+                        700,
+                        std::memory_order_release
+                    );
 
                     if (job->plan.valid() &&
                         compiledTrafficRoute.valid)
@@ -2567,8 +2583,26 @@ void SpaceState::updateDockingAdvisory()
                                     job->plan.executionGates
                                 );
 
+                        job->planningProgressStage.store(
+                            2,
+                            std::memory_order_release
+                        );
+                        job->planningProgressPermille.store(
+                            850,
+                            std::memory_order_release
+                        );
+
                         if (job->autopilotCompileRequested)
                         {
+                            job->planningProgressStage.store(
+                                3,
+                                std::memory_order_release
+                            );
+                            job->planningProgressPermille.store(
+                                930,
+                                std::memory_order_release
+                            );
+
                             job->autopilotCompiled =
                                 game::navigation::autopilot::
                                     ClientRouteAutopilot::start(
@@ -2586,6 +2620,15 @@ void SpaceState::updateDockingAdvisory()
                                     );
                         }
                     }
+
+                    job->planningProgressStage.store(
+                        4,
+                        std::memory_order_release
+                    );
+                    job->planningProgressPermille.store(
+                        1000,
+                        std::memory_order_release
+                    );
                 }
                 catch (const std::exception& error)
                 {

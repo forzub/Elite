@@ -59,6 +59,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     }
 
     auto plannerViaPoints = r.requiredViaPointsMeters;
+
+    struct ExactPlannerStraight
+    {
+        glm::dvec3 startMeters {0.0};
+        glm::dvec3 endMeters {0.0};
+    };
+    std::vector<ExactPlannerStraight> exactPlannerStraights;
+
     const auto samePoint =
         [](const glm::dvec3& a, const glm::dvec3& b)
         {
@@ -112,6 +120,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
             const glm::dvec3 workingJoin =
                 straight.startMeters - axis * workingExtensionMeters;
+
+            // The whole working axis from the tangent join to the portal must
+            // stay straight. Only the authored final portion is HARD, but if
+            // the extension were allowed to approach HARD start from an
+            // arbitrary direction, generic corner rounding would consume the
+            // HARD segment itself.
+            exactPlannerStraights.push_back(
+                {workingJoin, straight.endMeters}
+            );
+
             plannerViaPoints.insert(it, workingJoin);
         }
         else
@@ -133,6 +151,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
             const glm::dvec3 workingJoin =
                 straight.endMeters + axis * workingExtensionMeters;
+
+            exactPlannerStraights.push_back(
+                {straight.startMeters, workingJoin}
+            );
+
             plannerViaPoints.insert(std::next(it), workingJoin);
         }
     }
@@ -294,15 +317,36 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     search.params.agentRadiusMeters = r.hullRadiusMeters;
     search.params.maxConsideredObstacles = 48;
 
-    const auto protectedStraightForLeg =
+    const auto exactStraightForLeg =
         [&](const glm::dvec3& legStart,
             const glm::dvec3& legGoal)
-            -> const planner::MandatoryTangentStraightConstraint*
+            -> const ExactPlannerStraight*
         {
-            for (const auto& straight : r.mandatoryTangentStraights)
+            for (const auto& straight : exactPlannerStraights)
             {
-                if (glm::length(legStart - straight.startMeters) <= 1.0e-6 &&
-                    glm::length(legGoal - straight.endMeters) <= 1.0e-6)
+                const glm::dvec3 axisDelta =
+                    straight.endMeters - straight.startMeters;
+                const double axisLength = glm::length(axisDelta);
+                if (axisLength <= 1.0e-9)
+                    continue;
+
+                const glm::dvec3 axis = axisDelta / axisLength;
+                const auto liesOnAxisInterval =
+                    [&](const glm::dvec3& point)
+                    {
+                        const glm::dvec3 rel =
+                            point - straight.startMeters;
+                        const double along = glm::dot(rel, axis);
+                        const glm::dvec3 cross =
+                            rel - axis * along;
+                        return glm::length(cross) <= 1.0e-6 &&
+                            along >= -1.0e-6 &&
+                            along <= axisLength + 1.0e-6;
+                    };
+
+                if (liesOnAxisInterval(legStart) &&
+                    liesOnAxisInterval(legGoal) &&
+                    glm::dot(legGoal - legStart, axis) > 1.0e-6)
                 {
                     return &straight;
                 }
@@ -374,10 +418,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 continue;
 
             world::navigation::GeometricPathResult leg;
-            if (const auto* protectedStraight =
-                    protectedStraightForLeg(legStart, via))
+            if (const auto* exactStraight =
+                    exactStraightForLeg(legStart, via))
             {
-                (void)protectedStraight;
+                (void)exactStraight;
 
                 if (!clear(legStart, via))
                 {

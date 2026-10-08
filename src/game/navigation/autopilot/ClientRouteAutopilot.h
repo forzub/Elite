@@ -372,9 +372,16 @@ public:
 
         const auto executionAuthority =
             makeManeuverExecutionAuthority(params, law);
+        const double planningAuthorityFraction =
+            world::navigation::TrajectoryGenerationPolicy::
+                DefaultPlanningAuthorityFraction;
         const double forwardAuthority =
-            executionAuthority.forwardAccelerationMps2;
+            executionAuthority.forwardAccelerationMps2 *
+            planningAuthorityFraction;
         const double brakingAuthority =
+            executionAuthority.brakingAccelerationMps2 *
+            planningAuthorityFraction;
+        const double hardBrakingAuthority =
             executionAuthority.brakingAccelerationMps2;
 
         while (state.nextCheckpointIndex <
@@ -1010,6 +1017,13 @@ public:
             measuredBrakingResponse > 1.0e-6
                 ? std::min(brakingAuthority, measuredBrakingResponse)
                 : brakingAuthority;
+
+        // Hard physical braking remains available for emergency recovery, but
+        // ordinary terminal-stop planning intentionally uses the conservative
+        // planning envelope above. Runtime replanning must never "eat" that
+        // reserve and move braking back toward the mathematical limit.
+        const double hardRecoveryBrakingAuthority =
+            hardBrakingAuthority;
         const double longitudinalResponseGain =
             std::max(
                 1.0e-6,
@@ -1307,6 +1321,7 @@ public:
         out.courseResponseSeconds = courseResponseSeconds;
         out.effectiveBrakingAuthorityMps2 =
             effectiveBrakingAuthority;
+        (void)hardRecoveryBrakingAuthority;
         out.requiredTerminalStopDistanceMeters =
             requiredTerminalStopDistanceMeters;
         out.turnSpeedCeilingMps = turnSpeedCeilingMps;

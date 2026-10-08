@@ -44,6 +44,34 @@ TransitDirectionPolicy parseDirectionPolicy(const std::string& value)
         : TransitDirectionPolicy::OneWay;
 }
 
+PortalConnectionKind parsePortalConnectionKind(
+    const std::string& value
+)
+{
+    return value == "mandatory_tangent_straight"
+        ? PortalConnectionKind::MandatoryTangentStraight
+        : PortalConnectionKind::Direct;
+}
+
+PortalConnectionDefinition readPortalConnection(
+    const json& item,
+    const char* key
+)
+{
+    PortalConnectionDefinition out;
+    if (!item.contains(key) || !item[key].is_object())
+        return out;
+
+    const auto& connection = item[key];
+    out.kind =
+        parsePortalConnectionKind(
+            connection.value("kind", "direct")
+        );
+    out.mandatoryStraightMeters =
+        connection.value("mandatory_straight_m", 0.0);
+    return out;
+}
+
 glm::dvec3 readVec3(
     const json& parent,
     const char* key,
@@ -153,6 +181,10 @@ bool TrafficRouteGraphCatalog::load(const std::string& path)
                 item.value("required_clearance_m", 0.0);
             portal.maxCrossingSpeedMps =
                 item.value("max_crossing_speed_mps", 0.0);
+            portal.inboundConnection =
+                readPortalConnection(item, "inbound_connection");
+            portal.outboundConnection =
+                readPortalConnection(item, "outbound_connection");
             definition.portals.push_back(std::move(portal));
         }
     }

@@ -2212,6 +2212,130 @@ void SpaceState::updateDockingAdvisory()
 
         request.obstacles = snapshot.navigationObstacles;
 
+        if (pending.target.stableObjectId == "guidance_dock_cube_a" &&
+            pending.target.semanticAnchorId == "dock_gate_front")
+        {
+            game::navigation::traffic::TrafficRouteGraphCatalog trafficCatalog;
+            if (!trafficCatalog.load(
+                    "src/assets/data/navigation/hub_traffic_route_graph.json"))
+            {
+                fail("traffic graph unavailable: " + trafficCatalog.failure());
+                return;
+            }
+
+            const auto trafficGraph = trafficCatalog.graph();
+            const auto trafficRoute = trafficGraph->resolve(
+                "cylinder_b.entry_front",
+                "cube_a.dock_front"
+            );
+            const auto* entryPortal =
+                trafficGraph->portal("cylinder_b.entry_front");
+            const auto* exitPortal =
+                trafficGraph->portal("cylinder_b.exit_rear");
+            const auto* lane =
+                trafficGraph->lane("cylinder_b.blue_lane");
+
+            if (!trafficRoute.valid || !entryPortal || !exitPortal ||
+                !lane ||
+                lane->policy !=
+                    world::navigation::NavigationVolumePolicy::KeepInside)
+            {
+                fail("assigned blue traffic route is invalid");
+                return;
+            }
+
+            const auto* entryDefinition =
+                m_hubSemanticAnchorCatalog.find(
+                    entryPortal->hubModuleId,
+                    entryPortal->semanticAnchorId
+                );
+            const auto* exitDefinition =
+                m_hubSemanticAnchorCatalog.find(
+                    exitPortal->hubModuleId,
+                    exitPortal->semanticAnchorId
+                );
+
+            const auto transitObjectIt = std::find_if(
+                snapshot.objects.begin(),
+                snapshot.objects.end(),
+                [&](const auto& object)
+                {
+                    return object.hubAttachment.valid &&
+                        object.hubAttachment.moduleId ==
+                            entryPortal->hubModuleId;
+                }
+            );
+
+            if (!entryDefinition || !exitDefinition ||
+                transitObjectIt == snapshot.objects.end())
+            {
+                fail("blue traffic portal infrastructure unavailable");
+                return;
+            }
+
+            const auto entryPose = resolveDockingAdvisoryLocalPortAt(
+                transitObjectIt->hubAttachment,
+                *entryDefinition,
+                snapshot.epoch.universeTimeSeconds
+            );
+            const auto exitPose = resolveDockingAdvisoryLocalPortAt(
+                transitObjectIt->hubAttachment,
+                *exitDefinition,
+                snapshot.epoch.universeTimeSeconds
+            );
+
+            const glm::dvec3 delta =
+                exitPose.positionMeters - entryPose.positionMeters;
+            const double laneLength = glm::length(delta);
+            if (!entryPose.valid || !exitPose.valid ||
+                !(laneLength > 1.0))
+            {
+                fail("blue traffic portal geometry invalid");
+                return;
+            }
+
+            const glm::dvec3 laneForward = delta / laneLength;
+            const double leadMeters =
+                std::max(1000.0, hull.lengthMeters * 10.0);
+
+            request.requiredViaPointsMeters = {
+                entryPose.positionMeters - laneForward * leadMeters,
+                entryPose.positionMeters,
+                exitPose.positionMeters,
+                exitPose.positionMeters + laneForward * leadMeters
+            };
+
+            const std::uint32_t transitEntityId =
+                transitObjectIt->id.value;
+            request.obstacles.erase(
+                std::remove_if(
+                    request.obstacles.begin(),
+                    request.obstacles.end(),
+                    [&](const auto& obstacle)
+                    {
+                        return obstacle.entityId == transitEntityId;
+                    }
+                ),
+                request.obstacles.end()
+            );
+
+            std::cout
+                << "[TrafficRoute] request=" << pending.serial
+                << " lane=" << lane->id
+                << " volume=" << lane->navigationVolumeId
+                << " policy=KeepInside"
+                << " entry=("
+                << entryPose.positionMeters.x << ","
+                << entryPose.positionMeters.y << ","
+                << entryPose.positionMeters.z << ")"
+                << " exit=("
+                << exitPose.positionMeters.x << ","
+                << exitPose.positionMeters.y << ","
+                << exitPose.positionMeters.z << ")"
+                << " void_bridge_entity=" << transitEntityId
+                << std::endl;
+        }
+
         if (m_dockWorkerCount->load(std::memory_order_acquire) >= 2)
         {
             fail("planner busy");

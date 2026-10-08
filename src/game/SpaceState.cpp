@@ -2374,9 +2374,56 @@ void SpaceState::updateDockingAdvisory()
         }
     }
 
+    const auto currentTunnelRollPhase =
+        [&](double sampleUniverseTimeSeconds) -> double
+        {
+            if (!m_dockAdvice.serial ||
+                !m_dockAdvice.plan.valid() ||
+                m_dockAdvice.plan.gates.empty())
+            {
+                return 0.0;
+            }
+
+            const auto livePort =
+                resolveDockingAdvisoryLocalPortAt(
+                    m_dockAdvice.portAttachment,
+                    m_dockAdvice.portDefinition,
+                    sampleUniverseTimeSeconds
+                );
+            if (!livePort.valid)
+                return 0.0;
+
+            glm::dvec3 terminalRouteAxis =
+                m_dockAdvice.plan.gates.back().forward;
+            if (glm::length(terminalRouteAxis) <= 1.0e-9)
+                return 0.0;
+            terminalRouteAxis = glm::normalize(terminalRouteAxis);
+
+            const auto liveReference =
+                game::navigation::TwoPointRollGeometry::
+                    fromCenterAndUp(
+                        livePort.positionMeters,
+                        livePort.up
+                    );
+
+            return game::navigation::RouteFrameField::
+                synchronizedTunnelRollPhase(
+                    terminalRouteAxis,
+                    m_dockAdvice.dockCenterReference,
+                    m_dockAdvice.dockBottomReference,
+                    liveReference.center,
+                    liveReference.radialPoint
+                );
+        };
+
     if (m_clientDockingPhase ==
         ClientDockingPhase::Executing)
     {
+        ClientAutopilot::setLiveTunnelRollPhase(
+            m_clientRouteAutopilot,
+            currentTunnelRollPhase(universeTimeSeconds)
+        );
+
         const auto output =
             ClientAutopilot::update(
                 m_clientRouteAutopilot,
@@ -2540,44 +2587,10 @@ void SpaceState::updateDockingAdvisory()
     renderFrame.frameId =
         playerRenderFrame.hubId;
 
-    // Dynamic visual roll phase comes from a TWO-POINT dock reference:
-    // aperture center + a radial "bottom" point.  IMPORTANT: the terminal
-    // route tangent points INTO the dock and is therefore opposite to the
-    // dock's outward axis.  Measure the signed phase around the TERMINAL ROUTE
-    // axis so clockwise/counter-clockwise semantics match what the tunnel
-    // renderer actually rotates around.
-    double dockRollPhaseRad = 0.0;
-    const auto currentVisualPort =
-        resolveDockingAdvisoryLocalPortAt(
-            active.portAttachment,
-            active.portDefinition,
-            renderTime
-        );
-    if (currentVisualPort.valid &&
-        !active.plan.gates.empty())
-    {
-        glm::dvec3 terminalRouteAxis =
-            active.plan.gates.back().forward;
-        if (glm::length(terminalRouteAxis) > 1.0e-9)
-        {
-            terminalRouteAxis =
-                glm::normalize(terminalRouteAxis);
-
-            const glm::dvec3 liveDockBottom =
-                currentVisualPort.positionMeters -
-                currentVisualPort.up;
-
-            dockRollPhaseRad =
-                game::navigation::RouteFrameField::
-                    synchronizedTunnelRollPhase(
-                        terminalRouteAxis,
-                        active.dockCenterReference,
-                        active.dockBottomReference,
-                        currentVisualPort.positionMeters,
-                        liveDockBottom
-                    );
-        }
-    }
+    // WORKING CONTRACT: HUD and hull sample the same pure two-point dock
+    // phase function. Only sample time differs (render time vs fixed-sim time).
+    const double dockRollPhaseRad =
+        currentTunnelRollPhase(renderTime);
 
     const auto makeRoute =
         [&](const std::vector<

@@ -2667,11 +2667,13 @@ void SpaceState::updateDockingAdvisory()
                         }
                     }
 
-                    if (job->plan.valid())
+                    if (job->plan.valid() &&
+                        compiledTrafficRoute.valid)
                     {
                         // Explicit semantic -> generic contract seam.
-                        // SpaceState only composes the modules; it does not
-                        // derive route-stage progress or frame ownership.
+                        // Run only when semantic traffic was actually compiled.
+                        // The ordinary ship -> dock route must remain the
+                        // baseline planner path when BLUE is disabled.
                         const auto stageContract =
                             game::navigation::traffic::
                                 TrafficRoutePlanAdapter::

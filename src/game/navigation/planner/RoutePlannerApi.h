@@ -383,19 +383,72 @@ struct RouteCurveSegment
     }
 };
 
-// Semantic orientation anchor on the authoritative route.
+enum class RouteStageKind : std::uint8_t
+{
+    FreeTransit = 0,
+    VolumeEntryCapture,
+    VolumeTransit,
+    VolumeExit,
+    TerminalApproach
+};
+
+enum class RouteStageFramePolicy : std::uint8_t
+{
+    // Rotation-minimizing frame inherited from neighbouring geometry.
+    Transported = 0,
+
+    // Stage owns an authored/static navigation frame (BLUE/GREEN corridor,
+    // gate, canyon, tunnel, etc.).
+    NavigationFrame,
+
+    // Stage owns the live terminal docking frame. Dynamic dock phase may be
+    // refreshed while this stage is active without rotating earlier stages.
+    LiveDockFrame
+};
+
+enum class RouteStageRefreshPolicy : std::uint8_t
+{
+    FrozenAtPlanning = 0,
+    RefreshOnStageEntry,
+    LiveDuringStage
+};
+
+// One continuous RoutePlan is composed of ordered semantic stages.
 //
-// Geometry remains one continuous RoutePlan. These anchors only partition
-// orientation ownership along route progress: traffic volumes may own an
-// intermediate frame while the terminal docking frame owns the final phase.
+// A stage owns a route-progress interval and the navigation contract valid
+// over that interval. Geometry/speed planning remains continuous across stage
+// boundaries, but frame ownership and dynamic-data refresh are explicitly
+// local to the stage instead of being global route state.
+struct RouteStageSpan
+{
+    std::string id;
+    RouteStageKind kind = RouteStageKind::FreeTransit;
+
+    double startProgressMeters = 0.0;
+    double endProgressMeters = 0.0;
+
+    RouteStageFramePolicy framePolicy =
+        RouteStageFramePolicy::Transported;
+    RouteStageRefreshPolicy refreshPolicy =
+        RouteStageRefreshPolicy::FrozenAtPlanning;
+
+    // Static/authored stage frame. For LiveDockFrame this is the planning
+    // epoch fallback/reference; execution may refresh the live frame.
+    glm::dvec3 frameForward {0.0, 0.0, -1.0};
+    glm::dvec3 frameUp {0.0, 1.0, 0.0};
+
+    // Semantic ownership. Empty for unconstrained free transit.
+    std::string sourceId;
+    std::string volumeId;
+
+    // True for hard containment stages such as BLUE KeepInside.
+    bool hardContainment = false;
+};
+
 struct RouteFrameAnchor
 {
     double progressMeters = 0.0;
     glm::dvec3 upReference {0.0, 1.0, 0.0};
-
-    // 0 = ignore live dock roll at this anchor.
-    // 1 = fully phase-lock to the live rotating dock.
-    // Values between anchors are interpolated by RouteFrameField.
     double liveDockPhaseWeight = 0.0;
 };
 
@@ -415,8 +468,12 @@ struct RoutePlan
     std::vector<RouteGate> gates;
     std::vector<RouteGate> executionGates;
 
-    // Intermediate semantic orientation ownership. The terminal dock anchor
-    // is implicit and supplied by the caller's terminal up reference.
+    // Ordered semantic pieces of this one continuous route.
+    std::vector<RouteStageSpan> stages;
+
+    // Internal frame interpolation support. Consumers should prefer stages
+    // for ownership/refresh decisions; anchors are a derived implementation
+    // detail used by RouteFrameField.
     std::vector<RouteFrameAnchor> routeFrameAnchors;
 
     bool terminalDetourUsed = false;

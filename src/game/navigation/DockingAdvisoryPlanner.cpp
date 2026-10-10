@@ -1166,16 +1166,15 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     for (const auto& straight :
                          exactPlannerStraights)
                     {
-                        if (straight.inbound &&
-                            samePoint(
+                        // BOTH ends of a protected straight are geometric
+                        // boundary states. A turn before start must end
+                        // tangent to the axis; a turn after end must begin
+                        // tangent to the axis. Generic fillet rounding is
+                        // forbidden from consuming the protected interval.
+                        if (samePoint(
                                 vertices[i],
                                 straight.startMeters
-                            ))
-                        {
-                            return &straight;
-                        }
-
-                        if (!straight.inbound &&
+                            ) ||
                             samePoint(
                                 vertices[i],
                                 straight.endMeters
@@ -1198,6 +1197,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 {
                     const glm::dvec3 requiredForward =
                         axisDelta / axisLength;
+                    const bool transitionInbound =
+                        samePoint(
+                            vertices[i],
+                            stageStraightAtBoundary->startMeters
+                        );
 
                     // Manual-friendly stage capture is authored geometry, not
                     // an emergency "fit whatever radius is left" fillet.
@@ -1210,7 +1214,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         );
 
                     const glm::dvec3 neighbour =
-                        stageStraightAtBoundary->inbound
+                        transitionInbound
                             ? candidate.samples.back()
                             : vertices[i + 1];
 
@@ -1220,12 +1224,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                             vertices[i],
                             requiredForward,
                             comfortRadiusMeters,
-                            stageStraightAtBoundary->inbound
+                            transitionInbound
                         );
 
                     if (transition.valid)
                     {
-                        if (stageStraightAtBoundary->inbound)
+                        if (transitionInbound)
                         {
                             appendLineCurve(
                                 candidate.samples.back(),
@@ -1259,7 +1263,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                             transition.sweepRadians
                         );
 
-                        if (stageStraightAtBoundary->inbound)
+                        if (transitionInbound)
                         {
                             candidate.samples.insert(
                                 candidate.samples.end(),
@@ -1279,7 +1283,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         std::cerr
                             << "[StageTransitionArc]"
                             << " inbound="
-                            << (stageStraightAtBoundary->inbound
+                            << (transitionInbound
                                     ? 1
                                     : 0)
                             << " radius_m="
@@ -1308,7 +1312,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     std::cerr
                         << "[StageTransitionArc]"
                         << " inbound="
-                        << (stageStraightAtBoundary->inbound ? 1 : 0)
+                        << (transitionInbound ? 1 : 0)
                         << " radius_m=" << comfortRadiusMeters
                         << " result=no-single-arc-candidate"
                         << " fallback=legacy-fillet"

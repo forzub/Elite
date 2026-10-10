@@ -39,14 +39,14 @@ public:
         // How much of the live terminal dock roll phase belongs to this
         // station. Traffic-volume stages normally own 0; terminal docking
         // owns 1; transition spans interpolate continuously.
-        double liveDockPhaseWeight = 1.0;
+        double dynamicRollPhaseWeight = 1.0;
     };
 
     struct Anchor
     {
         double progressMeters = 0.0;
         glm::dvec3 upReference {0.0, 1.0, 0.0};
-        double liveDockPhaseWeight = 0.0;
+        double dynamicRollPhaseWeight = 0.0;
     };
 
     // WORKING CONTRACT: canonical visual frame field is built from authored
@@ -128,7 +128,7 @@ public:
         {
             std::size_t sampleIndex = 0;
             glm::dvec3 upReference {0.0, 1.0, 0.0};
-            double liveDockPhaseWeight = 0.0;
+            double dynamicRollPhaseWeight = 0.0;
         };
 
         std::vector<ResolvedAnchor> anchors;
@@ -175,8 +175,8 @@ public:
             anchor.sampleIndex =
                 nearestSampleIndex(requested.progressMeters);
             anchor.upReference = requested.upReference;
-            anchor.liveDockPhaseWeight = std::clamp(
-                requested.liveDockPhaseWeight,
+            anchor.dynamicRollPhaseWeight = std::clamp(
+                requested.dynamicRollPhaseWeight,
                 0.0,
                 1.0
             );
@@ -187,7 +187,7 @@ public:
         ResolvedAnchor terminal;
         terminal.sampleIndex = out.size() - 1;
         terminal.upReference = terminalUpReference;
-        terminal.liveDockPhaseWeight = 1.0;
+        terminal.dynamicRollPhaseWeight = 1.0;
         anchors.push_back(terminal);
 
         std::sort(
@@ -236,8 +236,8 @@ public:
         {
             const auto& first = anchors.front();
             setFrame(out[first.sampleIndex], first.upReference);
-            out[first.sampleIndex].liveDockPhaseWeight =
-                first.liveDockPhaseWeight;
+            out[first.sampleIndex].dynamicRollPhaseWeight =
+                first.dynamicRollPhaseWeight;
 
             for (std::size_t i = first.sampleIndex; i > 0; --i)
             {
@@ -251,8 +251,8 @@ public:
                 if (glm::length(up) <= 1.0e-9)
                     up = perpendicularSeed(out[i - 1].forward);
                 setFrame(out[i - 1], glm::normalize(up));
-                out[i - 1].liveDockPhaseWeight =
-                    first.liveDockPhaseWeight;
+                out[i - 1].dynamicRollPhaseWeight =
+                    first.dynamicRollPhaseWeight;
             }
         }
 
@@ -266,10 +266,10 @@ public:
 
             setFrame(out[a.sampleIndex], a.upReference);
             setFrame(out[b.sampleIndex], b.upReference);
-            out[a.sampleIndex].liveDockPhaseWeight =
-                a.liveDockPhaseWeight;
-            out[b.sampleIndex].liveDockPhaseWeight =
-                b.liveDockPhaseWeight;
+            out[a.sampleIndex].dynamicRollPhaseWeight =
+                a.dynamicRollPhaseWeight;
+            out[b.sampleIndex].dynamicRollPhaseWeight =
+                b.dynamicRollPhaseWeight;
 
             if (b.sampleIndex <= a.sampleIndex + 1)
                 continue;
@@ -348,9 +348,9 @@ public:
                     up = perpendicularSeed(out[i].forward);
                 setFrame(out[i], glm::normalize(up));
 
-                out[i].liveDockPhaseWeight =
-                    a.liveDockPhaseWeight * (1.0 - u) +
-                    b.liveDockPhaseWeight * u;
+                out[i].dynamicRollPhaseWeight =
+                    a.dynamicRollPhaseWeight * (1.0 - u) +
+                    b.dynamicRollPhaseWeight * u;
             }
         }
 
@@ -527,7 +527,7 @@ public:
         return result;
     }
 
-    [[nodiscard]] static double liveDockPhaseWeightAtProgress(
+    [[nodiscard]] static double dynamicRollPhaseWeightAtProgress(
         const std::vector<Sample>& field,
         double progressMeters
     )
@@ -537,10 +537,10 @@ public:
         if (field.size() == 1 ||
             progressMeters <= field.front().progressMeters)
         {
-            return field.front().liveDockPhaseWeight;
+            return field.front().dynamicRollPhaseWeight;
         }
         if (progressMeters >= field.back().progressMeters)
-            return field.back().liveDockPhaseWeight;
+            return field.back().dynamicRollPhaseWeight;
 
         const auto upper = std::upper_bound(
             field.begin(),
@@ -565,15 +565,15 @@ public:
                   )
                 : 0.0;
         return std::clamp(
-            field[lo].liveDockPhaseWeight * (1.0 - u) +
-            field[hi].liveDockPhaseWeight * u,
+            field[lo].dynamicRollPhaseWeight * (1.0 - u) +
+            field[hi].dynamicRollPhaseWeight * u,
             0.0,
             1.0
         );
     }
 
     [[nodiscard]] static std::vector<double>
-    sampleLiveDockPhaseWeightForGates(
+    sampleDynamicRollPhaseWeightForGates(
         const std::vector<Sample>& field,
         const std::vector<planner::RouteGate>& gates
     )
@@ -614,7 +614,7 @@ public:
                 field.back().progressMeters
             );
             result.push_back(
-                liveDockPhaseWeightAtProgress(
+                dynamicRollPhaseWeightAtProgress(
                     field,
                     estimatedProgress
                 )

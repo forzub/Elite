@@ -1746,6 +1746,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         selectedTraversalSeconds=estimatedTraversalSeconds(selected);
     }
 
+    const auto isInvariantStageBoundaryFailure =
+        [](const RoundedCandidate& candidate)
+        {
+            return candidate.failure ==
+                "no fixed-radius transition arc at protected straight boundary";
+        };
+
     const auto considerPreferredCandidate =
         [&](RoundedCandidate candidate, bool candidateIsDetour)
         {
@@ -1995,6 +2002,23 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     out.terminalArcLastRejection =
                         "transit-to-entry:" +
                         transitCandidate.failure;
+
+                    // The traffic-stage prefix is identical for every
+                    // terminal ingress angle. If it cannot satisfy a
+                    // protected stage boundary, rotating the distant
+                    // terminal arc cannot possibly repair that prefix.
+                    // Abort the terminal sweep instead of recomputing the
+                    // same impossible BLUE-entry transition hundreds of
+                    // times.
+                    if (isInvariantStageBoundaryFailure(
+                            transitCandidate
+                        ))
+                    {
+                        out.failure =
+                            transitCandidate.failure;
+                        return out;
+                    }
+
                     continue;
                 }
                 if(transitCandidate.samples.empty() ||

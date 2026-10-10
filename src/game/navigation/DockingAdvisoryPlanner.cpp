@@ -835,7 +835,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                  ++planeIndex)
             {
                 const double phi =
-                    glm::two_pi<double>() *
+                    (2.0 * std::acos(-1.0)) *
                     static_cast<double>(planeIndex) /
                     static_cast<double>(PlaneSamples);
                 const glm::dvec3 normal = glm::normalize(

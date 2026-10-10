@@ -70,7 +70,8 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationVolumeCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraph.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/TrafficRouteGraphCatalog.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/RouteStageCompiler.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/RouteStageCompiler.cpp
+    src/game/navigation/traffic/TrafficRoutePlanAdapter.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/traffic/RouteVolumeContainmentValidator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/diagnostics/NavigationScenarioRunner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"

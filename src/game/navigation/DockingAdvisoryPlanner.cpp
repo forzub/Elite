@@ -116,6 +116,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         glm::dvec3 startMeters {0.0};
         glm::dvec3 endMeters {0.0};
+        bool inbound = true;
     };
     std::vector<ExactPlannerStraight> exactPlannerStraights;
 
@@ -179,7 +180,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             // arbitrary direction, generic corner rounding would consume the
             // HARD segment itself.
             exactPlannerStraights.push_back(
-                {workingJoin, straight.endMeters}
+                {workingJoin, straight.endMeters, true}
             );
 
             if (traceTraffic)
@@ -225,7 +226,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 straight.endMeters + axis * workingExtensionMeters;
 
             exactPlannerStraights.push_back(
-                {straight.startMeters, workingJoin}
+                {straight.startMeters, workingJoin, false}
             );
 
             if (traceTraffic)
@@ -755,6 +756,275 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         std::vector<planner::RouteCurveSegment> curves;
     };
 
+    struct StageTransitionArcCandidate
+    {
+        bool valid = false;
+        glm::dvec3 startMeters {0.0};
+        glm::dvec3 endMeters {0.0};
+        glm::dvec3 centerMeters {0.0};
+        glm::dvec3 normal {0.0, 1.0, 0.0};
+        double radiusMeters = 0.0;
+        double sweepRadians = 0.0;
+        double planeRotationRadians = 0.0;
+        double tangentErrorRadians =
+            std::numeric_limits<double>::infinity();
+        std::vector<glm::dvec3> samples;
+    };
+
+    const auto stablePerpendicularBasis =
+        [](const glm::dvec3& axis)
+        {
+            const glm::dvec3 seed =
+                std::abs(axis.y) < 0.85
+                    ? glm::dvec3(0.0, 1.0, 0.0)
+                    : glm::dvec3(1.0, 0.0, 0.0);
+            const glm::dvec3 a =
+                glm::normalize(glm::cross(axis, seed));
+            const glm::dvec3 b =
+                glm::normalize(glm::cross(axis, a));
+            return std::pair<glm::dvec3, glm::dvec3>{a, b};
+        };
+
+    const auto rotateVectorAroundAxis =
+        [](const glm::dvec3& v,
+           const glm::dvec3& axis,
+           double angle)
+        {
+            const double co = std::cos(angle);
+            const double si = std::sin(angle);
+            return
+                v * co +
+                glm::cross(axis, v) * si +
+                axis * glm::dot(axis, v) * (1.0 - co);
+        };
+
+    const auto findRotatingStageTransitionArc =
+        [&](const glm::dvec3& neighbourMeters,
+            const glm::dvec3& boundaryMeters,
+            const glm::dvec3& requiredForward,
+            double radiusMeters,
+            bool inbound)
+        {
+            StageTransitionArcCandidate best;
+            if (radiusMeters <= 1.0e-6)
+                return best;
+
+            const double axisLength = glm::length(requiredForward);
+            if (axisLength <= 1.0e-9)
+                return best;
+            const glm::dvec3 axis = requiredForward / axisLength;
+
+            const auto [basisA, basisB] =
+                stablePerpendicularBasis(axis);
+
+            constexpr int PlaneSamples = 72;
+            constexpr int SweepSamples = 29;
+            constexpr double MinSweepDegrees = 20.0;
+            constexpr double MaxSweepDegrees = 160.0;
+            constexpr double MaxTangentErrorDegrees = 8.0;
+            const double maxTangentError =
+                glm::radians(MaxTangentErrorDegrees);
+
+            double bestScore =
+                std::numeric_limits<double>::infinity();
+
+            for (int planeIndex = 0;
+                 planeIndex < PlaneSamples;
+                 ++planeIndex)
+            {
+                const double phi =
+                    glm::two_pi<double>() *
+                    static_cast<double>(planeIndex) /
+                    static_cast<double>(PlaneSamples);
+                const glm::dvec3 normal = glm::normalize(
+                    basisA * std::cos(phi) +
+                    basisB * std::sin(phi)
+                );
+
+                for (int sweepIndex = 0;
+                     sweepIndex < SweepSamples;
+                     ++sweepIndex)
+                {
+                    const double sweepDegrees =
+                        MinSweepDegrees +
+                        (MaxSweepDegrees - MinSweepDegrees) *
+                        static_cast<double>(sweepIndex) /
+                        static_cast<double>(SweepSamples - 1);
+                    const double sweep =
+                        glm::radians(sweepDegrees);
+
+                    glm::dvec3 arcStart;
+                    glm::dvec3 arcEnd;
+                    glm::dvec3 center;
+                    glm::dvec3 freeTangent;
+
+                    const glm::dvec3 boundaryRadial =
+                        glm::cross(axis, normal) * radiusMeters;
+
+                    if (inbound)
+                    {
+                        arcEnd = boundaryMeters;
+                        center = arcEnd - boundaryRadial;
+
+                        const glm::dvec3 startRadial =
+                            rotateVectorAroundAxis(
+                                boundaryRadial,
+                                normal,
+                                -sweep
+                            );
+                        arcStart = center + startRadial;
+                        freeTangent = glm::normalize(
+                            glm::cross(normal, startRadial)
+                        );
+
+                        const glm::dvec3 line =
+                            arcStart - neighbourMeters;
+                        const double lineLength = glm::length(line);
+                        if (lineLength <= 1.0e-6)
+                            continue;
+
+                        const glm::dvec3 lineForward =
+                            line / lineLength;
+                        const double alignment = std::clamp(
+                            glm::dot(lineForward, freeTangent),
+                            -1.0,
+                            1.0
+                        );
+                        const double error = std::acos(alignment);
+                        if (error > maxTangentError)
+                            continue;
+
+                        if (!clear(neighbourMeters, arcStart))
+                            continue;
+                    }
+                    else
+                    {
+                        arcStart = boundaryMeters;
+                        center = arcStart - boundaryRadial;
+
+                        const glm::dvec3 endRadial =
+                            rotateVectorAroundAxis(
+                                boundaryRadial,
+                                normal,
+                                sweep
+                            );
+                        arcEnd = center + endRadial;
+                        freeTangent = glm::normalize(
+                            glm::cross(normal, endRadial)
+                        );
+
+                        const glm::dvec3 line =
+                            neighbourMeters - arcEnd;
+                        const double lineLength = glm::length(line);
+                        if (lineLength <= 1.0e-6)
+                            continue;
+
+                        const glm::dvec3 lineForward =
+                            line / lineLength;
+                        const double alignment = std::clamp(
+                            glm::dot(freeTangent, lineForward),
+                            -1.0,
+                            1.0
+                        );
+                        const double error = std::acos(alignment);
+                        if (error > maxTangentError)
+                            continue;
+
+                        if (!clear(arcEnd, neighbourMeters))
+                            continue;
+                    }
+
+                    const double arcLength =
+                        radiusMeters * sweep;
+                    const int arcSegments = std::clamp(
+                        static_cast<int>(
+                            std::ceil(arcLength / 10.0)
+                        ),
+                        8,
+                        512
+                    );
+
+                    std::vector<glm::dvec3> samples;
+                    samples.reserve(
+                        static_cast<std::size_t>(arcSegments) + 1
+                    );
+
+                    const glm::dvec3 startRadial =
+                        arcStart - center;
+                    glm::dvec3 previous = arcStart;
+                    bool safe = true;
+                    for (int j = 0; j <= arcSegments; ++j)
+                    {
+                        const double u =
+                            static_cast<double>(j) /
+                            static_cast<double>(arcSegments);
+                        const glm::dvec3 radial =
+                            rotateVectorAroundAxis(
+                                startRadial,
+                                normal,
+                                sweep * u
+                            );
+                        const glm::dvec3 point = center + radial;
+
+                        if (j > 0 && !clear(previous, point))
+                        {
+                            safe = false;
+                            break;
+                        }
+
+                        samples.push_back(point);
+                        previous = point;
+                    }
+
+                    if (!safe || samples.empty())
+                        continue;
+
+                    const glm::dvec3 freeLine =
+                        inbound
+                            ? arcStart - neighbourMeters
+                            : neighbourMeters - arcEnd;
+                    const double freeLineLength =
+                        glm::length(freeLine);
+                    const glm::dvec3 lineForward =
+                        freeLineLength > 1.0e-9
+                            ? freeLine / freeLineLength
+                            : freeTangent;
+                    const double error = std::acos(
+                        std::clamp(
+                            glm::dot(lineForward, freeTangent),
+                            -1.0,
+                            1.0
+                        )
+                    );
+
+                    // Tangency dominates. A small secondary length/sweep term
+                    // breaks ties without making the planner prefer cramped
+                    // geometry merely because it is shorter.
+                    const double score =
+                        error * 100000.0 +
+                        freeLineLength * 0.001 +
+                        sweep;
+
+                    if (score >= bestScore)
+                        continue;
+
+                    bestScore = score;
+                    best.valid = true;
+                    best.startMeters = arcStart;
+                    best.endMeters = arcEnd;
+                    best.centerMeters = center;
+                    best.normal = normal;
+                    best.radiusMeters = radiusMeters;
+                    best.sweepRadians = sweep;
+                    best.planeRotationRadians = phi;
+                    best.tangentErrorRadians = error;
+                    best.samples = std::move(samples);
+                }
+            }
+
+            return best;
+        };
+
     const auto roundGeometry =
         [&](const std::vector<glm::dvec3>& geometryPoints,
             double requiredTerminalRadiusMeters,
@@ -888,6 +1158,152 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         for (std::size_t i=1;i+1<vertices.size();++i)
         {
+            const auto stageStraightAtBoundary =
+                [&]() -> const ExactPlannerStraight*
+                {
+                    for (const auto& straight :
+                         exactPlannerStraights)
+                    {
+                        if (straight.inbound &&
+                            samePoint(
+                                vertices[i],
+                                straight.startMeters
+                            ))
+                        {
+                            return &straight;
+                        }
+
+                        if (!straight.inbound &&
+                            samePoint(
+                                vertices[i],
+                                straight.endMeters
+                            ))
+                        {
+                            return &straight;
+                        }
+                    }
+                    return nullptr;
+                }();
+
+            if (stageStraightAtBoundary)
+            {
+                const glm::dvec3 axisDelta =
+                    stageStraightAtBoundary->endMeters -
+                    stageStraightAtBoundary->startMeters;
+                const double axisLength = glm::length(axisDelta);
+
+                if (axisLength > 1.0e-9)
+                {
+                    const glm::dvec3 requiredForward =
+                        axisDelta / axisLength;
+
+                    // Manual-friendly stage capture is authored geometry, not
+                    // an emergency "fit whatever radius is left" fillet.
+                    // Keep this independent from cruise speed; the speed
+                    // profile will slow to the accepted curvature.
+                    const double comfortRadiusMeters =
+                        std::max(
+                            150.0,
+                            10.0 * r.hullRadiusMeters
+                        );
+
+                    const glm::dvec3 neighbour =
+                        stageStraightAtBoundary->inbound
+                            ? candidate.samples.back()
+                            : vertices[i + 1];
+
+                    const auto transition =
+                        findRotatingStageTransitionArc(
+                            neighbour,
+                            vertices[i],
+                            requiredForward,
+                            comfortRadiusMeters,
+                            stageStraightAtBoundary->inbound
+                        );
+
+                    if (transition.valid)
+                    {
+                        if (stageStraightAtBoundary->inbound)
+                        {
+                            appendLineCurve(
+                                candidate.samples.back(),
+                                transition.startMeters
+                            );
+                        }
+                        else
+                        {
+                            appendLineCurve(
+                                candidate.samples.back(),
+                                vertices[i]
+                            );
+                        }
+
+                        appendArcCurve(
+                            transition.startMeters,
+                            transition.endMeters,
+                            transition.centerMeters,
+                            transition.normal,
+                            transition.radiusMeters,
+                            transition.sweepRadians
+                        );
+
+                        if (stageStraightAtBoundary->inbound)
+                        {
+                            candidate.samples.insert(
+                                candidate.samples.end(),
+                                transition.samples.begin(),
+                                transition.samples.end()
+                            );
+                        }
+                        else
+                        {
+                            candidate.samples.insert(
+                                candidate.samples.end(),
+                                transition.samples.begin() + 1,
+                                transition.samples.end()
+                            );
+                        }
+
+                        std::cerr
+                            << "[StageTransitionArc]"
+                            << " inbound="
+                            << (stageStraightAtBoundary->inbound
+                                    ? 1
+                                    : 0)
+                            << " radius_m="
+                            << transition.radiusMeters
+                            << " sweep_deg="
+                            << glm::degrees(
+                                   transition.sweepRadians
+                               )
+                            << " plane_deg="
+                            << glm::degrees(
+                                   transition.planeRotationRadians
+                               )
+                            << " tangent_error_deg="
+                            << glm::degrees(
+                                   transition.tangentErrorRadians
+                               )
+                            << " boundary=("
+                            << vertices[i].x << ","
+                            << vertices[i].y << ","
+                            << vertices[i].z << ")"
+                            << std::endl;
+
+                        continue;
+                    }
+
+                    std::cerr
+                        << "[StageTransitionArc]"
+                        << " inbound="
+                        << (stageStraightAtBoundary->inbound ? 1 : 0)
+                        << " radius_m=" << comfortRadiusMeters
+                        << " result=no-single-arc-candidate"
+                        << " fallback=legacy-fillet"
+                        << std::endl;
+                }
+            }
+
             const auto a=vertices[i]-vertices[i-1];
             const auto b=vertices[i+1]-vertices[i];
             const double la=glm::length(a), lb=glm::length(b);

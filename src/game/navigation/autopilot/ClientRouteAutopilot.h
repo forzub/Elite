@@ -247,10 +247,23 @@ public:
 
         // WORKING CONTRACT: hull and HUD consume the same canonical route
         // orientation field. Dynamic dock roll is applied later as one phase.
+        std::vector<RouteFrameField::Anchor> frameAnchors;
+        frameAnchors.reserve(plan.routeFrameAnchors.size());
+        for (const auto& anchor : plan.routeFrameAnchors)
+        {
+            RouteFrameField::Anchor converted;
+            converted.progressMeters = anchor.progressMeters;
+            converted.upReference = anchor.upReference;
+            converted.liveDockPhaseWeight =
+                anchor.liveDockPhaseWeight;
+            frameAnchors.push_back(converted);
+        }
+
         state.routeFrameField =
             RouteFrameField::build(
                 state.routeCurves,
-                routeUpReference
+                routeUpReference,
+                frameAnchors
             );
 
         state.programs = std::move(programs);
@@ -981,10 +994,20 @@ public:
         hullRollRequest.tunnelCenter = referencePosition;
         hullRollRequest.tunnelForward = tunnelFrameForward;
         hullRollRequest.canonicalTunnelUp = canonicalTunnelUp;
+        const double liveDockPhaseWeight =
+            !state.routeFrameField.empty()
+                ? RouteFrameField::liveDockPhaseWeightAtProgress(
+                    state.routeFrameField,
+                    poseProgressMeters
+                  )
+                : 1.0;
+
         hullRollRequest.liveTunnelRollPhaseRad =
-            state.liveTunnelRollPhaseRad;
+            state.liveTunnelRollPhaseRad *
+            liveDockPhaseWeight;
         hullRollRequest.liveTunnelRollRateRadPerSec =
-            state.liveTunnelRollRateRadPerSec;
+            state.liveTunnelRollRateRadPerSec *
+            liveDockPhaseWeight;
         hullRollRequest.rollResponseSeconds =
             rollActuatorResponseSeconds;
         hullRollRequest.maxRollRateRadPerSec =

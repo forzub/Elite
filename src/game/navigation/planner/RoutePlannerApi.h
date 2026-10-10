@@ -383,6 +383,22 @@ struct RouteCurveSegment
     }
 };
 
+// Semantic orientation anchor on the authoritative route.
+//
+// Geometry remains one continuous RoutePlan. These anchors only partition
+// orientation ownership along route progress: traffic volumes may own an
+// intermediate frame while the terminal docking frame owns the final phase.
+struct RouteFrameAnchor
+{
+    double progressMeters = 0.0;
+    glm::dvec3 upReference {0.0, 1.0, 0.0};
+
+    // 0 = ignore live dock roll at this anchor.
+    // 1 = fully phase-lock to the live rotating dock.
+    // Values between anchors are interpolated by RouteFrameField.
+    double liveDockPhaseWeight = 0.0;
+};
+
 struct RoutePlan
 {
     RoutePlanDisposition disposition = RoutePlanDisposition::NeedsRefinement;
@@ -398,6 +414,10 @@ struct RoutePlan
     std::vector<RouteCurveSegment> routeCurves;
     std::vector<RouteGate> gates;
     std::vector<RouteGate> executionGates;
+
+    // Intermediate semantic orientation ownership. The terminal dock anchor
+    // is implicit and supplied by the caller's terminal up reference.
+    std::vector<RouteFrameAnchor> routeFrameAnchors;
 
     bool terminalDetourUsed = false;
 

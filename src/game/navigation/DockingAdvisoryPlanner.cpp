@@ -1476,8 +1476,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const auto isInvariantStageBoundaryFailure =
         [](const RoundedCandidate& candidate)
         {
-            return candidate.failure ==
-                "no fixed-radius transition arc at protected straight boundary";
+            return
+                candidate.failure.find(
+                    "protected radius"
+                ) != std::string::npos ||
+                candidate.failure.find(
+                    "turn corridor"
+                ) != std::string::npos;
         };
 
     const auto considerPreferredCandidate =

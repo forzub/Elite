@@ -2672,45 +2672,58 @@ void SpaceState::updateDockingAdvisory()
                         // anchors on the single continuous route. A BLUE/GREEN
                         // volume owns roll/up through its approach boundary and
                         // transit. The terminal dock remains the final owner.
+                        job->plan.stages.clear();
                         job->plan.routeFrameAnchors.clear();
 
-                        const auto appendFrameAnchorAtPoint =
+                        const auto routeProgressAt =
                             [&](const glm::dvec3& point,
-                                const glm::dvec3& up,
-                                const char* owner)
+                                double& progressMeters)
                             {
-                                double progressMeters = 0.0;
-                                if (!game::navigation::RouteFrameField::
-                                        progressAtPoint(
-                                            job->plan.routeCurves,
-                                            point,
-                                            progressMeters
-                                        ))
+                                return game::navigation::RouteFrameField::
+                                    progressAtPoint(
+                                        job->plan.routeCurves,
+                                        point,
+                                        progressMeters
+                                    );
+                            };
+
+                        const auto appendStage =
+                            [&](std::string id,
+                                game::navigation::planner::RouteStageKind kind,
+                                double startProgressMeters,
+                                double endProgressMeters,
+                                game::navigation::planner::
+                                    RouteStageFramePolicy framePolicy,
+                                game::navigation::planner::
+                                    RouteStageRefreshPolicy refreshPolicy,
+                                const glm::dvec3& frameForward,
+                                const glm::dvec3& frameUp,
+                                std::string sourceId,
+                                std::string volumeId,
+                                bool hardContainment)
+                            {
+                                if (!(endProgressMeters >
+                                      startProgressMeters + 1.0e-6))
                                 {
                                     return;
                                 }
 
-                                game::navigation::planner::RouteFrameAnchor
-                                    anchor;
-                                anchor.progressMeters = progressMeters;
-                                anchor.upReference = up;
-                                anchor.liveDockPhaseWeight = 0.0;
-                                job->plan.routeFrameAnchors.push_back(anchor);
-
-                                std::cerr
-                                    << "[RouteFrameAnchor]"
-                                    << " owner=" << owner
-                                    << " s=" << progressMeters
-                                    << " point=("
-                                    << point.x << ","
-                                    << point.y << ","
-                                    << point.z << ")"
-                                    << " up=("
-                                    << up.x << ","
-                                    << up.y << ","
-                                    << up.z << ")"
-                                    << " dock_phase_weight=0"
-                                    << std::endl;
+                                game::navigation::planner::RouteStageSpan
+                                    span;
+                                span.id = std::move(id);
+                                span.kind = kind;
+                                span.startProgressMeters =
+                                    startProgressMeters;
+                                span.endProgressMeters =
+                                    endProgressMeters;
+                                span.framePolicy = framePolicy;
+                                span.refreshPolicy = refreshPolicy;
+                                span.frameForward = frameForward;
+                                span.frameUp = frameUp;
+                                span.sourceId = std::move(sourceId);
+                                span.volumeId = std::move(volumeId);
+                                span.hardContainment = hardContainment;
+                                job->plan.stages.push_back(std::move(span));
                             };
 
                         if (compiledTrafficRoute.valid)
@@ -2727,67 +2740,275 @@ void SpaceState::updateDockingAdvisory()
                                     continue;
                                 }
 
-                                const auto policy =
-                                    stage.volumeConstraint.policy;
-                                if (policy !=
-                                        world::navigation::
-                                            NavigationVolumePolicy::
-                                                KeepInside &&
-                                    policy !=
-                                        world::navigation::
-                                            NavigationVolumePolicy::
-                                                PreferInside)
+                                double entryProgress = 0.0;
+                                double exitProgress = 0.0;
+                                if (!routeProgressAt(
+                                        stage.fromWorldMeters,
+                                        entryProgress
+                                    ) ||
+                                    !routeProgressAt(
+                                        stage.toWorldMeters,
+                                        exitProgress
+                                    ))
                                 {
                                     continue;
                                 }
 
-                                const glm::dvec3 entryUp =
-                                    stage.volumeSections.front().upWorld;
-                                const glm::dvec3 exitUp =
-                                    stage.volumeSections.back().upWorld;
+                                const auto& firstSection =
+                                    stage.volumeSections.front();
+                                const auto& lastSection =
+                                    stage.volumeSections.back();
+
+                                double captureStartProgress =
+                                    entryProgress;
+                                double releaseEndProgress =
+                                    exitProgress;
 
                                 for (const auto& straight :
                                      compiledTrafficRoute.
                                          mandatoryTangentStraights)
                                 {
+                                    double p = 0.0;
                                     if (straight.inbound &&
                                         straight.portalId ==
-                                            stage.fromPortalId)
-                                    {
-                                        appendFrameAnchorAtPoint(
+                                            stage.fromPortalId &&
+                                        routeProgressAt(
                                             straight.startWorldMeters,
-                                            entryUp,
-                                            "traffic-entry-capture"
-                                        );
+                                            p
+                                        ))
+                                    {
+                                        captureStartProgress =
+                                            std::min(
+                                                captureStartProgress,
+                                                p
+                                            );
                                     }
-                                }
 
-                                for (const auto& section :
-                                     stage.volumeSections)
-                                {
-                                    appendFrameAnchorAtPoint(
-                                        section.centerWorldMeters,
-                                        section.upWorld,
-                                        "traffic-volume"
-                                    );
-                                }
-
-                                for (const auto& straight :
-                                     compiledTrafficRoute.
-                                         mandatoryTangentStraights)
-                                {
                                     if (!straight.inbound &&
                                         straight.portalId ==
-                                            stage.toPortalId)
-                                    {
-                                        appendFrameAnchorAtPoint(
+                                            stage.toPortalId &&
+                                        routeProgressAt(
                                             straight.endWorldMeters,
-                                            exitUp,
-                                            "traffic-exit-release"
-                                        );
+                                            p
+                                        ))
+                                    {
+                                        releaseEndProgress =
+                                            std::max(
+                                                releaseEndProgress,
+                                                p
+                                            );
                                     }
                                 }
+
+                                appendStage(
+                                    "capture:" + stage.fromPortalId,
+                                    game::navigation::planner::
+                                        RouteStageKind::
+                                            VolumeEntryCapture,
+                                    captureStartProgress,
+                                    entryProgress,
+                                    game::navigation::planner::
+                                        RouteStageFramePolicy::
+                                            NavigationFrame,
+                                    game::navigation::planner::
+                                        RouteStageRefreshPolicy::
+                                            FrozenAtPlanning,
+                                    firstSection.forwardWorld,
+                                    firstSection.upWorld,
+                                    stage.fromPortalId,
+                                    stage.volumeConstraint.volumeId,
+                                    false
+                                );
+
+                                appendStage(
+                                    "volume:" + stage.laneId,
+                                    game::navigation::planner::
+                                        RouteStageKind::VolumeTransit,
+                                    entryProgress,
+                                    exitProgress,
+                                    game::navigation::planner::
+                                        RouteStageFramePolicy::
+                                            NavigationFrame,
+                                    game::navigation::planner::
+                                        RouteStageRefreshPolicy::
+                                            FrozenAtPlanning,
+                                    firstSection.forwardWorld,
+                                    firstSection.upWorld,
+                                    stage.laneId,
+                                    stage.volumeConstraint.volumeId,
+                                    stage.volumeConstraint.policy ==
+                                        world::navigation::
+                                            NavigationVolumePolicy::
+                                                KeepInside
+                                );
+
+                                appendStage(
+                                    "release:" + stage.toPortalId,
+                                    game::navigation::planner::
+                                        RouteStageKind::VolumeExit,
+                                    exitProgress,
+                                    releaseEndProgress,
+                                    game::navigation::planner::
+                                        RouteStageFramePolicy::
+                                            NavigationFrame,
+                                    game::navigation::planner::
+                                        RouteStageRefreshPolicy::
+                                            FrozenAtPlanning,
+                                    lastSection.forwardWorld,
+                                    lastSection.upWorld,
+                                    stage.toPortalId,
+                                    stage.volumeConstraint.volumeId,
+                                    false
+                                );
                             }
+                        }
+
+                        std::sort(
+                            job->plan.stages.begin(),
+                            job->plan.stages.end(),
+                            [](const auto& a, const auto& b)
+                            {
+                                return a.startProgressMeters <
+                                    b.startProgressMeters;
+                            }
+                        );
+
+                        const double routeStart =
+                            job->plan.routeCurves.empty()
+                                ? 0.0
+                                : job->plan.routeCurves.front().
+                                    startProgressMeters;
+                        const double routeEnd =
+                            job->plan.routeCurves.empty()
+                                ? 0.0
+                                : job->plan.routeCurves.back().
+                                    endProgressMeters;
+
+                        std::vector<
+                            game::navigation::planner::RouteStageSpan>
+                            completeStages;
+                        completeStages.reserve(
+                            job->plan.stages.size() + 2
+                        );
+
+                        double cursor = routeStart;
+                        for (const auto& explicitStage :
+                             job->plan.stages)
+                        {
+                            if (explicitStage.startProgressMeters >
+                                cursor + 1.0e-6)
+                            {
+                                game::navigation::planner::RouteStageSpan
+                                    freeStage;
+                                freeStage.id =
+                                    completeStages.empty()
+                                        ? "free:initial"
+                                        : "free:between";
+                                freeStage.kind =
+                                    game::navigation::planner::
+                                        RouteStageKind::FreeTransit;
+                                freeStage.startProgressMeters = cursor;
+                                freeStage.endProgressMeters =
+                                    explicitStage.startProgressMeters;
+
+                                // The next stage owns the target orientation:
+                                // begin aligning before the constrained stage.
+                                freeStage.framePolicy =
+                                    explicitStage.framePolicy;
+                                freeStage.refreshPolicy =
+                                    explicitStage.refreshPolicy;
+                                freeStage.frameForward =
+                                    explicitStage.frameForward;
+                                freeStage.frameUp =
+                                    explicitStage.frameUp;
+                                freeStage.sourceId =
+                                    explicitStage.sourceId;
+                                freeStage.volumeId =
+                                    explicitStage.volumeId;
+                                completeStages.push_back(
+                                    std::move(freeStage)
+                                );
+                            }
+
+                            completeStages.push_back(explicitStage);
+                            cursor = std::max(
+                                cursor,
+                                explicitStage.endProgressMeters
+                            );
+                        }
+
+                        // Everything after the final traffic stage belongs to
+                        // the terminal approach. This is the point where the
+                        // current live dock frame becomes authoritative.
+                        if (routeEnd > cursor + 1.0e-6)
+                        {
+                            game::navigation::planner::RouteStageSpan terminal;
+                            terminal.id = "terminal:dock";
+                            terminal.kind =
+                                game::navigation::planner::
+                                    RouteStageKind::TerminalApproach;
+                            terminal.startProgressMeters = cursor;
+                            terminal.endProgressMeters = routeEnd;
+                            terminal.framePolicy =
+                                game::navigation::planner::
+                                    RouteStageFramePolicy::LiveDockFrame;
+                            terminal.refreshPolicy =
+                                game::navigation::planner::
+                                    RouteStageRefreshPolicy::LiveDuringStage;
+                            terminal.frameForward =
+                                job->plan.routeCurves.back().endForward;
+                            terminal.frameUp =
+                                job->context.routeUpReference;
+                            terminal.sourceId = "dock";
+                            completeStages.push_back(std::move(terminal));
+                        }
+
+                        job->plan.stages = std::move(completeStages);
+
+                        // Derive interpolation anchors from stage boundaries.
+                        // Stages are the architecture; anchors only implement
+                        // smooth frame interpolation within/between them.
+                        for (const auto& stage : job->plan.stages)
+                        {
+                            if (stage.framePolicy ==
+                                game::navigation::planner::
+                                    RouteStageFramePolicy::Transported)
+                            {
+                                continue;
+                            }
+
+                            game::navigation::planner::RouteFrameAnchor a;
+                            a.progressMeters =
+                                stage.startProgressMeters;
+                            a.upReference = stage.frameUp;
+                            a.liveDockPhaseWeight =
+                                stage.framePolicy ==
+                                    game::navigation::planner::
+                                        RouteStageFramePolicy::LiveDockFrame
+                                    ? 1.0
+                                    : 0.0;
+                            job->plan.routeFrameAnchors.push_back(a);
+
+                            game::navigation::planner::RouteFrameAnchor b = a;
+                            b.progressMeters = stage.endProgressMeters;
+                            job->plan.routeFrameAnchors.push_back(b);
+
+                            std::cerr
+                                << "[RouteStage]"
+                                << " id=" << stage.id
+                                << " kind="
+                                << static_cast<int>(stage.kind)
+                                << " s0=" << stage.startProgressMeters
+                                << " s1=" << stage.endProgressMeters
+                                << " frame_policy="
+                                << static_cast<int>(stage.framePolicy)
+                                << " refresh_policy="
+                                << static_cast<int>(stage.refreshPolicy)
+                                << " source=" << stage.sourceId
+                                << " volume=" << stage.volumeId
+                                << " hard="
+                                << (stage.hardContainment ? 1 : 0)
+                                << std::endl;
                         }
 
                         std::sort(

@@ -2668,10 +2668,159 @@ void SpaceState::updateDockingAdvisory()
 
                     if (job->plan.valid())
                     {
+                        // Convert semantic traffic stages into orientation
+                        // anchors on the single continuous route. A BLUE/GREEN
+                        // volume owns roll/up through its approach boundary and
+                        // transit. The terminal dock remains the final owner.
+                        job->plan.routeFrameAnchors.clear();
+
+                        const auto appendFrameAnchorAtPoint =
+                            [&](const glm::dvec3& point,
+                                const glm::dvec3& up,
+                                const char* owner)
+                            {
+                                double progressMeters = 0.0;
+                                if (!game::navigation::RouteFrameField::
+                                        progressAtPoint(
+                                            job->plan.routeCurves,
+                                            point,
+                                            progressMeters
+                                        ))
+                                {
+                                    return;
+                                }
+
+                                game::navigation::planner::RouteFrameAnchor
+                                    anchor;
+                                anchor.progressMeters = progressMeters;
+                                anchor.upReference = up;
+                                anchor.liveDockPhaseWeight = 0.0;
+                                job->plan.routeFrameAnchors.push_back(anchor);
+
+                                std::cerr
+                                    << "[RouteFrameAnchor]"
+                                    << " owner=" << owner
+                                    << " s=" << progressMeters
+                                    << " point=("
+                                    << point.x << ","
+                                    << point.y << ","
+                                    << point.z << ")"
+                                    << " up=("
+                                    << up.x << ","
+                                    << up.y << ","
+                                    << up.z << ")"
+                                    << " dock_phase_weight=0"
+                                    << std::endl;
+                            };
+
+                        if (compiledTrafficRoute.valid)
+                        {
+                            for (const auto& stage :
+                                 compiledTrafficRoute.stages)
+                            {
+                                if (stage.kind !=
+                                        game::navigation::traffic::
+                                            TrafficRouteStageKind::
+                                                VolumeTransit ||
+                                    stage.volumeSections.empty())
+                                {
+                                    continue;
+                                }
+
+                                const auto policy =
+                                    stage.volumeConstraint.policy;
+                                if (policy !=
+                                        world::navigation::
+                                            NavigationVolumePolicy::
+                                                KeepInside &&
+                                    policy !=
+                                        world::navigation::
+                                            NavigationVolumePolicy::
+                                                PreferInside)
+                                {
+                                    continue;
+                                }
+
+                                const glm::dvec3 entryUp =
+                                    stage.volumeSections.front().upWorld;
+                                const glm::dvec3 exitUp =
+                                    stage.volumeSections.back().upWorld;
+
+                                for (const auto& straight :
+                                     compiledTrafficRoute.
+                                         mandatoryTangentStraights)
+                                {
+                                    if (straight.inbound &&
+                                        straight.portalId ==
+                                            stage.fromPortalId)
+                                    {
+                                        appendFrameAnchorAtPoint(
+                                            straight.startWorldMeters,
+                                            entryUp,
+                                            "traffic-entry-capture"
+                                        );
+                                    }
+                                }
+
+                                for (const auto& section :
+                                     stage.volumeSections)
+                                {
+                                    appendFrameAnchorAtPoint(
+                                        section.centerWorldMeters,
+                                        section.upWorld,
+                                        "traffic-volume"
+                                    );
+                                }
+
+                                for (const auto& straight :
+                                     compiledTrafficRoute.
+                                         mandatoryTangentStraights)
+                                {
+                                    if (!straight.inbound &&
+                                        straight.portalId ==
+                                            stage.toPortalId)
+                                    {
+                                        appendFrameAnchorAtPoint(
+                                            straight.endWorldMeters,
+                                            exitUp,
+                                            "traffic-exit-release"
+                                        );
+                                    }
+                                }
+                            }
+                        }
+
+                        std::sort(
+                            job->plan.routeFrameAnchors.begin(),
+                            job->plan.routeFrameAnchors.end(),
+                            [](const auto& a, const auto& b)
+                            {
+                                return a.progressMeters < b.progressMeters;
+                            }
+                        );
+
+                        std::vector<
+                            game::navigation::RouteFrameField::Anchor>
+                            visualAnchors;
+                        visualAnchors.reserve(
+                            job->plan.routeFrameAnchors.size()
+                        );
+                        for (const auto& anchor :
+                             job->plan.routeFrameAnchors)
+                        {
+                            game::navigation::RouteFrameField::Anchor visual;
+                            visual.progressMeters = anchor.progressMeters;
+                            visual.upReference = anchor.upReference;
+                            visual.liveDockPhaseWeight =
+                                anchor.liveDockPhaseWeight;
+                            visualAnchors.push_back(visual);
+                        }
+
                         const auto visualFrameField =
                             game::navigation::RouteFrameField::build(
                                 job->plan.routeCurves,
-                                job->context.routeUpReference
+                                job->context.routeUpReference,
+                                visualAnchors
                             );
                         job->context.visualGateUp =
                             game::navigation::RouteFrameField::
@@ -2682,6 +2831,18 @@ void SpaceState::updateDockingAdvisory()
                         job->context.visualExecutionGateUp =
                             game::navigation::RouteFrameField::
                                 sampleUpForGates(
+                                    visualFrameField,
+                                    job->plan.executionGates
+                                );
+                        job->context.visualGateDockPhaseWeight =
+                            game::navigation::RouteFrameField::
+                                sampleLiveDockPhaseWeightForGates(
+                                    visualFrameField,
+                                    job->plan.gates
+                                );
+                        job->context.visualExecutionGateDockPhaseWeight =
+                            game::navigation::RouteFrameField::
+                                sampleLiveDockPhaseWeightForGates(
                                     visualFrameField,
                                     job->plan.executionGates
                                 );
@@ -3197,6 +3358,7 @@ void SpaceState::updateDockingAdvisory()
         [&](const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
             const std::vector<glm::dvec3>& routeFrameUp,
+            const std::vector<double>& dockPhaseWeights,
             const std::string& id,
             bool sparseFrames)
         {
@@ -3253,14 +3415,23 @@ void SpaceState::updateDockingAdvisory()
                     localForward = glm::dvec3(0.0, 0.0, -1.0);
                 localForward = glm::normalize(localForward);
 
-                // Rotate the already-stable base frame around this frame's
-                // own normal/tangent by the dock's current roll phase.
+                // Dynamic dock roll belongs only to the
+                // terminal-owned part of the route. Traffic-volume stages
+                // retain their own frame; transition spans blend ownership.
+                const double dockPhaseWeight =
+                    index < dockPhaseWeights.size()
+                        ? std::clamp(
+                            dockPhaseWeights[index],
+                            0.0,
+                            1.0
+                          )
+                        : 1.0;
                 localFrameUp =
                     game::navigation::RouteFrameField::
                         rotateUpAroundForward(
                             localForward,
                             localFrameUp,
-                            dockRollPhaseRad
+                            dockRollPhaseRad * dockPhaseWeight
                         );
 
                 glm::dvec3 up =
@@ -3344,6 +3515,7 @@ void SpaceState::updateDockingAdvisory()
         makeRoute(
             active.plan.executionGates,
             active.visualExecutionGateUp,
+            active.visualExecutionGateDockPhaseWeight,
             m_activeDockingGuidanceCorridorId,
             false
         )
@@ -3353,6 +3525,7 @@ void SpaceState::updateDockingAdvisory()
         makeRoute(
             active.plan.gates,
             active.visualGateUp,
+            active.visualGateDockPhaseWeight,
             m_activeDockingGuidanceCorridorId + ":frames",
             true
         )

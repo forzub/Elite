@@ -35,14 +35,42 @@ public:
         glm::dvec3 right {1.0, 0.0, 0.0};
         glm::dvec3 up {0.0, 1.0, 0.0};
         glm::dquat orientation {1.0, 0.0, 0.0, 0.0};
+
+        // How much of the live terminal dock roll phase belongs to this
+        // station. Traffic-volume stages normally own 0; terminal docking
+        // owns 1; transition spans interpolate continuously.
+        double liveDockPhaseWeight = 1.0;
+    };
+
+    struct Anchor
+    {
+        double progressMeters = 0.0;
+        glm::dvec3 upReference {0.0, 1.0, 0.0};
+        double liveDockPhaseWeight = 0.0;
     };
 
     // WORKING CONTRACT: canonical visual frame field is built from authored
-    // routeCurves, anchored at the terminal dock frame, then transported
-    // backwards. HUD sampling density must not redefine tunnel orientation.
+    // routeCurves. With no semantic anchors this preserves the historical
+    // terminal-dock-owned field. With anchors, orientation ownership becomes
+    // piecewise while geometry remains one continuous route.
     [[nodiscard]] static std::vector<Sample> build(
         const std::vector<planner::RouteCurveSegment>& curves,
         const glm::dvec3& terminalUpReference,
+        double canonicalStepMeters = 25.0
+    )
+    {
+        return build(
+            curves,
+            terminalUpReference,
+            std::vector<Anchor>{},
+            canonicalStepMeters
+        );
+    }
+
+    [[nodiscard]] static std::vector<Sample> build(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const glm::dvec3& terminalUpReference,
+        const std::vector<Anchor>& requestedAnchors,
         double canonicalStepMeters = 25.0
     )
     {
@@ -79,61 +107,370 @@ public:
         for (const auto& curve : curves)
         {
             const double begin = curve.startProgressMeters;
-            const double end = curve.endProgressMeters;
-            if (!(end >= begin))
+            const double finish = curve.endProgressMeters;
+            if (!(finish >= begin))
                 continue;
 
             appendGeometrySample(begin, curve);
-
-            for (double s = begin + step; s < end - 1.0e-9; s += step)
+            for (double s = begin + step;
+                 s < finish - 1.0e-9;
+                 s += step)
+            {
                 appendGeometrySample(s, curve);
-
-            appendGeometrySample(end, curve);
+            }
+            appendGeometrySample(finish, curve);
         }
 
         if (out.empty())
             return out;
 
-        // The docking aperture owns the absolute roll phase.
-        // Anchor the FINAL route frame to the dock and transport that frame
-        // backwards.  Starting from the ship end would make the terminal
-        // frame an arbitrary consequence of route curvature.
-        glm::dvec3 terminalUp = terminalUpReference;
-        if (glm::length(terminalUp) <= 1.0e-9)
-            terminalUp = glm::dvec3(0.0, 1.0, 0.0);
-
-        terminalUp -= out.back().forward *
-            glm::dot(terminalUp, out.back().forward);
-        if (glm::length(terminalUp) <= 1.0e-9)
-            terminalUp = perpendicularSeed(out.back().forward);
-        terminalUp = glm::normalize(terminalUp);
-
-        setFrame(out.back(), terminalUp);
-
-        for (std::size_t i = out.size() - 1; i > 0; --i)
+        struct ResolvedAnchor
         {
-            const glm::dvec3 transported =
-                minimalRotate(
+            std::size_t sampleIndex = 0;
+            glm::dvec3 upReference {0.0, 1.0, 0.0};
+            double liveDockPhaseWeight = 0.0;
+        };
+
+        std::vector<ResolvedAnchor> anchors;
+        anchors.reserve(requestedAnchors.size() + 1);
+
+        const auto nearestSampleIndex =
+            [&](double progressMeters)
+            {
+                const double clamped = std::clamp(
+                    progressMeters,
+                    out.front().progressMeters,
+                    out.back().progressMeters
+                );
+                const auto it = std::lower_bound(
+                    out.begin(),
+                    out.end(),
+                    clamped,
+                    [](const Sample& sample, double value)
+                    {
+                        return sample.progressMeters < value;
+                    }
+                );
+                if (it == out.begin())
+                    return std::size_t{0};
+                if (it == out.end())
+                    return out.size() - 1;
+
+                const std::size_t hi =
+                    static_cast<std::size_t>(it - out.begin());
+                const std::size_t lo = hi - 1;
+                return
+                    std::abs(out[hi].progressMeters - clamped) <
+                    std::abs(out[lo].progressMeters - clamped)
+                        ? hi
+                        : lo;
+            };
+
+        for (const auto& requested : requestedAnchors)
+        {
+            if (!std::isfinite(requested.progressMeters))
+                continue;
+
+            ResolvedAnchor anchor;
+            anchor.sampleIndex =
+                nearestSampleIndex(requested.progressMeters);
+            anchor.upReference = requested.upReference;
+            anchor.liveDockPhaseWeight = std::clamp(
+                requested.liveDockPhaseWeight,
+                0.0,
+                1.0
+            );
+            anchors.push_back(anchor);
+        }
+
+        // Terminal docking frame remains the final authority.
+        ResolvedAnchor terminal;
+        terminal.sampleIndex = out.size() - 1;
+        terminal.upReference = terminalUpReference;
+        terminal.liveDockPhaseWeight = 1.0;
+        anchors.push_back(terminal);
+
+        std::sort(
+            anchors.begin(),
+            anchors.end(),
+            [](const ResolvedAnchor& a, const ResolvedAnchor& b)
+            {
+                return a.sampleIndex < b.sampleIndex;
+            }
+        );
+
+        // Same-index anchors: later semantic ownership wins. This makes an
+        // explicit terminal anchor authoritative if a preceding stage ends
+        // exactly on the route endpoint.
+        std::vector<ResolvedAnchor> uniqueAnchors;
+        for (const auto& anchor : anchors)
+        {
+            if (!uniqueAnchors.empty() &&
+                uniqueAnchors.back().sampleIndex == anchor.sampleIndex)
+            {
+                uniqueAnchors.back() = anchor;
+            }
+            else
+            {
+                uniqueAnchors.push_back(anchor);
+            }
+        }
+        anchors = std::move(uniqueAnchors);
+
+        const auto normalizedUpAt =
+            [&](std::size_t index, glm::dvec3 requested)
+            {
+                const glm::dvec3 forward = out[index].forward;
+                requested -= forward * glm::dot(requested, forward);
+                if (glm::length(requested) <= 1.0e-9)
+                    requested = perpendicularSeed(forward);
+                return glm::normalize(requested);
+            };
+
+        for (auto& anchor : anchors)
+            anchor.upReference =
+                normalizedUpAt(anchor.sampleIndex, anchor.upReference);
+
+        // Before the first semantic owner, transport that owner's frame
+        // backwards. Its dynamic phase ownership is held constant.
+        {
+            const auto& first = anchors.front();
+            setFrame(out[first.sampleIndex], first.upReference);
+            out[first.sampleIndex].liveDockPhaseWeight =
+                first.liveDockPhaseWeight;
+
+            for (std::size_t i = first.sampleIndex; i > 0; --i)
+            {
+                glm::dvec3 up = minimalRotate(
                     out[i].forward,
                     out[i - 1].forward,
                     out[i].up
                 );
+                up -= out[i - 1].forward *
+                    glm::dot(up, out[i - 1].forward);
+                if (glm::length(up) <= 1.0e-9)
+                    up = perpendicularSeed(out[i - 1].forward);
+                setFrame(out[i - 1], glm::normalize(up));
+                out[i - 1].liveDockPhaseWeight =
+                    first.liveDockPhaseWeight;
+            }
+        }
 
-            glm::dvec3 up =
-                transported -
-                out[i - 1].forward *
-                    glm::dot(transported, out[i - 1].forward);
-            if (glm::length(up) <= 1.0e-9)
-                up = perpendicularSeed(out[i - 1].forward);
-            up = glm::normalize(up);
+        // Between semantic owners, construct the roll interpolation from both
+        // ends. Tangent geometry stays untouched; only rotation around the
+        // route tangent is blended.
+        for (std::size_t ai = 0; ai + 1 < anchors.size(); ++ai)
+        {
+            const auto& a = anchors[ai];
+            const auto& b = anchors[ai + 1];
 
-            if (glm::dot(up, out[i].up) < 0.0)
-                up = -up;
+            setFrame(out[a.sampleIndex], a.upReference);
+            setFrame(out[b.sampleIndex], b.upReference);
+            out[a.sampleIndex].liveDockPhaseWeight =
+                a.liveDockPhaseWeight;
+            out[b.sampleIndex].liveDockPhaseWeight =
+                b.liveDockPhaseWeight;
 
-            setFrame(out[i - 1], up);
+            if (b.sampleIndex <= a.sampleIndex + 1)
+                continue;
+
+            std::vector<glm::dvec3> leftUp(
+                b.sampleIndex - a.sampleIndex + 1
+            );
+            std::vector<glm::dvec3> rightUp(
+                b.sampleIndex - a.sampleIndex + 1
+            );
+
+            leftUp.front() = a.upReference;
+            for (std::size_t i = a.sampleIndex + 1;
+                 i <= b.sampleIndex;
+                 ++i)
+            {
+                glm::dvec3 up = minimalRotate(
+                    out[i - 1].forward,
+                    out[i].forward,
+                    leftUp[i - 1 - a.sampleIndex]
+                );
+                up -= out[i].forward * glm::dot(up, out[i].forward);
+                if (glm::length(up) <= 1.0e-9)
+                    up = perpendicularSeed(out[i].forward);
+                leftUp[i - a.sampleIndex] = glm::normalize(up);
+            }
+
+            rightUp.back() = b.upReference;
+            for (std::size_t i = b.sampleIndex;
+                 i > a.sampleIndex;
+                 --i)
+            {
+                glm::dvec3 up = minimalRotate(
+                    out[i].forward,
+                    out[i - 1].forward,
+                    rightUp[i - a.sampleIndex]
+                );
+                up -= out[i - 1].forward *
+                    glm::dot(up, out[i - 1].forward);
+                if (glm::length(up) <= 1.0e-9)
+                    up = perpendicularSeed(out[i - 1].forward);
+                rightUp[i - 1 - a.sampleIndex] = glm::normalize(up);
+            }
+
+            const double s0 = out[a.sampleIndex].progressMeters;
+            const double s1 = out[b.sampleIndex].progressMeters;
+            const double span = std::max(1.0e-9, s1 - s0);
+
+            for (std::size_t i = a.sampleIndex + 1;
+                 i < b.sampleIndex;
+                 ++i)
+            {
+                const double u = std::clamp(
+                    (out[i].progressMeters - s0) / span,
+                    0.0,
+                    1.0
+                );
+
+                Sample left = out[i];
+                setFrame(left, leftUp[i - a.sampleIndex]);
+                Sample right = out[i];
+                setFrame(right, rightUp[i - a.sampleIndex]);
+
+                glm::dquat qa = left.orientation;
+                glm::dquat qb = right.orientation;
+                if (glm::dot(qa, qb) < 0.0)
+                    qb = -qb;
+
+                const glm::dquat q =
+                    glm::normalize(glm::slerp(qa, qb, u));
+                glm::dvec3 up =
+                    q * glm::dvec3(0.0, 1.0, 0.0);
+                up -= out[i].forward *
+                    glm::dot(up, out[i].forward);
+                if (glm::length(up) <= 1.0e-9)
+                    up = perpendicularSeed(out[i].forward);
+                setFrame(out[i], glm::normalize(up));
+
+                out[i].liveDockPhaseWeight =
+                    a.liveDockPhaseWeight * (1.0 - u) +
+                    b.liveDockPhaseWeight * u;
+            }
         }
 
         return out;
+    }
+
+    // Resolve the route progress of a semantic point. Exact Line matches are
+    // preferred; curved primitives use a bounded nearest-point refinement.
+    [[nodiscard]] static bool progressAtPoint(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const glm::dvec3& point,
+        double& progressMeters
+    )
+    {
+        bool found = false;
+        double bestDistance2 =
+            std::numeric_limits<double>::infinity();
+        double bestProgress = 0.0;
+
+        for (const auto& curve : curves)
+        {
+            const double length =
+                std::max(
+                    0.0,
+                    curve.endProgressMeters -
+                    curve.startProgressMeters
+                );
+            if (length <= 1.0e-12)
+                continue;
+
+            if (curve.kind == planner::RouteCurveKind::Line)
+            {
+                const glm::dvec3 delta =
+                    curve.endMeters - curve.startMeters;
+                const double delta2 = glm::dot(delta, delta);
+                if (delta2 <= 1.0e-12)
+                    continue;
+                const double t = std::clamp(
+                    glm::dot(point - curve.startMeters, delta) / delta2,
+                    0.0,
+                    1.0
+                );
+                const glm::dvec3 p =
+                    curve.startMeters + delta * t;
+                const glm::dvec3 error = point - p;
+                const double d2 = glm::dot(error, error);
+                if (d2 < bestDistance2)
+                {
+                    bestDistance2 = d2;
+                    bestProgress =
+                        curve.startProgressMeters + length * t;
+                    found = true;
+                }
+                continue;
+            }
+
+            constexpr int CoarseSamples = 128;
+            int bestI = 0;
+            for (int i = 0; i <= CoarseSamples; ++i)
+            {
+                const double t =
+                    static_cast<double>(i) /
+                    static_cast<double>(CoarseSamples);
+                const glm::dvec3 p =
+                    curve.positionAtParameter(t);
+                const glm::dvec3 error = point - p;
+                const double d2 = glm::dot(error, error);
+                if (d2 < bestDistance2)
+                {
+                    bestDistance2 = d2;
+                    bestI = i;
+                    bestProgress =
+                        curve.startProgressMeters + length * t;
+                    found = true;
+                }
+            }
+
+            double lo = std::max(
+                0.0,
+                (static_cast<double>(bestI) - 1.0) /
+                    static_cast<double>(CoarseSamples)
+            );
+            double hi = std::min(
+                1.0,
+                (static_cast<double>(bestI) + 1.0) /
+                    static_cast<double>(CoarseSamples)
+            );
+
+            for (int iteration = 0; iteration < 24; ++iteration)
+            {
+                const double m1 = lo + (hi - lo) / 3.0;
+                const double m2 = hi - (hi - lo) / 3.0;
+                const glm::dvec3 e1 =
+                    point - curve.positionAtParameter(m1);
+                const glm::dvec3 e2 =
+                    point - curve.positionAtParameter(m2);
+                if (glm::dot(e1, e1) < glm::dot(e2, e2))
+                    hi = m2;
+                else
+                    lo = m1;
+            }
+
+            const double t = 0.5 * (lo + hi);
+            const glm::dvec3 error =
+                point - curve.positionAtParameter(t);
+            const double d2 = glm::dot(error, error);
+            if (d2 < bestDistance2)
+            {
+                bestDistance2 = d2;
+                bestProgress =
+                    curve.startProgressMeters + length * t;
+                found = true;
+            }
+        }
+
+        if (!found)
+            return false;
+
+        progressMeters = bestProgress;
+        return true;
     }
 
     [[nodiscard]] static std::vector<glm::dvec3> sampleUpForGates(
@@ -187,6 +524,102 @@ public:
             result.push_back(glm::normalize(up));
         }
 
+        return result;
+    }
+
+    [[nodiscard]] static double liveDockPhaseWeightAtProgress(
+        const std::vector<Sample>& field,
+        double progressMeters
+    )
+    {
+        if (field.empty())
+            return 1.0;
+        if (field.size() == 1 ||
+            progressMeters <= field.front().progressMeters)
+        {
+            return field.front().liveDockPhaseWeight;
+        }
+        if (progressMeters >= field.back().progressMeters)
+            return field.back().liveDockPhaseWeight;
+
+        const auto upper = std::upper_bound(
+            field.begin(),
+            field.end(),
+            progressMeters,
+            [](double value, const Sample& sample)
+            {
+                return value < sample.progressMeters;
+            }
+        );
+        const std::size_t hi =
+            static_cast<std::size_t>(upper - field.begin());
+        const std::size_t lo = hi - 1;
+        const double span =
+            field[hi].progressMeters - field[lo].progressMeters;
+        const double u =
+            span > 1.0e-12
+                ? std::clamp(
+                    (progressMeters - field[lo].progressMeters) / span,
+                    0.0,
+                    1.0
+                  )
+                : 0.0;
+        return std::clamp(
+            field[lo].liveDockPhaseWeight * (1.0 - u) +
+            field[hi].liveDockPhaseWeight * u,
+            0.0,
+            1.0
+        );
+    }
+
+    [[nodiscard]] static std::vector<double>
+    sampleLiveDockPhaseWeightForGates(
+        const std::vector<Sample>& field,
+        const std::vector<planner::RouteGate>& gates
+    )
+    {
+        std::vector<double> result;
+        result.reserve(gates.size());
+        if (field.empty())
+            return result;
+
+        std::size_t searchBegin = 0;
+        for (const auto& gate : gates)
+        {
+            std::size_t best = searchBegin;
+            double bestDistance2 =
+                std::numeric_limits<double>::infinity();
+
+            for (std::size_t i = searchBegin; i < field.size(); ++i)
+            {
+                const glm::dvec3 delta =
+                    gate.positionMeters - field[i].positionMeters;
+                const double distance2 = glm::dot(delta, delta);
+                if (distance2 < bestDistance2)
+                {
+                    bestDistance2 = distance2;
+                    best = i;
+                }
+            }
+
+            searchBegin = best;
+            double estimatedProgress = field[best].progressMeters;
+            estimatedProgress += glm::dot(
+                gate.positionMeters - field[best].positionMeters,
+                field[best].forward
+            );
+            estimatedProgress = std::clamp(
+                estimatedProgress,
+                field.front().progressMeters,
+                field.back().progressMeters
+            );
+            result.push_back(
+                liveDockPhaseWeightAtProgress(
+                    field,
+                    estimatedProgress
+                )
+            );
+        }
         return result;
     }
 

@@ -1341,6 +1341,71 @@ int main()
         }
     }
 
+    // Stage-boundary capture regression: a mandatory inbound axis in open
+    // space must be joined by the fixed-radius rotating transition search,
+    // not by shrinking a generic fillet to whatever tangent room happens to
+    // remain in the precomputed polyline.
+    {
+        DockingAdvisoryRequest stageRequest;
+        stageRequest.startMeters = {-5000.0, 1800.0, 0.0};
+        stageRequest.entranceMeters = {7000.0, 0.0, 0.0};
+        stageRequest.outward = {1.0, 0.0, 0.0};
+        stageRequest.standoffMeters = 300.0;
+        stageRequest.hullRadiusMeters = 10.0;
+        stageRequest.maxSpeedMps = 150.0;
+        stageRequest.acceleratingMps2 = 10.0;
+        stageRequest.brakingMps2 = 10.0;
+        stageRequest.lateralMps2 = 5.0;
+        stageRequest.maxAngularVelocityRadPerSecond = 0.2;
+        stageRequest.maxAngularAccelerationRadPerSecond2 = 0.4;
+        stageRequest.roundTurns = true;
+
+        planner::MandatoryTangentStraightConstraint hard;
+        hard.startMeters = {0.0, 0.0, 0.0};
+        hard.endMeters = {1000.0, 0.0, 0.0};
+        hard.minimumStraightMeters = 1000.0;
+        hard.inbound = true;
+
+        stageRequest.requiredViaPointsMeters = {
+            hard.startMeters,
+            hard.endMeters
+        };
+        stageRequest.mandatoryTangentStraights = {hard};
+
+        const auto stagePlan =
+            DockingAdvisoryPlanner::plan(stageRequest);
+        if (!stagePlan.valid())
+        {
+            std::cerr
+                << "stage transition rotating-arc fixture failed: "
+                << stagePlan.failure << "\n";
+            return 123;
+        }
+
+        // Working-axis extension is 1000 m for this fixture.
+        const glm::dvec3 expectedBoundary {-1000.0, 0.0, 0.0};
+        bool foundComfortArc = false;
+        for (const auto& curve : stagePlan.routeCurves)
+        {
+            if (curve.kind != planner::RouteCurveKind::CircularArc)
+                continue;
+
+            if (glm::length(curve.endMeters - expectedBoundary) <= 1.0e-5 &&
+                curve.arcRadiusMeters >= 150.0 - 1.0e-6)
+            {
+                foundComfortArc = true;
+                break;
+            }
+        }
+
+        if (!foundComfortArc)
+        {
+            std::cerr
+                << "stage boundary collapsed below comfort radius or lost exact capture arc\n";
+            return 124;
+        }
+    }
+
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';
 }

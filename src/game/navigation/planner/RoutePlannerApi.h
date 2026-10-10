@@ -403,7 +403,7 @@ enum class RouteStageFramePolicy : std::uint8_t
 
     // Stage owns the live terminal docking frame. Dynamic dock phase may be
     // refreshed while this stage is active without rotating earlier stages.
-    LiveDockFrame
+    DynamicTerminalFrame
 };
 
 enum class RouteStageRefreshPolicy : std::uint8_t
@@ -432,7 +432,7 @@ struct RouteStageSpan
     RouteStageRefreshPolicy refreshPolicy =
         RouteStageRefreshPolicy::FrozenAtPlanning;
 
-    // Static/authored stage frame. For LiveDockFrame this is the planning
+    // Static/authored stage frame. For DynamicTerminalFrame this is the planning
     // epoch fallback/reference; execution may refresh the live frame.
     glm::dvec3 frameForward {0.0, 0.0, -1.0};
     glm::dvec3 frameUp {0.0, 1.0, 0.0};

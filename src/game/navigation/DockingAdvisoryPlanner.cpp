@@ -996,35 +996,88 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         for (std::size_t i=1;i+1<vertices.size();++i)
         {
-            const auto stageStraightAtBoundary =
+            const auto freeSpaceTurnBoundary =
                 [&]() -> const ExactPlannerStraight*
                 {
                     for (const auto& straight :
                          exactPlannerStraights)
                     {
-                        // BOTH ends of a protected straight are geometric
-                        // boundary states. A turn before start must end
-                        // tangent to the axis; a turn after end must begin
-                        // tangent to the axis. Generic fillet rounding is
-                        // forbidden from consuming the protected interval.
-                        if (samePoint(
-                                vertices[i],
-                                straight.startMeters
-                            ) ||
-                            samePoint(
-                                vertices[i],
-                                straight.endMeters
-                            ))
-                        {
+                        const bool matches =
+                            straight.inbound
+                                ? samePoint(
+                                      vertices[i],
+                                      straight.startMeters
+                                  )
+                                : samePoint(
+                                      vertices[i],
+                                      straight.endMeters
+                                  );
+                        if (matches)
                             return &straight;
-                        }
                     }
                     return nullptr;
                 }();
 
+            const auto semanticProtectedEndpoint =
+                [&]() -> const ExactPlannerStraight*
+                {
+                    for (const auto& straight :
+                         exactPlannerStraights)
+                    {
+                        const bool matches =
+                            straight.inbound
+                                ? samePoint(
+                                      vertices[i],
+                                      straight.endMeters
+                                  )
+                                : samePoint(
+                                      vertices[i],
+                                      straight.startMeters
+                                  );
+                        if (matches)
+                            return &straight;
+                    }
+                    return nullptr;
+                }();
+
+            // On the semantic side, the authored straight must survive
+            // literally to its endpoint. A symmetric circular fillet would
+            // have to consume part of that hard interval, which is forbidden.
+            // Preserve the corner explicitly; downstream stage geometry owns
+            // any further tangent continuation / stop-before-turn behavior.
+            if (semanticProtectedEndpoint)
+            {
+                appendLineCurve(
+                    candidate.samples.back(),
+                    vertices[i]
+                );
+                if (candidate.samples.empty() ||
+                    glm::length(
+                        candidate.samples.back() -
+                        vertices[i]
+                    ) > 1.0e-6)
+                {
+                    candidate.samples.push_back(vertices[i]);
+                }
+
+                if (traceTraffic)
+                {
+                    std::cerr
+                        << "[ProtectedStraightEndpoint]"
+                        << " inbound="
+                        << (semanticProtectedEndpoint->inbound ? 1 : 0)
+                        << " point=("
+                        << vertices[i].x << ","
+                        << vertices[i].y << ","
+                        << vertices[i].z << ")"
+                        << std::endl;
+                }
+                continue;
+            }
+
             const double protectedMinimumTurnRadiusMeters =
-                stageStraightAtBoundary
-                    ? stageStraightAtBoundary->minimumTurnRadiusMeters
+                freeSpaceTurnBoundary
+                    ? freeSpaceTurnBoundary->minimumTurnRadiusMeters
                     : 0.0;
 
             const auto a=vertices[i]-vertices[i-1];

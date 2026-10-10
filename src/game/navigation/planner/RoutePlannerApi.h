@@ -449,7 +449,7 @@ struct RouteFrameAnchor
 {
     double progressMeters = 0.0;
     glm::dvec3 upReference {0.0, 1.0, 0.0};
-    double liveDockPhaseWeight = 0.0;
+    double dynamicRollPhaseWeight = 0.0;
 };
 
 struct RoutePlan

@@ -1291,143 +1291,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     return nullptr;
                 }();
 
-            if (stageStraightAtBoundary)
-            {
-                const glm::dvec3 axisDelta =
-                    stageStraightAtBoundary->endMeters -
-                    stageStraightAtBoundary->startMeters;
-                const double axisLength = glm::length(axisDelta);
-
-                if (axisLength > 1.0e-9)
-                {
-                    const glm::dvec3 requiredForward =
-                        axisDelta / axisLength;
-                    const bool transitionInbound =
-                        samePoint(
-                            vertices[i],
-                            stageStraightAtBoundary->startMeters
-                        );
-
-                    // Manual-friendly stage capture is authored geometry, not
-                    // an emergency "fit whatever radius is left" fillet.
-                    // Keep this independent from cruise speed; the speed
-                    // profile will slow to the accepted curvature.
-                    const double comfortRadiusMeters =
-                        std::max(
-                            150.0,
-                            10.0 * r.hullRadiusMeters
-                        );
-
-                    const glm::dvec3 neighbour =
-                        transitionInbound
-                            ? candidate.samples.back()
-                            : vertices[i + 1];
-
-                    const auto transition =
-                        findRotatingStageTransitionArc(
-                            neighbour,
-                            vertices[i],
-                            requiredForward,
-                            comfortRadiusMeters,
-                            transitionInbound
-                        );
-
-                    if (transition.valid)
-                    {
-                        if (transitionInbound)
-                        {
-                            appendLineCurve(
-                                candidate.samples.back(),
-                                transition.startMeters
-                            );
-                        }
-                        else
-                        {
-                            appendLineCurve(
-                                candidate.samples.back(),
-                                vertices[i]
-                            );
-                            if (candidate.samples.empty() ||
-                                glm::length(
-                                    candidate.samples.back() -
-                                    vertices[i]
-                                ) > 1.0e-6)
-                            {
-                                candidate.samples.push_back(
-                                    vertices[i]
-                                );
-                            }
-                        }
-
-                        appendArcCurve(
-                            transition.startMeters,
-                            transition.endMeters,
-                            transition.centerMeters,
-                            transition.normal,
-                            transition.radiusMeters,
-                            transition.sweepRadians
-                        );
-
-                        if (transitionInbound)
-                        {
-                            candidate.samples.insert(
-                                candidate.samples.end(),
-                                transition.samples.begin(),
-                                transition.samples.end()
-                            );
-                        }
-                        else
-                        {
-                            candidate.samples.insert(
-                                candidate.samples.end(),
-                                transition.samples.begin() + 1,
-                                transition.samples.end()
-                            );
-                        }
-
-                        std::cerr
-                            << "[StageTransitionArc]"
-                            << " inbound="
-                            << (transitionInbound
-                                    ? 1
-                                    : 0)
-                            << " radius_m="
-                            << transition.radiusMeters
-                            << " sweep_deg="
-                            << glm::degrees(
-                                   transition.sweepRadians
-                               )
-                            << " plane_deg="
-                            << glm::degrees(
-                                   transition.planeRotationRadians
-                               )
-                            << " tangent_error_deg="
-                            << glm::degrees(
-                                   transition.tangentErrorRadians
-                               )
-                            << " boundary=("
-                            << vertices[i].x << ","
-                            << vertices[i].y << ","
-                            << vertices[i].z << ")"
-                            << std::endl;
-
-                        continue;
-                    }
-
-                    std::cerr
-                        << "[StageTransitionArc]"
-                        << " inbound="
-                        << (transitionInbound ? 1 : 0)
-                        << " radius_m=" << comfortRadiusMeters
-                        << " result=no-single-arc-candidate"
-                        << " fallback=forbidden-at-protected-boundary"
-                        << std::endl;
-
-                    candidate.failure =
-                        "no fixed-radius transition arc at protected straight boundary";
-                    return candidate;
-                }
-            }
+            const double protectedMinimumTurnRadiusMeters =
+                stageStraightAtBoundary
+                    ? stageStraightAtBoundary->minimumTurnRadiusMeters
+                    : 0.0;
 
             const auto a=vertices[i]-vertices[i-1];
             const auto b=vertices[i+1]-vertices[i];
@@ -1457,7 +1324,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const double desiredRadius=std::max({
                 20.0,
                 authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
-                terminalTurn ? requiredTerminalRadiusMeters : 0.0
+                terminalTurn ? requiredTerminalRadiusMeters : 0.0,
+                protectedMinimumTurnRadiusMeters
             });
             // Generic transit fillets are geometry, not a command to hold
             // cruise speed through every bend. The accepted dense route below
@@ -1472,7 +1340,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction
-                    : 0.40;
+                    : (protectedMinimumTurnRadiusMeters > 0.0
+                        ? 0.49
+                        : 0.40);
             double tangentDistance=std::min({
                 la*segmentFraction,
                 lb*segmentFraction,
@@ -1506,12 +1376,21 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 }
             }
 
-            if(terminalTurn &&
-               requiredTerminalRadiusMeters>0.0 &&
+            const double hardMinimumRadiusMeters =
+                std::max(
+                    terminalTurn
+                        ? requiredTerminalRadiusMeters
+                        : 0.0,
+                    protectedMinimumTurnRadiusMeters
+                );
+            if(hardMinimumRadiusMeters > 0.0 &&
                tangentDistance/tangentScale+1.0e-6 <
-                   requiredTerminalRadiusMeters)
+                   hardMinimumRadiusMeters)
             {
-                candidate.failure="preferred terminal turn radius unavailable on candidate";
+                candidate.failure =
+                    protectedMinimumTurnRadiusMeters > 0.0
+                        ? "turn corridor lacks tangent room for protected radius"
+                        : "preferred terminal turn radius unavailable on candidate";
                 return candidate;
             }
 
@@ -1521,9 +1400,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                  ++attempt,tangentDistance*=0.5)
             {
                 const double radius=tangentDistance/tangentScale;
-                if(terminalTurn &&
-                   requiredTerminalRadiusMeters>0.0 &&
-                   radius+1.0e-6<requiredTerminalRadiusMeters)
+                if(hardMinimumRadiusMeters > 0.0 &&
+                   radius+1.0e-6 < hardMinimumRadiusMeters)
                     break;
 
                 const auto entry=vertices[i]-tangentDistance*u;
@@ -1589,6 +1467,19 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     );
                     candidate.samples.insert(
                         candidate.samples.end(),arc.begin(),arc.end());
+                    if (protectedMinimumTurnRadiusMeters > 0.0)
+                    {
+                        std::cerr
+                            << "[TurnCorridorArc]"
+                            << " radius_m=" << radius
+                            << " turn_deg=" << glm::degrees(turnAngle)
+                            << " boundary=("
+                            << vertices[i].x << ","
+                            << vertices[i].y << ","
+                            << vertices[i].z << ")"
+                            << std::endl;
+                    }
+
                     if(initialForwardLeadActive && i==1)
                     {
                         candidate.initialTurnPresent=true;

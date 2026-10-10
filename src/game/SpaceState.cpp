@@ -2729,9 +2729,11 @@ void SpaceState::updateDockingAdvisory()
                             }
                         }
 
-                        std::vector<
-                            game::navigation::RouteFrameField::Anchor>
-                            visualAnchors;
+                        if (job->plan.valid())
+                        {
+                            std::vector<
+                                game::navigation::RouteFrameField::Anchor>
+                                visualAnchors;
                         visualAnchors.reserve(
                             job->plan.routeFrameAnchors.size()
                         );
@@ -2812,6 +2814,7 @@ void SpaceState::updateDockingAdvisory()
                                         true,
                                         &job->autopilotCompileFailure
                                     );
+                        }
                         }
                     }
 

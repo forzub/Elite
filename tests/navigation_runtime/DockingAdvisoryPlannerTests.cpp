@@ -1388,16 +1388,34 @@ int main()
             return 123;
         }
 
-        // Working-axis extension is 1000 m for this fixture.
-        const glm::dvec3 expectedBoundary {-1000.0, 0.0, 0.0};
+        // Corridor capture is allowed to place the tangent join anywhere
+        // before the authored hard interval. The old rotating-arc prototype
+        // required an exact endpoint at the former workingJoin (-1000,0,0),
+        // but the coarse-corridor solver intentionally chooses the join from
+        // available space. What remains hard is:
+        //   - radius must stay at or above the comfort floor;
+        //   - the arc must leave tangent to the protected +X axis;
+        //   - the arc must finish before hard.start so it cannot consume the
+        //     authored [0,1000] straight.
+        const glm::dvec3 hardAxis =
+            glm::normalize(hard.endMeters - hard.startMeters);
         bool foundComfortArc = false;
         for (const auto& curve : stagePlan.routeCurves)
         {
             if (curve.kind != planner::RouteCurveKind::CircularArc)
                 continue;
 
-            if (glm::length(curve.endMeters - expectedBoundary) <= 1.0e-5 &&
-                curve.arcRadiusMeters >= 150.0 - 1.0e-6)
+            const glm::dvec3 toArcEnd =
+                curve.endMeters - hard.startMeters;
+            const double along =
+                glm::dot(toArcEnd, hardAxis);
+            const glm::dvec3 lateral =
+                toArcEnd - along * hardAxis;
+
+            if (curve.arcRadiusMeters >= 150.0 - 1.0e-6 &&
+                along <= 1.0e-6 &&
+                glm::length(lateral) <= 1.0e-5 &&
+                glm::dot(curve.endForward, hardAxis) >= 0.999999)
             {
                 foundComfortArc = true;
                 break;
@@ -1407,7 +1425,7 @@ int main()
         if (!foundComfortArc)
         {
             std::cerr
-                << "stage boundary collapsed below comfort radius or lost exact capture arc\n";
+                << "stage boundary lost comfort-radius tangent capture before hard straight\n";
             return 124;
         }
     }

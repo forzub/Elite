@@ -3001,15 +3001,15 @@ void SpaceState::updateDockingAdvisory()
                                     havePreviousOwnedUp
                                         ? previousOwnedUp
                                         : stage.frameUp;
-                                a.liveDockPhaseWeight = 0.0;
+                                a.dynamicRollPhaseWeight = 0.0;
 
                                 b.upReference = stage.frameUp;
-                                b.liveDockPhaseWeight = 1.0;
+                                b.dynamicRollPhaseWeight = 1.0;
                             }
                             else
                             {
                                 a.upReference = stage.frameUp;
-                                a.liveDockPhaseWeight = 0.0;
+                                a.dynamicRollPhaseWeight = 0.0;
                                 b = a;
                                 b.progressMeters =
                                     stage.endProgressMeters;
@@ -3060,8 +3060,8 @@ void SpaceState::updateDockingAdvisory()
                             game::navigation::RouteFrameField::Anchor visual;
                             visual.progressMeters = anchor.progressMeters;
                             visual.upReference = anchor.upReference;
-                            visual.liveDockPhaseWeight =
-                                anchor.liveDockPhaseWeight;
+                            visual.dynamicRollPhaseWeight =
+                                anchor.dynamicRollPhaseWeight;
                             visualAnchors.push_back(visual);
                         }
 
@@ -3085,13 +3085,13 @@ void SpaceState::updateDockingAdvisory()
                                 );
                         job->context.visualGateDockPhaseWeight =
                             game::navigation::RouteFrameField::
-                                sampleLiveDockPhaseWeightForGates(
+                                sampleDynamicRollPhaseWeightForGates(
                                     visualFrameField,
                                     job->plan.gates
                                 );
                         job->context.visualExecutionGateDockPhaseWeight =
                             game::navigation::RouteFrameField::
-                                sampleLiveDockPhaseWeightForGates(
+                                sampleDynamicRollPhaseWeightForGates(
                                     visualFrameField,
                                     job->plan.executionGates
                                 );

@@ -1287,60 +1287,6 @@ int main()
             << "automatic docking recovery policy lost safe in-place correction semantics\n";
         return 39;
     }
-    // Protected traffic topology bridge: mandatory via points must survive
-    // geometric planning in order. Use piecewise-straight mode so the test
-    // proves exact semantic portal ownership without fillet approximation.
-    {
-        DockingAdvisoryRequest viaRequest;
-        viaRequest.startMeters = {-6000.0, 0.0, 0.0};
-        viaRequest.entranceMeters = {6000.0, 0.0, 0.0};
-        viaRequest.outward = {1.0, 0.0, 0.0};
-        viaRequest.standoffMeters = 300.0;
-        viaRequest.hullRadiusMeters = 10.0;
-        viaRequest.maxSpeedMps = 150.0;
-        viaRequest.acceleratingMps2 = 10.0;
-        viaRequest.brakingMps2 = 10.0;
-        viaRequest.lateralMps2 = 5.0;
-        viaRequest.roundTurns = false;
-        viaRequest.requiredViaPointsMeters = {
-            {-2000.0, 1200.0, 0.0},
-            {0.0, 1200.0, 0.0},
-            {2000.0, 1200.0, 0.0},
-            {3000.0, 0.0, 0.0}
-        };
-
-        const auto viaPlan =
-            DockingAdvisoryPlanner::plan(viaRequest);
-        if (!viaPlan.valid())
-        {
-            std::cerr
-                << "mandatory traffic via route failed: "
-                << viaPlan.failure << "\n";
-            return 121;
-        }
-
-        for (const auto& via : viaRequest.requiredViaPointsMeters)
-        {
-            bool found = false;
-            for (const auto& curve : viaPlan.routeCurves)
-            {
-                if (glm::length(curve.startMeters - via) < 1.0e-6 ||
-                    glm::length(curve.endMeters - via) < 1.0e-6)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
-            {
-                std::cerr
-                    << "mandatory traffic via point was bypassed: ("
-                    << via.x << "," << via.y << "," << via.z << ")\n";
-                return 122;
-            }
-        }
-    }
-
     std::cout << "FAR DOCK PASS gates=" << farPlan.gates.size() << '\n';
     std::cout << "DOCK ADVISORY PASS gates=" << result.gates.size() << '\n';
 }

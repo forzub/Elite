@@ -1236,6 +1236,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                                 candidate.samples.back(),
                                 vertices[i]
                             );
+                            if (candidate.samples.empty() ||
+                                glm::length(
+                                    candidate.samples.back() -
+                                    vertices[i]
+                                ) > 1.0e-6)
+                            {
+                                candidate.samples.push_back(
+                                    vertices[i]
+                                );
+                            }
                         }
 
                         appendArcCurve(

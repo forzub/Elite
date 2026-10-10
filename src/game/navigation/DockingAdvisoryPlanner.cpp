@@ -1,7 +1,5 @@
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 
-#include <glm/gtc/constants.hpp>
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -118,10 +116,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     {
         glm::dvec3 startMeters {0.0};
         glm::dvec3 endMeters {0.0};
-        bool inbound = true;
-        double minimumTurnRadiusMeters = 0.0;
-        glm::dvec3 turnBubbleCenterMeters {0.0};
-        double turnBubbleRadiusMeters = 0.0;
     };
     std::vector<ExactPlannerStraight> exactPlannerStraights;
 
@@ -179,33 +173,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 workingJoin =
                 straight.startMeters - axis * workingExtensionMeters;
 
-            const double minimumTurnRadiusMeters =
-                std::max(
-                    150.0,
-                    10.0 * r.hullRadiusMeters
-                );
-            const double captureLeadMeters =
-                std::max(
-                    straight.minimumStraightMeters,
-                    4.0 * minimumTurnRadiusMeters
-                );
-            const glm::dvec3 capturePoint =
-                workingJoin - axis * captureLeadMeters;
-
-            // The free-space planner does not aim directly at the semantic
-            // boundary. It first reaches a coarse capture region on the far
-            // side of a synthetic turn-clearance bubble. That forces a broad
-            // approach corridor with enough room for one or more fixed-radius
-            // fillets, instead of solving heading by angular brute force.
+            // The whole working axis from the tangent join to the portal must
+            // stay straight. Only the authored final portion is HARD, but if
+            // the extension were allowed to approach HARD start from an
+            // arbitrary direction, generic corner rounding would consume the
+            // HARD segment itself.
             exactPlannerStraights.push_back(
-                {
-                    capturePoint,
-                    straight.endMeters,
-                    true,
-                    minimumTurnRadiusMeters,
-                    workingJoin,
-                    2.0 * minimumTurnRadiusMeters
-                }
+                {workingJoin, straight.endMeters}
             );
 
             if (traceTraffic)
@@ -213,16 +187,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 std::cerr
                     << "[TrafficWorkingAxis]"
                     << " inbound=1"
-                    << " capture=("
-                    << capturePoint.x << ","
-                    << capturePoint.y << ","
-                    << capturePoint.z << ")"
                     << " working_join=("
                     << workingJoin.x << ","
                     << workingJoin.y << ","
                     << workingJoin.z << ")"
-                    << " turn_bubble_r_m="
-                    << (2.0 * minimumTurnRadiusMeters)
                     << " hard_start=("
                     << straight.startMeters.x << ","
                     << straight.startMeters.y << ","
@@ -234,9 +202,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     << std::endl;
             }
 
-            const auto workingIt =
-                plannerViaPoints.insert(it, workingJoin);
-            plannerViaPoints.insert(workingIt, capturePoint);
+            plannerViaPoints.insert(it, workingJoin);
         }
         else
         {
@@ -258,28 +224,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 workingJoin =
                 straight.endMeters + axis * workingExtensionMeters;
 
-            const double minimumTurnRadiusMeters =
-                std::max(
-                    150.0,
-                    10.0 * r.hullRadiusMeters
-                );
-            const double captureLeadMeters =
-                std::max(
-                    straight.minimumStraightMeters,
-                    4.0 * minimumTurnRadiusMeters
-                );
-            const glm::dvec3 capturePoint =
-                workingJoin + axis * captureLeadMeters;
-
             exactPlannerStraights.push_back(
-                {
-                    straight.startMeters,
-                    capturePoint,
-                    false,
-                    minimumTurnRadiusMeters,
-                    workingJoin,
-                    2.0 * minimumTurnRadiusMeters
-                }
+                {straight.startMeters, workingJoin}
             );
 
             if (traceTraffic)
@@ -299,18 +245,10 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     << workingJoin.x << ","
                     << workingJoin.y << ","
                     << workingJoin.z << ")"
-                    << " capture=("
-                    << capturePoint.x << ","
-                    << capturePoint.y << ","
-                    << capturePoint.z << ")"
-                    << " turn_bubble_r_m="
-                    << (2.0 * minimumTurnRadiusMeters)
                     << std::endl;
             }
 
-            const auto workingIt =
-                plannerViaPoints.insert(std::next(it), workingJoin);
-            plannerViaPoints.insert(std::next(workingIt), capturePoint);
+            plannerViaPoints.insert(std::next(it), workingJoin);
         }
     }
 
@@ -558,52 +496,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     std::max(0.0, additionalClearanceMeters);
                 query.params.maxConsideredObstacles =
                     maxConsideredObstacles;
-
-                for (const auto& straight : exactPlannerStraights)
-                {
-                    const bool entersCapture =
-                        straight.inbound &&
-                        samePoint(legGoal, straight.startMeters);
-                    const bool leavesCapture =
-                        !straight.inbound &&
-                        samePoint(legStart, straight.endMeters);
-                    if (!entersCapture && !leavesCapture)
-                        continue;
-
-                    world::navigation::NavigationObstacle bubble;
-                    bubble.id = "__turn_corridor_bubble";
-                    bubble.shape =
-                        world::navigation::NavigationObstacleShape::Sphere;
-                    bubble.centerMeters =
-                        straight.turnBubbleCenterMeters;
-                    bubble.radiusMeters =
-                        straight.turnBubbleRadiusMeters;
-                    query.obstacles.push_back(std::move(bubble));
-
-                    if (traceTraffic)
-                    {
-                        std::cerr
-                            << "[TurnCorridorProbe]"
-                            << " inbound=" << (straight.inbound ? 1 : 0)
-                            << " bubble_center=("
-                            << straight.turnBubbleCenterMeters.x << ","
-                            << straight.turnBubbleCenterMeters.y << ","
-                            << straight.turnBubbleCenterMeters.z << ")"
-                            << " bubble_r_m="
-                            << straight.turnBubbleRadiusMeters
-                            << " leg_start=("
-                            << legStart.x << ","
-                            << legStart.y << ","
-                            << legStart.z << ")"
-                            << " leg_goal=("
-                            << legGoal.x << ","
-                            << legGoal.y << ","
-                            << legGoal.z << ")"
-                            << std::endl;
-                    }
-                    break;
-                }
-
                 return world::navigation::GeometricPathPlanner::plan(query);
             };
 
@@ -996,90 +888,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         for (std::size_t i=1;i+1<vertices.size();++i)
         {
-            const auto freeSpaceTurnBoundary =
-                [&]() -> const ExactPlannerStraight*
-                {
-                    for (const auto& straight :
-                         exactPlannerStraights)
-                    {
-                        const bool matches =
-                            straight.inbound
-                                ? samePoint(
-                                      vertices[i],
-                                      straight.startMeters
-                                  )
-                                : samePoint(
-                                      vertices[i],
-                                      straight.endMeters
-                                  );
-                        if (matches)
-                            return &straight;
-                    }
-                    return nullptr;
-                }();
-
-            const auto semanticProtectedEndpoint =
-                [&]() -> const ExactPlannerStraight*
-                {
-                    for (const auto& straight :
-                         exactPlannerStraights)
-                    {
-                        const bool matches =
-                            straight.inbound
-                                ? samePoint(
-                                      vertices[i],
-                                      straight.endMeters
-                                  )
-                                : samePoint(
-                                      vertices[i],
-                                      straight.startMeters
-                                  );
-                        if (matches)
-                            return &straight;
-                    }
-                    return nullptr;
-                }();
-
-            // On the semantic side, the authored straight must survive
-            // literally to its endpoint. A symmetric circular fillet would
-            // have to consume part of that hard interval, which is forbidden.
-            // Preserve the corner explicitly; downstream stage geometry owns
-            // any further tangent continuation / stop-before-turn behavior.
-            if (semanticProtectedEndpoint)
-            {
-                appendLineCurve(
-                    candidate.samples.back(),
-                    vertices[i]
-                );
-                if (candidate.samples.empty() ||
-                    glm::length(
-                        candidate.samples.back() -
-                        vertices[i]
-                    ) > 1.0e-6)
-                {
-                    candidate.samples.push_back(vertices[i]);
-                }
-
-                if (traceTraffic)
-                {
-                    std::cerr
-                        << "[ProtectedStraightEndpoint]"
-                        << " inbound="
-                        << (semanticProtectedEndpoint->inbound ? 1 : 0)
-                        << " point=("
-                        << vertices[i].x << ","
-                        << vertices[i].y << ","
-                        << vertices[i].z << ")"
-                        << std::endl;
-                }
-                continue;
-            }
-
-            const double protectedMinimumTurnRadiusMeters =
-                freeSpaceTurnBoundary
-                    ? freeSpaceTurnBoundary->minimumTurnRadiusMeters
-                    : 0.0;
-
             const auto a=vertices[i]-vertices[i-1];
             const auto b=vertices[i+1]-vertices[i];
             const double la=glm::length(a), lb=glm::length(b);
@@ -1108,8 +916,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const double desiredRadius=std::max({
                 20.0,
                 authoredCruiseSpeed*authoredCruiseSpeed/r.lateralMps2,
-                terminalTurn ? requiredTerminalRadiusMeters : 0.0,
-                protectedMinimumTurnRadiusMeters
+                terminalTurn ? requiredTerminalRadiusMeters : 0.0
             });
             // Generic transit fillets are geometry, not a command to hold
             // cruise speed through every bend. The accepted dense route below
@@ -1124,9 +931,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const double segmentFraction=
                 terminalTurn
                     ? r.terminalTurnSegmentFraction
-                    : (protectedMinimumTurnRadiusMeters > 0.0
-                        ? 0.49
-                        : 0.40);
+                    : 0.40;
             double tangentDistance=std::min({
                 la*segmentFraction,
                 lb*segmentFraction,
@@ -1160,21 +965,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 }
             }
 
-            const double hardMinimumRadiusMeters =
-                std::max(
-                    terminalTurn
-                        ? requiredTerminalRadiusMeters
-                        : 0.0,
-                    protectedMinimumTurnRadiusMeters
-                );
-            if(hardMinimumRadiusMeters > 0.0 &&
+            if(terminalTurn &&
+               requiredTerminalRadiusMeters>0.0 &&
                tangentDistance/tangentScale+1.0e-6 <
-                   hardMinimumRadiusMeters)
+                   requiredTerminalRadiusMeters)
             {
-                candidate.failure =
-                    protectedMinimumTurnRadiusMeters > 0.0
-                        ? "turn corridor lacks tangent room for protected radius"
-                        : "preferred terminal turn radius unavailable on candidate";
+                candidate.failure="preferred terminal turn radius unavailable on candidate";
                 return candidate;
             }
 
@@ -1184,8 +980,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                  ++attempt,tangentDistance*=0.5)
             {
                 const double radius=tangentDistance/tangentScale;
-                if(hardMinimumRadiusMeters > 0.0 &&
-                   radius+1.0e-6 < hardMinimumRadiusMeters)
+                if(terminalTurn &&
+                   requiredTerminalRadiusMeters>0.0 &&
+                   radius+1.0e-6<requiredTerminalRadiusMeters)
                     break;
 
                 const auto entry=vertices[i]-tangentDistance*u;
@@ -1251,19 +1048,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     );
                     candidate.samples.insert(
                         candidate.samples.end(),arc.begin(),arc.end());
-                    if (protectedMinimumTurnRadiusMeters > 0.0)
-                    {
-                        std::cerr
-                            << "[TurnCorridorArc]"
-                            << " radius_m=" << radius
-                            << " turn_deg=" << glm::degrees(turnAngle)
-                            << " boundary=("
-                            << vertices[i].x << ","
-                            << vertices[i].y << ","
-                            << vertices[i].z << ")"
-                            << std::endl;
-                    }
-
                     if(initialForwardLeadActive && i==1)
                     {
                         candidate.initialTurnPresent=true;
@@ -1526,18 +1310,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         selectedTraversalSeconds=estimatedTraversalSeconds(selected);
     }
 
-    const auto isInvariantStageBoundaryFailure =
-        [](const RoundedCandidate& candidate)
-        {
-            return
-                candidate.failure.find(
-                    "protected radius"
-                ) != std::string::npos ||
-                candidate.failure.find(
-                    "turn corridor"
-                ) != std::string::npos;
-        };
-
     const auto considerPreferredCandidate =
         [&](RoundedCandidate candidate, bool candidateIsDetour)
         {
@@ -1787,23 +1559,6 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     out.terminalArcLastRejection =
                         "transit-to-entry:" +
                         transitCandidate.failure;
-
-                    // The traffic-stage prefix is identical for every
-                    // terminal ingress angle. If it cannot satisfy a
-                    // protected stage boundary, rotating the distant
-                    // terminal arc cannot possibly repair that prefix.
-                    // Abort the terminal sweep instead of recomputing the
-                    // same impossible BLUE-entry transition hundreds of
-                    // times.
-                    if (isInvariantStageBoundaryFailure(
-                            transitCandidate
-                        ))
-                    {
-                        out.failure =
-                            transitCandidate.failure;
-                        return out;
-                    }
-
                     continue;
                 }
                 if(transitCandidate.samples.empty() ||

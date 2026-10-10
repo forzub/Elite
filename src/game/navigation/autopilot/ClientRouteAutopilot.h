@@ -254,8 +254,8 @@ public:
             RouteFrameField::Anchor converted;
             converted.progressMeters = anchor.progressMeters;
             converted.upReference = anchor.upReference;
-            converted.liveDockPhaseWeight =
-                anchor.liveDockPhaseWeight;
+            converted.dynamicRollPhaseWeight =
+                anchor.dynamicRollPhaseWeight;
             frameAnchors.push_back(converted);
         }
 
@@ -994,9 +994,9 @@ public:
         hullRollRequest.tunnelCenter = referencePosition;
         hullRollRequest.tunnelForward = tunnelFrameForward;
         hullRollRequest.canonicalTunnelUp = canonicalTunnelUp;
-        const double liveDockPhaseWeight =
+        const double dynamicRollPhaseWeight =
             !state.routeFrameField.empty()
-                ? RouteFrameField::liveDockPhaseWeightAtProgress(
+                ? RouteFrameField::dynamicRollPhaseWeightAtProgress(
                     state.routeFrameField,
                     poseProgressMeters
                   )
@@ -1004,10 +1004,10 @@ public:
 
         hullRollRequest.liveTunnelRollPhaseRad =
             state.liveTunnelRollPhaseRad *
-            liveDockPhaseWeight;
+            dynamicRollPhaseWeight;
         hullRollRequest.liveTunnelRollRateRadPerSec =
             state.liveTunnelRollRateRadPerSec *
-            liveDockPhaseWeight;
+            dynamicRollPhaseWeight;
         hullRollRequest.rollResponseSeconds =
             rollActuatorResponseSeconds;
         hullRollRequest.maxRollRateRadPerSec =

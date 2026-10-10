@@ -51,7 +51,7 @@ int main()
     RouteFrameField::Anchor blue;
     blue.progressMeters = 1000.0;
     blue.upReference = glm::dvec3(0.0, 0.0, 1.0);
-    blue.liveDockPhaseWeight = 0.0;
+    blue.dynamicRollPhaseWeight = 0.0;
     anchors.push_back(blue);
 
     const auto field = RouteFrameField::build(
@@ -75,13 +75,13 @@ int main()
         return fail("terminal dock anchor did not own route up");
 
     const double beforeBlue =
-        RouteFrameField::liveDockPhaseWeightAtProgress(field, 500.0);
+        RouteFrameField::dynamicRollPhaseWeightAtProgress(field, 500.0);
     const double atBlue =
-        RouteFrameField::liveDockPhaseWeightAtProgress(field, 1000.0);
+        RouteFrameField::dynamicRollPhaseWeightAtProgress(field, 1000.0);
     const double between =
-        RouteFrameField::liveDockPhaseWeightAtProgress(field, 2000.0);
+        RouteFrameField::dynamicRollPhaseWeightAtProgress(field, 2000.0);
     const double atDock =
-        RouteFrameField::liveDockPhaseWeightAtProgress(field, 3000.0);
+        RouteFrameField::dynamicRollPhaseWeightAtProgress(field, 3000.0);
 
     if (!near(beforeBlue, 0.0) || !near(atBlue, 0.0))
         return fail("dock phase leaked into BLUE-owned approach");

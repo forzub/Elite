@@ -127,9 +127,9 @@ try:
             "job->plan.stages.push_back",
             "appendStage(",
             "const auto routeProgressAt",
-            "RouteStageKind::VolumeEntryCapture",
-            "RouteStageKind::VolumeTransit",
-            "RouteStageKind::VolumeExit",
+            "planner::RouteStageKind::VolumeEntryCapture",
+            "planner::RouteStageKind::VolumeTransit",
+            "planner::RouteStageKind::VolumeExit",
         ),
     )
 

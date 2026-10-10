@@ -119,6 +119,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         glm::dvec3 startMeters {0.0};
         glm::dvec3 endMeters {0.0};
         bool inbound = true;
+        double minimumTurnRadiusMeters = 0.0;
+        glm::dvec3 turnBubbleCenterMeters {0.0};
+        double turnBubbleRadiusMeters = 0.0;
     };
     std::vector<ExactPlannerStraight> exactPlannerStraights;
 
@@ -176,13 +179,33 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 workingJoin =
                 straight.startMeters - axis * workingExtensionMeters;
 
-            // The whole working axis from the tangent join to the portal must
-            // stay straight. Only the authored final portion is HARD, but if
-            // the extension were allowed to approach HARD start from an
-            // arbitrary direction, generic corner rounding would consume the
-            // HARD segment itself.
+            const double minimumTurnRadiusMeters =
+                std::max(
+                    150.0,
+                    10.0 * r.hullRadiusMeters
+                );
+            const double captureLeadMeters =
+                std::max(
+                    straight.minimumStraightMeters,
+                    4.0 * minimumTurnRadiusMeters
+                );
+            const glm::dvec3 capturePoint =
+                workingJoin - axis * captureLeadMeters;
+
+            // The free-space planner does not aim directly at the semantic
+            // boundary. It first reaches a coarse capture region on the far
+            // side of a synthetic turn-clearance bubble. That forces a broad
+            // approach corridor with enough room for one or more fixed-radius
+            // fillets, instead of solving heading by angular brute force.
             exactPlannerStraights.push_back(
-                {workingJoin, straight.endMeters, true}
+                {
+                    capturePoint,
+                    straight.endMeters,
+                    true,
+                    minimumTurnRadiusMeters,
+                    workingJoin,
+                    2.0 * minimumTurnRadiusMeters
+                }
             );
 
             if (traceTraffic)
@@ -190,10 +213,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 std::cerr
                     << "[TrafficWorkingAxis]"
                     << " inbound=1"
+                    << " capture=("
+                    << capturePoint.x << ","
+                    << capturePoint.y << ","
+                    << capturePoint.z << ")"
                     << " working_join=("
                     << workingJoin.x << ","
                     << workingJoin.y << ","
                     << workingJoin.z << ")"
+                    << " turn_bubble_r_m="
+                    << (2.0 * minimumTurnRadiusMeters)
                     << " hard_start=("
                     << straight.startMeters.x << ","
                     << straight.startMeters.y << ","
@@ -205,7 +234,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     << std::endl;
             }
 
-            plannerViaPoints.insert(it, workingJoin);
+            const auto workingIt =
+                plannerViaPoints.insert(it, workingJoin);
+            plannerViaPoints.insert(workingIt, capturePoint);
         }
         else
         {
@@ -227,8 +258,28 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             const glm::dvec3 workingJoin =
                 straight.endMeters + axis * workingExtensionMeters;
 
+            const double minimumTurnRadiusMeters =
+                std::max(
+                    150.0,
+                    10.0 * r.hullRadiusMeters
+                );
+            const double captureLeadMeters =
+                std::max(
+                    straight.minimumStraightMeters,
+                    4.0 * minimumTurnRadiusMeters
+                );
+            const glm::dvec3 capturePoint =
+                workingJoin + axis * captureLeadMeters;
+
             exactPlannerStraights.push_back(
-                {straight.startMeters, workingJoin, false}
+                {
+                    straight.startMeters,
+                    capturePoint,
+                    false,
+                    minimumTurnRadiusMeters,
+                    workingJoin,
+                    2.0 * minimumTurnRadiusMeters
+                }
             );
 
             if (traceTraffic)
@@ -248,10 +299,18 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     << workingJoin.x << ","
                     << workingJoin.y << ","
                     << workingJoin.z << ")"
+                    << " capture=("
+                    << capturePoint.x << ","
+                    << capturePoint.y << ","
+                    << capturePoint.z << ")"
+                    << " turn_bubble_r_m="
+                    << (2.0 * minimumTurnRadiusMeters)
                     << std::endl;
             }
 
-            plannerViaPoints.insert(std::next(it), workingJoin);
+            const auto workingIt =
+                plannerViaPoints.insert(std::next(it), workingJoin);
+            plannerViaPoints.insert(std::next(workingIt), capturePoint);
         }
     }
 
@@ -499,6 +558,52 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                     std::max(0.0, additionalClearanceMeters);
                 query.params.maxConsideredObstacles =
                     maxConsideredObstacles;
+
+                for (const auto& straight : exactPlannerStraights)
+                {
+                    const bool entersCapture =
+                        straight.inbound &&
+                        samePoint(legGoal, straight.startMeters);
+                    const bool leavesCapture =
+                        !straight.inbound &&
+                        samePoint(legStart, straight.endMeters);
+                    if (!entersCapture && !leavesCapture)
+                        continue;
+
+                    world::navigation::NavigationObstacle bubble;
+                    bubble.id = "__turn_corridor_bubble";
+                    bubble.shape =
+                        world::navigation::NavigationObstacleShape::Sphere;
+                    bubble.centerMeters =
+                        straight.turnBubbleCenterMeters;
+                    bubble.radiusMeters =
+                        straight.turnBubbleRadiusMeters;
+                    query.obstacles.push_back(std::move(bubble));
+
+                    if (traceTraffic)
+                    {
+                        std::cerr
+                            << "[TurnCorridorProbe]"
+                            << " inbound=" << (straight.inbound ? 1 : 0)
+                            << " bubble_center=("
+                            << straight.turnBubbleCenterMeters.x << ","
+                            << straight.turnBubbleCenterMeters.y << ","
+                            << straight.turnBubbleCenterMeters.z << ")"
+                            << " bubble_r_m="
+                            << straight.turnBubbleRadiusMeters
+                            << " leg_start=("
+                            << legStart.x << ","
+                            << legStart.y << ","
+                            << legStart.z << ")"
+                            << " leg_goal=("
+                            << legGoal.x << ","
+                            << legGoal.y << ","
+                            << legGoal.z << ")"
+                            << std::endl;
+                    }
+                    break;
+                }
+
                 return world::navigation::GeometricPathPlanner::plan(query);
             };
 

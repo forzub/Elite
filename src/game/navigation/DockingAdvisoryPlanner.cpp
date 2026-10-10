@@ -820,9 +820,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 stablePerpendicularBasis(axis);
 
             constexpr int PlaneSamples = 72;
-            constexpr int SweepSamples = 29;
-            constexpr double MinSweepDegrees = 20.0;
-            constexpr double MaxSweepDegrees = 160.0;
+            constexpr int SweepSamples = 43;
+            constexpr double MinSweepDegrees = 2.0;
+            constexpr double MaxSweepDegrees = 170.0;
             constexpr double MaxTangentErrorDegrees = 8.0;
             const double maxTangentError =
                 glm::radians(MaxTangentErrorDegrees);
@@ -1315,8 +1315,12 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         << (transitionInbound ? 1 : 0)
                         << " radius_m=" << comfortRadiusMeters
                         << " result=no-single-arc-candidate"
-                        << " fallback=legacy-fillet"
+                        << " fallback=forbidden-at-protected-boundary"
                         << std::endl;
+
+                    candidate.failure =
+                        "no fixed-radius transition arc at protected straight boundary";
+                    return candidate;
                 }
             }
 

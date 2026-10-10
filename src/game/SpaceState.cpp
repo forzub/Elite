@@ -2224,7 +2224,7 @@ void SpaceState::updateDockingAdvisory()
         // This leaves the legacy-normal RoutePlanner -> dock approach path
         // untouched so we can prove whether the regression belongs to the
         // traffic boundary layer rather than the base planner/autopilot.
-        constexpr bool EnableMandatoryBlueTransit = true;
+        constexpr bool EnableMandatoryBlueTransit = false;
 
         if (EnableMandatoryBlueTransit &&
             pending.target.stableObjectId == "guidance_dock_cube_a" &&

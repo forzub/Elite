@@ -791,6 +791,45 @@ foreach(guidance_test
 endforeach()
 
 add_executable(
+    route_frame_field_tests
+    RouteFrameFieldTests.cpp
+)
+
+target_include_directories(
+    route_frame_field_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    route_frame_field_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        route_frame_field_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        route_frame_field_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME route_frame_field
+    COMMAND route_frame_field_tests
+)
+
+set_tests_properties(
+    route_frame_field
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     hull_roll_alignment_contract_tests
     HullRollAlignmentContractTests.cpp
 )

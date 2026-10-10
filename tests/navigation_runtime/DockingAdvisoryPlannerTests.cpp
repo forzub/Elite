@@ -1360,6 +1360,12 @@ int main()
         stageRequest.maxAngularAccelerationRadPerSecond2 = 0.4;
         stageRequest.roundTurns = true;
 
+        // Keep this fixture focused on the traffic-stage transition. Use the
+        // existing exact terminal primitive instead of the legacy zero-radius
+        // align->stop branch, which can contain an unrelated 180-degree
+        // terminal reversal in this synthetic collinear setup.
+        stageRequest.preferredTerminalTurnRadiusMeters = 500.0;
+
         planner::MandatoryTangentStraightConstraint hard;
         hard.startMeters = {0.0, 0.0, 0.0};
         hard.endMeters = {1000.0, 0.0, 0.0};

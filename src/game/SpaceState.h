@@ -361,6 +361,11 @@ private:
         // field built from plan.routeCurves. Autopilot does not consume these.
         std::vector<glm::dvec3> visualGateUp;
         std::vector<glm::dvec3> visualExecutionGateUp;
+
+        // Per-gate ownership of the live rotating dock phase. Intermediate
+        // traffic stages own their own frame (0); final docking owns 1.
+        std::vector<double> visualGateDockPhaseWeight;
+        std::vector<double> visualExecutionGateDockPhaseWeight;
         double standoffMeters = 0.0;
         double widthMeters = 0.0;
         double heightMeters = 0.0;

@@ -212,7 +212,7 @@ TrafficRoutePlanAdapter::buildStageContract(
         terminal.startProgressMeters = cursor;
         terminal.endProgressMeters = routeEnd;
         terminal.framePolicy =
-            planner::RouteStageFramePolicy::LiveDockFrame;
+            planner::RouteStageFramePolicy::DynamicTerminalFrame;
         terminal.refreshPolicy =
             planner::RouteStageRefreshPolicy::LiveDuringStage;
         terminal.frameForward =
@@ -242,7 +242,7 @@ TrafficRoutePlanAdapter::buildStageContract(
         end.progressMeters = stage.endProgressMeters;
 
         if (stage.framePolicy ==
-            planner::RouteStageFramePolicy::LiveDockFrame)
+            planner::RouteStageFramePolicy::DynamicTerminalFrame)
         {
             begin.upReference =
                 havePreviousOwnedUp

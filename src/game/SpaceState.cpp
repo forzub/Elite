@@ -2968,6 +2968,10 @@ void SpaceState::updateDockingAdvisory()
                         // Derive interpolation anchors from stage boundaries.
                         // Stages are the architecture; anchors only implement
                         // smooth frame interpolation within/between them.
+                        glm::dvec3 previousOwnedUp =
+                            job->context.routeUpReference;
+                        bool havePreviousOwnedUp = false;
+
                         for (const auto& stage : job->plan.stages)
                         {
                             if (stage.framePolicy ==
@@ -2980,17 +2984,41 @@ void SpaceState::updateDockingAdvisory()
                             game::navigation::planner::RouteFrameAnchor a;
                             a.progressMeters =
                                 stage.startProgressMeters;
-                            a.upReference = stage.frameUp;
-                            a.liveDockPhaseWeight =
-                                stage.framePolicy ==
-                                    game::navigation::planner::
-                                        RouteStageFramePolicy::LiveDockFrame
-                                    ? 1.0
-                                    : 0.0;
-                            job->plan.routeFrameAnchors.push_back(a);
 
-                            game::navigation::planner::RouteFrameAnchor b = a;
-                            b.progressMeters = stage.endProgressMeters;
+                            game::navigation::planner::RouteFrameAnchor b;
+                            b.progressMeters =
+                                stage.endProgressMeters;
+
+                            if (stage.framePolicy ==
+                                game::navigation::planner::
+                                    RouteStageFramePolicy::LiveDockFrame)
+                            {
+                                // Enter the new stage in the orientation owned
+                                // by the preceding stage. From this point on,
+                                // live dock data is allowed to take ownership
+                                // progressively over the terminal approach.
+                                a.upReference =
+                                    havePreviousOwnedUp
+                                        ? previousOwnedUp
+                                        : stage.frameUp;
+                                a.liveDockPhaseWeight = 0.0;
+
+                                b.upReference = stage.frameUp;
+                                b.liveDockPhaseWeight = 1.0;
+                            }
+                            else
+                            {
+                                a.upReference = stage.frameUp;
+                                a.liveDockPhaseWeight = 0.0;
+                                b = a;
+                                b.progressMeters =
+                                    stage.endProgressMeters;
+
+                                previousOwnedUp = stage.frameUp;
+                                havePreviousOwnedUp = true;
+                            }
+
+                            job->plan.routeFrameAnchors.push_back(a);
                             job->plan.routeFrameAnchors.push_back(b);
 
                             std::cerr

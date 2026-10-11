@@ -2251,10 +2251,18 @@ void SpaceState::updateDockingAdvisory()
 
             if (check.currentCourseSafe)
             {
-                // We now own a collision-free inertial ray. Remove all
-                // translational demand again before taking the planning
-                // snapshot; angular settling is performed by Stabilizing.
-                submitAutopilotControl(coastForPlanningControl());
+                // The physical course is now collision-proven. A speculative
+                // planner worker may already be running (or even ready), so do
+                // not throw away the overlap by returning to a fresh planning
+                // start. Planning phase will finish angular damping before any
+                // route handoff is accepted.
+                const bool plannerAlreadyLaunched =
+                    m_dockAdviceJob &&
+                    m_dockAdviceJob->context.serial == pending.serial;
+
+                submitAutopilotControl(
+                    stabilizeAngularForPlanningControl()
+                );
 
                 std::cerr
                     << "[DockSafetyCourse]"
@@ -2262,11 +2270,15 @@ void SpaceState::updateDockingAdvisory()
                     << " phase=acquired"
                     << " speed_mps=" << speedMps
                     << " ray_m=" << check.sceneRayMeters
+                    << " planner_overlap="
+                    << (plannerAlreadyLaunched ? 1 : 0)
                     << std::endl;
 
                 m_dockSafeCourse = {};
                 m_clientDockingPhase =
-                    ClientDockingPhase::Stabilizing;
+                    plannerAlreadyLaunched
+                        ? ClientDockingPhase::Planning
+                        : ClientDockingPhase::Stabilizing;
                 m_clientDockingSettledSinceServerSeconds = -1.0;
                 return;
             }
@@ -2288,6 +2300,14 @@ void SpaceState::updateDockingAdvisory()
                 // blocker and do not hand this state back to the route
                 // planner. Fall back to the ordinary physical STOP.
                 m_dockSafeCourse.stopFallback = true;
+
+                if (m_dockAdviceJob)
+                {
+                    m_dockAdviceJob->cancelled.store(
+                        true,
+                        std::memory_order_release
+                    );
+                }
 
                 std::cerr
                     << "[DockSafetyCourse]"

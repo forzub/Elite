@@ -214,10 +214,35 @@ Evaluation evaluate(
 
     out.points.reserve(samplesPerBezier * 2 + 3);
 
+    const double minimumRadius =
+        effectiveMinimumRadius(request);
     const double maxCurvatureAllowed =
-        effectiveMinimumRadius(request) > Epsilon
-            ? 1.0 / effectiveMinimumRadius(request)
+        minimumRadius > Epsilon
+            ? 1.0 / minimumRadius
             : std::numeric_limits<double>::infinity();
+
+    const double referenceLength =
+        std::max(
+            1.0,
+            glm::length(
+                request.goal.positionMeters -
+                request.start.positionMeters
+            )
+        );
+    const double lateralAccelerationScale =
+        std::max(
+            Epsilon,
+            request.maxLateralAccelerationMps2
+        );
+    const double curvatureScale =
+        minimumRadius > Epsilon
+            ? 1.0 / minimumRadius
+            : 1.0 / referenceLength;
+    const double curvatureDerivativeScale =
+        std::max(
+            1.0e-15,
+            curvatureScale / referenceLength
+        );
 
     double previousCurvature = 0.0;
     bool havePreviousCurvature = false;
@@ -292,11 +317,14 @@ Evaluation evaluate(
                         request.designSpeedMps *
                         request.designSpeedMps *
                         curvature;
+                    const double normalizedLateralAcceleration =
+                        lateralAcceleration /
+                        lateralAccelerationScale;
 
                     out.lateralAccelerationEnergy +=
-                        lateralAcceleration *
-                        lateralAcceleration *
-                        ds;
+                        normalizedLateralAcceleration *
+                        normalizedLateralAcceleration *
+                        (ds / referenceLength);
 
                     if (havePreviousCurvature &&
                         ds > 1.0e-6)
@@ -304,11 +332,14 @@ Evaluation evaluate(
                         const double derivative =
                             (curvature -
                              previousCurvature) / ds;
+                        const double normalizedDerivative =
+                            derivative /
+                            curvatureDerivativeScale;
 
                         out.curvatureVariationEnergy +=
-                            derivative *
-                            derivative *
-                            ds;
+                            normalizedDerivative *
+                            normalizedDerivative *
+                            (ds / referenceLength);
                     }
 
                     if (!world::navigation::
@@ -395,7 +426,7 @@ Evaluation evaluate(
 
     out.objective =
         request.weights.pathLength *
-            out.length +
+            (out.length / referenceLength) +
         request.weights.lateralAccelerationEnergy *
             out.lateralAccelerationEnergy +
         request.weights.curvatureVariation *

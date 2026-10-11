@@ -632,6 +632,14 @@ RoutePlan planContinuousAssisted(
         std::to_string(
             optimized.diagnostics.minimumRadiusMeters
         ) +
+        " peak_lat_util=" +
+        std::to_string(
+            optimized.diagnostics.maxLateralUtilization
+        ) +
+        " brake_energy=" +
+        std::to_string(
+            optimized.diagnostics.brakingDemandEnergy
+        ) +
         " objective=" +
         std::to_string(
             optimized.diagnostics.objective

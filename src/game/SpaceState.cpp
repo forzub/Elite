@@ -3102,8 +3102,8 @@ void SpaceState::updateDockingAdvisory()
     {
         if (automatic)
         {
-            // Continue the same zero-acceleration coast used for the projected
-            // Automatic planning origin.
+            // Continue zero-acceleration ballistic coast from the planning
+            // snapshot while the asynchronous route is being built.
             submitAutopilotControl(coastForPlanningControl());
         }
         else

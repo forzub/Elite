@@ -2579,6 +2579,8 @@ void SpaceState::updateDockingAdvisory()
 
         request.obstacles = snapshot.navigationObstacles;
 
+        bool planningWhileSecuringCourse = false;
+
         if (automatic)
         {
             game::navigation::PreplanningSafetyCourseRequest safety;
@@ -2690,25 +2692,36 @@ void SpaceState::updateDockingAdvisory()
                         << (safetyResult.stopFallbackClear ? 1 : 0)
                         << std::endl;
                     submitAutopilotControl(manualStopControl());
+                    return;
                 }
-                else
-                {
-                    std::cerr
-                        << "[DockSafetyCourse]"
-                        << " request=" << pending.serial
-                        << " phase=securing"
-                        << " course=("
-                        << m_dockSafeCourse.direction.x << ","
-                        << m_dockSafeCourse.direction.y << ","
-                        << m_dockSafeCourse.direction.z << ")"
-                        << std::endl;
-                    submitAutopilotControl(
-                        safeCourseControl(
-                            m_dockSafeCourse.direction
-                        )
-                    );
-                }
-                return;
+
+                // The safe-course search is cheap and synchronous. As soon as
+                // it gives us a collision-proven launch/course direction, use
+                // that direction as the speculative planner start and launch
+                // the expensive worker immediately. The craft can rotate /
+                // redirect its inertial velocity while the route is computed.
+                // Spatial late-entry validation still decides whether this
+                // speculative prefix can be adopted when the worker finishes.
+                planningWhileSecuringCourse = true;
+                request.initialForward = m_dockSafeCourse.direction;
+
+                std::cerr
+                    << "[DockSafetyCourse]"
+                    << " request=" << pending.serial
+                    << " phase=securing+planning"
+                    << " course=("
+                    << m_dockSafeCourse.direction.x << ","
+                    << m_dockSafeCourse.direction.y << ","
+                    << m_dockSafeCourse.direction.z << ")"
+                    << std::endl;
+
+                submitAutopilotControl(
+                    safeCourseControl(
+                        m_dockSafeCourse.direction
+                    )
+                );
+            }
+        }
             }
         }
 

@@ -477,10 +477,15 @@ PreplanningSafetyCourse::evaluate(
             request.preferredDirection,
             {0.0, 0.0, -1.0}
         );
+    // At non-zero speed the physical course is the inertial velocity vector.
+    // At rest there is no inertial course, so the only physically meaningful
+    // launch ray is the hull forward axis. Never substitute the destination
+    // direction here: a ship parked nose-first at a wall/dock must discover
+    // that obstruction before route planning starts.
     out.currentCourse =
         out.speedMps > 0.5
             ? request.velocityMps / out.speedMps
-            : preferred;
+            : normalizedOr(request.hullForward, preferred);
     out.safeCourse = out.currentCourse;
 
     const double braking =
@@ -508,17 +513,6 @@ PreplanningSafetyCourse::evaluate(
             out.stopDistanceMeters + SceneExitMarginMeters
         );
 
-    if (out.speedMps <= 0.5)
-    {
-        out.valid = true;
-        out.currentCourseSafe = true;
-        out.safeCourseFound = true;
-        out.physicallyRecoverable = true;
-        out.safeCourse = preferred;
-        out.message = "stationary start is safe for planning";
-        return out;
-    }
-
     if (clearSegment(
             request,
             request.positionMeters,
@@ -530,7 +524,10 @@ PreplanningSafetyCourse::evaluate(
         out.currentCourseSafe = true;
         out.safeCourseFound = true;
         out.physicallyRecoverable = true;
-        out.message = "current ballistic course clears static planning scene";
+        out.message =
+            out.speedMps > 0.5
+                ? "current ballistic course clears static planning scene"
+                : "current launch ray clears static planning scene";
         return out;
     }
 

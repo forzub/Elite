@@ -490,6 +490,9 @@ private:
         if (o.safetyCourseActive && !m_lastSafetyCourseActive)
             ++m_safetyCourseCorrections;
 
+        if (o.safetyCourseActive && o.workerCount > 0)
+            ++m_planningSafetyOverlapSamples;
+
         if (o.safetyStopFallback && !m_lastSafetyStopFallback)
             ++m_emergencyStops;
 
@@ -581,6 +584,8 @@ private:
             << " planner_retries=" << m_plannerRetries
             << " safety_course_corrections="
             << m_safetyCourseCorrections
+            << " planning_safety_overlap_samples="
+            << m_planningSafetyOverlapSamples
             << " emergency_stops=" << m_emergencyStops
             << " max_speed=" << m_maxSpeed
             << " max_omega=" << m_maxOmega
@@ -627,6 +632,7 @@ private:
     int m_failures = 0;
     int m_plannerRetries = 0;
     int m_safetyCourseCorrections = 0;
+    int m_planningSafetyOverlapSamples = 0;
     int m_emergencyStops = 0;
     double m_maxSpeed = 0.0;
     double m_maxOmega = 0.0;

@@ -1,6 +1,6 @@
 param(
     [int]$NoProgressTimeoutSeconds = 15,
-    [int]$AbsoluteTimeoutSeconds = 120,
+    [int]$AbsoluteTimeoutSeconds = 300,
     [string]$ReportPath = "D:\tmp\elite_navigation_stress.log"
 )
 
@@ -38,6 +38,7 @@ $lastLength = -1L
 $lastWriteUtc = [DateTime]::MinValue
 $reportSeen = $false
 $completed = $false
+$scenarioFailed = $false
 $timedOut = $false
 $timeoutReason = ""
 
@@ -66,6 +67,11 @@ try {
             }
 
             $tail = Get-Content -Path $ReportPath -Tail 96 -ErrorAction SilentlyContinue
+            if ($tail -match "status=FAILED") {
+                $scenarioFailed = $true
+                break
+            }
+
             if ($tail -match "status=COMPLETE") {
                 $completed = $true
                 break
@@ -99,6 +105,15 @@ try {
             $process.WaitForExit()
         }
         exit 0
+    }
+
+    if ($scenarioFailed) {
+        Write-Host "[NavStressRunner] FAILED: navigation scenario reported failure"
+        if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+            $process.WaitForExit()
+        }
+        exit 4
     }
 
     if ($timedOut) {

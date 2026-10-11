@@ -5983,34 +5983,38 @@ void SpaceState::renderNavigationStressOverlay(
             break;
     }
 
-    if (m_clientDockingPhase ==
-        ClientDockingPhase::Executing)
-    {
-        for (const auto& stage : m_dockAdvice.plan.stages)
-        {
-            if (stage.kind !=
-                    game::navigation::planner::
-                        RouteStageKind::VolumeTransit ||
-                !stage.hardContainment)
-            {
-                continue;
-            }
+    const game::navigation::planner::RouteStageSpan*
+        blueStage = nullptr;
 
-            if (m_clientDockingRouteProgressMeters + 1.0 <
-                stage.startProgressMeters)
-            {
-                phase = "BLUE APPROACH";
-            }
-            else if (m_clientDockingRouteProgressMeters <=
-                stage.endProgressMeters + 1.0)
-            {
-                phase = "BLUE TRANSIT";
-            }
-            else
-            {
-                phase = "BLUE EXIT";
-            }
+    for (const auto& stage : m_dockAdvice.plan.stages)
+    {
+        if (stage.kind ==
+                game::navigation::planner::
+                    RouteStageKind::VolumeTransit &&
+            stage.hardContainment)
+        {
+            blueStage = &stage;
             break;
+        }
+    }
+
+    if (m_clientDockingPhase ==
+            ClientDockingPhase::Executing &&
+        blueStage)
+    {
+        if (m_clientDockingRouteProgressMeters + 1.0 <
+            blueStage->startProgressMeters)
+        {
+            phase = "BLUE APPROACH";
+        }
+        else if (m_clientDockingRouteProgressMeters <=
+            blueStage->endProgressMeters + 1.0)
+        {
+            phase = "BLUE TRANSIT";
+        }
+        else
+        {
+            phase = "BLUE EXIT";
         }
     }
 
@@ -6075,6 +6079,23 @@ void SpaceState::renderNavigationStressOverlay(
         !m_dockingGuidanceFailureReason.empty())
     {
         line3 = "FAIL: " + m_dockingGuidanceFailureReason;
+    }
+    else if (blueStage &&
+        m_clientDockingPhase == ClientDockingPhase::Executing)
+    {
+        std::ostringstream blue;
+        blue
+            << "BLUE "
+            << blueStage->volumeId
+            << "  s="
+            << std::fixed << std::setprecision(0)
+            << m_clientDockingRouteProgressMeters
+            << "  ["
+            << blueStage->startProgressMeters
+            << ", "
+            << blueStage->endProgressMeters
+            << "] m";
+        line3 = blue.str();
     }
     else if (m_navigationStressHarness.complete())
     {

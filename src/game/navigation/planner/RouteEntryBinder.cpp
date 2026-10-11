@@ -27,8 +27,22 @@ void appendUniqueGate(
         samePoint(dst.back().positionMeters, gate.positionMeters))
     {
         dst.back().forward = gate.forward;
-        dst.back().speedMps =
-            std::min(dst.back().speedMps, gate.speedMps);
+
+        // At an internal splice, two positive values are both speed ceilings,
+        // so the stricter one wins. Preserve a positive handoff if one side is
+        // a legacy zero-terminal artifact; HOLD/final zero constraints are not
+        // used as rebound anchors.
+        if (dst.back().speedMps > 1.0e-6 &&
+            gate.speedMps > 1.0e-6)
+        {
+            dst.back().speedMps =
+                std::min(dst.back().speedMps, gate.speedMps);
+        }
+        else
+        {
+            dst.back().speedMps =
+                std::max(dst.back().speedMps, gate.speedMps);
+        }
         return;
     }
     dst.push_back(gate);

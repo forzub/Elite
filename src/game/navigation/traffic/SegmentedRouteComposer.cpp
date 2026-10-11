@@ -1,0 +1,545 @@
+#include "src/game/navigation/traffic/SegmentedRouteComposer.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <utility>
+#include <vector>
+
+#include "src/game/navigation/planner/RoutePlannerApi.h"
+
+namespace game::navigation::traffic
+{
+namespace
+{
+
+bool samePoint(const glm::dvec3& a, const glm::dvec3& b)
+{
+    return glm::length(a - b) <= 1.0e-6;
+}
+
+void appendUniqueGate(
+    std::vector<planner::RouteGate>& dst,
+    const planner::RouteGate& gate
+)
+{
+    if (!dst.empty() &&
+        samePoint(dst.back().positionMeters, gate.positionMeters))
+    {
+        dst.back().forward = gate.forward;
+        dst.back().speedMps = std::max(dst.back().speedMps, gate.speedMps);
+        return;
+    }
+    dst.push_back(gate);
+}
+
+void appendShiftedCurves(
+    std::vector<planner::RouteCurveSegment>& dst,
+    const std::vector<planner::RouteCurveSegment>& src
+)
+{
+    double offset =
+        dst.empty() ? 0.0 : dst.back().endProgressMeters;
+
+    for (auto curve : src)
+    {
+        const double localStart = curve.startProgressMeters;
+        const double localEnd = curve.endProgressMeters;
+        curve.startProgressMeters = offset + localStart;
+        curve.endProgressMeters = offset + localEnd;
+        dst.push_back(std::move(curve));
+    }
+}
+
+void appendPlanSamples(
+    planner::RoutePlan& out,
+    const planner::RoutePlan& leg,
+    bool virtualTerminal,
+    double fallbackSpeedMps
+)
+{
+    appendShiftedCurves(out.routeCurves, leg.routeCurves);
+
+    for (std::size_t i = 0; i < leg.executionGates.size(); ++i)
+    {
+        auto gate = leg.executionGates[i];
+        if (virtualTerminal &&
+            i + 1 == leg.executionGates.size() &&
+            gate.speedMps <= 1.0e-6)
+        {
+            gate.speedMps = fallbackSpeedMps;
+        }
+        appendUniqueGate(out.executionGates, gate);
+    }
+
+    for (std::size_t i = 0; i < leg.gates.size(); ++i)
+    {
+        auto gate = leg.gates[i];
+        if (virtualTerminal &&
+            i + 1 == leg.gates.size() &&
+            gate.speedMps <= 1.0e-6)
+        {
+            gate.speedMps = fallbackSpeedMps;
+        }
+        appendUniqueGate(out.gates, gate);
+    }
+}
+
+void appendMandatoryVolume(
+    planner::RoutePlan& out,
+    const CompiledTrafficStage& stage,
+    const planner::RoutePlanRequest& base
+)
+{
+    std::vector<glm::dvec3> points;
+    const auto appendPoint =
+        [&](const glm::dvec3& point)
+        {
+            if (points.empty() || !samePoint(points.back(), point))
+                points.push_back(point);
+        };
+
+    appendPoint(stage.fromWorldMeters);
+    for (const auto& point : stage.requiredCenterlineMeters)
+        appendPoint(point);
+    appendPoint(stage.toWorldMeters);
+
+    if (points.size() < 2)
+        return;
+
+    const double stageSpeed =
+        stage.volumeConstraint.maxSpeedMps > 1.0e-6
+            ? std::min(base.maxSpeedMps,
+                       stage.volumeConstraint.maxSpeedMps)
+            : 0.8 * base.maxSpeedMps;
+
+    for (std::size_t i = 1; i < points.size(); ++i)
+    {
+        const glm::dvec3 delta = points[i] - points[i - 1];
+        const double length = glm::length(delta);
+        if (length <= 1.0e-9)
+            continue;
+
+        const glm::dvec3 forward = delta / length;
+
+        planner::RouteCurveSegment curve;
+        curve.kind = planner::RouteCurveKind::Line;
+        curve.startProgressMeters =
+            out.routeCurves.empty()
+                ? 0.0
+                : out.routeCurves.back().endProgressMeters;
+        curve.endProgressMeters =
+            curve.startProgressMeters + length;
+        curve.maxSpeedMps = stageSpeed;
+        curve.startMeters = points[i - 1];
+        curve.endMeters = points[i];
+        curve.startForward = forward;
+        curve.endForward = forward;
+        out.routeCurves.push_back(std::move(curve));
+
+        const double spacing =
+            std::max(
+                1.0,
+                std::min(10.0, base.gateSpacingMeters)
+            );
+        const int subdivisions =
+            std::max(1, static_cast<int>(std::ceil(length / spacing)));
+
+        for (int j = 1; j <= subdivisions; ++j)
+        {
+            const double t =
+                static_cast<double>(j) /
+                static_cast<double>(subdivisions);
+            planner::RouteGate gate;
+            gate.positionMeters =
+                j == subdivisions
+                    ? points[i]
+                    : glm::mix(points[i - 1], points[i], t);
+            gate.forward = forward;
+            gate.speedMps = stageSpeed;
+            appendUniqueGate(out.executionGates, gate);
+        }
+
+        planner::RouteGate sparse;
+        sparse.positionMeters = points[i];
+        sparse.forward = forward;
+        sparse.speedMps = stageSpeed;
+        appendUniqueGate(out.gates, sparse);
+    }
+}
+
+void recomputeGlobalSpeeds(
+    planner::RoutePlan& out,
+    const planner::RoutePlanRequest& base
+)
+{
+    auto& gates = out.executionGates;
+    if (gates.size() < 2)
+        return;
+
+    const double cruise =
+        std::max(0.5, 0.8 * base.maxSpeedMps);
+
+    for (std::size_t i = 0; i < gates.size(); ++i)
+    {
+        if (!std::isfinite(gates[i].speedMps) ||
+            gates[i].speedMps <= 1.0e-6)
+        {
+            gates[i].speedMps = cruise;
+        }
+        else
+        {
+            gates[i].speedMps =
+                std::min(gates[i].speedMps, cruise);
+        }
+    }
+
+    // Only the actual final destination is a zero-speed boundary.
+    gates.back().speedMps = 0.0;
+
+    for (std::size_t i = 1; i + 1 < gates.size(); ++i)
+    {
+        const glm::dvec3 a =
+            gates[i].positionMeters -
+            gates[i - 1].positionMeters;
+        const glm::dvec3 b =
+            gates[i + 1].positionMeters -
+            gates[i].positionMeters;
+        const double la = glm::length(a);
+        const double lb = glm::length(b);
+        const double across = glm::length(
+            gates[i + 1].positionMeters -
+            gates[i - 1].positionMeters
+        );
+        const double denom = la * lb * across;
+        if (denom <= 1.0e-9)
+            continue;
+
+        const double curvature =
+            2.0 * glm::length(glm::cross(a, b)) / denom;
+        if (curvature > 1.0e-9)
+        {
+            gates[i].speedMps = std::min(
+                gates[i].speedMps,
+                std::sqrt(base.lateralMps2 / curvature)
+            );
+        }
+    }
+
+    for (std::size_t i = gates.size() - 1; i > 0; --i)
+    {
+        const double ds = glm::length(
+            gates[i].positionMeters -
+            gates[i - 1].positionMeters
+        );
+        gates[i - 1].speedMps = std::min(
+            gates[i - 1].speedMps,
+            std::sqrt(
+                gates[i].speedMps * gates[i].speedMps +
+                2.0 * base.brakingMps2 * ds
+            )
+        );
+    }
+
+    double reachable =
+        std::max(0.0, base.initialSpeedMps);
+    for (std::size_t i = 1; i < gates.size(); ++i)
+    {
+        const double ds = glm::length(
+            gates[i].positionMeters -
+            gates[i - 1].positionMeters
+        );
+        reachable = std::sqrt(
+            reachable * reachable +
+            2.0 * base.acceleratingMps2 * ds
+        );
+        gates[i].speedMps =
+            std::min(gates[i].speedMps, reachable);
+        reachable = gates[i].speedMps;
+    }
+
+    // Sparse HUD gates are only a view of the execution route. Transfer the
+    // nearest dense speed ceiling instead of independently inventing another
+    // profile.
+    for (auto& sparse : out.gates)
+    {
+        double bestDistance =
+            std::numeric_limits<double>::infinity();
+        double bestSpeed = cruise;
+        for (const auto& dense : gates)
+        {
+            const double distance =
+                glm::length(
+                    dense.positionMeters -
+                    sparse.positionMeters
+                );
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestSpeed = dense.speedMps;
+            }
+        }
+        sparse.speedMps = bestSpeed;
+    }
+}
+
+planner::RoutePlan failedComposite(
+    const planner::RoutePlan& leg,
+    const char* prefix
+)
+{
+    planner::RoutePlan out = leg;
+    out.failure =
+        std::string(prefix) +
+        (leg.failure.empty()
+             ? std::string("unknown planner failure")
+             : leg.failure);
+    out.userMessage = out.failure;
+    return out;
+}
+
+} // namespace
+
+planner::RoutePlan SegmentedRouteComposer::plan(
+    const planner::RoutePlanRequest& terminalRequest,
+    const CompiledTrafficRoute& trafficRoute
+)
+{
+    if (!trafficRoute.valid)
+    {
+        planner::RoutePlan out;
+        out.disposition =
+            planner::RoutePlanDisposition::InvalidWorldData;
+        out.failureCode =
+            planner::RoutePlanFailureCode::InvalidWorldGeometry;
+        out.failure =
+            trafficRoute.failure.empty()
+                ? "segmented route received invalid traffic route"
+                : trafficRoute.failure;
+        out.userMessage = out.failure;
+        return out;
+    }
+
+    std::vector<const CompiledTrafficStage*> mandatoryStages;
+    for (const auto& stage : trafficRoute.stages)
+    {
+        if (stage.kind != TrafficRouteStageKind::VolumeTransit)
+            continue;
+        if (stage.volumeConstraint.policy !=
+                world::navigation::NavigationVolumePolicy::KeepInside &&
+            stage.volumeConstraint.policy !=
+                world::navigation::NavigationVolumePolicy::PreferInside)
+        {
+            continue;
+        }
+        mandatoryStages.push_back(&stage);
+    }
+
+    if (mandatoryStages.empty())
+        return planner::RoutePlanner::plan(terminalRequest);
+
+    planner::RoutePlan out;
+    out.disposition = planner::RoutePlanDisposition::Ready;
+    out.failureCode = planner::RoutePlanFailureCode::None;
+    out.userMessage = planner::routePlanFailureMessage(out.failureCode);
+
+    planner::RoutePlanRequest legRequest = terminalRequest;
+    legRequest.requiredViaPointsMeters.clear();
+    legRequest.mandatoryTangentStraights.clear();
+
+    glm::dvec3 currentStart = terminalRequest.startMeters;
+    bool currentHasForward = terminalRequest.hasInitialForward;
+    glm::dvec3 currentForward = terminalRequest.initialForward;
+    double currentSpeed = terminalRequest.initialSpeedMps;
+
+    for (std::size_t stageIndex = 0;
+         stageIndex < mandatoryStages.size();
+         ++stageIndex)
+    {
+        const auto& stage = *mandatoryStages[stageIndex];
+        if (stage.volumeSections.empty())
+        {
+            planner::RoutePlan invalid;
+            invalid.disposition =
+                planner::RoutePlanDisposition::InvalidWorldData;
+            invalid.failureCode =
+                planner::RoutePlanFailureCode::InvalidWorldGeometry;
+            invalid.failure =
+                "mandatory traffic volume has no resolved sections";
+            invalid.userMessage = invalid.failure;
+            return invalid;
+        }
+
+        glm::dvec3 entryForward =
+            stage.volumeSections.front().forwardWorld;
+        if (glm::length(entryForward) <= 1.0e-9)
+            entryForward =
+                stage.toWorldMeters - stage.fromWorldMeters;
+        if (glm::length(entryForward) <= 1.0e-9)
+        {
+            planner::RoutePlan invalid;
+            invalid.disposition =
+                planner::RoutePlanDisposition::InvalidWorldData;
+            invalid.failureCode =
+                planner::RoutePlanFailureCode::InvalidWorldGeometry;
+            invalid.failure =
+                "mandatory traffic entry direction is degenerate";
+            invalid.userMessage = invalid.failure;
+            return invalid;
+        }
+        entryForward = glm::normalize(entryForward);
+
+        legRequest.startMeters = currentStart;
+        legRequest.goalMeters = stage.fromWorldMeters;
+        legRequest.terminalOutward = -entryForward;
+        legRequest.initialSpeedMps = currentSpeed;
+        legRequest.hasInitialForward = currentHasForward;
+        legRequest.initialForward = currentForward;
+        legRequest.requiredViaPointsMeters.clear();
+        legRequest.mandatoryTangentStraights.clear();
+
+        const auto inbound =
+            planner::RoutePlanner::plan(legRequest);
+        if (!inbound.valid())
+            return failedComposite(
+                inbound,
+                "segmented inbound leg failed: "
+            );
+
+        const double handoffSpeed =
+            stage.volumeConstraint.maxSpeedMps > 1.0e-6
+                ? std::min(
+                      terminalRequest.maxSpeedMps,
+                      stage.volumeConstraint.maxSpeedMps
+                  )
+                : 0.8 * terminalRequest.maxSpeedMps;
+
+        appendPlanSamples(
+            out,
+            inbound,
+            true,
+            handoffSpeed
+        );
+
+        appendMandatoryVolume(
+            out,
+            stage,
+            terminalRequest
+        );
+
+        currentStart = stage.toWorldMeters;
+
+        currentForward =
+            stage.volumeSections.back().forwardWorld;
+        if (glm::length(currentForward) <= 1.0e-9)
+            currentForward = entryForward;
+        else
+            currentForward = glm::normalize(currentForward);
+
+        currentHasForward = true;
+        currentSpeed = handoffSpeed;
+    }
+
+    planner::RoutePlanRequest finalRequest = terminalRequest;
+    finalRequest.startMeters = currentStart;
+    finalRequest.initialSpeedMps = currentSpeed;
+    finalRequest.hasInitialForward = currentHasForward;
+    finalRequest.initialForward = currentForward;
+    finalRequest.requiredViaPointsMeters.clear();
+    finalRequest.mandatoryTangentStraights.clear();
+
+    const auto finalLeg =
+        planner::RoutePlanner::plan(finalRequest);
+    if (!finalLeg.valid())
+        return failedComposite(
+            finalLeg,
+            "segmented final leg failed: "
+        );
+
+    appendPlanSamples(
+        out,
+        finalLeg,
+        false,
+        0.0
+    );
+
+    recomputeGlobalSpeeds(out, terminalRequest);
+
+    // Terminal diagnostics belong to the real terminal leg. Initial-turn
+    // diagnostics belong to the first free leg and are already represented in
+    // the composite geometry; these fields are advisory only.
+    out.terminalDetourUsed = finalLeg.terminalDetourUsed;
+    out.terminalTurnRadiusRelaxed =
+        finalLeg.terminalTurnRadiusRelaxed;
+    out.terminalTurnRequestedRadiusMeters =
+        finalLeg.terminalTurnRequestedRadiusMeters;
+    out.terminalTurnSpeedMps =
+        finalLeg.terminalTurnSpeedMps;
+    out.terminalTurnLateralRadiusMeters =
+        finalLeg.terminalTurnLateralRadiusMeters;
+    out.terminalTurnAngularRadiusMeters =
+        finalLeg.terminalTurnAngularRadiusMeters;
+    out.terminalTurnAngularRampMeters =
+        finalLeg.terminalTurnAngularRampMeters;
+    out.terminalArcCandidatesTested =
+        finalLeg.terminalArcCandidatesTested;
+    out.terminalArcRouteable =
+        finalLeg.terminalArcRouteable;
+    out.terminalArcRouteRejected =
+        finalLeg.terminalArcRouteRejected;
+    out.terminalArcTransitReady =
+        finalLeg.terminalArcTransitReady;
+    out.terminalArcTransitRejected =
+        finalLeg.terminalArcTransitRejected;
+    out.terminalArcCollisionRejected =
+        finalLeg.terminalArcCollisionRejected;
+    out.terminalArcAcceptedCandidates =
+        finalLeg.terminalArcAcceptedCandidates;
+    out.terminalArcAxisPassesTested =
+        finalLeg.terminalArcAxisPassesTested;
+    out.terminalArcLastRejection =
+        finalLeg.terminalArcLastRejection;
+    out.terminalArcDominantBlockerId =
+        finalLeg.terminalArcDominantBlockerId;
+    out.terminalArcDominantBlockerHits =
+        finalLeg.terminalArcDominantBlockerHits;
+    out.terminalArcDominantBlockerCenterMeters =
+        finalLeg.terminalArcDominantBlockerCenterMeters;
+    out.terminalArcDominantBlockerHalfExtentsMeters =
+        finalLeg.terminalArcDominantBlockerHalfExtentsMeters;
+    out.terminalArcDominantBlockerRadiusMeters =
+        finalLeg.terminalArcDominantBlockerRadiusMeters;
+    out.terminalArcRotationDegrees =
+        finalLeg.terminalArcRotationDegrees;
+    out.terminalApproachShortened =
+        finalLeg.terminalApproachShortened;
+    out.terminalApproachExtended =
+        finalLeg.terminalApproachExtended;
+    out.terminalApproachLengthMeters =
+        finalLeg.terminalApproachLengthMeters;
+    out.terminalTurnRadiusMeters =
+        finalLeg.terminalTurnRadiusMeters;
+
+    out.diagnosticSummary =
+        "segmented route: free legs=" +
+        std::to_string(mandatoryStages.size() + 1) +
+        " mandatory volumes=" +
+        std::to_string(mandatoryStages.size());
+
+    if (out.routeCurves.empty() ||
+        out.executionGates.size() < 2 ||
+        out.gates.size() < 2)
+    {
+        out.disposition =
+            planner::RoutePlanDisposition::NeedsRefinement;
+        out.failureCode =
+            planner::RoutePlanFailureCode::BackendFailure;
+        out.failure =
+            "segmented route composition produced incomplete geometry";
+        out.userMessage = out.failure;
+    }
+
+    return out;
+}
+
+} // namespace game::navigation::traffic

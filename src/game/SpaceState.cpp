@@ -2624,6 +2624,60 @@ void SpaceState::updateDockingAdvisory()
                 << std::endl;
         }
 
+        bool hasPreferredEntryAnchor = false;
+        glm::dvec3 preferredEntryAnchor {0.0};
+        glm::dvec3 preferredEntryForward {0.0, 0.0, -1.0};
+
+        if (compiledTrafficRoute.valid)
+        {
+            for (const auto& stage : compiledTrafficRoute.stages)
+            {
+                if (stage.kind !=
+                        game::navigation::traffic::
+                            TrafficRouteStageKind::VolumeTransit ||
+                    (stage.volumeConstraint.policy !=
+                         world::navigation::
+                             NavigationVolumePolicy::KeepInside &&
+                     stage.volumeConstraint.policy !=
+                         world::navigation::
+                             NavigationVolumePolicy::PreferInside))
+                {
+                    continue;
+                }
+
+                glm::dvec3 traversalForward =
+                    stage.toWorldMeters - stage.fromWorldMeters;
+                if (glm::length(traversalForward) <= 1.0e-9 &&
+                    !stage.volumeSections.empty())
+                {
+                    traversalForward =
+                        stage.volumeSections.front().forwardWorld;
+                }
+
+                if (glm::length(traversalForward) <= 1.0e-9)
+                    break;
+
+                traversalForward = glm::normalize(traversalForward);
+
+                preferredEntryAnchor = stage.fromWorldMeters;
+                for (const auto& straight :
+                     compiledTrafficRoute.mandatoryTangentStraights)
+                {
+                    if (straight.inbound &&
+                        straight.portalId == stage.fromPortalId)
+                    {
+                        preferredEntryAnchor =
+                            straight.startWorldMeters;
+                        break;
+                    }
+                }
+
+                hasPreferredEntryAnchor = true;
+                preferredEntryForward = traversalForward;
+                break;
+            }
+        }
+
         if (m_dockWorkerCount->load(std::memory_order_acquire) != 0)
         {
             // Stabilizing above normally owns this wait. Keep this guard
@@ -2641,6 +2695,13 @@ void SpaceState::updateDockingAdvisory()
             snapshot.epoch.serverTimeSeconds;
         job->executionStartUniverseTimeSeconds =
             snapshot.epoch.universeTimeSeconds;
+        job->planningRequest = request;
+        job->entryRebind = lateEntryRebind;
+        if (lateEntryRebind)
+            job->entryBackbone = m_dockLateEntry.backbone;
+        job->hasPreferredEntryAnchor = hasPreferredEntryAnchor;
+        job->preferredEntryAnchor = preferredEntryAnchor;
+        job->preferredEntryForward = preferredEntryForward;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
         job->context.hubId =

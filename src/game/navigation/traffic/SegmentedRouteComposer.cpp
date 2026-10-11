@@ -287,6 +287,14 @@ void recomputeGlobalSpeeds(
                 gates[i].speedMps,
                 std::sqrt(base.lateralMps2 / curvature)
             );
+
+            if (base.maxAngularVelocityRadPerSecond > 1.0e-9)
+            {
+                gates[i].speedMps = std::min(
+                    gates[i].speedMps,
+                    base.maxAngularVelocityRadPerSecond / curvature
+                );
+            }
         }
     }
 

@@ -451,6 +451,13 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 ? outboundBoundary->endWorldMeters
                 : stage.toWorldMeters;
 
+        const double handoffSpeed =
+            game::navigation::OrdinaryRoutePolicy::
+                stageSpeedLimitMps(
+                    terminalRequest.maxSpeedMps,
+                    stage.volumeConstraint.maxSpeedMps
+                );
+
         legRequest.startMeters = currentStart;
         legRequest.goalMeters = blockStart;
         legRequest.terminalOutward = -traversalForward;
@@ -466,7 +473,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                           legRequest.brakingMps2,
                           legRequest.lateralMps2,
                           legRequest.maxAngularVelocityRadPerSecond,
-                          2.0 * legRequest.agentRadiusMeters
+                          legRequest.vehicleLengthMeters
                       )
                 : 0.0;
         legRequest.requiredViaPointsMeters.clear();
@@ -487,7 +494,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                     handoffSpeed,
                     terminalRequest.brakingMps2,
                     legRequest.terminalReferenceDistanceMeters,
-                    2.0 * terminalRequest.agentRadiusMeters
+                    terminalRequest.vehicleLengthMeters
                 );
 
         std::cerr
@@ -504,6 +511,12 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             << legRequest.goalMeters.z << ")"
             << " boundary_to_entry_m="
             << glm::length(stage.fromWorldMeters - blockStart)
+            << " start_speed_mps=" << currentSpeed
+            << " start_lead_m="
+            << legRequest.initialForwardLeadMeters
+            << " boundary_speed_mps=" << handoffSpeed
+            << " terminal_approach_m="
+            << legRequest.terminalApproachLengthMeters
             << std::endl;
 
         const auto inbound =
@@ -513,13 +526,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 inbound,
                 "segmented inbound leg failed: "
             );
-
-        const double handoffSpeed =
-            game::navigation::OrdinaryRoutePolicy::
-                stageSpeedLimitMps(
-                    terminalRequest.maxSpeedMps,
-                    stage.volumeConstraint.maxSpeedMps
-                );
 
         appendPlanSamples(
             out,
@@ -582,7 +588,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                       finalRequest.brakingMps2,
                       finalRequest.lateralMps2,
                       finalRequest.maxAngularVelocityRadPerSecond,
-                      2.0 * finalRequest.agentRadiusMeters
+                      finalRequest.vehicleLengthMeters
                   )
             : 0.0;
 
@@ -601,6 +607,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         << finalRequest.goalMeters.x << ","
         << finalRequest.goalMeters.y << ","
         << finalRequest.goalMeters.z << ")"
+        << " start_speed_mps=" << currentSpeed
+        << " start_lead_m="
+        << finalRequest.initialForwardLeadMeters
+        << " terminal_approach_m="
+        << finalRequest.terminalApproachLengthMeters
         << std::endl;
 
     const auto finalLeg =

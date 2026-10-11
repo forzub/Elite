@@ -3782,10 +3782,21 @@ void SpaceState::update(float dt)
             // ready acquire publishes the worker's plan/result strings.
             if (obs.jobReady)
             {
-                obs.jobResult =
-                    !m_dockAdviceJob->plan.failure.empty()
-                        ? m_dockAdviceJob->plan.failure
-                        : m_dockAdviceJob->plan.diagnosticSummary;
+                if (!m_dockAdviceJob->plan.failure.empty())
+                {
+                    obs.jobResult = m_dockAdviceJob->plan.failure;
+                    if (!m_dockAdviceJob->plan.diagnosticSummary.empty())
+                    {
+                        obs.jobResult += " | ";
+                        obs.jobResult +=
+                            m_dockAdviceJob->plan.diagnosticSummary;
+                    }
+                }
+                else
+                {
+                    obs.jobResult =
+                        m_dockAdviceJob->plan.diagnosticSummary;
+                }
             }
         }
 

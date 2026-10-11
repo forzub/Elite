@@ -592,6 +592,13 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                   )
             : 0.0;
 
+    // The authored mandatory release already guarantees that the whole craft
+    // clears the tunnel. Keep only a short straight beyond that boundary, but
+    // retain the full dynamic lead as TURN BUDGET so the first curve does not
+    // collapse to a small radius.
+    finalRequest.initialProtectedStraightMeters =
+        currentHasForward ? 150.0 : 0.0;
+
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
 
@@ -610,6 +617,8 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         << " start_speed_mps=" << currentSpeed
         << " start_lead_m="
         << finalRequest.initialForwardLeadMeters
+        << " protected_straight_m="
+        << finalRequest.initialProtectedStraightMeters
         << " terminal_approach_m="
         << finalRequest.terminalApproachLengthMeters
         << std::endl;

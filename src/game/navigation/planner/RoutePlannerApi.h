@@ -69,6 +69,11 @@ struct RoutePlanRequest
     double terminalReferenceDistanceMeters = 300.0;
 
     double agentRadiusMeters = 0.0;
+
+    // Generic longitudinal vehicle scale used by ordinary route policy when
+    // sizing moving-start leads and terminal braking approaches.
+    double vehicleLengthMeters = 0.0;
+
     double maxSpeedMps = 100.0;
     double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;

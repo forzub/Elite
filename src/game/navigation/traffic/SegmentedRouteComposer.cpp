@@ -86,9 +86,11 @@ void appendPlanSamples(
     }
 }
 
-void appendMandatoryVolume(
+void appendMandatoryBlock(
     planner::RoutePlan& out,
     const CompiledTrafficStage& stage,
+    const glm::dvec3& blockStart,
+    const glm::dvec3& blockEnd,
     const planner::RoutePlanRequest& base
 )
 {
@@ -100,10 +102,15 @@ void appendMandatoryVolume(
                 points.push_back(point);
         };
 
+    // The semantic boundary block owns the complete authored passage:
+    // inbound tangent straight -> volume -> outbound tangent straight.
+    // Free-space planners connect only to the two OUTER boundary states.
+    appendPoint(blockStart);
     appendPoint(stage.fromWorldMeters);
     for (const auto& point : stage.requiredCenterlineMeters)
         appendPoint(point);
     appendPoint(stage.toWorldMeters);
+    appendPoint(blockEnd);
 
     if (points.size() < 2)
         return;
@@ -359,6 +366,38 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     glm::dvec3 currentForward = terminalRequest.initialForward;
     double currentSpeed = terminalRequest.initialSpeedMps;
 
+    const auto inboundBoundaryFor =
+        [&](const CompiledTrafficStage& stage)
+            -> const CompiledMandatoryTangentStraight*
+        {
+            for (const auto& straight :
+                 trafficRoute.mandatoryTangentStraights)
+            {
+                if (straight.inbound &&
+                    straight.portalId == stage.fromPortalId)
+                {
+                    return &straight;
+                }
+            }
+            return nullptr;
+        };
+
+    const auto outboundBoundaryFor =
+        [&](const CompiledTrafficStage& stage)
+            -> const CompiledMandatoryTangentStraight*
+        {
+            for (const auto& straight :
+                 trafficRoute.mandatoryTangentStraights)
+            {
+                if (!straight.inbound &&
+                    straight.portalId == stage.toPortalId)
+                {
+                    return &straight;
+                }
+            }
+            return nullptr;
+        };
+
     for (std::size_t stageIndex = 0;
          stageIndex < mandatoryStages.size();
          ++stageIndex)
@@ -377,12 +416,12 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             return invalid;
         }
 
-        glm::dvec3 entryForward =
-            stage.volumeSections.front().forwardWorld;
-        if (glm::length(entryForward) <= 1.0e-9)
-            entryForward =
-                stage.toWorldMeters - stage.fromWorldMeters;
-        if (glm::length(entryForward) <= 1.0e-9)
+        glm::dvec3 traversalForward =
+            stage.toWorldMeters - stage.fromWorldMeters;
+        if (glm::length(traversalForward) <= 1.0e-9)
+            traversalForward =
+                stage.volumeSections.front().forwardWorld;
+        if (glm::length(traversalForward) <= 1.0e-9)
         {
             planner::RoutePlan invalid;
             invalid.disposition =
@@ -390,25 +429,49 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             invalid.failureCode =
                 planner::RoutePlanFailureCode::InvalidWorldGeometry;
             invalid.failure =
-                "mandatory traffic entry direction is degenerate";
+                "mandatory traffic traversal direction is degenerate";
             invalid.userMessage = invalid.failure;
             return invalid;
         }
-        entryForward = glm::normalize(entryForward);
+        traversalForward = glm::normalize(traversalForward);
+
+        const auto* inboundBoundary =
+            inboundBoundaryFor(stage);
+        const auto* outboundBoundary =
+            outboundBoundaryFor(stage);
+
+        const glm::dvec3 blockStart =
+            inboundBoundary
+                ? inboundBoundary->startWorldMeters
+                : stage.fromWorldMeters;
+        const glm::dvec3 blockEnd =
+            outboundBoundary
+                ? outboundBoundary->endWorldMeters
+                : stage.toWorldMeters;
 
         legRequest.startMeters = currentStart;
-        legRequest.goalMeters = stage.fromWorldMeters;
-        legRequest.terminalOutward = -entryForward;
+        legRequest.goalMeters = blockStart;
+        legRequest.terminalOutward = -traversalForward;
         legRequest.initialSpeedMps = currentSpeed;
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
         legRequest.requiredViaPointsMeters.clear();
         legRequest.mandatoryTangentStraights.clear();
 
+        // This is a virtual boundary, not a docking port. Keep the SAME
+        // geometric terminal solver/radius policy, but do not inherit the
+        // real dock's authored 9 km final approach.
+        legRequest.terminalApproachLengthMeters = 0.0;
+        legRequest.terminalReferenceDistanceMeters =
+            std::min(
+                terminalRequest.terminalReferenceDistanceMeters,
+                200.0
+            );
+
         std::cerr
             << "[SegmentedLeg]"
             << " index=" << stageIndex
-            << " kind=free-to-entry"
+            << " kind=free-to-boundary"
             << " from=("
             << legRequest.startMeters.x << ","
             << legRequest.startMeters.y << ","
@@ -417,6 +480,8 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             << legRequest.goalMeters.x << ","
             << legRequest.goalMeters.y << ","
             << legRequest.goalMeters.z << ")"
+            << " boundary_to_entry_m="
+            << glm::length(stage.fromWorldMeters - blockStart)
             << std::endl;
 
         const auto inbound =
@@ -442,9 +507,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             handoffSpeed
         );
 
-        appendMandatoryVolume(
+        appendMandatoryBlock(
             out,
             stage,
+            blockStart,
+            blockEnd,
             terminalRequest
         );
 
@@ -452,25 +519,26 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             << "[SegmentedMandatory]"
             << " index=" << stageIndex
             << " volume=" << stage.volumeConstraint.volumeId
-            << " from=("
+            << " block_from=("
+            << blockStart.x << ","
+            << blockStart.y << ","
+            << blockStart.z << ")"
+            << " entry=("
             << stage.fromWorldMeters.x << ","
             << stage.fromWorldMeters.y << ","
             << stage.fromWorldMeters.z << ")"
-            << " to=("
+            << " exit=("
             << stage.toWorldMeters.x << ","
             << stage.toWorldMeters.y << ","
             << stage.toWorldMeters.z << ")"
+            << " block_to=("
+            << blockEnd.x << ","
+            << blockEnd.y << ","
+            << blockEnd.z << ")"
             << std::endl;
 
-        currentStart = stage.toWorldMeters;
-
-        currentForward =
-            stage.volumeSections.back().forwardWorld;
-        if (glm::length(currentForward) <= 1.0e-9)
-            currentForward = entryForward;
-        else
-            currentForward = glm::normalize(currentForward);
-
+        currentStart = blockEnd;
+        currentForward = traversalForward;
         currentHasForward = true;
         currentSpeed = handoffSpeed;
     }
@@ -480,6 +548,13 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     finalRequest.initialSpeedMps = currentSpeed;
     finalRequest.hasInitialForward = currentHasForward;
     finalRequest.initialForward = currentForward;
+
+    // The authored outbound tangent straight already established the start
+    // state. Give the free leg only a normal continuation lead instead of
+    // reusing the ship-origin policy from the original request.
+    finalRequest.initialForwardLeadMeters =
+        currentHasForward ? 500.0 : 0.0;
+
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
 

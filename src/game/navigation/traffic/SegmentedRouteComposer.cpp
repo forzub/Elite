@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <iostream>
 #include <utility>
 #include <vector>
 
@@ -338,6 +339,12 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     if (mandatoryStages.empty())
         return planner::RoutePlanner::plan(terminalRequest);
 
+    std::cerr
+        << "[SegmentedRoute]"
+        << " free_legs=" << (mandatoryStages.size() + 1)
+        << " mandatory_segments=" << mandatoryStages.size()
+        << std::endl;
+
     planner::RoutePlan out;
     out.disposition = planner::RoutePlanDisposition::Ready;
     out.failureCode = planner::RoutePlanFailureCode::None;
@@ -398,6 +405,20 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         legRequest.requiredViaPointsMeters.clear();
         legRequest.mandatoryTangentStraights.clear();
 
+        std::cerr
+            << "[SegmentedLeg]"
+            << " index=" << stageIndex
+            << " kind=free-to-entry"
+            << " from=("
+            << legRequest.startMeters.x << ","
+            << legRequest.startMeters.y << ","
+            << legRequest.startMeters.z << ")"
+            << " to=("
+            << legRequest.goalMeters.x << ","
+            << legRequest.goalMeters.y << ","
+            << legRequest.goalMeters.z << ")"
+            << std::endl;
+
         const auto inbound =
             planner::RoutePlanner::plan(legRequest);
         if (!inbound.valid())
@@ -427,6 +448,20 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             terminalRequest
         );
 
+        std::cerr
+            << "[SegmentedMandatory]"
+            << " index=" << stageIndex
+            << " volume=" << stage.volumeConstraint.volumeId
+            << " from=("
+            << stage.fromWorldMeters.x << ","
+            << stage.fromWorldMeters.y << ","
+            << stage.fromWorldMeters.z << ")"
+            << " to=("
+            << stage.toWorldMeters.x << ","
+            << stage.toWorldMeters.y << ","
+            << stage.toWorldMeters.z << ")"
+            << std::endl;
+
         currentStart = stage.toWorldMeters;
 
         currentForward =
@@ -447,6 +482,20 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     finalRequest.initialForward = currentForward;
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
+
+    std::cerr
+        << "[SegmentedLeg]"
+        << " index=" << mandatoryStages.size()
+        << " kind=free-to-terminal"
+        << " from=("
+        << finalRequest.startMeters.x << ","
+        << finalRequest.startMeters.y << ","
+        << finalRequest.startMeters.z << ")"
+        << " to=("
+        << finalRequest.goalMeters.x << ","
+        << finalRequest.goalMeters.y << ","
+        << finalRequest.goalMeters.z << ")"
+        << std::endl;
 
     const auto finalLeg =
         planner::RoutePlanner::plan(finalRequest);

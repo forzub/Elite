@@ -86,6 +86,11 @@ bool clearArc(
     if (!arc.valid)
         return false;
 
+    // Identity arc means this boundary already has the correct tangent and no
+    // turn primitive is needed. It is a legitimate graph edge of zero length.
+    if (std::abs(arc.sweep) <= 1.0e-9)
+        return true;
+
     const double spacing =
         std::max(5.0, request.geometry.denseSampleSpacingMeters);
     const double length =
@@ -210,11 +215,18 @@ ArcPrimitive reverseArcForArrival(
     out.start = reverseArc.end;
     out.end = reverseArc.start;
     out.center = reverseArc.center;
-    out.normal = -reverseArc.normal;
     out.startForward = -reverseArc.endForward;
     out.endForward = -reverseArc.startForward;
     out.radius = reverseArc.radius;
     out.sweep = reverseArc.sweep;
+
+    if (std::abs(reverseArc.sweep) <= 1.0e-9)
+    {
+        out.normal = reverseArc.normal;
+        return out;
+    }
+
+    out.normal = -reverseArc.normal;
     return out;
 }
 
@@ -359,6 +371,10 @@ bool appendArcIfClear(
 {
     if (!clearArc(arc, request))
         return false;
+
+    if (std::abs(arc.sweep) <= 1.0e-9)
+        return true;
+
     curves.push_back(
         arcCurve(
             arc,
@@ -511,7 +527,46 @@ std::vector<EndArcCandidate> makeDepartureCandidates(
             request.geometry.departureSweepSamples
         );
 
-    out.reserve(planeSamples * sweepSamples);
+    out.reserve(1 + planeSamples * sweepSamples);
+
+    // "No departure arc" is a first-class candidate. If the current tangent
+    // already connects correctly, forcing a minimum 20-degree turn would
+    // create an unnecessary maneuver and can make an otherwise trivial route
+    // unsatisfiable. The same identity candidate is used in reverse for the
+    // arrival boundary.
+    {
+        ArcPrimitive identity;
+        identity.valid = true;
+        identity.start = arcStart;
+        identity.end = arcStart;
+        identity.center = arcStart;
+        identity.normal = glm::dvec3(0.0, 1.0, 0.0);
+        identity.startForward = tangent;
+        identity.endForward = tangent;
+        identity.radius = radius;
+        identity.sweep = 0.0;
+
+        const glm::dvec3 toTarget =
+            targetHint - arcStart;
+        const double targetDistance =
+            glm::length(toTarget);
+        const glm::dvec3 targetDir =
+            safeNormalize(toTarget, tangent);
+        const double headingPenalty =
+            1.0 -
+            std::clamp(
+                glm::dot(tangent, targetDir),
+                -1.0,
+                1.0
+            );
+
+        EndArcCandidate candidate;
+        candidate.arc = identity;
+        candidate.heuristic =
+            targetDistance +
+            radius * 2.0 * headingPenalty;
+        out.push_back(candidate);
+    }
 
     for (std::size_t pi = 0; pi < planeSamples; ++pi)
     {

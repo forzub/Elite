@@ -84,6 +84,11 @@ struct RoutePlanRequest
 
     bool roundTurns = true;
 
+    // Explicit production A/B gate for the continuous Assisted optimizer.
+    // False keeps the established planner backend. Live Assisted flight may
+    // opt in while Newtonian and compatibility callers remain unchanged.
+    bool useContinuousAssistedOptimizer = false;
+
     bool hasInitialForward = false;
     glm::dvec3 initialForward {0.0, 0.0, -1.0};
 

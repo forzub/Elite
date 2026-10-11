@@ -39,6 +39,49 @@ int main()
         {
             PreplanningSafetyCourseRequest request;
             request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {0.0, 0.0, 0.0};
+            request.hullForward = {1.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 10.0;
+            request.additionalClearanceMeters = 20.0;
+            request.courseAccelerationMps2 = 20.0;
+            request.brakingAccelerationMps2 = 20.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+            request.obstacles.push_back(
+                sphere("dock-ahead", {900.0, 0.0, 0.0}, 250.0)
+            );
+
+            const auto result =
+                PreplanningSafetyCourse::evaluate(request);
+
+            require(
+                result.valid,
+                "stationary blocked-launch request invalid"
+            );
+            require(
+                !result.currentCourseSafe,
+                "stationary hull-forward obstacle was ignored"
+            );
+            require(
+                result.safeCourseFound,
+                "stationary blocked launch did not find a free course"
+            );
+            require(
+                glm::dot(
+                    result.safeCourse,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                ) < 0.999,
+                "stationary escape course still points into the obstacle"
+            );
+            require(
+                result.speedMps <= 0.5,
+                "stationary safety probe invented translational speed"
+            );
+        }
+
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
             request.velocityMps = {100.0, 0.0, 0.0};
             request.preferredDirection = {1.0, 0.0, 0.0};
             request.hullRadiusMeters = 10.0;

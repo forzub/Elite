@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "src/world/navigation/GeometricPathPlanner.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 
 namespace game::navigation
 {
@@ -1320,14 +1321,13 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 estimatedTraversalSeconds(candidate);
             const bool better =
                 !selected.valid ||
-                candidateSeconds + 1.0e-6 <
-                    selectedTraversalSeconds ||
-                (std::abs(
-                     candidateSeconds -
-                     selectedTraversalSeconds
-                 ) <= 1.0e-6 &&
-                 candidate.lengthMeters + 1.0e-6 <
-                     selected.lengthMeters);
+                game::navigation::OrdinaryRoutePolicy::
+                    preferCandidate(
+                        candidate.lengthMeters,
+                        candidateSeconds,
+                        selected.lengthMeters,
+                        selectedTraversalSeconds
+                    );
 
             if (!better)
                 return;

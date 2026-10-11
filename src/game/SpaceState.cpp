@@ -5822,6 +5822,12 @@ void SpaceState::renderNavigationStressOverlay(
         case ClientDockingPhase::Executing:
             phase = "AUTOPILOT ACTIVE";
             break;
+        case ClientDockingPhase::SecuringCourse:
+            phase =
+                m_dockSafeCourse.stopFallback
+                    ? "EMERGENCY STOP"
+                    : "SECURING SAFE COURSE";
+            break;
         case ClientDockingPhase::Idle:
         default:
             phase =

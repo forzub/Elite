@@ -6135,7 +6135,9 @@ void SpaceState::renderNavigationStressOverlay(
             phase =
                 m_dockSafeCourse.stopFallback
                     ? "EMERGENCY STOP"
-                    : "SECURING SAFE COURSE";
+                    : m_dockAdviceJob
+                        ? "SECURING + PLANNING"
+                        : "SECURING SAFE COURSE";
             break;
         case ClientDockingPhase::Idle:
         default:

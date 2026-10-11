@@ -9,6 +9,7 @@
 
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/OrdinaryRoutePolicy.h"
+#include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
 
 namespace game::navigation::traffic
 {
@@ -85,6 +86,59 @@ void appendPlanSamples(
         }
         appendUniqueGate(out.gates, gate);
     }
+}
+
+double routeEndProgress(
+    const planner::RoutePlan& plan
+) noexcept
+{
+    return
+        plan.routeCurves.empty()
+            ? 0.0
+            : plan.routeCurves.back().endProgressMeters;
+}
+
+void appendStageSpan(
+    planner::RoutePlan& out,
+    const std::string& id,
+    planner::RouteStageKind kind,
+    double startProgressMeters,
+    double endProgressMeters,
+    planner::RouteStageFramePolicy framePolicy,
+    const glm::dvec3& frameForward,
+    const glm::dvec3& frameUp,
+    const std::string& sourceId,
+    const std::string& volumeId,
+    bool hardContainment
+)
+{
+    if (endProgressMeters <= startProgressMeters + 1.0e-6)
+        return;
+
+    planner::RouteStageSpan span;
+    span.id = id;
+    span.kind = kind;
+    span.startProgressMeters = startProgressMeters;
+    span.endProgressMeters = endProgressMeters;
+    span.framePolicy = framePolicy;
+    span.refreshPolicy =
+        planner::RouteStageRefreshPolicy::FrozenAtPlanning;
+    span.frameForward = frameForward;
+    span.frameUp = frameUp;
+    span.sourceId = sourceId;
+    span.volumeId = volumeId;
+    span.hardContainment = hardContainment;
+    out.stages.push_back(std::move(span));
+}
+
+double polylineLength(
+    const std::vector<glm::dvec3>& points
+) noexcept
+{
+    double total = 0.0;
+    for (std::size_t i = 1; i < points.size(); ++i)
+        total += glm::length(points[i] - points[i - 1]);
+    return total;
 }
 
 void appendMandatoryBlock(
@@ -539,12 +593,35 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             << " diagnostics=\"" << inbound.diagnosticSummary << "\""
             << std::endl;
 
+        const double freeStageStart =
+            routeEndProgress(out);
+
         appendPlanSamples(
             out,
             inbound,
             true,
             handoffSpeed
         );
+
+        const double freeStageEnd =
+            routeEndProgress(out);
+
+        appendStageSpan(
+            out,
+            "free:" + std::to_string(stageIndex),
+            planner::RouteStageKind::FreeTransit,
+            freeStageStart,
+            freeStageEnd,
+            planner::RouteStageFramePolicy::Transported,
+            currentForward,
+            glm::dvec3(0.0, 1.0, 0.0),
+            {},
+            {},
+            false
+        );
+
+        const double mandatoryStart =
+            routeEndProgress(out);
 
         appendMandatoryBlock(
             out,
@@ -553,6 +630,118 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             blockEnd,
             terminalRequest
         );
+
+        const glm::dvec3 stageUp =
+            !stage.volumeSections.empty() &&
+            glm::length(stage.volumeSections.front().upWorld) > 1.0e-9
+                ? glm::normalize(stage.volumeSections.front().upWorld)
+                : glm::dvec3(0.0, 1.0, 0.0);
+
+        std::vector<glm::dvec3> volumePoints;
+        const auto appendVolumePoint =
+            [&](const glm::dvec3& point)
+            {
+                if (volumePoints.empty() ||
+                    !samePoint(volumePoints.back(), point))
+                {
+                    volumePoints.push_back(point);
+                }
+            };
+
+        appendVolumePoint(stage.fromWorldMeters);
+        for (const auto& point : stage.requiredCenterlineMeters)
+            appendVolumePoint(point);
+        appendVolumePoint(stage.toWorldMeters);
+
+        const double entryLength =
+            glm::length(stage.fromWorldMeters - blockStart);
+        const double volumeLength =
+            polylineLength(volumePoints);
+        const double exitLength =
+            glm::length(blockEnd - stage.toWorldMeters);
+
+        const double entryEnd =
+            mandatoryStart + entryLength;
+        const double volumeEnd =
+            entryEnd + volumeLength;
+        const double mandatoryEnd =
+            routeEndProgress(out);
+
+        const std::string stageSource =
+            stage.laneId.empty()
+                ? stage.volumeConstraint.volumeId
+                : stage.laneId;
+
+        appendStageSpan(
+            out,
+            "volume-entry:" + stageSource,
+            planner::RouteStageKind::VolumeEntryCapture,
+            mandatoryStart,
+            entryEnd,
+            planner::RouteStageFramePolicy::NavigationFrame,
+            traversalForward,
+            stageUp,
+            stage.fromPortalId,
+            stage.volumeConstraint.volumeId,
+            false
+        );
+
+        appendStageSpan(
+            out,
+            "volume-transit:" + stageSource,
+            planner::RouteStageKind::VolumeTransit,
+            entryEnd,
+            volumeEnd,
+            planner::RouteStageFramePolicy::NavigationFrame,
+            traversalForward,
+            stageUp,
+            stageSource,
+            stage.volumeConstraint.volumeId,
+            stage.volumeConstraint.policy ==
+                world::navigation::NavigationVolumePolicy::KeepInside
+        );
+
+        appendStageSpan(
+            out,
+            "volume-exit:" + stageSource,
+            planner::RouteStageKind::VolumeExit,
+            volumeEnd,
+            mandatoryEnd,
+            planner::RouteStageFramePolicy::NavigationFrame,
+            traversalForward,
+            stageUp,
+            stage.toPortalId,
+            stage.volumeConstraint.volumeId,
+            false
+        );
+
+        if (stage.volumeConstraint.policy ==
+            world::navigation::NavigationVolumePolicy::KeepInside)
+        {
+            const auto containment =
+                RouteVolumeContainmentValidator::
+                    validateKeepInsideRouteInterval(
+                        stage,
+                        out.routeCurves,
+                        stage.fromWorldMeters,
+                        stage.toWorldMeters,
+                        terminalRequest.agentRadiusMeters
+                    );
+
+            if (!containment.valid)
+            {
+                planner::RoutePlan invalid = out;
+                invalid.disposition =
+                    planner::RoutePlanDisposition::InvalidWorldData;
+                invalid.failureCode =
+                    planner::RoutePlanFailureCode::InvalidWorldGeometry;
+                invalid.failure =
+                    "segmented mandatory BLUE containment failed: " +
+                    containment.failure;
+                invalid.userMessage = invalid.failure;
+                return invalid;
+            }
+        }
 
         std::cerr
             << "[SegmentedMandatory]"
@@ -655,11 +844,28 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         << " diagnostics=\"" << finalLeg.diagnosticSummary << "\""
         << std::endl;
 
+    const double finalFreeStart =
+        routeEndProgress(out);
+
     appendPlanSamples(
         out,
         finalLeg,
         false,
         0.0
+    );
+
+    appendStageSpan(
+        out,
+        "free:terminal",
+        planner::RouteStageKind::FreeTransit,
+        finalFreeStart,
+        routeEndProgress(out),
+        planner::RouteStageFramePolicy::Transported,
+        currentForward,
+        glm::dvec3(0.0, 1.0, 0.0),
+        {},
+        {},
+        false
     );
 
     recomputeGlobalSpeeds(out, terminalRequest);
@@ -723,7 +929,9 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         "segmented route: free legs=" +
         std::to_string(mandatoryStages.size() + 1) +
         " mandatory volumes=" +
-        std::to_string(mandatoryStages.size());
+        std::to_string(mandatoryStages.size()) +
+        " semantic stages=" +
+        std::to_string(out.stages.size());
 
     if (out.routeCurves.empty() ||
         out.executionGates.size() < 2 ||

@@ -1610,3 +1610,48 @@ set_tests_properties(
     preplanning_safety_course
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    segmented_route_composer_tests
+    SegmentedRouteComposerTests.cpp
+)
+
+target_include_directories(
+    segmented_route_composer_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    segmented_route_composer_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    segmented_route_composer_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        segmented_route_composer_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        segmented_route_composer_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME segmented_route_composer
+    COMMAND segmented_route_composer_tests
+)
+
+set_tests_properties(
+    segmented_route_composer
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

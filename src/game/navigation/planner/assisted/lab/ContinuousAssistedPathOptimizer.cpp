@@ -153,6 +153,14 @@ struct Evaluation
     double maxLateralUtilization = 0.0;
     double lateralAccelerationEnergy = 0.0;
     double brakingDemandEnergy = 0.0;
+
+    double totalCurvatureRadians = 0.0;
+    double curvatureConcentrationEnergy = 0.0;
+    double maxAngularVelocityUtilization = 0.0;
+    double maxAngularAccelerationUtilization = 0.0;
+    double angularVelocityEnergy = 0.0;
+    double angularAccelerationEnergy = 0.0;
+
     double curvatureVariationEnergy = 0.0;
 
     glm::dvec3 cruiseDirection {1.0, 0.0, 0.0};
@@ -181,6 +189,20 @@ double speedLimitForCurvature(
                     request.maxLateralAccelerationMps2 /
                     curvaturePerMeter
                 )
+            );
+    }
+
+    // Following a curved centerline also rotates the hull tangent. Lateral
+    // acceleration alone is therefore insufficient: v*kappa must remain
+    // inside the real angular-rate authority as well.
+    if (curvaturePerMeter > 1.0e-12 &&
+        request.maxAngularVelocityRadPerSecond > Epsilon)
+    {
+        limit =
+            std::min(
+                limit,
+                request.maxAngularVelocityRadPerSecond /
+                    curvaturePerMeter
             );
     }
 
@@ -616,10 +638,20 @@ Evaluation evaluate(
     double maxLateralUtilization = 0.0;
     double lateralEnergy = 0.0;
     double brakingDemandEnergy = 0.0;
+
+    double totalCurvature = 0.0;
+    double curvatureConcentration = 0.0;
+    double maxAngularVelocityUtilization = 0.0;
+    double maxAngularAccelerationUtilization = 0.0;
+    double angularVelocityEnergy = 0.0;
+    double angularAccelerationEnergy = 0.0;
+
     double curvatureVariation = 0.0;
 
     const double referenceLength =
         std::max(1.0, out.lowerBoundLength);
+    const double hullScale =
+        std::max(1.0, 2.0 * request.hullRadiusMeters);
 
     for (std::size_t i = 0; i + 1 < count; ++i)
     {
@@ -635,9 +667,10 @@ Evaluation evaluate(
         const double sumSpeed =
             speed[i] + speed[i + 1];
 
+        double segmentTime = 0.0;
         if (sumSpeed > MinimumUsefulSpeedMps)
         {
-            travelTime += 2.0 * ds / sumSpeed;
+            segmentTime = 2.0 * ds / sumSpeed;
         }
         else
         {
@@ -646,14 +679,19 @@ Evaluation evaluate(
                     Epsilon,
                     std::min(accelerating, braking)
                 );
-            travelTime +=
+            segmentTime =
                 2.0 * std::sqrt(ds / authority);
         }
+        travelTime += segmentTime;
 
         const double curvature =
             0.5 *
             (out.samples[i].curvaturePerMeter +
              out.samples[i + 1].curvaturePerMeter);
+
+        totalCurvature += curvature * ds;
+        curvatureConcentration +=
+            curvature * curvature * ds * hullScale;
 
         const double segmentSpeed =
             0.5 * (speed[i] + speed[i + 1]);
@@ -688,6 +726,71 @@ Evaluation evaluate(
             lateralSquared *
             lateralSquared *
             (ds / referenceLength);
+
+        if (request.maxAngularVelocityRadPerSecond > Epsilon)
+        {
+            const double angularRate =
+                segmentSpeed * curvature;
+            const double normalizedAngularRate =
+                angularRate /
+                request.maxAngularVelocityRadPerSecond;
+            const double angularRateSquared =
+                normalizedAngularRate *
+                normalizedAngularRate;
+
+            maxAngularVelocityUtilization =
+                std::max(
+                    maxAngularVelocityUtilization,
+                    normalizedAngularRate
+                );
+            angularVelocityEnergy +=
+                angularRateSquared *
+                angularRateSquared *
+                (ds / referenceLength);
+        }
+
+        if (request.maxAngularAccelerationRadPerSecond2 > Epsilon &&
+            segmentTime > Epsilon)
+        {
+            const double angularRate0 =
+                speed[i] *
+                out.samples[i].curvaturePerMeter;
+            const double angularRate1 =
+                speed[i + 1] *
+                out.samples[i + 1].curvaturePerMeter;
+            const double angularAcceleration =
+                std::abs(angularRate1 - angularRate0) /
+                segmentTime;
+            const double normalizedAngularAcceleration =
+                angularAcceleration /
+                request.maxAngularAccelerationRadPerSecond2;
+            const double angularAccelerationSquared =
+                normalizedAngularAcceleration *
+                normalizedAngularAcceleration;
+
+            maxAngularAccelerationUtilization =
+                std::max(
+                    maxAngularAccelerationUtilization,
+                    normalizedAngularAcceleration
+                );
+            angularAccelerationEnergy +=
+                angularAccelerationSquared *
+                angularAccelerationSquared *
+                (ds / referenceLength);
+
+            // Angular acceleration is a physical execution limit, not a
+            // comfort preference. A geometry that asks the hull to snap from
+            // one curvature state to another faster than the ship can rotate
+            // is not an admissible route.
+            if (normalizedAngularAcceleration > 1.0)
+            {
+                maxViolation =
+                    std::max(
+                        maxViolation,
+                        normalizedAngularAcceleration - 1.0
+                    );
+            }
+        }
 
         // Penalize only demanded braking, not ordinary full-throttle
         // acceleration. A candidate that must spend kilometres braking at the
@@ -731,6 +834,16 @@ Evaluation evaluate(
     out.maxLateralUtilization = maxLateralUtilization;
     out.lateralAccelerationEnergy = lateralEnergy;
     out.brakingDemandEnergy = brakingDemandEnergy;
+
+    out.totalCurvatureRadians = totalCurvature;
+    out.curvatureConcentrationEnergy = curvatureConcentration;
+    out.maxAngularVelocityUtilization =
+        maxAngularVelocityUtilization;
+    out.maxAngularAccelerationUtilization =
+        maxAngularAccelerationUtilization;
+    out.angularVelocityEnergy = angularVelocityEnergy;
+    out.angularAccelerationEnergy = angularAccelerationEnergy;
+
     out.curvatureVariationEnergy = curvatureVariation;
 
     out.finite =
@@ -742,6 +855,12 @@ Evaluation evaluate(
         std::isfinite(out.maxLateralUtilization) &&
         std::isfinite(out.lateralAccelerationEnergy) &&
         std::isfinite(out.brakingDemandEnergy) &&
+        std::isfinite(out.totalCurvatureRadians) &&
+        std::isfinite(out.curvatureConcentrationEnergy) &&
+        std::isfinite(out.maxAngularVelocityUtilization) &&
+        std::isfinite(out.maxAngularAccelerationUtilization) &&
+        std::isfinite(out.angularVelocityEnergy) &&
+        std::isfinite(out.angularAccelerationEnergy) &&
         std::isfinite(out.curvatureVariationEnergy) &&
         std::isfinite(maxViolation);
 
@@ -783,6 +902,13 @@ Evaluation evaluate(
         peakLateralSquared *
         peakLateralSquared;
 
+    const double peakAngularSquared =
+        out.maxAngularVelocityUtilization *
+        out.maxAngularVelocityUtilization;
+    const double peakAngularStress =
+        peakAngularSquared *
+        peakAngularSquared;
+
     // Curvature regularity is intentionally capped because it is a numerical
     // smoothness preference, not a reason to buy tens of kilometres of detour.
     const double boundedCurvatureVariation =
@@ -802,6 +928,15 @@ Evaluation evaluate(
             peakLateralStress +
         request.weights.brakingDemand *
             out.brakingDemandEnergy +
+        request.weights.totalCurvature *
+            out.totalCurvatureRadians +
+        request.weights.curvatureConcentration *
+            out.curvatureConcentrationEnergy +
+        request.weights.angularVelocityDemand *
+            (out.angularVelocityEnergy +
+             0.5 * peakAngularStress) +
+        request.weights.angularAccelerationDemand *
+            out.angularAccelerationEnergy +
         request.weights.curvatureVariation *
             boundedCurvatureVariation;
 
@@ -1274,6 +1409,8 @@ Result ContinuousAssistedPathOptimizer::optimize(
         request.acceleratingMps2 < 0.0 ||
         request.brakingMps2 < 0.0 ||
         request.maxLateralAccelerationMps2 <= 0.0 ||
+        request.maxAngularVelocityRadPerSecond < 0.0 ||
+        request.maxAngularAccelerationRadPerSecond2 < 0.0 ||
         request.minimumComfortRadiusMeters < 0.0)
     {
         result.message =
@@ -1489,6 +1626,18 @@ Result ContinuousAssistedPathOptimizer::optimize(
         current.lateralAccelerationEnergy;
     result.diagnostics.brakingDemandEnergy =
         current.brakingDemandEnergy;
+    result.diagnostics.totalCurvatureRadians =
+        current.totalCurvatureRadians;
+    result.diagnostics.curvatureConcentrationEnergy =
+        current.curvatureConcentrationEnergy;
+    result.diagnostics.maxAngularVelocityUtilization =
+        current.maxAngularVelocityUtilization;
+    result.diagnostics.maxAngularAccelerationUtilization =
+        current.maxAngularAccelerationUtilization;
+    result.diagnostics.angularVelocityEnergy =
+        current.angularVelocityEnergy;
+    result.diagnostics.angularAccelerationEnergy =
+        current.angularAccelerationEnergy;
     result.diagnostics.curvatureVariationEnergy =
         current.curvatureVariationEnergy;
     result.diagnostics.objective =

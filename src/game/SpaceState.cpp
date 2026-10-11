@@ -2024,40 +2024,88 @@ void SpaceState::updateDockingAdvisory()
         [&](const glm::dvec3& safeDirection)
         {
             const auto agent = makeAgent();
-            const double speed =
+            const double actualSpeed =
                 glm::length(agent.velocityMapMetersPerSecond);
             const glm::dvec3 desiredCourse =
                 glm::length(safeDirection) > 1.0e-9
                     ? glm::normalize(safeDirection)
                     : agent.forwardMap;
+            const double targetSpeed =
+                m_dockSafeCourse.targetSpeedMps > 0.5
+                    ? m_dockSafeCourse.targetSpeedMps
+                    : actualSpeed;
 
             game::navigation::autopilot::PredictivePilot::Request turn;
             turn.law = controlLaw;
-            turn.desiredVelocityMapMps =
-                desiredCourse * speed;
 
-            // Assisted bends the VREL vector toward the hull as the virtual
-            // pilot slews onto desiredCourse. Newtonian has no hidden lateral
-            // setpoint, so once the hull points onto the escape course it must
-            // use real forward main thrust to change the inertial vector.
             if (controlLaw ==
                 game::navigation::LocalFlightControlLaw::Newtonian)
             {
+                // Newtonian escape is an explicit delta-v manoeuvre.
+                //
+                // Do NOT point at the final course and hope the velocity
+                // follows. Compute the acceleration vector that changes the
+                // CURRENT inertial velocity into the selected safe velocity.
+                // First slew the hull onto that delta-v vector with zero main
+                // thrust; only after alignment do we light the real aft main
+                // bank. This matches PreplanningSafetyCourse's collision proof.
+                const glm::dvec3 targetVelocity =
+                    desiredCourse * targetSpeed;
+                const glm::dvec3 deltaVelocity =
+                    targetVelocity -
+                    agent.velocityMapMetersPerSecond;
+                const double deltaSpeed =
+                    glm::length(deltaVelocity);
+
+                const glm::dvec3 thrustDirection =
+                    deltaSpeed > 1.0e-6
+                        ? deltaVelocity / deltaSpeed
+                        : desiredCourse;
+
+                // PredictivePilot's moving pitch/yaw reference is the desired
+                // velocity course, so use the thrust vector here: hull attitude
+                // must align with the acceleration vector, not prematurely with
+                // the eventual coasting course.
+                turn.desiredVelocityMapMps =
+                    thrustDirection *
+                    std::max(1.0, actualSpeed);
+                turn.desiredForwardMap =
+                    thrustDirection;
+
+                constexpr double MainIgnitionAlignmentCosine =
+                    0.9961946980917455; // cos(5 deg)
+
+                const bool mainAligned =
+                    glm::dot(
+                        agent.forwardMap,
+                        thrustDirection
+                    ) >= MainIgnitionAlignmentCosine;
+
+                const double forwardAuthority =
+                    game::ship::
+                        forwardMainAccelerationLimitMps2(
+                            effectivePhysics
+                        );
+
                 turn.desiredLinearAccelerationMapMps2 =
-                    desiredCourse *
-                    (0.80 *
-                     game::ship::
-                         forwardMainAccelerationLimitMps2(
-                             effectivePhysics
-                         ));
+                    mainAligned && deltaSpeed > 0.25
+                        ? thrustDirection *
+                            (0.80 * forwardAuthority)
+                        : glm::dvec3(0.0);
             }
             else
             {
+                // Assisted owns a real bounded velocity-course actuator. Hold
+                // speed while its physical stabilization authority bends VREL
+                // onto the selected collision-free course.
+                turn.desiredVelocityMapMps =
+                    desiredCourse * targetSpeed;
+                turn.desiredForwardMap =
+                    desiredCourse;
                 turn.desiredLinearAccelerationMapMps2 =
                     glm::dvec3(0.0);
             }
 
-            turn.desiredForwardMap = desiredCourse;
             turn.desiredUpMap = agent.upMap;
             turn.actualVelocityMapMps =
                 agent.velocityMapMetersPerSecond;

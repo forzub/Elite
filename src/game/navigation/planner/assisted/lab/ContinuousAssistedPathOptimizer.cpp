@@ -764,6 +764,20 @@ Evaluation evaluate(
         }
     }
 
+    // Angular-rate smoothing may lower the admissible speed before the first
+    // curve. A moving craft cannot teleport down to that cap, so preserve the
+    // original hot-start feasibility check after the final shaped profile.
+    if (requestedStartSpeed >
+        backwardCap.front() + 0.25)
+    {
+        const double normalized =
+            (requestedStartSpeed -
+             backwardCap.front()) /
+            std::max(1.0, request.designSpeedMps);
+        maxViolation =
+            std::max(maxViolation, normalized);
+    }
+
     double travelTime = 0.0;
     double maxLateralUtilization = 0.0;
     double lateralEnergy = 0.0;

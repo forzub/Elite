@@ -3705,6 +3705,20 @@ void SpaceState::update(float dt)
             m_navigationWorkspace.dockingRouteRequests();
         obs.requestPending = stressRequests.pending().valid();
         obs.requestSerial = stressRequests.pending().serial;
+        if (obs.requestPending)
+        {
+            obs.requestTarget =
+                stressRequests.pending().target.stableObjectId +
+                ":" +
+                stressRequests.pending().target.semanticAnchorId;
+        }
+
+        obs.pageIndex = m_clientRouteAutopilot.pageIndex;
+        obs.segmentIndex = m_clientRouteAutopilot.segmentIndex;
+        obs.checkpointIndex = m_clientRouteAutopilot.checkpointIndex;
+        obs.routeCurveIndex = m_clientRouteAutopilot.routeCurveIndex;
+        obs.speedProfileRevision =
+            m_clientRouteAutopilot.speedProfileRevision;
 
         const auto stressPlayerIt =
             m_client->world().ships().find(m_playerId.value);

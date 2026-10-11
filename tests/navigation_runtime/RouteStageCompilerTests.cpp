@@ -84,6 +84,20 @@ int main()
             "compiled stage count changed"
         );
 
+        const auto* entryPortal =
+            graph->portal("cylinder_b.entry_front");
+        const auto* exitPortal =
+            graph->portal("cylinder_b.exit_rear");
+        require(
+            entryPortal && exitPortal,
+            "blue fixture portals disappeared from traffic graph"
+        );
+
+        const double authoredInboundStraight =
+            entryPortal->inboundConnection.mandatoryStraightMeters;
+        const double authoredOutboundStraight =
+            exitPortal->outboundConnection.mandatoryStraightMeters;
+
         const auto& transit = compiled.stages[1];
         require(
             transit.kind == TrafficRouteStageKind::VolumeTransit,
@@ -118,24 +132,39 @@ int main()
             compiled.mandatoryTangentStraights[0].inbound &&
             near(
                 compiled.mandatoryTangentStraights[0].startWorldMeters,
-                glm::dvec3(0.0, 0.0, -1300.0)
+                transit.fromWorldMeters -
+                    glm::dvec3(0.0, 0.0, 1.0) *
+                        authoredInboundStraight
             ) &&
             near(
                 compiled.mandatoryTangentStraights[0].endWorldMeters,
-                glm::dvec3(0.0, 0.0, -600.0)
-            ),
+                transit.fromWorldMeters
+            ) &&
+            std::abs(
+                compiled.mandatoryTangentStraights[0].lengthMeters -
+                authoredInboundStraight
+            ) <= 1.0e-9,
             "blue entry mandatory tangent straight is wrong"
         );
+        const glm::dvec3 authoredBlueExitEnd =
+            transit.toWorldMeters +
+            glm::dvec3(0.0, 0.0, 1.0) *
+                authoredOutboundStraight;
+
         require(
             !compiled.mandatoryTangentStraights[1].inbound &&
             near(
                 compiled.mandatoryTangentStraights[1].startWorldMeters,
-                glm::dvec3(0.0, 0.0, 600.0)
+                transit.toWorldMeters
             ) &&
             near(
                 compiled.mandatoryTangentStraights[1].endWorldMeters,
-                glm::dvec3(0.0, 0.0, 1300.0)
-            ),
+                authoredBlueExitEnd
+            ) &&
+            std::abs(
+                compiled.mandatoryTangentStraights[1].lengthMeters -
+                authoredOutboundStraight
+            ) <= 1.0e-9,
             "blue exit mandatory tangent straight is wrong"
         );
 
@@ -153,7 +182,7 @@ int main()
         require(
             near(
                 compiled.requiredViaPointsMeters[0],
-                glm::dvec3(0.0, 0.0, -1300.0)
+                compiled.mandatoryTangentStraights[0].startWorldMeters
             ),
             "compiled route does not begin blue entry alignment straight"
         );
@@ -174,9 +203,9 @@ int main()
         require(
             near(
                 compiled.requiredViaPointsMeters[3],
-                glm::dvec3(0.0, 0.0, 1300.0)
+                authoredBlueExitEnd
             ),
-            "compiled route does not preserve blue exit departure straight"
+            "compiled route does not preserve authored blue exit departure straight"
         );
         require(
             near(

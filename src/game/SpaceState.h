@@ -340,6 +340,7 @@ private:
         double sceneRayMeters = 0.0;
         double selectedTurnAngleRad = 0.0;
         double selectedTurnRadiusMeters = 0.0;
+        double lastRecheckServerSeconds = -1.0;
 
         double hullRadiusMeters = 0.0;
         double additionalClearanceMeters = 0.0;

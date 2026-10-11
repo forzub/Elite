@@ -4364,7 +4364,10 @@ void SpaceState::update(float dt)
             m_clientRouteAutopilot.currentContinuousSegment;
         obs.checkpointIndex =
             m_clientRouteAutopilot.nextCheckpointIndex;
-        obs.routeCurveIndex = 0;
+        obs.routeCurveIndex =
+            m_clientDockingRouteCurveIndex;
+        obs.routeProgressMeters =
+            m_clientDockingRouteProgressMeters;
         obs.speedProfileRevision =
             m_clientRouteAutopilot.speedProfileRevision;
 
@@ -4387,6 +4390,43 @@ void SpaceState::update(float dt)
         }
 
         obs.routeValid = m_dockAdvice.plan.valid();
+
+        for (const auto& stage : m_dockAdvice.plan.stages)
+        {
+            if (stage.kind !=
+                    game::navigation::planner::
+                        RouteStageKind::VolumeTransit ||
+                stage.volumeId.empty())
+            {
+                continue;
+            }
+
+            obs.blueStagePresent = true;
+            obs.blueHardContainment =
+                stage.hardContainment;
+            obs.blueStartProgressMeters =
+                stage.startProgressMeters;
+            obs.blueEndProgressMeters =
+                stage.endProgressMeters;
+            obs.blueVolumeId = stage.volumeId;
+
+            if (m_clientDockingRouteProgressMeters + 1.0 <
+                stage.startProgressMeters)
+            {
+                obs.bluePhase = 1;
+            }
+            else if (m_clientDockingRouteProgressMeters <=
+                stage.endProgressMeters + 1.0)
+            {
+                obs.bluePhase = 2;
+            }
+            else
+            {
+                obs.bluePhase = 3;
+            }
+            break;
+        }
+
         obs.routeCurveCount = m_dockAdvice.plan.routeCurves.size();
         obs.executionGateCount =
             m_dockAdvice.plan.executionGates.size();

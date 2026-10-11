@@ -29,10 +29,17 @@ struct OptimizationWeights
     // do not silently change ABI/source contracts.
     double pathLength = 0.35;
 
-    // Secondary comfort/energy terms. These must never buy tens of kilometres
-    // of detour merely to make a curve numerically smooth.
-    double lateralAccelerationEnergy = 0.08;
-    double curvatureVariation = 0.04;
+    // Dynamic reserve terms. These are dimensionless costs based on how much
+    // of the ship's real control authority the candidate consumes. They do not
+    // encode a preferred radius: the same radius can be cheap at low speed and
+    // expensive at high speed.
+    double lateralAccelerationEnergy = 0.20;
+    double peakLateralUtilization = 0.22;
+    double brakingDemand = 0.16;
+
+    // Pure geometric regularity remains a weak tie-breaker. It must not buy a
+    // giant detour merely to make a curve numerically silk-smooth.
+    double curvatureVariation = 0.03;
 };
 
 struct Request
@@ -93,7 +100,13 @@ struct Diagnostics
 
     double maxCurvaturePerMeter = 0.0;
     double minimumRadiusMeters = 0.0;
+
+    // Dynamic-load diagnostics are normalized to the authored vehicle
+    // authority: 1.0 means the plan is using 100% of that authority.
+    double maxLateralUtilization = 0.0;
     double lateralAccelerationEnergy = 0.0;
+    double brakingDemandEnergy = 0.0;
+
     double curvatureVariationEnergy = 0.0;
     double objective = 0.0;
     double maxConstraintViolation = 0.0;

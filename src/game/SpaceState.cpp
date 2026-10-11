@@ -3713,10 +3713,12 @@ void SpaceState::update(float dt)
                 stressRequests.pending().target.semanticAnchorId;
         }
 
-        obs.pageIndex = m_clientRouteAutopilot.pageIndex;
-        obs.segmentIndex = m_clientRouteAutopilot.segmentIndex;
-        obs.checkpointIndex = m_clientRouteAutopilot.checkpointIndex;
-        obs.routeCurveIndex = m_clientRouteAutopilot.routeCurveIndex;
+        obs.pageIndex = m_clientRouteAutopilot.currentPage;
+        obs.segmentIndex =
+            m_clientRouteAutopilot.currentContinuousSegment;
+        obs.checkpointIndex =
+            m_clientRouteAutopilot.nextCheckpointIndex;
+        obs.routeCurveIndex = 0;
         obs.speedProfileRevision =
             m_clientRouteAutopilot.speedProfileRevision;
 

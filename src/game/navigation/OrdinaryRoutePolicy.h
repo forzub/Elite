@@ -38,6 +38,31 @@ public:
         return std::min(routeMax, authored);
     }
 
+    [[nodiscard]] static double startTurnDesignSpeedMps(
+        double initialSpeedMps,
+        double routeMaxSpeedMps
+    ) noexcept
+    {
+        const double speed =
+            std::max(0.0, finiteOrZero(initialSpeedMps));
+        const double routeMax =
+            std::max(0.0, finiteOrZero(routeMaxSpeedMps));
+
+        if (routeMax <= 0.5)
+            return 0.0;
+
+        // From rest there is no incoming kinetic state to shed, so ordinary
+        // geometry may be designed for cruise and the speed profile simply
+        // delays acceleration until curvature allows it. While already moving,
+        // the first curve must be compatible with the speed that can actually
+        // arrive after the authored ballistic lead, never with an imaginary
+        // instantaneous jump to Vmax.
+        const double ordinaryCruise = 0.80 * routeMax;
+        return speed > 0.5
+            ? std::min(speed, ordinaryCruise)
+            : ordinaryCruise;
+    }
+
     [[nodiscard]] static double requiredStartLeadMeters(
         double initialSpeedMps,
         double routeMaxSpeedMps,
@@ -70,7 +95,7 @@ public:
         // start lead only guarantees enough straight room to shed excess
         // incoming speed and to establish the first comfortable-radius turn.
         const double designTurnSpeed =
-            std::min(speed, 0.80 * routeMax);
+            startTurnDesignSpeedMps(speed, routeMax);
 
         const double brakingDistance =
             speed > designTurnSpeed

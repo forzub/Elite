@@ -2137,6 +2137,7 @@ void SpaceState::updateDockingAdvisory()
         request.terminalOutward = localPort.forward;
         request.agentRadiusMeters =
             envelope.conservativeSafetyRadiusMeters();
+        request.vehicleLengthMeters = hull.lengthMeters;
 
         // Keep execution reserve on the client exactly where the virtual pilot
         // lives. Planner never assumes all installed authority is available.

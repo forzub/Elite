@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <glm/glm.hpp>
+
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 
 namespace
@@ -24,112 +26,173 @@ bool nearDirection(
     const double le = glm::length(expected);
     if (la <= 1.0e-9 || le <= 1.0e-9)
         return false;
+
     return
-        glm::dot(actual/la, expected/le) >= cosine;
+        glm::dot(actual / la, expected / le) >= cosine;
 }
 }
 
 int main()
 {
-    using namespace game::navigation::planner::assisted::lab;
+    using namespace
+        game::navigation::planner::assisted::lab;
 
-    Request request;
-    request.start.positionMeters =
-        glm::dvec3(0.0, 0.0, 0.0);
-    request.start.tangent =
-        glm::dvec3(1.0, 0.0, 0.0);
-    request.start.speedMps = 0.0;
+    // Case 1: reversed heading. This still requires a real turn and preserves
+    // a true authored comfort-radius floor, but maxSpeed^2/a_lat is no longer
+    // a hard geometric radius.
+    Request reversed;
+    reversed.start.positionMeters =
+        {0.0, 0.0, 0.0};
+    reversed.start.tangent =
+        {1.0, 0.0, 0.0};
+    reversed.start.speedMps = 0.0;
 
-    // Deliberately place the goal behind the initial tangent. There is no
-    // obstacle and no discrete "turn angle" input. The optimizer must derive
-    // non-zero curvature from the constrained minimum problem itself.
-    request.goal.positionMeters =
-        glm::dvec3(-6000.0, 0.0, 0.0);
-    request.goal.tangent =
-        glm::dvec3(-1.0, 0.0, 0.0);
-    request.goal.speedMps = 0.0;
+    reversed.goal.positionMeters =
+        {-6000.0, 0.0, 0.0};
+    reversed.goal.tangent =
+        {-1.0, 0.0, 0.0};
+    reversed.goal.speedMps = 0.0;
 
-    request.hullRadiusMeters = 17.3;
-    request.designSpeedMps = 80.0;
-    request.maxLateralAccelerationMps2 = 20.0;
-    request.minimumComfortRadiusMeters = 500.0;
+    reversed.hullRadiusMeters = 17.3;
+    reversed.designSpeedMps = 80.0;
+    reversed.acceleratingMps2 = 20.0;
+    reversed.brakingMps2 = 20.0;
+    reversed.maxLateralAccelerationMps2 = 20.0;
+    reversed.minimumComfortRadiusMeters = 500.0;
 
-    request.protectedStartStraightMeters = 150.0;
-    request.protectedGoalStraightMeters = 700.0;
+    reversed.protectedStartStraightMeters = 150.0;
+    reversed.protectedGoalStraightMeters = 700.0;
 
-    request.samplesPerBezier = 128;
-    request.maxPatternIterations = 700;
+    reversed.samplesPerBezier = 128;
+    reversed.maxPatternIterations = 700;
 
-    const Result result =
-        ContinuousAssistedPathOptimizer::optimize(request);
-
-    if (!result.valid)
-        return fail("reversed-heading free-space problem was not feasible");
-
-    if (result.sampledCenterlineMeters.size() < 64)
-        return fail("optimizer returned too few centerline samples");
-
-    const double requiredRadius =
-        std::max(
-            request.minimumComfortRadiusMeters,
-            request.designSpeedMps *
-                request.designSpeedMps /
-                request.maxLateralAccelerationMps2
+    const Result turn =
+        ContinuousAssistedPathOptimizer::optimize(
+            reversed
         );
 
-    if (result.diagnostics.minimumRadiusMeters +
+    if (!turn.valid)
+        return fail("reversed-heading free-space problem was not feasible");
+
+    if (turn.sampledCenterlineMeters.size() < 64)
+        return fail("optimizer returned too few centerline samples");
+
+    if (turn.segments.size() < 2)
+        return fail("optimizer returned no usable transition geometry");
+
+    if (turn.diagnostics.minimumRadiusMeters +
             1.0e-3 <
-        requiredRadius)
+        reversed.minimumComfortRadiusMeters)
     {
-        return fail("optimized path violated minimum-radius constraint");
+        return fail("optimized path violated authored comfort radius");
     }
 
     const glm::dvec3 startCurve =
-        request.start.positionMeters +
-        glm::normalize(request.start.tangent) *
-            request.protectedStartStraightMeters;
+        reversed.start.positionMeters +
+        glm::normalize(reversed.start.tangent) *
+            reversed.protectedStartStraightMeters;
     const glm::dvec3 goalCurve =
-        request.goal.positionMeters -
-        glm::normalize(request.goal.tangent) *
-            request.protectedGoalStraightMeters;
+        reversed.goal.positionMeters -
+        glm::normalize(reversed.goal.tangent) *
+            reversed.protectedGoalStraightMeters;
 
     if (!nearDirection(
-            result.firstControl1Meters - startCurve,
-            request.start.tangent,
+            turn.firstControl1Meters - startCurve,
+            reversed.start.tangent,
             0.999999))
     {
         return fail("start tangent boundary condition was not preserved");
     }
 
     if (!nearDirection(
-            goalCurve - result.secondControl2Meters,
-            request.goal.tangent,
+            goalCurve - turn.secondControl2Meters,
+            reversed.goal.tangent,
             0.999999))
     {
         return fail("goal tangent boundary condition was not preserved");
     }
 
-    if (!(result.diagnostics.pathLengthMeters > 6000.0))
+    if (!(turn.diagnostics.pathLengthMeters > 6000.0))
         return fail("reversed-heading solution did not form a real turn");
 
-    if (!(result.diagnostics.pathLengthMeters < 30000.0))
-        return fail("optimizer escaped into an absurdly long low-curvature loop");
+    if (!(turn.diagnostics.pathLengthMeters < 30000.0))
+        return fail("optimizer escaped into an absurdly long turn");
 
-    if (!(result.diagnostics.maxConstraintViolation <= 1.0e-7))
+    if (!(turn.diagnostics.estimatedTravelTimeSeconds > 0.0))
+        return fail("optimizer did not produce a physical travel-time estimate");
+
+    if (!(turn.diagnostics.maxConstraintViolation <= 1.0e-7))
         return fail("optimizer reported residual hard-constraint violation");
+
+    // Case 2: high cruise ceiling. This is the regression for the 80-110 km
+    // loops observed in production. The optimizer must be allowed to slow
+    // locally instead of inflating all turns to R=Vmax^2/a_lat.
+    Request highSpeed;
+    highSpeed.start.positionMeters =
+        {0.0, 0.0, 0.0};
+    highSpeed.start.tangent =
+        {1.0, 0.0, 0.0};
+    highSpeed.start.speedMps = 0.0;
+
+    highSpeed.goal.positionMeters =
+        {12000.0, 5000.0, 0.0};
+    highSpeed.goal.tangent =
+        {1.0, 0.0, 0.0};
+    highSpeed.goal.speedMps = 0.0;
+
+    highSpeed.hullRadiusMeters = 17.3;
+    highSpeed.designSpeedMps = 400.0;
+    highSpeed.acceleratingMps2 = 20.0;
+    highSpeed.brakingMps2 = 20.0;
+    highSpeed.maxLateralAccelerationMps2 = 20.0;
+    highSpeed.minimumComfortRadiusMeters = 0.0;
+
+    highSpeed.protectedStartStraightMeters = 500.0;
+    highSpeed.protectedGoalStraightMeters = 700.0;
+
+    highSpeed.samplesPerBezier = 128;
+    highSpeed.maxPatternIterations = 500;
+
+    const Result fast =
+        ContinuousAssistedPathOptimizer::optimize(
+            highSpeed
+        );
+
+    if (!fast.valid)
+        return fail("high-speed free-space problem was not feasible");
+
+    if (!(fast.diagnostics.lowerBoundLengthMeters > 10000.0))
+        return fail("high-speed lower-bound diagnostic is invalid");
+
+    if (!(fast.diagnostics.stretchRatio < 2.5))
+        return fail("high-speed optimizer still prefers a giant detour");
+
+    if (!(fast.diagnostics.pathLengthMeters < 30000.0))
+        return fail("high-speed optimizer exceeded route-length sanity bound");
+
+    if (!(fast.diagnostics.estimatedTravelTimeSeconds < 180.0))
+        return fail("high-speed optimizer produced an implausibly slow route");
+
+    if (!(fast.diagnostics.maxConstraintViolation <= 1.0e-7))
+        return fail("high-speed optimizer retained hard-constraint violation");
 
     std::cout
         << "CONTINUOUS ASSISTED OPTIMIZER LAB: PASS\n"
+        << " reversed_length_m="
+        << turn.diagnostics.pathLengthMeters
+        << " reversed_stretch="
+        << turn.diagnostics.stretchRatio
+        << " high_speed_length_m="
+        << fast.diagnostics.pathLengthMeters
+        << " high_speed_lower_bound_m="
+        << fast.diagnostics.lowerBoundLengthMeters
+        << " high_speed_stretch="
+        << fast.diagnostics.stretchRatio
+        << " high_speed_eta_s="
+        << fast.diagnostics.estimatedTravelTimeSeconds
         << " objective_evaluations="
-        << result.diagnostics.objectiveEvaluations
-        << " accepted_steps="
-        << result.diagnostics.acceptedSteps
-        << " length_m="
-        << result.diagnostics.pathLengthMeters
-        << " min_radius_m="
-        << result.diagnostics.minimumRadiusMeters
-        << " objective="
-        << result.diagnostics.objective
+        << (turn.diagnostics.objectiveEvaluations +
+            fast.diagnostics.objectiveEvaluations)
         << "\n";
 
     return EXIT_SUCCESS;

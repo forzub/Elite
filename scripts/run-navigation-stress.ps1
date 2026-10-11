@@ -34,8 +34,7 @@ Write-Host "[NavStressRunner] no-progress timeout $($NoProgressTimeoutSeconds)s;
 
 $started = Get-Date
 $lastProgressAt = $started
-$lastLength = -1L
-$lastWriteUtc = [DateTime]::MinValue
+$lastSemanticEvent = ""
 $completed = $false
 $timedOut = $false
 $timeoutReason = ""
@@ -48,14 +47,21 @@ try {
         $process.Refresh()
 
         if (Test-Path $ReportPath) {
-            $info = Get-Item $ReportPath
-            if ($info.Length -ne $lastLength -or $info.LastWriteTimeUtc -ne $lastWriteUtc) {
-                $lastLength = $info.Length
-                $lastWriteUtc = $info.LastWriteTimeUtc
+            # SAMPLE lines are heartbeats, not proof of planner progress.
+            # Watch semantic state transitions so a worker stuck forever in
+            # RoutePlanner is detected even while the render/update loop keeps
+            # appending telemetry.
+            $tail = Get-Content -Path $ReportPath -Tail 96 -ErrorAction SilentlyContinue
+            $semanticEvent =
+                $tail |
+                Where-Object { $_ -match '^(EVENT|SUMMARY|WATCHDOG)' } |
+                Select-Object -Last 1
+
+            if ($semanticEvent -and $semanticEvent -ne $lastSemanticEvent) {
+                $lastSemanticEvent = $semanticEvent
                 $lastProgressAt = Get-Date
             }
 
-            $tail = Get-Content -Path $ReportPath -Tail 8 -ErrorAction SilentlyContinue
             if ($tail -match "status=COMPLETE") {
                 $completed = $true
                 break
@@ -65,7 +71,7 @@ try {
         $now = Get-Date
         if (($now - $lastProgressAt).TotalSeconds -ge $NoProgressTimeoutSeconds) {
             $timedOut = $true
-            $timeoutReason = "no report progress for $NoProgressTimeoutSeconds seconds"
+            $timeoutReason = "no semantic navigation progress for $NoProgressTimeoutSeconds seconds"
             break
         }
 

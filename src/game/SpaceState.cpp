@@ -2769,9 +2769,9 @@ void SpaceState::updateDockingAdvisory()
             }
         }
 
-        // Planner workers are serialized, but a stale worker may still be
-        // unwinding after a target switch. Waiting is now safe because the
-        // current ballistic course has already been collision-proven above.
+        // Planner workers are serialized. If an older worker is still
+        // unwinding, the live safety controller keeps ownership of the craft
+        // while we wait; no new optimizer is stacked on top of it.
         const int livePlannerWorkers =
             m_dockWorkerCount->load(std::memory_order_acquire);
         if (livePlannerWorkers > 0)

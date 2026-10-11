@@ -45,6 +45,7 @@
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
+#include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
@@ -313,10 +314,11 @@ private:
     enum class ClientDockingPhase : std::uint8_t
     {
         Idle = 0,
-        Stabilizing,
-        Planning,
-        RouteReady,
-        Executing
+        Stabilizing = 1,
+        Planning = 2,
+        RouteReady = 3,
+        Executing = 4,
+        SecuringCourse = 5
     };
 
     ClientDockingPhase m_clientDockingPhase =
@@ -327,6 +329,30 @@ private:
     std::uint64_t m_clientDockingTraceTick = 0;
     game::navigation::autopilot::PredictivePilot::State
         m_clientDockingStabilizePilotState {};
+
+    struct DockSafeCourseState
+    {
+        bool active = false;
+        bool stopFallback = false;
+        std::uint64_t serial = 0;
+        glm::dvec3 direction {0.0, 0.0, -1.0};
+        double targetSpeedMps = 0.0;
+        double sceneRayMeters = 0.0;
+        double selectedTurnAngleRad = 0.0;
+        double selectedTurnRadiusMeters = 0.0;
+
+        double hullRadiusMeters = 0.0;
+        double additionalClearanceMeters = 0.0;
+        double courseAccelerationMps2 = 0.0;
+        double brakingAccelerationMps2 = 0.0;
+        double maxAngularVelocityRadPerSecond = 0.0;
+        bool newtonian = false;
+
+        glm::dvec3 preferredDirection {0.0, 0.0, -1.0};
+        std::vector<world::navigation::NavigationObstacle> obstacles;
+    };
+    DockSafeCourseState m_dockSafeCourse {};
+
     game::navigation::autopilot::ClientRouteAutopilot::State
         m_clientRouteAutopilot {};
 

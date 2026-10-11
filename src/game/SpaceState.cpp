@@ -1933,6 +1933,50 @@ void SpaceState::updateDockingAdvisory()
         return control;
     };
 
+    const auto stabilizeAngularForPlanningControl = [&]()
+    {
+        const auto agent = makeAgent();
+
+        game::navigation::autopilot::PredictivePilot::Request hold;
+        hold.law = controlLaw;
+
+        // Preserve the measured translational state exactly: no linear
+        // acceleration is requested while the old route is being released.
+        hold.desiredVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        hold.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
+
+        // Freeze the CURRENT hull pose while HullAttitudeControl damps
+        // pitch/yaw/roll rates to zero. terminalAttitudeHold selects explicit
+        // hull-pose tracking instead of velocity-course tracking; the target
+        // pose equals the current pose, so only angular-rate removal remains.
+        hold.desiredForwardMap = agent.forwardMap;
+        hold.desiredUpMap = agent.upMap;
+        hold.terminalAttitudeHold = true;
+        hold.desiredCourseAngularRateMapRadPerSec = glm::dvec3(0.0);
+        hold.desiredRollRateRadPerSec = 0.0;
+
+        hold.actualVelocityMapMps =
+            agent.velocityMapMetersPerSecond;
+        hold.forwardMap = agent.forwardMap;
+        hold.rightMap = agent.rightMap;
+        hold.upMap = agent.upMap;
+        hold.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+        hold.yawRateRadPerSec = agent.yawRateRadPerSec;
+        hold.rollRateRadPerSec = agent.rollRateRadPerSec;
+        hold.stopRequested = false;
+        hold.deltaSeconds = std::max(
+            1.0e-4,
+            m_client->serverFixedStepSeconds()
+        );
+
+        return game::navigation::autopilot::PredictivePilot::make(
+            hold,
+            effectivePhysics,
+            m_clientDockingStabilizePilotState
+        );
+    };
+
     const auto manualStopControl = [&]()
     {
         const auto agent = makeAgent();
@@ -2050,13 +2094,50 @@ void SpaceState::updateDockingAdvisory()
         }
         else
         {
+            // AUTOMATIC HOT-REPLAN CONTRACT:
+            // 1) release translational acceleration,
+            // 2) actively kill all angular velocity,
+            // 3) only then snapshot and plan from the ballistic state.
+            constexpr double AutomaticSettledAngularRadPerSec = 0.01;
+            constexpr double AutomaticAngularSettledSeconds = 0.20;
+
+            submitAutopilotControl(
+                stabilizeAngularForPlanningControl()
+            );
+
+            const bool angularStopped =
+                angularSpeedRadPerSec <=
+                    AutomaticSettledAngularRadPerSec;
+
+            if (!angularStopped)
+            {
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+
+            if (m_clientDockingSettledSinceServerSeconds < 0.0)
+            {
+                m_clientDockingSettledSinceServerSeconds =
+                    authoritativeServerSeconds;
+                return;
+            }
+
+            if (authoritativeServerSeconds -
+                    m_clientDockingSettledSinceServerSeconds <
+                AutomaticAngularSettledSeconds)
+            {
+                return;
+            }
+
+            // Angular state is now settled. From this point through the async
+            // calculation the craft is a pure ballistic translation.
             submitAutopilotControl(coastForPlanningControl());
         }
 
         std::cout
             << "[DockClient] request=" << pending.serial
             << " phase="
-            << (automatic ? "coast-planning" : "stopped-planning")
+            << (automatic ? "ballistic-planning" : "stopped-planning")
             << " vrel_mps=" << relativeSpeedMps
             << " omega_radps=" << angularSpeedRadPerSec
             << " lead_s=" << PlanningLeadSeconds

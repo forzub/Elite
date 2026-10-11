@@ -328,6 +328,8 @@ private:
     ShipControlState m_clientAutopilotControl {};
     double m_clientDockingSettledSinceServerSeconds = -1.0;
     std::uint64_t m_clientDockingTraceTick = 0;
+    double m_clientDockingRouteProgressMeters = 0.0;
+    std::size_t m_clientDockingRouteCurveIndex = 0;
     game::navigation::autopilot::PredictivePilot::State
         m_clientDockingStabilizePilotState {};
 

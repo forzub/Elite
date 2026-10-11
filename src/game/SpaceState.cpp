@@ -2750,12 +2750,17 @@ void SpaceState::updateDockingAdvisory()
                                     << std::endl;
                             }
                         }
+                    }
 
-                        if (job->plan.valid())
-                        {
-                            std::vector<
-                                game::navigation::RouteFrameField::Anchor>
-                                visualAnchors;
+                    // Route presentation and autopilot compilation belong to
+                    // every valid planner route. They are not traffic-route
+                    // concerns: a direct/free-space docking route must pass
+                    // through exactly the same execution pipeline.
+                    if (job->plan.valid())
+                    {
+                        std::vector<
+                            game::navigation::RouteFrameField::Anchor>
+                            visualAnchors;
                         visualAnchors.reserve(
                             job->plan.routeFrameAnchors.size()
                         );
@@ -2836,7 +2841,6 @@ void SpaceState::updateDockingAdvisory()
                                         true,
                                         &job->autopilotCompileFailure
                                     );
-                        }
                         }
                     }
 

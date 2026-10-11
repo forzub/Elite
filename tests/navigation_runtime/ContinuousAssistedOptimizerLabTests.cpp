@@ -176,6 +176,18 @@ int main()
     if (!(fast.diagnostics.maxConstraintViolation <= 1.0e-7))
         return fail("high-speed optimizer retained hard-constraint violation");
 
+    if (!std::isfinite(fast.diagnostics.maxLateralUtilization) ||
+        fast.diagnostics.maxLateralUtilization < 0.0)
+    {
+        return fail("high-speed optimizer produced invalid lateral-utilization diagnostics");
+    }
+
+    if (!std::isfinite(fast.diagnostics.brakingDemandEnergy) ||
+        fast.diagnostics.brakingDemandEnergy < 0.0)
+    {
+        return fail("high-speed optimizer produced invalid braking-demand diagnostics");
+    }
+
     std::cout
         << "CONTINUOUS ASSISTED OPTIMIZER LAB: PASS\n"
         << " reversed_length_m="
@@ -190,6 +202,10 @@ int main()
         << fast.diagnostics.stretchRatio
         << " high_speed_eta_s="
         << fast.diagnostics.estimatedTravelTimeSeconds
+        << " high_speed_peak_lat_util="
+        << fast.diagnostics.maxLateralUtilization
+        << " high_speed_brake_energy="
+        << fast.diagnostics.brakingDemandEnergy
         << " objective_evaluations="
         << (turn.diagnostics.objectiveEvaluations +
             fast.diagnostics.objectiveEvaluations)

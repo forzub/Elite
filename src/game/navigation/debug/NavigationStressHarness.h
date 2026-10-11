@@ -48,9 +48,13 @@ public:
         std::uint64_t jobSerial = 0;
         bool jobReady = false;
         bool jobCancelled = false;
+        bool jobPlanValid = false;
         int jobStage = -1;
         int jobPermille = -1;
         std::string jobResult;
+
+        bool safetyCourseActive = false;
+        bool safetyStopFallback = false;
 
         bool routeValid = false;
         std::size_t routeCurveCount = 0;
@@ -316,6 +320,9 @@ private:
             << " job_serial=" << o.jobSerial
             << " job_ready=" << (o.jobReady ? 1 : 0)
             << " job_cancelled=" << (o.jobCancelled ? 1 : 0)
+            << " job_plan_valid=" << (o.jobPlanValid ? 1 : 0)
+            << " safety_active=" << (o.safetyCourseActive ? 1 : 0)
+            << " safety_stop=" << (o.safetyStopFallback ? 1 : 0)
             << " job_stage=" << o.jobStage
             << " job_permille=" << o.jobPermille
             << " route_valid=" << (o.routeValid ? 1 : 0)
@@ -387,6 +394,27 @@ private:
         }
         if (!o.failed)
             m_failureLatched = false;
+
+        // A retryable planner miss is not a terminal client failure, but it
+        // must never disappear from the stress summary. Count each completed
+        // invalid worker once, including repeated attempts for the same serial.
+        if (o.jobReady &&
+            !m_lastJobReady &&
+            !o.jobPlanValid &&
+            !o.jobCancelled)
+        {
+            ++m_plannerRetries;
+        }
+        m_lastJobReady = o.jobReady;
+
+        if (o.safetyCourseActive && !m_lastSafetyCourseActive)
+            ++m_safetyCourseCorrections;
+
+        if (o.safetyStopFallback && !m_lastSafetyStopFallback)
+            ++m_emergencyStops;
+
+        m_lastSafetyCourseActive = o.safetyCourseActive;
+        m_lastSafetyStopFallback = o.safetyStopFallback;
     }
 
     Action issue(
@@ -438,6 +466,10 @@ private:
         m_stream
             << " requests=" << m_requests
             << " failures=" << m_failures
+            << " planner_retries=" << m_plannerRetries
+            << " safety_course_corrections="
+            << m_safetyCourseCorrections
+            << " emergency_stops=" << m_emergencyStops
             << " max_speed=" << m_maxSpeed
             << " max_omega=" << m_maxOmega
             << " max_workers=" << m_maxWorkers
@@ -468,9 +500,15 @@ private:
     std::uint64_t m_lastSerial = 0;
     bool m_lastFailed = false;
     int m_lastWorkers = -1;
+    bool m_lastJobReady = false;
+    bool m_lastSafetyCourseActive = false;
+    bool m_lastSafetyStopFallback = false;
 
     int m_requests = 0;
     int m_failures = 0;
+    int m_plannerRetries = 0;
+    int m_safetyCourseCorrections = 0;
+    int m_emergencyStops = 0;
     double m_maxSpeed = 0.0;
     double m_maxOmega = 0.0;
     int m_maxWorkers = 0;

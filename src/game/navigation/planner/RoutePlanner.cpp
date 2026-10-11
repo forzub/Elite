@@ -88,6 +88,8 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
     legacy.hasInitialForward = input.hasInitialForward;
     legacy.initialForward = input.initialForward;
     legacy.initialForwardLeadMeters = input.initialForwardLeadMeters;
+    legacy.initialProtectedStraightMeters =
+        input.initialProtectedStraightMeters;
     legacy.gateSpacingMeters = input.gateSpacingMeters;
     legacy.terminalGateSpacingMeters = input.terminalGateSpacingMeters;
     legacy.terminalDenseDistanceMeters = input.terminalDenseDistanceMeters;

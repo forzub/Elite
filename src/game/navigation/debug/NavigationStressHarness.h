@@ -77,6 +77,8 @@ public:
 
     bool enabled() const noexcept { return m_enabled; }
     bool complete() const noexcept { return m_complete; }
+    int currentStep() const noexcept { return m_step; }
+    static constexpr int totalSteps() noexcept { return 12; }
     const std::string& reportPath() const noexcept { return m_reportPath; }
 
     Action update(const Observation& o)

@@ -2210,6 +2210,7 @@ void SpaceState::updateDockingAdvisory()
             controlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
         request.roundTurns = assisted;
+        request.useContinuousAssistedOptimizer = assisted;
         if (assisted)
         {
             // Ordinary terminal geometry is sized from the speed that may

@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 
 namespace game::navigation::planner
 {
@@ -52,10 +53,553 @@ RouteGate adaptGate(const game::navigation::DockingAdvisoryGate& gate)
     return out;
 }
 
+
+glm::dvec3 normalizedOr(
+    const glm::dvec3& value,
+    const glm::dvec3& fallback
+)
+{
+    const double length = glm::length(value);
+    return std::isfinite(length) && length > 1.0e-9
+        ? value / length
+        : fallback;
+}
+
+double finalizeCurveProgress(
+    RouteCurveSegment& curve,
+    double startProgressMeters
+)
+{
+    curve.startProgressMeters = startProgressMeters;
+
+    if (curve.kind == RouteCurveKind::Line)
+    {
+        const double length =
+            glm::length(curve.endMeters - curve.startMeters);
+        curve.endProgressMeters =
+            startProgressMeters + std::max(0.0, length);
+        curve.arcLengthKnots.clear();
+        return std::max(0.0, length);
+    }
+
+    constexpr std::size_t Samples = 96;
+    curve.arcLengthKnots.clear();
+    curve.arcLengthKnots.reserve(Samples + 1);
+
+    double localProgress = 0.0;
+    glm::dvec3 previous = curve.positionAtParameter(0.0);
+
+    for (std::size_t i = 0; i <= Samples; ++i)
+    {
+        const double t =
+            static_cast<double>(i) /
+            static_cast<double>(Samples);
+        const glm::dvec3 point =
+            curve.positionAtParameter(t);
+
+        if (i > 0)
+            localProgress += glm::length(point - previous);
+
+        RouteCurveArcLengthKnot knot;
+        knot.parameter01 = t;
+        knot.localProgressMeters = localProgress;
+        curve.arcLengthKnots.push_back(knot);
+        previous = point;
+    }
+
+    curve.endProgressMeters =
+        startProgressMeters + localProgress;
+    return localProgress;
+}
+
+void appendLineCurve(
+    std::vector<RouteCurveSegment>& curves,
+    const glm::dvec3& start,
+    const glm::dvec3& end,
+    double maxSpeedMps,
+    double& progressMeters
+)
+{
+    const glm::dvec3 delta = end - start;
+    const double length = glm::length(delta);
+    if (!(std::isfinite(length) && length > 1.0e-6))
+        return;
+
+    RouteCurveSegment curve;
+    curve.kind = RouteCurveKind::Line;
+    curve.maxSpeedMps = maxSpeedMps;
+    curve.startMeters = start;
+    curve.endMeters = end;
+    curve.startForward = delta / length;
+    curve.endForward = curve.startForward;
+    finalizeCurveProgress(curve, progressMeters);
+    progressMeters = curve.endProgressMeters;
+    curves.push_back(std::move(curve));
+}
+
+void appendBezierCurve(
+    std::vector<RouteCurveSegment>& curves,
+    const glm::dvec3& p0,
+    const glm::dvec3& p1,
+    const glm::dvec3& p2,
+    const glm::dvec3& p3,
+    double maxSpeedMps,
+    double& progressMeters
+)
+{
+    RouteCurveSegment curve;
+    curve.kind = RouteCurveKind::CubicBezier;
+    curve.maxSpeedMps = maxSpeedMps;
+    curve.startMeters = p0;
+    curve.bezierControl1Meters = p1;
+    curve.bezierControl2Meters = p2;
+    curve.endMeters = p3;
+    curve.startForward =
+        normalizedOr(p1 - p0, normalizedOr(p3 - p0, {0.0,0.0,-1.0}));
+    curve.endForward =
+        normalizedOr(p3 - p2, curve.startForward);
+    finalizeCurveProgress(curve, progressMeters);
+    progressMeters = curve.endProgressMeters;
+    curves.push_back(std::move(curve));
+}
+
+struct CurveSample
+{
+    glm::dvec3 position {0.0};
+    glm::dvec3 tangent {0.0, 0.0, -1.0};
+    double curvaturePerMeter = 0.0;
+};
+
+CurveSample sampleCurves(
+    const std::vector<RouteCurveSegment>& curves,
+    double progressMeters
+)
+{
+    CurveSample out;
+    if (curves.empty())
+        return out;
+
+    const RouteCurveSegment* selected = &curves.back();
+    for (const auto& curve : curves)
+    {
+        if (progressMeters <= curve.endProgressMeters + 1.0e-9)
+        {
+            selected = &curve;
+            break;
+        }
+    }
+
+    const double clamped =
+        std::clamp(
+            progressMeters,
+            selected->startProgressMeters,
+            selected->endProgressMeters
+        );
+    const double t = selected->parameterAtProgress(clamped);
+    out.position = selected->positionAtParameter(t);
+    out.tangent = selected->tangentAtProgress(clamped);
+    out.curvaturePerMeter =
+        selected->curvatureAtProgress(clamped);
+    return out;
+}
+
+double speedLimitForCurvature(
+    const RoutePlanRequest& request,
+    double curvaturePerMeter
+)
+{
+    double limit = std::max(0.0, request.maxSpeedMps);
+    if (curvaturePerMeter > 1.0e-12 &&
+        request.lateralMps2 > 0.0)
+    {
+        limit =
+            std::min(
+                limit,
+                std::sqrt(
+                    request.lateralMps2 /
+                    curvaturePerMeter
+                )
+            );
+    }
+    return std::max(0.0, limit);
+}
+
+void appendGateAtProgress(
+    std::vector<RouteGate>& gates,
+    const std::vector<RouteCurveSegment>& curves,
+    const RoutePlanRequest& request,
+    double progressMeters,
+    bool terminal
+)
+{
+    const auto sample =
+        sampleCurves(curves, progressMeters);
+
+    RouteGate gate;
+    gate.positionMeters = sample.position;
+    gate.forward = sample.tangent;
+    gate.speedMps =
+        terminal
+            ? 0.0
+            : speedLimitForCurvature(
+                  request,
+                  sample.curvaturePerMeter
+              );
+
+    if (!gates.empty() &&
+        glm::length(
+            gates.back().positionMeters -
+            gate.positionMeters
+        ) <= 1.0e-6)
+    {
+        gates.back() = gate;
+        return;
+    }
+
+    gates.push_back(gate);
+}
+
+std::vector<RouteGate> buildPresentationGates(
+    const std::vector<RouteCurveSegment>& curves,
+    const RoutePlanRequest& request
+)
+{
+    std::vector<RouteGate> gates;
+    if (curves.empty())
+        return gates;
+
+    const double total = curves.back().endProgressMeters;
+    appendGateAtProgress(
+        gates,
+        curves,
+        request,
+        0.0,
+        total <= 1.0e-9
+    );
+
+    double progress = 0.0;
+    while (progress < total - 1.0e-9)
+    {
+        const double remaining = total - progress;
+        const bool terminalDense =
+            request.terminalDenseDistanceMeters > 0.0 &&
+            remaining <= request.terminalDenseDistanceMeters;
+
+        const double requestedSpacing =
+            terminalDense
+                ? request.terminalGateSpacingMeters
+                : request.gateSpacingMeters;
+        const double spacing =
+            std::max(1.0, requestedSpacing);
+
+        progress = std::min(total, progress + spacing);
+        appendGateAtProgress(
+            gates,
+            curves,
+            request,
+            progress,
+            progress >= total - 1.0e-9
+        );
+    }
+
+    return gates;
+}
+
+std::vector<RouteGate> buildExecutionGates(
+    const std::vector<RouteCurveSegment>& curves,
+    const RoutePlanRequest& request
+)
+{
+    std::vector<RouteGate> gates;
+    if (curves.empty())
+        return gates;
+
+    appendGateAtProgress(
+        gates,
+        curves,
+        request,
+        curves.front().startProgressMeters,
+        false
+    );
+
+    for (const auto& curve : curves)
+    {
+        if (curve.kind == RouteCurveKind::CubicBezier &&
+            curve.arcLengthKnots.size() >= 2)
+        {
+            for (std::size_t i = 1;
+                 i < curve.arcLengthKnots.size();
+                 ++i)
+            {
+                const double progress =
+                    curve.startProgressMeters +
+                    curve.arcLengthKnots[i].localProgressMeters;
+                appendGateAtProgress(
+                    gates,
+                    curves,
+                    request,
+                    progress,
+                    false
+                );
+            }
+            continue;
+        }
+
+        const double length =
+            curve.endProgressMeters -
+            curve.startProgressMeters;
+        const double spacing =
+            std::max(
+                1.0,
+                request.terminalGateSpacingMeters > 0.0
+                    ? request.terminalGateSpacingMeters
+                    : request.gateSpacingMeters
+            );
+        const std::size_t pieces =
+            std::max<std::size_t>(
+                1,
+                static_cast<std::size_t>(
+                    std::ceil(length / spacing)
+                )
+            );
+        for (std::size_t i = 1; i <= pieces; ++i)
+        {
+            const double progress =
+                curve.startProgressMeters +
+                length *
+                    static_cast<double>(i) /
+                    static_cast<double>(pieces);
+            appendGateAtProgress(
+                gates,
+                curves,
+                request,
+                progress,
+                false
+            );
+        }
+    }
+
+    if (!gates.empty())
+        gates.back().speedMps = 0.0;
+    return gates;
+}
+
+RoutePlan planContinuousAssisted(
+    const RoutePlanRequest& input
+)
+{
+    using assisted::lab::ContinuousAssistedPathOptimizer;
+
+    RoutePlan out;
+
+    assisted::lab::Request request;
+    request.start.positionMeters = input.startMeters;
+    request.start.tangent =
+        input.hasInitialForward
+            ? input.initialForward
+            : normalizedOr(
+                  input.goalMeters - input.startMeters,
+                  {0.0, 0.0, -1.0}
+              );
+    request.start.speedMps =
+        std::max(0.0, input.initialSpeedMps);
+
+    request.goal.positionMeters = input.goalMeters;
+    request.goal.tangent =
+        normalizedOr(
+            -input.terminalOutward,
+            normalizedOr(
+                input.goalMeters - input.startMeters,
+                request.start.tangent
+            )
+        );
+    request.goal.speedMps = 0.0;
+
+    request.hullRadiusMeters =
+        std::max(0.0, input.agentRadiusMeters);
+    request.designSpeedMps =
+        std::max(0.0, input.maxSpeedMps);
+    request.maxLateralAccelerationMps2 =
+        input.lateralMps2;
+
+    // No fixed turn angle and no arbitrary comfort radius. The hard curvature
+    // limit is derived only from v^2/a_lat in the optimizer.
+    request.minimumComfortRadiusMeters = 0.0;
+
+    request.protectedStartStraightMeters =
+        std::max(0.0, input.initialProtectedStraightMeters);
+    request.protectedGoalStraightMeters =
+        std::max(0.0, input.terminalApproachLengthMeters);
+    request.obstacles = input.obstacles;
+
+    const auto optimized =
+        ContinuousAssistedPathOptimizer::optimize(request);
+
+    if (!optimized.valid)
+    {
+        out.disposition = RoutePlanDisposition::NeedsRefinement;
+        out.failureCode =
+            RoutePlanFailureCode::NoCollisionFreeCandidate;
+        out.failure =
+            "continuous Assisted optimizer failed: " +
+            optimized.message;
+        out.userMessage = out.failure;
+        out.diagnosticSummary =
+            "continuous-assisted invalid evals=" +
+            std::to_string(
+                optimized.diagnostics.objectiveEvaluations
+            ) +
+            " violation=" +
+            std::to_string(
+                optimized.diagnostics.maxConstraintViolation
+            );
+        return out;
+    }
+
+    const glm::dvec3 startTangent =
+        normalizedOr(
+            request.start.tangent,
+            {0.0,0.0,-1.0}
+        );
+    const glm::dvec3 goalTangent =
+        normalizedOr(
+            request.goal.tangent,
+            startTangent
+        );
+
+    const glm::dvec3 startCurve =
+        input.startMeters +
+        startTangent *
+            request.protectedStartStraightMeters;
+    const glm::dvec3 goalCurve =
+        input.goalMeters -
+        goalTangent *
+            request.protectedGoalStraightMeters;
+
+    double progress = 0.0;
+    appendLineCurve(
+        out.routeCurves,
+        input.startMeters,
+        startCurve,
+        input.maxSpeedMps,
+        progress
+    );
+
+    appendBezierCurve(
+        out.routeCurves,
+        startCurve,
+        optimized.firstControl1Meters,
+        optimized.firstControl2Meters,
+        optimized.joinMeters,
+        input.maxSpeedMps,
+        progress
+    );
+
+    appendBezierCurve(
+        out.routeCurves,
+        optimized.joinMeters,
+        optimized.secondControl1Meters,
+        optimized.secondControl2Meters,
+        goalCurve,
+        input.maxSpeedMps,
+        progress
+    );
+
+    appendLineCurve(
+        out.routeCurves,
+        goalCurve,
+        input.goalMeters,
+        input.maxSpeedMps,
+        progress
+    );
+
+    if (out.routeCurves.empty())
+    {
+        out.disposition = RoutePlanDisposition::NeedsRefinement;
+        out.failureCode = RoutePlanFailureCode::BackendFailure;
+        out.failure =
+            "continuous Assisted optimizer produced empty route geometry";
+        out.userMessage = out.failure;
+        out.diagnosticSummary = "continuous-assisted empty-geometry";
+        return out;
+    }
+
+    out.gates =
+        buildPresentationGates(out.routeCurves, input);
+    out.executionGates =
+        buildExecutionGates(out.routeCurves, input);
+
+    if (out.gates.size() < 2 ||
+        out.executionGates.size() < 2)
+    {
+        out.disposition = RoutePlanDisposition::NeedsRefinement;
+        out.failureCode = RoutePlanFailureCode::BackendFailure;
+        out.failure =
+            "continuous Assisted route sampling produced too few gates";
+        out.userMessage = out.failure;
+        out.diagnosticSummary =
+            "continuous-assisted insufficient-gates";
+        return out;
+    }
+
+    out.disposition = RoutePlanDisposition::Ready;
+    out.failureCode = RoutePlanFailureCode::None;
+    out.failure.clear();
+    out.userMessage = routePlanFailureMessage(out.failureCode);
+    out.initialTurnPresent = true;
+    out.initialTurnRadiusMeters =
+        optimized.diagnostics.minimumRadiusMeters;
+    out.terminalTurnRadiusMeters =
+        optimized.diagnostics.minimumRadiusMeters;
+    out.terminalTurnLateralRadiusMeters =
+        optimized.diagnostics.minimumRadiusMeters;
+    out.terminalTurnSpeedMps = input.maxSpeedMps;
+    out.terminalApproachLengthMeters =
+        request.protectedGoalStraightMeters;
+
+    out.diagnosticSummary =
+        "continuous-assisted ready curves=" +
+        std::to_string(out.routeCurves.size()) +
+        " execution_gates=" +
+        std::to_string(out.executionGates.size()) +
+        " evals=" +
+        std::to_string(
+            optimized.diagnostics.objectiveEvaluations
+        ) +
+        " accepted_steps=" +
+        std::to_string(
+            optimized.diagnostics.acceptedSteps
+        ) +
+        " length_m=" +
+        std::to_string(
+            optimized.diagnostics.pathLengthMeters +
+            request.protectedStartStraightMeters +
+            request.protectedGoalStraightMeters
+        ) +
+        " min_radius_m=" +
+        std::to_string(
+            optimized.diagnostics.minimumRadiusMeters
+        ) +
+        " objective=" +
+        std::to_string(
+            optimized.diagnostics.objective
+        );
+
+    return out;
+}
+
 } // namespace
 
 RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
 {
+    if (input.useContinuousAssistedOptimizer &&
+        input.roundTurns &&
+        input.requiredViaPointsMeters.empty() &&
+        input.mandatoryTangentStraights.empty())
+    {
+        return planContinuousAssisted(input);
+    }
+
     game::navigation::DockingAdvisoryRequest legacy;
     legacy.startMeters = input.startMeters;
     legacy.outward = input.terminalOutward;

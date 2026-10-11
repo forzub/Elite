@@ -33,8 +33,10 @@ Write-Host "[NavStressRunner] report $ReportPath"
 Write-Host "[NavStressRunner] no-progress timeout $($NoProgressTimeoutSeconds)s; absolute timeout $($AbsoluteTimeoutSeconds)s"
 
 $started = Get-Date
-$lastProgressAt = $started
-$lastSemanticEvent = ""
+$lastHeartbeatAt = $started
+$lastLength = -1L
+$lastWriteUtc = [DateTime]::MinValue
+$reportSeen = $false
 $completed = $false
 $timedOut = $false
 $timeoutReason = ""
@@ -47,21 +49,23 @@ try {
         $process.Refresh()
 
         if (Test-Path $ReportPath) {
-            # SAMPLE lines are heartbeats, not proof of planner progress.
-            # Watch semantic state transitions so a worker stuck forever in
-            # RoutePlanner is detected even while the render/update loop keeps
-            # appending telemetry.
-            $tail = Get-Content -Path $ReportPath -Tail 96 -ErrorAction SilentlyContinue
-            $semanticEvent =
-                $tail |
-                Where-Object { $_ -match '^(EVENT|SUMMARY|WATCHDOG)' } |
-                Select-Object -Last 1
-
-            if ($semanticEvent -and $semanticEvent -ne $lastSemanticEvent) {
-                $lastSemanticEvent = $semanticEvent
-                $lastProgressAt = Get-Date
+            # SAMPLE output is the game-thread heartbeat. Planner geometry runs
+            # asynchronously and may legitimately spend many seconds inside one
+            # optimizer stage with no EVENT transition at all. Killing on
+            # "semantic" inactivity therefore kills a healthy game while the
+            # planner is still working.
+            $info = Get-Item $ReportPath -ErrorAction SilentlyContinue
+            if ($null -ne $info) {
+                $reportSeen = $true
+                if ($info.Length -ne $lastLength -or
+                    $info.LastWriteTimeUtc -ne $lastWriteUtc) {
+                    $lastLength = $info.Length
+                    $lastWriteUtc = $info.LastWriteTimeUtc
+                    $lastHeartbeatAt = Get-Date
+                }
             }
 
+            $tail = Get-Content -Path $ReportPath -Tail 96 -ErrorAction SilentlyContinue
             if ($tail -match "status=COMPLETE") {
                 $completed = $true
                 break
@@ -69,9 +73,15 @@ try {
         }
 
         $now = Get-Date
-        if (($now - $lastProgressAt).TotalSeconds -ge $NoProgressTimeoutSeconds) {
+
+        # No-progress protects against a frozen/crashed game loop only after
+        # telemetry has actually started. A slow startup or a long asynchronous
+        # optimizer is not a no-progress failure. The absolute timeout below is
+        # the guard against a planner worker that never returns.
+        if ($reportSeen -and
+            ($now - $lastHeartbeatAt).TotalSeconds -ge $NoProgressTimeoutSeconds) {
             $timedOut = $true
-            $timeoutReason = "no semantic navigation progress for $NoProgressTimeoutSeconds seconds"
+            $timeoutReason = "navigation report heartbeat stopped for $NoProgressTimeoutSeconds seconds"
             break
         }
 

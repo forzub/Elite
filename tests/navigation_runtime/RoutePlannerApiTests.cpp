@@ -1,4 +1,5 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/planner/RouteEntryBinder.h"
 
 #include <cmath>
 #include <iostream>
@@ -311,6 +312,117 @@ int main()
                 0.0,
                 1.0e-6,
                 "continuous Assisted execution route changed its goal"
+            );
+        }
+
+        // Late-bound start contract: elapsed wall-clock time does not
+        // invalidate a route. Only spatial consumption of the authored first
+        // straight matters, and the downstream tail can be retained while a
+        // new live entry connector is built.
+        {
+            using namespace game::navigation::planner;
+
+            RoutePlan synthetic;
+            synthetic.disposition = RoutePlanDisposition::Ready;
+            synthetic.failureCode = RoutePlanFailureCode::None;
+
+            double progress = 0.0;
+            const auto addLine =
+                [&](const glm::dvec3& a, const glm::dvec3& b)
+                {
+                    RouteCurveSegment curve;
+                    curve.kind = RouteCurveKind::Line;
+                    curve.startProgressMeters = progress;
+                    curve.endProgressMeters =
+                        progress + glm::length(b - a);
+                    curve.maxSpeedMps = 120.0;
+                    curve.startMeters = a;
+                    curve.endMeters = b;
+                    curve.startForward = glm::normalize(b - a);
+                    curve.endForward = curve.startForward;
+                    synthetic.routeCurves.push_back(curve);
+                    progress = curve.endProgressMeters;
+                };
+
+            addLine({0.0, 0.0, 0.0}, {1000.0, 0.0, 0.0});
+            addLine({1000.0, 0.0, 0.0}, {2000.0, 0.0, 0.0});
+            addLine({2000.0, 0.0, 0.0}, {3000.0, 0.0, 0.0});
+
+            for (int i = 0; i <= 6; ++i)
+            {
+                RouteGate gate;
+                gate.positionMeters = {
+                    500.0 * static_cast<double>(i),
+                    0.0,
+                    0.0
+                };
+                gate.forward = {1.0, 0.0, 0.0};
+                gate.speedMps = i == 6 ? 0.0 : 120.0;
+                synthetic.executionGates.push_back(gate);
+                synthetic.gates.push_back(gate);
+            }
+
+            const auto onPrefix =
+                RouteEntryBinder::inspectBallisticPrefix(
+                    synthetic,
+                    {450.0, 0.0, 0.0},
+                    20.0
+                );
+            require(
+                onPrefix.disposition ==
+                    BallisticPrefixDisposition::OnPrefix,
+                "late-bound handoff rejected live progress on ballistic prefix"
+            );
+            requireNear(
+                onPrefix.remainingMeters,
+                550.0,
+                1.0e-6,
+                "late-bound handoff computed wrong remaining straight"
+            );
+
+            const auto pastPrefix =
+                RouteEntryBinder::inspectBallisticPrefix(
+                    synthetic,
+                    {1200.0, 0.0, 0.0},
+                    20.0
+                );
+            require(
+                pastPrefix.disposition ==
+                    BallisticPrefixDisposition::PastPrefix,
+                "late-bound handoff did not detect consumed ballistic prefix"
+            );
+
+            const auto offAxis =
+                RouteEntryBinder::inspectBallisticPrefix(
+                    synthetic,
+                    {450.0, 50.0, 0.0},
+                    20.0
+                );
+            require(
+                offAxis.disposition ==
+                    BallisticPrefixDisposition::OffAxis,
+                "late-bound handoff did not detect ballistic corridor departure"
+            );
+
+            const auto backbone =
+                RouteEntryBinder::extractBackbone(
+                    synthetic,
+                    false,
+                    {},
+                    {}
+                );
+            require(
+                backbone.valid,
+                "late-bound route could not retain immutable terminal tail"
+            );
+            requireNear(
+                glm::length(
+                    backbone.anchorMeters -
+                    glm::dvec3(2000.0, 0.0, 0.0)
+                ),
+                0.0,
+                1.0e-6,
+                "late-bound route selected wrong direct-route tail anchor"
             );
         }
 

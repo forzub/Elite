@@ -98,6 +98,62 @@ double routeEndProgress(
             : plan.routeCurves.back().endProgressMeters;
 }
 
+double minimumSampledRadiusMeters(
+    const std::vector<planner::RouteCurveSegment>& curves
+) noexcept
+{
+    double maxCurvature = 0.0;
+    constexpr int SamplesPerCurve = 32;
+
+    for (const auto& curve : curves)
+    {
+        for (int i = 0; i <= SamplesPerCurve; ++i)
+        {
+            const double u =
+                static_cast<double>(i) /
+                static_cast<double>(SamplesPerCurve);
+            const double progress =
+                curve.startProgressMeters +
+                (curve.endProgressMeters -
+                 curve.startProgressMeters) * u;
+            maxCurvature =
+                std::max(
+                    maxCurvature,
+                    curve.curvatureAtProgress(progress)
+                );
+        }
+    }
+
+    return
+        maxCurvature > 1.0e-12
+            ? 1.0 / maxCurvature
+            : std::numeric_limits<double>::infinity();
+}
+
+double maximumJoinCurvatureJump(
+    const std::vector<planner::RouteCurveSegment>& curves
+) noexcept
+{
+    double maximum = 0.0;
+    for (std::size_t i = 1; i < curves.size(); ++i)
+    {
+        const double before =
+            curves[i - 1].curvatureAtProgress(
+                curves[i - 1].endProgressMeters
+            );
+        const double after =
+            curves[i].curvatureAtProgress(
+                curves[i].startProgressMeters
+            );
+        maximum =
+            std::max(
+                maximum,
+                std::abs(after - before)
+            );
+    }
+    return maximum;
+}
+
 void appendStageSpan(
     planner::RoutePlan& out,
     const std::string& id,
@@ -956,7 +1012,15 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         " mandatory volumes=" +
         std::to_string(mandatoryStages.size()) +
         " semantic stages=" +
-        std::to_string(out.stages.size());
+        std::to_string(out.stages.size()) +
+        " min_radius_m=" +
+        std::to_string(
+            minimumSampledRadiusMeters(out.routeCurves)
+        ) +
+        " max_join_dk=" +
+        std::to_string(
+            maximumJoinCurvatureJump(out.routeCurves)
+        );
 
     if (out.routeCurves.empty() ||
         out.executionGates.size() < 2 ||

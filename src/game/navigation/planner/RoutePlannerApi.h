@@ -82,6 +82,12 @@ struct RoutePlanRequest
     double maxAngularAccelerationRadPerSecond2 = 0.0;
     double initialSpeedMps = 0.0;
 
+    // Required/expected speed state at the route endpoint. Zero is the normal
+    // terminal/docking default. Segmented traffic legs must publish their real
+    // handoff speed here so geometry is optimized for the speed that will
+    // actually cross the semantic boundary.
+    double terminalSpeedMps = 0.0;
+
     bool roundTurns = true;
 
     // Explicit production A/B gate for the continuous Assisted optimizer.

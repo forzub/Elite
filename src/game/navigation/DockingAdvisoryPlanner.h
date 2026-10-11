@@ -44,6 +44,10 @@ struct DockingAdvisoryRequest
     glm::dvec3 initialForward {0.0, 0.0, -1.0};
     double initialForwardLeadMeters = 0.0;
 
+    // Optional explicit minimum straight before the first curve. When zero,
+    // preserve the historical lead heuristic.
+    double initialProtectedStraightMeters = 0.0;
+
     // Manual guidance stays sparse in open transit but becomes denser on the
     // final station approach so a curved turn is presented as a usable tunnel
     // rather than a few long chords.

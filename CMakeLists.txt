@@ -140,7 +140,6 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/world/navigation/local/LocalAvoidancePlanner.cpp
     src/game/navigation/NavigationRuntimePlanner.cpp
     src/game/navigation/NominalRoutePlanner.cpp
-    src/game/navigation/DockingAdvisoryPlanner.cpp
     src/game/navigation/planner/RoutePlanner.cpp
     src/game/navigation/planner/assisted/AssistedRoutePlanner.cpp
     src/game/navigation/traffic/RouteStageCompiler.cpp

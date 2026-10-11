@@ -426,8 +426,18 @@ RoutePlan planContinuousAssisted(
     // limit is derived only from v^2/a_lat in the optimizer.
     request.minimumComfortRadiusMeters = 0.0;
 
+    // HOT-REPLAN CONTRACT: an already moving craft continues
+    // ballistically along its measured course before any curvature is allowed.
+    // initialForwardLeadMeters is therefore authored geometry, not advisory
+    // metadata. Optimize the curved path only from the END of this straight.
     request.protectedStartStraightMeters =
-        std::max(0.0, input.initialProtectedStraightMeters);
+        std::max(
+            0.0,
+            std::max(
+                input.initialProtectedStraightMeters,
+                input.initialForwardLeadMeters
+            )
+        );
     request.protectedGoalStraightMeters =
         std::max(0.0, input.terminalApproachLengthMeters);
     request.obstacles = input.obstacles;

@@ -150,7 +150,9 @@ struct Evaluation
     double estimatedTravelTimeSeconds = 0.0;
 
     double maxCurvature = 0.0;
+    double maxLateralUtilization = 0.0;
     double lateralAccelerationEnergy = 0.0;
+    double brakingDemandEnergy = 0.0;
     double curvatureVariationEnergy = 0.0;
 
     glm::dvec3 cruiseDirection {1.0, 0.0, 0.0};
@@ -611,7 +613,9 @@ Evaluation evaluate(
     }
 
     double travelTime = 0.0;
+    double maxLateralUtilization = 0.0;
     double lateralEnergy = 0.0;
+    double brakingDemandEnergy = 0.0;
     double curvatureVariation = 0.0;
 
     const double referenceLength =
@@ -660,16 +664,55 @@ Evaluation evaluate(
             curvature;
 
         const double normalizedLateral =
-            lateralAcceleration /
             std::max(
-                Epsilon,
-                request.maxLateralAccelerationMps2
+                0.0,
+                lateralAcceleration /
+                    std::max(
+                        Epsilon,
+                        request.maxLateralAccelerationMps2
+                    )
             );
 
+        maxLateralUtilization =
+            std::max(
+                maxLateralUtilization,
+                normalizedLateral
+            );
+
+        // Convex dynamic-reserve cost. There is deliberately no preferred
+        // radius here: a tight curve is cheap when flown slowly, while a broad
+        // curve can still be expensive when it consumes most lateral authority.
+        const double lateralSquared =
+            normalizedLateral * normalizedLateral;
         lateralEnergy +=
-            normalizedLateral *
-            normalizedLateral *
+            lateralSquared *
+            lateralSquared *
             (ds / referenceLength);
+
+        // Penalize only demanded braking, not ordinary full-throttle
+        // acceleration. A candidate that must spend kilometres braking at the
+        // physical limit therefore loses to a slightly longer route that keeps
+        // useful stopping reserve.
+        if (speed[i] > speed[i + 1] + 1.0e-9)
+        {
+            const double demandedBraking =
+                (speed[i] * speed[i] -
+                 speed[i + 1] * speed[i + 1]) /
+                (2.0 * ds);
+            const double normalizedBraking =
+                std::max(
+                    0.0,
+                    demandedBraking /
+                        std::max(Epsilon, braking)
+                );
+            const double brakingSquared =
+                normalizedBraking * normalizedBraking;
+
+            brakingDemandEnergy +=
+                brakingSquared *
+                brakingSquared *
+                (ds / referenceLength);
+        }
 
         const double deltaCurvature =
             out.samples[i + 1].curvaturePerMeter -
@@ -685,7 +728,9 @@ Evaluation evaluate(
     }
 
     out.estimatedTravelTimeSeconds = travelTime;
+    out.maxLateralUtilization = maxLateralUtilization;
     out.lateralAccelerationEnergy = lateralEnergy;
+    out.brakingDemandEnergy = brakingDemandEnergy;
     out.curvatureVariationEnergy = curvatureVariation;
 
     out.finite =
@@ -694,7 +739,9 @@ Evaluation evaluate(
         std::isfinite(out.stretchRatio) &&
         std::isfinite(out.estimatedTravelTimeSeconds) &&
         std::isfinite(out.maxCurvature) &&
+        std::isfinite(out.maxLateralUtilization) &&
         std::isfinite(out.lateralAccelerationEnergy) &&
+        std::isfinite(out.brakingDemandEnergy) &&
         std::isfinite(out.curvatureVariationEnergy) &&
         std::isfinite(maxViolation);
 
@@ -724,15 +771,20 @@ Evaluation evaluate(
     const double excessLengthPenalty =
         excessStretch * excessStretch;
 
-    // Comfort is deliberately bounded in the objective. Once a route is
-    // already "uncomfortable", making it numerically silk-smooth is never
-    // allowed to buy an arbitrary detour. Time and quadratic route stretch
-    // remain unbounded costs and therefore dominate pathological loops.
-    const double boundedLateralEnergy =
-        std::min(
-            4.0,
-            out.lateralAccelerationEnergy
-        );
+    // The optimizer is not minimizing radius or path length. It minimizes
+    // travel time while paying for control authority consumed by the route.
+    // The fourth power keeps low utilization nearly free and makes operation
+    // near the physical limit progressively expensive without introducing a
+    // magic "good radius".
+    const double peakLateralSquared =
+        out.maxLateralUtilization *
+        out.maxLateralUtilization;
+    const double peakLateralStress =
+        peakLateralSquared *
+        peakLateralSquared;
+
+    // Curvature regularity is intentionally capped because it is a numerical
+    // smoothness preference, not a reason to buy tens of kilometres of detour.
     const double boundedCurvatureVariation =
         std::min(
             4.0,
@@ -745,7 +797,11 @@ Evaluation evaluate(
         request.weights.pathLength *
             excessLengthPenalty +
         request.weights.lateralAccelerationEnergy *
-            boundedLateralEnergy +
+            out.lateralAccelerationEnergy +
+        request.weights.peakLateralUtilization *
+            peakLateralStress +
+        request.weights.brakingDemand *
+            out.brakingDemandEnergy +
         request.weights.curvatureVariation *
             boundedCurvatureVariation;
 
@@ -1352,7 +1408,7 @@ Result ContinuousAssistedPathOptimizer::optimize(
     result.valid = current.feasible;
     result.message =
         result.valid
-            ? "continuous time/length optimized Assisted path ready"
+            ? "continuous time/reserve optimized Assisted path ready"
             : "continuous optimizer did not reach a feasible path";
 
     result.joinMeters = variables.midpoint;
@@ -1427,8 +1483,12 @@ Result ContinuousAssistedPathOptimizer::optimize(
         current.maxCurvature > 1.0e-12
             ? 1.0 / current.maxCurvature
             : std::numeric_limits<double>::infinity();
+    result.diagnostics.maxLateralUtilization =
+        current.maxLateralUtilization;
     result.diagnostics.lateralAccelerationEnergy =
         current.lateralAccelerationEnergy;
+    result.diagnostics.brakingDemandEnergy =
+        current.brakingDemandEnergy;
     result.diagnostics.curvatureVariationEnergy =
         current.curvatureVariationEnergy;
     result.diagnostics.objective =

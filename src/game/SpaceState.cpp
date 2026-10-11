@@ -2249,7 +2249,25 @@ void SpaceState::updateDockingAdvisory()
             m_dockSafeCourse.lastRecheckServerSeconds =
                 authoritativeServerSeconds;
 
-            if (check.currentCourseSafe)
+            constexpr double SafeCourseAlignmentCosine =
+                0.9961946980917455; // cos(5 deg)
+
+            const glm::dvec3 actualCourse =
+                speedMps > 0.5
+                    ? glm::normalize(
+                          agent.velocityMapMetersPerSecond
+                      )
+                    : glm::normalize(agent.forwardMap);
+
+            const glm::dvec3 selectedCourse =
+                glm::normalize(m_dockSafeCourse.direction);
+
+            const bool selectedCourseAcquired =
+                glm::dot(actualCourse, selectedCourse) >=
+                    SafeCourseAlignmentCosine;
+
+            if (check.currentCourseSafe &&
+                selectedCourseAcquired)
             {
                 // The physical course is now collision-proven. A speculative
                 // planner worker may already be running (or even ready), so do

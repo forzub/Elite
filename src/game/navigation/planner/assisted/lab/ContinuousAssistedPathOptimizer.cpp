@@ -360,13 +360,10 @@ Evaluation evaluate(
     }
 
     // Protected straight collision checks are hard constraints too.
-    const glm::dvec3 startCurve = out.control[0];
-    const glm::dvec3 goalCurve = out.control[5];
-
     if (!world::navigation::
         segmentClearOfNavigationObstacles(
             request.start.positionMeters,
-            startCurve,
+            out.control[0],
             request.obstacles,
             request.hullRadiusMeters))
     {
@@ -375,7 +372,7 @@ Evaluation evaluate(
 
     if (!world::navigation::
         segmentClearOfNavigationObstacles(
-            goalCurve,
+            out.control[5],
             request.goal.positionMeters,
             request.obstacles,
             request.hullRadiusMeters))

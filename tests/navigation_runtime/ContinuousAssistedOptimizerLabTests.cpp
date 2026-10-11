@@ -58,6 +58,8 @@ int main()
     reversed.acceleratingMps2 = 20.0;
     reversed.brakingMps2 = 20.0;
     reversed.maxLateralAccelerationMps2 = 20.0;
+    reversed.maxAngularVelocityRadPerSecond = 1.6;
+    reversed.maxAngularAccelerationRadPerSecond2 = 2.0;
     reversed.minimumComfortRadiusMeters = 500.0;
 
     reversed.protectedStartStraightMeters = 150.0;
@@ -145,6 +147,8 @@ int main()
     highSpeed.acceleratingMps2 = 20.0;
     highSpeed.brakingMps2 = 20.0;
     highSpeed.maxLateralAccelerationMps2 = 20.0;
+    highSpeed.maxAngularVelocityRadPerSecond = 1.6;
+    highSpeed.maxAngularAccelerationRadPerSecond2 = 2.0;
     highSpeed.minimumComfortRadiusMeters = 0.0;
 
     highSpeed.protectedStartStraightMeters = 500.0;
@@ -188,6 +192,22 @@ int main()
         return fail("high-speed optimizer produced invalid braking-demand diagnostics");
     }
 
+    if (!std::isfinite(fast.diagnostics.totalCurvatureRadians) ||
+        !std::isfinite(fast.diagnostics.curvatureConcentrationEnergy) ||
+        fast.diagnostics.totalCurvatureRadians < 0.0 ||
+        fast.diagnostics.curvatureConcentrationEnergy < 0.0)
+    {
+        return fail("high-speed optimizer produced invalid geometric-stress diagnostics");
+    }
+
+    if (!std::isfinite(fast.diagnostics.maxAngularVelocityUtilization) ||
+        !std::isfinite(fast.diagnostics.maxAngularAccelerationUtilization) ||
+        fast.diagnostics.maxAngularVelocityUtilization < 0.0 ||
+        fast.diagnostics.maxAngularAccelerationUtilization < 0.0)
+    {
+        return fail("high-speed optimizer produced invalid angular diagnostics");
+    }
+
     std::cout
         << "CONTINUOUS ASSISTED OPTIMIZER LAB: PASS\n"
         << " reversed_length_m="
@@ -206,6 +226,14 @@ int main()
         << fast.diagnostics.maxLateralUtilization
         << " high_speed_brake_energy="
         << fast.diagnostics.brakingDemandEnergy
+        << " high_speed_total_turn_rad="
+        << fast.diagnostics.totalCurvatureRadians
+        << " high_speed_bend_energy="
+        << fast.diagnostics.curvatureConcentrationEnergy
+        << " high_speed_peak_omega_util="
+        << fast.diagnostics.maxAngularVelocityUtilization
+        << " high_speed_peak_alpha_util="
+        << fast.diagnostics.maxAngularAccelerationUtilization
         << " objective_evaluations="
         << (turn.diagnostics.objectiveEvaluations +
             fast.diagnostics.objectiveEvaluations)

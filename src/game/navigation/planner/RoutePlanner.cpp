@@ -432,6 +432,13 @@ RoutePlan planContinuousAssisted(
         std::max(0.0, input.terminalApproachLengthMeters);
     request.obstacles = input.obstacles;
 
+    // Production planning runs asynchronously against a projected start.
+    // Keep the optimizer budget bounded so a valid route cannot repeatedly
+    // expire before handoff. Geometry remains collision-sampled densely
+    // enough for the current obstacle representation.
+    request.samplesPerBezier = 96;
+    request.maxPatternIterations = 160;
+
     const auto optimized =
         ContinuousAssistedPathOptimizer::optimize(request);
 

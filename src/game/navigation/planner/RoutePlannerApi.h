@@ -86,7 +86,17 @@ struct RoutePlanRequest
 
     bool hasInitialForward = false;
     glm::dvec3 initialForward {0.0, 0.0, -1.0};
+
+    // Geometric budget available to establish the first turn from the moving
+    // start. This may be much longer than the straight flight that must remain
+    // before curvature begins.
     double initialForwardLeadMeters = 0.0;
+
+    // Minimum straight that must remain untouched before the first curve.
+    // Zero keeps the backend legacy heuristic. Segmented mandatory passages
+    // set this explicitly so a craft can clear the tunnel and begin a broad
+    // tangent arc immediately afterward.
+    double initialProtectedStraightMeters = 0.0;
 
     double gateSpacingMeters = 500.0;
     double terminalGateSpacingMeters = 250.0;

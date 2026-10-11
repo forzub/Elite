@@ -2027,6 +2027,7 @@ void SpaceState::updateDockingAdvisory()
 
         m_lastDockingPathRequestSerial = pending.serial;
         m_lastDockingRequestTraceSerial = pending.serial;
+        m_dockLateEntry = {};
         m_clientDockingPhase =
             ClientDockingPhase::Stabilizing;
         m_noSafeDockingGuidanceSolution = false;
@@ -2200,6 +2201,11 @@ void SpaceState::updateDockingAdvisory()
                 controlLaw
             );
 
+        const bool lateEntryRebind =
+            automatic &&
+            m_dockLateEntry.active &&
+            m_dockLateEntry.serial == pending.serial;
+
         game::navigation::planner::RoutePlanRequest request;
         const glm::dvec3 startVelocityMps =
             automatic
@@ -2338,7 +2344,8 @@ void SpaceState::updateDockingAdvisory()
         // traffic boundary layer rather than the base planner/autopilot.
         constexpr bool EnableMandatoryBlueTransit = true;
 
-        if (EnableMandatoryBlueTransit &&
+        if (!lateEntryRebind &&
+            EnableMandatoryBlueTransit &&
             pending.target.stableObjectId == "guidance_dock_cube_a" &&
             pending.target.semanticAnchorId == "dock_gate_front")
         {

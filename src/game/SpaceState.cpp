@@ -1754,6 +1754,14 @@ void SpaceState::updateDockingAdvisory()
 
     const auto eraseVisibleRoute = [&]()
     {
+        if (m_dockAdviceJob)
+        {
+            m_dockAdviceJob->cancelled.store(
+                true,
+                std::memory_order_release
+            );
+        }
+
         if (!m_activeDockingGuidanceCorridorId.empty())
         {
             guidance.erase(m_activeDockingGuidanceCorridorId);
@@ -2132,6 +2140,17 @@ void SpaceState::updateDockingAdvisory()
             // Angular state is now settled. From this point through the async
             // calculation the craft is a pure ballistic translation.
             submitAutopilotControl(coastForPlanningControl());
+        }
+
+        // Exactly one geometric optimizer may own CPU at a time. A newer
+        // request retires the previous job, but RoutePlanner is synchronous;
+        // wait for that worker to observe cancellation/finish instead of
+        // stacking detached optimizers and eventually failing "planner busy".
+        const int livePlannerWorkers =
+            m_dockWorkerCount->load(std::memory_order_acquire);
+        if (livePlannerWorkers > 0)
+        {
+            return;
         }
 
         std::cout
@@ -2601,9 +2620,11 @@ void SpaceState::updateDockingAdvisory()
                 << std::endl;
         }
 
-        if (m_dockWorkerCount->load(std::memory_order_acquire) >= 2)
+        if (m_dockWorkerCount->load(std::memory_order_acquire) != 0)
         {
-            fail("planner busy");
+            // Stabilizing above normally owns this wait. Keep this guard
+            // non-fatal in case a worker completes between snapshot creation
+            // and launch.
             return;
         }
 
@@ -2697,6 +2718,24 @@ void SpaceState::updateDockingAdvisory()
                 const auto workerStarted =
                     std::chrono::steady_clock::now();
 
+                const auto finishWorker = [&]()
+                {
+                    job->workerDurationMs =
+                        std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() -
+                            workerStarted
+                        ).count();
+
+                    job->ready.store(
+                        true,
+                        std::memory_order_release
+                    );
+                    count->fetch_sub(
+                        1,
+                        std::memory_order_acq_rel
+                    );
+                };
+
                 try
                 {
                     job->planningProgressStage.store(
@@ -2722,6 +2761,12 @@ void SpaceState::updateDockingAdvisory()
                         700,
                         std::memory_order_release
                     );
+
+                    if (job->cancelled.load(std::memory_order_acquire))
+                    {
+                        finishWorker();
+                        return;
+                    }
 
                     if (job->plan.valid() &&
                         compiledTrafficRoute.valid)
@@ -2833,6 +2878,12 @@ void SpaceState::updateDockingAdvisory()
                         }
                     }
 
+                    if (job->cancelled.load(std::memory_order_acquire))
+                    {
+                        finishWorker();
+                        return;
+                    }
+
                     // Route presentation and autopilot compilation belong to
                     // every valid planner route. They are not traffic-route
                     // concerns: a direct/free-space docking route must pass
@@ -2896,6 +2947,12 @@ void SpaceState::updateDockingAdvisory()
                             std::memory_order_release
                         );
 
+                        if (job->cancelled.load(std::memory_order_acquire))
+                        {
+                            finishWorker();
+                            return;
+                        }
+
                         if (job->autopilotCompileRequested)
                         {
                             job->planningProgressStage.store(
@@ -2946,20 +3003,7 @@ void SpaceState::updateDockingAdvisory()
                         "planner/compile unknown exception";
                 }
 
-                job->workerDurationMs =
-                    std::chrono::duration<double, std::milli>(
-                        std::chrono::steady_clock::now() -
-                        workerStarted
-                    ).count();
-
-                job->ready.store(
-                    true,
-                    std::memory_order_release
-                );
-                count->fetch_sub(
-                    1,
-                    std::memory_order_acq_rel
-                );
+                finishWorker();
             }
         ).detach();
 

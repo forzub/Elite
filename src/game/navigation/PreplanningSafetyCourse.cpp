@@ -182,6 +182,166 @@ CandidateCheck courseTransferClear(
         return out;
     }
 
+    if (request.newtonian)
+    {
+        // NEWTONIAN COURSE-CHANGE PROOF
+        //
+        // A Newtonian craft cannot "steer" its velocity by declaring a new
+        // course. It must:
+        //   1) coast while the hull slews onto the required acceleration,
+        //   2) apply the real forward main engine,
+        //   3) accumulate exactly the delta-v that rotates the inertial
+        //      velocity vector onto the selected safe course,
+        //   4) cut thrust and coast again.
+        //
+        // The runtime safeCourseControl follows the same contract: it withholds
+        // main thrust until hull alignment, then thrusts along delta-v.
+        const glm::dvec3 initialVelocity =
+            from * speedMps;
+        const glm::dvec3 targetVelocity =
+            to * speedMps;
+        const glm::dvec3 deltaVelocity =
+            targetVelocity - initialVelocity;
+        const double deltaSpeed =
+            glm::length(deltaVelocity);
+
+        if (deltaSpeed <= 1.0e-6)
+        {
+            const double ray =
+                sceneRayLength(
+                    request,
+                    request.positionMeters,
+                    0.0
+                );
+            out.clear =
+                clearSegment(
+                    request,
+                    request.positionMeters,
+                    request.positionMeters + to * ray
+                );
+            return out;
+        }
+
+        const glm::dvec3 accelerationDirection =
+            deltaVelocity / deltaSpeed;
+        const glm::dvec3 hullForward =
+            normalizedOr(
+                request.hullForward,
+                from
+            );
+
+        const double hullSlewAngle =
+            angleBetween(
+                hullForward,
+                accelerationDirection
+            );
+        const double hullSlewSeconds =
+            hullSlewAngle /
+            request.maxAngularVelocityRadPerSecond;
+
+        glm::dvec3 thrustStart =
+            request.positionMeters;
+
+        if (hullSlewSeconds > 1.0e-6)
+        {
+            const glm::dvec3 endOfSlew =
+                request.positionMeters +
+                initialVelocity * hullSlewSeconds;
+
+            if (!clearSegment(
+                    request,
+                    request.positionMeters,
+                    endOfSlew
+                ))
+            {
+                return out;
+            }
+
+            thrustStart = endOfSlew;
+        }
+
+        const double correctionSeconds =
+            deltaSpeed /
+            request.courseAccelerationMps2;
+        const glm::dvec3 acceleration =
+            accelerationDirection *
+            request.courseAccelerationMps2;
+
+        const double maneuverDistanceEstimate =
+            speedMps * correctionSeconds +
+            0.5 *
+                request.courseAccelerationMps2 *
+                correctionSeconds *
+                correctionSeconds;
+
+        const int samples =
+            std::clamp(
+                static_cast<int>(
+                    std::ceil(
+                        maneuverDistanceEstimate /
+                        ArcSampleSpacingMeters
+                    )
+                ),
+                8,
+                ArcSampleCap
+            );
+
+        glm::dvec3 previous = thrustStart;
+        glm::dvec3 end = thrustStart;
+
+        for (int i = 1; i <= samples; ++i)
+        {
+            const double t =
+                correctionSeconds *
+                static_cast<double>(i) /
+                static_cast<double>(samples);
+
+            end =
+                thrustStart +
+                initialVelocity * t +
+                0.5 * acceleration * t * t;
+
+            if (!clearSegment(
+                    request,
+                    previous,
+                    end
+                ))
+            {
+                return out;
+            }
+
+            previous = end;
+        }
+
+        // By construction:
+        //   v_end = v_initial + a * (|deltaV|/|a|)
+        //         = targetVelocity.
+        // The selected course is therefore a real inertial state, not an
+        // attitude-only promise.
+        const double ray =
+            sceneRayLength(
+                request,
+                end,
+                speedMps * hullSlewSeconds +
+                    maneuverDistanceEstimate
+            );
+
+        out.radiusMeters = 0.0;
+        out.clear =
+            clearSegment(
+                request,
+                end,
+                end + to * ray
+            );
+        return out;
+    }
+
+    // ASSISTED COURSE-CHANGE PROOF
+    //
+    // Assisted has real bounded course-bending authority. Reserve a full hull
+    // slew first, then prove a constant-speed curvature arc and the resulting
+    // ballistic ray. This is deliberately conservative with respect to when
+    // Assisted begins redirecting VREL.
     const double accelerationRadius =
         speedMps * speedMps /
         request.courseAccelerationMps2;
@@ -195,10 +355,6 @@ CandidateCheck courseTransferClear(
             std::max(accelerationRadius, angularRadius)
         );
 
-    // Before an inertial-course change can be established the hull still has
-    // finite slew authority. Reserving the whole bounded slew distance is
-    // intentionally conservative: if this straight is already blocked, the
-    // manoeuvre is not accepted as a "safe course".
     const double slewSeconds =
         out.angleRad /
         request.maxAngularVelocityRadPerSecond;
@@ -303,6 +459,7 @@ PreplanningSafetyCourse::evaluate(
 
     if (!finite3(request.positionMeters) ||
         !finite3(request.velocityMps) ||
+        !finite3(request.hullForward) ||
         !finite3(request.preferredDirection) ||
         request.hullRadiusMeters < 0.0 ||
         request.additionalClearanceMeters < 0.0 ||

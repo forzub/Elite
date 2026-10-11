@@ -3760,6 +3760,35 @@ void SpaceState::update(float dt)
                 ? m_dockWorkerCount->load(std::memory_order_acquire)
                 : 0;
 
+        if (m_dockAdviceJob)
+        {
+            obs.jobSerial = m_dockAdviceJob->context.serial;
+            obs.jobReady = m_dockAdviceJob->ready.load(
+                std::memory_order_acquire
+            );
+            obs.jobCancelled = m_dockAdviceJob->cancelled.load(
+                std::memory_order_acquire
+            );
+            obs.jobStage = static_cast<int>(
+                m_dockAdviceJob->planningProgressStage.load(
+                    std::memory_order_acquire
+                )
+            );
+            obs.jobPermille =
+                m_dockAdviceJob->planningProgressPermille.load(
+                    std::memory_order_acquire
+                );
+
+            // ready acquire publishes the worker's plan/result strings.
+            if (obs.jobReady)
+            {
+                obs.jobResult =
+                    !m_dockAdviceJob->plan.failure.empty()
+                        ? m_dockAdviceJob->plan.failure
+                        : m_dockAdviceJob->plan.diagnosticSummary;
+            }
+        }
+
         const auto& stressRequests =
             m_navigationWorkspace.dockingRouteRequests();
         obs.requestPending = stressRequests.pending().valid();

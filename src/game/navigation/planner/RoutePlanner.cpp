@@ -418,12 +418,19 @@ RoutePlan planContinuousAssisted(
     request.hullRadiusMeters =
         std::max(0.0, input.agentRadiusMeters);
     request.designSpeedMps =
-        std::max(0.0, input.maxSpeedMps);
+        game::navigation::OrdinaryRoutePolicy::
+            startTurnDesignSpeedMps(
+                input.initialSpeedMps,
+                input.maxSpeedMps
+            );
     request.maxLateralAccelerationMps2 =
         input.lateralMps2;
 
-    // No fixed turn angle and no arbitrary comfort radius. The hard curvature
-    // limit is derived only from v^2/a_lat in the optimizer.
+    // The optimizer owns geometry, not a global Vmax mandate. The first-turn
+    // hard curvature limit is derived from the speed that can actually arrive
+    // after the authored ballistic lead. Execution gates independently publish
+    // local sqrt(a_lat / curvature) limits for every later curve, so speed
+    // yields to geometry instead of forcing the whole route to be Vmax-capable.
     request.minimumComfortRadiusMeters = 0.0;
 
     // HOT-REPLAN CONTRACT: an already moving craft continues
@@ -469,6 +476,16 @@ RoutePlan planContinuousAssisted(
             " violation=" +
             std::to_string(
                 optimized.diagnostics.maxConstraintViolation
+            ) +
+            " design_speed_mps=" +
+            std::to_string(request.designSpeedMps) +
+            " required_radius_m=" +
+            std::to_string(
+                request.maxLateralAccelerationMps2 > 1.0e-9
+                    ? request.designSpeedMps *
+                        request.designSpeedMps /
+                        request.maxLateralAccelerationMps2
+                    : 0.0
             );
         return out;
     }
@@ -597,6 +614,8 @@ RoutePlan planContinuousAssisted(
         std::to_string(
             optimized.diagnostics.minimumRadiusMeters
         ) +
+        " design_speed_mps=" +
+        std::to_string(request.designSpeedMps) +
         " objective=" +
         std::to_string(
             optimized.diagnostics.objective

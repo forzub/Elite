@@ -1564,3 +1564,48 @@ set_tests_properties(
     continuous_assisted_optimizer_lab
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    preplanning_safety_course_tests
+    PreplanningSafetyCourseTests.cpp
+)
+
+target_include_directories(
+    preplanning_safety_course_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    preplanning_safety_course_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    preplanning_safety_course_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        preplanning_safety_course_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        preplanning_safety_course_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME preplanning_safety_course
+    COMMAND preplanning_safety_course_tests
+)
+
+set_tests_properties(
+    preplanning_safety_course
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

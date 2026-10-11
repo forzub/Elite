@@ -387,6 +387,10 @@ private:
     struct DockAdviceJob
     {
         std::atomic<bool> ready {false};
+        // A newer docking request retires this job. The geometric optimizer
+        // itself is still synchronous, so cancellation is cooperative at the
+        // expensive stage boundaries; stale output is never adopted.
+        std::atomic<bool> cancelled {false};
 
         // Coarse asynchronous planning progress for HUD presentation.
         // This is phase completion, not an ETA. The expensive geometric

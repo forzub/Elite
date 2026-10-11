@@ -67,6 +67,64 @@ try:
         if token not in adapter_h and token not in adapter_cpp:
             raise AssertionError(f"traffic adapter missing {token!r}")
 
+    assisted_contract = read(
+        "src/game/navigation/planner/assisted/ASSISTED_ROUTE_PLANNER_CONTRACT.md"
+    )
+    assisted_api = read(
+        "src/game/navigation/planner/assisted/AssistedRoutePlannerApi.h"
+    )
+    assisted_cpp = read(
+        "src/game/navigation/planner/assisted/AssistedRoutePlanner.cpp"
+    )
+    route_planner_cpp = read(
+        "src/game/navigation/planner/RoutePlanner.cpp"
+    )
+
+    for token in (
+        "oriented start state",
+        "oriented goal state",
+        "minimum turn radius is a HARD constraint",
+        "MUST NOT silently shrink",
+        "DockingAdvisoryPlanner",
+    ):
+        if token not in assisted_contract:
+            raise AssertionError(
+                f"Assisted planner contract missing {token!r}"
+            )
+
+    for owner, body in (
+        ("AssistedRoutePlannerApi.h", assisted_api),
+        ("AssistedRoutePlanner.cpp", assisted_cpp),
+    ):
+        forbid(
+            body,
+            owner,
+            (
+                "DockingAdvisory",
+                '#include "src/game/navigation/traffic/',
+                "CompiledTrafficRoute",
+                "TrafficRouteGraph",
+                "TrafficRouteStageKind",
+                "NavigationVolumePolicy",
+                "ClientRouteAutopilot",
+                "SpaceState",
+            ),
+        )
+
+    if "assisted::AssistedRoutePlanner::plan" not in route_planner_cpp:
+        raise AssertionError(
+            "production RoutePlanner is not using Assisted v3 backend"
+        )
+    forbid(
+        route_planner_cpp,
+        "RoutePlanner.cpp",
+        (
+            "DockingAdvisoryPlanner",
+            "DockingAdvisoryRequest",
+            '#include "src/game/navigation/DockingAdvisoryPlanner.h"',
+        ),
+    )
+
     # Follower/autopilot may consume only generic route contracts.
     autopilot_dir = ROOT / "src/game/navigation/autopilot"
     for path in autopilot_dir.glob("*"):

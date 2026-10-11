@@ -52,9 +52,10 @@ struct PreplanningSafetyCourseResult
 // Fast, deterministic pre-planning guard.
 //
 // It does NOT build the requested route. It answers a smaller question:
-// "Can the craft coast indefinitely through the supplied static planning
-// scene on its present inertial course? If not, is there a physically
-// reachable escape course, or at least a collision-free stop?"
+// "Can the craft safely continue/launch through the supplied static planning
+// scene? At speed this means the present inertial course; at rest it means the
+// hull-forward launch ray. If blocked, is there a physically reachable free
+// course, or at least a collision-free stop?"
 //
 // This layer exists so route-planner failure can never mean "continue flying
 // blindly through the obstacle that just caused the failure".

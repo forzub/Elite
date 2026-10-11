@@ -20,14 +20,20 @@ struct BoundaryState
 
 struct OptimizationWeights
 {
+    // All objective terms are dimensionless. Do not mix raw metres,
+    // acceleration-energy units and curvature-derivative units here: doing so
+    // makes the optimum depend on the numerical unit scale and can reward
+    // absurdly long paths.
     double pathLength = 1.0;
 
-    // Integral of squared lateral acceleration surrogate:
-    // integral((v_design^2 * curvature)^2 ds).
-    double lateralAccelerationEnergy = 0.02;
+    // Mean squared fraction of available lateral acceleration, integrated over
+    // reference path length.
+    double lateralAccelerationEnergy = 0.25;
 
-    // Integral of squared curvature derivative along arc length.
-    double curvatureVariation = 5.0e7;
+    // Mean squared normalized curvature-gradient energy. This discourages
+    // abrupt curvature changes without rewarding kilometre-scale Bezier
+    // handles merely to make d(kappa)/ds numerically tiny.
+    double curvatureVariation = 0.10;
 };
 
 struct Request

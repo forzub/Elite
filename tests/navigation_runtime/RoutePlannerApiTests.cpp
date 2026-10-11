@@ -204,6 +204,7 @@ int main()
             continuous.brakingMps2 = 8.0;
             continuous.lateralMps2 = 20.0;
             continuous.initialSpeedMps = 0.0;
+            continuous.terminalSpeedMps = 25.0;
             continuous.roundTurns = true;
             continuous.useContinuousAssistedOptimizer = true;
             continuous.hasInitialForward = true;
@@ -312,6 +313,12 @@ int main()
                 0.0,
                 1.0e-6,
                 "continuous Assisted execution route changed its goal"
+            );
+            requireNear(
+                optimized.executionGates.back().speedMps,
+                continuous.terminalSpeedMps,
+                1.0e-6,
+                "continuous Assisted route discarded requested terminal speed"
             );
         }
 

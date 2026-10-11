@@ -20,20 +20,19 @@ struct BoundaryState
 
 struct OptimizationWeights
 {
-    // All objective terms are dimensionless. Do not mix raw metres,
-    // acceleration-energy units and curvature-derivative units here: doing so
-    // makes the optimum depend on the numerical unit scale and can reward
-    // absurdly long paths.
-    double pathLength = 1.0;
+    // Primary term: estimated traversal time after curvature speed limits and
+    // longitudinal acceleration/braking have been applied.
+    double travelTime = 1.0;
 
-    // Mean squared fraction of available lateral acceleration, integrated over
-    // reference path length.
-    double lateralAccelerationEnergy = 0.25;
+    // Quadratic penalty on route stretch above the geometric lower bound.
+    // Kept under the historical field name so existing experimental callers
+    // do not silently change ABI/source contracts.
+    double pathLength = 0.35;
 
-    // Mean squared normalized curvature-gradient energy. This discourages
-    // abrupt curvature changes without rewarding kilometre-scale Bezier
-    // handles merely to make d(kappa)/ds numerically tiny.
-    double curvatureVariation = 0.10;
+    // Secondary comfort/energy terms. These must never buy tens of kilometres
+    // of detour merely to make a curve numerically smooth.
+    double lateralAccelerationEnergy = 0.08;
+    double curvatureVariation = 0.04;
 };
 
 struct Request
@@ -42,11 +41,16 @@ struct Request
     BoundaryState goal;
 
     double hullRadiusMeters = 0.0;
+
+    // Maximum cruise speed, NOT a mandatory speed for every curve.
     double designSpeedMps = 0.0;
+
+    double acceleratingMps2 = 0.0;
+    double brakingMps2 = 0.0;
     double maxLateralAccelerationMps2 = 0.0;
 
-    // Additional comfort floor. Effective max curvature is the tighter of
-    // this radius and the dynamic radius v^2/a_lat.
+    // Optional true geometric/comfort floor. Unlike the previous optimizer,
+    // maxSpeed^2/a_lat is NOT converted into a hard global turn radius.
     double minimumComfortRadiusMeters = 0.0;
 
     double protectedStartStraightMeters = 0.0;
@@ -60,12 +64,33 @@ struct Request
     std::size_t maxPatternIterations = 500;
 };
 
+enum class OptimizedSegmentKind : unsigned char
+{
+    Line = 0,
+    CubicBezier
+};
+
+struct OptimizedSegment
+{
+    OptimizedSegmentKind kind = OptimizedSegmentKind::Line;
+    glm::dvec3 startMeters {0.0};
+    glm::dvec3 control1Meters {0.0};
+    glm::dvec3 control2Meters {0.0};
+    glm::dvec3 endMeters {0.0};
+};
+
 struct Diagnostics
 {
     std::size_t objectiveEvaluations = 0;
     std::size_t acceptedSteps = 0;
+    std::size_t seedCount = 0;
 
+    // Full route including protected start/goal straights.
     double pathLengthMeters = 0.0;
+    double lowerBoundLengthMeters = 0.0;
+    double stretchRatio = 0.0;
+    double estimatedTravelTimeSeconds = 0.0;
+
     double maxCurvaturePerMeter = 0.0;
     double minimumRadiusMeters = 0.0;
     double lateralAccelerationEnergy = 0.0;
@@ -79,11 +104,14 @@ struct Result
     bool valid = false;
     std::string message;
 
-    // The laboratory parameterization is two C1-connected cubic Beziers.
-    // Boundary position and tangent are exact by construction.
+    // Straight-biased free-flight topology:
+    //   cubic transition -> optional straight -> cubic transition.
+    // Boundary position/tangent are exact by construction.
+    std::vector<OptimizedSegment> segments;
+
+    // Compatibility/debug fields for the first/last cubic.
     glm::dvec3 joinMeters {0.0};
     glm::dvec3 joinTangent {1.0, 0.0, 0.0};
-
     glm::dvec3 firstControl1Meters {0.0};
     glm::dvec3 firstControl2Meters {0.0};
     glm::dvec3 secondControl1Meters {0.0};

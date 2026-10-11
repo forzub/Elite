@@ -260,6 +260,17 @@ int main()
                 "continuous Assisted execution geometry was not sampled densely"
             );
 
+            const double directDistance =
+                glm::length(
+                    continuous.goalMeters -
+                    continuous.startMeters
+                );
+            require(
+                optimized.routeCurves.back().endProgressMeters <
+                    directDistance * 5.0,
+                "continuous Assisted production bridge produced a runaway loop"
+            );
+
             const double requiredRadius =
                 continuous.maxSpeedMps *
                 continuous.maxSpeedMps /

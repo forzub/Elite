@@ -1,0 +1,399 @@
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+namespace game::navigation::debug
+{
+
+class NavigationStressHarness final
+{
+public:
+    enum class Target
+    {
+        None = 0,
+        CylinderRear,
+        CubeFront
+    };
+
+    struct Observation
+    {
+        bool worldReady = false;
+        double universeSeconds = 0.0;
+        double speedMps = 0.0;
+        double angularSpeedRadPerSec = 0.0;
+
+        int dockingPhase = 0;
+        bool requestPending = false;
+        std::uint64_t requestSerial = 0;
+        bool autopilotActive = false;
+        bool failed = false;
+        std::string failureReason;
+        int workerCount = 0;
+
+        bool routeValid = false;
+        std::size_t routeCurveCount = 0;
+        std::size_t executionGateCount = 0;
+        int firstCurveKind = -1;
+        double firstCurveLengthMeters = 0.0;
+        double routeLengthMeters = 0.0;
+        std::string routeDiagnostic;
+    };
+
+    struct Action
+    {
+        bool request = false;
+        Target target = Target::None;
+        bool clear = false;
+    };
+
+    NavigationStressHarness()
+    {
+        const char* enabled = std::getenv("ELITE_NAV_STRESS");
+        m_enabled =
+            enabled != nullptr &&
+            std::string(enabled) != "0" &&
+            std::string(enabled) != "";
+
+        const char* report = std::getenv("ELITE_NAV_STRESS_REPORT");
+        if (report && *report)
+            m_reportPath = report;
+    }
+
+    bool enabled() const noexcept { return m_enabled; }
+    bool complete() const noexcept { return m_complete; }
+    const std::string& reportPath() const noexcept { return m_reportPath; }
+
+    Action update(const Observation& o)
+    {
+        Action action;
+        if (!m_enabled || m_complete)
+            return action;
+
+        ensureOpen();
+        if (!m_started)
+        {
+            if (!o.worldReady)
+                return action;
+
+            m_started = true;
+            m_startedAt = o.universeSeconds;
+            m_stepStartedAt = o.universeSeconds;
+            logEvent(o, "START scenario=hot-replan-contract-v1");
+        }
+
+        sample(o);
+        detectTransitions(o);
+
+        // A step is deliberately condition-driven where possible. Timeouts
+        // prevent one failure from hiding all later transition cases.
+        const double stepAge = o.universeSeconds - m_stepStartedAt;
+
+        switch (m_step)
+        {
+            case 0:
+                if (o.universeSeconds - m_startedAt >= 1.0)
+                    return issue(o, Target::CylinderRear, "cold-cylinder");
+                break;
+
+            case 1:
+                if (o.failed || o.speedMps >= 100.0 || stepAge >= 12.0)
+                    return issue(o, Target::CubeFront, "switch-low-speed");
+                break;
+
+            case 2:
+                if (o.failed || o.speedMps >= 280.0 || stepAge >= 14.0)
+                    return issue(o, Target::CylinderRear, "switch-mid-speed");
+                break;
+
+            case 3:
+                if (o.failed || o.speedMps >= 390.0 || stepAge >= 14.0)
+                    return issue(o, Target::CubeFront, "switch-high-speed");
+                break;
+
+            case 4:
+                // Early interruption: hit the planner/follower handoff while
+                // the newly accepted route has barely started.
+                if (o.failed ||
+                    (o.autopilotActive && stepAge >= 1.0) ||
+                    stepAge >= 12.0)
+                {
+                    return issue(o, Target::CylinderRear, "switch-early-execution");
+                }
+                break;
+
+            case 5:
+                // Give this route enough time to reach authored curvature.
+                if (o.failed ||
+                    (o.autopilotActive && stepAge >= 4.0) ||
+                    stepAge >= 14.0)
+                {
+                    return issue(o, Target::CubeFront, "switch-during-flight");
+                }
+                break;
+
+            default:
+                // Rapid alternating requests exercise cancellation, stale
+                // workers, request serial ownership and state reset. Six
+                // transitions are enough to expose accumulation without making
+                // a normal run excessively long.
+                if (m_step >= 6 && m_step < 12)
+                {
+                    if (o.failed || stepAge >= 1.5)
+                    {
+                        const Target next =
+                            (m_step % 2 == 0)
+                                ? Target::CylinderRear
+                                : Target::CubeFront;
+                        return issue(o, next, "rapid-switch");
+                    }
+                }
+                else if (m_step == 12)
+                {
+                    if (stepAge >= 5.0)
+                    {
+                        logSummary(o);
+                        m_complete = true;
+                        flush();
+                    }
+                }
+                break;
+        }
+
+        return action;
+    }
+
+private:
+    static std::string escaped(std::string value)
+    {
+        for (char& c : value)
+        {
+            if (c == '\n' || c == '\r' || c == '\t')
+                c = ' ';
+        }
+        return value;
+    }
+
+    static const char* targetName(Target target)
+    {
+        switch (target)
+        {
+            case Target::CylinderRear: return "cylinder-rear";
+            case Target::CubeFront: return "cube-front";
+            default: return "none";
+        }
+    }
+
+    void ensureOpen()
+    {
+        if (m_stream.is_open())
+            return;
+
+        try
+        {
+            const std::filesystem::path path(m_reportPath);
+            if (path.has_parent_path())
+                std::filesystem::create_directories(path.parent_path());
+        }
+        catch (...) {}
+
+        m_stream.open(
+            m_reportPath,
+            std::ios::out | std::ios::trunc
+        );
+
+        if (m_stream.is_open())
+        {
+            m_stream
+                << "# Elite navigation runtime stress report\n"
+                << "# scenario=hot-replan-contract-v1\n"
+                << "# columns are key=value; SAMPLE cadence ~= 0.25 s\n";
+            flush();
+        }
+    }
+
+    void flush()
+    {
+        if (m_stream.is_open())
+            m_stream.flush();
+    }
+
+    void writeCommon(const Observation& o)
+    {
+        if (!m_stream.is_open())
+            return;
+
+        m_stream
+            << std::fixed << std::setprecision(6)
+            << " t=" << o.universeSeconds
+            << " step=" << m_step
+            << " v=" << o.speedMps
+            << " omega=" << o.angularSpeedRadPerSec
+            << " phase=" << o.dockingPhase
+            << " pending=" << (o.requestPending ? 1 : 0)
+            << " serial=" << o.requestSerial
+            << " autopilot=" << (o.autopilotActive ? 1 : 0)
+            << " failed=" << (o.failed ? 1 : 0)
+            << " workers=" << o.workerCount
+            << " route_valid=" << (o.routeValid ? 1 : 0)
+            << " curves=" << o.routeCurveCount
+            << " exec_gates=" << o.executionGateCount
+            << " first_kind=" << o.firstCurveKind
+            << " first_len=" << o.firstCurveLengthMeters
+            << " route_len=" << o.routeLengthMeters;
+    }
+
+    void sample(const Observation& o)
+    {
+        if (o.universeSeconds - m_lastSampleAt < 0.25)
+            return;
+        m_lastSampleAt = o.universeSeconds;
+
+        if (!m_stream.is_open())
+            return;
+
+        m_stream << "SAMPLE";
+        writeCommon(o);
+        if (!o.failureReason.empty())
+            m_stream << " failure=\"" << escaped(o.failureReason) << "\"";
+        if (!o.routeDiagnostic.empty())
+            m_stream << " diag=\"" << escaped(o.routeDiagnostic) << "\"";
+        m_stream << "\n";
+        flush();
+
+        m_maxSpeed = std::max(m_maxSpeed, o.speedMps);
+        m_maxOmega = std::max(m_maxOmega, o.angularSpeedRadPerSec);
+        m_maxWorkers = std::max(m_maxWorkers, o.workerCount);
+
+        // Contract observations are diagnostic rather than fatal so the test
+        // keeps running and collects the later failures too.
+        if (o.routeValid && o.speedMps > 1.0)
+        {
+            if (o.firstCurveKind != 0)
+                ++m_nonLineMovingStarts;
+            if (o.firstCurveLengthMeters <= 1.0)
+                ++m_missingBallisticLeadSamples;
+        }
+    }
+
+    void detectTransitions(const Observation& o)
+    {
+        if (o.dockingPhase != m_lastPhase ||
+            o.requestSerial != m_lastSerial ||
+            o.failed != m_lastFailed ||
+            o.workerCount != m_lastWorkers)
+        {
+            logEvent(o, "STATE");
+            m_lastPhase = o.dockingPhase;
+            m_lastSerial = o.requestSerial;
+            m_lastFailed = o.failed;
+            m_lastWorkers = o.workerCount;
+        }
+
+        if (o.failed && !m_failureLatched)
+        {
+            ++m_failures;
+            m_failureLatched = true;
+            logEvent(
+                o,
+                std::string("FAIL reason=\"") +
+                    escaped(o.failureReason) + "\""
+            );
+        }
+        if (!o.failed)
+            m_failureLatched = false;
+    }
+
+    Action issue(
+        const Observation& o,
+        Target target,
+        const char* reason
+    )
+    {
+        logEvent(
+            o,
+            std::string("REQUEST target=") +
+                targetName(target) +
+                " reason=" + reason
+        );
+
+        Action action;
+        action.request = true;
+        action.target = target;
+
+        ++m_step;
+        m_stepStartedAt = o.universeSeconds;
+        ++m_requests;
+        return action;
+    }
+
+    void logEvent(
+        const Observation& o,
+        const std::string& event
+    )
+    {
+        if (!m_stream.is_open())
+            return;
+        m_stream << "EVENT";
+        writeCommon(o);
+        m_stream << " " << event << "\n";
+        flush();
+    }
+
+    void logSummary(const Observation& o)
+    {
+        if (!m_stream.is_open())
+            return;
+
+        m_stream << "SUMMARY";
+        writeCommon(o);
+        m_stream
+            << " requests=" << m_requests
+            << " failures=" << m_failures
+            << " max_speed=" << m_maxSpeed
+            << " max_omega=" << m_maxOmega
+            << " max_workers=" << m_maxWorkers
+            << " moving_non_line_samples=" << m_nonLineMovingStarts
+            << " missing_ballistic_lead_samples="
+            << m_missingBallisticLeadSamples
+            << " status=COMPLETE"
+            << "\n";
+        flush();
+    }
+
+private:
+    bool m_enabled = false;
+    bool m_started = false;
+    bool m_complete = false;
+    bool m_failureLatched = false;
+
+    std::string m_reportPath =
+        "D:/tmp/elite_navigation_stress.log";
+    std::ofstream m_stream;
+
+    int m_step = 0;
+    double m_startedAt = 0.0;
+    double m_stepStartedAt = 0.0;
+    double m_lastSampleAt = -1.0e30;
+
+    int m_lastPhase = -1;
+    std::uint64_t m_lastSerial = 0;
+    bool m_lastFailed = false;
+    int m_lastWorkers = -1;
+
+    int m_requests = 0;
+    int m_failures = 0;
+    double m_maxSpeed = 0.0;
+    double m_maxOmega = 0.0;
+    int m_maxWorkers = 0;
+    int m_nonLineMovingStarts = 0;
+    int m_missingBallisticLeadSamples = 0;
+};
+
+} // namespace game::navigation::debug

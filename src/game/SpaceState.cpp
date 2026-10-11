@@ -5960,6 +5960,37 @@ void SpaceState::renderNavigationStressOverlay(
             break;
     }
 
+    if (m_clientDockingPhase ==
+        ClientDockingPhase::Executing)
+    {
+        for (const auto& stage : m_dockAdvice.plan.stages)
+        {
+            if (stage.kind !=
+                    game::navigation::planner::
+                        RouteStageKind::VolumeTransit ||
+                !stage.hardContainment)
+            {
+                continue;
+            }
+
+            if (m_clientDockingRouteProgressMeters + 1.0 <
+                stage.startProgressMeters)
+            {
+                phase = "BLUE APPROACH";
+            }
+            else if (m_clientDockingRouteProgressMeters <=
+                stage.endProgressMeters + 1.0)
+            {
+                phase = "BLUE TRANSIT";
+            }
+            else
+            {
+                phase = "BLUE EXIT";
+            }
+            break;
+        }
+    }
+
     std::string target = "none";
     if (pending.valid())
     {

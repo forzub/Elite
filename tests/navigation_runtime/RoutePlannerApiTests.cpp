@@ -1,4 +1,5 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 
 #include <cmath>
 #include <iostream>
@@ -284,14 +285,20 @@ int main()
                 "continuous Assisted production bridge produced a runaway loop"
             );
 
+            const double designTurnSpeed =
+                game::navigation::OrdinaryRoutePolicy::
+                    startTurnDesignSpeedMps(
+                        continuous.initialSpeedMps,
+                        continuous.maxSpeedMps
+                    );
             const double requiredRadius =
-                continuous.maxSpeedMps *
-                continuous.maxSpeedMps /
+                designTurnSpeed *
+                designTurnSpeed /
                 continuous.lateralMps2;
             require(
                 maxCurvature <=
                     1.0 / requiredRadius + 1.0e-6,
-                "continuous Assisted production bridge violated v^2/a radius"
+                "continuous Assisted production bridge violated first-turn v^2/a radius"
             );
 
             requireNear(
@@ -311,6 +318,59 @@ int main()
                 0.0,
                 1.0e-6,
                 "continuous Assisted execution route changed its goal"
+            );
+        }
+
+        // Hot-replan speed contract: geometry must be designed around the
+        // speed that can actually reach the first turn after the ballistic
+        // lead, not around an instantaneous jump to the vehicle Vmax.
+        {
+            using namespace game::navigation::planner;
+
+            RoutePlanRequest moving;
+            moving.startMeters = {0.0, 0.0, 0.0};
+            moving.goalMeters = {-12000.0, 7000.0, 0.0};
+            moving.terminalOutward = {1.0, 0.0, 0.0};
+            moving.agentRadiusMeters = 17.3;
+            moving.maxSpeedMps = 500.0;
+            moving.acceleratingMps2 = 45.0;
+            moving.brakingMps2 = 45.0;
+            moving.lateralMps2 = 45.0;
+            moving.maxAngularVelocityRadPerSecond = 1.5;
+            moving.initialSpeedMps = 280.0;
+            moving.roundTurns = true;
+            moving.useContinuousAssistedOptimizer = true;
+            moving.hasInitialForward = true;
+            moving.initialForward = {1.0, 0.0, 0.0};
+            moving.initialForwardLeadMeters =
+                game::navigation::OrdinaryRoutePolicy::
+                    requiredStartLeadMeters(
+                        moving.initialSpeedMps,
+                        moving.maxSpeedMps,
+                        moving.brakingMps2,
+                        moving.lateralMps2,
+                        moving.maxAngularVelocityRadPerSecond,
+                        30.0
+                    );
+            moving.terminalApproachLengthMeters = 1000.0;
+            moving.gateSpacingMeters = 500.0;
+            moving.terminalGateSpacingMeters = 250.0;
+
+            const auto hot = RoutePlanner::plan(moving);
+            require(
+                hot.valid(),
+                "continuous Assisted hot replan did not produce a route"
+            );
+            require(
+                hot.diagnosticSummary.find(
+                    "design_speed_mps=280.000000"
+                ) != std::string::npos,
+                "continuous Assisted hot replan reverted to Vmax geometry"
+            );
+            require(
+                !hot.routeCurves.empty() &&
+                hot.routeCurves.front().kind == RouteCurveKind::Line,
+                "hot replan lost its ballistic lead"
             );
         }
 

@@ -44,6 +44,7 @@
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
+#include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -297,6 +298,9 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
+    game::navigation::debug::NavigationStressHarness
+        m_navigationStressHarness {};
+    bool m_navigationStressCompleteAnnounced = false;
     std::uint64_t m_lastNavigationExecutionSnapshotTick = 0;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;

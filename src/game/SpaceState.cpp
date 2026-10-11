@@ -2174,6 +2174,7 @@ void SpaceState::updateDockingAdvisory()
             safety.positionMeters = agent.positionMapMeters;
             safety.velocityMps =
                 agent.velocityMapMetersPerSecond;
+            safety.hullForward = agent.forwardMap;
             safety.preferredDirection =
                 m_dockSafeCourse.preferredDirection;
             safety.hullRadiusMeters =
@@ -2538,6 +2539,7 @@ void SpaceState::updateDockingAdvisory()
             game::navigation::PreplanningSafetyCourseRequest safety;
             safety.positionMeters = request.startMeters;
             safety.velocityMps = startVelocityMps;
+            safety.hullForward = hullForwardLocal;
             safety.preferredDirection =
                 glm::length(request.goalMeters - request.startMeters) >
                         1.0e-9

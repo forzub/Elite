@@ -3121,32 +3121,6 @@ void SpaceState::updateDockingAdvisory()
 
         auto job = std::move(m_dockAdviceJob);
 
-        const double executionStartUniverseTimeSeconds =
-            job->executionStartUniverseTimeSeconds;
-        const double executionLatenessSeconds =
-            universeTimeSeconds - executionStartUniverseTimeSeconds;
-
-        if (executionLatenessSeconds < -fixedDt)
-        {
-            // Planner finished early. Keep coasting to the projected origin
-            // instead of starting the route before its authored start state.
-            m_dockAdviceJob = std::move(job);
-            return;
-        }
-
-        if (executionLatenessSeconds > 0.25)
-        {
-            std::cerr
-                << "[DockClient] request=" << pending.serial
-                << " phase=replan"
-                << " reason=projected-start-expired"
-                << " late_s=" << executionLatenessSeconds
-                << std::endl;
-            m_clientDockingPhase =
-                ClientDockingPhase::Stabilizing;
-            return;
-        }
-
         if (m_client->lastSimulationMetadata().
                 universeTimelineRevision !=
                 job->timelineRevision)
@@ -3196,6 +3170,87 @@ void SpaceState::updateDockingAdvisory()
             fail(reason);
             return;
         }
+
+        if (automatic)
+        {
+            const auto liveAgent = makeAgent();
+            const double handoffTolerance =
+                std::max(
+                    20.0,
+                    std::max(
+                        job->context.lateralToleranceMeters,
+                        job->context.verticalToleranceMeters
+                    )
+                );
+
+            const auto prefix =
+                game::navigation::planner::RouteEntryBinder::
+                    inspectBallisticPrefix(
+                        job->plan,
+                        liveAgent.positionMapMeters,
+                        handoffTolerance
+                    );
+
+            std::cerr
+                << "[DockLateEntry]"
+                << " request=" << pending.serial
+                << " disposition="
+                << static_cast<int>(prefix.disposition)
+                << " along_m=" << prefix.alongMeters
+                << " prefix_m=" << prefix.prefixLengthMeters
+                << " remaining_m=" << prefix.remainingMeters
+                << " cross_m=" << prefix.crossTrackMeters
+                << " worker_ms=" << job->workerDurationMs
+                << " rebound=" << (job->entryRebind ? 1 : 0)
+                << std::endl;
+
+            if (prefix.disposition !=
+                    game::navigation::planner::
+                        BallisticPrefixDisposition::OnPrefix)
+            {
+                if (!m_dockLateEntry.active)
+                {
+                    auto backbone =
+                        game::navigation::planner::RouteEntryBinder::
+                            extractBackbone(
+                                job->plan,
+                                job->hasPreferredEntryAnchor,
+                                job->preferredEntryAnchor,
+                                job->preferredEntryForward
+                            );
+
+                    if (!backbone.valid)
+                    {
+                        fail(
+                            "late-bound route entry unavailable: " +
+                            backbone.failure
+                        );
+                        return;
+                    }
+
+                    m_dockLateEntry.active = true;
+                    m_dockLateEntry.serial = pending.serial;
+                    m_dockLateEntry.backbone =
+                        std::move(backbone);
+                }
+
+                // The expensive downstream route is retained. Only the live
+                // connector from the current ballistic state to the immutable
+                // backbone will be rebuilt on the next planning pass.
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+
+                std::cerr
+                    << "[DockClient] request=" << pending.serial
+                    << " phase=entry-rebind"
+                    << " reason=ballistic-prefix-unavailable"
+                    << std::endl;
+                return;
+            }
+        }
+
+        m_dockLateEntry = {};
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);

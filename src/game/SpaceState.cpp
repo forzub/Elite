@@ -3682,6 +3682,140 @@ void SpaceState::update(float dt)
     }
 
 
+    // Optional real-runtime navigation stress scenario. Enabled only with
+    // ELITE_NAV_STRESS=1. It drives the same DockingRouteRequestState used by
+    // UI actions and observes real player physics; no simulation shortcut is
+    // introduced.
+    if (m_navigationStressHarness.enabled())
+    {
+        game::navigation::debug::NavigationStressHarness::Observation obs;
+        obs.universeSeconds =
+            m_client->lastSimulationMetadata().universeTimeSeconds;
+        obs.dockingPhase =
+            static_cast<int>(m_clientDockingPhase);
+        obs.autopilotActive = m_clientAutopilotControlActive;
+        obs.failed = m_noSafeDockingGuidanceSolution;
+        obs.failureReason = m_dockingGuidanceFailureReason;
+        obs.workerCount =
+            m_dockWorkerCount
+                ? m_dockWorkerCount->load(std::memory_order_acquire)
+                : 0;
+
+        const auto& stressRequests =
+            m_navigationWorkspace.dockingRouteRequests();
+        obs.requestPending = stressRequests.pending().valid();
+        obs.requestSerial = stressRequests.pending().serial;
+
+        const auto stressPlayerIt =
+            m_client->world().ships().find(m_playerId.value);
+        if (stressPlayerIt != m_client->world().ships().end())
+        {
+            const auto& stressTransform = stressPlayerIt->second.transform;
+            obs.worldReady =
+                stressTransform.motion.matchedToReferenceFrame &&
+                !stressTransform.motion.hubId.empty();
+            obs.speedMps =
+                glm::length(stressTransform.motion.localVelocityMps);
+            obs.angularSpeedRadPerSec =
+                std::sqrt(
+                    stressTransform.pitchRate * stressTransform.pitchRate +
+                    stressTransform.yawRate * stressTransform.yawRate +
+                    stressTransform.rollRate * stressTransform.rollRate
+                );
+        }
+
+        obs.routeValid = m_dockAdvice.plan.valid();
+        obs.routeCurveCount = m_dockAdvice.plan.routeCurves.size();
+        obs.executionGateCount =
+            m_dockAdvice.plan.executionGates.size();
+        obs.routeDiagnostic =
+            m_dockAdvice.plan.diagnosticSummary;
+
+        if (!m_dockAdvice.plan.routeCurves.empty())
+        {
+            const auto& first =
+                m_dockAdvice.plan.routeCurves.front();
+            const auto& last =
+                m_dockAdvice.plan.routeCurves.back();
+            obs.firstCurveKind =
+                static_cast<int>(first.kind);
+            obs.firstCurveLengthMeters =
+                std::max(
+                    0.0,
+                    first.endProgressMeters -
+                    first.startProgressMeters
+                );
+            obs.routeLengthMeters =
+                std::max(0.0, last.endProgressMeters);
+        }
+
+        const auto action =
+            m_navigationStressHarness.update(obs);
+
+        if (action.clear)
+        {
+            m_navigationWorkspace
+                .dockingRouteRequests()
+                .clear();
+        }
+
+        if (action.request)
+        {
+            game::navigation::RouteTargetRef target;
+            target.kind =
+                game::navigation::NavigationRouteAnchorKind::
+                    SemanticAnchor;
+            target.systemId =
+                stressPlayerIt != m_client->world().ships().end()
+                    ? stressPlayerIt->second.transform.motion.systemId
+                    : 0;
+
+            if (action.target ==
+                game::navigation::debug::
+                    NavigationStressHarness::Target::CylinderRear)
+            {
+                target.stableObjectId =
+                    "guidance_dock_cylinder_b";
+                target.semanticAnchorId =
+                    "dock_gate_rear";
+            }
+            else
+            {
+                target.stableObjectId =
+                    "guidance_dock_cube_a";
+                target.semanticAnchorId =
+                    "dock_gate_front";
+            }
+
+            const auto serial =
+                m_navigationWorkspace
+                    .dockingRouteRequests()
+                    .request(
+                        target,
+                        game::navigation::DockingRouteRequest::
+                            Mode::Automatic
+                    );
+
+            std::cerr
+                << "[NavStress] request=" << serial
+                << " target=" << target.stableObjectId
+                << ":" << target.semanticAnchorId
+                << " report="
+                << m_navigationStressHarness.reportPath()
+                << std::endl;
+        }
+
+        if (m_navigationStressHarness.complete() &&
+            !m_navigationStressCompleteAnnounced)
+        {
+            m_navigationStressCompleteAnnounced = true;
+            std::cerr
+                << "[NavStress] COMPLETE report="
+                << m_navigationStressHarness.reportPath()
+                << std::endl;
+        }
+    }
+
     const double dockingGuidanceStartMs = nowMs();
     updateDockingAdvisory();
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;

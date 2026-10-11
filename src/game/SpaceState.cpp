@@ -2301,43 +2301,51 @@ void SpaceState::updateDockingAdvisory()
                 return;
             }
 
-            if (check.safeCourseFound)
+            if (!check.currentCourseSafe)
             {
-                m_dockSafeCourse.direction =
-                    check.safeCourse;
-                m_dockSafeCourse.sceneRayMeters =
-                    check.sceneRayMeters;
-                m_dockSafeCourse.selectedTurnAngleRad =
-                    check.turnAngleRad;
-                m_dockSafeCourse.selectedTurnRadiusMeters =
-                    check.turnRadiusMeters;
-            }
-            else
-            {
-                // No proven escape turn. Do not keep coasting into the
-                // blocker and do not hand this state back to the route
-                // planner. Fall back to the ordinary physical STOP.
-                m_dockSafeCourse.stopFallback = true;
-
-                if (m_dockAdviceJob)
+                if (check.safeCourseFound)
                 {
-                    m_dockAdviceJob->cancelled.store(
-                        true,
-                        std::memory_order_release
-                    );
+                    // The previous escape direction is no longer proven from
+                    // the live position. Replace it with the newly proven one.
+                    // Any speculative route already running remains safe to
+                    // keep as a backbone candidate; spatial handoff will force
+                    // a late-entry rebind if this direction change matters.
+                    m_dockSafeCourse.direction =
+                        check.safeCourse;
+                    m_dockSafeCourse.sceneRayMeters =
+                        check.sceneRayMeters;
+                    m_dockSafeCourse.selectedTurnAngleRad =
+                        check.turnAngleRad;
+                    m_dockSafeCourse.selectedTurnRadiusMeters =
+                        check.turnRadiusMeters;
                 }
+                else
+                {
+                    // No proven escape turn. Do not keep coasting into the
+                    // blocker and do not hand this state back to the route
+                    // planner. Fall back to the ordinary physical STOP.
+                    m_dockSafeCourse.stopFallback = true;
 
-                std::cerr
-                    << "[DockSafetyCourse]"
-                    << " request=" << pending.serial
-                    << " phase=emergency-stop"
-                    << " stop_corridor_clear="
-                    << (check.stopFallbackClear ? 1 : 0)
-                    << " reason="" << check.message << """
-                    << std::endl;
+                    if (m_dockAdviceJob)
+                    {
+                        m_dockAdviceJob->cancelled.store(
+                            true,
+                            std::memory_order_release
+                        );
+                    }
 
-                submitAutopilotControl(manualStopControl());
-                return;
+                    std::cerr
+                        << "[DockSafetyCourse]"
+                        << " request=" << pending.serial
+                        << " phase=emergency-stop"
+                        << " stop_corridor_clear="
+                        << (check.stopFallbackClear ? 1 : 0)
+                        << " reason="" << check.message << """
+                        << std::endl;
+
+                    submitAutopilotControl(manualStopControl());
+                    return;
+                }
             }
         }
 

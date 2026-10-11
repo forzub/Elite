@@ -121,17 +121,47 @@ public:
 
             case 1:
                 if (o.failed || o.speedMps >= 100.0 || stepAge >= 12.0)
-                    return issue(o, Target::CubeFront, "switch-low-speed");
+                {
+                    return issue(
+                        o,
+                        Target::CubeFront,
+                        o.speedMps >= 100.0
+                            ? "switch-low-speed"
+                            : o.failed
+                                ? "switch-low-speed-after-failure"
+                                : "switch-low-speed-timeout"
+                    );
+                }
                 break;
 
             case 2:
                 if (o.failed || o.speedMps >= 280.0 || stepAge >= 14.0)
-                    return issue(o, Target::CylinderRear, "switch-mid-speed");
+                {
+                    return issue(
+                        o,
+                        Target::CylinderRear,
+                        o.speedMps >= 280.0
+                            ? "switch-mid-speed"
+                            : o.failed
+                                ? "switch-mid-speed-after-failure"
+                                : "switch-mid-speed-timeout"
+                    );
+                }
                 break;
 
             case 3:
                 if (o.failed || o.speedMps >= 390.0 || stepAge >= 14.0)
-                    return issue(o, Target::CubeFront, "switch-high-speed");
+                {
+                    return issue(
+                        o,
+                        Target::CubeFront,
+                        o.speedMps >= 390.0
+                            ? "switch-high-speed"
+                            : o.failed
+                                ? "switch-high-speed-after-failure"
+                                : "switch-high-speed-timeout"
+                    );
+                }
                 break;
 
             case 4:
@@ -141,7 +171,15 @@ public:
                     (o.dockingPhase == 4 && stepAge >= 1.0) ||
                     stepAge >= 12.0)
                 {
-                    return issue(o, Target::CylinderRear, "switch-early-execution");
+                    return issue(
+                        o,
+                        Target::CylinderRear,
+                        o.dockingPhase == 4
+                            ? "switch-early-execution"
+                            : o.failed
+                                ? "switch-early-after-failure"
+                                : "switch-early-timeout"
+                    );
                 }
                 break;
 
@@ -151,7 +189,15 @@ public:
                     (o.dockingPhase == 4 && stepAge >= 4.0) ||
                     stepAge >= 14.0)
                 {
-                    return issue(o, Target::CubeFront, "switch-during-flight");
+                    return issue(
+                        o,
+                        Target::CubeFront,
+                        o.dockingPhase == 4
+                            ? "switch-during-flight"
+                            : o.failed
+                                ? "switch-during-flight-after-failure"
+                                : "switch-during-flight-timeout"
+                    );
                 }
                 break;
 

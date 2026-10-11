@@ -187,6 +187,109 @@ int main()
             );
         }
 
+        // Production bridge regression: the public RoutePlanner must be able
+        // to publish the continuous optimizer as authoritative CubicBezier
+        // geometry and sample execution gates from that same path.
+        {
+            using namespace game::navigation::planner;
+
+            RoutePlanRequest continuous;
+            continuous.startMeters = {0.0, 0.0, 0.0};
+            continuous.goalMeters = {-6000.0, 0.0, 0.0};
+            continuous.terminalOutward = {1.0, 0.0, 0.0};
+            continuous.agentRadiusMeters = 17.3;
+            continuous.maxSpeedMps = 80.0;
+            continuous.acceleratingMps2 = 8.0;
+            continuous.brakingMps2 = 8.0;
+            continuous.lateralMps2 = 20.0;
+            continuous.initialSpeedMps = 0.0;
+            continuous.roundTurns = true;
+            continuous.useContinuousAssistedOptimizer = true;
+            continuous.hasInitialForward = true;
+            continuous.initialForward = {1.0, 0.0, 0.0};
+            continuous.initialProtectedStraightMeters = 150.0;
+            continuous.terminalApproachLengthMeters = 700.0;
+            continuous.gateSpacingMeters = 500.0;
+            continuous.terminalGateSpacingMeters = 250.0;
+            continuous.terminalDenseDistanceMeters = 2000.0;
+
+            const auto optimized =
+                RoutePlanner::plan(continuous);
+
+            require(
+                optimized.valid(),
+                "continuous Assisted production bridge did not produce a route"
+            );
+            require(
+                optimized.diagnosticSummary.find(
+                    "continuous-assisted ready"
+                ) != std::string::npos,
+                "continuous Assisted route did not expose optimizer diagnostics"
+            );
+
+            bool sawBezier = false;
+            double maxCurvature = 0.0;
+            for (const auto& curve : optimized.routeCurves)
+            {
+                if (curve.kind == RouteCurveKind::CubicBezier)
+                    sawBezier = true;
+
+                const double length =
+                    curve.endProgressMeters -
+                    curve.startProgressMeters;
+                for (int i = 0; i <= 32; ++i)
+                {
+                    const double progress =
+                        curve.startProgressMeters +
+                        length *
+                            static_cast<double>(i) / 32.0;
+                    maxCurvature =
+                        std::max(
+                            maxCurvature,
+                            curve.curvatureAtProgress(progress)
+                        );
+                }
+            }
+
+            require(
+                sawBezier,
+                "continuous Assisted production bridge published no Bezier geometry"
+            );
+            require(
+                optimized.executionGates.size() > optimized.gates.size(),
+                "continuous Assisted execution geometry was not sampled densely"
+            );
+
+            const double requiredRadius =
+                continuous.maxSpeedMps *
+                continuous.maxSpeedMps /
+                continuous.lateralMps2;
+            require(
+                maxCurvature <=
+                    1.0 / requiredRadius + 1.0e-6,
+                "continuous Assisted production bridge violated v^2/a radius"
+            );
+
+            requireNear(
+                glm::length(
+                    optimized.executionGates.front().positionMeters -
+                    continuous.startMeters
+                ),
+                0.0,
+                1.0e-6,
+                "continuous Assisted execution route changed its start"
+            );
+            requireNear(
+                glm::length(
+                    optimized.executionGates.back().positionMeters -
+                    continuous.goalMeters
+                ),
+                0.0,
+                1.0e-6,
+                "continuous Assisted execution route changed its goal"
+            );
+        }
+
         game::navigation::planner::RoutePlanRequest invalid = request;
         invalid.maxSpeedMps = std::numeric_limits<double>::quiet_NaN();
         const auto invalidPlan =

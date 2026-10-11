@@ -3667,11 +3667,34 @@ void SpaceState::updateDockingAdvisory()
             << m_dockAdvice.plan.executionGates.size()
             << " hud_gates="
             << m_dockAdvice.plan.gates.size()
+            << " semantic_stages="
+            << m_dockAdvice.plan.stages.size()
             << " terminal_radius_m="
             << m_dockAdvice.plan.terminalTurnRadiusMeters
             << " worker_ms="
             << job->workerDurationMs
             << std::endl;
+
+        for (std::size_t stageIndex = 0;
+             stageIndex < m_dockAdvice.plan.stages.size();
+             ++stageIndex)
+        {
+            const auto& stage =
+                m_dockAdvice.plan.stages[stageIndex];
+
+            std::cerr
+                << "[DockRouteStage]"
+                << " request=" << pending.serial
+                << " index=" << stageIndex
+                << " kind=" << static_cast<int>(stage.kind)
+                << " start_m=" << stage.startProgressMeters
+                << " end_m=" << stage.endProgressMeters
+                << " source=" << stage.sourceId
+                << " volume=" << stage.volumeId
+                << " hard="
+                << (stage.hardContainment ? 1 : 0)
+                << std::endl;
+        }
 
         if (automatic)
         {

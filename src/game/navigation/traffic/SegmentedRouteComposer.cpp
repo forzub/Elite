@@ -580,6 +580,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         legRequest.goalMeters = blockStart;
         legRequest.terminalOutward = -traversalForward;
         legRequest.initialSpeedMps = currentSpeed;
+        legRequest.terminalSpeedMps = handoffSpeed;
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
         legRequest.initialForwardLeadMeters =
@@ -633,6 +634,8 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             << " start_lead_m="
             << legRequest.initialForwardLeadMeters
             << " boundary_speed_mps=" << handoffSpeed
+            << " optimizer_terminal_speed_mps="
+            << legRequest.terminalSpeedMps
             << " terminal_approach_m="
             << legRequest.terminalApproachLengthMeters
             << std::endl;
@@ -855,6 +858,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     planner::RoutePlanRequest finalRequest = terminalRequest;
     finalRequest.startMeters = currentStart;
     finalRequest.initialSpeedMps = currentSpeed;
+    finalRequest.terminalSpeedMps = 0.0;
     finalRequest.hasInitialForward = currentHasForward;
     finalRequest.initialForward = currentForward;
 

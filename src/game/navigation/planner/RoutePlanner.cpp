@@ -419,11 +419,16 @@ RoutePlan planContinuousAssisted(
         std::max(0.0, input.agentRadiusMeters);
     request.designSpeedMps =
         std::max(0.0, input.maxSpeedMps);
+    request.acceleratingMps2 =
+        std::max(0.0, input.acceleratingMps2);
+    request.brakingMps2 =
+        std::max(0.0, input.brakingMps2);
     request.maxLateralAccelerationMps2 =
         input.lateralMps2;
 
-    // No fixed turn angle and no arbitrary comfort radius. The hard curvature
-    // limit is derived only from v^2/a_lat in the optimizer.
+    // Ordinary Assisted geometry is allowed to tighten and therefore lower
+    // the local speed. maxSpeed is a cruise ceiling, not a global turn-radius
+    // command. A non-zero comfort radius would still remain a true hard floor.
     request.minimumComfortRadiusMeters = 0.0;
 
     // HOT-REPLAN CONTRACT: an already moving craft continues
@@ -502,25 +507,31 @@ RoutePlan planContinuousAssisted(
         progress
     );
 
-    appendBezierCurve(
-        out.routeCurves,
-        startCurve,
-        optimized.firstControl1Meters,
-        optimized.firstControl2Meters,
-        optimized.joinMeters,
-        input.maxSpeedMps,
-        progress
-    );
+    for (const auto& segment : optimized.segments)
+    {
+        if (segment.kind ==
+            assisted::lab::OptimizedSegmentKind::Line)
+        {
+            appendLineCurve(
+                out.routeCurves,
+                segment.startMeters,
+                segment.endMeters,
+                input.maxSpeedMps,
+                progress
+            );
+            continue;
+        }
 
-    appendBezierCurve(
-        out.routeCurves,
-        optimized.joinMeters,
-        optimized.secondControl1Meters,
-        optimized.secondControl2Meters,
-        goalCurve,
-        input.maxSpeedMps,
-        progress
-    );
+        appendBezierCurve(
+            out.routeCurves,
+            segment.startMeters,
+            segment.control1Meters,
+            segment.control2Meters,
+            segment.endMeters,
+            input.maxSpeedMps,
+            progress
+        );
+    }
 
     appendLineCurve(
         out.routeCurves,
@@ -589,9 +600,23 @@ RoutePlan planContinuousAssisted(
         ) +
         " length_m=" +
         std::to_string(
-            optimized.diagnostics.pathLengthMeters +
-            request.protectedStartStraightMeters +
-            request.protectedGoalStraightMeters
+            optimized.diagnostics.pathLengthMeters
+        ) +
+        " lower_bound_m=" +
+        std::to_string(
+            optimized.diagnostics.lowerBoundLengthMeters
+        ) +
+        " stretch=" +
+        std::to_string(
+            optimized.diagnostics.stretchRatio
+        ) +
+        " eta_s=" +
+        std::to_string(
+            optimized.diagnostics.estimatedTravelTimeSeconds
+        ) +
+        " seeds=" +
+        std::to_string(
+            optimized.diagnostics.seedCount
         ) +
         " min_radius_m=" +
         std::to_string(

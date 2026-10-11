@@ -487,6 +487,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 terminalRequest.terminalReferenceDistanceMeters,
                 200.0
             );
+        legRequest.terminalSpeedMps = handoffSpeed;
         legRequest.terminalApproachLengthMeters =
             game::navigation::OrdinaryRoutePolicy::
                 requiredTerminalApproachMeters(
@@ -572,6 +573,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
 
     planner::RoutePlanRequest finalRequest = terminalRequest;
     finalRequest.startMeters = currentStart;
+    // Final leg retains terminalRequest.terminalSpeedMps (normally HOLD=0).
     finalRequest.initialSpeedMps = currentSpeed;
     finalRequest.hasInitialForward = currentHasForward;
     finalRequest.initialForward = currentForward;

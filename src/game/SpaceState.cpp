@@ -81,6 +81,7 @@
 #include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/DockingRouteEntryPolicy.h"
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/ship/ShipPropulsionState.h"
@@ -2177,8 +2178,8 @@ void SpaceState::updateDockingAdvisory()
         request.initialSpeedMps = glm::length(startVelocityMps);
 
         request.initialForwardLeadMeters =
-            game::navigation::DockingRouteEntryPolicy::
-                requiredInitialForwardLeadMeters(
+            game::navigation::OrdinaryRoutePolicy::
+                requiredStartLeadMeters(
                     request.initialSpeedMps,
                     request.maxSpeedMps,
                     request.brakingMps2,
@@ -2210,7 +2211,18 @@ void SpaceState::updateDockingAdvisory()
         request.roundTurns = assisted;
         if (assisted)
         {
-            request.terminalApproachLengthMeters = 9000.0;
+            // Ordinary terminal geometry is sized from the speed that may
+            // arrive at the final approach and the actual terminal crossing
+            // limit. Speed yields to geometry; no fixed 9 km approach.
+            request.terminalApproachLengthMeters =
+                game::navigation::OrdinaryRoutePolicy::
+                    requiredTerminalApproachMeters(
+                        request.maxSpeedMps,
+                        definition->maxEntrySpeedMps,
+                        request.brakingMps2,
+                        request.terminalReferenceDistanceMeters,
+                        hull.lengthMeters
+                    );
             request.terminalTurnSegmentFraction = 0.85;
             request.deriveTerminalTurnRadiusFromVehicle = true;
         }

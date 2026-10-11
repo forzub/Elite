@@ -112,6 +112,9 @@ int main()
     if (!(result.diagnostics.pathLengthMeters > 6000.0))
         return fail("reversed-heading solution did not form a real turn");
 
+    if (!(result.diagnostics.pathLengthMeters < 30000.0))
+        return fail("optimizer escaped into an absurdly long low-curvature loop");
+
     if (!(result.diagnostics.maxConstraintViolation <= 1.0e-7))
         return fail("optimizer reported residual hard-constraint violation");
 

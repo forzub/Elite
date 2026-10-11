@@ -375,7 +375,10 @@ private:
             return;
         m_stream << "EVENT";
         writeCommon(o);
-        m_stream << " " << event << "\n";
+        m_stream << " " << event;
+        if (!o.jobResult.empty())
+            m_stream << " job_result=\"" << escaped(o.jobResult) << "\"";
+        m_stream << "\n";
         flush();
     }
 

@@ -442,10 +442,10 @@ RoutePlan planContinuousAssisted(
         std::max(0.0, input.terminalApproachLengthMeters);
     request.obstacles = input.obstacles;
 
-    // Production planning runs asynchronously against a projected start.
-    // Keep the optimizer budget bounded so a valid route cannot repeatedly
-    // expire before handoff. Geometry remains collision-sampled densely
-    // enough for the current obstacle representation.
+    // Production planning is asynchronous, but route validity is spatial:
+    // elapsed wall-clock time does not expire the authored start. Keep the
+    // optimizer budget bounded for runtime cost only; geometry remains
+    // collision-sampled densely enough for the current obstacle representation.
     request.samplesPerBezier = 96;
     request.maxPatternIterations = 160;
 

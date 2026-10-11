@@ -75,6 +75,7 @@
 #include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
 #include "src/game/navigation/traffic/TrafficRoutePlanAdapter.h"
+#include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"
@@ -2613,8 +2614,14 @@ void SpaceState::updateDockingAdvisory()
                     );
 
                     job->plan =
-                        game::navigation::planner::
-                            RoutePlanner::plan(request);
+                        compiledTrafficRoute.valid
+                            ? game::navigation::traffic::
+                                  SegmentedRouteComposer::plan(
+                                      request,
+                                      compiledTrafficRoute
+                                  )
+                            : game::navigation::planner::
+                                  RoutePlanner::plan(request);
 
                     job->planningProgressPermille.store(
                         700,
@@ -2667,7 +2674,8 @@ void SpaceState::updateDockingAdvisory()
                         }
                     }
 
-                    if (job->plan.valid())
+                    if (job->plan.valid() &&
+                        compiledTrafficRoute.valid)
                     {
                         // Explicit semantic -> generic contract seam.
                         // SpaceState only composes the modules; it does not

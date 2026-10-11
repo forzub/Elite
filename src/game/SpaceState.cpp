@@ -3154,6 +3154,58 @@ void SpaceState::updateDockingAdvisory()
         compileAgent.positionMapMeters = request.startMeters;
         compileAgent.velocityMapMetersPerSecond = startVelocityMps;
 
+        if (planningWhileSecuringCourse)
+        {
+            // Compile against the collision-proven state we are physically
+            // acquiring, not the transient pre-turn velocity/attitude. The
+            // spatial handoff still validates the live craft before adoption.
+            const glm::dvec3 predictedForward =
+                glm::normalize(request.initialForward);
+
+            compileAgent.velocityMapMetersPerSecond =
+                predictedForward * request.initialSpeedMps;
+            compileAgent.forwardMap = predictedForward;
+
+            glm::dvec3 predictedUp =
+                compileAgent.upMap -
+                predictedForward *
+                    glm::dot(
+                        compileAgent.upMap,
+                        predictedForward
+                    );
+
+            if (glm::length(predictedUp) <= 1.0e-9)
+            {
+                const glm::dvec3 fallbackUp =
+                    std::abs(predictedForward.y) < 0.9
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                predictedUp =
+                    fallbackUp -
+                    predictedForward *
+                        glm::dot(
+                            fallbackUp,
+                            predictedForward
+                        );
+            }
+
+            predictedUp = glm::normalize(predictedUp);
+            compileAgent.rightMap =
+                glm::normalize(
+                    glm::cross(
+                        predictedForward,
+                        predictedUp
+                    )
+                );
+            compileAgent.upMap =
+                glm::normalize(
+                    glm::cross(
+                        compileAgent.rightMap,
+                        predictedForward
+                    )
+                );
+        }
+
         const double compileTolerance =
             std::max(
                 20.0,
@@ -3175,7 +3227,9 @@ void SpaceState::updateDockingAdvisory()
         );
         m_dockAdviceJob = job;
         m_clientDockingPhase =
-            ClientDockingPhase::Planning;
+            planningWhileSecuringCourse
+                ? ClientDockingPhase::SecuringCourse
+                : ClientDockingPhase::Planning;
 
         const double planningMaxSpeedMps = request.maxSpeedMps;
         const double planningInitialForwardLeadMeters =
@@ -3497,7 +3551,10 @@ void SpaceState::updateDockingAdvisory()
 
         std::cout
             << "[DockClient] request=" << pending.serial
-            << " phase=planning"
+            << " phase="
+            << (planningWhileSecuringCourse
+                    ? "planning+securing-course"
+                    : "planning")
             << " route_source=client"
             << " max_speed_mps=" << planningMaxSpeedMps
             << " initial_forward_lead_m="

@@ -27,7 +27,8 @@ void appendUniqueGate(
         samePoint(dst.back().positionMeters, gate.positionMeters))
     {
         dst.back().forward = gate.forward;
-        dst.back().speedMps = std::max(dst.back().speedMps, gate.speedMps);
+        dst.back().speedMps =
+            std::min(dst.back().speedMps, gate.speedMps);
         return;
     }
     dst.push_back(gate);
@@ -72,6 +73,161 @@ void appendShiftedCurves(
         curve.endProgressMeters = offset + localEnd;
         dst.push_back(std::move(curve));
     }
+}
+
+double minimumSampledRadiusMeters(
+    const std::vector<RouteCurveSegment>& curves
+) noexcept
+{
+    double maxCurvature = 0.0;
+    constexpr int SamplesPerCurve = 48;
+
+    for (const auto& curve : curves)
+    {
+        for (int i = 0; i <= SamplesPerCurve; ++i)
+        {
+            const double u =
+                static_cast<double>(i) /
+                static_cast<double>(SamplesPerCurve);
+            const double progress =
+                curve.startProgressMeters +
+                (curve.endProgressMeters -
+                 curve.startProgressMeters) * u;
+            maxCurvature =
+                std::max(
+                    maxCurvature,
+                    curve.curvatureAtProgress(progress)
+                );
+        }
+    }
+
+    return
+        maxCurvature > 1.0e-12
+            ? 1.0 / maxCurvature
+            : std::numeric_limits<double>::infinity();
+}
+
+double maximumJoinCurvatureJump(
+    const std::vector<RouteCurveSegment>& curves
+) noexcept
+{
+    double maximum = 0.0;
+    for (std::size_t i = 1; i < curves.size(); ++i)
+    {
+        const double before =
+            curves[i - 1].curvatureAtProgress(
+                curves[i - 1].endProgressMeters
+            );
+        const double after =
+            curves[i].curvatureAtProgress(
+                curves[i].startProgressMeters
+            );
+        maximum =
+            std::max(maximum, std::abs(after - before));
+    }
+    return maximum;
+}
+
+struct ExecutionStress
+{
+    double maxLateralUtilization = 0.0;
+    double maxAngularVelocityUtilization = 0.0;
+    double maxAngularAccelerationUtilization = 0.0;
+};
+
+ExecutionStress executionStress(
+    const std::vector<RouteGate>& gates,
+    const RoutePlanRequest& base
+) noexcept
+{
+    ExecutionStress out;
+    if (gates.size() < 3)
+        return out;
+
+    std::vector<double> curvature(gates.size(), 0.0);
+    for (std::size_t i = 1; i + 1 < gates.size(); ++i)
+    {
+        const glm::dvec3 a =
+            gates[i].positionMeters -
+            gates[i - 1].positionMeters;
+        const glm::dvec3 b =
+            gates[i + 1].positionMeters -
+            gates[i].positionMeters;
+        const double la = glm::length(a);
+        const double lb = glm::length(b);
+        const double across =
+            glm::length(
+                gates[i + 1].positionMeters -
+                gates[i - 1].positionMeters
+            );
+        const double denom = la * lb * across;
+        if (denom > 1.0e-9)
+        {
+            curvature[i] =
+                2.0 * glm::length(glm::cross(a, b)) / denom;
+        }
+    }
+
+    for (std::size_t i = 0; i < gates.size(); ++i)
+    {
+        const double v = std::max(0.0, gates[i].speedMps);
+        const double kappa = curvature[i];
+
+        if (base.lateralMps2 > 1.0e-9)
+        {
+            out.maxLateralUtilization =
+                std::max(
+                    out.maxLateralUtilization,
+                    v * v * kappa / base.lateralMps2
+                );
+        }
+
+        if (base.maxAngularVelocityRadPerSecond > 1.0e-9)
+        {
+            out.maxAngularVelocityUtilization =
+                std::max(
+                    out.maxAngularVelocityUtilization,
+                    v * kappa /
+                        base.maxAngularVelocityRadPerSecond
+                );
+        }
+    }
+
+    if (base.maxAngularAccelerationRadPerSecond2 > 1.0e-9)
+    {
+        for (std::size_t i = 0; i + 1 < gates.size(); ++i)
+        {
+            const double ds =
+                glm::length(
+                    gates[i + 1].positionMeters -
+                    gates[i].positionMeters
+                );
+            const double sumSpeed =
+                std::max(
+                    1.0e-6,
+                    gates[i].speedMps +
+                    gates[i + 1].speedMps
+                );
+            const double dt = 2.0 * ds / sumSpeed;
+            if (dt <= 1.0e-9)
+                continue;
+
+            const double omega0 =
+                gates[i].speedMps * curvature[i];
+            const double omega1 =
+                gates[i + 1].speedMps * curvature[i + 1];
+
+            out.maxAngularAccelerationUtilization =
+                std::max(
+                    out.maxAngularAccelerationUtilization,
+                    std::abs(omega1 - omega0) /
+                        dt /
+                        base.maxAngularAccelerationRadPerSecond2
+                );
+        }
+    }
+
+    return out;
 }
 
 void recomputeGlobalSpeeds(
@@ -123,10 +279,22 @@ void recomputeGlobalSpeeds(
             2.0 * glm::length(glm::cross(a, b)) / denom;
         if (curvature > 1.0e-9)
         {
-            gates[i].speedMps = std::min(
-                gates[i].speedMps,
-                std::sqrt(base.lateralMps2 / curvature)
-            );
+            if (base.lateralMps2 > 1.0e-9)
+            {
+                gates[i].speedMps = std::min(
+                    gates[i].speedMps,
+                    std::sqrt(base.lateralMps2 / curvature)
+                );
+            }
+
+            if (base.maxAngularVelocityRadPerSecond > 1.0e-9)
+            {
+                gates[i].speedMps = std::min(
+                    gates[i].speedMps,
+                    base.maxAngularVelocityRadPerSecond /
+                        curvature
+                );
+            }
         }
     }
 
@@ -357,9 +525,26 @@ RoutePlan RouteEntryBinder::bind(
             200.0
         );
 
-    // The immutable tail already owns the downstream straight/traffic
-    // semantics. The connector only has to arrive C1-tangent at the anchor.
-    entryRequest.terminalApproachLengthMeters = 0.0;
+    // The rebound connector must be optimized for the state that will
+    // actually cross into the immutable tail. Treating the anchor as a stop
+    // makes terminal curvature artificially cheap and packs the turn against
+    // BLUE. Preserve both the handoff speed and enough aligned approach to
+    // finish the turn before the semantic boundary.
+    entryRequest.terminalSpeedMps =
+        std::clamp(
+            backbone.handoffSpeedMps,
+            0.0,
+            std::max(0.0, liveRequest.maxSpeedMps)
+        );
+    entryRequest.terminalApproachLengthMeters =
+        game::navigation::OrdinaryRoutePolicy::
+            requiredTerminalApproachMeters(
+                liveRequest.maxSpeedMps,
+                entryRequest.terminalSpeedMps,
+                liveRequest.brakingMps2,
+                entryRequest.terminalReferenceDistanceMeters,
+                liveRequest.vehicleLengthMeters
+            );
     entryRequest.requiredViaPointsMeters.clear();
     entryRequest.mandatoryTangentStraights.clear();
 
@@ -422,6 +607,11 @@ RoutePlan RouteEntryBinder::bind(
     out.initialTurnPresent = entry.initialTurnPresent;
     out.initialTurnRadiusMeters = entry.initialTurnRadiusMeters;
 
+    recomputeGlobalSpeeds(out, liveRequest);
+
+    const auto stress =
+        executionStress(out.executionGates, liveRequest);
+
     out.diagnosticSummary =
         "late-entry rebound entry_m=" +
         std::to_string(entryLength) +
@@ -431,10 +621,29 @@ RoutePlan RouteEntryBinder::bind(
                 ? 0.0
                 : backbone.tail.routeCurves.back().endProgressMeters
         ) +
-        " | " +
-        backbone.tail.diagnosticSummary;
-
-    recomputeGlobalSpeeds(out, liveRequest);
+        " handoff_speed_mps=" +
+        std::to_string(entryRequest.terminalSpeedMps) +
+        " approach_m=" +
+        std::to_string(entryRequest.terminalApproachLengthMeters) +
+        " final_min_radius_m=" +
+        std::to_string(
+            minimumSampledRadiusMeters(out.routeCurves)
+        ) +
+        " final_max_join_dk=" +
+        std::to_string(
+            maximumJoinCurvatureJump(out.routeCurves)
+        ) +
+        " final_peak_lat_util=" +
+        std::to_string(stress.maxLateralUtilization) +
+        " final_peak_omega_util=" +
+        std::to_string(stress.maxAngularVelocityUtilization) +
+        " final_peak_alpha_util=" +
+        std::to_string(stress.maxAngularAccelerationUtilization) +
+        " | entry={" +
+        entry.diagnosticSummary +
+        "} | tail={" +
+        backbone.tail.diagnosticSummary +
+        "}";
 
     if (out.routeCurves.empty() ||
         out.executionGates.size() < 2 ||

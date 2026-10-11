@@ -1770,6 +1770,7 @@ void SpaceState::updateDockingAdvisory()
         m_activeDockingGuidanceCorridorId.clear();
         m_dockAdvice = {};
         m_dockAdviceJob.reset();
+        m_dockLateEntry = {};
     };
 
     const auto releaseClientAutopilot = [&]()
@@ -1793,6 +1794,7 @@ void SpaceState::updateDockingAdvisory()
         releaseClientAutopilot();
         m_clientDockingPhase = ClientDockingPhase::Idle;
         m_dockAdviceJob.reset();
+        m_dockLateEntry = {};
     };
 
     if (!pending.valid())

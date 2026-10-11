@@ -45,6 +45,7 @@
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
+#include "src/game/navigation/planner/RouteEntryBinder.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -404,6 +405,18 @@ private:
         double workerDurationMs = 0.0;
         DockAdvice context;
         game::navigation::planner::RoutePlan plan;
+
+        // Late-bound entry state. The first expensive plan discovers the
+        // immutable downstream backbone. If the craft has already consumed
+        // the authored ballistic prefix when the worker finishes, only the
+        // entry connector is replanned from the live state; the backbone is
+        // never recomputed merely because wall-clock planning took longer.
+        game::navigation::planner::RoutePlanRequest planningRequest;
+        game::navigation::planner::LateBoundRouteBackbone entryBackbone;
+        bool entryRebind = false;
+        bool hasPreferredEntryAnchor = false;
+        glm::dvec3 preferredEntryAnchor {0.0};
+        glm::dvec3 preferredEntryForward {0.0, 0.0, -1.0};
 
         // ASYNC CONTRACT: Planner + expensive client route compilation are
         // completed entirely in the worker. The main thread only adopts these

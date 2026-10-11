@@ -3572,11 +3572,59 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Planning)
     {
+        bool automaticMotionSettled = true;
+
         if (automatic)
         {
-            // Continue zero-acceleration ballistic coast from the planning
-            // snapshot while the asynchronous route is being built.
-            submitAutopilotControl(coastForPlanningControl());
+            // The worker is allowed to run concurrently with physical
+            // stabilization, but route handoff is not. Keep damping angular
+            // velocity with zero linear acceleration until the craft has been
+            // truly ballistic for a short settled interval.
+            constexpr double AutomaticSettledAngularRadPerSec = 0.01;
+            constexpr double AutomaticAngularSettledSeconds = 0.20;
+
+            const auto liveAgent = makeAgent();
+            const double angularSpeedRadPerSec =
+                std::sqrt(
+                    liveAgent.pitchRateRadPerSec *
+                        liveAgent.pitchRateRadPerSec +
+                    liveAgent.yawRateRadPerSec *
+                        liveAgent.yawRateRadPerSec +
+                    liveAgent.rollRateRadPerSec *
+                        liveAgent.rollRateRadPerSec
+                );
+
+            if (angularSpeedRadPerSec >
+                AutomaticSettledAngularRadPerSec)
+            {
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                automaticMotionSettled = false;
+                submitAutopilotControl(
+                    stabilizeAngularForPlanningControl()
+                );
+            }
+            else if (m_clientDockingSettledSinceServerSeconds < 0.0)
+            {
+                m_clientDockingSettledSinceServerSeconds =
+                    authoritativeServerSeconds;
+                automaticMotionSettled = false;
+                submitAutopilotControl(
+                    stabilizeAngularForPlanningControl()
+                );
+            }
+            else if (authoritativeServerSeconds -
+                         m_clientDockingSettledSinceServerSeconds <
+                     AutomaticAngularSettledSeconds)
+            {
+                automaticMotionSettled = false;
+                submitAutopilotControl(
+                    stabilizeAngularForPlanningControl()
+                );
+            }
+            else
+            {
+                submitAutopilotControl(coastForPlanningControl());
+            }
         }
         else
         {
@@ -3592,6 +3640,12 @@ void SpaceState::updateDockingAdvisory()
         {
             return;
         }
+
+        // A worker may finish before the craft has completed the physical
+        // transition to its ballistic handoff state. Keep the ready result,
+        // but do not adopt/validate it until motion settling is real.
+        if (automatic && !automaticMotionSettled)
+            return;
 
         auto job = std::move(m_dockAdviceJob);
 

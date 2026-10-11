@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h"
 
 namespace game::navigation::planner

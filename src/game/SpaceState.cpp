@@ -2093,6 +2093,7 @@ void SpaceState::updateDockingAdvisory()
         m_lastDockingPathRequestSerial = pending.serial;
         m_lastDockingRequestTraceSerial = pending.serial;
         m_dockLateEntry = {};
+        m_dockSafeCourse = {};
         m_clientDockingPhase =
             ClientDockingPhase::Stabilizing;
         m_noSafeDockingGuidanceSolution = false;
@@ -2115,6 +2116,149 @@ void SpaceState::updateDockingAdvisory()
         m_client->lastSimulationMetadata().serverTimeSeconds;
     const double universeTimeSeconds =
         m_client->lastSimulationMetadata().universeTimeSeconds;
+
+    if (m_clientDockingPhase ==
+        ClientDockingPhase::SecuringCourse)
+    {
+        if (!automatic ||
+            !m_dockSafeCourse.active ||
+            m_dockSafeCourse.serial != pending.serial)
+        {
+            m_dockSafeCourse = {};
+            m_clientDockingPhase =
+                ClientDockingPhase::Stabilizing;
+            m_clientDockingSettledSinceServerSeconds = -1.0;
+            return;
+        }
+
+        const auto agent = makeAgent();
+        const double speedMps =
+            glm::length(agent.velocityMapMetersPerSecond);
+        const double angularSpeedRadPerSec =
+            std::sqrt(
+                agent.pitchRateRadPerSec * agent.pitchRateRadPerSec +
+                agent.yawRateRadPerSec * agent.yawRateRadPerSec +
+                agent.rollRateRadPerSec * agent.rollRateRadPerSec
+            );
+
+        if (m_dockSafeCourse.stopFallback)
+        {
+            submitAutopilotControl(manualStopControl());
+
+            if (speedMps <= 0.05 &&
+                angularSpeedRadPerSec <= 0.01)
+            {
+                std::cerr
+                    << "[DockSafetyCourse]"
+                    << " request=" << pending.serial
+                    << " phase=stopped"
+                    << " fallback=1"
+                    << std::endl;
+
+                m_dockSafeCourse = {};
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+            }
+            return;
+        }
+
+        const bool shouldRecheck =
+            m_dockSafeCourse.lastRecheckServerSeconds < 0.0 ||
+            authoritativeServerSeconds -
+                m_dockSafeCourse.lastRecheckServerSeconds >= 0.25;
+
+        if (shouldRecheck)
+        {
+            game::navigation::PreplanningSafetyCourseRequest safety;
+            safety.positionMeters = agent.positionMapMeters;
+            safety.velocityMps =
+                agent.velocityMapMetersPerSecond;
+            safety.preferredDirection =
+                m_dockSafeCourse.preferredDirection;
+            safety.hullRadiusMeters =
+                m_dockSafeCourse.hullRadiusMeters;
+            safety.additionalClearanceMeters =
+                m_dockSafeCourse.additionalClearanceMeters;
+            safety.courseAccelerationMps2 =
+                m_dockSafeCourse.courseAccelerationMps2;
+            safety.brakingAccelerationMps2 =
+                m_dockSafeCourse.brakingAccelerationMps2;
+            safety.maxAngularVelocityRadPerSecond =
+                m_dockSafeCourse.maxAngularVelocityRadPerSecond;
+            safety.newtonian =
+                m_dockSafeCourse.newtonian;
+            safety.obstacles =
+                m_dockSafeCourse.obstacles;
+
+            const auto check =
+                game::navigation::PreplanningSafetyCourse::
+                    evaluate(safety);
+
+            m_dockSafeCourse.lastRecheckServerSeconds =
+                authoritativeServerSeconds;
+
+            if (check.currentCourseSafe)
+            {
+                // We now own a collision-free inertial ray. Remove all
+                // translational demand again before taking the planning
+                // snapshot; angular settling is performed by Stabilizing.
+                submitAutopilotControl(coastForPlanningControl());
+
+                std::cerr
+                    << "[DockSafetyCourse]"
+                    << " request=" << pending.serial
+                    << " phase=acquired"
+                    << " speed_mps=" << speedMps
+                    << " ray_m=" << check.sceneRayMeters
+                    << std::endl;
+
+                m_dockSafeCourse = {};
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+
+            if (check.safeCourseFound)
+            {
+                m_dockSafeCourse.direction =
+                    check.safeCourse;
+                m_dockSafeCourse.sceneRayMeters =
+                    check.sceneRayMeters;
+                m_dockSafeCourse.selectedTurnAngleRad =
+                    check.turnAngleRad;
+                m_dockSafeCourse.selectedTurnRadiusMeters =
+                    check.turnRadiusMeters;
+            }
+            else
+            {
+                // No proven escape turn. Do not keep coasting into the
+                // blocker and do not hand this state back to the route
+                // planner. Fall back to the ordinary physical STOP.
+                m_dockSafeCourse.stopFallback = true;
+
+                std::cerr
+                    << "[DockSafetyCourse]"
+                    << " request=" << pending.serial
+                    << " phase=emergency-stop"
+                    << " stop_corridor_clear="
+                    << (check.stopFallbackClear ? 1 : 0)
+                    << " reason="" << check.message << """
+                    << std::endl;
+
+                submitAutopilotControl(manualStopControl());
+                return;
+            }
+        }
+
+        submitAutopilotControl(
+            safeCourseControl(
+                m_dockSafeCourse.direction
+            )
+        );
+        return;
+    }
 
     if (m_clientDockingPhase ==
         ClientDockingPhase::Stabilizing)
@@ -2202,20 +2346,10 @@ void SpaceState::updateDockingAdvisory()
                 return;
             }
 
-            // Angular state is now settled. From this point through the async
-            // calculation the craft is a pure ballistic translation.
+            // Angular state is now settled. Remove all translational demand.
+            // We still MUST prove the resulting inertial course clear before
+            // any asynchronous route calculation is allowed to begin.
             submitAutopilotControl(coastForPlanningControl());
-        }
-
-        // Exactly one geometric optimizer may own CPU at a time. A newer
-        // request retires the previous job, but RoutePlanner is synchronous;
-        // wait for that worker to observe cancellation/finish instead of
-        // stacking detached optimizers and eventually failing "planner busy".
-        const int livePlannerWorkers =
-            m_dockWorkerCount->load(std::memory_order_acquire);
-        if (livePlannerWorkers > 0)
-        {
-            return;
         }
 
         std::cout

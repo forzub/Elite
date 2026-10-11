@@ -1772,6 +1772,8 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
         m_dockSafeCourse = {};
+        m_clientDockingRouteProgressMeters = 0.0;
+        m_clientDockingRouteCurveIndex = 0;
     };
 
     const auto releaseClientAutopilot = [&]()
@@ -3643,6 +3645,8 @@ void SpaceState::updateDockingAdvisory()
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);
+        m_clientDockingRouteProgressMeters = 0.0;
+        m_clientDockingRouteCurveIndex = 0;
 
         // WORKING ASYNC CONTRACT: expensive route compilation and visual
         // frame-field construction completed in the worker. Main thread only
@@ -3788,6 +3792,26 @@ void SpaceState::updateDockingAdvisory()
                 universeTimeSeconds,
                 fixedDt
             );
+
+        if (output.valid)
+        {
+            m_clientDockingRouteCurveIndex =
+                output.routeCurveIndex;
+
+            const double routeTotalMeters =
+                m_dockAdvice.plan.routeCurves.empty()
+                    ? 0.0
+                    : m_dockAdvice.plan.routeCurves.back().
+                        endProgressMeters;
+
+            m_clientDockingRouteProgressMeters =
+                std::clamp(
+                    routeTotalMeters -
+                        output.exactRemainingRouteMeters,
+                    0.0,
+                    std::max(0.0, routeTotalMeters)
+                );
+        }
 
         if (!output.valid)
         {

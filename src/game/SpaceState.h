@@ -429,6 +429,15 @@ private:
             compiledAutopilotState {};
     };
     std::shared_ptr<DockAdviceJob> m_dockAdviceJob;
+
+    struct DockLateEntryState
+    {
+        bool active = false;
+        std::uint64_t serial = 0;
+        game::navigation::planner::LateBoundRouteBackbone backbone;
+    };
+    DockLateEntryState m_dockLateEntry {};
+
     std::shared_ptr<std::atomic<int>> m_dockWorkerCount =
         std::make_shared<std::atomic<int>>(0);
     SystemMapRenderer m_systemMapRenderer;

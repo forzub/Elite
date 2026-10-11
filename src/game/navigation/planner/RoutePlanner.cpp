@@ -1,11 +1,9 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
-#include <utility>
 
-#include "src/game/navigation/DockingAdvisoryPlanner.h"
+#include "src/game/navigation/planner/assisted/AssistedRoutePlannerApi.h"
 
 namespace game::navigation::planner
 {
@@ -31,204 +29,145 @@ const char* routePlanFailureMessage(
         case RoutePlanFailureCode::PropulsionInsufficient:
             return "Available propulsion or control authority is insufficient to reach a safe route.";
         case RoutePlanFailureCode::NoCollisionFreeCandidate:
-            return "The current route candidate is blocked; search another sector, radius, lead length or approach geometry.";
+            return "No collision-free route satisfies the hard Assisted geometry constraints.";
         case RoutePlanFailureCode::DynamicWindowUnavailable:
             return "No safe dynamic passage is available now; wait for a valid movement window and replan.";
         case RoutePlanFailureCode::BackendFailure:
         default:
-            return "The current route candidate is not acceptable; refine route geometry or speed limits and try again.";
+            return "The route planner backend could not produce an accepted route.";
     }
 }
 
-namespace
+RoutePlan RoutePlanner::plan(
+    const RoutePlanRequest& input
+)
 {
+    // PRODUCTION BACKEND:
+    // The historical DockingAdvisoryPlanner remains in the repository as a
+    // regression oracle / recovery implementation, but production RoutePlanner
+    // no longer delegates to it.
+    //
+    // Traffic topology must already have been segmented outside this module.
+    // A free-space planner does not accept semantic via-points or mandatory
+    // traffic straights.
+    if (!input.requiredViaPointsMeters.empty() ||
+        !input.mandatoryTangentStraights.empty())
+    {
+        RoutePlan out;
+        out.disposition =
+            RoutePlanDisposition::InvalidWorldData;
+        out.failureCode =
+            RoutePlanFailureCode::InvalidRequest;
+        out.failure =
+            "Assisted RoutePlanner received semantic traffic constraints; "
+            "segment the route before free-space planning";
+        out.userMessage = out.failure;
+        return out;
+    }
 
-RouteGate adaptGate(const game::navigation::DockingAdvisoryGate& gate)
-{
-    RouteGate out;
-    out.positionMeters = gate.positionMeters;
-    out.forward = gate.forward;
-    out.speedMps = gate.speedMps;
-    return out;
-}
+    assisted::Request request;
 
-} // namespace
+    request.start.positionMeters =
+        input.startMeters;
+    request.start.forward =
+        input.hasInitialForward
+            ? input.initialForward
+            : (
+                glm::length(
+                    input.goalMeters -
+                    input.startMeters
+                ) > 1.0e-9
+                    ? glm::normalize(
+                          input.goalMeters -
+                          input.startMeters
+                      )
+                    : glm::dvec3(0.0, 0.0, -1.0)
+              );
+    request.start.speedMps =
+        std::max(0.0, input.initialSpeedMps);
 
-RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
-{
-    game::navigation::DockingAdvisoryRequest legacy;
-    legacy.startMeters = input.startMeters;
-    legacy.outward = input.terminalOutward;
-    legacy.standoffMeters = input.terminalReferenceDistanceMeters;
+    const double outwardLength =
+        glm::length(input.terminalOutward);
+    const glm::dvec3 outward =
+        std::isfinite(outwardLength) &&
+        outwardLength > 1.0e-9
+            ? input.terminalOutward /
+                outwardLength
+            : glm::dvec3(0.0, 0.0, 1.0);
 
-    // The current backend represents the generic endpoint as
-    // entrance + normalized(outward) * standoff. Keep that implementation
-    // detail private so callers only own the exact generic goal point.
-    const double outwardLength = glm::length(input.terminalOutward);
-    const glm::dvec3 terminalOutward =
-        std::isfinite(outwardLength) && outwardLength > 1.0e-12
-            ? input.terminalOutward / outwardLength
-            : input.terminalOutward;
-    legacy.entranceMeters =
-        input.goalMeters -
-        terminalOutward *
-            input.terminalReferenceDistanceMeters;
+    request.goal.positionMeters =
+        input.goalMeters;
 
-    legacy.hullRadiusMeters = input.agentRadiusMeters;
-    legacy.maxSpeedMps = input.maxSpeedMps;
-    legacy.acceleratingMps2 = input.acceleratingMps2;
-    legacy.brakingMps2 = input.brakingMps2;
-    legacy.lateralMps2 = input.lateralMps2;
-    legacy.maxAngularVelocityRadPerSecond =
+    // terminalOutward points FROM the terminal into approach space. Travel
+    // direction at the goal is therefore the opposite vector.
+    request.goal.forward =
+        -outward;
+    request.goal.speedMps =
+        std::max(0.0, input.terminalSpeedMps);
+
+    request.vehicle.radiusMeters =
+        input.agentRadiusMeters;
+    request.vehicle.lengthMeters =
+        input.vehicleLengthMeters;
+    request.vehicle.maxSpeedMps =
+        input.maxSpeedMps;
+    request.vehicle.acceleratingMps2 =
+        input.acceleratingMps2;
+    request.vehicle.brakingMps2 =
+        input.brakingMps2;
+    request.vehicle.lateralMps2 =
+        input.lateralMps2;
+    request.vehicle.maxAngularVelocityRadPerSecond =
         input.maxAngularVelocityRadPerSecond;
-    legacy.maxAngularAccelerationRadPerSecond2 =
+    request.vehicle.maxAngularAccelerationRadPerSecond2 =
         input.maxAngularAccelerationRadPerSecond2;
-    legacy.initialSpeedMps = input.initialSpeedMps;
-    legacy.roundTurns = input.roundTurns;
-    legacy.hasInitialForward = input.hasInitialForward;
-    legacy.initialForward = input.initialForward;
-    legacy.initialForwardLeadMeters = input.initialForwardLeadMeters;
-    legacy.initialProtectedStraightMeters =
-        input.initialProtectedStraightMeters;
-    legacy.gateSpacingMeters = input.gateSpacingMeters;
-    legacy.terminalGateSpacingMeters = input.terminalGateSpacingMeters;
-    legacy.terminalDenseDistanceMeters = input.terminalDenseDistanceMeters;
-    legacy.terminalApproachLengthMeters =
-        input.terminalApproachLengthMeters;
-    legacy.terminalTurnSegmentFraction =
-        input.terminalTurnSegmentFraction;
-    legacy.deriveTerminalTurnRadiusFromVehicle =
-        input.deriveTerminalTurnRadiusFromVehicle;
-    legacy.preferredTerminalTurnRadiusMeters =
-        input.preferredTerminalTurnRadiusMeters;
-    legacy.requiredViaPointsMeters =
-        input.requiredViaPointsMeters;
-    legacy.mandatoryTangentStraights =
-        input.mandatoryTangentStraights;
-    legacy.obstacles = input.obstacles;
 
-    const auto planned =
-        game::navigation::DockingAdvisoryPlanner::plan(legacy);
+    request.geometry.protectedDepartureStraightMeters =
+        input.initialProtectedStraightMeters > 1.0e-6
+            ? input.initialProtectedStraightMeters
+            : 150.0;
 
-    RoutePlan out;
-    out.failure = planned.failure;
-    out.diagnosticSummary =
-        game::navigation::dockingAdvisoryPlanDiagnosticSummary(planned);
+    request.geometry.protectedArrivalStraightMeters =
+        std::max(
+            0.0,
+            input.terminalApproachLengthMeters
+        );
 
-    if (planned.valid())
+    // If the caller has no authored terminal straight, keep only the generic
+    // terminal scale. This is still a physical boundary distance, not a
+    // docking-specific magic number.
+    if (request.geometry.protectedArrivalStraightMeters <= 1.0e-6)
     {
-        out.disposition = RoutePlanDisposition::Ready;
-        out.failureCode = RoutePlanFailureCode::None;
-        out.userMessage = routePlanFailureMessage(out.failureCode);
-    }
-    else
-    {
-        const std::string failureLower = [&]()
-        {
-            std::string value = planned.failure;
-            std::transform(
-                value.begin(),
-                value.end(),
-                value.begin(),
-                [](unsigned char ch)
-                {
-                    return static_cast<char>(std::tolower(ch));
-                }
+        request.geometry.protectedArrivalStraightMeters =
+            std::max(
+                150.0,
+                input.terminalReferenceDistanceMeters
             );
-            return value;
-        }();
-
-        if (failureLower.find("invalid") != std::string::npos ||
-            failureLower.find("nan") != std::string::npos ||
-            failureLower.find("non-finite") != std::string::npos)
-        {
-            out.disposition = RoutePlanDisposition::InvalidWorldData;
-            out.failureCode = RoutePlanFailureCode::InvalidWorldGeometry;
-            out.userMessage =
-                routePlanFailureMessage(out.failureCode);
-        }
-        else if (failureLower.find("blocked") != std::string::npos ||
-                 failureLower.find("obstruct") != std::string::npos ||
-                 failureLower.find("collision-free") != std::string::npos ||
-                 failureLower.find("route") != std::string::npos)
-        {
-            // One blocked candidate is not proof that the route is impossible.
-            // Ask the planner/orchestrator for a different sector, radius or
-            // approach geometry first.
-            out.disposition = RoutePlanDisposition::NeedsRefinement;
-            out.failureCode = RoutePlanFailureCode::NoCollisionFreeCandidate;
-            out.userMessage =
-                routePlanFailureMessage(out.failureCode);
-        }
-        else
-        {
-            out.disposition = RoutePlanDisposition::NeedsRefinement;
-            out.failureCode = RoutePlanFailureCode::BackendFailure;
-            out.userMessage =
-                routePlanFailureMessage(out.failureCode);
-        }
     }
 
-    out.gates.reserve(planned.gates.size());
-    for (const auto& gate : planned.gates)
-        out.gates.push_back(adaptGate(gate));
+    request.geometry.minimumComfortRadiusMeters =
+        std::max(
+            150.0,
+            30.0 * input.agentRadiusMeters
+        );
+    request.geometry.designSpeedFraction = 0.80;
+    request.geometry.denseSampleSpacingMeters =
+        std::min(
+            10.0,
+            std::max(1.0, input.gateSpacingMeters)
+        );
+    request.geometry.sparseGateSpacingMeters =
+        std::max(
+            request.geometry.denseSampleSpacingMeters,
+            input.gateSpacingMeters
+        );
 
-    out.executionGates.reserve(planned.executionGates.size());
-    for (const auto& gate : planned.executionGates)
-        out.executionGates.push_back(adaptGate(gate));
+    request.obstacles =
+        input.obstacles;
 
-    out.routeCurves = planned.routeCurves;
-
-    out.terminalDetourUsed = planned.terminalDetourUsed;
-    out.terminalTurnRadiusRelaxed =
-        planned.terminalTurnRadiusRelaxed;
-    out.terminalTurnRequestedRadiusMeters =
-        planned.terminalTurnRequestedRadiusMeters;
-    out.terminalTurnSpeedMps = planned.terminalTurnSpeedMps;
-    out.terminalTurnLateralRadiusMeters =
-        planned.terminalTurnLateralRadiusMeters;
-    out.terminalTurnAngularRadiusMeters =
-        planned.terminalTurnAngularRadiusMeters;
-    out.terminalTurnAngularRampMeters =
-        planned.terminalTurnAngularRampMeters;
-    out.terminalArcCandidatesTested =
-        planned.terminalArcCandidatesTested;
-    out.terminalArcRouteable = planned.terminalArcRouteable;
-    out.terminalArcRouteRejected =
-        planned.terminalArcRouteRejected;
-    out.terminalArcTransitReady = planned.terminalArcTransitReady;
-    out.terminalArcTransitRejected =
-        planned.terminalArcTransitRejected;
-    out.terminalArcCollisionRejected =
-        planned.terminalArcCollisionRejected;
-    out.terminalArcAcceptedCandidates =
-        planned.terminalArcAcceptedCandidates;
-    out.terminalArcAxisPassesTested =
-        planned.terminalArcAxisPassesTested;
-    out.terminalArcLastRejection =
-        planned.terminalArcLastRejection;
-    out.terminalArcDominantBlockerId =
-        planned.terminalArcDominantBlockerId;
-    out.terminalArcDominantBlockerHits =
-        planned.terminalArcDominantBlockerHits;
-    out.terminalArcDominantBlockerCenterMeters =
-        planned.terminalArcDominantBlockerCenterMeters;
-    out.terminalArcDominantBlockerHalfExtentsMeters =
-        planned.terminalArcDominantBlockerHalfExtentsMeters;
-    out.terminalArcDominantBlockerRadiusMeters =
-        planned.terminalArcDominantBlockerRadiusMeters;
-    out.terminalArcRotationDegrees =
-        planned.terminalArcRotationDegrees;
-    out.initialTurnPresent = planned.initialTurnPresent;
-    out.initialTurnRadiusMeters = planned.initialTurnRadiusMeters;
-    out.terminalApproachShortened =
-        planned.terminalApproachShortened;
-    out.terminalApproachExtended =
-        planned.terminalApproachExtended;
-    out.terminalApproachLengthMeters =
-        planned.terminalApproachLengthMeters;
-    out.terminalTurnRadiusMeters = planned.terminalTurnRadiusMeters;
-    return out;
+    return assisted::AssistedRoutePlanner::plan(
+        request
+    );
 }
 
 } // namespace game::navigation::planner

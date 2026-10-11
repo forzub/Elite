@@ -305,14 +305,31 @@ public:
                         break;
                     }
 
-                    // This is a proving timeout, not permission to call the
-                    // scenario successful merely because execution started.
-                    if (stepAge >= 180.0)
+                    // Approach and transit are different contracts.
+                    // The old single 180 s timer could fire one second after
+                    // BLUE_ENTER when a bloated route consumed the whole
+                    // budget on approach.
+                    if (!m_blueEntered &&
+                        stepAge >= 180.0)
                     {
                         logSummary(
                             o,
                             "FAILED",
-                            "BLUE transit was not completed within 180 seconds"
+                            "BLUE volume was not reached within 180 seconds"
+                        );
+                        m_complete = true;
+                        flush();
+                    }
+                    else if (m_blueEntered &&
+                             !m_blueExited &&
+                             m_blueEnteredAt > -1.0e20 &&
+                             o.universeSeconds -
+                                 m_blueEnteredAt >= 30.0)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "BLUE transit was not completed within 30 seconds after entry"
                         );
                         m_complete = true;
                         flush();
@@ -521,6 +538,8 @@ private:
             else if (o.bluePhase == 2)
             {
                 m_blueEntered = true;
+                if (m_blueEnteredAt < -1.0e20)
+                    m_blueEnteredAt = o.universeSeconds;
                 logEvent(o, "BLUE_ENTER");
             }
             else if (o.bluePhase == 3)
@@ -558,6 +577,7 @@ private:
         {
             m_blueEntered = false;
             m_blueExited = false;
+            m_blueEnteredAt = -1.0e30;
             m_lastBluePhase = 0;
         }
 
@@ -640,6 +660,7 @@ private:
     int m_lastBluePhase = 0;
     bool m_blueEntered = false;
     bool m_blueExited = false;
+    double m_blueEnteredAt = -1.0e30;
 
     int m_requests = 0;
     int m_failures = 0;

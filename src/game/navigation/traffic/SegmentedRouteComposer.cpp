@@ -664,8 +664,25 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             mandatoryStart + entryLength;
         const double volumeEnd =
             entryEnd + volumeLength;
+        const double expectedMandatoryEnd =
+            volumeEnd + exitLength;
         const double mandatoryEnd =
             routeEndProgress(out);
+
+        if (std::abs(
+                mandatoryEnd - expectedMandatoryEnd
+            ) > 1.0e-4)
+        {
+            planner::RoutePlan invalid = out;
+            invalid.disposition =
+                planner::RoutePlanDisposition::InvalidWorldData;
+            invalid.failureCode =
+                planner::RoutePlanFailureCode::InvalidWorldGeometry;
+            invalid.failure =
+                "segmented mandatory stage progress accounting mismatch";
+            invalid.userMessage = invalid.failure;
+            return invalid;
+        }
 
         const std::string stageSource =
             stage.laneId.empty()

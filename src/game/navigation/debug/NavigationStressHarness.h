@@ -115,7 +115,7 @@ public:
             m_started = true;
             m_startedAt = o.universeSeconds;
             m_stepStartedAt = o.universeSeconds;
-            logEvent(o, "START scenario=hot-replan-contract-v1");
+            logEvent(o, "START scenario=hot-replan-blue-transit-v2");
         }
 
         sample(o);
@@ -354,7 +354,7 @@ private:
         {
             m_stream
                 << "# Elite navigation runtime stress report\n"
-                << "# scenario=hot-replan-contract-v1\n"
+                << "# scenario=hot-replan-blue-transit-v2\n"
                 << "# columns are key=value; SAMPLE cadence ~= 0.25 s\n";
             flush();
         }

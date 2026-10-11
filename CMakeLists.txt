@@ -144,6 +144,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/game/navigation/planner/RoutePlanner.cpp
     src/game/navigation/traffic/RouteStageCompiler.cpp
     src/game/navigation/traffic/TrafficRoutePlanAdapter.cpp
+    src/game/navigation/traffic/SegmentedRouteComposer.cpp
     src/game/navigation/traffic/RouteVolumeContainmentValidator.cpp
     src/game/navigation/TrajectoryFollower.cpp
     src/game/navigation/ManeuverProgramSampler.cpp

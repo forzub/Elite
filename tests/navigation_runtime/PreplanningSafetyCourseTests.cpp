@@ -106,6 +106,46 @@ int main()
         {
             PreplanningSafetyCourseRequest request;
             request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {100.0, 0.0, 0.0};
+            request.hullForward = {1.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 10.0;
+            request.additionalClearanceMeters = 20.0;
+            request.courseAccelerationMps2 = 25.0;
+            request.brakingAccelerationMps2 = 25.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+            request.newtonian = true;
+            request.obstacles.push_back(
+                sphere("ahead-newton", {1800.0, 0.0, 0.0}, 250.0)
+            );
+
+            const auto result =
+                PreplanningSafetyCourse::evaluate(request);
+
+            require(
+                result.valid,
+                "Newtonian blocked-course request invalid"
+            );
+            require(
+                !result.currentCourseSafe,
+                "Newtonian blocked ballistic course was accepted"
+            );
+            require(
+                result.safeCourseFound,
+                "Newtonian safety planner invented no physical escape"
+            );
+            require(
+                glm::dot(
+                    result.safeCourse,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                ) < 0.999,
+                "Newtonian escape course did not change inertial velocity"
+            );
+        }
+
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
             request.velocityMps = {80.0, 0.0, 0.0};
             request.preferredDirection = {1.0, 0.0, 0.0};
             request.hullRadiusMeters = 10.0;

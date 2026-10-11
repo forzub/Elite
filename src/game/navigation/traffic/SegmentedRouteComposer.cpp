@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 
 namespace game::navigation::traffic
 {
@@ -116,10 +117,11 @@ void appendMandatoryBlock(
         return;
 
     const double stageSpeed =
-        stage.volumeConstraint.maxSpeedMps > 1.0e-6
-            ? std::min(base.maxSpeedMps,
-                       stage.volumeConstraint.maxSpeedMps)
-            : 0.8 * base.maxSpeedMps;
+        game::navigation::OrdinaryRoutePolicy::
+            stageSpeedLimitMps(
+                base.maxSpeedMps,
+                stage.volumeConstraint.maxSpeedMps
+            );
 
     for (std::size_t i = 1; i < points.size(); ++i)
     {
@@ -455,18 +457,38 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         legRequest.initialSpeedMps = currentSpeed;
         legRequest.hasInitialForward = currentHasForward;
         legRequest.initialForward = currentForward;
+        legRequest.initialForwardLeadMeters =
+            currentHasForward
+                ? game::navigation::OrdinaryRoutePolicy::
+                      requiredStartLeadMeters(
+                          currentSpeed,
+                          legRequest.maxSpeedMps,
+                          legRequest.brakingMps2,
+                          legRequest.lateralMps2,
+                          legRequest.maxAngularVelocityRadPerSecond,
+                          2.0 * legRequest.agentRadiusMeters
+                      )
+                : 0.0;
         legRequest.requiredViaPointsMeters.clear();
         legRequest.mandatoryTangentStraights.clear();
 
-        // This is a virtual boundary, not a docking port. Keep the SAME
-        // geometric terminal solver/radius policy, but do not inherit the
-        // real dock's authored 9 km final approach.
-        legRequest.terminalApproachLengthMeters = 0.0;
+        // This is a virtual terminal boundary. Size the final straight
+        // from the speed reduction required before entering the mandatory
+        // stage; do not inherit any docking-specific constant.
         legRequest.terminalReferenceDistanceMeters =
             std::min(
                 terminalRequest.terminalReferenceDistanceMeters,
                 200.0
             );
+        legRequest.terminalApproachLengthMeters =
+            game::navigation::OrdinaryRoutePolicy::
+                requiredTerminalApproachMeters(
+                    terminalRequest.maxSpeedMps,
+                    handoffSpeed,
+                    terminalRequest.brakingMps2,
+                    legRequest.terminalReferenceDistanceMeters,
+                    2.0 * terminalRequest.agentRadiusMeters
+                );
 
         std::cerr
             << "[SegmentedLeg]"
@@ -493,12 +515,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             );
 
         const double handoffSpeed =
-            stage.volumeConstraint.maxSpeedMps > 1.0e-6
-                ? std::min(
-                      terminalRequest.maxSpeedMps,
-                      stage.volumeConstraint.maxSpeedMps
-                  )
-                : 0.8 * terminalRequest.maxSpeedMps;
+            game::navigation::OrdinaryRoutePolicy::
+                stageSpeedLimitMps(
+                    terminalRequest.maxSpeedMps,
+                    stage.volumeConstraint.maxSpeedMps
+                );
 
         appendPlanSamples(
             out,
@@ -549,11 +570,21 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     finalRequest.hasInitialForward = currentHasForward;
     finalRequest.initialForward = currentForward;
 
-    // The authored outbound tangent straight already established the start
-    // state. Give the free leg only a normal continuation lead instead of
-    // reusing the ship-origin policy from the original request.
+    // Every free leg starts from a real moving state. Recompute its
+    // straight lead from exit speed and vehicle dynamics exactly as at the
+    // original ship start.
     finalRequest.initialForwardLeadMeters =
-        currentHasForward ? 500.0 : 0.0;
+        currentHasForward
+            ? game::navigation::OrdinaryRoutePolicy::
+                  requiredStartLeadMeters(
+                      currentSpeed,
+                      finalRequest.maxSpeedMps,
+                      finalRequest.brakingMps2,
+                      finalRequest.lateralMps2,
+                      finalRequest.maxAngularVelocityRadPerSecond,
+                      2.0 * finalRequest.agentRadiusMeters
+                  )
+            : 0.0;
 
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();

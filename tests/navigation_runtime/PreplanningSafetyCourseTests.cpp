@@ -1,0 +1,150 @@
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <stdexcept>
+
+#include "src/game/navigation/PreplanningSafetyCourse.h"
+
+namespace
+{
+void require(bool condition, const char* message)
+{
+    if (!condition)
+        throw std::runtime_error(message);
+}
+
+world::navigation::NavigationObstacle sphere(
+    const char* id,
+    const glm::dvec3& center,
+    double radius
+)
+{
+    world::navigation::NavigationObstacle out;
+    out.id = id;
+    out.shape =
+        world::navigation::NavigationObstacleShape::Sphere;
+    out.centerMeters = center;
+    out.radiusMeters = radius;
+    return out;
+}
+}
+
+int main()
+{
+    try
+    {
+        using game::navigation::PreplanningSafetyCourse;
+        using game::navigation::PreplanningSafetyCourseRequest;
+
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {100.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 10.0;
+            request.additionalClearanceMeters = 20.0;
+            request.courseAccelerationMps2 = 20.0;
+            request.brakingAccelerationMps2 = 20.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+            request.obstacles.push_back(
+                sphere("off-course", {0.0, 1000.0, 0.0}, 100.0)
+            );
+
+            const auto result =
+                PreplanningSafetyCourse::evaluate(request);
+
+            require(result.valid, "clear-course request invalid");
+            require(
+                result.currentCourseSafe,
+                "clear current course was rejected"
+            );
+            require(
+                result.safeCourseFound,
+                "clear current course was not preserved"
+            );
+        }
+
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {100.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 10.0;
+            request.additionalClearanceMeters = 20.0;
+            request.courseAccelerationMps2 = 25.0;
+            request.brakingAccelerationMps2 = 25.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+            request.obstacles.push_back(
+                sphere("ahead", {1800.0, 0.0, 0.0}, 250.0)
+            );
+
+            const auto result =
+                PreplanningSafetyCourse::evaluate(request);
+
+            require(result.valid, "blocked-course request invalid");
+            require(
+                !result.currentCourseSafe,
+                "blocked ballistic course was accepted"
+            );
+            require(
+                result.safeCourseFound,
+                "blocked course did not produce an escape course"
+            );
+            require(
+                glm::dot(
+                    result.safeCourse,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                ) < 0.999,
+                "escape course did not change inertial direction"
+            );
+            require(
+                result.turnRadiusMeters > 0.0,
+                "escape course omitted physical turn radius"
+            );
+        }
+
+        {
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {80.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 10.0;
+            request.additionalClearanceMeters = 20.0;
+            request.courseAccelerationMps2 = 0.0;
+            request.brakingAccelerationMps2 = 40.0;
+            request.maxAngularVelocityRadPerSecond = 0.0;
+            request.obstacles.push_back(
+                sphere("ahead", {3000.0, 0.0, 0.0}, 200.0)
+            );
+
+            const auto result =
+                PreplanningSafetyCourse::evaluate(request);
+
+            require(result.valid, "stop-fallback request invalid");
+            require(
+                !result.currentCourseSafe,
+                "blocked stop-fallback course was accepted"
+            );
+            require(
+                !result.safeCourseFound,
+                "zero turn authority invented an escape course"
+            );
+            require(
+                result.stopFallbackClear,
+                "clear physical stopping corridor was rejected"
+            );
+        }
+
+        std::cout
+            << "PREPLANNING SAFETY COURSE TESTS: PASS\n";
+        return EXIT_SUCCESS;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << "PREPLANNING SAFETY COURSE TESTS: FAIL: "
+            << e.what()
+            << "\n";
+        return EXIT_FAILURE;
+    }
+}

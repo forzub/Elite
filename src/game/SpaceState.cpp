@@ -2722,8 +2722,6 @@ void SpaceState::updateDockingAdvisory()
                 );
             }
         }
-            }
-        }
 
         // Planner workers are serialized, but a stale worker may still be
         // unwinding after a target switch. Waiting is now safe because the

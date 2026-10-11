@@ -527,6 +527,18 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 "segmented inbound leg failed: "
             );
 
+        std::cerr
+            << "[SegmentedLegPlan]"
+            << " index=" << stageIndex
+            << " route_m="
+            << (inbound.routeCurves.empty()
+                    ? 0.0
+                    : inbound.routeCurves.back().endProgressMeters)
+            << " curves=" << inbound.routeCurves.size()
+            << " execution_gates=" << inbound.executionGates.size()
+            << " diagnostics=\"" << inbound.diagnosticSummary << "\""
+            << std::endl;
+
         appendPlanSamples(
             out,
             inbound,
@@ -630,6 +642,18 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             finalLeg,
             "segmented final leg failed: "
         );
+
+    std::cerr
+        << "[SegmentedLegPlan]"
+        << " index=" << mandatoryStages.size()
+        << " route_m="
+        << (finalLeg.routeCurves.empty()
+                ? 0.0
+                : finalLeg.routeCurves.back().endProgressMeters)
+        << " curves=" << finalLeg.routeCurves.size()
+        << " execution_gates=" << finalLeg.executionGates.size()
+        << " diagnostics=\"" << finalLeg.diagnosticSummary << "\""
+        << std::endl;
 
     appendPlanSamples(
         out,

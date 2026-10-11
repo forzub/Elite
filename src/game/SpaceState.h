@@ -243,6 +243,7 @@ private:
         const Viewport& viewport
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
+    void renderNavigationStressOverlay(const Viewport& viewport);
     void renderRoutePlanningModal(const Viewport& viewport);
     void updateDockingAdvisory();
     game::presentation::SystemMapPanelPresentation

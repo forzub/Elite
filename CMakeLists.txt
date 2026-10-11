@@ -141,6 +141,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/game/navigation/NavigationRuntimePlanner.cpp
     src/game/navigation/NominalRoutePlanner.cpp
     src/game/navigation/DockingAdvisoryPlanner.cpp
+    src/game/navigation/PreplanningSafetyCourse.cpp
     src/game/navigation/planner/RoutePlanner.cpp
     src/game/navigation/planner/RouteEntryBinder.cpp
     src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp

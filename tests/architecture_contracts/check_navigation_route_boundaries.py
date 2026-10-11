@@ -125,6 +125,20 @@ try:
         ),
     )
 
+    root_cmake = read("CMakeLists.txt")
+    production_runtime_window = root_cmake[
+        root_cmake.find("add_library(EliteNavigationWorldRuntime STATIC"):
+        root_cmake.find("target_include_directories(EliteNavigationWorldRuntime")
+    ]
+    if "DockingAdvisoryPlanner.cpp" in production_runtime_window:
+        raise AssertionError(
+            "legacy DockingAdvisoryPlanner is still linked into production runtime"
+        )
+    if "planner/assisted/AssistedRoutePlanner.cpp" not in production_runtime_window:
+        raise AssertionError(
+            "Assisted v3 planner is missing from production runtime"
+        )
+
     # Follower/autopilot may consume only generic route contracts.
     autopilot_dir = ROOT / "src/game/navigation/autopilot"
     for path in autopilot_dir.glob("*"):

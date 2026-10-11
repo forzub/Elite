@@ -14,6 +14,7 @@ struct PreplanningSafetyCourseRequest
 {
     glm::dvec3 positionMeters {0.0};
     glm::dvec3 velocityMps {0.0};
+    glm::dvec3 hullForward {0.0, 0.0, -1.0};
     glm::dvec3 preferredDirection {0.0, 0.0, -1.0};
 
     double hullRadiusMeters = 0.0;

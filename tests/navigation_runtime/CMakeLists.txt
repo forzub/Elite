@@ -57,6 +57,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RoutePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RouteEntryBinder.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"

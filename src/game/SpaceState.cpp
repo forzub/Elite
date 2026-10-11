@@ -2363,9 +2363,10 @@ void SpaceState::updateDockingAdvisory()
         else
         {
             // AUTOMATIC HOT-REPLAN CONTRACT:
-            // 1) release translational acceleration,
-            // 2) actively kill all angular velocity,
-            // 3) only then snapshot and plan from the ballistic state.
+            // Immediately release translational acceleration and begin damping
+            // angular velocity. Do NOT serialize this physical settling ahead
+            // of the expensive route worker: the worker is speculative and
+            // asynchronous, while final handoff remains spatially validated.
             constexpr double AutomaticSettledAngularRadPerSec = 0.01;
             constexpr double AutomaticAngularSettledSeconds = 0.20;
 
@@ -2380,33 +2381,27 @@ void SpaceState::updateDockingAdvisory()
             if (!angularStopped)
             {
                 m_clientDockingSettledSinceServerSeconds = -1.0;
-                return;
             }
-
-            if (m_clientDockingSettledSinceServerSeconds < 0.0)
+            else if (m_clientDockingSettledSinceServerSeconds < 0.0)
             {
                 m_clientDockingSettledSinceServerSeconds =
                     authoritativeServerSeconds;
-                return;
             }
-
-            if (authoritativeServerSeconds -
-                    m_clientDockingSettledSinceServerSeconds <
-                AutomaticAngularSettledSeconds)
+            else if (authoritativeServerSeconds -
+                         m_clientDockingSettledSinceServerSeconds >=
+                     AutomaticAngularSettledSeconds)
             {
-                return;
+                // Once angular settling finishes the craft is a pure
+                // zero-acceleration ballistic body. Planning may already be
+                // running by this point.
+                submitAutopilotControl(coastForPlanningControl());
             }
-
-            // Angular state is now settled. Remove all translational demand.
-            // We still MUST prove the resulting inertial course clear before
-            // any asynchronous route calculation is allowed to begin.
-            submitAutopilotControl(coastForPlanningControl());
         }
 
         std::cout
             << "[DockClient] request=" << pending.serial
             << " phase="
-            << (automatic ? "ballistic-planning" : "stopped-planning")
+            << (automatic ? "async-preplanning" : "stopped-planning")
             << " vrel_mps=" << relativeSpeedMps
             << " omega_radps=" << angularSpeedRadPerSec
             << std::endl;

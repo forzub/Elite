@@ -2813,14 +2813,20 @@ void SpaceState::updateDockingAdvisory()
                     );
 
                     job->plan =
-                        compiledTrafficRoute.valid
-                            ? game::navigation::traffic::
-                                  SegmentedRouteComposer::plan(
+                        job->entryRebind
+                            ? game::navigation::planner::
+                                  RouteEntryBinder::bind(
                                       request,
-                                      compiledTrafficRoute
+                                      job->entryBackbone
                                   )
-                            : game::navigation::planner::
-                                  RoutePlanner::plan(request);
+                            : compiledTrafficRoute.valid
+                                ? game::navigation::traffic::
+                                      SegmentedRouteComposer::plan(
+                                          request,
+                                          compiledTrafficRoute
+                                      )
+                                : game::navigation::planner::
+                                      RoutePlanner::plan(request);
 
                     job->planningProgressPermille.store(
                         700,

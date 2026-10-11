@@ -286,7 +286,7 @@ public:
 
                     if (m_blueEntered && m_blueExited)
                     {
-                        logSummary(o, "COMPLETE", {});
+                        logSummary(o, "COMPLETE", std::string{});
                         m_complete = true;
                         flush();
                         break;

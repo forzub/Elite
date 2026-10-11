@@ -57,7 +57,16 @@ public:
         bool safetyStopFallback = false;
 
         bool routeValid = false;
+        double routeProgressMeters = 0.0;
         std::size_t routeCurveCount = 0;
+
+        // Semantic BLUE proving state from RoutePlan::stages.
+        bool blueStagePresent = false;
+        bool blueHardContainment = false;
+        int bluePhase = 0; // 0 absent, 1 approach, 2 transit, 3 exited
+        double blueStartProgressMeters = 0.0;
+        double blueEndProgressMeters = 0.0;
+        std::string blueVolumeId;
         std::size_t executionGateCount = 0;
         int firstCurveKind = -1;
         double firstCurveLengthMeters = 0.0;
@@ -206,11 +215,9 @@ public:
                 break;
 
             default:
-                // Rapid alternating requests exercise cancellation, stale
-                // workers, request serial ownership and state reset. Six
-                // transitions are enough to expose accumulation without making
-                // a normal run excessively long.
-                if (m_step >= 6 && m_step < 12)
+                // Five rapid alternating transitions exercise cancellation,
+                // stale workers, request serial ownership and state reset.
+                if (m_step >= 6 && m_step < 11)
                 {
                     if (o.failed || stepAge >= 1.5)
                     {
@@ -221,14 +228,79 @@ public:
                         return issue(o, next, "rapid-switch");
                     }
                 }
+                else if (m_step == 11)
+                {
+                    // Final request is not another cancellation probe. It is a
+                    // dedicated end-to-end BLUE traversal proof and therefore
+                    // must be allowed to fly through the authored volume.
+                    if (o.failed || stepAge >= 1.5)
+                    {
+                        return issue(
+                            o,
+                            Target::CubeFront,
+                            "blue-proving-run"
+                        );
+                    }
+                }
                 else if (m_step == 12)
                 {
-                    // Do not declare victory while the last request is still
-                    // planning. Finish only after the production pipeline has
-                    // produced an actual execution result or a terminal fail.
-                    if (o.failed || o.dockingPhase == 4)
+                    if (o.failed)
                     {
-                        logSummary(o);
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "blue-proving-terminal-failure"
+                        );
+                        m_complete = true;
+                        flush();
+                        break;
+                    }
+
+                    if (o.dockingPhase == 4 &&
+                        !o.blueStagePresent &&
+                        stepAge >= 1.0)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "accepted cube route has no semantic BLUE stage"
+                        );
+                        m_complete = true;
+                        flush();
+                        break;
+                    }
+
+                    if (o.blueStagePresent &&
+                        !o.blueHardContainment &&
+                        o.dockingPhase == 4)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "semantic BLUE stage lost hard containment"
+                        );
+                        m_complete = true;
+                        flush();
+                        break;
+                    }
+
+                    if (m_blueEntered && m_blueExited)
+                    {
+                        logSummary(o, "COMPLETE", {});
+                        m_complete = true;
+                        flush();
+                        break;
+                    }
+
+                    // This is a proving timeout, not permission to call the
+                    // scenario successful merely because execution started.
+                    if (stepAge >= 180.0)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "BLUE transit was not completed within 180 seconds"
+                        );
                         m_complete = true;
                         flush();
                     }
@@ -326,6 +398,14 @@ private:
             << " job_stage=" << o.jobStage
             << " job_permille=" << o.jobPermille
             << " route_valid=" << (o.routeValid ? 1 : 0)
+            << " route_progress_m=" << o.routeProgressMeters
+            << " blue_stage=" << (o.blueStagePresent ? 1 : 0)
+            << " blue_hard=" << (o.blueHardContainment ? 1 : 0)
+            << " blue_phase=" << o.bluePhase
+            << " blue_start_m=" << o.blueStartProgressMeters
+            << " blue_end_m=" << o.blueEndProgressMeters
+            << " blue_volume="
+            << (o.blueVolumeId.empty() ? "none" : o.blueVolumeId)
             << " curves=" << o.routeCurveCount
             << " exec_gates=" << o.executionGateCount
             << " first_kind=" << o.firstCurveKind
@@ -415,6 +495,26 @@ private:
 
         m_lastSafetyCourseActive = o.safetyCourseActive;
         m_lastSafetyStopFallback = o.safetyStopFallback;
+
+        if (o.bluePhase != m_lastBluePhase)
+        {
+            if (o.bluePhase == 1)
+            {
+                logEvent(o, "BLUE_APPROACH");
+            }
+            else if (o.bluePhase == 2)
+            {
+                m_blueEntered = true;
+                logEvent(o, "BLUE_ENTER");
+            }
+            else if (o.bluePhase == 3)
+            {
+                if (m_blueEntered)
+                    m_blueExited = true;
+                logEvent(o, "BLUE_EXIT");
+            }
+            m_lastBluePhase = o.bluePhase;
+        }
     }
 
     Action issue(
@@ -437,6 +537,14 @@ private:
         ++m_step;
         m_stepStartedAt = o.universeSeconds;
         ++m_requests;
+
+        if (std::string(reason) == "blue-proving-run")
+        {
+            m_blueEntered = false;
+            m_blueExited = false;
+            m_lastBluePhase = 0;
+        }
+
         return action;
     }
 
@@ -456,7 +564,11 @@ private:
         flush();
     }
 
-    void logSummary(const Observation& o)
+    void logSummary(
+        const Observation& o,
+        const char* status,
+        const std::string& reason
+    )
     {
         if (!m_stream.is_open())
             return;
@@ -476,8 +588,12 @@ private:
             << " moving_non_line_samples=" << m_nonLineMovingStarts
             << " missing_ballistic_lead_samples="
             << m_missingBallisticLeadSamples
-            << " status=COMPLETE"
-            << "\n";
+            << " blue_entered=" << (m_blueEntered ? 1 : 0)
+            << " blue_exited=" << (m_blueExited ? 1 : 0)
+            << " status=" << status;
+        if (!reason.empty())
+            m_stream << " reason=\"" << escaped(reason) << "\"";
+        m_stream << "\n";
         flush();
     }
 
@@ -503,6 +619,9 @@ private:
     bool m_lastJobReady = false;
     bool m_lastSafetyCourseActive = false;
     bool m_lastSafetyStopFallback = false;
+    int m_lastBluePhase = 0;
+    bool m_blueEntered = false;
+    bool m_blueExited = false;
 
     int m_requests = 0;
     int m_failures = 0;

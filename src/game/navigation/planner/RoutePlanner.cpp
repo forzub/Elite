@@ -221,6 +221,18 @@ double speedLimitForCurvature(
                 )
             );
     }
+
+    if (curvaturePerMeter > 1.0e-12 &&
+        request.maxAngularVelocityRadPerSecond > 0.0)
+    {
+        limit =
+            std::min(
+                limit,
+                request.maxAngularVelocityRadPerSecond /
+                    curvaturePerMeter
+            );
+    }
+
     return std::max(0.0, limit);
 }
 
@@ -425,6 +437,16 @@ RoutePlan planContinuousAssisted(
         std::max(0.0, input.brakingMps2);
     request.maxLateralAccelerationMps2 =
         input.lateralMps2;
+    request.maxAngularVelocityRadPerSecond =
+        std::max(
+            0.0,
+            input.maxAngularVelocityRadPerSecond
+        );
+    request.maxAngularAccelerationRadPerSecond2 =
+        std::max(
+            0.0,
+            input.maxAngularAccelerationRadPerSecond2
+        );
 
     // Ordinary Assisted geometry is allowed to tighten and therefore lower
     // the local speed. maxSpeed is a cruise ceiling, not a global turn-radius
@@ -639,6 +661,22 @@ RoutePlan planContinuousAssisted(
         " brake_energy=" +
         std::to_string(
             optimized.diagnostics.brakingDemandEnergy
+        ) +
+        " total_turn_rad=" +
+        std::to_string(
+            optimized.diagnostics.totalCurvatureRadians
+        ) +
+        " bend_energy=" +
+        std::to_string(
+            optimized.diagnostics.curvatureConcentrationEnergy
+        ) +
+        " peak_omega_util=" +
+        std::to_string(
+            optimized.diagnostics.maxAngularVelocityUtilization
+        ) +
+        " peak_alpha_util=" +
+        std::to_string(
+            optimized.diagnostics.maxAngularAccelerationUtilization
         ) +
         " objective=" +
         std::to_string(

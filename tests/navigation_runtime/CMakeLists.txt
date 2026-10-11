@@ -1515,3 +1515,48 @@ set_tests_properties(
     ordinary_route_policy
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    assisted_route_planner_v3_tests
+    AssistedRoutePlannerV3Tests.cpp
+)
+
+target_include_directories(
+    assisted_route_planner_v3_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    assisted_route_planner_v3_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    assisted_route_planner_v3_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        assisted_route_planner_v3_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        assisted_route_planner_v3_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME assisted_route_planner_v3
+    COMMAND assisted_route_planner_v3_tests
+)
+
+set_tests_properties(
+    assisted_route_planner_v3
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

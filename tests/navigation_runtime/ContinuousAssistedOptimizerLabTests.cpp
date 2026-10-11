@@ -140,7 +140,9 @@ int main()
         {12000.0, 5000.0, 0.0};
     highSpeed.goal.tangent =
         {1.0, 0.0, 0.0};
-    highSpeed.goal.speedMps = 0.0;
+    // BLUE-like moving handoff: geometry must remain executable at the
+    // non-zero speed that will actually cross the semantic boundary.
+    highSpeed.goal.speedMps = 220.0;
 
     highSpeed.hullRadiusMeters = 17.3;
     highSpeed.designSpeedMps = 400.0;
@@ -206,6 +208,12 @@ int main()
         fast.diagnostics.maxAngularAccelerationUtilization < 0.0)
     {
         return fail("high-speed optimizer produced invalid angular diagnostics");
+    }
+
+    if (fast.diagnostics.maxAngularAccelerationUtilization >
+        1.0001)
+    {
+        return fail("high-speed optimizer exceeded angular-acceleration authority");
     }
 
     std::cout

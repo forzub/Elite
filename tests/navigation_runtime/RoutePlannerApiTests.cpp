@@ -213,6 +213,8 @@ int main()
             continuous.terminalGateSpacingMeters = 250.0;
             continuous.terminalDenseDistanceMeters = 2000.0;
 
+            continuous.initialForwardLeadMeters = 1200.0;
+
             const auto optimized =
                 RoutePlanner::plan(continuous);
 
@@ -254,6 +256,17 @@ int main()
             require(
                 sawBezier,
                 "continuous Assisted production bridge published no Bezier geometry"
+            );
+            require(
+                !optimized.routeCurves.empty() &&
+                optimized.routeCurves.front().kind == RouteCurveKind::Line,
+                "continuous Assisted route did not author the ballistic start lead"
+            );
+            require(
+                optimized.routeCurves.front().endProgressMeters -
+                    optimized.routeCurves.front().startProgressMeters >=
+                    continuous.initialForwardLeadMeters - 1.0e-6,
+                "continuous Assisted route curved before the required ballistic lead ended"
             );
             require(
                 optimized.executionGates.size() > optimized.gates.size(),

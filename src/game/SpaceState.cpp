@@ -2533,6 +2533,146 @@ void SpaceState::updateDockingAdvisory()
 
         request.obstacles = snapshot.navigationObstacles;
 
+        if (automatic)
+        {
+            game::navigation::PreplanningSafetyCourseRequest safety;
+            safety.positionMeters = request.startMeters;
+            safety.velocityMps = startVelocityMps;
+            safety.preferredDirection =
+                glm::length(request.goalMeters - request.startMeters) >
+                        1.0e-9
+                    ? glm::normalize(
+                          request.goalMeters -
+                          request.startMeters
+                      )
+                    : request.initialForward;
+            safety.hullRadiusMeters =
+                request.agentRadiusMeters;
+            safety.additionalClearanceMeters =
+                std::max(
+                    25.0,
+                    definition->requiredClearanceMeters
+                );
+            safety.courseAccelerationMps2 =
+                controlLaw ==
+                        game::navigation::
+                            LocalFlightControlLaw::Assisted
+                    ? request.lateralMps2
+                    : request.acceleratingMps2;
+            safety.brakingAccelerationMps2 =
+                request.brakingMps2;
+            safety.maxAngularVelocityRadPerSecond =
+                request.maxAngularVelocityRadPerSecond;
+            safety.newtonian =
+                controlLaw ==
+                    game::navigation::
+                        LocalFlightControlLaw::Newtonian;
+            safety.obstacles = request.obstacles;
+
+            const auto safetyResult =
+                game::navigation::PreplanningSafetyCourse::
+                    evaluate(safety);
+
+            std::cerr
+                << "[DockSafetyCourse]"
+                << " request=" << pending.serial
+                << " phase=check"
+                << " speed_mps=" << safetyResult.speedMps
+                << " current_safe="
+                << (safetyResult.currentCourseSafe ? 1 : 0)
+                << " escape_found="
+                << (safetyResult.safeCourseFound ? 1 : 0)
+                << " stop_clear="
+                << (safetyResult.stopFallbackClear ? 1 : 0)
+                << " ray_m=" << safetyResult.sceneRayMeters
+                << " turn_deg="
+                << safetyResult.turnAngleRad *
+                    57.2957795130823208768
+                << " turn_radius_m="
+                << safetyResult.turnRadiusMeters
+                << " reason="" << safetyResult.message << """
+                << std::endl;
+
+            if (!safetyResult.currentCourseSafe)
+            {
+                m_dockSafeCourse = {};
+                m_dockSafeCourse.active = true;
+                m_dockSafeCourse.serial = pending.serial;
+                m_dockSafeCourse.stopFallback =
+                    !safetyResult.safeCourseFound;
+                m_dockSafeCourse.direction =
+                    safetyResult.safeCourse;
+                m_dockSafeCourse.targetSpeedMps =
+                    safetyResult.speedMps;
+                m_dockSafeCourse.sceneRayMeters =
+                    safetyResult.sceneRayMeters;
+                m_dockSafeCourse.selectedTurnAngleRad =
+                    safetyResult.turnAngleRad;
+                m_dockSafeCourse.selectedTurnRadiusMeters =
+                    safetyResult.turnRadiusMeters;
+                m_dockSafeCourse.lastRecheckServerSeconds =
+                    authoritativeServerSeconds;
+                m_dockSafeCourse.hullRadiusMeters =
+                    safety.hullRadiusMeters;
+                m_dockSafeCourse.additionalClearanceMeters =
+                    safety.additionalClearanceMeters;
+                m_dockSafeCourse.courseAccelerationMps2 =
+                    safety.courseAccelerationMps2;
+                m_dockSafeCourse.brakingAccelerationMps2 =
+                    safety.brakingAccelerationMps2;
+                m_dockSafeCourse.maxAngularVelocityRadPerSecond =
+                    safety.maxAngularVelocityRadPerSecond;
+                m_dockSafeCourse.newtonian =
+                    safety.newtonian;
+                m_dockSafeCourse.preferredDirection =
+                    safety.preferredDirection;
+                m_dockSafeCourse.obstacles =
+                    std::move(safety.obstacles);
+
+                m_clientDockingPhase =
+                    ClientDockingPhase::SecuringCourse;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+
+                if (m_dockSafeCourse.stopFallback)
+                {
+                    std::cerr
+                        << "[DockSafetyCourse]"
+                        << " request=" << pending.serial
+                        << " phase=emergency-stop"
+                        << " stop_corridor_clear="
+                        << (safetyResult.stopFallbackClear ? 1 : 0)
+                        << std::endl;
+                    submitAutopilotControl(manualStopControl());
+                }
+                else
+                {
+                    std::cerr
+                        << "[DockSafetyCourse]"
+                        << " request=" << pending.serial
+                        << " phase=securing"
+                        << " course=("
+                        << m_dockSafeCourse.direction.x << ","
+                        << m_dockSafeCourse.direction.y << ","
+                        << m_dockSafeCourse.direction.z << ")"
+                        << std::endl;
+                    submitAutopilotControl(
+                        safeCourseControl(
+                            m_dockSafeCourse.direction
+                        )
+                    );
+                }
+                return;
+            }
+        }
+
+        // Planner workers are serialized, but a stale worker may still be
+        // unwinding after a target switch. Waiting is now safe because the
+        // current ballistic course has already been collision-proven above.
+        const int livePlannerWorkers =
+            m_dockWorkerCount->load(std::memory_order_acquire);
+        if (livePlannerWorkers > 0)
+            return;
+
         game::navigation::traffic::CompiledTrafficRoute
             compiledTrafficRoute;
 

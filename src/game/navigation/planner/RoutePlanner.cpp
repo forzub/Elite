@@ -574,13 +574,23 @@ RoutePlan planContinuousAssisted(
     out.failureCode = RoutePlanFailureCode::None;
     out.failure.clear();
     out.userMessage = routePlanFailureMessage(out.failureCode);
-    out.initialTurnPresent = true;
+    out.initialTurnPresent =
+        optimized.diagnostics.maxCurvaturePerMeter >
+            1.0e-12;
+
+    const double representativeTurnRadius =
+        std::isfinite(
+            optimized.diagnostics.minimumRadiusMeters
+        )
+            ? optimized.diagnostics.minimumRadiusMeters
+            : 0.0;
+
     out.initialTurnRadiusMeters =
-        optimized.diagnostics.minimumRadiusMeters;
+        representativeTurnRadius;
     out.terminalTurnRadiusMeters =
-        optimized.diagnostics.minimumRadiusMeters;
+        representativeTurnRadius;
     out.terminalTurnLateralRadiusMeters =
-        optimized.diagnostics.minimumRadiusMeters;
+        representativeTurnRadius;
     out.terminalTurnSpeedMps = input.maxSpeedMps;
     out.terminalApproachLengthMeters =
         request.protectedGoalStraightMeters;

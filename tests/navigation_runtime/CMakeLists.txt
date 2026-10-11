@@ -1474,3 +1474,43 @@ set_tests_properties(
     navigation_runtime_planner
     PROPERTIES LABELS "legacy_navigation_lab"
 )
+
+
+add_executable(
+    ordinary_route_policy_tests
+    OrdinaryRoutePolicyTests.cpp
+)
+
+target_include_directories(
+    ordinary_route_policy_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ordinary_route_policy_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        ordinary_route_policy_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ordinary_route_policy_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ordinary_route_policy
+    COMMAND ordinary_route_policy_tests
+)
+
+set_tests_properties(
+    ordinary_route_policy
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

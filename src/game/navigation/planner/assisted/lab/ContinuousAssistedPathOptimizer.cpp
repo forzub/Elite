@@ -724,15 +724,30 @@ Evaluation evaluate(
     const double excessLengthPenalty =
         excessStretch * excessStretch;
 
+    // Comfort is deliberately bounded in the objective. Once a route is
+    // already "uncomfortable", making it numerically silk-smooth is never
+    // allowed to buy an arbitrary detour. Time and quadratic route stretch
+    // remain unbounded costs and therefore dominate pathological loops.
+    const double boundedLateralEnergy =
+        std::min(
+            4.0,
+            out.lateralAccelerationEnergy
+        );
+    const double boundedCurvatureVariation =
+        std::min(
+            4.0,
+            out.curvatureVariationEnergy
+        );
+
     out.objective =
         request.weights.travelTime *
             normalizedTime +
         request.weights.pathLength *
             excessLengthPenalty +
         request.weights.lateralAccelerationEnergy *
-            out.lateralAccelerationEnergy +
+            boundedLateralEnergy +
         request.weights.curvatureVariation *
-            out.curvatureVariationEnergy;
+            boundedCurvatureVariation;
 
     return out;
 }

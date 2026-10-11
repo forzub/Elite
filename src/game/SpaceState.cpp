@@ -3688,6 +3688,21 @@ void SpaceState::update(float dt)
     // introduced.
     if (m_navigationStressHarness.enabled())
     {
+        // Stress runs must remain visually inspectable even though they bypass
+        // the ordinary dock-card UI action that normally enables these layers.
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::RoutePlanning,
+            true
+        );
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::LocalGuidance,
+            true
+        );
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::HudGuidanceCorridor,
+            true
+        );
+
         game::navigation::debug::NavigationStressHarness::Observation obs;
         obs.universeSeconds =
             m_client->lastSimulationMetadata().universeTimeSeconds;
@@ -4840,6 +4855,7 @@ m_systemMapRenderer.render(
 
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
+    renderNavigationStressOverlay(vp);
 
     m_perfHudMs = nowMs() - hudStartMs;
 }
@@ -5054,6 +5070,7 @@ void SpaceState::renderInSessionPresentationOverlay()
             target.service
         );
         renderUiLanguageIndicator(vp);
+        renderNavigationStressOverlay(vp);
         return;
     }
 
@@ -5065,6 +5082,7 @@ void SpaceState::renderInSessionPresentationOverlay()
     renderRoutePlanningModal(vp);
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
+    renderNavigationStressOverlay(vp);
 }
 
 void SpaceState::renderRoutePlanningModal(
@@ -5216,6 +5234,175 @@ void SpaceState::renderRoutePlanningModal(
             glm::vec4(0.35f, 0.78f, 0.94f, 1.0f)
         );
     }
+
+    text.endFrame();
+}
+
+
+void SpaceState::renderNavigationStressOverlay(
+    const Viewport& viewport
+)
+{
+    if (!m_navigationStressHarness.enabled() ||
+        viewport.width <= 0 ||
+        viewport.height <= 0)
+    {
+        return;
+    }
+
+    const auto& pending =
+        m_navigationWorkspace.dockingRouteRequests().pending();
+
+    const char* phase = "IDLE";
+    switch (m_clientDockingPhase)
+    {
+        case ClientDockingPhase::Stabilizing:
+            phase = "STABILIZING";
+            break;
+        case ClientDockingPhase::Planning:
+            phase = "PLANNING";
+            break;
+        case ClientDockingPhase::RouteReady:
+            phase = "ROUTE READY";
+            break;
+        case ClientDockingPhase::Executing:
+            phase = "AUTOPILOT ACTIVE";
+            break;
+        case ClientDockingPhase::Idle:
+        default:
+            phase =
+                m_noSafeDockingGuidanceSolution
+                    ? "FAILED"
+                    : "IDLE";
+            break;
+    }
+
+    std::string target = "none";
+    if (pending.valid())
+    {
+        target =
+            pending.target.stableObjectId +
+            ":" +
+            pending.target.semanticAnchorId;
+    }
+
+    double speedMps = 0.0;
+    double omegaRadPerSec = 0.0;
+    if (m_client)
+    {
+        const auto playerIt =
+            m_client->world().ships().find(m_playerId.value);
+        if (playerIt != m_client->world().ships().end())
+        {
+            const auto& transform = playerIt->second.transform;
+            speedMps =
+                glm::length(transform.motion.localVelocityMps);
+            omegaRadPerSec =
+                std::sqrt(
+                    transform.pitchRate * transform.pitchRate +
+                    transform.yawRate * transform.yawRate +
+                    transform.rollRate * transform.rollRate
+                );
+        }
+    }
+
+    const int workers =
+        m_dockWorkerCount
+            ? m_dockWorkerCount->load(std::memory_order_acquire)
+            : 0;
+
+    std::ostringstream line1;
+    line1
+        << "NAV STRESS  "
+        << m_navigationStressHarness.currentStep()
+        << "/"
+        << game::navigation::debug::
+            NavigationStressHarness::totalSteps()
+        << "  "
+        << phase;
+
+    std::ostringstream line2;
+    line2
+        << target
+        << "   v="
+        << std::fixed << std::setprecision(1)
+        << speedMps
+        << " m/s   omega="
+        << std::setprecision(4)
+        << omegaRadPerSec
+        << " rad/s   workers="
+        << workers;
+
+    std::string line3;
+    if (m_noSafeDockingGuidanceSolution &&
+        !m_dockingGuidanceFailureReason.empty())
+    {
+        line3 = "FAIL: " + m_dockingGuidanceFailureReason;
+    }
+    else if (m_navigationStressHarness.complete())
+    {
+        line3 =
+            "COMPLETE  D:/tmp/elite_navigation_stress.log";
+    }
+    else
+    {
+        line3 =
+            "report: D:/tmp/elite_navigation_stress.log";
+    }
+
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(
+        viewport.width,
+        viewport.height
+    );
+
+    constexpr float x = 18.0f;
+    constexpr float y = 18.0f;
+    constexpr float width = 590.0f;
+    constexpr float height = 92.0f;
+
+    text.solidRectPx(
+        x,
+        y,
+        width,
+        height,
+        glm::vec4(0.015f, 0.025f, 0.035f, 0.90f)
+    );
+    text.solidRectPx(
+        x,
+        y,
+        5.0f,
+        height,
+        m_noSafeDockingGuidanceSolution
+            ? glm::vec4(0.94f, 0.25f, 0.22f, 1.0f)
+            : m_clientDockingPhase == ClientDockingPhase::Executing
+                ? glm::vec4(0.25f, 0.92f, 0.43f, 1.0f)
+                : glm::vec4(0.30f, 0.70f, 0.95f, 1.0f)
+    );
+
+    text.textDrawPx(
+        line1.str(),
+        x + 16.0f,
+        y + 24.0f,
+        18,
+        glm::vec4(0.93f, 0.97f, 1.0f, 1.0f)
+    );
+    text.textDrawPx(
+        line2.str(),
+        x + 16.0f,
+        y + 50.0f,
+        14,
+        glm::vec4(0.76f, 0.86f, 0.92f, 1.0f)
+    );
+    text.textDrawPx(
+        line3,
+        x + 16.0f,
+        y + 74.0f,
+        13,
+        m_noSafeDockingGuidanceSolution
+            ? glm::vec4(1.0f, 0.50f, 0.45f, 1.0f)
+            : glm::vec4(0.60f, 0.77f, 0.87f, 1.0f)
+    );
 
     text.endFrame();
 }

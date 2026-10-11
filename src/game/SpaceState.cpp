@@ -5468,10 +5468,16 @@ void SpaceState::renderNavigationStressOverlay(
     switch (m_clientDockingPhase)
     {
         case ClientDockingPhase::Stabilizing:
-            phase = "STABILIZING";
+            phase =
+                m_dockLateEntry.active
+                    ? "ENTRY STABILIZING"
+                    : "STABILIZING";
             break;
         case ClientDockingPhase::Planning:
-            phase = "PLANNING";
+            phase =
+                m_dockLateEntry.active
+                    ? "ENTRY PLANNING"
+                    : "PLANNING";
             break;
         case ClientDockingPhase::RouteReady:
             phase = "ROUTE READY";

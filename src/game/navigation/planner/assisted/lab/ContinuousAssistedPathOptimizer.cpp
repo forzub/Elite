@@ -634,6 +634,136 @@ Evaluation evaluate(
             );
     }
 
+    // Curvature-rate authority is part of the speed profile, not merely a
+    // diagnostic. If adjacent samples ask the hull to change path angular
+    // rate faster than its real attitude authority, lower the local speed
+    // ceilings and rebuild the longitudinal profile. This lets geometry and
+    // ETA compete naturally: a sharp curvature transition is still possible,
+    // but it becomes slow unless the optimizer broadens/smooths it.
+    if (request.maxAngularAccelerationRadPerSecond2 > Epsilon)
+    {
+        constexpr int AngularProfileIterations = 10;
+        constexpr double AngularReserve = 0.995;
+
+        for (int iteration = 0;
+             iteration < AngularProfileIterations;
+             ++iteration)
+        {
+            bool adjusted = false;
+
+            for (std::size_t i = 0; i + 1 < count; ++i)
+            {
+                const double ds =
+                    glm::length(
+                        out.samples[i + 1].position -
+                        out.samples[i].position
+                    );
+                if (ds <= 1.0e-9)
+                    continue;
+
+                const double sumSpeed =
+                    speed[i] + speed[i + 1];
+                if (sumSpeed <= MinimumUsefulSpeedMps)
+                    continue;
+
+                const double dt =
+                    2.0 * ds / sumSpeed;
+                if (dt <= Epsilon)
+                    continue;
+
+                const double omega0 =
+                    speed[i] *
+                    out.samples[i].curvaturePerMeter;
+                const double omega1 =
+                    speed[i + 1] *
+                    out.samples[i + 1].curvaturePerMeter;
+                const double demandedAlpha =
+                    std::abs(omega1 - omega0) / dt;
+
+                if (demandedAlpha <=
+                    request.maxAngularAccelerationRadPerSecond2 *
+                        (1.0 + 1.0e-6))
+                {
+                    continue;
+                }
+
+                // Scaling both endpoint speeds by s scales demanded angular
+                // acceleration approximately by s^2 because omega scales with
+                // s while traversal time grows as 1/s.
+                const double scale =
+                    AngularReserve *
+                    std::sqrt(
+                        request.maxAngularAccelerationRadPerSecond2 /
+                        demandedAlpha
+                    );
+
+                speedLimit[i] *= scale;
+                speedLimit[i + 1] *= scale;
+                adjusted = true;
+            }
+
+            if (!adjusted)
+                break;
+
+            backwardCap.back() =
+                std::min(
+                    speedLimit.back(),
+                    std::max(0.0, request.goal.speedMps)
+                );
+
+            for (std::size_t reverse = count - 1;
+                 reverse > 0;
+                 --reverse)
+            {
+                const std::size_t i = reverse - 1;
+                const double ds =
+                    glm::length(
+                        out.samples[i + 1].position -
+                        out.samples[i].position
+                    );
+                const double maxBefore =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            backwardCap[i + 1] *
+                                backwardCap[i + 1] +
+                            2.0 * braking * ds
+                        )
+                    );
+                backwardCap[i] =
+                    std::min(speedLimit[i], maxBefore);
+            }
+
+            speed.front() =
+                std::min(
+                    requestedStartSpeed,
+                    backwardCap.front()
+                );
+
+            for (std::size_t i = 0; i + 1 < count; ++i)
+            {
+                const double ds =
+                    glm::length(
+                        out.samples[i + 1].position -
+                        out.samples[i].position
+                    );
+                const double reachable =
+                    std::sqrt(
+                        std::max(
+                            0.0,
+                            speed[i] * speed[i] +
+                            2.0 * accelerating * ds
+                        )
+                    );
+                speed[i + 1] =
+                    std::min(
+                        backwardCap[i + 1],
+                        reachable
+                    );
+            }
+        }
+    }
+
     double travelTime = 0.0;
     double maxLateralUtilization = 0.0;
     double lateralEnergy = 0.0;
@@ -778,12 +908,18 @@ Evaluation evaluate(
                 angularAccelerationSquared *
                 (ds / referenceLength);
 
-            // A single cubic joined to a straight is only G1/C1 by
-            // construction, so a curvature-rate spike can exist even when the
-            // tangent is continuous. Score that spike aggressively instead of
-            // pretending it is a hard geometric impossibility; this pushes the
-            // optimizer toward broader, lower-curvature transitions without a
-            // magic minimum radius.
+            // The profile above must normally keep this at or below real
+            // authority. Remaining excess means the sampled geometry cannot be
+            // executed exactly even after slowing down and is therefore a hard
+            // dynamic violation, not a comfort preference.
+            if (normalizedAngularAcceleration > 1.0 + 1.0e-4)
+            {
+                maxViolation =
+                    std::max(
+                        maxViolation,
+                        normalizedAngularAcceleration - 1.0
+                    );
+            }
         }
 
         // Penalize only demanded braking, not ordinary full-throttle

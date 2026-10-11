@@ -30,6 +30,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         !std::isfinite(r.gateSpacingMeters) || r.gateSpacingMeters <= 0 ||
         !std::isfinite(r.initialForwardLeadMeters) ||
             r.initialForwardLeadMeters < 0.0 ||
+        !std::isfinite(r.initialProtectedStraightMeters) ||
+            r.initialProtectedStraightMeters < 0.0 ||
         (r.hasInitialForward &&
             (!finite(r.initialForward) ||
              glm::length(r.initialForward) < 0.9)) ||
@@ -344,10 +346,16 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         // tangent arc into the geometric route. The previous implementation
         // protected the entire lead and therefore created a hard corner at
         // routeSearchStart.
-        initialForwardProtectedStraightMeters=std::min(
-            acceptedLead,
-            std::max(500.0, acceptedLead*0.50)
-        );
+        initialForwardProtectedStraightMeters =
+            r.initialProtectedStraightMeters > 1.0e-6
+                ? std::min(
+                      acceptedLead,
+                      r.initialProtectedStraightMeters
+                  )
+                : std::min(
+                      acceptedLead,
+                      std::max(500.0, acceptedLead*0.50)
+                  );
     }
 
     // Only the near-port ingress is semantic hard geometry. The much longer

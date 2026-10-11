@@ -33,13 +33,24 @@ struct OptimizationWeights
     // of the ship's real control authority the candidate consumes. They do not
     // encode a preferred radius: the same radius can be cheap at low speed and
     // expensive at high speed.
-    double lateralAccelerationEnergy = 0.20;
-    double peakLateralUtilization = 0.22;
-    double brakingDemand = 0.16;
+    double lateralAccelerationEnergy = 0.12;
+    double peakLateralUtilization = 0.10;
+    double brakingDemand = 0.12;
+
+    // Geometry costs are independent of speed. totalCurvature rejects
+    // gratuitous left-right wriggles; curvatureConcentration rejects packing a
+    // large heading change into a tiny hook. Both are dimensionless and scaled
+    // from the ship hull, not from a magic preferred turn radius.
+    double totalCurvature = 0.10;
+    double curvatureConcentration = 0.18;
+
+    // Angular costs use the ship's real attitude-control authority.
+    double angularVelocityDemand = 0.16;
+    double angularAccelerationDemand = 0.20;
 
     // Pure geometric regularity remains a weak tie-breaker. It must not buy a
     // giant detour merely to make a curve numerically silk-smooth.
-    double curvatureVariation = 0.03;
+    double curvatureVariation = 0.02;
 };
 
 struct Request
@@ -55,6 +66,8 @@ struct Request
     double acceleratingMps2 = 0.0;
     double brakingMps2 = 0.0;
     double maxLateralAccelerationMps2 = 0.0;
+    double maxAngularVelocityRadPerSecond = 0.0;
+    double maxAngularAccelerationRadPerSecond2 = 0.0;
 
     // Optional true geometric/comfort floor. Unlike the previous optimizer,
     // maxSpeed^2/a_lat is NOT converted into a hard global turn radius.
@@ -106,6 +119,13 @@ struct Diagnostics
     double maxLateralUtilization = 0.0;
     double lateralAccelerationEnergy = 0.0;
     double brakingDemandEnergy = 0.0;
+
+    double totalCurvatureRadians = 0.0;
+    double curvatureConcentrationEnergy = 0.0;
+    double maxAngularVelocityUtilization = 0.0;
+    double maxAngularAccelerationUtilization = 0.0;
+    double angularVelocityEnergy = 0.0;
+    double angularAccelerationEnergy = 0.0;
 
     double curvatureVariationEnergy = 0.0;
     double objective = 0.0;

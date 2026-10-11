@@ -252,7 +252,14 @@ void appendGateAtProgress(
     gate.forward = sample.tangent;
     gate.speedMps =
         terminal
-            ? 0.0
+            ? std::clamp(
+                  request.terminalSpeedMps,
+                  0.0,
+                  speedLimitForCurvature(
+                      request,
+                      sample.curvaturePerMeter
+                  )
+              )
             : speedLimitForCurvature(
                   request,
                   sample.curvaturePerMeter
@@ -392,7 +399,22 @@ std::vector<RouteGate> buildExecutionGates(
     }
 
     if (!gates.empty())
-        gates.back().speedMps = 0.0;
+    {
+        const auto terminalSample =
+            sampleCurves(
+                curves,
+                curves.back().endProgressMeters
+            );
+        gates.back().speedMps =
+            std::clamp(
+                request.terminalSpeedMps,
+                0.0,
+                speedLimitForCurvature(
+                    request,
+                    terminalSample.curvaturePerMeter
+                )
+            );
+    }
     return gates;
 }
 
@@ -425,7 +447,12 @@ RoutePlan planContinuousAssisted(
                 request.start.tangent
             )
         );
-    request.goal.speedMps = 0.0;
+    request.goal.speedMps =
+        std::clamp(
+            input.terminalSpeedMps,
+            0.0,
+            std::max(0.0, input.maxSpeedMps)
+        );
 
     request.hullRadiusMeters =
         std::max(0.0, input.agentRadiusMeters);
@@ -645,6 +672,10 @@ RoutePlan planContinuousAssisted(
         " eta_s=" +
         std::to_string(
             optimized.diagnostics.estimatedTravelTimeSeconds
+        ) +
+        " terminal_speed_mps=" +
+        std::to_string(
+            request.goal.speedMps
         ) +
         " seeds=" +
         std::to_string(

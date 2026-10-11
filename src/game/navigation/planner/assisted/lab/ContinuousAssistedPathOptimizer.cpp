@@ -1548,6 +1548,10 @@ Result ContinuousAssistedPathOptimizer::optimize(
         !finite3(request.start.tangent) ||
         !finite3(request.goal.positionMeters) ||
         !finite3(request.goal.tangent) ||
+        !std::isfinite(request.start.speedMps) ||
+        !std::isfinite(request.goal.speedMps) ||
+        request.start.speedMps < 0.0 ||
+        request.goal.speedMps < 0.0 ||
         request.hullRadiusMeters < 0.0 ||
         request.designSpeedMps <= 0.0 ||
         request.acceleratingMps2 < 0.0 ||

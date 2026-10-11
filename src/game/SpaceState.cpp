@@ -2016,10 +2016,9 @@ void SpaceState::updateDockingAdvisory()
         );
     };
 
-    // Planner + route compiler run asynchronously. Reserve enough coast time
-    // for BOTH stages so the main thread never has to block at handoff.
-    // The ship keeps its measured velocity with zero commanded acceleration.
-    constexpr double PlanningLeadSeconds = 3.0;
+    // Automatic replanning has no wall-clock start deadline. The ship
+    // remains ballistic while the asynchronous route is built; handoff is
+    // validated spatially against the authored first straight.
 
     if (pending.serial != m_lastDockingPathRequestSerial)
     {
@@ -2159,7 +2158,6 @@ void SpaceState::updateDockingAdvisory()
             << (automatic ? "ballistic-planning" : "stopped-planning")
             << " vrel_mps=" << relativeSpeedMps
             << " omega_radps=" << angularSpeedRadPerSec
-            << " lead_s=" << PlanningLeadSeconds
             << std::endl;
 
         const auto snapshot =
@@ -2208,8 +2206,7 @@ void SpaceState::updateDockingAdvisory()
                 ? snapshot.controlledShip.localVelocityMps
                 : glm::dvec3(0.0);
         request.startMeters =
-            snapshot.controlledShip.localPositionMeters +
-            startVelocityMps * PlanningLeadSeconds;
+            snapshot.controlledShip.localPositionMeters;
         request.hasInitialForward = true;
         const glm::dvec3 hullForwardLocal =
             glm::normalize(
@@ -2636,7 +2633,7 @@ void SpaceState::updateDockingAdvisory()
         job->startedServerSeconds =
             snapshot.epoch.serverTimeSeconds;
         job->executionStartUniverseTimeSeconds =
-            snapshot.epoch.universeTimeSeconds + PlanningLeadSeconds;
+            snapshot.epoch.universeTimeSeconds;
         job->context.serial = pending.serial;
         job->context.systemId = snapshot.systemId;
         job->context.hubId =
@@ -2698,7 +2695,7 @@ void SpaceState::updateDockingAdvisory()
         const double planningMaxSpeedMps = request.maxSpeedMps;
         const double planningInitialForwardLeadMeters =
             request.initialForwardLeadMeters;
-        const glm::dvec3 planningProjectedStartMeters =
+        const glm::dvec3 planningSnapshotStartMeters =
             request.startMeters;
         const double planningInitialSpeedMps =
             request.initialSpeedMps;
@@ -3014,13 +3011,12 @@ void SpaceState::updateDockingAdvisory()
             << " max_speed_mps=" << planningMaxSpeedMps
             << " initial_forward_lead_m="
             << planningInitialForwardLeadMeters
-            << " projected_start_m=("
-            << planningProjectedStartMeters.x << ","
-            << planningProjectedStartMeters.y << ","
-            << planningProjectedStartMeters.z << ")"
+            << " snapshot_start_m=("
+            << planningSnapshotStartMeters.x << ","
+            << planningSnapshotStartMeters.y << ","
+            << planningSnapshotStartMeters.z << ")"
             << " initial_speed_mps="
             << planningInitialSpeedMps
-            << " lead_s=" << PlanningLeadSeconds
             << std::endl;
         return;
     }

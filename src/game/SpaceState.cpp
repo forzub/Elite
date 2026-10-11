@@ -1771,6 +1771,7 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice = {};
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
+        m_dockSafeCourse = {};
     };
 
     const auto releaseClientAutopilot = [&]()
@@ -1795,6 +1796,7 @@ void SpaceState::updateDockingAdvisory()
         m_clientDockingPhase = ClientDockingPhase::Idle;
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
+        m_dockSafeCourse = {};
     };
 
     if (!pending.valid())
@@ -2017,6 +2019,67 @@ void SpaceState::updateDockingAdvisory()
             m_clientDockingStabilizePilotState
         );
     };
+
+    const auto safeCourseControl =
+        [&](const glm::dvec3& safeDirection)
+        {
+            const auto agent = makeAgent();
+            const double speed =
+                glm::length(agent.velocityMapMetersPerSecond);
+            const glm::dvec3 desiredCourse =
+                glm::length(safeDirection) > 1.0e-9
+                    ? glm::normalize(safeDirection)
+                    : agent.forwardMap;
+
+            game::navigation::autopilot::PredictivePilot::Request turn;
+            turn.law = controlLaw;
+            turn.desiredVelocityMapMps =
+                desiredCourse * speed;
+
+            // Assisted bends the VREL vector toward the hull as the virtual
+            // pilot slews onto desiredCourse. Newtonian has no hidden lateral
+            // setpoint, so once the hull points onto the escape course it must
+            // use real forward main thrust to change the inertial vector.
+            if (controlLaw ==
+                game::navigation::LocalFlightControlLaw::Newtonian)
+            {
+                turn.desiredLinearAccelerationMapMps2 =
+                    desiredCourse *
+                    (0.80 *
+                     game::ship::
+                         forwardMainAccelerationLimitMps2(
+                             effectivePhysics
+                         ));
+            }
+            else
+            {
+                turn.desiredLinearAccelerationMapMps2 =
+                    glm::dvec3(0.0);
+            }
+
+            turn.desiredForwardMap = desiredCourse;
+            turn.desiredUpMap = agent.upMap;
+            turn.actualVelocityMapMps =
+                agent.velocityMapMetersPerSecond;
+            turn.forwardMap = agent.forwardMap;
+            turn.rightMap = agent.rightMap;
+            turn.upMap = agent.upMap;
+            turn.pitchRateRadPerSec = agent.pitchRateRadPerSec;
+            turn.yawRateRadPerSec = agent.yawRateRadPerSec;
+            turn.rollRateRadPerSec = agent.rollRateRadPerSec;
+            turn.stopRequested = false;
+            turn.terminalAttitudeHold = false;
+            turn.deltaSeconds = std::max(
+                1.0e-4,
+                m_client->serverFixedStepSeconds()
+            );
+
+            return game::navigation::autopilot::PredictivePilot::make(
+                turn,
+                effectivePhysics,
+                m_clientDockingStabilizePilotState
+            );
+        };
 
     // Automatic replanning has no wall-clock start deadline. The ship
     // remains ballistic while the asynchronous route is built; handoff is

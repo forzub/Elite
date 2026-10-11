@@ -4283,6 +4283,9 @@ void SpaceState::update(float dt)
             obs.jobCancelled = m_dockAdviceJob->cancelled.load(
                 std::memory_order_acquire
             );
+            obs.jobPlanValid = m_dockAdviceJob->ready.load(
+                std::memory_order_acquire
+            ) && m_dockAdviceJob->plan.valid();
             obs.jobStage = static_cast<int>(
                 m_dockAdviceJob->planningProgressStage.load(
                     std::memory_order_acquire
@@ -4313,6 +4316,12 @@ void SpaceState::update(float dt)
                 }
             }
         }
+
+        obs.safetyCourseActive =
+            m_dockSafeCourse.active;
+        obs.safetyStopFallback =
+            m_dockSafeCourse.active &&
+            m_dockSafeCourse.stopFallback;
 
         const auto& stressRequests =
             m_navigationWorkspace.dockingRouteRequests();

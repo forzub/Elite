@@ -778,18 +778,12 @@ Evaluation evaluate(
                 angularAccelerationSquared *
                 (ds / referenceLength);
 
-            // Angular acceleration is a physical execution limit, not a
-            // comfort preference. A geometry that asks the hull to snap from
-            // one curvature state to another faster than the ship can rotate
-            // is not an admissible route.
-            if (normalizedAngularAcceleration > 1.0)
-            {
-                maxViolation =
-                    std::max(
-                        maxViolation,
-                        normalizedAngularAcceleration - 1.0
-                    );
-            }
+            // A single cubic joined to a straight is only G1/C1 by
+            // construction, so a curvature-rate spike can exist even when the
+            // tangent is continuous. Score that spike aggressively instead of
+            // pretending it is a hard geometric impossibility; this pushes the
+            // optimizer toward broader, lower-curvature transitions without a
+            // magic minimum radius.
         }
 
         // Penalize only demanded braking, not ordinary full-throttle

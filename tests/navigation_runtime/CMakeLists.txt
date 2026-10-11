@@ -1514,3 +1514,51 @@ set_tests_properties(
     ordinary_route_policy
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+# Continuous Assisted trajectory optimization laboratory.
+# This target is deliberately NOT linked into production RoutePlanner yet.
+add_executable(
+    continuous_assisted_optimizer_lab_tests
+    ContinuousAssistedOptimizerLabTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp"
+)
+
+target_include_directories(
+    continuous_assisted_optimizer_lab_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    continuous_assisted_optimizer_lab_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    continuous_assisted_optimizer_lab_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        continuous_assisted_optimizer_lab_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        continuous_assisted_optimizer_lab_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME continuous_assisted_optimizer_lab
+    COMMAND continuous_assisted_optimizer_lab_tests
+)
+
+set_tests_properties(
+    continuous_assisted_optimizer_lab
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

@@ -57,6 +57,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RoutePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryFollower.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverProgramSampler.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/ManeuverTrackingController.cpp"
@@ -1517,11 +1518,10 @@ set_tests_properties(
 
 
 # Continuous Assisted trajectory optimization laboratory.
-# This target is deliberately NOT linked into production RoutePlanner yet.
+# Production now links the same optimizer through EliteNavigationRuntimeControl.
 add_executable(
     continuous_assisted_optimizer_lab_tests
     ContinuousAssistedOptimizerLabTests.cpp
-    "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp"
 )
 
 target_include_directories(

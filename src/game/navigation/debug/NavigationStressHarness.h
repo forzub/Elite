@@ -286,6 +286,19 @@ public:
 
                     if (m_blueEntered && m_blueExited)
                     {
+                        if (m_safetyCourseCorrections > 0 &&
+                            m_planningSafetyOverlapSamples == 0)
+                        {
+                            logSummary(
+                                o,
+                                "FAILED",
+                                "safe-course correction never overlapped async planning"
+                            );
+                            m_complete = true;
+                            flush();
+                            break;
+                        }
+
                         logSummary(o, "COMPLETE", std::string{});
                         m_complete = true;
                         flush();

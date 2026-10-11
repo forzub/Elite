@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -32,7 +34,14 @@ public:
         int dockingPhase = 0;
         bool requestPending = false;
         std::uint64_t requestSerial = 0;
+        std::string requestTarget;
         bool autopilotActive = false;
+
+        std::size_t pageIndex = 0;
+        std::size_t segmentIndex = 0;
+        std::size_t checkpointIndex = 0;
+        std::size_t routeCurveIndex = 0;
+        std::uint64_t speedProfileRevision = 0;
         bool failed = false;
         std::string failureReason;
         int workerCount = 0;
@@ -238,7 +247,13 @@ private:
             << " phase=" << o.dockingPhase
             << " pending=" << (o.requestPending ? 1 : 0)
             << " serial=" << o.requestSerial
+            << " target=" << (o.requestTarget.empty() ? "none" : o.requestTarget)
             << " autopilot=" << (o.autopilotActive ? 1 : 0)
+            << " page=" << o.pageIndex
+            << " segment=" << o.segmentIndex
+            << " checkpoint=" << o.checkpointIndex
+            << " route_curve=" << o.routeCurveIndex
+            << " profile_rev=" << o.speedProfileRevision
             << " failed=" << (o.failed ? 1 : 0)
             << " workers=" << o.workerCount
             << " route_valid=" << (o.routeValid ? 1 : 0)

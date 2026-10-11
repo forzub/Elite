@@ -68,6 +68,10 @@ struct RoutePlanRequest
     glm::dvec3 terminalOutward {0.0, 0.0, 1.0};
     double terminalReferenceDistanceMeters = 300.0;
 
+    // Required speed at this free-leg boundary. Real dock HOLD normally uses
+    // zero; a virtual mandatory-volume boundary may be a fly-through speed.
+    double terminalSpeedMps = 0.0;
+
     double agentRadiusMeters = 0.0;
 
     // Generic longitudinal vehicle scale used by ordinary route policy when

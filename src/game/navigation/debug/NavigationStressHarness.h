@@ -45,6 +45,12 @@ public:
         bool failed = false;
         std::string failureReason;
         int workerCount = 0;
+        std::uint64_t jobSerial = 0;
+        bool jobReady = false;
+        bool jobCancelled = false;
+        int jobStage = -1;
+        int jobPermille = -1;
+        std::string jobResult;
 
         bool routeValid = false;
         std::size_t routeCurveCount = 0;
@@ -132,7 +138,7 @@ public:
                 // Early interruption: hit the planner/follower handoff while
                 // the newly accepted route has barely started.
                 if (o.failed ||
-                    (o.autopilotActive && stepAge >= 1.0) ||
+                    (o.dockingPhase == 4 && stepAge >= 1.0) ||
                     stepAge >= 12.0)
                 {
                     return issue(o, Target::CylinderRear, "switch-early-execution");
@@ -142,7 +148,7 @@ public:
             case 5:
                 // Give this route enough time to reach authored curvature.
                 if (o.failed ||
-                    (o.autopilotActive && stepAge >= 4.0) ||
+                    (o.dockingPhase == 4 && stepAge >= 4.0) ||
                     stepAge >= 14.0)
                 {
                     return issue(o, Target::CubeFront, "switch-during-flight");
@@ -167,7 +173,10 @@ public:
                 }
                 else if (m_step == 12)
                 {
-                    if (stepAge >= 5.0)
+                    // Do not declare victory while the last request is still
+                    // planning. Finish only after the production pipeline has
+                    // produced an actual execution result or a terminal fail.
+                    if (o.failed || o.dockingPhase == 4)
                     {
                         logSummary(o);
                         m_complete = true;
@@ -258,6 +267,11 @@ private:
             << " profile_rev=" << o.speedProfileRevision
             << " failed=" << (o.failed ? 1 : 0)
             << " workers=" << o.workerCount
+            << " job_serial=" << o.jobSerial
+            << " job_ready=" << (o.jobReady ? 1 : 0)
+            << " job_cancelled=" << (o.jobCancelled ? 1 : 0)
+            << " job_stage=" << o.jobStage
+            << " job_permille=" << o.jobPermille
             << " route_valid=" << (o.routeValid ? 1 : 0)
             << " curves=" << o.routeCurveCount
             << " exec_gates=" << o.executionGateCount
@@ -281,6 +295,8 @@ private:
             m_stream << " failure=\"" << escaped(o.failureReason) << "\"";
         if (!o.routeDiagnostic.empty())
             m_stream << " diag=\"" << escaped(o.routeDiagnostic) << "\"";
+        if (!o.jobResult.empty())
+            m_stream << " job_result=\"" << escaped(o.jobResult) << "\"";
         m_stream << "\n";
         flush();
 

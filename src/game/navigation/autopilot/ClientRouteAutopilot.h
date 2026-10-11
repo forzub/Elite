@@ -1034,17 +1034,23 @@ public:
         // owns the full reverse-main envelope. Enter BrakeToStop before the
         // ideal v^2/(2a) boundary by subtracting the controller response
         // distance from the usable route length.
+        // Braking authority is a physical vehicle capability.
+        // The learned Assisted response estimate describes controller
+        // dynamics/latency only; it must never replace the craft's actual
+        // braking envelope. Doing so can collapse a valid ~45 m/s^2 authority
+        // into a tiny transient estimate (for example ~0.01 m/s^2) and make
+        // terminal-speed planning throttle an otherwise valid route down to
+        // walking speed.
+        const double effectiveBrakingAuthority =
+            brakingAuthority;
+
+        // Keep the learned response available as a controller diagnostic, but
+        // do not feed it back as physical deceleration authority.
         const double measuredBrakingResponse =
             state.pilotState.assistedBrakingResponseMps2;
-        const double effectiveBrakingAuthority =
-            measuredBrakingResponse > 1.0e-6
-                ? std::min(brakingAuthority, measuredBrakingResponse)
-                : brakingAuthority;
+        (void)measuredBrakingResponse;
 
-        // Hard physical braking remains available for emergency recovery, but
-        // ordinary terminal-stop planning intentionally uses the conservative
-        // planning envelope above. Runtime replanning must never "eat" that
-        // reserve and move braking back toward the mathematical limit.
+        // Hard physical braking remains available for emergency recovery.
         const double hardRecoveryBrakingAuthority =
             hardBrakingAuthority;
         const double longitudinalResponseGain =

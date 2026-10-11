@@ -59,6 +59,13 @@ int main()
                 "stationary blocked-launch request invalid"
             );
             require(
+                glm::dot(
+                    result.currentCourse,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                ) > 0.999,
+                "stationary safety probe did not use hull-forward launch ray"
+            );
+            require(
                 !result.currentCourseSafe,
                 "stationary hull-forward obstacle was ignored"
             );

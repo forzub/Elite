@@ -103,6 +103,18 @@ void testRouteLayerCannotSeeConcretePilots()
         "ClientRouteAutopilot reads concrete Assisted controller state"
     );
 
+    require(
+        route.find("mainGimbal") == std::string::npos,
+        "ClientRouteAutopilot leaked Newtonian TVC actuator details"
+    );
+
+    const std::string assistedPilot =
+        readText("src/game/navigation/autopilot/AssistedAutopilot.h");
+    require(
+        assistedPilot.find("mainGimbal") == std::string::npos,
+        "AssistedAutopilot leaked into the Newtonian TVC actuator channel"
+    );
+
     const std::string space =
         readText("src/game/SpaceState.cpp");
     require(

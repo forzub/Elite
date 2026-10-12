@@ -120,7 +120,7 @@ require("client_route_autopilot_tests" in TEST_CMAKE,
         "client route autopilot CTest target is not registered")
 
 print("NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS")
-print(" - client owns Planner/Follower/PredictivePilot execution")
+print(" - client owns ClientRouteAutopilot/ManeuverTrackingController/PredictivePilot execution")
 print(" - virtual pilot emits the same ShipControlState surface as Human input")
 print(" - server is navigation-blind and applies ordinary numbered controls through ShipControlExecutionGateway")
 print(" - V2 follows the accepted continuous centerline without a retired private follower")

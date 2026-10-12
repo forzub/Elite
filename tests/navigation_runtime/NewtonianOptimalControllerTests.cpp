@@ -74,6 +74,44 @@ void fillStraightPreview(
     }
 }
 
+void testZeroSpeedAccelerationReferenceLaunchesMain()
+{
+    NewtonianOptimalController controller;
+    auto request = baseRequest();
+
+    request.actualPositionMapMeters = {0.0, 0.0, 0.0};
+    request.desiredPositionMapMeters = {0.0, 0.0, 0.0};
+    request.positionReferenceValid = true;
+
+    request.actualVelocityMapMps = {0.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {0.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {45.0, 0.0, 0.0};
+
+    request.previewCount = 4;
+    for (std::size_t i = 0; i < request.previewCount; ++i)
+    {
+        const double t = 0.75 * static_cast<double>(i + 1);
+        auto& s = request.preview[i];
+        s.timeOffsetSeconds = t;
+        s.desiredPositionMapMeters = {0.5 * 45.0 * t * t, 0.0, 0.0};
+        s.desiredVelocityMapMps = {45.0 * t, 0.0, 0.0};
+        s.desiredLinearAccelerationMapMps2 = {45.0, 0.0, 0.0};
+    }
+
+    const auto control = controller.update(request, params());
+
+    require(
+        control.targetSpeedRate > 0.10f,
+        "zero-speed Newtonian launch stalled despite positive acceleration reference"
+    );
+    require(
+        std::abs(control.forwardInput) +
+        std::abs(control.strafeInput) +
+        std::abs(control.liftInput) < 1.0e-6f,
+        "zero-speed launch leaked into translation RCS"
+    );
+}
+
 void testSteadyCruiseDoesNotChaseHullPose()
 {
     NewtonianOptimalController controller;
@@ -272,6 +310,7 @@ int main()
 {
     try
     {
+        testZeroSpeedAccelerationReferenceLaunchesMain();
         testSteadyCruiseDoesNotChaseHullPose();
         testFutureSlowdownStartsTurnBeforeBrakeStation();
         testPreviewChangesShortStraightDecision();
@@ -281,6 +320,7 @@ int main()
 
         std::cout
             << "NEWTONIAN OPTIMAL CONTROLLER: PASS\n"
+            << " - zero-speed positive-acceleration reference launches main\n"
             << " - steady cruise coasts without hull chasing\n"
             << " - future braking is anticipated before the brake station\n"
             << " - short-straight decisions depend on future constraints\n"

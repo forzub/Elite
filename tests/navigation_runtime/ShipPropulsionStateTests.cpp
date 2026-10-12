@@ -1,4 +1,5 @@
 #include "src/game/ship/ShipPropulsionState.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -30,26 +31,37 @@ void requireNear(
 ShipDescriptor makeDescriptor()
 {
     ShipDescriptor descriptor;
+    descriptor.physicalControlModel =
+        game::ship::plant::PhysicalControlModelId::AssistedI;
+    descriptor.localFlightControlLaw =
+        game::ship::plant::nativeFlightLaw(
+            descriptor.physicalControlModel
+        );
+
+    descriptor.physics.maxPitchRate = 2.5f;
+    descriptor.physics.maxYawRate = 2.5f;
+    descriptor.physics.maxRollRate = 3.0f;
+    descriptor.physics.angularAccel = 3.0f;
     descriptor.physics.maxGs = 5.0f;
     descriptor.physics.maxLinearGs = 7.5f;
     descriptor.physics.forwardMainEngineAvailable = true;
     descriptor.physics.reverseMainEngineAvailable = true;
     descriptor.physics.forwardMainEngineAccelerationMps2 = 73.549875f;
     descriptor.physics.reverseMainEngineAccelerationMps2 = 73.549875f;
+    descriptor.physics.strafeAccel = 73.549875f;
     descriptor.physics.manoeuvreThrusterAccel = 2.0f;
     descriptor.physics.massKg = 1.0;
     descriptor.physics.pitchInertiaKgM2 = 1.0;
     descriptor.physics.yawInertiaKgM2 = 1.0;
     descriptor.physics.rollInertiaKgM2 = 1.0;
 
-    descriptor.mainPropulsion.aftEngineModuleIds = {
+    descriptor.physicalControl.slotModuleIds = {
         "aft_l",
-        "aft_r"
-    };
-    descriptor.mainPropulsion.foreEngineModuleIds = {
+        "aft_r",
         "fore_l",
         "fore_r"
     };
+
     return descriptor;
 }
 
@@ -77,110 +89,174 @@ std::vector<game::simulation::ObjectModuleSnapshot> healthyModules()
     };
 }
 
-void testHealthyBanksKeepFullDescriptorAuthority()
+void testHealthyTopologyKeepsNominalAuthority()
 {
     const ShipDescriptor descriptor = makeDescriptor();
     const auto modules = healthyModules();
-    const ShipParams effective =
-        game::ship::effectiveShipPhysics(descriptor, modules);
+    const auto capability =
+        game::ship::capability::buildShipCapability(
+            descriptor,
+            modules
+        );
 
-    require(effective.forwardMainEngineAvailable,
-            "healthy aft bank was disabled");
-    require(effective.reverseMainEngineAvailable,
-            "healthy fore bank was disabled");
+    require(capability.valid, "healthy capability is invalid");
+    require(
+        capability.controlState ==
+            game::ship::capability::ControlHealthState::Normal,
+        "healthy Assisted-I was not NORMAL"
+    );
 
     requireNear(
-        game::ship::forwardMainAccelerationLimitMps2(effective),
-        game::ship::forwardMainAccelerationLimitMps2(descriptor.physics),
+        game::ship::forwardMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
+        game::ship::forwardMainAccelerationLimitMps2(
+            descriptor.physics
+        ),
         1.0e-6,
-        "healthy aft bank lost thrust"
+        "healthy aft pair lost thrust"
     );
     requireNear(
-        game::ship::reverseMainAccelerationLimitMps2(effective),
-        game::ship::reverseMainAccelerationLimitMps2(descriptor.physics),
+        game::ship::reverseMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
+        game::ship::reverseMainAccelerationLimitMps2(
+            descriptor.physics
+        ),
         1.0e-6,
-        "healthy fore bank lost thrust"
+        "healthy fore pair lost thrust"
     );
 }
 
-void testLowHealthDoesNotDerateOperationalMainEngine()
+void testPartialHealthDeratesOnlyItsShare()
 {
     const ShipDescriptor descriptor = makeDescriptor();
     auto modules = healthyModules();
-    modules[2].health = 1.0f;
 
-    const ShipParams effective =
-        game::ship::effectiveShipPhysics(descriptor, modules);
+    // One of two fore engines has 50% health. The fore bank therefore retains
+    // (1.0 + 0.5) / 2 = 75% of nominal braking authority.
+    modules[2].health = 50.0f;
 
-    require(effective.reverseMainEngineAvailable,
-            "nonzero-health fore engine was treated as failed");
+    const auto capability =
+        game::ship::capability::buildShipCapability(
+            descriptor,
+            modules
+        );
+
+    require(capability.valid, "degraded capability is invalid");
+    require(
+        capability.controlState ==
+            game::ship::capability::ControlHealthState::Degraded,
+        "partial engine health did not report DEGRADED control"
+    );
+
     requireNear(
-        game::ship::reverseMainAccelerationLimitMps2(effective),
-        game::ship::reverseMainAccelerationLimitMps2(descriptor.physics),
-        1.0e-6,
-        "operational fore bank was proportionally derated"
+        game::ship::reverseMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
+        73.549875 * 0.75,
+        1.0e-4,
+        "partial fore-engine health did not proportionally derate bank"
+    );
+
+    requireNear(
+        game::ship::forwardMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
+        73.549875,
+        1.0e-4,
+        "fore degradation leaked into aft authority"
     );
 }
 
-void testForeBankFailureIsBinary()
+void testSingleForeFailureLeavesHalfReverseAuthority()
 {
     using State = world::modules::ObjectModuleRuntimeState;
     const ShipDescriptor descriptor = makeDescriptor();
     auto modules = healthyModules();
-    modules[2] = module("fore_l", State::Destroyed, 0.0f);
+
+    modules[2] =
+        module("fore_l", State::Destroyed, 0.0f);
 
     const ShipParams effective =
-        game::ship::effectiveShipPhysics(descriptor, modules);
+        game::ship::effectiveShipPhysics(
+            descriptor,
+            modules
+        );
 
-    require(effective.forwardMainEngineAvailable,
-            "fore failure incorrectly disabled aft main");
-    require(!effective.reverseMainEngineAvailable,
-            "failed fore bank retained reverse main authority");
+    require(
+        effective.forwardMainEngineAvailable,
+        "single fore failure incorrectly disabled aft propulsion"
+    );
+    require(
+        effective.reverseMainEngineAvailable,
+        "single fore failure incorrectly removed the surviving fore engine"
+    );
     requireNear(
         game::ship::reverseMainAccelerationLimitMps2(effective),
+        73.549875 * 0.5,
+        1.0e-4,
+        "single fore failure did not leave half reverse authority"
+    );
+}
+
+void testCompleteForeLossFallsBackWithoutCrashing()
+{
+    using State = world::modules::ObjectModuleRuntimeState;
+    const ShipDescriptor descriptor = makeDescriptor();
+    auto modules = healthyModules();
+
+    modules[2] =
+        module("fore_l", State::Destroyed, 0.0f);
+    modules[3] =
+        module("fore_r", State::Destroyed, 0.0f);
+
+    const auto capability =
+        game::ship::capability::buildShipCapability(
+            descriptor,
+            modules
+        );
+
+    require(capability.valid, "fore-bank loss invalidated ship capability");
+    require(
+        capability.controlState ==
+            game::ship::capability::ControlHealthState::Degraded,
+        "fore-bank loss should be degraded thrust-axis fallback"
+    );
+    require(
+        !capability.effectivePhysics.reverseMainEngineAvailable,
+        "destroyed fore bank retained reverse main authority"
+    );
+    requireNear(
+        game::ship::reverseMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
         0.0,
         1.0e-12,
-        "failed fore bank was partially derated instead of disabled"
+        "destroyed fore bank retained nonzero reverse thrust"
+    );
+    require(
+        capability.effectivePhysics.forwardMainEngineAvailable,
+        "fore-bank loss incorrectly disabled surviving aft propulsion"
     );
 }
 
-void testAftBankFailureLeavesFullForeAuthority()
-{
-    using State = world::modules::ObjectModuleRuntimeState;
-    const ShipDescriptor descriptor = makeDescriptor();
-    auto modules = healthyModules();
-    modules[0] = module("aft_l", State::Disabled, 0.0f);
-
-    const ShipParams effective =
-        game::ship::effectiveShipPhysics(descriptor, modules);
-
-    require(!effective.forwardMainEngineAvailable,
-            "failed aft bank retained forward main authority");
-    require(effective.reverseMainEngineAvailable,
-            "aft failure incorrectly disabled fore main");
-    requireNear(
-        game::ship::reverseMainAccelerationLimitMps2(effective),
-        game::ship::reverseMainAccelerationLimitMps2(descriptor.physics),
-        1.0e-6,
-        "surviving fore bank did not retain full thrust"
-    );
 }
-
-} // namespace
 
 int main()
 {
     try
     {
-        testHealthyBanksKeepFullDescriptorAuthority();
-        testLowHealthDoesNotDerateOperationalMainEngine();
-        testForeBankFailureIsBinary();
-        testAftBankFailureLeavesFullForeAuthority();
+        testHealthyTopologyKeepsNominalAuthority();
+        testPartialHealthDeratesOnlyItsShare();
+        testSingleForeFailureLeavesHalfReverseAuthority();
+        testCompleteForeLossFallsBackWithoutCrashing();
 
         std::cout << "SHIP PROPULSION STATE TESTS: PASS\n";
-        std::cout << " - operational main banks retain full descriptor thrust\n";
-        std::cout << " - main-engine health is binary, never proportionally derated\n";
-        std::cout << " - fore/aft bank failures remain direction-specific\n";
+        std::cout << " - topology + module health produce runtime capability\n";
+        std::cout << " - partial damage proportionally derates its actuator share\n";
+        std::cout << " - one failed engine no longer kills an entire bank\n";
+        std::cout << " - complete fore loss becomes degraded fallback, not an error\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

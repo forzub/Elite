@@ -149,6 +149,22 @@ void testDiagonalCommandCannotCheatEnvelope()
     motion.mainGimbalRightCommand01 = 1.0;
     motion.mainGimbalUpCommand01 = 1.0;
 
+    apply(motion, vehicle, 0.25);
+
+    constexpr double TwoDeg =
+        2.0 * 3.1415926535897932384626433832795 / 180.0;
+    const double firstSlew =
+        std::sqrt(
+            motion.mainGimbalYawRad * motion.mainGimbalYawRad +
+            motion.mainGimbalPitchRad * motion.mainGimbalPitchRad
+        );
+    requireNear(
+        firstSlew,
+        TwoDeg,
+        2.0e-6,
+        "diagonal nozzle slew exceeded resultant 8 deg/s rate"
+    );
+
     apply(motion, vehicle, 2.0);
 
     const glm::dvec3 a =

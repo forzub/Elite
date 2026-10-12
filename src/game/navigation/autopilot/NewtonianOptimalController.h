@@ -175,7 +175,7 @@ private:
     static constexpr std::size_t BeamWidth = 24;
     static constexpr std::size_t CandidateCount = 8;
     static constexpr std::size_t MaximumDepth =
-        AutopilotPreviewCapacity;
+        AutopilotPreviewCapacity + 1;
 
     struct Action
     {
@@ -266,10 +266,129 @@ private:
                 request.previewCount,
                 AutopilotPreviewCapacity
             );
-        return
-            count > 0
-                ? referenceAt(request, count - 1)
-                : currentReference(request);
+        if (count == 0)
+            return currentReference(request);
+
+        auto out = request.preview[count - 1];
+        out.desiredPositionMapMeters =
+            finiteVecOrZero(out.desiredPositionMapMeters);
+        out.desiredVelocityMapMps =
+            finiteVecOrZero(out.desiredVelocityMapMps);
+        out.desiredLinearAccelerationMapMps2 =
+            finiteVecOrZero(
+                out.desiredLinearAccelerationMapMps2
+            );
+        return out;
+    }
+
+    [[nodiscard]] static AutopilotReferencePreviewSample referenceAtTime(
+        const AutopilotControlRequest& request,
+        double timeOffsetSeconds
+    ) noexcept
+    {
+        const double t =
+            std::max(0.0, finiteOrZero(timeOffsetSeconds));
+        const std::size_t count =
+            std::min(
+                request.previewCount,
+                AutopilotPreviewCapacity
+            );
+
+        const auto current = currentReference(request);
+        if (count == 0 || t <= 1.0e-12)
+            return current;
+
+        auto sanitizedPreview =
+            [&](std::size_t index)
+            {
+                auto out = request.preview[index];
+                out.desiredPositionMapMeters =
+                    finiteVecOrZero(out.desiredPositionMapMeters);
+                out.desiredVelocityMapMps =
+                    finiteVecOrZero(out.desiredVelocityMapMps);
+                out.desiredLinearAccelerationMapMps2 =
+                    finiteVecOrZero(
+                        out.desiredLinearAccelerationMapMps2
+                    );
+                return out;
+            };
+
+        auto upper = sanitizedPreview(0);
+        if (t <= upper.timeOffsetSeconds)
+        {
+            const double dt =
+                std::max(1.0e-9, upper.timeOffsetSeconds);
+            const double u =
+                std::clamp(t / dt, 0.0, 1.0);
+
+            AutopilotReferencePreviewSample out;
+            out.timeOffsetSeconds = t;
+            out.desiredPositionMapMeters =
+                glm::mix(
+                    current.desiredPositionMapMeters,
+                    upper.desiredPositionMapMeters,
+                    u
+                );
+            out.desiredVelocityMapMps =
+                glm::mix(
+                    current.desiredVelocityMapMps,
+                    upper.desiredVelocityMapMps,
+                    u
+                );
+            out.desiredLinearAccelerationMapMps2 =
+                glm::mix(
+                    current.desiredLinearAccelerationMapMps2,
+                    upper.desiredLinearAccelerationMapMps2,
+                    u
+                );
+            return out;
+        }
+
+        for (std::size_t i = 1; i < count; ++i)
+        {
+            const auto lower = sanitizedPreview(i - 1);
+            upper = sanitizedPreview(i);
+
+            if (t <= upper.timeOffsetSeconds)
+            {
+                const double dt =
+                    std::max(
+                        1.0e-9,
+                        upper.timeOffsetSeconds -
+                            lower.timeOffsetSeconds
+                    );
+                const double u =
+                    std::clamp(
+                        (t - lower.timeOffsetSeconds) / dt,
+                        0.0,
+                        1.0
+                    );
+
+                AutopilotReferencePreviewSample out;
+                out.timeOffsetSeconds = t;
+                out.desiredPositionMapMeters =
+                    glm::mix(
+                        lower.desiredPositionMapMeters,
+                        upper.desiredPositionMapMeters,
+                        u
+                    );
+                out.desiredVelocityMapMps =
+                    glm::mix(
+                        lower.desiredVelocityMapMps,
+                        upper.desiredVelocityMapMps,
+                        u
+                    );
+                out.desiredLinearAccelerationMapMps2 =
+                    glm::mix(
+                        lower.desiredLinearAccelerationMapMps2,
+                        upper.desiredLinearAccelerationMapMps2,
+                        u
+                    );
+                return out;
+            }
+        }
+
+        return sanitizedPreview(count - 1);
     }
 
     [[nodiscard]] static double stepSeconds(
@@ -362,11 +481,21 @@ private:
                 ? std::min(previewCount + 1, MaximumDepth)
                 : std::size_t(4);
 
+        double horizonTimeSeconds = 0.0;
         for (std::size_t depth = 0; depth < depthCount; ++depth)
         {
-            const auto reference = referenceAt(request, depth);
-            const auto future = finalReference(request);
             const double step = stepSeconds(request, depth);
+            const auto reference =
+                referenceAtTime(
+                    request,
+                    horizonTimeSeconds
+                );
+            const auto evaluationReference =
+                referenceAtTime(
+                    request,
+                    horizonTimeSeconds + step
+                );
+            const auto future = finalReference(request);
 
             std::array<
                 SearchNode,
@@ -394,7 +523,7 @@ private:
                         simulate(
                             node,
                             action,
-                            reference,
+                            evaluationReference,
                             request,
                             params,
                             mainAuthority,
@@ -463,6 +592,8 @@ private:
                 std::min(BeamWidth, expandedCount);
             for (std::size_t i = 0; i < beamCount; ++i)
                 beam[i] = expanded[i];
+
+            horizonTimeSeconds += step;
         }
 
         if (beamCount == 0 || !beam[0].firstAction.valid)

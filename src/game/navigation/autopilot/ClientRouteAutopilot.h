@@ -1126,6 +1126,9 @@ public:
             !terminalAttitudeHold;
 
         AutopilotControlRequest request;
+        request.desiredPositionMapMeters = referencePosition;
+        request.actualPositionMapMeters = agent.positionMapMeters;
+        request.positionReferenceValid = true;
         request.desiredVelocityMapMps = desiredVelocity;
         request.desiredLinearAccelerationMapMps2 =
             tracking.status !=
@@ -1306,6 +1309,8 @@ public:
                 auto& sample =
                     request.preview[request.previewCount++];
                 sample.timeOffsetSeconds = accumulatedTime;
+                sample.desiredPositionMapMeters =
+                    previewReference.reference.positionMapMeters;
                 sample.desiredVelocityMapMps =
                     previewReference.reference.
                         velocityMapMetersPerSecond;

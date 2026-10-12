@@ -266,6 +266,8 @@ void testClientMessageRoundTrip()
     control.strafeInput = -0.2f;
     control.liftInput = 0.3f;
     control.forwardInput = 0.9f;
+    control.mainGimbalRightInput = 0.4f;
+    control.mainGimbalUpInput = -0.6f;
     control.localControlLawCommandValid = true;
     control.requestedLocalControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
     control.velocityAlignmentCommand = game::navigation::VelocityAlignmentMode::BrakeToStop;
@@ -294,6 +296,14 @@ void testClientMessageRoundTrip()
     require(nearlyEqual(decodedControl.strafeInput, control.strafeInput), "strafe mismatch");
     require(nearlyEqual(decodedControl.liftInput, control.liftInput), "lift mismatch");
     require(nearlyEqual(decodedControl.forwardInput, control.forwardInput), "forward mismatch");
+    require(nearlyEqual(
+        decodedControl.mainGimbalRightInput,
+        control.mainGimbalRightInput
+    ), "main-gimbal right mismatch");
+    require(nearlyEqual(
+        decodedControl.mainGimbalUpInput,
+        control.mainGimbalUpInput
+    ), "main-gimbal up mismatch");
     require(decodedControl.localControlLawCommandValid ==
             control.localControlLawCommandValid,
         "control law command-valid mismatch");

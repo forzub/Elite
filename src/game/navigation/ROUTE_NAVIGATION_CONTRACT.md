@@ -496,7 +496,7 @@ AutopilotLawController
         |
         +--> AssistedAutopilot
         |
-        +--> NewtonianAutopilot
+        +--> NewtonianOptimalController
         |
         v
 ShipControlState

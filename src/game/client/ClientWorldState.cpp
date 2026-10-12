@@ -1648,12 +1648,11 @@ void ClientWorldState::predict(
     );
 
     /*
-        SharedShipPhysics currently owns attitude prediction only. The server
-        advances HubTactical translation through DynamicMotionSystem, so the
-        client must run that same deterministic motion step as part of input
-        prediction. Otherwise localPositionMeters changes only when a server
-        snapshot arrives and nearby co-frame infrastructure appears to pulse
-        even though the hub frame itself is smooth.
+        The ship-control execution gateway owns the shared deterministic
+        control backend. HubTactical translation is advanced separately below
+        because fixed prediction mirrors the server's control/kinematic phase
+        split. Otherwise localPositionMeters would change only on snapshots and
+        nearby co-frame infrastructure would appear to pulse.
     */
     (void)game::client::predictHubTacticalMotion(
         ship.transform,

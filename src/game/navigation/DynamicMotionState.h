@@ -96,6 +96,14 @@ struct DynamicMotionState
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 
+    // Newtonian main-nozzle TVC. Commands are normalized pilot inputs;
+    // actual angles are rate-limited physical actuator state. Assisted ignores
+    // this channel, so adding it cannot alter Assisted translation behavior.
+    double mainGimbalRightCommand01 = 0.0;
+    double mainGimbalUpCommand01 = 0.0;
+    double mainGimbalYawRad = 0.0;
+    double mainGimbalPitchRad = 0.0;
+
     // Assisted-only automatic lateral stabilization. This is distinct from
     // the pilot's gas-limited keypad RCS command above. Its capability comes
     // from ShipParams::strafeAccel through the central ShipDynamics adapter;

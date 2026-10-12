@@ -340,6 +340,7 @@ private:
     double m_clientAutopilotCourseErrorRad = 0.0;
     double m_clientAutopilotHullErrorRad = 0.0;
     double m_clientAutopilotTargetSpeedMps = 0.0;
+    double m_clientAutopilotTargetLongitudinalAccelerationMps2 = 0.0;
     game::navigation::autopilot::AutopilotLawController
         m_clientDockingStabilizePilotController {};
 

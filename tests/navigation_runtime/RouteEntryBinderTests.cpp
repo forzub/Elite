@@ -1,0 +1,169 @@
+#include "src/game/navigation/planner/RouteEntryBinder.h"
+
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+namespace
+{
+
+using game::navigation::planner::BallisticPrefixDisposition;
+using game::navigation::planner::RouteCurveKind;
+using game::navigation::planner::RouteCurveSegment;
+using game::navigation::planner::RouteEntryBinder;
+using game::navigation::planner::RouteGate;
+using game::navigation::planner::RoutePlan;
+using game::navigation::planner::RoutePlanDisposition;
+using game::navigation::planner::RoutePlanFailureCode;
+
+void require(bool condition, const std::string& message)
+{
+    if (!condition)
+        throw std::runtime_error(message);
+}
+
+RoutePlan straightPrefixPlan()
+{
+    RoutePlan plan;
+    plan.disposition = RoutePlanDisposition::Ready;
+    plan.failureCode = RoutePlanFailureCode::None;
+    plan.failure.clear();
+
+    RouteCurveSegment line;
+    line.kind = RouteCurveKind::Line;
+    line.startProgressMeters = 0.0;
+    line.endProgressMeters = 1000.0;
+    line.startMeters = {0.0, 0.0, 0.0};
+    line.endMeters = {1000.0, 0.0, 0.0};
+    line.startForward = {1.0, 0.0, 0.0};
+    line.endForward = {1.0, 0.0, 0.0};
+    line.maxSpeedMps = 200.0;
+    plan.routeCurves.push_back(line);
+
+    RouteGate a;
+    a.positionMeters = line.startMeters;
+    a.forward = line.startForward;
+    a.speedMps = 200.0;
+
+    RouteGate b;
+    b.positionMeters = line.endMeters;
+    b.forward = line.endForward;
+    b.speedMps = 200.0;
+
+    plan.gates = {a, b};
+    plan.executionGates = {a, b};
+    return plan;
+}
+
+void testLivePositionMayAdvanceAlongBallisticPrefix()
+{
+    const auto plan = straightPrefixPlan();
+
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {250.0, 0.0, 0.0},
+            5.0
+        );
+
+    require(
+        status.disposition == BallisticPrefixDisposition::OnPrefix,
+        "live ballistic craft on authored first straight was rejected"
+    );
+    require(
+        std::abs(status.alongMeters - 250.0) < 1.0e-9,
+        "ballistic-prefix along distance is wrong"
+    );
+    require(
+        std::abs(status.remainingMeters - 750.0) < 1.0e-9,
+        "ballistic-prefix remaining distance is wrong"
+    );
+}
+
+void testPastPrefixRequiresLateEntryRebind()
+{
+    const auto plan = straightPrefixPlan();
+
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {1100.0, 0.0, 0.0},
+            5.0
+        );
+
+    require(
+        status.disposition == BallisticPrefixDisposition::PastPrefix,
+        "craft beyond first straight was not marked for late-entry rebind"
+    );
+    require(
+        status.remainingMeters == 0.0,
+        "past-prefix result reported negative/positive remaining distance"
+    );
+}
+
+void testOffAxisRequiresLateEntryRebind()
+{
+    const auto plan = straightPrefixPlan();
+
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {250.0, 10.0, 0.0},
+            5.0
+        );
+
+    require(
+        status.disposition == BallisticPrefixDisposition::OffAxis,
+        "off-axis live craft was incorrectly accepted on stale ballistic prefix"
+    );
+    require(
+        std::abs(status.crossTrackMeters - 10.0) < 1.0e-9,
+        "ballistic-prefix cross-track diagnostic is wrong"
+    );
+}
+
+void testBeforeStartIsNotAcceptedAsOnPrefix()
+{
+    const auto plan = straightPrefixPlan();
+
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {-25.0, 0.0, 0.0},
+            5.0
+        );
+
+    require(
+        status.disposition == BallisticPrefixDisposition::BeforeStart,
+        "position before authored start was incorrectly accepted as on-prefix"
+    );
+}
+
+} // namespace
+
+int main()
+{
+    try
+    {
+        testLivePositionMayAdvanceAlongBallisticPrefix();
+        testPastPrefixRequiresLateEntryRebind();
+        testOffAxisRequiresLateEntryRebind();
+        testBeforeStartIsNotAcceptedAsOnPrefix();
+
+        std::cout
+            << "ROUTE ENTRY BINDER: PASS\n"
+            << " - worker duration is irrelevant while live craft remains on spatial prefix\n"
+            << " - past-prefix and off-axis states demand late-entry rebind\n"
+            << " - no fixed planning-time projection is required\n";
+        return EXIT_SUCCESS;
+    }
+    catch (const std::exception& error)
+    {
+        std::cerr
+            << "ROUTE ENTRY BINDER: FAIL: "
+            << error.what() << "\n";
+        return EXIT_FAILURE;
+    }
+}

@@ -188,6 +188,7 @@ private:
     {
         glm::dvec3 positionMapMeters {0.0};
         glm::dvec3 velocityMapMps {0.0};
+        glm::dvec3 hullDirectionMap {0.0, 0.0, -1.0};
         glm::dvec3 thrustDirectionMap {0.0, 0.0, -1.0};
         double hullSlewRateRadPerSec = 0.0;
         double cost = 0.0;
@@ -346,6 +347,7 @@ private:
             finiteVecOrZero(request.actualPositionMapMeters);
         beam[0].velocityMapMps =
             finiteVecOrZero(request.actualVelocityMapMps);
+        beam[0].hullDirectionMap = initialThrustDirection;
         beam[0].thrustDirectionMap = initialThrustDirection;
         beam[0].hullSlewRateRadPerSec = initialHullRate;
 
@@ -537,6 +539,18 @@ private:
                 node.thrustDirectionMap
             );
 
+        const double gimbalLimit =
+            std::max(
+                game::ship::mainGimbalPitchLimitRad(params),
+                game::ship::mainGimbalYawLimitRad(params)
+            );
+        const glm::dvec3 desiredHullDirection =
+            hullAxisForResidualGimbal(
+                targetDirection,
+                node.hullDirectionMap,
+                gimbalLimit
+            );
+
         const double hullRateLimit =
             std::max(
                 0.0,
@@ -552,8 +566,8 @@ private:
 
         const double separation =
             angleBetween(
-                node.thrustDirectionMap,
-                targetDirection
+                node.hullDirectionMap,
+                desiredHullDirection
             );
 
         const double desiredHullRate =
@@ -577,21 +591,39 @@ private:
                     hullRate - maximumRateDelta
                 );
 
-        const double reachableAngle =
+        const double hullReachableAngle =
             std::max(
                 0.0,
-                (0.5 *
-                    (node.hullSlewRateRadPerSec + hullRate) +
-                 gimbalRate) * dt
+                0.5 *
+                    (node.hullSlewRateRadPerSec + hullRate) *
+                    dt
             );
 
+        next.hullDirectionMap =
+            slewDirection(
+                node.hullDirectionMap,
+                desiredHullDirection,
+                hullReachableAngle
+            );
+        next.hullSlewRateRadPerSec = hullRate;
+
+        const glm::dvec3 commandedThrustDirection =
+            slewDirection(
+                next.hullDirectionMap,
+                targetDirection,
+                gimbalLimit
+            );
+        const double hullMotion =
+            angleBetween(
+                node.hullDirectionMap,
+                next.hullDirectionMap
+            );
         next.thrustDirectionMap =
             slewDirection(
                 node.thrustDirectionMap,
-                targetDirection,
-                reachableAngle
+                commandedThrustDirection,
+                hullMotion + gimbalRate * dt
             );
-        next.hullSlewRateRadPerSec = hullRate;
 
         const double throttle =
             std::clamp(action.throttle01, 0.0, 1.0);

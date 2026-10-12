@@ -51,6 +51,27 @@ int main()
     if (!(movingLead > stoppedLead))
         return fail("moving-start lead did not grow with speed");
 
+    // HUD/manual tunnel readability is geometric, not speed dependent.
+    // With 500 m sparse frames and a 30 degree maximum heading change, a
+    // quarter-turn must span at least three frame intervals.
+    const double tunnelRadius =
+        OrdinaryRoutePolicy::requiredGuidanceTunnelRadiusMeters(
+            500.0,
+            30.0
+        );
+    const double expectedTunnelRadius =
+        500.0 / 0.52359877559829887308;
+    if (!near(tunnelRadius, expectedTunnelRadius, 1.0e-6))
+        return fail("tunnel-safe radius did not follow frame spacing");
+
+    const double capitalShipRadius =
+        OrdinaryRoutePolicy::requiredGuidanceTunnelRadiusMeters(
+            500.0,
+            1000.0
+        );
+    if (!(capitalShipRadius > tunnelRadius))
+        return fail("tunnel-safe radius did not scale with vehicle length");
+
     // Terminal approach must be derived from braking physics, not a fixed
     // multi-kilometre constant.
     const double approach =

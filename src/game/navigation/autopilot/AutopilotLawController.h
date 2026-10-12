@@ -5,7 +5,7 @@
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
-#include "src/game/navigation/autopilot/NewtonianAutopilot.h"
+#include "src/game/navigation/autopilot/NewtonianOptimalController.h"
 
 namespace game::navigation::autopilot
 {
@@ -57,7 +57,7 @@ public:
 
 private:
     AssistedAutopilot assisted_ {};
-    NewtonianAutopilot newtonian_ {};
+    NewtonianOptimalController newtonian_ {};
 };
 
 // Compile-time API parity guard.  A concrete pilot cannot silently drift to a
@@ -87,10 +87,10 @@ static_assert(
 
 static_assert(
     std::is_same_v<
-        PilotUpdateResult<NewtonianAutopilot>,
+        PilotUpdateResult<NewtonianOptimalController>,
         AutopilotControlCommand
     >,
-    "NewtonianAutopilot must implement the hard autopilot command API"
+    "NewtonianOptimalController must implement the hard autopilot command API"
 );
 
 static_assert(
@@ -103,10 +103,10 @@ static_assert(
 
 static_assert(
     std::is_same_v<
-        PilotTelemetryResult<NewtonianAutopilot>,
+        PilotTelemetryResult<NewtonianOptimalController>,
         AutopilotControlTelemetry
     >,
-    "NewtonianAutopilot must implement the hard telemetry API"
+    "NewtonianOptimalController must implement the hard telemetry API"
 );
 
 } // namespace game::navigation::autopilot

@@ -167,6 +167,27 @@ try:
                 + forbidden_token
             )
 
+    for forbidden_token in (
+        "PredictivePilot",
+        "MainIgnitionAlignmentCosine",
+    ):
+        if forbidden_token in space:
+            raise AssertionError(
+                "SpaceState crossed the hard flight-law autopilot wall: "
+                + forbidden_token
+            )
+
+    simulation = require(
+        "src/game/simulation/GameSimulation.cpp",
+        "AutopilotControlRequest",
+        "m_npcAutopilotLawControllers",
+        "pilotController.update(",
+    )
+    if "PredictivePilot" in simulation:
+        raise AssertionError(
+            "GameSimulation crossed the hard flight-law autopilot wall"
+        )
+
     client_auto = require(
         "src/game/navigation/autopilot/ClientRouteAutopilot.h",
         "class ClientRouteAutopilot final",

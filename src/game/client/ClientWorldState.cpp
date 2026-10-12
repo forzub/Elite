@@ -6,6 +6,7 @@
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include "src/game/client/presentation/LocalPredictedPresentation.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
+#include "src/game/ship/ShipPropulsionState.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
@@ -1639,9 +1640,15 @@ void ClientWorldState::predict(
     if (!isLocalControlledEntity(id) || !ship.descriptor)
         return;
 
+    const ShipParams effectivePhysics =
+        game::ship::effectiveShipPhysics(
+            *ship.descriptor,
+            ship.modules
+        );
+
     game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         ship.transform,
-        ship.descriptor->physics,
+        effectivePhysics,
         control,
         world,
         dt
@@ -1657,7 +1664,7 @@ void ClientWorldState::predict(
     (void)game::client::predictHubTacticalMotion(
         ship.transform,
         ship.referenceFrame,
-        ship.descriptor->physics,
+        effectivePhysics,
         control,
         dt
     );

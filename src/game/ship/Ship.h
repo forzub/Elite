@@ -58,6 +58,8 @@ public:
     void updateMotionPhysics(float dt, const WorldParams& world);
     void updateMotionControl(float dt, const WorldParams& world);
     void propagateMotionOrientation(float dt);
+    void updateTranslationControl(float dt);
+    bool propagateHubTacticalTranslation(double dt);
     void updateSystems(float dt);
     void updateSignals(
         float dt,

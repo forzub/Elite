@@ -305,14 +305,16 @@ void testAssistedRequestsRefinementForMotionEnvelope()
 }
 
 
-void testNewtonianTransitDoesNotSpendPrecisionRcs()
+void testNewtonianVectorDemandUsesMainNotPrecisionRcs()
 {
     ShipParams params = makeParams();
-    params.manoeuvreThrusterAccel = 20.0f;
+    params.manoeuvreThrusterAccel = 0.0f;
 
     auto trajectory = makeTrajectory();
     for (auto& sample : trajectory.samples)
     {
+        // Pure path-normal acceleration. A Newtonian craft serves this by
+        // rotating the aft-main thrust vector, not by spending translation RCS.
         sample.accelerationMps2 = {5.0, 0.0, 0.0};
     }
 
@@ -323,26 +325,31 @@ void testNewtonianTransitDoesNotSpendPrecisionRcs()
     request.objectiveRevision = 13;
     request.firstProgramRevision = 50;
     request.capabilityRevision = 7;
+    request.policy.linearFeedbackReserveMps2 = 4.0;
 
     const auto result =
         game::navigation::AcceptedManeuverProgramBuilder::build(request);
 
-    require(!result.valid,
-            "Newtonian transit incorrectly used precision RCS as route thrust");
     require(
-        result.failureReason ==
-            "newtonian-motion-envelope-infeasible",
-        "Newtonian rejection did not identify main-engine alignment failure"
+        result.valid,
+        "Newtonian path-normal main-vector demand was incorrectly tied to RCS authority"
     );
 }
 
-void testNewtonianReverseDemandRequiresInstalledAuthority()
+void testNewtonianBackwardDemandUsesFlipAndBurnMain()
 {
     ShipParams params = makeParams();
     params.reverseMainEngineAvailable = false;
+    params.reverseMainEngineAccelerationMps2 = 0.0f;
+    params.manoeuvreThrusterAccel = 0.0f;
+
     auto trajectory = makeTrajectory();
     for (auto& sample : trajectory.samples)
+    {
+        // Opposite the nominal hull-forward sample. Rear-only Newtonian
+        // propulsion can still provide this acceleration after a 180-deg flip.
         sample.accelerationMps2 = {0.0, 0.0, 5.0};
+    }
 
     game::navigation::AcceptedManeuverProgramBuilder::Request request;
     request.trajectory = &trajectory;
@@ -350,12 +357,42 @@ void testNewtonianReverseDemandRequiresInstalledAuthority()
     request.controlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
     request.objectiveRevision = 13;
     request.firstProgramRevision = 50;
+    request.policy.linearFeedbackReserveMps2 = 4.0;
 
     const auto result =
         game::navigation::AcceptedManeuverProgramBuilder::build(request);
-    require(!result.valid && result.failureReason ==
-                "newtonian-motion-envelope-infeasible",
-            "rear-only ship accepted a backward acceleration it cannot deliver");
+
+    require(
+        result.valid,
+        "rear-only Newtonian ship rejected acceleration that is reachable by flip-and-burn"
+    );
+}
+
+void testNewtonianDemandAboveAftMainMagnitudeIsRejected()
+{
+    ShipParams params = makeParams();
+    params.manoeuvreThrusterAccel = 100.0f;
+
+    auto trajectory = makeTrajectory();
+    for (auto& sample : trajectory.samples)
+        sample.accelerationMps2 = {30.0, 0.0, 0.0};
+
+    game::navigation::AcceptedManeuverProgramBuilder::Request request;
+    request.trajectory = &trajectory;
+    request.shipPhysics = &params;
+    request.controlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    request.objectiveRevision = 14;
+    request.firstProgramRevision = 60;
+    request.policy.linearFeedbackReserveMps2 = 4.0;
+
+    const auto result =
+        game::navigation::AcceptedManeuverProgramBuilder::build(request);
+
+    require(
+        !result.valid &&
+        result.failureReason == "newtonian-motion-envelope-infeasible",
+        "Newtonian accepted an acceleration vector above aft-main magnitude"
+    );
 }
 
 void testImpossibleTerminalSpinIsRejected()
@@ -393,8 +430,9 @@ int main()
         testStoragePageBoundaryPreservesAngularState();
         testAssistedUsesGameFlightLawInsteadOfRcsAllocation();
         testAssistedRequestsRefinementForMotionEnvelope();
-        testNewtonianTransitDoesNotSpendPrecisionRcs();
-        testNewtonianReverseDemandRequiresInstalledAuthority();
+        testNewtonianVectorDemandUsesMainNotPrecisionRcs();
+        testNewtonianBackwardDemandUsesFlipAndBurnMain();
+        testNewtonianDemandAboveAftMainMagnitudeIsRejected();
         testImpossibleTerminalSpinIsRejected();
 
         std::cout
@@ -404,7 +442,8 @@ int main()
             << " - storage-page angular state remains continuous\n"
             << " - Assisted uses game-flight velocity control, not route RCS\n"
             << " - recoverable Assisted acceleration violation requests planner refinement\n"
-            << " - Newtonian ordinary transit cannot spend precision RCS\n"
+            << " - Newtonian route-vector acceleration belongs to aft main, not precision RCS\n"
+            << " - rear-only Newtonian braking is accepted through flip-and-burn\n"
             << " - impossible terminal spin rejected before Follower\n";
         return 0;
     }

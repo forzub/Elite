@@ -44,13 +44,18 @@ private identification state.
 The concrete pilots are siblings:
 
 - `AssistedAutopilot`
-- `NewtonianAutopilot`
+- `NewtonianOptimalController`
 
 Both implement the same public calls:
 
 - `update(const AutopilotControlRequest&, const ShipParams&)`
 - `telemetry(const ShipParams&) const`
 - `reset()`
+
+`AutopilotControlRequest` may also carry a fixed-capacity, law-neutral
+future-reference preview. Assisted may ignore it; Newtonian optimal control uses
+it to price future braking and turns before the current route station reaches
+those constraints.
 
 `AutopilotLawController` is the only selection seam. Compile-time parity
 guards prevent either concrete pilot from drifting to a different request,
@@ -81,10 +86,17 @@ Owns the Assisted conversion from vehicle-state guidance to ordinary pilot
 controls. Its measured course/speed response is private implementation state;
 the route layer receives only neutral telemetry.
 
-### NewtonianAutopilot
+### NewtonianOptimalController
 
-Owns the Newtonian conversion from the same vehicle-state guidance to the same
-ordinary pilot-control surface.
+Owns Newtonian receding-horizon control. It receives the same current
+vehicle-state guidance plus a law-neutral future reference preview and searches
+a short physically constrained horizon for the first control action that
+minimizes velocity-reference error, overspeed, unnecessary thrust and
+unnecessary reorientation.
+
+The hull is not a route-course objective. Route tangent belongs to the desired
+velocity reference. Hull + TVC exist only to realize the selected main-thrust
+vector.
 
 Ordinary Newtonian route translation follows these rules:
 

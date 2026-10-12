@@ -35,7 +35,7 @@ SystemMap / local route intent
          course capture
          roll/terminal composition
     -> AutopilotLawController
-         -> AssistedAutopilot | NewtonianAutopilot
+         -> AssistedAutopilot | NewtonianOptimalController
     -> ordinary ShipControlState
     -> GameClient::submitInput
     -> server fixed-step ship physics
@@ -154,7 +154,7 @@ must not redefine the physical envelope or hide material infeasibility.
 
 ## 6. Hull attitude is an actuator problem
 
-`AutopilotLawController` selects exactly one concrete flight-law pilot. `AssistedAutopilot` and `NewtonianAutopilot` convert the same law-neutral guidance request into ordinary hull/translation controls through the same API.
+`AutopilotLawController` selects exactly one concrete flight-law pilot. `AssistedAutopilot` and `NewtonianOptimalController` convert the same law-neutral guidance request into ordinary hull/translation controls through the same API.
 
 Pitch/yaw:
 - target the desired velocity-course while moving;
@@ -288,7 +288,7 @@ Completed in this cleanup:
 - `ShipControlAdapter` deleted and production NPC/player ordinary control migrated to `AutopilotLawController` with isolated Assisted/Newtonian pilots;
 - obsolete `CorridorCaptureGuidance` and its test deleted;
 - obsolete composite proving-ground test deleted;
-- current architecture contract is `ClientRouteAutopilot -> AutopilotLawController -> {AssistedAutopilot | NewtonianAutopilot} -> ShipControlState -> ShipController/DynamicMotionSystem`.
+- current architecture contract is `ClientRouteAutopilot -> AutopilotLawController -> {AssistedAutopilot | NewtonianOptimalController} -> ShipControlState -> ShipController/DynamicMotionSystem`.
 
 Still to migrate before direct-demand removal:
 - the old NavigationRuntimeControlBridge/runtime-lab path;

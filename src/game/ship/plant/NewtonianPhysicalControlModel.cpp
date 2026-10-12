@@ -64,13 +64,6 @@ PhysicalControlModelId modelId(PropulsionLayout layout) noexcept
     }
 }
 
-double fraction(std::size_t operational, std::size_t total) noexcept
-{
-    return total > 0
-        ? static_cast<double>(operational) / static_cast<double>(total)
-        : 0.0;
-}
-
 AxisAuthority01 symmetric(double authority) noexcept
 {
     const double a = std::clamp(authority, 0.0, 1.0);
@@ -227,8 +220,9 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
         out.regime = RuntimeFlightRegime::SurvivalControl;
     }
     else if (
-        operationalMain == mainSlots &&
-        operationalManoeuvre == manoeuvreSlots
+        mainFraction >= 1.0 - 1.0e-9 &&
+        mainVectoringFraction >= 1.0 - 1.0e-9 &&
+        manoeuvreFraction >= 1.0 - 1.0e-9
     )
     {
         out.regime = RuntimeFlightRegime::FullNewtonian;

@@ -201,9 +201,6 @@ bool ShipControlExecutionGateway::propagateHubTacticalTranslation(
         dt
     );
 
-    transform.referenceVelocityMetersPerSecond =
-        motion.referenceVelocityMps;
-
     return true;
 }
 

@@ -191,6 +191,7 @@ private:
         glm::dvec3 hullDirectionMap {0.0, 0.0, -1.0};
         glm::dvec3 thrustDirectionMap {0.0, 0.0, -1.0};
         double hullSlewRateRadPerSec = 0.0;
+        double elapsedSeconds = 0.0;
         double cost = 0.0;
         Action firstAction {};
     };
@@ -729,6 +730,8 @@ private:
         next.positionMapMeters =
             node.positionMapMeters +
             0.5 * (node.velocityMapMps + next.velocityMapMps) * dt;
+        next.elapsedSeconds =
+            node.elapsedSeconds + dt;
 
         const glm::dvec3 velocityError =
             next.velocityMapMps -
@@ -784,6 +787,77 @@ private:
 
         if (request.stopRequested)
             stageCost += 6.0 * actualSpeed * actualSpeed;
+
+        // Preserve branches that start a necessary flip BEFORE the future
+        // speed/reference change becomes the current sample.  This is a
+        // physical reachability lower bound, not a tuned "brake early" rule:
+        //
+        //   required future delta-v
+        //       <= mainAuthority * max(0, timeRemaining - minTurnTime)
+        //
+        // If the inequality is already violated, the deficit is accumulated
+        // immediately so beam pruning cannot discard the only branch that is
+        // paying the hull-rotation cost early enough.
+        const auto future =
+            finalReference(request);
+        const double deadline =
+            std::max(
+                0.0,
+                future.timeOffsetSeconds -
+                    next.elapsedSeconds
+            );
+        const glm::dvec3 futureDeltaVelocity =
+            future.desiredVelocityMapMps -
+            next.velocityMapMps;
+        const double requiredFutureDeltaV =
+            finiteLength(futureDeltaVelocity);
+
+        if (requiredFutureDeltaV > 1.0e-9 &&
+            deadline > 1.0e-9)
+        {
+            const glm::dvec3 futureThrustDirection =
+                futureDeltaVelocity /
+                requiredFutureDeltaV;
+
+            const double gimbalLimit =
+                std::max(
+                    game::ship::mainGimbalPitchLimitRad(params),
+                    game::ship::mainGimbalYawLimitRad(params)
+                );
+            const double hullAngle =
+                std::max(
+                    0.0,
+                    angleBetween(
+                        next.hullDirectionMap,
+                        futureThrustDirection
+                    ) - gimbalLimit
+                );
+
+            const double minTurnTime =
+                minimumTurnTimeSeconds(
+                    hullAngle,
+                    next.hullSlewRateRadPerSec,
+                    params
+                );
+            const double availableBurnTime =
+                std::max(
+                    0.0,
+                    deadline - minTurnTime
+                );
+            const double reachableDeltaV =
+                mainAuthority * availableBurnTime;
+            const double unreachableDeltaV =
+                std::max(
+                    0.0,
+                    requiredFutureDeltaV -
+                        reachableDeltaV
+                );
+
+            stageCost +=
+                12.0 *
+                unreachableDeltaV *
+                unreachableDeltaV;
+        }
 
         next.cost += stageCost * dt;
         return next;
@@ -1129,6 +1203,69 @@ private:
                 tangent * std::sin(moveFromDesired),
             desired
         );
+    }
+
+    [[nodiscard]] static double minimumTurnTimeSeconds(
+        double angleRad,
+        double currentRateRadPerSec,
+        const ShipParams& params
+    ) noexcept
+    {
+        const double angle =
+            std::max(0.0, angleRad);
+        if (angle <= 1.0e-12)
+            return 0.0;
+
+        const double acceleration =
+            std::max(
+                0.0,
+                game::ship::angularAccelerationLimitRadPerSec2(params)
+            );
+        const double maxRate =
+            std::max(
+                0.0,
+                game::ship::maximumAngularSpeedRadPerSec(params)
+            );
+
+        if (maxRate <= 1.0e-12)
+            return std::numeric_limits<double>::infinity();
+
+        const double initialRate =
+            std::clamp(
+                std::max(0.0, currentRateRadPerSec),
+                0.0,
+                maxRate
+            );
+
+        if (acceleration <= 1.0e-12)
+            return angle / std::max(initialRate, 1.0e-12);
+
+        const double accelerationTime =
+            std::max(
+                0.0,
+                (maxRate - initialRate) /
+                    acceleration
+            );
+        const double accelerationAngle =
+            initialRate * accelerationTime +
+            0.5 * acceleration *
+                accelerationTime * accelerationTime;
+
+        if (angle <= accelerationAngle)
+        {
+            // angle = v0*t + 0.5*a*t^2
+            const double discriminant =
+                initialRate * initialRate +
+                2.0 * acceleration * angle;
+            return
+                (-initialRate +
+                 std::sqrt(std::max(0.0, discriminant))) /
+                acceleration;
+        }
+
+        return
+            accelerationTime +
+            (angle - accelerationAngle) / maxRate;
     }
 
     [[nodiscard]] static glm::dvec3 slewDirection(

@@ -12,7 +12,6 @@ def require(cond: bool, msg: str) -> None:
 
 CONTROL = read("src/game/ship/core/ShipControlState.h")
 PILOT = read("src/game/navigation/autopilot/PredictivePilot.h")
-FOLLOWER = read("src/game/navigation/autopilot/RouteFollower.cpp")
 CLIENT_AUTO = read("src/game/navigation/autopilot/ClientRouteAutopilot.h")
 SPACE = read("src/game/SpaceState.cpp")
 SERVER = read("src/game/server/GameServer.cpp")
@@ -41,19 +40,28 @@ for marker in (
     require(marker in PILOT, f"PredictivePilot V2 contract missing: {marker}")
 
 for marker in (
-    "the accepted centerline is the ONLY path",
-    "centerlinePoint",
-    "inward * correctionSpeed",
+    "Execution owns one continuous spatial reference assembled from all",
+    "Authoritative spatial geometry.",
+    "sampleContinuousReference(",
+    "Advance strictly along the already accepted centerline.",
+    "ManeuverTrackingController::track(",
+    "sampleRouteCurveAtProgress(",
 ):
-    require(marker in FOLLOWER, f"RouteFollower V2 contract missing: {marker}")
+    require(
+        marker in CLIENT_AUTO,
+        f"client continuous-route execution contract missing: {marker}",
+    )
 
-for forbidden in ("TrajectoryFollower", "lookAhead", "steeringRay"):
-    require(forbidden not in FOLLOWER,
-            f"RouteFollower regained private/legacy route mechanism: {forbidden}")
+for forbidden in ("TrajectoryFollower", "RouteFollower::follow(", "steeringRay"):
+    require(
+        forbidden not in CLIENT_AUTO,
+        f"client autopilot regained retired/private route mechanism: {forbidden}",
+    )
 
 for marker in (
     "class ClientRouteAutopilot final",
-    "RouteFollower::follow(",
+    "sampleContinuousReference(",
+    "ManeuverTrackingController::track(",
     "PredictivePilot::make(",
     "ReferenceMode::SpatialCorridor",
     "ShipControlState",
@@ -91,8 +99,10 @@ for marker in ("control.pitchInput", "control.yawInput", "control.rollInput"):
 
 require("applyLocalFrameInput(" in MOTION,
         "ordinary local-frame flight law entry point missing")
-require("DynamicMotionSystem::applyLocalFrameInput(" in GATEWAY,
-        "ship control gateway no longer owns ordinary local-frame controls")
+require(
+    "DynamicMotionSystem::applyLocalFrameInput(" in "".join(GATEWAY.split()),
+    "ship control gateway no longer owns ordinary local-frame controls",
+)
 require("shipPtr->updateTranslationControl(motionControlDt)" in SIM,
         "GameSimulation no longer delegates ordinary controls to ship gateway")
 require("DynamicMotionSystem::applyLocalFrameInput(" not in SIM,
@@ -113,4 +123,4 @@ print("NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS")
 print(" - client owns Planner/Follower/PredictivePilot execution")
 print(" - virtual pilot emits the same ShipControlState surface as Human input")
 print(" - server is navigation-blind and applies ordinary numbered controls through ShipControlExecutionGateway")
-print(" - V2 follows the authored centerline without a private look-ahead route")
+print(" - V2 follows the accepted continuous centerline without a retired private follower")

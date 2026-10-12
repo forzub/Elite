@@ -107,6 +107,15 @@ struct ShipMainPropulsionBinding
     std::vector<std::string> foreEngineModuleIds;
 };
 
+// Physical topology owns slot count/placement. A descriptor may only bind the
+// already-existing slots to damageable module IDs, in physicalControlSlots()
+// order. Empty IDs are allowed later for non-damageable/integrated actuators;
+// adding extra entries is never a way to create new propulsion geometry.
+struct ShipPhysicalControlBinding
+{
+    std::vector<std::string> slotModuleIds;
+};
+
 struct CockpitData
 {
     bool enabled = false;
@@ -231,6 +240,7 @@ public:
     ShipSurvivalCaps    survival;
     SignalProfile       signalProfile;
     ShipMainPropulsionBinding mainPropulsion;
+    ShipPhysicalControlBinding physicalControl;
 
     ReactorDescriptor               reactor;
     CoolingDescriptor               cooling;

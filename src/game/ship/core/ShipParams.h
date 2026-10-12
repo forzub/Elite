@@ -45,6 +45,15 @@ struct ShipParams
     bool reverseMainEngineAvailable = false;
     float forwardMainEngineAccelerationMps2 = 0.0f;
     float reverseMainEngineAccelerationMps2 = 0.0f;
+
+    // Installed main-nozzle thrust-vector-control (TVC) envelope.
+    //
+    // These are physical actuator limits, not autopilot tuning constants.
+    // Zero means a fixed-axis main engine.  The current Newtonian proving
+    // craft uses a deliberately modest real-world-like gimbal envelope.
+    float mainGimbalPitchLimitRad = 0.0f;
+    float mainGimbalYawLimitRad = 0.0f;
+    float mainGimbalRateRadPerSec = 0.0f;
     
     // --- стабилизация ---
     float autoLevelStrength; // 0 = выкл

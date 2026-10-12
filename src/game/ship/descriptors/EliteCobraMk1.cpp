@@ -13,6 +13,9 @@
 #include "src/game/equipment/types/RadarVisualProfile.h"
 #include "src/world/descriptors/LogicalDimensions.h"
 
+#include <cstdlib>
+#include <string>
+
 // #include "game/damage/HitVolume.h"
 
 
@@ -1031,6 +1034,47 @@ desc.physicalControl.slotModuleIds = {
     "ship_fore_engine_L",
     "ship_fore_engine_R"
 };
+
+// TEST-ONLY healthy physical-model substitution.
+//
+// Ordinary runtime never sets this environment variable. The live corridor
+// matrix launches a fresh game process for each model, so the static
+// descriptor remains immutable inside one run. Alternate I/Y/X topologies do
+// not pretend to map onto Cobra's real four damage modules: clearing the
+// binding deliberately asks the capability builder for a healthy topology.
+if (const char* rawModel =
+        std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL"))
+{
+    using Model =
+        game::ship::plant::PhysicalControlModelId;
+
+    const std::string model(rawModel);
+    bool recognized = true;
+
+    if (model == "Assisted-I")
+        desc.physicalControlModel = Model::AssistedI;
+    else if (model == "Assisted-Y")
+        desc.physicalControlModel = Model::AssistedY;
+    else if (model == "Assisted-X")
+        desc.physicalControlModel = Model::AssistedX;
+    else if (model == "Newtonian-I")
+        desc.physicalControlModel = Model::NewtonianI;
+    else if (model == "Newtonian-Y")
+        desc.physicalControlModel = Model::NewtonianY;
+    else if (model == "Newtonian-X")
+        desc.physicalControlModel = Model::NewtonianX;
+    else
+        recognized = false;
+
+    if (recognized)
+    {
+        desc.localFlightControlLaw =
+            game::ship::plant::nativeFlightLaw(
+                desc.physicalControlModel
+            );
+        desc.physicalControl.slotModuleIds.clear();
+    }
+}
 
 
 for (auto& m : desc.modules)

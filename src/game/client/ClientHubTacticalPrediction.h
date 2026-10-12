@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
@@ -51,33 +51,20 @@ inline bool predictHubTacticalMotion(
     transform.motion.matchedToReferenceFrame =
         frameSnapshot.matchedToReferenceFrame;
 
-    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
-        transform.motion,
-        frame,
-        params,
-        dt,
-        control.targetSpeedRate,
-        control.cruiseActive,
-        control.forwardInput,
-        control.liftInput,
-        control.strafeInput,
-        transform.forward(),
-        transform.right(),
-        transform.up()
-    );
+    (void)game::ship::control::ShipControlExecutionGateway::
+        evaluateTranslationControl(
+            transform,
+            params,
+            control,
+            dt
+        );
 
-    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-        transform.motion,
-        transform.worldPosition,
-        frame,
-        params,
-        static_cast<double>(dt)
-    );
-
-    transform.referenceVelocityMetersPerSecond =
-        transform.motion.referenceVelocityMps;
-
-    return true;
+    return game::ship::control::ShipControlExecutionGateway::
+        propagateHubTacticalTranslation(
+            transform,
+            params,
+            static_cast<double>(dt)
+        );
 }
 
 } // namespace game::client

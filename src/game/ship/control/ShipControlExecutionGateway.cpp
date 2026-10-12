@@ -23,7 +23,9 @@ bool hasManualTranslationOverride(
         std::abs(control.targetSpeedRate) > 0.001f ||
         std::abs(control.forwardInput) > 0.001f ||
         std::abs(control.liftInput) > 0.001f ||
-        std::abs(control.strafeInput) > 0.001f;
+        std::abs(control.strafeInput) > 0.001f ||
+        std::abs(control.mainGimbalRightInput) > 0.001f ||
+        std::abs(control.mainGimbalUpInput) > 0.001f;
 }
 
 } // namespace

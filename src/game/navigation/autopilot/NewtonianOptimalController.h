@@ -235,11 +235,11 @@ private:
                 request.previewCount,
                 AutopilotPreviewCapacity
             );
-        if (count == 0)
+        if (count == 0 || depth == 0)
             return currentReference(request);
 
         const std::size_t index =
-            std::min(depth, count - 1);
+            std::min(depth - 1, count - 1);
         auto out = request.preview[index];
         out.desiredVelocityMapMps =
             finiteVecOrZero(out.desiredVelocityMapMps);
@@ -278,18 +278,41 @@ private:
         if (count == 0)
             return 0.50;
 
-        const double now =
-            depth == 0
-                ? 0.0
-                : request.preview[
-                    std::min(depth - 1, count - 1)
-                  ].timeOffsetSeconds;
-        const double next =
-            request.preview[
-                std::min(depth, count - 1)
-            ].timeOffsetSeconds;
+        const double firstPreviewTime =
+            std::max(
+                0.10,
+                request.preview[0].timeOffsetSeconds
+            );
+        const double firstControlStep =
+            std::clamp(
+                std::min(0.25, firstPreviewTime),
+                0.10,
+                0.25
+            );
 
-        return std::clamp(next - now, 0.10, 1.25);
+        if (depth == 0)
+            return firstControlStep;
+
+        if (depth == 1)
+        {
+            return std::clamp(
+                firstPreviewTime - firstControlStep,
+                0.10,
+                1.25
+            );
+        }
+
+        const std::size_t previousIndex =
+            std::min(depth - 2, count - 1);
+        const std::size_t nextIndex =
+            std::min(depth - 1, count - 1);
+
+        return std::clamp(
+            request.preview[nextIndex].timeOffsetSeconds -
+                request.preview[previousIndex].timeOffsetSeconds,
+            0.10,
+            1.25
+        );
     }
 
     [[nodiscard]] static Action optimize(
@@ -326,7 +349,7 @@ private:
             );
         const std::size_t depthCount =
             previewCount > 0
-                ? std::min(previewCount, MaximumDepth)
+                ? std::min(previewCount + 1, MaximumDepth)
                 : std::size_t(4);
 
         for (std::size_t depth = 0; depth < depthCount; ++depth)

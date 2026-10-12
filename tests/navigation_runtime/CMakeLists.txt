@@ -1218,6 +1218,49 @@ set_tests_properties(
 
 
 add_executable(
+    autopilot_law_api_tests
+    AutopilotLawApiTests.cpp
+)
+
+target_include_directories(autopilot_law_api_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    autopilot_law_api_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    autopilot_law_api_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        autopilot_law_api_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        autopilot_law_api_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME autopilot_law_api
+    COMMAND autopilot_law_api_tests
+)
+
+set_tests_properties(
+    autopilot_law_api
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     engine_thrust_hud_presentation_tests
     EngineThrustHudPresentationTests.cpp
 )

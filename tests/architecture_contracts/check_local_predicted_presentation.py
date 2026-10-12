@@ -21,7 +21,7 @@ require(
     "src/game/client/presentation/LocalPredictedPresentation.h",
     "sampleLocalPredictedPresentationTarget(",
     "ShipTransform target = fixedPredictedTransform;",
-    "SharedShipPhysics::integrate(",
+    "ShipControlExecutionGateway::integrateAttitude(",
     "predictHubTacticalMotion(",
     "fractionalStepSeconds",
     "fixedStepSeconds",

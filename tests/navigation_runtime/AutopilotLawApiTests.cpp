@@ -90,8 +90,12 @@ void testRouteLayerCannotSeeConcretePilots()
         "ClientRouteAutopilot leaked concrete Assisted pilot dependency"
     );
     require(
+        route.find("NewtonianOptimalController") == std::string::npos,
+        "ClientRouteAutopilot leaked concrete Newtonian controller dependency"
+    );
+    require(
         route.find("NewtonianAutopilot") == std::string::npos,
-        "ClientRouteAutopilot leaked concrete Newtonian pilot dependency"
+        "ClientRouteAutopilot still references retired NewtonianAutopilot"
     );
     require(
         route.find("PredictivePilot") == std::string::npos,
@@ -137,8 +141,12 @@ void testRouteLayerCannotSeeConcretePilots()
         readText("src/game/navigation/autopilot/AutopilotLawController.h");
     require(
         controller.find("AssistedAutopilot") != std::string::npos &&
-        controller.find("NewtonianAutopilot") != std::string::npos,
-        "AutopilotLawController is not the explicit two-law selection seam"
+        controller.find("NewtonianOptimalController") != std::string::npos,
+        "AutopilotLawController is not the explicit Assisted/optimal-Newtonian selection seam"
+    );
+    require(
+        controller.find("NewtonianAutopilot") == std::string::npos,
+        "AutopilotLawController still exposes retired NewtonianAutopilot"
     );
 }
 

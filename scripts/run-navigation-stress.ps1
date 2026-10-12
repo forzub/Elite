@@ -13,6 +13,37 @@ if (-not (Test-Path $exe)) {
     throw "EliteGame.exe not found: $exe"
 }
 
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$gitCommit = "unknown"
+$gitBranch = "unknown"
+$gitDirty = "unknown"
+
+try {
+    $commitOutput = & git -C $repoRoot rev-parse --short=12 HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $commitOutput) {
+        $gitCommit = ($commitOutput | Select-Object -First 1).Trim()
+    }
+
+    $branchOutput = & git -C $repoRoot branch --show-current 2>$null
+    if ($LASTEXITCODE -eq 0 -and $branchOutput) {
+        $gitBranch = ($branchOutput | Select-Object -First 1).Trim()
+    }
+
+    $dirtyOutput = & git -C $repoRoot status --porcelain --untracked-files=no 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        $gitDirty = if ($dirtyOutput) { "dirty" } else { "clean" }
+    }
+}
+catch {
+    # Stress execution must not depend on git being installed.
+}
+
+$exeInfo = Get-Item $exe
+$exeHash = (Get-FileHash -Algorithm SHA256 -Path $exe).Hash.ToLowerInvariant()
+$exeHashShort = $exeHash.Substring(0, 16)
+$exeWriteUtc = $exeInfo.LastWriteTimeUtc.ToString("o")
+$buildId = "$gitCommit@$gitBranch/$gitDirty exe=$exeHashShort built=$exeWriteUtc"
+
 $reportDir = Split-Path -Parent $ReportPath
 if ($reportDir -and -not (Test-Path $reportDir)) {
     New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
@@ -24,11 +55,14 @@ if (Test-Path $ReportPath) {
 
 $oldStress = $env:ELITE_NAV_STRESS
 $oldReport = $env:ELITE_NAV_STRESS_REPORT
+$oldBuildId = $env:ELITE_NAV_STRESS_BUILD_ID
 
 $env:ELITE_NAV_STRESS = "1"
 $env:ELITE_NAV_STRESS_REPORT = $ReportPath
+$env:ELITE_NAV_STRESS_BUILD_ID = $buildId
 
 Write-Host "[NavStressRunner] starting $exe"
+Write-Host "[NavStressRunner] build $buildId"
 Write-Host "[NavStressRunner] report $ReportPath"
 Write-Host "[NavStressRunner] no-progress timeout $($NoProgressTimeoutSeconds)s; absolute timeout $($AbsoluteTimeoutSeconds)s"
 
@@ -136,4 +170,5 @@ try {
 finally {
     $env:ELITE_NAV_STRESS = $oldStress
     $env:ELITE_NAV_STRESS_REPORT = $oldReport
+    $env:ELITE_NAV_STRESS_BUILD_ID = $oldBuildId
 }

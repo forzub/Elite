@@ -101,7 +101,7 @@ try:
         "RouteFollower",
         "AutopilotLawController",
         "AssistedAutopilot",
-        "NewtonianAutopilot",
+        "NewtonianOptimalController",
         "DockingAdvisoryPlanner",
         "automaticDockingRoute",
         "DockResult",
@@ -119,7 +119,7 @@ try:
         "RouteFollower",
         "AutopilotLawController",
         "AssistedAutopilot",
-        "NewtonianAutopilot",
+        "NewtonianOptimalController",
         "AcceptedManeuverProgram",
         "HubSemanticAnchorCatalog",
         "DockingPortRuntimeStateCatalog",
@@ -213,7 +213,7 @@ try:
         "steeringRay",
         "PredictivePilot",
         "AssistedAutopilot",
-        "NewtonianAutopilot",
+        "NewtonianOptimalController",
         "assistedCourseResponseSeconds",
         "assistedBrakingResponseMps2",
     ):
@@ -254,7 +254,7 @@ try:
         "case LocalFlightControlLaw::Assisted",
         "case LocalFlightControlLaw::Newtonian",
         "AssistedAutopilot assisted_",
-        "NewtonianAutopilot newtonian_",
+        "NewtonianOptimalController newtonian_",
         "Compile-time API parity guard",
     )
 
@@ -270,10 +270,10 @@ try:
     )
 
     newtonian = require(
-        "src/game/navigation/autopilot/NewtonianAutopilot.h",
-        "class NewtonianAutopilot final",
-        "The main engine is the Newtonian translational actuator",
-        "VelocityAlignmentMode::BrakeToStop",
+        "src/game/navigation/autopilot/NewtonianOptimalController.h",
+        "class NewtonianOptimalController final",
+        "Receding-horizon Newtonian controller",
+        "optimize(request, params)",
         "out.forwardInput = 0.0f",
         "out.strafeInput = 0.0f",
         "out.liftInput = 0.0f",

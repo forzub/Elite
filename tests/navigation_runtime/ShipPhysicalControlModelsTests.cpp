@@ -26,6 +26,9 @@ ShipParams nominalPhysics()
     p.strafeAccel = 40.0f;
     p.manoeuvreThrusterAccel = 4.0f;
     p.angularAccel = 3.0f;
+    p.mainGimbalPitchLimitRad = 0.12f;
+    p.mainGimbalYawLimitRad = 0.12f;
+    p.mainGimbalRateRadPerSec = 0.14f;
     p.maxGs = 20.0f;
     p.maxLinearGs = 20.0f;
     p.turnRadius = 20.0f;
@@ -237,6 +240,9 @@ void testNewtonianDegradation()
     ));
     assert(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
     assert(near(full.effectivePhysics.manoeuvreThrusterAccel, 4.0));
+    assert(near(full.effectivePhysics.mainGimbalPitchLimitRad, 0.12, 1.0e-6));
+    assert(near(full.effectivePhysics.mainGimbalYawLimitRad, 0.12, 1.0e-6));
+    assert(near(full.effectivePhysics.mainGimbalRateRadPerSec, 0.14, 1.0e-6));
 
     // Newtonian-I main is gimbaled. It can bend a powered trajectory and
     // generate pitch/yaw, but a centred single main has no direct roll moment.
@@ -263,6 +269,35 @@ void testNewtonianDegradation()
     );
     assert(newtonY.poweredMainVectoring.roll01 > 0.999);
     assert(newtonX.poweredMainVectoring.roll01 > 0.999);
+
+    // Vectoring damage shrinks real nozzle travel/slew; it must not be
+    // converted into hidden RCS authority.
+    state[0].vectoring01 = 0.5;
+    auto halfVectoring = evaluatePhysicalControlModel(
+        PhysicalControlModelId::NewtonianI,
+        nominal,
+        state
+    );
+    assert(near(
+        halfVectoring.effectivePhysics.mainGimbalPitchLimitRad,
+        0.06,
+        1.0e-6
+    ));
+    assert(near(
+        halfVectoring.effectivePhysics.mainGimbalYawLimitRad,
+        0.06,
+        1.0e-6
+    ));
+    assert(near(
+        halfVectoring.effectivePhysics.mainGimbalRateRadPerSec,
+        0.07,
+        1.0e-6
+    ));
+    assert(near(
+        halfVectoring.effectivePhysics.manoeuvreThrusterAccel,
+        4.0
+    ));
+    state[0].vectoring01 = 1.0;
 
     // Slot 0 is the axial main, remaining slots are RCS clusters.
     state[1].operational = false;

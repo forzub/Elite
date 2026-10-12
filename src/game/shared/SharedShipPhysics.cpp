@@ -122,6 +122,30 @@ void evaluateControl(
     transform.strafeInput     = control.strafeInput;
     transform.liftInput       = control.liftInput;
     transform.targetSpeedRate = control.targetSpeedRate;
+
+    // TVC commands live in DynamicMotionState because nozzle position is a
+    // rate-limited physical actuator state, not a presentation/input transient.
+    if (motion.localControlLaw ==
+        game::navigation::LocalFlightControlLaw::Newtonian)
+    {
+        motion.mainGimbalRightCommand01 =
+            std::clamp(
+                static_cast<double>(control.mainGimbalRightInput),
+                -1.0,
+                1.0
+            );
+        motion.mainGimbalUpCommand01 =
+            std::clamp(
+                static_cast<double>(control.mainGimbalUpInput),
+                -1.0,
+                1.0
+            );
+    }
+    else
+    {
+        motion.mainGimbalRightCommand01 = 0.0;
+        motion.mainGimbalUpCommand01 = 0.0;
+    }
     transform.cruiseActive    = control.cruiseActive;
     transform.jumpActive      = control.jumpActive;
 

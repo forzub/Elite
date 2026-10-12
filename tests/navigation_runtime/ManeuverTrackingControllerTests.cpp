@@ -872,6 +872,44 @@ void testNewtonianSpatialDriftDoesNotCountAsRouteLoss()
     );
 }
 
+void testNewtonianSpatialRecoveryKeepsMainVectorFeedForward()
+{
+    Program program = baseProgram();
+    program.referenceMode = Program::ReferenceMode::SpatialCorridor;
+    program.family = Program::ManeuverFamily::PrecisionTransit;
+    program.translationMode =
+        Program::TranslationMode::NewtonianMainEngine;
+    program.tracking.positionErrorMeters = 5.0;
+    program.tracking.linearVelocityErrorMps = 1.0;
+    program.tracking.linearFeedbackReserveMps2 = 2.0;
+
+    auto reference = program.samples[0];
+    reference.linearAccelerationFeedForwardMapMps2 =
+        {0.0, 6.0, 0.0};
+
+    auto agent = exactAgentFor(reference);
+    agent.positionMapMeters += glm::dvec3(0.0, 10.0, 0.0);
+
+    const auto result =
+        Tracker::track(program, reference, agent, Tracker::Policy {});
+
+    require(
+        result.status == Tracker::Status::EnvelopeExceeded,
+        "Newtonian recovery fixture did not leave the soft corridor envelope"
+    );
+
+    const glm::dvec3 recoveredFeedForward =
+        result.intent.idealLinearAccelerationLocalMps2 -
+        result.linearFeedbackMapMps2;
+
+    requireNear(
+        recoveredFeedForward.y,
+        reference.linearAccelerationFeedForwardMapMps2.y,
+        1.0e-9,
+        "Newtonian corridor recovery erased authored main-vector feed-forward"
+    );
+}
+
 void testSpatialCorridorSteersBackWithoutReducingRouteSpeed()
 {
     Program program = baseProgram();
@@ -1071,6 +1109,7 @@ int main()
         testAssistedSpatialSteeringLeadIsNotRouteLoss();
         testAssistedSpatialVelocityCourseDepartureIsRouteLoss();
         testNewtonianSpatialDriftDoesNotCountAsRouteLoss();
+        testNewtonianSpatialRecoveryKeepsMainVectorFeedForward();
         testSpatialCorridorSteersBackWithoutReducingRouteSpeed();
         testSpatialCorridorHoldsTangentInsideCenterDeadband();
         testSpatialZeroSpeedHoldDoesNotInventCourseLoss();

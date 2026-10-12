@@ -76,10 +76,25 @@ require(
     "ShipDescriptor lost immutable physical-control topology selection",
 )
 require(
+    "ShipPhysicalControlBinding" in DESCRIPTOR
+    and "std::vector<std::string> slotModuleIds" in DESCRIPTOR,
+    "ShipDescriptor lost fixed-slot to damage-module binding",
+)
+require(
     "PhysicalControlModelId::AssistedI" in COBRA
     and "nativeFlightLaw(desc.physicalControlModel)" in COBRA,
     "Cobra Mk1 no longer binds its doctrine to Assisted-I hardware",
 )
+for module_id in (
+    '"ship_engine_L"',
+    '"ship_engine_R"',
+    '"ship_fore_engine_L"',
+    '"ship_fore_engine_R"',
+):
+    require(
+        module_id in COBRA,
+        f"Cobra Mk1 Assisted-I slot binding lost module: {module_id}",
+    )
 
 # Individual ship descriptors may select/tune a model but may not author
 # private actuator geometry outside the six topology modules.

@@ -77,6 +77,16 @@ void Ship::propagateMotionOrientation(float dt)
     m_core.propagateMotionOrientation(dt);
 }
 
+void Ship::updateTranslationControl(float dt)
+{
+    m_core.updateTranslationControl(dt);
+}
+
+bool Ship::propagateHubTacticalTranslation(double dt)
+{
+    return m_core.propagateHubTacticalTranslation(dt);
+}
+
 void Ship::updateSystems(float dt)
 {
     m_core.updateSystems(dt);

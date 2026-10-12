@@ -47,8 +47,8 @@ struct ShipControlState
     // Legacy navigation-v2 diagnostic/lab seam.
     //
     // Production autopilot MUST NOT use this path. It is a virtual pilot and
-    // must emit the ordinary controls above through the isolated
-    // navigation::autopilot::PredictivePilot V2. ShipControlAdapter is legacy
+    // must emit the ordinary controls above through the isolated hard
+    // navigation::autopilot law API. ShipControlAdapter is legacy
     // and is forbidden in production automatic docking. These fields remain only
     // while older navigation labs/bridges are migrated and are guarded out of
     // automatic docking by architecture contracts.

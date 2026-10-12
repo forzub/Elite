@@ -17,6 +17,7 @@ struct AutopilotReferencePreviewSample
 {
     // Relative to the current control instant.
     double timeOffsetSeconds = 0.0;
+    glm::dvec3 desiredPositionMapMeters {0.0};
     glm::dvec3 desiredVelocityMapMps {0.0};
     glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
 };
@@ -28,8 +29,11 @@ struct AutopilotReferencePreviewSample
 // any implementation-owned controller state through this structure.
 struct AutopilotControlRequest
 {
+    glm::dvec3 desiredPositionMapMeters {0.0};
     glm::dvec3 desiredVelocityMapMps {0.0};
     glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
+    glm::dvec3 actualPositionMapMeters {0.0};
+    bool positionReferenceValid = false;
 
     // Law-neutral future reference preview. Assisted is free to ignore it.
     // Newtonian optimal control uses it to price future braking/turning before

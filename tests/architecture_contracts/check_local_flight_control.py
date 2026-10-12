@@ -23,6 +23,8 @@ mapper = read("src/game/ship/controller/PlayerInputMapper.cpp")
 client = read("src/game/client/GameClient.cpp")
 space = read("src/game/SpaceState.cpp")
 shared = read("src/game/shared/SharedShipPhysics.cpp")
+gateway = read("src/game/ship/control/ShipControlExecutionGateway.cpp")
+gateway_h = read("src/game/ship/control/ShipControlExecutionGateway.h")
 simulation = read("src/game/simulation/GameSimulation.cpp")
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
 params = read("src/game/ship/core/ShipParams.h")
@@ -298,11 +300,39 @@ if "glm::length(motion.localVelocityMps)" in flight_state_machine.split(
     fail("Assisted transition recaptured total VREL magnitude instead of longitudinal state")
 
 for token in (
-    "shipPtr->core().effectivePhysics()",
-    "const ShipParams effectivePhysics",
+    "shipPtr->updateTranslationControl(motionControlDt)",
+    "shipPtr->propagateHubTacticalTranslation(dt)",
 ):
     if token not in simulation:
-        fail(f"server local motion lost damage-aware propulsion profile: {token}")
+        fail(f"server local motion bypassed ship control gateway: {token}")
+
+for forbidden in (
+    "DynamicMotionSystem::applyLocalFrameInput(",
+    "DynamicMotionSystem::applyNavigationAssistedFlightModel(",
+    "DynamicMotionSystem::applySystemAccelerationDemand(",
+    "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
+):
+    if forbidden in simulation:
+        fail(f"GameSimulation regained control-law interpretation: {forbidden}")
+
+for token in (
+    "selectTranslationPath(",
+    "evaluateAttitudeControl(",
+    "evaluateTranslationControl(",
+    "propagateHubTacticalTranslation(",
+    "DynamicMotionSystem::applyLocalFrameInput(",
+    "DynamicMotionSystem::applyNavigationAssistedFlightModel(",
+    "DynamicMotionSystem::applySystemAccelerationDemand(",
+    "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
+):
+    if token not in (gateway_h + gateway):
+        fail(f"ship control execution gateway lost contract: {token}")
+
+if "DynamicMotionSystem::" in prediction:
+    fail("client HubTactical prediction bypassed ship control execution gateway")
+
+if "ShipControlExecutionGateway::" not in prediction:
+    fail("client HubTactical prediction no longer crosses ship control execution gateway")
 
 if "game::ship::effectiveShipPhysics" not in space:
     fail("manual docking planning no longer consumes current engine health")

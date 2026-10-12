@@ -53,6 +53,7 @@
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/autopilot/AutopilotLawController.h"
 #include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
@@ -332,8 +333,8 @@ private:
     std::uint64_t m_clientDockingTraceTick = 0;
     double m_clientDockingRouteProgressMeters = 0.0;
     std::size_t m_clientDockingRouteCurveIndex = 0;
-    game::navigation::autopilot::PredictivePilot::State
-        m_clientDockingStabilizePilotState {};
+    game::navigation::autopilot::AutopilotLawController
+        m_clientDockingStabilizePilotController {};
 
     struct DockSafeCourseState
     {

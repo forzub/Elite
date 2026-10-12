@@ -13,7 +13,7 @@ constexpr double Sqrt3Over2 = 0.86602540378443864676;
 constexpr double InvSqrt2 = 0.70710678118654752440;
 
 const std::vector<EngineSlotDefinition> NewtonianI = {
-    {"main_center", EngineSlotRole::AftMain, {0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
+    {"main_center", EngineSlotRole::AftMain, {0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
 
     {"rcs_fore_left",  EngineSlotRole::ManoeuvreCluster, {-1.0, 0.0, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_fore_right", EngineSlotRole::ManoeuvreCluster, { 1.0, 0.0, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
@@ -22,9 +22,9 @@ const std::vector<EngineSlotDefinition> NewtonianI = {
 };
 
 const std::vector<EngineSlotDefinition> NewtonianY = {
-    {"main_top",         EngineSlotRole::AftMain, {0.0,          1.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
-    {"main_lower_right", EngineSlotRole::AftMain, { Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
+    {"main_top",         EngineSlotRole::AftMain, {0.0,          1.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_left",  EngineSlotRole::AftMain, {-Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_right", EngineSlotRole::AftMain, { Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
 
     {"rcs_fore_top",         EngineSlotRole::ManoeuvreCluster, {0.0,          1.0, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_fore_lower_left",  EngineSlotRole::ManoeuvreCluster, {-Sqrt3Over2, -0.5, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
@@ -35,10 +35,10 @@ const std::vector<EngineSlotDefinition> NewtonianY = {
 };
 
 const std::vector<EngineSlotDefinition> NewtonianX = {
-    {"main_upper_left",  EngineSlotRole::AftMain, {-InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
-    {"main_upper_right", EngineSlotRole::AftMain, { InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
-    {"main_lower_right", EngineSlotRole::AftMain, { InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::FixedAxis},
+    {"main_upper_left",  EngineSlotRole::AftMain, {-InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_upper_right", EngineSlotRole::AftMain, { InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_left",  EngineSlotRole::AftMain, {-InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_right", EngineSlotRole::AftMain, { InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
 
     {"rcs_fore_upper_left",  EngineSlotRole::ManoeuvreCluster, {-InvSqrt2,  InvSqrt2, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_fore_upper_right", EngineSlotRole::ManoeuvreCluster, { InvSqrt2,  InvSqrt2, -1.0}, {0.0}, EngineSlotFreedom::OmnidirectionalCluster},
@@ -163,6 +163,23 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     out.authority.pitch = symmetric(manoeuvreFraction);
     out.authority.yaw = symmetric(manoeuvreFraction);
     out.authority.roll = symmetric(manoeuvreFraction);
+
+    // Newtonian main nozzles are thrust-vectoring as well. Unlike Assisted,
+    // this authority is coupled to an aft-main burn rather than being a
+    // high-authority independent velocity-control channel.
+    out.poweredMainVectoring.trajectoryStrafe01 = mainFraction;
+    out.poweredMainVectoring.trajectoryLift01 = mainFraction;
+    out.poweredMainVectoring.pitch01 = mainFraction;
+    out.poweredMainVectoring.yaw01 = mainFraction;
+    out.poweredMainVectoring.roll01 =
+        layout == PropulsionLayout::I ? 0.0 : mainFraction;
+
+    // TVC redirects the main thrust instead of cancelling an opposed bank.
+    // Resource accounting later must model the axial/lateral split from the
+    // commanded vector angle; there is no Assisted-style cancellation penalty.
+    out.thrustUtilization.axialTranslation01 = 1.0;
+    out.thrustUtilization.lateralTranslation01 = 1.0;
+    out.thrustUtilization.cancelledDuringLateral01 = 0.0;
 
     out.effectivePhysics.forwardMainEngineAvailable =
         operationalMain > 0 && nominalForward > 0.0;

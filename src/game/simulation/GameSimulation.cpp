@@ -4740,99 +4740,14 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            const auto& control = shipPtr->core().control();
             const float motionControlDt = static_cast<float>(
                 decisionIt->second.executionDeltaSeconds
             );
 
-            const bool manualTranslationOverride =
-                control.cruiseActive ||
-                control.jumpActive ||
-                control.assistedMaxSpeedCommand ||
-                control.velocityAlignmentCommand !=
-                    game::navigation::VelocityAlignmentMode::None ||
-                std::abs(control.targetSpeedRate) > 0.001f ||
-                std::abs(control.forwardInput) > 0.001f ||
-                std::abs(control.liftInput) > 0.001f ||
-                std::abs(control.strafeInput) > 0.001f;
-
-            const ShipParams effectivePhysics =
-                shipPtr->core().effectivePhysics();
-
-            if (control.navigationVelocityTargetValid &&
-                control.navigationAccelerationDemandValid &&
-                control.navigationPrecisionTranslationOnly &&
-                !manualTranslationOverride)
-            {
-                game::navigation::DynamicMotionSystem::
-                    applyNavigationPrecisionVelocityTrim(
-                        tr.motion,
-                        tr.motion.travelFrame,
-                        effectivePhysics,
-                        motionControlDt,
-                        control.navigationTargetVelocitySystemMps
-                    );
-            }
-            else if (control.navigationVelocityTargetValid &&
-                control.navigationAccelerationDemandValid &&
-                tr.motion.localControlLaw ==
-                    game::navigation::LocalFlightControlLaw::Assisted &&
-                !manualTranslationOverride)
-            {
-                game::navigation::DynamicMotionSystem::
-                    applyNavigationAssistedFlightModel(
-                        tr.motion,
-                        tr.motion.travelFrame,
-                        effectivePhysics,
-                        motionControlDt,
-                        control.navigationTargetVelocitySystemMps,
-                        control.navigationLinearAccelerationDemandSystemMps2,
-                        tr.forward(), tr.right(), tr.up()
-                    );
-            }
-            else if (control.navigationVelocityTargetValid &&
-                     control.navigationAccelerationDemandValid &&
-                     !manualTranslationOverride)
-            {
-                // Newtonian hardware allocation lives in the ship. The
-                // Navigator supplies a velocity target and pilot demand;
-                // engine choice remains a physical vehicle response.
-                game::navigation::DynamicMotionSystem::
-                    applySystemAccelerationDemand(
-                        tr.motion,
-                        effectivePhysics,
-                        control.navigationLinearAccelerationDemandSystemMps2,
-                        tr.forward()
-                    );
-            }
-            else if (control.navigationAccelerationDemandValid &&
-                     !manualTranslationOverride)
-            {
-                game::navigation::DynamicMotionSystem::
-                    applySystemAccelerationDemand(
-                        tr.motion,
-                        effectivePhysics,
-                        control.navigationLinearAccelerationDemandSystemMps2,
-                        tr.forward()
-                    );
-            }
-            else
-            {
-                game::navigation::DynamicMotionSystem::applyLocalFrameInput(
-                    tr.motion,
-                    tr.motion.travelFrame,
-                    effectivePhysics,
-                    motionControlDt,
-                    control.targetSpeedRate,
-                    control.cruiseActive,
-                    control.forwardInput,
-                    control.liftInput,
-                    control.strafeInput,
-                    tr.forward(),
-                    tr.right(),
-                    tr.up()
-                );
-            }
+            // GameSimulation owns cadence/reference-frame orchestration only.
+            // ShipControlState semantics and actuator/backend selection are
+            // isolated behind the ship control execution gateway.
+            shipPtr->updateTranslationControl(motionControlDt);
         }
     }
 
@@ -4874,15 +4789,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!tr.motion.travelFrame.valid)
                 continue;
 
-            const ShipParams effectivePhysics =
-                shipPtr->core().effectivePhysics();
-            game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-                tr.motion,
-                tr.worldPosition,
-                tr.motion.travelFrame,
-                effectivePhysics,
-                dt
-            );
+            (void)shipPtr->propagateHubTacticalTranslation(dt);
 
             if (isNavigationRuntimeLabShip(id))
             {

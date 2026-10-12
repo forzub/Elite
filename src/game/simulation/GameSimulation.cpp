@@ -51,7 +51,7 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
-#include "src/game/navigation/autopilot/PredictivePilot.h"
+#include "src/game/navigation/autopilot/AutopilotLawController.h"
 #include "src/game/navigation/NavigationHitVolumeAdapter.h"
 #include "src/game/navigation/NavigationFrameBoundary.h"
 #include "src/world/navigation/local/PhysicalManeuverHorizon.h"
@@ -993,11 +993,8 @@ bool GameSimulation::updateNpcNavigationControl(
     }
     else
     {
-        using Pilot =
-            game::navigation::autopilot::PredictivePilot;
-
-        Pilot::Request pilotRequest;
-        pilotRequest.law = tr.motion.localControlLaw;
+        game::navigation::autopilot::AutopilotControlRequest
+            pilotRequest;
         pilotRequest.desiredVelocityMapMps =
             goal.mode == NpcNavigationGoalMode::MaintainForwardCruise
                 ? navigationState.forwardSystem *
@@ -1029,12 +1026,13 @@ bool GameSimulation::updateNpcNavigationControl(
             goal.mode == NpcNavigationGoalMode::Hold;
         pilotRequest.deltaSeconds = executionDeltaSeconds;
 
-        auto& pilotState = m_npcPredictivePilotStates[id];
+        auto& pilotController =
+            m_npcAutopilotLawControllers[id];
         ship.setControlState(
-            Pilot::make(
+            pilotController.update(
+                tr.motion.localControlLaw,
                 pilotRequest,
-                ship.core().effectivePhysics(),
-                pilotState
+                ship.core().effectivePhysics()
             )
         );
     }
@@ -4526,7 +4524,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 m_npcNavigationControlBridges.erase(id);
                 m_npcNavigationExecutionSnapshots.erase(id);
                 m_npcNavigationLastExecutionTimeSeconds.erase(id);
-                m_npcPredictivePilotStates.erase(id);
+                m_npcAutopilotLawControllers.erase(id);
                 continue;
             }
 
@@ -4572,7 +4570,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 m_npcNavigationControlBridges.erase(id);
                 m_npcNavigationExecutionSnapshots.erase(id);
                 m_npcNavigationLastExecutionTimeSeconds.erase(id);
-                m_npcPredictivePilotStates.erase(id);
+                m_npcAutopilotLawControllers.erase(id);
             }
         }
 

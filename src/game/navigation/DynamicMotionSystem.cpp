@@ -63,6 +63,98 @@ inline glm::dvec3 clampSecondaryToTotalAccelerationEnvelope(
     return secondary * fraction;
 }
 
+inline double moveToward(
+    double current,
+    double target,
+    double maximumDelta
+)
+{
+    if (maximumDelta <= 0.0)
+        return current;
+
+    const double delta = target - current;
+    if (std::abs(delta) <= maximumDelta)
+        return target;
+
+    return current + std::copysign(maximumDelta, delta);
+}
+
+inline glm::dvec3 updateNewtonianMainGimbal(
+    DynamicMotionState& motion,
+    const ShipParams& params,
+    double dt,
+    const glm::dvec3& forward,
+    const glm::dvec3& right,
+    const glm::dvec3& up
+)
+{
+    const double yawLimit =
+        std::max(
+            0.0,
+            static_cast<double>(params.mainGimbalYawLimitRad)
+        );
+    const double pitchLimit =
+        std::max(
+            0.0,
+            static_cast<double>(params.mainGimbalPitchLimitRad)
+        );
+    const double slew =
+        std::max(
+            0.0,
+            static_cast<double>(params.mainGimbalRateRadPerSec)
+        );
+
+    double rightCommand =
+        std::clamp(motion.mainGimbalRightCommand01, -1.0, 1.0);
+    double upCommand =
+        std::clamp(motion.mainGimbalUpCommand01, -1.0, 1.0);
+
+    // Treat pitch/yaw travel as one elliptical gimbal envelope. With equal
+    // axis limits this is a true cone, so diagonal commands cannot cheat a
+    // 7-degree nozzle into ~10 degrees of resultant deflection.
+    const double commandLength =
+        std::sqrt(
+            rightCommand * rightCommand +
+            upCommand * upCommand
+        );
+    if (commandLength > 1.0)
+    {
+        rightCommand /= commandLength;
+        upCommand /= commandLength;
+    }
+
+    const double targetYaw = rightCommand * yawLimit;
+    const double targetPitch = upCommand * pitchLimit;
+    const double maxStep = slew * std::max(0.0, dt);
+
+    motion.mainGimbalYawRad =
+        moveToward(
+            motion.mainGimbalYawRad,
+            targetYaw,
+            maxStep
+        );
+    motion.mainGimbalPitchRad =
+        moveToward(
+            motion.mainGimbalPitchRad,
+            targetPitch,
+            maxStep
+        );
+
+    if (yawLimit <= 1.0e-12 && pitchLimit <= 1.0e-12)
+        return forward;
+
+    const glm::dvec3 direction =
+        forward +
+        right * std::tan(motion.mainGimbalYawRad) +
+        up * std::tan(motion.mainGimbalPitchRad);
+
+    const double length = glm::length(direction);
+    return
+        std::isfinite(length) && length > 1.0e-12
+            ? direction / length
+            : forward;
+}
+
 inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
     const glm::dvec3& currentVelocity,
     const glm::dvec3& requestedAcceleration,
@@ -591,6 +683,19 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
     if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
+        // Newtonian main thrust follows the rate-limited physical nozzle axis.
+        // RCS remains a separate small body-axis actuator; TVC is never folded
+        // into manoeuvreAccelerationMps2.
+        const glm::dvec3 mainThrustDirection =
+            updateNewtonianMainGimbal(
+                motion,
+                params,
+                dtD,
+                f,
+                r,
+                u
+            );
+
         // END: rotate tail-to-velocity via ShipController, then use bounded
         // main-engine deceleration. RCS remains an independent body-axis force.
         if (motion.velocityAlignmentMode ==
@@ -616,12 +721,13 @@ void DynamicMotionSystem::applyLocalFrameInput(
             {
                 // Normal Newtonian doctrine: turn the nose anti-velocity so the
                 // aft/rear main bank produces the braking acceleration.
-                if (glm::dot(f, antiVelocity) >=
+                if (glm::dot(mainThrustDirection, antiVelocity) >=
                     static_cast<double>(params.brakeAlignmentCosine))
                 {
                     const double brakeAccel =
                         std::min(forwardMainAccel, speed / dtD);
-                    motion.mainEngineAccelerationMps2 = f * brakeAccel;
+                    motion.mainEngineAccelerationMps2 =
+                        mainThrustDirection * brakeAccel;
                 }
             }
             else if (reverseMainAccel > 1.0e-9)
@@ -629,12 +735,13 @@ void DynamicMotionSystem::applyLocalFrameInput(
                 // Aft bank is dead. ShipController points the nose WITH the
                 // velocity vector; the surviving fore/nose bank then thrusts
                 // opposite the nose and supplies the required braking dv.
-                if (glm::dot(f, velocityDirection) >=
+                if (glm::dot(mainThrustDirection, velocityDirection) >=
                     static_cast<double>(params.brakeAlignmentCosine))
                 {
                     const double brakeAccel =
                         std::min(reverseMainAccel, speed / dtD);
-                    motion.mainEngineAccelerationMps2 = -f * brakeAccel;
+                    motion.mainEngineAccelerationMps2 =
+                        -mainThrustDirection * brakeAccel;
                 }
             }
 
@@ -659,12 +766,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
         if (forwardMainAccel > 1.0e-9)
         {
             motion.mainEngineAccelerationMps2 =
-                f * (mainThrustCommand * forwardMainAccel);
+                mainThrustDirection *
+                (mainThrustCommand * forwardMainAccel);
         }
         else if (reverseMainAccel > 1.0e-9)
         {
             motion.mainEngineAccelerationMps2 =
-                -f * (mainThrustCommand * reverseMainAccel);
+                -mainThrustDirection *
+                (mainThrustCommand * reverseMainAccel);
         }
         motion.engineAccelerationMps2 =
             motion.mainEngineAccelerationMps2 +

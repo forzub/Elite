@@ -1023,6 +1023,15 @@ desc.mainPropulsion.foreEngineModuleIds = {
     "ship_fore_engine_R"
 };
 
+desc.physicalControl.slotModuleIds = {
+    // Assisted-I topology order:
+    // aft_left, aft_right, fore_left, fore_right.
+    "ship_engine_L",
+    "ship_engine_R",
+    "ship_fore_engine_L",
+    "ship_fore_engine_R"
+};
+
 
 for (auto& m : desc.modules)
 {

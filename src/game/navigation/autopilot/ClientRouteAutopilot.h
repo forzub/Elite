@@ -21,7 +21,7 @@
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
-#include "src/game/navigation/autopilot/PredictivePilot.h"
+#include "src/game/navigation/autopilot/AutopilotLawController.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -102,7 +102,7 @@ public:
         bool hasLiveTunnelRollPhase = false;
 
         AutopilotTrackingPolicy followerPolicy {};
-        PredictivePilot::State pilotState {};
+        AutopilotLawController pilotController {};
         std::vector<AcceptedManeuverProgram> programs;
     };
 
@@ -325,12 +325,11 @@ public:
         const AutopilotAgentState& agent,
         LocalFlightControlLaw law,
         const ShipParams& params,
-        PredictivePilot::State& pilotState,
+        AutopilotLawController& pilotController,
         double deltaSeconds
     ) noexcept
     {
-        PredictivePilot::Request request;
-        request.law = law;
+        AutopilotControlRequest request;
         request.desiredVelocityMapMps = glm::dvec3(0.0);
         request.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
         request.desiredForwardMap = agent.forwardMap;
@@ -344,7 +343,7 @@ public:
         request.rollRateRadPerSec = agent.rollRateRadPerSec;
         request.stopRequested = true;
         request.deltaSeconds = deltaSeconds;
-        return PredictivePilot::make(request, params, pilotState);
+        return pilotController.update(law, request, params);
     }
 
     [[nodiscard]] static Output update(
@@ -512,10 +511,13 @@ public:
         const double actualSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
 
+        const AutopilotControlTelemetry pilotTelemetry =
+            state.pilotController.telemetry(law, params);
+
         const double courseResponseSeconds =
             std::max(
                 deltaSeconds,
-                state.pilotState.assistedCourseResponseSeconds
+                pilotTelemetry.courseResponseSeconds
             );
         const double angularRateLimit =
             game::ship::maximumAngularSpeedRadPerSec(params);
@@ -694,14 +696,13 @@ public:
                 brakingAuthority > 1.0e-9)
             {
                 const double targetSetpointRate =
-                    PredictivePilot::
-                        effectiveAssistedTargetSpeedChangeRateMps2(
-                            params,
-                            state.pilotState
-                        );
+                    std::max(
+                        1.0e-6,
+                        pilotTelemetry.targetSpeedChangeRateMps2
+                    );
 
                 const double measuredBrakingResponse =
-                    state.pilotState.assistedBrakingResponseMps2;
+                    pilotTelemetry.brakingResponseMps2;
                 const double effectiveTurnBraking =
                     measuredBrakingResponse > 1.0e-6
                         ? std::min(
@@ -1047,7 +1048,7 @@ public:
         // Keep the learned response available as a controller diagnostic, but
         // do not feed it back as physical deceleration authority.
         const double measuredBrakingResponse =
-            state.pilotState.assistedBrakingResponseMps2;
+            pilotTelemetry.brakingResponseMps2;
         (void)measuredBrakingResponse;
 
         // Hard physical braking remains available for emergency recovery.
@@ -1098,7 +1099,7 @@ public:
 
         // Navigation owns velocity, not hull attitude. The desired velocity
         // vector is the authored route tangent (except explicit out-of-corridor
-        // recovery). PredictivePilot may move the hull however the actuator
+        // recovery). flight-law autopilot may move the hull however the actuator
         // needs, but it may not redefine this course from nose direction.
         const glm::dvec3 desiredVelocity =
             steeringForward * targetSpeed;
@@ -1132,8 +1133,7 @@ public:
             (atFinalContinuousSegment || terminalBrakeActive) &&
             !terminalAttitudeHold;
 
-        PredictivePilot::Request request;
-        request.law = law;
+        AutopilotControlRequest request;
         request.desiredVelocityMapMps = desiredVelocity;
         request.desiredLinearAccelerationMapMps2 =
             tracking.status !=
@@ -1209,7 +1209,7 @@ public:
 
             // Navigation is owned by the desired VELOCITY direction.  On a
             // smooth authored bend that direction is itself rotating, so give
-            // PredictivePilot its continuous course-rate feed-forward instead
+            // flight-law autopilot its continuous course-rate feed-forward instead
             // of forcing the hull controller to rediscover the turn from a
             // sequence of accumulated angle errors.
             desiredCourseAngularRateMap =
@@ -1241,14 +1241,14 @@ public:
 
         double actualCourseAngularRateRadPerSec = 0.0;
         const double previousCourseSpeed =
-            glm::length(state.pilotState.previousVelocityMapMps);
-        if (state.pilotState.initialized &&
+            glm::length(pilotTelemetry.previousVelocityMapMps);
+        if (pilotTelemetry.initialized &&
             previousCourseSpeed > 0.5 &&
             actualSpeed > 0.5 &&
             deltaSeconds > 1.0e-9)
         {
             const glm::dvec3 previousCourse =
-                state.pilotState.previousVelocityMapMps /
+                pilotTelemetry.previousVelocityMapMps /
                 previousCourseSpeed;
             const glm::dvec3 currentCourse =
                 agent.velocityMapMetersPerSecond / actualSpeed;
@@ -1258,7 +1258,7 @@ public:
         }
 
         out.control =
-            PredictivePilot::make(request, params, state.pilotState);
+            state.pilotController.update(law, request, params);
 
         out.valid = true;
         out.crossTrackErrorMeters = crossTrackErrorMeters;

@@ -83,6 +83,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/ship/controller/ManeuverDecisionController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/control/ShipControlExecutionGateway.cpp"
 )
 
 target_include_directories(EliteNavigationRuntimeControl PUBLIC
@@ -1086,6 +1087,48 @@ add_test(
 
 set_tests_properties(
     ordinary_physical_maneuver_compiler
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    ship_control_execution_gateway_tests
+    ShipControlExecutionGatewayTests.cpp
+)
+
+target_include_directories(ship_control_execution_gateway_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_control_execution_gateway_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    ship_control_execution_gateway_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_control_execution_gateway_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_control_execution_gateway_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_control_execution_gateway
+    COMMAND ship_control_execution_gateway_tests
+)
+
+set_tests_properties(
+    ship_control_execution_gateway
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

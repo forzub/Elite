@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -90,10 +91,40 @@ struct EngineSlotDefinition
 
 struct EngineSlotState
 {
-    // First plant iteration is deliberately binary. Resource starvation,
-    // thermal derating and partial health belong to later layers.
+    // Runtime actuator availability. The first integrated plant only derives
+    // these values from module health/state; power, fuel and thermal limits are
+    // deliberately absent from this layer for now.
     bool operational = true;
+
+    // Fraction of nominal thrust currently available.
+    double thrust01 = 1.0;
+
+    // Fraction of nominal thrust-vectoring authority currently available.
+    // Manoeuvre clusters ignore this field.
+    double vectoring01 = 1.0;
 };
+
+[[nodiscard]] inline double effectiveSlotThrust01(
+    const EngineSlotState& state
+) noexcept
+{
+    return state.operational
+        ? std::clamp(state.thrust01, 0.0, 1.0)
+        : 0.0;
+}
+
+[[nodiscard]] inline double effectiveSlotVectoring01(
+    const EngineSlotState& state
+) noexcept
+{
+    return state.operational
+        ? std::clamp(
+              std::min(state.thrust01, state.vectoring01),
+              0.0,
+              1.0
+          )
+        : 0.0;
+}
 
 struct AxisAuthority01
 {

@@ -1218,6 +1218,49 @@ set_tests_properties(
 
 
 add_executable(
+    newtonian_main_gimbal_tests
+    NewtonianMainGimbalTests.cpp
+)
+
+target_include_directories(newtonian_main_gimbal_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    newtonian_main_gimbal_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    newtonian_main_gimbal_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        newtonian_main_gimbal_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        newtonian_main_gimbal_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME newtonian_main_gimbal
+    COMMAND newtonian_main_gimbal_tests
+)
+
+set_tests_properties(
+    newtonian_main_gimbal
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     autopilot_law_api_tests
     AutopilotLawApiTests.cpp
 )

@@ -31,6 +31,7 @@
 #include "src/game/ship/ShipAttachmentPoint.h"
 #include "src/world/descriptors/LogicalDimensions.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 
 
 struct ShipIdentity
@@ -208,10 +209,16 @@ public:
     ObjectType          typeId;
     ShipIdentity        identity;
 
-    // Native local-flight doctrine of this hull. Runtime instances start from
-    // this descriptor value. Debug/UI may temporarily switch the live
-    // DynamicMotionState, but planners/autopilots must consume the current
-    // runtime law rather than a global hard-coded default.
+    // Physical ordinary-flight architecture. This selects exactly one of the
+    // six fixed Assisted/Newtonian I/Y/X models; individual ship descriptors
+    // tune ratings but are not allowed to author a private propulsion layout.
+    game::ship::plant::PhysicalControlModelId physicalControlModel =
+        game::ship::plant::PhysicalControlModelId::AssistedI;
+
+    // Compatibility mirror for the current motion stack. During migration this
+    // must match nativeFlightLaw(physicalControlModel). The physical model is
+    // the long-term source of truth; runtime damage changes capability/regime,
+    // not the construction family.
     game::navigation::LocalFlightControlLaw localFlightControlLaw =
         game::navigation::defaultLocalFlightControlLaw();
 

@@ -701,6 +701,10 @@ RoutePlan planContinuousAssisted(
         std::to_string(
             optimized.diagnostics.curvatureConcentrationEnergy
         ) +
+        " curvature_cv2=" +
+        std::to_string(
+            optimized.diagnostics.curvatureUniformityEnergy
+        ) +
         " peak_omega_util=" +
         std::to_string(
             optimized.diagnostics.maxAngularVelocityUtilization

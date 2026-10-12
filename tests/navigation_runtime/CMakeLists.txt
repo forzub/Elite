@@ -1216,6 +1216,49 @@ set_tests_properties(
 )
 
 
+
+add_executable(
+    engine_thrust_hud_presentation_tests
+    EngineThrustHudPresentationTests.cpp
+)
+
+target_include_directories(engine_thrust_hud_presentation_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    engine_thrust_hud_presentation_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    engine_thrust_hud_presentation_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        engine_thrust_hud_presentation_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        engine_thrust_hud_presentation_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME engine_thrust_hud_presentation
+    COMMAND engine_thrust_hud_presentation_tests
+)
+
+set_tests_properties(
+    engine_thrust_hud_presentation
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
 add_executable(
     ship_physical_corridor_matrix_tests
     ShipPhysicalCorridorMatrixTests.cpp

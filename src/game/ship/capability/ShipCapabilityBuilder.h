@@ -281,6 +281,25 @@ inline ShipCapabilitySnapshot makeCapability(
 
 } // namespace detail
 
+// Public per-slot capability projection for diagnostics/presentation and the
+// future actuator allocator. The physical topology remains the source of slot
+// count/order; consumers must not reconstruct engine health from ad-hoc banks.
+inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
+    const ShipDescriptor& descriptor,
+    const world::modules::ObjectModuleRuntime& runtime
+)
+{
+    return detail::slotStates(descriptor, runtime);
+}
+
+inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
+    const ShipDescriptor& descriptor,
+    const std::vector<game::simulation::ObjectModuleSnapshot>& modules
+)
+{
+    return detail::slotStates(descriptor, modules);
+}
+
 inline ShipCapabilitySnapshot buildShipCapability(
     const ShipDescriptor& descriptor,
     const world::modules::ObjectModuleRuntime& runtime

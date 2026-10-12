@@ -5650,6 +5650,15 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
         {
+            const auto engineThrustInstrument =
+                game::presentation::buildEngineThrustHudPresentation(
+                    playerShip
+                );
+            m_engineThrustIndicatorRenderer.render(
+                engineThrustInstrument,
+                vp
+            );
+
             // The hull boresight is a fundamental attitude cue, not a velocity
             // cue and not a navigation-module product. Keep it present whenever
             // the cockpit HUD is present.

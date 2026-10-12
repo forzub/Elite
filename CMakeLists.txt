@@ -436,6 +436,7 @@ add_executable(EliteGame
     src/render/RenderCockpitPass.cpp
     src/render/RenderCockpitBitmapPass.cpp
     src/render/cockpit/FlightVectorIndicatorRenderer.cpp
+    src/render/cockpit/EngineThrustIndicatorRenderer.cpp
     src/render/cockpit/GuidanceCorridorRenderer.cpp
     src/render/cockpit/GalacticCompassRenderer.cpp
     src/render/HUD/HudPrimitiveBatch.cpp

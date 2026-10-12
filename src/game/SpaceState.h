@@ -29,6 +29,7 @@
 #include "src/game/client/GameClient.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
+#include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 #include "src/render/cockpit/GuidanceCorridorRenderer.h"
 #include "src/render/cockpit/GalacticCompassRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
@@ -269,6 +270,7 @@ private:
     HudMessage*                                 m_activeMessage = nullptr;
     HudRenderer                                 m_hudRenderer;
     render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
+    render::cockpit::EngineThrustIndicatorRenderer m_engineThrustIndicatorRenderer;
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;
 

@@ -420,6 +420,7 @@ public:
         applyRuntimeProfile(
             state.runtimeSpeedProfileMps,
             state.runtimeLongitudinalAccelerationMps2,
+            law,
             continuous
         );
 
@@ -1865,6 +1866,7 @@ private:
     static void applyRuntimeProfile(
         const std::vector<double>& runtimeSpeeds,
         const std::vector<double>& runtimeAccelerations,
+        LocalFlightControlLaw law,
         ContinuousReferenceDiagnostic& reference
     ) noexcept
     {
@@ -1892,8 +1894,29 @@ private:
         const double longitudinalAcceleration =
             runtimeAccelerations[reference.lowerSampleIndex] * (1.0 - u) +
             runtimeAccelerations[reference.upperSampleIndex] * u;
-        reference.reference.linearAccelerationFeedForwardMapMps2 =
-            tangent * longitudinalAcceleration;
+
+        if (law == LocalFlightControlLaw::Newtonian)
+        {
+            // Runtime speed replanning owns ONLY the longitudinal component.
+            // Newtonian depends on the authored path-normal acceleration to
+            // lead a bend with the aft-main vector. Erasing it turns a
+            // curvature-following problem into a late cross-track recovery.
+            const glm::dvec3 authoredAcceleration =
+                reference.reference.linearAccelerationFeedForwardMapMps2;
+            const glm::dvec3 authoredLateral =
+                authoredAcceleration -
+                tangent * glm::dot(authoredAcceleration, tangent);
+
+            reference.reference.linearAccelerationFeedForwardMapMps2 =
+                authoredLateral +
+                tangent * longitudinalAcceleration;
+        }
+        else
+        {
+            // Preserve the currently proven Assisted behavior exactly.
+            reference.reference.linearAccelerationFeedForwardMapMps2 =
+                tangent * longitudinalAcceleration;
+        }
     }
 
     [[nodiscard]] static glm::dvec3 rotateAroundAxis(

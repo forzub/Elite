@@ -1041,6 +1041,50 @@ void testCenteredArcUsesExactLocalTangent()
         ) < 5.0e-3,
         "overspeed arc used turn-speed ceiling instead of actual v*kappa"
     );
+
+    // Newtonian needs the authored path-normal acceleration itself, not merely
+    // the rotating tangent. Runtime speed-profile application must not erase
+    // that centripetal feed-forward.
+    auto newtonVehicle = params();
+    newtonVehicle.mainGimbalPitchLimitRad =
+        static_cast<float>(7.0 * 3.14159265358979323846 / 180.0);
+    newtonVehicle.mainGimbalYawLimitRad =
+        static_cast<float>(7.0 * 3.14159265358979323846 / 180.0);
+    newtonVehicle.mainGimbalRateRadPerSec =
+        static_cast<float>(8.0 * 3.14159265358979323846 / 180.0);
+
+    Autopilot::State newtonState;
+    require(
+        Autopilot::start(
+            newtonState,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Newtonian,
+            newtonVehicle,
+            1000.0,
+            35,
+            20.0
+        ),
+        "centered Newtonian arc route rejected"
+    );
+
+    const auto newtonOutput = Autopilot::update(
+        newtonState,
+        onCurve,
+        game::navigation::LocalFlightControlLaw::Newtonian,
+        newtonVehicle,
+        1000.0,
+        0.02
+    );
+
+    require(newtonOutput.valid, "centered Newtonian arc update invalid");
+    require(
+        std::hypot(
+            newtonOutput.control.mainGimbalRightInput,
+            newtonOutput.control.mainGimbalUpInput
+        ) > 0.1,
+        "runtime speed profile erased Newtonian centripetal feed-forward"
+    );
 }
 
 void testApproachBrakesBeforeDynamicTurnLimit()

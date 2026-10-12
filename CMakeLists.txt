@@ -403,6 +403,9 @@ add_executable(EliteGame
     
     src/game/ship/ShipController.cpp
     src/game/ship/control/ShipControlExecutionGateway.cpp
+        src/game/ship/plant/AssistedPhysicalControlModel.cpp
+        src/game/ship/plant/NewtonianPhysicalControlModel.cpp
+        src/game/ship/plant/ShipPhysicalControlModels.cpp
     src/game/ship/physics/ShipImpulseSystem.cpp
     src/game/ship/Ship.cpp
     src/game/ship/ShipDescriptorRegistry.cpp
@@ -686,6 +689,9 @@ if(ELITE_BUILD_SERVER)
         src/game/ship/descriptors/EliteCobraMk1.cpp
         src/game/ship/ShipController.cpp
     src/game/ship/control/ShipControlExecutionGateway.cpp
+        src/game/ship/plant/AssistedPhysicalControlModel.cpp
+        src/game/ship/plant/NewtonianPhysicalControlModel.cpp
+        src/game/ship/plant/ShipPhysicalControlModels.cpp
         src/game/ship/physics/ShipImpulseSystem.cpp
         src/game/ship/Ship.cpp
         src/game/ship/ShipDescriptorRegistry.cpp

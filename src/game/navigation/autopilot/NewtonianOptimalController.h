@@ -230,11 +230,16 @@ private:
         std::size_t depth
     ) noexcept
     {
-        if (request.previewCount == 0)
+        const std::size_t count =
+            std::min(
+                request.previewCount,
+                AutopilotPreviewCapacity
+            );
+        if (count == 0)
             return currentReference(request);
 
         const std::size_t index =
-            std::min(depth, request.previewCount - 1);
+            std::min(depth, count - 1);
         auto out = request.preview[index];
         out.desiredVelocityMapMps =
             finiteVecOrZero(out.desiredVelocityMapMps);
@@ -249,9 +254,14 @@ private:
         const AutopilotControlRequest& request
     ) noexcept
     {
+        const std::size_t count =
+            std::min(
+                request.previewCount,
+                AutopilotPreviewCapacity
+            );
         return
-            request.previewCount > 0
-                ? referenceAt(request, request.previewCount - 1)
+            count > 0
+                ? referenceAt(request, count - 1)
                 : currentReference(request);
     }
 
@@ -260,18 +270,23 @@ private:
         std::size_t depth
     ) noexcept
     {
-        if (request.previewCount == 0)
+        const std::size_t count =
+            std::min(
+                request.previewCount,
+                AutopilotPreviewCapacity
+            );
+        if (count == 0)
             return 0.50;
 
         const double now =
             depth == 0
                 ? 0.0
                 : request.preview[
-                    std::min(depth - 1, request.previewCount - 1)
+                    std::min(depth - 1, count - 1)
                   ].timeOffsetSeconds;
         const double next =
             request.preview[
-                std::min(depth, request.previewCount - 1)
+                std::min(depth, count - 1)
             ].timeOffsetSeconds;
 
         return std::clamp(next - now, 0.10, 1.25);
@@ -304,9 +319,14 @@ private:
         beam[0].thrustDirectionMap = initialThrustDirection;
         beam[0].hullSlewRateRadPerSec = initialHullRate;
 
+        const std::size_t previewCount =
+            std::min(
+                request.previewCount,
+                AutopilotPreviewCapacity
+            );
         const std::size_t depthCount =
-            request.previewCount > 0
-                ? std::min(request.previewCount, MaximumDepth)
+            previewCount > 0
+                ? std::min(previewCount, MaximumDepth)
                 : std::size_t(4);
 
         for (std::size_t depth = 0; depth < depthCount; ++depth)

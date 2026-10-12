@@ -374,19 +374,42 @@ public:
         }
         else
         {
-            const double authority =
+            // Newtonian pilot semantics stay throttle-based longitudinally,
+            // but transverse motion is still expressed through the same
+            // scheme-agnostic translation controls used by a human pilot.
+            // The physical layer decides whether RCS and/or main-nozzle TVC
+            // can realize that request.
+            const double mainAuthority =
                 game::ship::forwardMainAccelerationLimitMps2(params);
-            if (authority > 1.0e-9)
+            if (mainAuthority > 1.0e-9)
             {
                 out.targetSpeedRate = static_cast<float>(
                     std::clamp(
                         glm::dot(
                             request.desiredLinearAccelerationMapMps2,
                             forward
-                        ) / authority,
+                        ) / mainAuthority,
                         0.0,
                         1.0
                     )
+                );
+            }
+
+            const double lateralAuthority =
+                game::ship::manoeuvreAccelerationLimitMps2(params);
+            if (lateralAuthority > 1.0e-9)
+            {
+                out.strafeInput = finiteClamp(
+                    glm::dot(
+                        request.desiredLinearAccelerationMapMps2,
+                        right
+                    ) / lateralAuthority
+                );
+                out.liftInput = finiteClamp(
+                    glm::dot(
+                        request.desiredLinearAccelerationMapMps2,
+                        up
+                    ) / lateralAuthority
                 );
             }
         }

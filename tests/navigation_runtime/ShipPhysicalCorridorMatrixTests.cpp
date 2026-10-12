@@ -3,6 +3,8 @@
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/world/WorldParams.h"
 
@@ -203,25 +205,25 @@ double distanceToAuthoredArc(const glm::dvec3& position)
 
 void runModel(Model model)
 {
-    const ShipParams nominal = cobraNominalParams();
-    const auto& slots =
-        game::ship::plant::physicalControlSlots(model);
+    ShipDescriptor descriptor;
+    descriptor.physicalControlModel = model;
+    descriptor.localFlightControlLaw =
+        game::ship::plant::nativeFlightLaw(model);
+    descriptor.physics = cobraNominalParams();
 
-    const auto physical =
-        game::ship::plant::evaluatePhysicalControlModel(
-            model,
-            nominal,
-            game::ship::plant::healthySlotState(slots)
+    const auto capability =
+        game::ship::capability::buildHealthyShipCapability(
+            descriptor
         );
 
     require(
-        physical.valid,
+        capability.valid,
         std::string(modelName(model)) +
-            " produced invalid healthy physical capability"
+            " produced invalid healthy capability"
     );
 
-    const ShipParams params = physical.effectivePhysics;
-    const auto law = game::ship::plant::nativeFlightLaw(model);
+    const ShipParams params = capability.effectivePhysics;
+    const auto law = descriptor.localFlightControlLaw;
     const auto plan = tunnelPlan();
 
     WorldParams world {};
@@ -358,8 +360,8 @@ void runModel(Model model)
         << modelName(model)
         << " law="
         << game::navigation::localFlightControlLawName(law)
-        << " main_slots=" << physical.mainSlots
-        << " rcs_slots=" << physical.manoeuvreSlots
+        << " capability_state="
+        << static_cast<int>(capability.controlState)
         << " max_cross_track_m=" << maxCrossTrack
         << "\n";
 }

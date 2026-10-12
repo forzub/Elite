@@ -333,15 +333,9 @@ private:
         GimbalDemand out;
 
         const double yawLimit =
-            std::max(
-                0.0,
-                static_cast<double>(params.mainGimbalYawLimitRad)
-            );
+            game::ship::mainGimbalYawLimitRad(params);
         const double pitchLimit =
-            std::max(
-                0.0,
-                static_cast<double>(params.mainGimbalPitchLimitRad)
-            );
+            game::ship::mainGimbalPitchLimitRad(params);
 
         if (yawLimit <= 1.0e-12 && pitchLimit <= 1.0e-12)
             return out;

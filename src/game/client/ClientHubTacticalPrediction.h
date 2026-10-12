@@ -59,12 +59,21 @@ inline bool predictHubTacticalMotion(
             dt
         );
 
-    return game::ship::control::ShipControlExecutionGateway::
-        propagateHubTacticalTranslation(
-            transform,
-            params,
-            static_cast<double>(dt)
-        );
+    const bool propagated =
+        game::ship::control::ShipControlExecutionGateway::
+            propagateHubTacticalTranslation(
+                transform,
+                params,
+                static_cast<double>(dt)
+            );
+
+    if (propagated)
+    {
+        transform.referenceVelocityMetersPerSecond =
+            transform.motion.referenceVelocityMps;
+    }
+
+    return propagated;
 }
 
 } // namespace game::client

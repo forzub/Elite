@@ -271,6 +271,8 @@ void recomputeGlobalSpeeds(
 
     gates.back().speedMps = 0.0;
 
+    std::vector<double> curvature(gates.size(), 0.0);
+
     for (std::size_t i = 1; i + 1 < gates.size(); ++i)
     {
         const glm::dvec3 a =
@@ -289,15 +291,16 @@ void recomputeGlobalSpeeds(
         if (denom <= 1.0e-9)
             continue;
 
-        const double curvature =
+        curvature[i] =
             2.0 * glm::length(glm::cross(a, b)) / denom;
-        if (curvature > 1.0e-9)
+        const double kappa = curvature[i];
+        if (kappa > 1.0e-9)
         {
             if (base.lateralMps2 > 1.0e-9)
             {
                 gates[i].speedMps = std::min(
                     gates[i].speedMps,
-                    std::sqrt(base.lateralMps2 / curvature)
+                    std::sqrt(base.lateralMps2 / kappa)
                 );
             }
 
@@ -306,7 +309,7 @@ void recomputeGlobalSpeeds(
                 gates[i].speedMps = std::min(
                     gates[i].speedMps,
                     base.maxAngularVelocityRadPerSecond /
-                        curvature
+                        kappa
                 );
             }
         }
@@ -342,6 +345,110 @@ void recomputeGlobalSpeeds(
         gates[i].speedMps =
             std::min(gates[i].speedMps, reachable);
         reachable = gates[i].speedMps;
+    }
+
+    if (base.maxAngularAccelerationRadPerSecond2 > 1.0e-9)
+    {
+        constexpr int AngularProfileIterations = 10;
+        constexpr double AngularReserve = 0.995;
+
+        for (int iteration = 0;
+             iteration < AngularProfileIterations;
+             ++iteration)
+        {
+            bool adjusted = false;
+
+            for (std::size_t i = 0; i + 1 < gates.size(); ++i)
+            {
+                const double ds =
+                    glm::length(
+                        gates[i + 1].positionMeters -
+                        gates[i].positionMeters
+                    );
+                if (ds <= 1.0e-9)
+                    continue;
+
+                const double sumSpeed =
+                    gates[i].speedMps +
+                    gates[i + 1].speedMps;
+                if (sumSpeed <= 1.0e-6)
+                    continue;
+
+                const double dt = 2.0 * ds / sumSpeed;
+                if (dt <= 1.0e-9)
+                    continue;
+
+                const double omega0 =
+                    gates[i].speedMps * curvature[i];
+                const double omega1 =
+                    gates[i + 1].speedMps * curvature[i + 1];
+                const double demandedAlpha =
+                    std::abs(omega1 - omega0) / dt;
+
+                if (demandedAlpha <=
+                    base.maxAngularAccelerationRadPerSecond2 *
+                        (1.0 + 1.0e-6))
+                {
+                    continue;
+                }
+
+                const double scale =
+                    AngularReserve *
+                    std::sqrt(
+                        base.maxAngularAccelerationRadPerSecond2 /
+                        demandedAlpha
+                    );
+
+                gates[i].speedMps *= scale;
+                gates[i + 1].speedMps *= scale;
+                adjusted = true;
+            }
+
+            if (!adjusted)
+                break;
+
+            for (std::size_t i = gates.size() - 1; i > 0; --i)
+            {
+                const double ds =
+                    glm::length(
+                        gates[i].positionMeters -
+                        gates[i - 1].positionMeters
+                    );
+                gates[i - 1].speedMps =
+                    std::min(
+                        gates[i - 1].speedMps,
+                        std::sqrt(
+                            gates[i].speedMps *
+                                gates[i].speedMps +
+                            2.0 * base.brakingMps2 * ds
+                        )
+                    );
+            }
+
+            double reachableAfterAngular =
+                std::max(0.0, base.initialSpeedMps);
+            for (std::size_t i = 1; i < gates.size(); ++i)
+            {
+                const double ds =
+                    glm::length(
+                        gates[i].positionMeters -
+                        gates[i - 1].positionMeters
+                    );
+                reachableAfterAngular =
+                    std::sqrt(
+                        reachableAfterAngular *
+                            reachableAfterAngular +
+                        2.0 * base.acceleratingMps2 * ds
+                    );
+                gates[i].speedMps =
+                    std::min(
+                        gates[i].speedMps,
+                        reachableAfterAngular
+                    );
+                reachableAfterAngular =
+                    gates[i].speedMps;
+            }
+        }
     }
 
     for (auto& sparse : out.gates)

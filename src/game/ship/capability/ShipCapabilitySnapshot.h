@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
+
 #include "src/game/ship/core/ShipParams.h"
-#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 
 namespace game::ship::capability
 {

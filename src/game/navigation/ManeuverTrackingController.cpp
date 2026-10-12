@@ -289,6 +289,11 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
     const bool spatialCorridor =
         program.referenceMode ==
             AcceptedManeuverProgram::ReferenceMode::SpatialCorridor;
+    const bool newtonianSpatial =
+        spatialCorridor &&
+        program.translationMode ==
+            AcceptedManeuverProgram::TranslationMode::
+                NewtonianMainEngine;
 
     if (spatialCorridor)
     {
@@ -460,9 +465,14 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         effectivePositionError * policy.positionGainPerSecond2 +
         effectiveVelocityError * policy.velocityGainPerSecond;
 
-    // Outside the proved tracking envelope the accepted feed-forward is no
-    // longer authoritative. B10 falls back to bounded error reduction only;
-    // orchestration may invalidate the program if that condition persists.
+    // Outside the proved tracking envelope Assisted/TimeScheduled execution
+    // drops feed-forward and falls back to bounded error reduction.
+    //
+    // Newtonian SpatialCorridor is different: removing the authored main-vector
+    // acceleration precisely when VREL starts to depart the tangent removes
+    // the only actuator capable of recovering the locomotive-scale momentum.
+    // Keep its route feed-forward alive; orchestration may still invalidate or
+    // replan if the hard corridor condition persists.
     const glm::dvec3 controlAngularVelocityError =
         outsideEnvelope && !result.angularCorrectionOnly
             ? -actualAngularVelocity
@@ -493,7 +503,9 @@ ManeuverTrackingController::Result ManeuverTrackingController::track(
         std::clamp(program.hazardUrgency01, 0.0, 1.0);
 
     const glm::dvec3 linearFeedForward =
-        outsideEnvelope && !result.angularCorrectionOnly
+        outsideEnvelope &&
+        !result.angularCorrectionOnly &&
+        !newtonianSpatial
             ? glm::dvec3(0.0)
             : reference.linearAccelerationFeedForwardMapMps2;
     const glm::dvec3 angularFeedForward =

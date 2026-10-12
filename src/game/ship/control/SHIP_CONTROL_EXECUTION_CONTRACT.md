@@ -10,7 +10,7 @@ Status: migration seam established 2026-10-12.
 Control producers remain above this boundary:
 
 - human input / `PlayerInputMapper`;
-- client `PredictivePilot` / autopilot;
+- client flight-law autopilot;
 - NPC pilot logic.
 
 Transport also remains above it. The network sends numbered

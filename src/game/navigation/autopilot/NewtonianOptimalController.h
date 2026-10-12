@@ -173,7 +173,7 @@ public:
 private:
     static constexpr double OptimizationPeriodSeconds = 0.10;
     static constexpr std::size_t BeamWidth = 24;
-    static constexpr std::size_t CandidateCount = 6;
+    static constexpr std::size_t CandidateCount = 8;
     static constexpr std::size_t MaximumDepth =
         AutopilotPreviewCapacity;
 
@@ -410,6 +410,44 @@ private:
                 }
             }
 
+            if (depth + 1 == depthCount)
+            {
+                const auto terminalReference =
+                    finalReference(request);
+
+                for (std::size_t i = 0; i < expandedCount; ++i)
+                {
+                    auto& node = expanded[i];
+
+                    const glm::dvec3 velocityError =
+                        node.velocityMapMps -
+                        terminalReference.desiredVelocityMapMps;
+                    node.cost +=
+                        4.0 *
+                        glm::dot(velocityError, velocityError);
+
+                    if (request.positionReferenceValid)
+                    {
+                        const glm::dvec3 tangent =
+                            normalizedOr(
+                                terminalReference.desiredVelocityMapMps,
+                                node.velocityMapMps
+                            );
+                        const glm::dvec3 positionError =
+                            node.positionMapMeters -
+                            terminalReference.desiredPositionMapMeters;
+                        const glm::dvec3 crossTrack =
+                            positionError -
+                            tangent *
+                                glm::dot(positionError, tangent);
+
+                        node.cost +=
+                            8.0 *
+                            glm::dot(crossTrack, crossTrack);
+                    }
+                }
+            }
+
             std::sort(
                 expanded.begin(),
                 expanded.begin() +
@@ -465,6 +503,47 @@ private:
                 1.0
             );
 
+        // Position capture is a first-class Newtonian objective. It must be
+        // present in the action set, not merely in the scalar cost, otherwise
+        // beam search can "understand" that it is off-route while having no
+        // candidate capable of deliberately returning to centerline.
+        glm::dvec3 captureAcceleration =
+            trackingAcceleration;
+        if (request.positionReferenceValid)
+        {
+            const glm::dvec3 tangent =
+                normalizedOr(
+                    reference.desiredVelocityMapMps,
+                    node.velocityMapMps
+                );
+            const glm::dvec3 positionError =
+                node.positionMapMeters -
+                reference.desiredPositionMapMeters;
+            const glm::dvec3 crossTrack =
+                positionError -
+                tangent * glm::dot(positionError, tangent);
+
+            constexpr double CaptureTimeSeconds = 2.0;
+            captureAcceleration -=
+                crossTrack /
+                (CaptureTimeSeconds * CaptureTimeSeconds);
+        }
+
+        const double captureMagnitude =
+            finiteLength(captureAcceleration);
+        const glm::dvec3 captureDirection =
+            normalizedOr(
+                captureAcceleration,
+                trackingDirection
+            );
+        const double captureThrottle =
+            std::clamp(
+                captureMagnitude /
+                    std::max(mainAuthority, 1.0e-9),
+                0.0,
+                1.0
+            );
+
         glm::dvec3 futureDelta =
             future.desiredVelocityMapMps -
             node.velocityMapMps;
@@ -473,7 +552,7 @@ private:
         const glm::dvec3 futureDirection =
             normalizedOr(
                 futureDelta,
-                trackingDirection
+                captureDirection
             );
 
         // 0: hold attitude and coast.
@@ -483,36 +562,51 @@ private:
             true
         };
 
-        // 1: pre-orient toward the current optimal correction with main off.
+        // 1: pre-orient toward the current velocity/feed-forward correction.
         actions[1] = {
             trackingDirection,
             0.0,
             true
         };
 
-        // 2: physically-sized tracking burn.
+        // 2: physically-sized current tracking burn.
         actions[2] = {
             trackingDirection,
             trackingThrottle,
             true
         };
 
-        // 3: full-authority tracking burn.
+        // 3: pre-orient toward explicit centerline capture.
         actions[3] = {
-            trackingDirection,
+            captureDirection,
+            0.0,
+            true
+        };
+
+        // 4: physically-sized centerline capture burn.
+        actions[4] = {
+            captureDirection,
+            captureThrottle,
+            true
+        };
+
+        // 5: full-authority capture/main-vector burn. This is available for
+        // large errors; the functional still decides whether it is worth it.
+        actions[5] = {
+            captureDirection,
             1.0,
             true
         };
 
-        // 4: pre-orient for a future slow-down/turn before it becomes current.
-        actions[4] = {
+        // 6: pre-orient for future slow-down/turn before it becomes current.
+        actions[6] = {
             futureDirection,
             0.0,
             true
         };
 
-        // 5: full burn along the future delta-v direction.
-        actions[5] = {
+        // 7: full burn along the future delta-v direction.
+        actions[7] = {
             futureDirection,
             1.0,
             true
@@ -681,12 +775,12 @@ private:
 
         double stageCost =
             1.0 * velocityError2 +
-            0.50 * crossTrackError2 +
+            2.0 * crossTrackError2 +
             4.0 * overspeed * overspeed +
             0.08 * accelerationError2 +
             2.0 * throttle * throttle +
-            150.0 * reorientation * reorientation +
-            2.0 * hullRate * hullRate;
+            40.0 * reorientation * reorientation +
+            1.0 * hullRate * hullRate;
 
         if (request.stopRequested)
             stageCost += 6.0 * actualSpeed * actualSpeed;

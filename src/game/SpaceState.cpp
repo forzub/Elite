@@ -1781,7 +1781,7 @@ void SpaceState::updateDockingAdvisory()
         m_clientAutopilotControlActive = false;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
-        m_clientDockingStabilizePilotState = {};
+        m_clientDockingStabilizePilotController.reset();
         ClientAutopilot::stop(m_clientRouteAutopilot);
     };
 
@@ -1951,8 +1951,7 @@ void SpaceState::updateDockingAdvisory()
     {
         const auto agent = makeAgent();
 
-        game::navigation::autopilot::PredictivePilot::Request hold;
-        hold.law = controlLaw;
+        game::navigation::autopilot::AutopilotControlRequest hold;
 
         // Preserve the measured translational state exactly: no linear
         // acceleration is requested while the old route is being released.
@@ -1984,10 +1983,10 @@ void SpaceState::updateDockingAdvisory()
             m_client->serverFixedStepSeconds()
         );
 
-        return game::navigation::autopilot::PredictivePilot::make(
+        return m_clientDockingStabilizePilotController.update(
+            controlLaw,
             hold,
-            effectivePhysics,
-            m_clientDockingStabilizePilotState
+            effectivePhysics
         );
     };
 
@@ -1995,8 +1994,7 @@ void SpaceState::updateDockingAdvisory()
     {
         const auto agent = makeAgent();
 
-        game::navigation::autopilot::PredictivePilot::Request stop;
-        stop.law = controlLaw;
+        game::navigation::autopilot::AutopilotControlRequest stop;
         stop.desiredVelocityMapMps = glm::dvec3(0.0);
         stop.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
         stop.desiredForwardMap = agent.forwardMap;
@@ -2015,10 +2013,10 @@ void SpaceState::updateDockingAdvisory()
             m_client->serverFixedStepSeconds()
         );
 
-        return game::navigation::autopilot::PredictivePilot::make(
+        return m_clientDockingStabilizePilotController.update(
+            controlLaw,
             stop,
-            effectivePhysics,
-            m_clientDockingStabilizePilotState
+            effectivePhysics
         );
     };
 
@@ -2037,76 +2035,34 @@ void SpaceState::updateDockingAdvisory()
                     ? m_dockSafeCourse.targetSpeedMps
                     : actualSpeed;
 
-            game::navigation::autopilot::PredictivePilot::Request turn;
-            turn.law = controlLaw;
+            game::navigation::autopilot::AutopilotControlRequest turn;
 
-            if (controlLaw ==
-                game::navigation::LocalFlightControlLaw::Newtonian)
-            {
-                // Newtonian escape is an explicit delta-v manoeuvre.
-                //
-                // Do NOT point at the final course and hope the velocity
-                // follows. Compute the acceleration vector that changes the
-                // CURRENT inertial velocity into the selected safe velocity.
-                // First slew the hull onto that delta-v vector with zero main
-                // thrust; only after alignment do we light the real aft main
-                // bank. This matches PreplanningSafetyCourse's collision proof.
-                const glm::dvec3 targetVelocity =
-                    desiredCourse * targetSpeed;
-                const glm::dvec3 deltaVelocity =
-                    targetVelocity -
-                    agent.velocityMapMetersPerSecond;
-                const double deltaSpeed =
-                    glm::length(deltaVelocity);
+            // Safe-course orchestration remains flight-law neutral.
+            // It describes the target vehicle state only. The concrete pilot
+            // decides how hull attitude, main thrust and/or low-speed trim
+            // realize this delta-v.
+            const glm::dvec3 targetVelocity =
+                desiredCourse * targetSpeed;
+            const glm::dvec3 deltaVelocity =
+                targetVelocity -
+                agent.velocityMapMetersPerSecond;
+            const double deltaSpeed =
+                glm::length(deltaVelocity);
 
-                const glm::dvec3 thrustDirection =
-                    deltaSpeed > 1.0e-6
-                        ? deltaVelocity / deltaSpeed
-                        : desiredCourse;
+            turn.desiredVelocityMapMps = targetVelocity;
+            turn.desiredForwardMap = desiredCourse;
 
-                // PredictivePilot's moving pitch/yaw reference is the desired
-                // velocity course, so use the thrust vector here: hull attitude
-                // must align with the acceleration vector, not prematurely with
-                // the eventual coasting course.
-                turn.desiredVelocityMapMps =
-                    thrustDirection *
-                    std::max(1.0, actualSpeed);
-                turn.desiredForwardMap =
-                    thrustDirection;
-
-                constexpr double MainIgnitionAlignmentCosine =
-                    0.9961946980917455; // cos(5 deg)
-
-                const bool mainAligned =
-                    glm::dot(
-                        agent.forwardMap,
-                        thrustDirection
-                    ) >= MainIgnitionAlignmentCosine;
-
-                const double forwardAuthority =
-                    game::ship::
-                        forwardMainAccelerationLimitMps2(
-                            effectivePhysics
-                        );
-
-                turn.desiredLinearAccelerationMapMps2 =
-                    mainAligned && deltaSpeed > 0.25
-                        ? thrustDirection *
-                            (0.80 * forwardAuthority)
-                        : glm::dvec3(0.0);
-            }
-            else
-            {
-                // Assisted owns a real bounded velocity-course actuator. Hold
-                // speed while its physical stabilization authority bends VREL
-                // onto the selected collision-free course.
-                turn.desiredVelocityMapMps =
-                    desiredCourse * targetSpeed;
-                turn.desiredForwardMap =
-                    desiredCourse;
-                turn.desiredLinearAccelerationMapMps2 =
-                    glm::dvec3(0.0);
-            }
+            const double requestedAcceleration =
+                std::max(
+                    0.0,
+                    m_dockSafeCourse.courseAccelerationMps2
+                );
+            turn.desiredLinearAccelerationMapMps2 =
+                deltaSpeed > 1.0e-6 &&
+                requestedAcceleration > 1.0e-9
+                    ? deltaVelocity / deltaSpeed *
+                        requestedAcceleration
+                    : glm::dvec3(0.0);
 
             turn.desiredUpMap = agent.upMap;
             turn.actualVelocityMapMps =
@@ -2124,10 +2080,10 @@ void SpaceState::updateDockingAdvisory()
                 m_client->serverFixedStepSeconds()
             );
 
-            return game::navigation::autopilot::PredictivePilot::make(
+            return m_clientDockingStabilizePilotController.update(
+                controlLaw,
                 turn,
-                effectivePhysics,
-                m_clientDockingStabilizePilotState
+                effectivePhysics
             );
         };
 

@@ -73,8 +73,8 @@ for marker in (
     require(marker in CLIENT_AUTO, f"client virtual-pilot contract missing: {marker}")
 
 for marker in (
-    "ClientAutopilot::stabilize(",
-    "ClientAutopilot::start(",
+    "ClientRouteAutopilot::start(",
+    "PredictivePilot::make(",
     "ClientAutopilot::update(",
     "m_client->submitInput(m_clientAutopilotControl)",
     "control_path=ShipControlState",

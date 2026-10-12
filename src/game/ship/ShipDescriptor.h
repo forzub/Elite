@@ -60,7 +60,12 @@ struct CoreConfig
 struct ShipSystemSlots
 {
     int reactorSlots = 0;
+
+    // LEGACY equipment/UI capacity. This is NOT the number of physical
+    // propulsion actuators. Ordinary-flight actuator count comes exclusively
+    // from physicalControlModel (Assisted/Newtonian I/Y/X).
     int engineSlots = 0;
+
     int radarSlots = 0;
     int weaponSlots = 0;
     int decryptorSlots = 0;

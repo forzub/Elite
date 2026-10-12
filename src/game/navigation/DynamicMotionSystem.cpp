@@ -89,20 +89,11 @@ inline glm::dvec3 updateNewtonianMainGimbal(
 )
 {
     const double yawLimit =
-        std::max(
-            0.0,
-            static_cast<double>(params.mainGimbalYawLimitRad)
-        );
+        game::ship::mainGimbalYawLimitRad(params);
     const double pitchLimit =
-        std::max(
-            0.0,
-            static_cast<double>(params.mainGimbalPitchLimitRad)
-        );
+        game::ship::mainGimbalPitchLimitRad(params);
     const double slew =
-        std::max(
-            0.0,
-            static_cast<double>(params.mainGimbalRateRadPerSec)
-        );
+        game::ship::mainGimbalRateRadPerSec(params);
 
     double rightCommand =
         std::clamp(motion.mainGimbalRightCommand01, -1.0, 1.0);

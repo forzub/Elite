@@ -17,8 +17,9 @@ namespace game::navigation::autopilot
 //
 // Ordinary route translation doctrine:
 //   * the main engine owns meaningful delta-v;
-//   * the hull points the main thrust axis at the requested acceleration;
-//   * main thrust stays off while that axis points away from the demand;
+//   * bounded/rate-limited main-nozzle TVC covers small acceleration-angle
+//     error before the hull is asked to rotate the remainder;
+//   * main thrust stays off while the usable thrust axis points away from the demand;
 //   * translational RCS is NOT used to substitute for an unaligned main engine;
 //   * RCS translation is reserved for the explicit precision-stop residue.
 //
@@ -63,20 +64,44 @@ public:
 
         glm::dvec3 targetForward = forward;
         bool followingCourseInsteadOfThrust = false;
+        GimbalDemand gimbal {};
 
         if (request.terminalAttitudeHold)
         {
             targetForward =
                 normalizedOr(request.desiredForwardMap, forward);
         }
+        else if (request.stopRequested && !precisionStop)
+        {
+            // Explicit BrakeToStop owns hull alignment downstream. Do not
+            // fight it with a simultaneous route-attitude or TVC command.
+            targetForward = forward;
+        }
         else if (demandedAcceleration > 1.0e-9)
         {
-            // The main engine is the Newtonian translational actuator.  On an
-            // arc this naturally points the nose toward the curvature center;
-            // under braking it naturally turns the ship through 180 degrees.
-            targetForward =
+            const glm::dvec3 accelerationDirection =
                 request.desiredLinearAccelerationMapMps2 /
                 demandedAcceleration;
+
+            // Let the real nozzle cover the portion of the acceleration-angle
+            // error that fits inside its physical gimbal envelope. The hull is
+            // asked to rotate only the unserved remainder.
+            gimbal = solveGimbalDemand(
+                accelerationDirection,
+                forward,
+                right,
+                up,
+                params
+            );
+            out.mainGimbalRightInput = gimbal.rightInput;
+            out.mainGimbalUpInput = gimbal.upInput;
+
+            targetForward =
+                hullAxisForResidualGimbal(
+                    accelerationDirection,
+                    forward,
+                    gimbal.servedAngleRad
+                );
         }
         else if (desiredSpeed > 1.0e-9)
         {
@@ -290,6 +315,147 @@ public:
     }
 
 private:
+    struct GimbalDemand
+    {
+        float rightInput = 0.0f;
+        float upInput = 0.0f;
+        double servedAngleRad = 0.0;
+    };
+
+    [[nodiscard]] static GimbalDemand solveGimbalDemand(
+        const glm::dvec3& desiredDirection,
+        const glm::dvec3& forward,
+        const glm::dvec3& right,
+        const glm::dvec3& up,
+        const ShipParams& params
+    ) noexcept
+    {
+        GimbalDemand out;
+
+        const double yawLimit =
+            std::max(
+                0.0,
+                static_cast<double>(params.mainGimbalYawLimitRad)
+            );
+        const double pitchLimit =
+            std::max(
+                0.0,
+                static_cast<double>(params.mainGimbalPitchLimitRad)
+            );
+
+        if (yawLimit <= 1.0e-12 && pitchLimit <= 1.0e-12)
+            return out;
+
+        const glm::dvec3 desired =
+            normalizedOr(desiredDirection, forward);
+
+        const double localForward =
+            glm::dot(desired, forward);
+        const double localRight =
+            glm::dot(desired, right);
+        const double localUp =
+            glm::dot(desired, up);
+
+        const double desiredYaw =
+            std::atan2(localRight, localForward);
+        const double desiredPitch =
+            std::atan2(
+                localUp,
+                std::sqrt(
+                    localForward * localForward +
+                    localRight * localRight
+                )
+            );
+
+        double right01 =
+            yawLimit > 1.0e-12
+                ? desiredYaw / yawLimit
+                : 0.0;
+        double up01 =
+            pitchLimit > 1.0e-12
+                ? desiredPitch / pitchLimit
+                : 0.0;
+
+        // Same elliptical envelope as the physical actuator. Equal pitch/yaw
+        // limits therefore form a true cone and diagonal commands cannot gain
+        // extra resultant travel.
+        const double normalizedLength =
+            std::sqrt(right01 * right01 + up01 * up01);
+        if (normalizedLength > 1.0)
+        {
+            right01 /= normalizedLength;
+            up01 /= normalizedLength;
+        }
+
+        right01 = std::clamp(right01, -1.0, 1.0);
+        up01 = std::clamp(up01, -1.0, 1.0);
+
+        out.rightInput = finiteClamp(right01);
+        out.upInput = finiteClamp(up01);
+
+        const double commandedYaw = right01 * yawLimit;
+        const double commandedPitch = up01 * pitchLimit;
+        const glm::dvec3 commandedDirection =
+            normalizedOr(
+                forward +
+                    right * std::tan(commandedYaw) +
+                    up * std::tan(commandedPitch),
+                forward
+            );
+
+        out.servedAngleRad =
+            std::acos(
+                std::clamp(
+                    glm::dot(forward, commandedDirection),
+                    -1.0,
+                    1.0
+                )
+            );
+        return out;
+    }
+
+    [[nodiscard]] static glm::dvec3 hullAxisForResidualGimbal(
+        const glm::dvec3& desiredDirection,
+        const glm::dvec3& currentForward,
+        double servedAngleRad
+    ) noexcept
+    {
+        const glm::dvec3 desired =
+            normalizedOr(desiredDirection, currentForward);
+        const glm::dvec3 current =
+            normalizedOr(currentForward, {0.0, 0.0, -1.0});
+
+        const double cosine =
+            std::clamp(glm::dot(desired, current), -1.0, 1.0);
+        const double separation = std::acos(cosine);
+
+        if (separation <= 1.0e-9)
+            return current;
+
+        if (servedAngleRad >= separation - 1.0e-9)
+            return current;
+
+        // Near an exact 180-degree flip there is no unique great-circle side.
+        // Let HullPoseGuidance choose its established deterministic flip rather
+        // than inventing a TVC-side preference.
+        if (cosine <= -0.999999)
+            return desired;
+
+        const double moveFromDesired =
+            std::clamp(servedAngleRad, 0.0, separation);
+        const glm::dvec3 tangent =
+            normalizedOr(
+                current - desired * cosine,
+                current
+            );
+
+        return normalizedOr(
+            desired * std::cos(moveFromDesired) +
+                tangent * std::sin(moveFromDesired),
+            desired
+        );
+    }
+
     struct State
     {
         bool initialized = false;

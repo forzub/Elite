@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -121,12 +122,12 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         return out;
     }
 
-    const auto capability =
+    const auto shipCapability =
         capability::buildShipCapability(
             descriptor,
             ship.modules
         );
-    if (!capability.valid)
+    if (!shipCapability.valid)
         return out;
 
     out.modelLabel =
@@ -148,7 +149,7 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
     double foreDemand01 = 0.0;
     double lateralDemand01 = 0.0;
 
-    const ShipParams& effective = capability.effectivePhysics;
+    const ShipParams& effective = shipCapability.effectivePhysics;
 
     if (assisted)
     {

@@ -34,6 +34,22 @@ void testManualInputOwnsTranslation()
     );
 }
 
+void testMainGimbalOwnsOrdinaryPhysicalTranslationPath()
+{
+    ShipControlState control;
+    control.navigationAccelerationDemandValid = true;
+    control.navigationVelocityTargetValid = true;
+    control.mainGimbalRightInput = 0.5f;
+
+    require(
+        Gateway::selectTranslationPath(
+            control,
+            game::navigation::LocalFlightControlLaw::Newtonian
+        ) == Path::ManualFlight,
+        "Newtonian TVC command was bypassed by legacy navigation translation"
+    );
+}
+
 void testPrecisionPath()
 {
     ShipControlState control;
@@ -100,13 +116,14 @@ int main()
     try
     {
         testManualInputOwnsTranslation();
+        testMainGimbalOwnsOrdinaryPhysicalTranslationPath();
         testPrecisionPath();
         testAssistedPath();
         testNewtonianNavigationDemandPath();
         testNeutralManualPath();
 
         std::cout << "SHIP CONTROL EXECUTION GATEWAY TESTS: PASS\n";
-        std::cout << " - manual input retains override priority\n";
+        std::cout << " - manual/TVC input retains ordinary physical-path priority\n";
         std::cout << " - precision/Assisted/Newtonian execution selection is centralized\n";
         std::cout << " - callers no longer need to interpret ShipControlState\n";
         return EXIT_SUCCESS;

@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 13u;
+inline constexpr std::uint16_t WireProtocolVersion = 14u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -592,6 +592,8 @@ inline bool encodeShipControlState(
     writer.f32(value.strafeInput);
     writer.f32(value.liftInput);
     writer.f32(value.forwardInput);
+    writer.f32(value.mainGimbalRightInput);
+    writer.f32(value.mainGimbalUpInput);
     writer.boolean(value.localControlLawCommandValid);
     writer.u8(static_cast<std::uint8_t>(value.requestedLocalControlLaw));
     writer.u8(static_cast<std::uint8_t>(value.velocityAlignmentCommand));
@@ -617,6 +619,8 @@ inline bool decodeShipControlState(
         !reader.f32(outValue.strafeInput) ||
         !reader.f32(outValue.liftInput) ||
         !reader.f32(outValue.forwardInput) ||
+        !reader.f32(outValue.mainGimbalRightInput) ||
+        !reader.f32(outValue.mainGimbalUpInput) ||
         !reader.boolean(outValue.localControlLawCommandValid) ||
         !reader.u8(controlLaw) ||
         !reader.u8(alignmentMode) ||

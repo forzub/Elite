@@ -92,6 +92,33 @@ public:
         );
     }
 
+    [[nodiscard]] static double requiredGuidanceTunnelRadiusMeters(
+        double gateSpacingMeters,
+        double vehicleLengthMeters
+    ) noexcept
+    {
+        const double spacing =
+            std::max(1.0, finiteOrZero(gateSpacingMeters));
+        const double vehicleLength =
+            std::max(0.0, finiteOrZero(vehicleLengthMeters));
+
+        // Manual/autopilot HUD corridor contract: neighbouring tunnel frames
+        // must still read as one continuous tunnel. A quarter-turn may not be
+        // compressed into one or two sparse 500 m gates. 30 degrees per
+        // characteristic interval means a 90-degree bend spans at least three
+        // visible frame intervals. This is geometric safety and is deliberately
+        // independent of how slowly the speed profiler is willing to crawl.
+        constexpr double MaxFrameTurnRadians =
+            0.52359877559829887308; // pi / 6
+
+        const double characteristicInterval =
+            std::max(spacing, vehicleLength);
+
+        return
+            characteristicInterval /
+            MaxFrameTurnRadians;
+    }
+
     [[nodiscard]] static double requiredTerminalApproachMeters(
         double possibleApproachSpeedMps,
         double targetSpeedMps,

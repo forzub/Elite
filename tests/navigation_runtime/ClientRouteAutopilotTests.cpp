@@ -1131,11 +1131,9 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     Agent approaching = initial;
     approaching.positionMapMeters = {850.0, 0.0, 0.0};
 
-    // The route preview must use the same learned Assisted speed-handle
-    // response as PredictivePilot. A slow measured response must move the
-    // slowdown horizon outward instead of silently falling back to the
-    // configured nominal setpoint rate.
-    state.pilotState.assistedSpeedResponseMps2 = 1.0;
+    // Route preview must consume the same law-neutral controller telemetry
+    // exposed through the hard autopilot API. Concrete identification state is
+    // intentionally inaccessible here.
 
     const auto output = Autopilot::update(
         state,
@@ -1165,11 +1163,10 @@ void testApproachBrakesBeforeDynamicTurnLimit()
         "pre-turn model ignored Assisted speed-handle slew"
     );
     const double effectiveSetpointRate =
-        game::navigation::autopilot::PredictivePilot::
-            effectiveAssistedTargetSpeedChangeRateMps2(
-                vehicle,
-                state.pilotState
-            );
+        state.pilotController.telemetry(
+            game::navigation::LocalFlightControlLaw::Assisted,
+            vehicle
+        ).targetSpeedChangeRateMps2;
     const double expectedSlewSeconds =
         std::max(0.0, 200.0 - output.turnSpeedCeilingMps) /
         effectiveSetpointRate;
@@ -1178,7 +1175,7 @@ void testApproachBrakesBeforeDynamicTurnLimit()
             output.turnSpeedSetpointSlewSeconds -
             expectedSlewSeconds
         ) < 1.0e-6,
-        "turn preview and PredictivePilot disagree on learned Assisted setpoint response"
+        "turn preview and Assisted autopilot API disagree on speed response"
     );
     require(
         output.requiredTurnSlowdownDistanceMeters >
@@ -2312,12 +2309,10 @@ void testMissedGateAdvancesToFutureRouteWithoutReturn()
 void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
 {
     using Pilot =
-        game::navigation::autopilot::PredictivePilot;
+        game::navigation::autopilot::AssistedAutopilot;
 
-    Pilot::State state;
-    Pilot::Request request;
-    request.law =
-        game::navigation::LocalFlightControlLaw::Assisted;
+    Pilot pilot;
+    game::navigation::autopilot::AutopilotControlRequest request;
 
     // Nose already turned toward +X, but velocity still lags 90 degrees along
     // +Z. The craft is physically moving at 40 m/s while the route wants 20.
@@ -2333,7 +2328,7 @@ void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
     request.deltaSeconds = 0.02;
 
     const auto control =
-        Pilot::make(request, params(), state);
+        pilot.update(request, params());
 
     require(
         control.targetSpeedRate < -1.0e-6f,
@@ -2344,12 +2339,10 @@ void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
 void testPredictivePilotBrakesAngularRateBeforeTarget()
 {
     using Pilot =
-        game::navigation::autopilot::PredictivePilot;
+        game::navigation::autopilot::AssistedAutopilot;
 
-    Pilot::State state;
-    Pilot::Request request;
-    request.law =
-        game::navigation::LocalFlightControlLaw::Assisted;
+    Pilot pilot;
+    game::navigation::autopilot::AutopilotControlRequest request;
     request.forwardMap = {1.0, 0.0, 0.0};
     request.rightMap = {0.0, 0.0, 1.0};
     request.upMap = {0.0, 1.0, 0.0};
@@ -2359,7 +2352,7 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
     request.deltaSeconds = 0.02;
 
     const auto accelerate =
-        Pilot::make(request, params(), state);
+        pilot.update(request, params());
     require(
         std::abs(accelerate.yawInput) > 1.0e-6,
         "predictive pilot did not begin yaw toward target"
@@ -2373,7 +2366,7 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
     // braking-envelope controller must counter-steer NOW, before overshoot.
     request.yawRateRadPerSec = turnSign * 1.5;
     const auto brake =
-        Pilot::make(request, params(), state);
+        pilot.update(request, params());
 
     require(
         static_cast<double>(brake.yawInput) * turnSign < -1.0e-6,
@@ -2384,7 +2377,7 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
 void testPredictivePilotCapturesTurnsWithoutOvershoot()
 {
     using Pilot =
-        game::navigation::autopilot::PredictivePilot;
+        game::navigation::autopilot::AssistedAutopilot;
 
     const auto vehicle = params();
     constexpr double Dt = 0.02;
@@ -2394,7 +2387,7 @@ void testPredictivePilotCapturesTurnsWithoutOvershoot()
     const auto runTurn =
         [&](double targetDegrees)
         {
-            Pilot::State state;
+            Pilot pilot;
             double angle = 0.0;
             double yawRate = 0.0;
             double holdSeconds = 0.0;
@@ -2420,9 +2413,7 @@ void testPredictivePilotCapturesTurnsWithoutOvershoot()
                     -std::sin(target)
                 );
 
-                Pilot::Request request;
-                request.law =
-                    game::navigation::LocalFlightControlLaw::Assisted;
+                game::navigation::autopilot::AutopilotControlRequest request;
                 request.forwardMap = forward;
                 request.rightMap = right;
                 request.upMap = up;
@@ -2432,7 +2423,7 @@ void testPredictivePilotCapturesTurnsWithoutOvershoot()
                 request.deltaSeconds = Dt;
 
                 const auto control =
-                    Pilot::make(request, vehicle, state);
+                    pilot.update(request, vehicle);
 
                 // Reproduce the ordinary-keyboard angular path used by the
                 // live client autopilot: held input ramps from 18% to full
@@ -2565,17 +2556,15 @@ void testClientAutopilotUsesDockUpReferenceForRoll()
 void testHullAttitudeControlIsNotSlowedByCourseLag()
 {
     using Pilot =
-        game::navigation::autopilot::PredictivePilot;
+        game::navigation::autopilot::AssistedAutopilot;
 
-    Pilot::State state;
+    Pilot pilot;
     const auto vehicle = params();
 
     constexpr double FiveDegreesRad =
         5.0 * 3.1415926535897932384626433832795 / 180.0;
 
-    Pilot::Request request;
-    request.law =
-        game::navigation::LocalFlightControlLaw::Assisted;
+    game::navigation::autopilot::AutopilotControlRequest request;
     request.forwardMap = {1.0, 0.0, 0.0};
     request.rightMap = {0.0, 0.0, 1.0};
     request.upMap = {0.0, 1.0, 0.0};
@@ -2586,9 +2575,8 @@ void testHullAttitudeControlIsNotSlowedByCourseLag()
     };
     request.desiredUpMap = {0.0, 1.0, 0.0};
 
-    // Deliberately huge measured course-response lag. This describes how
-    // long velocity takes to follow the nose, NOT how slowly the hull may rotate.
-    state.assistedCourseResponseSeconds = 5.0;
+    // Hull attitude authority is independent from route-course response
+    // telemetry; no concrete controller state is accessible at this layer.
     request.desiredVelocityMapMps =
         request.desiredForwardMap * 10.0;
     request.actualVelocityMapMps =
@@ -2596,7 +2584,7 @@ void testHullAttitudeControlIsNotSlowedByCourseLag()
     request.deltaSeconds = 0.02;
 
     const auto control =
-        Pilot::make(request, vehicle, state);
+        pilot.update(request, vehicle);
 
     require(
         std::abs(control.yawInput) > 0.5f,
@@ -2609,7 +2597,7 @@ void testClientStabilizerUsesOrdinaryControls()
     Autopilot::State routeState;
     (void)routeState;
 
-    game::navigation::autopilot::PredictivePilot::State pilotState;
+    game::navigation::autopilot::AutopilotLawController pilotController;
     Agent agent;
     agent.velocityMapMetersPerSecond = {12.0, 0.0, 0.0};
     agent.forwardMap = {1.0, 0.0, 0.0};
@@ -2620,7 +2608,7 @@ void testClientStabilizerUsesOrdinaryControls()
         agent,
         game::navigation::LocalFlightControlLaw::Assisted,
         params(),
-        pilotState,
+        pilotController,
         0.02
     );
 

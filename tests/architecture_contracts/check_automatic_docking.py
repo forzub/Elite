@@ -31,7 +31,6 @@ try:
         "src/game/navigation/autopilot/RouteFollowerApi.h",
         "src/game/navigation/autopilot/RouteFollower.cpp",
         "src/game/navigation/autopilot/CorridorCaptureGuidance.h",
-        "src/game/navigation/autopilot/VelocityCourseGuidance.h",
         "tests/navigation_runtime/NavigationCompositeProvingGroundTests.cpp",
         "tests/navigation_runtime/RouteFollowerApiTests.cpp",
         "tests/navigation_runtime/CorridorCaptureGuidanceTests.cpp",

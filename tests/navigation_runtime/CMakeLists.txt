@@ -1680,7 +1680,7 @@ set_tests_properties(
 # These tests intentionally exercise retired execution seams such as
 # TrajectoryFollower, NavigationRuntimeControlBridge or the old Assisted
 # actuator helper. They remain useful as historical diagnostics/oracles, but
-# they MUST NOT participate in the production PredictivePilot V2 acceptance
+# they MUST NOT participate in the production flight-law autopilot acceptance
 # gate or in the default navigation-runtime run.
 set_tests_properties(
     maneuver_phase_gate

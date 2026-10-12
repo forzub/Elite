@@ -186,6 +186,7 @@ private:
 
     struct SearchNode
     {
+        glm::dvec3 positionMapMeters {0.0};
         glm::dvec3 velocityMapMps {0.0};
         glm::dvec3 thrustDirectionMap {0.0, 0.0, -1.0};
         double hullSlewRateRadPerSec = 0.0;
@@ -216,6 +217,8 @@ private:
     {
         AutopilotReferencePreviewSample out;
         out.timeOffsetSeconds = 0.0;
+        out.desiredPositionMapMeters =
+            finiteVecOrZero(request.desiredPositionMapMeters);
         out.desiredVelocityMapMps =
             finiteVecOrZero(request.desiredVelocityMapMps);
         out.desiredLinearAccelerationMapMps2 =
@@ -241,6 +244,8 @@ private:
         const std::size_t index =
             std::min(depth - 1, count - 1);
         auto out = request.preview[index];
+        out.desiredPositionMapMeters =
+            finiteVecOrZero(out.desiredPositionMapMeters);
         out.desiredVelocityMapMps =
             finiteVecOrZero(out.desiredVelocityMapMps);
         out.desiredLinearAccelerationMapMps2 =
@@ -337,6 +342,8 @@ private:
 
         std::array<SearchNode, BeamWidth> beam {};
         std::size_t beamCount = 1;
+        beam[0].positionMapMeters =
+            finiteVecOrZero(request.actualPositionMapMeters);
         beam[0].velocityMapMps =
             finiteVecOrZero(request.actualVelocityMapMps);
         beam[0].thrustDirectionMap = initialThrustDirection;
@@ -593,6 +600,9 @@ private:
             (mainAuthority * throttle);
         next.velocityMapMps =
             node.velocityMapMps + acceleration * dt;
+        next.positionMapMeters =
+            node.positionMapMeters +
+            0.5 * (node.velocityMapMps + next.velocityMapMps) * dt;
 
         const glm::dvec3 velocityError =
             next.velocityMapMps -
@@ -619,8 +629,27 @@ private:
                 next.thrustDirectionMap
             );
 
+        double crossTrackError2 = 0.0;
+        if (request.positionReferenceValid)
+        {
+            const glm::dvec3 positionError =
+                next.positionMapMeters -
+                reference.desiredPositionMapMeters;
+            const glm::dvec3 tangent =
+                normalizedOr(
+                    reference.desiredVelocityMapMps,
+                    node.velocityMapMps
+                );
+            const glm::dvec3 crossTrack =
+                positionError -
+                tangent * glm::dot(positionError, tangent);
+            crossTrackError2 =
+                glm::dot(crossTrack, crossTrack);
+        }
+
         double stageCost =
             1.0 * velocityError2 +
+            0.50 * crossTrackError2 +
             4.0 * overspeed * overspeed +
             0.08 * accelerationError2 +
             2.0 * throttle * throttle +

@@ -143,6 +143,38 @@ void testAssistedLayoutGrouping()
     }
 }
 
+void testNewtonianNeverRendersForeMainBars()
+{
+    constexpr Model models[] = {
+        Model::NewtonianI,
+        Model::NewtonianY,
+        Model::NewtonianX
+    };
+
+    for (const auto model : models)
+    {
+        const auto descriptor = descriptorFor(model);
+        auto ship = shipFor(descriptor);
+        const auto p =
+            game::presentation::buildEngineThrustHudPresentation(
+                ship
+            );
+
+        require(p.visible, "Newtonian engine HUD is hidden");
+
+        for (const auto& group : p.groups)
+        {
+            for (const auto& bar : group.bars)
+            {
+                require(
+                    bar.fillDirection == Direction::BottomUp,
+                    "Newtonian HUD exposed a fore-main/top-down bar"
+                );
+            }
+        }
+    }
+}
+
 void testAssistedForwardThrustUsesAftBars()
 {
     const auto descriptor = descriptorFor(Model::AssistedI);
@@ -218,12 +250,14 @@ int main()
     try
     {
         testAssistedLayoutGrouping();
+        testNewtonianNeverRendersForeMainBars();
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
 
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"
             << " - Assisted I/Y/X render 2/3/4 paired groups\n"
+            << " - Newtonian HUD never renders fore-main bars\n"
             << " - yellow bars are per-slot capability\n"
             << " - red bars follow axial and vectoring main thrust\n";
         return EXIT_SUCCESS;

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "src/game/client/ClientHubTacticalPrediction.h"
-#include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
@@ -54,7 +54,7 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
 
     // Attitude uses exactly the same deterministic controller as fixed-step
     // prediction; this mutates only the presentation copy.
-    SharedShipPhysics::integrate(
+    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         target,
         shipParams,
         control,
@@ -62,7 +62,7 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
         dt
     );
 
-    // Hub-local translation must use the same DynamicMotionSystem equations as
+    // Hub-local translation crosses the same ship-control execution gateway as
     // both server simulation and fixed client prediction.
     (void)game::client::predictHubTacticalMotion(
         target,

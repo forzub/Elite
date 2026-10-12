@@ -35,10 +35,14 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
             "COBRETTY-FNR1"
         };
 
-        // Native flight doctrine of this hull. Ctrl+F10 remains a debug-only
-        // runtime override; ordinary initialization and navigation start here.
+        // Fixed ordinary-flight construction: Assisted-I.
+        // Two aft + two fore vectoring main engines; no dedicated ordinary RCS
+        // belongs to this physical model. The legacy law field mirrors the
+        // selected hardware family until the old aggregate stack is retired.
+        desc.physicalControlModel =
+            game::ship::plant::PhysicalControlModelId::AssistedI;
         desc.localFlightControlLaw =
-            game::navigation::LocalFlightControlLaw::Assisted;
+            game::ship::plant::nativeFlightLaw(desc.physicalControlModel);
 
         // -------------------------
         // Physics

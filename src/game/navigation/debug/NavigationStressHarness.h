@@ -92,12 +92,42 @@ public:
         const char* report = std::getenv("ELITE_NAV_STRESS_REPORT");
         if (report && *report)
             m_reportPath = report;
+
+        const char* simple = std::getenv("ELITE_NAV_STRESS_SIMPLE");
+        m_simpleCorridor =
+            simple != nullptr &&
+            std::string(simple) != "0" &&
+            std::string(simple) != "";
+
+        const char* model =
+            std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
+        if (model && *model)
+            m_physicalModelLabel = model;
+
+        const char* runIndex =
+            std::getenv("ELITE_SHIP_PHYSICAL_TEST_INDEX");
+        const char* runTotal =
+            std::getenv("ELITE_SHIP_PHYSICAL_TEST_TOTAL");
+        if (runIndex && *runIndex)
+            m_matrixRunIndex = std::max(0, std::atoi(runIndex));
+        if (runTotal && *runTotal)
+            m_matrixRunTotal = std::max(0, std::atoi(runTotal));
     }
 
     bool enabled() const noexcept { return m_enabled; }
     bool complete() const noexcept { return m_complete; }
+    bool simpleCorridor() const noexcept { return m_simpleCorridor; }
     int currentStep() const noexcept { return m_step; }
-    static constexpr int totalSteps() noexcept { return 12; }
+    int totalStepsForScenario() const noexcept
+    {
+        return m_simpleCorridor ? 1 : 12;
+    }
+    int matrixRunIndex() const noexcept { return m_matrixRunIndex; }
+    int matrixRunTotal() const noexcept { return m_matrixRunTotal; }
+    const std::string& physicalModelLabel() const noexcept
+    {
+        return m_physicalModelLabel;
+    }
     const std::string& reportPath() const noexcept { return m_reportPath; }
 
     Action update(const Observation& o)
@@ -115,7 +145,12 @@ public:
             m_started = true;
             m_startedAt = o.universeSeconds;
             m_stepStartedAt = o.universeSeconds;
-            logEvent(o, "START scenario=hot-replan-blue-transit-v2");
+            logEvent(
+                o,
+                m_simpleCorridor
+                    ? "START scenario=simple-physical-corridor"
+                    : "START scenario=hot-replan-blue-transit-v2"
+            );
         }
 
         sample(o);
@@ -124,6 +159,100 @@ public:
         // A step is deliberately condition-driven where possible. Timeouts
         // prevent one failure from hiding all later transition cases.
         const double stepAge = o.universeSeconds - m_stepStartedAt;
+
+        if (m_simpleCorridor)
+        {
+            if (m_step == 0)
+            {
+                if (o.universeSeconds - m_startedAt >= 1.0)
+                {
+                    return issue(
+                        o,
+                        Target::CubeFront,
+                        "simple-corridor"
+                    );
+                }
+            }
+            else if (m_step == 1)
+            {
+                if (o.failed)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "simple corridor terminal failure"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.dockingPhase == 4 &&
+                    !o.blueStagePresent &&
+                    stepAge >= 1.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "simple corridor route has no semantic BLUE stage"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.blueStagePresent &&
+                    !o.blueHardContainment &&
+                    o.dockingPhase == 4)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "simple corridor BLUE stage lost hard containment"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (m_blueEntered && m_blueExited)
+                {
+                    logSummary(o, "COMPLETE", std::string{});
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (!m_blueEntered && stepAge >= 180.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "simple corridor BLUE volume was not reached within 180 seconds"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (m_blueEntered &&
+                    !m_blueExited &&
+                    m_blueEnteredAt > -1.0e20 &&
+                    o.universeSeconds - m_blueEnteredAt >= 30.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "simple corridor BLUE transit was not completed within 30 seconds after entry"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+            }
+
+            return action;
+        }
 
         switch (m_step)
         {
@@ -384,7 +513,18 @@ private:
         {
             m_stream
                 << "# Elite navigation runtime stress report\n"
-                << "# scenario=hot-replan-blue-transit-v2\n"
+                << "# scenario="
+                << (m_simpleCorridor
+                        ? "simple-physical-corridor"
+                        : "hot-replan-blue-transit-v2")
+                << "\n"
+                << "# physical_model="
+                << (m_physicalModelLabel.empty()
+                        ? "descriptor-default"
+                        : m_physicalModelLabel)
+                << "\n"
+                << "# matrix_run=" << m_matrixRunIndex
+                << "/" << m_matrixRunTotal << "\n"
                 << "# columns are key=value; SAMPLE cadence ~= 0.25 s\n";
             flush();
         }
@@ -440,7 +580,11 @@ private:
             << " exec_gates=" << o.executionGateCount
             << " first_kind=" << o.firstCurveKind
             << " first_len=" << o.firstCurveLengthMeters
-            << " route_len=" << o.routeLengthMeters;
+            << " route_len=" << o.routeLengthMeters
+            << " physical_model="
+            << (m_physicalModelLabel.empty()
+                    ? "descriptor-default"
+                    : m_physicalModelLabel);
     }
 
     void sample(const Observation& o)
@@ -573,7 +717,8 @@ private:
         m_stepStartedAt = o.universeSeconds;
         ++m_requests;
 
-        if (std::string(reason) == "blue-proving-run")
+        if (std::string(reason) == "blue-proving-run" ||
+            std::string(reason) == "simple-corridor")
         {
             m_blueEntered = false;
             m_blueExited = false;
@@ -640,6 +785,11 @@ private:
     bool m_started = false;
     bool m_complete = false;
     bool m_failureLatched = false;
+    bool m_simpleCorridor = false;
+
+    std::string m_physicalModelLabel;
+    int m_matrixRunIndex = 0;
+    int m_matrixRunTotal = 0;
 
     std::string m_reportPath =
         "D:/tmp/elite_navigation_stress.log";

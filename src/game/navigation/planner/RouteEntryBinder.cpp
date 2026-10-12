@@ -767,6 +767,17 @@ RoutePlan RouteEntryBinder::bind(
         out.failure = "late entry splice produced incomplete route";
         out.userMessage = out.failure;
     }
+    else if (
+        stress.maxLateralUtilization > 1.0005 ||
+        stress.maxAngularVelocityUtilization > 1.0005 ||
+        stress.maxAngularAccelerationUtilization > 1.0005)
+    {
+        out.disposition = RoutePlanDisposition::NeedsRefinement;
+        out.failureCode = RoutePlanFailureCode::PropulsionInsufficient;
+        out.failure =
+            "late entry splice exceeded final dynamic authority";
+        out.userMessage = out.failure;
+    }
 
     return out;
 }

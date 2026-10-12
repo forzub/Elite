@@ -333,6 +333,13 @@ private:
     std::uint64_t m_clientDockingTraceTick = 0;
     double m_clientDockingRouteProgressMeters = 0.0;
     std::size_t m_clientDockingRouteCurveIndex = 0;
+
+    // Read-only live execution diagnostics mirrored into the stress harness.
+    // They never participate in control.
+    double m_clientAutopilotCrossTrackMeters = 0.0;
+    double m_clientAutopilotCourseErrorRad = 0.0;
+    double m_clientAutopilotHullErrorRad = 0.0;
+    double m_clientAutopilotTargetSpeedMps = 0.0;
     game::navigation::autopilot::AutopilotLawController
         m_clientDockingStabilizePilotController {};
 

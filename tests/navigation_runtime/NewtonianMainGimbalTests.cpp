@@ -1,5 +1,6 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>

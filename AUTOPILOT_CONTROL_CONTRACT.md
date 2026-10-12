@@ -2,107 +2,132 @@
 
 ## Purpose
 
-The route Planner owns route geometry and the time/speed/attitude reference.
-The Follower measures deviation from that accepted route and requests pilot
-corrections. The Autopilot is a virtual pilot: it must use the same ordinary
-ship controls as a human pilot.
+The route Planner owns route geometry and the accepted speed/attitude reference.
+The route follower measures deviation from that accepted route.  A flight-law
+autopilot converts the resulting desired/observed vehicle state into ordinary
+`ShipControlState` pilot controls.
 
-The production automatic-docking path must not select engines, inject
-SYSTEM-frame acceleration, or call navigation-only propulsion helpers.
+Production automatic docking must not select engines, inject SYSTEM-frame
+acceleration, or call navigation-only propulsion helpers.
+
+## Hard API boundary
+
+The only route-to-pilot data contract is:
+
+`src/game/navigation/autopilot/AutopilotControlApi.h`
+
+Input:
+
+- `AutopilotControlRequest`
+- `ShipParams`
+
+Output:
+
+- `AutopilotControlCommand` (ordinary `ShipControlState`)
+- read-only `AutopilotControlTelemetry`
+
+Forbidden across this boundary:
+
+- engine ids or slot ids;
+- propulsion topology;
+- bank health/throttle state;
+- concrete Assisted/Newtonian controller state;
+- direct actuator allocation;
+- RCS/main-engine selection.
+
+`ClientRouteAutopilot` may depend only on the hard API and
+`AutopilotLawController`. It must never include a concrete pilot or read its
+private identification state.
+
+## Replaceable flight-law modules
+
+The concrete pilots are siblings:
+
+- `AssistedAutopilot`
+- `NewtonianAutopilot`
+
+Both implement the same public calls:
+
+- `update(const AutopilotControlRequest&, const ShipParams&)`
+- `telemetry(const ShipParams&) const`
+- `reset()`
+
+`AutopilotLawController` is the only selection seam. Compile-time parity
+guards prevent either concrete pilot from drifting to a different request,
+command, or telemetry shape.
+
+Controller state is isolated per law. Running Assisted must not mutate or
+initialize Newtonian state, and vice versa.
 
 ## Ownership
 
 ### Planner
 
-Owns:
-
-- collision-free route geometry;
-- accepted corridor/centerline;
-- speed schedule and stopping points;
-- physically feasible orientation/angular schedule;
-- route replacement when the accepted route is invalidated.
+Owns collision-free geometry, corridor/centerline, speed schedule, stopping
+points, physically feasible route dynamics, and route replacement.
 
 The Planner does not press controls.
 
-### Follower
+### Route follower
 
-Owns:
+Owns route progress, cross-track/course/speed error, and bounded vehicle-state
+guidance.
 
-- current progress on the accepted route;
-- cross-track and speed/attitude error;
-- bounded steering/correction intent.
+The follower does not select engines or concrete actuator doctrine.
 
-The Follower does not select engines and does not create a second global route.
+### AssistedAutopilot
 
-### Autopilot V2 virtual pilot
+Owns the Assisted conversion from vehicle-state guidance to ordinary pilot
+controls. Its measured course/speed response is private implementation state;
+the route layer receives only neutral telemetry.
 
-`src/game/navigation/autopilot/PredictivePilot.h`
+### NewtonianAutopilot
 
-This is the only production automatic-docking pilot. It converts desired vehicle state into ordinary `ShipControlState` pilot inputs only and predicts control against the measured ship response:
+Owns the Newtonian conversion from the same vehicle-state guidance to the same
+ordinary pilot-control surface.
 
-- `pitchInput`, `yawInput`, `rollInput`;
-- `targetSpeedRate`;
-- `forwardInput`, `strafeInput`, `liftInput`;
-- `VelocityAlignmentMode::BrakeToStop` (the ordinary END/autobrake action).
+Ordinary Newtonian route translation follows these rules:
 
-It MUST leave these legacy direct-navigation fields disabled:
-
-- `navigationAccelerationDemandValid`;
-- `navigationVelocityTargetValid`;
-- `navigationPrecisionTranslationOnly`.
+- meaningful delta-v belongs to the main engine;
+- hull attitude follows the demanded acceleration/main-thrust direction;
+- braking therefore becomes turn-and-burn;
+- on a curved path the hull may point toward the curvature-acceleration vector
+  rather than along the velocity vector;
+- translational RCS must not substitute for an unaligned main engine;
+- RCS translation is reserved for explicit precision-stop residuals.
 
 ### Ship / flight law
 
-`ShipController`, `LocalFlightControlStateMachine`, and
-`DynamicMotionSystem::applyLocalFrameInput` own the causal response of the
-vehicle to pilot controls.
-
-They alone know how installed propulsion and control authority produce motion.
-
-Assisted:
-
-- pilot controls desired forward speed with the ordinary +/- control;
-- hull nose is the travel direction;
-- the ship flight law accelerates/brakes and realigns VREL to the nose.
-
-Newtonian:
-
-- pilot controls primary-main throttle with the ordinary + control;
-- velocity remains inertial when thrust is released;
-- braking uses the ordinary END/autobrake contract (turn and burn);
-- keypad RCS remains available for small positioning corrections.
+`ShipController`, `ShipControlExecutionGateway`, and the physical motion
+backend own causal actuator response. The autopilot presses ordinary controls;
+it does not allocate installed engines itself.
 
 ## STOP semantics
 
-Measured near-zero velocity is never a maneuver state selector.
+Measured near-zero velocity is never a maneuver-state selector.
 
-An authored STOP is explicit. During an authored STOP:
+An authored STOP is explicit. Large Newtonian stop velocity is removed through
+ordinary main-engine/autobrake turn-and-burn. Only the final precision-stop
+residual may be removed with ordinary translation RCS.
 
-- normal main-engine/autobrake behavior removes large velocity;
-- below the precision-stop entry band, ordinary keypad RCS removes the final
-  residual velocity;
-- values such as 0.045 m/s are treated as residual motion inside the STOP
-  operation, not as a new MOVING state.
+## Forbidden legacy navigation seam
 
-A new moving segment is explicit and must carry a non-zero movement command;
-STOP and START must never be inferred from floating-point equality.
+Both production pilots MUST leave disabled:
 
-## Production automatic docking invariant
+- `navigationAccelerationDemandValid`
+- `navigationVelocityTargetValid`
+- `navigationPrecisionTranslationOnly`
 
-`GameServer.cpp` automatic docking must construct control exclusively via
-`PredictivePilot::make()` and then call `ship->setControlState(...)`.
+Those fields remain diagnostic/legacy only.
 
-`ShipControlAdapter` is retained only as historical/lab code. Production automatic docking must not include it, call it, or fall back to it.
+## Isolation invariant
 
-It must not write direct navigation actuator demand fields or call direct
-navigation propulsion functions.
+A navigation tick has exactly one concrete pilot owner selected by
+`AutopilotLawController`.
 
-The architecture test `check_automatic_docking.py` enforces this boundary.
+No tick may combine Assisted and Newtonian output, blend their private state,
+or fall back to direct navigation actuator demands. Failure/recovery must be
+explicit.
 
-## V2 isolation invariant
-
-Automatic docking has exactly one pilot-control owner: `PredictivePilot`.
-No tick may combine, blend, sequence, or fall back between PredictivePilot and
-ShipControlAdapter/direct navigation actuator demands. If V2 cannot produce a
-valid ordinary control sample, automatic docking must fail/recover explicitly;
-it must never silently hand the same maneuver to the legacy controller.
+The `autopilot_law_api` contract test enforces API parity, private state
+isolation, Newtonian main-engine ownership, and precision-only RCS translation.

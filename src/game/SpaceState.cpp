@@ -1778,6 +1778,7 @@ void SpaceState::updateDockingAdvisory()
         m_clientAutopilotCourseErrorRad = 0.0;
         m_clientAutopilotHullErrorRad = 0.0;
         m_clientAutopilotTargetSpeedMps = 0.0;
+        m_clientAutopilotTargetLongitudinalAccelerationMps2 = 0.0;
     };
 
     const auto releaseClientAutopilot = [&]()
@@ -3774,6 +3775,7 @@ void SpaceState::updateDockingAdvisory()
         m_clientAutopilotCourseErrorRad = 0.0;
         m_clientAutopilotHullErrorRad = 0.0;
         m_clientAutopilotTargetSpeedMps = 0.0;
+        m_clientAutopilotTargetLongitudinalAccelerationMps2 = 0.0;
 
         // WORKING ASYNC CONTRACT: expensive route compilation and visual
         // frame-field construction completed in the worker. Main thread only
@@ -3955,6 +3957,8 @@ void SpaceState::updateDockingAdvisory()
                 output.hullForwardErrorRad;
             m_clientAutopilotTargetSpeedMps =
                 output.targetSpeedMps;
+            m_clientAutopilotTargetLongitudinalAccelerationMps2 =
+                output.targetLongitudinalAccelerationMps2;
 
             const double routeTotalMeters =
                 m_dockAdvice.plan.routeCurves.empty()
@@ -4560,6 +4564,16 @@ void SpaceState::update(float dt)
             m_clientAutopilotHullErrorRad;
         obs.targetSpeedMps =
             m_clientAutopilotTargetSpeedMps;
+        obs.targetLongitudinalAccelerationMps2 =
+            m_clientAutopilotTargetLongitudinalAccelerationMps2;
+        obs.mainCommand01 =
+            static_cast<double>(m_clientAutopilotControl.targetSpeedRate);
+        obs.pitchCommand =
+            static_cast<double>(m_clientAutopilotControl.pitchInput);
+        obs.yawCommand =
+            static_cast<double>(m_clientAutopilotControl.yawInput);
+        obs.rollCommand =
+            static_cast<double>(m_clientAutopilotControl.rollInput);
 
         const auto stressPlayerIt =
             m_client->world().ships().find(m_playerId.value);

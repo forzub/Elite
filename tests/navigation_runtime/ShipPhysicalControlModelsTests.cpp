@@ -126,7 +126,7 @@ void testSlotSemantics()
         {
             if (slot.role == EngineSlotRole::AftMain)
             {
-                assert(slot.freedom == EngineSlotFreedom::FixedAxis);
+                assert(slot.freedom == EngineSlotFreedom::VectoringMain);
                 assert(slot.nominalForceDirectionBody.z < -0.999);
             }
             else
@@ -164,6 +164,14 @@ void testAssistedDegradation()
     assert(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
     assert(near(full.effectivePhysics.reverseMainEngineAccelerationMps2, 60.0));
     assert(near(full.effectivePhysics.manoeuvreThrusterAccel, 0.0));
+    assert(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
+    assert(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
+
+    // With nominal 40 m/s^2 useful lateral authority and 60+60 m/s^2 gross
+    // opposed-bank authority, only one third of generated thrust becomes net
+    // lateral translation. This is propulsive utilization, not engine eta.
+    assert(near(full.thrustUtilization.lateralTranslation01, 1.0 / 3.0));
+    assert(near(full.thrustUtilization.cancelledDuringLateral01, 2.0 / 3.0));
 
     // Assisted-I slot order is aft L/R, fore L/R.
     state[2].operational = false;
@@ -230,6 +238,32 @@ void testNewtonianDegradation()
     assert(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
     assert(near(full.effectivePhysics.manoeuvreThrusterAccel, 4.0));
 
+    // Newtonian-I main is gimbaled. It can bend a powered trajectory and
+    // generate pitch/yaw, but a centred single main has no direct roll moment.
+    assert(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
+    assert(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
+    assert(near(full.poweredMainVectoring.pitch01, 1.0));
+    assert(near(full.poweredMainVectoring.yaw01, 1.0));
+    assert(near(full.poweredMainVectoring.roll01, 0.0));
+    assert(near(full.thrustUtilization.cancelledDuringLateral01, 0.0));
+
+    const auto newtonY = evaluatePhysicalControlModel(
+        PhysicalControlModelId::NewtonianY,
+        nominal,
+        healthySlotState(
+            physicalControlSlots(PhysicalControlModelId::NewtonianY)
+        )
+    );
+    const auto newtonX = evaluatePhysicalControlModel(
+        PhysicalControlModelId::NewtonianX,
+        nominal,
+        healthySlotState(
+            physicalControlSlots(PhysicalControlModelId::NewtonianX)
+        )
+    );
+    assert(newtonY.poweredMainVectoring.roll01 > 0.999);
+    assert(newtonX.poweredMainVectoring.roll01 > 0.999);
+
     // Slot 0 is the axial main, remaining slots are RCS clusters.
     state[1].operational = false;
     auto rcsLost = evaluatePhysicalControlModel(
@@ -282,7 +316,7 @@ int main()
     std::cout << "SHIP PHYSICAL CONTROL MODELS: PASS\n";
     std::cout << " - six fixed Assisted/Newtonian I/Y/X topologies\n";
     std::cout << " - Assisted ordinary control uses vectoring mains, no RCS slots\n";
-    std::cout << " - Newtonian uses aft axial main propulsion plus RCS clusters\n";
+    std::cout << " - Newtonian uses aft vectoring main propulsion plus RCS clusters\n";
     std::cout << " - slot loss degrades kinematic authority without changing construction family\n";
     return 0;
 }

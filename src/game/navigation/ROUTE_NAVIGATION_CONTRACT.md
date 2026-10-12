@@ -1,7 +1,7 @@
 # Route, trajectory and autopilot product contract
 
 > **Current execution precedence (2026-10-06):** for the live Navigation V2
-> course/capture/speed/PredictivePilot execution contract and test-gate
+> course/capture/speed/hard flight-law autopilot execution contract and test-gate
 > classification, use `NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`. Historical
 > sections below remain product/design history and must not override that file.
 
@@ -334,9 +334,9 @@ accounts for both command/setpoint slew and real longitudinal response:
         + physical braking distance
         + closed-loop response margin
 
-The same measured/effective Assisted speed-handle response used by
-PredictivePilot must be used by turn preview. Do not maintain two independent
-estimates.
+The same measured/effective Assisted speed-handle response published through
+`AutopilotControlTelemetry` by `AssistedAutopilot` must be used by turn
+preview. Do not maintain two independent estimates.
 
 Course response is also finite. Assisted remains the aircraft-like law
 "velocity follows the nose", but a short measured velocity-to-nose lag is
@@ -492,7 +492,14 @@ HullPoseGuidance
 HullAttitudeControl
         |
         v
-PredictivePilot / ShipControlState
+AutopilotLawController
+        |
+        +--> AssistedAutopilot
+        |
+        +--> NewtonianAutopilot
+        |
+        v
+ShipControlState
         |
         v
 ShipController

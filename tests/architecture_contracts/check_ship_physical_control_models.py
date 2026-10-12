@@ -34,6 +34,8 @@ for token in (
     "RuntimeFlightRegime",
     "ThrustAxisFallback",
     "SurvivalControl",
+    "PoweredMainVectoringEstimate",
+    "ThrustUtilizationEstimate",
 ):
     require(token in COMMON, f"physical model contract lost: {token}")
 
@@ -58,10 +60,12 @@ for token in (
 for token in (
     "main_center",
     "rcs_fore_left",
-    "FixedAxis",
+    "VectoringMain",
     "OmnidirectionalCluster",
     "reverseMainEngineAvailable = false",
     "RuntimeFlightRegime::SurvivalControl",
+    "poweredMainVectoring.trajectoryStrafe01",
+    "poweredMainVectoring.roll01",
 ):
     require(token in NEWTON_CPP, f"Newtonian topology/physics lost: {token}")
 

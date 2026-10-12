@@ -113,19 +113,25 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     std::size_t manoeuvreSlots = 0;
     std::size_t operationalMain = 0;
     std::size_t operationalManoeuvre = 0;
+    double mainThrustSum01 = 0.0;
+    double mainVectoringSum01 = 0.0;
+    double manoeuvreThrustSum01 = 0.0;
 
     for (std::size_t i = 0; i < definition.size(); ++i)
     {
         if (definition[i].role == EngineSlotRole::AftMain)
         {
             ++mainSlots;
-            if (state[i].operational)
+            mainThrustSum01 += effectiveSlotThrust01(state[i]);
+            mainVectoringSum01 += effectiveSlotVectoring01(state[i]);
+            if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalMain;
         }
         else if (definition[i].role == EngineSlotRole::ManoeuvreCluster)
         {
             ++manoeuvreSlots;
-            if (state[i].operational)
+            manoeuvreThrustSum01 += effectiveSlotThrust01(state[i]);
+            if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalManoeuvre;
         }
     }
@@ -135,9 +141,18 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     out.operationalMainSlots = operationalMain;
     out.operationalManoeuvreSlots = operationalManoeuvre;
 
-    const double mainFraction = fraction(operationalMain, mainSlots);
+    const double mainFraction =
+        mainSlots > 0
+            ? mainThrustSum01 / static_cast<double>(mainSlots)
+            : 0.0;
+    const double mainVectoringFraction =
+        mainSlots > 0
+            ? mainVectoringSum01 / static_cast<double>(mainSlots)
+            : 0.0;
     const double manoeuvreFraction =
-        fraction(operationalManoeuvre, manoeuvreSlots);
+        manoeuvreSlots > 0
+            ? manoeuvreThrustSum01 / static_cast<double>(manoeuvreSlots)
+            : 0.0;
 
     const double nominalForward =
         game::ship::forwardMainAccelerationLimitMps2(nominalPhysics);
@@ -167,12 +182,12 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     // Newtonian main nozzles are thrust-vectoring as well. Unlike Assisted,
     // this authority is coupled to an aft-main burn rather than being a
     // high-authority independent velocity-control channel.
-    out.poweredMainVectoring.trajectoryStrafe01 = mainFraction;
-    out.poweredMainVectoring.trajectoryLift01 = mainFraction;
-    out.poweredMainVectoring.pitch01 = mainFraction;
-    out.poweredMainVectoring.yaw01 = mainFraction;
+    out.poweredMainVectoring.trajectoryStrafe01 = mainVectoringFraction;
+    out.poweredMainVectoring.trajectoryLift01 = mainVectoringFraction;
+    out.poweredMainVectoring.pitch01 = mainVectoringFraction;
+    out.poweredMainVectoring.yaw01 = mainVectoringFraction;
     out.poweredMainVectoring.roll01 =
-        layout == PropulsionLayout::I ? 0.0 : mainFraction;
+        layout == PropulsionLayout::I ? 0.0 : mainVectoringFraction;
 
     // TVC redirects the main thrust instead of cancelling an opposed bank.
     // Resource accounting later must model the axial/lateral split from the

@@ -100,10 +100,18 @@ Ordinary Newtonian route translation follows these rules:
 - RCS translation is reserved for explicit precision-stop residuals.
 
 The route/planner layer does not command gimbal axes and does not inspect
-`mainGimbal*` controls. The current common planner is unchanged by TVC.
-If Newtonian route optimization later exploits TVC when selecting curvature or
-speed, that logic must be introduced as a Newtonian-specific capability/policy
-behind the planner boundary; it must not alter Assisted execution semantics.
+`mainGimbal*` controls. The geometric planner is unchanged by TVC.
+
+Newtonian execution authority is flight-law-specific:
+`newtonian/NewtonianExecutionAuthority.h` treats the aft main as the owner of
+the complete route acceleration vector after hull/TVC orientation. Sustained
+route-normal acceleration and follower correction MUST NOT be budgeted from
+manoeuvre/RCS authority. RCS remains attitude/precision hardware.
+
+The shared TrajectoryGenerator may consume that Newtonian-specific capability
+snapshot, but Assisted capability and execution semantics must remain
+unchanged. Any future Newtonian-only route optimization must remain behind this
+capability/policy boundary rather than modifying Assisted behavior.
 
 ### Ship / flight law
 

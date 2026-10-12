@@ -1774,6 +1774,10 @@ void SpaceState::updateDockingAdvisory()
         m_dockSafeCourse = {};
         m_clientDockingRouteProgressMeters = 0.0;
         m_clientDockingRouteCurveIndex = 0;
+        m_clientAutopilotCrossTrackMeters = 0.0;
+        m_clientAutopilotCourseErrorRad = 0.0;
+        m_clientAutopilotHullErrorRad = 0.0;
+        m_clientAutopilotTargetSpeedMps = 0.0;
     };
 
     const auto releaseClientAutopilot = [&]()
@@ -3766,6 +3770,10 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice.plan = std::move(job->plan);
         m_clientDockingRouteProgressMeters = 0.0;
         m_clientDockingRouteCurveIndex = 0;
+        m_clientAutopilotCrossTrackMeters = 0.0;
+        m_clientAutopilotCourseErrorRad = 0.0;
+        m_clientAutopilotHullErrorRad = 0.0;
+        m_clientAutopilotTargetSpeedMps = 0.0;
 
         // WORKING ASYNC CONTRACT: expensive route compilation and visual
         // frame-field construction completed in the worker. Main thread only
@@ -3939,6 +3947,14 @@ void SpaceState::updateDockingAdvisory()
         {
             m_clientDockingRouteCurveIndex =
                 output.routeCurveIndex;
+            m_clientAutopilotCrossTrackMeters =
+                output.crossTrackErrorMeters;
+            m_clientAutopilotCourseErrorRad =
+                output.courseErrorRad;
+            m_clientAutopilotHullErrorRad =
+                output.hullForwardErrorRad;
+            m_clientAutopilotTargetSpeedMps =
+                output.targetSpeedMps;
 
             const double routeTotalMeters =
                 m_dockAdvice.plan.routeCurves.empty()
@@ -4085,6 +4101,30 @@ void SpaceState::updateDockingAdvisory()
                     << " lift=" << output.control.liftInput
                     << " speed_rate="
                     << output.control.targetSpeedRate
+                    << " course_err_deg="
+                    << output.courseErrorRad *
+                        57.2957795130823208768
+                    << " hull_err_deg="
+                    << output.hullForwardErrorRad *
+                        57.2957795130823208768
+                    << " gimbal_cmd_r="
+                    << output.control.mainGimbalRightInput
+                    << " gimbal_cmd_u="
+                    << output.control.mainGimbalUpInput
+                    << " main_a_mps2="
+                    << glm::length(
+                        motion.mainEngineAccelerationMps2
+                    )
+                    << " rcs_a_mps2="
+                    << glm::length(
+                        motion.manoeuvreAccelerationMps2
+                    )
+                    << " gimbal_yaw_deg="
+                    << motion.mainGimbalYawRad *
+                        57.2957795130823208768
+                    << " gimbal_pitch_deg="
+                    << motion.mainGimbalPitchRad *
+                        57.2957795130823208768
                     << std::endl;
             }
         }
@@ -4512,6 +4552,14 @@ void SpaceState::update(float dt)
             m_clientDockingRouteProgressMeters;
         obs.speedProfileRevision =
             m_clientRouteAutopilot.speedProfileRevision;
+        obs.crossTrackMeters =
+            m_clientAutopilotCrossTrackMeters;
+        obs.courseErrorRad =
+            m_clientAutopilotCourseErrorRad;
+        obs.hullErrorRad =
+            m_clientAutopilotHullErrorRad;
+        obs.targetSpeedMps =
+            m_clientAutopilotTargetSpeedMps;
 
         const auto stressPlayerIt =
             m_client->world().ships().find(m_playerId.value);
@@ -4529,6 +4577,22 @@ void SpaceState::update(float dt)
                     stressTransform.yawRate * stressTransform.yawRate +
                     stressTransform.rollRate * stressTransform.rollRate
                 );
+            obs.mainAccelerationMps2 =
+                glm::length(
+                    stressTransform.motion.mainEngineAccelerationMps2
+                );
+            obs.manoeuvreAccelerationMps2 =
+                glm::length(
+                    stressTransform.motion.manoeuvreAccelerationMps2
+                );
+            obs.gimbalRightCommand01 =
+                stressTransform.motion.mainGimbalRightCommand01;
+            obs.gimbalUpCommand01 =
+                stressTransform.motion.mainGimbalUpCommand01;
+            obs.gimbalYawRad =
+                stressTransform.motion.mainGimbalYawRad;
+            obs.gimbalPitchRad =
+                stressTransform.motion.mainGimbalPitchRad;
         }
 
         obs.routeValid = m_dockAdvice.plan.valid();

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
+
 #include <glm/glm.hpp>
 
 #include "src/game/ship/core/ShipControlState.h"
@@ -7,6 +10,16 @@
 
 namespace game::navigation::autopilot
 {
+
+inline constexpr std::size_t AutopilotPreviewCapacity = 8;
+
+struct AutopilotReferencePreviewSample
+{
+    // Relative to the current control instant.
+    double timeOffsetSeconds = 0.0;
+    glm::dvec3 desiredVelocityMapMps {0.0};
+    glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
+};
 
 // Hard boundary between route guidance and a flight-law-specific virtual pilot.
 //
@@ -17,6 +30,15 @@ struct AutopilotControlRequest
 {
     glm::dvec3 desiredVelocityMapMps {0.0};
     glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
+
+    // Law-neutral future reference preview. Assisted is free to ignore it.
+    // Newtonian optimal control uses it to price future braking/turning before
+    // the current station reaches that constraint.
+    std::array<
+        AutopilotReferencePreviewSample,
+        AutopilotPreviewCapacity
+    > preview {};
+    std::size_t previewCount = 0;
 
     // Angular rate of the desired NAVIGATION course. A concrete pilot may use
     // it only when that is meaningful for its actuator doctrine.

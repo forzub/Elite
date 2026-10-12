@@ -19,6 +19,7 @@ SERVER = read("src/game/server/GameServer.cpp")
 SIM = read("src/game/simulation/GameSimulation.cpp")
 MOTION = read("src/game/navigation/DynamicMotionSystem.cpp")
 SHARED = read("src/game/shared/SharedShipPhysics.cpp")
+GATEWAY = read("src/game/ship/control/ShipControlExecutionGateway.cpp")
 TEST_CMAKE = read("tests/navigation_runtime/CMakeLists.txt")
 CLIENT_TEST = read("tests/navigation_runtime/ClientRouteAutopilotTests.cpp")
 
@@ -90,8 +91,12 @@ for marker in ("control.pitchInput", "control.yawInput", "control.rollInput"):
 
 require("applyLocalFrameInput(" in MOTION,
         "ordinary local-frame flight law entry point missing")
-require("applyLocalFrameInput(" in SIM,
-        "GameSimulation no longer applies ordinary local-frame controls")
+require("DynamicMotionSystem::applyLocalFrameInput(" in GATEWAY,
+        "ship control gateway no longer owns ordinary local-frame controls")
+require("shipPtr->updateTranslationControl(motionControlDt)" in SIM,
+        "GameSimulation no longer delegates ordinary controls to ship gateway")
+require("DynamicMotionSystem::applyLocalFrameInput(" not in SIM,
+        "GameSimulation bypassed ship control gateway")
 
 for marker in (
     "testClientAutopilotEmitsOrdinaryControls",
@@ -107,5 +112,5 @@ require("client_route_autopilot_tests" in TEST_CMAKE,
 print("NAVIGATION LIVE RUNTIME CONTROL CONTRACT: PASS")
 print(" - client owns Planner/Follower/PredictivePilot execution")
 print(" - virtual pilot emits the same ShipControlState surface as Human input")
-print(" - server is navigation-blind and applies ordinary numbered controls only")
+print(" - server is navigation-blind and applies ordinary numbered controls through ShipControlExecutionGateway")
 print(" - V2 follows the authored centerline without a private look-ahead route")

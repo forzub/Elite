@@ -261,6 +261,15 @@ public:
             game::ship::forwardMainAccelerationLimitMps2(params);
         out.brakingResponseMps2 =
             game::ship::forwardMainAccelerationLimitMps2(params);
+        out.commandResponsePerSecond =
+            std::max(
+                1.0e-6,
+                static_cast<double>(params.throttleAccel) > 0.0
+                    ? static_cast<double>(params.throttleAccel)
+                    : static_cast<double>(
+                        params.fallbackThrottleResponsePerSecond
+                      )
+            );
         return out;
     }
 

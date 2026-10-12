@@ -315,6 +315,7 @@ for forbidden in (
     if forbidden in simulation:
         fail(f"GameSimulation regained control-law interpretation: {forbidden}")
 
+gateway_compact = "".join((gateway_h + gateway).split())
 for token in (
     "selectTranslationPath(",
     "evaluateAttitudeControl(",
@@ -325,7 +326,7 @@ for token in (
     "DynamicMotionSystem::applySystemAccelerationDemand(",
     "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
 ):
-    if token not in (gateway_h + gateway):
+    if "".join(token.split()) not in gateway_compact:
         fail(f"ship control execution gateway lost contract: {token}")
 
 if "DynamicMotionSystem::" in prediction:

@@ -539,26 +539,18 @@ RoutePlan RouteEntryBinder::bind(
             200.0
         );
 
-    // The rebound connector must be optimized for the state that will
-    // actually cross into the immutable tail. Treating the anchor as a stop
-    // makes terminal curvature artificially cheap and packs the turn against
-    // BLUE. Preserve both the handoff speed and enough aligned approach to
-    // finish the turn before the semantic boundary.
+    // The connector must arrive at the immutable tail with the real handoff
+    // speed and tangent. The tail already owns its protected semantic straight
+    // (for BLUE this is the authored capture axis). Do not prepend a second
+    // braking straight derived from route max speed: the continuous speed
+    // profile already brakes wherever the actual geometry requires it.
     entryRequest.terminalSpeedMps =
         std::clamp(
             backbone.handoffSpeedMps,
             0.0,
             std::max(0.0, liveRequest.maxSpeedMps)
         );
-    entryRequest.terminalApproachLengthMeters =
-        game::navigation::OrdinaryRoutePolicy::
-            requiredTerminalApproachMeters(
-                liveRequest.maxSpeedMps,
-                entryRequest.terminalSpeedMps,
-                liveRequest.brakingMps2,
-                entryRequest.terminalReferenceDistanceMeters,
-                liveRequest.vehicleLengthMeters
-            );
+    entryRequest.terminalApproachLengthMeters = 0.0;
     entryRequest.requiredViaPointsMeters.clear();
     entryRequest.mandatoryTangentStraights.clear();
 

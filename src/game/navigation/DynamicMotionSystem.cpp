@@ -63,22 +63,6 @@ inline glm::dvec3 clampSecondaryToTotalAccelerationEnvelope(
     return secondary * fraction;
 }
 
-inline double moveToward(
-    double current,
-    double target,
-    double maximumDelta
-)
-{
-    if (maximumDelta <= 0.0)
-        return current;
-
-    const double delta = target - current;
-    if (std::abs(delta) <= maximumDelta)
-        return target;
-
-    return current + std::copysign(maximumDelta, delta);
-}
-
 inline glm::dvec3 updateNewtonianMainGimbal(
     DynamicMotionState& motion,
     const ShipParams& params,
@@ -118,18 +102,30 @@ inline glm::dvec3 updateNewtonianMainGimbal(
     const double targetPitch = upCommand * pitchLimit;
     const double maxStep = slew * std::max(0.0, dt);
 
-    motion.mainGimbalYawRad =
-        moveToward(
-            motion.mainGimbalYawRad,
-            targetYaw,
-            maxStep
+    // Slew is a resultant nozzle-axis rate, not an independent free rate on
+    // both servos. This prevents a diagonal pitch+yaw move from exceeding the
+    // physical angular speed by sqrt(2).
+    double deltaYaw =
+        targetYaw - motion.mainGimbalYawRad;
+    double deltaPitch =
+        targetPitch - motion.mainGimbalPitchRad;
+    const double deltaLength =
+        std::sqrt(
+            deltaYaw * deltaYaw +
+            deltaPitch * deltaPitch
         );
-    motion.mainGimbalPitchRad =
-        moveToward(
-            motion.mainGimbalPitchRad,
-            targetPitch,
-            maxStep
-        );
+
+    if (deltaLength <= maxStep || deltaLength <= 1.0e-15)
+    {
+        motion.mainGimbalYawRad = targetYaw;
+        motion.mainGimbalPitchRad = targetPitch;
+    }
+    else if (maxStep > 0.0)
+    {
+        const double scale = maxStep / deltaLength;
+        motion.mainGimbalYawRad += deltaYaw * scale;
+        motion.mainGimbalPitchRad += deltaPitch * scale;
+    }
 
     if (yawLimit <= 1.0e-12 && pitchLimit <= 1.0e-12)
         return forward;

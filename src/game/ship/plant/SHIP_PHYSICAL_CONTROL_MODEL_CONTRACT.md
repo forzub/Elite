@@ -109,7 +109,10 @@ The first implementation deliberately works in kinematic authority rather than
 engineering detail.
 
 Each topology owns a fixed set of semantic actuator slots and normalized lever
-positions. Slot state is currently binary: operational or unavailable.
+positions. Runtime slot state is deliberately small: operational flag plus
+`thrust01` and `vectoring01`. Module health currently feeds both fractions;
+resource/thermal constraints may multiply them later without changing the
+capability boundary.
 
 The model derives:
 

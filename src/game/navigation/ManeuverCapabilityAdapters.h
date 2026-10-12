@@ -6,6 +6,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/navigation/newtonian/NewtonianExecutionAuthority.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
 
@@ -27,6 +28,36 @@ makeManeuverExecutionAuthority(
     double executionFraction = 0.90
 ) noexcept
 {
+    const double fraction =
+        std::clamp(executionFraction, 0.0, 1.0);
+
+    if (law == LocalFlightControlLaw::Newtonian)
+    {
+        const auto newtonian =
+            game::navigation::newtonian::makeExecutionAuthority(
+                params,
+                fraction
+            );
+
+        ManeuverExecutionAuthority out;
+        out.feedbackReserveMps2 =
+            newtonian.feedbackReserveMps2;
+
+        // The route acceleration vector is supplied by the aft main after the
+        // hull/TVC solver orients the thrust axis. "Lateral" here is therefore
+        // path-normal acceleration authority, not a body-axis RCS channel.
+        out.forwardAccelerationMps2 =
+            newtonian.plannedVectorAccelerationMps2;
+        out.brakingAccelerationMps2 =
+            newtonian.plannedVectorAccelerationMps2;
+        out.lateralAccelerationMps2 =
+            newtonian.plannedVectorAccelerationMps2;
+        return out;
+    }
+
+    // Assisted keeps its existing independent longitudinal-main and automatic
+    // lateral-stabilization envelopes. Nothing in the Newtonian authority
+    // calculation is allowed to alter this path.
     const double forward =
         std::max(
             0.0,
@@ -38,40 +69,25 @@ makeManeuverExecutionAuthority(
             game::ship::reverseMainAccelerationLimitMps2(params)
         );
     const double lateral =
-        law == LocalFlightControlLaw::Assisted
-            ? std::max(
-                0.0,
-                game::ship::
-                    assistedLateralStabilizationAccelerationLimitMps2(params)
-              )
-            : std::max(
-                0.0,
-                game::ship::manoeuvreAccelerationLimitMps2(params)
-              );
-
-    // Longitudinal braking and lateral course authority are distinct physical
-    // channels. Assisted must never spend lateral stabilization as extra
-    // reverse-main braking authority.
-    const double braking =
-        law == LocalFlightControlLaw::Assisted
-            ? reverse
-            : forward;
+        std::max(
+            0.0,
+            game::ship::
+                assistedLateralStabilizationAccelerationLimitMps2(params)
+        );
 
     const double reserve =
         DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
             forward,
-            braking,
+            reverse,
             lateral
         );
-    const double fraction =
-        std::clamp(executionFraction, 0.0, 1.0);
 
     ManeuverExecutionAuthority out;
     out.feedbackReserveMps2 = reserve;
     out.forwardAccelerationMps2 =
         std::max(0.1, (forward - reserve) * fraction);
     out.brakingAccelerationMps2 =
-        std::max(0.1, (braking - reserve) * fraction);
+        std::max(0.1, (reverse - reserve) * fraction);
     out.lateralAccelerationMps2 =
         std::max(0.1, (lateral - reserve) * fraction);
     return out;

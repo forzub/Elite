@@ -645,12 +645,12 @@ public:
             const double kappa = speedGuide.curvaturePerMeter;
             const double radius = 1.0 / kappa;
 
-            // During one Assisted course-response time, the authored curve
+            // During one closed-loop course-response time, the authored curve
             // bends away from its tangent by the sagitta below. Bound that
             // one-response deviation by the already-authoritative corridor
             // tracking tolerance. This yields a speed limit from route
-            // geometry and measured course lag, not from a tuned corner-speed
-            // percentage.
+            // geometry and measured controller lag, not from a law-specific
+            // corner-speed percentage.
             const double corridorTolerance =
                 std::max(
                     0.0,
@@ -714,11 +714,7 @@ public:
                 const double longitudinalResponseGain =
                     std::max(
                         1.0e-6,
-                        static_cast<double>(params.throttleAccel) > 0.0
-                            ? static_cast<double>(params.throttleAccel)
-                            : static_cast<double>(
-                                params.fallbackThrottleResponsePerSecond
-                              )
+                        pilotTelemetry.commandResponsePerSecond
                     );
                 const double feedbackResponseSeconds =
                     1.0 / longitudinalResponseGain + deltaSeconds;
@@ -1029,15 +1025,14 @@ public:
         const double courseLeadDistanceMeters =
             attitudeLeadDistanceMeters;
 
-        // Terminal stop uses a conservative *measured* braking envelope.
-        // Ordinary Assisted speed following has a first-order controller and a
-        // slew-limited speed setpoint; BrakeToStop bypasses that setpoint and
-        // owns the full reverse-main envelope. Enter BrakeToStop before the
-        // ideal v^2/(2a) boundary by subtracting the controller response
-        // distance from the usable route length.
+        // Terminal stop uses a conservative physical braking envelope.
+        // A concrete law may have command/setpoint dynamics before full
+        // braking authority is realized. Enter explicit stopping behavior
+        // before the ideal v^2/(2a) boundary by subtracting the controller
+        // response distance from the usable route length.
         // Braking authority is a physical vehicle capability.
-        // The learned Assisted response estimate describes controller
-        // dynamics/latency only; it must never replace the craft's actual
+        // Controller response telemetry describes dynamics/latency only; it
+        // must never replace the craft's actual
         // braking envelope. Doing so can collapse a valid ~45 m/s^2 authority
         // into a tiny transient estimate (for example ~0.01 m/s^2) and make
         // terminal-speed planning throttle an otherwise valid route down to
@@ -1057,11 +1052,7 @@ public:
         const double longitudinalResponseGain =
             std::max(
                 1.0e-6,
-                static_cast<double>(params.throttleAccel) > 0.0
-                    ? static_cast<double>(params.throttleAccel)
-                    : static_cast<double>(
-                        params.fallbackThrottleResponsePerSecond
-                      )
+                pilotTelemetry.commandResponsePerSecond
             );
         const double controllerResponseSeconds =
             1.0 / longitudinalResponseGain + deltaSeconds;

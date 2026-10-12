@@ -70,6 +70,13 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.reverseMainEngineAvailable = true;
         desc.physics.forwardMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
         desc.physics.reverseMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
+
+        // Main-nozzle TVC hardware used by the Newtonian proving variants.
+        // 7 deg travel with 8 deg/s slew is intentionally modest; Assisted
+        // currently ignores this explicit gimbal channel.
+        desc.physics.mainGimbalPitchLimitRad = 0.122173048f; // 7 deg
+        desc.physics.mainGimbalYawLimitRad = 0.122173048f;   // 7 deg
+        desc.physics.mainGimbalRateRadPerSec = 0.139626340f; // 8 deg/s
         
         desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
         

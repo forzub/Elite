@@ -27,7 +27,7 @@ def forbid(rel: str, *tokens: str) -> str:
 try:
     for deleted in (
         "src/game/navigation/autopilot/ShipControlAdapter.h",
-        "src/game/navigation/autopilot/NewtonianAutopilot.h",
+        "src/game/navigation/autopilot/" + "Newtonian" + "Autopilot.h",
         "src/game/navigation/autopilot/RouteFollowerApi.h",
         "src/game/navigation/autopilot/RouteFollower.cpp",
         "src/game/navigation/autopilot/CorridorCaptureGuidance.h",

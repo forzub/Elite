@@ -102,6 +102,9 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     std::size_t foreSlots = 0;
     std::size_t operationalAft = 0;
     std::size_t operationalFore = 0;
+    double aftThrustSum01 = 0.0;
+    double foreThrustSum01 = 0.0;
+    double vectoringSum01 = 0.0;
 
     for (std::size_t i = 0; i < definition.size(); ++i)
     {
@@ -109,13 +112,17 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
         if (role == EngineSlotRole::AftMain)
         {
             ++aftSlots;
-            if (state[i].operational)
+            aftThrustSum01 += effectiveSlotThrust01(state[i]);
+            vectoringSum01 += effectiveSlotVectoring01(state[i]);
+            if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalAft;
         }
         else if (role == EngineSlotRole::ForeMain)
         {
             ++foreSlots;
-            if (state[i].operational)
+            foreThrustSum01 += effectiveSlotThrust01(state[i]);
+            vectoringSum01 += effectiveSlotVectoring01(state[i]);
+            if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalFore;
         }
     }
@@ -123,10 +130,14 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     out.mainSlots = aftSlots + foreSlots;
     out.operationalMainSlots = operationalAft + operationalFore;
 
-    const double aftFraction = fraction(operationalAft, aftSlots);
-    const double foreFraction = fraction(operationalFore, foreSlots);
+    const double aftFraction =
+        aftSlots > 0 ? aftThrustSum01 / static_cast<double>(aftSlots) : 0.0;
+    const double foreFraction =
+        foreSlots > 0 ? foreThrustSum01 / static_cast<double>(foreSlots) : 0.0;
     const double vectoringFraction =
-        fraction(out.operationalMainSlots, out.mainSlots);
+        out.mainSlots > 0
+            ? vectoringSum01 / static_cast<double>(out.mainSlots)
+            : 0.0;
 
     out.authority.longitudinal.positive =
         nominalPhysics.forwardMainEngineAvailable ? aftFraction : 0.0;

@@ -154,6 +154,42 @@ void testLawStateIsIsolated()
     );
 }
 
+void testNewtonianCanAcquireLaunchAttitudeAtRest()
+{
+    AutopilotLawController controller;
+    const auto vehicle = params();
+
+    auto request = baseRequest();
+    request.actualVelocityMapMps = {0.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {0.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {0.0, 0.0, 0.0};
+
+    // Safe-course/startup orchestration may require hull attitude acquisition
+    // before any translational command exists.
+    request.desiredForwardMap = {0.0, 0.0, 1.0};
+
+    const auto control = controller.update(
+        LocalFlightControlLaw::Newtonian,
+        request,
+        vehicle
+    );
+
+    require(
+        std::abs(control.pitchInput) + std::abs(control.yawInput) > 1.0e-6f,
+        "Newtonian deadlocked at rest instead of acquiring launch attitude"
+    );
+    require(
+        std::abs(control.targetSpeedRate) < 1.0e-6f,
+        "Newtonian lit the main engine during attitude-only launch acquisition"
+    );
+    require(
+        std::abs(control.forwardInput) < 1.0e-6f &&
+        std::abs(control.strafeInput) < 1.0e-6f &&
+        std::abs(control.liftInput) < 1.0e-6f,
+        "Newtonian used translation RCS during attitude-only launch acquisition"
+    );
+}
+
 void testNewtonianTurnsMainAxisBeforeBurn()
 {
     AutopilotLawController controller;
@@ -294,6 +330,7 @@ int main()
     {
         testRouteLayerCannotSeeConcretePilots();
         testLawStateIsIsolated();
+        testNewtonianCanAcquireLaunchAttitudeAtRest();
         testNewtonianTurnsMainAxisBeforeBurn();
         testNewtonianArcAccelerationUsesMainAxis();
         testPrecisionStopMayUseRcs();
@@ -304,6 +341,7 @@ int main()
             << " - route layer cannot see concrete pilot modules\n"
             << " - Assisted/Newtonian share one request/command API\n"
             << " - concrete controller state is isolated per law\n"
+            << " - Newtonian can acquire launch attitude from rest without thrust\n"
             << " - Newtonian ordinary delta-v is main-engine owned\n"
             << " - Newtonian RCS translation is precision-stop only\n";
         return EXIT_SUCCESS;

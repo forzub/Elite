@@ -92,6 +92,65 @@ try:
         ),
     )
 
+    # The continuous Assisted optimizer is an implementation detail of the
+    # generic RoutePlanner. No orchestration, traffic, follower or presentation
+    # code may bind to it directly.
+    internal_optimizer_include = (
+        '#include "src/game/navigation/planner/assisted/lab/'
+        'ContinuousAssistedPathOptimizer.h"'
+    )
+    navigation_root = ROOT / "src/game/navigation"
+    for path in navigation_root.rglob("*"):
+        if path.suffix not in (".h", ".cpp"):
+            continue
+        rel = str(path.relative_to(ROOT)).replace("\\", "/")
+        if rel in (
+            "src/game/navigation/planner/RoutePlanner.cpp",
+            "src/game/navigation/planner/assisted/lab/"
+            "ContinuousAssistedPathOptimizer.cpp",
+        ):
+            continue
+        body = path.read_text(encoding="utf-8", errors="replace")
+        if internal_optimizer_include in body:
+            raise AssertionError(
+                f"{rel}: bypasses RoutePlanner and includes internal optimizer"
+            )
+
+    space_for_internal = read("src/game/SpaceState.cpp")
+    if internal_optimizer_include in space_for_internal:
+        raise AssertionError(
+            "SpaceState bypasses RoutePlanner and includes internal optimizer"
+        )
+
+    # Pure route calculations receive state only through explicit value APIs.
+    # Direct diagnostics, clocks, filesystem/config access or concrete vehicle
+    # selection belong to orchestration/debug boundaries.
+    for rel in (
+        "src/game/navigation/planner/RoutePlanner.cpp",
+        "src/game/navigation/planner/RouteEntryBinder.cpp",
+        "src/game/navigation/planner/assisted/lab/"
+        "ContinuousAssistedPathOptimizer.cpp",
+        "src/game/navigation/traffic/SegmentedRouteComposer.cpp",
+    ):
+        body = read(rel)
+        forbid(
+            body,
+            rel,
+            (
+                "std::cout",
+                "std::cerr",
+                "std::chrono",
+                "std::filesystem",
+                "std::ifstream",
+                "std::ofstream",
+                "getenv(",
+                "ShipDescriptor",
+                "SpaceState",
+                "SystemMapRenderer",
+                "ClientHudPresentation",
+            ),
+        )
+
     # Follower/autopilot may consume only generic route contracts.
     autopilot_dir = ROOT / "src/game/navigation/autopilot"
     for path in autopilot_dir.glob("*"):
@@ -180,6 +239,8 @@ try:
     print("[PASS] navigation route module boundaries")
     print(" - traffic semantics terminate at TrafficRoutePlanAdapter")
     print(" - SegmentedRouteComposer owns geometry only and performs no direct I/O")
+    print(" - continuous Assisted optimizer is private to RoutePlanner")
+    print(" - route calculation modules have no ambient I/O/time/descriptor dependency")
     print(" - generic planner backend has no traffic dependency")
     print(" - autopilot/follower has no traffic or stage-semantic dependency")
     print(" - SpaceState is composition-only for route stage assembly")

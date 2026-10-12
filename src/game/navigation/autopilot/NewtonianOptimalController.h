@@ -72,10 +72,31 @@ public:
         }
 
         state_.secondsUntilOptimize -= dt;
-        const bool forceOptimize =
+        bool forceOptimize =
             !state_.initialized ||
             request.stopRequested != state_.lastStopRequested ||
             request.terminalAttitudeHold;
+
+        // An orient-only optimum is deliberately allowed to start a flip
+        // before braking is due. As soon as that orientation has been reached,
+        // re-solve immediately instead of idling until the 100 ms MPC period
+        // expires.
+        if (state_.action.valid &&
+            state_.action.throttle01 <= 1.0e-6 &&
+            finiteLength(request.desiredLinearAccelerationMapMps2) >
+                1.0e-6)
+        {
+            const double alignment =
+                glm::dot(
+                    forward,
+                    normalizedOr(
+                        state_.action.targetThrustDirectionMap,
+                        forward
+                    )
+                );
+            if (alignment > 0.995)
+                forceOptimize = true;
+        }
 
         if (forceOptimize || state_.secondsUntilOptimize <= 0.0)
         {

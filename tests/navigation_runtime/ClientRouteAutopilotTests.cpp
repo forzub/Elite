@@ -2336,7 +2336,7 @@ void testAssistedSpeedControlUsesTrueSpeedDuringTurn()
     );
 }
 
-void testPredictivePilotBrakesAngularRateBeforeTarget()
+void testAssistedAutopilotBrakesAngularRateBeforeTarget()
 {
     using Pilot =
         game::navigation::autopilot::AssistedAutopilot;
@@ -2355,7 +2355,7 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
         pilot.update(request, params());
     require(
         std::abs(accelerate.yawInput) > 1.0e-6,
-        "predictive pilot did not begin yaw toward target"
+        "Assisted autopilot did not begin yaw toward target"
     );
 
     const double turnSign =
@@ -2370,11 +2370,11 @@ void testPredictivePilotBrakesAngularRateBeforeTarget()
 
     require(
         static_cast<double>(brake.yawInput) * turnSign < -1.0e-6,
-        "predictive pilot waited for angular overshoot before braking"
+        "Assisted autopilot waited for angular overshoot before braking"
     );
 }
 
-void testPredictivePilotCapturesTurnsWithoutOvershoot()
+void testAssistedAutopilotCapturesTurnsWithoutOvershoot()
 {
     using Pilot =
         game::navigation::autopilot::AssistedAutopilot;
@@ -2471,11 +2471,11 @@ void testPredictivePilotCapturesTurnsWithoutOvershoot()
 
             require(
                 std::abs(finalDegrees - targetDegrees) < 0.25,
-                "predictive pilot failed to settle on commanded turn angle"
+                "Assisted autopilot failed to settle on commanded turn angle"
             );
             require(
                 overshootDegrees < 0.25,
-                "predictive pilot overshot commanded turn angle"
+                "Assisted autopilot overshot commanded turn angle"
             );
         };
 
@@ -2654,8 +2654,8 @@ int main()
         testCheckpointReanchorPreservesFutureBrakingConstraint();
         testMissedGateAdvancesToFutureRouteWithoutReturn();
         testAssistedSpeedControlUsesTrueSpeedDuringTurn();
-        testPredictivePilotBrakesAngularRateBeforeTarget();
-        testPredictivePilotCapturesTurnsWithoutOvershoot();
+        testAssistedAutopilotBrakesAngularRateBeforeTarget();
+        testAssistedAutopilotCapturesTurnsWithoutOvershoot();
         testClientAutopilotUsesDockUpReferenceForRoll();
         testHullAttitudeControlIsNotSlowedByCourseLag();
         testClientStabilizerUsesOrdinaryControls();

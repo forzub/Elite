@@ -60,6 +60,20 @@ public:
         double routeProgressMeters = 0.0;
         std::size_t routeCurveCount = 0;
 
+        // Live follower/actuator diagnostics. These let the physical matrix
+        // distinguish a guidance failure from a control/actuator plumbing
+        // failure without changing production behavior.
+        double crossTrackMeters = 0.0;
+        double courseErrorRad = 0.0;
+        double hullErrorRad = 0.0;
+        double targetSpeedMps = 0.0;
+        double mainAccelerationMps2 = 0.0;
+        double manoeuvreAccelerationMps2 = 0.0;
+        double gimbalRightCommand01 = 0.0;
+        double gimbalUpCommand01 = 0.0;
+        double gimbalYawRad = 0.0;
+        double gimbalPitchRad = 0.0;
+
         // Semantic BLUE proving state from RoutePlan::stages.
         bool blueStagePresent = false;
         bool blueHardContainment = false;
@@ -569,6 +583,20 @@ private:
             << " job_permille=" << o.jobPermille
             << " route_valid=" << (o.routeValid ? 1 : 0)
             << " route_progress_m=" << o.routeProgressMeters
+            << " cross_track_m=" << o.crossTrackMeters
+            << " course_err_deg="
+            << o.courseErrorRad * 57.2957795130823208768
+            << " hull_err_deg="
+            << o.hullErrorRad * 57.2957795130823208768
+            << " target_speed_mps=" << o.targetSpeedMps
+            << " main_a_mps2=" << o.mainAccelerationMps2
+            << " rcs_a_mps2=" << o.manoeuvreAccelerationMps2
+            << " gimbal_cmd_r=" << o.gimbalRightCommand01
+            << " gimbal_cmd_u=" << o.gimbalUpCommand01
+            << " gimbal_yaw_deg="
+            << o.gimbalYawRad * 57.2957795130823208768
+            << " gimbal_pitch_deg="
+            << o.gimbalPitchRad * 57.2957795130823208768
             << " blue_stage=" << (o.blueStagePresent ? 1 : 0)
             << " blue_hard=" << (o.blueHardContainment ? 1 : 0)
             << " blue_phase=" << o.bluePhase

@@ -1231,6 +1231,93 @@ public:
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
 
+        if (law == LocalFlightControlLaw::Newtonian &&
+            !state.continuousSamples.empty() &&
+            state.continuousProgressMeters.size() ==
+                state.continuousSamples.size())
+        {
+            constexpr double HorizonSeconds = 6.0;
+            const double previewSpeed =
+                std::max(
+                    20.0,
+                    std::max(actualSpeed, targetSpeed)
+                );
+            const double remaining =
+                std::max(
+                    0.0,
+                    state.continuousProgressMeters.back() -
+                        routeProgressMeters
+                );
+            const double horizonDistance =
+                std::min(
+                    remaining,
+                    previewSpeed * HorizonSeconds
+                );
+
+            double previousProgress = routeProgressMeters;
+            double previousSpeed = std::max(actualSpeed, 1.0);
+            double accumulatedTime = 0.0;
+
+            for (std::size_t i = 0;
+                 i < AutopilotPreviewCapacity &&
+                 horizonDistance > 1.0e-6;
+                 ++i)
+            {
+                const double fraction =
+                    static_cast<double>(i + 1) /
+                    static_cast<double>(AutopilotPreviewCapacity);
+                const double previewProgress =
+                    routeProgressMeters +
+                    horizonDistance * fraction;
+
+                auto previewReference =
+                    sampleContinuousReferenceAtProgress(
+                        state.continuousSamples,
+                        state.continuousProgressMeters,
+                        previewProgress
+                    );
+                if (!previewReference.valid)
+                    break;
+
+                applyRuntimeProfile(
+                    state.runtimeSpeedProfileMps,
+                    state.runtimeLongitudinalAccelerationMps2,
+                    law,
+                    previewReference
+                );
+
+                const double sampleSpeed =
+                    glm::length(
+                        previewReference.reference.
+                            velocityMapMetersPerSecond
+                    );
+                const double ds =
+                    std::max(
+                        0.0,
+                        previewProgress - previousProgress
+                    );
+                const double averageSpeed =
+                    std::max(
+                        1.0,
+                        0.5 * (previousSpeed + sampleSpeed)
+                    );
+                accumulatedTime += ds / averageSpeed;
+
+                auto& sample =
+                    request.preview[request.previewCount++];
+                sample.timeOffsetSeconds = accumulatedTime;
+                sample.desiredVelocityMapMps =
+                    previewReference.reference.
+                        velocityMapMetersPerSecond;
+                sample.desiredLinearAccelerationMapMps2 =
+                    previewReference.reference.
+                        linearAccelerationFeedForwardMapMps2;
+
+                previousProgress = previewProgress;
+                previousSpeed = std::max(sampleSpeed, 1.0);
+            }
+        }
+
         double actualCourseAngularRateRadPerSec = 0.0;
         const double previousCourseSpeed =
             glm::length(pilotTelemetry.previousVelocityMapMps);

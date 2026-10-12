@@ -1,3 +1,4 @@
+#include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
 
@@ -294,6 +295,24 @@ int main()
                 maxCurvature <=
                     1.0 / requiredRadius + 1.0e-6,
                 "continuous Assisted production bridge violated v^2/a radius"
+            );
+
+            const double tunnelSafeRadius =
+                game::navigation::OrdinaryRoutePolicy::
+                    requiredGuidanceTunnelRadiusMeters(
+                        continuous.gateSpacingMeters,
+                        continuous.vehicleLengthMeters
+                    );
+            require(
+                maxCurvature <=
+                    1.0 / tunnelSafeRadius + 1.0e-6,
+                "continuous Assisted route violated HUD tunnel turn readability"
+            );
+            require(
+                optimized.diagnosticSummary.find(
+                    "tunnel_radius_floor_m="
+                ) != std::string::npos,
+                "continuous Assisted route did not expose tunnel radius floor"
             );
 
             requireNear(

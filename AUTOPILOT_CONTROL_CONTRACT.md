@@ -108,6 +108,12 @@ the complete route acceleration vector after hull/TVC orientation. Sustained
 route-normal acceleration and follower correction MUST NOT be budgeted from
 manoeuvre/RCS authority. RCS remains attitude/precision hardware.
 
+Runtime speed-profile updates own only the longitudinal component of the
+reference acceleration. They MUST preserve Newtonian authored path-normal
+(curvature/centripetal) feed-forward. A soft SpatialCorridor tracking-envelope
+excursion must not erase Newtonian main-vector feed-forward; doing so removes
+the very authority required to recover the velocity vector.
+
 The shared TrajectoryGenerator may consume that Newtonian-specific capability
 snapshot, but Assisted capability and execution semantics must remain
 unchanged. Any future Newtonian-only route optimization must remain behind this

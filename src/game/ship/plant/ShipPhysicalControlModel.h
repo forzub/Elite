@@ -80,11 +80,11 @@ struct EngineSlotDefinition
     // Dimensionless functional placement. It is NOT CAD geometry.
     // Values describe only the sign and relative lever arm needed by the
     // simplified flight model.
-    glm::dvec3 normalizedPositionBody {0.0};
+    glm::dvec3 normalizedPositionBody {0.0, 0.0, 0.0};
 
     // Force direction at neutral gimbal. Manoeuvre clusters are omnidirectional
     // and therefore use {0,0,0}.
-    glm::dvec3 nominalForceDirectionBody {0.0};
+    glm::dvec3 nominalForceDirectionBody {0.0, 0.0, 0.0};
 
     EngineSlotFreedom freedom = EngineSlotFreedom::FixedAxis;
 };

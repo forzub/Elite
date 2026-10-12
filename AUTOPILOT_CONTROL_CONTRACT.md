@@ -89,18 +89,32 @@ ordinary pilot-control surface.
 Ordinary Newtonian route translation follows these rules:
 
 - meaningful delta-v belongs to the main engine;
-- hull attitude follows the demanded acceleration/main-thrust direction;
-- braking therefore becomes turn-and-burn;
-- on a curved path the hull may point toward the curvature-acceleration vector
-  rather than along the velocity vector;
-- translational RCS must not substitute for an unaligned main engine;
+- bounded main-nozzle TVC may absorb the part of acceleration-direction error
+  that fits inside the installed physical gimbal envelope;
+- the hull rotates only the TVC-unserved remainder of the acceleration-angle
+  error;
+- nozzle travel and nozzle slew are physical limits from `ShipParams`, not
+  route/planner tuning constants;
+- braking therefore remains turn-and-burn;
+- translational RCS must not substitute for main thrust or TVC;
 - RCS translation is reserved for explicit precision-stop residuals.
+
+The route/planner layer does not command gimbal axes and does not inspect
+`mainGimbal*` controls. The current common planner is unchanged by TVC.
+If Newtonian route optimization later exploits TVC when selecting curvature or
+speed, that logic must be introduced as a Newtonian-specific capability/policy
+behind the planner boundary; it must not alter Assisted execution semantics.
 
 ### Ship / flight law
 
 `ShipController`, `ShipControlExecutionGateway`, and the physical motion
 backend own causal actuator response. The autopilot presses ordinary controls;
 it does not allocate installed engines itself.
+
+`mainGimbalRightInput` / `mainGimbalUpInput` are ordinary physical TVC
+controls carried in the common `ShipControlState` shape. Assisted leaves them
+zero. The Newtonian physical layer rate-limits them and converts actual nozzle
+position into the real main-thrust vector.
 
 ## STOP semantics
 

@@ -6218,14 +6218,29 @@ void SpaceState::renderNavigationStressOverlay(
             : 0;
 
     std::ostringstream line1;
-    line1
-        << "NAV STRESS  "
-        << m_navigationStressHarness.currentStep()
-        << "/"
-        << game::navigation::debug::
-            NavigationStressHarness::totalSteps()
-        << "  "
-        << phase;
+    if (m_navigationStressHarness.simpleCorridor() &&
+        m_navigationStressHarness.matrixRunTotal() > 0)
+    {
+        line1
+            << "PHYSICAL MATRIX  "
+            << m_navigationStressHarness.matrixRunIndex()
+            << "/"
+            << m_navigationStressHarness.matrixRunTotal()
+            << "  "
+            << m_navigationStressHarness.physicalModelLabel()
+            << "  "
+            << phase;
+    }
+    else
+    {
+        line1
+            << "NAV STRESS  "
+            << m_navigationStressHarness.currentStep()
+            << "/"
+            << m_navigationStressHarness.totalStepsForScenario()
+            << "  "
+            << phase;
+    }
 
     std::ostringstream line2;
     line2
@@ -6265,12 +6280,20 @@ void SpaceState::renderNavigationStressOverlay(
     else if (m_navigationStressHarness.complete())
     {
         line3 =
-            "COMPLETE  D:/tmp/elite_navigation_stress.log";
+            "COMPLETE  " +
+            m_navigationStressHarness.physicalModelLabel();
+    }
+    else if (m_navigationStressHarness.simpleCorridor())
+    {
+        line3 =
+            "one live corridor pass; report: " +
+            m_navigationStressHarness.reportPath();
     }
     else
     {
         line3 =
-            "report: D:/tmp/elite_navigation_stress.log";
+            "report: " +
+            m_navigationStressHarness.reportPath();
     }
 
     auto& text = TextRenderer::instance();

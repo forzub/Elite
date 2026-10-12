@@ -53,6 +53,7 @@ if prediction_h.is_file():
 
 if gateway_cpp.is_file():
     text = gateway_cpp.read_text(encoding="utf-8", errors="replace")
+    compact = "".join(text.split())
     for required in (
         "DynamicMotionSystem::applyLocalFrameInput(",
         "DynamicMotionSystem::updateLocalFrameMotion(",
@@ -60,7 +61,7 @@ if gateway_cpp.is_file():
         "DynamicMotionSystem::applySystemAccelerationDemand(",
         "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
     ):
-        if required not in text:
+        if "".join(required.split()) not in compact:
             fail(
                 gateway_cpp,
                 f"gateway lost current authoritative motion backend: {required}",

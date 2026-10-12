@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "core/log.h"
-#include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/data/radars.h"
@@ -199,7 +199,7 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
 void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
 {
     const ShipParams physics = effectivePhysics();
-    SharedShipPhysics::integrate(
+    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         m_transform,
         physics,
         m_control,
@@ -211,21 +211,45 @@ void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
 void ShipCore::updateMotionControl(float dt, const WorldParams& world)
 {
     const ShipParams physics = effectivePhysics();
-    SharedShipPhysics::evaluateControl(
-        m_transform,
-        physics,
-        m_control,
-        world,
-        dt
-    );
+    game::ship::control::ShipControlExecutionGateway::
+        evaluateAttitudeControl(
+            m_transform,
+            physics,
+            m_control,
+            world,
+            dt
+        );
 }
 
 void ShipCore::propagateMotionOrientation(float dt)
 {
-    SharedShipPhysics::propagateOrientation(
+    game::ship::control::ShipControlExecutionGateway::propagateOrientation(
         m_transform,
         dt
     );
+}
+
+void ShipCore::updateTranslationControl(float dt)
+{
+    const ShipParams physics = effectivePhysics();
+    (void)game::ship::control::ShipControlExecutionGateway::
+        evaluateTranslationControl(
+            m_transform,
+            physics,
+            m_control,
+            dt
+        );
+}
+
+bool ShipCore::propagateHubTacticalTranslation(double dt)
+{
+    const ShipParams physics = effectivePhysics();
+    return game::ship::control::ShipControlExecutionGateway::
+        propagateHubTacticalTranslation(
+            m_transform,
+            physics,
+            dt
+        );
 }
 
 void ShipCore::updateSystems(float dt)

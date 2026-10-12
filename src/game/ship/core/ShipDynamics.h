@@ -23,6 +23,15 @@ inline constexpr double StandardGravityMps2 = 9.80665;
     {
         return std::isfinite(value) && value > 0.0;
     };
+    const auto physicalGimbalAngle = [](double value) noexcept
+    {
+        constexpr double HalfPi =
+            1.5707963267948966192313216916398;
+        return
+            std::isfinite(value) &&
+            value >= 0.0 &&
+            value < HalfPi;
+    };
 
     return
         nonNegativeFinite(params.maxPitchRate) &&
@@ -44,6 +53,9 @@ inline constexpr double StandardGravityMps2 = 9.80665;
         nonNegativeFinite(params.fallbackThrottleResponsePerSecond) &&
         nonNegativeFinite(params.forwardMainEngineAccelerationMps2) &&
         nonNegativeFinite(params.reverseMainEngineAccelerationMps2) &&
+        physicalGimbalAngle(params.mainGimbalPitchLimitRad) &&
+        physicalGimbalAngle(params.mainGimbalYawLimitRad) &&
+        nonNegativeFinite(params.mainGimbalRateRadPerSec) &&
         nonNegativeFinite(params.autoLevelStrength) &&
         nonNegativeFinite(params.strafeAccel) &&
         nonNegativeFinite(params.strafeDamping) &&
@@ -61,6 +73,36 @@ inline constexpr double StandardGravityMps2 = 9.80665;
         positiveFinite(params.pitchInertiaKgM2) &&
         positiveFinite(params.yawInertiaKgM2) &&
         positiveFinite(params.rollInertiaKgM2);
+}
+
+[[nodiscard]] inline double mainGimbalPitchLimitRad(
+    const ShipParams& params
+) noexcept
+{
+    return std::max(
+        0.0,
+        static_cast<double>(params.mainGimbalPitchLimitRad)
+    );
+}
+
+[[nodiscard]] inline double mainGimbalYawLimitRad(
+    const ShipParams& params
+) noexcept
+{
+    return std::max(
+        0.0,
+        static_cast<double>(params.mainGimbalYawLimitRad)
+    );
+}
+
+[[nodiscard]] inline double mainGimbalRateRadPerSec(
+    const ShipParams& params
+) noexcept
+{
+    return std::max(
+        0.0,
+        static_cast<double>(params.mainGimbalRateRadPerSec)
+    );
 }
 
 [[nodiscard]] inline double effectiveLinearGs(

@@ -54,6 +54,7 @@ struct AutopilotControlTelemetry
     double courseResponseSeconds = 2.0;
     double targetSpeedChangeRateMps2 = 0.0;
     double brakingResponseMps2 = 0.0;
+    double commandResponsePerSecond = 0.0;
 };
 
 using AutopilotControlCommand = ShipControlState;

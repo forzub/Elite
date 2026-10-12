@@ -30,6 +30,15 @@ struct ShipControlState
     float liftInput    = 0.0f;
     float forwardInput = 0.0f;
 
+    // Main-nozzle TVC request in normalized physical gimbal axes.
+    // right: -1..+1 maps to -/+ yaw gimbal limit (thrust toward ship right).
+    // up:    -1..+1 maps to -/+ pitch gimbal limit (thrust toward ship up).
+    //
+    // These are ordinary actuator controls, not navigation/direct-acceleration
+    // demands. Assisted currently leaves them at zero; Newtonian may use them.
+    float mainGimbalRightInput = 0.0f;
+    float mainGimbalUpInput = 0.0f;
+
     // Ctrl+F10 sends an explicit requested mode instead of a non-idempotent
     // toggle. That keeps server replay and fractional presentation prediction
     // deterministic even when the same input sample is evaluated twice.

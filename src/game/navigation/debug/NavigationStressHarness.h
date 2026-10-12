@@ -113,6 +113,11 @@ public:
             std::string(simple) != "0" &&
             std::string(simple) != "";
 
+        const char* buildId =
+            std::getenv("ELITE_NAV_STRESS_BUILD_ID");
+        if (buildId && *buildId)
+            m_buildId = buildId;
+
         const char* model =
             std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
         if (model && *model)
@@ -527,6 +532,9 @@ private:
         {
             m_stream
                 << "# Elite navigation runtime stress report\n"
+                << "# build_id="
+                << (m_buildId.empty() ? "unknown" : m_buildId)
+                << "\n"
                 << "# scenario="
                 << (m_simpleCorridor
                         ? "simple-physical-corridor"
@@ -815,6 +823,7 @@ private:
     bool m_failureLatched = false;
     bool m_simpleCorridor = false;
 
+    std::string m_buildId;
     std::string m_physicalModelLabel;
     int m_matrixRunIndex = 0;
     int m_matrixRunTotal = 0;

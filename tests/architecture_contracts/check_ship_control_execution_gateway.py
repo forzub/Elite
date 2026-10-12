@@ -62,6 +62,7 @@ for forbidden in (
         fail(f"gateway leaked upward into orchestration/presentation: {forbidden}")
 
 # Current backends remain private implementation details behind the gateway.
+gateway_compact = "".join(gateway_cpp.split())
 for token in (
     "SharedShipPhysics::evaluateControl(",
     "SharedShipPhysics::integrate(",
@@ -72,11 +73,12 @@ for token in (
     "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
     "DynamicMotionSystem::updateLocalFrameMotion(",
 ):
-    if token not in gateway_cpp:
+    if "".join(token.split()) not in gateway_compact:
         fail(f"gateway lost current backend delegation: {token}")
 
 # Server simulation owns cadence/frame orchestration only; it cannot interpret
 # ShipControlState to select a propulsion/control law.
+simulation_compact = "".join(simulation.split())
 for forbidden in (
     "DynamicMotionSystem::applyLocalFrameInput(",
     "DynamicMotionSystem::applyNavigationAssistedFlightModel(",
@@ -84,7 +86,7 @@ for forbidden in (
     "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
     "manualTranslationOverride",
 ):
-    if forbidden in simulation:
+    if "".join(forbidden.split()) in simulation_compact:
         fail(f"GameSimulation bypasses gateway: {forbidden}")
 
 for token in (
@@ -109,6 +111,7 @@ for rel, body in (
 ):
     if "ShipControlExecutionGateway" not in body and rel != "ClientWorldState.cpp":
         fail(f"{rel} does not cross ShipControlExecutionGateway")
+    body_compact = "".join(body.split())
     for forbidden in (
         "DynamicMotionSystem::applyLocalFrameInput(",
         "DynamicMotionSystem::applyNavigationAssistedFlightModel(",
@@ -116,7 +119,7 @@ for rel, body in (
         "DynamicMotionSystem::applyNavigationPrecisionVelocityTrim(",
         "SharedShipPhysics::integrate(",
     ):
-        if forbidden in body:
+        if "".join(forbidden.split()) in body_compact:
             fail(f"{rel} bypasses gateway backend: {forbidden}")
 
 if "ShipControlExecutionGateway::integrateAttitude(" not in client_world:

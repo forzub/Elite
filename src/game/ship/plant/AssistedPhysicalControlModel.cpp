@@ -138,10 +138,38 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     out.authority.yaw = symmetric(vectoringFraction);
     out.authority.roll = symmetric(vectoringFraction);
 
+    out.poweredMainVectoring.trajectoryStrafe01 = vectoringFraction;
+    out.poweredMainVectoring.trajectoryLift01 = vectoringFraction;
+    out.poweredMainVectoring.pitch01 = vectoringFraction;
+    out.poweredMainVectoring.yaw01 = vectoringFraction;
+    out.poweredMainVectoring.roll01 = vectoringFraction;
+
     const double nominalForward =
         game::ship::forwardMainAccelerationLimitMps2(nominalPhysics);
     const double nominalReverse =
         game::ship::reverseMainAccelerationLimitMps2(nominalPhysics);
+
+    // Coarse propulsive-utilization estimate for the velocity-control family.
+    // Axial acceleration uses one longitudinal bank directly. Pure lateral
+    // translation uses opposed fore/aft vectoring: their longitudinal
+    // components cancel, so useful net lateral acceleration is only a fraction
+    // of gross generated thrust. This is not engine efficiency.
+    const double nominalLateral =
+        std::max(0.0, static_cast<double>(nominalPhysics.strafeAccel));
+    const double grossOpposedAuthority = nominalForward + nominalReverse;
+    const double lateralUtilization =
+        grossOpposedAuthority > 1.0e-9
+            ? std::clamp(
+                  nominalLateral / grossOpposedAuthority,
+                  0.0,
+                  1.0
+              )
+            : 0.0;
+
+    out.thrustUtilization.axialTranslation01 = 1.0;
+    out.thrustUtilization.lateralTranslation01 = lateralUtilization;
+    out.thrustUtilization.cancelledDuringLateral01 =
+        1.0 - lateralUtilization;
 
     out.effectivePhysics.forwardMainEngineAvailable =
         operationalAft > 0 && nominalForward > 0.0;

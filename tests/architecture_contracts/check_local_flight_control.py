@@ -247,7 +247,8 @@ for forbidden in (
         fail(f"client automatic docking revived retired follower path: {forbidden}")
 
 for token in (
-    "ClientAutopilot::stabilize(",
+    "ClientRouteAutopilot::start(",
+    "PredictivePilot::make(",
     "ClientAutopilot::update(",
     "m_client->submitInput(m_clientAutopilotControl)",
 ):

@@ -13,6 +13,7 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 
 #include "src/game/ship/core/ShipInventory.h"
 #include "src/game/ship/core/CargoBay.h"
@@ -230,6 +231,12 @@ public:
 
     const ShipDescriptor&                       desc() const                { return *m_desc; }
     const ShipDescriptor&                       descriptor() const           { return *m_desc; }
+
+    // Authoritative answer to "what can this ship do right now?". Physical
+    // topology and damage stay below this boundary.
+    game::ship::capability::ShipCapabilitySnapshot capabilities() const;
+
+    // Transitional projection for the accepted motion backend.
     ShipParams                                   effectivePhysics() const;
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 

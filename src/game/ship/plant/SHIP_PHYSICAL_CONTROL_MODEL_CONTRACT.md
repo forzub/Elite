@@ -29,6 +29,10 @@ A descriptor selects one `PhysicalControlModelId`. It may tune nominal
 acceleration, rate/load envelopes and later component ratings. It may not add,
 remove or reposition propulsion slots.
 
+A descriptor may bind those fixed slots to damageable module IDs through
+`physicalControl.slotModuleIds`. Binding order is the topology's slot order;
+this maps damage state onto the fixed model and does not create geometry.
+
 The I/Y/X coordinates are normalized functional lever arms. They are not CAD
 dimensions and must never require per-ship engineering calculations.
 

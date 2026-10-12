@@ -230,12 +230,21 @@ for token in (
 
 for token in (
     "class ClientRouteAutopilot final",
-    "RouteFollower::follow(",
+    "sampleContinuousReference(",
+    "ManeuverTrackingController::track(",
+    "sampleRouteCurveAtProgress(",
     "PredictivePilot::make(",
     "ShipControlState",
 ):
     if token not in client_autopilot:
         fail(f"client automatic docking V2 path lost: {token}")
+
+for forbidden in (
+    "RouteFollower::follow(",
+    "TrajectoryFollower",
+):
+    if forbidden in client_autopilot:
+        fail(f"client automatic docking revived retired follower path: {forbidden}")
 
 for token in (
     "ClientAutopilot::stabilize(",

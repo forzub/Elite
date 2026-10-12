@@ -202,6 +202,12 @@ int main()
         return fail("high-speed optimizer produced invalid geometric-stress diagnostics");
     }
 
+    if (!std::isfinite(fast.diagnostics.curvatureUniformityEnergy) ||
+        fast.diagnostics.curvatureUniformityEnergy < 0.0)
+    {
+        return fail("high-speed optimizer produced invalid curvature-uniformity diagnostics");
+    }
+
     if (!std::isfinite(fast.diagnostics.maxAngularVelocityUtilization) ||
         !std::isfinite(fast.diagnostics.maxAngularAccelerationUtilization) ||
         fast.diagnostics.maxAngularVelocityUtilization < 0.0 ||
@@ -238,6 +244,8 @@ int main()
         << fast.diagnostics.totalCurvatureRadians
         << " high_speed_bend_energy="
         << fast.diagnostics.curvatureConcentrationEnergy
+        << " high_speed_curvature_cv2="
+        << fast.diagnostics.curvatureUniformityEnergy
         << " high_speed_peak_omega_util="
         << fast.diagnostics.maxAngularVelocityUtilization
         << " high_speed_peak_alpha_util="

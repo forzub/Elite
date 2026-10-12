@@ -111,6 +111,30 @@ struct KinematicAuthorityEstimate
     AxisAuthority01 roll;
 };
 
+// Additional control available specifically while a vectoring main bank is
+// producing thrust. This is intentionally separate from independent/RCS-like
+// authority: a Newtonian craft may bend its powered trajectory with TVC even
+// though it cannot strafe freely at high authority while coasting.
+struct PoweredMainVectoringEstimate
+{
+    double trajectoryStrafe01 = 0.0;
+    double trajectoryLift01 = 0.0;
+    double pitch01 = 0.0;
+    double yaw01 = 0.0;
+    double roll01 = 0.0;
+};
+
+// Propulsive utilization, NOT engine thermodynamic efficiency.
+// usefulNetForce / sum(abs(generated engine thrust)) for representative
+// translation modes. Values below 1 represent thrust components that cancel
+// each other or are spent on simultaneous attitude compensation.
+struct ThrustUtilizationEstimate
+{
+    double axialTranslation01 = 1.0;
+    double lateralTranslation01 = 1.0;
+    double cancelledDuringLateral01 = 0.0;
+};
+
 struct PhysicalControlSnapshot
 {
     bool valid = false;
@@ -123,6 +147,8 @@ struct PhysicalControlSnapshot
     std::size_t operationalManoeuvreSlots = 0;
 
     KinematicAuthorityEstimate authority;
+    PoweredMainVectoringEstimate poweredMainVectoring;
+    ThrustUtilizationEstimate thrustUtilization;
 
     // Compatibility projection for the current motion stack. This is the
     // bridge we will feed into ShipControlExecutionGateway while migrating

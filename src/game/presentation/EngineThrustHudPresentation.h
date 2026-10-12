@@ -221,6 +221,16 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
             continue;
         }
 
+        // Newtonian ships have no forward main-engine bank in the cockpit
+        // thrust instrument. A fore slot, if ever present in transitional data,
+        // must not reappear as a dead/zero bar: it is outside the Newtonian
+        // propulsion contract and therefore absent from the HUD.
+        if (!assisted &&
+            role == plant::EngineSlotRole::ForeMain)
+        {
+            continue;
+        }
+
         const glm::dvec2 groupPosition(
             definitions[i].normalizedPositionBody.x,
             definitions[i].normalizedPositionBody.y

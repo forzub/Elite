@@ -67,6 +67,30 @@ try:
         if token not in adapter_h and token not in adapter_cpp:
             raise AssertionError(f"traffic adapter missing {token!r}")
 
+    # SegmentedRouteComposer owns traffic-aware geometry composition only.
+    # Semantic RouteStageSpan/frame publication remains exclusively in
+    # TrafficRoutePlanAdapter, otherwise two independent semantic mappings can
+    # silently disagree.
+    segmented = read(
+        "src/game/navigation/traffic/SegmentedRouteComposer.cpp"
+    )
+    forbid(
+        segmented,
+        "SegmentedRouteComposer.cpp",
+        (
+            "RouteStageSpan",
+            "out.stages",
+            "routeFrameAnchors",
+            "appendStageSpan(",
+            "RouteStageKind::VolumeEntryCapture",
+            "RouteStageKind::VolumeTransit",
+            "RouteStageKind::VolumeExit",
+            "std::cerr",
+            "std::cout",
+            "#include <iostream>",
+        ),
+    )
+
     # Follower/autopilot may consume only generic route contracts.
     autopilot_dir = ROOT / "src/game/navigation/autopilot"
     for path in autopilot_dir.glob("*"):
@@ -154,6 +178,7 @@ try:
 
     print("[PASS] navigation route module boundaries")
     print(" - traffic semantics terminate at TrafficRoutePlanAdapter")
+    print(" - SegmentedRouteComposer owns geometry only and performs no direct I/O")
     print(" - generic planner backend has no traffic dependency")
     print(" - autopilot/follower has no traffic or stage-semantic dependency")
     print(" - SpaceState is composition-only for route stage assembly")

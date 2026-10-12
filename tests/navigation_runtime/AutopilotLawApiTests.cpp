@@ -100,6 +100,24 @@ void testRouteLayerCannotSeeConcretePilots()
         "ClientRouteAutopilot reads concrete Assisted controller state"
     );
 
+    const std::string space =
+        readText("src/game/SpaceState.cpp");
+    require(
+        space.find("PredictivePilot") == std::string::npos,
+        "SpaceState bypassed the hard autopilot law API"
+    );
+    require(
+        space.find("MainIgnitionAlignmentCosine") == std::string::npos,
+        "SpaceState regained Newtonian main-engine ignition doctrine"
+    );
+
+    const std::string simulation =
+        readText("src/game/simulation/GameSimulation.cpp");
+    require(
+        simulation.find("PredictivePilot") == std::string::npos,
+        "GameSimulation bypassed the hard autopilot law API"
+    );
+
     const std::string controller =
         readText("src/game/navigation/autopilot/AutopilotLawController.h");
     require(

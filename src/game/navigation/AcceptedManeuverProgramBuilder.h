@@ -534,9 +534,18 @@ public:
             }
             else
             {
-                // Prove vehicle motion against body-axis capability without
-                // choosing an engine, throttle, or RCS schedule. The actual
-                // ship allocates propulsion from the executed demand.
+                // Newtonian control requests motion, not an engine schedule.
+                // Aft main propulsion provides both acceleration and
+                // flip-and-burn braking after the hull is reoriented; small
+                // transverse demand may be served by the independent RCS
+                // channel. Main-nozzle TVC is a further physical authority
+                // below this boundary and must never be represented here as a
+                // synthetic fore/reverse engine.
+                const double mainAuthority =
+                    game::ship::forwardMainAccelerationLimitMps2(params);
+                const double lateralAuthority =
+                    game::ship::manoeuvreAccelerationLimitMps2(params);
+
                 for (std::size_t i = 0; i < count; ++i)
                 {
                     const auto& sample = page.samples[i];
@@ -547,17 +556,70 @@ public:
                     const glm::dvec3 demand =
                         sample.linearAccelerationFeedForwardMapMps2;
                     const double along = glm::dot(demand, forward);
-                    const glm::dvec3 transverse = demand - along * forward;
-                    const double forwardAuthority =
-                        game::ship::forwardMainAccelerationLimitMps2(params);
-                    const double reverseAuthority =
-                        game::ship::reverseMainAccelerationLimitMps2(params);
-                    if (!finiteVec(demand) ||
-                        glm::length(transverse) > 1.0e-3 ||
-                        along > forwardAuthority + 1.0e-6 ||
-                        along < -reverseAuthority - 1.0e-6)
+                    const glm::dvec3 transverse =
+                        demand - along * forward;
+                    const double transverseMagnitude =
+                        glm::length(transverse);
+
+                    if (!finiteVec(demand))
+                        return fail("newtonian-motion-program-invalid");
+
+                    const bool longitudinalViolation =
+                        std::abs(along) > mainAuthority + 1.0e-6;
+                    const bool lateralViolation =
+                        transverseMagnitude >
+                            lateralAuthority + 1.0e-6;
+
+                    if (longitudinalViolation || lateralViolation)
                     {
-                        return fail("newtonian-motion-envelope-infeasible");
+                        const double required =
+                            longitudinalViolation
+                                ? std::abs(along)
+                                : transverseMagnitude;
+                        const double available =
+                            longitudinalViolation
+                                ? mainAuthority
+                                : lateralAuthority;
+
+                        if (!(available > 1.0e-9))
+                        {
+                            return fail(
+                                "newtonian-motion-physically-impossible",
+                                ValidationDisposition::PhysicallyImpossible,
+                                longitudinalViolation
+                                    ? RefinementKind::BrakeEarlier
+                                    : RefinementKind::IncreaseTurnRadius,
+                                out.pages.size(),
+                                i,
+                                required,
+                                available,
+                                1.0,
+                                "required Newtonian acceleration has zero available authority"
+                            );
+                        }
+
+                        const double scale =
+                            std::clamp(
+                                0.95 * std::sqrt(available / required),
+                                0.50,
+                                0.98
+                            );
+
+                        return fail(
+                            "newtonian-motion-envelope-infeasible",
+                            ValidationDisposition::NeedsRefinement,
+                            longitudinalViolation
+                                ? RefinementKind::ReduceSpeed
+                                : RefinementKind::IncreaseTurnRadius,
+                            out.pages.size(),
+                            i,
+                            required,
+                            available,
+                            scale,
+                            longitudinalViolation
+                                ? "lower speed or begin flip-and-burn braking earlier"
+                                : "lower speed or increase turn radius for available lateral authority"
+                        );
                     }
                 }
             }

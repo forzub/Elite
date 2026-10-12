@@ -44,6 +44,12 @@ struct OptimizationWeights
     double totalCurvature = 0.10;
     double curvatureConcentration = 0.18;
 
+    // Turn-shape cost. This is the turn-angle-weighted coefficient of
+    // variation of curvature inside each cubic transition. A constant-radius
+    // turn is near zero; a flattened "sausage" with long shallow shoulders
+    // and a tight nose is expensive. It does not prescribe any radius.
+    double curvatureUniformity = 0.18;
+
     // Angular costs use the ship's real attitude-control authority.
     double angularVelocityDemand = 0.16;
     double angularAccelerationDemand = 0.20;
@@ -122,6 +128,11 @@ struct Diagnostics
 
     double totalCurvatureRadians = 0.0;
     double curvatureConcentrationEnergy = 0.0;
+
+    // Dimensionless, turn-angle-weighted curvature variance. 0 means each
+    // continuous turn is effectively constant-radius.
+    double curvatureUniformityEnergy = 0.0;
+
     double maxAngularVelocityUtilization = 0.0;
     double maxAngularAccelerationUtilization = 0.0;
     double angularVelocityEnergy = 0.0;

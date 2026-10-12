@@ -36,6 +36,9 @@ ShipParams params()
     p.reverseMainEngineAvailable = true;
     p.forwardMainEngineAccelerationMps2 = 50.0f;
     p.reverseMainEngineAccelerationMps2 = 50.0f;
+    p.mainGimbalPitchLimitRad = 0.122173048f; // 7 deg
+    p.mainGimbalYawLimitRad = 0.122173048f;   // 7 deg
+    p.mainGimbalRateRadPerSec = 0.139626340f;// 8 deg/s
     p.strafeAccel = 50.0f;
     p.manoeuvreThrusterAccel = 2.0f;
     p.assistedMinimumTargetSpeedChangeRateMps2 = 5.0f;
@@ -243,6 +246,122 @@ void testNewtonianTurnsMainAxisBeforeBurn()
     );
 }
 
+void testNewtonianUsesTvcInsideEnvelope()
+{
+    AutopilotLawController controller;
+    const auto vehicle = params();
+
+    constexpr double FiveDeg =
+        5.0 * 3.1415926535897932384626433832795 / 180.0;
+
+    auto request = baseRequest();
+    request.actualVelocityMapMps = {40.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {40.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {
+        20.0 * std::cos(FiveDeg),
+        0.0,
+        20.0 * std::sin(FiveDeg)
+    };
+
+    const auto control = controller.update(
+        LocalFlightControlLaw::Newtonian,
+        request,
+        vehicle
+    );
+
+    require(
+        control.mainGimbalRightInput > 0.1f,
+        "Newtonian ignored available TVC inside the nozzle envelope"
+    );
+    require(
+        std::abs(control.mainGimbalUpInput) < 1.0e-5f,
+        "Newtonian invented vertical TVC for a planar demand"
+    );
+    require(
+        std::abs(control.pitchInput) + std::abs(control.yawInput) < 1.0e-4f,
+        "Newtonian rotated the hull for an acceleration fully inside TVC envelope"
+    );
+    require(
+        control.targetSpeedRate > 0.0f,
+        "Newtonian failed to burn while TVC covered the acceleration direction"
+    );
+    require(
+        std::abs(control.forwardInput) < 1.0e-6f &&
+        std::abs(control.strafeInput) < 1.0e-6f &&
+        std::abs(control.liftInput) < 1.0e-6f,
+        "Newtonian substituted RCS for bounded TVC"
+    );
+}
+
+void testNewtonianSaturatesTvcThenTurnsHull()
+{
+    AutopilotLawController controller;
+    const auto vehicle = params();
+
+    constexpr double TwentyDeg =
+        20.0 * 3.1415926535897932384626433832795 / 180.0;
+
+    auto request = baseRequest();
+    request.actualVelocityMapMps = {40.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {40.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {
+        20.0 * std::cos(TwentyDeg),
+        0.0,
+        20.0 * std::sin(TwentyDeg)
+    };
+
+    const auto control = controller.update(
+        LocalFlightControlLaw::Newtonian,
+        request,
+        vehicle
+    );
+
+    const double gimbalNorm =
+        std::sqrt(
+            static_cast<double>(control.mainGimbalRightInput) *
+                static_cast<double>(control.mainGimbalRightInput) +
+            static_cast<double>(control.mainGimbalUpInput) *
+                static_cast<double>(control.mainGimbalUpInput)
+        );
+
+    require(
+        gimbalNorm > 0.99 && gimbalNorm <= 1.000001,
+        "Newtonian did not saturate TVC at the physical envelope"
+    );
+    require(
+        std::abs(control.pitchInput) + std::abs(control.yawInput) > 1.0e-6f,
+        "Newtonian failed to rotate hull for acceleration outside TVC envelope"
+    );
+    require(
+        std::abs(control.forwardInput) < 1.0e-6f &&
+        std::abs(control.strafeInput) < 1.0e-6f &&
+        std::abs(control.liftInput) < 1.0e-6f,
+        "Newtonian used translation RCS for the TVC-unserved angle"
+    );
+}
+
+void testAssistedDoesNotUseNewtonianTvcChannel()
+{
+    AutopilotLawController controller;
+    const auto vehicle = params();
+
+    auto request = baseRequest();
+    request.desiredVelocityMapMps = {20.0, 0.0, 5.0};
+    request.desiredLinearAccelerationMapMps2 = {10.0, 0.0, 5.0};
+
+    const auto control = controller.update(
+        LocalFlightControlLaw::Assisted,
+        request,
+        vehicle
+    );
+
+    require(
+        std::abs(control.mainGimbalRightInput) < 1.0e-7f &&
+        std::abs(control.mainGimbalUpInput) < 1.0e-7f,
+        "Assisted leaked into the Newtonian TVC actuator channel"
+    );
+}
+
 void testNewtonianArcAccelerationUsesMainAxis()
 {
     AutopilotLawController controller;
@@ -332,6 +451,9 @@ int main()
         testLawStateIsIsolated();
         testNewtonianCanAcquireLaunchAttitudeAtRest();
         testNewtonianTurnsMainAxisBeforeBurn();
+        testNewtonianUsesTvcInsideEnvelope();
+        testNewtonianSaturatesTvcThenTurnsHull();
+        testAssistedDoesNotUseNewtonianTvcChannel();
         testNewtonianArcAccelerationUsesMainAxis();
         testPrecisionStopMayUseRcs();
         testAssistedAndNewtonianSharePublicCommandShape();
@@ -343,6 +465,8 @@ int main()
             << " - concrete controller state is isolated per law\n"
             << " - Newtonian can acquire launch attitude from rest without thrust\n"
             << " - Newtonian ordinary delta-v is main-engine owned\n"
+            << " - bounded TVC absorbs small acceleration-angle error before hull turn\n"
+            << " - Assisted never writes the Newtonian TVC channel\n"
             << " - Newtonian RCS translation is precision-stop only\n";
         return EXIT_SUCCESS;
     }

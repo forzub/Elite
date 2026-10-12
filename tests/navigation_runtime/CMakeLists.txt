@@ -1218,6 +1218,49 @@ set_tests_properties(
 
 
 add_executable(
+    newtonian_optimal_controller_tests
+    NewtonianOptimalControllerTests.cpp
+)
+
+target_include_directories(newtonian_optimal_controller_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    newtonian_optimal_controller_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    newtonian_optimal_controller_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        newtonian_optimal_controller_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        newtonian_optimal_controller_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME newtonian_optimal_controller
+    COMMAND newtonian_optimal_controller_tests
+)
+
+set_tests_properties(
+    newtonian_optimal_controller
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     newtonian_execution_authority_tests
     NewtonianExecutionAuthorityTests.cpp
 )

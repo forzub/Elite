@@ -135,8 +135,13 @@ try:
         "ClientDockingPhase::Executing",
         "coastForPlanningControl",
         "navigationAccelerationDemandValid = true",
-        "PlanningLeadSeconds = 1.0",
-        "startVelocityMps * PlanningLeadSeconds",
+        "DockingRouteEntryPolicy::initialCourse(",
+        "OrdinaryRoutePolicy::requiredStartLeadMeters(",
+        "RouteEntryBinder::inspectBallisticPrefix(",
+        "BallisticPrefixDisposition::OnPrefix",
+        "RouteEntryBinder::extractBackbone(",
+        "RouteEntryBinder::bind(",
+        "phase=entry-rebind",
         "executionStartUniverseTimeSeconds",
         "ClientNavigationPlanningSnapshotFactory",
         "RoutePlanner::plan(request)",
@@ -166,6 +171,15 @@ try:
                 "SpaceState still depends on server docking orchestration: "
                 + forbidden_token
             )
+
+    # Moving-start planning uses spatial late binding. Wall-clock
+    # projection by a guessed fixed planning duration is intentionally retired:
+    # the worker may finish at any time, and handoff is validated against the
+    # actual live position on the authored ballistic prefix.
+    if "PlanningLeadSeconds" in space:
+        raise AssertionError(
+            "SpaceState regressed to fixed-time moving-start projection"
+        )
 
     for forbidden_token in (
         "PredictivePilot",

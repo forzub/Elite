@@ -257,7 +257,7 @@ void runModel(Model model)
     Autopilot::State autopilot;
     std::string failureReason;
 
-    require(
+    const bool autopilotStarted =
         Autopilot::start(
             autopilot,
             plan,
@@ -271,7 +271,10 @@ void runModel(Model model)
             glm::dvec3(0.0, 1.0, 0.0),
             false,
             &failureReason
-        ),
+        );
+
+    require(
+        autopilotStarted,
         std::string(modelName(model)) +
             " autopilot rejected common tunnel: " +
             failureReason

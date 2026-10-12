@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <iostream>
 #include <utility>
 #include <vector>
 
@@ -152,39 +151,6 @@ double maximumJoinCurvatureJump(
             );
     }
     return maximum;
-}
-
-void appendStageSpan(
-    planner::RoutePlan& out,
-    const std::string& id,
-    planner::RouteStageKind kind,
-    double startProgressMeters,
-    double endProgressMeters,
-    planner::RouteStageFramePolicy framePolicy,
-    const glm::dvec3& frameForward,
-    const glm::dvec3& frameUp,
-    const std::string& sourceId,
-    const std::string& volumeId,
-    bool hardContainment
-)
-{
-    if (endProgressMeters <= startProgressMeters + 1.0e-6)
-        return;
-
-    planner::RouteStageSpan span;
-    span.id = id;
-    span.kind = kind;
-    span.startProgressMeters = startProgressMeters;
-    span.endProgressMeters = endProgressMeters;
-    span.framePolicy = framePolicy;
-    span.refreshPolicy =
-        planner::RouteStageRefreshPolicy::FrozenAtPlanning;
-    span.frameForward = frameForward;
-    span.frameUp = frameUp;
-    span.sourceId = sourceId;
-    span.volumeId = volumeId;
-    span.hardContainment = hardContainment;
-    out.stages.push_back(std::move(span));
 }
 
 double polylineLength(
@@ -466,12 +432,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     if (mandatoryStages.empty())
         return planner::RoutePlanner::plan(terminalRequest);
 
-    std::cerr
-        << "[SegmentedRoute]"
-        << " free_legs=" << (mandatoryStages.size() + 1)
-        << " mandatory_segments=" << mandatoryStages.size()
-        << std::endl;
-
     planner::RoutePlan out;
     out.disposition = planner::RoutePlanDisposition::Ready;
     out.failureCode = planner::RoutePlanFailureCode::None;
@@ -616,30 +576,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                     terminalRequest.vehicleLengthMeters
                 );
 
-        std::cerr
-            << "[SegmentedLeg]"
-            << " index=" << stageIndex
-            << " kind=free-to-boundary"
-            << " from=("
-            << legRequest.startMeters.x << ","
-            << legRequest.startMeters.y << ","
-            << legRequest.startMeters.z << ")"
-            << " to=("
-            << legRequest.goalMeters.x << ","
-            << legRequest.goalMeters.y << ","
-            << legRequest.goalMeters.z << ")"
-            << " boundary_to_entry_m="
-            << glm::length(stage.fromWorldMeters - blockStart)
-            << " start_speed_mps=" << currentSpeed
-            << " start_lead_m="
-            << legRequest.initialForwardLeadMeters
-            << " boundary_speed_mps=" << handoffSpeed
-            << " optimizer_terminal_speed_mps="
-            << legRequest.terminalSpeedMps
-            << " terminal_approach_m="
-            << legRequest.terminalApproachLengthMeters
-            << std::endl;
-
         const auto inbound =
             planner::RoutePlanner::plan(legRequest);
         if (!inbound.valid())
@@ -648,43 +584,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 "segmented inbound leg failed: "
             );
 
-        std::cerr
-            << "[SegmentedLegPlan]"
-            << " index=" << stageIndex
-            << " route_m="
-            << (inbound.routeCurves.empty()
-                    ? 0.0
-                    : inbound.routeCurves.back().endProgressMeters)
-            << " curves=" << inbound.routeCurves.size()
-            << " execution_gates=" << inbound.executionGates.size()
-            << " diagnostics=\"" << inbound.diagnosticSummary << "\""
-            << std::endl;
-
-        const double freeStageStart =
-            routeEndProgress(out);
-
         appendPlanSamples(
             out,
             inbound,
             true,
             handoffSpeed
-        );
-
-        const double freeStageEnd =
-            routeEndProgress(out);
-
-        appendStageSpan(
-            out,
-            "free:" + std::to_string(stageIndex),
-            planner::RouteStageKind::FreeTransit,
-            freeStageStart,
-            freeStageEnd,
-            planner::RouteStageFramePolicy::Transported,
-            currentForward,
-            glm::dvec3(0.0, 1.0, 0.0),
-            {},
-            {},
-            false
         );
 
         const double mandatoryStart =
@@ -697,12 +601,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             blockEnd,
             terminalRequest
         );
-
-        const glm::dvec3 stageUp =
-            !stage.volumeSections.empty() &&
-            glm::length(stage.volumeSections.front().upWorld) > 1.0e-9
-                ? glm::normalize(stage.volumeSections.front().upWorld)
-                : glm::dvec3(0.0, 1.0, 0.0);
 
         std::vector<glm::dvec3> volumePoints;
         const auto appendVolumePoint =
@@ -751,54 +649,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             return invalid;
         }
 
-        const std::string stageSource =
-            stage.laneId.empty()
-                ? stage.volumeConstraint.volumeId
-                : stage.laneId;
-
-        appendStageSpan(
-            out,
-            "volume-entry:" + stageSource,
-            planner::RouteStageKind::VolumeEntryCapture,
-            mandatoryStart,
-            entryEnd,
-            planner::RouteStageFramePolicy::NavigationFrame,
-            traversalForward,
-            stageUp,
-            stage.fromPortalId,
-            stage.volumeConstraint.volumeId,
-            false
-        );
-
-        appendStageSpan(
-            out,
-            "volume-transit:" + stageSource,
-            planner::RouteStageKind::VolumeTransit,
-            entryEnd,
-            volumeEnd,
-            planner::RouteStageFramePolicy::NavigationFrame,
-            traversalForward,
-            stageUp,
-            stageSource,
-            stage.volumeConstraint.volumeId,
-            stage.volumeConstraint.policy ==
-                world::navigation::NavigationVolumePolicy::KeepInside
-        );
-
-        appendStageSpan(
-            out,
-            "volume-exit:" + stageSource,
-            planner::RouteStageKind::VolumeExit,
-            volumeEnd,
-            mandatoryEnd,
-            planner::RouteStageFramePolicy::NavigationFrame,
-            traversalForward,
-            stageUp,
-            stage.toPortalId,
-            stage.volumeConstraint.volumeId,
-            false
-        );
-
         if (stage.volumeConstraint.policy ==
             world::navigation::NavigationVolumePolicy::KeepInside)
         {
@@ -826,28 +676,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 return invalid;
             }
         }
-
-        std::cerr
-            << "[SegmentedMandatory]"
-            << " index=" << stageIndex
-            << " volume=" << stage.volumeConstraint.volumeId
-            << " block_from=("
-            << blockStart.x << ","
-            << blockStart.y << ","
-            << blockStart.z << ")"
-            << " entry=("
-            << stage.fromWorldMeters.x << ","
-            << stage.fromWorldMeters.y << ","
-            << stage.fromWorldMeters.z << ")"
-            << " exit=("
-            << stage.toWorldMeters.x << ","
-            << stage.toWorldMeters.y << ","
-            << stage.toWorldMeters.z << ")"
-            << " block_to=("
-            << blockEnd.x << ","
-            << blockEnd.y << ","
-            << blockEnd.z << ")"
-            << std::endl;
 
         currentStart = blockEnd;
         currentForward = traversalForward;
@@ -888,27 +716,6 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
 
-    std::cerr
-        << "[SegmentedLeg]"
-        << " index=" << mandatoryStages.size()
-        << " kind=free-to-terminal"
-        << " from=("
-        << finalRequest.startMeters.x << ","
-        << finalRequest.startMeters.y << ","
-        << finalRequest.startMeters.z << ")"
-        << " to=("
-        << finalRequest.goalMeters.x << ","
-        << finalRequest.goalMeters.y << ","
-        << finalRequest.goalMeters.z << ")"
-        << " start_speed_mps=" << currentSpeed
-        << " start_lead_m="
-        << finalRequest.initialForwardLeadMeters
-        << " protected_straight_m="
-        << finalRequest.initialProtectedStraightMeters
-        << " terminal_approach_m="
-        << finalRequest.terminalApproachLengthMeters
-        << std::endl;
-
     const auto finalLeg =
         planner::RoutePlanner::plan(finalRequest);
     if (!finalLeg.valid())
@@ -917,40 +724,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
             "segmented final leg failed: "
         );
 
-    std::cerr
-        << "[SegmentedLegPlan]"
-        << " index=" << mandatoryStages.size()
-        << " route_m="
-        << (finalLeg.routeCurves.empty()
-                ? 0.0
-                : finalLeg.routeCurves.back().endProgressMeters)
-        << " curves=" << finalLeg.routeCurves.size()
-        << " execution_gates=" << finalLeg.executionGates.size()
-        << " diagnostics=\"" << finalLeg.diagnosticSummary << "\""
-        << std::endl;
-
-    const double finalFreeStart =
-        routeEndProgress(out);
-
     appendPlanSamples(
         out,
         finalLeg,
         false,
         0.0
-    );
-
-    appendStageSpan(
-        out,
-        "free:terminal",
-        planner::RouteStageKind::FreeTransit,
-        finalFreeStart,
-        routeEndProgress(out),
-        planner::RouteStageFramePolicy::Transported,
-        currentForward,
-        glm::dvec3(0.0, 1.0, 0.0),
-        {},
-        {},
-        false
     );
 
     recomputeGlobalSpeeds(out, terminalRequest);
@@ -1015,8 +793,8 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         std::to_string(mandatoryStages.size() + 1) +
         " mandatory volumes=" +
         std::to_string(mandatoryStages.size()) +
-        " semantic stages=" +
-        std::to_string(out.stages.size()) +
+        " compiled_traffic_stages=" +
+        std::to_string(trafficRoute.stages.size()) +
         " min_radius_m=" +
         std::to_string(
             minimumSampledRadiusMeters(out.routeCurves)

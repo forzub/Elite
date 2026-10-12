@@ -31,8 +31,12 @@ for marker in (
 for marker in (
     "class PredictivePilot final",
     "effectivePitchAuthorityRadPerSec2",
+    "effectiveYawAuthorityRadPerSec2",
+    "effectiveRollAuthorityRadPerSec2",
     "assistedCourseResponseSeconds",
-    "choosePredictiveAxisInput(",
+    "HullAttitudeControl::evaluate(",
+    "learnedAuthority(",
+    "updateIdentification(",
     "navigationAccelerationDemandValid = false",
     "navigationVelocityTargetValid = false",
     "navigationPrecisionTranslationOnly = false",

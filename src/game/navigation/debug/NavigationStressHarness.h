@@ -67,6 +67,11 @@ public:
         double courseErrorRad = 0.0;
         double hullErrorRad = 0.0;
         double targetSpeedMps = 0.0;
+        double targetLongitudinalAccelerationMps2 = 0.0;
+        double mainCommand01 = 0.0;
+        double pitchCommand = 0.0;
+        double yawCommand = 0.0;
+        double rollCommand = 0.0;
         double mainAccelerationMps2 = 0.0;
         double manoeuvreAccelerationMps2 = 0.0;
         double gimbalRightCommand01 = 0.0;
@@ -597,6 +602,12 @@ private:
             << " hull_err_deg="
             << o.hullErrorRad * 57.2957795130823208768
             << " target_speed_mps=" << o.targetSpeedMps
+            << " target_long_a_mps2="
+            << o.targetLongitudinalAccelerationMps2
+            << " main_cmd=" << o.mainCommand01
+            << " pitch_cmd=" << o.pitchCommand
+            << " yaw_cmd=" << o.yawCommand
+            << " roll_cmd=" << o.rollCommand
             << " main_a_mps2=" << o.mainAccelerationMps2
             << " rcs_a_mps2=" << o.manoeuvreAccelerationMps2
             << " gimbal_cmd_r=" << o.gimbalRightCommand01

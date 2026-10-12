@@ -84,6 +84,9 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/control/ShipControlExecutionGateway.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/AssistedPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/NewtonianPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/ShipPhysicalControlModels.cpp"
 )
 
 target_include_directories(EliteNavigationRuntimeControl PUBLIC
@@ -1166,6 +1169,49 @@ add_test(
 
 set_tests_properties(
     ship_propulsion_state
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
+    ship_physical_control_models_tests
+    ShipPhysicalControlModelsTests.cpp
+)
+
+target_include_directories(ship_physical_control_models_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_physical_control_models_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    ship_physical_control_models_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_physical_control_models_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_physical_control_models_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_physical_control_models
+    COMMAND ship_physical_control_models_tests
+)
+
+set_tests_properties(
+    ship_physical_control_models
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

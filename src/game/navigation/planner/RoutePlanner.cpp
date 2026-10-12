@@ -475,10 +475,15 @@ RoutePlan planContinuousAssisted(
             input.maxAngularAccelerationRadPerSecond2
         );
 
-    // Ordinary Assisted geometry is allowed to tighten and therefore lower
-    // the local speed. maxSpeed is a cruise ceiling, not a global turn-radius
-    // command. A non-zero comfort radius would still remain a true hard floor.
-    request.minimumComfortRadiusMeters = 0.0;
+    // Geometric tunnel safety is independent of speed. The speed profiler may
+    // slow down for dynamic authority, but it may not buy an unreadably sharp
+    // HUD/manual corridor by crawling through a tiny-radius turn.
+    request.minimumComfortRadiusMeters =
+        game::navigation::OrdinaryRoutePolicy::
+            requiredGuidanceTunnelRadiusMeters(
+                input.gateSpacingMeters,
+                input.vehicleLengthMeters
+            );
 
     // HOT-REPLAN CONTRACT: an already moving craft continues
     // ballistically along its measured course before any curvature is allowed.
@@ -684,6 +689,10 @@ RoutePlan planContinuousAssisted(
         " min_radius_m=" +
         std::to_string(
             optimized.diagnostics.minimumRadiusMeters
+        ) +
+        " tunnel_radius_floor_m=" +
+        std::to_string(
+            request.minimumComfortRadiusMeters
         ) +
         " peak_lat_util=" +
         std::to_string(

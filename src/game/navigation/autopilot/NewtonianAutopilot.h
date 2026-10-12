@@ -86,6 +86,17 @@ public:
                 request.desiredVelocityMapMps / desiredSpeed;
             followingCourseInsteadOfThrust = true;
         }
+        else if (actualSpeed <= 0.5)
+        {
+            // At (near) rest there is no velocity course and there may be no
+            // translational acceleration demand yet.  The orchestration layer
+            // may still require a launch/safety-course attitude before route
+            // handoff.  In that zero-speed state desiredForwardMap is the only
+            // physically meaningful course observable, so acquire it with
+            // attitude controls while keeping main thrust off.
+            targetForward =
+                normalizedOr(request.desiredForwardMap, forward);
+        }
 
         HullPoseGuidance::Request poseRequest;
         poseRequest.currentForward = forward;

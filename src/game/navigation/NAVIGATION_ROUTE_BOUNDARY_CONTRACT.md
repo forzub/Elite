@@ -17,16 +17,19 @@ TrafficRouteGraph / NavigationVolume / semantic portals
 RouteStageCompiler
         |
         v
-TrafficRoutePlanAdapter
+CompiledTrafficRoute
         |
-        +--> planner::RoutePlanRequest
-        +--> planner::RoutePlan stage/frame metadata
-                    |
-                    v
-              RoutePlanner
-                    |
-                    v
-          ClientRouteAutopilot / follower
+        +--> SegmentedRouteComposer
+        |       |
+        |       +--> planner::RoutePlanRequest --> RoutePlanner
+        |       +<-- planner::RoutePlan geometry
+        |
+        +--> TrafficRoutePlanAdapter
+                |
+                +--> planner::RoutePlan stage/frame metadata
+                            |
+                            v
+                  ClientRouteAutopilot / follower
 ```
 
 `SpaceState` is a composition root. It may invoke both sides, but it must not
@@ -43,8 +46,19 @@ Owns:
 - semantic stage ordering;
 - conversion of those semantics into generic route-stage/frame metadata.
 
-The only production semantic-to-generic route adapter is
-`TrafficRoutePlanAdapter`.
+Traffic-aware route composition has two deliberately separate owners:
+
+- `SegmentedRouteComposer` owns decomposition/composition of route geometry
+  around mandatory traffic passages. It may inspect `CompiledTrafficRoute`,
+  but it may call the generic planner only through
+  `planner::RoutePlanRequest` / `planner::RoutePlan`. It does not publish
+  semantic `RouteStageSpan` or route-frame metadata and performs no I/O.
+- `TrafficRoutePlanAdapter` is the only production owner that converts
+  compiled traffic semantics into generic route-stage/frame metadata on the
+  finished geometric `RoutePlan`.
+
+This split prevents traffic semantics from leaking into `RoutePlanner` or the
+Follower while also preventing two independent stage-metadata implementations.
 
 ### Generic planner contract
 

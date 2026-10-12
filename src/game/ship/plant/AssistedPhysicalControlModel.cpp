@@ -187,6 +187,14 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     // Assisted has no dedicated ordinary RCS in the new model. Translation
     // and attitude are produced by the vectoring main engines.
     out.effectivePhysics.manoeuvreThrusterAccel = 0.0f;
+
+    // Assisted translation uses main-nozzle vectoring, not the Newtonian RCS
+    // working-fluid accumulator. Keep the accepted motion backend but make its
+    // old gas bookkeeping inert for this physical family.
+    out.effectivePhysics.manoeuvreGasUsePerSecond = 0.0f;
+    out.effectivePhysics.manoeuvreGasRechargePerSecond = 0.0f;
+    out.effectivePhysics.manoeuvreGasRestartFraction = 0.0f;
+
     out.effectivePhysics.strafeAccel =
         static_cast<float>(
             std::max(0.0, static_cast<double>(nominalPhysics.strafeAccel)) *

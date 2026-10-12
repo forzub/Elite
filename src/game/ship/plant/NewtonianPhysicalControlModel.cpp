@@ -194,6 +194,31 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     out.effectivePhysics.forwardMainEngineAccelerationMps2 =
         static_cast<float>(nominalForward * mainFraction);
 
+    // TVC is real main-engine hardware. Damage to thrust/vectoring authority
+    // continuously shrinks both travel and slew instead of turning into a
+    // hidden lateral/RCS budget.
+    out.effectivePhysics.mainGimbalPitchLimitRad =
+        static_cast<float>(
+            std::max(
+                0.0,
+                static_cast<double>(nominalPhysics.mainGimbalPitchLimitRad)
+            ) * mainVectoringFraction
+        );
+    out.effectivePhysics.mainGimbalYawLimitRad =
+        static_cast<float>(
+            std::max(
+                0.0,
+                static_cast<double>(nominalPhysics.mainGimbalYawLimitRad)
+            ) * mainVectoringFraction
+        );
+    out.effectivePhysics.mainGimbalRateRadPerSec =
+        static_cast<float>(
+            std::max(
+                0.0,
+                static_cast<double>(nominalPhysics.mainGimbalRateRadPerSec)
+            ) * mainVectoringFraction
+        );
+
     // This is the defining physical distinction from Assisted.
     out.effectivePhysics.reverseMainEngineAvailable = false;
     out.effectivePhysics.reverseMainEngineAccelerationMps2 = 0.0f;

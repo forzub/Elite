@@ -53,13 +53,6 @@ PhysicalControlModelId modelId(PropulsionLayout layout) noexcept
     }
 }
 
-double fraction(std::size_t operational, std::size_t total) noexcept
-{
-    return total > 0
-        ? static_cast<double>(operational) / static_cast<double>(total)
-        : 0.0;
-}
-
 AxisAuthority01 symmetric(double authority) noexcept
 {
     const double a = std::clamp(authority, 0.0, 1.0);
@@ -211,8 +204,13 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     }
     else if (operationalAft > 0 && operationalFore > 0)
     {
+        const bool nominalAuthority =
+            aftFraction >= 1.0 - 1.0e-9 &&
+            foreFraction >= 1.0 - 1.0e-9 &&
+            vectoringFraction >= 1.0 - 1.0e-9;
+
         out.regime =
-            out.operationalMainSlots == out.mainSlots
+            nominalAuthority
                 ? RuntimeFlightRegime::FullAssisted
                 : RuntimeFlightRegime::DegradedAssisted;
     }

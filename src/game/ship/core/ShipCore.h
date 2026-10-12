@@ -143,6 +143,13 @@ public:
     void updateMotionPhysics(float dt, const WorldParams& world);
     void updateMotionControl(float dt, const WorldParams& world);
     void propagateMotionOrientation(float dt);
+
+    // Translation control and propagation are deliberately separate because
+    // server activation may decimate control evaluation while preserving
+    // fixed-step kinematics. Both cross the single ship-control gateway.
+    void updateTranslationControl(float dt);
+    bool propagateHubTacticalTranslation(double dt);
+
     void updateSystems(float dt);
     bool canInstallRadar(
         const ShipDescriptor& shipDesc,

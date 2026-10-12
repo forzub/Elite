@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/ShipPropulsionState.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/data/radars.h"
 
@@ -179,15 +180,24 @@ void ShipCore::init(
 // //   ######   ##       ######   #####      ###    #####
 // //           ####
 
-ShipParams ShipCore::effectivePhysics() const
+game::ship::capability::ShipCapabilitySnapshot
+ShipCore::capabilities() const
 {
     if (!m_desc)
-        return ShipParams {};
+        return {};
 
-    return game::ship::effectiveShipPhysics(
+    return game::ship::capability::buildShipCapability(
         *m_desc,
         m_moduleRuntime
     );
+}
+
+ShipParams ShipCore::effectivePhysics() const
+{
+    const auto capability = capabilities();
+    return capability.valid
+        ? capability.effectivePhysics
+        : ShipParams {};
 }
 
 void ShipCore::updatePhysics(float dt, const WorldParams& world)

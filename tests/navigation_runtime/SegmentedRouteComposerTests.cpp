@@ -1,4 +1,5 @@
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
+#include "src/game/navigation/traffic/TrafficRoutePlanAdapter.h"
 #include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
 
 #include <cmath>
@@ -108,36 +109,47 @@ int main()
             plan.valid(),
             "segmented composer did not produce executable route"
         );
+        const auto stageContract =
+            TrafficRoutePlanAdapter::buildStageContract(
+                traffic,
+                plan,
+                glm::dvec3(0.0, 1.0, 0.0)
+            );
         require(
-            plan.stages.size() == 5,
+            stageContract.valid,
+            "traffic route-plan adapter rejected segmented geometry"
+        );
+        const auto& stages = stageContract.stages;
+        require(
+            stages.size() == 5,
             "segmented composer did not publish five semantic stages"
         );
 
         require(
-            plan.stages[0].kind == RouteStageKind::FreeTransit,
+            stages[0].kind == RouteStageKind::FreeTransit,
             "first semantic stage is not free transit"
         );
         require(
-            plan.stages[1].kind ==
+            stages[1].kind ==
                 RouteStageKind::VolumeEntryCapture,
             "BLUE entry stage missing"
         );
         require(
-            plan.stages[2].kind ==
+            stages[2].kind ==
                 RouteStageKind::VolumeTransit,
             "BLUE transit stage missing"
         );
         require(
-            plan.stages[3].kind ==
+            stages[3].kind ==
                 RouteStageKind::VolumeExit,
             "BLUE exit stage missing"
         );
         require(
-            plan.stages[4].kind == RouteStageKind::FreeTransit,
+            stages[4].kind == RouteStageKind::FreeTransit,
             "terminal free stage missing"
         );
 
-        const auto& transit = plan.stages[2];
+        const auto& transit = stages[2];
         require(
             transit.hardContainment,
             "BLUE transit did not retain KeepInside hard containment"
@@ -151,11 +163,11 @@ int main()
             "BLUE transit lost semantic lane id"
         );
 
-        for (std::size_t i = 1; i < plan.stages.size(); ++i)
+        for (std::size_t i = 1; i < stages.size(); ++i)
         {
             require(
-                plan.stages[i].startProgressMeters + 1.0e-6 >=
-                    plan.stages[i - 1].endProgressMeters,
+                stages[i].startProgressMeters + 1.0e-6 >=
+                    stages[i - 1].endProgressMeters,
                 "semantic stage progress overlaps or reverses"
             );
         }

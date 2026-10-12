@@ -2,7 +2,9 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -63,6 +65,47 @@ void requireNoLegacyNavigationDemand(
         !control.navigationVelocityTargetValid &&
         !control.navigationPrecisionTranslationOnly,
         owner + " crossed the forbidden direct-navigation actuator seam"
+    );
+}
+
+std::string readText(const std::string& path)
+{
+    std::ifstream input(path);
+    require(input.good(), "cannot open architecture source: " + path);
+    std::ostringstream buffer;
+    buffer << input.rdbuf();
+    return buffer.str();
+}
+
+void testRouteLayerCannotSeeConcretePilots()
+{
+    const std::string route =
+        readText("src/game/navigation/autopilot/ClientRouteAutopilot.h");
+
+    require(
+        route.find("AssistedAutopilot") == std::string::npos,
+        "ClientRouteAutopilot leaked concrete Assisted pilot dependency"
+    );
+    require(
+        route.find("NewtonianAutopilot") == std::string::npos,
+        "ClientRouteAutopilot leaked concrete Newtonian pilot dependency"
+    );
+    require(
+        route.find("PredictivePilot") == std::string::npos,
+        "ClientRouteAutopilot still depends on retired mixed-law pilot"
+    );
+    require(
+        route.find("assistedCourseResponseSeconds") == std::string::npos &&
+        route.find("assistedBrakingResponseMps2") == std::string::npos,
+        "ClientRouteAutopilot reads concrete Assisted controller state"
+    );
+
+    const std::string controller =
+        readText("src/game/navigation/autopilot/AutopilotLawController.h");
+    require(
+        controller.find("AssistedAutopilot") != std::string::npos &&
+        controller.find("NewtonianAutopilot") != std::string::npos,
+        "AutopilotLawController is not the explicit two-law selection seam"
     );
 }
 
@@ -231,6 +274,7 @@ int main()
 {
     try
     {
+        testRouteLayerCannotSeeConcretePilots();
         testLawStateIsIsolated();
         testNewtonianTurnsMainAxisBeforeBurn();
         testNewtonianArcAccelerationUsesMainAxis();
@@ -239,6 +283,7 @@ int main()
 
         std::cout
             << "AUTOPILOT LAW API: PASS\n"
+            << " - route layer cannot see concrete pilot modules\n"
             << " - Assisted/Newtonian share one request/command API\n"
             << " - concrete controller state is isolated per law\n"
             << " - Newtonian ordinary delta-v is main-engine owned\n"

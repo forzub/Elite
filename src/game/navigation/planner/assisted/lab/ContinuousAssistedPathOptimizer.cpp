@@ -97,6 +97,106 @@ double curvatureOf(const CubicSample& sample) noexcept
          derivativeLength);
 }
 
+struct CurvatureShapeStats
+{
+    bool finite = true;
+    double turnRadians = 0.0;
+    double curvatureUniformity = 0.0;
+};
+
+CurvatureShapeStats curvatureShapeOfCubic(
+    const glm::dvec3& p0,
+    const glm::dvec3& p1,
+    const glm::dvec3& p2,
+    const glm::dvec3& p3,
+    std::size_t samples
+) noexcept
+{
+    CurvatureShapeStats out;
+    samples = std::max<std::size_t>(24, samples);
+
+    double firstMoment = 0.0;   // integral kappa ds == turn angle
+    double secondMoment = 0.0;  // integral kappa^2 ds
+    double thirdMoment = 0.0;   // integral kappa^3 ds
+
+    CubicSample previous =
+        sampleCubic(p0, p1, p2, p3, 0.0);
+    double previousCurvature = curvatureOf(previous);
+
+    if (!std::isfinite(previousCurvature))
+    {
+        out.finite = false;
+        return out;
+    }
+
+    for (std::size_t i = 1; i <= samples; ++i)
+    {
+        const double t =
+            static_cast<double>(i) /
+            static_cast<double>(samples);
+        const CubicSample current =
+            sampleCubic(p0, p1, p2, p3, t);
+        const double currentCurvature =
+            curvatureOf(current);
+        const double ds =
+            glm::length(
+                current.position -
+                previous.position
+            );
+
+        if (!std::isfinite(currentCurvature) ||
+            !std::isfinite(ds))
+        {
+            out.finite = false;
+            return out;
+        }
+
+        if (ds > Epsilon)
+        {
+            const double kappa =
+                0.5 *
+                (previousCurvature +
+                 currentCurvature);
+            const double kappa2 = kappa * kappa;
+
+            firstMoment += kappa * ds;
+            secondMoment += kappa2 * ds;
+            thirdMoment += kappa2 * kappa * ds;
+        }
+
+        previous = current;
+        previousCurvature = currentCurvature;
+    }
+
+    out.turnRadians = firstMoment;
+
+    // Use turn angle dtheta = kappa ds as the measure. Straight portions
+    // therefore carry zero weight without any arbitrary "is this a turn?"
+    // threshold. For constant curvature:
+    //
+    //   C * A / B^2 - 1 == 0
+    //
+    // where A=int(k ds), B=int(k^2 ds), C=int(k^3 ds).
+    // Flattened/elliptical turns have a positive dimensionless variance.
+    if (firstMoment > Epsilon &&
+        secondMoment > Epsilon)
+    {
+        const double raw =
+            thirdMoment *
+            firstMoment /
+            (secondMoment * secondMoment) -
+            1.0;
+
+        out.curvatureUniformity =
+            std::max(0.0, raw);
+    }
+
+    out.finite =
+        std::isfinite(out.turnRadians) &&
+        std::isfinite(out.curvatureUniformity);
+    return out;
+}
+
 glm::dvec3 deterministicPerpendicular(
     const glm::dvec3& tangent
 ) noexcept
@@ -156,6 +256,7 @@ struct Evaluation
 
     double totalCurvatureRadians = 0.0;
     double curvatureConcentrationEnergy = 0.0;
+    double curvatureUniformityEnergy = 0.0;
     double maxAngularVelocityUtilization = 0.0;
     double maxAngularAccelerationUtilization = 0.0;
     double angularVelocityEnergy = 0.0;
@@ -508,6 +609,46 @@ Evaluation evaluate(
             true))
     {
         return out;
+    }
+
+    // Score each continuous cubic turn against its own mean curvature.
+    // This is deliberately per-turn rather than global: two legitimate turns
+    // may use different radii, while each should still avoid the flattened
+    // "long shallow shoulders + tight nose" shape.
+    const CurvatureShapeStats firstShape =
+        curvatureShapeOfCubic(
+            out.control[0],
+            out.control[1],
+            out.control[2],
+            out.control[3],
+            samplesPerBezier
+        );
+    const CurvatureShapeStats secondShape =
+        curvatureShapeOfCubic(
+            out.control[4],
+            out.control[5],
+            out.control[6],
+            out.control[7],
+            samplesPerBezier
+        );
+
+    if (!firstShape.finite || !secondShape.finite)
+        return out;
+
+    const double shapeTurn =
+        firstShape.turnRadians +
+        secondShape.turnRadians;
+
+    if (shapeTurn > Epsilon)
+    {
+        out.curvatureUniformityEnergy =
+            (
+                firstShape.turnRadians *
+                    firstShape.curvatureUniformity +
+                secondShape.turnRadians *
+                    secondShape.curvatureUniformity
+            ) /
+            shapeTurn;
     }
 
     if (glm::length(
@@ -1001,6 +1142,7 @@ Evaluation evaluate(
         std::isfinite(out.brakingDemandEnergy) &&
         std::isfinite(out.totalCurvatureRadians) &&
         std::isfinite(out.curvatureConcentrationEnergy) &&
+        std::isfinite(out.curvatureUniformityEnergy) &&
         std::isfinite(out.maxAngularVelocityUtilization) &&
         std::isfinite(out.maxAngularAccelerationUtilization) &&
         std::isfinite(out.angularVelocityEnergy) &&
@@ -1076,6 +1218,8 @@ Evaluation evaluate(
             out.totalCurvatureRadians +
         request.weights.curvatureConcentration *
             out.curvatureConcentrationEnergy +
+        request.weights.curvatureUniformity *
+            out.curvatureUniformityEnergy +
         request.weights.angularVelocityDemand *
             (out.angularVelocityEnergy +
              0.5 * peakAngularStress) +
@@ -1778,6 +1922,8 @@ Result ContinuousAssistedPathOptimizer::optimize(
         current.totalCurvatureRadians;
     result.diagnostics.curvatureConcentrationEnergy =
         current.curvatureConcentrationEnergy;
+    result.diagnostics.curvatureUniformityEnergy =
+        current.curvatureUniformityEnergy;
     result.diagnostics.maxAngularVelocityUtilization =
         current.maxAngularVelocityUtilization;
     result.diagnostics.maxAngularAccelerationUtilization =

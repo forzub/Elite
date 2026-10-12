@@ -99,7 +99,9 @@ try:
         "TrajectoryGenerator",
         "AcceptedManeuverProgram",
         "RouteFollower",
-        "PredictivePilot",
+        "AutopilotLawController",
+        "AssistedAutopilot",
+        "NewtonianAutopilot",
         "DockingAdvisoryPlanner",
         "automaticDockingRoute",
         "DockResult",
@@ -115,7 +117,9 @@ try:
         "src/game/server/GameServer.h",
         "DockingAutomaticRuntime",
         "RouteFollower",
-        "PredictivePilot",
+        "AutopilotLawController",
+        "AssistedAutopilot",
+        "NewtonianAutopilot",
         "AcceptedManeuverProgram",
         "HubSemanticAnchorCatalog",
         "DockingPortRuntimeStateCatalog",
@@ -173,7 +177,9 @@ try:
         "RouteSpeedGuidance::evaluateTurnSlowdown(",
         "sampleRouteCurveAtProgress(",
         "makeManeuverExecutionAuthority(params, law)",
-        "PredictivePilot::make(",
+        "AutopilotControlRequest request;",
+        "AutopilotControlTelemetry pilotTelemetry",
+        "state.pilotController.update(law, request, params)",
         "ReferenceMode::SpatialCorridor",
         "ShipControlState",
         "actualCourseForCapture",
@@ -184,6 +190,11 @@ try:
         "RouteFollower::follow(",
         "RouteFollower::sampleReference(",
         "steeringRay",
+        "PredictivePilot",
+        "AssistedAutopilot",
+        "NewtonianAutopilot",
+        "assistedCourseResponseSeconds",
+        "assistedBrakingResponseMps2",
     ):
         if token in client_auto:
             raise AssertionError(
@@ -208,20 +219,43 @@ try:
                 "CourseCaptureGuidance is no longer pure route geometry: " + token
             )
 
-    pilot = require(
-        "src/game/navigation/autopilot/PredictivePilot.h",
-        "Navigation course is owned by desired velocity",
-        "request.desiredVelocityMapMps / desiredSpeed",
-        "HullPoseGuidance::evaluate(",
+    require(
+        "src/game/navigation/autopilot/AutopilotControlApi.h",
+        "struct AutopilotControlRequest",
+        "struct AutopilotControlTelemetry",
+        "using AutopilotControlCommand = ShipControlState",
+        "Hard boundary between route guidance",
+    )
+
+    controller = require(
+        "src/game/navigation/autopilot/AutopilotLawController.h",
+        "class AutopilotLawController final",
+        "case LocalFlightControlLaw::Assisted",
+        "case LocalFlightControlLaw::Newtonian",
+        "AssistedAutopilot assisted_",
+        "NewtonianAutopilot newtonian_",
+        "Compile-time API parity guard",
+    )
+
+    assisted = require(
+        "src/game/navigation/autopilot/AssistedAutopilot.h",
+        "class AssistedAutopilot final",
+        "VelocityCourseGuidance::evaluate(",
         "HullAttitudeControl::evaluate(",
-        "pitchInput",
-        "yawInput",
-        "rollInput",
         "targetSpeedRate",
-        "forwardInput",
-        "strafeInput",
-        "liftInput",
+        "navigationAccelerationDemandValid = false",
+        "navigationVelocityTargetValid = false",
+        "navigationPrecisionTranslationOnly = false",
+    )
+
+    newtonian = require(
+        "src/game/navigation/autopilot/NewtonianAutopilot.h",
+        "class NewtonianAutopilot final",
+        "The main engine is the Newtonian translational actuator",
         "VelocityAlignmentMode::BrakeToStop",
+        "out.forwardInput = 0.0f",
+        "out.strafeInput = 0.0f",
+        "out.liftInput = 0.0f",
         "navigationAccelerationDemandValid = false",
         "navigationVelocityTargetValid = false",
         "navigationPrecisionTranslationOnly = false",
@@ -239,6 +273,8 @@ try:
         "tests/navigation_runtime/CMakeLists.txt",
         "client_route_autopilot_tests",
         "NAME client_route_autopilot",
+        "autopilot_law_api_tests",
+        "NAME autopilot_law_api",
         "course_capture_guidance",
         "NAME navigation_scenario_runner",
         "NAME navigation_v2_tunnel_proving_ground",
@@ -288,11 +324,11 @@ try:
     )
 
     print("[PASS] client-owned automatic docking architecture")
-    print(" - Planner/ClientRouteAutopilot/PredictivePilot live on the client")
+    print(" - Planner/ClientRouteAutopilot + isolated Assisted/Newtonian pilots live on the client")
     print(" - Manual route and Automatic use one client Planner product")
     print(" - server receives only ordinary ShipControlState execution input")
     print(" - docking/navigation task intent is absent from the network protocol")
-    print(" - velocity course, smooth recapture and PredictivePilot are separate frozen layers")
+    print(" - route guidance and flight-law-specific pilots are separated by one hard API")
 except AssertionError as exc:
     print(f"[FAIL] {exc}")
     raise SystemExit(1)

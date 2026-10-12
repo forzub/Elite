@@ -26,6 +26,7 @@ dynamic_cpp = SRC / "game/navigation/DynamicMotionSystem.cpp"
 sim_cpp = SRC / "game/simulation/GameSimulation.cpp"
 snapshot_h = SRC / "game/simulation/ShipReferenceFrameSnapshot.h"
 prediction_h = SRC / "game/client/ClientHubTacticalPrediction.h"
+gateway_cpp = SRC / "game/ship/control/ShipControlExecutionGateway.cpp"
 
 motion = text(motion_h)
 travel = text(travel_h)
@@ -33,6 +34,7 @@ dynamic = text(dynamic_cpp)
 sim = text(sim_cpp)
 snapshot = text(snapshot_h)
 prediction = text(prediction_h)
+gateway = text(gateway_cpp)
 
 for token in (
     "KinematicFrame travelFrame",
@@ -61,13 +63,29 @@ for token in (
     "TravelFrameSystem::matchToReference(",
     "TravelFrameSystem::refreshMatchedReference(",
     "tr.motion.travelFrame",
-    "DynamicMotionSystem::applyLocalFrameInput(",
-    "DynamicMotionSystem::updateLocalFrameMotion(",
+    "shipPtr->updateTranslationControl(motionControlDt)",
+    "shipPtr->propagateHubTacticalTranslation(dt)",
     "seedFromLocalTravelFrame",
     "const auto& frame = tr.motion.travelFrame",
     "if (tr.motion.matchedToReferenceFrame)",
 ):
     require(sim_cpp, sim, token, "server stopped using ship-owned travel-frame authority")
+
+for token in (
+    "DynamicMotionSystem::applyLocalFrameInput(",
+    "DynamicMotionSystem::updateLocalFrameMotion(",
+):
+    require(
+        gateway_cpp,
+        gateway,
+        token,
+        "ship control gateway stopped owning generic-frame motion backend",
+    )
+
+if "DynamicMotionSystem::" in prediction:
+    errors.append(
+        "client prediction bypassed ship control gateway into DynamicMotionSystem"
+    )
 
 for token in (
     "std::string frameId",

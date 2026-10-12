@@ -215,6 +215,39 @@ void testGentleFutureTurnDoesNotUseTranslationRcs()
     );
 }
 
+void testCrossTrackCorrectionUsesMainVector()
+{
+    NewtonianOptimalController controller;
+    auto request = baseRequest();
+
+    request.positionReferenceValid = true;
+    request.actualPositionMapMeters = {0.0, 20.0, 0.0};
+    request.desiredPositionMapMeters = {0.0, 0.0, 0.0};
+    request.actualVelocityMapMps = {80.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {80.0, 0.0, 0.0};
+    request.desiredLinearAccelerationMapMps2 = {0.0, -10.0, 0.0};
+
+    fillStraightPreview(request, 80.0);
+    for (std::size_t i = 0; i < request.previewCount; ++i)
+        request.preview[i].desiredPositionMapMeters =
+            {80.0 * request.preview[i].timeOffsetSeconds, 0.0, 0.0};
+
+    const auto control = controller.update(request, params());
+
+    require(
+        std::abs(control.mainGimbalUpInput) +
+        std::abs(control.pitchInput) +
+        std::abs(control.yawInput) > 1.0e-5f,
+        "cross-track error produced no main-vector correction"
+    );
+    require(
+        std::abs(control.forwardInput) +
+        std::abs(control.strafeInput) +
+        std::abs(control.liftInput) < 1.0e-6f,
+        "cross-track recovery leaked into translation RCS"
+    );
+}
+
 void testPrecisionStopStillUsesRcs()
 {
     NewtonianOptimalController controller;
@@ -243,6 +276,7 @@ int main()
         testFutureSlowdownStartsTurnBeforeBrakeStation();
         testPreviewChangesShortStraightDecision();
         testGentleFutureTurnDoesNotUseTranslationRcs();
+        testCrossTrackCorrectionUsesMainVector();
         testPrecisionStopStillUsesRcs();
 
         std::cout
@@ -251,6 +285,7 @@ int main()
             << " - future braking is anticipated before the brake station\n"
             << " - short-straight decisions depend on future constraints\n"
             << " - gentle turns use main-vector control, not translation RCS\n"
+            << " - cross-track recovery is priced and remains main-vector owned\n"
             << " - precision-stop RCS remains isolated\n";
         return EXIT_SUCCESS;
     }

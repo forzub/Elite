@@ -21,6 +21,7 @@ try:
     contract = read("src/game/navigation/NAVIGATION_ROUTE_BOUNDARY_CONTRACT.md")
     for token in (
         "TrafficRoutePlanAdapter",
+        "SegmentedRouteComposer",
         "RoutePlannerApi.h",
         "ClientRouteAutopilot / follower",
         "SpaceState",

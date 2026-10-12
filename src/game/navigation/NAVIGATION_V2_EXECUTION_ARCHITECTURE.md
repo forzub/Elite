@@ -34,7 +34,8 @@ SystemMap / local route intent
          route-speed preview/envelope
          course capture
          roll/terminal composition
-    -> PredictivePilot
+    -> AutopilotLawController
+         -> AssistedAutopilot | NewtonianAutopilot
     -> ordinary ShipControlState
     -> GameClient::submitInput
     -> server fixed-step ship physics
@@ -46,7 +47,7 @@ The older `RouteFollower` generation and its fixed-distance look-ahead
 implementation have been deleted. There is one player follower/execution owner.
 
 Removed/forbidden execution seams:
-- `ShipControlAdapter` — deleted; NPC and player ordinary controls use `PredictivePilot`;
+- `ShipControlAdapter` — deleted; NPC and player ordinary controls use the hard flight-law autopilot API;
 - `CorridorCaptureGuidance` — deleted; recapture is `CourseCaptureGuidance`;
 - old `RouteFollower` fixed-look-ahead execution path — deleted;
 - old composite proving-ground execution path — deleted;
@@ -153,8 +154,7 @@ must not redefine the physical envelope or hide material infeasibility.
 
 ## 6. Hull attitude is an actuator problem
 
-`PredictivePilot` converts the desired translational course into ordinary hull
-controls.
+`AutopilotLawController` selects exactly one concrete flight-law pilot. `AssistedAutopilot` and `NewtonianAutopilot` convert the same law-neutral guidance request into ordinary hull/translation controls through the same API.
 
 Pitch/yaw:
 - target the desired velocity-course while moving;
@@ -245,7 +245,7 @@ ctest --test-dir build/tests/navigation_runtime   -LE legacy_navigation_lab   --
 ```
 
 Current acceptance coverage includes:
-- `navigation_runtime_control` — PredictivePilot ordinary controls and STOP semantics;
+- `autopilot_law_api` / `navigation_runtime_control` — hard flight-law API, ordinary controls and STOP semantics;
 - `hull_pose_guidance`;
 - `hull_attitude_control`;
 - `route_speed_guidance`;
@@ -272,7 +272,7 @@ label is therefore a temporary migration bucket, not an archive.
 `tests/architecture_contracts/check_automatic_docking.py` must lock:
 - client-owned Planner/autopilot;
 - `CourseCaptureGuidance` in production composition;
-- velocity-owned course in `PredictivePilot`;
+- law-neutral route guidance at the hard autopilot API boundary;
 - separate HullPose/HullAttitude layers;
 - shared executable authority;
 - no retired adapter/direct-demand/private follower route in `ClientRouteAutopilot`;
@@ -285,10 +285,10 @@ The current runtime architecture must not be inferred from historical
 
 The repository is being collapsed to one execution generation.
 Completed in this cleanup:
-- `ShipControlAdapter` deleted and production NPC ordinary control migrated to `PredictivePilot`;
+- `ShipControlAdapter` deleted and production NPC/player ordinary control migrated to `AutopilotLawController` with isolated Assisted/Newtonian pilots;
 - obsolete `CorridorCaptureGuidance` and its test deleted;
 - obsolete composite proving-ground test deleted;
-- current architecture contract remains `ClientRouteAutopilot -> PredictivePilot -> ShipControlState -> ShipController/DynamicMotionSystem`.
+- current architecture contract is `ClientRouteAutopilot -> AutopilotLawController -> {AssistedAutopilot | NewtonianAutopilot} -> ShipControlState -> ShipController/DynamicMotionSystem`.
 
 Still to migrate before direct-demand removal:
 - the old NavigationRuntimeControlBridge/runtime-lab path;

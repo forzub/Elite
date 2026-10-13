@@ -1136,7 +1136,7 @@ void GameSimulation::updateShipShells(double dt)
         std::max(
             0.0,
             m_serverTimelineClock.timeSeconds() -
-                m_shipTierTransitionStartSeconds
+                m_fiveHundredShipHerdStartSeconds
         );
 
     for (auto& [id, shell] : m_shipShells)
@@ -1189,17 +1189,21 @@ void GameSimulation::updateShipShells(double dt)
 
 void GameSimulation::updateShipTierTransitionTest()
 {
-    if (!m_shipTierTransitionTestRequested ||
-        m_shipTierTransitionProbeId.value == 0)
-    {
+    if (!m_shipTierTransitionTestRequested)
         return;
+
+    if (m_shipTierTransitionProbeId.value == 0)
+    {
+        initializeShipTierTransitionTest();
+        if (m_shipTierTransitionProbeId.value == 0)
+            return;
     }
 
     const double elapsed =
         std::max(
             0.0,
             m_serverTimelineClock.timeSeconds() -
-                m_fiveHundredShipHerdStartSeconds
+                m_shipTierTransitionStartSeconds
         );
 
     if (m_shipTierTransitionStage == 0 && elapsed >= 2.0)

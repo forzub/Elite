@@ -50,7 +50,17 @@ ShipImpulseResult ShipImpulseSystem::applyImpulseAtWorldPoint(
         ship.motion.worldVelocityMps += result.deltaVelocityWorldMps;
     }
 
-    const glm::dvec3 centerWorldMeters = ship.fullWorldMeters();
+    const glm::dvec3 centerOffsetWorldMeters =
+        glm::dvec3(
+            ship.orientation *
+            glm::vec4(
+                glm::vec3(params.centerOfMassLocalMeters),
+                0.0f
+            )
+        );
+
+    const glm::dvec3 centerWorldMeters =
+        ship.fullWorldMeters() + centerOffsetWorldMeters;
     const glm::dvec3 leverArmWorldMeters =
         contactPointWorldMeters - centerWorldMeters;
 

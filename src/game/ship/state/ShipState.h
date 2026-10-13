@@ -5,6 +5,8 @@
 #include <utility>
 #include <vector>
 
+#include <glm/glm.hpp>
+
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -49,6 +51,47 @@ struct ShipConstructionState
         nativeFlightControlLaw =
             game::ship::plant::nativeFlightLaw(physicalControlModel);
         ++revision;
+    }
+};
+
+struct ShipMassPropertiesState
+{
+    double massKg = 1.0;
+    glm::dvec3 centerOfMassLocalMeters {0.0};
+
+    // Keep the complete local inertia tensor in per-instance state. The
+    // accepted motion backend currently consumes only the principal diagonal,
+    // but cargo/asymmetric damage can later populate the off-diagonal terms
+    // without changing the ShipState contract.
+    glm::dmat3 inertiaTensorLocalKgM2 {1.0};
+
+    std::uint64_t revision = 0;
+
+    void initialize(const ShipParams& physics) noexcept
+    {
+        massKg = std::max(physics.massKg, 1.0e-9);
+        centerOfMassLocalMeters = physics.centerOfMassLocalMeters;
+
+        inertiaTensorLocalKgM2 = glm::dmat3(0.0);
+        inertiaTensorLocalKgM2[0][0] =
+            std::max(physics.pitchInertiaKgM2, 1.0e-9);
+        inertiaTensorLocalKgM2[1][1] =
+            std::max(physics.yawInertiaKgM2, 1.0e-9);
+        inertiaTensorLocalKgM2[2][2] =
+            std::max(physics.rollInertiaKgM2, 1.0e-9);
+        ++revision;
+    }
+
+    void applyTo(ShipParams& physics) const noexcept
+    {
+        physics.massKg = std::max(massKg, 1.0e-9);
+        physics.centerOfMassLocalMeters = centerOfMassLocalMeters;
+        physics.pitchInertiaKgM2 =
+            std::max(inertiaTensorLocalKgM2[0][0], 1.0e-9);
+        physics.yawInertiaKgM2 =
+            std::max(inertiaTensorLocalKgM2[1][1], 1.0e-9);
+        physics.rollInertiaKgM2 =
+            std::max(inertiaTensorLocalKgM2[2][2], 1.0e-9);
     }
 };
 
@@ -126,6 +169,7 @@ struct ShipActuatorState
 struct ShipState
 {
     ShipConstructionState construction;
+    ShipMassPropertiesState massProperties;
     ShipActuatorState actuators;
     ShipControlState control;
     std::uint64_t revision = 0;
@@ -133,6 +177,7 @@ struct ShipState
     void initialize(const ShipDescriptor& descriptor)
     {
         construction.bind(descriptor);
+        massProperties.initialize(descriptor.physics);
         actuators.resetHealthy(
             construction.physicalControlModel,
             ShipActuatorStateSource::ModuleRuntime
@@ -144,6 +189,7 @@ struct ShipState
     [[nodiscard]] bool valid() const noexcept
     {
         return construction.valid() &&
+            massProperties.massKg > 0.0 &&
             actuators.topologyMatches(
                 construction.physicalControlModel
             );

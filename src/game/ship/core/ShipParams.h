@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 
 struct ShipParams
 {
@@ -101,6 +102,12 @@ struct ShipParams
     // being folded into control-law limits. Principal axes are ship-local:
     // pitch = right/X, yaw = up/Y, roll = forward/Z.
     double massKg                = 1.0;
+
+    // Explicit center of mass in canonical ship-local coordinates:
+    // +X right, +Y up, -Z forward, +Z aft. Existing ships keep the previous
+    // implicit behavior by defaulting to the local origin.
+    glm::dvec3 centerOfMassLocalMeters {0.0};
+
     double pitchInertiaKgM2      = 1.0;
     double yawInertiaKgM2        = 1.0;
     double rollInertiaKgM2       = 1.0;

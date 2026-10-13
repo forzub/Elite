@@ -97,6 +97,9 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // 26.0 x 5.0 x 22.2 m logical hull and are intentionally explicit so
         // off-centre impacts can produce physically meaningful spin.
         desc.physics.massKg                  = 260000.0;
+        // Current Cobra logical origin is its nominal dry CoM. Keep this
+        // explicit so future marks/cargo layouts never inherit origin==CoM.
+        desc.physics.centerOfMassLocalMeters  = {0.0, 0.0, 0.0};
         desc.physics.pitchInertiaKgM2        = 11219866.6666667;
         desc.physics.yawInertiaKgM2          = 25324866.6666667;
         desc.physics.rollInertiaKgM2         = 15188333.3333333;

@@ -230,11 +230,17 @@ ShipCore::capabilities() const
     if (!m_state.valid())
         return {};
 
-    return game::ship::capability::buildShipCapability(
-        *m_state.construction.definition,
-        m_state.construction.physicalControlModel,
-        m_state.actuators.propulsionSlots
-    );
+    auto out =
+        game::ship::capability::buildShipCapability(
+            *m_state.construction.definition,
+            m_state.construction.physicalControlModel,
+            m_state.actuators.propulsionSlots
+        );
+
+    if (out.valid)
+        m_state.massProperties.applyTo(out.effectivePhysics);
+
+    return out;
 }
 
 ShipParams ShipCore::effectivePhysics() const

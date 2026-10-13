@@ -399,6 +399,7 @@ private:
     bool isShipStateFlightTestShip(EntityId id) const noexcept;
 
     void initializeFiveHundredShipHerd();
+    void initializeShipTierTransitionTest();
     void updateShipShells(double dt);
     void updateShipTierTransitionTest();
     void updateFiveHundredShipHerdDiagnostics();
@@ -467,8 +468,11 @@ private:
 
     bool m_fiveHundredShipHerdRequested = false;
     bool m_fiveHundredMaterializedShipHerdRequested = false;
+    bool m_fiveHundredFullMaterializedStressRequested = false;
+
     bool m_shipTierTransitionTestRequested = false;
     EntityId m_shipTierTransitionProbeId {0};
+    double m_shipTierTransitionStartSeconds = 0.0;
     int m_shipTierTransitionStage = 0;
     double m_fiveHundredShipHerdStartSeconds = 0.0;
     double m_fiveHundredShipHerdLastLogSeconds = -1.0;

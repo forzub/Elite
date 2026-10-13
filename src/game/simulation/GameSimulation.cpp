@@ -79,6 +79,7 @@ namespace
     }
 
     constexpr std::size_t FiveHundredShipCount = 500;
+    constexpr std::size_t HerdMaterializedInteractionCount = 24;
     constexpr std::size_t HerdFlightSize = 3;
     constexpr std::size_t HerdFlightCount =
         (FiveHundredShipCount + HerdFlightSize - 1) / HerdFlightSize;
@@ -431,7 +432,10 @@ GameSimulation::GameSimulation(
     m_fiveHundredShipHerdRequested =
         environmentFlagEnabled("ELITE_500_SHIPS_TEST");
     m_fiveHundredMaterializedShipHerdRequested =
-        environmentFlagEnabled("ELITE_500_MATERIALIZED_SHIPS_TEST");
+        environmentFlagEnabled("ELITE_500_MATERIALIZED_SHIPS_TEST") ||
+        environmentFlagEnabled("ELITE_500_INTERACTION_TEST");
+    m_fiveHundredFullMaterializedStressRequested =
+        environmentFlagEnabled("ELITE_500_FULL_MATERIALIZED_STRESS");
     m_shipTierTransitionTestRequested =
         environmentFlagEnabled("ELITE_SHIP_TIER_TRANSITION_TEST");
 
@@ -553,6 +557,7 @@ void GameSimulation::buildInitialScene(
 
     initializeShipStateFlightTest();
     initializeFiveHundredShipHerd();
+    initializeShipTierTransitionTest();
 }
 
 
@@ -883,7 +888,8 @@ void GameSimulation::updateShipStateFlightTest()
 void GameSimulation::initializeFiveHundredShipHerd()
 {
     if ((!m_fiveHundredShipHerdRequested &&
-         !m_fiveHundredMaterializedShipHerdRequested) ||
+         !m_fiveHundredMaterializedShipHerdRequested &&
+         !m_fiveHundredFullMaterializedStressRequested) ||
         !m_fiveHundredShipHerd.empty() ||
         m_activeCelestialSystemId < 0)
     {
@@ -891,16 +897,27 @@ void GameSimulation::initializeFiveHundredShipHerd()
     }
 
     glm::dvec3 anchor(0.0);
+    glm::dvec3 forward(0.0, 0.0, -1.0);
+    glm::dvec3 up(0.0, 1.0, 0.0);
+
     if (const Ship* player = playerShip())
     {
         anchor =
             world::coordinates::fullMeters(
                 player->core().transform().worldPosition
             );
+        forward = glm::normalize(
+            glm::dvec3(player->core().transform().forward())
+        );
+        up = glm::normalize(
+            glm::dvec3(player->core().transform().up())
+        );
     }
 
+    // The proving ground must be visible without turning around. The old
+    // fixed +Z placement put the herd behind the default Cobra (-Z forward).
     m_fiveHundredShipHerdCenterMeters =
-        anchor + glm::dvec3(0.0, 2200.0, 8000.0);
+        anchor + forward * 5200.0 + up * 450.0;
     m_fiveHundredShipHerdStartSeconds =
         m_serverTimelineClock.timeSeconds();
     m_fiveHundredShipHerdLastLogSeconds = -1.0;
@@ -946,7 +963,12 @@ void GameSimulation::initializeFiveHundredShipHerd()
         init.registry.shipRole = ShipRoleType::Civilian;
 
         EntityId id {};
-        if (m_fiveHundredMaterializedShipHerdRequested)
+        const bool materializeThisMember =
+            m_fiveHundredFullMaterializedStressRequested ||
+            (m_fiveHundredMaterializedShipHerdRequested &&
+             ordinal < HerdMaterializedInteractionCount);
+
+        if (materializeThisMember)
         {
             id =
                 spawnShip(
@@ -1012,12 +1034,6 @@ void GameSimulation::initializeFiveHundredShipHerd()
             }
         );
 
-        if (ordinal == 0 &&
-            m_shipTierTransitionTestRequested &&
-            m_shipTierTransitionProbeId.value == 0)
-        {
-            m_shipTierTransitionProbeId = id;
-        }
     }
 
     std::ofstream reset("herd_500.csv", std::ios::trunc);
@@ -1037,10 +1053,78 @@ void GameSimulation::initializeFiveHundredShipHerd()
         << " speed_mps=" << HerdSpeedMetersPerSecond
         << " radius_m=" << HerdRadiusMeters
         << " tier="
-        << (m_fiveHundredMaterializedShipHerdRequested
-                ? "materialized"
-                : "traffic_shell")
+        << (m_fiveHundredFullMaterializedStressRequested
+                ? "full_materialized_stress"
+                : (m_fiveHundredMaterializedShipHerdRequested
+                    ? "mixed_24_materialized_476_shell"
+                    : "traffic_shell"))
         << "\n";
+}
+
+void GameSimulation::initializeShipTierTransitionTest()
+{
+    if (!m_shipTierTransitionTestRequested ||
+        m_shipTierTransitionProbeId.value != 0 ||
+        m_activeCelestialSystemId < 0)
+    {
+        return;
+    }
+
+    glm::dvec3 anchor(0.0);
+    glm::dvec3 forward(0.0, 0.0, -1.0);
+    glm::dvec3 up(0.0, 1.0, 0.0);
+
+    if (const Ship* player = playerShip())
+    {
+        anchor =
+            world::coordinates::fullMeters(
+                player->core().transform().worldPosition
+            );
+        forward = glm::normalize(
+            glm::dvec3(player->core().transform().forward())
+        );
+        up = glm::normalize(
+            glm::dvec3(player->core().transform().up())
+        );
+    }
+
+    const auto& descriptor =
+        EliteCobraMk1::EliteCobraMk1Descriptor();
+
+    ShipInitData init;
+    init.visual.shipType = "Cobra MK1";
+    init.visual.shipName = "Tier Transition Probe";
+    init.registry.instanceId = 990001;
+    init.registry.ownerName = "diagnostics";
+    init.registry.registrationId = "TIER-PROBE";
+    init.registry.shipRole = ShipRoleType::Civilian;
+
+    const glm::dvec3 position =
+        anchor + forward * 900.0 + up * 120.0;
+    const glm::dvec3 velocity =
+        forward * 60.0;
+
+    m_shipTierTransitionProbeId =
+        spawnTrafficShell(
+            m_activeCelestialSystemId,
+            descriptor,
+            position,
+            velocity,
+            init,
+            orientationFromVelocity(velocity)
+        );
+
+    if (m_shipTierTransitionProbeId.value == 0)
+        return;
+
+    m_shipTierTransitionStartSeconds =
+        m_serverTimelineClock.timeSeconds();
+    m_shipTierTransitionStage = 0;
+
+    std::cout
+        << "[ShipTierTest] stage=traffic_shell id="
+        << m_shipTierTransitionProbeId.value
+        << " distance_m=900 standalone=1\n";
 }
 
 void GameSimulation::updateShipShells(double dt)
@@ -1052,7 +1136,7 @@ void GameSimulation::updateShipShells(double dt)
         std::max(
             0.0,
             m_serverTimelineClock.timeSeconds() -
-                m_fiveHundredShipHerdStartSeconds
+                m_shipTierTransitionStartSeconds
         );
 
     for (auto& [id, shell] : m_shipShells)
@@ -1161,7 +1245,8 @@ void GameSimulation::updateShipTierTransitionTest()
 void GameSimulation::updateFiveHundredShipHerdDiagnostics()
 {
     if (!m_fiveHundredShipHerdRequested &&
-        !m_fiveHundredMaterializedShipHerdRequested)
+        !m_fiveHundredMaterializedShipHerdRequested &&
+        !m_fiveHundredFullMaterializedStressRequested)
         return;
 
     if (m_fiveHundredShipHerd.empty())

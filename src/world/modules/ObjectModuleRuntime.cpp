@@ -92,6 +92,7 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
 
     buildHierarchy();
     reevaluateStructuralStates();
+    ++m_revision;
 
     std::cout << "[ObjectModuleRuntime] initialized modules="
               << m_modules.size() << "\n";
@@ -364,7 +365,11 @@ void ObjectModuleRuntime::setModuleHealth(const std::string& moduleId, float hea
     if (index < 0)
         return;
 
+    if (m_modules[index].health == health)
+        return;
+
     m_modules[index].health = health;
+    ++m_revision;
 }
 
 bool ObjectModuleRuntime::setSupportLinkHealth(
@@ -391,6 +396,7 @@ bool ObjectModuleRuntime::setSupportLinkHealth(
         if (link.health < 0.0f)
             link.health = 0.0f;
 
+        ++m_revision;
         return true;
     }
 
@@ -405,6 +411,7 @@ void ObjectModuleRuntime::markModuleDestroyed(const std::string& moduleId, float
 
     m_modules[index].health = health;
     onModuleDestroyed(index);
+    ++m_revision;
 }
 
 void ObjectModuleRuntime::onModuleDestroyed(int index)
@@ -577,6 +584,7 @@ void ObjectModuleRuntime::restoreModuleBranch(const std::string& moduleId)
 
     std::cout << "[ObjectModuleRuntime] restoreModuleBranch moduleId="
               << moduleId << "\n";
+    ++m_revision;
 }
 
 void ObjectModuleRuntime::setWholeObjectDestroyed()
@@ -592,6 +600,7 @@ void ObjectModuleRuntime::setWholeObjectDestroyed()
             link.destroyed = true;
         }
     }
+    ++m_revision;
 }
 
 void ObjectModuleRuntime::applyStructuralStateFromSupports(int index,
@@ -813,6 +822,7 @@ void ObjectModuleRuntime::reevaluateStructuralStates(
     {
         applyStructuralStateFromSupports(i, structuralLinks);
     }
+    ++m_revision;
 }
 
 bool ObjectModuleRuntime::reattachModule(const std::string& moduleId)
@@ -846,6 +856,7 @@ bool ObjectModuleRuntime::reattachModule(const std::string& moduleId)
         << "[ObjectModuleRuntime] module reattached: "
         << moduleId << "\n";
 
+    ++m_revision;
     return true;
 }
 
@@ -876,6 +887,7 @@ bool ObjectModuleRuntime::debugForceDetach(const std::string& moduleId)
     module.state = ObjectModuleRuntimeState::Detached;
 
     reevaluateStructuralStates();
+    ++m_revision;
     return true;
 }
 
@@ -894,6 +906,7 @@ bool ObjectModuleRuntime::debugForceHang(const std::string& moduleId)
         return false;
 
     module.state = ObjectModuleRuntimeState::Hanging;
+    ++m_revision;
     return true;
 }
 
@@ -905,6 +918,7 @@ bool ObjectModuleRuntime::debugForceDestroy(const std::string& moduleId)
 
     m_modules[index].health = 0.0f;
     onModuleDestroyed(index);
+    ++m_revision;
     return true;
 }
 

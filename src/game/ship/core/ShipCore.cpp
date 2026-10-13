@@ -191,6 +191,16 @@ void ShipCore::refreshRuntimeState()
         return;
     }
 
+    const std::uint64_t moduleRevision =
+        m_moduleRuntime.revision();
+
+    if (m_lastModuleProjectionRevision == moduleRevision &&
+        m_state.actuators.topologyMatches(
+            m_state.construction.physicalControlModel))
+    {
+        return;
+    }
+
     m_state.actuators.synchronizeFromModules(
         game::ship::capability::buildPhysicalControlSlotState(
             *m_state.construction.definition,
@@ -198,6 +208,8 @@ void ShipCore::refreshRuntimeState()
             m_moduleRuntime
         )
     );
+
+    m_lastModuleProjectionRevision = moduleRevision;
 }
 
 bool ShipCore::selectPhysicalConstructionForDiagnostic(
@@ -216,6 +228,7 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
 void ShipCore::clearPhysicalConstructionDiagnosticOverride()
 {
     m_state.clearDiagnosticConstructionOverride();
+    m_lastModuleProjectionRevision = ~std::uint64_t{0};
     if (m_state.construction.valid())
     {
         m_transform.motion.localControlLaw =

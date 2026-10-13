@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <cstdint>
 
 #include "src/world/modules/ObjectModuleState.h"
 #include "src/world/descriptors/ModuleDescriptor.h"
@@ -41,7 +42,15 @@ public:
     void setWholeObjectDestroyed();
 
     const std::vector<ObjectModuleState>& modules() const { return m_modules; }
-    std::vector<ObjectModuleState>& modules() { return m_modules; }
+
+    // Mutable access conservatively invalidates all derived projections.
+    std::vector<ObjectModuleState>& modules()
+    {
+        ++m_revision;
+        return m_modules;
+    }
+
+    std::uint64_t revision() const noexcept { return m_revision; }
 
     void reevaluateStructuralStates(
         const ObjectStructuralLinkRuntime* structuralLinks = nullptr
@@ -75,6 +84,7 @@ private:
 private:
     std::vector<ObjectModuleState>         m_modules;
     std::unordered_map<std::string, int>   m_moduleIndexById;
+    std::uint64_t                          m_revision = 0;
 };
 
 } // namespace world::modules

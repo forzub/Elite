@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 
 #include <unordered_map>
 #include <string>
@@ -375,6 +376,8 @@ private:
 
     // --------- MODULE RUNTIME --------
     world::modules::ObjectModuleRuntime             m_moduleRuntime;
+    std::uint64_t                                    m_lastModuleProjectionRevision =
+        ~std::uint64_t{0};
     world::modules::ObjectStructuralLinkRuntime     m_structuralLinkRuntime;
     world::modules::ObjectDetachedFragmentRuntime m_detachedFragmentRuntime;
     world::modules::ObjectRepairJobRuntime m_repairJobRuntime;

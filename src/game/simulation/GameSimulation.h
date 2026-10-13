@@ -34,6 +34,7 @@
 #include "src/game/server/ServerTimelineClock.h"
 #include "src/game/simulation/activation/ActivationPlanner.h"
 #include "src/game/simulation/activation/ActivationExecutionPolicy.h"
+#include "src/game/simulation/ShipSimulationTier.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -112,6 +113,32 @@ public:
         const ShipInitData& initData,
         const glm::mat4& orientation = glm::mat4(1.0f)
     );
+
+    // Simulation-detail transitions are independent from actor identity.
+    EntityId spawnTrafficShell(
+        int systemId,
+        const ShipDescriptor& descriptor,
+        const glm::dvec3& positionMeters,
+        const glm::dvec3& velocityMetersPerSecond,
+        const ShipInitData& initData,
+        const glm::mat4& orientation = glm::mat4(1.0f),
+        std::uint32_t formationId = 0,
+        std::uint16_t formationSlot = 0
+    );
+
+    bool materializeTrafficShell(EntityId id);
+    bool markShipDerelict(EntityId id);
+    bool dematerializeShip(
+        EntityId id,
+        game::simulation::ShipSimulationTier targetTier
+    );
+
+    game::simulation::ShipSimulationTier shipSimulationTier(
+        EntityId id
+    ) const noexcept;
+
+    const game::simulation::ShipShellState* shipShell(EntityId id) const;
+    std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
 
     EntityId spawnStation(
         ObjectType type,
@@ -372,6 +399,7 @@ private:
     bool isShipStateFlightTestShip(EntityId id) const noexcept;
 
     void initializeFiveHundredShipHerd();
+    void updateShipShells(double dt);
     void updateFiveHundredShipHerdDiagnostics();
     bool buildFiveHundredShipHerdGoal(
         EntityId id,
@@ -395,6 +423,14 @@ private:
     uint32_t                            m_nextEntityId = 1;
 
     std::unordered_map<EntityId, std::unique_ptr<Ship>> m_ships;
+
+    // Lightweight authoritative ships live outside m_ships by design: merely
+    // existing in the universe must not allocate ShipCore/module/damage state.
+    std::unordered_map<EntityId, game::simulation::ShipShellState> m_shipShells;
+    std::unordered_map<
+        EntityId,
+        game::simulation::ShipSimulationLifecycleState
+    > m_shipSimulationLifecycle;
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
 
@@ -429,6 +465,7 @@ private:
     };
 
     bool m_fiveHundredShipHerdRequested = false;
+    bool m_fiveHundredMaterializedShipHerdRequested = false;
     double m_fiveHundredShipHerdStartSeconds = 0.0;
     double m_fiveHundredShipHerdLastLogSeconds = -1.0;
     glm::dvec3 m_fiveHundredShipHerdCenterMeters {0.0};

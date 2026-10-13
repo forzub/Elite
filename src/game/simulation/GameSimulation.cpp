@@ -188,6 +188,34 @@ namespace
         }
     }
 
+    const char* physicalDamageProfileName(
+        game::ship::plant::PhysicalControlModelId model,
+        std::size_t profile
+    )
+    {
+        const bool assisted =
+            game::ship::plant::familyOf(model) ==
+            game::ship::plant::PhysicalControlFamily::Assisted;
+
+        switch (profile)
+        {
+            case 0: return "healthy";
+            case 1: return "aft-main-thrust-50";
+            case 2: return "aft-main-off";
+            case 3: return "main-vectoring-50";
+            case 4: return "main-vectoring-off";
+            case 5:
+                return assisted
+                    ? "fore-main-thrust-50"
+                    : "manoeuvre-thrust-50";
+            case 6:
+                return assisted
+                    ? "fore-main-off"
+                    : "manoeuvre-off";
+            default: return "unknown";
+        }
+    }
+
     glm::mat4 orientationFromVelocity(const glm::dvec3& velocity)
     {
         glm::vec3 forward = glm::vec3(velocity);
@@ -597,7 +625,7 @@ void GameSimulation::initializeShipStateFlightTest()
     if (reset)
     {
         reset
-            << "time_s,cycle,phase,model,damage_profile,"
+            << "time_s,cycle,phase,model,damage_profile,damage_name,"
             << "speed_mps,omega_rad_s,"
             << "px,py,pz,vx,vy,vz,"
             << "main_cmd,pitch_cmd,yaw_cmd,roll_cmd,"
@@ -645,7 +673,7 @@ void GameSimulation::updateShipStateFlightTest()
     };
 
     constexpr double PhaseSeconds = 8.0;
-    constexpr std::size_t DamageProfiles = 4;
+    constexpr std::size_t DamageProfiles = 7;
     constexpr std::size_t PhaseCount =
         Models.size() * DamageProfiles;
     constexpr double CycleSeconds =
@@ -682,59 +710,66 @@ void GameSimulation::updateShipStateFlightTest()
         const auto& slots =
             game::ship::plant::physicalControlSlots(model);
 
-        if (damageProfile == 1)
-        {
-            for (std::size_t i = 0; i < slots.size(); ++i)
+        const bool assisted =
+            game::ship::plant::familyOf(model) ==
+            game::ship::plant::PhysicalControlFamily::Assisted;
+
+        const auto firstSlotWithRole =
+            [&](game::ship::plant::EngineSlotRole role)
+                -> game::ship::plant::EngineSlotState*
             {
-                if (slots[i].role ==
-                    game::ship::plant::EngineSlotRole::AftMain)
+                for (std::size_t i = 0; i < slots.size(); ++i)
                 {
-                    state.actuators.propulsionSlots[i].thrust01 = 0.50;
-                    break;
+                    if (slots[i].role == role)
+                        return &state.actuators.propulsionSlots[i];
+                }
+                return nullptr;
+            };
+
+        if (damageProfile == 1 || damageProfile == 2)
+        {
+            if (auto* actuator = firstSlotWithRole(
+                    game::ship::plant::EngineSlotRole::AftMain))
+            {
+                actuator->thrust01 =
+                    damageProfile == 1 ? 0.50 : 0.0;
+                if (damageProfile == 2)
+                {
+                    actuator->operational = false;
+                    actuator->vectoring01 = 0.0;
                 }
             }
         }
-        else if (damageProfile == 2)
+        else if (damageProfile == 3 || damageProfile == 4)
         {
+            const double vectoring =
+                damageProfile == 3 ? 0.50 : 0.0;
+
             for (std::size_t i = 0; i < slots.size(); ++i)
             {
                 if (slots[i].role !=
                     game::ship::plant::EngineSlotRole::ManoeuvreCluster)
                 {
-                    state.actuators.propulsionSlots[i].vectoring01 = 0.50;
+                    state.actuators.propulsionSlots[i].vectoring01 =
+                        vectoring;
                 }
             }
         }
-        else if (damageProfile == 3)
+        else if (damageProfile == 5 || damageProfile == 6)
         {
-            bool disabled = false;
-            for (std::size_t i = 0; i < slots.size(); ++i)
-            {
-                if (slots[i].role ==
-                    game::ship::plant::EngineSlotRole::ManoeuvreCluster)
-                {
-                    auto& actuator = state.actuators.propulsionSlots[i];
-                    actuator.operational = false;
-                    actuator.thrust01 = 0.0;
-                    actuator.vectoring01 = 0.0;
-                    disabled = true;
-                    break;
-                }
-            }
+            const auto role =
+                assisted
+                    ? game::ship::plant::EngineSlotRole::ForeMain
+                    : game::ship::plant::EngineSlotRole::ManoeuvreCluster;
 
-            if (!disabled)
+            if (auto* actuator = firstSlotWithRole(role))
             {
-                for (std::size_t i = 0; i < slots.size(); ++i)
+                actuator->thrust01 =
+                    damageProfile == 5 ? 0.50 : 0.0;
+                if (damageProfile == 6)
                 {
-                    if (slots[i].role ==
-                        game::ship::plant::EngineSlotRole::ForeMain)
-                    {
-                        auto& actuator = state.actuators.propulsionSlots[i];
-                        actuator.operational = false;
-                        actuator.thrust01 = 0.0;
-                        actuator.vectoring01 = 0.0;
-                        break;
-                    }
+                    actuator->operational = false;
+                    actuator->vectoring01 = 0.0;
                 }
             }
         }
@@ -745,33 +780,44 @@ void GameSimulation::updateShipStateFlightTest()
             << " phase=" << phase
             << " model=" << physicalModelName(model)
             << " damage=" << damageProfile
+            << " damage_name="
+            << physicalDamageProfileName(model, damageProfile)
             << " position_preserved=1 velocity_preserved=1\n";
     }
 
     ShipControlState control;
     control.controlTick = ++m_shipStateFlightControlTick;
 
-    if (phaseTime < 2.0)
+    if (phaseTime < 1.5)
     {
+        // Positive main-thrust response.
         control.targetSpeedRate = 0.28f;
     }
-    else if (phaseTime < 4.0)
+    else if (phaseTime < 3.0)
     {
+        // Main + attitude + TVC coupling.
         control.targetSpeedRate = 0.18f;
         control.pitchInput = 0.18f;
         control.yawInput = 0.32f;
         control.mainGimbalRightInput = 0.35f;
         control.mainGimbalUpInput = -0.20f;
     }
-    else if (phaseTime < 6.0)
+    else if (phaseTime < 4.5)
     {
+        // Lateral/vertical authority and opposite TVC demand.
         control.targetSpeedRate = 0.08f;
         control.strafeInput = 0.30f;
         control.liftInput = 0.18f;
         control.mainGimbalRightInput = -0.25f;
         control.mainGimbalUpInput = 0.25f;
     }
-    // Final two seconds are deliberately neutral to expose coast/stabilization.
+    else if (phaseTime < 6.0)
+    {
+        // Assisted must use its real fore-main authority. Newtonian has no
+        // reverse main and therefore deliberately ignores this sign.
+        control.targetSpeedRate = -0.25f;
+    }
+    // Final two seconds are neutral to expose coast/stabilization.
 
     ship->setControlState(control);
 
@@ -802,6 +848,7 @@ void GameSimulation::updateShipStateFlightTest()
             << phase << ','
             << physicalModelName(model) << ','
             << damageProfile << ','
+            << physicalDamageProfileName(model, damageProfile) << ','
             << speed << ','
             << omega << ','
             << tr.motion.localPositionMeters.x << ','

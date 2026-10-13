@@ -10,6 +10,7 @@ namespace game::navigation
 
 struct NpcNavigationKinematicState
 {
+    glm::dvec3 positionSystemMeters {0.0};
     glm::dvec3 relativeSystemVelocityMps {0.0};
 
     glm::dvec3 forwardSystem {0.0, 0.0, -1.0};
@@ -30,6 +31,11 @@ struct NpcNavigationKinematicState
 class NpcNavigationIntentController final
 {
 public:
+    [[nodiscard]] static glm::dvec3 desiredVelocityForGoal(
+        const NpcNavigationKinematicState& state,
+        const NpcNavigationGoal& goal
+    ) noexcept;
+
     [[nodiscard]] static NavigationSystemControlIntent buildIntent(
         const NpcNavigationKinematicState& state,
         const NpcNavigationGoal& goal

@@ -2078,3 +2078,29 @@ set_tests_properties(
     ship_state
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    npc_formation_goal_tests
+    NpcFormationGoalTests.cpp
+)
+
+target_include_directories(npc_formation_goal_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(npc_formation_goal_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    npc_formation_goal_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+if(MSVC)
+    target_compile_options(npc_formation_goal_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(npc_formation_goal_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_test(NAME npc_formation_goal COMMAND npc_formation_goal_tests)
+set_tests_properties(
+    npc_formation_goal
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

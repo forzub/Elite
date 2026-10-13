@@ -366,6 +366,16 @@ private:
         double executionTimeSeconds,
         double executionDeltaSeconds
     );
+
+    void initializeShipStateFlightTest();
+    void updateShipStateFlightTest();
+    bool isShipStateFlightTestShip(EntityId id) const noexcept;
+
+    void initializeFiveHundredShipHerd();
+    bool buildFiveHundredShipHerdGoal(
+        EntityId id,
+        NpcNavigationGoal& outGoal
+    ) const;
     game::simulation::SimulationMode activationExecutionMode(
         EntityId shipId
     ) const noexcept;
@@ -400,6 +410,28 @@ private:
     std::vector<InterferenceSource>     m_interferenceSources;
     ShipControlState                    m_playerControlState;
     NpcAiSystem                         m_npcAiSystem;
+
+    // State/physics proving actor. It changes construction and degradation
+    // continuously without resetting kinematics.
+    bool m_shipStateFlightTestRequested = false;
+    EntityId m_shipStateFlightTestShipId {0};
+    double m_shipStateFlightTestStartSeconds = 0.0;
+    double m_shipStateFlightTestLastLogSeconds = -1.0;
+    std::size_t m_shipStateFlightTestPhase = static_cast<std::size_t>(-1);
+    std::uint64_t m_shipStateFlightControlTick = 0;
+
+    struct FiveHundredShipHerdMember
+    {
+        std::size_t ordinal = 0;
+        std::size_t flightIndex = 0;
+        std::size_t slotInFlight = 0;
+    };
+
+    bool m_fiveHundredShipHerdRequested = false;
+    double m_fiveHundredShipHerdStartSeconds = 0.0;
+    glm::dvec3 m_fiveHundredShipHerdCenterMeters {0.0};
+    std::unordered_map<EntityId, FiveHundredShipHerdMember>
+        m_fiveHundredShipHerd;
 
     std::unordered_map<
         EntityId,

@@ -33,6 +33,48 @@ glm::dvec3 normalizedOr(
 
 } // namespace
 
+glm::dvec3
+NpcNavigationIntentController::desiredVelocityForGoal(
+    const NpcNavigationKinematicState& state,
+    const NpcNavigationGoal& goal
+) noexcept
+{
+    const glm::dvec3 forward = normalizedOr(
+        state.forwardSystem,
+        glm::dvec3(0.0, 0.0, -1.0)
+    );
+
+    if (goal.mode == NpcNavigationGoalMode::MaintainForwardCruise)
+    {
+        return forward * std::max(0.0, goal.desiredForwardSpeedMps);
+    }
+
+    if (goal.mode != NpcNavigationGoalMode::TrackFormationSlot)
+        return glm::dvec3(0.0);
+
+    const glm::dvec3 targetPosition =
+        finiteOrZero(goal.desiredPositionSystemMeters);
+    const glm::dvec3 targetVelocity =
+        finiteOrZero(goal.desiredVelocitySystemMps);
+    const glm::dvec3 position =
+        finiteOrZero(state.positionSystemMeters);
+
+    glm::dvec3 correction =
+        (targetPosition - position) *
+        std::max(0.0, goal.positionResponsePerSecond);
+
+    const double correctionMagnitude = glm::length(correction);
+    const double correctionLimit =
+        std::max(0.0, goal.maximumPositionCorrectionSpeedMps);
+    if (correctionMagnitude > correctionLimit &&
+        correctionMagnitude > 1.0e-9)
+    {
+        correction *= correctionLimit / correctionMagnitude;
+    }
+
+    return targetVelocity + correction;
+}
+
 NavigationSystemControlIntent
 NpcNavigationIntentController::buildIntent(
     const NpcNavigationKinematicState& state,
@@ -60,12 +102,8 @@ NpcNavigationIntentController::buildIntent(
         glm::dvec3(0.0, 1.0, 0.0)
     );
 
-    glm::dvec3 desiredRelativeSystemVelocity(0.0);
-    if (goal.mode == NpcNavigationGoalMode::MaintainForwardCruise)
-    {
-        desiredRelativeSystemVelocity =
-            forward * std::max(0.0, goal.desiredForwardSpeedMps);
-    }
+    const glm::dvec3 desiredRelativeSystemVelocity =
+        desiredVelocityForGoal(state, goal);
 
     const glm::dvec3 linearDemand =
         (desiredRelativeSystemVelocity - relativeSystemVelocity) *

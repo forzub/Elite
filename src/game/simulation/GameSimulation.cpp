@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 
 #include "game/ship/ShipInitData.h"
 #include "game/ship/ShipRoleType.h"
@@ -61,6 +62,154 @@
 
 namespace
 {
+    bool environmentFlagEnabled(const char* name)
+    {
+        const char* raw = std::getenv(name);
+        if (!raw || !*raw)
+            return false;
+
+        const std::string value(raw);
+        return value != "0" &&
+            value != "false" &&
+            value != "FALSE" &&
+            value != "off" &&
+            value != "OFF";
+    }
+
+    constexpr std::size_t FiveHundredShipCount = 500;
+    constexpr std::size_t HerdFlightSize = 3;
+    constexpr std::size_t HerdFlightCount =
+        (FiveHundredShipCount + HerdFlightSize - 1) / HerdFlightSize;
+    constexpr double HerdRadiusMeters = 6000.0;
+    constexpr double HerdSpeedMetersPerSecond = 180.0;
+    constexpr double HerdVerticalWaveMeters = 260.0;
+    constexpr double HerdWingLateralMeters = 55.0;
+    constexpr double HerdWingTrailMeters = 85.0;
+    constexpr double TwoPi = 6.28318530717958647692;
+
+    struct HerdRouteSample
+    {
+        glm::dvec3 positionMeters {0.0};
+        glm::dvec3 velocityMps {0.0};
+    };
+
+    HerdRouteSample sampleHerdRoute(
+        const glm::dvec3& centerMeters,
+        std::size_t flightIndex,
+        std::size_t slotInFlight,
+        double elapsedSeconds
+    )
+    {
+        const double omega =
+            HerdSpeedMetersPerSecond / HerdRadiusMeters;
+        const double phase =
+            TwoPi *
+                static_cast<double>(flightIndex) /
+                static_cast<double>(HerdFlightCount) +
+            omega * std::max(0.0, elapsedSeconds);
+
+        const glm::dvec3 radial(
+            std::cos(phase),
+            0.0,
+            std::sin(phase)
+        );
+        const glm::dvec3 tangent(
+            -std::sin(phase),
+            0.0,
+            std::cos(phase)
+        );
+        const glm::dvec3 up(0.0, 1.0, 0.0);
+
+        double lateral = 0.0;
+        double trail = 0.0;
+        if (slotInFlight == 1)
+        {
+            lateral = -HerdWingLateralMeters;
+            trail = -HerdWingTrailMeters;
+        }
+        else if (slotInFlight == 2)
+        {
+            lateral = HerdWingLateralMeters;
+            trail = -HerdWingTrailMeters;
+        }
+
+        const double vertical =
+            HerdVerticalWaveMeters * std::sin(phase * 2.0);
+        const double verticalVelocity =
+            HerdVerticalWaveMeters * 2.0 * omega *
+            std::cos(phase * 2.0);
+
+        HerdRouteSample sample;
+        sample.positionMeters =
+            centerMeters +
+            radial * (HerdRadiusMeters + lateral) +
+            tangent * trail +
+            up * vertical;
+
+        // d(radial)/dt = tangent*omega,
+        // d(tangent)/dt = -radial*omega.
+        sample.velocityMps =
+            tangent * (omega * (HerdRadiusMeters + lateral)) -
+            radial * (omega * trail) +
+            up * verticalVelocity;
+        return sample;
+    }
+
+    game::navigation::KinematicFrame makeDiagnosticIdentityFrame(
+        int systemId,
+        const std::string& id,
+        const glm::dvec3& originMeters
+    )
+    {
+        game::navigation::KinematicFrame frame;
+        frame.systemId = systemId;
+        frame.frameId = id;
+        frame.originMeters = originMeters;
+        frame.localToWorldBasis = glm::dmat3(1.0);
+        frame.valid = true;
+        return frame;
+    }
+
+    const char* physicalModelName(
+        game::ship::plant::PhysicalControlModelId model
+    )
+    {
+        using Model = game::ship::plant::PhysicalControlModelId;
+        switch (model)
+        {
+            case Model::AssistedI: return "Assisted-I";
+            case Model::AssistedY: return "Assisted-Y";
+            case Model::AssistedX: return "Assisted-X";
+            case Model::NewtonianI: return "Newtonian-I";
+            case Model::NewtonianY: return "Newtonian-Y";
+            case Model::NewtonianX: return "Newtonian-X";
+            default: return "unknown";
+        }
+    }
+
+    glm::mat4 orientationFromVelocity(const glm::dvec3& velocity)
+    {
+        glm::vec3 forward = glm::vec3(velocity);
+        if (glm::length2(forward) < 1.0e-8f)
+            forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        else
+            forward = glm::normalize(forward);
+
+        glm::vec3 up(0.0f, 1.0f, 0.0f);
+        glm::vec3 right = glm::cross(forward, up);
+        if (glm::length2(right) < 1.0e-8f)
+            right = glm::vec3(1.0f, 0.0f, 0.0f);
+        else
+            right = glm::normalize(right);
+        up = glm::normalize(glm::cross(right, forward));
+
+        glm::mat4 out(1.0f);
+        out[0] = glm::vec4(right, 0.0f);
+        out[1] = glm::vec4(up, 0.0f);
+        out[2] = glm::vec4(-forward, 0.0f);
+        return out;
+    }
+
     glm::dvec3 passiveTrajectoryAcceleration(
         const glm::dvec3& relativePositionMeters,
         double gravitationalParameterM3s2
@@ -247,6 +396,11 @@ GameSimulation::GameSimulation(
     ObjectDescriptorRegistry::ensureInitialized();
     game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
 
+    m_shipStateFlightTestRequested =
+        environmentFlagEnabled("ELITE_SHIP_STATE_FLIGHT_TEST");
+    m_fiveHundredShipHerdRequested =
+        environmentFlagEnabled("ELITE_500_SHIPS_TEST");
+
 
 
     // ========================= PLAYER =========================
@@ -362,6 +516,463 @@ void GameSimulation::buildInitialScene(
     {
         m_promoFlybyScenario.setup(*this);
     }
+
+    initializeShipStateFlightTest();
+    initializeFiveHundredShipHerd();
+}
+
+
+void GameSimulation::initializeShipStateFlightTest()
+{
+    if (!m_shipStateFlightTestRequested ||
+        m_shipStateFlightTestShipId.value != 0 ||
+        m_activeCelestialSystemId < 0)
+    {
+        return;
+    }
+
+    glm::dvec3 origin(0.0);
+    if (const Ship* player = playerShip())
+    {
+        origin =
+            world::coordinates::fullMeters(
+                player->core().transform().worldPosition
+            );
+    }
+
+    const glm::dvec3 position =
+        origin + glm::dvec3(0.0, 600.0, 1800.0);
+
+    ShipInitData init;
+    init.visual.shipType = "Cobra MK1";
+    init.visual.shipName = "Ship State Flight Test";
+    init.registry.instanceId = 950000;
+    init.registry.ownerName = "diagnostics";
+    init.registry.registrationId = "STATE-FLIGHT";
+    init.registry.shipRole = ShipRoleType::Civilian;
+
+    const auto& descriptor =
+        EliteCobraMk1::EliteCobraMk1Descriptor();
+
+    const EntityId id =
+        spawnShip(
+            ShipRole::NPC,
+            m_activeCelestialSystemId,
+            descriptor,
+            position,
+            init,
+            glm::mat4(1.0f)
+        );
+    if (id.value == 0)
+        return;
+
+    Ship* ship = getShip(id);
+    if (!ship)
+        return;
+
+    auto& tr = ship->core().transform();
+    tr.motion.mode = game::navigation::MotionMode::HubTactical;
+    tr.motion.travelFrame =
+        makeDiagnosticIdentityFrame(
+            m_activeCelestialSystemId,
+            "ship-state-flight-test",
+            origin
+        );
+    tr.motion.localPositionMeters =
+        tr.motion.travelFrame.worldToLocalPosition(position);
+    tr.motion.localVelocityMps = glm::dvec3(0.0);
+    tr.motion.worldVelocityMps = glm::dvec3(0.0);
+    tr.motion.referenceVelocityMps = glm::dvec3(0.0);
+    tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+
+    m_shipStateFlightTestShipId = id;
+    m_shipStateFlightTestStartSeconds =
+        m_serverTimelineClock.timeSeconds();
+    m_shipStateFlightTestLastLogSeconds = -1.0;
+    m_shipStateFlightTestPhase =
+        static_cast<std::size_t>(-1);
+
+    std::ofstream reset("ship_state_flight.csv", std::ios::trunc);
+    if (reset)
+    {
+        reset
+            << "time_s,cycle,phase,model,damage_profile,"
+            << "speed_mps,omega_rad_s,"
+            << "px,py,pz,vx,vy,vz,"
+            << "main_cmd,pitch_cmd,yaw_cmd,roll_cmd,"
+            << "strafe_cmd,lift_cmd,gimbal_r,gimbal_u,"
+            << "gimbal_yaw_deg,gimbal_pitch_deg,"
+            << "engine_ax,engine_ay,engine_az,control_state\n";
+    }
+
+    std::cout
+        << "[ShipStateFlight] spawned id=" << id.value
+        << " continuous=1 reset_kinematics=0\n";
+}
+
+bool GameSimulation::isShipStateFlightTestShip(
+    EntityId id
+) const noexcept
+{
+    return m_shipStateFlightTestShipId.value != 0 &&
+        id == m_shipStateFlightTestShipId;
+}
+
+void GameSimulation::updateShipStateFlightTest()
+{
+    if (!m_shipStateFlightTestRequested)
+        return;
+
+    if (m_shipStateFlightTestShipId.value == 0)
+    {
+        initializeShipStateFlightTest();
+        return;
+    }
+
+    Ship* ship = getShip(m_shipStateFlightTestShipId);
+    if (!ship)
+        return;
+
+    using Model = game::ship::plant::PhysicalControlModelId;
+    static constexpr std::array<Model, 6> Models {
+        Model::AssistedI,
+        Model::AssistedY,
+        Model::AssistedX,
+        Model::NewtonianI,
+        Model::NewtonianY,
+        Model::NewtonianX
+    };
+
+    constexpr double PhaseSeconds = 8.0;
+    constexpr std::size_t DamageProfiles = 4;
+    constexpr std::size_t PhaseCount =
+        Models.size() * DamageProfiles;
+    constexpr double CycleSeconds =
+        PhaseSeconds * static_cast<double>(PhaseCount);
+
+    const double now = m_serverTimelineClock.timeSeconds();
+    const double elapsed =
+        std::max(0.0, now - m_shipStateFlightTestStartSeconds);
+    const std::uint64_t cycle =
+        static_cast<std::uint64_t>(
+            std::floor(elapsed / CycleSeconds)
+        );
+    const double withinCycle =
+        std::fmod(elapsed, CycleSeconds);
+    const std::size_t phase =
+        std::min(
+            PhaseCount - 1,
+            static_cast<std::size_t>(
+                withinCycle / PhaseSeconds
+            )
+        );
+    const double phaseTime =
+        withinCycle -
+        static_cast<double>(phase) * PhaseSeconds;
+    const Model model = Models[phase % Models.size()];
+    const std::size_t damageProfile = phase / Models.size();
+
+    if (phase != m_shipStateFlightTestPhase)
+    {
+        if (!ship->core().selectPhysicalConstructionForDiagnostic(model))
+            return;
+
+        auto& state = ship->core().state();
+        const auto& slots =
+            game::ship::plant::physicalControlSlots(model);
+
+        if (damageProfile == 1)
+        {
+            for (std::size_t i = 0; i < slots.size(); ++i)
+            {
+                if (slots[i].role ==
+                    game::ship::plant::EngineSlotRole::AftMain)
+                {
+                    state.actuators.propulsionSlots[i].thrust01 = 0.50;
+                    break;
+                }
+            }
+        }
+        else if (damageProfile == 2)
+        {
+            for (std::size_t i = 0; i < slots.size(); ++i)
+            {
+                if (slots[i].role !=
+                    game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                {
+                    state.actuators.propulsionSlots[i].vectoring01 = 0.50;
+                }
+            }
+        }
+        else if (damageProfile == 3)
+        {
+            bool disabled = false;
+            for (std::size_t i = 0; i < slots.size(); ++i)
+            {
+                if (slots[i].role ==
+                    game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                {
+                    auto& actuator = state.actuators.propulsionSlots[i];
+                    actuator.operational = false;
+                    actuator.thrust01 = 0.0;
+                    actuator.vectoring01 = 0.0;
+                    disabled = true;
+                    break;
+                }
+            }
+
+            if (!disabled)
+            {
+                for (std::size_t i = 0; i < slots.size(); ++i)
+                {
+                    if (slots[i].role ==
+                        game::ship::plant::EngineSlotRole::ForeMain)
+                    {
+                        auto& actuator = state.actuators.propulsionSlots[i];
+                        actuator.operational = false;
+                        actuator.thrust01 = 0.0;
+                        actuator.vectoring01 = 0.0;
+                        break;
+                    }
+                }
+            }
+        }
+
+        m_shipStateFlightTestPhase = phase;
+        std::cout
+            << "[ShipStateFlight] cycle=" << cycle
+            << " phase=" << phase
+            << " model=" << physicalModelName(model)
+            << " damage=" << damageProfile
+            << " position_preserved=1 velocity_preserved=1\n";
+    }
+
+    ShipControlState control;
+    control.controlTick = ++m_shipStateFlightControlTick;
+
+    if (phaseTime < 2.0)
+    {
+        control.targetSpeedRate = 0.28f;
+    }
+    else if (phaseTime < 4.0)
+    {
+        control.targetSpeedRate = 0.18f;
+        control.pitchInput = 0.18f;
+        control.yawInput = 0.32f;
+        control.mainGimbalRightInput = 0.35f;
+        control.mainGimbalUpInput = -0.20f;
+    }
+    else if (phaseTime < 6.0)
+    {
+        control.targetSpeedRate = 0.08f;
+        control.strafeInput = 0.30f;
+        control.liftInput = 0.18f;
+        control.mainGimbalRightInput = -0.25f;
+        control.mainGimbalUpInput = 0.25f;
+    }
+    // Final two seconds are deliberately neutral to expose coast/stabilization.
+
+    ship->setControlState(control);
+
+    if (m_shipStateFlightTestLastLogSeconds >= 0.0 &&
+        now - m_shipStateFlightTestLastLogSeconds < 0.20)
+    {
+        return;
+    }
+    m_shipStateFlightTestLastLogSeconds = now;
+
+    const auto& tr = ship->core().transform();
+    const auto capability = ship->core().capabilities();
+    const double speed = glm::length(tr.motion.localVelocityMps);
+    const double omega =
+        std::sqrt(
+            static_cast<double>(tr.pitchRate) * tr.pitchRate +
+            static_cast<double>(tr.yawRate) * tr.yawRate +
+            static_cast<double>(tr.rollRate) * tr.rollRate
+        );
+
+    std::ofstream out("ship_state_flight.csv", std::ios::app);
+    if (out)
+    {
+        out
+            << std::fixed << std::setprecision(6)
+            << now << ','
+            << cycle << ','
+            << phase << ','
+            << physicalModelName(model) << ','
+            << damageProfile << ','
+            << speed << ','
+            << omega << ','
+            << tr.motion.localPositionMeters.x << ','
+            << tr.motion.localPositionMeters.y << ','
+            << tr.motion.localPositionMeters.z << ','
+            << tr.motion.localVelocityMps.x << ','
+            << tr.motion.localVelocityMps.y << ','
+            << tr.motion.localVelocityMps.z << ','
+            << control.targetSpeedRate << ','
+            << control.pitchInput << ','
+            << control.yawInput << ','
+            << control.rollInput << ','
+            << control.strafeInput << ','
+            << control.liftInput << ','
+            << control.mainGimbalRightInput << ','
+            << control.mainGimbalUpInput << ','
+            << tr.motion.mainGimbalYawRad * 57.29577951308232 << ','
+            << tr.motion.mainGimbalPitchRad * 57.29577951308232 << ','
+            << tr.motion.engineAccelerationMps2.x << ','
+            << tr.motion.engineAccelerationMps2.y << ','
+            << tr.motion.engineAccelerationMps2.z << ','
+            << static_cast<int>(capability.controlState)
+            << '\n';
+    }
+}
+
+void GameSimulation::initializeFiveHundredShipHerd()
+{
+    if (!m_fiveHundredShipHerdRequested ||
+        !m_fiveHundredShipHerd.empty() ||
+        m_activeCelestialSystemId < 0)
+    {
+        return;
+    }
+
+    glm::dvec3 anchor(0.0);
+    if (const Ship* player = playerShip())
+    {
+        anchor =
+            world::coordinates::fullMeters(
+                player->core().transform().worldPosition
+            );
+    }
+
+    m_fiveHundredShipHerdCenterMeters =
+        anchor + glm::dvec3(0.0, 2200.0, 8000.0);
+    m_fiveHundredShipHerdStartSeconds =
+        m_serverTimelineClock.timeSeconds();
+
+    const auto& descriptor =
+        EliteCobraMk1::EliteCobraMk1Descriptor();
+    const auto frame =
+        makeDiagnosticIdentityFrame(
+            m_activeCelestialSystemId,
+            "500-ships-loop",
+            m_fiveHundredShipHerdCenterMeters
+        );
+
+    for (std::size_t ordinal = 0;
+         ordinal < FiveHundredShipCount;
+         ++ordinal)
+    {
+        const std::size_t flightIndex =
+            ordinal / HerdFlightSize;
+        const std::size_t slotInFlight =
+            ordinal % HerdFlightSize;
+
+        const auto sample =
+            sampleHerdRoute(
+                m_fiveHundredShipHerdCenterMeters,
+                flightIndex,
+                slotInFlight,
+                0.0
+            );
+
+        ShipInitData init;
+        init.visual.shipType = "Cobra MK1";
+        init.visual.shipName =
+            "500 ships F" +
+            std::to_string(flightIndex + 1) +
+            "-" +
+            std::to_string(slotInFlight + 1);
+        init.registry.instanceId =
+            static_cast<std::uint64_t>(500000 + ordinal);
+        init.registry.ownerName = "500 ships";
+        init.registry.registrationId =
+            "HERD-" + std::to_string(ordinal + 1);
+        init.registry.shipRole = ShipRoleType::Civilian;
+
+        const EntityId id =
+            spawnShip(
+                ShipRole::NPC,
+                m_activeCelestialSystemId,
+                descriptor,
+                sample.positionMeters,
+                init,
+                orientationFromVelocity(sample.velocityMps)
+            );
+        if (id.value == 0)
+            continue;
+
+        Ship* ship = getShip(id);
+        if (!ship)
+            continue;
+
+        auto& tr = ship->core().transform();
+        tr.motion.mode = game::navigation::MotionMode::HubTactical;
+        tr.motion.travelFrame = frame;
+        tr.motion.localPositionMeters =
+            frame.worldToLocalPosition(sample.positionMeters);
+        tr.motion.localVelocityMps =
+            frame.worldToLocalVector(sample.velocityMps);
+        tr.motion.worldVelocityMps = sample.velocityMps;
+        tr.motion.referenceVelocityMps = glm::dvec3(0.0);
+        tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+
+        m_fiveHundredShipHerd.emplace(
+            id,
+            FiveHundredShipHerdMember {
+                ordinal,
+                flightIndex,
+                slotInFlight
+            }
+        );
+    }
+
+    std::cout
+        << "[500Ships] spawned=" << m_fiveHundredShipHerd.size()
+        << " requested=" << FiveHundredShipCount
+        << " flights=" << HerdFlightCount
+        << " flight_size=3"
+        << " speed_mps=" << HerdSpeedMetersPerSecond
+        << " radius_m=" << HerdRadiusMeters
+        << " real_ship_state=1\n";
+}
+
+bool GameSimulation::buildFiveHundredShipHerdGoal(
+    EntityId id,
+    NpcNavigationGoal& outGoal
+) const
+{
+    const auto it = m_fiveHundredShipHerd.find(id);
+    if (it == m_fiveHundredShipHerd.end())
+        return false;
+
+    const double elapsed =
+        std::max(
+            0.0,
+            m_serverTimelineClock.timeSeconds() -
+                m_fiveHundredShipHerdStartSeconds
+        );
+    const auto sample =
+        sampleHerdRoute(
+            m_fiveHundredShipHerdCenterMeters,
+            it->second.flightIndex,
+            it->second.slotInFlight,
+            elapsed
+        );
+
+    outGoal = {};
+    outGoal.revision =
+        static_cast<std::uint64_t>(
+            std::floor(elapsed * 10.0)
+        ) + 1;
+    outGoal.mode = NpcNavigationGoalMode::TrackFormationSlot;
+    outGoal.desiredPositionSystemMeters = sample.positionMeters;
+    outGoal.desiredVelocitySystemMps = sample.velocityMps;
+    outGoal.positionResponsePerSecond = 0.45;
+    outGoal.maximumPositionCorrectionSpeedMps = 55.0;
+    outGoal.velocityResponsePerSecond = 0.90;
+    outGoal.angularDampingPerSecond = 2.0;
+    return true;
 }
 
 
@@ -922,6 +1533,8 @@ bool GameSimulation::updateNpcNavigationControl(
     const auto& tr = ship.core().transform();
 
     game::navigation::NpcNavigationKinematicState navigationState;
+    navigationState.positionSystemMeters =
+        world::coordinates::fullMeters(tr.worldPosition);
     navigationState.relativeSystemVelocityMps =
         tr.motion.travelFrame.valid
             ? tr.motion.travelFrame.localToWorldVector(
@@ -996,10 +1609,11 @@ bool GameSimulation::updateNpcNavigationControl(
         game::navigation::autopilot::AutopilotControlRequest
             pilotRequest;
         pilotRequest.desiredVelocityMapMps =
-            goal.mode == NpcNavigationGoalMode::MaintainForwardCruise
-                ? navigationState.forwardSystem *
-                    std::max(0.0, goal.desiredForwardSpeedMps)
-                : glm::dvec3(0.0);
+            game::navigation::NpcNavigationIntentController::
+                desiredVelocityForGoal(
+                    navigationState,
+                    goal
+                );
         pilotRequest.desiredLinearAccelerationMapMps2 =
             latest.snapshot.executedLinearAccelerationDemandSystemMps2;
 
@@ -4495,6 +5109,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
     {
+        updateShipStateFlightTest();
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same
         // accumulated dt prevents the two halves of ship motion from drifting
@@ -4518,6 +5133,9 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
 
             Ship& ship = *shipPtr;
+            if (isShipStateFlightTestShip(id))
+                continue;
+
             if (isPlayerControlled(id) ||
                 ship.core().role() == ShipRole::Player)
             {
@@ -4550,11 +5168,15 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!cadence.execute)
                 continue;
 
-            const NpcNavigationGoal goal =
-                m_npcAiSystem.computeGoal(
-                    ship,
-                    static_cast<float>(cadence.thinkDeltaSeconds)
-                );
+            NpcNavigationGoal goal;
+            if (!buildFiveHundredShipHerdGoal(id, goal))
+            {
+                goal =
+                    m_npcAiSystem.computeGoal(
+                        ship,
+                        static_cast<float>(cadence.thinkDeltaSeconds)
+                    );
+            }
 
             if (!updateNpcNavigationControl(
                     id,

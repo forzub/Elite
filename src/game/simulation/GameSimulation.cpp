@@ -432,6 +432,8 @@ GameSimulation::GameSimulation(
         environmentFlagEnabled("ELITE_500_SHIPS_TEST");
     m_fiveHundredMaterializedShipHerdRequested =
         environmentFlagEnabled("ELITE_500_MATERIALIZED_SHIPS_TEST");
+    m_shipTierTransitionTestRequested =
+        environmentFlagEnabled("ELITE_SHIP_TIER_TRANSITION_TEST");
 
 
 
@@ -1009,6 +1011,13 @@ void GameSimulation::initializeFiveHundredShipHerd()
                 slotInFlight
             }
         );
+
+        if (ordinal == 0 &&
+            m_shipTierTransitionTestRequested &&
+            m_shipTierTransitionProbeId.value == 0)
+        {
+            m_shipTierTransitionProbeId = id;
+        }
     }
 
     std::ofstream reset("herd_500.csv", std::ios::trunc);
@@ -1093,6 +1102,61 @@ void GameSimulation::updateShipShells(double dt)
             shell.transform.motion.localVelocityMps * dt;
     }
 }
+
+void GameSimulation::updateShipTierTransitionTest()
+{
+    if (!m_shipTierTransitionTestRequested ||
+        m_shipTierTransitionProbeId.value == 0)
+    {
+        return;
+    }
+
+    const double elapsed =
+        std::max(
+            0.0,
+            m_serverTimelineClock.timeSeconds() -
+                m_fiveHundredShipHerdStartSeconds
+        );
+
+    if (m_shipTierTransitionStage == 0 && elapsed >= 2.0)
+    {
+        if (materializeTrafficShell(m_shipTierTransitionProbeId))
+        {
+            m_shipTierTransitionStage = 1;
+            std::cout
+                << "[ShipTierTest] stage=materialized id="
+                << m_shipTierTransitionProbeId.value
+                << " preserved_entity_id=1\n";
+        }
+    }
+
+    if (m_shipTierTransitionStage == 1 && elapsed >= 5.0)
+    {
+        if (ejectShipCockpitCapsule(m_shipTierTransitionProbeId))
+        {
+            m_shipTierTransitionStage = 2;
+            std::cout
+                << "[ShipTierTest] stage=derelict id="
+                << m_shipTierTransitionProbeId.value
+                << " formation_removed=1 ai_removed=1\n";
+        }
+    }
+
+    if (m_shipTierTransitionStage == 2 && elapsed >= 8.0)
+    {
+        if (dematerializeShip(
+                m_shipTierTransitionProbeId,
+                game::simulation::ShipSimulationTier::WreckShell))
+        {
+            m_shipTierTransitionStage = 3;
+            std::cout
+                << "[ShipTierTest] stage=wreck_shell id="
+                << m_shipTierTransitionProbeId.value
+                << " preserved_entity_id=1\n";
+        }
+    }
+}
+
 
 void GameSimulation::updateFiveHundredShipHerdDiagnostics()
 {
@@ -5394,6 +5458,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     {
         updateShipStateFlightTest();
         updateShipShells(dt);
+        updateShipTierTransitionTest();
         updateFiveHundredShipHerdDiagnostics();
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same

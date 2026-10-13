@@ -372,6 +372,7 @@ private:
     bool isShipStateFlightTestShip(EntityId id) const noexcept;
 
     void initializeFiveHundredShipHerd();
+    void updateFiveHundredShipHerdDiagnostics();
     bool buildFiveHundredShipHerdGoal(
         EntityId id,
         NpcNavigationGoal& outGoal
@@ -429,6 +430,7 @@ private:
 
     bool m_fiveHundredShipHerdRequested = false;
     double m_fiveHundredShipHerdStartSeconds = 0.0;
+    double m_fiveHundredShipHerdLastLogSeconds = -1.0;
     glm::dvec3 m_fiveHundredShipHerdCenterMeters {0.0};
     std::unordered_map<EntityId, FiveHundredShipHerdMember>
         m_fiveHundredShipHerd;

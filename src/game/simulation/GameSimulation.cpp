@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <array>
 
 #include "game/ship/ShipInitData.h"
 #include "game/ship/ShipRoleType.h"
@@ -849,6 +850,7 @@ void GameSimulation::initializeFiveHundredShipHerd()
         anchor + glm::dvec3(0.0, 2200.0, 8000.0);
     m_fiveHundredShipHerdStartSeconds =
         m_serverTimelineClock.timeSeconds();
+    m_fiveHundredShipHerdLastLogSeconds = -1.0;
 
     const auto& descriptor =
         EliteCobraMk1::EliteCobraMk1Descriptor();
@@ -927,6 +929,14 @@ void GameSimulation::initializeFiveHundredShipHerd()
         );
     }
 
+    std::ofstream reset("herd_500.csv", std::ios::trunc);
+    if (reset)
+    {
+        reset
+            << "time_s,ships,state_valid,active,prewarm,coarse,other,"
+            << "mean_slot_error_m,max_slot_error_m,mean_speed_mps\n";
+    }
+
     std::cout
         << "[500Ships] spawned=" << m_fiveHundredShipHerd.size()
         << " requested=" << FiveHundredShipCount
@@ -935,6 +945,116 @@ void GameSimulation::initializeFiveHundredShipHerd()
         << " speed_mps=" << HerdSpeedMetersPerSecond
         << " radius_m=" << HerdRadiusMeters
         << " real_ship_state=1\n";
+}
+
+void GameSimulation::updateFiveHundredShipHerdDiagnostics()
+{
+    if (!m_fiveHundredShipHerdRequested)
+        return;
+
+    if (m_fiveHundredShipHerd.empty())
+    {
+        initializeFiveHundredShipHerd();
+        return;
+    }
+
+    const double now = m_serverTimelineClock.timeSeconds();
+    if (m_fiveHundredShipHerdLastLogSeconds >= 0.0 &&
+        now - m_fiveHundredShipHerdLastLogSeconds < 0.50)
+    {
+        return;
+    }
+    m_fiveHundredShipHerdLastLogSeconds = now;
+
+    const double elapsed =
+        std::max(0.0, now - m_fiveHundredShipHerdStartSeconds);
+
+    std::size_t live = 0;
+    std::size_t stateValid = 0;
+    std::size_t active = 0;
+    std::size_t prewarm = 0;
+    std::size_t coarse = 0;
+    std::size_t other = 0;
+    double errorSum = 0.0;
+    double maximumError = 0.0;
+    double speedSum = 0.0;
+
+    for (const auto& [id, member] : m_fiveHundredShipHerd)
+    {
+        const Ship* ship = getShip(id);
+        if (!ship)
+            continue;
+
+        ++live;
+        if (ship->core().state().valid())
+            ++stateValid;
+
+        const auto target =
+            sampleHerdRoute(
+                m_fiveHundredShipHerdCenterMeters,
+                member.flightIndex,
+                member.slotInFlight,
+                elapsed
+            );
+        const glm::dvec3 actualPosition =
+            world::coordinates::fullMeters(
+                ship->core().transform().worldPosition
+            );
+        const double error =
+            glm::length(actualPosition - target.positionMeters);
+        errorSum += error;
+        maximumError = std::max(maximumError, error);
+        speedSum +=
+            glm::length(
+                ship->core().transform().motion.localVelocityMps
+            );
+
+        switch (activationExecutionMode(id))
+        {
+            case game::simulation::SimulationMode::Active:
+                ++active;
+                break;
+            case game::simulation::SimulationMode::Prewarm:
+                ++prewarm;
+                break;
+            case game::simulation::SimulationMode::Coarse:
+                ++coarse;
+                break;
+            default:
+                ++other;
+                break;
+        }
+    }
+
+    const double denominator =
+        live > 0 ? static_cast<double>(live) : 1.0;
+    const double meanError = errorSum / denominator;
+    const double meanSpeed = speedSum / denominator;
+
+    std::ofstream out("herd_500.csv", std::ios::app);
+    if (out)
+    {
+        out
+            << std::fixed << std::setprecision(6)
+            << now << ','
+            << live << ','
+            << stateValid << ','
+            << active << ','
+            << prewarm << ','
+            << coarse << ','
+            << other << ','
+            << meanError << ','
+            << maximumError << ','
+            << meanSpeed << '\n';
+    }
+
+    if (live != stateValid)
+    {
+        std::cerr
+            << "[500Ships] invalid_state="
+            << (live - stateValid)
+            << " live=" << live << '\n';
+    }
 }
 
 bool GameSimulation::buildFiveHundredShipHerdGoal(
@@ -5110,6 +5230,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     if (!trajectoryDebugMode)
     {
         updateShipStateFlightTest();
+        updateFiveHundredShipHerdDiagnostics();
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same
         // accumulated dt prevents the two halves of ship motion from drifting

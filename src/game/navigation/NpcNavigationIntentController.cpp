@@ -89,10 +89,6 @@ NpcNavigationIntentController::buildIntent(
     const glm::dvec3 relativeSystemVelocity =
         finiteOrZero(state.relativeSystemVelocityMps);
 
-    const glm::dvec3 forward = normalizedOr(
-        state.forwardSystem,
-        glm::dvec3(0.0, 0.0, -1.0)
-    );
     const glm::dvec3 right = normalizedOr(
         state.rightSystem,
         glm::dvec3(1.0, 0.0, 0.0)

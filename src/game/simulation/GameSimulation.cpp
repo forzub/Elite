@@ -1120,7 +1120,7 @@ void GameSimulation::updateShipTierTransitionTest()
 
     if (m_shipTierTransitionStage == 0 && elapsed >= 2.0)
     {
-        if (materializeTrafficShell(m_shipTierTransitionProbeId))
+        if (materializeShipShell(m_shipTierTransitionProbeId))
         {
             m_shipTierTransitionStage = 1;
             std::cout
@@ -7631,19 +7631,15 @@ GameSimulation::shipSimulationTier(EntityId id) const noexcept
 }
 
 
-bool GameSimulation::materializeTrafficShell(EntityId id)
+bool GameSimulation::materializeShipShell(EntityId id)
 {
     auto shellIt = m_shipShells.find(id);
     if (shellIt == m_shipShells.end())
         return getShip(id) != nullptr;
 
     const auto shell = shellIt->second;
-    if (!shell.valid() ||
-        shell.lifecycle.tier !=
-            game::simulation::ShipSimulationTier::TrafficShell)
-    {
+    if (!shell.valid())
         return false;
-    }
 
     auto ship = std::make_unique<Ship>();
     ship->setId(id);
@@ -7711,7 +7707,22 @@ bool GameSimulation::materializeTrafficShell(EntityId id)
     ship->core().refreshRuntimeState();
 
     auto lifecycle = shell.lifecycle;
-    lifecycle.materializeForInteraction();
+    if (lifecycle.tier ==
+        game::simulation::ShipSimulationTier::WreckShell)
+    {
+        lifecycle.tier =
+            game::simulation::ShipSimulationTier::Derelict;
+        lifecycle.actorKind =
+            game::simulation::ShipActorKind::None;
+        lifecycle.pilotPresent = false;
+        lifecycle.formationId = 0;
+        lifecycle.formationSlot = 0;
+        ++lifecycle.revision;
+    }
+    else
+    {
+        lifecycle.materializeForInteraction();
+    }
 
     m_shipShells.erase(shellIt);
     m_ships[id] = std::move(ship);
@@ -8898,7 +8909,7 @@ const Ship* GameSimulation::playerShip() const
 bool GameSimulation::debugDestroyShipModule(EntityId id, const std::string& moduleId)
 {
     if (!getShip(id) && shipShell(id))
-        (void)materializeTrafficShell(id);
+        (void)materializeShipShell(id);
 
     Ship* ship = getShip(id);
     if (!ship)

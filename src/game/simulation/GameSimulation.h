@@ -126,7 +126,7 @@ public:
         std::uint16_t formationSlot = 0
     );
 
-    bool materializeTrafficShell(EntityId id);
+    bool materializeShipShell(EntityId id);
     bool markShipDerelict(EntityId id);
     bool dematerializeShip(
         EntityId id,

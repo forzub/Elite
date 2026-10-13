@@ -8830,6 +8830,9 @@ bool GameSimulation::debugSetShipStructuralLinkHealth(
     bool destroyed
 )
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -8929,6 +8932,9 @@ bool GameSimulation::debugDestroyShipModule(EntityId id, const std::string& modu
 
 bool GameSimulation::debugDetachShipModule(EntityId id, const std::string& moduleId)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -8946,6 +8952,9 @@ bool GameSimulation::debugReattachShipModule(
     const std::string& moduleId
 )
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -8964,6 +8973,9 @@ bool GameSimulation::startShipRepairJob(
     const std::string& moduleId
 )
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -8979,6 +8991,9 @@ bool GameSimulation::startShipRepairJob(
 
 bool GameSimulation::ejectShipCockpitCapsule(EntityId id)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
     {
@@ -9007,6 +9022,9 @@ bool GameSimulation::ejectShipCockpitCapsule(EntityId id)
 
 bool GameSimulation::debugHangShipModule(EntityId id, const std::string& moduleId)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9019,6 +9037,9 @@ bool GameSimulation::debugHangShipModule(EntityId id, const std::string& moduleI
 
 bool GameSimulation::debugReevaluateShipStructure(EntityId id)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9032,6 +9053,9 @@ bool GameSimulation::debugReevaluateShipStructure(EntityId id)
 
 bool GameSimulation::debugRestoreShipModule(EntityId id, const std::string& moduleId)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
     {
@@ -9049,6 +9073,9 @@ bool GameSimulation::debugRestoreShipModule(EntityId id, const std::string& modu
 
 bool GameSimulation::debugResetShipStructure(EntityId id)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeShipShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
     {

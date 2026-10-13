@@ -39,6 +39,7 @@ ShipDescriptor descriptor()
     d.physics.maxLinearGs = 20.0f;
     d.physics.turnRadius = 20.0f;
     d.physics.massKg = 100000.0;
+    d.physics.centerOfMassLocalMeters = {1.5, -0.25, 3.0};
     d.physics.pitchInertiaKgM2 = 1000000.0;
     d.physics.yawInertiaKgM2 = 1000000.0;
     d.physics.rollInertiaKgM2 = 1000000.0;
@@ -150,6 +151,42 @@ void testModuleProjectionCannotOverwriteDiagnosticOverride()
     );
 }
 
+void testMassPropertiesLiveInInstanceState()
+{
+    auto d = descriptor();
+    game::ship::state::ShipState state;
+    state.initialize(d);
+
+    require(
+        state.massProperties.massKg == d.physics.massKg,
+        "mass did not enter ShipState"
+    );
+    require(
+        state.massProperties.centerOfMassLocalMeters ==
+            d.physics.centerOfMassLocalMeters,
+        "local CoM did not enter ShipState"
+    );
+    require(
+        state.massProperties.inertiaTensorLocalKgM2[0][0] ==
+            d.physics.pitchInertiaKgM2 &&
+        state.massProperties.inertiaTensorLocalKgM2[1][1] ==
+            d.physics.yawInertiaKgM2 &&
+        state.massProperties.inertiaTensorLocalKgM2[2][2] ==
+            d.physics.rollInertiaKgM2,
+        "principal inertias did not enter state tensor"
+    );
+
+    ShipParams projected = d.physics;
+    state.massProperties.centerOfMassLocalMeters = {-2.0, 0.5, 1.0};
+    state.massProperties.applyTo(projected);
+
+    require(
+        projected.centerOfMassLocalMeters ==
+            glm::dvec3(-2.0, 0.5, 1.0),
+        "runtime CoM was not projected to effective physics"
+    );
+}
+
 void testDifferentShipDescriptorsRemainIndependent()
 {
     auto cobraLike = descriptor();
@@ -239,6 +276,7 @@ int main()
         testAllSixConstructionsAreStateTransitions();
         testDiagnosticDamageChangesCapabilityWithoutChangingConstruction();
         testModuleProjectionCannotOverwriteDiagnosticOverride();
+        testMassPropertiesLiveInInstanceState();
         testDifferentShipDescriptorsRemainIndependent();
         testClearOverrideReturnsToDescriptorConstruction();
 
@@ -247,6 +285,7 @@ int main()
             << " - all six physical constructions are state transitions\n"
             << " - actuator degradation changes capability, not construction\n"
             << " - diagnostic state is not overwritten by module projection\n"
+            << " - mass/CoM/inertia live in per-instance state\n"
             << " - different ship marks keep independent definitions/capability\n"
             << " - production descriptor binding is restorable\n";
         return EXIT_SUCCESS;

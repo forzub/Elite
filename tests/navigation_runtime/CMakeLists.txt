@@ -2104,3 +2104,28 @@ set_tests_properties(
     npc_formation_goal
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    ship_mass_properties_tests
+    ShipMassPropertiesTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/ship/physics/ShipImpulseSystem.cpp"
+)
+
+target_include_directories(ship_mass_properties_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(ship_mass_properties_tests PRIVATE cxx_std_17)
+
+if(MSVC)
+    target_compile_options(ship_mass_properties_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(ship_mass_properties_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(NAME ship_mass_properties COMMAND ship_mass_properties_tests)
+set_tests_properties(
+    ship_mass_properties
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

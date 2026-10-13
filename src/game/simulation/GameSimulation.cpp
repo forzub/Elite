@@ -83,7 +83,7 @@ namespace
     constexpr std::size_t HerdFlightSize = 3;
     constexpr std::size_t HerdFlightCount =
         (FiveHundredShipCount + HerdFlightSize - 1) / HerdFlightSize;
-    constexpr double HerdRadiusMeters = 6000.0;
+    constexpr double HerdRadiusMeters = 4500.0;
     constexpr double HerdSpeedMetersPerSecond = 180.0;
     constexpr double HerdVerticalWaveMeters = 260.0;
     constexpr double HerdWingLateralMeters = 55.0;
@@ -917,7 +917,7 @@ void GameSimulation::initializeFiveHundredShipHerd()
     // The proving ground must be visible without turning around. The old
     // fixed +Z placement put the herd behind the default Cobra (-Z forward).
     m_fiveHundredShipHerdCenterMeters =
-        anchor + forward * 5200.0 + up * 450.0;
+        anchor + forward * 5000.0 + up * 450.0;
     m_fiveHundredShipHerdStartSeconds =
         m_serverTimelineClock.timeSeconds();
     m_fiveHundredShipHerdLastLogSeconds = -1.0;

@@ -53,15 +53,16 @@ void ShipCore::init(
     // геттер из файла описания корабля (f.e. Cobra MKIII)
     // позиция корабля в пространстве
 
-    m_role = inRole;  
-    m_desc = &descriptor;
+    m_role = inRole;
+    m_desc = &descriptor; // compatibility mirror; construction truth is m_state.
+    m_state.initialize(descriptor);
     m_transform.setWorldPositionMeters(glm::dvec3(position));
 
-    // The hull descriptor owns the native local-flight doctrine. The live
-    // state may later be switched by the existing debug control, but every
-    // fresh ship starts from its descriptor rather than a global default.
+    // Every Ship -- player, NPC, bot or diagnostic actor -- starts from the
+    // same construction state. Runtime control reads this state rather than
+    // branching on ownership/role.
     m_transform.motion.localControlLaw =
-        descriptor.localFlightControlLaw;
+        m_state.construction.nativeFlightControlLaw;
 
 
     // собираем корабль
@@ -148,6 +149,7 @@ void ShipCore::init(
     m_damageHandler.ship = this;
 
     initModuleRuntime();
+    refreshRuntimeState();
 
     if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
     {
@@ -180,15 +182,58 @@ void ShipCore::init(
 // //   ######   ##       ######   #####      ###    #####
 // //           ####
 
+void ShipCore::refreshRuntimeState()
+{
+    if (!m_state.construction.valid() ||
+        m_state.actuators.source !=
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+    {
+        return;
+    }
+
+    m_state.actuators.synchronizeFromModules(
+        game::ship::capability::buildPhysicalControlSlotState(
+            *m_state.construction.definition,
+            m_state.construction.physicalControlModel,
+            m_moduleRuntime
+        )
+    );
+}
+
+bool ShipCore::selectPhysicalConstructionForDiagnostic(
+    game::ship::plant::PhysicalControlModelId model
+)
+{
+    if (!m_state.construction.valid())
+        return false;
+
+    m_state.selectConstructionForDiagnostic(model);
+    m_transform.motion.localControlLaw =
+        m_state.construction.nativeFlightControlLaw;
+    return true;
+}
+
+void ShipCore::clearPhysicalConstructionDiagnosticOverride()
+{
+    m_state.clearDiagnosticConstructionOverride();
+    if (m_state.construction.valid())
+    {
+        m_transform.motion.localControlLaw =
+            m_state.construction.nativeFlightControlLaw;
+        refreshRuntimeState();
+    }
+}
+
 game::ship::capability::ShipCapabilitySnapshot
 ShipCore::capabilities() const
 {
-    if (!m_desc)
+    if (!m_state.valid())
         return {};
 
     return game::ship::capability::buildShipCapability(
-        *m_desc,
-        m_moduleRuntime
+        *m_state.construction.definition,
+        m_state.construction.physicalControlModel,
+        m_state.actuators.propulsionSlots
     );
 }
 
@@ -212,7 +257,7 @@ void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
     game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         m_transform,
         physics,
-        m_control,
+        m_state.control,
         world,
         dt
     );
@@ -225,7 +270,7 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         evaluateAttitudeControl(
             m_transform,
             physics,
-            m_control,
+            m_state.control,
             world,
             dt
         );
@@ -246,7 +291,7 @@ void ShipCore::updateTranslationControl(float dt)
         evaluateTranslationControl(
             m_transform,
             physics,
-            m_control,
+            m_state.control,
             dt
         );
 }

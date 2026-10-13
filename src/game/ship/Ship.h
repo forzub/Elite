@@ -78,7 +78,6 @@ public:
 
 private:
     ShipCore            m_core;
-    ShipControlState    m_control;
     EntityId            m_id;
     ObjectType          m_typeId;
 

@@ -2045,3 +2045,36 @@ set_tests_properties(
     segmented_route_composer
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    ship_state_tests
+    ShipStateTests.cpp
+)
+
+target_include_directories(ship_state_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(ship_state_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    ship_state_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(ship_state_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(ship_state_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(
+    NAME ship_state
+    COMMAND ship_state_tests
+)
+
+set_tests_properties(
+    ship_state
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

@@ -119,22 +119,10 @@ void Ship::updatePerception(
 
 void Ship::updateControlIntent()
 {
-        
-        // control уже заполнен в handleInput()
-        // m_core.transform().cruiseActive    = m_control.cruiseActive;
-        // m_core.transform().pitchInput      = m_control.pitchInput;
-        // m_core.transform().yawInput        = m_control.yawInput;
-        // m_core.transform().rollInput       = m_control.rollInput;
-        // m_core.transform().targetSpeedRate = m_control.targetSpeedRate;
-        // m_core.transform().strafeInput     = m_control.strafeInput;
-        // m_core.transform().liftInput       = m_control.liftInput;
-        // m_core.transform().forwardInput    = m_control.forwardInput;
-    
-        m_core.control() = m_control;
-
-
-
-       
+    // ShipControlState already lives in the canonical ShipState. This seam is
+    // now responsible only for synchronizing module-derived actuator state
+    // before the physics/control phases consume capability.
+    m_core.refreshRuntimeState();
 }
 
 
@@ -183,8 +171,7 @@ bool Ship::removeItem(Item* item)
 
 void Ship::setControlState(const ShipControlState& newControl)
 {
-
-    m_control = newControl;
+    m_core.state().control = newControl;
 }
 
 

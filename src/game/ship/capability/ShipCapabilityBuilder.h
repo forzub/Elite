@@ -281,6 +281,97 @@ inline ShipCapabilitySnapshot makeCapability(
 
 } // namespace detail
 
+// State-driven projection for a construction selected by ShipState. The
+// descriptor supplies immutable module bindings/ratings only; the per-instance
+// construction model is supplied explicitly.
+inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model,
+    const world::modules::ObjectModuleRuntime& runtime
+)
+{
+    const auto& topology = plant::physicalControlSlots(model);
+    const auto& binding = descriptor.physicalControl.slotModuleIds;
+
+    if (binding.empty())
+        return plant::healthySlotState(topology);
+
+    if (binding.size() != topology.size())
+        return {};
+
+    std::vector<plant::EngineSlotState> out;
+    out.reserve(topology.size());
+    for (const auto& moduleId : binding)
+    {
+        if (moduleId.empty())
+            out.push_back(detail::healthySlot());
+        else
+            out.push_back(detail::slotFromModule(runtime.findModule(moduleId)));
+    }
+    return out;
+}
+
+inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model,
+    const std::vector<game::simulation::ObjectModuleSnapshot>& modules
+)
+{
+    const auto& topology = plant::physicalControlSlots(model);
+    const auto& binding = descriptor.physicalControl.slotModuleIds;
+
+    if (binding.empty() || modules.empty())
+        return plant::healthySlotState(topology);
+
+    if (binding.size() != topology.size())
+        return {};
+
+    std::vector<plant::EngineSlotState> out;
+    out.reserve(topology.size());
+    for (const auto& moduleId : binding)
+    {
+        if (moduleId.empty())
+        {
+            out.push_back(detail::healthySlot());
+            continue;
+        }
+
+        const auto it = std::find_if(
+            modules.begin(),
+            modules.end(),
+            [&](const auto& module)
+            {
+                return module.moduleId == moduleId;
+            }
+        );
+        out.push_back(
+            detail::slotFromSnapshot(
+                descriptor,
+                it == modules.end() ? nullptr : &*it
+            )
+        );
+    }
+    return out;
+}
+
+inline ShipCapabilitySnapshot buildShipCapability(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model,
+    const std::vector<plant::EngineSlotState>& state
+)
+{
+    if (state.size() != plant::physicalControlSlots(model).size())
+        return {};
+
+    return detail::makeCapability(
+        plant::evaluatePhysicalControlModel(
+            model,
+            descriptor.physics,
+            state
+        )
+    );
+}
+
 // Public per-slot capability projection for diagnostics/presentation and the
 // future actuator allocator. The physical topology remains the source of slot
 // count/order; consumers must not reconstruct engine health from ad-hoc banks.

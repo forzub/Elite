@@ -13,6 +13,7 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/state/ShipState.h"
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 
 #include "src/game/ship/core/ShipInventory.h"
@@ -214,8 +215,11 @@ public:
     ShipTransform&                              transform()                 { return m_transform; }
     const ShipTransform&                        transform() const           { return m_transform; }
 
-    ShipControlState&                           control()                   { return m_control; }
-    const ShipControlState&                     control() const             { return m_control; }
+    game::ship::state::ShipState&               state()                     { return m_state; }
+    const game::ship::state::ShipState&         state() const               { return m_state; }
+
+    ShipControlState&                           control()                   { return m_state.control; }
+    const ShipControlState&                     control() const             { return m_state.control; }
 
     game::ShipEquipment&                        equipment()                 { return m_equipment; }
     const game::ShipEquipment&                  equipment() const           { return m_equipment; }
@@ -229,8 +233,16 @@ public:
 
     const std::vector<SignalReceptionResult>&   signalResults() const       {return m_signalResults;} 
 
-    const ShipDescriptor&                       desc() const                { return *m_desc; }
-    const ShipDescriptor&                       descriptor() const           { return *m_desc; }
+    const ShipDescriptor&                       desc() const                { return *m_state.construction.definition; }
+    const ShipDescriptor&                       descriptor() const           { return *m_state.construction.definition; }
+
+    // Refreshes module-derived actuator state once at the ship-control seam.
+    // Diagnostic actuator/construction overrides are never overwritten here.
+    void                                        refreshRuntimeState();
+    bool                                        selectPhysicalConstructionForDiagnostic(
+                                                    game::ship::plant::PhysicalControlModelId model
+                                                );
+    void                                        clearPhysicalConstructionDiagnosticOverride();
 
     // Authoritative answer to "what can this ship do right now?". Physical
     // topology and damage stay below this boundary.
@@ -313,7 +325,7 @@ private:
     // Состояние
     // ───────────────
     ShipTransform                               m_transform;
-    ShipControlState                            m_control;
+    game::ship::state::ShipState                m_state;
     ShipParams                                  m_params;
     // ShipController                              m_controller;
 

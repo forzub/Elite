@@ -150,6 +150,67 @@ void testModuleProjectionCannotOverwriteDiagnosticOverride()
     );
 }
 
+void testDifferentShipDescriptorsRemainIndependent()
+{
+    auto cobraLike = descriptor();
+    cobraLike.physics.massKg = 100000.0;
+    cobraLike.physics.forwardMainEngineAccelerationMps2 = 60.0f;
+    cobraLike.physicalControlModel = Model::AssistedI;
+
+    auto heavyLike = descriptor();
+    heavyLike.physics.massKg = 900000.0;
+    heavyLike.physics.forwardMainEngineAccelerationMps2 = 18.0f;
+    heavyLike.physicalControlModel = Model::NewtonianY;
+
+    game::ship::state::ShipState cobraState;
+    game::ship::state::ShipState heavyState;
+    cobraState.initialize(cobraLike);
+    heavyState.initialize(heavyLike);
+
+    require(
+        cobraState.construction.definition == &cobraLike,
+        "first ship lost its own descriptor binding"
+    );
+    require(
+        heavyState.construction.definition == &heavyLike,
+        "second ship lost its own descriptor binding"
+    );
+    require(
+        cobraState.construction.physicalControlModel == Model::AssistedI,
+        "first ship construction leaked from another mark"
+    );
+    require(
+        heavyState.construction.physicalControlModel == Model::NewtonianY,
+        "second ship construction leaked from another mark"
+    );
+
+    const auto cobraCapability =
+        game::ship::capability::buildShipCapability(
+            cobraLike,
+            cobraState.construction.physicalControlModel,
+            cobraState.actuators.propulsionSlots
+        );
+    const auto heavyCapability =
+        game::ship::capability::buildShipCapability(
+            heavyLike,
+            heavyState.construction.physicalControlModel,
+            heavyState.actuators.propulsionSlots
+        );
+
+    require(cobraCapability.valid, "first mark capability invalid");
+    require(heavyCapability.valid, "second mark capability invalid");
+    require(
+        cobraCapability.effectivePhysics.massKg !=
+            heavyCapability.effectivePhysics.massKg,
+        "different marks collapsed onto one physics definition"
+    );
+    require(
+        cobraCapability.effectivePhysics.forwardMainEngineAccelerationMps2 !=
+            heavyCapability.effectivePhysics.forwardMainEngineAccelerationMps2,
+        "different marks collapsed onto one propulsion definition"
+    );
+}
+
 void testClearOverrideReturnsToDescriptorConstruction()
 {
     auto d = descriptor();
@@ -178,6 +239,7 @@ int main()
         testAllSixConstructionsAreStateTransitions();
         testDiagnosticDamageChangesCapabilityWithoutChangingConstruction();
         testModuleProjectionCannotOverwriteDiagnosticOverride();
+        testDifferentShipDescriptorsRemainIndependent();
         testClearOverrideReturnsToDescriptorConstruction();
 
         std::cout
@@ -185,6 +247,7 @@ int main()
             << " - all six physical constructions are state transitions\n"
             << " - actuator degradation changes capability, not construction\n"
             << " - diagnostic state is not overwritten by module projection\n"
+            << " - different ship marks keep independent definitions/capability\n"
             << " - production descriptor binding is restorable\n";
         return EXIT_SUCCESS;
     }

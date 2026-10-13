@@ -51,6 +51,7 @@
 #include "src/world/orbits/OrbitalMotion.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/autopilot/AutopilotLawController.h"
@@ -429,6 +430,8 @@ GameSimulation::GameSimulation(
         environmentFlagEnabled("ELITE_SHIP_STATE_FLIGHT_TEST");
     m_fiveHundredShipHerdRequested =
         environmentFlagEnabled("ELITE_500_SHIPS_TEST");
+    m_fiveHundredMaterializedShipHerdRequested =
+        environmentFlagEnabled("ELITE_500_MATERIALIZED_SHIPS_TEST");
 
 
 
@@ -877,7 +880,8 @@ void GameSimulation::updateShipStateFlightTest()
 
 void GameSimulation::initializeFiveHundredShipHerd()
 {
-    if (!m_fiveHundredShipHerdRequested ||
+    if ((!m_fiveHundredShipHerdRequested &&
+         !m_fiveHundredMaterializedShipHerdRequested) ||
         !m_fiveHundredShipHerd.empty() ||
         m_activeCelestialSystemId < 0)
     {
@@ -939,32 +943,63 @@ void GameSimulation::initializeFiveHundredShipHerd()
             "HERD-" + std::to_string(ordinal + 1);
         init.registry.shipRole = ShipRoleType::Civilian;
 
-        const EntityId id =
-            spawnShip(
-                ShipRole::NPC,
-                m_activeCelestialSystemId,
-                descriptor,
-                sample.positionMeters,
-                init,
-                orientationFromVelocity(sample.velocityMps)
-            );
+        EntityId id {};
+        if (m_fiveHundredMaterializedShipHerdRequested)
+        {
+            id =
+                spawnShip(
+                    ShipRole::NPC,
+                    m_activeCelestialSystemId,
+                    descriptor,
+                    sample.positionMeters,
+                    init,
+                    orientationFromVelocity(sample.velocityMps)
+                );
+
+            if (Ship* ship = getShip(id))
+            {
+                auto& tr = ship->core().transform();
+                tr.motion.mode = game::navigation::MotionMode::HubTactical;
+                tr.motion.travelFrame = frame;
+                tr.motion.localPositionMeters =
+                    frame.worldToLocalPosition(sample.positionMeters);
+                tr.motion.localVelocityMps =
+                    frame.worldToLocalVector(sample.velocityMps);
+                tr.motion.worldVelocityMps = sample.velocityMps;
+                tr.motion.referenceVelocityMps = glm::dvec3(0.0);
+                tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+            }
+        }
+        else
+        {
+            id =
+                spawnTrafficShell(
+                    m_activeCelestialSystemId,
+                    descriptor,
+                    sample.positionMeters,
+                    sample.velocityMps,
+                    init,
+                    orientationFromVelocity(sample.velocityMps),
+                    static_cast<std::uint32_t>(flightIndex + 1),
+                    static_cast<std::uint16_t>(slotInFlight)
+                );
+
+            auto shellIt = m_shipShells.find(id);
+            if (shellIt != m_shipShells.end())
+            {
+                auto& tr = shellIt->second.transform;
+                tr.motion.mode = game::navigation::MotionMode::HubTactical;
+                tr.motion.travelFrame = frame;
+                tr.motion.localPositionMeters =
+                    frame.worldToLocalPosition(sample.positionMeters);
+                tr.motion.localVelocityMps =
+                    frame.worldToLocalVector(sample.velocityMps);
+                tr.motion.worldVelocityMps = sample.velocityMps;
+            }
+        }
+
         if (id.value == 0)
             continue;
-
-        Ship* ship = getShip(id);
-        if (!ship)
-            continue;
-
-        auto& tr = ship->core().transform();
-        tr.motion.mode = game::navigation::MotionMode::HubTactical;
-        tr.motion.travelFrame = frame;
-        tr.motion.localPositionMeters =
-            frame.worldToLocalPosition(sample.positionMeters);
-        tr.motion.localVelocityMps =
-            frame.worldToLocalVector(sample.velocityMps);
-        tr.motion.worldVelocityMps = sample.velocityMps;
-        tr.motion.referenceVelocityMps = glm::dvec3(0.0);
-        tr.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
 
         m_fiveHundredShipHerd.emplace(
             id,
@@ -980,7 +1015,8 @@ void GameSimulation::initializeFiveHundredShipHerd()
     if (reset)
     {
         reset
-            << "time_s,ships,state_valid,active,prewarm,coarse,other,"
+            << "time_s,entities,shells,materialized,state_valid,"
+            << "active,prewarm,coarse,other,"
             << "mean_slot_error_m,max_slot_error_m,mean_speed_mps\n";
     }
 
@@ -991,12 +1027,77 @@ void GameSimulation::initializeFiveHundredShipHerd()
         << " flight_size=3"
         << " speed_mps=" << HerdSpeedMetersPerSecond
         << " radius_m=" << HerdRadiusMeters
-        << " real_ship_state=1\n";
+        << " tier="
+        << (m_fiveHundredMaterializedShipHerdRequested
+                ? "materialized"
+                : "traffic_shell")
+        << "\n";
+}
+
+void GameSimulation::updateShipShells(double dt)
+{
+    if (dt <= 0.0)
+        return;
+
+    const double elapsed =
+        std::max(
+            0.0,
+            m_serverTimelineClock.timeSeconds() -
+                m_fiveHundredShipHerdStartSeconds
+        );
+
+    for (auto& [id, shell] : m_shipShells)
+    {
+        auto herdIt = m_fiveHundredShipHerd.find(id);
+        if (herdIt != m_fiveHundredShipHerd.end() &&
+            shell.lifecycle.tier ==
+                game::simulation::ShipSimulationTier::TrafficShell)
+        {
+            const auto sample =
+                sampleHerdRoute(
+                    m_fiveHundredShipHerdCenterMeters,
+                    herdIt->second.flightIndex,
+                    herdIt->second.slotInFlight,
+                    elapsed
+                );
+
+            shell.transform.setWorldPositionMeters(sample.positionMeters);
+            shell.transform.orientation =
+                orientationFromVelocity(sample.velocityMps);
+            shell.transform.motion.worldVelocityMps = sample.velocityMps;
+
+            if (shell.transform.motion.travelFrame.valid)
+            {
+                shell.transform.motion.localPositionMeters =
+                    shell.transform.motion.travelFrame.worldToLocalPosition(
+                        sample.positionMeters
+                    );
+                shell.transform.motion.localVelocityMps =
+                    shell.transform.motion.travelFrame.worldToLocalVector(
+                        sample.velocityMps
+                    );
+            }
+            else
+            {
+                shell.transform.motion.localVelocityMps = sample.velocityMps;
+            }
+            continue;
+        }
+
+        // Background non-route shells and wrecks use inertial propagation only.
+        // There is no AI, controller, engine or module update on this path.
+        shell.transform.addWorldMeters(
+            shell.transform.motion.worldVelocityMps * dt
+        );
+        shell.transform.motion.localPositionMeters +=
+            shell.transform.motion.localVelocityMps * dt;
+    }
 }
 
 void GameSimulation::updateFiveHundredShipHerdDiagnostics()
 {
-    if (!m_fiveHundredShipHerdRequested)
+    if (!m_fiveHundredShipHerdRequested &&
+        !m_fiveHundredMaterializedShipHerdRequested)
         return;
 
     if (m_fiveHundredShipHerd.empty())
@@ -1017,6 +1118,8 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
         std::max(0.0, now - m_fiveHundredShipHerdStartSeconds);
 
     std::size_t live = 0;
+    std::size_t shells = 0;
+    std::size_t materialized = 0;
     std::size_t stateValid = 0;
     std::size_t active = 0;
     std::size_t prewarm = 0;
@@ -1029,12 +1132,21 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
     for (const auto& [id, member] : m_fiveHundredShipHerd)
     {
         const Ship* ship = getShip(id);
-        if (!ship)
+        const auto* shell = shipShell(id);
+        if (!ship && !shell)
             continue;
 
         ++live;
-        if (ship->core().state().valid())
-            ++stateValid;
+        if (ship)
+        {
+            ++materialized;
+            if (ship->core().state().valid())
+                ++stateValid;
+        }
+        else
+        {
+            ++shells;
+        }
 
         const auto target =
             sampleHerdRoute(
@@ -1043,18 +1155,19 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
                 member.slotInFlight,
                 elapsed
             );
+        const ShipTransform& actualTransform =
+            ship ? ship->core().transform() : shell->transform;
         const glm::dvec3 actualPosition =
-            world::coordinates::fullMeters(
-                ship->core().transform().worldPosition
-            );
+            world::coordinates::fullMeters(actualTransform.worldPosition);
         const double error =
             glm::length(actualPosition - target.positionMeters);
         errorSum += error;
         maximumError = std::max(maximumError, error);
         speedSum +=
-            glm::length(
-                ship->core().transform().motion.localVelocityMps
-            );
+            glm::length(actualTransform.motion.worldVelocityMps);
+
+        if (!ship)
+            continue;
 
         switch (activationExecutionMode(id))
         {
@@ -1085,6 +1198,8 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
             << std::fixed << std::setprecision(6)
             << now << ','
             << live << ','
+            << shells << ','
+            << materialized << ','
             << stateValid << ','
             << active << ','
             << prewarm << ','
@@ -1095,12 +1210,13 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
             << meanSpeed << '\n';
     }
 
-    if (live != stateValid)
+    if (materialized != stateValid)
     {
         std::cerr
-            << "[500Ships] invalid_state="
-            << (live - stateValid)
-            << " live=" << live << '\n';
+            << "[500Ships] invalid_materialized_state="
+            << (materialized - stateValid)
+            << " materialized=" << materialized
+            << " shells=" << shells << '\n';
     }
 }
 
@@ -1110,7 +1226,7 @@ bool GameSimulation::buildFiveHundredShipHerdGoal(
 ) const
 {
     const auto it = m_fiveHundredShipHerd.find(id);
-    if (it == m_fiveHundredShipHerd.end())
+    if (it == m_fiveHundredShipHerd.end() || !getShip(id))
         return false;
 
     const double elapsed =
@@ -5277,6 +5393,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     if (!trajectoryDebugMode)
     {
         updateShipStateFlightTest();
+        updateShipShells(dt);
         updateFiveHundredShipHerdDiagnostics();
         // Stage 4B uses one cadence decision for both attitude/control-force
         // evaluation and HubTactical engine-command refresh. Reusing the same
@@ -5303,6 +5420,17 @@ m_hubVelocityMetersPerSecond[hubId] =
             Ship& ship = *shipPtr;
             if (isShipStateFlightTestShip(id))
                 continue;
+
+            if (shipSimulationTier(id) ==
+                game::simulation::ShipSimulationTier::Derelict)
+            {
+                ship.setControlState(ShipControlState {});
+                m_npcNavigationControlBridges.erase(id);
+                m_npcNavigationExecutionSnapshots.erase(id);
+                m_npcNavigationLastExecutionTimeSeconds.erase(id);
+                m_npcAutopilotLawControllers.erase(id);
+                continue;
+            }
 
             if (isPlayerControlled(id) ||
                 ship.core().role() == ShipRole::Player)
@@ -6232,6 +6360,51 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
         snapshot.ships.push_back(s);
+    }
+
+    // Lightweight shells publish only identity + transform. Client hydration
+    // resolves descriptor/assembly by typeId and receives no heavy graph.
+    for (const auto& [id, shell] : m_shipShells)
+    {
+        if (!shell.valid())
+            continue;
+
+        ShipSnapshot s;
+        s.id = id;
+        s.instanceId = shell.registry.instanceId;
+        s.role = ShipRole::NPC;
+        s.typeId = shell.definition->typeId;
+        s.transform = shell.transform;
+
+        s.referenceFrame.systemId = shell.transform.motion.systemId;
+        s.referenceFrame.frameId = shell.transform.motion.travelFrame.frameId;
+        s.referenceFrame.type = shell.transform.motion.mode;
+        s.referenceFrame.localPositionMeters =
+            shell.transform.motion.localPositionMeters;
+        s.referenceFrame.localVelocityMetersPerSecond =
+            shell.transform.motion.localVelocityMps;
+        s.referenceFrame.universeTimeSeconds =
+            m_orbitalUniverseTimeSeconds;
+
+        if (shell.transform.motion.travelFrame.valid)
+        {
+            const auto& frame = shell.transform.motion.travelFrame;
+            s.referenceFrame.originMeters = frame.originMeters;
+            s.referenceFrame.velocityMetersPerSecond =
+                frame.linearVelocityMps;
+            s.referenceFrame.accelerationMetersPerSecond2 =
+                frame.linearAccelerationMps2;
+            s.referenceFrame.angularVelocityWorldRadPerSecond =
+                frame.angularVelocityWorldRadPerSecond;
+            s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
+                frame.angularAccelerationWorldRadPerSecond2;
+            s.referenceFrame.progradeAxis = frame.localToWorldBasis[0];
+            s.referenceFrame.radialAxis = frame.localToWorldBasis[1];
+            s.referenceFrame.normalAxis = frame.localToWorldBasis[2];
+            s.referenceFrame.valid = true;
+        }
+
+        snapshot.ships.push_back(std::move(s));
     }
 
 
@@ -7308,11 +7481,327 @@ EntityId GameSimulation::spawnShip(
     ship->core().transform().motion.systemId = systemId;
 
     m_ships[id] = std::move(ship);
+
+    game::simulation::ShipSimulationLifecycleState lifecycle;
+    lifecycle.tier =
+        game::simulation::ShipSimulationTier::MaterializedShip;
+    lifecycle.actorKind =
+        role == ShipRole::Player
+            ? game::simulation::ShipActorKind::Player
+            : game::simulation::ShipActorKind::NpcPilot;
+    lifecycle.pilotPresent = true;
+    m_shipSimulationLifecycle[id] = lifecycle;
+
     markShipGraphDirty(id);
 
     return id;
 }
 
+
+EntityId GameSimulation::spawnTrafficShell(
+    int systemId,
+    const ShipDescriptor& descriptor,
+    const glm::dvec3& positionMeters,
+    const glm::dvec3& velocityMetersPerSecond,
+    const ShipInitData& initData,
+    const glm::mat4& orientation,
+    std::uint32_t formationId,
+    std::uint16_t formationSlot
+)
+{
+    if (!game::simulation::canCreateInActiveRuntimeSystem(
+            systemId,
+            m_activeCelestialSystemId))
+    {
+        return EntityId{};
+    }
+
+    const EntityId id = generateEntityId();
+
+    game::simulation::ShipShellState shell;
+    shell.id = id;
+    shell.definition = &descriptor;
+    shell.visual = initData.visual;
+    shell.registry = initData.registry;
+    shell.transform.setWorldPositionMeters(positionMeters);
+    shell.transform.orientation = orientation;
+    shell.transform.motion.systemId = systemId;
+    shell.transform.motion.worldVelocityMps = velocityMetersPerSecond;
+    shell.transform.motion.localVelocityMps = velocityMetersPerSecond;
+    shell.transform.referenceVelocityMetersPerSecond = glm::dvec3(0.0);
+
+    shell.lifecycle.tier =
+        game::simulation::ShipSimulationTier::TrafficShell;
+    shell.lifecycle.actorKind =
+        game::simulation::ShipActorKind::TrafficAutopilot;
+    shell.lifecycle.pilotPresent = true;
+    shell.lifecycle.formationId = formationId;
+    shell.lifecycle.formationSlot = formationSlot;
+
+    m_shipShells.emplace(id, std::move(shell));
+    return id;
+}
+
+
+const game::simulation::ShipShellState*
+GameSimulation::shipShell(EntityId id) const
+{
+    const auto it = m_shipShells.find(id);
+    return it == m_shipShells.end() ? nullptr : &it->second;
+}
+
+
+game::simulation::ShipSimulationTier
+GameSimulation::shipSimulationTier(EntityId id) const noexcept
+{
+    const auto shellIt = m_shipShells.find(id);
+    if (shellIt != m_shipShells.end())
+        return shellIt->second.lifecycle.tier;
+
+    const auto it = m_shipSimulationLifecycle.find(id);
+    if (it != m_shipSimulationLifecycle.end())
+        return it->second.tier;
+
+    return game::simulation::ShipSimulationTier::MaterializedShip;
+}
+
+
+bool GameSimulation::materializeTrafficShell(EntityId id)
+{
+    auto shellIt = m_shipShells.find(id);
+    if (shellIt == m_shipShells.end())
+        return getShip(id) != nullptr;
+
+    const auto shell = shellIt->second;
+    if (!shell.valid() ||
+        shell.lifecycle.tier !=
+            game::simulation::ShipSimulationTier::TrafficShell)
+    {
+        return false;
+    }
+
+    auto ship = std::make_unique<Ship>();
+    ship->setId(id);
+    ship->setTypeId(shell.definition->typeId);
+
+    ShipInitData init;
+    init.visual = shell.visual;
+    init.registry = shell.registry;
+
+    ship->init(
+        ShipRole::NPC,
+        *shell.definition,
+        glm::vec3(0.0f),
+        init,
+        shell.transform.orientation
+    );
+    ship->core().transform() = shell.transform;
+
+    // Expand cheap aggregate engine damage into the real module graph. This is
+    // deliberately approximate: exact hit history begins only after materialization.
+    const auto& definitions =
+        game::ship::plant::physicalControlSlots(
+            shell.definition->physicalControlModel
+        );
+    const auto& binding =
+        shell.definition->physicalControl.slotModuleIds;
+
+    if (binding.size() == definitions.size())
+    {
+        for (std::size_t i = 0; i < binding.size(); ++i)
+        {
+            if (binding[i].empty())
+                continue;
+
+            auto* module =
+                ship->core().moduleRuntime().findModule(binding[i]);
+            if (!module)
+                continue;
+
+            double authority =
+                shell.damage.mainThrustAuthority01;
+            if (definitions[i].role ==
+                game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+            {
+                authority = shell.damage.manoeuvreAuthority01;
+            }
+            else
+            {
+                authority = std::min(
+                    shell.damage.mainThrustAuthority01,
+                    shell.damage.mainVectoringAuthority01
+                );
+            }
+
+            ship->core().moduleRuntime().setModuleHealth(
+                binding[i],
+                static_cast<float>(
+                    module->maxHealth *
+                    std::clamp(authority, 0.0, 1.0)
+                )
+            );
+        }
+    }
+
+    ship->core().refreshRuntimeState();
+
+    auto lifecycle = shell.lifecycle;
+    lifecycle.materializeForInteraction();
+
+    m_shipShells.erase(shellIt);
+    m_ships[id] = std::move(ship);
+    m_shipSimulationLifecycle[id] = lifecycle;
+    markShipGraphDirty(id);
+    return true;
+}
+
+
+bool GameSimulation::markShipDerelict(EntityId id)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    auto& lifecycle = m_shipSimulationLifecycle[id];
+    lifecycle.onPilotEjected();
+
+    ship->setControlState(ShipControlState {});
+    m_playerControlledShipIds.erase(id);
+    m_npcNavigationControlBridges.erase(id);
+    m_npcNavigationExecutionSnapshots.erase(id);
+    m_npcNavigationLastExecutionTimeSeconds.erase(id);
+    m_npcAutopilotLawControllers.erase(id);
+    m_npcAiCadenceStates.erase(id);
+    m_shipMotionControlCadenceStates.erase(id);
+
+    // A pilotless or uncontrollable hull is no longer a formation member.
+    m_fiveHundredShipHerd.erase(id);
+    return true;
+}
+
+
+bool GameSimulation::dematerializeShip(
+    EntityId id,
+    game::simulation::ShipSimulationTier targetTier
+)
+{
+    if (targetTier != game::simulation::ShipSimulationTier::TrafficShell &&
+        targetTier != game::simulation::ShipSimulationTier::WreckShell)
+    {
+        return false;
+    }
+
+    auto shipIt = m_ships.find(id);
+    if (shipIt == m_ships.end() || !shipIt->second)
+        return false;
+
+    Ship& ship = *shipIt->second;
+    auto lifecycleIt = m_shipSimulationLifecycle.find(id);
+    auto lifecycle =
+        lifecycleIt != m_shipSimulationLifecycle.end()
+            ? lifecycleIt->second
+            : game::simulation::ShipSimulationLifecycleState{};
+
+    if (targetTier == game::simulation::ShipSimulationTier::TrafficShell &&
+        !lifecycle.pilotPresent)
+    {
+        return false;
+    }
+
+    if (targetTier == game::simulation::ShipSimulationTier::WreckShell &&
+        lifecycle.pilotPresent)
+    {
+        return false;
+    }
+
+    game::simulation::ShipShellState shell;
+    shell.id = id;
+    shell.definition = &ship.core().desc();
+    shell.visual = ship.core().visualIdentity();
+    shell.registry = ship.core().registry();
+    shell.transform = ship.core().transform();
+    shell.lifecycle = lifecycle;
+    shell.lifecycle.tier = targetTier;
+    ++shell.lifecycle.revision;
+
+    double structuralSum = 0.0;
+    std::size_t structuralCount = 0;
+    for (const auto& module : ship.core().moduleRuntime().modules())
+    {
+        if (module.maxHealth <= 0.0f)
+            continue;
+        structuralSum +=
+            std::clamp(
+                static_cast<double>(module.health / module.maxHealth),
+                0.0,
+                1.0
+            );
+        ++structuralCount;
+    }
+    shell.damage.structuralIntegrity01 =
+        structuralCount > 0
+            ? structuralSum / static_cast<double>(structuralCount)
+            : 1.0;
+
+    const auto& definitions =
+        game::ship::plant::physicalControlSlots(
+            ship.core().state().construction.physicalControlModel
+        );
+    const auto& slots = ship.core().state().actuators.propulsionSlots;
+
+    double mainThrust = 0.0;
+    double mainVectoring = 0.0;
+    double manoeuvre = 0.0;
+    std::size_t mainCount = 0;
+    std::size_t manoeuvreCount = 0;
+
+    const std::size_t count = std::min(definitions.size(), slots.size());
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        if (definitions[i].role ==
+            game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+        {
+            manoeuvre +=
+                game::ship::plant::effectiveSlotThrust01(slots[i]);
+            ++manoeuvreCount;
+        }
+        else
+        {
+            mainThrust +=
+                game::ship::plant::effectiveSlotThrust01(slots[i]);
+            mainVectoring +=
+                game::ship::plant::effectiveSlotVectoring01(slots[i]);
+            ++mainCount;
+        }
+    }
+
+    shell.damage.mainThrustAuthority01 =
+        mainCount > 0
+            ? mainThrust / static_cast<double>(mainCount)
+            : 0.0;
+    shell.damage.mainVectoringAuthority01 =
+        mainCount > 0
+            ? mainVectoring / static_cast<double>(mainCount)
+            : 0.0;
+    shell.damage.manoeuvreAuthority01 =
+        manoeuvreCount > 0
+            ? manoeuvre / static_cast<double>(manoeuvreCount)
+            : 1.0;
+
+    m_npcNavigationControlBridges.erase(id);
+    m_npcNavigationExecutionSnapshots.erase(id);
+    m_npcNavigationLastExecutionTimeSeconds.erase(id);
+    m_npcAutopilotLawControllers.erase(id);
+    m_npcAiCadenceStates.erase(id);
+    m_shipMotionControlCadenceStates.erase(id);
+    m_shipSystemsCadenceStates.erase(id);
+    m_shipMaintenanceCadenceStates.erase(id);
+
+    m_ships.erase(shipIt);
+    m_shipSimulationLifecycle.erase(id);
+    m_shipShells[id] = std::move(shell);
+    return true;
+}
 
 
 EntityId GameSimulation::spawnStation(
@@ -8343,6 +8832,9 @@ const Ship* GameSimulation::playerShip() const
 
 bool GameSimulation::debugDestroyShipModule(EntityId id, const std::string& moduleId)
 {
+    if (!getShip(id) && shipShell(id))
+        (void)materializeTrafficShell(id);
+
     Ship* ship = getShip(id);
     if (!ship)
     {
@@ -8422,7 +8914,13 @@ bool GameSimulation::ejectShipCockpitCapsule(EntityId id)
 
     const bool changed = ship->core().ejectCockpitCapsule();
     if (changed)
+    {
+        // The cockpit fragment is the current physical escape capsule carrier.
+        // The abandoned hull immediately loses AI/formation authority and
+        // continues only under physics until it may be reduced to WreckShell.
         markShipGraphDirty(id);
+        (void)markShipDerelict(id);
+    }
     return changed;
 }
 

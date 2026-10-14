@@ -25,42 +25,6 @@ struct RemoteShipPresentationDeadReckoning
 inline RemoteShipPresentationDeadReckoning
 deadReckonRemoteShipPresentation(
     const ShipSnapshot& authoritative,
-    double presentationServerTimeSeconds,
-    double maximumPredictionSeconds = 0.75
-) noexcept
-{
-    RemoteShipPresentationDeadReckoning out;
-
-    const double maxPrediction =
-        std::max(0.0, maximumPredictionSeconds);
-    const double requested =
-        std::max(
-            0.0,
-            presentationServerTimeSeconds -
-                authoritative.referenceFrame.universeTimeSeconds
-        );
-
-    // referenceFrame.universeTimeSeconds is normally the universe epoch and is
-    // not the replication server time. Callers that have a snapshot time use
-    // the overload below. Keep this overload conservative.
-    out.deltaSeconds = std::min(requested, maxPrediction);
-    out.worldPosition = world::coordinates::translated(
-        authoritative.transform.worldPosition,
-        authoritative.transform.motion.worldVelocityMps *
-            out.deltaSeconds
-    );
-    out.localPositionMeters =
-        authoritative.transform.motion.localPositionMeters +
-        authoritative.transform.motion.localVelocityMps *
-            out.deltaSeconds;
-    out.localVelocityMetersPerSecond =
-        authoritative.transform.motion.localVelocityMps;
-    return out;
-}
-
-inline RemoteShipPresentationDeadReckoning
-deadReckonRemoteShipPresentation(
-    const ShipSnapshot& authoritative,
     double authoritativeServerTimeSeconds,
     double presentationServerTimeSeconds,
     double maximumPredictionSeconds

@@ -32,7 +32,10 @@ void testPresentationPredictionDoesNotMutateTruth()
     authoritative.transform.motion.localPositionMeters = {5.0, 6.0, 7.0};
     authoritative.transform.motion.localVelocityMps = {1.0, 2.0, 3.0};
 
-    const auto originalWorld = authoritative.transform.worldPosition;
+    const auto originalWorldMeters =
+        world::coordinates::fullMeters(
+            authoritative.transform.worldPosition
+        );
     const auto originalLocal =
         authoritative.transform.motion.localPositionMeters;
 
@@ -58,7 +61,9 @@ void testPresentationPredictionDoesNotMutateTruth()
         "local presentation prediction mismatch"
     );
     require(
-        authoritative.transform.worldPosition == originalWorld &&
+        world::coordinates::fullMeters(
+            authoritative.transform.worldPosition
+        ) == originalWorldMeters &&
         authoritative.transform.motion.localPositionMeters == originalLocal,
         "presentation dead reckoning mutated authoritative snapshot"
     );

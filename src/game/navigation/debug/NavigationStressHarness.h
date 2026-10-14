@@ -66,6 +66,7 @@ public:
         double crossTrackMeters = 0.0;
         double courseErrorRad = 0.0;
         double hullErrorRad = 0.0;
+        double hullToVelocityErrorRad = 0.0;
         double targetSpeedMps = 0.0;
         double targetLongitudinalAccelerationMps2 = 0.0;
         double mainCommand01 = 0.0;
@@ -181,7 +182,8 @@ public:
         return (
             m_simpleCorridor ||
             m_assistedHighSpeedManeuver ||
-            m_assistedGameplayParity
+            m_assistedGameplayParity ||
+            m_assistedSafeCourseObstacle
         )
             ? 1
             : 12;
@@ -211,7 +213,8 @@ public:
             // first world-ready zero-speed snapshot for the requested
             // high-speed boundary.
             if ((m_assistedHighSpeedManeuver ||
-                 m_assistedGameplayParity) &&
+                 m_assistedGameplayParity ||
+                 m_assistedSafeCourseObstacle) &&
                 o.speedMps + 1.0e-6 < m_highSpeedMinimumRequestMps)
             {
                 if (m_highSpeedArmingStartedAt < -1.0e20)
@@ -235,8 +238,10 @@ public:
             m_stepStartedAt = o.universeSeconds;
             logEvent(
                 o,
-                m_assistedGameplayParity
-                    ? "START scenario=assisted-gameplay-parity"
+                m_assistedSafeCourseObstacle
+                    ? "START scenario=assisted-safe-course-obstacle"
+                    : m_assistedGameplayParity
+                        ? "START scenario=assisted-gameplay-parity"
                     : m_assistedHighSpeedManeuver
                         ? "START scenario=assisted-high-speed-maneuver"
                     : m_simpleCorridor
@@ -251,6 +256,176 @@ public:
         // A step is deliberately condition-driven where possible. Timeouts
         // prevent one failure from hiding all later transition cases.
         const double stepAge = o.universeSeconds - m_stepStartedAt;
+
+        if (m_assistedSafeCourseObstacle)
+        {
+            if (m_step == 0)
+            {
+                if (m_physicalModelLabel.rfind("Assisted-", 0) != 0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "safe-course obstacle probe requires an Assisted physical model"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.speedMps + 1.0e-6 <
+                    m_highSpeedMinimumRequestMps)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "safe-course obstacle probe did not arm at high speed"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                m_safeCourseProbeRequestSpeedMps = o.speedMps;
+                return issue(
+                    o,
+                    Target::CubeFront,
+                    "assisted-safe-course-obstacle"
+                );
+            }
+
+            if (m_step == 1)
+            {
+                if (o.failed)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "safe-course obstacle probe reported terminal docking failure"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.safetyStopFallback)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "safe-course obstacle probe fell back to emergency stop"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.safetyCourseActive)
+                {
+                    m_safeCourseProbeSeen = true;
+                    m_safeCourseProbePeakHullVelocityErrorRad =
+                        std::max(
+                            m_safeCourseProbePeakHullVelocityErrorRad,
+                            o.hullToVelocityErrorRad
+                        );
+                }
+
+                if (!m_safeCourseProbeSeen)
+                {
+                    if (stepAge >= 2.0)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "fixture did not place an obstacle on the initial Assisted velocity corridor"
+                        );
+                        m_complete = true;
+                        flush();
+                    }
+                    return action;
+                }
+
+                if (!o.safetyCourseActive)
+                {
+                    const double retainedFraction =
+                        m_safeCourseProbeRequestSpeedMps > 1.0e-6
+                            ? o.speedMps /
+                                m_safeCourseProbeRequestSpeedMps
+                            : 0.0;
+
+                    if (m_safetyCourseCorrections != 1)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "safe-course was selected more than once"
+                        );
+                        m_complete = true;
+                        flush();
+                        return action;
+                    }
+
+                    if (retainedFraction < 0.90)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "safe-course lost more than 10 percent of entry speed"
+                        );
+                        m_complete = true;
+                        flush();
+                        return action;
+                    }
+
+                    constexpr double HullVelocityAcquireRad =
+                        2.0 * 3.14159265358979323846 / 180.0;
+                    if (o.hullToVelocityErrorRad >
+                        HullVelocityAcquireRad + 1.0e-6)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "Assisted safe-course completed with hull separated from velocity vector"
+                        );
+                        m_complete = true;
+                        flush();
+                        return action;
+                    }
+
+                    if (o.angularSpeedRadPerSec > 0.02)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "Assisted safe-course completed before angular motion settled"
+                        );
+                        m_complete = true;
+                        flush();
+                        return action;
+                    }
+
+                    logEvent(o, "SAFE_COURSE_ACQUIRED");
+                    logSummary(o, "COMPLETE", std::string{});
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (stepAge >= 10.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "safe-course obstacle correction did not complete within 10 seconds"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+            }
+
+            return action;
+        }
 
         if (m_assistedGameplayParity)
         {
@@ -880,6 +1055,8 @@ private:
             << o.courseErrorRad * 57.2957795130823208768
             << " hull_err_deg="
             << o.hullErrorRad * 57.2957795130823208768
+            << " hull_velocity_err_deg="
+            << o.hullToVelocityErrorRad * 57.2957795130823208768
             << " target_speed_mps=" << o.targetSpeedMps
             << " target_long_a_mps2="
             << o.targetLongitudinalAccelerationMps2
@@ -1131,6 +1308,11 @@ private:
     bool m_simpleCorridor = false;
     bool m_assistedHighSpeedManeuver = false;
     bool m_assistedGameplayParity = false;
+    bool m_assistedSafeCourseObstacle = false;
+
+    bool m_safeCourseProbeSeen = false;
+    double m_safeCourseProbeRequestSpeedMps = 0.0;
+    double m_safeCourseProbePeakHullVelocityErrorRad = 0.0;
 
     double m_highSpeedArmingStartedAt = -1.0e30;
     double m_highSpeedMinimumRequestMps = 350.0;

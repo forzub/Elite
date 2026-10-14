@@ -35,6 +35,22 @@ assert "navigationAccelerationDemandValid = true;" not in space[
 ]
 assert "game::navigation::AssistedSafeCourseRecoveryPlan plan;" not in header
 
+# A new automatic docking request must settle angular motion BEFORE the
+# authoritative planning snapshot is captured. Waiting only at handoff is too
+# late because the worker compiles the initial angular trajectory from snapshot.
+settle_marker = space.index("AUTOMATIC SETTLE-BEFORE-SNAPSHOT CONTRACT")
+snapshot_capture = space.index(
+    "ClientNavigationPlanningSnapshotFactory::",
+    settle_marker,
+)
+settle_region = space[settle_marker:snapshot_capture]
+assert "AutomaticSettledAngularRadPerSec = 0.01" in settle_region
+assert "AutomaticAngularSettledSeconds = 0.20" in settle_region
+assert "if (!angularStopped)" in settle_region
+assert "return;" in settle_region
+assert "submitAutopilotControl(coastForPlanningControl())" in settle_region
+assert "async-preplanning" not in settle_region
+
 for token in [
     "DO NOT turn this back into a trajectory follower",
     "turn the VELOCITY VECTOR",

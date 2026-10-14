@@ -689,13 +689,22 @@ void GameSimulation::applyPhysicalCorridorHotStart()
         }
     }
 
-    constexpr double NoseOffsetRad =
-        1.04719755119659774615; // 60 degrees, diagnostic only.
+    double noseOffsetDeg = 60.0;
+    if (const char* requestedOffset =
+            std::getenv("ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG"))
+    {
+        char* end = nullptr;
+        const double parsed = std::strtod(requestedOffset, &end);
+        if (end != requestedOffset && std::isfinite(parsed))
+            noseOffsetDeg = parsed;
+    }
+    const double noseOffsetRad =
+        noseOffsetDeg * 0.0174532925199432957692;
 
     const glm::dvec3 newForward =
         safeNormalizeD(
-            oldForward * std::cos(NoseOffsetRad) +
-            oldRight * std::sin(NoseOffsetRad),
+            oldForward * std::cos(noseOffsetRad) +
+            oldRight * std::sin(noseOffsetRad),
             oldForward
         );
     glm::dvec3 newRight =
@@ -755,7 +764,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
     std::cout
         << "[PhysicalCorridor] hot_start=1"
         << " speed_mps=" << startSpeedMps
-        << " nose_course_offset_deg=60"
+        << " nose_course_offset_deg=" << noseOffsetDeg
         << "\n";
 }
 

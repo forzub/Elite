@@ -1,7 +1,7 @@
 param(
     [double]$StartSpeedMps = 400.0,
-    [double]$MinimumRequestSpeedMps = 350.0,
-    [double]$MinimumRouteReadySpeedMps = 300.0,
+    [double]$MinimumRequestSpeedMps = 390.0,
+    [double]$MinimumRouteReadySpeedMps = 350.0,
     [int]$NoProgressTimeoutSeconds = 15,
     [int]$AbsoluteTimeoutSeconds = 90,
     [string]$ReportPath = "D:\\tmp\\elite\\assisted_high_speed\\assisted_i_400.log"
@@ -34,6 +34,7 @@ $oldTotal = $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL
 $oldSimple = $env:ELITE_NAV_STRESS_SIMPLE
 $oldHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
 $oldHotStartSpeed = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS
+$oldHotStartNoseOffset = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG
 $oldHighSpeed = $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED
 $oldMinRequest = $env:ELITE_ASSISTED_HIGH_SPEED_MIN_REQUEST_MPS
 $oldMinReady = $env:ELITE_ASSISTED_HIGH_SPEED_MIN_ROUTE_READY_MPS
@@ -48,6 +49,7 @@ try {
 
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, "{0}", $StartSpeedMps)
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "0"
 
     $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED = "1"
     $env:ELITE_ASSISTED_HIGH_SPEED_MIN_REQUEST_MPS = [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, "{0}", $MinimumRequestSpeedMps)
@@ -57,6 +59,7 @@ try {
     Write-Host "============================================================"
     Write-Host "[AssistedHighSpeed] START Assisted-I"
     Write-Host "[AssistedHighSpeed] injected speed: $StartSpeedMps m/s"
+    Write-Host "[AssistedHighSpeed] nose/course offset: 0 deg (isolate speed/planner timing)"
     Write-Host "[AssistedHighSpeed] request threshold: $MinimumRequestSpeedMps m/s"
     Write-Host "[AssistedHighSpeed] route-ready threshold: $MinimumRouteReadySpeedMps m/s"
     Write-Host "[AssistedHighSpeed] report: $ReportPath"
@@ -72,6 +75,7 @@ finally {
     $env:ELITE_NAV_STRESS_SIMPLE = $oldSimple
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldHotStart
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = $oldHotStartSpeed
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = $oldHotStartNoseOffset
     $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED = $oldHighSpeed
     $env:ELITE_ASSISTED_HIGH_SPEED_MIN_REQUEST_MPS = $oldMinRequest
     $env:ELITE_ASSISTED_HIGH_SPEED_MIN_ROUTE_READY_MPS = $oldMinReady

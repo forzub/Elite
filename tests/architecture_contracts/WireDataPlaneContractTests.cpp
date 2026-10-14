@@ -71,6 +71,12 @@ SimulationSnapshot makeSnapshot()
     ship.id = EntityId{42u};
     ship.role = ShipRole::Player;
     ship.typeId = ObjectType::CobraMk1;
+    ship.simulationTier =
+        game::simulation::ShipSimulationTier::MaterializedShip;
+    ship.motionFidelity =
+        game::simulation::ShipMotionFidelity::Response;
+    ship.materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Response;
     ship.acknowledgedControlTick = 77u;
     ship.motionLabKind = game::diagnostics::HubMotionLabActorKind::FastOrbit;
 
@@ -495,6 +501,21 @@ void testSnapshotRoundTrip()
         "removed hub lifecycle mismatch");
     require(decoded.ships.size() == 1u, "ship count mismatch");
     require(decoded.ships[0].id == EntityId{42u}, "ship identity mismatch");
+    require(
+        decoded.ships[0].simulationTier ==
+            source.ships[0].simulationTier,
+        "ship simulation tier did not round-trip"
+    );
+    require(
+        decoded.ships[0].motionFidelity ==
+            source.ships[0].motionFidelity,
+        "ship motion fidelity did not round-trip"
+    );
+    require(
+        decoded.ships[0].materializedFidelity ==
+            source.ships[0].materializedFidelity,
+        "ship internal fidelity did not round-trip"
+    );
     const auto* decodedNavigationExecution =
         std::get_if<game::simulation::NavigationExecutionSnapshot>(
             &decoded.ships[0].navigationExecution

@@ -65,6 +65,21 @@ ELITE_WIRE_ENUM_RANGE(
     game::network::ReplicatedEntitySetMode::SparseRetainMissing
 );
 ELITE_WIRE_ENUM_RANGE(ShipRole, ShipRole::Player, ShipRole::NPC);
+ELITE_WIRE_ENUM_RANGE(
+    game::simulation::ShipSimulationTier,
+    game::simulation::ShipSimulationTier::TrafficShell,
+    game::simulation::ShipSimulationTier::WreckShell
+);
+ELITE_WIRE_ENUM_RANGE(
+    game::simulation::ShipMotionFidelity,
+    game::simulation::ShipMotionFidelity::RouteOnly,
+    game::simulation::ShipMotionFidelity::FullControl
+);
+ELITE_WIRE_ENUM_RANGE(
+    game::simulation::ShipMaterializedFidelity,
+    game::simulation::ShipMaterializedFidelity::Response,
+    game::simulation::ShipMaterializedFidelity::Detailed
+);
 ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::GuidanceDockCylinder);
 ELITE_WIRE_ENUM_RANGE(
     game::diagnostics::HubMotionLabActorKind,
@@ -590,6 +605,9 @@ ELITE_WIRE_SCHEMA(
     v.typeId,
     v.acknowledgedControlTick,
     v.motionLabKind,
+    v.simulationTier,
+    v.motionFidelity,
+    v.materializedFidelity,
     v.transform,
     v.referenceFrame,
     v.navigationExecution,

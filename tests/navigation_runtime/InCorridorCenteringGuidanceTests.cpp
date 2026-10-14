@@ -1,7 +1,8 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
 
@@ -11,6 +12,12 @@ namespace
 {
 
 constexpr double Pi = 3.14159265358979323846;
+
+void require(bool condition, const std::string& message)
+{
+    if (!condition)
+        throw std::runtime_error(message);
+}
 
 double angleBetween(const glm::dvec3& a, const glm::dvec3& b)
 {
@@ -38,9 +45,9 @@ int main()
         r.responseSeconds = 1.0;
 
         const auto out = InCorridorCenteringGuidance::evaluate(r);
-        assert(out.valid);
-        assert(std::abs(out.desiredClosingSpeedMps) < 1.0e-12);
-        assert(angleBetween(out.desiredCourseMap, r.routeTangentMap) < 1.0e-12);
+        require(out.valid, "centering result invalid");
+        require(std::abs(out.desiredClosingSpeedMps) < 1.0e-12, "deadband produced closing speed");
+        require(angleBetween(out.desiredCourseMap, r.routeTangentMap) < 1.0e-12, "deadband altered tangent");
     }
 
     {
@@ -54,16 +61,16 @@ int main()
         r.responseSeconds = 1.0;
 
         const auto out = InCorridorCenteringGuidance::evaluate(r);
-        assert(out.valid);
-        assert(out.desiredClosingSpeedMps > 0.0);
-        assert(out.desiredClosingSpeedMps <= 20.0 + 1.0e-9);
+        require(out.valid, "centering result invalid");
+        require(out.desiredClosingSpeedMps > 0.0, "centering produced no closing speed");
+        require(out.desiredClosingSpeedMps <= 20.0 + 1.0e-9, "centering exceeded lateral authority");
 
         // Positive Y error must produce a negative-Y course component.
-        assert(out.desiredCourseMap.y < 0.0);
+        require(out.desiredCourseMap.y < 0.0, "centering did not point toward center");
 
         // Gentle means single-digit degrees, not an emergency capture turn.
-        assert(out.correctionAngleRad > 0.0);
-        assert(out.correctionAngleRad < 6.0 * Pi / 180.0);
+        require(out.correctionAngleRad > 0.0, "centering produced zero correction angle");
+        require(out.correctionAngleRad < 6.0 * Pi / 180.0, "centering correction became emergency-sized");
     }
 
     {
@@ -84,14 +91,16 @@ int main()
         const auto farOut =
             InCorridorCenteringGuidance::evaluate(far);
 
-        assert(nearOut.valid && farOut.valid);
-        assert(
+        require(nearOut.valid && farOut.valid, "near/far centering result invalid");
+        require(
             nearOut.desiredClosingSpeedMps <
-            farOut.desiredClosingSpeedMps
+                farOut.desiredClosingSpeedMps,
+            "centering strength did not increase with offset"
         );
-        assert(
+        require(
             nearOut.correctionAngleRad <
-            farOut.correctionAngleRad
+                farOut.correctionAngleRad,
+            "centering angle did not increase with offset"
         );
     }
 
@@ -111,9 +120,9 @@ int main()
         r.responseSeconds = 2.0;
 
         const auto out = InCorridorCenteringGuidance::evaluate(r);
-        assert(out.valid);
-        assert(out.desiredClosingSpeedMps > 5.0);
-        assert(out.desiredCourseMap.y < 0.0);
+        require(out.valid, "centering result invalid");
+        require(out.desiredClosingSpeedMps > 5.0, "18 m residual centering authority too weak");
+        require(out.desiredCourseMap.y < 0.0, "centering did not point toward center");
     }
 
     {
@@ -126,7 +135,7 @@ int main()
         r.lateralAccelerationAuthorityMps2 = 20.0;
         r.responseSeconds = 1.0;
 
-        assert(!InCorridorCenteringGuidance::evaluate(r).valid);
+        require(!InCorridorCenteringGuidance::evaluate(r).valid, "zero tangent was accepted");
     }
 
     std::cout << "IN-CORRIDOR CENTERING GUIDANCE: PASS\n";

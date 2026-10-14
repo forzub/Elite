@@ -6547,6 +6547,196 @@ m_systemMapRenderer.render(
             }
         }
 
+        // ------------------------------------------------------------
+        // Isolated docking status terminal.
+        // Presentation-only adapter: it snapshots state into a DTO and renders
+        // the pure terminal output. No navigation code can be reached from the
+        // terminal module.
+        // ------------------------------------------------------------
+        {
+            game::presentation::DockingTerminalSnapshot terminal;
+
+            const bool dockingVisible =
+                m_clientDockingPhase != ClientDockingPhase::Idle ||
+                m_dockingAdvisoryRequest.active;
+
+            terminal.visible = dockingVisible;
+            terminal.title = "DOCKING";
+
+            switch (m_clientDockingPhase)
+            {
+                case ClientDockingPhase::Idle:
+                    terminal.phase = "idle";
+                    break;
+                case ClientDockingPhase::Stabilizing:
+                    terminal.phase = "stabilization";
+                    break;
+                case ClientDockingPhase::Planning:
+                    terminal.phase = "planning";
+                    break;
+                case ClientDockingPhase::RouteReady:
+                    terminal.phase = "route ready";
+                    break;
+                case ClientDockingPhase::Executing:
+                    terminal.phase = "autopilot";
+                    break;
+                case ClientDockingPhase::SecuringCourse:
+                    terminal.phase =
+                        m_dockAssistedSafeRecovery.stopFallback ||
+                        m_dockSafeCourse.stopFallback
+                            ? "stop"
+                            : "safe-course";
+                    break;
+            }
+
+            if (m_dockAdviceJob)
+            {
+                const int permille =
+                    std::clamp(
+                        m_dockAdviceJob->planningProgressPermille.load(
+                            std::memory_order_acquire
+                        ),
+                        0,
+                        1000
+                    );
+                terminal.planner =
+                    "planner on " +
+                    std::to_string(permille / 10) +
+                    "%";
+            }
+            else
+            {
+                terminal.planner =
+                    m_clientDockingPhase == ClientDockingPhase::Executing ||
+                    m_clientDockingPhase == ClientDockingPhase::RouteReady
+                        ? "planner ready"
+                        : "planner off";
+            }
+
+            if (m_dockAssistedSafeRecovery.active)
+                terminal.safety = "safe-course acquiring";
+            else if (m_dockSafeCourse.active)
+                terminal.safety = "safe-course active";
+            else
+                terminal.safety = "safe-course clear";
+
+            if (m_dockLateEntry.active)
+            {
+                terminal.handoff =
+                    "handoff rebind " +
+                    std::to_string(
+                        m_dockLateEntry.rebindAttempts
+                    );
+            }
+            else if (m_clientDockingPhase == ClientDockingPhase::Executing)
+            {
+                terminal.handoff = "handoff accepted";
+            }
+
+            terminal.error =
+                !m_dockingGuidanceFailureReason.empty()
+                    ? "error: " + m_dockingGuidanceFailureReason
+                    : m_dockingStatusWarning;
+
+            const double terminalNowSeconds =
+                m_client->lastSimulationMetadata().serverTimeSeconds;
+
+            const auto terminalOutput =
+                m_dockingStatusTerminal.update(
+                    terminal,
+                    terminalNowSeconds
+                );
+
+            auto& text = TextRenderer::instance();
+
+            const float screenW =
+                static_cast<float>(vp.width);
+            const float screenH =
+                static_cast<float>(vp.height);
+
+            const int fontPx =
+                std::clamp(
+                    static_cast<int>(screenH * 0.0145f),
+                    11,
+                    17
+                );
+
+            const float terminalLeft =
+                std::max(18.0f, screenW * 0.018f);
+            const float terminalTop =
+                std::max(72.0f, screenH * 0.105f);
+            const float terminalWidth =
+                screenW * 0.25f;
+            const float terminalBottom =
+                screenH * 0.56f;
+            const float lineStep =
+                static_cast<float>(fontPx) * 1.28f;
+
+            float y = terminalTop;
+
+            for (const auto& line : terminalOutput.lines)
+            {
+                if (y + lineStep > terminalBottom)
+                    break;
+
+                std::string visibleText = line.text;
+                if (line.cursor)
+                    visibleText += "_";
+
+                // Hard visual width budget: no frame, no clipping rectangle,
+                // simply trim the text to the requested quarter-screen column.
+                while (!visibleText.empty() &&
+                       text.measureTextPx(
+                           visibleText,
+                           fontPx
+                       ) > terminalWidth)
+                {
+                    visibleText.pop_back();
+                }
+
+                const glm::vec4 color =
+                    line.severity ==
+                            game::presentation::
+                                DockingTerminalSeverity::Error
+                        ? glm::vec4(
+                              0.74f,
+                              0.53f,
+                              0.58f,
+                              0.58f
+                          )
+                        : line.severity ==
+                                game::presentation::
+                                    DockingTerminalSeverity::Warning
+                            ? glm::vec4(
+                                  0.68f,
+                                  0.56f,
+                                  0.60f,
+                                  0.54f
+                              )
+                            : glm::vec4(
+                                  0.53f,
+                                  0.66f,
+                                  0.72f,
+                                  0.54f
+                              );
+
+                text.textDrawPx(
+                    visibleText,
+                    terminalLeft,
+                    y,
+                    fontPx,
+                    color
+                );
+
+                y += lineStep;
+            }
+
+            // typedCharacters is intentionally exposed by the pure terminal
+            // as an optional sound hook. No audio backend is coupled here:
+            // adding/removing the terminal must never alter simulation state.
+            (void)terminalOutput.typedCharacters;
+        }
+
         uiRoot->render(vp);
 
         TextRenderer::instance().endFrame();

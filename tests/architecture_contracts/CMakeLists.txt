@@ -1473,3 +1473,38 @@ set_tests_properties(
     remote_ship_presentation_contracts
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    client_observation_interest_contract_tests
+    ClientObservationInterestContractTests.cpp
+)
+
+target_include_directories(
+    client_observation_interest_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        client_observation_interest_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        client_observation_interest_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME client_observation_interest_contracts
+    COMMAND client_observation_interest_contract_tests
+)
+
+set_tests_properties(
+    client_observation_interest_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

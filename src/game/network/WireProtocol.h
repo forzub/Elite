@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 14u;
+inline constexpr std::uint16_t WireProtocolVersion = 15u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -680,6 +680,68 @@ inline bool decodeClientShipCommand(
     return true;
 }
 
+inline bool encodeClientObservationInterest(
+    WireWriter& writer,
+    const ClientObservationInterest& value
+)
+{
+    if (value.entries.size() > MaxClientObservationInterestEntries)
+        return false;
+
+    writer.u64(value.serial);
+    writer.u16(static_cast<std::uint16_t>(value.entries.size()));
+
+    for (const auto& entry : value.entries)
+    {
+        if (entry.targetId.value == 0)
+            return false;
+
+        writer.u32(entry.targetId.value);
+        writer.u8(static_cast<std::uint8_t>(entry.detail));
+    }
+
+    return true;
+}
+
+inline bool decodeClientObservationInterest(
+    WireReader& reader,
+    ClientObservationInterest& outValue
+)
+{
+    std::uint16_t count = 0;
+    if (!reader.u64(outValue.serial) || !reader.u16(count))
+        return false;
+
+    if (count > MaxClientObservationInterestEntries)
+        return false;
+
+    outValue.entries.clear();
+    outValue.entries.reserve(count);
+
+    for (std::uint16_t i = 0; i < count; ++i)
+    {
+        std::uint32_t target = 0;
+        std::uint8_t detail = 0;
+
+        if (!reader.u32(target) ||
+            !reader.u8(detail) ||
+            target == 0 ||
+            detail > static_cast<std::uint8_t>(
+                ClientObservationDetail::Response))
+        {
+            return false;
+        }
+
+        ClientObservationInterestEntry entry;
+        entry.targetId = EntityId{target};
+        entry.detail =
+            static_cast<ClientObservationDetail>(detail);
+        outValue.entries.push_back(entry);
+    }
+
+    return true;
+}
+
 inline bool encodeClientMessage(
     const ClientMessage& value,
     std::vector<std::uint8_t>& outPayload
@@ -699,10 +761,22 @@ inline bool encodeClientMessage(
     else if (std::holds_alternative<ClientShipCommand>(value.payload))
     {
         writer.u8(1u);
-        encodeClientShipCommand(
-            writer,
-            std::get<ClientShipCommand>(value.payload)
-        );
+        if (!encodeClientShipCommand(
+                writer,
+                std::get<ClientShipCommand>(value.payload)))
+        {
+            return false;
+        }
+    }
+    else if (std::holds_alternative<ClientObservationInterest>(value.payload))
+    {
+        writer.u8(2u);
+        if (!encodeClientObservationInterest(
+                writer,
+                std::get<ClientObservationInterest>(value.payload)))
+        {
+            return false;
+        }
     }
     else
     {
@@ -736,6 +810,13 @@ inline bool decodeClientMessage(
         if (!decodeClientShipCommand(reader, command))
             return false;
         outValue.payload = command;
+    }
+    else if (variantTag == 2u)
+    {
+        ClientObservationInterest interest;
+        if (!decodeClientObservationInterest(reader, interest))
+            return false;
+        outValue.payload = std::move(interest);
     }
     else
     {

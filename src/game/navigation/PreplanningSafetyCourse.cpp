@@ -173,7 +173,7 @@ bool clearSegment(
     // rather than accepting one infinitesimally thin center ray.  The
     // obstacle query already inflates by hull radius + normal clearance; this
     // extra spot is deliberate uncertainty/dynamic-margin, not hull geometry.
-    constexpr std::array<glm::dvec2, 8> Ring {
+    const std::array<glm::dvec2, 8> Ring {
         glm::dvec2( 1.0,  0.0),
         glm::dvec2(-1.0,  0.0),
         glm::dvec2( 0.0,  1.0),

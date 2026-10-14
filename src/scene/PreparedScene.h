@@ -95,6 +95,7 @@ struct PreparedScene
         float boundRadius = 1.0f;
 
         bool hasWholeShipProxy = false;
+        bool forceWholeShipProxy = false;
         float lodSwitchDistance = 0.0f;
 
         const void* assembly = nullptr;

@@ -1070,6 +1070,17 @@ void SceneRenderer::prepareScene(
             if (!ship.assembly)
                 continue;
 
+            if (ship.simulationTier ==
+                    game::simulation::ShipSimulationTier::TrafficShell ||
+                ship.simulationTier ==
+                    game::simulation::ShipSimulationTier::WreckShell)
+            {
+                // Lightweight authoritative ships render through the instanced
+                // proxy lane below. Never expand them into per-module real-ship
+                // mesh work merely because they exist in replication.
+                continue;
+            }
+
             const auto& gpuAssembly =
                 render::geometry::AssemblyGpuLibrary::get(
                     ship.assembly->typeId
@@ -1279,8 +1290,93 @@ void SceneRenderer::prepareScene(
         prepared.visualShips.clear();
         prepared.visualShipParts.clear();
 
-        prepared.visualShips.reserve(world.visualShips().size());
+        prepared.visualShips.reserve(
+            world.visualShips().size() + world.ships().size()
+        );
         prepared.visualShipParts.reserve(512);
+
+        // Authoritative TrafficShell/WreckShell entities are visible, but they
+        // stay on the cheap instanced proxy path. System-map sampling still
+        // consumes the same ShipSnapshot rows, so render/map identity matches.
+        for (const auto& pair : world.ships())
+        {
+            const auto& ship = pair.second;
+            if (ship.simulationTier !=
+                    game::simulation::ShipSimulationTier::TrafficShell &&
+                ship.simulationTier !=
+                    game::simulation::ShipSimulationTier::WreckShell)
+            {
+                continue;
+            }
+
+            if (!game::client::belongsToRenderSystem(
+                    ship.renderTransform.motion.systemId,
+                    prepared.activeSystemId
+                ))
+            {
+                continue;
+            }
+
+            if (!ship.assembly)
+                continue;
+
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    ship.assembly->typeId
+                );
+
+            const glm::mat4 shipModel =
+                world::coordinates::makeRenderModelMatrix(
+                    ship.renderTransform.worldPosition,
+                    glm::mat4(ship.renderTransform.orientation),
+                    prepared.frame
+                );
+
+            PreparedScene::VisualShipItem shellItem;
+            shellItem.kind = game::visual::VisualShipKind::Traffic;
+            shellItem.wholeShipProxyGpu = &gpuAssembly.wholeShipProxy;
+            shellItem.model = shipModel;
+            shellItem.boundCenter = ship.assembly->boundCenter;
+            shellItem.boundRadius = ship.assembly->boundRadius;
+            shellItem.hasWholeShipProxy = ship.assembly->hasWholeShipProxy;
+            shellItem.forceWholeShipProxy = ship.assembly->hasWholeShipProxy;
+            shellItem.lodSwitchDistance = ship.assembly->lodSwitchDistance;
+
+            const int shellIndex =
+                static_cast<int>(prepared.visualShips.size());
+            prepared.visualShips.push_back(shellItem);
+
+            // Fallback only for an asset that has no whole-ship proxy.
+            if (shellItem.forceWholeShipProxy)
+                continue;
+
+            for (const auto& module : ship.assembly->modules)
+            {
+                const glm::mat4 moduleModel =
+                    buildAssemblyModuleBaseModel(shipModel, module);
+                const glm::vec3 moduleLocalPosition =
+                    glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+                const float moduleDistanceBias =
+                    glm::length(moduleLocalPosition);
+
+                for (const auto& part : module.meshes)
+                {
+                    const auto& gpuPart =
+                        gpuAssembly.forPart(*ship.assembly, module, part);
+
+                    PreparedScene::VisualShipPartItem partItem;
+                    partItem.shipIndex = shellIndex;
+                    partItem.gpuLod0 = &gpuPart.lod0;
+                    partItem.gpuLod1 = &gpuPart.lod1;
+                    partItem.model =
+                        glm::translate(moduleModel, part.localOffset);
+                    partItem.boundCenter = part.boundCenter;
+                    partItem.boundHalfSize = part.boundHalfSize;
+                    partItem.moduleDistanceBias = moduleDistanceBias;
+                    prepared.visualShipParts.push_back(partItem);
+                }
+            }
+        }
 
         for (const auto& ship : world.visualShips())
         {
@@ -2278,7 +2374,8 @@ profileAfterSetupMs = renderProfileNowMs();
 
                     const bool useWholeShipProxy =
                         ship.hasWholeShipProxy &&
-                        distToShip > kVisualShipProxyRenderDistance;
+                        (ship.forceWholeShipProxy ||
+                         distToShip > kVisualShipProxyRenderDistance);
 
                     visualShipVisible[i] = 1;
                     visualShipUseProxy[i] = useWholeShipProxy ? 1 : 0;

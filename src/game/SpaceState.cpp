@@ -6562,7 +6562,11 @@ m_systemMapRenderer.render(
                 !m_dockingStatusWarning.empty();
 
             terminal.visible = dockingVisible;
-            terminal.title = "DOCKING";
+            terminal.title = localizedUiText(
+                context().app,
+                "cockpit.terminal.title",
+                "DOCKING"
+            );
 
             // The terminal intentionally occupies the legacy coordinate block
             // directly below FRONT. Preserve coordinates when docking is idle;
@@ -6582,26 +6586,54 @@ m_systemMapRenderer.render(
             switch (m_clientDockingPhase)
             {
                 case ClientDockingPhase::Idle:
-                    terminal.phase = "idle";
+                    terminal.phase = localizedUiText(
+                        context().app,
+                        "cockpit.terminal.idle",
+                        "idle"
+                    );
                     break;
                 case ClientDockingPhase::Stabilizing:
-                    terminal.phase = "stabilization";
+                    terminal.phase = localizedUiText(
+                        context().app,
+                        "cockpit.terminal.stabilization",
+                        "stabilization"
+                    );
                     break;
                 case ClientDockingPhase::Planning:
-                    terminal.phase = "planning";
+                    terminal.phase = localizedUiText(
+                        context().app,
+                        "cockpit.terminal.planning",
+                        "planning"
+                    );
                     break;
                 case ClientDockingPhase::RouteReady:
-                    terminal.phase = "route ready";
+                    terminal.phase = localizedUiText(
+                        context().app,
+                        "cockpit.terminal.route_ready",
+                        "route ready"
+                    );
                     break;
                 case ClientDockingPhase::Executing:
-                    terminal.phase = "autopilot";
+                    terminal.phase = localizedUiText(
+                        context().app,
+                        "cockpit.terminal.autopilot",
+                        "autopilot"
+                    );
                     break;
                 case ClientDockingPhase::SecuringCourse:
                     terminal.phase =
                         m_dockAssistedSafeRecovery.stopFallback ||
                         m_dockSafeCourse.stopFallback
-                            ? "stop"
-                            : "safe-course";
+                            ? localizedUiText(
+                                  context().app,
+                                  "cockpit.terminal.stop",
+                                  "stop"
+                              )
+                            : localizedUiText(
+                                  context().app,
+                                  "cockpit.terminal.safe_course",
+                                  "safe-course"
+                              );
                     break;
             }
 
@@ -6616,7 +6648,12 @@ m_systemMapRenderer.render(
                         1000
                     );
                 terminal.planner =
-                    "planner on " +
+                    localizedUiText(
+                        context().app,
+                        "cockpit.terminal.planner_on",
+                        "planner on"
+                    ) +
+                    " " +
                     std::to_string(permille / 10) +
                     "%";
             }
@@ -6625,34 +6662,100 @@ m_systemMapRenderer.render(
                 terminal.planner =
                     m_clientDockingPhase == ClientDockingPhase::Executing ||
                     m_clientDockingPhase == ClientDockingPhase::RouteReady
-                        ? "planner ready"
-                        : "planner off";
+                        ? localizedUiText(
+                              context().app,
+                              "cockpit.terminal.planner_ready",
+                              "planner ready"
+                          )
+                        : localizedUiText(
+                              context().app,
+                              "cockpit.terminal.planner_off",
+                              "planner off"
+                          );
             }
 
             if (m_dockAssistedSafeRecovery.active)
-                terminal.safety = "safe-course acquiring";
+            {
+                terminal.safety = localizedUiText(
+                    context().app,
+                    "cockpit.terminal.safe_course_acquiring",
+                    "safe-course acquiring"
+                );
+            }
             else if (m_dockSafeCourse.active)
-                terminal.safety = "safe-course active";
+            {
+                terminal.safety = localizedUiText(
+                    context().app,
+                    "cockpit.terminal.safe_course_active",
+                    "safe-course active"
+                );
+            }
             else
-                terminal.safety = "safe-course clear";
+            {
+                terminal.safety = localizedUiText(
+                    context().app,
+                    "cockpit.terminal.safe_course_clear",
+                    "safe-course clear"
+                );
+            }
 
             if (m_dockLateEntry.active)
             {
                 terminal.handoff =
-                    "handoff rebind " +
+                    localizedUiText(
+                        context().app,
+                        "cockpit.terminal.handoff_rebind",
+                        "handoff rebind"
+                    ) +
+                    " " +
                     std::to_string(
                         m_dockLateEntry.rebindAttempts
                     );
+
+                terminal.error =
+                    localizedUiText(
+                        context().app,
+                        m_dockLateEntry.rebindAttempts > 0
+                            ? "cockpit.terminal.warning_handoff_retry"
+                            : "cockpit.terminal.warning_handoff_rebinding",
+                        m_dockLateEntry.rebindAttempts > 0
+                            ? "warning: handoff drift; connector retry"
+                            : "warning: handoff drift; rebinding connector"
+                    );
+
+                if (m_dockLateEntry.rebindAttempts > 0)
+                {
+                    terminal.error +=
+                        " " +
+                        std::to_string(
+                            m_dockLateEntry.rebindAttempts
+                        );
+                }
             }
             else if (m_clientDockingPhase == ClientDockingPhase::Executing)
             {
-                terminal.handoff = "handoff accepted";
+                terminal.handoff = localizedUiText(
+                    context().app,
+                    "cockpit.terminal.handoff_accepted",
+                    "handoff accepted"
+                );
             }
 
-            terminal.error =
-                !m_dockingGuidanceFailureReason.empty()
-                    ? "error: " + m_dockingGuidanceFailureReason
-                    : m_dockingStatusWarning;
+            if (!m_dockingGuidanceFailureReason.empty())
+            {
+                terminal.error =
+                    localizedUiText(
+                        context().app,
+                        "cockpit.terminal.error_prefix",
+                        "error:"
+                    ) +
+                    " " +
+                    m_dockingGuidanceFailureReason;
+            }
+            else if (terminal.error.empty())
+            {
+                terminal.error = m_dockingStatusWarning;
+            }
 
             const double terminalNowSeconds =
                 m_client->lastSimulationMetadata().serverTimeSeconds;
@@ -6718,7 +6821,7 @@ m_systemMapRenderer.render(
                               0.74f,
                               0.53f,
                               0.58f,
-                              0.58f
+                              0.39f
                           )
                         : line.severity ==
                                 game::presentation::
@@ -6727,13 +6830,13 @@ m_systemMapRenderer.render(
                                   0.68f,
                                   0.56f,
                                   0.60f,
-                                  0.54f
+                                  0.36f
                               )
                             : glm::vec4(
                                   0.53f,
                                   0.66f,
                                   0.72f,
-                                  0.54f
+                                  0.36f
                               );
 
                 text.textDrawPx(

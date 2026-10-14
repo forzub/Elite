@@ -6558,7 +6558,8 @@ m_systemMapRenderer.render(
 
             const bool dockingVisible =
                 m_clientDockingPhase != ClientDockingPhase::Idle ||
-                m_dockingAdvisoryRequest.active;
+                !m_dockingGuidanceFailureReason.empty() ||
+                !m_dockingStatusWarning.empty();
 
             terminal.visible = dockingVisible;
             terminal.title = "DOCKING";

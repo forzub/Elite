@@ -1198,66 +1198,155 @@ void ClientWorldState::update(
                         }
                         else
                         {
-                            const glm::dvec3 delta =
-                                world::coordinates::relativeMeters(
-                                    itNew->transform.worldPosition,
-                                    itOld->transform.worldPosition
-                                );
+                            const bool clientDeadReckoning =
+                                ship.motionFidelity ==
+                                    game::simulation::ShipMotionFidelity::RouteOnly ||
+                                ship.motionFidelity ==
+                                    game::simulation::ShipMotionFidelity::Kinematic;
 
-                            const auto interpolatedWorld =
-                                world::coordinates::translated(
-                                    itOld->transform.worldPosition,
-                                    delta * static_cast<double>(t)
-                                );
-
-                            ship.renderTransform = itNew->transform;
-                            ship.renderTransform.setWorldPosition(interpolatedWorld);
-
-                            if (sameReferenceFrame(
-                                    itOld->referenceFrame,
-                                    itNew->referenceFrame
-                                ))
+                            if (clientDeadReckoning)
                             {
-                                const glm::dvec3 localPosition =
-                                    itOld->referenceFrame.localPositionMeters +
-                                    (itNew->referenceFrame.localPositionMeters -
-                                     itOld->referenceFrame.localPositionMeters) *
-                                        static_cast<double>(t);
-
-                                const glm::dvec3 localVelocity =
-                                    itOld->referenceFrame.localVelocityMetersPerSecond +
-                                    (itNew->referenceFrame.localVelocityMetersPerSecond -
-                                     itOld->referenceFrame.localVelocityMetersPerSecond) *
-                                        static_cast<double>(t);
-
-                                ship.renderTransform.motion.localPositionMeters =
-                                    localPosition;
-                                ship.renderTransform.motion.localVelocityMps =
-                                    localVelocity;
-                                ship.renderReferenceFrame =
-                                    game::client::interpolateReferenceFramePresentation(
-                                        itOld->referenceFrame,
-                                        itNew->referenceFrame,
-                                        static_cast<double>(t)
+                                // Background truth may arrive only at 2-10 Hz.
+                                // The client owns smooth presentation between
+                                // authoritative epochs, never combat/collision
+                                // truth. A new server snapshot always corrects
+                                // this presentation path.
+                                const double presentationDelta =
+                                    glm::clamp(
+                                        renderTime -
+                                            older->metadata.serverTimeSeconds,
+                                        0.0,
+                                        0.75
                                     );
-                                ship.renderReferenceFrame.localPositionMeters =
-                                    localPosition;
-                                ship.renderReferenceFrame.localVelocityMetersPerSecond =
-                                    localVelocity;
 
-                                ship.renderTransform.setWorldPositionMeters(
-                                    ship.renderReferenceFrame.localToWorldPosition(
-                                        localPosition
-                                    )
-                                );
+                                ship.renderTransform = itOld->transform;
+                                ship.renderTransform.orientation =
+                                    smoothOrientationMatrix(
+                                        itOld->transform.orientation,
+                                        itNew->transform.orientation,
+                                        t
+                                    );
+
+                                if (sameReferenceFrame(
+                                        itOld->referenceFrame,
+                                        itNew->referenceFrame
+                                    ))
+                                {
+                                    const glm::dvec3 localPosition =
+                                        itOld->referenceFrame.localPositionMeters +
+                                        itOld->referenceFrame
+                                            .localVelocityMetersPerSecond *
+                                            presentationDelta;
+
+                                    ship.renderReferenceFrame =
+                                        game::client::
+                                            interpolateReferenceFramePresentation(
+                                                itOld->referenceFrame,
+                                                itNew->referenceFrame,
+                                                static_cast<double>(t)
+                                            );
+                                    ship.renderReferenceFrame
+                                        .localPositionMeters = localPosition;
+                                    ship.renderReferenceFrame
+                                        .localVelocityMetersPerSecond =
+                                            itOld->referenceFrame
+                                                .localVelocityMetersPerSecond;
+
+                                    ship.renderTransform.motion
+                                        .localPositionMeters = localPosition;
+                                    ship.renderTransform.motion
+                                        .localVelocityMps =
+                                            itOld->referenceFrame
+                                                .localVelocityMetersPerSecond;
+                                    ship.renderTransform.setWorldPositionMeters(
+                                        ship.renderReferenceFrame
+                                            .localToWorldPosition(localPosition)
+                                    );
+                                }
+                                else
+                                {
+                                    ship.renderTransform.setWorldPosition(
+                                        world::coordinates::translated(
+                                            itOld->transform.worldPosition,
+                                            itOld->transform.motion
+                                                .worldVelocityMps *
+                                                presentationDelta
+                                        )
+                                    );
+                                }
                             }
+                            else
+                            {
+                                const glm::dvec3 delta =
+                                    world::coordinates::relativeMeters(
+                                        itNew->transform.worldPosition,
+                                        itOld->transform.worldPosition
+                                    );
 
-                            ship.renderTransform.orientation =
-                                smoothOrientationMatrix(
-                                    itOld->transform.orientation,
-                                    itNew->transform.orientation,
-                                    t
+                                const auto interpolatedWorld =
+                                    world::coordinates::translated(
+                                        itOld->transform.worldPosition,
+                                        delta * static_cast<double>(t)
+                                    );
+
+                                ship.renderTransform = itNew->transform;
+                                ship.renderTransform.setWorldPosition(
+                                    interpolatedWorld
                                 );
+
+                                if (sameReferenceFrame(
+                                        itOld->referenceFrame,
+                                        itNew->referenceFrame
+                                    ))
+                                {
+                                    const glm::dvec3 localPosition =
+                                        itOld->referenceFrame
+                                            .localPositionMeters +
+                                        (itNew->referenceFrame
+                                             .localPositionMeters -
+                                         itOld->referenceFrame
+                                             .localPositionMeters) *
+                                            static_cast<double>(t);
+
+                                    const glm::dvec3 localVelocity =
+                                        itOld->referenceFrame
+                                            .localVelocityMetersPerSecond +
+                                        (itNew->referenceFrame
+                                             .localVelocityMetersPerSecond -
+                                         itOld->referenceFrame
+                                             .localVelocityMetersPerSecond) *
+                                            static_cast<double>(t);
+
+                                    ship.renderTransform.motion
+                                        .localPositionMeters = localPosition;
+                                    ship.renderTransform.motion
+                                        .localVelocityMps = localVelocity;
+                                    ship.renderReferenceFrame =
+                                        game::client::
+                                            interpolateReferenceFramePresentation(
+                                                itOld->referenceFrame,
+                                                itNew->referenceFrame,
+                                                static_cast<double>(t)
+                                            );
+                                    ship.renderReferenceFrame
+                                        .localPositionMeters = localPosition;
+                                    ship.renderReferenceFrame
+                                        .localVelocityMetersPerSecond =
+                                            localVelocity;
+
+                                    ship.renderTransform.setWorldPositionMeters(
+                                        ship.renderReferenceFrame
+                                            .localToWorldPosition(localPosition)
+                                    );
+                                }
+
+                                ship.renderTransform.orientation =
+                                    smoothOrientationMatrix(
+                                        itOld->transform.orientation,
+                                        itNew->transform.orientation,
+                                        t
+                                    );
+                            }
                         }
                     }
                     else

@@ -45,6 +45,7 @@
 
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
+#include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/navigation/PreplanningSafetyCourse.h"
@@ -277,6 +278,9 @@ private:
     render::cockpit::EngineThrustIndicatorRenderer m_engineThrustIndicatorRenderer;
     render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
     render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;
+    // Presentation-only terminal. It consumes a DTO snapshot and has no
+    // navigation/control access; deleting this member cannot alter flight.
+    game::presentation::DockingStatusTerminal m_dockingStatusTerminal {};
 
     WorldLabelRenderer                          m_worldLabelRenderer;
 
@@ -402,6 +406,8 @@ private:
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     std::string m_dockingGuidanceFailureReason;
+    // Presentation/diagnostic warning only. Never participates in control.
+    std::string m_dockingStatusWarning;
     struct DockAdvice
     {
         std::uint64_t serial = 0;
@@ -514,6 +520,7 @@ private:
         // speed.  It gives the cheap entry bind time to finish without ever
         // throwing away/re-running the expensive downstream route.
         double leadSeconds = 0.0;
+        std::uint32_t rebindAttempts = 0;
     };
     DockLateEntryState m_dockLateEntry {};
 

@@ -6564,6 +6564,21 @@ m_systemMapRenderer.render(
             terminal.visible = dockingVisible;
             terminal.title = "DOCKING";
 
+            // The terminal intentionally occupies the legacy coordinate block
+            // directly below FRONT. Preserve coordinates when docking is idle;
+            // hide only those five text bindings while terminal is visible.
+            for (const char* id : {
+                     "main_coord_cell",
+                     "main_coord_x",
+                     "main_coord_y",
+                     "main_coord_z",
+                     "main_coord_v"
+                 })
+            {
+                if (auto* component = uiRoot->findById(id))
+                    component->visible = !dockingVisible;
+            }
+
             switch (m_clientDockingPhase)
             {
                 case ClientDockingPhase::Idle:
@@ -6663,9 +6678,9 @@ m_systemMapRenderer.render(
                 );
 
             const float terminalLeft =
-                std::max(18.0f, screenW * 0.018f);
+                screenW * 0.06f;
             const float terminalTop =
-                std::max(72.0f, screenH * 0.105f);
+                screenH * 0.175f;
             const float terminalWidth =
                 screenW * 0.25f;
             const float terminalBottom =

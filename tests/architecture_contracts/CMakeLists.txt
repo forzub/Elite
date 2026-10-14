@@ -1438,3 +1438,38 @@ set_tests_properties(
     client_preferences_store_contracts
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    remote_ship_presentation_contract_tests
+    RemoteShipPresentationContractTests.cpp
+)
+
+target_include_directories(
+    remote_ship_presentation_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        remote_ship_presentation_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        remote_ship_presentation_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME remote_ship_presentation_contracts
+    COMMAND remote_ship_presentation_contract_tests
+)
+
+set_tests_properties(
+    remote_ship_presentation_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

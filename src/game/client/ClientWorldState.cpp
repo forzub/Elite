@@ -5,6 +5,7 @@
 #include "src/game/client/SnapshotPresentationWindow.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include "src/game/client/presentation/LocalPredictedPresentation.h"
+#include "src/game/client/ClientRemoteShipPresentation.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/ShipPropulsionState.h"
 #include <iostream>
@@ -1211,14 +1212,14 @@ void ClientWorldState::update(
                                 // authoritative epochs, never combat/collision
                                 // truth. A new server snapshot always corrects
                                 // this presentation path.
-                                const double presentationDelta =
-                                    glm::clamp(
-                                        renderTime -
+                                const auto deadReckoning =
+                                    game::client::
+                                        deadReckonRemoteShipPresentation(
+                                            *itOld,
                                             older->metadata.serverTimeSeconds,
-                                        0.0,
-                                        0.75
-                                    );
-
+                                            renderTime,
+                                            0.75
+                                        );
                                 ship.renderTransform = itOld->transform;
                                 ship.renderTransform.orientation =
                                     smoothOrientationMatrix(
@@ -1233,10 +1234,7 @@ void ClientWorldState::update(
                                     ))
                                 {
                                     const glm::dvec3 localPosition =
-                                        itOld->referenceFrame.localPositionMeters +
-                                        itOld->referenceFrame
-                                            .localVelocityMetersPerSecond *
-                                            presentationDelta;
+                                        deadReckoning.localPositionMeters;
 
                                     ship.renderReferenceFrame =
                                         game::client::
@@ -1266,12 +1264,7 @@ void ClientWorldState::update(
                                 else
                                 {
                                     ship.renderTransform.setWorldPosition(
-                                        world::coordinates::translated(
-                                            itOld->transform.worldPosition,
-                                            itOld->transform.motion
-                                                .worldVelocityMps *
-                                                presentationDelta
-                                        )
+                                        deadReckoning.worldPosition
                                     );
                                 }
                             }

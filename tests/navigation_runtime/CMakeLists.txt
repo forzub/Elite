@@ -842,6 +842,45 @@ set_tests_properties(
 )
 
 add_executable(
+    docking_status_terminal_tests
+    DockingStatusTerminalTests.cpp
+)
+
+target_include_directories(
+    docking_status_terminal_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    docking_status_terminal_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        docking_status_terminal_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        docking_status_terminal_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME docking_status_terminal
+    COMMAND docking_status_terminal_tests
+)
+
+set_tests_properties(
+    docking_status_terminal
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     route_frame_field_tests
     RouteFrameFieldTests.cpp
 )

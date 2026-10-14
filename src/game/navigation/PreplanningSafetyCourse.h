@@ -20,6 +20,11 @@ struct PreplanningSafetyCourseRequest
     double hullRadiusMeters = 0.0;
     double additionalClearanceMeters = 0.0;
 
+    // Extra spatial delta-spot around the candidate trajectory. Zero preserves
+    // legacy single-centerline proof. Positive values require the whole local
+    // tube, not merely its center ray, to remain obstacle-free.
+    double courseSafetySpotRadiusMeters = 0.0;
+
     // Physical authority available while acquiring a new inertial course.
     double courseAccelerationMps2 = 0.0;
     double brakingAccelerationMps2 = 0.0;

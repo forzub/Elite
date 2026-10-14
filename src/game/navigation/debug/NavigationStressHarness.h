@@ -188,7 +188,13 @@ public:
         {
             if (m_step == 0)
             {
-                if (o.universeSeconds - m_startedAt >= 1.0)
+                const bool assistedHotStart =
+                    m_physicalModelLabel.rfind("Assisted-", 0) == 0;
+                const double requestDelaySeconds =
+                    assistedHotStart ? 0.15 : 1.0;
+
+                if (o.universeSeconds - m_startedAt >=
+                    requestDelaySeconds)
                 {
                     return issue(
                         o,

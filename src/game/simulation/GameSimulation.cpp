@@ -672,7 +672,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
     // while the hull is deliberately yawed away from that course. This makes
     // route construction consume a real non-zero velocity boundary and proves
     // that navigation course is not reconstructed from hull nose.
-    constexpr double StartSpeedMps = 120.0;
+    constexpr double StartSpeedMps = 300.0;
     constexpr double NoseOffsetRad =
         1.04719755119659774615; // 60 degrees, diagnostic only.
 
@@ -719,6 +719,17 @@ void GameSimulation::applyPhysicalCorridorHotStart()
         motion.referenceVelocityMps;
     motion.forwardSpeedMps =
         glm::dot(relativeWorldVelocity, newForward);
+
+    // Keep the diagnostic entry genuinely high-speed until the route request
+    // is issued. Without this hold, ordinary Assisted stabilization immediately
+    // bleeds the deliberately off-nose velocity and the planner ends up seeing
+    // ~25-40 m/s instead of the requested 300 m/s hot start.
+    motion.targetForwardSpeedMps = StartSpeedMps;
+    motion.assistedTargetSpeedHold = true;
+    motion.assistedThrottleTrimWasActive = false;
+    motion.velocityAlignmentMode =
+        game::navigation::VelocityAlignmentMode::None;
+
     tr.pitchRate = 0.0f;
     tr.yawRate = 0.0f;
     tr.rollRate = 0.0f;

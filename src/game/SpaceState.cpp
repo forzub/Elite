@@ -2507,6 +2507,9 @@ void SpaceState::updateDockingAdvisory()
                 envelope,
                 controlLaw
             );
+        const bool assisted =
+            controlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted;
 
         const bool lateEntryRebind =
             automatic &&
@@ -2576,12 +2579,24 @@ void SpaceState::updateDockingAdvisory()
                 (shipProfile.maxBrakingAccelerationMps2 -
                  linearReserve) * 0.90
             );
-        request.lateralMps2 =
+        const double executionCurveLateralMps2 =
             std::max(
-                0.1,
+                0.0,
                 (shipProfile.maxLateralAccelerationMps2 -
                  linearReserve) * 0.90
             );
+
+        // Route TOPOLOGY and route EXECUTION need different Newtonian
+        // authority semantics. The global obstacle/portal solver must not turn
+        // a small TVC side component into a 20-50 km geometric detour. For
+        // Newtonian it chooses compact straight-first geometry with the normal
+        // main-engine maneuver scale; the accepted trajectory below still
+        // uses the real TVC budget to cap speed on any finite curvature and
+        // forces v=0 at tangent discontinuities.
+        request.lateralMps2 =
+            assisted
+                ? std::max(0.1, executionCurveLateralMps2)
+                : request.acceleratingMps2;
         request.maxAngularVelocityRadPerSecond =
             shipProfile.maxAngularVelocityRadPerSecond;
         request.maxAngularAccelerationRadPerSecond2 =
@@ -2606,6 +2621,10 @@ void SpaceState::updateDockingAdvisory()
             << " route_max_mps=" << request.maxSpeedMps
             << " forward_lead_m="
             << request.initialForwardLeadMeters
+            << " geometry_lat_mps2="
+            << request.lateralMps2
+            << " execution_curve_lat_mps2="
+            << executionCurveLateralMps2
             << " initial_course=("
             << request.initialForward.x << ","
             << request.initialForward.y << ","
@@ -2616,9 +2635,6 @@ void SpaceState::updateDockingAdvisory()
         request.gateSpacingMeters = 500.0;
         request.terminalGateSpacingMeters = 250.0;
 
-        const bool assisted =
-            controlLaw ==
-                game::navigation::LocalFlightControlLaw::Assisted;
         request.roundTurns = assisted;
         request.useContinuousAssistedOptimizer = assisted;
         if (assisted)

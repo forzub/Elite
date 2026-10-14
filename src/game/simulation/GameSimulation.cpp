@@ -6798,6 +6798,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             // If this client-visible entity was detailed before, publish one
             // explicit empty graph so canonical snapshot merging cannot retain
             // stale heavy state forever after demotion.
+            m_shipGraphPayloadPublicationsRemaining.erase(id);
+
             if (hadDetailedGraph)
             {
                 graph.hasModules = true;
@@ -6810,7 +6812,6 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 graph.debugHitVolumes.clear();
 
                 m_initializedShipGraphIds.erase(id);
-                m_shipGraphPayloadPublicationsRemaining.erase(id);
             }
 
             // Response rendering uses static descriptor assembly. Runtime

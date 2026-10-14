@@ -92,18 +92,39 @@ struct ShipMotionFidelityDemand
     double forwardAlignment = -1.0;
 };
 
-inline bool claimRequiresFullControl(
+inline ShipMotionFidelity claimMotionFidelityDemand(
     const activation::ActivationClaim& claim,
     EntityId subjectId,
     int systemId,
     double serverTimeSeconds
 ) noexcept
 {
-    return
-        claim.subjectId == subjectId &&
-        claim.systemId == systemId &&
-        activation::activationClaimIsLive(claim, serverTimeSeconds) &&
-        claim.kind != activation::ActivationClaimKind::None;
+    if (claim.subjectId != subjectId ||
+        claim.systemId != systemId ||
+        !activation::activationClaimIsLive(
+            claim,
+            serverTimeSeconds
+        ))
+    {
+        return ShipMotionFidelity::RouteOnly;
+    }
+
+    switch (claim.minimumMode)
+    {
+        case SimulationMode::Active:
+            return ShipMotionFidelity::FullControl;
+
+        case SimulationMode::Prewarm:
+            return ShipMotionFidelity::Response;
+
+        case SimulationMode::Coarse:
+        case SimulationMode::Scheduled:
+        case SimulationMode::OnDemand:
+        case SimulationMode::Dormant:
+            return ShipMotionFidelity::RouteOnly;
+    }
+
+    return ShipMotionFidelity::RouteOnly;
 }
 
 inline ShipMotionFidelityDemand evaluateShipMotionFidelityDemand(
@@ -120,19 +141,26 @@ inline ShipMotionFidelityDemand evaluateShipMotionFidelityDemand(
 
     for (const auto& claim : claims)
     {
-        if (!claimRequiresFullControl(
+        const ShipMotionFidelity claimDemand =
+            claimMotionFidelityDemand(
                 claim,
                 subjectId,
                 subjectSystemId,
-                serverTimeSeconds))
+                serverTimeSeconds
+            );
+
+        if (shipMotionFidelityPriority(claimDemand) <=
+            shipMotionFidelityPriority(result.requested))
         {
             continue;
         }
 
-        result.requested = ShipMotionFidelity::FullControl;
+        result.requested = claimDemand;
         result.reason = ShipMotionFidelityReason::ExplicitInteraction;
         result.observerId = claim.sourceId;
-        return result;
+
+        if (claimDemand == ShipMotionFidelity::FullControl)
+            return result;
     }
 
     for (const auto& observer : observers)

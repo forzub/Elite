@@ -31,7 +31,8 @@ Default observer policy:
   `Response`
 - near the aim axis up to ~3 km or within ~350 m regardless of view:
   `FullControl`
-- live combat/projectile/docking/script claims: `FullControl`
+- server interaction claim at `Prewarm`: at least `Response`
+- server interaction claim at `Active` (combat/projectile/etc.): `FullControl`
 
 Promotion is immediate. Demotion is hysteretic and staged:
 `FullControl -> Response -> Kinematic -> RouteOnly`.
@@ -46,6 +47,13 @@ players may observe or shoot one ship simultaneously.
 For every shared ship, the server evaluates all player-controlled observer
 ships and uses the strongest required MotionFidelity. Therefore one player's
 aim/combat demand upgrades the same authoritative entity for every client.
+
+The first implementation uses each controlled ship's authoritative forward axis
+as the server-side observation direction. That is intentionally conservative
+and secure, but it does not yet know a client's free-look/rear-camera direction.
+The next networking refinement should send a small observation-interest claim
+(camera/aim direction only). Such a claim may raise server simulation demand;
+it must never carry hit results or authoritative physics.
 
 Safe work is moved to clients:
 

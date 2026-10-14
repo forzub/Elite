@@ -177,6 +177,33 @@ void testExplicitCombatClaimForcesServerFullControl()
     );
 }
 
+void testPrewarmClaimRaisesOnlyToResponse()
+{
+    Claim claim;
+    claim.subjectId = EntityId{10};
+    claim.sourceId = EntityId{2};
+    claim.systemId = 7;
+    claim.minimumMode = game::simulation::SimulationMode::Prewarm;
+    claim.kind = ClaimKind::Docking;
+    claim.expiresAtServerTimeSeconds = 20.0;
+
+    const auto demand =
+        game::simulation::evaluateShipMotionFidelityDemand(
+            EntityId{10},
+            7,
+            {50000.0, 0.0, 0.0},
+            {},
+            {claim},
+            10.0
+        );
+
+    require(
+        demand.requested == Fidelity::Response &&
+        demand.reason == Reason::ExplicitInteraction,
+        "Prewarm claim over-promoted shared ship beyond Response"
+    );
+}
+
 void testHysteresisPromotesImmediatelyAndDemotesInSteps()
 {
     Policy policy;
@@ -254,6 +281,7 @@ int main()
         testCloseShipMattersEvenBehindObserver();
         testStrongestOfSeveralPlayersWins();
         testExplicitCombatClaimForcesServerFullControl();
+        testPrewarmClaimRaisesOnlyToResponse();
         testHysteresisPromotesImmediatelyAndDemotesInSteps();
 
         std::cout
@@ -262,7 +290,8 @@ int main()
             << " - visible ships rise through Kinematic/Response/FullControl\n"
             << " - close collision risk overrides camera direction\n"
             << " - strongest of several player observers wins\n"
-            << " - combat claims force shared server FullControl\n"
+            << " - Active combat claims force shared server FullControl\n"
+            << " - Prewarm interaction claims require Response, not FullControl\n"
             << " - promotion is immediate and demotion is hysteretic\n";
         return EXIT_SUCCESS;
     }

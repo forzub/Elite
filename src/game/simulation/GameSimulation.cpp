@@ -173,6 +173,31 @@ namespace
         return frame;
     }
 
+    bool physicalModelFromLabel(
+        const std::string& label,
+        game::ship::plant::PhysicalControlModelId& outModel
+    )
+    {
+        using Model = game::ship::plant::PhysicalControlModelId;
+
+        if (label == "Assisted-I")
+            outModel = Model::AssistedI;
+        else if (label == "Assisted-Y")
+            outModel = Model::AssistedY;
+        else if (label == "Assisted-X")
+            outModel = Model::AssistedX;
+        else if (label == "Newtonian-I")
+            outModel = Model::NewtonianI;
+        else if (label == "Newtonian-Y")
+            outModel = Model::NewtonianY;
+        else if (label == "Newtonian-X")
+            outModel = Model::NewtonianX;
+        else
+            return false;
+
+        return true;
+    }
+
     const char* physicalModelName(
         game::ship::plant::PhysicalControlModelId model
     )
@@ -546,6 +571,47 @@ void GameSimulation::buildInitialScene(
 {
     m_playerId =
         game::scene::buildInitialScene(*this, initialState);
+
+    // Live physical-corridor diagnostics must switch the actual ship
+    // construction, not merely relabel the stress overlay. This environment
+    // variable is only set by the dedicated six-model corridor runner.
+    if (const char* requestedModel =
+            std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
+        requestedModel && *requestedModel)
+    {
+        game::ship::plant::PhysicalControlModelId model;
+        if (physicalModelFromLabel(requestedModel, model))
+        {
+            if (Ship* player = playerShip())
+            {
+                if (player->core().
+                        selectPhysicalConstructionForDiagnostic(model))
+                {
+                    std::cout
+                        << "[PhysicalCorridor] player model override="
+                        << physicalModelName(model)
+                        << " law="
+                        << game::navigation::localFlightControlLawName(
+                               player->core().transform().
+                                   motion.localControlLaw
+                           )
+                        << "\n";
+                }
+                else
+                {
+                    std::cerr
+                        << "[PhysicalCorridor] failed player model override="
+                        << requestedModel << "\n";
+                }
+            }
+        }
+        else
+        {
+            std::cerr
+                << "[PhysicalCorridor] unknown model label="
+                << requestedModel << "\n";
+        }
+    }
 
     // m_playerId is only the authored primary spawn compatibility alias.
     // Human control authority is established later by GameServer from

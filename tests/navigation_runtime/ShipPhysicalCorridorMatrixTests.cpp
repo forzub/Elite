@@ -1,9 +1,9 @@
-#include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
-#include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/world/WorldParams.h"
@@ -12,6 +12,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -206,7 +209,8 @@ double distanceToAuthoredArc(const glm::dvec3& position)
 
 void runModel(Model model)
 {
-    ShipDescriptor descriptor;
+    ShipDescriptor descriptor =
+        EliteCobraMk1::EliteCobraMk1Descriptor();
     descriptor.physicalControlModel = model;
     descriptor.localFlightControlLaw =
         game::ship::plant::nativeFlightLaw(model);
@@ -215,6 +219,10 @@ void runModel(Model model)
     const auto capability =
         game::ship::capability::buildHealthyShipCapability(
             descriptor
+        );
+    const auto slotState =
+        game::ship::plant::healthySlotState(
+            game::ship::plant::physicalControlSlots(model)
         );
 
     require(
@@ -281,6 +289,9 @@ void runModel(Model model)
     );
 
     double maxCrossTrack = 0.0;
+    double maxMainTorqueNm = 0.0;
+    double maxAngularSpeedRadPerSec = 0.0;
+    double completionTimeSeconds = 0.0;
     bool reachedEnd = false;
 
     for (int tick = 0; tick < 6000; ++tick)
@@ -301,35 +312,40 @@ void runModel(Model model)
                 " emitted invalid autopilot output"
         );
 
-        SharedShipPhysics::integrate(
-            transform,
-            params,
-            output.control,
-            world,
-            static_cast<float>(kDt)
-        );
+        game::ship::control::ShipControlExecutionGateway::
+            evaluateAttitudeControl(
+                transform,
+                params,
+                output.control,
+                world,
+                static_cast<float>(kDt)
+            );
 
-        game::navigation::DynamicMotionSystem::applyLocalFrameInput(
-            transform.motion,
-            frame,
-            params,
-            static_cast<float>(kDt),
-            output.control.targetSpeedRate,
-            output.control.cruiseActive,
-            output.control.forwardInput,
-            output.control.liftInput,
-            output.control.strafeInput,
-            transform.forward(),
-            transform.right(),
-            transform.up()
-        );
+        game::ship::control::ShipControlExecutionGateway::
+            propagateOrientation(
+                transform,
+                static_cast<float>(kDt)
+            );
 
-        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-            transform.motion,
-            transform.worldPosition,
-            frame,
-            params,
-            kDt
+        (void)game::ship::control::ShipControlExecutionGateway::
+            evaluateTranslationControl(
+                transform,
+                params,
+                output.control,
+                model,
+                slotState,
+                static_cast<float>(kDt)
+            );
+
+        require(
+            game::ship::control::ShipControlExecutionGateway::
+                propagateHubTacticalTranslation(
+                    transform,
+                    params,
+                    kDt
+                ),
+            std::string(modelName(model)) +
+                " failed HubTactical translation propagation"
         );
 
         const double crossTrack =
@@ -338,6 +354,25 @@ void runModel(Model model)
             );
         maxCrossTrack =
             std::max(maxCrossTrack, crossTrack);
+        maxMainTorqueNm =
+            std::max(
+                maxMainTorqueNm,
+                glm::length(
+                    transform.motion.mainPropulsionTorqueBodyNm
+                )
+            );
+        maxAngularSpeedRadPerSec =
+            std::max(
+                maxAngularSpeedRadPerSec,
+                std::sqrt(
+                    static_cast<double>(transform.pitchRate) *
+                        transform.pitchRate +
+                    static_cast<double>(transform.yawRate) *
+                        transform.yawRate +
+                    static_cast<double>(transform.rollRate) *
+                        transform.rollRate
+                )
+            );
 
         require(
             crossTrack <= kTunnelHalfWidthMeters + 1.0e-6,
@@ -348,6 +383,8 @@ void runModel(Model model)
         if (output.complete ||
             output.exactRemainingRouteMeters <= 1.0)
         {
+            completionTimeSeconds =
+                static_cast<double>(tick + 1) * kDt;
             reachedEnd = true;
             break;
         }
@@ -367,11 +404,45 @@ void runModel(Model model)
         << " capability_state="
         << static_cast<int>(capability.controlState)
         << " max_cross_track_m=" << maxCrossTrack
+        << " max_main_torque_nm=" << maxMainTorqueNm
+        << " max_omega_rad_s=" << maxAngularSpeedRadPerSec
+        << " completion_s=" << completionTimeSeconds
         << "\n";
+
+    const std::filesystem::path logPath(
+        "D:/tmp/elite/ship_physical_corridor/summary.csv"
+    );
+    std::filesystem::create_directories(logPath.parent_path());
+    const bool writeHeader = !std::filesystem::exists(logPath);
+    std::ofstream log(logPath, std::ios::app);
+    if (log)
+    {
+        if (writeHeader)
+        {
+            log
+                << "model,law,capability_state,max_cross_track_m,"
+                << "max_main_torque_nm,max_omega_rad_s,completion_s\n";
+        }
+        log
+            << modelName(model) << ','
+            << game::navigation::localFlightControlLawName(law) << ','
+            << static_cast<int>(capability.controlState) << ','
+            << std::fixed << std::setprecision(6)
+            << maxCrossTrack << ','
+            << maxMainTorqueNm << ','
+            << maxAngularSpeedRadPerSec << ','
+            << completionTimeSeconds << '\n';
+    }
 }
 
 void testAllHealthyPhysicalModelsUseSameControlCorridor()
 {
+    const std::filesystem::path logPath(
+        "D:/tmp/elite/ship_physical_corridor/summary.csv"
+    );
+    std::error_code ec;
+    std::filesystem::remove(logPath, ec);
+
     constexpr std::array<Model, 6> Models = {
         Model::AssistedI,
         Model::AssistedY,

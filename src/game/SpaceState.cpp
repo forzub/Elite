@@ -86,6 +86,8 @@
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/ship/ShipPropulsionState.h"
+#include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
@@ -1890,11 +1892,63 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
-    const ShipParams effectivePhysics =
+    ShipParams effectivePhysics =
         game::ship::effectiveShipPhysics(
             *player.descriptor,
             player.modules
         );
+
+    // Dedicated six-model corridor diagnostics override the authoritative
+    // server construction. Mirror that selection into the client-side
+    // planner/follower capability projection so Newtonian runs are not
+    // planned with the authored default Assisted capability.
+    if (const char* requestedModel =
+            std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
+        requestedModel && *requestedModel)
+    {
+        using Model =
+            game::ship::plant::PhysicalControlModelId;
+        Model model = player.descriptor->physicalControlModel;
+        bool known = true;
+        const std::string label(requestedModel);
+
+        if (label == "Assisted-I")
+            model = Model::AssistedI;
+        else if (label == "Assisted-Y")
+            model = Model::AssistedY;
+        else if (label == "Assisted-X")
+            model = Model::AssistedX;
+        else if (label == "Newtonian-I")
+            model = Model::NewtonianI;
+        else if (label == "Newtonian-Y")
+            model = Model::NewtonianY;
+        else if (label == "Newtonian-X")
+            model = Model::NewtonianX;
+        else
+            known = false;
+
+        if (known)
+        {
+            ShipDescriptor diagnosticDescriptor =
+                *player.descriptor;
+            diagnosticDescriptor.physicalControlModel = model;
+            diagnosticDescriptor.localFlightControlLaw =
+                game::ship::plant::nativeFlightLaw(model);
+
+            const auto diagnosticCapability =
+                game::ship::capability::
+                    buildHealthyShipCapability(
+                        diagnosticDescriptor
+                    );
+
+            if (diagnosticCapability.valid)
+            {
+                effectivePhysics =
+                    diagnosticCapability.effectivePhysics;
+            }
+        }
+    }
+
     const auto controlLaw =
         motion.localControlLaw;
 

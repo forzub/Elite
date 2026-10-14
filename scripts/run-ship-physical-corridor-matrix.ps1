@@ -1,10 +1,42 @@
 param(
     [int]$NoProgressTimeoutSeconds = 15,
     [int]$PerModelTimeoutSeconds = 240,
-    [string]$ReportDirectory = "D:\\tmp\\elite_ship_physical_matrix"
+    [string]$ReportDirectory = "D:\\tmp\\elite\\ship_physical_corridor\\live"
 )
 
 $ErrorActionPreference = "Stop"
+
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$buildDir = Join-Path $repoRoot "build"
+$runtimeTestBuildDir = Join-Path $buildDir "tests\navigation_runtime"
+
+Write-Host "[PhysicalMatrix] configuring navigation runtime tests"
+& cmake -S (Join-Path $repoRoot "tests\navigation_runtime") `
+    -B $runtimeTestBuildDir -G Ninja
+if ($LASTEXITCODE -ne 0) {
+    throw "Navigation runtime configure failed (exit code $LASTEXITCODE)"
+}
+
+Write-Host "[PhysicalMatrix] building headless corridor gate"
+& cmake --build $runtimeTestBuildDir `
+    --target ship_physical_corridor_matrix_tests -j 8
+if ($LASTEXITCODE -ne 0) {
+    throw "Physical corridor test build failed (exit code $LASTEXITCODE)"
+}
+
+Write-Host "[PhysicalMatrix] building EliteGame"
+& cmake --build $buildDir --target EliteGame -j 8
+if ($LASTEXITCODE -ne 0) {
+    throw "EliteGame build failed (exit code $LASTEXITCODE)"
+}
+
+Write-Host "[PhysicalMatrix] running six-model headless physical gate"
+& ctest --test-dir $runtimeTestBuildDir `
+    -R "^ship_physical_corridor_matrix$" `
+    --output-on-failure
+if ($LASTEXITCODE -ne 0) {
+    throw "Headless physical corridor matrix failed (exit code $LASTEXITCODE)"
+}
 
 $runner = Join-Path $PSScriptRoot "run-navigation-stress.ps1"
 if (-not (Test-Path $runner)) {
@@ -71,6 +103,7 @@ try {
     foreach ($result in $results) {
         Write-Host ("[PhysicalMatrix] PASS {0}/6 {1} -> {2}" -f $result.Index, $result.Model, $result.Report)
     }
+    Write-Host "[PhysicalMatrix] headless summary: D:\tmp\elite\ship_physical_corridor\summary.csv"
     Write-Host "=========================================================="
 }
 finally {

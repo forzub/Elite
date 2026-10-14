@@ -160,7 +160,10 @@ entities=500 shells=500 materialized=0
 motion={route:500,kin:0,response:0,full:0}
 ```
 
-This is the lower-bound population cost.
+This is the lower-bound population cost. After the game exits, the runner
+automatically validates `herd_500.csv`: all 500 identities must still exist,
+all must remain shells/RouteOnly, the motion census must sum to 500, and no
+materialized state may appear.
 
 ### budget500 — real population test
 
@@ -178,7 +181,13 @@ This is the primary acceptance test. We check:
 - ships are visible and map-visible;
 - the population does **not** collapse into 500 FullControl ships;
 - `herd_500.csv` shows a plausible mix of four motion levels;
-- mean/max slot error remains bounded across LOD transitions.
+- mean/max slot error remains finite across LOD transitions.
+
+After the game exits, the runner automatically checks the CSV census. It fails
+if identity/state counts disagree, any diagnostics become NaN/Inf, or the run
+collapses all 500 entities into `FullControl`/materialized state. Frame-time
+and input-latency remain reported measurements rather than hardcoded pass/fail
+thresholds until a hardware target is declared.
 
 ### tier — lifecycle only
 

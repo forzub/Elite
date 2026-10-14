@@ -435,11 +435,16 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
         maxContinuousSlipSeconds <= 3.0 + 1.0e-9,
         "Assisted velocity-to-nose lag exceeded three seconds"
     );
+    const auto publicPilotTelemetry =
+        autopilot.pilotController.telemetry(
+            game::navigation::LocalFlightControlLaw::Assisted,
+            params
+        );
     require(
-        autopilot.pilotState.effectivePitchAuthorityRadPerSec2 > 0.0 ||
-        autopilot.pilotState.effectiveYawAuthorityRadPerSec2 > 0.0 ||
-        autopilot.pilotState.effectiveRollAuthorityRadPerSec2 > 0.0,
-        "PredictivePilot learned no angular authority while negotiating the tunnel"
+        publicPilotTelemetry.initialized &&
+        publicPilotTelemetry.courseResponseSeconds > 0.0 &&
+        publicPilotTelemetry.targetSpeedChangeRateMps2 > 0.0,
+        "Assisted pilot exposed no valid public telemetry while negotiating the tunnel"
     );
     require(
         maxHullTurnFromStartDeg > 45.0,
@@ -461,12 +466,12 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
         << " max_hull_turn_deg=" << maxHullTurnFromStartDeg
         << " min_roll_err_deg=" << minimumRollAlignmentErrorDeg
         << " final_roll_err_deg=" << finalRollAlignmentErrorDeg
-        << " learned_pitch_alpha="
-        << autopilot.pilotState.effectivePitchAuthorityRadPerSec2
-        << " learned_yaw_alpha="
-        << autopilot.pilotState.effectiveYawAuthorityRadPerSec2
-        << " learned_roll_alpha="
-        << autopilot.pilotState.effectiveRollAuthorityRadPerSec2
+        << " pilot_course_response_s="
+        << publicPilotTelemetry.courseResponseSeconds
+        << " pilot_speed_authority_mps2="
+        << publicPilotTelemetry.targetSpeedChangeRateMps2
+        << " pilot_brake_response_mps2="
+        << publicPilotTelemetry.brakingResponseMps2
         << "\n";
 }
 

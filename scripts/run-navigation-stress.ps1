@@ -76,13 +76,30 @@ $assistedGameplayParity =
     $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY -and
     $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY -ne "0"
 
-if ($assistedHighSpeed -or $assistedGameplayParity) {
+$assistedSafeCourseObstacle =
+    $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE -and
+    $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE -ne "0"
+
+if ($assistedHighSpeed -or $assistedGameplayParity -or $assistedSafeCourseObstacle) {
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
 }
 
 if ($assistedHighSpeed) {
     if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS) {
         $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "400"
+    }
+}
+
+if ($assistedSafeCourseObstacle) {
+    # Dedicated physics probe.  Start with hull aligned to velocity so any
+    # later hull/velocity separation is caused by the safe-course maneuver,
+    # not by the fixture.  The existing CubeFront scene geometry must block
+    # the initial velocity corridor; the harness fails explicitly if it does not.
+    if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS) {
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "500"
+    }
+    if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG) {
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "0"
     }
 }
 

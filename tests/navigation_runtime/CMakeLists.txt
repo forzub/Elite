@@ -1517,6 +1517,55 @@ set_tests_properties(
 )
 
 add_executable(
+    ship_physical_damage_matrix_tests
+    ShipPhysicalDamageMatrixTests.cpp
+)
+
+target_include_directories(ship_physical_damage_matrix_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_physical_damage_matrix_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    ship_physical_damage_matrix_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+target_compile_definitions(
+    ship_physical_damage_matrix_tests
+    PRIVATE
+        ELITE_SHIP_PHYSICAL_DAMAGE_DEFAULT_LOG_DIR="D:/tmp/elite/ship_physical_damage"
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_physical_damage_matrix_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_physical_damage_matrix_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_physical_damage_matrix
+    COMMAND ship_physical_damage_matrix_tests
+)
+
+set_tests_properties(
+    ship_physical_damage_matrix
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     physical_maneuver_search_coordinator_tests
     PhysicalManeuverSearchCoordinatorTests.cpp
 )

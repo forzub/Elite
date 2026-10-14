@@ -251,6 +251,7 @@ private:
     void renderNavigationStressOverlay(const Viewport& viewport);
     void renderRoutePlanningModal(const Viewport& viewport);
     void updateDockingAdvisory();
+    void updateShipObservationInterest(float dt);
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
@@ -297,6 +298,9 @@ private:
     ShipControlState                                m_playerControl;
     std::deque<ShipControlState>                    m_sentInputs;
     uint32_t m_localTick = 0;
+
+    double m_shipObservationInterestAccumulatorSeconds = 0.0;
+    std::uint64_t m_shipObservationInterestSerial = 0;
 
     // =======================================
     //  ===========       HUD       ==========

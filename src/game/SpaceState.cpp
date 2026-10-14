@@ -43,6 +43,7 @@
 
 #include "ui/components/radar/RadarWidgetBase.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/network/ClientObservationInterest.h"
 #include "src/game/RuntimeFeatureFlags.h"
 
 #include "src/render/InitShaders.h"
@@ -4340,6 +4341,167 @@ void SpaceState::updateDockingAdvisory()
     );
 }
 
+void SpaceState::updateShipObservationInterest(float dt)
+{
+    if (!m_client || !m_playerView)
+        return;
+
+    m_shipObservationInterestAccumulatorSeconds +=
+        std::max(0.0, static_cast<double>(dt));
+
+    constexpr double PublishIntervalSeconds = 0.10;
+    if (m_shipObservationInterestAccumulatorSeconds + 1.0e-9 <
+        PublishIntervalSeconds)
+    {
+        return;
+    }
+    m_shipObservationInterestAccumulatorSeconds = 0.0;
+
+    if (context().app &&
+        context().app->sceneGameUiMode() != GameUiMode::Flight)
+    {
+        // Do not claim visibility from a hidden gameplay camera. The previous
+        // server hint expires automatically after 350 ms.
+        return;
+    }
+
+    const auto& ships = m_client->world().ships();
+    const auto playerIt = ships.find(m_playerId.value);
+    if (playerIt == ships.end())
+        return;
+
+    const auto& player = playerIt->second;
+    const int playerSystemId = player.renderTransform.motion.systemId;
+    if (playerSystemId < 0)
+        return;
+
+    Camera& camera = m_playerView->camera(m_activeCameraMode);
+    const glm::mat4 cameraWorld = glm::inverse(camera.viewMatrix());
+    glm::dvec3 cameraForward(
+        -static_cast<double>(cameraWorld[2].x),
+        -static_cast<double>(cameraWorld[2].y),
+        -static_cast<double>(cameraWorld[2].z)
+    );
+
+    const double forwardLength = glm::length(cameraForward);
+    if (forwardLength <= 1.0e-9)
+        return;
+    cameraForward /= forwardLength;
+
+    const double verticalHalfRad =
+        glm::radians(static_cast<double>(camera.fov()) * 0.5);
+    const double horizontalHalfRad =
+        std::atan(
+            std::tan(verticalHalfRad) *
+            std::max(0.1, static_cast<double>(camera.aspect()))
+        );
+
+    // A small guard band promotes before an object reaches the exact screen
+    // edge, hiding LOD transition latency without granting combat authority.
+    const double interestHalfAngleRad =
+        std::min(
+            glm::radians(89.0),
+            std::max(verticalHalfRad, horizontalHalfRad) +
+                glm::radians(5.0)
+        );
+    const double minimumAlignment = std::cos(interestHalfAngleRad);
+
+    struct Candidate
+    {
+        EntityId id {0};
+        game::network::ClientObservationDetail detail =
+            game::network::ClientObservationDetail::Kinematic;
+        double distanceMeters = 0.0;
+    };
+
+    std::vector<Candidate> candidates;
+    candidates.reserve(
+        std::min<std::size_t>(
+            ships.size(),
+            game::network::MaxClientObservationInterestEntries * 2
+        )
+    );
+
+    constexpr double KinematicDistanceMeters = 15000.0;
+    constexpr double ResponseDistanceMeters = 4000.0;
+
+    for (const auto& [entityValue, target] : ships)
+    {
+        if (entityValue == m_playerId.value ||
+            target.renderTransform.motion.systemId != playerSystemId)
+        {
+            continue;
+        }
+
+        const glm::dvec3 delta =
+            world::coordinates::relativeMeters(
+                target.renderTransform.worldPosition,
+                player.renderTransform.worldPosition
+            );
+        const double distanceMeters = glm::length(delta);
+        if (!std::isfinite(distanceMeters) ||
+            distanceMeters <= 1.0e-6 ||
+            distanceMeters > KinematicDistanceMeters)
+        {
+            continue;
+        }
+
+        const double alignment =
+            glm::dot(delta / distanceMeters, cameraForward);
+        if (alignment < minimumAlignment)
+            continue;
+
+        Candidate candidate;
+        candidate.id = EntityId{entityValue};
+        candidate.distanceMeters = distanceMeters;
+        candidate.detail =
+            distanceMeters <= ResponseDistanceMeters
+                ? game::network::ClientObservationDetail::Response
+                : game::network::ClientObservationDetail::Kinematic;
+        candidates.push_back(candidate);
+    }
+
+    std::sort(
+        candidates.begin(),
+        candidates.end(),
+        [](const Candidate& a, const Candidate& b)
+        {
+            if (a.detail != b.detail)
+            {
+                return static_cast<std::uint8_t>(a.detail) >
+                    static_cast<std::uint8_t>(b.detail);
+            }
+            return a.distanceMeters < b.distanceMeters;
+        }
+    );
+
+    if (candidates.size() >
+        game::network::MaxClientObservationInterestEntries)
+    {
+        candidates.resize(
+            game::network::MaxClientObservationInterestEntries
+        );
+    }
+
+    game::network::ClientObservationInterest interest;
+    interest.serial = ++m_shipObservationInterestSerial;
+    interest.entries.reserve(candidates.size());
+
+    for (const auto& candidate : candidates)
+    {
+        interest.entries.push_back({
+            candidate.id,
+            candidate.detail
+        });
+    }
+
+    game::network::ClientMessage message;
+    message.clientTick = 0;
+    message.payload = std::move(interest);
+    m_client->sendMessage(message);
+}
+
+
 void SpaceState::update(float dt)
 {
     const double updateStartMs = nowMs();
@@ -4807,6 +4969,8 @@ m_playerView->update(
     ship.renderTransform,
     ship.detachedFragments
 );
+
+updateShipObservationInterest(viewDt);
 
 
 

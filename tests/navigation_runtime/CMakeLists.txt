@@ -2153,3 +2153,30 @@ set_tests_properties(
     ship_simulation_tier
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    ship_simulation_detail_policy_tests
+    ShipSimulationDetailPolicyTests.cpp
+)
+
+target_include_directories(ship_simulation_detail_policy_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(ship_simulation_detail_policy_tests PRIVATE cxx_std_17)
+
+if(MSVC)
+    target_compile_options(ship_simulation_detail_policy_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(ship_simulation_detail_policy_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(
+    NAME ship_simulation_detail_policy
+    COMMAND ship_simulation_detail_policy_tests
+)
+set_tests_properties(
+    ship_simulation_detail_policy
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

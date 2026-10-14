@@ -32,6 +32,29 @@ enum class ShipActorKind : std::uint8_t
 // Orthogonal to SimulationTier. A materialized ship can still use a compact
 // response model; only player/explicitly promoted actors need detailed
 // reactor/thermal/module service simulation.
+enum class ShipMotionFidelity : std::uint8_t
+{
+    RouteOnly = 0,
+    Kinematic,
+    Response,
+    FullControl
+};
+
+inline const char* shipMotionFidelityName(
+    ShipMotionFidelity fidelity
+) noexcept
+{
+    switch (fidelity)
+    {
+        case ShipMotionFidelity::RouteOnly: return "route-only";
+        case ShipMotionFidelity::Kinematic: return "kinematic";
+        case ShipMotionFidelity::Response: return "response";
+        case ShipMotionFidelity::FullControl: return "full-control";
+    }
+
+    return "unknown";
+}
+
 enum class ShipMaterializedFidelity : std::uint8_t
 {
     Response = 0,
@@ -70,6 +93,8 @@ struct ShipSimulationLifecycleState
 {
     ShipSimulationTier tier = ShipSimulationTier::MaterializedShip;
     ShipActorKind actorKind = ShipActorKind::NpcPilot;
+    ShipMotionFidelity motionFidelity =
+        ShipMotionFidelity::Response;
     ShipMaterializedFidelity materializedFidelity =
         ShipMaterializedFidelity::Response;
     bool pilotPresent = true;
@@ -103,12 +128,35 @@ struct ShipSimulationLifecycleState
         ++revision;
     }
 
+    void demoteToResponseInternals() noexcept
+    {
+        if (materializedFidelity != ShipMaterializedFidelity::Response)
+        {
+            materializedFidelity = ShipMaterializedFidelity::Response;
+            ++revision;
+        }
+    }
+
+    void setMotionFidelity(ShipMotionFidelity value) noexcept
+    {
+        if (motionFidelity != value)
+        {
+            motionFidelity = value;
+            ++revision;
+        }
+    }
+
     void materializeForInteraction() noexcept
     {
         tier = ShipSimulationTier::MaterializedShip;
         if (actorKind == ShipActorKind::TrafficAutopilot)
             actorKind = ShipActorKind::NpcPilot;
         pilotPresent = true;
+        if (motionFidelity == ShipMotionFidelity::RouteOnly ||
+            motionFidelity == ShipMotionFidelity::Kinematic)
+        {
+            motionFidelity = ShipMotionFidelity::Response;
+        }
         ++revision;
     }
 
@@ -127,6 +175,11 @@ struct ShipSimulationLifecycleState
         tier = pilotPresent
             ? ShipSimulationTier::TrafficShell
             : ShipSimulationTier::WreckShell;
+        if (motionFidelity == ShipMotionFidelity::Response ||
+            motionFidelity == ShipMotionFidelity::FullControl)
+        {
+            motionFidelity = ShipMotionFidelity::Kinematic;
+        }
         ++revision;
     }
 };
@@ -144,6 +197,10 @@ struct ShipShellState
 
     ShipSimulationLifecycleState lifecycle;
     CoarseShipDamageState damage;
+
+    // Background shells are server-authoritative at a low cadence. Clients
+    // interpolate/extrapolate between replicated states for presentation.
+    double authoritativeMotionAccumulatorSeconds = 0.0;
 
     [[nodiscard]] bool valid() const noexcept
     {

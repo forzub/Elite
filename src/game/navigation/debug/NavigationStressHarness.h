@@ -178,7 +178,11 @@ public:
     int currentStep() const noexcept { return m_step; }
     int totalStepsForScenario() const noexcept
     {
-        return (m_simpleCorridor || m_assistedHighSpeedManeuver)
+        return (
+            m_simpleCorridor ||
+            m_assistedHighSpeedManeuver ||
+            m_assistedGameplayParity
+        )
             ? 1
             : 12;
     }
@@ -206,7 +210,8 @@ public:
             // the client observes it on a later snapshot. Do not mistake the
             // first world-ready zero-speed snapshot for the requested
             // high-speed boundary.
-            if (m_assistedHighSpeedManeuver &&
+            if ((m_assistedHighSpeedManeuver ||
+                 m_assistedGameplayParity) &&
                 o.speedMps + 1.0e-6 < m_highSpeedMinimumRequestMps)
             {
                 if (m_highSpeedArmingStartedAt < -1.0e20)
@@ -230,8 +235,10 @@ public:
             m_stepStartedAt = o.universeSeconds;
             logEvent(
                 o,
-                m_assistedHighSpeedManeuver
-                    ? "START scenario=assisted-high-speed-maneuver"
+                m_assistedGameplayParity
+                    ? "START scenario=assisted-gameplay-parity"
+                    : m_assistedHighSpeedManeuver
+                        ? "START scenario=assisted-high-speed-maneuver"
                     : m_simpleCorridor
                         ? "START scenario=simple-physical-corridor"
                         : "START scenario=hot-replan-blue-transit-v2"
@@ -244,6 +251,110 @@ public:
         // A step is deliberately condition-driven where possible. Timeouts
         // prevent one failure from hiding all later transition cases.
         const double stepAge = o.universeSeconds - m_stepStartedAt;
+
+        if (m_assistedGameplayParity)
+        {
+            if (m_step == 0)
+            {
+                if (m_physicalModelLabel.rfind("Assisted-", 0) != 0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "gameplay-parity probe requires an Assisted physical model"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.speedMps + 1.0e-6 <
+                    m_highSpeedMinimumRequestMps)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "gameplay-parity request was not issued at high speed"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                return issue(
+                    o,
+                    Target::CubeFront,
+                    "assisted-gameplay-parity"
+                );
+            }
+
+            if (m_step == 1)
+            {
+                if (o.failed)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "Assisted gameplay-parity docking reported terminal failure"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                // This scenario deliberately does NOT assert a minimum speed
+                // when the route becomes executable. Gameplay is allowed to
+                // shed speed if the authored route itself requires it. What we
+                // care about is ownership/liveness: one request, no planner
+                // retry loop, a valid route, then real execution progress.
+                if (!m_highSpeedRouteReadySeen &&
+                    o.routeValid &&
+                    o.dockingPhase == 4)
+                {
+                    m_highSpeedRouteReadySeen = true;
+                    m_highSpeedRouteReadyAt = o.universeSeconds;
+                    m_highSpeedRouteReadySpeedMps = o.speedMps;
+                    logEvent(o, "GAMEPLAY_PARITY_ROUTE_EXECUTING");
+                }
+
+                if (m_plannerRetries > 0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "gameplay-parity detected planner/rebind retry loop"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (m_highSpeedRouteReadySeen &&
+                    (o.routeCurveIndex > 0 ||
+                     o.routeProgressMeters >= 500.0))
+                {
+                    logEvent(o, "GAMEPLAY_PARITY_PROGRESS");
+                    logSummary(o, "COMPLETE", std::string{});
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (stepAge >= 30.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "gameplay-parity route did not enter execution within 30 seconds"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+            }
+
+            return action;
+        }
 
         if (m_assistedHighSpeedManeuver)
         {
@@ -1019,6 +1130,7 @@ private:
     bool m_failureLatched = false;
     bool m_simpleCorridor = false;
     bool m_assistedHighSpeedManeuver = false;
+    bool m_assistedGameplayParity = false;
 
     double m_highSpeedArmingStartedAt = -1.0e30;
     double m_highSpeedMinimumRequestMps = 350.0;

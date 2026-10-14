@@ -64,6 +64,8 @@ struct ClientShipState
     game::diagnostics::HubMotionLabActorKind        motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
     game::simulation::ShipSimulationTier             simulationTier =
         game::simulation::ShipSimulationTier::MaterializedShip;
+    game::simulation::ShipMotionFidelity              motionFidelity =
+        game::simulation::ShipMotionFidelity::FullControl;
     game::simulation::ShipMaterializedFidelity       materializedFidelity =
         game::simulation::ShipMaterializedFidelity::Detailed;
 

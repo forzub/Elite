@@ -531,6 +531,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.simulationTier = s.simulationTier;
+            state.motionFidelity = s.motionFidelity;
             state.materializedFidelity = s.materializedFidelity;
             state.descriptor =
                 &ShipDescriptorRegistry::get(s.typeId);
@@ -616,6 +617,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.simulationTier = s.simulationTier;
+            state.motionFidelity = s.motionFidelity;
             state.materializedFidelity = s.materializedFidelity;
             state.transform = s.transform;
             state.referenceFrame = s.referenceFrame;

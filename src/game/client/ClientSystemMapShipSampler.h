@@ -38,6 +38,8 @@ struct SystemMapShipSample
         game::diagnostics::HubMotionLabActorKind::None;
     game::simulation::ShipSimulationTier simulationTier =
         game::simulation::ShipSimulationTier::MaterializedShip;
+    game::simulation::ShipMotionFidelity motionFidelity =
+        game::simulation::ShipMotionFidelity::FullControl;
     game::simulation::ShipMaterializedFidelity materializedFidelity =
         game::simulation::ShipMaterializedFidelity::Detailed;
     int systemId = -1;
@@ -85,6 +87,7 @@ inline SystemMapShipSample makeSystemMapShipSample(
     out.typeId = ship.typeId;
     out.motionLabKind = ship.motionLabKind;
     out.simulationTier = ship.simulationTier;
+    out.motionFidelity = ship.motionFidelity;
     out.materializedFidelity = ship.materializedFidelity;
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;

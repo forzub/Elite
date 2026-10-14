@@ -1134,26 +1134,50 @@ void GameSimulation::updateShipShells(double dt)
     if (dt <= 0.0)
         return;
 
-    const double elapsed =
+    const double now = m_serverTimelineClock.timeSeconds();
+    const double herdElapsed =
         std::max(
             0.0,
-            m_serverTimelineClock.timeSeconds() -
-                m_fiveHundredShipHerdStartSeconds
+            now - m_fiveHundredShipHerdStartSeconds
         );
 
     for (auto& [id, shell] : m_shipShells)
     {
+        shell.authoritativeMotionAccumulatorSeconds += dt;
+
+        const double interval =
+            game::simulation::shellMotionIntervalSeconds(
+                shell.lifecycle.motionFidelity,
+                m_shipMotionFidelityPolicy
+            );
+
+        if (shell.authoritativeMotionAccumulatorSeconds + 1.0e-9 <
+            interval)
+        {
+            continue;
+        }
+
+        const double authoritativeDt =
+            std::max(
+                dt,
+                shell.authoritativeMotionAccumulatorSeconds
+            );
+        shell.authoritativeMotionAccumulatorSeconds = 0.0;
+
         auto herdIt = m_fiveHundredShipHerd.find(id);
         if (herdIt != m_fiveHundredShipHerd.end() &&
             shell.lifecycle.tier ==
                 game::simulation::ShipSimulationTier::TrafficShell)
         {
+            // RouteOnly/Kinematic traffic is evaluated analytically only at
+            // its authoritative cadence. Clients smooth presentation between
+            // these snapshots; the server does not integrate 50 tiny steps.
             const auto sample =
                 sampleHerdRoute(
                     m_fiveHundredShipHerdCenterMeters,
                     herdIt->second.flightIndex,
                     herdIt->second.slotInFlight,
-                    elapsed
+                    herdElapsed
                 );
 
             shell.transform.setWorldPositionMeters(sample.positionMeters);
@@ -1179,15 +1203,281 @@ void GameSimulation::updateShipShells(double dt)
             continue;
         }
 
-        // Background non-route shells and wrecks use inertial propagation only.
-        // There is no AI, controller, engine or module update on this path.
+        // Non-route shells/wrecks need only one inertial step per cadence.
         shell.transform.addWorldMeters(
-            shell.transform.motion.worldVelocityMps * dt
+            shell.transform.motion.worldVelocityMps * authoritativeDt
         );
         shell.transform.motion.localPositionMeters +=
-            shell.transform.motion.localVelocityMps * dt;
+            shell.transform.motion.localVelocityMps * authoritativeDt;
     }
 }
+
+void GameSimulation::updateShipSimulationDetail(double dt)
+{
+    if (dt <= 0.0)
+        return;
+
+    m_shipMotionFidelityEvaluationAccumulatorSeconds += dt;
+    if (m_shipMotionFidelityEvaluationAccumulatorSeconds + 1.0e-9 <
+        m_shipMotionFidelityPolicy.evaluationIntervalSeconds)
+    {
+        return;
+    }
+    m_shipMotionFidelityEvaluationAccumulatorSeconds = 0.0;
+
+    const double now = m_serverTimelineClock.timeSeconds();
+
+    std::vector<game::simulation::ShipObserverView> observers;
+    observers.reserve(
+        std::max<std::size_t>(1, m_playerControlledShipIds.size())
+    );
+
+    std::unordered_set<EntityId> observedPlayerIds;
+    const auto appendObserver =
+        [&](EntityId observerId)
+        {
+            if (observerId.value == 0 ||
+                observedPlayerIds.find(observerId) !=
+                    observedPlayerIds.end())
+            {
+                return;
+            }
+
+            const Ship* observer = getShip(observerId);
+            if (!observer)
+                return;
+
+            const auto& tr = observer->core().transform();
+            game::simulation::ShipObserverView view;
+            view.observerId = observerId;
+            view.systemId = tr.motion.systemId;
+            view.positionMeters =
+                world::coordinates::fullMeters(tr.worldPosition);
+            view.forward = glm::dvec3(tr.forward());
+            view.valid = true;
+            observers.push_back(view);
+            observedPlayerIds.insert(observerId);
+        };
+
+    for (const EntityId id : m_playerControlledShipIds)
+        appendObserver(id);
+
+    // Single-player compatibility: session ownership may be established one
+    // frame after the authored primary player already exists.
+    if (observers.empty())
+        appendObserver(m_playerId);
+
+    std::vector<EntityId> toMaterialize;
+    std::vector<std::pair<EntityId, game::simulation::ShipSimulationTier>>
+        toDematerialize;
+
+    const auto forcedFullStress =
+        [&](EntityId id) noexcept
+        {
+            return
+                m_fiveHundredFullMaterializedStressRequested &&
+                m_fiveHundredShipHerd.find(id) !=
+                    m_fiveHundredShipHerd.end();
+        };
+
+    for (auto& [id, shell] : m_shipShells)
+    {
+        auto& runtime = m_shipMotionFidelityStates[id];
+        if (runtime.transitionSerial == 0 &&
+            runtime.planned != shell.lifecycle.motionFidelity)
+        {
+            runtime.planned = shell.lifecycle.motionFidelity;
+        }
+
+        game::simulation::ShipMotionFidelity requested =
+            game::simulation::ShipMotionFidelity::RouteOnly;
+
+        if (forcedFullStress(id))
+        {
+            requested =
+                game::simulation::ShipMotionFidelity::FullControl;
+        }
+        else
+        {
+            requested =
+                game::simulation::evaluateShipMotionFidelityDemand(
+                    id,
+                    shell.transform.motion.systemId,
+                    world::coordinates::fullMeters(
+                        shell.transform.worldPosition
+                    ),
+                    observers,
+                    m_activationClaims,
+                    now,
+                    m_shipMotionFidelityPolicy
+                ).requested;
+        }
+
+        const auto update =
+            game::simulation::updateShipMotionFidelityPlan(
+                runtime,
+                requested,
+                now,
+                m_shipMotionFidelityPolicy
+            );
+
+        shell.lifecycle.setMotionFidelity(update.planned);
+
+        if (game::simulation::shipMotionFidelityPriority(update.planned) >=
+            game::simulation::shipMotionFidelityPriority(
+                game::simulation::ShipMotionFidelity::Response))
+        {
+            toMaterialize.push_back(id);
+        }
+    }
+
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        if (!shipPtr)
+            continue;
+
+        auto lifecycleIt = m_shipSimulationLifecycle.find(id);
+        if (lifecycleIt == m_shipSimulationLifecycle.end())
+            continue;
+
+        auto& lifecycle = lifecycleIt->second;
+        auto& runtime = m_shipMotionFidelityStates[id];
+
+        const bool pinnedFull =
+            isPlayerControlled(id) ||
+            shipPtr->core().role() == ShipRole::Player ||
+            isHubMotionLabShip(id) ||
+            isNavigationRuntimeLabShip(id) ||
+            isShipStateFlightTestShip(id) ||
+            forcedFullStress(id);
+
+        game::simulation::ShipMotionFidelity requested =
+            game::simulation::ShipMotionFidelity::FullControl;
+
+        if (!pinnedFull)
+        {
+            const auto& tr = shipPtr->core().transform();
+            requested =
+                game::simulation::evaluateShipMotionFidelityDemand(
+                    id,
+                    tr.motion.systemId,
+                    world::coordinates::fullMeters(tr.worldPosition),
+                    observers,
+                    m_activationClaims,
+                    now,
+                    m_shipMotionFidelityPolicy
+                ).requested;
+        }
+
+        const auto update =
+            game::simulation::updateShipMotionFidelityPlan(
+                runtime,
+                requested,
+                now,
+                m_shipMotionFidelityPolicy
+            );
+
+        lifecycle.setMotionFidelity(update.planned);
+
+        if (pinnedFull)
+        {
+            if (shipPtr->core().role() == ShipRole::Player ||
+                isPlayerControlled(id))
+            {
+                lifecycle.promoteDetailed();
+            }
+            continue;
+        }
+
+        if (game::simulation::shipMotionFidelityPriority(update.planned) >
+            game::simulation::shipMotionFidelityPriority(
+                game::simulation::ShipMotionFidelity::Kinematic))
+        {
+            continue;
+        }
+
+        // Exact module history is cheap to retain in memory but must not be
+        // silently destroyed by a LOD transition. A pristine inactive ship can
+        // collapse to a shell; a damaged ship remains materialized at a coarse
+        // motion budget until a future compressed damage signature exists.
+        bool persistentDetailedHistory =
+            shipPtr->core().activeRepairJobCount() > 0 ||
+            !shipPtr->core().detachedFragmentRuntime().fragments().empty();
+
+        if (!persistentDetailedHistory)
+        {
+            for (const auto& module :
+                 shipPtr->core().moduleRuntime().modules())
+            {
+                if (module.maxHealth > 0.0f &&
+                    module.health + 1.0e-4f < module.maxHealth)
+                {
+                    persistentDetailedHistory = true;
+                    break;
+                }
+            }
+        }
+
+        if (!persistentDetailedHistory)
+        {
+            for (const auto& link :
+                 shipPtr->core().structuralLinkRuntime().links())
+            {
+                if (link.destroyed ||
+                    link.health + 1.0e-4f < link.maxHealth)
+                {
+                    persistentDetailedHistory = true;
+                    break;
+                }
+            }
+        }
+
+        lifecycle.demoteToResponseInternals();
+
+        if (persistentDetailedHistory)
+            continue;
+
+        toDematerialize.push_back({
+            id,
+            lifecycle.pilotPresent
+                ? game::simulation::ShipSimulationTier::TrafficShell
+                : game::simulation::ShipSimulationTier::WreckShell
+        });
+    }
+
+    for (const EntityId id : toMaterialize)
+    {
+        const auto stateIt = m_shipMotionFidelityStates.find(id);
+        const auto planned =
+            stateIt != m_shipMotionFidelityStates.end()
+                ? stateIt->second.planned
+                : game::simulation::ShipMotionFidelity::Response;
+
+        if (materializeShipShell(id))
+        {
+            auto lifecycleIt = m_shipSimulationLifecycle.find(id);
+            if (lifecycleIt != m_shipSimulationLifecycle.end())
+                lifecycleIt->second.setMotionFidelity(planned);
+        }
+    }
+
+    for (const auto& [id, targetTier] : toDematerialize)
+    {
+        const auto stateIt = m_shipMotionFidelityStates.find(id);
+        const auto planned =
+            stateIt != m_shipMotionFidelityStates.end()
+                ? stateIt->second.planned
+                : game::simulation::ShipMotionFidelity::Kinematic;
+
+        if (dematerializeShip(id, targetTier))
+        {
+            auto shellIt = m_shipShells.find(id);
+            if (shellIt != m_shipShells.end())
+                shellIt->second.lifecycle.setMotionFidelity(planned);
+        }
+    }
+}
+
 
 void GameSimulation::updateShipTierTransitionTest()
 {
@@ -5013,6 +5303,38 @@ GameSimulation::activationExecutionMode(EntityId shipId) const noexcept
 }
 
 
+game::simulation::SimulationMode
+GameSimulation::motionExecutionMode(EntityId shipId) const noexcept
+{
+    using game::simulation::ShipMotionFidelity;
+    using game::simulation::SimulationMode;
+
+    if (isPlayerControlled(shipId) ||
+        isHubMotionLabShip(shipId) ||
+        isNavigationRuntimeLabShip(shipId) ||
+        isShipStateFlightTestShip(shipId))
+    {
+        return SimulationMode::Active;
+    }
+
+    switch (shipMotionFidelity(shipId))
+    {
+        case ShipMotionFidelity::FullControl:
+            return SimulationMode::Active;
+
+        case ShipMotionFidelity::Response:
+            // 10 Hz AI and 25 Hz control using the existing Prewarm cadences.
+            return SimulationMode::Prewarm;
+
+        case ShipMotionFidelity::Kinematic:
+        case ShipMotionFidelity::RouteOnly:
+            return SimulationMode::Coarse;
+    }
+
+    return SimulationMode::Coarse;
+}
+
+
 //                       ###              ##
 //                        ##              ##
 //  ##  ##   ######       ##    ####     #####    ####
@@ -5080,7 +5402,7 @@ void GameSimulation::update(
             continue;
         }
 
-        const auto maintenanceMode = activationExecutionMode(id);
+        const auto maintenanceMode = motionExecutionMode(id);
 
         if constexpr (game::runtime::ActivationShipMaintenanceCadenceEnabled)
         {
@@ -5735,7 +6057,7 @@ m_hubVelocityMetersPerSecond[hubId] =
                 if constexpr (
                     game::runtime::ActivationShipSystemsCadenceEnabled)
                 {
-                    const auto systemsMode = activationExecutionMode(id);
+                    const auto systemsMode = motionExecutionMode(id);
                     auto& systemsState = m_shipSystemsCadenceStates[id];
                     const auto systemsCadence =
                         game::simulation::activation::

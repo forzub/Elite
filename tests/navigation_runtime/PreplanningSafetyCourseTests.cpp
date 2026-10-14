@@ -225,6 +225,50 @@ int main()
             );
         }
 
+        {
+            // The center ray is clear, but a nearby obstacle clips the
+            // requested delta-spot. The old single-ray test would have called
+            // this course safe; the tube proof must reject it.
+            PreplanningSafetyCourseRequest request;
+            request.positionMeters = {0.0, 0.0, 0.0};
+            request.velocityMps = {100.0, 0.0, 0.0};
+            request.hullForward = {1.0, 0.0, 0.0};
+            request.preferredDirection = {1.0, 0.0, 0.0};
+            request.hullRadiusMeters = 5.0;
+            request.additionalClearanceMeters = 5.0;
+            request.courseSafetySpotRadiusMeters = 25.0;
+            request.courseAccelerationMps2 = 25.0;
+            request.brakingAccelerationMps2 = 25.0;
+            request.maxAngularVelocityRadPerSecond = 1.0;
+
+            // Centerline clearance: 5 + 5 + obstacle radius 5 = 15 m.
+            // Obstacle is 30 m off the centerline, so the center ray is clear,
+            // while the +Y delta ray at 25 m is blocked.
+            request.obstacles.push_back(
+                sphere("near-edge", {1200.0, 30.0, 0.0}, 5.0)
+            );
+
+            auto noSpot = request;
+            noSpot.courseSafetySpotRadiusMeters = 0.0;
+            const auto centerOnly =
+                PreplanningSafetyCourse::evaluate(noSpot);
+            require(
+                centerOnly.currentCourseSafe,
+                "control case unexpectedly rejected clear center ray"
+            );
+
+            const auto withSpot =
+                PreplanningSafetyCourse::evaluate(request);
+            require(
+                !withSpot.currentCourseSafe,
+                "delta-spot ignored nearby obstacle beside center ray"
+            );
+            require(
+                withSpot.safeCourseFound,
+                "delta-spot rejection did not find an alternate course"
+            );
+        }
+
         std::cout
             << "PREPLANNING SAFETY COURSE TESTS: PASS\n";
         return EXIT_SUCCESS;

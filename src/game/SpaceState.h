@@ -54,8 +54,9 @@
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
-#include "src/game/navigation/autopilot/AutopilotLawController.h"
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/AssistedAutopilot.h"
+#include "src/game/navigation/autopilot/NewtonianOptimalController.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
@@ -346,8 +347,10 @@ private:
     double m_clientAutopilotHullErrorRad = 0.0;
     double m_clientAutopilotTargetSpeedMps = 0.0;
     double m_clientAutopilotTargetLongitudinalAccelerationMps2 = 0.0;
-    game::navigation::autopilot::AutopilotLawController
-        m_clientDockingStabilizePilotController {};
+    game::navigation::autopilot::AssistedAutopilot
+        m_clientDockingAssistedStabilizePilotController {};
+    game::navigation::autopilot::NewtonianOptimalController
+        m_clientDockingNewtonianStabilizePilotController {};
 
     struct DockAssistedSafeRecoveryState
     {
@@ -385,8 +388,10 @@ private:
     };
     DockSafeCourseState m_dockSafeCourse {};
 
-    game::navigation::autopilot::ClientRouteAutopilot::State
-        m_clientRouteAutopilot {};
+    game::navigation::autopilot::AssistedClientRouteAutopilot::State
+        m_clientAssistedRouteAutopilot {};
+    game::navigation::autopilot::NewtonianClientRouteAutopilot::State
+        m_clientNewtonianRouteAutopilot {};
 
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
@@ -483,8 +488,12 @@ private:
         bool autopilotCompileRequested = false;
         bool autopilotCompiled = false;
         std::string autopilotCompileFailure;
-        game::navigation::autopilot::ClientRouteAutopilot::State
-            compiledAutopilotState {};
+        game::navigation::LocalFlightControlLaw compiledAutopilotLaw =
+            game::navigation::LocalFlightControlLaw::Assisted;
+        game::navigation::autopilot::AssistedClientRouteAutopilot::State
+            compiledAssistedAutopilotState {};
+        game::navigation::autopilot::NewtonianClientRouteAutopilot::State
+            compiledNewtonianAutopilotState {};
     };
     std::shared_ptr<DockAdviceJob> m_dockAdviceJob;
 

@@ -32,11 +32,6 @@ bool near(double a, double b)
     return std::abs(a - b) <= 1.0e-9;
 }
 
-bool near(float a, float b)
-{
-    return std::abs(a - b) <= 1.0e-5f;
-}
-
 world::coordinates::WorldPosition position(
     std::int64_t x,
     std::int64_t y,
@@ -84,13 +79,13 @@ SimulationSnapshot makeSnapshot()
     navigationExecution.valid = true;
     navigationExecution.intentRevision = 9001u;
     navigationExecution.activeTargetRevision = 8999u;
-    navigationExecution.idealLinearAccelerationDemandMapMps2 =
+    navigationExecution.idealLinearAccelerationDemandSystemMps2 =
         glm::dvec3(1.0, 2.0, 3.0);
-    navigationExecution.idealAngularAccelerationDemandMapRadPerSec2 =
+    navigationExecution.idealAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(0.1, 0.2, 0.3);
-    navigationExecution.executedLinearAccelerationDemandMapMps2 =
+    navigationExecution.executedLinearAccelerationDemandSystemMps2 =
         glm::dvec3(0.9, 1.8, 2.7);
-    navigationExecution.executedAngularAccelerationDemandMapRadPerSec2 =
+    navigationExecution.executedAngularAccelerationDemandSystemRadPerSec2 =
         glm::dvec3(0.09, 0.18, 0.27);
     navigationExecution.emergency = true;
     navigationExecution.hazardUrgency01 = 0.8;
@@ -417,10 +412,6 @@ SimulationSnapshot makeSnapshot()
     hub.motion = object.orbitalMotion;
     snapshot.hubs.push_back(hub);
 
-    snapshot.session.controlledEntityAutopilotActive = true;
-    snapshot.session.dockingResultSerial = 42;
-    snapshot.session.dockingResultSucceeded = false;
-    snapshot.session.dockingResultReason = "planner-exception:diagnostic";
     snapshot.session.playerNavigation.currentSystemId = 3;
     snapshot.session.playerNavigation.worldPosition = ship.transform.worldPosition;
     snapshot.session.playerNavigation.orientation = ship.transform.orientation;
@@ -530,12 +521,12 @@ void testSnapshotRoundTrip()
         "navigation execution active-target revision did not round-trip");
     require(near(
             decodedNavigationExecution->
-                executedLinearAccelerationDemandMapMps2.y,
+                executedLinearAccelerationDemandSystemMps2.y,
             1.8),
         "navigation executed linear demand did not round-trip");
     require(near(
             decodedNavigationExecution->
-                executedAngularAccelerationDemandMapRadPerSec2.z,
+                executedAngularAccelerationDemandSystemRadPerSec2.z,
             0.27),
         "navigation executed angular demand did not round-trip");
     require(decodedNavigationExecution->emergency &&
@@ -570,13 +561,6 @@ void testSnapshotRoundTrip()
     );
     require(decoded.hubs.size() == 1u && decoded.hubs[0].id == "earth_orbital_hub",
         "hub payload mismatch");
-    require(decoded.session.controlledEntityAutopilotActive,
-        "per-session controlled-entity Autopilot state did not round-trip");
-    require(decoded.session.dockingResultSerial == 42 &&
-                !decoded.session.dockingResultSucceeded &&
-                decoded.session.dockingResultReason ==
-                    "planner-exception:diagnostic",
-        "per-session docking failure did not round-trip");
     require(decoded.session.playerNavigation.currentSystemId == 3,
         "per-session navigation mismatch");
     require(decoded.session.ownedNavigationAssets.size() == 1u,

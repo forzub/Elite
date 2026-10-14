@@ -55,16 +55,18 @@ case "${MODE}" in
   shell500)
     build_game
     echo "[ship-tier-test] BASELINE: 500 RouteOnly TrafficShell; automatic observer LOD disabled"
-    exec env \
+    env \
       ELITE_500_SHIPS_TEST=1 \
       ELITE_DISABLE_AUTO_SHIP_DETAIL=1 \
       ./build/EliteGame.exe
+    bash scripts/check-ship-lod-csv.sh shell herd_500.csv
     ;;
 
   budget500)
     build_game
     echo "[ship-tier-test] REAL BUDGET: 500 starting shells; observer-driven MotionFidelity enabled"
-    exec env ELITE_500_SHIPS_TEST=1 ./build/EliteGame.exe
+    env ELITE_500_SHIPS_TEST=1 ./build/EliteGame.exe
+    bash scripts/check-ship-lod-csv.sh budget herd_500.csv
     ;;
 
   mixed500)

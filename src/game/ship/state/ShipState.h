@@ -82,6 +82,14 @@ struct ShipMassPropertiesState
         ++revision;
     }
 
+    // Call after an intentional direct edit of mass/CoM/inertia. Production
+    // mutators should eventually own these fields; this explicit seam prevents
+    // cached response profiles from surviving a real mass-property change.
+    void touch() noexcept
+    {
+        ++revision;
+    }
+
     void applyTo(ShipParams& physics) const noexcept
     {
         physics.massKg = std::max(massKg, 1.0e-9);
@@ -128,6 +136,13 @@ struct ShipActuatorState
     {
         return propulsionSlots.size() ==
             game::ship::plant::physicalControlSlots(model).size();
+    }
+
+    // Diagnostic/test code may deliberately edit a slot in place. Touching
+    // invalidates the compact response profile cached by ShipCore.
+    void touch() noexcept
+    {
+        ++revision;
     }
 
     void synchronizeFromModules(

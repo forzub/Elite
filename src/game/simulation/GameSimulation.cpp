@@ -784,6 +784,8 @@ void GameSimulation::updateShipStateFlightTest()
             }
         }
 
+        state.actuators.touch();
+
         m_shipStateFlightTestPhase = phase;
         std::cout
             << "[ShipStateFlight] cycle=" << cycle

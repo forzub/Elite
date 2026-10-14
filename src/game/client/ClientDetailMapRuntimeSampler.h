@@ -38,6 +38,10 @@ struct DetailMapShipRuntimeSample
     ObjectType typeId = ObjectType::None;
     game::diagnostics::HubMotionLabActorKind motionLabKind =
         game::diagnostics::HubMotionLabActorKind::None;
+    game::simulation::ShipSimulationTier simulationTier =
+        game::simulation::ShipSimulationTier::MaterializedShip;
+    game::simulation::ShipMaterializedFidelity materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Detailed;
 
     int systemId = -1;
     std::string parentBodyId;
@@ -186,6 +190,8 @@ inline DetailMapShipRuntimeSample makeDetailShipSample(
     out.role = ship.role;
     out.typeId = ship.typeId;
     out.motionLabKind = ship.motionLabKind;
+    out.simulationTier = ship.simulationTier;
+    out.materializedFidelity = ship.materializedFidelity;
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;
     out.hubId = ship.transform.motion.hubId;

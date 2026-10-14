@@ -187,6 +187,29 @@ void testMassPropertiesLiveInInstanceState()
     );
 }
 
+void testResponseProfileRevisionSeams()
+{
+    auto d = descriptor();
+    game::ship::state::ShipState state;
+    state.initialize(d);
+
+    const auto actuatorRevision = state.actuators.revision;
+    state.actuators.propulsionSlots[0].thrust01 = 0.5;
+    state.actuators.touch();
+    require(
+        state.actuators.revision == actuatorRevision + 1,
+        "actuator direct edit did not invalidate response-profile revision"
+    );
+
+    const auto massRevision = state.massProperties.revision;
+    state.massProperties.centerOfMassLocalMeters.x += 0.5;
+    state.massProperties.touch();
+    require(
+        state.massProperties.revision == massRevision + 1,
+        "mass-property direct edit did not invalidate response-profile revision"
+    );
+}
+
 void testDifferentShipDescriptorsRemainIndependent()
 {
     auto cobraLike = descriptor();
@@ -277,6 +300,7 @@ int main()
         testDiagnosticDamageChangesCapabilityWithoutChangingConstruction();
         testModuleProjectionCannotOverwriteDiagnosticOverride();
         testMassPropertiesLiveInInstanceState();
+        testResponseProfileRevisionSeams();
         testDifferentShipDescriptorsRemainIndependent();
         testClearOverrideReturnsToDescriptorConstruction();
 
@@ -286,6 +310,7 @@ int main()
             << " - actuator degradation changes capability, not construction\n"
             << " - diagnostic state is not overwritten by module projection\n"
             << " - mass/CoM/inertia live in per-instance state\n"
+            << " - response-profile cache has explicit revision invalidation seams\n"
             << " - different ship marks keep independent definitions/capability\n"
             << " - production descriptor binding is restorable\n";
         return EXIT_SUCCESS;

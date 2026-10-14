@@ -85,6 +85,49 @@ void testPilotedBackgroundReturnsToTrafficShell()
     );
 }
 
+void testMaterializedFidelityIsOrthogonalToTier()
+{
+    Lifecycle state;
+    state.tier = Tier::MaterializedShip;
+    state.actorKind = Actor::NpcPilot;
+    state.pilotPresent = true;
+
+    require(
+        state.materializedFidelity ==
+            game::simulation::ShipMaterializedFidelity::Response,
+        "ordinary materialized NPC did not default to response fidelity"
+    );
+    require(
+        !state.usesDetailedSimulation(),
+        "response NPC unexpectedly enabled detailed systems"
+    );
+
+    state.promoteDetailed();
+
+    require(
+        state.materializedFidelity ==
+            game::simulation::ShipMaterializedFidelity::Detailed,
+        "explicit interaction did not promote detailed fidelity"
+    );
+    require(
+        state.usesDetailedSimulation(),
+        "detailed materialized ship did not enable detailed simulation"
+    );
+
+    state.onPilotEjected();
+    require(
+        state.usesDetailedSimulation(),
+        "detailed derelict lost detailed state before dematerialization"
+    );
+
+    state.dematerializeBackground();
+    require(
+        state.tier == Tier::WreckShell &&
+        !state.usesDetailedSimulation(),
+        "wreck shell still reported detailed simulation"
+    );
+}
+
 void testCoarseDamageIsBounded()
 {
     game::simulation::CoarseShipDamageState damage;
@@ -105,6 +148,7 @@ int main()
         testIdentityAndSimulationDetailAreIndependent();
         testPilotEjectionCreatesDerelictSemantics();
         testPilotedBackgroundReturnsToTrafficShell();
+        testMaterializedFidelityIsOrthogonalToTier();
         testCoarseDamageIsBounded();
 
         std::cout
@@ -113,6 +157,7 @@ int main()
             << " - interaction promotes shell to materialized ship\n"
             << " - pilot ejection removes AI and formation ownership\n"
             << " - background derelict reduces to wreck shell\n"
+            << " - response/detailed fidelity is orthogonal to lifecycle tier\n"
             << " - shell damage aggregate remains bounded\n";
         return EXIT_SUCCESS;
     }

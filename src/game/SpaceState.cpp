@@ -2669,6 +2669,17 @@ void SpaceState::updateDockingAdvisory()
                 : glm::dvec3(0.0);
         request.startMeters =
             snapshot.controlledShip.localPositionMeters;
+
+        if (lateEntryRebind)
+        {
+            // One-shot projected entry.  The downstream route is immutable;
+            // only its short live connector is rebuilt.  Project the current
+            // ballistic craft to the handoff time selected from the previous
+            // route's first-turn travel time.
+            request.startMeters +=
+                startVelocityMps * m_dockLateEntry.leadSeconds;
+        }
+
         request.hasInitialForward = true;
         const glm::dvec3 hullForwardLocal =
             glm::normalize(
@@ -3441,7 +3452,8 @@ void SpaceState::updateDockingAdvisory()
         job->startedServerSeconds =
             snapshot.epoch.serverTimeSeconds;
         job->executionStartUniverseTimeSeconds =
-            snapshot.epoch.universeTimeSeconds;
+            snapshot.epoch.universeTimeSeconds +
+            (lateEntryRebind ? m_dockLateEntry.leadSeconds : 0.0);
         job->planningRequest = request;
         job->entryRebind = lateEntryRebind;
         if (lateEntryRebind)
@@ -4024,6 +4036,19 @@ void SpaceState::updateDockingAdvisory()
 
         auto job = std::move(m_dockAdviceJob);
 
+        if (automatic &&
+            job->entryRebind &&
+            universeTimeSeconds + fixedDt <
+                job->executionStartUniverseTimeSeconds)
+        {
+            // The final connector was intentionally authored from a future
+            // ballistic point.  If calculation finished early, wait for that
+            // point; do not invent another rebind.
+            submitAutopilotControl(coastForPlanningControl());
+            m_dockAdviceJob = std::move(job);
+            return;
+        }
+
         if (m_client->lastSimulationMetadata().
                 universeTimelineRevision !=
                 job->timelineRevision)
@@ -4111,35 +4136,105 @@ void SpaceState::updateDockingAdvisory()
                     game::navigation::planner::
                         BallisticPrefixDisposition::OnPrefix)
             {
-                if (!m_dockLateEntry.active)
+                if (job->entryRebind)
                 {
-                    auto backbone =
-                        game::navigation::planner::RouteEntryBinder::
-                            extractBackbone(
-                                job->plan,
-                                job->hasPreferredEntryAnchor,
-                                job->preferredEntryAnchor,
-                                job->preferredEntryForward
-                            );
-
-                    if (!backbone.valid)
-                    {
-                        fail(
-                            "late-bound route entry unavailable: " +
-                            backbone.failure
-                        );
-                        return;
-                    }
-
-                    m_dockLateEntry.active = true;
-                    m_dockLateEntry.serial = pending.serial;
-                    m_dockLateEntry.backbone =
-                        std::move(backbone);
+                    // HARD CONTRACT: there is no entry-rebind loop.  The
+                    // expensive route was already retained and this was the
+                    // single projected connector calculation.  If this handoff
+                    // still misses, report the bug explicitly instead of
+                    // chasing the moving ship forever.
+                    fail(
+                        "projected Assisted entry bind missed its one-shot handoff"
+                    );
+                    return;
                 }
 
-                // The expensive downstream route is retained. Only the live
-                // connector from the current ballistic state to the immutable
-                // backbone will be rebuilt on the next planning pass.
+                auto backbone =
+                    game::navigation::planner::RouteEntryBinder::
+                        extractBackbone(
+                            job->plan,
+                            job->hasPreferredEntryAnchor,
+                            job->preferredEntryAnchor,
+                            job->preferredEntryForward
+                        );
+
+                if (!backbone.valid)
+                {
+                    fail(
+                        "late-bound route entry unavailable: " +
+                        backbone.failure
+                    );
+                    return;
+                }
+
+                double firstTurnProgressMeters = 0.0;
+                for (const auto& curve : job->plan.routeCurves)
+                {
+                    if (curve.kind !=
+                        game::navigation::planner::RouteCurveKind::Line)
+                    {
+                        firstTurnProgressMeters =
+                            std::max(
+                                0.0,
+                                curve.startProgressMeters
+                            );
+                        break;
+                    }
+                }
+
+                if (firstTurnProgressMeters <= 1.0e-6 &&
+                    !job->plan.routeCurves.empty())
+                {
+                    firstTurnProgressMeters =
+                        std::max(
+                            0.0,
+                            job->plan.routeCurves.front().
+                                endProgressMeters
+                        );
+                }
+
+                const double liveSpeedMps =
+                    glm::length(
+                        liveAgent.velocityMapMetersPerSecond
+                    );
+
+                const double firstTurnTravelSeconds =
+                    liveSpeedMps > 0.5
+                        ? firstTurnProgressMeters / liveSpeedMps
+                        : 0.0;
+
+                // Use only measured/route-derived time scales.  The first-turn
+                // travel time is the historical handoff delay.  Worker time is
+                // a lower bound so the projected point cannot be reached
+                // before a similarly expensive entry calculation can finish.
+                const double measuredWorkerSeconds =
+                    std::max(0.0, job->workerDurationMs * 0.001);
+                const double leadSeconds =
+                    std::max(
+                        firstTurnTravelSeconds,
+                        measuredWorkerSeconds
+                    );
+
+                m_dockLateEntry = {};
+                m_dockLateEntry.active = true;
+                m_dockLateEntry.serial = pending.serial;
+                m_dockLateEntry.backbone =
+                    std::move(backbone);
+                m_dockLateEntry.leadSeconds =
+                    leadSeconds;
+
+                // ============================================================
+                // PROJECTED ENTRY CONTRACT -- DO NOT TURN THIS INTO A LOOP.
+                //
+                // The expensive planner has finished.  Keep its downstream
+                // route.  Estimate the available handoff delay from the
+                // route's start-to-first-turn travel time, project the live
+                // ballistic craft by that delay, and calculate ONLY the final
+                // entry connector from that predicted point.
+                //
+                // Exactly one rebind is allowed.  Never discard/re-run the
+                // expensive route because its original start became stale.
+                // ============================================================
                 m_clientDockingPhase =
                     ClientDockingPhase::Stabilizing;
                 m_clientDockingSettledSinceServerSeconds = -1.0;
@@ -4147,7 +4242,11 @@ void SpaceState::updateDockingAdvisory()
                 std::cerr
                     << "[DockClient] request=" << pending.serial
                     << " phase=entry-rebind"
-                    << " reason=ballistic-prefix-unavailable"
+                    << " first_turn_m="
+                    << firstTurnProgressMeters
+                    << " live_speed_mps=" << liveSpeedMps
+                    << " lead_s=" << leadSeconds
+                    << " worker_s=" << measuredWorkerSeconds
                     << std::endl;
                 return;
             }

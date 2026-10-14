@@ -1774,6 +1774,7 @@ void SpaceState::updateDockingAdvisory()
         m_dockAdvice = {};
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
+        m_dockAssistedSafeRecovery = {};
         m_dockSafeCourse = {};
         m_clientDockingRouteProgressMeters = 0.0;
         m_clientDockingRouteCurveIndex = 0;
@@ -1806,6 +1807,7 @@ void SpaceState::updateDockingAdvisory()
         m_clientDockingPhase = ClientDockingPhase::Idle;
         m_dockAdviceJob.reset();
         m_dockLateEntry = {};
+        m_dockAssistedSafeRecovery = {};
         m_dockSafeCourse = {};
     };
 
@@ -2080,7 +2082,7 @@ void SpaceState::updateDockingAdvisory()
         );
     };
 
-    const auto safeCourseControl =
+    const auto legacyNewtonianSafeCourseControl =
         [&](const glm::dvec3& safeDirection)
         {
             const auto agent = makeAgent();
@@ -2097,10 +2099,9 @@ void SpaceState::updateDockingAdvisory()
 
             game::navigation::autopilot::AutopilotControlRequest turn;
 
-            // Safe-course orchestration remains flight-law neutral.
-            // It describes the target vehicle state only. The concrete pilot
-            // decides how hull attitude, main thrust and/or low-speed trim
-            // realize this delta-v.
+            // Legacy Newtonian bridge only. Assisted recovery owns a separate
+            // committed-trajectory API and must never enter this mutable
+            // direction controller.
             const glm::dvec3 targetVelocity =
                 desiredCourse * targetSpeed;
             const glm::dvec3 deltaVelocity =
@@ -2141,15 +2142,17 @@ void SpaceState::updateDockingAdvisory()
             );
 
             return m_clientDockingStabilizePilotController.update(
-                controlLaw,
+                game::navigation::LocalFlightControlLaw::Newtonian,
                 turn,
                 effectivePhysics
             );
         };
 
-    // Automatic replanning has no wall-clock start deadline. The ship
-    // remains ballistic while the asynchronous route is built; handoff is
-    // validated spatially against the authored first straight.
+    // Automatic replanning has no wall-clock start deadline. Assisted either
+    // follows one committed, collision-proven recovery maneuver or coasts
+    // ballistically while the asynchronous route is built. Newtonian keeps
+    // its legacy safety bridge until its separate recovery executor exists.
+    // Route handoff remains spatially validated.
 
     if (pending.serial != m_lastDockingPathRequestSerial)
     {
@@ -2159,6 +2162,7 @@ void SpaceState::updateDockingAdvisory()
         m_lastDockingPathRequestSerial = pending.serial;
         m_lastDockingRequestTraceSerial = pending.serial;
         m_dockLateEntry = {};
+        m_dockAssistedSafeRecovery = {};
         m_dockSafeCourse = {};
         m_clientDockingPhase =
             ClientDockingPhase::Stabilizing;
@@ -2186,6 +2190,211 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::SecuringCourse)
     {
+        if (automatic &&
+            controlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted &&
+            m_dockAssistedSafeRecovery.active &&
+            m_dockAssistedSafeRecovery.serial == pending.serial)
+        {
+            const auto agent = makeAgent();
+            const double speedMps =
+                glm::length(agent.velocityMapMetersPerSecond);
+            const double angularSpeedRadPerSec =
+                std::sqrt(
+                    agent.pitchRateRadPerSec *
+                        agent.pitchRateRadPerSec +
+                    agent.yawRateRadPerSec *
+                        agent.yawRateRadPerSec +
+                    agent.rollRateRadPerSec *
+                        agent.rollRateRadPerSec
+                );
+            const double elapsedSeconds =
+                std::max(
+                    0.0,
+                    authoritativeServerSeconds -
+                        m_dockAssistedSafeRecovery.
+                            startedServerSeconds
+                );
+
+            const auto assessment =
+                game::navigation::AssistedSafeCourseRecovery::
+                    assess(
+                        m_dockAssistedSafeRecovery.plan,
+                        elapsedSeconds,
+                        agent.positionMapMeters,
+                        agent.velocityMapMetersPerSecond,
+                        m_dockAssistedSafeRecovery.plan.obstacles
+                    );
+
+            using RecoveryAssessment =
+                game::navigation::
+                    AssistedSafeCourseRecoveryAssessmentDisposition;
+
+            if (assessment.disposition ==
+                RecoveryAssessment::StopFallback)
+            {
+                submitAutopilotControl(manualStopControl());
+
+                if (speedMps <= 0.05 &&
+                    angularSpeedRadPerSec <= 0.01)
+                {
+                    std::cerr
+                        << "[AssistedSafeRecovery]"
+                        << " request=" << pending.serial
+                        << " phase=stopped"
+                        << " fallback=1"
+                        << std::endl;
+
+                    m_dockAssistedSafeRecovery = {};
+                    m_clientDockingPhase =
+                        ClientDockingPhase::Stabilizing;
+                    m_clientDockingSettledSinceServerSeconds =
+                        -1.0;
+                }
+                return;
+            }
+
+            if (assessment.disposition ==
+                    RecoveryAssessment::ReplanRequired ||
+                assessment.disposition ==
+                    RecoveryAssessment::Invalid)
+            {
+                if (m_dockAdviceJob)
+                {
+                    m_dockAdviceJob->cancelled.store(
+                        true,
+                        std::memory_order_release
+                    );
+                }
+
+                std::cerr
+                    << "[AssistedSafeRecovery]"
+                    << " request=" << pending.serial
+                    << " phase=replan"
+                    << " elapsed_s=" << elapsedSeconds
+                    << " pos_err_m="
+                    << assessment.positionErrorMeters
+                    << " vel_err_mps="
+                    << assessment.velocityErrorMps
+                    << " remaining_clear="
+                    << (assessment.remainingTrajectoryClear ? 1 : 0)
+                    << " reason=\"" << assessment.message << "\""
+                    << std::endl;
+
+                m_dockAssistedSafeRecovery = {};
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                submitAutopilotControl(
+                    coastForPlanningControl()
+                );
+                return;
+            }
+
+            if (assessment.disposition ==
+                RecoveryAssessment::Complete)
+            {
+                const bool plannerAlreadyLaunched =
+                    m_dockAdviceJob &&
+                    m_dockAdviceJob->context.serial ==
+                        pending.serial;
+
+                std::cerr
+                    << "[AssistedSafeRecovery]"
+                    << " request=" << pending.serial
+                    << " phase=acquired"
+                    << " elapsed_s=" << elapsedSeconds
+                    << " pos_err_m="
+                    << assessment.positionErrorMeters
+                    << " vel_err_mps="
+                    << assessment.velocityErrorMps
+                    << " planner_overlap="
+                    << (plannerAlreadyLaunched ? 1 : 0)
+                    << std::endl;
+
+                submitAutopilotControl(
+                    stabilizeAngularForPlanningControl()
+                );
+
+                m_dockAssistedSafeRecovery = {};
+                m_clientDockingPhase =
+                    plannerAlreadyLaunched
+                        ? ClientDockingPhase::Planning
+                        : ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
+            }
+
+            if (assessment.disposition !=
+                    RecoveryAssessment::Continue ||
+                !assessment.target.valid)
+            {
+                m_dockAssistedSafeRecovery = {};
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                submitAutopilotControl(manualStopControl());
+                return;
+            }
+
+            game::navigation::autopilot::
+                AutopilotControlRequest recovery;
+
+            recovery.desiredVelocityMapMps =
+                assessment.target.velocityMps;
+            recovery.desiredLinearAccelerationMapMps2 =
+                assessment.target.linearAccelerationMps2;
+
+            const double desiredSpeed =
+                glm::length(assessment.target.velocityMps);
+            recovery.desiredForwardMap =
+                desiredSpeed > 0.5
+                    ? assessment.target.velocityMps /
+                        desiredSpeed
+                    : agent.forwardMap;
+            recovery.desiredUpMap = agent.upMap;
+
+            if (desiredSpeed > 0.5)
+            {
+                recovery.desiredCourseAngularRateMapRadPerSec =
+                    glm::cross(
+                        assessment.target.velocityMps,
+                        assessment.target.linearAccelerationMps2
+                    ) /
+                    (desiredSpeed * desiredSpeed);
+            }
+            else
+            {
+                recovery.desiredCourseAngularRateMapRadPerSec =
+                    glm::dvec3(0.0);
+            }
+
+            recovery.desiredRollRateRadPerSec = 0.0;
+            recovery.actualVelocityMapMps =
+                agent.velocityMapMetersPerSecond;
+            recovery.forwardMap = agent.forwardMap;
+            recovery.rightMap = agent.rightMap;
+            recovery.upMap = agent.upMap;
+            recovery.pitchRateRadPerSec =
+                agent.pitchRateRadPerSec;
+            recovery.yawRateRadPerSec =
+                agent.yawRateRadPerSec;
+            recovery.rollRateRadPerSec =
+                agent.rollRateRadPerSec;
+            recovery.stopRequested = false;
+            recovery.terminalAttitudeHold = false;
+            recovery.deltaSeconds = fixedDt;
+
+            submitAutopilotControl(
+                m_clientDockingStabilizePilotController.update(
+                    game::navigation::
+                        LocalFlightControlLaw::Assisted,
+                    recovery,
+                    effectivePhysics
+                )
+            );
+            return;
+        }
+
         if (!automatic ||
             !m_dockSafeCourse.active ||
             m_dockSafeCourse.serial != pending.serial)
@@ -2356,7 +2565,7 @@ void SpaceState::updateDockingAdvisory()
                         << " phase=emergency-stop"
                         << " stop_corridor_clear="
                         << (check.stopFallbackClear ? 1 : 0)
-                        << " reason="" << check.message << """
+                        << " reason=\"" << check.message << "\""
                         << std::endl;
 
                     submitAutopilotControl(manualStopControl());
@@ -2366,7 +2575,7 @@ void SpaceState::updateDockingAdvisory()
         }
 
         submitAutopilotControl(
-            safeCourseControl(
+            legacyNewtonianSafeCourseControl(
                 m_dockSafeCourse.direction
             )
         );
@@ -2661,11 +2870,7 @@ void SpaceState::updateDockingAdvisory()
 
         if (automatic)
         {
-            game::navigation::PreplanningSafetyCourseRequest safety;
-            safety.positionMeters = request.startMeters;
-            safety.velocityMps = startVelocityMps;
-            safety.hullForward = hullForwardLocal;
-            safety.preferredDirection =
+            const glm::dvec3 preferredSafetyDirection =
                 glm::length(request.goalMeters - request.startMeters) >
                         1.0e-9
                     ? glm::normalize(
@@ -2673,131 +2878,307 @@ void SpaceState::updateDockingAdvisory()
                           request.startMeters
                       )
                     : request.initialForward;
-            safety.hullRadiusMeters =
-                request.agentRadiusMeters;
-            safety.additionalClearanceMeters =
-                std::max(
-                    25.0,
-                    definition->requiredClearanceMeters
-                );
-            safety.courseAccelerationMps2 =
-                controlLaw ==
-                        game::navigation::
-                            LocalFlightControlLaw::Assisted
-                    ? request.lateralMps2
-                    : request.acceleratingMps2;
-            safety.brakingAccelerationMps2 =
-                request.brakingMps2;
-            safety.maxAngularVelocityRadPerSecond =
-                request.maxAngularVelocityRadPerSecond;
-            safety.newtonian =
-                controlLaw ==
-                    game::navigation::
-                        LocalFlightControlLaw::Newtonian;
-            safety.obstacles = request.obstacles;
 
-            const auto safetyResult =
-                game::navigation::PreplanningSafetyCourse::
-                    evaluate(safety);
-
-            std::cerr
-                << "[DockSafetyCourse]"
-                << " request=" << pending.serial
-                << " phase=check"
-                << " speed_mps=" << safetyResult.speedMps
-                << " current_safe="
-                << (safetyResult.currentCourseSafe ? 1 : 0)
-                << " escape_found="
-                << (safetyResult.safeCourseFound ? 1 : 0)
-                << " stop_clear="
-                << (safetyResult.stopFallbackClear ? 1 : 0)
-                << " ray_m=" << safetyResult.sceneRayMeters
-                << " turn_deg="
-                << safetyResult.turnAngleRad *
-                    57.2957795130823208768
-                << " turn_radius_m="
-                << safetyResult.turnRadiusMeters
-                << " reason="" << safetyResult.message << """
-                << std::endl;
-
-            if (!safetyResult.currentCourseSafe)
+            if (assisted)
             {
-                m_dockSafeCourse = {};
-                m_dockSafeCourse.active = true;
-                m_dockSafeCourse.serial = pending.serial;
-                m_dockSafeCourse.stopFallback =
-                    !safetyResult.safeCourseFound;
-                m_dockSafeCourse.direction =
-                    safetyResult.safeCourse;
-                m_dockSafeCourse.targetSpeedMps =
-                    safetyResult.speedMps;
-                m_dockSafeCourse.sceneRayMeters =
-                    safetyResult.sceneRayMeters;
-                m_dockSafeCourse.selectedTurnAngleRad =
-                    safetyResult.turnAngleRad;
-                m_dockSafeCourse.selectedTurnRadiusMeters =
-                    safetyResult.turnRadiusMeters;
-                m_dockSafeCourse.lastRecheckServerSeconds =
-                    authoritativeServerSeconds;
-                m_dockSafeCourse.hullRadiusMeters =
-                    safety.hullRadiusMeters;
-                m_dockSafeCourse.additionalClearanceMeters =
-                    safety.additionalClearanceMeters;
-                m_dockSafeCourse.courseAccelerationMps2 =
-                    safety.courseAccelerationMps2;
-                m_dockSafeCourse.brakingAccelerationMps2 =
-                    safety.brakingAccelerationMps2;
-                m_dockSafeCourse.maxAngularVelocityRadPerSecond =
-                    safety.maxAngularVelocityRadPerSecond;
-                m_dockSafeCourse.newtonian =
-                    safety.newtonian;
-                m_dockSafeCourse.preferredDirection =
-                    safety.preferredDirection;
-                m_dockSafeCourse.obstacles =
-                    std::move(safety.obstacles);
+                game::navigation::
+                    AssistedSafeCourseRecoveryRequest recoveryRequest;
+                recoveryRequest.positionMeters =
+                    request.startMeters;
+                recoveryRequest.velocityMps =
+                    startVelocityMps;
+                recoveryRequest.preferredDirection =
+                    preferredSafetyDirection;
+                recoveryRequest.hullRadiusMeters =
+                    request.agentRadiusMeters;
+                recoveryRequest.additionalClearanceMeters =
+                    std::max(
+                        25.0,
+                        definition->requiredClearanceMeters
+                    );
+                recoveryRequest.courseAccelerationMps2 =
+                    request.lateralMps2;
+                recoveryRequest.brakingAccelerationMps2 =
+                    request.brakingMps2;
+                recoveryRequest.
+                    maxCourseAngularVelocityRadPerSecond =
+                        request.maxAngularVelocityRadPerSecond;
+                recoveryRequest.obstacles =
+                    request.obstacles;
 
-                m_clientDockingPhase =
-                    ClientDockingPhase::SecuringCourse;
-                m_clientDockingSettledSinceServerSeconds = -1.0;
+                auto recoveryPlan =
+                    game::navigation::
+                        AssistedSafeCourseRecovery::plan(
+                            recoveryRequest
+                        );
 
-                if (m_dockSafeCourse.stopFallback)
+                std::cerr
+                    << "[AssistedSafeRecovery]"
+                    << " request=" << pending.serial
+                    << " phase=check"
+                    << " disposition="
+                    << static_cast<int>(
+                           recoveryPlan.disposition
+                       )
+                    << " speed_mps="
+                    << recoveryPlan.speedMps
+                    << " turn_deg="
+                    << recoveryPlan.turnAngleRad *
+                        57.2957795130823208768
+                    << " radius_m="
+                    << recoveryPlan.turnRadiusMeters
+                    << " duration_s="
+                    << recoveryPlan.durationSeconds
+                    << " stop_clear="
+                    << (recoveryPlan.stopCorridorClear ? 1 : 0)
+                    << " reason=\""
+                    << recoveryPlan.message
+                    << "\""
+                    << std::endl;
+
+                if (!recoveryPlan.valid())
                 {
+                    fail(
+                        "Assisted safe-course recovery request invalid"
+                    );
+                    return;
+                }
+
+                if (recoveryPlan.disposition ==
+                    game::navigation::
+                        AssistedSafeCourseRecoveryDisposition::
+                            StopFallback)
+                {
+                    m_dockAssistedSafeRecovery = {};
+                    m_dockAssistedSafeRecovery.active = true;
+                    m_dockAssistedSafeRecovery.serial =
+                        pending.serial;
+                    m_dockAssistedSafeRecovery.startedServerSeconds =
+                        authoritativeServerSeconds;
+                    m_dockAssistedSafeRecovery.plan =
+                        std::move(recoveryPlan);
+
+                    m_clientDockingPhase =
+                        ClientDockingPhase::SecuringCourse;
+                    m_clientDockingSettledSinceServerSeconds =
+                        -1.0;
+
                     std::cerr
-                        << "[DockSafetyCourse]"
+                        << "[AssistedSafeRecovery]"
                         << " request=" << pending.serial
                         << " phase=emergency-stop"
                         << " stop_corridor_clear="
-                        << (safetyResult.stopFallbackClear ? 1 : 0)
+                        << (
+                            m_dockAssistedSafeRecovery.
+                                plan.stopCorridorClear
+                                ? 1
+                                : 0
+                        )
                         << std::endl;
+
                     submitAutopilotControl(manualStopControl());
                     return;
                 }
 
-                // The safe-course search is cheap and synchronous. As soon as
-                // it gives us a collision-proven launch/course direction, use
-                // that direction as the speculative planner start and launch
-                // the expensive worker immediately. The craft can rotate /
-                // redirect its inertial velocity while the route is computed.
-                // Spatial late-entry validation still decides whether this
-                // speculative prefix can be adopted when the worker finishes.
-                planningWhileSecuringCourse = true;
-                request.initialForward = m_dockSafeCourse.direction;
+                if (recoveryPlan.requiresManeuver())
+                {
+                    // Commit ONCE. The plan owns the complete physical escape
+                    // arc. Subsequent SecuringCourse ticks sample/validate this
+                    // exact maneuver; elapsed time is never a reason to choose
+                    // another direction.
+                    m_dockAssistedSafeRecovery = {};
+                    m_dockAssistedSafeRecovery.active = true;
+                    m_dockAssistedSafeRecovery.serial =
+                        pending.serial;
+                    m_dockAssistedSafeRecovery.startedServerSeconds =
+                        authoritativeServerSeconds;
+                    m_dockAssistedSafeRecovery.plan =
+                        recoveryPlan;
+
+                    m_clientDockingPhase =
+                        ClientDockingPhase::SecuringCourse;
+                    m_clientDockingSettledSinceServerSeconds =
+                        -1.0;
+                    planningWhileSecuringCourse = true;
+
+                    // The expensive route worker starts from the PREDICTED END
+                    // of the already-proven recovery, not from a position the
+                    // craft is guaranteed to leave while the worker runs.
+                    request.startMeters =
+                        recoveryPlan.endPositionMeters;
+                    request.initialForward =
+                        recoveryPlan.targetCourse;
+                    request.initialSpeedMps =
+                        recoveryPlan.speedMps;
+                    request.initialForwardLeadMeters =
+                        game::navigation::OrdinaryRoutePolicy::
+                            requiredStartLeadMeters(
+                                request.initialSpeedMps,
+                                request.maxSpeedMps,
+                                request.brakingMps2,
+                                request.lateralMps2,
+                                request.
+                                    maxAngularVelocityRadPerSecond,
+                                hull.lengthMeters
+                            );
+
+                    std::cerr
+                        << "[AssistedSafeRecovery]"
+                        << " request=" << pending.serial
+                        << " phase=committed+planning"
+                        << " end_m=("
+                        << recoveryPlan.endPositionMeters.x << ","
+                        << recoveryPlan.endPositionMeters.y << ","
+                        << recoveryPlan.endPositionMeters.z << ")"
+                        << " course=("
+                        << recoveryPlan.targetCourse.x << ","
+                        << recoveryPlan.targetCourse.y << ","
+                        << recoveryPlan.targetCourse.z << ")"
+                        << " duration_s="
+                        << recoveryPlan.durationSeconds
+                        << std::endl;
+
+                    // One frame of angular damping is harmless. The next
+                    // SecuringCourse tick begins tracking the committed
+                    // recovery sample through the ordinary Assisted pilot.
+                    submitAutopilotControl(
+                        stabilizeAngularForPlanningControl()
+                    );
+                }
+            }
+            else
+            {
+                // Newtonian intentionally remains on the old selector/executor
+                // until its separate rotate/settle/burn recovery contract is
+                // implemented. Do not pretend the Assisted arc API applies.
+                game::navigation::PreplanningSafetyCourseRequest safety;
+                safety.positionMeters = request.startMeters;
+                safety.velocityMps = startVelocityMps;
+                safety.hullForward = hullForwardLocal;
+                safety.preferredDirection =
+                    preferredSafetyDirection;
+                safety.hullRadiusMeters =
+                    request.agentRadiusMeters;
+                safety.additionalClearanceMeters =
+                    std::max(
+                        25.0,
+                        definition->requiredClearanceMeters
+                    );
+                safety.courseAccelerationMps2 =
+                    request.acceleratingMps2;
+                safety.brakingAccelerationMps2 =
+                    request.brakingMps2;
+                safety.maxAngularVelocityRadPerSecond =
+                    request.maxAngularVelocityRadPerSecond;
+                safety.newtonian = true;
+                safety.obstacles = request.obstacles;
+
+                const auto safetyResult =
+                    game::navigation::PreplanningSafetyCourse::
+                        evaluate(safety);
 
                 std::cerr
                     << "[DockSafetyCourse]"
                     << " request=" << pending.serial
-                    << " phase=securing+planning"
-                    << " course=("
-                    << m_dockSafeCourse.direction.x << ","
-                    << m_dockSafeCourse.direction.y << ","
-                    << m_dockSafeCourse.direction.z << ")"
+                    << " phase=check"
+                    << " speed_mps=" << safetyResult.speedMps
+                    << " current_safe="
+                    << (safetyResult.currentCourseSafe ? 1 : 0)
+                    << " escape_found="
+                    << (safetyResult.safeCourseFound ? 1 : 0)
+                    << " stop_clear="
+                    << (safetyResult.stopFallbackClear ? 1 : 0)
+                    << " ray_m=" << safetyResult.sceneRayMeters
+                    << " turn_deg="
+                    << safetyResult.turnAngleRad *
+                        57.2957795130823208768
+                    << " turn_radius_m="
+                    << safetyResult.turnRadiusMeters
+                    << " reason=\""
+                    << safetyResult.message
+                    << "\""
                     << std::endl;
 
-                submitAutopilotControl(
-                    safeCourseControl(
-                        m_dockSafeCourse.direction
-                    )
-                );
+                if (!safetyResult.currentCourseSafe)
+                {
+                    m_dockSafeCourse = {};
+                    m_dockSafeCourse.active = true;
+                    m_dockSafeCourse.serial = pending.serial;
+                    m_dockSafeCourse.stopFallback =
+                        !safetyResult.safeCourseFound;
+                    m_dockSafeCourse.direction =
+                        safetyResult.safeCourse;
+                    m_dockSafeCourse.targetSpeedMps =
+                        safetyResult.speedMps;
+                    m_dockSafeCourse.sceneRayMeters =
+                        safetyResult.sceneRayMeters;
+                    m_dockSafeCourse.selectedTurnAngleRad =
+                        safetyResult.turnAngleRad;
+                    m_dockSafeCourse.selectedTurnRadiusMeters =
+                        safetyResult.turnRadiusMeters;
+                    m_dockSafeCourse.lastRecheckServerSeconds =
+                        authoritativeServerSeconds;
+                    m_dockSafeCourse.hullRadiusMeters =
+                        safety.hullRadiusMeters;
+                    m_dockSafeCourse.additionalClearanceMeters =
+                        safety.additionalClearanceMeters;
+                    m_dockSafeCourse.courseAccelerationMps2 =
+                        safety.courseAccelerationMps2;
+                    m_dockSafeCourse.brakingAccelerationMps2 =
+                        safety.brakingAccelerationMps2;
+                    m_dockSafeCourse.
+                        maxAngularVelocityRadPerSecond =
+                            safety.maxAngularVelocityRadPerSecond;
+                    m_dockSafeCourse.newtonian = true;
+                    m_dockSafeCourse.preferredDirection =
+                        safety.preferredDirection;
+                    m_dockSafeCourse.obstacles =
+                        std::move(safety.obstacles);
+
+                    m_clientDockingPhase =
+                        ClientDockingPhase::SecuringCourse;
+                    m_clientDockingSettledSinceServerSeconds =
+                        -1.0;
+
+                    if (m_dockSafeCourse.stopFallback)
+                    {
+                        std::cerr
+                            << "[DockSafetyCourse]"
+                            << " request=" << pending.serial
+                            << " phase=emergency-stop"
+                            << " stop_corridor_clear="
+                            << (
+                                safetyResult.stopFallbackClear
+                                    ? 1
+                                    : 0
+                            )
+                            << std::endl;
+                        submitAutopilotControl(
+                            manualStopControl()
+                        );
+                        return;
+                    }
+
+                    planningWhileSecuringCourse = true;
+                    request.initialForward =
+                        m_dockSafeCourse.direction;
+
+                    std::cerr
+                        << "[DockSafetyCourse]"
+                        << " request=" << pending.serial
+                        << " phase=securing+planning"
+                        << " course=("
+                        << m_dockSafeCourse.direction.x << ","
+                        << m_dockSafeCourse.direction.y << ","
+                        << m_dockSafeCourse.direction.z << ")"
+                        << std::endl;
+
+                    submitAutopilotControl(
+                        legacyNewtonianSafeCourseControl(
+                            m_dockSafeCourse.direction
+                        )
+                    );
+                }
             }
         }
 

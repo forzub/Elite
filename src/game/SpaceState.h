@@ -48,6 +48,7 @@
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/navigation/PreplanningSafetyCourse.h"
+#include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
@@ -348,6 +349,18 @@ private:
     game::navigation::autopilot::AutopilotLawController
         m_clientDockingStabilizePilotController {};
 
+    struct DockAssistedSafeRecoveryState
+    {
+        bool active = false;
+        std::uint64_t serial = 0;
+        double startedServerSeconds = 0.0;
+        game::navigation::AssistedSafeCourseRecoveryPlan plan;
+    };
+    DockAssistedSafeRecoveryState m_dockAssistedSafeRecovery {};
+
+    // Legacy generic safety-course state is retained for Newtonian until its
+    // rotate/settle/burn recovery executor is implemented. Assisted no longer
+    // uses this mutable direction state.
     struct DockSafeCourseState
     {
         bool active = false;

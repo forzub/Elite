@@ -58,6 +58,7 @@ add_library(EliteNavigationRuntimeControl STATIC
     "${ELITE_SOURCE_ROOT}/src/world/navigation/TrajectoryGenerator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingAdvisoryPlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/PreplanningSafetyCourse.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/AssistedSafeCourseRecovery.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RoutePlanner.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/RouteEntryBinder.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.cpp"
@@ -2046,6 +2047,51 @@ add_test(
 
 set_tests_properties(
     continuous_assisted_optimizer_lab
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
+    assisted_safe_course_recovery_tests
+    AssistedSafeCourseRecoveryTests.cpp
+)
+
+target_include_directories(
+    assisted_safe_course_recovery_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    assisted_safe_course_recovery_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    assisted_safe_course_recovery_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        assisted_safe_course_recovery_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        assisted_safe_course_recovery_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME assisted_safe_course_recovery
+    COMMAND assisted_safe_course_recovery_tests
+)
+
+set_tests_properties(
+    assisted_safe_course_recovery
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 

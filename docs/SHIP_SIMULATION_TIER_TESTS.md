@@ -1,125 +1,207 @@
-# Ship simulation tier and response-physics proving ground
+# Ship simulation detail / LOD proving ground
 
-The runtime separates three independent concerns:
-
-```text
-identity/actor       simulation tier          materialized fidelity
---------------       ---------------          ---------------------
-NPC pilot       +    TrafficShell
-traffic actor   +    MaterializedShip    +    Response
-player          +    MaterializedShip    +    Detailed
-no pilot        +    Derelict            +    Response/Detailed
-no pilot        +    WreckShell
-```
-
-Normal large-population lifecycle:
+The runtime intentionally separates four independent concerns:
 
 ```text
-TrafficShell -> MaterializedShip(Response) -> Derelict -> WreckShell
+Actor identity
+    player / NPC pilot / traffic autopilot / drone / none
+
+Lifecycle tier
+    TrafficShell / MaterializedShip / Derelict / WreckShell
+
+Motion fidelity
+    RouteOnly / Kinematic / Response / FullControl
+
+Internal fidelity
+    Response / Detailed
 ```
 
-A shell has identity, descriptor, transform, formation membership and coarse
-damage. It has no ShipCore/module graph/reactor/thermal/autopilot runtime.
+The crucial rule is that **FullControl motion does not imply Detailed
+internals**. A combat target can fly with authoritative full control while
+still using aggregate damage/system state. Detailed module/reactor/repair state
+is reserved for gameplay that can actually expose those internals.
 
-A Response materialized NPC still has authoritative motion, AI/control and a
-real ShipState, but the expensive physical description is resolved into a
-cached capability/response profile. Reactor, thermal, life-support and
-per-observer full signal/radar scans are skipped. The response profile is
-recomputed only when construction, actuator damage or mass properties change.
+## Motion budget
 
-Detailed fidelity is reserved for the player and for an explicitly promoted
-ship when gameplay really needs module-level state (module damage/repair,
-ejection, structural inspection, etc.).
+Default observer policy:
 
-## Visibility and maps
+- background/unseen: `RouteOnly`
+- visible up to ~15 km: `Kinematic`
+- clearly observed up to ~4 km or within ~1.2 km regardless of view:
+  `Response`
+- near the aim axis up to ~3 km or within ~350 m regardless of view:
+  `FullControl`
+- live combat/projectile/docking/script claims: `FullControl`
 
-TrafficShell and WreckShell are ordinary authoritative ship identities.
+Promotion is immediate. Demotion is hysteretic and staged:
+`FullControl -> Response -> Kinematic -> RouteOnly`.
 
-- 3D scene: rendered through the existing instanced whole-ship proxy lane.
-  They are not expanded into per-module real-ship mesh work.
-- System Map: sampled from the same ShipSnapshot stream as materialized ships.
-- Detail Map: same rule; shell identity/tier is retained.
-- Hub Map: a non-player ship appears only when it actually belongs to that hub
-  frame, exactly like a materialized ship.
+The server evaluates the policy at 10 Hz, not at the physics tick rate.
 
-## Commands
+## Server/client authority
 
-Every runtime command below builds `EliteGame` first. This is deliberate:
-running a stale binary invalidates the test.
+Shared gameplay truth remains server-owned. This is required because several
+players may observe or shoot one ship simultaneously.
+
+For every shared ship, the server evaluates all player-controlled observer
+ships and uses the strongest required MotionFidelity. Therefore one player's
+aim/combat demand upgrades the same authoritative entity for every client.
+
+Safe work is moved to clients:
+
+- RouteOnly/Kinematic server truth updates at low cadence;
+- client render transforms dead-reckon/interpolate between snapshots;
+- proxy rendering/culling stays client/GPU-side;
+- maps consume the replicated authoritative ship identity/fidelity.
+
+Clients do **not** decide hit results, collision truth, damage, shared route
+state, or the authoritative position of a target.
+
+## Simplified response physics
+
+Materialized Response NPCs use the normal ShipState/control boundary but avoid
+re-solving rich structure every tick:
+
+- module -> actuator projection is revision-driven;
+- descriptor + actuator + mass/CoM are collapsed into a cached capability /
+  effective-physics profile;
+- the profile is rebuilt only when construction, actuator damage or mass
+  properties change;
+- Response NPCs skip detailed reactor/thermal/life-support service simulation
+  and per-observer full signal/radar receiver work.
+
+Motion cadence is also reduced:
+
+- FullControl: normal Active cadence;
+- Response: Prewarm cadence (currently ~10 Hz AI, ~25 Hz control);
+- RouteOnly/Kinematic normally live as shells and do not own ShipCore physics.
+
+## Exact tests
+
+Every script mode prints:
+
+```text
+[ship-tier-test] source_sha=<40-char git SHA> dirty=<0|1> mode=<mode>
+```
+
+and every runtime mode builds `EliteGame` before launching it.
+
+### contracts
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh contracts
 ```
 
-Builds EliteGame, the focused navigation/runtime contracts, plus System/Detail
-map shell-presence contracts.
+Answers only deterministic questions:
+
+1. lifecycle identity survives shell/materialize/derelict/wreck transitions;
+2. CoM/mass state and impulse contracts remain valid;
+3. observer policy selects RouteOnly/Kinematic/Response/FullControl correctly;
+4. the strongest of several players wins;
+5. a live interaction claim forces server FullControl;
+6. promotion/demotion hysteresis is correct;
+7. MotionFidelity survives replication into System/Detail map sampling;
+8. response physics/control contracts still pass.
+
+No performance conclusion is drawn from this test.
+
+### shell500 — pure baseline
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh shell500
 ```
 
-Spawns 500 TrafficShell ships in 3-ship formations on a loop in front of the
-player. Expected: visible proxy traffic and map entries, without 500 ShipCore
-instances.
+Automatic observer LOD is disabled. Exactly 500 background TrafficShells are
+the workload. This measures the cost of identity + low-cadence route motion +
+replication + client proxy presentation.
 
-```bash
-scripts/run-ship-simulation-tier-tests.sh mixed500
+Expected census is approximately:
+
+```text
+entities=500 shells=500 materialized=0
+motion={route:500,kin:0,response:0,full:0}
 ```
 
-Spawns 500 total entities: 24 MaterializedShip(Response) and 476 TrafficShell.
-This is the normal interaction-budget test.
+This is the lower-bound population cost.
+
+### budget500 — real population test
+
+```bash
+scripts/run-ship-simulation-tier-tests.sh budget500
+```
+
+Starts the same 500 ships as shells, then enables observer-driven detail.
+Ships in/near the player's observation/interaction envelope are promoted
+automatically; background ships stay cheap.
+
+This is the primary acceptance test. We check:
+
+- the game remains responsive;
+- ships are visible and map-visible;
+- the population does **not** collapse into 500 FullControl ships;
+- `herd_500.csv` shows a plausible mix of four motion levels;
+- mean/max slot error remains bounded across LOD transitions.
+
+### tier — lifecycle only
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh tier
 ```
 
-Spawns one standalone shell about 900 m ahead and automatically performs:
+Automatic LOD is disabled. One known entity performs:
 
-- ~0 s: TrafficShell, visible/map-visible
-- ~2 s: TrafficShell -> MaterializedShip(Response), same EntityId
-- ~5 s: cockpit eject -> Derelict, AI/formation authority removed
-- ~8 s: Derelict -> WreckShell, same EntityId
-
-Expected console markers begin with `[ShipTierTest]`.
-
-```bash
-scripts/run-ship-simulation-tier-tests.sh combined
+```text
+TrafficShell
+ -> MaterializedShip(Response)
+ -> Derelict
+ -> WreckShell
 ```
 
-Runs the physical ShipState flight specimen together with 500 shells and the
-standalone lifecycle probe.
+The EntityId must remain unchanged. This test says nothing about 500-ship
+performance.
+
+### mixed500 — compatibility comparison
+
+```bash
+scripts/run-ship-simulation-tier-tests.sh mixed500
+```
+
+Starts 24 materialized ships + 476 shells, then lets automatic LOD rebalance.
+Useful only to compare with earlier logs; it is no longer the primary test.
+
+### fullstress — artificial ceiling
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh fullstress
 ```
 
-Intentional hard-ceiling test: 500 ShipCore/materialized actors. They use
-Response fidelity unless explicitly promoted, so this measures motion/AI/entity
-overhead rather than 500 detailed reactors/thermal systems. This is not the
-normal population path.
+Forces all 500 herd members to FullControl/materialized operation. This is a
+torture test, not a target architecture. A poor result here does not invalidate
+`budget500`.
+
+## herd_500.csv
+
+Columns include:
+
+- total entities;
+- shell/materialized counts;
+- valid ShipState count;
+- RouteOnly/Kinematic/Response/FullControl counts;
+- Active/Prewarm/Coarse execution counts;
+- mean/max formation-slot error;
+- mean speed.
 
 ## GPU policy
 
-Use the GPU where the work is coherent and massively parallel:
+GPU is useful when the workload stays coherent and massively parallel:
 
-- whole-ship proxy instancing (already used by shells);
-- future GPU culling/transform evaluation for very large shell populations;
-- possibly a GPU spatial broad-phase if results can stay on-GPU.
+- instanced whole-ship proxy rendering;
+- culling;
+- future tens-of-thousands shell transform evaluation;
+- potentially spatial broad-phase when its results can remain on-GPU.
 
-Do not move detailed ship simulation to GPU merely because it is expensive.
-Module graphs, AI, damage transitions, activation and service systems are
-branch-heavy and require authoritative CPU state. At the expected number of
-interactive ships, cached response coefficients plus a CPU spatial broad-phase
-are the preferred path.
-
-## 500-ship CSV
-
-`herd_500.csv` reports:
-
-- total entities
-- shell count
-- materialized count
-- valid full ShipState count
-- Active / Prewarm / Coarse materialized counts
-- mean/max formation-slot error
-- mean speed
+Do not move authoritative detailed ship simulation to GPU merely because it is
+expensive. AI, module damage graphs, repairs, activation transitions and shared
+combat authority are branch-heavy and require CPU-side game state. The first
+performance wins should remain: **do less work, run it less often, cache it,
+and move only presentation to the client**.

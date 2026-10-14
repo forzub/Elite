@@ -9,6 +9,7 @@ namespace
 
 using Tier = game::simulation::ShipSimulationTier;
 using Actor = game::simulation::ShipActorKind;
+using Motion = game::simulation::ShipMotionFidelity;
 using Lifecycle = game::simulation::ShipSimulationLifecycleState;
 
 void require(bool condition, const char* message)
@@ -25,6 +26,7 @@ void testIdentityAndSimulationDetailAreIndependent()
     state.pilotPresent = true;
     state.formationId = 17;
     state.formationSlot = 2;
+    state.motionFidelity = Motion::RouteOnly;
 
     require(!state.acceptsAiControl(), "traffic shell received full AI control");
 
@@ -44,6 +46,10 @@ void testIdentityAndSimulationDetailAreIndependent()
         "materialization lost formation membership"
     );
     require(state.acceptsAiControl(), "materialized piloted ship cannot run AI");
+    require(
+        state.motionFidelity == Motion::Response,
+        "materialization did not raise RouteOnly shell to minimum Response motion"
+    );
 }
 
 void testPilotEjectionCreatesDerelictSemantics()
@@ -76,12 +82,17 @@ void testPilotedBackgroundReturnsToTrafficShell()
     state.tier = Tier::MaterializedShip;
     state.actorKind = Actor::NpcPilot;
     state.pilotPresent = true;
+    state.motionFidelity = Motion::FullControl;
 
     state.dematerializeBackground();
 
     require(
         state.tier == Tier::TrafficShell,
         "piloted background ship did not reduce to TRAFFIC_SHELL"
+    );
+    require(
+        state.motionFidelity == Motion::Kinematic,
+        "background dematerialization retained expensive FullControl motion"
     );
 }
 
@@ -128,6 +139,31 @@ void testMaterializedFidelityIsOrthogonalToTier()
     );
 }
 
+void testMotionFidelityIsIndependentFromInternalDetail()
+{
+    Lifecycle state;
+    state.tier = Tier::MaterializedShip;
+    state.actorKind = Actor::NpcPilot;
+    state.motionFidelity = Motion::FullControl;
+    state.materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Response;
+    state.pilotPresent = true;
+
+    require(
+        state.motionFidelity == Motion::FullControl &&
+        !state.usesDetailedSimulation(),
+        "FullControl motion incorrectly required detailed internals"
+    );
+
+    state.promoteDetailed();
+
+    require(
+        state.motionFidelity == Motion::FullControl &&
+        state.usesDetailedSimulation(),
+        "internal promotion changed or lost FullControl motion"
+    );
+}
+
 void testCoarseDamageIsBounded()
 {
     game::simulation::CoarseShipDamageState damage;
@@ -149,6 +185,7 @@ int main()
         testPilotEjectionCreatesDerelictSemantics();
         testPilotedBackgroundReturnsToTrafficShell();
         testMaterializedFidelityIsOrthogonalToTier();
+        testMotionFidelityIsIndependentFromInternalDetail();
         testCoarseDamageIsBounded();
 
         std::cout
@@ -158,6 +195,8 @@ int main()
             << " - pilot ejection removes AI and formation ownership\n"
             << " - background derelict reduces to wreck shell\n"
             << " - response/detailed fidelity is orthogonal to lifecycle tier\n"
+            << " - motion fidelity is independent from internal fidelity\n"
+            << " - materialize/dematerialize enforce sensible motion floors/caps\n"
             << " - shell damage aggregate remains bounded\n";
         return EXIT_SUCCESS;
     }

@@ -37,6 +37,8 @@ ShipSnapshot makeShip(
     ship.typeId = ObjectType::CobraMk1;
     ship.simulationTier =
         game::simulation::ShipSimulationTier::TrafficShell;
+    ship.motionFidelity =
+        game::simulation::ShipMotionFidelity::Kinematic;
     ship.materializedFidelity =
         game::simulation::ShipMaterializedFidelity::Response;
     ship.transform.motion.systemId = systemId;
@@ -150,6 +152,11 @@ int main()
         sample.ships.front().simulationTier ==
             game::simulation::ShipSimulationTier::TrafficShell,
         "Details runtime sampler filtered or reclassified TrafficShell"
+    );
+    require(
+        sample.ships.front().motionFidelity ==
+            game::simulation::ShipMotionFidelity::Kinematic,
+        "Details runtime sampler lost MotionFidelity"
     );
     require(
         sample.ships.front().materializedFidelity ==

@@ -69,6 +69,8 @@ void testTrafficShellRemainsVisibleToSystemMap()
     auto older = makeShip(99, ShipRole::NPC, 0, 500.0);
     older.simulationTier =
         game::simulation::ShipSimulationTier::TrafficShell;
+    older.motionFidelity =
+        game::simulation::ShipMotionFidelity::Kinematic;
     older.materializedFidelity =
         game::simulation::ShipMaterializedFidelity::Response;
 
@@ -98,6 +100,11 @@ void testTrafficShellRemainsVisibleToSystemMap()
         sample.ships.front().simulationTier ==
             game::simulation::ShipSimulationTier::TrafficShell,
         "System-map sample lost TrafficShell tier"
+    );
+    require(
+        sample.ships.front().motionFidelity ==
+            game::simulation::ShipMotionFidelity::Kinematic,
+        "System-map sample lost replicated MotionFidelity"
     );
 }
 

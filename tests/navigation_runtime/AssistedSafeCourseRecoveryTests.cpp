@@ -138,7 +138,6 @@ int main()
             const auto assessment =
                 AssistedSafeCourseRecovery::assess(
                     plan,
-                    elapsed,
                     expected.positionMeters,
                     expected.velocityMps,
                     request.obstacles
@@ -148,12 +147,42 @@ int main()
                 assessment.disposition ==
                     AssistedSafeCourseRecoveryAssessmentDisposition::
                         Continue,
-                "elapsed time alone caused Assisted safe-course replanning"
+                "on-arc Assisted tracking caused false replanning"
             );
             require(
                 glm::dot(plan.targetCourse, committedCourse) >
                     0.999999999,
                 "committed Assisted escape direction changed while tracking"
+            );
+        }
+
+        {
+            // Live integration regression: the first control packet may spend
+            // one network/update interval damping attitude while translation
+            // continues ballistically. Recovery must not panic merely because
+            // wall-clock time advanced; progress is derived from actual V.
+            constexpr double delaySeconds = 0.25;
+            const glm::dvec3 coastedPosition =
+                plan.startPositionMeters +
+                plan.startVelocityMps * delaySeconds;
+
+            const auto assessment =
+                AssistedSafeCourseRecovery::assess(
+                    plan,
+                    coastedPosition,
+                    plan.startVelocityMps,
+                    request.obstacles
+                );
+
+            require(
+                assessment.disposition ==
+                    AssistedSafeCourseRecoveryAssessmentDisposition::
+                        Continue,
+                "brief ballistic control latency caused false Assisted replan"
+            );
+            require(
+                assessment.target.turnProgress01 <= 1.0e-6,
+                "wall-clock latency invented Assisted maneuver progress"
             );
         }
 
@@ -165,18 +194,20 @@ int main()
                     elapsed
                 );
 
+            const glm::dvec3 outward =
+                glm::normalize(
+                    expected.positionMeters -
+                    plan.turnCenterMeters
+                );
             const glm::dvec3 divergedPosition =
                 expected.positionMeters +
-                glm::dvec3(
-                    plan.trackingPositionEnvelopeMeters * 2.0,
-                    0.0,
-                    0.0
-                );
+                outward *
+                    plan.trackingPositionEnvelopeMeters *
+                    2.0;
 
             const auto assessment =
                 AssistedSafeCourseRecovery::assess(
                     plan,
-                    elapsed,
                     divergedPosition,
                     expected.velocityMps,
                     request.obstacles
@@ -211,7 +242,6 @@ int main()
             const auto assessment =
                 AssistedSafeCourseRecovery::assess(
                     plan,
-                    elapsed,
                     expected.positionMeters,
                     expected.velocityMps,
                     changedObstacles
@@ -235,7 +265,6 @@ int main()
             const auto assessment =
                 AssistedSafeCourseRecovery::assess(
                     plan,
-                    plan.durationSeconds,
                     expected.positionMeters,
                     expected.velocityMps,
                     request.obstacles
@@ -278,7 +307,7 @@ int main()
             << "ASSISTED SAFE COURSE RECOVERY TESTS: PASS\n"
             << " - safe ballistic course remains untouched\n"
             << " - blocked course commits one physical escape arc\n"
-            << " - 0.25 s observations do not reselect the maneuver\n"
+            << " - progress comes from actual course, not wall-clock time\n"
             << " - real tracking divergence or new blockers request replan\n"
             << " - completed maneuver acquires the predicted safe velocity\n";
         return EXIT_SUCCESS;

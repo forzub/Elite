@@ -2220,7 +2220,6 @@ void SpaceState::updateDockingAdvisory()
                 game::navigation::AssistedSafeCourseRecovery::
                     assess(
                         m_dockAssistedSafeRecovery.plan,
-                        elapsedSeconds,
                         agent.positionMapMeters,
                         agent.velocityMapMetersPerSecond,
                         m_dockAssistedSafeRecovery.plan.obstacles
@@ -5141,10 +5140,20 @@ void SpaceState::update(float dt)
         }
 
         obs.safetyCourseActive =
+            m_dockAssistedSafeRecovery.active ||
             m_dockSafeCourse.active;
         obs.safetyStopFallback =
-            m_dockSafeCourse.active &&
-            m_dockSafeCourse.stopFallback;
+            (
+                m_dockAssistedSafeRecovery.active &&
+                m_dockAssistedSafeRecovery.plan.disposition ==
+                    game::navigation::
+                        AssistedSafeCourseRecoveryDisposition::
+                            StopFallback
+            ) ||
+            (
+                m_dockSafeCourse.active &&
+                m_dockSafeCourse.stopFallback
+            );
 
         const auto& stressRequests =
             m_navigationWorkspace.dockingRouteRequests();

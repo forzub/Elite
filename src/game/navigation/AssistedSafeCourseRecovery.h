@@ -136,10 +136,12 @@ struct AssistedSafeCourseRecoveryAssessment
 //   not change merely because time has passed.
 //
 // assess():
-//   Checks whether the craft is still tracking that SAME committed maneuver
-//   and whether its remaining proven path is still clear. It never chooses a
-//   replacement direction. Replanning is requested only after real tracking
-//   divergence or loss of the remaining safety proof.
+//   Derives progress from the ACTUAL inertial velocity/course and committed
+//   arc geometry, never from wall-clock elapsed time. It checks whether the
+//   craft is still inside that SAME maneuver's spatial safety envelope and
+//   whether the remaining proven path is clear. It never chooses a replacement
+//   direction. Replanning is requested only after real spatial divergence or
+//   loss of the remaining safety proof.
 //
 // Newtonian is deliberately NOT part of this API. Its rotate/settle/burn
 // recovery sequence has different actuator semantics and should get its own
@@ -158,7 +160,6 @@ public:
 
     [[nodiscard]] static AssistedSafeCourseRecoveryAssessment assess(
         const AssistedSafeCourseRecoveryPlan& plan,
-        double elapsedSeconds,
         const glm::dvec3& actualPositionMeters,
         const glm::dvec3& actualVelocityMps,
         const std::vector<world::navigation::NavigationObstacle>&

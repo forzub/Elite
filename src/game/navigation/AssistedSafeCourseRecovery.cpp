@@ -336,9 +336,55 @@ Candidate proveCandidate(
     return out;
 }
 
+double directedPositionProgressAngle(
+    const AssistedSafeCourseRecoveryPlan& plan,
+    const glm::dvec3& actualPositionMeters
+) noexcept
+{
+    const glm::dvec3 startRadial =
+        normalizedOr(
+            plan.startPositionMeters -
+                plan.turnCenterMeters,
+            deterministicPerpendicular(plan.initialCourse)
+        );
+    const glm::dvec3 actualRadial =
+        normalizedOr(
+            actualPositionMeters -
+                plan.turnCenterMeters,
+            startRadial
+        );
+    const glm::dvec3 axis =
+        normalizedOr(
+            plan.turnAxis,
+            deterministicPerpendicular(plan.initialCourse)
+        );
+
+    const double x =
+        std::clamp(
+            glm::dot(startRadial, actualRadial),
+            -1.0,
+            1.0
+        );
+    const double y =
+        glm::dot(
+            axis,
+            glm::cross(startRadial, actualRadial)
+        );
+
+    double angle = std::atan2(y, x);
+    if (angle < 0.0)
+        angle = 0.0;
+
+    return std::clamp(
+        angle,
+        0.0,
+        std::max(0.0, plan.turnAngleRad)
+    );
+}
+
 bool remainingTrajectoryClear(
     const AssistedSafeCourseRecoveryPlan& plan,
-    double elapsedSeconds,
+    double progressAngleRad,
     const glm::dvec3& actualPositionMeters,
     const std::vector<world::navigation::NavigationObstacle>&
         obstacles
@@ -346,13 +392,22 @@ bool remainingTrajectoryClear(
 {
     glm::dvec3 previous = actualPositionMeters;
 
-    if (elapsedSeconds < plan.durationSeconds - 1.0e-9)
+    const double clampedProgress =
+        std::clamp(
+            progressAngleRad,
+            0.0,
+            std::max(0.0, plan.turnAngleRad)
+        );
+    const double remainingAngle =
+        std::max(
+            0.0,
+            plan.turnAngleRad - clampedProgress
+        );
+
+    if (remainingAngle > 1.0e-9)
     {
-        const double remainingSeconds =
-            plan.durationSeconds -
-            std::max(0.0, elapsedSeconds);
         const double remainingMeters =
-            plan.speedMps * remainingSeconds;
+            plan.turnRadiusMeters * remainingAngle;
         const int samples =
             std::clamp(
                 static_cast<int>(
@@ -367,14 +422,20 @@ bool remainingTrajectoryClear(
 
         for (int i = 1; i <= samples; ++i)
         {
-            const double t =
-                std::max(0.0, elapsedSeconds) +
-                remainingSeconds *
+            const double angle =
+                clampedProgress +
+                remainingAngle *
                     static_cast<double>(i) /
                     static_cast<double>(samples);
+            const double nominalTime =
+                angle /
+                plan.courseAngularRateRadPerSecond;
 
             const auto future =
-                AssistedSafeCourseRecovery::sample(plan, t);
+                AssistedSafeCourseRecovery::sample(
+                    plan,
+                    nominalTime
+                );
             if (!future.valid)
                 return false;
 
@@ -750,7 +811,6 @@ AssistedSafeCourseRecovery::sample(
 AssistedSafeCourseRecoveryAssessment
 AssistedSafeCourseRecovery::assess(
     const AssistedSafeCourseRecoveryPlan& plan,
-    double elapsedSeconds,
     const glm::dvec3& actualPositionMeters,
     const glm::dvec3& actualVelocityMps,
     const std::vector<world::navigation::NavigationObstacle>&
@@ -761,8 +821,7 @@ AssistedSafeCourseRecovery::assess(
 
     if (!plan.valid() ||
         !finite3(actualPositionMeters) ||
-        !finite3(actualVelocityMps) ||
-        !std::isfinite(elapsedSeconds))
+        !finite3(actualVelocityMps))
     {
         out.message =
             "invalid Assisted safe-course recovery assessment";
@@ -795,8 +854,36 @@ AssistedSafeCourseRecovery::assess(
         return out;
     }
 
+    const double actualSpeedMps =
+        glm::length(actualVelocityMps);
+    if (!std::isfinite(actualSpeedMps) ||
+        actualSpeedMps <= MovingSpeedEpsilonMps)
+    {
+        out.disposition =
+            AssistedSafeCourseRecoveryAssessmentDisposition::
+                ReplanRequired;
+        out.message =
+            "Assisted craft lost its moving course before recovery completed";
+        return out;
+    }
+
+    const glm::dvec3 actualCourse =
+        actualVelocityMps / actualSpeedMps;
+    const double progressAngleRad =
+        directedPositionProgressAngle(
+            plan,
+            actualPositionMeters
+        );
+
+    const double nominalTime =
+        progressAngleRad /
+        plan.courseAngularRateRadPerSecond;
+
     out.target =
-        sample(plan, elapsedSeconds);
+        sample(
+            plan,
+            nominalTime
+        );
     if (!out.target.valid)
     {
         out.message =
@@ -809,10 +896,41 @@ AssistedSafeCourseRecovery::assess(
             actualPositionMeters -
             out.target.positionMeters
         );
+
+    // Safety recovery owns COURSE, not cruise-speed recapture. Losing speed is
+    // conservative; exceeding the speed used to prove the arc is not.
+    const double trackingSpeedMps =
+        std::min(
+            actualSpeedMps,
+            plan.speedMps
+        );
+    const glm::dvec3 targetCourse =
+        normalizedOr(
+            out.target.velocityMps,
+            plan.targetCourse
+        );
+
+    out.target.velocityMps =
+        targetCourse * trackingSpeedMps;
+
+    const double requiredCentripetalMps2 =
+        plan.turnRadiusMeters > Epsilon
+            ? trackingSpeedMps *
+                trackingSpeedMps /
+                plan.turnRadiusMeters
+            : 0.0;
+
+    out.target.linearAccelerationMps2 =
+        requiredCentripetalMps2 *
+        glm::cross(
+            plan.turnAxis,
+            targetCourse
+        );
+
     out.velocityErrorMps =
-        glm::length(
-            actualVelocityMps -
-            out.target.velocityMps
+        std::max(
+            0.0,
+            actualSpeedMps - plan.speedMps
         );
 
     if (out.positionErrorMeters >
@@ -824,14 +942,14 @@ AssistedSafeCourseRecovery::assess(
             AssistedSafeCourseRecoveryAssessmentDisposition::
                 ReplanRequired;
         out.message =
-            "actual Assisted state left committed maneuver tracking envelope";
+            "actual Assisted state left committed maneuver safety envelope";
         return out;
     }
 
     out.remainingTrajectoryClear =
         remainingTrajectoryClear(
             plan,
-            std::max(0.0, elapsedSeconds),
+            progressAngleRad,
             actualPositionMeters,
             currentObstacles
         );
@@ -846,10 +964,34 @@ AssistedSafeCourseRecovery::assess(
         return out;
     }
 
-    if (elapsedSeconds >= plan.durationSeconds &&
-        out.velocityErrorMps <=
-            plan.trackingVelocityEnvelopeMps)
+    const double remainingArcMeters =
+        plan.turnRadiusMeters *
+        std::max(
+            0.0,
+            plan.turnAngleRad - progressAngleRad
+        );
+
+    const double terminalCourseErrorMeters =
+        plan.turnRadiusMeters *
+        angleBetween(
+            actualCourse,
+            plan.targetCourse
+        );
+
+    if (remainingArcMeters <=
+            plan.trackingPositionEnvelopeMeters &&
+        terminalCourseErrorMeters <=
+            plan.trackingPositionEnvelopeMeters)
     {
+        out.target.turnComplete = true;
+        out.target.turnProgress01 = 1.0;
+        out.target.positionMeters =
+            plan.endPositionMeters;
+        out.target.velocityMps =
+            plan.targetCourse * trackingSpeedMps;
+        out.target.linearAccelerationMps2 =
+            glm::dvec3(0.0);
+
         out.disposition =
             AssistedSafeCourseRecoveryAssessmentDisposition::
                 Complete;

@@ -71,6 +71,8 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
+#include "src/game/navigation/planner/assisted/AssistedPlanningPipeline.h"
+#include "src/game/navigation/planner/newtonian/NewtonianPlanningPipeline.h"
 #include "src/game/navigation/traffic/TrafficRouteGraphCatalog.h"
 #include "src/game/navigation/NavigationVolumeCatalog.h"
 #include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
@@ -1724,8 +1726,10 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 void SpaceState::updateDockingAdvisory()
 {
     using namespace game::navigation;
-    using ClientAutopilot =
-        game::navigation::autopilot::ClientRouteAutopilot;
+    using AssistedClientAutopilot =
+        game::navigation::autopilot::AssistedClientRouteAutopilot;
+    using NewtonianClientAutopilot =
+        game::navigation::autopilot::NewtonianClientRouteAutopilot;
     using FollowerAgent =
         game::navigation::autopilot::AutopilotAgentState;
 
@@ -1790,8 +1794,10 @@ void SpaceState::updateDockingAdvisory()
         m_clientAutopilotControlActive = false;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
-        m_clientDockingStabilizePilotController.reset();
-        ClientAutopilot::stop(m_clientRouteAutopilot);
+        m_clientDockingAssistedStabilizePilotController.reset();
+        m_clientDockingNewtonianStabilizePilotController.reset();
+        AssistedClientAutopilot::stop(m_clientAssistedRouteAutopilot);
+        NewtonianClientAutopilot::stop(m_clientNewtonianRouteAutopilot);
     };
 
     const auto fail = [&](const std::string& reason)
@@ -2045,11 +2051,16 @@ void SpaceState::updateDockingAdvisory()
             m_client->serverFixedStepSeconds()
         );
 
-        return m_clientDockingStabilizePilotController.update(
-            controlLaw,
-            hold,
-            effectivePhysics
-        );
+        return controlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted
+            ? m_clientDockingAssistedStabilizePilotController.update(
+                  hold,
+                  effectivePhysics
+              )
+            : m_clientDockingNewtonianStabilizePilotController.update(
+                  hold,
+                  effectivePhysics
+              );
     };
 
     const auto manualStopControl = [&]()
@@ -2075,11 +2086,16 @@ void SpaceState::updateDockingAdvisory()
             m_client->serverFixedStepSeconds()
         );
 
-        return m_clientDockingStabilizePilotController.update(
-            controlLaw,
-            stop,
-            effectivePhysics
-        );
+        return controlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted
+            ? m_clientDockingAssistedStabilizePilotController.update(
+                  stop,
+                  effectivePhysics
+              )
+            : m_clientDockingNewtonianStabilizePilotController.update(
+                  stop,
+                  effectivePhysics
+              );
     };
 
     const auto legacyNewtonianSafeCourseControl =
@@ -2141,8 +2157,7 @@ void SpaceState::updateDockingAdvisory()
                 m_client->serverFixedStepSeconds()
             );
 
-            return m_clientDockingStabilizePilotController.update(
-                game::navigation::LocalFlightControlLaw::Newtonian,
+            return m_clientDockingNewtonianStabilizePilotController.update(
                 turn,
                 effectivePhysics
             );
@@ -2384,9 +2399,7 @@ void SpaceState::updateDockingAdvisory()
             recovery.deltaSeconds = fixedDt;
 
             submitAutopilotControl(
-                m_clientDockingStabilizePilotController.update(
-                    game::navigation::
-                        LocalFlightControlLaw::Assisted,
+                m_clientDockingAssistedStabilizePilotController.update(
                     recovery,
                     effectivePhysics
                 )
@@ -2843,8 +2856,6 @@ void SpaceState::updateDockingAdvisory()
         request.gateSpacingMeters = 500.0;
         request.terminalGateSpacingMeters = 250.0;
 
-        request.roundTurns = assisted;
-        request.useContinuousAssistedOptimizer = assisted;
         if (assisted)
         {
             // Ordinary terminal geometry is sized from the speed that may
@@ -3721,21 +3732,43 @@ void SpaceState::updateDockingAdvisory()
                         std::memory_order_release
                     );
 
-                    job->plan =
-                        job->entryRebind
-                            ? game::navigation::planner::
-                                  RouteEntryBinder::bind(
+                    if (compileControlLaw ==
+                        game::navigation::LocalFlightControlLaw::Assisted)
+                    {
+                        using Pipeline =
+                            game::navigation::planner::assisted::
+                                AssistedPlanningPipeline;
+                        job->plan =
+                            job->entryRebind
+                                ? Pipeline::bind(
                                       request,
                                       job->entryBackbone
                                   )
-                            : compiledTrafficRoute.valid
-                                ? game::navigation::traffic::
-                                      SegmentedRouteComposer::plan(
+                                : compiledTrafficRoute.valid
+                                    ? Pipeline::segmented(
                                           request,
                                           compiledTrafficRoute
                                       )
-                                : game::navigation::planner::
-                                      RoutePlanner::plan(request);
+                                    : Pipeline::route(request);
+                    }
+                    else
+                    {
+                        using Pipeline =
+                            game::navigation::planner::newtonian::
+                                NewtonianPlanningPipeline;
+                        job->plan =
+                            job->entryRebind
+                                ? Pipeline::bind(
+                                      request,
+                                      job->entryBackbone
+                                  )
+                                : compiledTrafficRoute.valid
+                                    ? Pipeline::segmented(
+                                          request,
+                                          compiledTrafficRoute
+                                      )
+                                    : Pipeline::route(request);
+                    }
 
                     job->planningProgressPermille.store(
                         700,
@@ -3944,21 +3977,44 @@ void SpaceState::updateDockingAdvisory()
                                 std::memory_order_release
                             );
 
-                            job->autopilotCompiled =
-                                game::navigation::autopilot::
-                                    ClientRouteAutopilot::start(
-                                        job->compiledAutopilotState,
-                                        job->plan,
-                                        compileAgent,
-                                        compileControlLaw,
-                                        compilePhysics,
-                                        compileExecutionUniverseTimeSeconds,
-                                        compileRequestSerial,
-                                        compileTolerance,
-                                        job->context.routeUpReference,
-                                        true,
-                                        &job->autopilotCompileFailure
-                                    );
+                            job->compiledAutopilotLaw =
+                                compileControlLaw;
+                            if (compileControlLaw ==
+                                game::navigation::
+                                    LocalFlightControlLaw::Assisted)
+                            {
+                                job->autopilotCompiled =
+                                    game::navigation::autopilot::
+                                        AssistedClientRouteAutopilot::start(
+                                            job->compiledAssistedAutopilotState,
+                                            job->plan,
+                                            compileAgent,
+                                            compilePhysics,
+                                            compileExecutionUniverseTimeSeconds,
+                                            compileRequestSerial,
+                                            compileTolerance,
+                                            job->context.routeUpReference,
+                                            true,
+                                            &job->autopilotCompileFailure
+                                        );
+                            }
+                            else
+                            {
+                                job->autopilotCompiled =
+                                    game::navigation::autopilot::
+                                        NewtonianClientRouteAutopilot::start(
+                                            job->compiledNewtonianAutopilotState,
+                                            job->plan,
+                                            compileAgent,
+                                            compilePhysics,
+                                            compileExecutionUniverseTimeSeconds,
+                                            compileRequestSerial,
+                                            compileTolerance,
+                                            job->context.routeUpReference,
+                                            true,
+                                            &job->autopilotCompileFailure
+                                        );
+                            }
                         }
                     }
 
@@ -4310,8 +4366,23 @@ void SpaceState::updateDockingAdvisory()
                 return;
             }
 
-            m_clientRouteAutopilot =
-                std::move(job->compiledAutopilotState);
+            if (job->compiledAutopilotLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted)
+            {
+                m_clientAssistedRouteAutopilot =
+                    std::move(job->compiledAssistedAutopilotState);
+                NewtonianClientAutopilot::stop(
+                    m_clientNewtonianRouteAutopilot
+                );
+            }
+            else
+            {
+                m_clientNewtonianRouteAutopilot =
+                    std::move(job->compiledNewtonianAutopilotState);
+                AssistedClientAutopilot::stop(
+                    m_clientAssistedRouteAutopilot
+                );
+            }
 
             m_clientDockingPhase =
                 ClientDockingPhase::Executing;
@@ -4380,208 +4451,238 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Executing)
     {
-        ClientAutopilot::setLiveTunnelRollPhase(
-            m_clientRouteAutopilot,
-            currentTunnelRollPhase(universeTimeSeconds),
-            fixedDt
-        );
+        const auto handleOutput = [&](const auto& output) -> bool
+        {
+            if (output.valid)
+            {
+                m_clientDockingRouteCurveIndex =
+                    output.routeCurveIndex;
+                m_clientAutopilotCrossTrackMeters =
+                    output.crossTrackErrorMeters;
+                m_clientAutopilotCourseErrorRad =
+                    output.courseErrorRad;
+                m_clientAutopilotHullErrorRad =
+                    output.hullForwardErrorRad;
+                m_clientAutopilotTargetSpeedMps =
+                    output.targetSpeedMps;
+                m_clientAutopilotTargetLongitudinalAccelerationMps2 =
+                    output.targetLongitudinalAccelerationMps2;
+    
+                const double routeTotalMeters =
+                    m_dockAdvice.plan.routeCurves.empty()
+                        ? 0.0
+                        : m_dockAdvice.plan.routeCurves.back().
+                            endProgressMeters;
+    
+                m_clientDockingRouteProgressMeters =
+                    std::clamp(
+                        routeTotalMeters -
+                            output.exactRemainingRouteMeters,
+                        0.0,
+                        std::max(0.0, routeTotalMeters)
+                    );
+            }
+    
+            if (!output.valid)
+            {
+                std::cerr
+                    << "[DockClient] request=" << pending.serial
+                    << " phase=execution-replan"
+                    << " reason=follower-invalid"
+                    << std::endl;
+                releaseClientAutopilot();
+                m_clientDockingPhase =
+                    ClientDockingPhase::Stabilizing;
+                submitAutopilotControl(coastForPlanningControl());
+                return false;
+            }
+    
+            if (output.complete)
+            {
+                releaseClientAutopilot();
+                m_clientDockingPhase =
+                    ClientDockingPhase::RouteReady;
+    
+                std::cerr
+                    << "[DockClient] request=" << pending.serial
+                    << " phase=complete"
+                    << " human_control=1"
+                    << std::endl;
+            }
+            else
+            {
+                submitAutopilotControl(output.control);
+    
+                if (m_clientDockingTraceTick == 0 ||
+                    m_client->lastSimulationMetadata().serverTick -
+                        m_clientDockingTraceTick >= 60)
+                {
+                    m_clientDockingTraceTick =
+                        m_client->lastSimulationMetadata().serverTick;
+    
+                    std::cerr
+                        << "[DockClientTrack] request="
+                        << pending.serial
+                        << " page=" << output.pageIndex
+                        << " segment=" << output.segmentIndex
+                        << " cross_track_m="
+                        << output.crossTrackErrorMeters
+                        << " remaining_m="
+                        << output.remainingDistanceMeters
+                        << " target_speed_mps="
+                        << output.targetSpeedMps
+                        << " actual_speed_mps="
+                        << glm::length(motion.localVelocityMps)
+                        << " checkpoint="
+                        << output.checkpointIndex
+                        << " profile_rev="
+                        << output.speedProfileRevision
+                        << " target_accel_mps2="
+                        << output.targetLongitudinalAccelerationMps2
+                        << " cross_closing_mps="
+                        << output.crossTrackClosingSpeedMps
+                        << " course_lead_m="
+                        << output.courseLeadDistanceMeters
+                        << " predicted_cross_m="
+                        << output.predictedCrossTrackMeters
+                        << " center_deadband_m="
+                        << output.centeringDeadbandMeters
+                        << " curve=" << output.routeCurveIndex
+                        << " curvature_1pm="
+                        << output.routeCurvaturePerMeter
+                        << " radius_m="
+                        << output.routeRadiusMeters
+                        << " exact_remaining_m="
+                        << output.exactRemainingRouteMeters
+                        << " desired_course_omega_radps="
+                        << output.desiredCourseAngularRateRadPerSec
+                        << " actual_course_omega_radps="
+                        << output.actualCourseAngularRateRadPerSec
+                        << " hull_omega_radps="
+                        << output.actualAngularRateRadPerSec
+                        << " phase_lead_deg="
+                        << output.coursePhaseLeadAngleRad *
+                            57.2957795130823208768
+                        << " course_tau_s="
+                        << output.courseResponseSeconds
+                        << " brake_a_mps2="
+                        << output.effectiveBrakingAuthorityMps2
+                        << " stop_need_m="
+                        << output.requiredTerminalStopDistanceMeters
+                        << " terminal_brake="
+                        << (output.terminalBrakeActive ? 1 : 0)
+                        << " turn_vmax_mps="
+                        << output.turnSpeedCeilingMps
+                        << " turn_distance_m="
+                        << output.distanceToTurnMeters
+                        << " turn_need_m="
+                        << output.requiredTurnSlowdownDistanceMeters
+                        << " turn_slew_s="
+                        << output.turnSpeedSetpointSlewSeconds
+                        << " capture_angle_deg="
+                        << output.crossTrackCorrectionAngleRad *
+                            57.2957795130823208768
+                        << " capture_omega_radps="
+                        << output.desiredCaptureAngularRateRadPerSec
+                        << " roll_err_deg="
+                        << output.signedRollErrorRad *
+                            57.2957795130823208768
+                        << " roll_target_omega_radps="
+                        << output.desiredRollRateRadPerSec
+                        << " tunnel_roll_phase_deg="
+                        << output.liveTunnelRollPhaseRad *
+                            57.2957795130823208768
+                        << " tunnel_roll_omega_radps="
+                        << output.liveTunnelRollRateRadPerSec
+                        << " brake_attitude_lock="
+                        << (output.brakeAttitudeLockActive ? 1 : 0)
+                        << " terminal_attitude_capture="
+                        << (output.terminalAttitudeCaptureActive ? 1 : 0)
+                        << " forward_err_deg="
+                        << output.forwardErrorRad *
+                            57.2957795130823208768
+                        << " up_err_deg="
+                        << output.upErrorRad *
+                            57.2957795130823208768
+                        << " terminal_hold="
+                        << (output.terminalHold ? 1 : 0)
+                        << " pitch=" << output.control.pitchInput
+                        << " yaw=" << output.control.yawInput
+                        << " roll=" << output.control.rollInput
+                        << " strafe=" << output.control.strafeInput
+                        << " lift=" << output.control.liftInput
+                        << " speed_rate="
+                        << output.control.targetSpeedRate
+                        << " course_err_deg="
+                        << output.courseErrorRad *
+                            57.2957795130823208768
+                        << " hull_err_deg="
+                        << output.hullForwardErrorRad *
+                            57.2957795130823208768
+                        << " gimbal_cmd_r="
+                        << output.control.mainGimbalRightInput
+                        << " gimbal_cmd_u="
+                        << output.control.mainGimbalUpInput
+                        << " main_a_mps2="
+                        << glm::length(
+                            motion.mainEngineAccelerationMps2
+                        )
+                        << " rcs_a_mps2="
+                        << glm::length(
+                            motion.manoeuvreAccelerationMps2
+                        )
+                        << " gimbal_yaw_deg="
+                        << motion.mainGimbalYawRad *
+                            57.2957795130823208768
+                        << " gimbal_pitch_deg="
+                        << motion.mainGimbalPitchRad *
+                            57.2957795130823208768
+                        << std::endl;
+                }
+            }
+    
+            return true;
+        };
 
-        const auto output =
-            ClientAutopilot::update(
-                m_clientRouteAutopilot,
-                makeAgent(),
-                controlLaw,
-                effectivePhysics,
-                universeTimeSeconds,
+        const double tunnelRollPhase =
+            currentTunnelRollPhase(universeTimeSeconds);
+
+        if (controlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted)
+        {
+            AssistedClientAutopilot::setLiveTunnelRollPhase(
+                m_clientAssistedRouteAutopilot,
+                tunnelRollPhase,
                 fixedDt
             );
-
-        if (output.valid)
-        {
-            m_clientDockingRouteCurveIndex =
-                output.routeCurveIndex;
-            m_clientAutopilotCrossTrackMeters =
-                output.crossTrackErrorMeters;
-            m_clientAutopilotCourseErrorRad =
-                output.courseErrorRad;
-            m_clientAutopilotHullErrorRad =
-                output.hullForwardErrorRad;
-            m_clientAutopilotTargetSpeedMps =
-                output.targetSpeedMps;
-            m_clientAutopilotTargetLongitudinalAccelerationMps2 =
-                output.targetLongitudinalAccelerationMps2;
-
-            const double routeTotalMeters =
-                m_dockAdvice.plan.routeCurves.empty()
-                    ? 0.0
-                    : m_dockAdvice.plan.routeCurves.back().
-                        endProgressMeters;
-
-            m_clientDockingRouteProgressMeters =
-                std::clamp(
-                    routeTotalMeters -
-                        output.exactRemainingRouteMeters,
-                    0.0,
-                    std::max(0.0, routeTotalMeters)
+            const auto output =
+                AssistedClientAutopilot::update(
+                    m_clientAssistedRouteAutopilot,
+                    makeAgent(),
+                    effectivePhysics,
+                    universeTimeSeconds,
+                    fixedDt
                 );
-        }
-
-        if (!output.valid)
-        {
-            std::cerr
-                << "[DockClient] request=" << pending.serial
-                << " phase=execution-replan"
-                << " reason=follower-invalid"
-                << std::endl;
-            ClientAutopilot::stop(m_clientRouteAutopilot);
-            m_clientDockingPhase =
-                ClientDockingPhase::Stabilizing;
-            submitAutopilotControl(coastForPlanningControl());
-            return;
-        }
-
-        if (output.complete)
-        {
-            releaseClientAutopilot();
-            m_clientDockingPhase =
-                ClientDockingPhase::RouteReady;
-
-            std::cerr
-                << "[DockClient] request=" << pending.serial
-                << " phase=complete"
-                << " human_control=1"
-                << std::endl;
+            if (!handleOutput(output))
+                return;
         }
         else
         {
-            submitAutopilotControl(output.control);
-
-            if (m_clientDockingTraceTick == 0 ||
-                m_client->lastSimulationMetadata().serverTick -
-                    m_clientDockingTraceTick >= 60)
-            {
-                m_clientDockingTraceTick =
-                    m_client->lastSimulationMetadata().serverTick;
-
-                std::cerr
-                    << "[DockClientTrack] request="
-                    << pending.serial
-                    << " page=" << output.pageIndex
-                    << " segment=" << output.segmentIndex
-                    << " cross_track_m="
-                    << output.crossTrackErrorMeters
-                    << " remaining_m="
-                    << output.remainingDistanceMeters
-                    << " target_speed_mps="
-                    << output.targetSpeedMps
-                    << " actual_speed_mps="
-                    << glm::length(motion.localVelocityMps)
-                    << " checkpoint="
-                    << output.checkpointIndex
-                    << " profile_rev="
-                    << output.speedProfileRevision
-                    << " target_accel_mps2="
-                    << output.targetLongitudinalAccelerationMps2
-                    << " cross_closing_mps="
-                    << output.crossTrackClosingSpeedMps
-                    << " course_lead_m="
-                    << output.courseLeadDistanceMeters
-                    << " predicted_cross_m="
-                    << output.predictedCrossTrackMeters
-                    << " center_deadband_m="
-                    << output.centeringDeadbandMeters
-                    << " curve=" << output.routeCurveIndex
-                    << " curvature_1pm="
-                    << output.routeCurvaturePerMeter
-                    << " radius_m="
-                    << output.routeRadiusMeters
-                    << " exact_remaining_m="
-                    << output.exactRemainingRouteMeters
-                    << " desired_course_omega_radps="
-                    << output.desiredCourseAngularRateRadPerSec
-                    << " actual_course_omega_radps="
-                    << output.actualCourseAngularRateRadPerSec
-                    << " hull_omega_radps="
-                    << output.actualAngularRateRadPerSec
-                    << " phase_lead_deg="
-                    << output.coursePhaseLeadAngleRad *
-                        57.2957795130823208768
-                    << " course_tau_s="
-                    << output.courseResponseSeconds
-                    << " brake_a_mps2="
-                    << output.effectiveBrakingAuthorityMps2
-                    << " stop_need_m="
-                    << output.requiredTerminalStopDistanceMeters
-                    << " terminal_brake="
-                    << (output.terminalBrakeActive ? 1 : 0)
-                    << " turn_vmax_mps="
-                    << output.turnSpeedCeilingMps
-                    << " turn_distance_m="
-                    << output.distanceToTurnMeters
-                    << " turn_need_m="
-                    << output.requiredTurnSlowdownDistanceMeters
-                    << " turn_slew_s="
-                    << output.turnSpeedSetpointSlewSeconds
-                    << " capture_angle_deg="
-                    << output.crossTrackCorrectionAngleRad *
-                        57.2957795130823208768
-                    << " capture_omega_radps="
-                    << output.desiredCaptureAngularRateRadPerSec
-                    << " roll_err_deg="
-                    << output.signedRollErrorRad *
-                        57.2957795130823208768
-                    << " roll_target_omega_radps="
-                    << output.desiredRollRateRadPerSec
-                    << " tunnel_roll_phase_deg="
-                    << output.liveTunnelRollPhaseRad *
-                        57.2957795130823208768
-                    << " tunnel_roll_omega_radps="
-                    << output.liveTunnelRollRateRadPerSec
-                    << " brake_attitude_lock="
-                    << (output.brakeAttitudeLockActive ? 1 : 0)
-                    << " terminal_attitude_capture="
-                    << (output.terminalAttitudeCaptureActive ? 1 : 0)
-                    << " forward_err_deg="
-                    << output.forwardErrorRad *
-                        57.2957795130823208768
-                    << " up_err_deg="
-                    << output.upErrorRad *
-                        57.2957795130823208768
-                    << " terminal_hold="
-                    << (output.terminalHold ? 1 : 0)
-                    << " pitch=" << output.control.pitchInput
-                    << " yaw=" << output.control.yawInput
-                    << " roll=" << output.control.rollInput
-                    << " strafe=" << output.control.strafeInput
-                    << " lift=" << output.control.liftInput
-                    << " speed_rate="
-                    << output.control.targetSpeedRate
-                    << " course_err_deg="
-                    << output.courseErrorRad *
-                        57.2957795130823208768
-                    << " hull_err_deg="
-                    << output.hullForwardErrorRad *
-                        57.2957795130823208768
-                    << " gimbal_cmd_r="
-                    << output.control.mainGimbalRightInput
-                    << " gimbal_cmd_u="
-                    << output.control.mainGimbalUpInput
-                    << " main_a_mps2="
-                    << glm::length(
-                        motion.mainEngineAccelerationMps2
-                    )
-                    << " rcs_a_mps2="
-                    << glm::length(
-                        motion.manoeuvreAccelerationMps2
-                    )
-                    << " gimbal_yaw_deg="
-                    << motion.mainGimbalYawRad *
-                        57.2957795130823208768
-                    << " gimbal_pitch_deg="
-                    << motion.mainGimbalPitchRad *
-                        57.2957795130823208768
-                    << std::endl;
-            }
+            NewtonianClientAutopilot::setLiveTunnelRollPhase(
+                m_clientNewtonianRouteAutopilot,
+                tunnelRollPhase,
+                fixedDt
+            );
+            const auto output =
+                NewtonianClientAutopilot::update(
+                    m_clientNewtonianRouteAutopilot,
+                    makeAgent(),
+                    effectivePhysics,
+                    universeTimeSeconds,
+                    fixedDt
+                );
+            if (!handleOutput(output))
+                return;
         }
     }
 
@@ -5167,17 +5268,29 @@ void SpaceState::update(float dt)
                 stressRequests.pending().target.semanticAnchorId;
         }
 
-        obs.pageIndex = m_clientRouteAutopilot.currentPage;
+        const bool observeAssisted =
+            motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted;
+        obs.pageIndex =
+            observeAssisted
+                ? m_clientAssistedRouteAutopilot.currentPage
+                : m_clientNewtonianRouteAutopilot.currentPage;
         obs.segmentIndex =
-            m_clientRouteAutopilot.currentContinuousSegment;
+            observeAssisted
+                ? m_clientAssistedRouteAutopilot.currentContinuousSegment
+                : m_clientNewtonianRouteAutopilot.currentContinuousSegment;
         obs.checkpointIndex =
-            m_clientRouteAutopilot.nextCheckpointIndex;
+            observeAssisted
+                ? m_clientAssistedRouteAutopilot.nextCheckpointIndex
+                : m_clientNewtonianRouteAutopilot.nextCheckpointIndex;
         obs.routeCurveIndex =
             m_clientDockingRouteCurveIndex;
         obs.routeProgressMeters =
             m_clientDockingRouteProgressMeters;
         obs.speedProfileRevision =
-            m_clientRouteAutopilot.speedProfileRevision;
+            observeAssisted
+                ? m_clientAssistedRouteAutopilot.speedProfileRevision
+                : m_clientNewtonianRouteAutopilot.speedProfileRevision;
         obs.crossTrackMeters =
             m_clientAutopilotCrossTrackMeters;
         obs.courseErrorRad =

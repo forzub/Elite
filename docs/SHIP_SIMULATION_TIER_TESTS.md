@@ -1,40 +1,73 @@
-# Ship simulation tier proving ground
+# Ship simulation tier and response-physics proving ground
 
-The simulation tier is independent from actor identity.
-
-Normal large-population path:
+The runtime separates three independent concerns:
 
 ```text
-TrafficShell -> MaterializedShip -> Derelict -> WreckShell
+identity/actor       simulation tier          materialized fidelity
+--------------       ---------------          ---------------------
+NPC pilot       +    TrafficShell
+traffic actor   +    MaterializedShip    +    Response
+player          +    MaterializedShip    +    Detailed
+no pilot        +    Derelict            +    Response/Detailed
+no pilot        +    WreckShell
+```
+
+Normal large-population lifecycle:
+
+```text
+TrafficShell -> MaterializedShip(Response) -> Derelict -> WreckShell
 ```
 
 A shell has identity, descriptor, transform, formation membership and coarse
-damage, but no ShipCore/module graph/reactor/thermal/autopilot runtime.
+damage. It has no ShipCore/module graph/reactor/thermal/autopilot runtime.
+
+A Response materialized NPC still has authoritative motion, AI/control and a
+real ShipState, but the expensive physical description is resolved into a
+cached capability/response profile. Reactor, thermal, life-support and
+per-observer full signal/radar scans are skipped. The response profile is
+recomputed only when construction, actuator damage or mass properties change.
+
+Detailed fidelity is reserved for the player and for an explicitly promoted
+ship when gameplay really needs module-level state (module damage/repair,
+ejection, structural inspection, etc.).
+
+## Visibility and maps
+
+TrafficShell and WreckShell are ordinary authoritative ship identities.
+
+- 3D scene: rendered through the existing instanced whole-ship proxy lane.
+  They are not expanded into per-module real-ship mesh work.
+- System Map: sampled from the same ShipSnapshot stream as materialized ships.
+- Detail Map: same rule; shell identity/tier is retained.
+- Hub Map: a non-player ship appears only when it actually belongs to that hub
+  frame, exactly like a materialized ship.
 
 ## Commands
 
-From MSYS2 / Git Bash at the repository root:
+Every runtime command below builds `EliteGame` first. This is deliberate:
+running a stale binary invalidates the test.
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh contracts
 ```
 
-Builds EliteGame and the focused contract tests, then runs CTest.
+Builds EliteGame, the focused navigation/runtime contracts, plus System/Detail
+map shell-presence contracts.
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh shell500
 ```
 
-Spawns 500 lightweight TrafficShell ships in 3-ship formations on a loop placed
-in front of the player. This is the normal bulk-population scalability test.
+Spawns 500 TrafficShell ships in 3-ship formations on a loop in front of the
+player. Expected: visible proxy traffic and map entries, without 500 ShipCore
+instances.
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh mixed500
 ```
 
-Spawns 500 total entities: 24 materialized ships and 476 shells. This exercises
-the normal interaction budget without turning all background traffic into full
-ships.
+Spawns 500 total entities: 24 MaterializedShip(Response) and 476 TrafficShell.
+This is the normal interaction-budget test.
 
 ```bash
 scripts/run-ship-simulation-tier-tests.sh tier
@@ -42,9 +75,10 @@ scripts/run-ship-simulation-tier-tests.sh tier
 
 Spawns one standalone shell about 900 m ahead and automatically performs:
 
-- ~2 s: TrafficShell -> MaterializedShip
-- ~5 s: cockpit eject -> Derelict, AI and formation ownership removed
-- ~8 s: Derelict -> WreckShell
+- ~0 s: TrafficShell, visible/map-visible
+- ~2 s: TrafficShell -> MaterializedShip(Response), same EntityId
+- ~5 s: cockpit eject -> Derelict, AI/formation authority removed
+- ~8 s: Derelict -> WreckShell, same EntityId
 
 Expected console markers begin with `[ShipTierTest]`.
 
@@ -59,9 +93,24 @@ standalone lifecycle probe.
 scripts/run-ship-simulation-tier-tests.sh fullstress
 ```
 
-Intentional torture test: all 500 ships are fully materialized. This is not the
-normal runtime architecture and may become extremely slow. Use only when
-profiling the hard ceiling of full simulation.
+Intentional hard-ceiling test: 500 ShipCore/materialized actors. They use
+Response fidelity unless explicitly promoted, so this measures motion/AI/entity
+overhead rather than 500 detailed reactors/thermal systems. This is not the
+normal population path.
+
+## GPU policy
+
+Use the GPU where the work is coherent and massively parallel:
+
+- whole-ship proxy instancing (already used by shells);
+- future GPU culling/transform evaluation for very large shell populations;
+- possibly a GPU spatial broad-phase if results can stay on-GPU.
+
+Do not move detailed ship simulation to GPU merely because it is expensive.
+Module graphs, AI, damage transitions, activation and service systems are
+branch-heavy and require authoritative CPU state. At the expected number of
+interactive ships, cached response coefficients plus a CPU spatial broad-phase
+are the preferred path.
 
 ## 500-ship CSV
 

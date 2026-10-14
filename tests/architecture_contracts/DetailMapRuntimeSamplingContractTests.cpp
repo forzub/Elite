@@ -35,6 +35,10 @@ ShipSnapshot makeShip(
     ship.id = EntityId{idValue};
     ship.role = ShipRole::NPC;
     ship.typeId = ObjectType::CobraMk1;
+    ship.simulationTier =
+        game::simulation::ShipSimulationTier::TrafficShell;
+    ship.materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Response;
     ship.transform.motion.systemId = systemId;
     ship.transform.motion.parentBodyId = "planet";
     ship.transform.setWorldPositionMeters(glm::dvec3(xMeters, 0.0, 0.0));
@@ -142,6 +146,16 @@ int main()
         "Details runtime sampler did not resolve exact-epoch history"
     );
     require(sample.ships.size() == 1, "Details ship sampling changed entity set");
+    require(
+        sample.ships.front().simulationTier ==
+            game::simulation::ShipSimulationTier::TrafficShell,
+        "Details runtime sampler filtered or reclassified TrafficShell"
+    );
+    require(
+        sample.ships.front().materializedFidelity ==
+            game::simulation::ShipMaterializedFidelity::Response,
+        "Details runtime sampler lost response fidelity"
+    );
     require(sample.objects.size() == 1, "non-map-visible Detail module was filtered out");
     require(sample.hubs.size() == 1, "Details hub sampling changed entity set");
 
@@ -222,7 +236,7 @@ int main()
     );
 
     std::cout
-        << "[PASS] Details runtime facts use exact-epoch ordinary replication"
+        << "[PASS] Details runtime facts keep TrafficShell exact-epoch ordinary replication"
         << '\n';
     return 0;
 }

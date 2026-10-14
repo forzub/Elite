@@ -24,6 +24,15 @@ case "${MODE}" in
     ctest --test-dir build/tests/navigation_runtime \
       -R "^(ship_state|ship_mass_properties|ship_simulation_tier|npc_formation_goal|ship_physical_control_models|ship_control_execution_gateway)$" \
       --output-on-failure
+
+    cmake --build build/tests/architecture_contracts \
+      --target system_map_ship_sampling_contract_tests \
+               detail_map_runtime_sampling_contract_tests \
+      -j "${JOBS}"
+
+    ctest --test-dir build/tests/architecture_contracts \
+      -R "^(system_map_ship_sampling_contracts|detail_map_runtime_sampling_contracts)$" \
+      --output-on-failure
     ;;
 
   shell500)

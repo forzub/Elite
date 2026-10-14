@@ -61,12 +61,54 @@ SimulationSnapshot makeSnapshot(
     snapshot.ships.assign(ships.begin(), ships.end());
     return snapshot;
 }
+
+void testTrafficShellRemainsVisibleToSystemMap()
+{
+    std::deque<SimulationSnapshot> history;
+
+    auto older = makeShip(99, ShipRole::NPC, 0, 500.0);
+    older.simulationTier =
+        game::simulation::ShipSimulationTier::TrafficShell;
+    older.materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Response;
+
+    auto newer = older;
+    newer.transform.setWorldPositionMeters(glm::dvec3(520.0, 0.0, 0.0));
+
+    history.push_back(makeSnapshot(20, 4.00, {older}));
+    history.push_back(makeSnapshot(23, 4.06, {newer}));
+
+    const auto sample =
+        game::client::sampleSystemMapShipsAtServerTime(
+            history,
+            0,
+            4.03
+        );
+
+    require(
+        sample.status == game::client::SystemMapShipSampleStatus::Ready,
+        "TrafficShell System-map sample was not ready"
+    );
+    require(
+        sample.ships.size() == 1 &&
+        sample.ships.front().id == EntityId{99},
+        "TrafficShell disappeared from System-map ordinary ship layer"
+    );
+    require(
+        sample.ships.front().simulationTier ==
+            game::simulation::ShipSimulationTier::TrafficShell,
+        "System-map sample lost TrafficShell tier"
+    );
+}
+
 }
 
 int main()
 {
     try
     {
+        testTrafficShellRemainsVisibleToSystemMap();
+
         std::deque<SimulationSnapshot> history;
         history.push_back(makeSnapshot(
             3,
@@ -170,7 +212,7 @@ int main()
             "exact post-transfer endpoint was not preserved"
         );
 
-        std::cout << "[PASS] System-map ships sample ordinary replication at one server epoch\n";
+        std::cout << "[PASS] System-map ships include TrafficShell ordinary replication at one server epoch\n";
         return 0;
     }
     catch (const std::exception& e)

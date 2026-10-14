@@ -1230,6 +1230,11 @@ target_compile_features(
     PRIVATE cxx_std_17
 )
 
+target_link_libraries(
+    ship_propulsion_state_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
 if(MSVC)
     target_compile_options(
         ship_propulsion_state_tests

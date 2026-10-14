@@ -2006,14 +2006,14 @@ void SpaceState::updateDockingAdvisory()
 
     const auto coastForPlanningControl = [&]()
     {
-        ShipControlState control;
-        // Planning hand-off contract: remove commanded linear acceleration
-        // but preserve measured local velocity. This bypasses Assisted
-        // translational recapture while the asynchronous planner works.
-        control.navigationAccelerationDemandValid = true;
-        control.navigationLinearAccelerationDemandSystemMps2 =
-            glm::dvec3(0.0);
-        return control;
+        // NEUTRAL PHYSICAL CONTROL, not a direct-navigation bypass.
+        //
+        // Newtonian: zero ordinary controls naturally means ballistic coast.
+        // Assisted: zero ordinary controls MUST leave the normal FA-on law
+        // alive.  It may remove residual lateral slip relative to the hull;
+        // bypassing that with navigationAccelerationDemandValid=0 m/s^2 makes
+        // Assisted behave Newtonian and visibly separates nose from velocity.
+        return ShipControlState {};
     };
 
     const auto stabilizeAngularForPlanningControl = [&]()
@@ -2265,6 +2265,16 @@ void SpaceState::updateDockingAdvisory()
                 agent.rollRateRadPerSec;
             safeInput.selectedSpeedMps =
                 m_dockAssistedSafeRecovery.targetSpeedMps;
+            safeInput.maxPitchRateRadPerSec =
+                effectivePhysics.maxPitchRate;
+            safeInput.maxYawRateRadPerSec =
+                effectivePhysics.maxYawRate;
+            safeInput.maxRollRateRadPerSec =
+                effectivePhysics.maxRollRate;
+            safeInput.angularAccelerationAuthorityRadPerSec2 =
+                game::ship::angularAccelerationLimitRadPerSec2(
+                    effectivePhysics
+                );
             safeInput.deltaSeconds = fixedDt;
 
             const auto safeOutput =
@@ -2323,12 +2333,10 @@ void SpaceState::updateDockingAdvisory()
 
             // The selected direction is immutable for this docking-entry
             // correction.  No 0.25 s reassessment/reselection loop exists.
-            submitAutopilotControl(
-                m_clientDockingAssistedStabilizePilotController.update(
-                    safeOutput.request,
-                    effectivePhysics
-                )
-            );
+            // Safe-course already emits ordinary Assisted controls.  Do not
+            // route it through AssistedAutopilot/VelocityCourseGuidance: that
+            // would create a second course controller on top of physical FA-on.
+            submitAutopilotControl(safeOutput.control);
             return;
         }
 

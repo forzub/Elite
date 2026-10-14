@@ -99,6 +99,12 @@ struct ShipSimulationLifecycleState
         ShipMaterializedFidelity::Response;
     bool pilotPresent = true;
 
+    // Only actors whose coarse mission/route semantics are representable by
+    // ShipShellState may collapse back out of ShipCore automatically.
+    // Spawned full NPCs remain materialized until their persistent mission
+    // state has an explicit shell representation.
+    bool shellEligible = false;
+
     // Zero means no formation ownership. These fields are orthogonal to tier:
     // a materialized ship may remain in a formation until an event removes it.
     std::uint32_t formationId = 0;

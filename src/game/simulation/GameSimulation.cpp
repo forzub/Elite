@@ -1449,7 +1449,7 @@ void GameSimulation::updateShipSimulationDetail(double dt)
 
         lifecycle.demoteToResponseInternals();
 
-        if (persistentDetailedHistory)
+        if (persistentDetailedHistory || !lifecycle.shellEligible)
             continue;
 
         toDematerialize.push_back({
@@ -8109,6 +8109,7 @@ EntityId GameSimulation::spawnTrafficShell(
     shell.lifecycle.motionFidelity =
         game::simulation::ShipMotionFidelity::RouteOnly;
     shell.lifecycle.pilotPresent = true;
+    shell.lifecycle.shellEligible = true;
     shell.lifecycle.formationId = formationId;
     shell.lifecycle.formationSlot = formationSlot;
 

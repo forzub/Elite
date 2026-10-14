@@ -27,6 +27,7 @@ void testIdentityAndSimulationDetailAreIndependent()
     state.formationId = 17;
     state.formationSlot = 2;
     state.motionFidelity = Motion::RouteOnly;
+    state.shellEligible = true;
 
     require(!state.acceptsAiControl(), "traffic shell received full AI control");
 
@@ -164,6 +165,27 @@ void testMotionFidelityIsIndependentFromInternalDetail()
     );
 }
 
+void testFullNpcIsNotImplicitlyShellEligible()
+{
+    Lifecycle state;
+    state.tier = Tier::MaterializedShip;
+    state.actorKind = Actor::NpcPilot;
+    state.motionFidelity = Motion::RouteOnly;
+    state.pilotPresent = true;
+
+    require(
+        !state.shellEligible,
+        "ordinary materialized NPC unexpectedly became shell-eligible"
+    );
+
+    state.shellEligible = true;
+    state.materializeForInteraction();
+    require(
+        state.shellEligible,
+        "traffic-origin shell eligibility was lost during materialization"
+    );
+}
+
 void testCoarseDamageIsBounded()
 {
     game::simulation::CoarseShipDamageState damage;
@@ -186,6 +208,7 @@ int main()
         testPilotedBackgroundReturnsToTrafficShell();
         testMaterializedFidelityIsOrthogonalToTier();
         testMotionFidelityIsIndependentFromInternalDetail();
+        testFullNpcIsNotImplicitlyShellEligible();
         testCoarseDamageIsBounded();
 
         std::cout
@@ -197,6 +220,7 @@ int main()
             << " - response/detailed fidelity is orthogonal to lifecycle tier\n"
             << " - motion fidelity is independent from internal fidelity\n"
             << " - materialize/dematerialize enforce sensible motion floors/caps\n"
+            << " - only traffic-origin actors are automatically shell-eligible\n"
             << " - shell damage aggregate remains bounded\n";
         return EXIT_SUCCESS;
     }

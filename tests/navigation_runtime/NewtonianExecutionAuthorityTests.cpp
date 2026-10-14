@@ -30,6 +30,8 @@ void requireNear(
 ShipParams params()
 {
     ShipParams p {};
+    p.maxCombatSpeed = 500.0f;
+    p.maxCruiseSpeed = 1000.0f;
     p.forwardMainEngineAvailable = true;
     p.reverseMainEngineAvailable = true;
     p.forwardMainEngineAccelerationMps2 = 50.0f;

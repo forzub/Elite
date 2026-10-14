@@ -94,9 +94,13 @@ public:
             std::max(0.0, in.lateralAccelerationAuthorityMps2) *
             response;
 
+        // The proportional term already decays continuously to zero
+        // at the deadband. Multiplying it by occupancy again creates a cubic
+        // near-center falloff and leaves a visible residual offset for many
+        // kilometres. Keep occupancy as telemetry/speed-policy information,
+        // but do not attenuate the actual centering command twice.
         out.desiredClosingSpeedMps =
-            std::min(proportionalClosingSpeed, authorityClosingSpeed) *
-            out.occupancy01;
+            std::min(proportionalClosingSpeed, authorityClosingSpeed);
 
         if (out.desiredClosingSpeedMps <= 1.0e-9)
             return out;

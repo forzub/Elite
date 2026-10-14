@@ -803,6 +803,45 @@ foreach(guidance_test
 endforeach()
 
 add_executable(
+    in_corridor_centering_guidance_tests
+    InCorridorCenteringGuidanceTests.cpp
+)
+
+target_include_directories(
+    in_corridor_centering_guidance_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    in_corridor_centering_guidance_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        in_corridor_centering_guidance_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        in_corridor_centering_guidance_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME in_corridor_centering_guidance
+    COMMAND in_corridor_centering_guidance_tests
+)
+
+set_tests_properties(
+    in_corridor_centering_guidance
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     route_frame_field_tests
     RouteFrameFieldTests.cpp
 )

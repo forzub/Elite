@@ -56,10 +56,27 @@ if (Test-Path $ReportPath) {
 $oldStress = $env:ELITE_NAV_STRESS
 $oldReport = $env:ELITE_NAV_STRESS_REPORT
 $oldBuildId = $env:ELITE_NAV_STRESS_BUILD_ID
+$oldPhysicalHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
+$oldPhysicalHotStartSpeed = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS
 
 $env:ELITE_NAV_STRESS = "1"
 $env:ELITE_NAV_STRESS_REPORT = $ReportPath
 $env:ELITE_NAV_STRESS_BUILD_ID = $buildId
+
+# The dedicated Assisted high-speed scenario owns its physical initial
+# condition. Previously the harness could be enabled without enabling the
+# server hot-start at all; additionally the generic 300 m/s hot-start was below
+# the harness' 350 m/s acceptance boundary. Make the scenario self-contained.
+$assistedHighSpeed =
+    $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED -and
+    $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED -ne "0"
+
+if ($assistedHighSpeed) {
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
+    if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS) {
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "400"
+    }
+}
 
 Write-Host "[NavStressRunner] starting $exe"
 Write-Host "[NavStressRunner] build $buildId"
@@ -171,4 +188,6 @@ finally {
     $env:ELITE_NAV_STRESS = $oldStress
     $env:ELITE_NAV_STRESS_REPORT = $oldReport
     $env:ELITE_NAV_STRESS_BUILD_ID = $oldBuildId
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldPhysicalHotStart
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = $oldPhysicalHotStartSpeed
 }

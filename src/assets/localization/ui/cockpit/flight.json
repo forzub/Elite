@@ -99,6 +99,139 @@
       "zh-Hans": "正在准备自动对接",
       "es": "PREPARANDO ATRAQUE AUTOMÁTICO",
       "ja": "自動ドッキング準備中"
+    },
+    "cockpit.terminal.title": {
+      "en": "DOCKING",
+      "ru": "СТЫКОВКА",
+      "zh-Hans": "对接",
+      "es": "ATRAQUE",
+      "ja": "ドッキング"
+    },
+    "cockpit.terminal.idle": {
+      "en": "idle",
+      "ru": "ожидание",
+      "zh-Hans": "待机",
+      "es": "en espera",
+      "ja": "待機"
+    },
+    "cockpit.terminal.stabilization": {
+      "en": "stabilization",
+      "ru": "стабилизация",
+      "zh-Hans": "稳定",
+      "es": "estabilización",
+      "ja": "安定化"
+    },
+    "cockpit.terminal.planning": {
+      "en": "planning",
+      "ru": "расчёт маршрута",
+      "zh-Hans": "规划中",
+      "es": "planificación",
+      "ja": "経路計算"
+    },
+    "cockpit.terminal.route_ready": {
+      "en": "route ready",
+      "ru": "маршрут готов",
+      "zh-Hans": "航路就绪",
+      "es": "ruta lista",
+      "ja": "経路準備完了"
+    },
+    "cockpit.terminal.autopilot": {
+      "en": "autopilot",
+      "ru": "автопилот",
+      "zh-Hans": "自动驾驶",
+      "es": "piloto automático",
+      "ja": "オートパイロット"
+    },
+    "cockpit.terminal.stop": {
+      "en": "stop",
+      "ru": "стоп",
+      "zh-Hans": "停止",
+      "es": "parada",
+      "ja": "停止"
+    },
+    "cockpit.terminal.safe_course": {
+      "en": "safe-course",
+      "ru": "безопасный курс",
+      "zh-Hans": "安全航向",
+      "es": "rumbo seguro",
+      "ja": "安全針路"
+    },
+    "cockpit.terminal.planner_on": {
+      "en": "planner on",
+      "ru": "планировщик включён",
+      "zh-Hans": "规划器开启",
+      "es": "planificador activo",
+      "ja": "プランナー作動"
+    },
+    "cockpit.terminal.planner_ready": {
+      "en": "planner ready",
+      "ru": "планировщик готов",
+      "zh-Hans": "规划器就绪",
+      "es": "planificador listo",
+      "ja": "プランナー準備完了"
+    },
+    "cockpit.terminal.planner_off": {
+      "en": "planner off",
+      "ru": "планировщик выключен",
+      "zh-Hans": "规划器关闭",
+      "es": "planificador inactivo",
+      "ja": "プランナー停止"
+    },
+    "cockpit.terminal.safe_course_acquiring": {
+      "en": "safe-course acquiring",
+      "ru": "выход на безопасный курс",
+      "zh-Hans": "正在获取安全航向",
+      "es": "adquiriendo rumbo seguro",
+      "ja": "安全針路へ移行"
+    },
+    "cockpit.terminal.safe_course_active": {
+      "en": "safe-course active",
+      "ru": "безопасный курс активен",
+      "zh-Hans": "安全航向启用",
+      "es": "rumbo seguro activo",
+      "ja": "安全針路作動"
+    },
+    "cockpit.terminal.safe_course_clear": {
+      "en": "safe-course clear",
+      "ru": "курс безопасен",
+      "zh-Hans": "航向安全",
+      "es": "rumbo despejado",
+      "ja": "針路安全"
+    },
+    "cockpit.terminal.handoff_rebind": {
+      "en": "handoff rebind",
+      "ru": "перепривязка маршрута",
+      "zh-Hans": "重新接入航路",
+      "es": "reajuste de enlace",
+      "ja": "経路再接続"
+    },
+    "cockpit.terminal.handoff_accepted": {
+      "en": "handoff accepted",
+      "ru": "маршрут принят",
+      "zh-Hans": "航路接入完成",
+      "es": "enlace aceptado",
+      "ja": "経路接続完了"
+    },
+    "cockpit.terminal.warning_handoff_rebinding": {
+      "en": "warning: handoff drift; rebinding connector",
+      "ru": "предупреждение: смещение стыковки; перепривязка",
+      "zh-Hans": "警告：接入点漂移；重新连接",
+      "es": "aviso: deriva de enlace; reajustando",
+      "ja": "警告：接続点ドリフト；再接続中"
+    },
+    "cockpit.terminal.warning_handoff_retry": {
+      "en": "warning: handoff drift; connector retry",
+      "ru": "предупреждение: смещение стыковки; повтор соединения",
+      "zh-Hans": "警告：接入点漂移；重试连接",
+      "es": "aviso: deriva de enlace; reintento",
+      "ja": "警告：接続点ドリフト；再試行"
+    },
+    "cockpit.terminal.error_prefix": {
+      "en": "error:",
+      "ru": "ошибка:",
+      "zh-Hans": "错误：",
+      "es": "error:",
+      "ja": "エラー："
     }
   }
 }

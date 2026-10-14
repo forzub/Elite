@@ -361,6 +361,7 @@ add_executable(EliteGame
     src/core/StateStack.cpp
     src/core/StateContext.cpp
     src/game/localization/LocalizationService.cpp
+    src/audio/AudioEngine.cpp
 
 
     src/window/Window.cpp
@@ -669,6 +670,10 @@ add_executable(EliteGame
     src/game/system_map/AuthoritativeMapInterpolator.cpp
     src/world/celestial/CelestialRuntimeRegistry.cpp
 )
+endif()
+
+if(TARGET EliteGame AND WIN32)
+    target_link_libraries(EliteGame PRIVATE winmm)
 endif()
 
 if(ELITE_BUILD_SERVER)

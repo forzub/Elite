@@ -5268,9 +5268,12 @@ void SpaceState::update(float dt)
                 stressRequests.pending().target.semanticAnchorId;
         }
 
+        // Stress diagnostics read the state that actually owns execution.
+        // Do not re-derive a flight law here: the two autopilots are isolated
+        // and at most one of them may be active at a time.
         const bool observeAssisted =
-            motion.localControlLaw ==
-                game::navigation::LocalFlightControlLaw::Assisted;
+            m_clientAssistedRouteAutopilot.active ||
+            !m_clientNewtonianRouteAutopilot.active;
         obs.pageIndex =
             observeAssisted
                 ? m_clientAssistedRouteAutopilot.currentPage

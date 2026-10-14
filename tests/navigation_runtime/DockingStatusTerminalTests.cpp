@@ -32,7 +32,14 @@ int main()
         snapshot.safety = "safe-course clear";
 
         auto out = terminal.update(snapshot, 0.0);
-        require(out.lines.empty(), "terminal typed without elapsed time");
+        require(
+            out.typedCharacters == 0,
+            "terminal advanced typewriter without elapsed time"
+        );
+        require(
+            out.lines.size() <= 1,
+            "terminal emitted completed history without elapsed time"
+        );
 
         out = terminal.update(snapshot, 1.0);
         require(out.typedCharacters > 0, "terminal did not type characters");

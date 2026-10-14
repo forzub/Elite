@@ -45,12 +45,16 @@ contract.
 4. Turn the hull using ordinary Assisted controls.
 5. Let Assisted FA-on physically bend velocity toward the hull/course.
 6. Acquire the safe course once.
-7. Continue planning in parallel.
-8. Preserve the expensive planner backbone.
-9. Repair late entry only through a cheap projected connector.
-10. Entry rebind is not a new docking request and must not re-run the primary
+7. Before capturing a planning snapshot for a new docking request, remove
+   requested linear acceleration and damp pitch/yaw/roll rate to <= 0.01 rad/s,
+   then hold that settled angular state for 0.20 s. Linear velocity is preserved.
+8. Only after that settled state is reached may expensive planning/compilation
+   start asynchronously while the craft continues ballistic translation.
+9. Preserve the expensive planner backbone.
+10. Repair late entry only through a cheap projected connector.
+11. Entry rebind is not a new docking request and must not re-run the primary
     safe-course selector.
-11. Recoverable handoff drift must not terminal-fail docking.
+12. Recoverable handoff drift must not terminal-fail docking.
 
 ### Safe-course
 

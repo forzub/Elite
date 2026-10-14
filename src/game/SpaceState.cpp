@@ -1,3 +1,4 @@
+#include "src/audio/AudioEngine.h"
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include "src/core/RuntimeTrace.h"
@@ -6850,10 +6851,19 @@ m_systemMapRenderer.render(
                 y += lineStep;
             }
 
-            // typedCharacters is intentionally exposed by the pure terminal
-            // as an optional sound hook. No audio backend is coupled here:
-            // adding/removing the terminal must never alter simulation state.
-            (void)terminalOutput.typedCharacters;
+            // Presentation-only audio seam. The terminal itself remains pure:
+            // it reports how many characters appeared; the adapter rate-limits
+            // that event; AudioEngine owns the replaceable platform backend.
+            if (m_terminalAudioAdapter.shouldPlayTick(
+                    terminalOutput.typedCharacters,
+                    terminalNowSeconds
+                ))
+            {
+                audio::AudioEngine::instance().playTerminalTick();
+            }
+
+            if (!terminal.visible)
+                m_terminalAudioAdapter.reset();
         }
 
         uiRoot->render(vp);

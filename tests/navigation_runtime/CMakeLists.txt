@@ -842,6 +842,33 @@ set_tests_properties(
 )
 
 add_executable(
+    terminal_audio_adapter_tests
+    TerminalAudioAdapterTests.cpp
+)
+
+target_include_directories(
+    terminal_audio_adapter_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    terminal_audio_adapter_tests
+    PRIVATE cxx_std_17
+)
+
+add_test(
+    NAME terminal_audio_adapter
+    COMMAND terminal_audio_adapter_tests
+)
+
+set_tests_properties(
+    terminal_audio_adapter
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     docking_status_terminal_tests
     DockingStatusTerminalTests.cpp
 )

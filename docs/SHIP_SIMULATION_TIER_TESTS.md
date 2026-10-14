@@ -68,7 +68,16 @@ re-solving rich structure every tick:
 - the profile is rebuilt only when construction, actuator damage or mass
   properties change;
 - Response NPCs skip detailed reactor/thermal/life-support service simulation
-  and per-observer full signal/radar receiver work.
+  and per-observer full signal/radar receiver work;
+- Response replication omits module/link/hit-volume/sensor payload. Static
+  descriptor assembly is enough to render the ship. Detailed promotion sends
+  the exact graph; demotion explicitly clears it on the client.
+
+A full NPC that was authored/spawned with persistent mission state is not
+automatically collapsed into TrafficShell until that mission state has a
+compact shell representation. Traffic-origin entities are marked
+`shellEligible` and may freely materialize/dematerialize without losing their
+coarse route identity.
 
 Motion cadence is also reduced:
 

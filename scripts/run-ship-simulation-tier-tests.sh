@@ -6,7 +6,7 @@ JOBS="${JOBS:-8}"
 
 SOURCE_SHA="$(git rev-parse HEAD)"
 SOURCE_SHORT_SHA="$(git rev-parse --short=12 HEAD)"
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+if [[ -n "$(git status --porcelain)" ]]; then
   SOURCE_DIRTY=1
 else
   SOURCE_DIRTY=0

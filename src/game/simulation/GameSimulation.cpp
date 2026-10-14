@@ -6764,10 +6764,15 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
 
 
 
-        s.receptions = ship.core().signalResults();
+        const bool detailedReplication =
+            shipUsesDetailedSimulation(id);
 
+        if (detailedReplication)
+        {
+            s.receptions = ship.core().signalResults();
+            s.radarContacts = ship.core().radar().getContacts();
+        }
 
-        s.radarContacts = ship.core().radar().getContacts();
         s.shipCoreStatus = ship.core().getCoreStatus();
 
         // s.modules.clear();
@@ -6784,72 +6789,128 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         auto& graph = s.graph;
 
         const bool motionLabProbe = isHubMotionLabShip(id);
-        auto resendIt = m_shipGraphPayloadPublicationsRemaining.find(id);
-        const bool sendStructuralGraph =
-            !motionLabProbe &&
-            (m_initializedShipGraphIds.find(id) == m_initializedShipGraphIds.end() ||
-             resendIt != m_shipGraphPayloadPublicationsRemaining.end());
+        const bool hadDetailedGraph =
+            m_initializedShipGraphIds.find(id) !=
+            m_initializedShipGraphIds.end();
 
-        if (sendStructuralGraph)
+        if (!detailedReplication)
         {
-            graph.hasModules = true;
-            graph.hasStructuralLinks = true;
-            graph.hasAssemblyModules = true;
-            graph.hasDebugHitVolumes = true;
-
-            const auto& runtimeModules = ship.core().moduleRuntime().modules();
-            const auto& descModules = ship.core().desc().moduleDescriptors();
-
-            std::unordered_map<std::string, const world::modules::ObjectModuleState*> runtimeById;
-            runtimeById.reserve(runtimeModules.size());
-            for (const auto& mod : runtimeModules)
-                runtimeById[mod.moduleId] = &mod;
-
-            graph.modules.reserve(descModules.size());
-            for (const auto& descMod : descModules)
+            // If this client-visible entity was detailed before, publish one
+            // explicit empty graph so canonical snapshot merging cannot retain
+            // stale heavy state forever after demotion.
+            if (hadDetailedGraph)
             {
-                const auto itRt = runtimeById.find(descMod.moduleId);
-                const auto* rt = (itRt != runtimeById.end()) ? itRt->second : nullptr;
-                graph.modules.push_back(buildModuleSnapshot(descMod, rt));
+                graph.hasModules = true;
+                graph.hasStructuralLinks = true;
+                graph.hasAssemblyModules = true;
+                graph.hasDebugHitVolumes = true;
+                graph.modules.clear();
+                graph.structuralLinks.clear();
+                graph.assemblyModules.clear();
+                graph.debugHitVolumes.clear();
+
+                m_initializedShipGraphIds.erase(id);
+                m_shipGraphPayloadPublicationsRemaining.erase(id);
             }
 
-            const auto& links = ship.core().structuralLinkRuntime().links();
-            graph.structuralLinks.reserve(links.size());
-            for (const auto& link : links)
-                graph.structuralLinks.push_back(buildStructuralLinkSnapshot(link));
-
-            graph.assemblyModules = ship.core().assemblyRuntime().buildSnapshots();
-
-            graph.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
-                ship.core().hitComponent()
-            );
-
-            m_initializedShipGraphIds.insert(id);
-
-            if (resendIt != m_shipGraphPayloadPublicationsRemaining.end())
-            {
-                --resendIt->second;
-                if (resendIt->second <= 0)
-                    m_shipGraphPayloadPublicationsRemaining.erase(resendIt);
-            }
-
-            ship.core().clearHitVolumesDirty();
+            // Response rendering uses static descriptor assembly. Runtime
+            // module/link/hit state remains server-side until Detailed.
+            if (ship.core().hitVolumesDirty())
+                ship.core().clearHitVolumesDirty();
         }
-        else if (ship.core().hitVolumesDirty())
+        else
         {
-            // Debug-only payload: hit volumes can change after rebuilds.
-            // Do not resend modules/links just because debug geometry changed.
-            graph.hasDebugHitVolumes = true;
-            graph.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
-                ship.core().hitComponent()
-            );
-            ship.core().clearHitVolumesDirty();
+            auto resendIt =
+                m_shipGraphPayloadPublicationsRemaining.find(id);
+            const bool sendStructuralGraph =
+                !motionLabProbe &&
+                (!hadDetailedGraph ||
+                 resendIt !=
+                    m_shipGraphPayloadPublicationsRemaining.end());
+
+            if (sendStructuralGraph)
+            {
+                graph.hasModules = true;
+                graph.hasStructuralLinks = true;
+                graph.hasAssemblyModules = true;
+                graph.hasDebugHitVolumes = true;
+
+                const auto& runtimeModules =
+                    ship.core().moduleRuntime().modules();
+                const auto& descModules =
+                    ship.core().desc().moduleDescriptors();
+
+                std::unordered_map<
+                    std::string,
+                    const world::modules::ObjectModuleState*
+                > runtimeById;
+                runtimeById.reserve(runtimeModules.size());
+                for (const auto& mod : runtimeModules)
+                    runtimeById[mod.moduleId] = &mod;
+
+                graph.modules.reserve(descModules.size());
+                for (const auto& descMod : descModules)
+                {
+                    const auto itRt =
+                        runtimeById.find(descMod.moduleId);
+                    const auto* rt =
+                        itRt != runtimeById.end()
+                            ? itRt->second
+                            : nullptr;
+                    graph.modules.push_back(
+                        buildModuleSnapshot(descMod, rt)
+                    );
+                }
+
+                const auto& links =
+                    ship.core().structuralLinkRuntime().links();
+                graph.structuralLinks.reserve(links.size());
+                for (const auto& link : links)
+                {
+                    graph.structuralLinks.push_back(
+                        buildStructuralLinkSnapshot(link)
+                    );
+                }
+
+                graph.assemblyModules =
+                    ship.core().assemblyRuntime().buildSnapshots();
+
+                graph.debugHitVolumes =
+                    world::modules::HitVolumeSnapshotBuilder::build(
+                        ship.core().hitComponent()
+                    );
+
+                m_initializedShipGraphIds.insert(id);
+
+                if (resendIt !=
+                    m_shipGraphPayloadPublicationsRemaining.end())
+                {
+                    --resendIt->second;
+                    if (resendIt->second <= 0)
+                    {
+                        m_shipGraphPayloadPublicationsRemaining.erase(
+                            resendIt
+                        );
+                    }
+                }
+
+                ship.core().clearHitVolumesDirty();
+            }
+            else if (ship.core().hitVolumesDirty())
+            {
+                graph.hasDebugHitVolumes = true;
+                graph.debugHitVolumes =
+                    world::modules::HitVolumeSnapshotBuilder::build(
+                        ship.core().hitComponent()
+                    );
+                ship.core().clearHitVolumesDirty();
+            }
         }
 
         // Motion-lab probes exercise only authoritative transform -> snapshot
         // -> client presentation. Shipping their complete damage/repair graph
         // multiplies startup snapshot memory without testing anything useful.
-        if (!motionLabProbe)
+        if (!motionLabProbe && detailedReplication)
         {
             auto detachedFragments =
                 ship.core().detachedFragmentRuntime().buildSnapshots(
@@ -8198,6 +8259,10 @@ bool GameSimulation::promoteShipToDetailedSimulation(EntityId id)
         game::simulation::ShipMaterializedFidelity::Detailed)
     {
         it->second.promoteDetailed();
+
+        // Detailed promotion is the publication boundary for module/link/hit
+        // state. Response actors intentionally do not ship that graph.
+        markShipGraphDirty(id);
     }
 
     return true;

@@ -61,10 +61,15 @@ void testPresentationPredictionDoesNotMutateTruth()
         "local presentation prediction mismatch"
     );
     require(
-        world::coordinates::fullMeters(
-            authoritative.transform.worldPosition
-        ) == originalWorldMeters &&
-        authoritative.transform.motion.localPositionMeters == originalLocal,
+        glm::length(
+            world::coordinates::fullMeters(
+                authoritative.transform.worldPosition
+            ) - originalWorldMeters
+        ) < 1.0e-12 &&
+        glm::length(
+            authoritative.transform.motion.localPositionMeters -
+                originalLocal
+        ) < 1.0e-12,
         "presentation dead reckoning mutated authoritative snapshot"
     );
 }

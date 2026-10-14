@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace
@@ -1559,6 +1560,111 @@ void testExactCurveBoundaryActivatesAtAuthoredEntry()
     );
 }
 
+void testNewtonianBrokenTangentStopsBeforeNextStraight()
+{
+    using game::navigation::planner::RouteCurveKind;
+    using game::navigation::planner::RouteCurveSegment;
+    using game::navigation::planner::RouteGate;
+
+    game::navigation::planner::RoutePlan route;
+    route.disposition =
+        game::navigation::planner::RoutePlanDisposition::Ready;
+    route.failureCode =
+        game::navigation::planner::RoutePlanFailureCode::None;
+
+    constexpr double LegMeters = 800.0;
+    constexpr double CruiseMps = 120.0;
+
+    route.executionGates = {
+        RouteGate{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, CruiseMps},
+        RouteGate{{LegMeters, 0.0, 0.0}, {1.0, 0.0, 0.0}, CruiseMps},
+        RouteGate{{LegMeters, 0.0, LegMeters}, {0.0, 0.0, 1.0}, 0.0}
+    };
+    route.gates = route.executionGates;
+
+    RouteCurveSegment first;
+    first.kind = RouteCurveKind::Line;
+    first.startProgressMeters = 0.0;
+    first.endProgressMeters = LegMeters;
+    first.maxSpeedMps = CruiseMps;
+    first.startMeters = {0.0, 0.0, 0.0};
+    first.endMeters = {LegMeters, 0.0, 0.0};
+    first.startForward = first.endForward = {1.0, 0.0, 0.0};
+    route.routeCurves.push_back(first);
+
+    RouteCurveSegment second;
+    second.kind = RouteCurveKind::Line;
+    second.startProgressMeters = LegMeters;
+    second.endProgressMeters = 2.0 * LegMeters;
+    second.maxSpeedMps = CruiseMps;
+    second.startMeters = {LegMeters, 0.0, 0.0};
+    second.endMeters = {LegMeters, 0.0, LegMeters};
+    second.startForward = second.endForward = {0.0, 0.0, 1.0};
+    route.routeCurves.push_back(second);
+
+    auto vehicle = params();
+    vehicle.maxCombatSpeed = 160.0f;
+    vehicle.maxCruiseSpeed = 160.0f;
+    vehicle.mainGimbalPitchLimitRad = 0.12f;
+    vehicle.mainGimbalYawLimitRad = 0.12f;
+    vehicle.mainGimbalRateRadPerSec = 0.14f;
+
+    Agent initial;
+    initial.positionMapMeters = {0.0, 0.0, 0.0};
+    initial.velocityMapMetersPerSecond = {100.0, 0.0, 0.0};
+    initial.forwardMap = {1.0, 0.0, 0.0};
+    initial.rightMap = {0.0, 0.0, 1.0};
+    initial.upMap = {0.0, 1.0, 0.0};
+
+    Autopilot::State state;
+    std::string failure;
+    require(
+        Autopilot::start(
+            state,
+            route,
+            initial,
+            game::navigation::LocalFlightControlLaw::Newtonian,
+            vehicle,
+            1000.0,
+            40,
+            20.0,
+            {0.0, 1.0, 0.0},
+            false,
+            &failure
+        ),
+        "Newtonian broken-tangent route rejected"
+    );
+
+    const glm::dvec3 corner(LegMeters, 0.0, 0.0);
+    double nearestDistance = std::numeric_limits<double>::infinity();
+    double nearestSpeed = std::numeric_limits<double>::infinity();
+
+    for (const auto& sample : state.continuousSamples)
+    {
+        const double distance =
+            glm::length(sample.positionMapMeters - corner);
+        if (distance < nearestDistance)
+        {
+            nearestDistance = distance;
+            nearestSpeed =
+                glm::length(sample.velocityMapMetersPerSecond);
+        }
+    }
+
+    require(
+        nearestDistance < 1.0,
+        "Newtonian accepted program did not preserve the straight-line join"
+    );
+    require(
+        nearestSpeed <=
+            std::max(
+                0.10,
+                static_cast<double>(vehicle.stopSpeedEpsilonMps)
+            ),
+        "Newtonian broken tangent retained non-zero through-speed"
+    );
+}
+
 void testTerminalBrakingIncludesControllerResponseMargin()
 {
     using game::navigation::planner::RouteCurveKind;
@@ -2688,6 +2794,7 @@ int main()
         testTurnPreviewCrossesIntermediateStraight();
         testBezierInteriorCurvatureParticipatesInPreview();
         testExactCurveBoundaryActivatesAtAuthoredEntry();
+        testNewtonianBrokenTangentStopsBeforeNextStraight();
         testTerminalBrakingIncludesControllerResponseMargin();
         testTerminalHoldKeepsStrongAttitudeCaptureForLargeError();
         testTerminalFrameHoldsStoppedAndAligned();
@@ -2718,6 +2825,7 @@ int main()
             << " - turn preview crosses intermediate straight primitives\n"
             << " - Bezier interior curvature participates in turn preview\n"
             << " - exact curve boundary activates at authored entry\n"
+            << " - Newtonian broken tangents compile as stop/turn/go boundaries\n"
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
             << " - in-corridor cross-track does not replace authored tangent\n"

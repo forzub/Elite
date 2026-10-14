@@ -43,15 +43,32 @@ makeManeuverExecutionAuthority(
         out.feedbackReserveMps2 =
             newtonian.feedbackReserveMps2;
 
-        // The route acceleration vector is supplied by the aft main after the
-        // hull/TVC solver orients the thrust axis. "Lateral" here is therefore
-        // path-normal acceleration authority, not a body-axis RCS channel.
+        // Full aft-main remains available on straights and for
+        // flip-and-burn. Smooth path-normal acceleration is bounded by TVC,
+        // otherwise trajectory generation would treat the whole main as a
+        // fictitious lateral thruster.
         out.forwardAccelerationMps2 =
             newtonian.plannedVectorAccelerationMps2;
         out.brakingAccelerationMps2 =
             newtonian.plannedVectorAccelerationMps2;
+        const double installedMain =
+            game::ship::forwardMainAccelerationLimitMps2(params);
+        const double installedTvcLateral =
+            game::ship::
+                newtonianMainVectoringLateralAccelerationLimitMps2(
+                    params
+                );
+        const double tvcFraction =
+            installedMain > 1.0e-9
+                ? std::clamp(
+                      installedTvcLateral / installedMain,
+                      0.0,
+                      1.0
+                  )
+                : 0.0;
         out.lateralAccelerationMps2 =
-            newtonian.plannedVectorAccelerationMps2;
+            newtonian.plannedVectorAccelerationMps2 *
+            tvcFraction;
         return out;
     }
 

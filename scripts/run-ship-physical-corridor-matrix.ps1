@@ -60,6 +60,7 @@ $oldModel = $env:ELITE_SHIP_PHYSICAL_TEST_MODEL
 $oldSimple = $env:ELITE_NAV_STRESS_SIMPLE
 $oldIndex = $env:ELITE_SHIP_PHYSICAL_TEST_INDEX
 $oldTotal = $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL
+$oldHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
 
 $results = @()
 
@@ -73,6 +74,7 @@ try {
 
         $env:ELITE_SHIP_PHYSICAL_TEST_MODEL = $model
         $env:ELITE_SHIP_PHYSICAL_TEST_INDEX = [string]$index
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = if ($model -like "Assisted-*") { "1" } else { "0" }
 
         $safeModel = $model -replace '[^A-Za-z0-9]+', '_'
         $report = Join-Path $ReportDirectory ("{0:D2}_{1}.log" -f $index, $safeModel)
@@ -111,4 +113,5 @@ finally {
     $env:ELITE_NAV_STRESS_SIMPLE = $oldSimple
     $env:ELITE_SHIP_PHYSICAL_TEST_INDEX = $oldIndex
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = $oldTotal
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldHotStart
 }

@@ -2536,6 +2536,11 @@ private:
             plan.executionGates.size()
         );
         trajectoryRequest.pointSpeedConstraints.reserve(
+            plan.executionGates.size() +
+            plan.routeCurves.size()
+        );
+        std::vector<double> executionGateProgressMeters;
+        executionGateProgressMeters.reserve(
             plan.executionGates.size()
         );
 
@@ -2557,6 +2562,10 @@ private:
                 );
             }
 
+            executionGateProgressMeters.push_back(
+                sourceProgressMeters
+            );
+
             world::navigation::TrajectoryPointSpeedConstraint limit;
             limit.sourcePathProgressMeters = sourceProgressMeters;
             limit.maxSpeedMps = std::min(
@@ -2564,6 +2573,92 @@ private:
                 std::max(0.0, gate.speedMps)
             );
             trajectoryRequest.pointSpeedConstraints.push_back(limit);
+        }
+
+        if (law == LocalFlightControlLaw::Newtonian &&
+            plan.routeCurves.size() >= 2 &&
+            executionGateProgressMeters.size() ==
+                plan.executionGates.size())
+        {
+            // A true tangent discontinuity has unbounded curvature. No finite
+            // TVC authority can fly through it continuously, so the Newtonian
+            // speed profile must arrive stopped. This is geometry, not an
+            // angle heuristic: numerically identical tangents remain a
+            // fly-through join; any authored directional discontinuity is a
+            // stop/turn/go boundary.
+            constexpr double TangentEqualityEpsilon2 = 1.0e-12;
+
+            for (std::size_t curveIndex = 0;
+                 curveIndex + 1 < plan.routeCurves.size();
+                 ++curveIndex)
+            {
+                const auto& before = plan.routeCurves[curveIndex];
+                const auto& after = plan.routeCurves[curveIndex + 1];
+
+                const glm::dvec3 beforeTangent =
+                    normalizedOr(
+                        before.tangentAtProgress(
+                            before.endProgressMeters
+                        ),
+                        before.endForward
+                    );
+                const glm::dvec3 afterTangent =
+                    normalizedOr(
+                        after.tangentAtProgress(
+                            after.startProgressMeters
+                        ),
+                        after.startForward
+                    );
+
+                if (glm::length2(
+                        beforeTangent - afterTangent
+                    ) <= TangentEqualityEpsilon2)
+                {
+                    continue;
+                }
+
+                const glm::dvec3 joinPosition =
+                    0.5 * (
+                        before.endMeters +
+                        after.startMeters
+                    );
+
+                std::size_t nearestGate = 0;
+                double nearestDistance2 =
+                    std::numeric_limits<double>::infinity();
+
+                for (std::size_t gateIndex = 0;
+                     gateIndex < plan.executionGates.size();
+                     ++gateIndex)
+                {
+                    const glm::dvec3 delta =
+                        plan.executionGates[gateIndex].
+                            positionMeters -
+                        joinPosition;
+                    const double distance2 =
+                        glm::dot(delta, delta);
+                    if (distance2 < nearestDistance2)
+                    {
+                        nearestDistance2 = distance2;
+                        nearestGate = gateIndex;
+                    }
+                }
+
+                if (nearestGate == 0 ||
+                    nearestGate + 1 >=
+                        plan.executionGates.size())
+                {
+                    continue;
+                }
+
+                world::navigation::
+                    TrajectoryPointSpeedConstraint stop;
+                stop.sourcePathProgressMeters =
+                    executionGateProgressMeters[nearestGate];
+                stop.maxSpeedMps = 0.0;
+                trajectoryRequest.pointSpeedConstraints.
+                    push_back(stop);
+            }
         }
 
         constexpr int MaximumRefinementAttempts = 6;

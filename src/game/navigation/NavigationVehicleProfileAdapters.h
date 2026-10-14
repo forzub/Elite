@@ -49,16 +49,19 @@ makeNavigationVehicleProfile(
     }
     else
     {
-        // Newtonian navigation is rotate + main-engine burn. This legacy
-        // scalar field is interpreted only as a course-change timing budget;
-        // the accepted program still has to align the real main engine with
-        // every burn and may not spend precision RCS as sustained lateral
-        // route authority.
+        // Newtonian straights and flip-and-burn use the full aft main.
+        // Continuous curvature without a wholesale hull reorientation is
+        // limited by the main-nozzle TVC side component. Broken tangents are
+        // handled separately as stop/turn/go boundaries.
         const double primaryMain =
             forwardMain > 0.0 ? forwardMain : reverseMain;
         profile.maxForwardAccelerationMps2 = primaryMain;
         profile.maxBrakingAccelerationMps2 = primaryMain;
-        profile.maxLateralAccelerationMps2 = primaryMain;
+        profile.maxLateralAccelerationMps2 =
+            game::ship::
+                newtonianMainVectoringLateralAccelerationLimitMps2(
+                    params
+                );
     }
 
     profile.maxAngularVelocityRadPerSecond =

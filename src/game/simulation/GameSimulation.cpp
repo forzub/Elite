@@ -454,6 +454,8 @@ GameSimulation::GameSimulation(
 
     m_shipStateFlightTestRequested =
         environmentFlagEnabled("ELITE_SHIP_STATE_FLIGHT_TEST");
+    m_physicalCorridorHotStartRequested =
+        environmentFlagEnabled("ELITE_PHYSICAL_CORRIDOR_HOT_START");
     m_fiveHundredShipHerdRequested =
         environmentFlagEnabled("ELITE_500_SHIPS_TEST");
     m_fiveHundredMaterializedShipHerdRequested =
@@ -626,6 +628,108 @@ void GameSimulation::buildInitialScene(
     initializeShipStateFlightTest();
     initializeFiveHundredShipHerd();
     initializeShipTierTransitionTest();
+}
+
+
+void GameSimulation::applyPhysicalCorridorHotStart()
+{
+    if (!m_physicalCorridorHotStartRequested ||
+        m_physicalCorridorHotStartApplied)
+    {
+        return;
+    }
+
+    Ship* player = playerShip();
+    if (!player)
+        return;
+
+    auto& tr = player->core().transform();
+    auto& motion = tr.motion;
+
+    if (motion.mode != game::navigation::MotionMode::HubTactical ||
+        !motion.travelFrame.valid)
+    {
+        return;
+    }
+
+    const glm::dvec3 oldForward =
+        safeNormalizeD(
+            glm::dvec3(tr.forward()),
+            glm::dvec3(0.0, 0.0, -1.0)
+        );
+    const glm::dvec3 oldUp =
+        safeNormalizeD(
+            glm::dvec3(tr.up()),
+            glm::dvec3(0.0, 1.0, 0.0)
+        );
+    const glm::dvec3 oldRight =
+        safeNormalizeD(
+            glm::dvec3(tr.right()),
+            glm::dvec3(1.0, 0.0, 0.0)
+        );
+
+    // Diagnostic hot entry: the ship is already moving on its old course,
+    // while the hull is deliberately yawed away from that course. This makes
+    // route construction consume a real non-zero velocity boundary and proves
+    // that navigation course is not reconstructed from hull nose.
+    constexpr double StartSpeedMps = 120.0;
+    constexpr double NoseOffsetRad =
+        1.04719755119659774615; // 60 degrees, diagnostic only.
+
+    const glm::dvec3 newForward =
+        safeNormalizeD(
+            oldForward * std::cos(NoseOffsetRad) +
+            oldRight * std::sin(NoseOffsetRad),
+            oldForward
+        );
+    glm::dvec3 newRight =
+        safeNormalizeD(
+            glm::cross(newForward, oldUp),
+            oldRight
+        );
+    const glm::dvec3 newUp =
+        safeNormalizeD(
+            glm::cross(newRight, newForward),
+            oldUp
+        );
+    newRight =
+        safeNormalizeD(
+            glm::cross(newForward, newUp),
+            newRight
+        );
+
+    tr.orientation = glm::mat4(1.0f);
+    tr.orientation[0] =
+        glm::vec4(glm::vec3(newRight), 0.0f);
+    tr.orientation[1] =
+        glm::vec4(glm::vec3(newUp), 0.0f);
+    tr.orientation[2] =
+        glm::vec4(glm::vec3(-newForward), 0.0f);
+
+    const glm::dvec3 relativeWorldVelocity =
+        oldForward * StartSpeedMps;
+    motion.localVelocityMps =
+        motion.travelFrame.worldToLocalVector(
+            relativeWorldVelocity
+        );
+    motion.worldVelocityMps =
+        motion.referenceVelocityMps +
+        relativeWorldVelocity;
+    tr.referenceVelocityMetersPerSecond =
+        motion.referenceVelocityMps;
+    motion.forwardSpeedMps =
+        glm::dot(relativeWorldVelocity, newForward);
+    tr.pitchRate = 0.0f;
+    tr.yawRate = 0.0f;
+    tr.rollRate = 0.0f;
+
+    m_physicalCorridorHotStartApplied = true;
+
+    std::cout
+        << "[PhysicalCorridor] hot_start=1"
+        << " speed_mps=" << StartSpeedMps
+        << " nose_course_offset_deg=60"
+        << "\n";
 }
 
 
@@ -6101,6 +6205,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
     {
+        applyPhysicalCorridorHotStart();
         updateShipStateFlightTest();
         updateShipShells(dt);
         updateShipSimulationDetail(dt);

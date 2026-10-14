@@ -167,6 +167,28 @@ inline constexpr double StandardGravityMps2 = 9.80665;
         : 0.0;
 }
 
+[[nodiscard]] inline double
+newtonianMainVectoringLateralAccelerationLimitMps2(
+    const ShipParams& params
+) noexcept
+{
+    const double main =
+        forwardMainAccelerationLimitMps2(params);
+    if (main <= 0.0)
+        return 0.0;
+
+    // Continuous Newtonian curvature without a hull flip is limited by the
+    // main-nozzle deflection itself, not by the full aft-main magnitude.
+    // Use the weaker of pitch/yaw gimbal envelopes as the 3-D route budget.
+    const double gimbal =
+        std::min(
+            mainGimbalPitchLimitRad(params),
+            mainGimbalYawLimitRad(params)
+        );
+
+    return main * std::sin(gimbal);
+}
+
 [[nodiscard]] inline double manoeuvreAccelerationLimitMps2(
     const ShipParams& params
 ) noexcept

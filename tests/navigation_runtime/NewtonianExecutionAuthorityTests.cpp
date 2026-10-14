@@ -1,4 +1,5 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -35,6 +36,8 @@ ShipParams params()
     p.reverseMainEngineAccelerationMps2 = 50.0f;
     p.strafeAccel = 40.0f;
     p.manoeuvreThrusterAccel = 2.0f;
+    p.mainGimbalPitchLimitRad = 0.12f;
+    p.mainGimbalYawLimitRad = 0.12f;
     p.maxGs = 100.0f;
     p.maxLinearGs = 100.0f;
     return p;
@@ -68,11 +71,13 @@ void testNewtonianCourseAuthorityComesFromMainVector()
         1.0e-9,
         "Newtonian flip-and-burn planning authority disagrees with aft main"
     );
+    const double expectedTvcLateral =
+        36.0 * std::sin(0.12);
     requireNear(
         a.lateralAccelerationMps2,
-        36.0,
-        1.0e-9,
-        "Newtonian path-normal planning authority was still treated as RCS"
+        expectedTvcLateral,
+        1.0e-6,
+        "Newtonian smooth-curve authority was not limited by TVC"
     );
 
     p.manoeuvreThrusterAccel = 100.0f;
@@ -86,13 +91,47 @@ void testNewtonianCourseAuthorityComesFromMainVector()
         withHugeRcs.lateralAccelerationMps2,
         a.lateralAccelerationMps2,
         1.0e-9,
-        "Newtonian route authority changed when only precision RCS changed"
+        "Newtonian TVC curvature authority changed when only precision RCS changed"
     );
     requireNear(
         withHugeRcs.feedbackReserveMps2,
         a.feedbackReserveMps2,
         1.0e-9,
         "Newtonian feedback reserve leaked precision RCS authority"
+    );
+}
+
+void testNewtonianPlannerProfileUsesSameTvcCurveBudget()
+{
+    const auto p = params();
+    const auto profile =
+        game::navigation::makeNavigationVehicleProfile(
+            p,
+            15.0,
+            5.0,
+            game::navigation::LocalFlightControlLaw::Newtonian
+        );
+
+    const double expectedTvcLateral =
+        50.0 * std::sin(0.12);
+
+    requireNear(
+        profile.maxForwardAccelerationMps2,
+        50.0,
+        1.0e-9,
+        "Newtonian planner lost full straight-line main authority"
+    );
+    requireNear(
+        profile.maxBrakingAccelerationMps2,
+        50.0,
+        1.0e-9,
+        "Newtonian planner lost full flip-and-burn authority"
+    );
+    requireNear(
+        profile.maxLateralAccelerationMps2,
+        expectedTvcLateral,
+        1.0e-6,
+        "Newtonian planner still treats full main as curve authority"
     );
 }
 
@@ -147,12 +186,15 @@ int main()
     try
     {
         testNewtonianCourseAuthorityComesFromMainVector();
+        testNewtonianPlannerProfileUsesSameTvcCurveBudget();
         testAssistedAuthorityIsUnchanged();
         testNoAftMainMeansNoNewtonianRouteAuthority();
 
         std::cout
             << "NEWTONIAN EXECUTION AUTHORITY: PASS\n"
-            << " - route-vector authority comes from aft main\n"
+            << " - straight/flip authority comes from full aft main\n"
+            << " - smooth-curve authority comes from TVC side thrust\n"
+            << " - planner and execution share the same TVC curve doctrine\n"
             << " - precision RCS cannot inflate or starve route tracking\n"
             << " - Assisted authority remains unchanged\n";
         return EXIT_SUCCESS;

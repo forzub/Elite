@@ -416,6 +416,7 @@ private:
     void initializeShipStateFlightTest();
     void updateShipStateFlightTest();
     bool isShipStateFlightTestShip(EntityId id) const noexcept;
+    void applyPhysicalCorridorHotStart();
 
     void initializeFiveHundredShipHerd();
     void initializeShipTierTransitionTest();
@@ -493,6 +494,9 @@ private:
     double m_shipStateFlightTestLastLogSeconds = -1.0;
     std::size_t m_shipStateFlightTestPhase = static_cast<std::size_t>(-1);
     std::uint64_t m_shipStateFlightControlTick = 0;
+
+    bool m_physicalCorridorHotStartRequested = false;
+    bool m_physicalCorridorHotStartApplied = false;
 
     struct FiveHundredShipHerdMember
     {

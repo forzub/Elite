@@ -352,12 +352,18 @@ private:
     game::navigation::autopilot::NewtonianOptimalController
         m_clientDockingNewtonianStabilizePilotController {};
 
+    // Assisted docking-entry safety owns ONE selected inertial course.
+    // It is deliberately not a trajectory/follower state.  Once the velocity
+    // vector acquires this direction, linear acceleration is removed and the
+    // ship coasts while route planning/entry binding finishes.
     struct DockAssistedSafeRecoveryState
     {
         bool active = false;
+        bool stopFallback = false;
         std::uint64_t serial = 0;
-        double startedServerSeconds = 0.0;
-        game::navigation::AssistedSafeCourseRecoveryPlan plan;
+        glm::dvec3 direction {0.0, 0.0, -1.0};
+        double targetSpeedMps = 0.0;
+        double sceneRayMeters = 0.0;
     };
     DockAssistedSafeRecoveryState m_dockAssistedSafeRecovery {};
 
@@ -502,6 +508,12 @@ private:
         bool active = false;
         std::uint64_t serial = 0;
         game::navigation::planner::LateBoundRouteBackbone backbone;
+
+        // One-shot projected handoff.  The lead is derived from the accepted
+        // route's distance to its first real turn divided by live ballistic
+        // speed.  It gives the cheap entry bind time to finish without ever
+        // throwing away/re-running the expensive downstream route.
+        double leadSeconds = 0.0;
     };
     DockLateEntryState m_dockLateEntry {};
 

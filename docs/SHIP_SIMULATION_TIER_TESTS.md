@@ -58,6 +58,10 @@ it must never carry hit results or authoritative physics.
 Safe work is moved to clients:
 
 - RouteOnly/Kinematic server truth updates at low cadence;
+- per-session replication cadence is also bounded by MotionFidelity
+  (`RouteOnly≈2 Hz`, `Kinematic≈5 Hz`, `Response≈10 Hz` by default);
+- a distant client may receive the same shared FullControl target more slowly
+  than the player actually fighting it;
 - client render transforms dead-reckon/interpolate between snapshots;
 - proxy rendering/culling stays client/GPU-side;
 - maps consume the replicated authoritative ship identity/fidelity.

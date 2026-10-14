@@ -44,6 +44,16 @@ struct ReplicationInterestPolicy
     double tacticalIntervalSeconds = 0.0;
     double nearbyIntervalSeconds = 0.20;
     double coarseIntervalSeconds = 1.00;
+
+    // Motion fidelity is a second, independent transport budget. A nearby
+    // RouteOnly/Kinematic ship does not need full snapshot cadence merely
+    // because it lies inside a broad network radius; the client already owns
+    // bounded presentation dead-reckoning. These values are minimum intervals
+    // and are combined with spatial interest using max().
+    double fullControlMotionIntervalSeconds = 0.0;
+    double responseMotionIntervalSeconds = 0.10;
+    double kinematicMotionIntervalSeconds = 0.20;
+    double routeOnlyMotionIntervalSeconds = 0.50;
 };
 
 struct ShipReplicationInterestDecision
@@ -92,6 +102,48 @@ inline double replicationIntervalSeconds(
     return std::numeric_limits<double>::infinity();
 }
 
+inline double replicationMotionIntervalSeconds(
+    game::simulation::ShipMotionFidelity fidelity,
+    const ReplicationInterestPolicy& policy
+) noexcept
+{
+    using game::simulation::ShipMotionFidelity;
+
+    switch (fidelity)
+    {
+        case ShipMotionFidelity::FullControl:
+            return std::max(0.0, policy.fullControlMotionIntervalSeconds);
+        case ShipMotionFidelity::Response:
+            return std::max(0.0, policy.responseMotionIntervalSeconds);
+        case ShipMotionFidelity::Kinematic:
+            return std::max(0.0, policy.kinematicMotionIntervalSeconds);
+        case ShipMotionFidelity::RouteOnly:
+            return std::max(0.0, policy.routeOnlyMotionIntervalSeconds);
+    }
+
+    return std::max(0.0, policy.routeOnlyMotionIntervalSeconds);
+}
+
+inline double combinedReplicationIntervalSeconds(
+    ShipReplicationInterestTier tier,
+    game::simulation::ShipMotionFidelity motionFidelity,
+    const ReplicationInterestPolicy& policy
+) noexcept
+{
+    if (tier == ShipReplicationInterestTier::None)
+        return std::numeric_limits<double>::infinity();
+
+    // Local control/reconciliation must never be decimated by a remote-object
+    // presentation budget.
+    if (tier == ShipReplicationInterestTier::Controlled)
+        return replicationIntervalSeconds(tier, policy);
+
+    return std::max(
+        replicationIntervalSeconds(tier, policy),
+        replicationMotionIntervalSeconds(motionFidelity, policy)
+    );
+}
+
 inline ShipReplicationInterestDecision evaluateShipReplicationInterest(
     EntityId controlledEntityId,
     int controlledSystemId,
@@ -109,7 +161,11 @@ inline ShipReplicationInterestDecision evaluateShipReplicationInterest(
         result.sameSystem = true;
         result.distanceMeters = 0.0;
         result.targetIntervalSeconds =
-            replicationIntervalSeconds(result.tier, policy);
+            combinedReplicationIntervalSeconds(
+                result.tier,
+                candidate.motionFidelity,
+                policy
+            );
         return result;
     }
 
@@ -120,7 +176,11 @@ inline ShipReplicationInterestDecision evaluateShipReplicationInterest(
     {
         result.tier = ShipReplicationInterestTier::None;
         result.targetIntervalSeconds =
-            replicationIntervalSeconds(result.tier, policy);
+            combinedReplicationIntervalSeconds(
+                result.tier,
+                candidate.motionFidelity,
+                policy
+            );
         return result;
     }
 
@@ -142,7 +202,11 @@ inline ShipReplicationInterestDecision evaluateShipReplicationInterest(
         result.tier = ShipReplicationInterestTier::Coarse;
 
     result.targetIntervalSeconds =
-        replicationIntervalSeconds(result.tier, policy);
+        combinedReplicationIntervalSeconds(
+            result.tier,
+            candidate.motionFidelity,
+            policy
+        );
     return result;
 }
 

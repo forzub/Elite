@@ -170,6 +170,39 @@ int main()
         std::abs(requireDecision(plan, 4).targetIntervalSeconds - 2.0) < 1e-9,
         "interest tier does not carry its target publication cadence"
     );
+    // Motion fidelity independently caps per-session publication frequency.
+    // A client may be geographically close to a background ship, but smooth
+    // presentation belongs on that client rather than on the server wire.
+    auto motionWorld = world;
+    motionWorld.ships[1].motionFidelity =
+        game::simulation::ShipMotionFidelity::RouteOnly;
+    motionWorld.ships[2].motionFidelity =
+        game::simulation::ShipMotionFidelity::Kinematic;
+
+    const auto motionPlan =
+        game::server::buildShipReplicationInterestPlan(
+            EntityId{1},
+            motionWorld,
+            policy
+        );
+
+    require(
+        std::abs(
+            requireDecision(motionPlan, 2).targetIntervalSeconds - 0.50
+        ) < 1e-9,
+        "RouteOnly tactical ship ignored client-side presentation budget"
+    );
+    require(
+        std::abs(
+            requireDecision(motionPlan, 3).targetIntervalSeconds - 0.25
+        ) < 1e-9,
+        "Kinematic ship did not combine motion and spatial cadence"
+    );
+    require(
+        requireDecision(motionPlan, 1).targetIntervalSeconds == 0.0,
+        "controlled ship was incorrectly decimated by motion fidelity"
+    );
+
     require(
         plan.summary.controlledShips == 1 &&
         plan.summary.tacticalShips == 1 &&

@@ -1685,13 +1685,26 @@ void ClientWorldState::prepareLocalPredictedPresentation(
     if (!isLocalControlledEntity(id) || !ship.descriptor)
         return;
 
+    const auto slotState =
+        game::ship::capability::buildPhysicalControlSlotState(
+            *ship.descriptor,
+            ship.modules
+        );
+    const ShipParams effectivePhysics =
+        game::ship::effectiveShipPhysics(
+            *ship.descriptor,
+            ship.modules
+        );
+
     m_localPredictedPresentationTarget =
         game::client::presentation::sampleLocalPredictedPresentationTarget(
             ship.transform,
             ship.referenceFrame,
-            ship.descriptor->physics,
+            effectivePhysics,
             control,
             world,
+            ship.descriptor->physicalControlModel,
+            slotState,
             fractionalStepSeconds,
             fixedStepSeconds
         );
@@ -1749,13 +1762,22 @@ void ClientWorldState::predict(
         split. Otherwise localPositionMeters would change only on snapshots and
         nearby co-frame infrastructure would appear to pulse.
     */
+    const auto slotState =
+        game::ship::capability::buildPhysicalControlSlotState(
+            *ship.descriptor,
+            ship.modules
+        );
+
     (void)game::client::predictHubTacticalMotion(
         ship.transform,
         ship.referenceFrame,
         effectivePhysics,
         control,
+        ship.descriptor->physicalControlModel,
+        slotState,
         dt
     );
+
 }
 
 

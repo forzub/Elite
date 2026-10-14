@@ -659,17 +659,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
     motion.strafeSpeedMps = glm::dot(relativeWorldVelocity, r);
     motion.liftSpeedMps = glm::dot(relativeWorldVelocity, u);
 
-    // The grey-keypad controls one physical six-direction RCS system in both
-    // flight laws. No axis is promoted to a throttle or a hidden velocity
-    // setpoint. Assisted may stabilize the result afterwards; Newtonian keeps
-    // every tiny impulse as inertial delta-v.
-    motion.manoeuvreAccelerationMps2 =
-        f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
-        r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
-        u * (static_cast<double>(liftInput) * manoeuvreAccel);
-
     if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
+        // Newtonian owns real independent RCS clusters. Their body-axis force
+        // remains a separate actuator from the aft main/TVC system.
+        motion.manoeuvreAccelerationMps2 =
+            f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
+            r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
+            u * (static_cast<double>(liftInput) * manoeuvreAccel);
         // Newtonian main thrust follows the rate-limited physical nozzle axis.
         // RCS remains a separate small body-axis actuator; TVC is never folded
         // into manoeuvreAccelerationMps2.
@@ -772,10 +769,11 @@ void DynamicMotionSystem::applyLocalFrameInput(
     }
 
     // ---------------- Assisted / Elite-style law ----------------
-    // +/- remains the persistent forward-speed controller. Keypad RCS is not
-    // folded into that setpoint: while a body-axis RCS key is held, stabilization
-    // yields on that axis and the small physical thruster moves the ship. On
-    // release, the Assisted controller resumes correcting that axis.
+    // Assisted has no dedicated ordinary RCS. Manual body-axis translation is
+    // allocated to the same vectoring-main authority used by automatic
+    // stabilization. The input semantics survive; the fake manoeuvre actuator
+    // does not.
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
     const double targetSpeedChangeRate =
         std::max(
             static_cast<double>(
@@ -803,15 +801,16 @@ void DynamicMotionSystem::applyLocalFrameInput(
     glm::dvec3 velocityError =
         desiredWorldVelocity - relativeWorldVelocity;
 
-    auto yieldAxisToManualRcs = [&](const glm::dvec3& axis, float input)
+    auto yieldAxisToManualTranslation =
+        [&](const glm::dvec3& axis, float input)
     {
         if (std::abs(static_cast<double>(input)) > 1.0e-6)
             velocityError -= axis * glm::dot(velocityError, axis);
     };
 
-    yieldAxisToManualRcs(f, forwardInput);
-    yieldAxisToManualRcs(r, strafeInput);
-    yieldAxisToManualRcs(u, liftInput);
+    yieldAxisToManualTranslation(f, forwardInput);
+    yieldAxisToManualTranslation(r, strafeInput);
+    yieldAxisToManualTranslation(u, liftInput);
 
     const double longitudinalResponse =
         positiveOr(
@@ -863,18 +862,29 @@ void DynamicMotionSystem::applyLocalFrameInput(
     // complete load envelope along the new nose and leave zero authority for
     // lateral cancellation, making FA-on feel Newtonian for several seconds.
     //
-    // Manual keypad RCS remains a real small gas-limited actuator and is not
-    // silently promoted. The separate automatic stabilization actuator is
-    // what bends the velocity vector toward the nose.
-    const glm::dvec3 manualRcsAcceleration =
+    // Manual Assisted translation and automatic stabilization share the
+    // vectoring-main budget. There is no hidden gas-limited RCS actuator in
+    // this physical family.
+    const glm::dvec3 manualAssistedVectoringAcceleration =
         clampMagnitude(
-            motion.manoeuvreAccelerationMps2,
-            manoeuvreAccel
+            f * (
+                static_cast<double>(forwardInput) *
+                assistedLateralStabilizationAccel
+            ) +
+            r * (
+                static_cast<double>(strafeInput) *
+                assistedLateralStabilizationAccel
+            ) +
+            u * (
+                static_cast<double>(liftInput) *
+                assistedLateralStabilizationAccel
+            ),
+            assistedLateralStabilizationAccel
         );
 
     motion.assistedStabilizationAccelerationMps2 =
         clampSecondaryToTotalAccelerationEnvelope(
-            manualRcsAcceleration,
+            manualAssistedVectoringAcceleration,
             clampMagnitude(
                 lateralVelocityError * lateralGain,
                 assistedLateralStabilizationAccel
@@ -886,8 +896,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         f * requestedMainLongitudinalAcceleration;
     motion.mainEngineAccelerationMps2 =
         clampSecondaryToTotalAccelerationEnvelope(
-            manualRcsAcceleration +
-                motion.assistedStabilizationAccelerationMps2,
+            motion.assistedStabilizationAccelerationMps2,
             requestedMainAcceleration,
             totalLinearEnvelope
         );
@@ -908,8 +917,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
             motion.assistedStabilizationAccelerationMps2 +
                 motion.mainEngineAccelerationMps2,
             clampMagnitude(
-                manualRcsAcceleration +
-                    unservedLongitudinalAcceleration,
+                unservedLongitudinalAcceleration,
                 manoeuvreAccel
             ),
             totalLinearEnvelope

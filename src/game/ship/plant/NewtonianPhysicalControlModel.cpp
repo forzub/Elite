@@ -225,6 +225,7 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
 
     out.effectivePhysics.manoeuvreThrusterAccel =
         static_cast<float>(nominalRcs * manoeuvreFraction);
+    out.effectivePhysics.manoeuvreThrusterAuthorityExplicit = true;
     out.effectivePhysics.strafeAccel =
         static_cast<float>(
             std::max(0.0, static_cast<double>(nominalPhysics.strafeAccel)) *

@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/navigation/DynamicMotionSystem.h"
 
 namespace
 {
@@ -213,6 +215,62 @@ void testAssistedDegradation()
     ));
 }
 
+void testAssistedHasNoGhostRcs()
+{
+    const ShipParams nominal = nominalPhysics();
+    const auto model = PhysicalControlModelId::AssistedI;
+    const auto snapshot = evaluatePhysicalControlModel(
+        model,
+        nominal,
+        healthySlotState(physicalControlSlots(model))
+    );
+
+    assert(snapshot.valid);
+    assert(snapshot.effectivePhysics.manoeuvreThrusterAuthorityExplicit);
+    assert(near(
+        game::ship::manoeuvreAccelerationLimitMps2(
+            snapshot.effectivePhysics
+        ),
+        0.0
+    ));
+    assert(
+        game::ship::assistedLateralStabilizationAccelerationLimitMps2(
+            snapshot.effectivePhysics
+        ) > 0.0
+    );
+
+    game::navigation::DynamicMotionState motion;
+    motion.mode = game::navigation::MotionMode::HubTactical;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+
+    game::navigation::KinematicFrame frame;
+    frame.systemId = 1;
+    frame.frameId = "assisted-no-ghost-rcs";
+    frame.localToWorldBasis = glm::dmat3(1.0);
+    frame.valid = true;
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        motion,
+        frame,
+        snapshot.effectivePhysics,
+        0.02f,
+        0.0f,
+        false,
+        0.0f,
+        0.0f,
+        1.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    assert(near(glm::length(motion.manoeuvreAccelerationMps2), 0.0));
+    assert(glm::length(
+        motion.assistedStabilizationAccelerationMps2
+    ) > 1.0e-6);
+}
+
 void testNewtonianDegradation()
 {
     ShipParams nominal = nominalPhysics();
@@ -345,12 +403,13 @@ int main()
     testSixFixedTopologies();
     testSlotSemantics();
     testAssistedDegradation();
+    testAssistedHasNoGhostRcs();
     testNewtonianDegradation();
     testStateShapeIsPartOfTopology();
 
     std::cout << "SHIP PHYSICAL CONTROL MODELS: PASS\n";
     std::cout << " - six fixed Assisted/Newtonian I/Y/X topologies\n";
-    std::cout << " - Assisted ordinary control uses vectoring mains, no RCS slots\n";
+    std::cout << " - Assisted ordinary control uses vectoring mains, no RCS slots or legacy ghost-RCS fallback\n";
     std::cout << " - Newtonian uses aft vectoring main propulsion plus RCS clusters\n";
     std::cout << " - slot loss degrades kinematic authority without changing construction family\n";
     return 0;

@@ -187,6 +187,7 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     // Assisted has no dedicated ordinary RCS in the new model. Translation
     // and attitude are produced by the vectoring main engines.
     out.effectivePhysics.manoeuvreThrusterAccel = 0.0f;
+    out.effectivePhysics.manoeuvreThrusterAuthorityExplicit = true;
 
     // Assisted translation uses main-nozzle vectoring, not the Newtonian RCS
     // working-fluid accumulator. Keep the accepted motion backend but make its

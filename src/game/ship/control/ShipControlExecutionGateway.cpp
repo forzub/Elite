@@ -4,6 +4,7 @@
 
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 
 namespace game::ship::control
 {
@@ -113,6 +114,10 @@ ShipControlExecutionGateway::evaluateTranslationControl(
 )
 {
     auto& motion = transform.motion;
+    motion.mainPropulsionTorqueBodyNm = glm::dvec3(0.0);
+    motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
+        glm::dvec3(0.0);
+
     const TranslationPath path =
         selectTranslationPath(control, motion.localControlLaw);
 
@@ -178,6 +183,82 @@ ShipControlExecutionGateway::evaluateTranslationControl(
             );
             break;
     }
+
+    return path;
+}
+
+ShipControlExecutionGateway::TranslationPath
+ShipControlExecutionGateway::evaluateTranslationControl(
+    ShipTransform& transform,
+    const ShipParams& capabilities,
+    const ShipControlState& control,
+    game::ship::plant::PhysicalControlModelId model,
+    const std::vector<game::ship::plant::EngineSlotState>& slotState,
+    float dt
+)
+{
+    const TranslationPath path =
+        evaluateTranslationControl(
+            transform,
+            capabilities,
+            control,
+            dt
+        );
+
+    auto& motion = transform.motion;
+    if (dt <= 0.0f ||
+        motion.mode != game::navigation::MotionMode::HubTactical ||
+        !motion.travelFrame.valid)
+    {
+        return path;
+    }
+
+    const glm::dvec3 mainAccelerationWorld =
+        motion.mainEngineAccelerationMps2;
+
+    const glm::dvec3 right(transform.right());
+    const glm::dvec3 up(transform.up());
+    const glm::dvec3 forward(transform.forward());
+
+    // Canonical body basis is +X right, +Y up, +Z aft. ShipTransform::forward
+    // points along body -Z.
+    const glm::dvec3 mainAccelerationBody(
+        glm::dot(mainAccelerationWorld, right),
+        glm::dot(mainAccelerationWorld, up),
+        -glm::dot(mainAccelerationWorld, forward)
+    );
+
+    const auto reaction =
+        game::ship::plant::evaluateMainPropulsionReaction(
+            model,
+            slotState,
+            capabilities,
+            mainAccelerationBody
+        );
+
+    if (!reaction.valid)
+        return path;
+
+    motion.mainPropulsionTorqueBodyNm =
+        reaction.torqueBodyNm;
+    motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
+        reaction.angularAccelerationBodyRadPerSec2;
+
+    // This is physical force application, not a controller request. Do not run
+    // it through normal controlled-rate clamps: an asymmetric damaged main
+    // bank may overpower the surviving attitude-control authority.
+    transform.pitchRate += static_cast<float>(
+        reaction.angularAccelerationBodyRadPerSec2.x *
+        static_cast<double>(dt)
+    );
+    transform.yawRate += static_cast<float>(
+        reaction.angularAccelerationBodyRadPerSec2.y *
+        static_cast<double>(dt)
+    );
+    transform.rollRate += static_cast<float>(
+        reaction.angularAccelerationBodyRadPerSec2.z *
+        static_cast<double>(dt)
+    );
 
     return path;
 }

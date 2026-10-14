@@ -1,12 +1,14 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include "src/game/client/ClientHubTacticalPrediction.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/world/WorldParams.h"
 
@@ -71,6 +73,56 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
         control,
         dt
     );
+
+    return target;
+}
+
+
+inline ShipTransform sampleLocalPredictedPresentationTarget(
+    const ShipTransform& fixedPredictedTransform,
+    const game::simulation::ShipReferenceFrameSnapshot& referenceFrame,
+    const ShipParams& shipParams,
+    const ShipControlState& control,
+    const WorldParams& world,
+    game::ship::plant::PhysicalControlModelId model,
+    const std::vector<game::ship::plant::EngineSlotState>& slotState,
+    float fractionalStepSeconds,
+    float fixedStepSeconds
+)
+{
+    ShipTransform target = fixedPredictedTransform;
+
+    const float maxFraction =
+        std::max(0.0f, fixedStepSeconds);
+
+    const float dt =
+        std::clamp(
+            fractionalStepSeconds,
+            0.0f,
+            maxFraction
+        );
+
+    if (dt <= 0.0f)
+        return target;
+
+    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
+        target,
+        shipParams,
+        control,
+        world,
+        dt
+    );
+
+    (void)game::client::predictHubTacticalMotion(
+        target,
+        referenceFrame,
+        shipParams,
+        control,
+        model,
+        slotState,
+        dt
+    );
+
 
     return target;
 }

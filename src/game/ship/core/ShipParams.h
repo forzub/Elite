@@ -111,6 +111,11 @@ struct ShipParams
     double pitchInertiaKgM2      = 1.0;
     double yawInertiaKgM2        = 1.0;
     double rollInertiaKgM2       = 1.0;
+
+    // Appended for aggregate-initialization compatibility. Distinguishes an
+    // explicitly authored "no manoeuvre thrusters" vehicle from legacy
+    // descriptors that still use strafeAccel as the old RCS fallback.
+    bool manoeuvreThrusterAuthorityExplicit = false;
     
     
 };

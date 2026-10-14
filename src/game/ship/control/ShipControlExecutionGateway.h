@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/world/WorldParams.h"
 
 namespace game::ship::control
@@ -64,6 +66,19 @@ public:
         ShipTransform& transform,
         const ShipParams& capabilities,
         const ShipControlState& control,
+        float dt
+    );
+
+    // Physical-control overload used by authoritative ShipCore. The accepted
+    // translation law still computes the net force, then the per-slot plant
+    // restores the rigid-body r x F consequence that aggregate ShipParams
+    // cannot represent.
+    [[nodiscard]] static TranslationPath evaluateTranslationControl(
+        ShipTransform& transform,
+        const ShipParams& capabilities,
+        const ShipControlState& control,
+        game::ship::plant::PhysicalControlModelId model,
+        const std::vector<game::ship::plant::EngineSlotState>& slotState,
         float dt
     );
 

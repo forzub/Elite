@@ -1,5 +1,6 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/world/WorldParams.h"
 
@@ -48,6 +49,7 @@ struct Scenario
     double durationSeconds;
     double initialForwardSpeedMps;
     ShipControlState control;
+    bool oneShotVelocityAlignment = false;
 };
 
 void require(bool condition, const std::string& message)
@@ -342,6 +344,17 @@ std::vector<Scenario> scenarios()
     }
     {
         ShipControlState c;
+        c.yawInput = 1.0f;
+        out.push_back({"yaw_while_coasting", kScenarioDurationSeconds, 50.0, c});
+    }
+    {
+        ShipControlState c;
+        c.velocityAlignmentCommand =
+            game::navigation::VelocityAlignmentMode::BrakeToStop;
+        out.push_back({"brake_to_stop", 12.0, 100.0, c, true});
+    }
+    {
+        ShipControlState c;
         c.targetSpeedRate = 1.0f;
         c.mainGimbalRightInput = 1.0f;
         out.push_back({"tvc_right_with_main", kScenarioDurationSeconds, 0.0, c});
@@ -449,10 +462,13 @@ void writeCsvHeader(std::ofstream& csv)
         << "cmd_target_speed_rate,cmd_forward,cmd_strafe,cmd_lift,cmd_pitch,cmd_yaw,cmd_roll,"
         << "cmd_gimbal_right,cmd_gimbal_up,"
         << "pos_x_m,pos_y_m,pos_z_m,vel_x_mps,vel_y_mps,vel_z_mps,"
+        << "hull_fwd_x,hull_fwd_y,hull_fwd_z,"
         << "main_ax_mps2,main_ay_mps2,main_az_mps2,"
         << "rcs_ax_mps2,rcs_ay_mps2,rcs_az_mps2,"
         << "assist_ax_mps2,assist_ay_mps2,assist_az_mps2,"
         << "engine_ax_mps2,engine_ay_mps2,engine_az_mps2,"
+        << "main_torque_x_nm,main_torque_y_nm,main_torque_z_nm,"
+        << "main_alpha_pitch_radps2,main_alpha_yaw_radps2,main_alpha_roll_radps2,"
         << "pitch_rate_radps,yaw_rate_radps,roll_rate_radps,"
         << "gimbal_yaw_rad,gimbal_pitch_rad,slot_state\n";
 }
@@ -462,6 +478,7 @@ void writeCsvRow(
     Model model,
     const DamageCase& damage,
     const Scenario& scenario,
+    const ShipControlState& appliedControl,
     double timeSeconds,
     const Snapshot& snapshot,
     const ShipTransform& transform,
@@ -470,7 +487,8 @@ void writeCsvRow(
 {
     const auto& p = snapshot.effectivePhysics;
     const auto& m = transform.motion;
-    const auto& c = scenario.control;
+    const auto& c = appliedControl;
+    const glm::dvec3 hullForward(transform.forward());
 
     csv << std::fixed << std::setprecision(9)
         << modelName(model) << ','
@@ -518,6 +536,9 @@ void writeCsvRow(
         << m.localVelocityMps.x << ','
         << m.localVelocityMps.y << ','
         << m.localVelocityMps.z << ','
+        << hullForward.x << ','
+        << hullForward.y << ','
+        << hullForward.z << ','
         << m.mainEngineAccelerationMps2.x << ','
         << m.mainEngineAccelerationMps2.y << ','
         << m.mainEngineAccelerationMps2.z << ','
@@ -530,6 +551,12 @@ void writeCsvRow(
         << m.engineAccelerationMps2.x << ','
         << m.engineAccelerationMps2.y << ','
         << m.engineAccelerationMps2.z << ','
+        << m.mainPropulsionTorqueBodyNm.x << ','
+        << m.mainPropulsionTorqueBodyNm.y << ','
+        << m.mainPropulsionTorqueBodyNm.z << ','
+        << m.mainPropulsionAngularAccelerationBodyRadPerSec2.x << ','
+        << m.mainPropulsionAngularAccelerationBodyRadPerSec2.y << ','
+        << m.mainPropulsionAngularAccelerationBodyRadPerSec2.z << ','
         << transform.pitchRate << ','
         << transform.yawRate << ','
         << transform.rollRate << ','
@@ -569,6 +596,13 @@ void runScenario(
 
     for (int tick = 0; tick <= ticks; ++tick)
     {
+        ShipControlState appliedControl = scenario.control;
+        if (scenario.oneShotVelocityAlignment && tick > 0)
+        {
+            appliedControl.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::None;
+        }
+
         const double timeSeconds =
             std::min(
                 scenario.durationSeconds,
@@ -582,6 +616,7 @@ void runScenario(
                 model,
                 damage,
                 scenario,
+                appliedControl,
                 timeSeconds,
                 snapshot,
                 transform,
@@ -592,35 +627,33 @@ void runScenario(
         if (tick == ticks)
             break;
 
-        SharedShipPhysics::integrate(
-            transform,
-            snapshot.effectivePhysics,
-            scenario.control,
-            world,
-            static_cast<float>(kDt)
-        );
+        game::ship::control::ShipControlExecutionGateway::
+            integrateAttitude(
+                transform,
+                snapshot.effectivePhysics,
+                appliedControl,
+                world,
+                static_cast<float>(kDt)
+            );
 
-        game::navigation::DynamicMotionSystem::applyLocalFrameInput(
-            transform.motion,
-            transform.motion.travelFrame,
-            snapshot.effectivePhysics,
-            static_cast<float>(kDt),
-            scenario.control.targetSpeedRate,
-            scenario.control.cruiseActive,
-            scenario.control.forwardInput,
-            scenario.control.liftInput,
-            scenario.control.strafeInput,
-            transform.forward(),
-            transform.right(),
-            transform.up()
-        );
+        (void)game::ship::control::ShipControlExecutionGateway::
+            evaluateTranslationControl(
+                transform,
+                snapshot.effectivePhysics,
+                appliedControl,
+                model,
+                damage.slots,
+                static_cast<float>(kDt)
+            );
 
-        game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
-            transform.motion,
-            transform.worldPosition,
-            transform.motion.travelFrame,
-            snapshot.effectivePhysics,
-            kDt
+        require(
+            game::ship::control::ShipControlExecutionGateway::
+                propagateHubTacticalTranslation(
+                    transform,
+                    snapshot.effectivePhysics,
+                    kDt
+                ),
+            "damage matrix lost HubTactical translation frame"
         );
 
         require(
@@ -665,6 +698,10 @@ void runScenario(
         << " final_gimbal_rad=("
         << transform.motion.mainGimbalYawRad << ';'
         << transform.motion.mainGimbalPitchRad << ')'
+        << " final_main_torque_nm=("
+        << transform.motion.mainPropulsionTorqueBodyNm.x << ';'
+        << transform.motion.mainPropulsionTorqueBodyNm.y << ';'
+        << transform.motion.mainPropulsionTorqueBodyNm.z << ')'
         << '\n';
 }
 
@@ -721,7 +758,7 @@ void runMatrix(
         << "dt_s=" << kDt << '\n'
         << "scenario_duration_s=" << kScenarioDurationSeconds << '\n'
         << "note=diagnostic matrix records current production physics; it does not impose desired autopilot behavior\n"
-        << "note=per-slot damage state is logged, but the current accepted motion backend consumes the aggregate ShipParams projection\n";
+        << "note=net translation still uses the accepted aggregate motion law; main-engine reaction torque is restored from per-slot force application\n";
 
     constexpr std::array<Model, 6> models = {
         Model::AssistedI,

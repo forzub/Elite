@@ -1,10 +1,13 @@
 #pragma once
 
+#include <vector>
+
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 
 namespace game::client
 {
@@ -56,6 +59,54 @@ inline bool predictHubTacticalMotion(
             transform,
             params,
             control,
+            dt
+        );
+
+    const bool propagated =
+        game::ship::control::ShipControlExecutionGateway::
+            propagateHubTacticalTranslation(
+                transform,
+                params,
+                static_cast<double>(dt)
+            );
+
+    if (propagated)
+    {
+        transform.referenceVelocityMetersPerSecond =
+            transform.motion.referenceVelocityMps;
+    }
+
+    return propagated;
+}
+
+
+inline bool predictHubTacticalMotion(
+    ShipTransform& transform,
+    const game::simulation::ShipReferenceFrameSnapshot& frameSnapshot,
+    const ShipParams& params,
+    const ShipControlState& control,
+    game::ship::plant::PhysicalControlModelId model,
+    const std::vector<game::ship::plant::EngineSlotState>& slotState,
+    float dt
+)
+{
+    if (!canPredictHubTacticalMotion(transform, frameSnapshot))
+        return false;
+
+    const game::navigation::KinematicFrame frame =
+        travelFrameForPrediction(frameSnapshot);
+
+    transform.motion.travelFrame = frame;
+    transform.motion.matchedToReferenceFrame =
+        frameSnapshot.matchedToReferenceFrame;
+
+    (void)game::ship::control::ShipControlExecutionGateway::
+        evaluateTranslationControl(
+            transform,
+            params,
+            control,
+            model,
+            slotState,
             dt
         );
 

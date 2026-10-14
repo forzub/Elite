@@ -114,6 +114,11 @@ struct DynamicMotionState
     // active control-law speed envelope have been applied.
     glm::dvec3 engineAccelerationMps2 {0.0};
 
+    // Rigid-body reaction of the currently firing physical main slots. These
+    // are diagnostics/state from the physical plant, not controller demands.
+    glm::dvec3 mainPropulsionTorqueBodyNm {0.0};
+    glm::dvec3 mainPropulsionAngularAccelerationBodyRadPerSec2 {0.0};
+
     // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
     double manoeuvreGasPressure01 = 1.0;
     bool manoeuvreGasDepleted = false;

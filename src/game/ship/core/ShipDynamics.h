@@ -171,8 +171,17 @@ inline constexpr double StandardGravityMps2 = 9.80665;
     const ShipParams& params
 ) noexcept
 {
-    const double dedicated =
-        static_cast<double>(params.manoeuvreThrusterAccel);
+    const double dedicated = std::max(
+        0.0,
+        static_cast<double>(params.manoeuvreThrusterAccel)
+    );
+
+    // A migrated physical-control model may explicitly have no manoeuvre
+    // thrusters at all (Assisted). Zero is therefore a real hardware fact,
+    // not a request to resurrect the legacy strafeAccel fallback.
+    if (params.manoeuvreThrusterAuthorityExplicit)
+        return dedicated;
+
     if (dedicated > 0.0)
         return dedicated;
 

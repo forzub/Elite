@@ -108,6 +108,9 @@ ShipParams cobraNominalParams()
     p.reverseMainEngineAvailable = true;
     p.forwardMainEngineAccelerationMps2 = 73.549875f;
     p.reverseMainEngineAccelerationMps2 = 73.549875f;
+    p.mainGimbalPitchLimitRad = 0.12f;
+    p.mainGimbalYawLimitRad = 0.12f;
+    p.mainGimbalRateRadPerSec = 0.14f;
 
     p.autoLevelStrength = 0.0f;
     p.strafeAccel = 73.549875f;

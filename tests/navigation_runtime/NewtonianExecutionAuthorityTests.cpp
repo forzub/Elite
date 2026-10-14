@@ -135,6 +135,37 @@ void testNewtonianPlannerProfileUsesSameTvcCurveBudget()
     );
 }
 
+void testZeroTvcStillProducesValidStraightLineVehicle()
+{
+    auto p = params();
+    p.mainGimbalPitchLimitRad = 0.0f;
+    p.mainGimbalYawLimitRad = 0.0f;
+
+    const auto profile =
+        game::navigation::makeNavigationVehicleProfile(
+            p,
+            15.0,
+            5.0,
+            game::navigation::LocalFlightControlLaw::Newtonian
+        );
+
+    require(
+        profile.valid(),
+        "zero-TVC Newtonian was rejected as an invalid vehicle"
+    );
+    requireNear(
+        profile.maxLateralAccelerationMps2,
+        0.0,
+        1.0e-12,
+        "zero-TVC Newtonian invented continuous curve authority"
+    );
+    require(
+        profile.maxForwardAccelerationMps2 > 0.0 &&
+        profile.maxBrakingAccelerationMps2 > 0.0,
+        "zero-TVC Newtonian lost straight/flip-and-burn authority"
+    );
+}
+
 void testAssistedAuthorityIsUnchanged()
 {
     const auto p = params();
@@ -187,6 +218,7 @@ int main()
     {
         testNewtonianCourseAuthorityComesFromMainVector();
         testNewtonianPlannerProfileUsesSameTvcCurveBudget();
+        testZeroTvcStillProducesValidStraightLineVehicle();
         testAssistedAuthorityIsUnchanged();
         testNoAftMainMeansNoNewtonianRouteAuthority();
 
@@ -195,6 +227,7 @@ int main()
             << " - straight/flip authority comes from full aft main\n"
             << " - smooth-curve authority comes from TVC side thrust\n"
             << " - planner and execution share the same TVC curve doctrine\n"
+            << " - zero-TVC Newtonian remains valid for straight stop/turn/go flight\n"
             << " - precision RCS cannot inflate or starve route tracking\n"
             << " - Assisted authority remains unchanged\n";
         return EXIT_SUCCESS;

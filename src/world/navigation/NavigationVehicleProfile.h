@@ -51,7 +51,11 @@ struct NavigationVehicleProfile
             maxSpeedMps > 0.0 &&
             maxForwardAccelerationMps2 > 0.0 &&
             maxBrakingAccelerationMps2 > 0.0 &&
-            maxLateralAccelerationMps2 > 0.0;
+            // Zero continuous lateral authority is a valid vehicle state.
+            // Such a craft can still execute straight legs and stop/turn/go
+            // joins; non-zero-curvature flight must simply collapse to zero
+            // through-speed or be rejected as infeasible.
+            maxLateralAccelerationMps2 >= 0.0;
     }
 };
 

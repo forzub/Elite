@@ -19,6 +19,7 @@
 #include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/TwoPointRollGeometry.h"
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
+#include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
@@ -860,14 +861,61 @@ public:
             crossTrackErrorMeters >
                 state.trackingPositionToleranceMeters;
 
+        // Assisted-only gentle centerline recapture.
+        //
+        // HARD BOUNDARY:
+        // - this does NOT replace CourseCaptureGuidance;
+        // - this does NOT run for Newtonian;
+        // - this does NOT alter the authored route geometry;
+        // - outside the corridor, the existing emergency capture remains
+        //   authoritative exactly as before.
+        //
+        // The old in-corridor contract used the exact tangent all the way out
+        // to the full tracking tolerance. That allowed a craft to fly tens of
+        // metres parallel to the centerline forever. The helper below adds
+        // only a bounded lateral velocity component toward center.
+        InCorridorCenteringGuidance::Result centering;
+        if constexpr (Law == LocalFlightControlLaw::Assisted)
+        {
+            InCorridorCenteringGuidance::Request centerRequest;
+            centerRequest.routeTangentMap =
+                normalizedOr(poseTangent, referenceTangent);
+            centerRequest.crossTrackErrorMapMeters =
+                crossPositionError;
+            centerRequest.actualSpeedMps = actualSpeed;
+            centerRequest.deadbandMeters =
+                centeringDeadbandMeters;
+            centerRequest.corridorToleranceMeters =
+                state.trackingPositionToleranceMeters;
+            centerRequest.lateralAccelerationAuthorityMps2 =
+                std::max(
+                    0.0,
+                    static_cast<double>(params.strafeAccel)
+                );
+            centerRequest.responseSeconds =
+                std::max(1.0, courseResponseSeconds * 2.0);
+
+            centering =
+                InCorridorCenteringGuidance::evaluate(
+                    centerRequest
+                );
+        }
+
         // Compatibility name only: this is the desired VELOCITY direction.
-        // Under normal in-corridor flight it is exactly the authored tangent.
-        // Temporary capture geometry may own it only after the craft has
-        // actually left the allowed corridor.
+        // Emergency capture owns out-of-corridor recovery. Assisted gentle
+        // centering owns only the interior band. Newtonian retains the exact
+        // pre-change tangent semantics.
         const glm::dvec3 steeringForward =
             emergencyCourseRecovery
                 ? capture.desiredCourseMap
-                : normalizedOr(poseTangent, referenceTangent);
+                : (
+                    centering.valid
+                        ? centering.desiredCourseMap
+                        : normalizedOr(
+                              poseTangent,
+                              referenceTangent
+                          )
+                  );
 
         const double navigationSpeedForCapture =
             glm::length(agent.velocityMapMetersPerSecond);
@@ -1374,7 +1422,10 @@ public:
                     -crossPositionError / crossTrackErrorMeters
                   )
                 : 0.0;
-        out.crossTrackCaptureSpeedMps = 0.0;
+        out.crossTrackCaptureSpeedMps =
+            centering.valid
+                ? centering.desiredClosingSpeedMps
+                : 0.0;
 
         const double navigationSpeed =
             glm::length(agent.velocityMapMetersPerSecond);
@@ -1446,7 +1497,13 @@ public:
         out.turnSpeedSetpointSlewSeconds =
             turnSpeedSetpointSlewSeconds;
         out.crossTrackCorrectionAngleRad =
-            crossTrackCorrectionAngleRad;
+            emergencyCourseRecovery
+                ? crossTrackCorrectionAngleRad
+                : (
+                    centering.valid
+                        ? centering.correctionAngleRad
+                        : 0.0
+                  );
         out.desiredCaptureAngularRateRadPerSec =
             glm::length(captureAngularRateMap);
         out.courseCaptureActive =

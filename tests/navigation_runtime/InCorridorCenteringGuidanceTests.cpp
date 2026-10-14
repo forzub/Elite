@@ -96,6 +96,27 @@ int main()
     }
 
     {
+        // Regression from live Assisted stress telemetry: with ~64 m corridor
+        // tolerance and ~18 m residual offset, centering must still have
+        // meaningful authority. The old double-smoothstep attenuation reduced
+        // this to a fraction of a metre per second and visually stranded the
+        // craft around 20 m from centerline.
+        InCorridorCenteringGuidance::Request r;
+        r.routeTangentMap = {0.0, 0.0, -1.0};
+        r.crossTrackErrorMapMeters = {0.0, 18.0, 0.0};
+        r.actualSpeedMps = 350.0;
+        r.deadbandMeters = 6.4;
+        r.corridorToleranceMeters = 64.0;
+        r.lateralAccelerationAuthorityMps2 = 20.0;
+        r.responseSeconds = 2.0;
+
+        const auto out = InCorridorCenteringGuidance::evaluate(r);
+        assert(out.valid);
+        assert(out.desiredClosingSpeedMps > 5.0);
+        assert(out.desiredCourseMap.y < 0.0);
+    }
+
+    {
         InCorridorCenteringGuidance::Request r;
         r.routeTangentMap = {0.0, 0.0, 0.0};
         r.crossTrackErrorMapMeters = {0.0, 52.0, 0.0};

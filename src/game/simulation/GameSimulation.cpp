@@ -436,6 +436,8 @@ GameSimulation::GameSimulation(
         environmentFlagEnabled("ELITE_500_INTERACTION_TEST");
     m_fiveHundredFullMaterializedStressRequested =
         environmentFlagEnabled("ELITE_500_FULL_MATERIALIZED_STRESS");
+    m_shipAutomaticDetailDisabled =
+        environmentFlagEnabled("ELITE_DISABLE_AUTO_SHIP_DETAIL");
     m_shipTierTransitionTestRequested =
         environmentFlagEnabled("ELITE_SHIP_TIER_TRANSITION_TEST");
 
@@ -1043,6 +1045,7 @@ void GameSimulation::initializeFiveHundredShipHerd()
     {
         reset
             << "time_s,entities,shells,materialized,state_valid,"
+            << "route_only,kinematic,response,full_control,"
             << "active,prewarm,coarse,other,"
             << "mean_slot_error_m,max_slot_error_m,mean_speed_mps\n";
     }
@@ -1214,7 +1217,7 @@ void GameSimulation::updateShipShells(double dt)
 
 void GameSimulation::updateShipSimulationDetail(double dt)
 {
-    if (dt <= 0.0)
+    if (dt <= 0.0 || m_shipAutomaticDetailDisabled)
         return;
 
     m_shipMotionFidelityEvaluationAccumulatorSeconds += dt;
@@ -1282,6 +1285,12 @@ void GameSimulation::updateShipSimulationDetail(double dt)
 
     for (auto& [id, shell] : m_shipShells)
     {
+        if (m_shipTierTransitionTestRequested &&
+            id == m_shipTierTransitionProbeId)
+        {
+            continue;
+        }
+
         auto& runtime = m_shipMotionFidelityStates[id];
         if (runtime.transitionSerial == 0 &&
             runtime.planned != shell.lifecycle.motionFidelity)
@@ -1335,6 +1344,12 @@ void GameSimulation::updateShipSimulationDetail(double dt)
     {
         if (!shipPtr)
             continue;
+
+        if (m_shipTierTransitionTestRequested &&
+            id == m_shipTierTransitionProbeId)
+        {
+            continue;
+        }
 
         auto lifecycleIt = m_shipSimulationLifecycle.find(id);
         if (lifecycleIt == m_shipSimulationLifecycle.end())
@@ -1570,6 +1585,10 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
     std::size_t prewarm = 0;
     std::size_t coarse = 0;
     std::size_t other = 0;
+    std::size_t routeOnly = 0;
+    std::size_t kinematic = 0;
+    std::size_t response = 0;
+    std::size_t fullControl = 0;
     double errorSum = 0.0;
     double maximumError = 0.0;
     double speedSum = 0.0;
@@ -1582,6 +1601,23 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
             continue;
 
         ++live;
+
+        switch (shipMotionFidelity(id))
+        {
+            case game::simulation::ShipMotionFidelity::RouteOnly:
+                ++routeOnly;
+                break;
+            case game::simulation::ShipMotionFidelity::Kinematic:
+                ++kinematic;
+                break;
+            case game::simulation::ShipMotionFidelity::Response:
+                ++response;
+                break;
+            case game::simulation::ShipMotionFidelity::FullControl:
+                ++fullControl;
+                break;
+        }
+
         if (ship)
         {
             ++materialized;
@@ -1646,6 +1682,10 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
             << shells << ','
             << materialized << ','
             << stateValid << ','
+            << routeOnly << ','
+            << kinematic << ','
+            << response << ','
+            << fullControl << ','
             << active << ','
             << prewarm << ','
             << coarse << ','
@@ -1654,6 +1694,17 @@ void GameSimulation::updateFiveHundredShipHerdDiagnostics()
             << maximumError << ','
             << meanSpeed << '\n';
     }
+
+    std::cout
+        << "[500Ships] entities=" << live
+        << " shells=" << shells
+        << " materialized=" << materialized
+        << " motion={route:" << routeOnly
+        << ",kin:" << kinematic
+        << ",response:" << response
+        << ",full:" << fullControl
+        << "} mean_error_m=" << meanError
+        << "\n";
 
     if (materialized != stateValid)
     {

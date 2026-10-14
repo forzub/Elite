@@ -493,6 +493,7 @@ private:
     bool m_fiveHundredShipHerdRequested = false;
     bool m_fiveHundredMaterializedShipHerdRequested = false;
     bool m_fiveHundredFullMaterializedStressRequested = false;
+    bool m_shipAutomaticDetailDisabled = false;
 
     bool m_shipTierTransitionTestRequested = false;
     EntityId m_shipTierTransitionProbeId {0};

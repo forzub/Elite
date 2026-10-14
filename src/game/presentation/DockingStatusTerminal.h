@@ -1,0 +1,223 @@
+#pragma once
+
+#include <algorithm>
+#include <cstddef>
+#include <deque>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace game::presentation
+{
+
+enum class DockingTerminalSeverity
+{
+    Info,
+    Warning,
+    Error
+};
+
+struct DockingTerminalSnapshot
+{
+    bool visible = false;
+    std::string title;
+    std::string phase;
+    std::string planner;
+    std::string safety;
+    std::string handoff;
+    std::string error;
+};
+
+struct DockingTerminalLine
+{
+    std::string text;
+    DockingTerminalSeverity severity = DockingTerminalSeverity::Info;
+    bool cursor = false;
+};
+
+// Pure presentation state machine.
+//
+// HARD BOUNDARY:
+// - consumes only the snapshot DTO above;
+// - owns no SpaceState/navigation/render/audio pointers;
+// - never calls planner, autopilot or docking code;
+// - removal of this file cannot change flight behavior.
+//
+// Rendering and optional character-tick audio are adapters outside this class.
+class DockingStatusTerminal final
+{
+public:
+    struct Output
+    {
+        std::vector<DockingTerminalLine> lines;
+        std::size_t typedCharacters = 0; // optional audio hook
+    };
+
+    void reset() noexcept
+    {
+        *this = {};
+    }
+
+    [[nodiscard]] Output update(
+        const DockingTerminalSnapshot& snapshot,
+        double nowSeconds
+    )
+    {
+        Output out;
+
+        if (!snapshot.visible)
+        {
+            reset();
+            return out;
+        }
+
+        if (!m_initialized)
+        {
+            m_initialized = true;
+            m_lastNowSeconds = nowSeconds;
+            enqueue(snapshot.title.empty() ? "DOCKING" : snapshot.title,
+                    DockingTerminalSeverity::Info);
+            enqueue(snapshot.phase, DockingTerminalSeverity::Info);
+            enqueue(snapshot.planner, DockingTerminalSeverity::Info);
+            enqueue(snapshot.safety, DockingTerminalSeverity::Info);
+            enqueue(snapshot.handoff, DockingTerminalSeverity::Info);
+            if (!snapshot.error.empty())
+                enqueue(snapshot.error, DockingTerminalSeverity::Error);
+            m_last = snapshot;
+        }
+        else
+        {
+            enqueueChanged(m_last.phase, snapshot.phase,
+                           DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.planner, snapshot.planner,
+                           DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.safety, snapshot.safety,
+                           DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.handoff, snapshot.handoff,
+                           DockingTerminalSeverity::Warning);
+
+            if (snapshot.error != m_last.error &&
+                !snapshot.error.empty())
+            {
+                enqueue(snapshot.error, DockingTerminalSeverity::Error);
+            }
+            m_last = snapshot;
+        }
+
+        const double dt =
+            std::clamp(nowSeconds - m_lastNowSeconds, 0.0, 0.25);
+        m_lastNowSeconds = nowSeconds;
+
+        constexpr double CharactersPerSecond = 38.0;
+        m_characterBudget += dt * CharactersPerSecond;
+
+        while (m_characterBudget >= 1.0 && !m_pending.empty())
+        {
+            auto& front = m_pending.front();
+            if (m_revealedCharacters < front.first.size())
+            {
+                ++m_revealedCharacters;
+                ++out.typedCharacters;
+                m_characterBudget -= 1.0;
+            }
+
+            if (m_revealedCharacters >= front.first.size())
+            {
+                m_history.push_back({
+                    front.first,
+                    front.second,
+                    false
+                });
+                while (m_history.size() > MaxHistoryLines)
+                    m_history.pop_front();
+
+                m_pending.pop_front();
+                m_revealedCharacters = 0;
+            }
+        }
+
+        out.lines.assign(m_history.begin(), m_history.end());
+
+        if (!m_pending.empty())
+        {
+            const auto& front = m_pending.front();
+            out.lines.push_back({
+                front.first.substr(0, m_revealedCharacters),
+                front.second,
+                true
+            });
+        }
+        else if (!out.lines.empty())
+        {
+            out.lines.back().cursor = cursorVisible(nowSeconds);
+        }
+
+        if (out.lines.size() > MaxVisibleLines)
+        {
+            out.lines.erase(
+                out.lines.begin(),
+                out.lines.begin() +
+                    static_cast<std::ptrdiff_t>(
+                        out.lines.size() - MaxVisibleLines
+                    )
+            );
+        }
+
+        return out;
+    }
+
+private:
+    static constexpr std::size_t MaxHistoryLines = 24;
+    static constexpr std::size_t MaxVisibleLines = 14;
+
+    void enqueue(
+        const std::string& text,
+        DockingTerminalSeverity severity
+    )
+    {
+        if (text.empty())
+            return;
+
+        if (!m_pending.empty() &&
+            m_pending.back().first == text)
+        {
+            return;
+        }
+
+        if (!m_history.empty() &&
+            m_history.back().text == text)
+        {
+            return;
+        }
+
+        m_pending.emplace_back(text, severity);
+    }
+
+    void enqueueChanged(
+        const std::string& previous,
+        const std::string& current,
+        DockingTerminalSeverity severity
+    )
+    {
+        if (current != previous && !current.empty())
+            enqueue(current, severity);
+    }
+
+    [[nodiscard]] static bool cursorVisible(double nowSeconds) noexcept
+    {
+        const auto phase =
+            static_cast<long long>(nowSeconds * 2.0);
+        return (phase & 1LL) == 0;
+    }
+
+    bool m_initialized = false;
+    double m_lastNowSeconds = 0.0;
+    double m_characterBudget = 0.0;
+    std::size_t m_revealedCharacters = 0;
+
+    DockingTerminalSnapshot m_last {};
+    std::deque<std::pair<std::string, DockingTerminalSeverity>> m_pending;
+    std::deque<DockingTerminalLine> m_history;
+};
+
+} // namespace game::presentation

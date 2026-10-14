@@ -43,7 +43,7 @@ int main()
         require(out.typedCharacters > 0, "changed status was not queued");
 
         snapshot.error = "error: handoff drift";
-        for (int i = 3; i < 8; ++i)
+        for (int i = 3; i < 16; ++i)
             out = terminal.update(snapshot, static_cast<double>(i));
 
         bool sawError = false;
@@ -61,7 +61,7 @@ int main()
         require(sawError, "terminal never surfaced queued error");
 
         snapshot.visible = false;
-        out = terminal.update(snapshot, 9.0);
+        out = terminal.update(snapshot, 16.0);
         require(out.lines.empty(), "hidden terminal retained visible lines");
 
         std::cout << "DOCKING STATUS TERMINAL: PASS\n";

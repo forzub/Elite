@@ -5,7 +5,9 @@
 
 #include <glm/glm.hpp>
 
-#include "src/game/navigation/autopilot/AutopilotControlApi.h"
+#include "src/game/navigation/autopilot/HullAttitudeControl.h"
+#include "src/game/navigation/autopilot/HullPoseGuidance.h"
+#include "src/game/ship/core/ShipControlState.h"
 
 namespace game::navigation::assisted
 {
@@ -48,6 +50,10 @@ public:
         // from deliberately commanding a slowdown.
         double selectedSpeedMps = 0.0;
 
+        double maxPitchRateRadPerSec = 0.0;
+        double maxYawRateRadPerSec = 0.0;
+        double maxRollRateRadPerSec = 0.0;
+        double angularAccelerationAuthorityRadPerSec2 = 0.0;
         double deltaSeconds = 0.0;
     };
 
@@ -56,7 +62,8 @@ public:
         bool valid = false;
         bool acquired = false;
         double courseErrorRad = 0.0;
-        autopilot::AutopilotControlRequest request;
+        double hullToVelocityErrorRad = 0.0;
+        ShipControlState control;
     };
 
     [[nodiscard]] static Output evaluate(const Input& in) noexcept
@@ -83,73 +90,147 @@ public:
             std::clamp(glm::dot(current, target), -1.0, 1.0);
         out.courseErrorRad = std::acos(cosine);
 
-        // Course acquisition tolerance, not route geometry.  This exists only
-        // to decide when the pre-route turn is finished.
+        const glm::dvec3 forward =
+            normalizedOr(in.forwardMap, current);
+        out.hullToVelocityErrorRad = std::acos(
+            std::clamp(glm::dot(forward, current), -1.0, 1.0)
+        );
+
+        // Acquisition means BOTH physical Assisted invariants have converged:
+        // the velocity vector is on the selected safe course AND the hull is
+        // again aligned with that velocity.  Never hand a visibly slipping
+        // Assisted craft to the planning coast.
         constexpr double AcquireErrorRad =
             2.0 * 3.14159265358979323846 / 180.0;
+        constexpr double AcquireAngularRateRadPerSec = 0.01;
+        const double angularSpeedRadPerSec =
+            std::sqrt(
+                in.pitchRateRadPerSec * in.pitchRateRadPerSec +
+                in.yawRateRadPerSec * in.yawRateRadPerSec +
+                in.rollRateRadPerSec * in.rollRateRadPerSec
+            );
 
         out.valid = true;
-        out.acquired = out.courseErrorRad <= AcquireErrorRad;
+        out.acquired =
+            out.courseErrorRad <= AcquireErrorRad &&
+            out.hullToVelocityErrorRad <= AcquireErrorRad &&
+            angularSpeedRadPerSec <= AcquireAngularRateRadPerSec;
+
         if (out.acquired)
             return out;
 
-        // Do not point the hull straight at a distant safe direction in one
-        // control sample.  Assisted FA-on would then classify most of the
-        // existing inertial velocity as lateral slip and destroy its energy.
-        // Instead keep a small course lead and let the real Assisted law bend
-        // the velocity vector progressively.
+        // Manual Assisted semantics:
+        //
+        //   pilot turns HULL -> ordinary FA-on bends VELOCITY toward hull.
+        //
+        // The safe-course executor therefore emits ordinary pitch/yaw/roll
+        // inputs only. It must NEVER feed VelocityCourseGuidance or a direct
+        // navigation acceleration path. Those are route-execution semantics
+        // and create a second controller fighting the physical Assisted law.
         constexpr double MaxLeadRad =
             8.0 * 3.14159265358979323846 / 180.0;
         const double step = std::min(out.courseErrorRad, MaxLeadRad);
 
-        glm::dvec3 axis = glm::cross(current, target);
-        double axisLength = glm::length(axis);
-        if (axisLength <= 1.0e-9)
+        glm::dvec3 intermediate = target;
+        if (out.courseErrorRad > 1.0e-9)
         {
-            const glm::dvec3 basis =
-                std::abs(current.y) < 0.9
-                    ? glm::dvec3(0.0, 1.0, 0.0)
-                    : glm::dvec3(1.0, 0.0, 0.0);
-            axis = glm::cross(current, basis);
-            axisLength = glm::length(axis);
+            glm::dvec3 axis = glm::cross(current, target);
+            double axisLength = glm::length(axis);
+            if (axisLength <= 1.0e-9)
+            {
+                const glm::dvec3 basis =
+                    std::abs(current.y) < 0.9
+                        ? glm::dvec3(0.0, 1.0, 0.0)
+                        : glm::dvec3(1.0, 0.0, 0.0);
+                axis = glm::cross(current, basis);
+                axisLength = glm::length(axis);
+            }
+            if (axisLength <= 1.0e-9)
+                return {};
+
+            axis /= axisLength;
+            intermediate =
+                current * std::cos(step) +
+                glm::cross(axis, current) * std::sin(step) +
+                axis * glm::dot(axis, current) *
+                    (1.0 - std::cos(step));
         }
-        if (axisLength <= 1.0e-9)
+
+        autopilot::HullPoseGuidance::Request poseRequest;
+        poseRequest.currentForward = in.forwardMap;
+        poseRequest.currentRight = in.rightMap;
+        poseRequest.currentUp = in.upMap;
+        poseRequest.targetForward = glm::normalize(intermediate);
+        // Safe-course owns no roll geometry. Preserve current up and merely
+        // damp any existing roll rate.
+        poseRequest.targetUp = in.upMap;
+
+        const auto pose =
+            autopilot::HullPoseGuidance::evaluate(poseRequest);
+        if (!pose.valid)
             return {};
 
-        axis /= axisLength;
+        autopilot::HullAttitudeControl::Request attitudeRequest;
+        attitudeRequest.pitchYawErrorRad = {
+            pose.pitchYawErrorLocalRad.x,
+            pose.pitchYawErrorLocalRad.y
+        };
+        attitudeRequest.rollErrorRad = 0.0;
+        attitudeRequest.pitchYawRateRadPerSec = {
+            in.pitchRateRadPerSec,
+            in.yawRateRadPerSec
+        };
+        attitudeRequest.desiredPitchYawRateRadPerSec = {0.0, 0.0};
+        attitudeRequest.rollRateRadPerSec = in.rollRateRadPerSec;
+        attitudeRequest.desiredRollRateRadPerSec = 0.0;
+        attitudeRequest.maxPitchYawRateRadPerSec = {
+            std::max(0.0, in.maxPitchRateRadPerSec),
+            std::max(0.0, in.maxYawRateRadPerSec)
+        };
+        attitudeRequest.maxRollRateRadPerSec =
+            std::max(0.0, in.maxRollRateRadPerSec);
+        attitudeRequest.pitchYawAngularAccelerationAuthorityRadPerSec2 =
+            std::max(1.0e-9, in.angularAccelerationAuthorityRadPerSec2);
+        attitudeRequest.rollAngularAccelerationAuthorityRadPerSec2 =
+            std::max(1.0e-9, in.angularAccelerationAuthorityRadPerSec2);
+        attitudeRequest.deltaSeconds =
+            std::max(1.0e-4, in.deltaSeconds);
 
-        // Rodrigues rotation: advance the requested course only by MaxLeadRad.
-        const glm::dvec3 intermediate =
-            current * std::cos(step) +
-            glm::cross(axis, current) * std::sin(step) +
-            axis * glm::dot(axis, current) * (1.0 - std::cos(step));
+        const auto attitude =
+            autopilot::HullAttitudeControl::evaluate(attitudeRequest);
+        if (!attitude.valid)
+            return {};
 
-        const double requestedSpeed =
-            in.selectedSpeedMps > 0.5
-                ? in.selectedSpeedMps
-                : actualSpeed;
+        out.control.pitchInput =
+            static_cast<float>(attitude.pitchYawInput.x);
+        out.control.yawInput =
+            static_cast<float>(attitude.pitchYawInput.y);
+        out.control.rollInput =
+            static_cast<float>(attitude.rollInput);
 
-        auto& request = out.request;
-        request.desiredVelocityMapMps =
-            glm::normalize(intermediate) * requestedSpeed;
-        request.desiredLinearAccelerationMapMps2 = glm::dvec3(0.0);
-        request.desiredForwardMap = glm::normalize(intermediate);
-        request.desiredUpMap = in.upMap;
-        request.desiredCourseAngularRateMapRadPerSec = glm::dvec3(0.0);
-        request.desiredRollRateRadPerSec = 0.0;
-
-        request.actualVelocityMapMps = in.actualVelocityMapMps;
-        request.forwardMap = in.forwardMap;
-        request.rightMap = in.rightMap;
-        request.upMap = in.upMap;
-        request.pitchRateRadPerSec = in.pitchRateRadPerSec;
-        request.yawRateRadPerSec = in.yawRateRadPerSec;
-        request.rollRateRadPerSec = in.rollRateRadPerSec;
-        request.stopRequested = false;
-        request.terminalAttitudeHold = false;
-        request.deltaSeconds = std::max(1.0e-4, in.deltaSeconds);
-
+        // No throttle/translation command. Translation remains on the exact
+        // ordinary Assisted manual path, so its physical FA-on controller is
+        // the ONLY system allowed to pull velocity toward the rotated hull.
+        out.control.targetSpeedRate = 0.0f;
         return out;
+    }
+
+private:
+    [[nodiscard]] static glm::dvec3 normalizedOr(
+        const glm::dvec3& value,
+        const glm::dvec3& fallback
+    ) noexcept
+    {
+        const double length = glm::length(value);
+        if (std::isfinite(length) && length > 1.0e-12)
+            return value / length;
+
+        const double fallbackLength = glm::length(fallback);
+        return
+            std::isfinite(fallbackLength) &&
+            fallbackLength > 1.0e-12
+                ? fallback / fallbackLength
+                : glm::dvec3(0.0, 0.0, -1.0);
     }
 };
 

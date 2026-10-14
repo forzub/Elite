@@ -204,6 +204,68 @@ void testPrewarmClaimRaisesOnlyToResponse()
     );
 }
 
+void testClientObservationHintIsStrictlyPresentationBounded()
+{
+    Policy policy;
+
+    require(
+        game::simulation::sanitizeClientObservationDemand(
+            Fidelity::FullControl
+        ) == Fidelity::Response,
+        "client observation hint was allowed to request FullControl"
+    );
+    require(
+        game::simulation::sanitizeClientObservationDemand(
+            Fidelity::Response
+        ) == Fidelity::Response,
+        "client Response hint changed"
+    );
+    require(
+        game::simulation::sanitizeClientObservationDemand(
+            Fidelity::Kinematic
+        ) == Fidelity::Kinematic,
+        "client Kinematic hint changed"
+    );
+
+    require(
+        game::simulation::clientObservationDemandAllowed(
+            Fidelity::Response,
+            policy.responseVisibleDistanceMeters,
+            policy
+        ),
+        "Response hint was rejected at its server distance boundary"
+    );
+    require(
+        !game::simulation::clientObservationDemandAllowed(
+            Fidelity::Response,
+            policy.responseVisibleDistanceMeters + 1.0,
+            policy
+        ),
+        "Response hint exceeded server-validated distance boundary"
+    );
+    require(
+        game::simulation::clientObservationDemandAllowed(
+            Fidelity::Kinematic,
+            policy.kinematicVisibleDistanceMeters,
+            policy
+        ),
+        "Kinematic hint was rejected at its server distance boundary"
+    );
+    require(
+        !game::simulation::clientObservationDemandAllowed(
+            Fidelity::Kinematic,
+            policy.kinematicVisibleDistanceMeters + 1.0,
+            policy
+        ),
+        "Kinematic hint exceeded server-validated distance boundary"
+    );
+
+    game::simulation::ShipClientObservationInterestState state;
+    state.expiresAtServerTimeSeconds = 10.35;
+    require(state.live(10.34), "fresh camera hint expired too early");
+    require(state.live(10.35), "camera hint did not include expiry epoch");
+    require(!state.live(10.36), "stale camera hint remained live");
+}
 void testHysteresisPromotesImmediatelyAndDemotesInSteps()
 {
     Policy policy;
@@ -282,6 +344,7 @@ int main()
         testStrongestOfSeveralPlayersWins();
         testExplicitCombatClaimForcesServerFullControl();
         testPrewarmClaimRaisesOnlyToResponse();
+        testClientObservationHintIsStrictlyPresentationBounded();
         testHysteresisPromotesImmediatelyAndDemotesInSteps();
 
         std::cout
@@ -292,6 +355,7 @@ int main()
             << " - strongest of several player observers wins\n"
             << " - Active combat claims force shared server FullControl\n"
             << " - Prewarm interaction claims require Response, not FullControl\n"
+            << " - client camera hints are capped at Response, distance checked, and expire\n"
             << " - promotion is immediate and demotion is hysteretic\n";
         return EXIT_SUCCESS;
     }

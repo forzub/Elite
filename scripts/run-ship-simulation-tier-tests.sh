@@ -43,10 +43,11 @@ case "${MODE}" in
                remote_ship_presentation_contract_tests \
                replication_interest_contract_tests \
                wire_data_plane_contract_tests \
+               client_observation_interest_contract_tests \
       -j "${JOBS}"
 
     ctest --test-dir build/tests/architecture_contracts \
-      -R "^(system_map_ship_sampling_contracts|detail_map_runtime_sampling_contracts|remote_ship_presentation_contracts|replication_interest_contracts|wire_data_plane_contracts)$" \
+      -R "^(system_map_ship_sampling_contracts|detail_map_runtime_sampling_contracts|remote_ship_presentation_contracts|replication_interest_contracts|wire_data_plane_contracts|client_observation_interest_contracts)$" \
       --output-on-failure
     ;;
 

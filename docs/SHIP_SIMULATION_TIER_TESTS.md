@@ -48,12 +48,21 @@ For every shared ship, the server evaluates all player-controlled observer
 ships and uses the strongest required MotionFidelity. Therefore one player's
 aim/combat demand upgrades the same authoritative entity for every client.
 
-The first implementation uses each controlled ship's authoritative forward axis
-as the server-side observation direction. That is intentionally conservative
-and secure, but it does not yet know a client's free-look/rear-camera direction.
-The next networking refinement should send a small observation-interest claim
-(camera/aim direction only). Such a claim may raise server simulation demand;
-it must never carry hit results or authoritative physics.
+The server always evaluates a conservative observer from each controlled ship's
+authoritative forward axis. In addition, the client publishes a bounded
+camera-interest hint every ~100 ms from the real active cockpit/rear/drone
+camera. The hint contains only target EntityIds plus `Kinematic`/`Response`
+interest:
+
+- at most 64 targets;
+- it expires after 350 ms if the client stops publishing;
+- the server re-checks observer ownership, system membership and distance;
+- the wire format cannot represent a `FullControl` request;
+- several clients are merged by strongest valid demand.
+
+Therefore free-look/rear-camera observation can prewarm a real shared ship, but
+only server-side proximity, aim logic and interaction claims can require
+`FullControl`. The client never reports hit results or authoritative physics.
 
 Safe work is moved to clients:
 
@@ -121,8 +130,10 @@ Answers only deterministic questions:
 4. the strongest of several players wins;
 5. a live interaction claim forces server FullControl;
 6. promotion/demotion hysteresis is correct;
-7. MotionFidelity survives replication into System/Detail map sampling;
-8. response physics/control contracts still pass.
+7. MotionFidelity survives the TCP data-plane and System/Detail map sampling;
+8. client camera-interest wire data cannot request FullControl and is capped;
+9. per-session replication cadence respects MotionFidelity;
+10. response physics/control contracts still pass.
 
 No performance conclusion is drawn from this test.
 

@@ -202,6 +202,29 @@ public:
             if (!o.worldReady)
                 return action;
 
+            // The server applies the diagnostic hot-start on a fixed step and
+            // the client observes it on a later snapshot. Do not mistake the
+            // first world-ready zero-speed snapshot for the requested
+            // high-speed boundary.
+            if (m_assistedHighSpeedManeuver &&
+                o.speedMps + 1.0e-6 < m_highSpeedMinimumRequestMps)
+            {
+                if (m_highSpeedArmingStartedAt < -1.0e20)
+                    m_highSpeedArmingStartedAt = o.universeSeconds;
+
+                if (o.universeSeconds - m_highSpeedArmingStartedAt >= 5.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "Assisted high-speed hot-start was not observed within 5 seconds"
+                    );
+                    m_complete = true;
+                    flush();
+                }
+                return action;
+            }
+
             m_started = true;
             m_startedAt = o.universeSeconds;
             m_stepStartedAt = o.universeSeconds;
@@ -997,6 +1020,7 @@ private:
     bool m_simpleCorridor = false;
     bool m_assistedHighSpeedManeuver = false;
 
+    double m_highSpeedArmingStartedAt = -1.0e30;
     double m_highSpeedMinimumRequestMps = 350.0;
     double m_highSpeedMinimumRouteReadyMps = 300.0;
     double m_highSpeedRequestAt = -1.0e30;

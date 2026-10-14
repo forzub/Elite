@@ -8399,12 +8399,16 @@ bool GameSimulation::submitClientObservationInterest(
     }
 
     auto& state = m_shipClientObservationInterests[observerId];
-    if (state.serial != 0 && serial <= state.serial)
+    const double now = m_serverTimelineClock.timeSeconds();
+
+    // A live stream is monotonic. Once the previous hint has expired, a new
+    // client/session controlling the same entity may restart its local serial.
+    if (state.live(now) && state.serial != 0 && serial <= state.serial)
         return false;
 
     state.serial = serial;
     state.expiresAtServerTimeSeconds =
-        m_serverTimelineClock.timeSeconds() +
+        now +
         game::simulation::ShipClientObservationInterestLifetimeSeconds;
     state.entries.clear();
     state.entries.reserve(entries.size());

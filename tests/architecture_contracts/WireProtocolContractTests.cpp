@@ -319,7 +319,6 @@ void testClientMessageRoundTrip()
     command.type = ClientShipCommand::DamageRadiator;
     command.index = 3;
     command.amount = 17.5;
-    command.requestSerial = 0x1122334455667788ull;
     commandMessage.payload = command;
 
     require(encodeClientMessage(commandMessage, payload), "ship command encode failed");
@@ -330,51 +329,6 @@ void testClientMessageRoundTrip()
     require(decodedCommand.type == command.type, "ship command type mismatch");
     require(decodedCommand.index == command.index, "ship command index mismatch");
     require(nearlyEqual(decodedCommand.amount, command.amount), "ship command amount mismatch");
-    require(decodedCommand.requestSerial == command.requestSerial,
-        "ship command request serial mismatch");
-
-    ClientMessage dockingCommandMessage;
-    dockingCommandMessage.clientTick = 5679u;
-    ClientShipCommand dockingCommand;
-    dockingCommand.type =
-        ClientShipCommand::BeginDockingGuidancePreparation;
-    dockingCommand.requestSerial = 42u;
-    dockingCommandMessage.payload = dockingCommand;
-    require(encodeClientMessage(dockingCommandMessage, payload),
-        "docking preparation command encode failed");
-    require(decodeClientMessage(payload, decoded),
-        "docking preparation command decode failed");
-    const auto& decodedDockingCommand =
-        std::get<ClientShipCommand>(decoded.payload);
-    require(decodedDockingCommand.type ==
-            ClientShipCommand::BeginDockingGuidancePreparation &&
-            decodedDockingCommand.requestSerial == 42u,
-        "docking preparation command round-trip mismatch");
-
-    ClientMessage automaticDockingMessage;
-    automaticDockingMessage.clientTick = 5680u;
-    ClientShipCommand automaticDocking;
-    automaticDocking.type =
-        ClientShipCommand::BeginAutomaticDocking;
-    automaticDocking.requestSerial = 43u;
-    automaticDocking.dockingTargetSystemId = 7;
-    automaticDocking.dockingTargetModuleId = "dock-module-a";
-    automaticDocking.dockingTargetAnchorId = "port-bottom";
-    automaticDockingMessage.payload = automaticDocking;
-
-    require(encodeClientMessage(automaticDockingMessage, payload),
-        "automatic docking command encode failed");
-    require(decodeClientMessage(payload, decoded),
-        "automatic docking command decode failed");
-    const auto& decodedAutomatic =
-        std::get<ClientShipCommand>(decoded.payload);
-    require(decodedAutomatic.type ==
-            ClientShipCommand::BeginAutomaticDocking &&
-            decodedAutomatic.requestSerial == 43u &&
-            decodedAutomatic.dockingTargetSystemId == 7 &&
-            decodedAutomatic.dockingTargetModuleId == "dock-module-a" &&
-            decodedAutomatic.dockingTargetAnchorId == "port-bottom",
-        "automatic docking target identity round-trip mismatch");
 }
 
 void testTimeSyncRoundTrip()

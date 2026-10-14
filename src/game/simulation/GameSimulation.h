@@ -137,6 +137,13 @@ public:
         EntityId id
     ) const noexcept;
 
+    game::simulation::ShipMaterializedFidelity shipMaterializedFidelity(
+        EntityId id
+    ) const noexcept;
+
+    bool shipUsesDetailedSimulation(EntityId id) const noexcept;
+    bool promoteShipToDetailedSimulation(EntityId id);
+
     const game::simulation::ShipShellState* shipShell(EntityId id) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
 

@@ -5727,31 +5727,36 @@ m_hubVelocityMetersPerSecond[hubId] =
             // hull followed by a 200 ms orientation jump.
             ship.propagateMotionOrientation(fdt);
 
-            if constexpr (game::runtime::ActivationShipSystemsCadenceEnabled)
+            if (shipUsesDetailedSimulation(id))
             {
-                const auto systemsMode = activationExecutionMode(id);
-                auto& systemsState = m_shipSystemsCadenceStates[id];
-                const auto systemsCadence =
-                    game::simulation::activation::advanceShipSystemsCadence(
-                        systemsState,
-                        systemsMode,
-                        dt,
-                        m_serverTimelineClock.timeSeconds(),
-                        m_activationExecutionPolicy
-                    );
-
-                if (systemsCadence.execute)
+                if constexpr (
+                    game::runtime::ActivationShipSystemsCadenceEnabled)
                 {
-                    ship.updateSystems(
-                        static_cast<float>(
-                            systemsCadence.executionDeltaSeconds
-                        )
-                    );
+                    const auto systemsMode = activationExecutionMode(id);
+                    auto& systemsState = m_shipSystemsCadenceStates[id];
+                    const auto systemsCadence =
+                        game::simulation::activation::
+                            advanceShipSystemsCadence(
+                                systemsState,
+                                systemsMode,
+                                dt,
+                                m_serverTimelineClock.timeSeconds(),
+                                m_activationExecutionPolicy
+                            );
+
+                    if (systemsCadence.execute)
+                    {
+                        ship.updateSystems(
+                            static_cast<float>(
+                                systemsCadence.executionDeltaSeconds
+                            )
+                        );
+                    }
                 }
-            }
-            else
-            {
-                ship.updateSystems(fdt);
+                else
+                {
+                    ship.updateSystems(fdt);
+                }
             }
         }
 
@@ -6136,6 +6141,12 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!shipPtr)
                 continue;
 
+            // Response NPCs do not run an individual receiver over the entire
+            // system signal list. They use navigation/combat broad-phase data;
+            // player/explicit detailed actors keep the rich receiver model.
+            if (!shipUsesDetailedSimulation(id))
+                continue;
+
             Ship& ship = *shipPtr;
             const int shipSystemId =
                 ship.core().transform().motion.systemId;
@@ -6173,6 +6184,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             for (auto& [id, shipPtr] : m_ships)
             {
                 if (!shipPtr)
+                    continue;
+
+                if (!shipUsesDetailedSimulation(id))
                     continue;
 
                 Ship& ship = *shipPtr;
@@ -7735,6 +7749,49 @@ GameSimulation::shipSimulationTier(EntityId id) const noexcept
     return game::simulation::ShipSimulationTier::MaterializedShip;
 }
 
+game::simulation::ShipMaterializedFidelity
+GameSimulation::shipMaterializedFidelity(EntityId id) const noexcept
+{
+    const auto shellIt = m_shipShells.find(id);
+    if (shellIt != m_shipShells.end())
+        return shellIt->second.lifecycle.materializedFidelity;
+
+    const auto it = m_shipSimulationLifecycle.find(id);
+    if (it != m_shipSimulationLifecycle.end())
+        return it->second.materializedFidelity;
+
+    return game::simulation::ShipMaterializedFidelity::Response;
+}
+
+
+bool GameSimulation::shipUsesDetailedSimulation(EntityId id) const noexcept
+{
+    const auto it = m_shipSimulationLifecycle.find(id);
+    return
+        it != m_shipSimulationLifecycle.end() &&
+        it->second.usesDetailedSimulation();
+}
+
+
+bool GameSimulation::promoteShipToDetailedSimulation(EntityId id)
+{
+    if (!getShip(id))
+        return false;
+
+    auto it = m_shipSimulationLifecycle.find(id);
+    if (it == m_shipSimulationLifecycle.end())
+        return false;
+
+    if (it->second.materializedFidelity !=
+        game::simulation::ShipMaterializedFidelity::Detailed)
+    {
+        it->second.promoteDetailed();
+    }
+
+    return true;
+}
+
+
 
 bool GameSimulation::materializeShipShell(EntityId id)
 {
@@ -8938,6 +8995,8 @@ bool GameSimulation::debugSetShipStructuralLinkHealth(
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
 
+    (void)promoteShipToDetailedSimulation(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9019,6 +9078,8 @@ bool GameSimulation::debugDestroyShipModule(EntityId id, const std::string& modu
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
 
+    (void)promoteShipToDetailedSimulation(id);
+
     Ship* ship = getShip(id);
     if (!ship)
     {
@@ -9040,6 +9101,8 @@ bool GameSimulation::debugDetachShipModule(EntityId id, const std::string& modul
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
 
+    (void)promoteShipToDetailedSimulation(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9059,6 +9122,8 @@ bool GameSimulation::debugReattachShipModule(
 {
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
+
+    (void)promoteShipToDetailedSimulation(id);
 
     Ship* ship = getShip(id);
     if (!ship)
@@ -9081,6 +9146,8 @@ bool GameSimulation::startShipRepairJob(
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
 
+    (void)promoteShipToDetailedSimulation(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9098,6 +9165,8 @@ bool GameSimulation::ejectShipCockpitCapsule(EntityId id)
 {
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
+
+    (void)promoteShipToDetailedSimulation(id);
 
     Ship* ship = getShip(id);
     if (!ship)
@@ -9130,6 +9199,8 @@ bool GameSimulation::debugHangShipModule(EntityId id, const std::string& moduleI
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
 
+    (void)promoteShipToDetailedSimulation(id);
+
     Ship* ship = getShip(id);
     if (!ship)
         return false;
@@ -9144,6 +9215,8 @@ bool GameSimulation::debugReevaluateShipStructure(EntityId id)
 {
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
+
+    (void)promoteShipToDetailedSimulation(id);
 
     Ship* ship = getShip(id);
     if (!ship)
@@ -9160,6 +9233,8 @@ bool GameSimulation::debugRestoreShipModule(EntityId id, const std::string& modu
 {
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
+
+    (void)promoteShipToDetailedSimulation(id);
 
     Ship* ship = getShip(id);
     if (!ship)
@@ -9180,6 +9255,8 @@ bool GameSimulation::debugResetShipStructure(EntityId id)
 {
     if (!getShip(id) && shipShell(id))
         (void)materializeShipShell(id);
+
+    (void)promoteShipToDetailedSimulation(id);
 
     Ship* ship = getShip(id);
     if (!ship)

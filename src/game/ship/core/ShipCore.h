@@ -328,6 +328,18 @@ private:
     ShipTransform                               m_transform;
     game::ship::state::ShipState                m_state;
     ShipParams                                  m_params;
+
+    // Resolved response profile cache. Descriptor/topology/damage may be rich,
+    // but motion consumes one compact coefficient set until one of those
+    // source revisions changes.
+    mutable game::ship::capability::ShipCapabilitySnapshot
+        m_cachedCapability;
+    mutable std::uint64_t m_cachedConstructionRevision =
+        ~std::uint64_t{0};
+    mutable std::uint64_t m_cachedActuatorRevision =
+        ~std::uint64_t{0};
+    mutable std::uint64_t m_cachedMassRevision =
+        ~std::uint64_t{0};
     // ShipController                              m_controller;
 
     // ───────────────

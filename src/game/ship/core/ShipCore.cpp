@@ -243,6 +243,21 @@ ShipCore::capabilities() const
     if (!m_state.valid())
         return {};
 
+    const std::uint64_t constructionRevision =
+        m_state.construction.revision;
+    const std::uint64_t actuatorRevision =
+        m_state.actuators.revision;
+    const std::uint64_t massRevision =
+        m_state.massProperties.revision;
+
+    if (m_cachedCapability.valid &&
+        m_cachedConstructionRevision == constructionRevision &&
+        m_cachedActuatorRevision == actuatorRevision &&
+        m_cachedMassRevision == massRevision)
+    {
+        return m_cachedCapability;
+    }
+
     auto out =
         game::ship::capability::buildShipCapability(
             *m_state.construction.definition,
@@ -253,7 +268,12 @@ ShipCore::capabilities() const
     if (out.valid)
         m_state.massProperties.applyTo(out.effectivePhysics);
 
-    return out;
+    m_cachedCapability = out;
+    m_cachedConstructionRevision = constructionRevision;
+    m_cachedActuatorRevision = actuatorRevision;
+    m_cachedMassRevision = massRevision;
+
+    return m_cachedCapability;
 }
 
 ShipParams ShipCore::effectivePhysics() const

@@ -4,6 +4,11 @@ set -euo pipefail
 MODE="${1:-contracts}"
 JOBS="${JOBS:-8}"
 
+build_game() {
+  echo "[ship-tier-test] building EliteGame"
+  cmake --build build --target EliteGame -j "${JOBS}"
+}
+
 case "${MODE}" in
   contracts)
     cmake --build build --target EliteGame -j "${JOBS}"
@@ -22,21 +27,25 @@ case "${MODE}" in
     ;;
 
   shell500)
+    build_game
     echo "[ship-tier-test] 500 total: 500 TrafficShell, visible formation"
     exec env ELITE_500_SHIPS_TEST=1 ./build/EliteGame.exe
     ;;
 
   mixed500)
+    build_game
     echo "[ship-tier-test] 500 total: 24 materialized + 476 TrafficShell"
     exec env ELITE_500_MATERIALIZED_SHIPS_TEST=1 ./build/EliteGame.exe
     ;;
 
   tier)
+    build_game
     echo "[ship-tier-test] standalone lifecycle: shell -> materialized -> derelict -> wreck shell"
     exec env ELITE_SHIP_TIER_TRANSITION_TEST=1 ./build/EliteGame.exe
     ;;
 
   combined)
+    build_game
     echo "[ship-tier-test] physical state flight + 500 shells + standalone lifecycle"
     exec env \
       ELITE_SHIP_STATE_FLIGHT_TEST=1 \
@@ -46,6 +55,7 @@ case "${MODE}" in
     ;;
 
   fullstress)
+    build_game
     echo "[ship-tier-test] WARNING: intentional 500 FULL materialized torture test."
     echo "[ship-tier-test] This may be very slow and is NOT the normal scalability path."
     exec env ELITE_500_FULL_MATERIALIZED_STRESS=1 ./build/EliteGame.exe

@@ -13,6 +13,7 @@
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
 #include "src/game/simulation/ShipCoreStatus.h"
+#include "src/game/simulation/ShipSimulationTier.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/simulation/NavigationExecutionSnapshot.h"
 #include "src/game/diagnostics/HubMotionLab.h"
@@ -28,6 +29,10 @@ struct ShipSnapshot
     ObjectType                                          typeId;
     std::uint64_t                                       acknowledgedControlTick = 0;
     game::diagnostics::HubMotionLabActorKind            motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
+    game::simulation::ShipSimulationTier                 simulationTier =
+        game::simulation::ShipSimulationTier::MaterializedShip;
+    game::simulation::ShipMaterializedFidelity           materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Detailed;
     
     ShipTransform                                       transform;
     game::simulation::ShipReferenceFrameSnapshot         referenceFrame;

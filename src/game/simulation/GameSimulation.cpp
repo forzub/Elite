@@ -6260,6 +6260,15 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.typeId = ship.core().desc().typeId;
         s.role = ship.core().role();
         s.motionLabKind = hubMotionLabActorKind(id);
+        {
+            const auto lifecycleIt = m_shipSimulationLifecycle.find(id);
+            if (lifecycleIt != m_shipSimulationLifecycle.end())
+            {
+                s.simulationTier = lifecycleIt->second.tier;
+                s.materializedFidelity =
+                    lifecycleIt->second.materializedFidelity;
+            }
+        }
 
         const auto navigationExecutionIt =
             m_npcNavigationExecutionSnapshots.find(id);
@@ -6528,6 +6537,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.instanceId = shell.registry.instanceId;
         s.role = ShipRole::NPC;
         s.typeId = shell.definition->typeId;
+        s.simulationTier = shell.lifecycle.tier;
+        s.materializedFidelity =
+            shell.lifecycle.materializedFidelity;
         s.transform = shell.transform;
 
         s.referenceFrame.systemId = shell.transform.motion.systemId;
@@ -7643,6 +7655,10 @@ EntityId GameSimulation::spawnShip(
         role == ShipRole::Player
             ? game::simulation::ShipActorKind::Player
             : game::simulation::ShipActorKind::NpcPilot;
+    lifecycle.materializedFidelity =
+        role == ShipRole::Player
+            ? game::simulation::ShipMaterializedFidelity::Detailed
+            : game::simulation::ShipMaterializedFidelity::Response;
     lifecycle.pilotPresent = true;
     m_shipSimulationLifecycle[id] = lifecycle;
 

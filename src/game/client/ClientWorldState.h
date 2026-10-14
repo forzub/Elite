@@ -28,6 +28,7 @@
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/simulation/ShipCoreStatus.h"
+#include "src/game/simulation/ShipSimulationTier.h"
 #include "src/game/damage/DamageEvent.h"
 
 #include "scene/EntityID.h"
@@ -61,6 +62,10 @@ struct ClientShipState
     ObjectType                                      typeId;
     std::uint64_t                                   acknowledgedControlTick = 0;
     game::diagnostics::HubMotionLabActorKind        motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
+    game::simulation::ShipSimulationTier             simulationTier =
+        game::simulation::ShipSimulationTier::MaterializedShip;
+    game::simulation::ShipMaterializedFidelity       materializedFidelity =
+        game::simulation::ShipMaterializedFidelity::Detailed;
 
     ShipTransform                                   transform;      // 🔥 единственный источник sim state
     ShipTransform                                   renderTransform;

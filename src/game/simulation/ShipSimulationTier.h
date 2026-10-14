@@ -29,6 +29,15 @@ enum class ShipActorKind : std::uint8_t
     AutonomousDrone
 };
 
+// Orthogonal to SimulationTier. A materialized ship can still use a compact
+// response model; only player/explicitly promoted actors need detailed
+// reactor/thermal/module service simulation.
+enum class ShipMaterializedFidelity : std::uint8_t
+{
+    Response = 0,
+    Detailed
+};
+
 struct CoarseShipDamageState
 {
     double structuralIntegrity01 = 1.0;
@@ -61,6 +70,8 @@ struct ShipSimulationLifecycleState
 {
     ShipSimulationTier tier = ShipSimulationTier::MaterializedShip;
     ShipActorKind actorKind = ShipActorKind::NpcPilot;
+    ShipMaterializedFidelity materializedFidelity =
+        ShipMaterializedFidelity::Response;
     bool pilotPresent = true;
 
     // Zero means no formation ownership. These fields are orthogonal to tier:
@@ -76,6 +87,20 @@ struct ShipSimulationLifecycleState
             tier == ShipSimulationTier::MaterializedShip &&
             pilotPresent &&
             actorKind != ShipActorKind::None;
+    }
+
+    [[nodiscard]] bool usesDetailedSimulation() const noexcept
+    {
+        return
+            (tier == ShipSimulationTier::MaterializedShip ||
+             tier == ShipSimulationTier::Derelict) &&
+            materializedFidelity == ShipMaterializedFidelity::Detailed;
+    }
+
+    void promoteDetailed() noexcept
+    {
+        materializedFidelity = ShipMaterializedFidelity::Detailed;
+        ++revision;
     }
 
     void materializeForInteraction() noexcept

@@ -3,7 +3,6 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
-#include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/world/WorldParams.h"
@@ -209,12 +208,18 @@ double distanceToAuthoredArc(const glm::dvec3& position)
 
 void runModel(Model model)
 {
-    ShipDescriptor descriptor =
-        EliteCobraMk1::EliteCobraMk1Descriptor();
+    ShipDescriptor descriptor;
     descriptor.physicalControlModel = model;
     descriptor.localFlightControlLaw =
         game::ship::plant::nativeFlightLaw(model);
     descriptor.physics = cobraNominalParams();
+
+    // Match the production Cobra logical hull geometry without linking the
+    // production descriptor implementation into this standalone runtime test.
+    descriptor.logicalDimensionsValue.enabled = true;
+    descriptor.logicalDimensionsValue.width = 26.0f;
+    descriptor.logicalDimensionsValue.height = 5.0f;
+    descriptor.logicalDimensionsValue.length = 22.2f;
 
     const auto capability =
         game::ship::capability::buildHealthyShipCapability(

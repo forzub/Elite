@@ -35,6 +35,7 @@
 #include "src/game/simulation/activation/ActivationPlanner.h"
 #include "src/game/simulation/activation/ActivationExecutionPolicy.h"
 #include "src/game/simulation/ShipSimulationTier.h"
+#include "src/game/simulation/ShipSimulationDetailPolicy.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -134,6 +135,10 @@ public:
     );
 
     game::simulation::ShipSimulationTier shipSimulationTier(
+        EntityId id
+    ) const noexcept;
+
+    game::simulation::ShipMotionFidelity shipMotionFidelity(
         EntityId id
     ) const noexcept;
 
@@ -408,6 +413,7 @@ private:
     void initializeFiveHundredShipHerd();
     void initializeShipTierTransitionTest();
     void updateShipShells(double dt);
+    void updateShipSimulationDetail(double dt);
     void updateShipTierTransitionTest();
     void updateFiveHundredShipHerdDiagnostics();
     bool buildFiveHundredShipHerdGoal(
@@ -415,6 +421,9 @@ private:
         NpcNavigationGoal& outGoal
     ) const;
     game::simulation::SimulationMode activationExecutionMode(
+        EntityId shipId
+    ) const noexcept;
+    game::simulation::SimulationMode motionExecutionMode(
         EntityId shipId
     ) const noexcept;
     void endUniverseTrajectoryDiagnostic();
@@ -440,6 +449,14 @@ private:
         EntityId,
         game::simulation::ShipSimulationLifecycleState
     > m_shipSimulationLifecycle;
+
+    game::simulation::ShipMotionFidelityPolicy
+        m_shipMotionFidelityPolicy {};
+    std::unordered_map<
+        EntityId,
+        game::simulation::ShipMotionFidelityRuntimeState
+    > m_shipMotionFidelityStates;
+    double m_shipMotionFidelityEvaluationAccumulatorSeconds = 0.0;
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
 

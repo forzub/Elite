@@ -5549,6 +5549,7 @@ m_hubVelocityMetersPerSecond[hubId] =
     {
         updateShipStateFlightTest();
         updateShipShells(dt);
+        updateShipSimulationDetail(dt);
         updateShipTierTransitionTest();
         updateFiveHundredShipHerdDiagnostics();
         // Stage 4B uses one cadence decision for both attitude/control-force
@@ -5602,10 +5603,10 @@ m_hubVelocityMetersPerSecond[hubId] =
             // execution lanes. Stage 4B also decimates motion-control
             // evaluation, while translation propagation remains fixed-step.
             game::simulation::SimulationMode executionMode =
-                game::simulation::SimulationMode::Active;
+                motionExecutionMode(id);
 
-            if constexpr (game::runtime::ActivationNpcAiCadenceEnabled)
-                executionMode = activationExecutionMode(id);
+            if constexpr (!game::runtime::ActivationNpcAiCadenceEnabled)
+                executionMode = game::simulation::SimulationMode::Active;
 
             auto& cadenceState = m_npcAiCadenceStates[id];
             const auto cadence =
@@ -5692,7 +5693,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             if constexpr (
                 game::runtime::ActivationShipMotionControlCadenceEnabled)
             {
-                const auto motionMode = activationExecutionMode(id);
+                const auto motionMode = motionExecutionMode(id);
                 auto& motionState = m_shipMotionControlCadenceStates[id];
                 motionControlCadence =
                     game::simulation::activation::advanceShipMotionControlCadence(
@@ -6281,6 +6282,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             if (lifecycleIt != m_shipSimulationLifecycle.end())
             {
                 s.simulationTier = lifecycleIt->second.tier;
+                s.motionFidelity =
+                    lifecycleIt->second.motionFidelity;
                 s.materializedFidelity =
                     lifecycleIt->second.materializedFidelity;
             }
@@ -6554,6 +6557,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.role = ShipRole::NPC;
         s.typeId = shell.definition->typeId;
         s.simulationTier = shell.lifecycle.tier;
+        s.motionFidelity =
+            shell.lifecycle.motionFidelity;
         s.materializedFidelity =
             shell.lifecycle.materializedFidelity;
         s.transform = shell.transform;
@@ -7671,11 +7676,19 @@ EntityId GameSimulation::spawnShip(
         role == ShipRole::Player
             ? game::simulation::ShipActorKind::Player
             : game::simulation::ShipActorKind::NpcPilot;
+    lifecycle.motionFidelity =
+        role == ShipRole::Player
+            ? game::simulation::ShipMotionFidelity::FullControl
+            : game::simulation::ShipMotionFidelity::Response;
     lifecycle.materializedFidelity =
         role == ShipRole::Player
             ? game::simulation::ShipMaterializedFidelity::Detailed
             : game::simulation::ShipMaterializedFidelity::Response;
     lifecycle.pilotPresent = true;
+
+    game::simulation::ShipMotionFidelityRuntimeState motionState;
+    motionState.planned = lifecycle.motionFidelity;
+    m_shipMotionFidelityStates[id] = motionState;
     m_shipSimulationLifecycle[id] = lifecycle;
 
     markShipGraphDirty(id);
@@ -7720,11 +7733,19 @@ EntityId GameSimulation::spawnTrafficShell(
         game::simulation::ShipSimulationTier::TrafficShell;
     shell.lifecycle.actorKind =
         game::simulation::ShipActorKind::TrafficAutopilot;
+    shell.lifecycle.motionFidelity =
+        game::simulation::ShipMotionFidelity::RouteOnly;
     shell.lifecycle.pilotPresent = true;
     shell.lifecycle.formationId = formationId;
     shell.lifecycle.formationSlot = formationSlot;
 
     m_shipShells.emplace(id, std::move(shell));
+
+    game::simulation::ShipMotionFidelityRuntimeState motionState;
+    motionState.planned =
+        game::simulation::ShipMotionFidelity::RouteOnly;
+    m_shipMotionFidelityStates[id] = motionState;
+
     return id;
 }
 
@@ -7750,6 +7771,21 @@ GameSimulation::shipSimulationTier(EntityId id) const noexcept
 
     return game::simulation::ShipSimulationTier::MaterializedShip;
 }
+
+game::simulation::ShipMotionFidelity
+GameSimulation::shipMotionFidelity(EntityId id) const noexcept
+{
+    const auto shellIt = m_shipShells.find(id);
+    if (shellIt != m_shipShells.end())
+        return shellIt->second.lifecycle.motionFidelity;
+
+    const auto it = m_shipSimulationLifecycle.find(id);
+    if (it != m_shipSimulationLifecycle.end())
+        return it->second.motionFidelity;
+
+    return game::simulation::ShipMotionFidelity::Response;
+}
+
 
 game::simulation::ShipMaterializedFidelity
 GameSimulation::shipMaterializedFidelity(EntityId id) const noexcept
@@ -7891,6 +7927,9 @@ bool GameSimulation::materializeShipShell(EntityId id)
     m_shipShells.erase(shellIt);
     m_ships[id] = std::move(ship);
     m_shipSimulationLifecycle[id] = lifecycle;
+
+    auto& motionState = m_shipMotionFidelityStates[id];
+    motionState.planned = lifecycle.motionFidelity;
     markShipGraphDirty(id);
     return true;
 }
@@ -8040,6 +8079,10 @@ bool GameSimulation::dematerializeShip(
     m_ships.erase(shipIt);
     m_shipSimulationLifecycle.erase(id);
     m_shipShells[id] = std::move(shell);
+
+    auto& motionState = m_shipMotionFidelityStates[id];
+    motionState.planned = m_shipShells[id].lifecycle.motionFidelity;
+
     return true;
 }
 

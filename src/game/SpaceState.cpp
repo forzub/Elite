@@ -2184,6 +2184,7 @@ void SpaceState::updateDockingAdvisory()
             ClientDockingPhase::Stabilizing;
         m_noSafeDockingGuidanceSolution = false;
         m_dockingGuidanceFailureReason.clear();
+        m_dockingStatusWarning.clear();
 
         std::cout
             << "[DockClient] request=" << pending.serial
@@ -2822,7 +2823,21 @@ void SpaceState::updateDockingAdvisory()
 
         bool planningWhileSecuringCourse = false;
 
-        if (automatic)
+        if (automatic && assisted && lateEntryRebind)
+        {
+            // ENTRY-REBIND IS NOT A NEW DOCKING REQUEST.
+            //
+            // The primary Assisted safety course has already been selected
+            // and physically acquired. Re-entering PreplanningSafetyCourse
+            // here used to let a rotating station trigger a second unrelated
+            // course correction while the connector was being rebound,
+            // invalidating the very handoff we were trying to repair.
+            //
+            // Keep the already accepted inertial state and rebuild only the
+            // connector to the immutable backbone.
+            submitAutopilotControl(coastForPlanningControl());
+        }
+        else if (automatic)
         {
             const glm::dvec3 preferredSafetyDirection =
                 glm::length(request.goalMeters - request.startMeters) >
@@ -2860,6 +2875,13 @@ void SpaceState::updateDockingAdvisory()
                     std::max(
                         25.0,
                         definition->requiredClearanceMeters
+                    );
+                safety.courseSafetySpotRadiusMeters =
+                    std::clamp(
+                        request.agentRadiusMeters * 0.35 +
+                            safety.additionalClearanceMeters * 0.25,
+                        15.0,
+                        50.0
                     );
                 safety.courseAccelerationMps2 =
                     request.lateralMps2;
@@ -2973,6 +2995,13 @@ void SpaceState::updateDockingAdvisory()
                     std::max(
                         25.0,
                         definition->requiredClearanceMeters
+                    );
+                safety.courseSafetySpotRadiusMeters =
+                    std::clamp(
+                        request.agentRadiusMeters * 0.35 +
+                            safety.additionalClearanceMeters * 0.25,
+                        15.0,
+                        50.0
                     );
                 safety.courseAccelerationMps2 =
                     request.acceleratingMps2;
@@ -4146,13 +4175,46 @@ void SpaceState::updateDockingAdvisory()
             {
                 if (job->entryRebind)
                 {
-                    // HARD CONTRACT: there is no entry-rebind loop.  The
-                    // expensive route was already retained and this was the
-                    // single projected connector calculation.  If this handoff
-                    // still misses, report the bug explicitly instead of
-                    // chasing the moving ship forever.
-                    fail(
-                        "projected Assisted entry bind missed its one-shot handoff"
+                    // Connector miss is recoverable. The expensive downstream
+                    // backbone remains valid; do NOT fail the docking request
+                    // and do NOT run the primary safe-course selector again.
+                    //
+                    // Re-project from the latest live ballistic state and
+                    // retry only the cheap connector. Worker duration is the
+                    // minimum useful lead because a connector authored for a
+                    // point already passed cannot possibly be adopted.
+                    ++m_dockLateEntry.rebindAttempts;
+                    const double workerSeconds =
+                        std::max(0.0, job->workerDurationMs * 0.001);
+                    m_dockLateEntry.leadSeconds =
+                        std::max(
+                            0.75,
+                            workerSeconds * 1.25
+                        );
+
+                    m_dockingStatusWarning =
+                        "warning: handoff drift; connector retry " +
+                        std::to_string(
+                            m_dockLateEntry.rebindAttempts
+                        );
+
+                    std::cerr
+                        << "[DockClient]"
+                        << " request=" << pending.serial
+                        << " phase=entry-rebind-retry"
+                        << " attempt="
+                        << m_dockLateEntry.rebindAttempts
+                        << " cross_m="
+                        << prefix.crossTrackMeters
+                        << " lead_s="
+                        << m_dockLateEntry.leadSeconds
+                        << std::endl;
+
+                    m_clientDockingPhase =
+                        ClientDockingPhase::Stabilizing;
+                    m_clientDockingSettledSinceServerSeconds = -1.0;
+                    submitAutopilotControl(
+                        coastForPlanningControl()
                     );
                     return;
                 }
@@ -4230,6 +4292,9 @@ void SpaceState::updateDockingAdvisory()
                     std::move(backbone);
                 m_dockLateEntry.leadSeconds =
                     leadSeconds;
+                m_dockLateEntry.rebindAttempts = 0;
+                m_dockingStatusWarning =
+                    "handoff drift: rebinding connector";
 
                 // ============================================================
                 // PROJECTED ENTRY CONTRACT -- DO NOT TURN THIS INTO A LOOP.
@@ -4261,6 +4326,7 @@ void SpaceState::updateDockingAdvisory()
         }
 
         m_dockLateEntry = {};
+        m_dockingStatusWarning.clear();
 
         m_dockAdvice = std::move(job->context);
         m_dockAdvice.plan = std::move(job->plan);

@@ -127,7 +127,7 @@ double sceneRayLength(
     return out;
 }
 
-bool clearSegment(
+bool clearSegmentCenterline(
     const PreplanningSafetyCourseRequest& request,
     const glm::dvec3& a,
     const glm::dvec3& b
@@ -140,6 +140,67 @@ bool clearSegment(
         request.hullRadiusMeters,
         request.additionalClearanceMeters
     );
+}
+
+bool clearSegment(
+    const PreplanningSafetyCourseRequest& request,
+    const glm::dvec3& a,
+    const glm::dvec3& b
+) noexcept
+{
+    if (!clearSegmentCenterline(request, a, b))
+        return false;
+
+    const double spotRadius =
+        std::max(0.0, request.courseSafetySpotRadiusMeters);
+    if (spotRadius <= 1.0e-6)
+        return true;
+
+    const glm::dvec3 segment = b - a;
+    const double segmentLength = glm::length(segment);
+    if (segmentLength <= 1.0e-9)
+        return true;
+
+    const glm::dvec3 forward = segment / segmentLength;
+    const glm::dvec3 axisX = deterministicPerpendicular(forward);
+    const glm::dvec3 axisY =
+        normalizedOr(
+            glm::cross(forward, axisX),
+            glm::dvec3(0.0, 1.0, 0.0)
+        );
+
+    // Spatial delta-spot: prove a small tube around the candidate course,
+    // rather than accepting one infinitesimally thin center ray.  The
+    // obstacle query already inflates by hull radius + normal clearance; this
+    // extra spot is deliberate uncertainty/dynamic-margin, not hull geometry.
+    constexpr std::array<glm::dvec2, 8> Ring {
+        glm::dvec2( 1.0,  0.0),
+        glm::dvec2(-1.0,  0.0),
+        glm::dvec2( 0.0,  1.0),
+        glm::dvec2( 0.0, -1.0),
+        glm::dvec2( 0.7071067811865476,  0.7071067811865476),
+        glm::dvec2(-0.7071067811865476,  0.7071067811865476),
+        glm::dvec2( 0.7071067811865476, -0.7071067811865476),
+        glm::dvec2(-0.7071067811865476, -0.7071067811865476)
+    };
+
+    for (const auto& sample : Ring)
+    {
+        const glm::dvec3 offset =
+            (axisX * sample.x + axisY * sample.y) *
+            spotRadius;
+
+        if (!clearSegmentCenterline(
+                request,
+                a + offset,
+                b + offset
+            ))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 struct CandidateCheck
@@ -463,6 +524,7 @@ PreplanningSafetyCourse::evaluate(
         !finite3(request.preferredDirection) ||
         request.hullRadiusMeters < 0.0 ||
         request.additionalClearanceMeters < 0.0 ||
+        request.courseSafetySpotRadiusMeters < 0.0 ||
         request.courseAccelerationMps2 < 0.0 ||
         request.brakingAccelerationMps2 < 0.0 ||
         request.maxAngularVelocityRadPerSecond < 0.0)
@@ -526,8 +588,8 @@ PreplanningSafetyCourse::evaluate(
         out.physicallyRecoverable = true;
         out.message =
             out.speedMps > 0.5
-                ? "current ballistic course clears static planning scene"
-                : "current launch ray clears static planning scene";
+                ? "current ballistic delta-spot clears planning scene"
+                : "current launch delta-spot clears planning scene";
         return out;
     }
 
@@ -654,7 +716,7 @@ PreplanningSafetyCourse::evaluate(
         out.safeCourse = best.direction;
         out.turnAngleRad = best.check.angleRad;
         out.turnRadiusMeters = best.check.radiusMeters;
-        out.message = "alternate collision-free preplanning course found";
+        out.message = "alternate collision-free preplanning delta-spot found";
         return out;
     }
 

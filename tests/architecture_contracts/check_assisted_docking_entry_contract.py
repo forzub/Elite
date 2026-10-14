@@ -12,6 +12,7 @@ required = [
     "RESTORED ASSISTED DOCKING-ENTRY CONTRACT",
     "PROJECTED ENTRY CONTRACT -- DO NOT TURN THIS INTO A LOOP",
     "AssistedSafeCourseExecutor::evaluate",
+    "submitAutopilotControl(safeOutput.control)",
     "firstTurnTravelSeconds",
     "m_dockLateEntry.leadSeconds",
     "projected Assisted entry bind missed its one-shot handoff",
@@ -23,10 +24,15 @@ for forbidden in [
     "AssistedSafeCourseRecovery::assess",
     "AssistedSafeCourseRecovery::plan",
     "m_dockAssistedSafeRecovery.plan",
+    "safeOutput.request",
 ]:
     assert forbidden not in space, f"trajectory-style safe-course regression: {forbidden}"
 
 assert "double leadSeconds = 0.0;" in header
+assert "navigationAccelerationDemandValid = true;" not in space[
+    space.index("const auto coastForPlanningControl"):
+    space.index("const auto stabilizeAngularForPlanningControl")
+]
 assert "game::navigation::AssistedSafeCourseRecoveryPlan plan;" not in header
 
 for token in [
@@ -38,7 +44,8 @@ for token in [
 
 print("ASSISTED DOCKING ENTRY CONTRACT: PASS")
 print(" - safe-course selects one direction; it is not a trajectory follower.")
-print(" - safe-course completion returns to zero-acceleration ballistic coast.")
+print(" - safe-course emits ordinary Assisted hull controls; FA-on remains authoritative.")
+print(" - planning coast uses neutral physical controls, never a direct acceleration bypass.")
 print(" - expensive downstream route is retained.")
 print(" - live handoff uses one projected entry bind based on first-turn travel time.")
 print(" - repeated entry-rebind loops are forbidden.")

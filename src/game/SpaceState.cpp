@@ -2580,11 +2580,26 @@ void SpaceState::updateDockingAdvisory()
         }
         else
         {
-            // AUTOMATIC HOT-REPLAN CONTRACT:
-            // Immediately release translational acceleration and begin damping
-            // angular velocity. Do NOT serialize this physical settling ahead
-            // of the expensive route worker: the worker is speculative and
-            // asynchronous, while final handoff remains spatially validated.
+            // ================================================================
+            // AUTOMATIC SETTLE-BEFORE-SNAPSHOT CONTRACT -- DO NOT WEAKEN.
+            //
+            // A new docking request first removes translational acceleration
+            // and kills hull angular velocity.  Linear VELOCITY is preserved.
+            //
+            // The planner/compiler MUST NOT see a snapshot captured while the
+            // hull is still rotating.  Waiting only at route adoption is too
+            // late: the worker compiles the initial angular trajectory from
+            // the snapshot and can permanently reject an otherwise valid
+            // route as initial-omega-outside-capability.
+            //
+            // Required order:
+            //   1. zero requested linear acceleration;
+            //   2. damp pitch/yaw/roll rates;
+            //   3. hold the settled angular state briefly;
+            //   4. only then capture the authoritative planning snapshot;
+            //   5. after launch, expensive planning may run asynchronously
+            //      while the craft continues ballistic translation.
+            // ================================================================
             constexpr double AutomaticSettledAngularRadPerSec = 0.01;
             constexpr double AutomaticAngularSettledSeconds = 0.20;
 
@@ -2599,27 +2614,32 @@ void SpaceState::updateDockingAdvisory()
             if (!angularStopped)
             {
                 m_clientDockingSettledSinceServerSeconds = -1.0;
+                return;
             }
-            else if (m_clientDockingSettledSinceServerSeconds < 0.0)
+
+            if (m_clientDockingSettledSinceServerSeconds < 0.0)
             {
                 m_clientDockingSettledSinceServerSeconds =
                     authoritativeServerSeconds;
+                return;
             }
-            else if (authoritativeServerSeconds -
-                         m_clientDockingSettledSinceServerSeconds >=
-                     AutomaticAngularSettledSeconds)
+
+            if (authoritativeServerSeconds -
+                    m_clientDockingSettledSinceServerSeconds <
+                AutomaticAngularSettledSeconds)
             {
-                // Once angular settling finishes the craft is a pure
-                // zero-acceleration ballistic body. Planning may already be
-                // running by this point.
-                submitAutopilotControl(coastForPlanningControl());
+                return;
             }
+
+            // Snapshot below now observes the contract state: no requested
+            // linear acceleration and effectively zero hull angular velocity.
+            submitAutopilotControl(coastForPlanningControl());
         }
 
         std::cout
             << "[DockClient] request=" << pending.serial
             << " phase="
-            << (automatic ? "async-preplanning" : "stopped-planning")
+            << (automatic ? "settled-planning" : "stopped-planning")
             << " vrel_mps=" << relativeSpeedMps
             << " omega_radps=" << angularSpeedRadPerSec
             << std::endl;

@@ -672,7 +672,23 @@ void GameSimulation::applyPhysicalCorridorHotStart()
     // while the hull is deliberately yawed away from that course. This makes
     // route construction consume a real non-zero velocity boundary and proves
     // that navigation course is not reconstructed from hull nose.
-    constexpr double StartSpeedMps = 300.0;
+    //
+    // The ordinary matrix keeps the 300 m/s default. A dedicated high-speed
+    // planner probe may override it without changing production physics.
+    double startSpeedMps = 300.0;
+    if (const char* requestedSpeed =
+            std::getenv("ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS"))
+    {
+        char* end = nullptr;
+        const double parsed = std::strtod(requestedSpeed, &end);
+        if (end != requestedSpeed &&
+            std::isfinite(parsed) &&
+            parsed > 0.0)
+        {
+            startSpeedMps = parsed;
+        }
+    }
+
     constexpr double NoseOffsetRad =
         1.04719755119659774615; // 60 degrees, diagnostic only.
 
@@ -707,7 +723,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
         glm::vec4(glm::vec3(-newForward), 0.0f);
 
     const glm::dvec3 relativeWorldVelocity =
-        oldForward * StartSpeedMps;
+        oldForward * startSpeedMps;
     motion.localVelocityMps =
         motion.travelFrame.worldToLocalVector(
             relativeWorldVelocity
@@ -724,7 +740,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
     // is issued. Without this hold, ordinary Assisted stabilization immediately
     // bleeds the deliberately off-nose velocity and the planner ends up seeing
     // ~25-40 m/s instead of the requested 300 m/s hot start.
-    motion.targetForwardSpeedMps = StartSpeedMps;
+    motion.targetForwardSpeedMps = startSpeedMps;
     motion.assistedTargetSpeedHold = true;
     motion.assistedThrottleTrimWasActive = false;
     motion.velocityAlignmentMode =
@@ -738,7 +754,7 @@ void GameSimulation::applyPhysicalCorridorHotStart()
 
     std::cout
         << "[PhysicalCorridor] hot_start=1"
-        << " speed_mps=" << StartSpeedMps
+        << " speed_mps=" << startSpeedMps
         << " nose_course_offset_deg=60"
         << "\n";
 }

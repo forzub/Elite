@@ -118,6 +118,40 @@ public:
             std::string(simple) != "0" &&
             std::string(simple) != "";
 
+        const char* assistedHighSpeed =
+            std::getenv("ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED");
+        m_assistedHighSpeedManeuver =
+            assistedHighSpeed != nullptr &&
+            std::string(assistedHighSpeed) != "0" &&
+            std::string(assistedHighSpeed) != "";
+
+        const auto readPositiveDouble =
+            [](const char* name, double fallback) noexcept
+            {
+                const char* raw = std::getenv(name);
+                if (!raw || !*raw)
+                    return fallback;
+
+                char* end = nullptr;
+                const double value = std::strtod(raw, &end);
+                return end != raw &&
+                       std::isfinite(value) &&
+                       value > 0.0
+                    ? value
+                    : fallback;
+            };
+
+        m_highSpeedMinimumRequestMps =
+            readPositiveDouble(
+                "ELITE_ASSISTED_HIGH_SPEED_MIN_REQUEST_MPS",
+                350.0
+            );
+        m_highSpeedMinimumRouteReadyMps =
+            readPositiveDouble(
+                "ELITE_ASSISTED_HIGH_SPEED_MIN_ROUTE_READY_MPS",
+                300.0
+            );
+
         const char* buildId =
             std::getenv("ELITE_NAV_STRESS_BUILD_ID");
         if (buildId && *buildId)
@@ -144,7 +178,9 @@ public:
     int currentStep() const noexcept { return m_step; }
     int totalStepsForScenario() const noexcept
     {
-        return m_simpleCorridor ? 1 : 12;
+        return (m_simpleCorridor || m_assistedHighSpeedManeuver)
+            ? 1
+            : 12;
     }
     int matrixRunIndex() const noexcept { return m_matrixRunIndex; }
     int matrixRunTotal() const noexcept { return m_matrixRunTotal; }
@@ -171,9 +207,11 @@ public:
             m_stepStartedAt = o.universeSeconds;
             logEvent(
                 o,
-                m_simpleCorridor
-                    ? "START scenario=simple-physical-corridor"
-                    : "START scenario=hot-replan-blue-transit-v2"
+                m_assistedHighSpeedManeuver
+                    ? "START scenario=assisted-high-speed-maneuver"
+                    : m_simpleCorridor
+                        ? "START scenario=simple-physical-corridor"
+                        : "START scenario=hot-replan-blue-transit-v2"
             );
         }
 
@@ -183,6 +221,105 @@ public:
         // A step is deliberately condition-driven where possible. Timeouts
         // prevent one failure from hiding all later transition cases.
         const double stepAge = o.universeSeconds - m_stepStartedAt;
+
+        if (m_assistedHighSpeedManeuver)
+        {
+            if (m_step == 0)
+            {
+                if (m_physicalModelLabel.rfind("Assisted-", 0) != 0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "high-speed maneuver probe requires an Assisted physical model"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (o.speedMps + 1.0e-6 <
+                    m_highSpeedMinimumRequestMps)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "high-speed request boundary was already below the required speed"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                return issue(
+                    o,
+                    Target::CubeFront,
+                    "assisted-high-speed"
+                );
+            }
+
+            if (m_step == 1)
+            {
+                if (o.failed)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "high-speed Assisted maneuver terminal failure"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (!m_highSpeedRouteReadySeen &&
+                    o.routeValid &&
+                    o.dockingPhase == 4)
+                {
+                    m_highSpeedRouteReadySeen = true;
+                    m_highSpeedRouteReadyAt = o.universeSeconds;
+                    m_highSpeedRouteReadySpeedMps = o.speedMps;
+                    logEvent(o, "HIGH_SPEED_ROUTE_READY");
+
+                    if (o.speedMps + 1.0e-6 <
+                        m_highSpeedMinimumRouteReadyMps)
+                    {
+                        logSummary(
+                            o,
+                            "FAILED",
+                            "planner only produced an executable route after high-speed entry had already decayed"
+                        );
+                        m_complete = true;
+                        flush();
+                        return action;
+                    }
+                }
+
+                if (m_highSpeedRouteReadySeen &&
+                    o.routeCurveIndex > 0)
+                {
+                    logEvent(o, "HIGH_SPEED_FIRST_MANEUVER");
+                    logSummary(o, "COMPLETE", std::string{});
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+
+                if (stepAge >= 60.0)
+                {
+                    logSummary(
+                        o,
+                        "FAILED",
+                        "high-speed Assisted maneuver did not reach an executable first turn within 60 seconds"
+                    );
+                    m_complete = true;
+                    flush();
+                    return action;
+                }
+            }
+
+            return action;
+        }
 
         if (m_simpleCorridor)
         {
@@ -547,9 +684,11 @@ private:
                 << (m_buildId.empty() ? "unknown" : m_buildId)
                 << "\n"
                 << "# scenario="
-                << (m_simpleCorridor
-                        ? "simple-physical-corridor"
-                        : "hot-replan-blue-transit-v2")
+                << (m_assistedHighSpeedManeuver
+                        ? "assisted-high-speed-maneuver"
+                        : m_simpleCorridor
+                            ? "simple-physical-corridor"
+                            : "hot-replan-blue-transit-v2")
                 << "\n"
                 << "# physical_model="
                 << (m_physicalModelLabel.empty()
@@ -770,6 +909,12 @@ private:
         m_stepStartedAt = o.universeSeconds;
         ++m_requests;
 
+        if (std::string(reason) == "assisted-high-speed")
+        {
+            m_highSpeedRequestAt = o.universeSeconds;
+            m_highSpeedRequestSpeedMps = o.speedMps;
+        }
+
         if (std::string(reason) == "blue-proving-run" ||
             std::string(reason) == "simple-corridor")
         {
@@ -824,6 +969,17 @@ private:
             << " moving_non_line_samples=" << m_nonLineMovingStarts
             << " missing_ballistic_lead_samples="
             << m_missingBallisticLeadSamples
+            << " high_speed_request_mps="
+            << m_highSpeedRequestSpeedMps
+            << " high_speed_route_ready_mps="
+            << m_highSpeedRouteReadySpeedMps
+            << " high_speed_route_ready_s="
+            << (
+                m_highSpeedRouteReadySeen &&
+                m_highSpeedRequestAt > -1.0e20
+                    ? m_highSpeedRouteReadyAt - m_highSpeedRequestAt
+                    : -1.0
+            )
             << " blue_entered=" << (m_blueEntered ? 1 : 0)
             << " blue_exited=" << (m_blueExited ? 1 : 0)
             << " status=" << status;
@@ -839,6 +995,15 @@ private:
     bool m_complete = false;
     bool m_failureLatched = false;
     bool m_simpleCorridor = false;
+    bool m_assistedHighSpeedManeuver = false;
+
+    double m_highSpeedMinimumRequestMps = 350.0;
+    double m_highSpeedMinimumRouteReadyMps = 300.0;
+    double m_highSpeedRequestAt = -1.0e30;
+    double m_highSpeedRequestSpeedMps = 0.0;
+    bool m_highSpeedRouteReadySeen = false;
+    double m_highSpeedRouteReadyAt = -1.0e30;
+    double m_highSpeedRouteReadySpeedMps = 0.0;
 
     std::string m_buildId;
     std::string m_physicalModelLabel;

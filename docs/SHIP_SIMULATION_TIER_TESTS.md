@@ -104,7 +104,13 @@ Motion cadence is also reduced:
 
 - FullControl: normal Active cadence;
 - Response: Prewarm cadence (currently ~10 Hz AI, ~25 Hz control);
-- RouteOnly/Kinematic normally live as shells and do not own ShipCore physics.
+- shell-eligible traffic remains compact through RouteOnly, Kinematic **and
+  Response**; default authoritative shell cadence is approximately 2 Hz / 10 Hz
+  / 25 Hz respectively;
+- only FullControl materializes traffic-origin ships into ShipCore;
+- authored NPCs whose mission state has no compact shell representation may
+  remain materialized at Response, but still consume the cached response profile
+  and skip Detailed service systems.
 
 ## Exact tests
 

@@ -64,6 +64,7 @@ struct ShipMotionFidelityPolicy
     // interpolation; the server retains coarse truth for multiplayer.
     double routeOnlyServerMotionIntervalSeconds = 0.50;
     double kinematicServerMotionIntervalSeconds = 0.10;
+    double responseServerMotionIntervalSeconds = 0.04;
 };
 
 inline int shipMotionFidelityPriority(
@@ -436,9 +437,36 @@ inline double shellMotionIntervalSeconds(
     const ShipMotionFidelityPolicy& policy = {}
 ) noexcept
 {
-    return fidelity == ShipMotionFidelity::Kinematic
-        ? std::max(0.0, policy.kinematicServerMotionIntervalSeconds)
-        : std::max(0.0, policy.routeOnlyServerMotionIntervalSeconds);
+    switch (fidelity)
+    {
+        case ShipMotionFidelity::FullControl:
+            // FullControl is materialized immediately by the LOD planner.
+            // Zero keeps the one transition tick temporally exact.
+            return 0.0;
+
+        case ShipMotionFidelity::Response:
+            return std::max(
+                0.0,
+                policy.responseServerMotionIntervalSeconds
+            );
+
+        case ShipMotionFidelity::Kinematic:
+            return std::max(
+                0.0,
+                policy.kinematicServerMotionIntervalSeconds
+            );
+
+        case ShipMotionFidelity::RouteOnly:
+            return std::max(
+                0.0,
+                policy.routeOnlyServerMotionIntervalSeconds
+            );
+    }
+
+    return std::max(
+        0.0,
+        policy.routeOnlyServerMotionIntervalSeconds
+    );
 }
 
 } // namespace game::simulation

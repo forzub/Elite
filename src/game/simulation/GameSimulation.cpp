@@ -1442,9 +1442,12 @@ void GameSimulation::updateShipSimulationDetail(double dt)
 
         shell.lifecycle.setMotionFidelity(update.planned);
 
-        if (game::simulation::shipMotionFidelityPriority(update.planned) >=
-            game::simulation::shipMotionFidelityPriority(
-                game::simulation::ShipMotionFidelity::Response))
+        // Traffic-origin Response remains a compact shell. At this level the
+        // player can observe smooth believable motion, but there is still no
+        // reason to allocate ShipCore/module/reactor/AI state. FullControl is
+        // the materialization boundary.
+        if (update.planned ==
+            game::simulation::ShipMotionFidelity::FullControl)
         {
             toMaterialize.push_back(id);
         }
@@ -1518,7 +1521,7 @@ void GameSimulation::updateShipSimulationDetail(double dt)
 
         if (game::simulation::shipMotionFidelityPriority(update.planned) >
             game::simulation::shipMotionFidelityPriority(
-                game::simulation::ShipMotionFidelity::Kinematic))
+                game::simulation::ShipMotionFidelity::Response))
         {
             continue;
         }

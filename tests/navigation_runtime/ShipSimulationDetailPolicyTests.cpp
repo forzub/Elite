@@ -266,6 +266,41 @@ void testClientObservationHintIsStrictlyPresentationBounded()
     require(state.live(10.35), "camera hint did not include expiry epoch");
     require(!state.live(10.36), "stale camera hint remained live");
 }
+void testShellCadenceScalesAcrossThreeCheapMotionLevels()
+{
+    Policy policy;
+
+    require(
+        game::simulation::shellMotionIntervalSeconds(
+            Fidelity::RouteOnly, policy) ==
+            policy.routeOnlyServerMotionIntervalSeconds,
+        "RouteOnly shell cadence changed"
+    );
+    require(
+        game::simulation::shellMotionIntervalSeconds(
+            Fidelity::Kinematic, policy) ==
+            policy.kinematicServerMotionIntervalSeconds,
+        "Kinematic shell cadence changed"
+    );
+    require(
+        game::simulation::shellMotionIntervalSeconds(
+            Fidelity::Response, policy) ==
+            policy.responseServerMotionIntervalSeconds,
+        "Response shell cadence changed"
+    );
+    require(
+        game::simulation::shellMotionIntervalSeconds(
+            Fidelity::FullControl, policy) == 0.0,
+        "FullControl transition tick was decimated"
+    );
+    require(
+        policy.routeOnlyServerMotionIntervalSeconds >
+            policy.kinematicServerMotionIntervalSeconds &&
+        policy.kinematicServerMotionIntervalSeconds >
+            policy.responseServerMotionIntervalSeconds,
+        "cheap shell cadences are not ordered by observability"
+    );
+}
 void testHysteresisPromotesImmediatelyAndDemotesInSteps()
 {
     Policy policy;
@@ -345,6 +380,7 @@ int main()
         testExplicitCombatClaimForcesServerFullControl();
         testPrewarmClaimRaisesOnlyToResponse();
         testClientObservationHintIsStrictlyPresentationBounded();
+        testShellCadenceScalesAcrossThreeCheapMotionLevels();
         testHysteresisPromotesImmediatelyAndDemotesInSteps();
 
         std::cout
@@ -356,6 +392,7 @@ int main()
             << " - Active combat claims force shared server FullControl\n"
             << " - Prewarm interaction claims require Response, not FullControl\n"
             << " - client camera hints are capped at Response, distance checked, and expire\n"
+            << " - RouteOnly/Kinematic/Response shell cadences scale with observability\n"
             << " - promotion is immediate and demotion is hysteretic\n";
         return EXIT_SUCCESS;
     }

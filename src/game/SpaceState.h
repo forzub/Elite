@@ -45,6 +45,7 @@
 
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
+#include "src/audio/TerminalAudioAdapter.h"
 #include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
@@ -281,6 +282,8 @@ private:
     // Presentation-only terminal. It consumes a DTO snapshot and has no
     // navigation/control access; deleting this member cannot alter flight.
     game::presentation::DockingStatusTerminal m_dockingStatusTerminal {};
+    // Presentation->audio seam only. No simulation/navigation state crosses it.
+    audio::TerminalAudioAdapter m_terminalAudioAdapter {};
 
     WorldLabelRenderer                          m_worldLabelRenderer;
 

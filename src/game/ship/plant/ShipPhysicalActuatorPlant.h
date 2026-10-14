@@ -32,9 +32,9 @@ struct MainPropulsionReaction
 // This function adds the rigid-body consequence that was previously lost when
 // per-slot topology was projected into aggregate ShipParams.
 //
-// normalizedPositionBody is deliberately dimensionless. ShipParams::turnRadius
-// is the existing characteristic vehicle lever-arm length and scales those
-// topology coordinates into the simplified rigid-body model.
+// normalizedPositionBody is deliberately dimensionless. Production capability
+// projection maps it through the ship's real logical half-extents; turnRadius
+// remains only a legacy fallback for descriptors/tests that lack geometry.
 [[nodiscard]] MainPropulsionReaction evaluateMainPropulsionReaction(
     PhysicalControlModelId model,
     const std::vector<EngineSlotState>& state,

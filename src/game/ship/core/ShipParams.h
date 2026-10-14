@@ -116,6 +116,12 @@ struct ShipParams
     // explicitly authored "no manoeuvre thrusters" vehicle from legacy
     // descriptors that still use strafeAccel as the old RCS fallback.
     bool manoeuvreThrusterAuthorityExplicit = false;
+
+    // Physical half-extents used to map normalized propulsion-slot positions
+    // into metres: X=half width, Y=half height, Z=half length. Runtime
+    // capability projection derives this from ShipDescriptor::logicalDimensions
+    // when available. Zero keeps a conservative legacy fallback.
+    glm::dvec3 physicalActuatorHalfExtentsMeters {0.0};
     
     
 };

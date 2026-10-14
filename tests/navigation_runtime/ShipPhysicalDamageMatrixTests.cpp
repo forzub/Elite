@@ -50,6 +50,7 @@ struct Scenario
     double initialForwardSpeedMps;
     ShipControlState control;
     bool oneShotVelocityAlignment = false;
+    double centerGimbalAfterSeconds = -1.0;
 };
 
 void require(bool condition, const std::string& message)
@@ -148,6 +149,9 @@ ShipParams nominalPhysics()
     p.pitchInertiaKgM2 = 11219866.6666667;
     p.yawInertiaKgM2 = 25324866.6666667;
     p.rollInertiaKgM2 = 15188333.3333333;
+
+    // Cobra logical dimensions: width 26.0, height 5.0, length 22.2 m.
+    p.physicalActuatorHalfExtentsMeters = {13.0, 2.5, 11.1};
     return p;
 }
 
@@ -358,6 +362,19 @@ std::vector<Scenario> scenarios()
         c.targetSpeedRate = 1.0f;
         c.mainGimbalRightInput = 1.0f;
         out.push_back({"tvc_right_with_main", kScenarioDurationSeconds, 0.0, c});
+    }
+    {
+        ShipControlState c;
+        c.targetSpeedRate = 1.0f;
+        c.mainGimbalRightInput = 1.0f;
+        out.push_back({
+            "tvc_pulse_then_center",
+            kScenarioDurationSeconds,
+            0.0,
+            c,
+            false,
+            0.50
+        });
     }
     {
         ShipControlState c;
@@ -601,6 +618,15 @@ void runScenario(
         {
             appliedControl.velocityAlignmentCommand =
                 game::navigation::VelocityAlignmentMode::None;
+        }
+
+        const double rawTimeSeconds =
+            static_cast<double>(tick) * kDt;
+        if (scenario.centerGimbalAfterSeconds >= 0.0 &&
+            rawTimeSeconds >= scenario.centerGimbalAfterSeconds)
+        {
+            appliedControl.mainGimbalRightInput = 0.0f;
+            appliedControl.mainGimbalUpInput = 0.0f;
         }
 
         const double timeSeconds =

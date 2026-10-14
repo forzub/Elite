@@ -23,6 +23,7 @@ ShipParams physics()
     p.yawInertiaKgM2 = 25324866.6666667;
     p.rollInertiaKgM2 = 15188333.3333333;
     p.turnRadius = 20.0f;
+    p.physicalActuatorHalfExtentsMeters = {13.0, 2.5, 11.1};
     return p;
 }
 

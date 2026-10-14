@@ -71,11 +71,22 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
     const double massKg =
         positiveFiniteOr(physics.massKg, 1.0);
 
-    // This is the already-existing simplified rigid-body lever arm. The slot
-    // topology supplies relative placement/sign, while turnRadius supplies the
-    // vehicle-scale length in metres.
-    const double leverArmMeters =
+    const glm::dvec3 configuredHalfExtents =
+        physics.physicalActuatorHalfExtentsMeters;
+    const bool hasPhysicalGeometry =
+        configuredHalfExtents.x > Epsilon &&
+        configuredHalfExtents.y > Epsilon &&
+        configuredHalfExtents.z > Epsilon;
+
+    // Legacy descriptors/tests that have not yet supplied logical dimensions
+    // retain a conservative isotropic fallback. Production capability
+    // projection supplies true X/Y/Z half-extents from the descriptor.
+    const double legacyLeverArmMeters =
         std::max(0.0, static_cast<double>(physics.turnRadius));
+    const glm::dvec3 halfExtentsMeters =
+        hasPhysicalGeometry
+            ? configuredHalfExtents
+            : glm::dvec3(legacyLeverArmMeters);
 
     const glm::dvec3 centerOfMass =
         physics.centerOfMassLocalMeters;
@@ -93,8 +104,11 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
 
         const double fraction = weight / totalWeight;
 
-        const glm::dvec3 applicationPointBodyMeters =
-            slots[i].normalizedPositionBody * leverArmMeters;
+        const glm::dvec3 applicationPointBodyMeters(
+            slots[i].normalizedPositionBody.x * halfExtentsMeters.x,
+            slots[i].normalizedPositionBody.y * halfExtentsMeters.y,
+            slots[i].normalizedPositionBody.z * halfExtentsMeters.z
+        );
 
         const glm::dvec3 armBodyMeters =
             applicationPointBodyMeters - centerOfMass;

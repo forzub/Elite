@@ -279,6 +279,28 @@ inline ShipCapabilitySnapshot makeCapability(
     return out;
 }
 
+inline void applyDescriptorActuatorGeometry(
+    const ShipDescriptor& descriptor,
+    ShipCapabilitySnapshot& capability
+) noexcept
+{
+    if (!capability.valid)
+        return;
+
+    const auto& dims = descriptor.logicalDimensionsValue;
+    if (dims.enabled &&
+        dims.width > 0.0f &&
+        dims.height > 0.0f &&
+        dims.length > 0.0f)
+    {
+        capability.effectivePhysics.physicalActuatorHalfExtentsMeters = {
+            static_cast<double>(dims.width) * 0.5,
+            static_cast<double>(dims.height) * 0.5,
+            static_cast<double>(dims.length) * 0.5
+        };
+    }
+}
+
 } // namespace detail
 
 // State-driven projection for a construction selected by ShipState. The
@@ -363,13 +385,15 @@ inline ShipCapabilitySnapshot buildShipCapability(
     if (state.size() != plant::physicalControlSlots(model).size())
         return {};
 
-    return detail::makeCapability(
+    auto out = detail::makeCapability(
         plant::evaluatePhysicalControlModel(
             model,
             descriptor.physics,
             state
         )
     );
+    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    return out;
 }
 
 // Public per-slot capability projection for diagnostics/presentation and the
@@ -405,13 +429,15 @@ inline ShipCapabilitySnapshot buildShipCapability(
         return {};
     }
 
-    return detail::makeCapability(
+    auto out = detail::makeCapability(
         plant::evaluatePhysicalControlModel(
             descriptor.physicalControlModel,
             descriptor.physics,
             state
         )
     );
+    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    return out;
 }
 
 inline ShipCapabilitySnapshot buildShipCapability(
@@ -428,13 +454,15 @@ inline ShipCapabilitySnapshot buildShipCapability(
         return {};
     }
 
-    return detail::makeCapability(
+    auto out = detail::makeCapability(
         plant::evaluatePhysicalControlModel(
             descriptor.physicalControlModel,
             descriptor.physics,
             state
         )
     );
+    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    return out;
 }
 
 inline ShipCapabilitySnapshot buildHealthyShipCapability(
@@ -446,13 +474,15 @@ inline ShipCapabilitySnapshot buildHealthyShipCapability(
             descriptor.physicalControlModel
         );
 
-    return detail::makeCapability(
+    auto out = detail::makeCapability(
         plant::evaluatePhysicalControlModel(
             descriptor.physicalControlModel,
             descriptor.physics,
             plant::healthySlotState(topology)
         )
     );
+    detail::applyDescriptorActuatorGeometry(descriptor, out);
+    return out;
 }
 
 } // namespace game::ship::capability

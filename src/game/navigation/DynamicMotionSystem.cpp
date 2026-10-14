@@ -882,7 +882,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
             assistedLateralStabilizationAccel
         );
 
-    motion.assistedStabilizationAccelerationMps2 =
+    const glm::dvec3 automaticAssistedStabilizationAcceleration =
         clampSecondaryToTotalAccelerationEnvelope(
             manualAssistedVectoringAcceleration,
             clampMagnitude(
@@ -891,6 +891,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
             ),
             totalLinearEnvelope
         );
+
+    // The envelope helper returns only the admitted SECONDARY vector. Manual
+    // translation is the primary vectoring-main request and must remain in the
+    // executed actuator command; dropping it here was the exact reason
+    // Assisted strafe/lift became zero when ghost-RCS was removed.
+    motion.assistedStabilizationAccelerationMps2 =
+        manualAssistedVectoringAcceleration +
+        automaticAssistedStabilizationAcceleration;
 
     const glm::dvec3 requestedMainAcceleration =
         f * requestedMainLongitudinalAcceleration;

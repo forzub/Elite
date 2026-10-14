@@ -149,6 +149,13 @@ public:
     bool shipUsesDetailedSimulation(EntityId id) const noexcept;
     bool promoteShipToDetailedSimulation(EntityId id);
 
+    bool submitClientObservationInterest(
+        EntityId observerId,
+        std::uint64_t serial,
+        const std::vector<
+            game::simulation::ShipClientObservationInterestEntry>& entries
+    );
+
     const game::simulation::ShipShellState* shipShell(EntityId id) const;
     std::size_t shipShellCount() const noexcept { return m_shipShells.size(); }
 
@@ -456,6 +463,10 @@ private:
         EntityId,
         game::simulation::ShipMotionFidelityRuntimeState
     > m_shipMotionFidelityStates;
+    std::unordered_map<
+        EntityId,
+        game::simulation::ShipClientObservationInterestState
+    > m_shipClientObservationInterests;
     double m_shipMotionFidelityEvaluationAccumulatorSeconds = 0.0;
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;

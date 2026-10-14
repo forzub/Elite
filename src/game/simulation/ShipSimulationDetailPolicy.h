@@ -255,6 +255,78 @@ inline ShipMotionFidelityDemand evaluateShipMotionFidelityDemand(
     return result;
 }
 
+inline constexpr std::size_t MaxShipClientObservationInterestEntries = 64;
+inline constexpr double ShipClientObservationInterestLifetimeSeconds = 0.35;
+
+struct ShipClientObservationInterestEntry
+{
+    EntityId targetId {0};
+    ShipMotionFidelity requested = ShipMotionFidelity::Kinematic;
+};
+
+struct ShipClientObservationInterestState
+{
+    std::uint64_t serial = 0;
+    double expiresAtServerTimeSeconds = 0.0;
+    std::vector<ShipClientObservationInterestEntry> entries;
+
+    [[nodiscard]] bool live(double serverTimeSeconds) const noexcept
+    {
+        return
+            expiresAtServerTimeSeconds > 0.0 &&
+            serverTimeSeconds <= expiresAtServerTimeSeconds;
+    }
+};
+
+inline ShipMotionFidelity sanitizeClientObservationDemand(
+    ShipMotionFidelity requested
+) noexcept
+{
+    if (shipMotionFidelityPriority(requested) >=
+        shipMotionFidelityPriority(ShipMotionFidelity::Response))
+    {
+        return ShipMotionFidelity::Response;
+    }
+
+    if (shipMotionFidelityPriority(requested) >=
+        shipMotionFidelityPriority(ShipMotionFidelity::Kinematic))
+    {
+        return ShipMotionFidelity::Kinematic;
+    }
+
+    return ShipMotionFidelity::RouteOnly;
+}
+
+inline double clientObservationDistanceLimitMeters(
+    ShipMotionFidelity requested,
+    const ShipMotionFidelityPolicy& policy
+) noexcept
+{
+    const auto sanitized = sanitizeClientObservationDemand(requested);
+    if (sanitized == ShipMotionFidelity::Response)
+        return std::max(0.0, policy.responseVisibleDistanceMeters);
+    if (sanitized == ShipMotionFidelity::Kinematic)
+        return std::max(0.0, policy.kinematicVisibleDistanceMeters);
+    return 0.0;
+}
+
+inline bool clientObservationDemandAllowed(
+    ShipMotionFidelity requested,
+    double distanceMeters,
+    const ShipMotionFidelityPolicy& policy
+) noexcept
+{
+    if (!std::isfinite(distanceMeters) || distanceMeters < 0.0)
+        return false;
+
+    const auto sanitized = sanitizeClientObservationDemand(requested);
+    if (sanitized == ShipMotionFidelity::RouteOnly)
+        return false;
+
+    return distanceMeters <=
+        clientObservationDistanceLimitMeters(sanitized, policy);
+}
+
 struct ShipMotionFidelityRuntimeState
 {
     ShipMotionFidelity planned = ShipMotionFidelity::RouteOnly;

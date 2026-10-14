@@ -1270,6 +1270,114 @@ void GameSimulation::updateShipSimulationDetail(double dt)
     if (observers.empty())
         appendObserver(m_playerId);
 
+    // Client camera knowledge is useful for deciding whether a background ship
+    // deserves smoother server motion, but it is never combat authority. Each
+    // hint is short-lived, same-system/distance validated, and capped at
+    // Response. Strongest demand across all connected observers wins.
+    std::unordered_map<
+        EntityId,
+        game::simulation::ShipMotionFidelity
+    > clientObservationDemand;
+
+    for (auto it = m_shipClientObservationInterests.begin();
+         it != m_shipClientObservationInterests.end();)
+    {
+        const EntityId observerId = it->first;
+        const auto& interest = it->second;
+
+        const Ship* observer = getShip(observerId);
+        if (!interest.live(now) ||
+            !isPlayerControlled(observerId) ||
+            !observer)
+        {
+            it = m_shipClientObservationInterests.erase(it);
+            continue;
+        }
+
+        const auto& observerTransform = observer->core().transform();
+        const int observerSystemId = observerTransform.motion.systemId;
+        const glm::dvec3 observerPosition =
+            world::coordinates::fullMeters(
+                observerTransform.worldPosition
+            );
+
+        for (const auto& entry : interest.entries)
+        {
+            int targetSystemId = -1;
+            glm::dvec3 targetPosition {0.0};
+            bool targetFound = false;
+
+            if (const Ship* target = getShip(entry.targetId))
+            {
+                const auto& tr = target->core().transform();
+                targetSystemId = tr.motion.systemId;
+                targetPosition =
+                    world::coordinates::fullMeters(tr.worldPosition);
+                targetFound = true;
+            }
+            else if (const auto* target = shipShell(entry.targetId))
+            {
+                targetSystemId = target->transform.motion.systemId;
+                targetPosition =
+                    world::coordinates::fullMeters(
+                        target->transform.worldPosition
+                    );
+                targetFound = true;
+            }
+
+            if (!targetFound ||
+                targetSystemId != observerSystemId)
+            {
+                continue;
+            }
+
+            const double distanceMeters =
+                glm::length(targetPosition - observerPosition);
+            if (!game::simulation::clientObservationDemandAllowed(
+                    entry.requested,
+                    distanceMeters,
+                    m_shipMotionFidelityPolicy))
+            {
+                continue;
+            }
+
+            const auto sanitized =
+                game::simulation::sanitizeClientObservationDemand(
+                    entry.requested
+                );
+
+            auto [demandIt, inserted] =
+                clientObservationDemand.emplace(
+                    entry.targetId,
+                    sanitized
+                );
+            if (!inserted)
+            {
+                demandIt->second =
+                    game::simulation::strongerMotionFidelity(
+                        demandIt->second,
+                        sanitized
+                    );
+            }
+        }
+
+        ++it;
+    }
+
+    const auto mergeClientObservationDemand =
+        [&](EntityId id,
+            game::simulation::ShipMotionFidelity serverDemand) noexcept
+        {
+            const auto it = clientObservationDemand.find(id);
+            if (it == clientObservationDemand.end())
+                return serverDemand;
+
+            return game::simulation::strongerMotionFidelity(
+                serverDemand,
+                it->second
+            );
+        };
+
     std::vector<EntityId> toMaterialize;
     std::vector<std::pair<EntityId, game::simulation::ShipSimulationTier>>
         toDematerialize;
@@ -1320,6 +1428,8 @@ void GameSimulation::updateShipSimulationDetail(double dt)
                     now,
                     m_shipMotionFidelityPolicy
                 ).requested;
+            requested =
+                mergeClientObservationDemand(id, requested);
         }
 
         const auto update =
@@ -1382,6 +1492,8 @@ void GameSimulation::updateShipSimulationDetail(double dt)
                     now,
                     m_shipMotionFidelityPolicy
                 ).requested;
+            requested =
+                mergeClientObservationDemand(id, requested);
         }
 
         const auto update =
@@ -8270,6 +8382,79 @@ bool GameSimulation::promoteShipToDetailedSimulation(EntityId id)
 }
 
 
+bool GameSimulation::submitClientObservationInterest(
+    EntityId observerId,
+    std::uint64_t serial,
+    const std::vector<
+        game::simulation::ShipClientObservationInterestEntry>& entries
+)
+{
+    if (observerId.value == 0 ||
+        !isPlayerControlled(observerId) ||
+        !getShip(observerId) ||
+        entries.size() >
+            game::simulation::MaxShipClientObservationInterestEntries)
+    {
+        return false;
+    }
+
+    auto& state = m_shipClientObservationInterests[observerId];
+    if (state.serial != 0 && serial <= state.serial)
+        return false;
+
+    state.serial = serial;
+    state.expiresAtServerTimeSeconds =
+        m_serverTimelineClock.timeSeconds() +
+        game::simulation::ShipClientObservationInterestLifetimeSeconds;
+    state.entries.clear();
+    state.entries.reserve(entries.size());
+
+    std::unordered_map<EntityId, game::simulation::ShipMotionFidelity>
+        strongestByTarget;
+    strongestByTarget.reserve(entries.size());
+
+    for (const auto& entry : entries)
+    {
+        if (entry.targetId.value == 0 ||
+            entry.targetId == observerId)
+        {
+            continue;
+        }
+
+        const auto sanitized =
+            game::simulation::sanitizeClientObservationDemand(
+                entry.requested
+            );
+        if (sanitized ==
+            game::simulation::ShipMotionFidelity::RouteOnly)
+        {
+            continue;
+        }
+
+        auto [it, inserted] =
+            strongestByTarget.emplace(entry.targetId, sanitized);
+        if (!inserted)
+        {
+            it->second =
+                game::simulation::strongerMotionFidelity(
+                    it->second,
+                    sanitized
+                );
+        }
+    }
+
+    for (const auto& [targetId, requested] : strongestByTarget)
+    {
+        state.entries.push_back({
+            targetId,
+            requested
+        });
+    }
+
+    return true;
+}
+
+
 
 bool GameSimulation::materializeShipShell(EntityId id)
 {
@@ -9781,9 +9966,14 @@ bool GameSimulation::setPlayerControlled(EntityId id, bool controlled)
         return false;
 
     if (controlled)
+    {
         m_playerControlledShipIds.insert(id);
+    }
     else
+    {
         m_playerControlledShipIds.erase(id);
+        m_shipClientObservationInterests.erase(id);
+    }
 
     return true;
 }

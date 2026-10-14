@@ -1085,6 +1085,33 @@ void GameServer::receiveClientMessage(
                 // produced this numbered input sample.
                 submitCommand(controlledEntityId, payload);
             }
+            else if constexpr (
+                std::is_same_v<
+                    PayloadT,
+                    game::network::ClientObservationInterest>)
+            {
+                std::vector<
+                    game::simulation::ShipClientObservationInterestEntry
+                > entries;
+                entries.reserve(payload.entries.size());
+
+                for (const auto& entry : payload.entries)
+                {
+                    entries.push_back({
+                        entry.targetId,
+                        entry.detail ==
+                                game::network::ClientObservationDetail::Response
+                            ? game::simulation::ShipMotionFidelity::Response
+                            : game::simulation::ShipMotionFidelity::Kinematic
+                    });
+                }
+
+                (void)m_simulation.submitClientObservationInterest(
+                    controlledEntityId,
+                    payload.serial,
+                    entries
+                );
+            }
             else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
             {
                 // Non-navigation service/debug commands remain explicit.

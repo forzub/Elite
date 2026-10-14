@@ -58,6 +58,7 @@ $oldReport = $env:ELITE_NAV_STRESS_REPORT
 $oldBuildId = $env:ELITE_NAV_STRESS_BUILD_ID
 $oldPhysicalHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
 $oldPhysicalHotStartSpeed = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS
+$oldPhysicalHotStartNoseOffset = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG
 
 $env:ELITE_NAV_STRESS = "1"
 $env:ELITE_NAV_STRESS_REPORT = $ReportPath
@@ -71,10 +72,30 @@ $assistedHighSpeed =
     $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED -and
     $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED -ne "0"
 
-if ($assistedHighSpeed) {
+$assistedGameplayParity =
+    $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY -and
+    $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY -ne "0"
+
+if ($assistedHighSpeed -or $assistedGameplayParity) {
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
+}
+
+if ($assistedHighSpeed) {
     if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS) {
         $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "400"
+    }
+}
+
+if ($assistedGameplayParity) {
+    # Mirror the manual gameplay probe:
+    # - 500 m/s inertial entry;
+    # - hull initially aligned with velocity;
+    # - no synthetic 60-degree off-nose disturbance.
+    if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS) {
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "500"
+    }
+    if (-not $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG) {
+        $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "0"
     }
 }
 
@@ -190,4 +211,5 @@ finally {
     $env:ELITE_NAV_STRESS_BUILD_ID = $oldBuildId
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldPhysicalHotStart
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = $oldPhysicalHotStartSpeed
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = $oldPhysicalHotStartNoseOffset
 }

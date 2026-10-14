@@ -5314,6 +5314,36 @@ void SpaceState::update(float dt)
                     stressTransform.yawRate * stressTransform.yawRate +
                     stressTransform.rollRate * stressTransform.rollRate
                 );
+
+            if (stressTransform.motion.travelFrame.valid &&
+                obs.speedMps > 0.5)
+            {
+                const glm::dvec3 velocityWorld =
+                    stressTransform.motion.travelFrame.localToWorldVector(
+                        stressTransform.motion.localVelocityMps
+                    );
+                const double velocityLength =
+                    glm::length(velocityWorld);
+                const glm::dvec3 hullForward =
+                    glm::normalize(
+                        glm::dvec3(stressTransform.forward())
+                    );
+
+                if (velocityLength > 1.0e-9)
+                {
+                    obs.hullToVelocityErrorRad =
+                        std::acos(
+                            std::clamp(
+                                glm::dot(
+                                    hullForward,
+                                    velocityWorld / velocityLength
+                                ),
+                                -1.0,
+                                1.0
+                            )
+                        );
+                }
+            }
             obs.mainAccelerationMps2 =
                 glm::length(
                     stressTransform.motion.mainEngineAccelerationMps2

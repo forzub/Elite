@@ -524,6 +524,37 @@ void DynamicMotionSystem::updateLocalFrameMotion(
 
     const glm::dvec3 actualManoeuvreLocalAcceleration =
         frame.worldToLocalVector(actualManoeuvreWorldAcceleration);
+
+    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
+    {
+        motion.newtonianManualManoeuvreDeltaVelocityMps +=
+            actualManoeuvreLocalAcceleration * dt;
+
+        const double ledgerMagnitude =
+            glm::length(
+                motion.newtonianManualManoeuvreDeltaVelocityMps
+            );
+
+        // Prevent tiny numerical sign flips from causing perpetual corrective
+        // chatter around zero after a released manoeuvre.
+        if (!motion.newtonianManualManoeuvreInputActive &&
+            ledgerMagnitude <=
+                std::max(
+                    1.0e-6,
+                    manoeuvreAuthority * dt * 1.0e-3
+                ))
+        {
+            motion.newtonianManualManoeuvreDeltaVelocityMps =
+                glm::dvec3(0.0);
+        }
+    }
+    else
+    {
+        motion.newtonianManualManoeuvreDeltaVelocityMps =
+            glm::dvec3(0.0);
+        motion.newtonianManualManoeuvreInputActive = false;
+    }
+
     const glm::dvec3 actualAssistedStabilizationLocalAcceleration =
         frame.worldToLocalVector(
             actualAssistedStabilizationWorldAcceleration
@@ -649,6 +680,8 @@ void DynamicMotionSystem::applyLocalFrameInput(
         // by the input mapper and explicitly cleared here as a second guard.
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+        motion.newtonianManualManoeuvreDeltaVelocityMps = glm::dvec3(0.0);
+        motion.newtonianManualManoeuvreInputActive = false;
         return;
     }
 
@@ -663,10 +696,42 @@ void DynamicMotionSystem::applyLocalFrameInput(
     {
         // Newtonian owns real independent RCS clusters. Their body-axis force
         // remains a separate actuator from the aft main/TVC system.
-        motion.manoeuvreAccelerationMps2 =
-            f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
-            r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
-            u * (static_cast<double>(liftInput) * manoeuvreAccel);
+        const bool manualManoeuvreInput =
+            std::abs(static_cast<double>(forwardInput)) > 1.0e-6 ||
+            std::abs(static_cast<double>(strafeInput)) > 1.0e-6 ||
+            std::abs(static_cast<double>(liftInput)) > 1.0e-6;
+
+        motion.newtonianManualManoeuvreInputActive =
+            manualManoeuvreInput;
+
+        if (manualManoeuvreInput)
+        {
+            motion.manoeuvreAccelerationMps2 =
+                f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
+                r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
+                u * (static_cast<double>(liftInput) * manoeuvreAccel);
+        }
+        else if (dtD > 0.0 &&
+                 glm::length(
+                     motion.newtonianManualManoeuvreDeltaVelocityMps
+                 ) > 1.0e-9)
+        {
+            // Release doctrine for manual Newtonian RCS:
+            // cancel only the delta-v previously created by those RCS
+            // thrusters. Do not chase total VREL and do not touch main-engine
+            // or externally induced velocity.
+            const glm::dvec3 requiredLocalAcceleration =
+                -motion.newtonianManualManoeuvreDeltaVelocityMps / dtD;
+            const glm::dvec3 commandedLocalAcceleration =
+                clampMagnitude(
+                    requiredLocalAcceleration,
+                    manoeuvreAccel
+                );
+            motion.manoeuvreAccelerationMps2 =
+                frame.localToWorldVector(
+                    commandedLocalAcceleration
+                );
+        }
         // Newtonian main thrust follows the rate-limited physical nozzle axis.
         // RCS remains a separate small body-axis actuator; TVC is never folded
         // into manoeuvreAccelerationMps2.

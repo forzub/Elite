@@ -1503,9 +1503,22 @@ void SpaceState::prepareFrame(float dt)
 // =====================================================================================
 void SpaceState::handleInput()
 {
-    // Restore the temporary diagnostic construction once the authoritative
-    // player ship has arrived. The preference never mutates client physics
-    // directly; it is replayed as the same server command used by Ctrl+F9/F10.
+    // Restore the temporary manual construction preference once the
+    // authoritative player ship has arrived.
+    //
+    // An explicit ELITE_SHIP_PHYSICAL_TEST_MODEL owns diagnostic construction
+    // for the whole process. Never replay a persisted Ctrl+F9/F10 preference
+    // over that server-selected model: doing so makes the stress overlay label
+    // one model while the authoritative ship is physically running another.
+    const char* explicitDiagnosticModel =
+        std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
+    if (!m_persistedPhysicalModelApplied &&
+        explicitDiagnosticModel &&
+        *explicitDiagnosticModel)
+    {
+        m_persistedPhysicalModelApplied = true;
+    }
+
     if (!m_persistedPhysicalModelApplied &&
         context().app &&
         m_client)

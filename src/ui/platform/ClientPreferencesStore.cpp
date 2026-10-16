@@ -31,6 +31,7 @@ constexpr std::size_t MaxEndpointLength = 512u;
 constexpr std::size_t MaxLocaleLength = 32u;
 constexpr std::size_t MaxSkyCultureIdLength = 64u;
 constexpr std::size_t MaxCoordinateDisplayFormatIdLength = 32u;
+constexpr std::size_t MaxPhysicalControlModelLength = 32u;
 
 bool fail(std::string* outError, const std::string& message)
 {
@@ -79,6 +80,17 @@ bool validSkyCultureId(const std::string& value)
             return false;
     }
     return true;
+}
+
+bool validPhysicalControlModel(const std::string& value)
+{
+    return value.empty() ||
+        value == "Assisted-I" ||
+        value == "Assisted-Y" ||
+        value == "Assisted-X" ||
+        value == "Newtonian-I" ||
+        value == "Newtonian-Y" ||
+        value == "Newtonian-X";
 }
 
 bool validCoordinateDisplayFormatId(const std::string& value)
@@ -165,6 +177,8 @@ nlohmann::json toJson(const ClientPreferences& preferences)
     root["sky_culture_id"] = preferences.skyCultureId;
     root["coordinate_display_format_id"] =
         preferences.coordinateDisplayFormatId;
+    root["preferred_physical_control_model"] =
+        preferences.preferredPhysicalControlModel;
     root["last_successful_account_by_server"] = nlohmann::json::object();
 
     for (const auto& [endpoint, account] : preferences.lastSuccessfulAccountByServer)
@@ -243,6 +257,30 @@ bool fromJson(
             return fail(
                 outError,
                 "coordinate_display_format_id is invalid"
+            );
+        }
+    }
+
+    if (root.contains("preferred_physical_control_model"))
+    {
+        if (!root["preferred_physical_control_model"].is_string())
+        {
+            return fail(
+                outError,
+                "preferred_physical_control_model must be a string"
+            );
+        }
+
+        parsed.preferredPhysicalControlModel =
+            root["preferred_physical_control_model"].get<std::string>();
+        if (parsed.preferredPhysicalControlModel.size() >
+                MaxPhysicalControlModelLength ||
+            !validPhysicalControlModel(
+                parsed.preferredPhysicalControlModel))
+        {
+            return fail(
+                outError,
+                "preferred_physical_control_model is invalid"
             );
         }
     }

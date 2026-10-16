@@ -1,3 +1,41 @@
+## 2026-10-16 — propulsion authority matrix and in-game control oracle
+
+Current restore point before the propulsion-authority refactor:
+`restore/pre-propulsion-authority-matrix-2026-10-16`.
+
+Working branch:
+`feature/propulsion-authority-matrix-2026-10-16`.
+
+Physical-control architecture:
+- individual engine/module health is projected through a simplified propulsion-authority contribution matrix into the existing aggregate movement envelope;
+- the matrix is a cinematic/causal bridge, not a detailed engine/gas-dynamics solver;
+- healthy Assisted/Newtonian I/Y/X constructions must preserve the accepted pre-matrix movement behavior;
+- damage may remove or asymmetrically reduce authority but must never create extra authority;
+- Assisted I/Y/X use 4/6/8 vectoring main engines respectively; Newtonian uses its own main/RCS topology;
+- autopilot remains a virtual pilot and uses ordinary ShipControlState only.
+
+Testing policy changed after prior false confidence from green unit/corridor tests:
+- structural/CTest coverage is necessary but not sufficient;
+- primary behavioral acceptance is now an in-game `EliteGame.exe` control->motion oracle;
+- the oracle is manually armed/launched, then cycles all six physical models inside one game process through the same `SelectPhysicalControlModel` path used by Ctrl+F9/F10;
+- each command logs COMMAND / EXPECTED / ACTUAL / RESULT;
+- command completion is condition-driven: a command remains active until its physical expectation becomes true;
+- elapsed game time must not produce a physics FAIL; if an expectation never occurs, the probe remains on that command and logs WAIT/INCOMPLETE evidence instead of declaring a timer-based behavioral failure;
+- between models the oracle applies BrakeToStop and waits for near-zero linear/angular motion before starting the next model.
+
+Manual launch:
+- arm with `scripts/run-ship-control-oracle.ps1` (it now only creates the marker; it does not start EliteGame.exe);
+- alternatively create `D:/tmp/elite/ship_control_oracle.enable`;
+- start EliteGame.exe manually as usual;
+- combined report: `D:/tmp/elite/ship_control_oracle_matrix.log`;
+- the marker is removed automatically after all six models complete.
+
+Observed from first runtime logs before converting the probe to condition-driven execution:
+- Assisted-X, Newtonian-I and Newtonian-Y completed all 14 old timed steps;
+- Newtonian manual strafe/lift release returned the commanded manoeuvre delta-velocity close to zero, confirming the self-stabilizing manual RCS path in those runs;
+- the old timed oracle is not authoritative because it sampled at fixed elapsed times rather than waiting for the expected state.
+
+
 ## 2026-10-06 — current Navigation V2 execution contract
 
 The authoritative current execution description is

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <string_view>
 
 #include <glm/glm.hpp>
 
@@ -46,6 +47,76 @@ enum class PhysicalControlModelId : std::uint8_t
     NewtonianY,
     NewtonianX
 };
+
+
+[[nodiscard]] constexpr PhysicalControlModelId modelFor(
+    PhysicalControlFamily family,
+    PropulsionLayout layout
+) noexcept
+{
+    if (family == PhysicalControlFamily::Assisted)
+    {
+        switch (layout)
+        {
+            case PropulsionLayout::Y: return PhysicalControlModelId::AssistedY;
+            case PropulsionLayout::X: return PhysicalControlModelId::AssistedX;
+            case PropulsionLayout::I:
+            default: return PhysicalControlModelId::AssistedI;
+        }
+    }
+
+    switch (layout)
+    {
+        case PropulsionLayout::Y: return PhysicalControlModelId::NewtonianY;
+        case PropulsionLayout::X: return PhysicalControlModelId::NewtonianX;
+        case PropulsionLayout::I:
+        default: return PhysicalControlModelId::NewtonianI;
+    }
+}
+
+[[nodiscard]] constexpr PropulsionLayout nextLayout(
+    PropulsionLayout layout
+) noexcept
+{
+    switch (layout)
+    {
+        case PropulsionLayout::I: return PropulsionLayout::Y;
+        case PropulsionLayout::Y: return PropulsionLayout::X;
+        case PropulsionLayout::X:
+        default: return PropulsionLayout::I;
+    }
+}
+
+[[nodiscard]] inline const char* physicalControlModelName(
+    PhysicalControlModelId model
+) noexcept
+{
+    switch (model)
+    {
+        case PhysicalControlModelId::AssistedI: return "Assisted-I";
+        case PhysicalControlModelId::AssistedY: return "Assisted-Y";
+        case PhysicalControlModelId::AssistedX: return "Assisted-X";
+        case PhysicalControlModelId::NewtonianI: return "Newtonian-I";
+        case PhysicalControlModelId::NewtonianY: return "Newtonian-Y";
+        case PhysicalControlModelId::NewtonianX: return "Newtonian-X";
+        default: return "Assisted-I";
+    }
+}
+
+[[nodiscard]] inline bool parsePhysicalControlModel(
+    std::string_view value,
+    PhysicalControlModelId& out
+) noexcept
+{
+    if (value == "Assisted-I") out = PhysicalControlModelId::AssistedI;
+    else if (value == "Assisted-Y") out = PhysicalControlModelId::AssistedY;
+    else if (value == "Assisted-X") out = PhysicalControlModelId::AssistedX;
+    else if (value == "Newtonian-I") out = PhysicalControlModelId::NewtonianI;
+    else if (value == "Newtonian-Y") out = PhysicalControlModelId::NewtonianY;
+    else if (value == "Newtonian-X") out = PhysicalControlModelId::NewtonianX;
+    else return false;
+    return true;
+}
 
 enum class EngineSlotRole : std::uint8_t
 {

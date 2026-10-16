@@ -894,11 +894,25 @@ AssistedSafeCourseRecovery::assess(
         return out;
     }
 
-    out.positionErrorMeters =
-        glm::length(
-            actualPositionMeters -
-            out.target.positionMeters
+    // The committed recovery owns cross-track geometry, not timing along
+    // the tangent. During a short control/attitude latency the craft may coast
+    // forward on the correct inertial course before curvature begins. Treating
+    // that along-track displacement as spatial divergence recreates the old
+    // wall-clock panic loop. Radial/lateral departure remains fully bounded.
+    const glm::dvec3 targetCourseForEnvelope =
+        normalizedOr(
+            out.target.velocityMps,
+            plan.initialCourse
         );
+    const glm::dvec3 positionDelta =
+        actualPositionMeters - out.target.positionMeters;
+    const glm::dvec3 crossTrackDelta =
+        positionDelta -
+        targetCourseForEnvelope *
+            glm::dot(positionDelta, targetCourseForEnvelope);
+
+    out.positionErrorMeters =
+        glm::length(crossTrackDelta);
 
     // Safety recovery owns COURSE, not cruise-speed recapture. Losing speed is
     // conservative; exceeding the speed used to prove the arc is not.

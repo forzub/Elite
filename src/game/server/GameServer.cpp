@@ -615,6 +615,22 @@ void GameServer::update(double dt)
                     m_simulation.startBestRepairJobForFirstMissingSlot(id);
                     break;
 
+                case ClientShipCommand::SelectPhysicalControlModel:
+                {
+                    using Model =
+                        game::ship::plant::PhysicalControlModelId;
+                    const int raw = shipCmd.index;
+                    if (raw >= static_cast<int>(Model::AssistedI) &&
+                        raw <= static_cast<int>(Model::NewtonianX))
+                    {
+                        (void)ship.core().
+                            selectPhysicalConstructionForDiagnostic(
+                                static_cast<Model>(raw)
+                            );
+                    }
+                    break;
+                }
+
                 default:
                     ship.applyCommand(shipCmd);
                     break;

@@ -956,6 +956,16 @@ void Application::mainLoop()
                 const bool ctrlDown = press.ctrlDown;
                 const bool altDown = press.altDown;
 
+                // Every discrete F-key action has a console echo. This is
+                // intentionally above routing so swallowed/ignored chords are
+                // distinguishable from actions that reached their feature.
+                std::cout
+                    << "[Hotkey] F" << functionKey
+                    << " ctrl=" << (ctrlDown ? "yes" : "no")
+                    << " alt=" << (altDown ? "yes" : "no")
+                    << " session_ready=" << (sessionReady ? "yes" : "no")
+                    << "\n";
+
                 if (sessionReady && !ctrlDown && !altDown)
                 {
                     if (const auto target =

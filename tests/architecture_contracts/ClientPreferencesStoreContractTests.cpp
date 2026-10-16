@@ -35,6 +35,7 @@ int main()
     preferences.constellationsEnabled = true;
     preferences.skyCultureId = "western";
     preferences.coordinateDisplayFormatId = "axis";
+    preferences.preferredPhysicalControlModel = "Newtonian-Y";
     preferences.rememberSuccessfulMultiplayer("127.0.0.1:27351", "pilot-a");
     preferences.rememberSuccessfulMultiplayer("example.test:28000", "pilot-b");
 
@@ -60,6 +61,8 @@ int main()
         return fail("sky-culture mode was not preserved");
     if (loaded.coordinateDisplayFormatId != "axis")
         return fail("coordinate display mode was not preserved");
+    if (loaded.preferredPhysicalControlModel != "Newtonian-Y")
+        return fail("physical control model was not preserved");
 
     std::ifstream input(file, std::ios::binary);
     const std::string serialized(

@@ -49,6 +49,7 @@
 #include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
+#include "src/game/debug/ShipRuntimeControlOracle.h"
 #include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
@@ -327,6 +328,8 @@ private:
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
     game::navigation::debug::NavigationStressHarness
         m_navigationStressHarness {};
+    game::debug::ShipRuntimeControlOracle
+        m_shipRuntimeControlOracle {};
     bool m_navigationStressCompleteAnnounced = false;
     std::uint64_t m_lastNavigationExecutionSnapshotTick = 0;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;

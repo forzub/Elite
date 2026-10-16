@@ -46,6 +46,9 @@ int main()
         require(!out.lines.empty(), "terminal produced no visible line");
 
         snapshot.phase = "planning";
+        snapshot.ship = "SHIP Assisted-I LAW ASSISTED";
+        snapshot.physics = "ACT main=4 aft=2 fore=2 rcs=0";
+        snapshot.activity = "CALC A1B2 C3D4 E5F6 0718";
         out = terminal.update(snapshot, 2.0);
         require(out.typedCharacters > 0, "changed status was not queued");
 
@@ -69,12 +72,33 @@ int main()
 
         snapshot.visible = false;
         out = terminal.update(snapshot, 16.0);
-        require(out.lines.empty(), "hidden terminal retained visible lines");
+        require(out.lines.empty(), "hidden terminal emitted visible lines");
+
+        // Hidden is not reset: physical-model switches and later docking
+        // sessions continue the same scrolling diagnostic history.
+        snapshot.visible = true;
+        snapshot.ship = "SHIP Newtonian-I LAW NEWTONIAN";
+        snapshot.physics = "ACT main=1 aft=1 fore=0 rcs=4";
+        for (int i = 17; i < 24; ++i)
+            out = terminal.update(snapshot, static_cast<double>(i));
+
+        bool sawModelSwitch = false;
+        for (const auto& line : out.lines)
+        {
+            if (line.text.find("Newtonian-I") != std::string::npos)
+                sawModelSwitch = true;
+        }
+        require(
+            sawModelSwitch,
+            "terminal did not append physical-model switch after hidden interval"
+        );
 
         std::cout << "DOCKING STATUS TERMINAL: PASS\n";
         std::cout << " - DTO-only presentation state\n";
         std::cout << " - typewriter queue and cursor state\n";
         std::cout << " - error severity preserved\n";
+        std::cout << " - hidden intervals preserve scrolling diagnostic history\n";
+        std::cout << " - ship/physics/activity streams append as terminal events\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)

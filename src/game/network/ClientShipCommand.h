@@ -8,7 +8,8 @@
             RepairAllPanels,
             InjectReactorFailure,
             EjectCockpitCapsule,
-            StartBestRepairJob
+            StartBestRepairJob,
+            SelectPhysicalControlModel
         };
         Type type;
 

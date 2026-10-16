@@ -128,6 +128,13 @@ struct DynamicMotionState
     glm::dvec3 mainPropulsionTorqueBodyNm {0.0};
     glm::dvec3 mainPropulsionAngularAccelerationBodyRadPerSec2 {0.0};
 
+    // Damage-trim diagnostics. Healthy symmetric propulsion remains
+    // load=0 / usable=1. Assisted may reserve main-force margin to cancel
+    // parasitic r x F reaction. Newtonian currently exposes the raw reaction
+    // and therefore leaves these at their neutral values.
+    double mainTrimLoad01 = 0.0;
+    double mainTrimUsableScale01 = 1.0;
+
     // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
     double manoeuvreGasPressure01 = 1.0;
     bool manoeuvreGasDepleted = false;

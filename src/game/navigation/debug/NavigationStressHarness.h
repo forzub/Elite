@@ -29,6 +29,10 @@ public:
         bool worldReady = false;
         std::string actualPhysicalModelLabel;
         std::string actualControlLawLabel;
+        bool actualCapabilityValid = false;
+        bool actualForwardMainAvailable = false;
+        bool actualReverseMainAvailable = false;
+        std::size_t actualPropulsionSlotCount = 0;
         double universeSeconds = 0.0;
         double speedMps = 0.0;
         double angularSpeedRadPerSec = 0.0;
@@ -1142,7 +1146,13 @@ private:
             << " actual_control_law="
             << (o.actualControlLawLabel.empty()
                     ? "unknown"
-                    : o.actualControlLawLabel);
+                    : o.actualControlLawLabel)
+            << " capability_valid=" << (o.actualCapabilityValid ? 1 : 0)
+            << " forward_main_available="
+            << (o.actualForwardMainAvailable ? 1 : 0)
+            << " reverse_main_available="
+            << (o.actualReverseMainAvailable ? 1 : 0)
+            << " propulsion_slots=" << o.actualPropulsionSlotCount;
     }
 
     void sample(const Observation& o)

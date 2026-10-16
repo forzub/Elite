@@ -1,3 +1,22 @@
+## 2026-10-16 — damage trim and Newtonian short-lever main geometry
+
+Damage behavior refinement after the first six-model healthy in-game oracle:
+- healthy I/Y/X remain behaviorally equivalent by contract;
+- damage must create a real parasitic rigid-body reaction from per-slot force application around COM;
+- Assisted automatically spends remaining vectoring/attitude authority to cancel avoidable parasitic torque;
+- Assisted trim is not free: a cinematic main-force reserve is applied, so usable main acceleration decreases as trim load grows;
+- if Assisted trim authority saturates, residual torque remains and is applied to the hull;
+- runtime diagnostics now expose `mainTrimLoad01` and `mainTrimUsableScale01`;
+- Newtonian does not get the same hidden full automatic trim; residual damaged-main reaction remains visible for RCS/orientation doctrine;
+- Newtonian Y/X main clusters are modeled close to the thrust axis: radial placement is 12% of the hull half-extent radius, while longitudinal placement remains aft;
+- Newtonian RCS clusters remain on the full lever arm because they are intended to generate corrective torque efficiently;
+- the physical actuator plant already computes `r x F` using slot position relative to `centerOfMassLocalMeters`; this is now the authoritative parasitic-moment basis.
+
+New/updated tests:
+- ShipPhysicalActuatorPlantTests require damaged Newtonian Y/X main torque to remain non-zero but bounded with the short radial lever arm;
+- ShipControlExecutionGatewayTests require a damaged Assisted-Y aft bank to have a real raw geometric pitch bias, then consume automatic trim authority, reserve some usable main thrust, and leave near-zero avoidable pitch reaction when trim capacity is sufficient.
+
+
 ## 2026-10-16 — propulsion authority matrix and in-game control oracle
 
 Current restore point before the propulsion-authority refactor:

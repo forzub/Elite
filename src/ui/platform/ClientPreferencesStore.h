@@ -20,6 +20,10 @@ struct ClientPreferences
     std::string skyCultureId;
     std::string coordinateDisplayFormatId = "hierarchical";
 
+    // Temporary developer selection of the six fixed ordinary-flight
+    // constructions. Empty means "use the descriptor default".
+    std::string preferredPhysicalControlModel;
+
     std::string lastSuccessfulAccountFor(
         const std::string& endpoint) const;
 

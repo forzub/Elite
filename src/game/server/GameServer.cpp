@@ -617,43 +617,15 @@ void GameServer::update(double dt)
 
                 case ClientShipCommand::SelectPhysicalControlModel:
                 {
-                    using namespace game::ship::plant;
-                    using Model = PhysicalControlModelId;
-
-                    const auto before =
-                        ship.core().state().construction.physicalControlModel;
+                    using Model = game::ship::plant::PhysicalControlModelId;
                     const int raw = shipCmd.index;
 
                     if (raw >= static_cast<int>(Model::AssistedI) &&
                         raw <= static_cast<int>(Model::NewtonianX))
                     {
-                        const auto requested = static_cast<Model>(raw);
-                        const bool accepted =
-                            ship.core().selectPhysicalConstructionForDiagnostic(
-                                requested
-                            );
-                        const auto after =
-                            ship.core().state().construction.physicalControlModel;
-
-                        std::cout
-                            << "[ShipModel][server] entity=" << id.value
-                            << " before=" << physicalControlModelName(before)
-                            << " requested=" << physicalControlModelName(requested)
-                            << " after=" << physicalControlModelName(after)
-                            << " accepted=" << (accepted ? "yes" : "no")
-                            << " law="
-                            << game::navigation::localFlightControlLawName(
-                                   ship.core().transform().motion.localControlLaw
-                               )
-                            << "\n";
-                    }
-                    else
-                    {
-                        std::cout
-                            << "[ShipModel][server] entity=" << id.value
-                            << " before=" << physicalControlModelName(before)
-                            << " rejected_raw=" << raw
-                            << " reason=invalid-model-id\n";
+                        (void)ship.core().selectPhysicalConstructionForDiagnostic(
+                            static_cast<Model>(raw)
+                        );
                     }
                     break;
                 }

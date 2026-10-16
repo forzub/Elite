@@ -288,13 +288,6 @@ private:
     // Presentation-only terminal. It consumes a DTO snapshot and has no
     // navigation/control access; deleting this member cannot alter flight.
     game::presentation::DockingStatusTerminal m_dockingStatusTerminal {};
-    // Terminal visibility/history state is presentation-only. Physical-model
-    // changes may briefly reopen the diagnostic terminal without touching flight.
-    bool m_terminalObservedPhysicalModelValid = false;
-    game::ship::plant::PhysicalControlModelId
-        m_terminalObservedPhysicalModel =
-            game::ship::plant::PhysicalControlModelId::AssistedI;
-    double m_terminalDiagnosticVisibleUntilServerSeconds = -1.0;
     // Presentation->audio seam only. No simulation/navigation state crosses it.
     audio::TerminalAudioAdapter m_terminalAudioAdapter {};
 

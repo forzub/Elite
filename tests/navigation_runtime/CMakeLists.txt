@@ -842,6 +842,45 @@ set_tests_properties(
 )
 
 add_executable(
+    newtonian_maneuver_optimizer_tests
+    NewtonianManeuverOptimizerTests.cpp
+)
+
+target_include_directories(
+    newtonian_maneuver_optimizer_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    newtonian_maneuver_optimizer_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        newtonian_maneuver_optimizer_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        newtonian_maneuver_optimizer_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME newtonian_maneuver_optimizer
+    COMMAND newtonian_maneuver_optimizer_tests
+)
+
+set_tests_properties(
+    newtonian_maneuver_optimizer
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     terminal_audio_adapter_tests
     TerminalAudioAdapterTests.cpp
 )

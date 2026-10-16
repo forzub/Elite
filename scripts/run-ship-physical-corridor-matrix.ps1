@@ -1,7 +1,7 @@
 param(
     [int]$NoProgressTimeoutSeconds = 15,
     [int]$PerModelTimeoutSeconds = 240,
-    [string]$ReportDirectory = "D:\\tmp\\elite\\ship_physical_corridor\\live"
+    [string]$ReportDirectory = "D:\\tmp"
 )
 
 $ErrorActionPreference = "Stop"
@@ -105,7 +105,7 @@ try {
     foreach ($result in $results) {
         Write-Host ("[PhysicalMatrix] PASS {0}/6 {1} -> {2}" -f $result.Index, $result.Model, $result.Report)
     }
-    Write-Host "[PhysicalMatrix] headless summary: D:\tmp\elite\ship_physical_corridor\summary.csv"
+    Write-Host "[PhysicalMatrix] headless summary: D:\tmp\ship_physical_corridor_summary.csv"
     Write-Host "=========================================================="
 }
 finally {

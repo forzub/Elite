@@ -1711,6 +1711,72 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 //           ####
 
 
+void SpaceState::cyclePhysicalControlLayout()
+{
+    if (!m_client)
+        return;
+
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return;
+
+    using namespace game::ship::plant;
+    const auto current = it->second.physicalControlModel;
+    const auto next = modelFor(
+        familyOf(current),
+        nextLayout(layoutOf(current))
+    );
+
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::SelectPhysicalControlModel;
+    command.index = static_cast<int>(next);
+    msg.payload = command;
+    m_client->sendMessage(msg);
+
+    if (context().app)
+        context().app->setPreferredPhysicalControlModel(
+            physicalControlModelName(next)
+        );
+
+    std::cout << "[ShipModel] requested="
+              << physicalControlModelName(next) << "\n";
+}
+
+void SpaceState::cyclePhysicalControlFamily()
+{
+    if (!m_client)
+        return;
+
+    const auto it = m_client->world().ships().find(m_playerId.value);
+    if (it == m_client->world().ships().end())
+        return;
+
+    using namespace game::ship::plant;
+    const auto current = it->second.physicalControlModel;
+    const auto nextFamily =
+        familyOf(current) == PhysicalControlFamily::Assisted
+            ? PhysicalControlFamily::Newtonian
+            : PhysicalControlFamily::Assisted;
+    const auto next = modelFor(nextFamily, layoutOf(current));
+
+    game::network::ClientMessage msg;
+    ClientShipCommand command;
+    command.type = ClientShipCommand::SelectPhysicalControlModel;
+    command.index = static_cast<int>(next);
+    msg.payload = command;
+    m_client->sendMessage(msg);
+
+    if (context().app)
+        context().app->setPreferredPhysicalControlModel(
+            physicalControlModelName(next)
+        );
+
+    std::cout << "[ShipModel] requested="
+              << physicalControlModelName(next) << "\n";
+}
+
+
 void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 {
     // F1-F4 leave the Navigation presentation domain immediately. Do not let
@@ -1903,62 +1969,31 @@ void SpaceState::updateDockingAdvisory()
         return;
     }
 
-    ShipParams effectivePhysics =
-        game::ship::effectiveShipPhysics(
+    const auto plannerSlotState =
+        player.physicalControlModel !=
+                player.descriptor->physicalControlModel
+            ? game::ship::plant::healthySlotState(
+                  game::ship::plant::physicalControlSlots(
+                      player.physicalControlModel
+                  )
+              )
+            : game::ship::capability::buildPhysicalControlSlotState(
+                  *player.descriptor,
+                  player.physicalControlModel,
+                  player.modules
+              );
+
+    const auto plannerCapability =
+        game::ship::capability::buildShipCapability(
             *player.descriptor,
-            player.modules
+            player.physicalControlModel,
+            plannerSlotState
         );
 
-    // Dedicated six-model corridor diagnostics override the authoritative
-    // server construction. Mirror that selection into the client-side
-    // planner/follower capability projection so Newtonian runs are not
-    // planned with the authored default Assisted capability.
-    if (const char* requestedModel =
-            std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
-        requestedModel && *requestedModel)
-    {
-        using Model =
-            game::ship::plant::PhysicalControlModelId;
-        Model model = player.descriptor->physicalControlModel;
-        bool known = true;
-        const std::string label(requestedModel);
-
-        if (label == "Assisted-I")
-            model = Model::AssistedI;
-        else if (label == "Assisted-Y")
-            model = Model::AssistedY;
-        else if (label == "Assisted-X")
-            model = Model::AssistedX;
-        else if (label == "Newtonian-I")
-            model = Model::NewtonianI;
-        else if (label == "Newtonian-Y")
-            model = Model::NewtonianY;
-        else if (label == "Newtonian-X")
-            model = Model::NewtonianX;
-        else
-            known = false;
-
-        if (known)
-        {
-            ShipDescriptor diagnosticDescriptor =
-                *player.descriptor;
-            diagnosticDescriptor.physicalControlModel = model;
-            diagnosticDescriptor.localFlightControlLaw =
-                game::ship::plant::nativeFlightLaw(model);
-
-            const auto diagnosticCapability =
-                game::ship::capability::
-                    buildHealthyShipCapability(
-                        diagnosticDescriptor
-                    );
-
-            if (diagnosticCapability.valid)
-            {
-                effectivePhysics =
-                    diagnosticCapability.effectivePhysics;
-            }
-        }
-    }
+    ShipParams effectivePhysics =
+        plannerCapability.valid
+            ? plannerCapability.effectivePhysics
+            : ShipParams {};
 
     const auto controlLaw =
         motion.localControlLaw;

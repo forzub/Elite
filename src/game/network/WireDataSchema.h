@@ -97,6 +97,11 @@ ELITE_WIRE_ENUM_RANGE(
     game::navigation::LocalFlightControlLaw::Assisted
 );
 ELITE_WIRE_ENUM_RANGE(
+    game::ship::plant::PhysicalControlModelId,
+    game::ship::plant::PhysicalControlModelId::AssistedI,
+    game::ship::plant::PhysicalControlModelId::NewtonianX
+);
+ELITE_WIRE_ENUM_RANGE(
     game::navigation::NavigationAssetKind,
     game::navigation::NavigationAssetKind::None,
     game::navigation::NavigationAssetKind::Drone
@@ -603,6 +608,7 @@ ELITE_WIRE_SCHEMA(
     v.instanceId,
     v.role,
     v.typeId,
+    v.physicalControlModel,
     v.acknowledgedControlTick,
     v.motionLabKind,
     v.simulationTier,

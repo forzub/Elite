@@ -108,13 +108,29 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         return out;
 
     const ShipDescriptor& descriptor = *ship.descriptor;
+
+    // The descriptor describes the ship type, but the selected I/Y/X +
+    // Assisted/Newtonian construction is per-instance runtime state. Ctrl+F9
+    // and Ctrl+F10 change ship.physicalControlModel authoritatively; the HUD
+    // must consume that same replicated state instead of silently falling back
+    // to the descriptor's spawn-time model.
+    const auto model = ship.physicalControlModel;
     const auto& definitions =
-        plant::physicalControlSlots(descriptor.physicalControlModel);
+        plant::physicalControlSlots(model);
+
+    // Diagnostic construction switching deliberately creates a healthy fixed
+    // actuator topology on the server. When it differs from the descriptor's
+    // native construction there is no descriptor module binding for those
+    // synthetic slots, so mirror the same healthy diagnostic state on the
+    // client. For the native construction, keep real replicated module damage.
     const auto slotState =
-        capability::buildPhysicalControlSlotState(
-            descriptor,
-            ship.modules
-        );
+        model != descriptor.physicalControlModel
+            ? plant::healthySlotState(definitions)
+            : capability::buildPhysicalControlSlotState(
+                  descriptor,
+                  model,
+                  ship.modules
+              );
 
     if (definitions.empty() ||
         slotState.size() != definitions.size())
@@ -125,16 +141,17 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
     const auto shipCapability =
         capability::buildShipCapability(
             descriptor,
-            ship.modules
+            model,
+            slotState
         );
     if (!shipCapability.valid)
         return out;
 
     out.modelLabel =
-        detail::physicalModelLabel(descriptor.physicalControlModel);
+        detail::physicalModelLabel(model);
 
     const auto family =
-        plant::familyOf(descriptor.physicalControlModel);
+        plant::familyOf(model);
     const bool assisted =
         family == plant::PhysicalControlFamily::Assisted;
 

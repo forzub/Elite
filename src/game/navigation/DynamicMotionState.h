@@ -96,6 +96,15 @@ struct DynamicMotionState
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 
+    // Newtonian manual-RCS delta-v ledger in the travel frame. This tracks
+    // ONLY velocity change physically produced by keypad manoeuvre thrusters.
+    // When all manual manoeuvre axes are released, the same RCS hardware
+    // applies opposite bounded thrust until this ledger returns to zero.
+    // Main-engine delta-v, pre-existing drift and external impulses are not
+    // included and therefore are not cancelled by manual-RCS stabilization.
+    glm::dvec3 newtonianManualManoeuvreDeltaVelocityMps {0.0};
+    bool newtonianManualManoeuvreInputActive = false;
+
     // Newtonian main-nozzle TVC. Commands are normalized pilot inputs;
     // actual angles are rate-limited physical actuator state. Assisted ignores
     // this channel, so adding it cannot alter Assisted translation behavior.

@@ -152,14 +152,23 @@ inventing new semantics, rollback should target the last accepted Assisted resto
 rather than an arbitrary intermediate commit.
 
 
-## 9. Cross-family manual attitude doctrine — 2026-10-16
+## 9. Cross-family pilot-control attitude doctrine — 2026-10-16
 
 This section is law-neutral and is included here because the cockpit family switch
 must not silently change the meaning of released pitch/yaw/roll controls.
 
-- Newtonian TRANSLATIONAL motion remains inertial when thrust is released.
+**Hard control-source contract:** production autopilot is a virtual pilot. It
+temporarily replaces the human as the producer of ordinary `ShipControlState`.
+The server/control-law/physical plant must not know whether that ordinary control
+sample came from keyboard, autopilot, NPC logic, or another pilot source. Production
+autopilot must not bypass ordinary controls to command engines directly.
+
+Therefore every ordinary control-law semantic below applies identically to human
+and automatic control.
+
+- Newtonian TRANSLATIONAL motion remains inertial when main thrust is released.
 - Newtonian does NOT inherit Assisted velocity-vector stabilization.
-- Manual pitch/yaw/roll release commands zero angular rate on the released axis.
+- Released pitch/yaw/roll commands zero angular rate on the released axis.
 - Angular-rate arrest must be produced through ordinary bounded angular authority
   (manoeuvre thrusters / available vectoring authority); code must not directly
   assign angular velocity or orientation.
@@ -174,7 +183,7 @@ linear controls released  -> coast
 angular control released  -> physical rate damping toward omega = 0
 ```
 
-This is a manual-control doctrine and does not merge the Assisted and Newtonian
+This is a pilot-control doctrine and does not merge the Assisted and Newtonian
 planning pipelines.
 
 ## 10. Cockpit diagnostic terminal doctrine — 2026-10-16
@@ -186,6 +195,39 @@ The cockpit terminal is presentation-only.
 - decorative CALC/HEX activity is derived only from diagnostic counters and is
   not represented as memory contents or planner data;
 - hiding the terminal must not clear its scrolling history;
-- changing I/Y/X or Assisted/Newtonian may briefly reveal the terminal and append
-  a new model/topology event;
+- changing I/Y/X or Assisted/Newtonian may append a new model/topology event but
+  MUST NOT itself change terminal visibility;
 - deleting the terminal module must not alter flight, planning or physics.
+
+
+## 11. Autopilot replaces the pilot — hard production contract — 2026-10-16
+
+The production control chain is:
+
+```text
+human input ---------\
+                      -> ShipControlState -> flight-control law
+autopilot / NPC -----/                       -> actuator allocation
+                                             -> physical plant
+                                             -> integration
+```
+
+Rules:
+
+1. Exactly one ordinary pilot source owns a control sample at a time.
+2. When automatic control is active, it replaces the human control source; it does
+   not add a parallel engine-control layer.
+3. Human and automatic control use the same `ShipControlState` semantics.
+4. Assisted FA-on behavior therefore remains active under neutral automatic
+   controls exactly as it does when the human releases the controls.
+5. Newtonian self-stabilizing manoeuvre/attitude semantics, where defined by the
+   Newtonian flight-control law, apply equally to human, autopilot and NPC control.
+6. Physical capability is owned below this seam by the selected physical model,
+   actuator state and plant. The pilot source may request controls but may not
+   invent unavailable thrust, reverse engines, RCS authority or gimbal travel.
+7. Legacy `navigationAccelerationDemand*` fields remain diagnostic/migration
+   seams only and are not a production automatic-docking bypass.
+
+This contract is architectural: future autopilot work must be rejected if it
+commands propulsion hardware directly instead of replacing the pilot at the
+ordinary-control seam.

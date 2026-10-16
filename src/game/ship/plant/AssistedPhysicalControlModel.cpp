@@ -133,11 +133,6 @@ PhysicalControlModelId modelId(PropulsionLayout layout) noexcept
     }
 }
 
-AxisAuthority01 symmetric(double authority) noexcept
-{
-    const double a = std::clamp(authority, 0.0, 1.0);
-    return {a, a};
-}
 
 } // namespace
 

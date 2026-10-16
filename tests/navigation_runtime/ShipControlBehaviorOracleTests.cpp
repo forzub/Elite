@@ -443,6 +443,296 @@ void runHealthyBehaviorOracle(Model model)
     }
 }
 
+
+void runDamageBehaviorOracle(Model model)
+{
+    const ShipParams nominal = nominalPhysics();
+    const auto& definitions =
+        game::ship::plant::physicalControlSlots(model);
+    const auto healthySlots =
+        game::ship::plant::healthySlotState(definitions);
+    const Snapshot healthy = game::ship::plant::evaluatePhysicalControlModel(
+        model,
+        nominal,
+        healthySlots
+    );
+    require(healthy.valid, std::string(modelName(model)) + " healthy invalid");
+
+    std::size_t firstAft = definitions.size();
+    std::size_t firstFore = definitions.size();
+    std::size_t firstManoeuvre = definitions.size();
+
+    for (std::size_t i = 0; i < definitions.size(); ++i)
+    {
+        if (definitions[i].role == game::ship::plant::EngineSlotRole::AftMain &&
+            firstAft == definitions.size())
+        {
+            firstAft = i;
+        }
+        if (definitions[i].role == game::ship::plant::EngineSlotRole::ForeMain &&
+            firstFore == definitions.size())
+        {
+            firstFore = i;
+        }
+        if (definitions[i].role == game::ship::plant::EngineSlotRole::ManoeuvreCluster &&
+            firstManoeuvre == definitions.size())
+        {
+            firstManoeuvre = i;
+        }
+    }
+
+    require(firstAft < definitions.size(), "model has no aft main");
+
+    {
+        ShipControlState c;
+        c.targetSpeedRate = 1.0f;
+
+        const auto healthyActual = execute(model, healthy, c);
+
+        auto damagedSlots = healthySlots;
+        damagedSlots[firstAft].operational = false;
+        damagedSlots[firstAft].thrust01 = 0.0;
+        damagedSlots[firstAft].vectoring01 = 0.0;
+
+        const auto damagedSnapshot =
+            game::ship::plant::evaluatePhysicalControlModel(
+                model,
+                nominal,
+                damagedSlots
+            );
+        require(damagedSnapshot.valid, "damaged main snapshot invalid");
+
+        ShipTransform transform = makeTransform(model, 0.0);
+        WorldParams world {};
+        const glm::dvec3 startVelocity = transform.motion.localVelocityMps;
+        Observation damagedActual;
+        const int ticks = static_cast<int>(kDuration / kDt);
+
+        for (int tick = 0; tick < ticks; ++tick)
+        {
+            game::ship::control::ShipControlExecutionGateway::integrateAttitude(
+                transform,
+                damagedSnapshot.effectivePhysics,
+                c,
+                world,
+                static_cast<float>(kDt)
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                evaluateTranslationControl(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    c,
+                    model,
+                    damagedSlots,
+                    static_cast<float>(kDt)
+                );
+            keepPeak(
+                damagedActual.peakMainAcceleration,
+                transform.motion.mainEngineAccelerationMps2
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                propagateHubTacticalTranslation(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    kDt
+                );
+        }
+
+        damagedActual.deltaVelocity =
+            transform.motion.localVelocityMps - startVelocity;
+        damagedActual.finalSpeed =
+            glm::length(transform.motion.localVelocityMps);
+        damagedActual.pitchRate = transform.pitchRate;
+        damagedActual.yawRate = transform.yawRate;
+        damagedActual.rollRate = transform.rollRate;
+
+        const bool pass =
+            damagedActual.finalSpeed <= healthyActual.finalSpeed + 1.0e-6 &&
+            glm::length(damagedActual.peakMainAcceleration) <=
+                glm::length(healthyActual.peakMainAcceleration) + 1.0e-6;
+
+        report(
+            model,
+            "damage_first_aft_main_then_forward_burn",
+            "losing one aft main may preserve or reduce forward response, never improve it",
+            damagedActual,
+            pass
+        );
+        require(
+            pass,
+            std::string(modelName(model)) +
+                " damaged aft main improved forward response"
+        );
+    }
+
+    if (game::ship::plant::familyOf(model) == Family::Assisted &&
+        firstFore < definitions.size())
+    {
+        ShipControlState c;
+        c.targetSpeedRate = -1.0f;
+
+        const auto healthyActual = execute(model, healthy, c, 50.0);
+
+        auto damagedSlots = healthySlots;
+        damagedSlots[firstFore].operational = false;
+        damagedSlots[firstFore].thrust01 = 0.0;
+        damagedSlots[firstFore].vectoring01 = 0.0;
+
+        const auto damagedSnapshot =
+            game::ship::plant::evaluatePhysicalControlModel(
+                model,
+                nominal,
+                damagedSlots
+            );
+        require(damagedSnapshot.valid, "damaged fore snapshot invalid");
+
+        ShipTransform transform = makeTransform(model, 50.0);
+        WorldParams world {};
+        const double initialSpeed =
+            glm::length(transform.motion.localVelocityMps);
+        const int ticks = static_cast<int>(kDuration / kDt);
+        Observation damagedActual;
+
+        for (int tick = 0; tick < ticks; ++tick)
+        {
+            game::ship::control::ShipControlExecutionGateway::integrateAttitude(
+                transform,
+                damagedSnapshot.effectivePhysics,
+                c,
+                world,
+                static_cast<float>(kDt)
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                evaluateTranslationControl(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    c,
+                    model,
+                    damagedSlots,
+                    static_cast<float>(kDt)
+                );
+            keepPeak(
+                damagedActual.peakMainAcceleration,
+                transform.motion.mainEngineAccelerationMps2
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                propagateHubTacticalTranslation(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    kDt
+                );
+        }
+
+        damagedActual.finalSpeed =
+            glm::length(transform.motion.localVelocityMps);
+        damagedActual.deltaVelocity =
+            transform.motion.localVelocityMps -
+            glm::dvec3(0.0, 0.0, -initialSpeed);
+
+        const double healthySpeedDrop =
+            50.0 - healthyActual.finalSpeed;
+        const double damagedSpeedDrop =
+            50.0 - damagedActual.finalSpeed;
+
+        const bool pass =
+            damagedSpeedDrop <= healthySpeedDrop + 1.0e-6;
+
+        report(
+            model,
+            "damage_first_fore_main_then_reverse_request",
+            "losing one fore main weakens or preserves Assisted braking; it must never improve braking",
+            damagedActual,
+            pass
+        );
+        require(
+            pass,
+            std::string(modelName(model)) +
+                " damaged fore main improved braking"
+        );
+    }
+
+    if (game::ship::plant::familyOf(model) == Family::Newtonian &&
+        firstManoeuvre < definitions.size())
+    {
+        ShipControlState c;
+        c.strafeInput = 1.0f;
+
+        const auto healthyActual = execute(model, healthy, c);
+
+        auto damagedSlots = healthySlots;
+        damagedSlots[firstManoeuvre].operational = false;
+        damagedSlots[firstManoeuvre].thrust01 = 0.0;
+        damagedSlots[firstManoeuvre].vectoring01 = 0.0;
+
+        const auto damagedSnapshot =
+            game::ship::plant::evaluatePhysicalControlModel(
+                model,
+                nominal,
+                damagedSlots
+            );
+        require(damagedSnapshot.valid, "damaged RCS snapshot invalid");
+
+        ShipTransform transform = makeTransform(model, 0.0);
+        WorldParams world {};
+        const int ticks = static_cast<int>(kDuration / kDt);
+        Observation damagedActual;
+
+        for (int tick = 0; tick < ticks; ++tick)
+        {
+            game::ship::control::ShipControlExecutionGateway::integrateAttitude(
+                transform,
+                damagedSnapshot.effectivePhysics,
+                c,
+                world,
+                static_cast<float>(kDt)
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                evaluateTranslationControl(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    c,
+                    model,
+                    damagedSlots,
+                    static_cast<float>(kDt)
+                );
+            keepPeak(
+                damagedActual.peakRcsAcceleration,
+                transform.motion.manoeuvreAccelerationMps2
+            );
+            (void)game::ship::control::ShipControlExecutionGateway::
+                propagateHubTacticalTranslation(
+                    transform,
+                    damagedSnapshot.effectivePhysics,
+                    kDt
+                );
+        }
+
+        damagedActual.finalVelocity = transform.motion.localVelocityMps;
+        damagedActual.deltaVelocity = transform.motion.localVelocityMps;
+        damagedActual.finalSpeed = glm::length(transform.motion.localVelocityMps);
+
+        const bool pass =
+            damagedActual.deltaVelocity.x <=
+                healthyActual.deltaVelocity.x + 1.0e-6 &&
+            glm::length(damagedActual.peakRcsAcceleration) <=
+                glm::length(healthyActual.peakRcsAcceleration) + 1.0e-6;
+
+        report(
+            model,
+            "damage_first_rcs_then_strafe_right",
+            "losing one Newtonian manoeuvre cluster weakens or preserves strafe response; it must never improve it",
+            damagedActual,
+            pass
+        );
+        require(
+            pass,
+            std::string(modelName(model)) +
+                " damaged RCS improved strafe response"
+        );
+    }
+}
+
+
 } // namespace
 
 int main()
@@ -459,13 +749,17 @@ int main()
         };
 
         for (const auto model : models)
+        {
             runHealthyBehaviorOracle(model);
+            runDamageBehaviorOracle(model);
+        }
 
         std::cout
             << "SHIP CONTROL BEHAVIOR ORACLE: PASS\n"
             << " - six healthy Assisted/Newtonian I/Y/X constructions\n"
             << " - each command prints EXPECTED semantics next to ACTUAL motion\n"
-            << " - test verifies control->motion causality without planner/tunnel/follower\n";
+            << " - test verifies control->motion causality without planner/tunnel/follower\n"
+            << " - obvious damage cases are compared against the same healthy command response\n";
         return 0;
     }
     catch (const std::exception& error)

@@ -1733,7 +1733,16 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 playerIt->second.transform.motion.localControlLaw;
     }
 
-    if (!m_clientAutopilotControlActive)
+    if (m_shipRuntimeControlOracle.enabled())
+    {
+        // In-game control oracle owns the exact same ordinary pilot-control
+        // surface as keyboard input. No direct physics/engine calls are
+        // permitted here; the purpose of this probe is to test the real
+        // game runtime control -> server physics -> snapshot chain.
+        m_playerControl = m_shipRuntimeControlOracle.control();
+        m_client->submitInput(m_playerControl);
+    }
+    else if (!m_clientAutopilotControlActive)
     {
         // Human input owns the ordinary control stream only while the local
         // virtual pilot is inactive. Client autopilot submission happens from

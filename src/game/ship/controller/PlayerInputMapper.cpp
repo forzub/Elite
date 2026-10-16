@@ -37,56 +37,10 @@ void PlayerInputMapper::updateFromKeyState(
         keys.isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
         keys.isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
 
-    // Ctrl+F10 switches the *local* flight law on F10 release, not on press.
-    // This makes the chord deliberate and prevents a held key from feeling
-    // like a hair trigger. A short release debounce also filters a transient
-    // up/down sample before the command is committed. Ctrl is required only
-    // to arm the chord; once armed, releasing Ctrl before F10 does not cancel
-    // the intended switch.
-    const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10);
-
-    switch (m_ctrlF10State)
-    {
-        case CtrlF10State::Idle:
-            if (ctrlDown && f10Down)
-            {
-                m_ctrlF10State = CtrlF10State::Pressed;
-                m_ctrlF10ReleaseSamples = 0;
-            }
-            break;
-
-        case CtrlF10State::Pressed:
-            if (!f10Down)
-            {
-                m_ctrlF10State = CtrlF10State::ReleaseDebounce;
-                m_ctrlF10ReleaseSamples = 1;
-            }
-            break;
-
-        case CtrlF10State::ReleaseDebounce:
-            if (f10Down)
-            {
-                // A brief return to DOWN is treated as release bounce. Keep
-                // the already-armed chord, but restart release qualification.
-                m_ctrlF10State = CtrlF10State::Pressed;
-                m_ctrlF10ReleaseSamples = 0;
-                break;
-            }
-
-            ++m_ctrlF10ReleaseSamples;
-            if (m_ctrlF10ReleaseSamples >= kCtrlF10ReleaseDebounceSamples)
-            {
-                ctrl.localControlLawCommandValid = true;
-                ctrl.requestedLocalControlLaw =
-                    game::navigation::LocalFlightControlStateMachine::next(
-                        currentLocalControlLaw
-                    );
-
-                m_ctrlF10State = CtrlF10State::Idle;
-                m_ctrlF10ReleaseSamples = 0;
-            }
-            break;
-    }
+    // Modified F-keys are application-level discrete commands. Ctrl+F9/F10
+    // now mutate the authoritative PhysicalControlModelId through
+    // ClientShipCommand; ordinary ship input must not maintain a second
+    // law-only toggle path.
 
     ctrl.cruiseActive = keys.isKeyPressed(GLFW_KEY_J);
 

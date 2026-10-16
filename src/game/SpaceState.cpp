@@ -5563,6 +5563,14 @@ void SpaceState::update(float dt)
             obs.worldReady =
                 stressTransform.motion.matchedToReferenceFrame &&
                 !stressTransform.motion.hubId.empty();
+            obs.actualPhysicalModelLabel =
+                game::ship::plant::physicalControlModelName(
+                    stressPlayerIt->second.physicalControlModel
+                );
+            obs.actualControlLawLabel =
+                game::navigation::localFlightControlLawName(
+                    stressTransform.motion.localControlLaw
+                );
             obs.speedMps =
                 glm::length(stressTransform.motion.localVelocityMps);
             obs.angularSpeedRadPerSec =

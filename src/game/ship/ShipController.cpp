@@ -528,9 +528,9 @@ void ShipController::updateControlRates(
         angularInput * safeAngularAccel;
 
     // Neutral-axis angular stabilization is a control-law doctrine, not a
-    // universal hidden helper. Assisted arrests released rotation. Newtonian
-    // preserves angular inertia unless an explicit alignment/autobrake state
-    // owns attitude.
+    // hard rewrite. Both families arrest released pilot-induced rotation by
+    // applying real bounded angular authority. Newtonian linear velocity still
+    // remains inertial; only neutral attitude rate is driven toward zero.
     const bool neutralAngularDamping =
         game::navigation::LocalFlightControlStateMachine::
             neutralAngularDampingEnabled(

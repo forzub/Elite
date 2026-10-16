@@ -102,7 +102,8 @@ void testNewtonianYSingleMainLossCreatesPitchTorque()
 
     assert(out.valid);
     assert(std::abs(out.torqueBodyNm.x) > 1.0);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-6);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25);
     assert(near(out.angularAccelerationBodyRadPerSec2.y, 0.0, 1.0e-12));
 }
 
@@ -126,8 +127,10 @@ void testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque()
     assert(out.valid);
     assert(std::abs(out.torqueBodyNm.x) > 1.0);
     assert(std::abs(out.torqueBodyNm.y) > 1.0);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-6);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) > 1.0e-6);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) > 1.0e-3);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25);
+    assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) < 0.25);
 }
 
 } // namespace
@@ -144,6 +147,7 @@ int main()
         << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
         << " - balanced main banks produce zero parasitic torque\n"
         << " - Newtonian-I TVC produces rigid-body reaction torque\n"
-        << " - Y/X single-main failures produce layout-dependent asymmetric torque\n";
+        << " - Y/X single-main failures produce layout-dependent asymmetric torque\n"
+        << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
     return 0;
 }

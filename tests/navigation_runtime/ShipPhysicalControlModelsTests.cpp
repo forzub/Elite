@@ -382,6 +382,151 @@ void testNewtonianDegradation()
     assert(!mainLost.effectivePhysics.forwardMainEngineAvailable);
 }
 
+
+bool axisNotGreater(
+    const AxisAuthority01& damaged,
+    const AxisAuthority01& healthy,
+    double eps = 1.0e-9
+)
+{
+    return
+        damaged.positive <= healthy.positive + eps &&
+        damaged.negative <= healthy.negative + eps;
+}
+
+bool authorityNotGreater(
+    const KinematicAuthorityEstimate& damaged,
+    const KinematicAuthorityEstimate& healthy
+)
+{
+    return
+        axisNotGreater(damaged.longitudinal, healthy.longitudinal) &&
+        axisNotGreater(damaged.strafe, healthy.strafe) &&
+        axisNotGreater(damaged.lift, healthy.lift) &&
+        axisNotGreater(damaged.pitch, healthy.pitch) &&
+        axisNotGreater(damaged.yaw, healthy.yaw) &&
+        axisNotGreater(damaged.roll, healthy.roll);
+}
+
+void testHealthyMatrixPreservesAcceptedEnvelope()
+{
+    ShipParams nominal = nominalPhysics();
+
+    constexpr PhysicalControlModelId models[] = {
+        PhysicalControlModelId::AssistedI,
+        PhysicalControlModelId::AssistedY,
+        PhysicalControlModelId::AssistedX,
+        PhysicalControlModelId::NewtonianI,
+        PhysicalControlModelId::NewtonianY,
+        PhysicalControlModelId::NewtonianX
+    };
+
+    for (const auto model : models)
+    {
+        const auto snapshot = evaluatePhysicalControlModel(
+            model,
+            nominal,
+            healthySlotState(physicalControlSlots(model))
+        );
+
+        assert(snapshot.valid);
+        assert(near(snapshot.authority.longitudinal.positive, 1.0));
+        assert(near(
+            snapshot.effectivePhysics.forwardMainEngineAccelerationMps2,
+            60.0
+        ));
+
+        if (familyOf(model) == PhysicalControlFamily::Assisted)
+        {
+            assert(snapshot.regime == RuntimeFlightRegime::FullAssisted);
+            assert(near(snapshot.authority.longitudinal.negative, 1.0));
+            assert(snapshot.effectivePhysics.reverseMainEngineAvailable);
+            assert(near(
+                snapshot.effectivePhysics.reverseMainEngineAccelerationMps2,
+                60.0
+            ));
+            assert(near(snapshot.effectivePhysics.strafeAccel, 40.0));
+            assert(near(snapshot.effectivePhysics.angularAccel, 3.0));
+            assert(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 0.0));
+        }
+        else
+        {
+            assert(snapshot.regime == RuntimeFlightRegime::FullNewtonian);
+            assert(!snapshot.effectivePhysics.reverseMainEngineAvailable);
+            assert(near(
+                snapshot.effectivePhysics.reverseMainEngineAccelerationMps2,
+                0.0
+            ));
+            assert(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 4.0));
+            assert(near(snapshot.effectivePhysics.strafeAccel, 40.0));
+            assert(near(snapshot.effectivePhysics.angularAccel, 3.0));
+        }
+    }
+}
+
+void testDamageMatrixNeverCreatesAuthority()
+{
+    const ShipParams nominal = nominalPhysics();
+
+    constexpr PhysicalControlModelId models[] = {
+        PhysicalControlModelId::AssistedI,
+        PhysicalControlModelId::AssistedY,
+        PhysicalControlModelId::AssistedX,
+        PhysicalControlModelId::NewtonianI,
+        PhysicalControlModelId::NewtonianY,
+        PhysicalControlModelId::NewtonianX
+    };
+
+    for (const auto model : models)
+    {
+        const auto& slots = physicalControlSlots(model);
+        const auto healthyState = healthySlotState(slots);
+        const auto healthy = evaluatePhysicalControlModel(
+            model,
+            nominal,
+            healthyState
+        );
+        assert(healthy.valid);
+
+        for (std::size_t failed = 0; failed < slots.size(); ++failed)
+        {
+            auto damagedState = healthyState;
+            damagedState[failed].operational = false;
+
+            const auto damaged = evaluatePhysicalControlModel(
+                model,
+                nominal,
+                damagedState
+            );
+
+            assert(damaged.valid);
+            assert(authorityNotGreater(damaged.authority, healthy.authority));
+            assert(
+                damaged.effectivePhysics.forwardMainEngineAccelerationMps2 <=
+                healthy.effectivePhysics.forwardMainEngineAccelerationMps2 +
+                    1.0e-6f
+            );
+            assert(
+                damaged.effectivePhysics.reverseMainEngineAccelerationMps2 <=
+                healthy.effectivePhysics.reverseMainEngineAccelerationMps2 +
+                    1.0e-6f
+            );
+            assert(
+                damaged.effectivePhysics.strafeAccel <=
+                healthy.effectivePhysics.strafeAccel + 1.0e-6f
+            );
+            assert(
+                damaged.effectivePhysics.angularAccel <=
+                healthy.effectivePhysics.angularAccel + 1.0e-6f
+            );
+            assert(
+                damaged.effectivePhysics.manoeuvreThrusterAccel <=
+                healthy.effectivePhysics.manoeuvreThrusterAccel + 1.0e-6f
+            );
+        }
+    }
+}
+
 void testStateShapeIsPartOfTopology()
 {
     const ShipParams nominal = nominalPhysics();
@@ -405,12 +550,16 @@ int main()
     testAssistedDegradation();
     testAssistedHasNoGhostRcs();
     testNewtonianDegradation();
+    testHealthyMatrixPreservesAcceptedEnvelope();
+    testDamageMatrixNeverCreatesAuthority();
     testStateShapeIsPartOfTopology();
 
     std::cout << "SHIP PHYSICAL CONTROL MODELS: PASS\n";
     std::cout << " - six fixed Assisted/Newtonian I/Y/X topologies\n";
     std::cout << " - Assisted ordinary control uses vectoring mains, no RCS slots or legacy ghost-RCS fallback\n";
     std::cout << " - Newtonian uses aft vectoring main propulsion plus RCS clusters\n";
+    std::cout << " - healthy authority matrices preserve the accepted pre-matrix movement envelope\n";
+    std::cout << " - slot damage can only remove authority; it can never improve an axis\n";
     std::cout << " - slot loss degrades kinematic authority without changing construction family\n";
     return 0;
 }

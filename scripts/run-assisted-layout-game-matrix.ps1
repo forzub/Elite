@@ -30,6 +30,8 @@ $oldSimple = $env:ELITE_NAV_STRESS_SIMPLE
 $oldIndex = $env:ELITE_SHIP_PHYSICAL_TEST_INDEX
 $oldTotal = $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL
 $oldHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
+$oldHotStartSpeed = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS
+$oldHotStartNoseOffset = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG
 $oldHighSpeed = $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED
 $oldGameplayParity = $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY
 $oldSafeCourseObstacle = $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE
@@ -45,7 +47,13 @@ try {
     $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY = "0"
     $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE = "0"
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = [string]$layouts.Count
+
+    # The layout matrix is a baseline flight comparison, not the historical
+    # high-speed/off-nose hot-entry stress probe. Use the same accepted corridor
+    # speed as the headless baseline and align hull with inertial velocity.
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "8"
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "0"
 
     for ($i = 0; $i -lt $layouts.Count; ++$i) {
         $model = $layouts[$i]
@@ -102,6 +110,8 @@ finally {
     $env:ELITE_SHIP_PHYSICAL_TEST_INDEX = $oldIndex
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = $oldTotal
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldHotStart
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = $oldHotStartSpeed
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = $oldHotStartNoseOffset
     $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED = $oldHighSpeed
     $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY = $oldGameplayParity
     $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE = $oldSafeCourseObstacle

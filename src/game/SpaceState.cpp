@@ -5590,6 +5590,40 @@ void SpaceState::update(float dt)
                 game::navigation::localFlightControlLawName(
                     stressTransform.motion.localControlLaw
                 );
+
+            const auto stressSlotState =
+                stressPlayerIt->second.physicalControlModel !=
+                        stressPlayerIt->second.descriptor->physicalControlModel
+                    ? game::ship::plant::healthySlotState(
+                          game::ship::plant::physicalControlSlots(
+                              stressPlayerIt->second.physicalControlModel
+                          )
+                      )
+                    : game::ship::capability::buildPhysicalControlSlotState(
+                          *stressPlayerIt->second.descriptor,
+                          stressPlayerIt->second.physicalControlModel,
+                          stressPlayerIt->second.modules
+                      );
+
+            const auto stressCapability =
+                game::ship::capability::buildShipCapability(
+                    *stressPlayerIt->second.descriptor,
+                    stressPlayerIt->second.physicalControlModel,
+                    stressSlotState
+                );
+
+            obs.actualCapabilityValid = stressCapability.valid;
+            obs.actualPropulsionSlotCount = stressSlotState.size();
+            if (stressCapability.valid)
+            {
+                obs.actualForwardMainAvailable =
+                    stressCapability.effectivePhysics.
+                        forwardMainEngineAvailable;
+                obs.actualReverseMainAvailable =
+                    stressCapability.effectivePhysics.
+                        reverseMainEngineAvailable;
+            }
+
             obs.speedMps =
                 glm::length(stressTransform.motion.localVelocityMps);
             obs.angularSpeedRadPerSec =

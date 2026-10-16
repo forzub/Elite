@@ -55,7 +55,7 @@ public:
                     "cockpit.shortcut_strip.repair",
                     "REPAIR"
                 ),
-            key("Ctrl+Q") + " " +
+            key("L-Ctrl+Q") + " " +
                 localization.text(
                     "cockpit.shortcut_strip.eject",
                     "EJECT"

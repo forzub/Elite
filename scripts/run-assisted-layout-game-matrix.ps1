@@ -48,12 +48,13 @@ try {
     $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE = "0"
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = [string]$layouts.Count
 
-    # The layout matrix is a baseline flight comparison, not the historical
-    # high-speed/off-nose hot-entry stress probe. Use the same accepted corridor
-    # speed as the headless baseline and align hull with inertial velocity.
+    # Hard Assisted entry regression. This is intentionally not a gentle
+    # baseline: the accepted algorithm must handle arbitrary finite entry
+    # speed and hull/course misalignment by securing one safe course, cutting
+    # acceleration again, and returning to ballistic coast before route handoff.
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
-    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "8"
-    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "0"
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS = "300"
+    $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG = "60"
 
     for ($i = 0; $i -lt $layouts.Count; ++$i) {
         $model = $layouts[$i]

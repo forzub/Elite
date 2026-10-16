@@ -98,6 +98,94 @@ void testAllSixConstructionsAreStateTransitions()
     }
 }
 
+void testRuntimeConstructionSwitchChangesEffectivePhysics()
+{
+    auto d = descriptor();
+    game::ship::state::ShipState state;
+    state.initialize(d);
+
+    auto capabilityForCurrentState = [&]()
+    {
+        return game::ship::capability::buildShipCapability(
+            d,
+            state.construction.physicalControlModel,
+            state.actuators.propulsionSlots
+        );
+    };
+
+    // Baseline Assisted-I: opposed main banks, no ordinary RCS.
+    auto assistedI = capabilityForCurrentState();
+    require(assistedI.valid, "Assisted-I capability invalid");
+    require(
+        assistedI.effectivePhysics.reverseMainEngineAvailable,
+        "Assisted-I lost its fore/reverse main bank"
+    );
+    require(
+        assistedI.effectivePhysics.manoeuvreThrusterAccel == 0.0f,
+        "Assisted-I fabricated ordinary RCS authority"
+    );
+    require(
+        state.actuators.propulsionSlots.size() == 4,
+        "Assisted-I runtime topology is not four main actuators"
+    );
+
+    // Family switch must change the physical capability, not only the label.
+    state.selectConstructionForDiagnostic(Model::NewtonianI);
+    auto newtonianI = capabilityForCurrentState();
+    require(newtonianI.valid, "Newtonian-I capability invalid after switch");
+    require(
+        state.construction.nativeFlightControlLaw ==
+            game::navigation::LocalFlightControlLaw::Newtonian,
+        "Newtonian switch did not change native flight law"
+    );
+    require(
+        !newtonianI.effectivePhysics.reverseMainEngineAvailable,
+        "Newtonian-I retained an impossible fore/reverse main bank"
+    );
+    require(
+        newtonianI.effectivePhysics.manoeuvreThrusterAccel > 0.0f,
+        "Newtonian-I did not acquire RCS authority"
+    );
+    require(
+        state.actuators.propulsionSlots.size() == 5,
+        "Newtonian-I runtime topology is not one main plus four RCS clusters"
+    );
+
+    // Layout switch inside one family must rebuild the actuator topology.
+    state.selectConstructionForDiagnostic(Model::NewtonianX);
+    auto newtonianX = capabilityForCurrentState();
+    require(newtonianX.valid, "Newtonian-X capability invalid after switch");
+    require(
+        state.actuators.propulsionSlots.size() == 12,
+        "Newtonian-X runtime topology is not four mains plus eight RCS clusters"
+    );
+    require(
+        !newtonianX.effectivePhysics.reverseMainEngineAvailable,
+        "Newtonian-X incorrectly gained a fore main bank"
+    );
+
+    state.selectConstructionForDiagnostic(Model::AssistedY);
+    auto assistedY = capabilityForCurrentState();
+    require(assistedY.valid, "Assisted-Y capability invalid after switch");
+    require(
+        state.construction.nativeFlightControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted,
+        "Assisted switch did not restore Assisted flight law"
+    );
+    require(
+        assistedY.effectivePhysics.reverseMainEngineAvailable,
+        "Assisted-Y did not restore its fore/reverse main bank"
+    );
+    require(
+        assistedY.effectivePhysics.manoeuvreThrusterAccel == 0.0f,
+        "Assisted-Y retained Newtonian RCS authority"
+    );
+    require(
+        state.actuators.propulsionSlots.size() == 6,
+        "Assisted-Y runtime topology is not three aft plus three fore mains"
+    );
+}
+
 void testDiagnosticDamageChangesCapabilityWithoutChangingConstruction()
 {
     auto d = descriptor();
@@ -297,6 +385,7 @@ int main()
     try
     {
         testAllSixConstructionsAreStateTransitions();
+        testRuntimeConstructionSwitchChangesEffectivePhysics();
         testDiagnosticDamageChangesCapabilityWithoutChangingConstruction();
         testModuleProjectionCannotOverwriteDiagnosticOverride();
         testMassPropertiesLiveInInstanceState();
@@ -307,6 +396,7 @@ int main()
         std::cout
             << "SHIP STATE: PASS\n"
             << " - all six physical constructions are state transitions\n"
+            << " - runtime family/layout switching changes effective physics and actuator topology\n"
             << " - actuator degradation changes capability, not construction\n"
             << " - diagnostic state is not overwritten by module projection\n"
             << " - mass/CoM/inertia live in per-instance state\n"

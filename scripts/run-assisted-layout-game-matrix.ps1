@@ -30,11 +30,20 @@ $oldSimple = $env:ELITE_NAV_STRESS_SIMPLE
 $oldIndex = $env:ELITE_SHIP_PHYSICAL_TEST_INDEX
 $oldTotal = $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL
 $oldHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
+$oldHighSpeed = $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED
+$oldGameplayParity = $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY
+$oldSafeCourseObstacle = $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE
 
 $results = @()
 
 try {
+    # This runner owns the scenario completely. Never inherit another stress
+    # probe from the caller shell, otherwise the matrix silently stops being a
+    # comparable I/Y/X corridor test.
     $env:ELITE_NAV_STRESS_SIMPLE = "1"
+    $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED = "0"
+    $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY = "0"
+    $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE = "0"
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = [string]$layouts.Count
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = "1"
 
@@ -93,4 +102,7 @@ finally {
     $env:ELITE_SHIP_PHYSICAL_TEST_INDEX = $oldIndex
     $env:ELITE_SHIP_PHYSICAL_TEST_TOTAL = $oldTotal
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldHotStart
+    $env:ELITE_NAV_STRESS_ASSISTED_HIGH_SPEED = $oldHighSpeed
+    $env:ELITE_NAV_STRESS_ASSISTED_GAMEPLAY_PARITY = $oldGameplayParity
+    $env:ELITE_NAV_STRESS_ASSISTED_SAFE_COURSE_OBSTACLE = $oldSafeCourseObstacle
 }

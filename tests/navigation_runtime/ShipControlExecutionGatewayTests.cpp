@@ -283,6 +283,14 @@ void testAssistedSingleMainLossUsesTrimBeforeHullRotation()
         "Assisted-Y damage trim suppressed main propulsion entirely"
     );
     require(
+        transform.motion.mainTrimLoad01 > 0.0,
+        "Assisted-Y damage did not register automatic trim load"
+    );
+    require(
+        transform.motion.mainTrimUsableScale01 < 1.0,
+        "Assisted-Y damage trim did not reserve main-force margin"
+    );
+    require(
         glm::length(transform.motion.mainEngineAccelerationMps2) <
             physical.effectivePhysics.forwardMainEngineAccelerationMps2,
         "Assisted-Y damage trim did not reserve any main-force margin"

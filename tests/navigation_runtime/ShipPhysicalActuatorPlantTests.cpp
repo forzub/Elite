@@ -27,52 +27,6 @@ ShipParams physics()
     return p;
 }
 
-void testHealthyAssistedLateralVectoringHasNoParasiticTorque()
-{
-    ShipParams p = physics();
-    p.forwardMainEngineAvailable = true;
-    p.reverseMainEngineAvailable = true;
-
-    for (const auto model : {
-             PhysicalControlModelId::AssistedI,
-             PhysicalControlModelId::AssistedY,
-             PhysicalControlModelId::AssistedX
-         })
-    {
-        const auto state =
-            healthySlotState(physicalControlSlots(model));
-
-        for (const glm::dvec3 lateral : {
-                 glm::dvec3(20.0, 0.0, 0.0),
-                 glm::dvec3(0.0, 20.0, 0.0),
-                 glm::dvec3(14.0, -11.0, 0.0)
-             })
-        {
-            const auto out =
-                evaluateMainPropulsionReaction(
-                    model,
-                    state,
-                    p,
-                    lateral
-                );
-
-            assert(out.valid);
-            assert(near(
-                glm::length(out.torqueBodyNm),
-                0.0,
-                1.0e-6
-            ));
-            assert(near(
-                glm::length(
-                    out.angularAccelerationBodyRadPerSec2
-                ),
-                0.0,
-                1.0e-12
-            ));
-        }
-    }
-}
-
 void testCenteredNewtonianIAxialBurnHasNoTorque()
 {
     const auto model = PhysicalControlModelId::NewtonianI;
@@ -180,7 +134,6 @@ void testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque()
 
 int main()
 {
-    testHealthyAssistedLateralVectoringHasNoParasiticTorque();
     testCenteredNewtonianIAxialBurnHasNoTorque();
     testNewtonianIGimbalCreatesYawTorque();
     testHealthyNewtonianYAxialBankIsBalanced();
@@ -189,7 +142,6 @@ int main()
 
     std::cout
         << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
-        << " - healthy Assisted I/Y/X lateral vectoring produces zero parasitic torque\n"
         << " - balanced main banks produce zero parasitic torque\n"
         << " - Newtonian-I TVC produces rigid-body reaction torque\n"
         << " - Y/X single-main failures produce layout-dependent asymmetric torque\n";

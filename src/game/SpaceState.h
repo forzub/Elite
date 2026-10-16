@@ -307,6 +307,7 @@ private:
     GameClient*                                      m_client = nullptr;
 
     PlayerInputMapper                               m_inputMapper;
+    bool                                            m_persistedPhysicalModelApplied = false;
     std::unique_ptr<PlayerShipView>                 m_playerView;
     EntityId                                        m_playerId;
 

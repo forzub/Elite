@@ -56,6 +56,13 @@ public:
     }
     bool setConstellationsEnabled(bool enabled);
     bool setSkyCultureId(const std::string& cultureId);
+
+    const std::string& preferredPhysicalControlModel() const noexcept
+    {
+        return m_clientPreferences.preferredPhysicalControlModel;
+    }
+    void setPreferredPhysicalControlModel(const std::string& modelId);
+
     void cycleUiLanguage();
 
     void updatePendingSessionStart();

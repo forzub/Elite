@@ -6970,6 +6970,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         s.id = id;
         s.instanceId = ship.core().registry().instanceId;
         s.typeId = ship.core().desc().typeId;
+        s.physicalControlModel =
+            ship.core().state().construction.physicalControlModel;
         s.role = ship.core().role();
         s.motionLabKind = hubMotionLabActorKind(id);
         {

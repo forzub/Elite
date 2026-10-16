@@ -23,6 +23,7 @@
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/game/identity/ClientIdentityProfile.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/platform/ProcessSingleInstanceGuard.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"

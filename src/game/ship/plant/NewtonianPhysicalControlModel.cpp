@@ -12,6 +12,7 @@ namespace
 
 constexpr double Sqrt3Over2 = 0.86602540378443864676;
 constexpr double InvSqrt2 = 0.70710678118654752440;
+constexpr double NewtonMainRadialScale = 0.12;
 
 const std::vector<EngineSlotDefinition> NewtonianI = {
     {"main_center", EngineSlotRole::AftMain, {0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
@@ -23,9 +24,9 @@ const std::vector<EngineSlotDefinition> NewtonianI = {
 };
 
 const std::vector<EngineSlotDefinition> NewtonianY = {
-    {"main_top",         EngineSlotRole::AftMain, {0.0,          1.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_right", EngineSlotRole::AftMain, { Sqrt3Over2, -0.5, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_top",         EngineSlotRole::AftMain, {0.0,          NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_left",  EngineSlotRole::AftMain, {-Sqrt3Over2 * NewtonMainRadialScale, -0.5 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_right", EngineSlotRole::AftMain, { Sqrt3Over2 * NewtonMainRadialScale, -0.5 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
 
     {"rcs_fore_top",         EngineSlotRole::ManoeuvreCluster, {0.0,          1.0, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_fore_lower_left",  EngineSlotRole::ManoeuvreCluster, {-Sqrt3Over2, -0.5, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
@@ -36,10 +37,10 @@ const std::vector<EngineSlotDefinition> NewtonianY = {
 };
 
 const std::vector<EngineSlotDefinition> NewtonianX = {
-    {"main_upper_left",  EngineSlotRole::AftMain, {-InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_upper_right", EngineSlotRole::AftMain, { InvSqrt2,  InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_right", EngineSlotRole::AftMain, { InvSqrt2, -InvSqrt2, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_upper_left",  EngineSlotRole::AftMain, {-InvSqrt2 * NewtonMainRadialScale,  InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_upper_right", EngineSlotRole::AftMain, { InvSqrt2 * NewtonMainRadialScale,  InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_left",  EngineSlotRole::AftMain, {-InvSqrt2 * NewtonMainRadialScale, -InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
+    {"main_lower_right", EngineSlotRole::AftMain, { InvSqrt2 * NewtonMainRadialScale, -InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
 
     {"rcs_fore_upper_left",  EngineSlotRole::ManoeuvreCluster, {-InvSqrt2,  InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_fore_upper_right", EngineSlotRole::ManoeuvreCluster, { InvSqrt2,  InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},

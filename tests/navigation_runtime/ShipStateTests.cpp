@@ -98,6 +98,102 @@ void testAllSixConstructionsAreStateTransitions()
     }
 }
 
+void testAssistedLayoutRoundTripRestoresBaselineCapability()
+{
+    auto d = descriptor();
+    game::ship::state::ShipState state;
+    state.initialize(d);
+
+    const auto capability = [&]()
+    {
+        return game::ship::capability::buildShipCapability(
+            d,
+            state.construction.physicalControlModel,
+            state.actuators.propulsionSlots
+        );
+    };
+
+    const auto baseline = capability();
+    require(baseline.valid, "baseline Assisted-I capability invalid");
+
+    state.selectConstructionForDiagnostic(Model::AssistedY);
+    require(
+        state.construction.physicalControlModel == Model::AssistedY,
+        "Assisted-I -> Y diagnostic switch failed"
+    );
+
+    state.selectConstructionForDiagnostic(Model::AssistedX);
+    require(
+        state.construction.physicalControlModel == Model::AssistedX,
+        "Assisted-Y -> X diagnostic switch failed"
+    );
+
+    state.selectConstructionForDiagnostic(Model::AssistedI);
+    require(
+        state.construction.physicalControlModel == Model::AssistedI,
+        "Assisted-X -> I diagnostic switch failed"
+    );
+    require(
+        state.construction.nativeFlightControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted,
+        "Assisted round-trip changed native flight law"
+    );
+
+    const auto restored = capability();
+    require(restored.valid, "round-trip Assisted-I capability invalid");
+
+    require(
+        restored.effectivePhysics.forwardMainEngineAvailable ==
+            baseline.effectivePhysics.forwardMainEngineAvailable,
+        "round-trip changed forward-main availability"
+    );
+    require(
+        restored.effectivePhysics.reverseMainEngineAvailable ==
+            baseline.effectivePhysics.reverseMainEngineAvailable,
+        "round-trip changed reverse-main availability"
+    );
+    require(
+        restored.effectivePhysics.forwardMainEngineAccelerationMps2 ==
+            baseline.effectivePhysics.forwardMainEngineAccelerationMps2,
+        "round-trip changed forward-main authority"
+    );
+    require(
+        restored.effectivePhysics.reverseMainEngineAccelerationMps2 ==
+            baseline.effectivePhysics.reverseMainEngineAccelerationMps2,
+        "round-trip changed reverse-main authority"
+    );
+    require(
+        restored.effectivePhysics.strafeAccel ==
+            baseline.effectivePhysics.strafeAccel,
+        "round-trip changed Assisted lateral authority"
+    );
+    require(
+        restored.effectivePhysics.angularAccel ==
+            baseline.effectivePhysics.angularAccel,
+        "round-trip changed angular authority"
+    );
+    require(
+        restored.effectivePhysics.maxPitchRate ==
+            baseline.effectivePhysics.maxPitchRate &&
+        restored.effectivePhysics.maxYawRate ==
+            baseline.effectivePhysics.maxYawRate &&
+        restored.effectivePhysics.maxRollRate ==
+            baseline.effectivePhysics.maxRollRate,
+        "round-trip changed angular-rate limits"
+    );
+
+    require(
+        state.actuators.propulsionSlots.size() == 4,
+        "round-trip Assisted-I topology is not four main actuators"
+    );
+    for (const auto& slot : state.actuators.propulsionSlots)
+    {
+        require(slot.operational, "round-trip produced dead Assisted-I actuator");
+        require(slot.thrust01 == 1.0, "round-trip lost Assisted-I thrust");
+        require(slot.vectoring01 == 1.0, "round-trip lost Assisted-I vectoring");
+    }
+}
+
 void testRuntimeConstructionSwitchChangesEffectivePhysics()
 {
     auto d = descriptor();
@@ -385,6 +481,7 @@ int main()
     try
     {
         testAllSixConstructionsAreStateTransitions();
+        testAssistedLayoutRoundTripRestoresBaselineCapability();
         testRuntimeConstructionSwitchChangesEffectivePhysics();
         testDiagnosticDamageChangesCapabilityWithoutChangingConstruction();
         testModuleProjectionCannotOverwriteDiagnosticOverride();
@@ -397,6 +494,7 @@ int main()
             << "SHIP STATE: PASS\n"
             << " - all six physical constructions are state transitions\n"
             << " - runtime family/layout switching changes effective physics and actuator topology\n"
+            << " - Assisted I/Y/X/I round-trip restores the baseline capability exactly\n"
             << " - actuator degradation changes capability, not construction\n"
             << " - diagnostic state is not overwritten by module projection\n"
             << " - mass/CoM/inertia live in per-instance state\n"

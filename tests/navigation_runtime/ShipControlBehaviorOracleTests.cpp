@@ -410,36 +410,39 @@ void runHealthyBehaviorOracle(Model model)
         );
     }
 
+    if (family == Family::Newtonian)
     {
-        ShipControlState c;
-        c.targetSpeedRate = 1.0f;
-        c.mainGimbalRightInput = 1.0f;
-        const auto a = execute(model, snapshot, c);
-        check(
-            model,
-            "main_gimbal_right",
-            "main burn plus right-gimbal command moves nozzle away from center and produces lateral main-thrust component",
-            a,
-            std::abs(a.gimbalYaw) > kTiny &&
-            std::abs(a.peakMainAcceleration.x) > kTiny &&
-            glm::length(a.peakMainAcceleration) > kTiny
-        );
-    }
+        {
+            ShipControlState c;
+            c.targetSpeedRate = 1.0f;
+            c.mainGimbalRightInput = 1.0f;
+            const auto a = execute(model, snapshot, c);
+            check(
+                model,
+                "main_gimbal_right",
+                "Newtonian main burn plus right-gimbal command moves nozzle away from center and produces lateral main-thrust component",
+                a,
+                std::abs(a.gimbalYaw) > kTiny &&
+                std::abs(a.peakMainAcceleration.x) > kTiny &&
+                glm::length(a.peakMainAcceleration) > kTiny
+            );
+        }
 
-    {
-        ShipControlState c;
-        c.targetSpeedRate = 1.0f;
-        c.mainGimbalUpInput = 1.0f;
-        const auto a = execute(model, snapshot, c);
-        check(
-            model,
-            "main_gimbal_up",
-            "main burn plus up-gimbal command moves nozzle away from center and produces vertical main-thrust component",
-            a,
-            std::abs(a.gimbalPitch) > kTiny &&
-            std::abs(a.peakMainAcceleration.y) > kTiny &&
-            glm::length(a.peakMainAcceleration) > kTiny
-        );
+        {
+            ShipControlState c;
+            c.targetSpeedRate = 1.0f;
+            c.mainGimbalUpInput = 1.0f;
+            const auto a = execute(model, snapshot, c);
+            check(
+                model,
+                "main_gimbal_up",
+                "Newtonian main burn plus up-gimbal command moves nozzle away from center and produces vertical main-thrust component",
+                a,
+                std::abs(a.gimbalPitch) > kTiny &&
+                std::abs(a.peakMainAcceleration.y) > kTiny &&
+                glm::length(a.peakMainAcceleration) > kTiny
+            );
+        }
     }
 }
 

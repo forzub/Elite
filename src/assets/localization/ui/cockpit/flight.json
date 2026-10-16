@@ -267,6 +267,41 @@
       "zh-Hans": "弹射",
       "es": "EYECTAR",
       "ja": "脱出"
+    },
+    "cockpit.shortcut_strip.flight_law": {
+      "en": "FLIGHT LAW",
+      "ru": "РЕЖИМ",
+      "zh-Hans": "飞行律",
+      "es": "MODO",
+      "ja": "飛行則"
+    },
+    "cockpit.shortcut_strip.coordinates": {
+      "en": "COORDS",
+      "ru": "КООРД.",
+      "zh-Hans": "坐标",
+      "es": "COORD.",
+      "ja": "座標"
+    },
+    "cockpit.shortcut_strip.constellations": {
+      "en": "CONSTELL.",
+      "ru": "СОЗВЕЗД.",
+      "zh-Hans": "星座",
+      "es": "CONSTEL.",
+      "ja": "星座"
+    },
+    "cockpit.shortcut_strip.sky_culture": {
+      "en": "SKY",
+      "ru": "НЕБО",
+      "zh-Hans": "星空",
+      "es": "CIELO",
+      "ja": "星空"
+    },
+    "cockpit.shortcut_strip.language": {
+      "en": "LANG",
+      "ru": "ЯЗЫК",
+      "zh-Hans": "语言",
+      "es": "IDIOMA",
+      "ja": "言語"
     }
   }
 }

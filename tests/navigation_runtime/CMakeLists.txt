@@ -1754,6 +1754,49 @@ set_tests_properties(
 )
 
 add_executable(
+    ship_control_behavior_oracle_tests
+    ShipControlBehaviorOracleTests.cpp
+)
+
+target_include_directories(ship_control_behavior_oracle_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    ship_control_behavior_oracle_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    ship_control_behavior_oracle_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        ship_control_behavior_oracle_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_control_behavior_oracle_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME ship_control_behavior_oracle
+    COMMAND ship_control_behavior_oracle_tests
+)
+
+set_tests_properties(
+    ship_control_behavior_oracle
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     ship_physical_damage_matrix_tests
     ShipPhysicalDamageMatrixTests.cpp
 )

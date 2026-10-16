@@ -54,51 +54,19 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
     if (glm::length(mainAccelerationBodyMps2) <= Epsilon)
         return out;
 
-    const bool assisted =
-        familyOf(model) == PhysicalControlFamily::Assisted;
-
-    const glm::dvec3 longitudinalAcceleration(
-        0.0,
-        0.0,
-        mainAccelerationBodyMps2.z
-    );
-    const glm::dvec3 lateralAcceleration(
-        mainAccelerationBodyMps2.x,
-        mainAccelerationBodyMps2.y,
-        0.0
-    );
-
-    const EngineSlotRole longitudinalRole =
+    const EngineSlotRole activeRole =
         activeLongitudinalBank(mainAccelerationBodyMps2);
 
-    double longitudinalWeight = 0.0;
-    double lateralWeight = 0.0;
-
+    double totalWeight = 0.0;
     for (std::size_t i = 0; i < slots.size(); ++i)
     {
-        const double thrust = effectiveSlotThrust01(state[i]);
-        if (thrust <= Epsilon)
+        if (slots[i].role != activeRole)
             continue;
-
-        if (slots[i].role == longitudinalRole)
-            longitudinalWeight += thrust;
-
-        if (assisted &&
-            slots[i].freedom == EngineSlotFreedom::VectoringMain)
-        {
-            lateralWeight +=
-                std::min(
-                    thrust,
-                    effectiveSlotVectoring01(state[i])
-                );
-        }
+        totalWeight += effectiveSlotThrust01(state[i]);
     }
 
-    if (longitudinalWeight <= Epsilon &&
-        (!assisted || lateralWeight <= Epsilon))
-    {
+    if (totalWeight <= Epsilon)
         return out;
-    }
 
     const double massKg =
         positiveFiniteOr(physics.massKg, 1.0);
@@ -127,45 +95,14 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
 
     for (std::size_t i = 0; i < slots.size(); ++i)
     {
-        const double thrust = effectiveSlotThrust01(state[i]);
-        if (thrust <= Epsilon)
+        if (slots[i].role != activeRole)
             continue;
 
-        glm::dvec3 slotAccelerationBody(0.0);
-
-        // Longitudinal acceleration is produced by the bank that points in the
-        // requested axial direction.
-        if (slots[i].role == longitudinalRole &&
-            longitudinalWeight > Epsilon)
-        {
-            slotAccelerationBody +=
-                longitudinalAcceleration *
-                (thrust / longitudinalWeight);
-        }
-
-        // Assisted lateral translation is NOT produced by one longitudinal
-        // bank. Healthy fore/aft vectoring mains work as an opposed set: their
-        // axial components cancel while the useful lateral force adds. Spread
-        // the net lateral force across every available vectoring main so a
-        // symmetric healthy I/Y/X construction has zero parasitic r x F torque.
-        // Damage/asymmetric authority naturally leaves a residual physical
-        // moment because the slot weights then cease to balance.
-        if (assisted &&
-            lateralWeight > Epsilon &&
-            slots[i].freedom == EngineSlotFreedom::VectoringMain)
-        {
-            const double vectoringWeight =
-                std::min(
-                    thrust,
-                    effectiveSlotVectoring01(state[i])
-                );
-            slotAccelerationBody +=
-                lateralAcceleration *
-                (vectoringWeight / lateralWeight);
-        }
-
-        if (glm::length(slotAccelerationBody) <= Epsilon)
+        const double weight = effectiveSlotThrust01(state[i]);
+        if (weight <= Epsilon)
             continue;
+
+        const double fraction = weight / totalWeight;
 
         const glm::dvec3 applicationPointBodyMeters(
             slots[i].normalizedPositionBody.x * halfExtentsMeters.x,
@@ -177,7 +114,7 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
             applicationPointBodyMeters - centerOfMass;
 
         const glm::dvec3 slotForceBodyNewtons =
-            slotAccelerationBody * massKg;
+            mainAccelerationBodyMps2 * (massKg * fraction);
 
         torque += glm::cross(
             armBodyMeters,

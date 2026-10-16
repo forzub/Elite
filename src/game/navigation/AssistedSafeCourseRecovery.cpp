@@ -336,39 +336,37 @@ Candidate proveCandidate(
     return out;
 }
 
-double directedPositionProgressAngle(
+double directedCourseProgressAngle(
     const AssistedSafeCourseRecoveryPlan& plan,
-    const glm::dvec3& actualPositionMeters
+    const glm::dvec3& actualCourse
 ) noexcept
 {
-    const glm::dvec3 startRadial =
+    const glm::dvec3 initialCourse =
         normalizedOr(
-            plan.startPositionMeters -
-                plan.turnCenterMeters,
-            deterministicPerpendicular(plan.initialCourse)
+            plan.initialCourse,
+            {0.0, 0.0, -1.0}
         );
-    const glm::dvec3 actualRadial =
+    const glm::dvec3 measuredCourse =
         normalizedOr(
-            actualPositionMeters -
-                plan.turnCenterMeters,
-            startRadial
+            actualCourse,
+            initialCourse
         );
     const glm::dvec3 axis =
         normalizedOr(
             plan.turnAxis,
-            deterministicPerpendicular(plan.initialCourse)
+            deterministicPerpendicular(initialCourse)
         );
 
     const double x =
         std::clamp(
-            glm::dot(startRadial, actualRadial),
+            glm::dot(initialCourse, measuredCourse),
             -1.0,
             1.0
         );
     const double y =
         glm::dot(
             axis,
-            glm::cross(startRadial, actualRadial)
+            glm::cross(initialCourse, measuredCourse)
         );
 
     double angle = std::atan2(y, x);
@@ -869,10 +867,15 @@ AssistedSafeCourseRecovery::assess(
 
     const glm::dvec3 actualCourse =
         actualVelocityMps / actualSpeedMps;
+    // Recovery progress is physical COURSE progress. A craft may coast
+    // ballistically along the tangent while attitude/control catches up; that
+    // changes its position-relative radial angle without changing inertial
+    // velocity direction. Position remains an envelope/safety measurement
+    // below, but must never invent completed turn progress.
     const double progressAngleRad =
-        directedPositionProgressAngle(
+        directedCourseProgressAngle(
             plan,
-            actualPositionMeters
+            actualCourse
         );
 
     const double nominalTime =

@@ -73,6 +73,7 @@ ClientShipState shipFor(const ShipDescriptor& descriptor)
 {
     ClientShipState ship {};
     ship.descriptor = &descriptor;
+    ship.physicalControlModel = descriptor.physicalControlModel;
     ship.transform.orientation = glm::mat4(1.0f);
     ship.transform.motion.localControlLaw =
         descriptor.localFlightControlLaw;
@@ -140,6 +141,44 @@ void testAssistedLayoutGrouping()
                 "Assisted-X must render four paired groups");
         require(totalBars(p) == 8,
                 "Assisted-X must render eight main-engine bars");
+    }
+}
+
+void testRuntimeModelOverridesDescriptorModel()
+{
+    const auto descriptor = descriptorFor(Model::AssistedI);
+    auto ship = shipFor(descriptor);
+
+    ship.physicalControlModel = Model::AssistedY;
+    auto p =
+        game::presentation::buildEngineThrustHudPresentation(ship);
+
+    require(p.modelLabel == "ASSISTED-Y",
+            "HUD label ignored replicated runtime model");
+    require(p.groups.size() == 3,
+            "runtime Assisted-Y must replace descriptor Assisted-I geometry");
+    require(totalBars(p) == 6,
+            "runtime Assisted-Y must render six main-engine bars");
+
+    ship.physicalControlModel = Model::NewtonianX;
+    p = game::presentation::buildEngineThrustHudPresentation(ship);
+
+    require(p.modelLabel == "NEWTONIAN-X",
+            "HUD label ignored runtime Newtonian family");
+    require(p.groups.size() == 4,
+            "runtime Newtonian-X must render four physical main groups");
+    require(totalBars(p) == 4,
+            "runtime Newtonian-X must render four aft main engines only");
+
+    for (const auto& group : p.groups)
+    {
+        for (const auto& bar : group.bars)
+        {
+            require(
+                bar.fillDirection == Direction::BottomUp,
+                "runtime Newtonian-X exposed a fore-main bar"
+            );
+        }
     }
 }
 
@@ -250,6 +289,7 @@ int main()
     try
     {
         testAssistedLayoutGrouping();
+        testRuntimeModelOverridesDescriptorModel();
         testNewtonianNeverRendersForeMainBars();
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
@@ -257,6 +297,7 @@ int main()
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"
             << " - Assisted I/Y/X render 2/3/4 paired groups\n"
+            << " - runtime model overrides descriptor spawn model\n"
             << " - Newtonian HUD never renders fore-main bars\n"
             << " - yellow bars are per-slot capability\n"
             << " - red bars follow axial and vectoring main thrust\n";

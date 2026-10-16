@@ -12,6 +12,7 @@ client_cpp = (ROOT / "src/game/client/ClientWorldState.cpp").read_text(encoding=
 space = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")
 app = (ROOT / "src/core/Application.cpp").read_text(encoding="utf-8")
 mapper = (ROOT / "src/game/ship/controller/PlayerInputMapper.cpp").read_text(encoding="utf-8")
+engine_hud = (ROOT / "src/game/presentation/EngineThrustHudPresentation.h").read_text(encoding="utf-8")
 wire_schema = (ROOT / "src/game/network/WireDataSchema.h").read_text(encoding="utf-8")
 wire_codec = (ROOT / "src/game/network/WireDataCodec.h").read_text(encoding="utf-8")
 
@@ -40,6 +41,13 @@ assert "functionKey == 9 && ctrlDown && !altDown" in app
 assert "cyclePhysicalControlLayout()" in app
 assert "functionKey == 10 && ctrlDown && !altDown" in app
 assert "cyclePhysicalControlFamily()" in app
+assert "[Hotkey] F" in app
+assert "const auto model = ship.physicalControlModel;" in engine_hud
+assert "physicalControlSlots(model)" in engine_hud
+assert "buildShipCapability(" in engine_hud
+assert "descriptor.physicalControlModel" not in engine_hud.split(
+    "const auto model = ship.physicalControlModel;", 1
+)[1].split("const bool assisted", 1)[0] or "model != descriptor.physicalControlModel" in engine_hud
 
 # There must be no second keyboard path that changes law independently of
 # construction. ShipControlState retains a generic command field for protocol
@@ -51,4 +59,6 @@ print("PHYSICAL MODEL RUNTIME SELECTION: PASS")
 print(" - Ctrl+F9 cycles I/Y/X through authoritative ShipState.")
 print(" - Ctrl+F10 switches Assisted/Newtonian family while preserving layout.")
 print(" - snapshot/client prediction/planner consume the replicated model.")
+print(" - engine HUD consumes the same replicated runtime model.")
+print(" - function-key actions have a console capture echo.")
 print(" - keyboard no longer has a parallel law-only Ctrl+F10 path.")

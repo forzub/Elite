@@ -90,9 +90,9 @@ public:
             enqueue(snapshot.handoff, DockingTerminalSeverity::Info);
             enqueue(snapshot.ship, DockingTerminalSeverity::Info);
             enqueue(snapshot.physics, DockingTerminalSeverity::Info);
-            enqueue(snapshot.activity, DockingTerminalSeverity::Info);
             if (!snapshot.error.empty())
                 enqueue(snapshot.error, DockingTerminalSeverity::Error);
+            enqueue(snapshot.activity, DockingTerminalSeverity::Info);
             m_last = snapshot;
         }
         else
@@ -109,14 +109,18 @@ public:
                            DockingTerminalSeverity::Info);
             enqueueChanged(m_last.physics, snapshot.physics,
                            DockingTerminalSeverity::Info);
-            enqueueChanged(m_last.activity, snapshot.activity,
-                           DockingTerminalSeverity::Info);
 
             if (snapshot.error != m_last.error &&
                 !snapshot.error.empty())
             {
-                enqueue(snapshot.error, DockingTerminalSeverity::Error);
+                enqueuePriority(
+                    snapshot.error,
+                    DockingTerminalSeverity::Error
+                );
             }
+
+            enqueueChanged(m_last.activity, snapshot.activity,
+                           DockingTerminalSeverity::Info);
             m_last = snapshot;
         }
 
@@ -207,6 +211,41 @@ private:
         }
 
         m_pending.emplace_back(text, severity);
+    }
+
+    void enqueuePriority(
+        const std::string& text,
+        DockingTerminalSeverity severity
+    )
+    {
+        if (text.empty())
+            return;
+
+        for (const auto& pending : m_pending)
+        {
+            if (pending.first == text)
+                return;
+        }
+
+        if (!m_history.empty() &&
+            m_history.back().text == text)
+        {
+            return;
+        }
+
+        // Preserve the line currently being typed, but put urgent diagnostics
+        // immediately after it so decorative/activity traffic cannot starve
+        // warnings or errors.
+        if (m_pending.empty())
+        {
+            m_pending.emplace_back(text, severity);
+            return;
+        }
+
+        m_pending.insert(
+            std::next(m_pending.begin()),
+            std::make_pair(text, severity)
+        );
     }
 
     void enqueueChanged(

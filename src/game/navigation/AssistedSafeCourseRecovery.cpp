@@ -336,37 +336,39 @@ Candidate proveCandidate(
     return out;
 }
 
-double directedCourseProgressAngle(
+double directedPositionProgressAngle(
     const AssistedSafeCourseRecoveryPlan& plan,
-    const glm::dvec3& actualCourse
+    const glm::dvec3& actualPositionMeters
 ) noexcept
 {
-    const glm::dvec3 initialCourse =
+    const glm::dvec3 startRadial =
         normalizedOr(
-            plan.initialCourse,
-            {0.0, 0.0, -1.0}
+            plan.startPositionMeters -
+                plan.turnCenterMeters,
+            deterministicPerpendicular(plan.initialCourse)
         );
-    const glm::dvec3 measuredCourse =
+    const glm::dvec3 actualRadial =
         normalizedOr(
-            actualCourse,
-            initialCourse
+            actualPositionMeters -
+                plan.turnCenterMeters,
+            startRadial
         );
     const glm::dvec3 axis =
         normalizedOr(
             plan.turnAxis,
-            deterministicPerpendicular(initialCourse)
+            deterministicPerpendicular(plan.initialCourse)
         );
 
     const double x =
         std::clamp(
-            glm::dot(initialCourse, measuredCourse),
+            glm::dot(startRadial, actualRadial),
             -1.0,
             1.0
         );
     const double y =
         glm::dot(
             axis,
-            glm::cross(initialCourse, measuredCourse)
+            glm::cross(startRadial, actualRadial)
         );
 
     double angle = std::atan2(y, x);
@@ -867,15 +869,10 @@ AssistedSafeCourseRecovery::assess(
 
     const glm::dvec3 actualCourse =
         actualVelocityMps / actualSpeedMps;
-    // Recovery progress is physical COURSE progress. A craft may coast
-    // ballistically along the tangent while attitude/control catches up; that
-    // changes its position-relative radial angle without changing inertial
-    // velocity direction. Position remains an envelope/safety measurement
-    // below, but must never invent completed turn progress.
     const double progressAngleRad =
-        directedCourseProgressAngle(
+        directedPositionProgressAngle(
             plan,
-            actualCourse
+            actualPositionMeters
         );
 
     const double nominalTime =
@@ -894,25 +891,11 @@ AssistedSafeCourseRecovery::assess(
         return out;
     }
 
-    // The committed recovery owns cross-track geometry, not timing along
-    // the tangent. During a short control/attitude latency the craft may coast
-    // forward on the correct inertial course before curvature begins. Treating
-    // that along-track displacement as spatial divergence recreates the old
-    // wall-clock panic loop. Radial/lateral departure remains fully bounded.
-    const glm::dvec3 targetCourseForEnvelope =
-        normalizedOr(
-            out.target.velocityMps,
-            plan.initialCourse
-        );
-    const glm::dvec3 positionDelta =
-        actualPositionMeters - out.target.positionMeters;
-    const glm::dvec3 crossTrackDelta =
-        positionDelta -
-        targetCourseForEnvelope *
-            glm::dot(positionDelta, targetCourseForEnvelope);
-
     out.positionErrorMeters =
-        glm::length(crossTrackDelta);
+        glm::length(
+            actualPositionMeters -
+            out.target.positionMeters
+        );
 
     // Safety recovery owns COURSE, not cruise-speed recapture. Losing speed is
     // conservative; exceeding the speed used to prove the arc is not.

@@ -6826,17 +6826,72 @@ m_systemMapRenderer.render(
         {
             game::presentation::DockingTerminalSnapshot terminal;
 
+            const double terminalNowSeconds =
+                m_client->lastSimulationMetadata().serverTimeSeconds;
+
+            if (!m_terminalObservedPhysicalModelValid ||
+                m_terminalObservedPhysicalModel !=
+                    playerShip.physicalControlModel)
+            {
+                m_terminalObservedPhysicalModelValid = true;
+                m_terminalObservedPhysicalModel =
+                    playerShip.physicalControlModel;
+                m_terminalDiagnosticVisibleUntilServerSeconds =
+                    terminalNowSeconds + 8.0;
+            }
+
             const bool dockingVisible =
                 m_clientDockingPhase != ClientDockingPhase::Idle ||
                 !m_dockingGuidanceFailureReason.empty() ||
                 !m_dockingStatusWarning.empty();
+            const bool diagnosticVisible =
+                terminalNowSeconds <=
+                    m_terminalDiagnosticVisibleUntilServerSeconds;
 
-            terminal.visible = dockingVisible;
+            terminal.visible = dockingVisible || diagnosticVisible;
             terminal.title = localizedUiText(
                 context().app,
                 "cockpit.terminal.title",
-                "DOCKING"
+                "NAV/SHIP"
             );
+
+            {
+                using namespace game::ship::plant;
+                const auto model = playerShip.physicalControlModel;
+                const auto& slots = physicalControlSlots(model);
+
+                std::size_t aft = 0;
+                std::size_t fore = 0;
+                std::size_t manoeuvre = 0;
+                for (const auto& slot : slots)
+                {
+                    switch (slot.role)
+                    {
+                        case EngineSlotRole::AftMain: ++aft; break;
+                        case EngineSlotRole::ForeMain: ++fore; break;
+                        case EngineSlotRole::ManoeuvreCluster:
+                            ++manoeuvre;
+                            break;
+                    }
+                }
+
+                std::ostringstream shipLine;
+                shipLine
+                    << "SHIP " << physicalControlModelName(model)
+                    << " LAW "
+                    << game::navigation::localFlightControlLawName(
+                           playerShip.renderTransform.motion.localControlLaw
+                       );
+                terminal.ship = shipLine.str();
+
+                std::ostringstream physicsLine;
+                physicsLine
+                    << "ACT main=" << (aft + fore)
+                    << " aft=" << aft
+                    << " fore=" << fore
+                    << " rcs=" << manoeuvre;
+                terminal.physics = physicsLine.str();
+            }
 
             // The terminal intentionally occupies the legacy coordinate block
             // directly below FRONT. Preserve coordinates when docking is idle;
@@ -6917,15 +6972,61 @@ m_systemMapRenderer.render(
                         0,
                         1000
                     );
-                terminal.planner =
-                    localizedUiText(
-                        context().app,
-                        "cockpit.terminal.planner_on",
-                        "planner on"
-                    ) +
-                    " " +
-                    std::to_string(permille / 10) +
-                    "%";
+                const int stage =
+                    static_cast<int>(
+                        m_dockAdviceJob->planningProgressStage.load(
+                            std::memory_order_acquire
+                        )
+                    );
+
+                std::ostringstream plannerLine;
+                plannerLine
+                    << localizedUiText(
+                           context().app,
+                           "cockpit.terminal.planner_on",
+                           "planner on"
+                       )
+                    << " S" << stage
+                    << " " << (permille / 10) << "%"
+                    << " W="
+                    << m_dockWorkerCount->load(
+                           std::memory_order_acquire
+                       );
+                terminal.planner = plannerLine.str();
+
+                // Presentation-only activity trace. This is intentionally a
+                // deterministic pseudo-hex visualization of diagnostic state,
+                // not memory contents and not planner input/output.
+                const std::uint64_t bucket =
+                    static_cast<std::uint64_t>(
+                        std::max(0.0, std::floor(terminalNowSeconds))
+                    );
+                std::uint64_t x =
+                    m_dockAdviceJob->context.serial *
+                        0x9E3779B97F4A7C15ULL ^
+                    static_cast<std::uint64_t>(stage + 1) *
+                        0xBF58476D1CE4E5B9ULL ^
+                    static_cast<std::uint64_t>(permille + 1) *
+                        0x94D049BB133111EBULL ^
+                    bucket;
+                auto nextHexWord = [&]()
+                {
+                    x ^= x >> 12;
+                    x ^= x << 25;
+                    x ^= x >> 27;
+                    x *= 0x2545F4914F6CDD1DULL;
+                    return static_cast<unsigned int>(x & 0xFFFFULL);
+                };
+
+                std::ostringstream activity;
+                activity
+                    << "CALC "
+                    << std::hex << std::uppercase << std::setfill('0')
+                    << std::setw(4) << nextHexWord() << " "
+                    << std::setw(4) << nextHexWord() << " "
+                    << std::setw(4) << nextHexWord() << " "
+                    << std::setw(4) << nextHexWord();
+                terminal.activity = activity.str();
             }
             else
             {
@@ -7026,9 +7127,6 @@ m_systemMapRenderer.render(
             {
                 terminal.error = m_dockingStatusWarning;
             }
-
-            const double terminalNowSeconds =
-                m_client->lastSimulationMetadata().serverTimeSeconds;
 
             const auto terminalOutput =
                 m_dockingStatusTerminal.update(

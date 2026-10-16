@@ -94,10 +94,13 @@ public:
         VelocityAlignmentMode alignmentMode
     ) noexcept
     {
-        // Assisted flight automatically arrests pilot-induced angular motion.
-        // Newtonian flight preserves angular inertia unless a persistent
-        // alignment/autobrake action explicitly owns attitude.
+        // Linear inertia remains law-specific, but neutral attitude control
+        // is rate-hold in both families. Releasing pitch/yaw/roll commands a
+        // zero angular rate through the ship's real angular authority; it does
+        // not rewrite orientation or angular velocity. This keeps Newtonian
+        // translation fully inertial while making manual hull control usable.
         return law == LocalFlightControlLaw::Assisted ||
+            law == LocalFlightControlLaw::Newtonian ||
             alignmentMode != VelocityAlignmentMode::None;
     }
 

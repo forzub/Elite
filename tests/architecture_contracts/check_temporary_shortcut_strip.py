@@ -21,14 +21,28 @@ for forbidden in [
 ]:
     assert forbidden not in strip, f"temporary strip leaked control dependency: {forbidden}"
 
-# User explicitly excluded function-key controls/switches from the strip.
-for forbidden in ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"]:
-    assert forbidden not in strip, f"function key leaked into temporary strip: {forbidden}"
+# Modified F-key chords are the primary content of the strip.
+for required in [
+    "Ctrl+F10",
+    "Ctrl+F11",
+    "Ctrl+F12",
+    "Alt+F12",
+    "Ctrl+Alt+F12",
+]:
+    assert required in strip, f"missing modified function-key hint: {required}"
+
+# No Shift+Fxx command exists in the current runtime contract.
+assert "Shift+F" not in strip
 
 for required in ["Esc", "Backspace", "Ctrl+R", "L-Ctrl+Q"]:
     assert required in strip, f"missing shortcut hint: {required}"
 
 keys = [
+    "cockpit.shortcut_strip.flight_law",
+    "cockpit.shortcut_strip.coordinates",
+    "cockpit.shortcut_strip.constellations",
+    "cockpit.shortcut_strip.sky_culture",
+    "cockpit.shortcut_strip.language",
     "cockpit.shortcut_strip.menu",
     "cockpit.shortcut_strip.detail",
     "cockpit.shortcut_strip.back",
@@ -44,5 +58,5 @@ for key in keys:
 
 print("TEMPORARY SHORTCUT STRIP: PASS")
 print(" - one presentation-only removable component.")
-print(" - no flight-control or F-key hints.")
+print(" - modified F-key chords are explicit; no Shift+Fxx command exists.")
 print(" - all five UI locales present.")

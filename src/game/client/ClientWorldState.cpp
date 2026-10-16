@@ -529,7 +529,25 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.instanceId = s.instanceId;
             state.role = s.role;
             state.typeId = s.typeId;
+
+            const auto previousPhysicalControlModel =
+                state.physicalControlModel;
             state.physicalControlModel = s.physicalControlModel;
+            if (previousPhysicalControlModel != state.physicalControlModel)
+            {
+                std::cout
+                    << "[ShipModel][client] entity=" << s.id.value
+                    << " applied="
+                    << game::ship::plant::physicalControlModelName(
+                           state.physicalControlModel
+                       )
+                    << " previous="
+                    << game::ship::plant::physicalControlModelName(
+                           previousPhysicalControlModel
+                       )
+                    << "\n";
+            }
+
             state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.simulationTier = s.simulationTier;

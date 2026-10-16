@@ -5438,63 +5438,82 @@ void SpaceState::update(float dt)
 
         if (m_dockAssistedSafeRecovery.active)
         {
-            const auto safeAgent = makeAgent();
-            const double safeSpeed =
-                glm::length(safeAgent.velocityMapMetersPerSecond);
-            const double selectedLength =
-                glm::length(m_dockAssistedSafeRecovery.direction);
+            const auto stressPlayerIt =
+                m_client->world().ships().find(m_playerId.value);
 
-            if (safeSpeed > 1.0e-9 && selectedLength > 1.0e-9)
+            if (stressPlayerIt != m_client->world().ships().end())
             {
-                const glm::dvec3 currentCourse =
-                    safeAgent.velocityMapMetersPerSecond / safeSpeed;
-                const glm::dvec3 selectedCourse =
-                    m_dockAssistedSafeRecovery.direction / selectedLength;
+                const auto& stressTransform =
+                    stressPlayerIt->second.transform;
+                const auto& stressMotion =
+                    stressTransform.motion;
 
-                obs.safeCourseErrorRad =
-                    std::acos(
-                        std::clamp(
-                            glm::dot(currentCourse, selectedCourse),
-                            -1.0,
-                            1.0
-                        )
-                    );
+                const double safeSpeed =
+                    glm::length(stressMotion.localVelocityMps);
+                const double selectedLength =
+                    glm::length(m_dockAssistedSafeRecovery.direction);
 
-                constexpr double MaxLeadRad =
-                    8.0 * 3.14159265358979323846 / 180.0;
-                const double step =
-                    std::min(obs.safeCourseErrorRad, MaxLeadRad);
-
-                glm::dvec3 intermediate = selectedCourse;
-                if (obs.safeCourseErrorRad > 1.0e-9)
+                if (safeSpeed > 1.0e-9 &&
+                    selectedLength > 1.0e-9 &&
+                    stressMotion.travelFrame.valid)
                 {
-                    glm::dvec3 axis =
-                        glm::cross(currentCourse, selectedCourse);
-                    const double axisLength = glm::length(axis);
-                    if (axisLength > 1.0e-9)
-                    {
-                        axis /= axisLength;
-                        intermediate =
-                            currentCourse * std::cos(step) +
-                            glm::cross(axis, currentCourse) * std::sin(step) +
-                            axis * glm::dot(axis, currentCourse) *
-                                (1.0 - std::cos(step));
-                    }
-                }
+                    const glm::dvec3 currentCourse =
+                        stressMotion.localVelocityMps / safeSpeed;
+                    const glm::dvec3 selectedCourse =
+                        m_dockAssistedSafeRecovery.direction /
+                        selectedLength;
 
-                const glm::dvec3 hullForward =
-                    glm::normalize(safeAgent.forwardMap);
-                obs.safeCourseHullTargetErrorRad =
-                    std::acos(
-                        std::clamp(
-                            glm::dot(
-                                hullForward,
-                                glm::normalize(intermediate)
-                            ),
-                            -1.0,
-                            1.0
-                        )
-                    );
+                    obs.safeCourseErrorRad =
+                        std::acos(
+                            std::clamp(
+                                glm::dot(currentCourse, selectedCourse),
+                                -1.0,
+                                1.0
+                            )
+                        );
+
+                    constexpr double MaxLeadRad =
+                        8.0 * 3.14159265358979323846 / 180.0;
+                    const double step =
+                        std::min(obs.safeCourseErrorRad, MaxLeadRad);
+
+                    glm::dvec3 intermediate = selectedCourse;
+                    if (obs.safeCourseErrorRad > 1.0e-9)
+                    {
+                        glm::dvec3 axis =
+                            glm::cross(currentCourse, selectedCourse);
+                        const double axisLength = glm::length(axis);
+                        if (axisLength > 1.0e-9)
+                        {
+                            axis /= axisLength;
+                            intermediate =
+                                currentCourse * std::cos(step) +
+                                glm::cross(axis, currentCourse) *
+                                    std::sin(step) +
+                                axis * glm::dot(axis, currentCourse) *
+                                    (1.0 - std::cos(step));
+                        }
+                    }
+
+                    const glm::dvec3 hullForward =
+                        glm::normalize(
+                            stressMotion.travelFrame.worldToLocalVector(
+                                glm::dvec3(stressTransform.forward())
+                            )
+                        );
+
+                    obs.safeCourseHullTargetErrorRad =
+                        std::acos(
+                            std::clamp(
+                                glm::dot(
+                                    hullForward,
+                                    glm::normalize(intermediate)
+                                ),
+                                -1.0,
+                                1.0
+                            )
+                        );
+                }
             }
         }
 

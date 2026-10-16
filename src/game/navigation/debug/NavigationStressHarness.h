@@ -80,6 +80,13 @@ public:
         double gimbalYawRad = 0.0;
         double gimbalPitchRad = 0.0;
 
+        double mainTorquePitchNm = 0.0;
+        double mainTorqueYawNm = 0.0;
+        double mainTorqueRollNm = 0.0;
+        double mainAngularAccelPitchRadPerSec2 = 0.0;
+        double mainAngularAccelYawRadPerSec2 = 0.0;
+        double mainAngularAccelRollRadPerSec2 = 0.0;
+
         // Semantic BLUE proving state from RoutePlan::stages.
         bool blueStagePresent = false;
         bool blueHardContainment = false;
@@ -1072,6 +1079,15 @@ private:
             << o.gimbalYawRad * 57.2957795130823208768
             << " gimbal_pitch_deg="
             << o.gimbalPitchRad * 57.2957795130823208768
+            << " main_torque_pitch_nm=" << o.mainTorquePitchNm
+            << " main_torque_yaw_nm=" << o.mainTorqueYawNm
+            << " main_torque_roll_nm=" << o.mainTorqueRollNm
+            << " main_alpha_pitch_radps2="
+            << o.mainAngularAccelPitchRadPerSec2
+            << " main_alpha_yaw_radps2="
+            << o.mainAngularAccelYawRadPerSec2
+            << " main_alpha_roll_radps2="
+            << o.mainAngularAccelRollRadPerSec2
             << " blue_stage=" << (o.blueStagePresent ? 1 : 0)
             << " blue_hard=" << (o.blueHardContainment ? 1 : 0)
             << " blue_phase=" << o.bluePhase

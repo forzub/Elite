@@ -1669,6 +1669,49 @@ set_tests_properties(
 )
 
 add_executable(
+    assisted_layout_flight_matrix_tests
+    AssistedLayoutFlightMatrixTests.cpp
+)
+
+target_include_directories(assisted_layout_flight_matrix_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    assisted_layout_flight_matrix_tests
+    PRIVATE cxx_std_17
+)
+
+target_link_libraries(
+    assisted_layout_flight_matrix_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        assisted_layout_flight_matrix_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        assisted_layout_flight_matrix_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME assisted_layout_flight_matrix
+    COMMAND assisted_layout_flight_matrix_tests
+)
+
+set_tests_properties(
+    assisted_layout_flight_matrix
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     ship_physical_corridor_matrix_tests
     ShipPhysicalCorridorMatrixTests.cpp
 )

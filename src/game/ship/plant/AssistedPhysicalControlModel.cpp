@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/plant/ShipPhysicalAuthorityMatrix.h"
 
 namespace game::ship::plant
 {
@@ -38,6 +39,85 @@ const std::vector<EngineSlotDefinition> AssistedX = {
     {"fore_lower_left",  EngineSlotRole::ForeMain, {-InvSqrt2, -InvSqrt2, -1.0}, {0.0, 0.0, 1.0}, EngineSlotFreedom::VectoringMain},
     {"fore_lower_right", EngineSlotRole::ForeMain, { InvSqrt2, -InvSqrt2, -1.0}, {0.0, 0.0, 1.0}, EngineSlotFreedom::VectoringMain},
 };
+
+
+AuthorityContributionRow assistedContributionRow(
+    EngineSlotRole role
+)
+{
+    AuthorityContributionRow row;
+
+    if (role == EngineSlotRole::AftMain)
+        row.thrust.longitudinal = {1.0, 0.0};
+    else if (role == EngineSlotRole::ForeMain)
+        row.thrust.longitudinal = {0.0, 1.0};
+
+    const AxisAuthority01 symmetricVectoring {1.0, 1.0};
+    row.vectoring.strafe = symmetricVectoring;
+    row.vectoring.lift = symmetricVectoring;
+    row.vectoring.pitch = symmetricVectoring;
+    row.vectoring.yaw = symmetricVectoring;
+    row.vectoring.roll = symmetricVectoring;
+
+    row.poweredMainVectoring = {
+        1.0, // trajectory strafe
+        1.0, // trajectory lift
+        1.0, // pitch
+        1.0, // yaw
+        1.0  // roll
+    };
+
+    return row;
+}
+
+std::vector<AuthorityContributionRow> makeAssistedContributionMatrix(
+    const std::vector<EngineSlotDefinition>& slots
+)
+{
+    std::vector<AuthorityContributionRow> rows;
+    rows.reserve(slots.size());
+    for (const auto& slot : slots)
+        rows.push_back(assistedContributionRow(slot.role));
+    return rows;
+}
+
+const std::vector<AuthorityContributionRow>& assistedContributionMatrix(
+    PropulsionLayout layout
+)
+{
+    static const auto I = makeAssistedContributionMatrix(AssistedI);
+    static const auto Y = makeAssistedContributionMatrix(AssistedY);
+    static const auto X = makeAssistedContributionMatrix(AssistedX);
+
+    switch (layout)
+    {
+        case PropulsionLayout::Y:
+            return Y;
+        case PropulsionLayout::X:
+            return X;
+        case PropulsionLayout::I:
+        default:
+            return I;
+    }
+}
+
+double assistedVectoringFloor(
+    const AuthorityMatrixResult& matrix
+) noexcept
+{
+    return std::min({
+        weakestAxisAuthority(matrix.authority.strafe),
+        weakestAxisAuthority(matrix.authority.lift),
+        weakestAxisAuthority(matrix.authority.pitch),
+        weakestAxisAuthority(matrix.authority.yaw),
+        weakestAxisAuthority(matrix.authority.roll),
+        matrix.poweredMainVectoring.trajectoryStrafe01,
+        matrix.poweredMainVectoring.trajectoryLift01,
+        matrix.poweredMainVectoring.pitch01,
+        matrix.poweredMainVectoring.yaw01,
+        matrix.poweredMainVectoring.roll01
+    });
+}
 
 PhysicalControlModelId modelId(PropulsionLayout layout) noexcept
 {
@@ -91,13 +171,17 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     if (state.size() != definition.size())
         return out;
 
+    const auto matrix = evaluateAuthorityContributionMatrix(
+        assistedContributionMatrix(layout),
+        state
+    );
+    if (!matrix.valid)
+        return out;
+
     std::size_t aftSlots = 0;
     std::size_t foreSlots = 0;
     std::size_t operationalAft = 0;
     std::size_t operationalFore = 0;
-    double aftThrustSum01 = 0.0;
-    double foreThrustSum01 = 0.0;
-    double vectoringSum01 = 0.0;
 
     for (std::size_t i = 0; i < definition.size(); ++i)
     {
@@ -105,16 +189,12 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
         if (role == EngineSlotRole::AftMain)
         {
             ++aftSlots;
-            aftThrustSum01 += effectiveSlotThrust01(state[i]);
-            vectoringSum01 += effectiveSlotVectoring01(state[i]);
             if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalAft;
         }
         else if (role == EngineSlotRole::ForeMain)
         {
             ++foreSlots;
-            foreThrustSum01 += effectiveSlotThrust01(state[i]);
-            vectoringSum01 += effectiveSlotVectoring01(state[i]);
             if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalFore;
         }
@@ -122,31 +202,20 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
 
     out.mainSlots = aftSlots + foreSlots;
     out.operationalMainSlots = operationalAft + operationalFore;
+    out.authority = matrix.authority;
+    out.poweredMainVectoring = matrix.poweredMainVectoring;
+
+    if (!nominalPhysics.forwardMainEngineAvailable)
+        out.authority.longitudinal.positive = 0.0;
+    if (!nominalPhysics.reverseMainEngineAvailable)
+        out.authority.longitudinal.negative = 0.0;
 
     const double aftFraction =
-        aftSlots > 0 ? aftThrustSum01 / static_cast<double>(aftSlots) : 0.0;
+        out.authority.longitudinal.positive;
     const double foreFraction =
-        foreSlots > 0 ? foreThrustSum01 / static_cast<double>(foreSlots) : 0.0;
+        out.authority.longitudinal.negative;
     const double vectoringFraction =
-        out.mainSlots > 0
-            ? vectoringSum01 / static_cast<double>(out.mainSlots)
-            : 0.0;
-
-    out.authority.longitudinal.positive =
-        nominalPhysics.forwardMainEngineAvailable ? aftFraction : 0.0;
-    out.authority.longitudinal.negative =
-        nominalPhysics.reverseMainEngineAvailable ? foreFraction : 0.0;
-    out.authority.strafe = symmetric(vectoringFraction);
-    out.authority.lift = symmetric(vectoringFraction);
-    out.authority.pitch = symmetric(vectoringFraction);
-    out.authority.yaw = symmetric(vectoringFraction);
-    out.authority.roll = symmetric(vectoringFraction);
-
-    out.poweredMainVectoring.trajectoryStrafe01 = vectoringFraction;
-    out.poweredMainVectoring.trajectoryLift01 = vectoringFraction;
-    out.poweredMainVectoring.pitch01 = vectoringFraction;
-    out.poweredMainVectoring.yaw01 = vectoringFraction;
-    out.poweredMainVectoring.roll01 = vectoringFraction;
+        assistedVectoringFloor(matrix);
 
     const double nominalForward =
         game::ship::forwardMainAccelerationLimitMps2(nominalPhysics);
@@ -196,6 +265,10 @@ PhysicalControlSnapshot AssistedPhysicalControlModel::evaluate(
     out.effectivePhysics.manoeuvreGasRechargePerSecond = 0.0f;
     out.effectivePhysics.manoeuvreGasRestartFraction = 0.0f;
 
+    // Transitional projection: the accepted motion backend still consumes one
+    // scalar lateral/angular envelope. Use the weakest matrix axis so damage
+    // can only remove capability. Healthy matrices normalize to exactly 1.0,
+    // preserving the pre-matrix flight response.
     out.effectivePhysics.strafeAccel =
         static_cast<float>(
             std::max(0.0, static_cast<double>(nominalPhysics.strafeAccel)) *

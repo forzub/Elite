@@ -1,5 +1,10 @@
 # PROJECT STATE — ASSISTED FINALIZATION — 2026-10-16
 
+> **Authoritative pre-planning sequence:**
+> `docs/navigation/ASSISTED_PREPLANNING_ENTRY_CONTRACT.md`.
+> If a test or implementation conflicts with that document, the test/implementation
+> must be investigated; the entry algorithm must not be redefined to make the test green.
+
 ## Active focus
 
 **Newtonian development is PAUSED.**

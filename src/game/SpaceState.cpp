@@ -1503,6 +1503,43 @@ void SpaceState::prepareFrame(float dt)
 // =====================================================================================
 void SpaceState::handleInput()
 {
+    // Restore the temporary diagnostic construction once the authoritative
+    // player ship has arrived. The preference never mutates client physics
+    // directly; it is replayed as the same server command used by Ctrl+F9/F10.
+    if (!m_persistedPhysicalModelApplied &&
+        context().app &&
+        m_client)
+    {
+        const auto playerIt =
+            m_client->world().ships().find(m_playerId.value);
+        if (playerIt != m_client->world().ships().end())
+        {
+            using Model =
+                game::ship::plant::PhysicalControlModelId;
+            Model preferred = playerIt->second.physicalControlModel;
+            const std::string& saved =
+                context().app->preferredPhysicalControlModel();
+
+            if (!saved.empty() &&
+                game::ship::plant::parsePhysicalControlModel(
+                    saved,
+                    preferred
+                ) &&
+                preferred != playerIt->second.physicalControlModel)
+            {
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type =
+                    ClientShipCommand::SelectPhysicalControlModel;
+                command.index = static_cast<int>(preferred);
+                msg.payload = command;
+                m_client->sendMessage(msg);
+            }
+
+            m_persistedPhysicalModelApplied = true;
+        }
+    }
+
     if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap)
     {

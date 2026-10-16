@@ -269,11 +269,11 @@
       "ja": "脱出"
     },
     "cockpit.shortcut_strip.flight_law": {
-      "en": "FLIGHT LAW",
-      "ru": "РЕЖИМ",
-      "zh-Hans": "飞行律",
-      "es": "MODO",
-      "ja": "飛行則"
+      "en": "FAMILY",
+      "ru": "СЕМЕЙСТВО",
+      "zh-Hans": "系列",
+      "es": "FAMILIA",
+      "ja": "系列"
     },
     "cockpit.shortcut_strip.coordinates": {
       "en": "COORDS",
@@ -302,6 +302,13 @@
       "zh-Hans": "语言",
       "es": "IDIOMA",
       "ja": "言語"
+    },
+    "cockpit.shortcut_strip.layout": {
+      "en": "I/Y/X",
+      "ru": "I/Y/X",
+      "zh-Hans": "I/Y/X",
+      "es": "I/Y/X",
+      "ja": "I/Y/X"
     }
   }
 }

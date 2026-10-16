@@ -55,6 +55,11 @@ public:
 
         bool safetyCourseActive = false;
         bool safetyStopFallback = false;
+        double safeCourseErrorRad = 0.0;
+        double safeCourseHullTargetErrorRad = 0.0;
+        double pitchRateRadPerSec = 0.0;
+        double yawRateRadPerSec = 0.0;
+        double rollRateRadPerSec = 0.0;
 
         bool routeValid = false;
         double routeProgressMeters = 0.0;
@@ -1053,6 +1058,13 @@ private:
             << " job_plan_valid=" << (o.jobPlanValid ? 1 : 0)
             << " safety_active=" << (o.safetyCourseActive ? 1 : 0)
             << " safety_stop=" << (o.safetyStopFallback ? 1 : 0)
+            << " safe_course_err_deg="
+            << o.safeCourseErrorRad * 57.2957795130823208768
+            << " safe_hull_target_err_deg="
+            << o.safeCourseHullTargetErrorRad * 57.2957795130823208768
+            << " pitch_rate_radps=" << o.pitchRateRadPerSec
+            << " yaw_rate_radps=" << o.yawRateRadPerSec
+            << " roll_rate_radps=" << o.rollRateRadPerSec
             << " job_stage=" << o.jobStage
             << " job_permille=" << o.jobPermille
             << " route_valid=" << (o.routeValid ? 1 : 0)

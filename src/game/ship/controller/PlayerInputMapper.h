@@ -28,7 +28,4 @@ struct PlayerInputMapper
         game::navigation::LocalFlightControlLaw currentLocalControlLaw
     );
 
-private:
-
-
 };

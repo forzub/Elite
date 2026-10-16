@@ -232,6 +232,41 @@
       "zh-Hans": "错误：",
       "es": "error:",
       "ja": "エラー："
+    },
+    "cockpit.shortcut_strip.menu": {
+      "en": "MENU",
+      "ru": "МЕНЮ",
+      "zh-Hans": "菜单",
+      "es": "MENÚ",
+      "ja": "メニュー"
+    },
+    "cockpit.shortcut_strip.detail": {
+      "en": "DETAIL",
+      "ru": "ДЕТАЛИ",
+      "zh-Hans": "详情",
+      "es": "DETALLE",
+      "ja": "詳細"
+    },
+    "cockpit.shortcut_strip.back": {
+      "en": "BACK",
+      "ru": "НАЗАД",
+      "zh-Hans": "返回",
+      "es": "ATRÁS",
+      "ja": "戻る"
+    },
+    "cockpit.shortcut_strip.repair": {
+      "en": "REPAIR",
+      "ru": "РЕМОНТ",
+      "zh-Hans": "维修",
+      "es": "REPARAR",
+      "ja": "修理"
+    },
+    "cockpit.shortcut_strip.eject": {
+      "en": "EJECT",
+      "ru": "КАТАПУЛЬТА",
+      "zh-Hans": "弹射",
+      "es": "EYECTAR",
+      "ja": "脱出"
     }
   }
 }

@@ -36,11 +36,16 @@ public:
 
         // Modified function-key chords are the primary purpose of
         // this temporary strip. Ordinary utility shortcuts follow them.
-        const std::array<std::string, 10> items {
+        const std::array<std::string, 11> items {
+            key("Ctrl+F9") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.layout",
+                    "I/Y/X"
+                ),
             key("Ctrl+F10") + " " +
                 localization.text(
                     "cockpit.shortcut_strip.flight_law",
-                    "FLIGHT LAW"
+                    "FAMILY"
                 ),
             key("Ctrl+F11") + " " +
                 localization.text(

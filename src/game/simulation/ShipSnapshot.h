@@ -9,6 +9,7 @@
 #include "src/game/ship/ShipRegistry.h"
 #include "src/world/types/ObjectType.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
@@ -27,6 +28,8 @@ struct ShipSnapshot
     ShipInstanceId                                      instanceId = 0;
     ShipRole                                            role;
     ObjectType                                          typeId;
+    game::ship::plant::PhysicalControlModelId            physicalControlModel =
+        game::ship::plant::PhysicalControlModelId::AssistedI;
     std::uint64_t                                       acknowledgedControlTick = 0;
     game::diagnostics::HubMotionLabActorKind            motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
     game::simulation::ShipSimulationTier                 simulationTier =

@@ -529,6 +529,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.instanceId = s.instanceId;
             state.role = s.role;
             state.typeId = s.typeId;
+            state.physicalControlModel = s.physicalControlModel;
             state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.simulationTier = s.simulationTier;
@@ -615,6 +616,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.instanceId = s.instanceId;
             state.role = s.role;
             state.typeId = s.typeId;
+            state.physicalControlModel = s.physicalControlModel;
             state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.simulationTier = s.simulationTier;
@@ -1686,15 +1688,25 @@ void ClientWorldState::prepareLocalPredictedPresentation(
         return;
 
     const auto slotState =
-        game::ship::capability::buildPhysicalControlSlotState(
+        ship.physicalControlModel != ship.descriptor->physicalControlModel
+            ? game::ship::plant::healthySlotState(
+                  game::ship::plant::physicalControlSlots(
+                      ship.physicalControlModel
+                  )
+              )
+            : game::ship::capability::buildPhysicalControlSlotState(
+                  *ship.descriptor,
+                  ship.physicalControlModel,
+                  ship.modules
+              );
+    const auto capability =
+        game::ship::capability::buildShipCapability(
             *ship.descriptor,
-            ship.modules
+            ship.physicalControlModel,
+            slotState
         );
     const ShipParams effectivePhysics =
-        game::ship::effectiveShipPhysics(
-            *ship.descriptor,
-            ship.modules
-        );
+        capability.valid ? capability.effectivePhysics : ShipParams {};
 
     m_localPredictedPresentationTarget =
         game::client::presentation::sampleLocalPredictedPresentationTarget(
@@ -1703,7 +1715,7 @@ void ClientWorldState::prepareLocalPredictedPresentation(
             effectivePhysics,
             control,
             world,
-            ship.descriptor->physicalControlModel,
+            ship.physicalControlModel,
             slotState,
             fractionalStepSeconds,
             fixedStepSeconds
@@ -1741,11 +1753,26 @@ void ClientWorldState::predict(
     if (!isLocalControlledEntity(id) || !ship.descriptor)
         return;
 
-    const ShipParams effectivePhysics =
-        game::ship::effectiveShipPhysics(
+    const auto slotState =
+        ship.physicalControlModel != ship.descriptor->physicalControlModel
+            ? game::ship::plant::healthySlotState(
+                  game::ship::plant::physicalControlSlots(
+                      ship.physicalControlModel
+                  )
+              )
+            : game::ship::capability::buildPhysicalControlSlotState(
+                  *ship.descriptor,
+                  ship.physicalControlModel,
+                  ship.modules
+              );
+    const auto capability =
+        game::ship::capability::buildShipCapability(
             *ship.descriptor,
-            ship.modules
+            ship.physicalControlModel,
+            slotState
         );
+    const ShipParams effectivePhysics =
+        capability.valid ? capability.effectivePhysics : ShipParams {};
 
     game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         ship.transform,
@@ -1762,18 +1789,12 @@ void ClientWorldState::predict(
         split. Otherwise localPositionMeters would change only on snapshots and
         nearby co-frame infrastructure would appear to pulse.
     */
-    const auto slotState =
-        game::ship::capability::buildPhysicalControlSlotState(
-            *ship.descriptor,
-            ship.modules
-        );
-
     (void)game::client::predictHubTacticalMotion(
         ship.transform,
         ship.referenceFrame,
         effectivePhysics,
         control,
-        ship.descriptor->physicalControlModel,
+        ship.physicalControlModel,
         slotState,
         dt
     );

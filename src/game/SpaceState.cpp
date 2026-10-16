@@ -105,6 +105,7 @@
 #include "core/Application.h"
 #include "game/scene/GameSceneSetup.h"
 #include "render/HUD/TextRenderer.h"
+#include "src/game/presentation/TemporaryShortcutStrip.h"
 
 namespace
 {
@@ -6916,6 +6917,13 @@ m_systemMapRenderer.render(
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
+    if (context().app)
+    {
+        game::presentation::TemporaryShortcutStrip::render(
+            vp,
+            context().app->localization()
+        );
+    }
 
     m_perfHudMs = nowMs() - hudStartMs;
 }
@@ -7131,6 +7139,7 @@ void SpaceState::renderInSessionPresentationOverlay()
         );
         renderUiLanguageIndicator(vp);
         renderNavigationStressOverlay(vp);
+        game::presentation::TemporaryShortcutStrip::render(vp, loc);
         return;
     }
 
@@ -7143,6 +7152,7 @@ void SpaceState::renderInSessionPresentationOverlay()
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
     renderNavigationStressOverlay(vp);
+    game::presentation::TemporaryShortcutStrip::render(vp, loc);
 }
 
 void SpaceState::renderRoutePlanningModal(

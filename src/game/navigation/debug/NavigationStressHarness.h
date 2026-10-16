@@ -222,6 +222,23 @@ public:
             if (!o.worldReady)
                 return action;
 
+            if (!m_physicalModelLabel.empty() &&
+                !o.actualPhysicalModelLabel.empty() &&
+                o.actualPhysicalModelLabel != m_physicalModelLabel)
+            {
+                logSummary(
+                    o,
+                    "FAILED",
+                    std::string("requested/actual physical model mismatch: requested=") +
+                        m_physicalModelLabel +
+                        " actual=" +
+                        o.actualPhysicalModelLabel
+                );
+                m_complete = true;
+                flush();
+                return action;
+            }
+
             // The server applies the diagnostic hot-start on a fixed step and
             // the client observes it on a later snapshot. Do not mistake the
             // first world-ready zero-speed snapshot for the requested

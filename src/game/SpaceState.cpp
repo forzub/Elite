@@ -1751,11 +1751,19 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 void SpaceState::cyclePhysicalControlLayout()
 {
     if (!m_client)
+    {
+        std::cout << "[ShipModel] Ctrl+F9 ignored reason=no-client\n";
         return;
+    }
 
     const auto it = m_client->world().ships().find(m_playerId.value);
     if (it == m_client->world().ships().end())
+    {
+        std::cout
+            << "[ShipModel] Ctrl+F9 ignored reason=player-not-replicated"
+            << " entity=" << m_playerId.value << "\n";
         return;
+    }
 
     using namespace game::ship::plant;
     const auto current = it->second.physicalControlModel;
@@ -1776,18 +1784,29 @@ void SpaceState::cyclePhysicalControlLayout()
             physicalControlModelName(next)
         );
 
-    std::cout << "[ShipModel] requested="
-              << physicalControlModelName(next) << "\n";
+    std::cout
+        << "[ShipModel] Ctrl+F9 requested current="
+        << physicalControlModelName(current)
+        << " next=" << physicalControlModelName(next)
+        << "\n";
 }
 
 void SpaceState::cyclePhysicalControlFamily()
 {
     if (!m_client)
+    {
+        std::cout << "[ShipModel] Ctrl+F10 ignored reason=no-client\n";
         return;
+    }
 
     const auto it = m_client->world().ships().find(m_playerId.value);
     if (it == m_client->world().ships().end())
+    {
+        std::cout
+            << "[ShipModel] Ctrl+F10 ignored reason=player-not-replicated"
+            << " entity=" << m_playerId.value << "\n";
         return;
+    }
 
     using namespace game::ship::plant;
     const auto current = it->second.physicalControlModel;
@@ -1809,8 +1828,11 @@ void SpaceState::cyclePhysicalControlFamily()
             physicalControlModelName(next)
         );
 
-    std::cout << "[ShipModel] requested="
-              << physicalControlModelName(next) << "\n";
+    std::cout
+        << "[ShipModel] Ctrl+F10 requested current="
+        << physicalControlModelName(current)
+        << " next=" << physicalControlModelName(next)
+        << "\n";
 }
 
 

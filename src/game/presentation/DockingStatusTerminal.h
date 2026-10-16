@@ -25,6 +25,9 @@ struct DockingTerminalSnapshot
     std::string planner;
     std::string safety;
     std::string handoff;
+    std::string ship;
+    std::string physics;
+    std::string activity;
     std::string error;
 };
 
@@ -65,9 +68,13 @@ public:
     {
         Output out;
 
+        // Visibility is a renderer concern. Keep history/state while hidden so
+        // model-family/layout changes and planner activity continue as one
+        // scrolling diagnostic stream when the terminal becomes visible again.
         if (!snapshot.visible)
         {
-            reset();
+            if (m_initialized)
+                m_last = snapshot;
             return out;
         }
 
@@ -81,6 +88,9 @@ public:
             enqueue(snapshot.planner, DockingTerminalSeverity::Info);
             enqueue(snapshot.safety, DockingTerminalSeverity::Info);
             enqueue(snapshot.handoff, DockingTerminalSeverity::Info);
+            enqueue(snapshot.ship, DockingTerminalSeverity::Info);
+            enqueue(snapshot.physics, DockingTerminalSeverity::Info);
+            enqueue(snapshot.activity, DockingTerminalSeverity::Info);
             if (!snapshot.error.empty())
                 enqueue(snapshot.error, DockingTerminalSeverity::Error);
             m_last = snapshot;
@@ -95,6 +105,12 @@ public:
                            DockingTerminalSeverity::Info);
             enqueueChanged(m_last.handoff, snapshot.handoff,
                            DockingTerminalSeverity::Warning);
+            enqueueChanged(m_last.ship, snapshot.ship,
+                           DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.physics, snapshot.physics,
+                           DockingTerminalSeverity::Info);
+            enqueueChanged(m_last.activity, snapshot.activity,
+                           DockingTerminalSeverity::Info);
 
             if (snapshot.error != m_last.error &&
                 !snapshot.error.empty())
@@ -167,7 +183,7 @@ public:
     }
 
 private:
-    static constexpr std::size_t MaxHistoryLines = 24;
+    static constexpr std::size_t MaxHistoryLines = 64;
     static constexpr std::size_t MaxVisibleLines = 14;
 
     void enqueue(

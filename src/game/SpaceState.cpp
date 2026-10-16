@@ -6829,37 +6829,19 @@ m_systemMapRenderer.render(
             const double terminalNowSeconds =
                 m_client->lastSimulationMetadata().serverTimeSeconds;
 
-            if (!m_terminalObservedPhysicalModelValid ||
-                m_terminalObservedPhysicalModel !=
-                    playerShip.physicalControlModel)
-            {
-                m_terminalObservedPhysicalModelValid = true;
-                m_terminalObservedPhysicalModel =
-                    playerShip.physicalControlModel;
-                m_terminalDiagnosticVisibleUntilServerSeconds =
-                    terminalNowSeconds + 8.0;
-            }
-
             const bool dockingVisible =
                 m_clientDockingPhase != ClientDockingPhase::Idle ||
                 !m_dockingGuidanceFailureReason.empty() ||
                 !m_dockingStatusWarning.empty();
-            const bool diagnosticVisible =
-                terminalNowSeconds <=
-                    m_terminalDiagnosticVisibleUntilServerSeconds;
 
-            terminal.visible = dockingVisible || diagnosticVisible;
-            terminal.title = dockingVisible
-                ? localizedUiText(
-                      context().app,
-                      "cockpit.terminal.title",
-                      "DOCKING"
-                  )
-                : localizedUiText(
-                      context().app,
-                      "cockpit.terminal.ship_diagnostic",
-                      "SHIP DIAGNOSTIC"
-                  );
+            // Physical-model/layout changes only append diagnostic lines.
+            // They do NOT own terminal visibility.
+            terminal.visible = dockingVisible;
+            terminal.title = localizedUiText(
+                context().app,
+                "cockpit.terminal.title",
+                "DOCKING"
+            );
 
             {
                 using namespace game::ship::plant;

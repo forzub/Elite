@@ -27,6 +27,8 @@ public:
     struct Observation
     {
         bool worldReady = false;
+        std::string actualPhysicalModelLabel;
+        std::string actualControlLawLabel;
         double universeSeconds = 0.0;
         double speedMps = 0.0;
         double angularSpeedRadPerSec = 0.0;
@@ -1112,10 +1114,18 @@ private:
             << " first_kind=" << o.firstCurveKind
             << " first_len=" << o.firstCurveLengthMeters
             << " route_len=" << o.routeLengthMeters
-            << " physical_model="
+            << " requested_physical_model="
             << (m_physicalModelLabel.empty()
                     ? "descriptor-default"
-                    : m_physicalModelLabel);
+                    : m_physicalModelLabel)
+            << " actual_physical_model="
+            << (o.actualPhysicalModelLabel.empty()
+                    ? "unknown"
+                    : o.actualPhysicalModelLabel)
+            << " actual_control_law="
+            << (o.actualControlLawLabel.empty()
+                    ? "unknown"
+                    : o.actualControlLawLabel);
     }
 
     void sample(const Observation& o)

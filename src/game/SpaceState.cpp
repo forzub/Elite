@@ -5457,18 +5457,31 @@ void SpaceState::update(float dt)
 
         m_shipRuntimeControlOracle.update(obs);
 
-        if (m_shipRuntimeControlOracle.complete() &&
-            !m_shipRuntimeControlOracle.failed())
+        game::ship::plant::PhysicalControlModelId requestedModel;
+        if (m_shipRuntimeControlOracle.takeModelRequest(requestedModel))
         {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type =
+                ClientShipCommand::SelectPhysicalControlModel;
+            command.index = static_cast<int>(requestedModel);
+            msg.payload = command;
+            m_client->sendMessage(msg);
+
             std::cerr
-                << "[ShipControlOracle] COMPLETE report="
-                << m_shipRuntimeControlOracle.reportPath()
+                << "[ShipControlOracle] requested model="
+                << game::ship::plant::physicalControlModelName(
+                       requestedModel
+                   )
                 << std::endl;
         }
-        else if (m_shipRuntimeControlOracle.complete())
+
+        if (m_shipRuntimeControlOracle.complete() &&
+            !m_navigationStressCompleteAnnounced)
         {
+            m_navigationStressCompleteAnnounced = true;
             std::cerr
-                << "[ShipControlOracle] FAILED report="
+                << "[ShipControlOracle] COMPLETE report="
                 << m_shipRuntimeControlOracle.reportPath()
                 << std::endl;
         }

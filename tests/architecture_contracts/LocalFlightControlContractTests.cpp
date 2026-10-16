@@ -258,6 +258,76 @@ void testNewtonianRcsCanCreepPastControlledSpeedEnvelope()
     );
 }
 
+void testNewtonianManualRcsSelfStabilizesAfterRelease()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.maxCombatSpeed = 10.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.manoeuvreGasUsePerSecond = 0.0f;
+    params.manoeuvreGasRechargePerSecond = 0.0f;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    motion.localVelocityMps = glm::dvec3(30.0, -4.0, 2.0);
+
+    auto position =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+
+    const glm::dvec3 baseline = motion.localVelocityMps;
+
+    // Hold two manual manoeuvre axes long enough to create a visible RCS-only
+    // delta-v. Newtonian RCS is still allowed to accumulate while held.
+    for (int i = 0; i < 10; ++i)
+    {
+        stepRcs(
+            motion,
+            position,
+            frame,
+            params,
+            0.1f,
+            0.0f,
+            1.0f,
+            1.0f
+        );
+    }
+
+    const double pushedDelta =
+        glm::length(motion.localVelocityMps - baseline);
+    require(
+        pushedDelta > 1.0,
+        "Newtonian manual RCS did not accumulate manoeuvre delta-v while held"
+    );
+
+    // Release all manoeuvre axes. The same RCS authority must cancel only the
+    // delta-v it created, preserving the pre-existing inertial flight vector.
+    for (int i = 0; i < 80; ++i)
+    {
+        stepRcs(
+            motion,
+            position,
+            frame,
+            params,
+            0.05f,
+            0.0f,
+            0.0f,
+            0.0f
+        );
+    }
+
+    require(
+        glm::length(motion.localVelocityMps - baseline) < 1.0e-5,
+        "Newtonian released manual RCS failed to restore pre-manoeuvre VREL"
+    );
+    require(
+        glm::length(
+            motion.newtonianManualManoeuvreDeltaVelocityMps
+        ) < 1.0e-6,
+        "Newtonian manual RCS delta-v ledger did not settle to zero"
+    );
+}
+
 void testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease()
 {
     const auto frame = makeFrame();
@@ -1528,6 +1598,7 @@ int main()
         testFreshFlightStateDefaultsToAssisted();
         testFlightLawTransitionStateMachine();
         testNewtonianRcsCanCreepPastControlledSpeedEnvelope();
+        testNewtonianManualRcsSelfStabilizesAfterRelease();
         testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease();
         testAssistedLateralStabilizerIsDistinctFromNewtonianRcs();
         testManoeuvreGasDrainsLocksAndRecharges();

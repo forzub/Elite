@@ -5355,6 +5355,126 @@ void SpaceState::update(float dt)
     }
 
 
+    // Optional real-runtime ship control oracle. Enabled only with
+    // ELITE_SHIP_CONTROL_ORACLE=1. It drives the exact ordinary pilot-control
+    // stream in handleInput() and observes the authoritative replicated ship
+    // state here. No planner, corridor or direct physics shortcut participates.
+    if (m_shipRuntimeControlOracle.enabled())
+    {
+        game::debug::ShipRuntimeControlOracle::Observation obs;
+        obs.universeSeconds =
+            m_client->lastSimulationMetadata().universeTimeSeconds;
+
+        const auto playerIt =
+            m_client->world().ships().find(m_playerId.value);
+        if (playerIt != m_client->world().ships().end())
+        {
+            const auto& transform = playerIt->second.transform;
+            const auto& motion = transform.motion;
+
+            obs.worldReady =
+                motion.matchedToReferenceFrame &&
+                motion.travelFrame.valid;
+            obs.physicalModelLabel =
+                game::ship::plant::physicalControlModelName(
+                    playerIt->second.physicalControlModel
+                );
+            obs.law = motion.localControlLaw;
+
+            if (motion.travelFrame.valid)
+            {
+                const glm::dvec3 forwardLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.forward())
+                        )
+                    );
+                const glm::dvec3 rightLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.right())
+                        )
+                    );
+                const glm::dvec3 upLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.up())
+                        )
+                    );
+
+                obs.forwardVelocityMps =
+                    glm::dot(motion.localVelocityMps, forwardLocal);
+                obs.rightVelocityMps =
+                    glm::dot(motion.localVelocityMps, rightLocal);
+                obs.upVelocityMps =
+                    glm::dot(motion.localVelocityMps, upLocal);
+                obs.speedMps =
+                    glm::length(motion.localVelocityMps);
+
+                obs.mainForwardAccelerationMps2 =
+                    glm::dot(
+                        motion.mainEngineAccelerationMps2,
+                        forwardLocal
+                    );
+                obs.mainRightAccelerationMps2 =
+                    glm::dot(
+                        motion.mainEngineAccelerationMps2,
+                        rightLocal
+                    );
+                obs.mainUpAccelerationMps2 =
+                    glm::dot(
+                        motion.mainEngineAccelerationMps2,
+                        upLocal
+                    );
+                obs.manoeuvreRightAccelerationMps2 =
+                    glm::dot(
+                        motion.manoeuvreAccelerationMps2,
+                        rightLocal
+                    );
+                obs.manoeuvreUpAccelerationMps2 =
+                    glm::dot(
+                        motion.manoeuvreAccelerationMps2,
+                        upLocal
+                    );
+                obs.assistedRightAccelerationMps2 =
+                    glm::dot(
+                        motion.assistedStabilizationAccelerationMps2,
+                        rightLocal
+                    );
+                obs.assistedUpAccelerationMps2 =
+                    glm::dot(
+                        motion.assistedStabilizationAccelerationMps2,
+                        upLocal
+                    );
+            }
+
+            obs.pitchRateRadPerSec = transform.pitchRate;
+            obs.yawRateRadPerSec = transform.yawRate;
+            obs.rollRateRadPerSec = transform.rollRate;
+            obs.gimbalYawRad = motion.mainGimbalYawRad;
+            obs.gimbalPitchRad = motion.mainGimbalPitchRad;
+        }
+
+        m_shipRuntimeControlOracle.update(obs);
+
+        if (m_shipRuntimeControlOracle.complete() &&
+            !m_shipRuntimeControlOracle.failed())
+        {
+            std::cerr
+                << "[ShipControlOracle] COMPLETE report="
+                << m_shipRuntimeControlOracle.reportPath()
+                << std::endl;
+        }
+        else if (m_shipRuntimeControlOracle.complete())
+        {
+            std::cerr
+                << "[ShipControlOracle] FAILED report="
+                << m_shipRuntimeControlOracle.reportPath()
+                << std::endl;
+        }
+    }
+
+
     // Optional real-runtime navigation stress scenario. Enabled only with
     // ELITE_NAV_STRESS=1. It drives the same DockingRouteRequestState used by
     // UI actions and observes real player physics; no simulation shortcut is

@@ -228,7 +228,7 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         -glm::dot(mainAccelerationWorld, forward)
     );
 
-    const auto reaction =
+    auto reaction =
         game::ship::plant::evaluateMainPropulsionReaction(
             model,
             slotState,
@@ -239,14 +239,129 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     if (!reaction.valid)
         return path;
 
+    // Assisted damage trim.
+    //
+    // A healthy symmetric bank has zero parasitic reaction and therefore this
+    // path is exactly inert. With asymmetric damage, Assisted spends part of
+    // its remaining automatic vectoring/attitude authority cancelling the
+    // reaction torque. That compensation is not free: some propulsive margin
+    // is reserved for trim, reducing usable main acceleration before the
+    // remaining reaction is applied to the rigid body.
+    //
+    // This is deliberately a cinematic allocator rather than a detailed
+    // per-nozzle solver. The important causal contract is:
+    //   damage -> parasitic torque -> trim effort -> lost usable thrust;
+    // if trim authority saturates, residual torque remains visible.
+    if (game::ship::plant::familyOf(model) ==
+        game::ship::plant::PhysicalControlFamily::Assisted)
+    {
+        const double trimAuthority =
+            std::max(
+                0.0,
+                static_cast<double>(capabilities.angularAccel)
+            );
+
+        if (trimAuthority > 1.0e-9)
+        {
+            const glm::dvec3 rawAlpha =
+                reaction.angularAccelerationBodyRadPerSec2;
+
+            const double trimLoad01 =
+                std::clamp(
+                    std::max({
+                        std::abs(rawAlpha.x),
+                        std::abs(rawAlpha.y),
+                        std::abs(rawAlpha.z)
+                    }) / trimAuthority,
+                    0.0,
+                    1.0
+                );
+
+            // At full trim load reserve 20% of currently requested main-force
+            // margin for balancing. Healthy trimLoad=0 => exact old behavior.
+            const double usableMainScale =
+                1.0 - 0.20 * trimLoad01;
+
+            if (usableMainScale < 1.0 - 1.0e-12)
+            {
+                motion.mainEngineAccelerationMps2 *= usableMainScale;
+
+                const glm::dvec3 scaledMainAccelerationWorld =
+                    motion.mainEngineAccelerationMps2;
+                const glm::dvec3 scaledMainAccelerationBody(
+                    glm::dot(scaledMainAccelerationWorld, right),
+                    glm::dot(scaledMainAccelerationWorld, up),
+                    -glm::dot(scaledMainAccelerationWorld, forward)
+                );
+
+                reaction =
+                    game::ship::plant::evaluateMainPropulsionReaction(
+                        model,
+                        slotState,
+                        capabilities,
+                        scaledMainAccelerationBody
+                    );
+            }
+
+            if (reaction.valid)
+            {
+                glm::dvec3 residualAlpha =
+                    reaction.angularAccelerationBodyRadPerSec2;
+
+                auto trimAxis =
+                    [trimAuthority](double value) noexcept
+                    {
+                        return
+                            value -
+                            std::clamp(
+                                value,
+                                -trimAuthority,
+                                trimAuthority
+                            );
+                    };
+
+                residualAlpha.x = trimAxis(residualAlpha.x);
+                residualAlpha.y = trimAxis(residualAlpha.y);
+                residualAlpha.z = trimAxis(residualAlpha.z);
+
+                reaction.angularAccelerationBodyRadPerSec2 =
+                    residualAlpha;
+
+                reaction.torqueBodyNm = {
+                    residualAlpha.x *
+                        std::max(
+                            1.0,
+                            static_cast<double>(
+                                capabilities.pitchInertiaKgM2
+                            )
+                        ),
+                    residualAlpha.y *
+                        std::max(
+                            1.0,
+                            static_cast<double>(
+                                capabilities.yawInertiaKgM2
+                            )
+                        ),
+                    -residualAlpha.z *
+                        std::max(
+                            1.0,
+                            static_cast<double>(
+                                capabilities.rollInertiaKgM2
+                            )
+                        )
+                };
+            }
+        }
+    }
+
     motion.mainPropulsionTorqueBodyNm =
         reaction.torqueBodyNm;
     motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
         reaction.angularAccelerationBodyRadPerSec2;
 
-    // This is physical force application, not a controller request. Do not run
-    // it through normal controlled-rate clamps: an asymmetric damaged main
-    // bank may overpower the surviving attitude-control authority.
+    // This is physical force application, not a controller request. Newtonian
+    // keeps the residual reaction directly visible. Assisted only reaches this
+    // point with torque left over after its automatic trim authority saturates.
     transform.pitchRate += static_cast<float>(
         reaction.angularAccelerationBodyRadPerSec2.x *
         static_cast<double>(dt)

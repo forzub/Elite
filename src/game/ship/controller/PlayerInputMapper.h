@@ -29,16 +29,6 @@ struct PlayerInputMapper
     );
 
 private:
-    enum class CtrlF10State
-    {
-        Idle,
-        Pressed,
-        ReleaseDebounce
-    };
 
-    static constexpr int kCtrlF10ReleaseDebounceSamples = 3;
-
-    CtrlF10State m_ctrlF10State = CtrlF10State::Idle;
-    int m_ctrlF10ReleaseSamples = 0;
 
 };

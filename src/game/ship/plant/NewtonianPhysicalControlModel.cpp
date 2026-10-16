@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/game/ship/plant/ShipPhysicalAuthorityMatrix.h"
 
 namespace game::ship::plant
 {
@@ -49,6 +50,96 @@ const std::vector<EngineSlotDefinition> NewtonianX = {
     {"rcs_aft_lower_left",   EngineSlotRole::ManoeuvreCluster, {-InvSqrt2, -InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
     {"rcs_aft_lower_right",  EngineSlotRole::ManoeuvreCluster, { InvSqrt2, -InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
 };
+
+
+AuthorityContributionRow newtonianMainContributionRow(
+    bool supportsPoweredRoll
+)
+{
+    AuthorityContributionRow row;
+    row.thrust.longitudinal = {1.0, 0.0};
+
+    row.poweredMainVectoring = {
+        1.0, // trajectory strafe
+        1.0, // trajectory lift
+        1.0, // pitch
+        1.0, // yaw
+        supportsPoweredRoll ? 1.0 : 0.0
+    };
+    return row;
+}
+
+AuthorityContributionRow newtonianRcsContributionRow()
+{
+    AuthorityContributionRow row;
+
+    // RCS can trim all three translation axes and all attitude axes. Negative
+    // longitudinal authority is rescaled later to the real RCS/main ratio so
+    // it never masquerades as a reverse main engine.
+    const AxisAuthority01 symmetric {1.0, 1.0};
+    row.thrust.longitudinal = {0.0, 1.0};
+    row.thrust.strafe = symmetric;
+    row.thrust.lift = symmetric;
+    row.thrust.pitch = symmetric;
+    row.thrust.yaw = symmetric;
+    row.thrust.roll = symmetric;
+    return row;
+}
+
+std::vector<AuthorityContributionRow> makeNewtonianContributionMatrix(
+    const std::vector<EngineSlotDefinition>& slots,
+    bool supportsPoweredRoll
+)
+{
+    std::vector<AuthorityContributionRow> rows;
+    rows.reserve(slots.size());
+
+    for (const auto& slot : slots)
+    {
+        if (slot.role == EngineSlotRole::AftMain)
+            rows.push_back(newtonianMainContributionRow(supportsPoweredRoll));
+        else
+            rows.push_back(newtonianRcsContributionRow());
+    }
+
+    return rows;
+}
+
+const std::vector<AuthorityContributionRow>& newtonianContributionMatrix(
+    PropulsionLayout layout
+)
+{
+    static const auto I =
+        makeNewtonianContributionMatrix(NewtonianI, false);
+    static const auto Y =
+        makeNewtonianContributionMatrix(NewtonianY, true);
+    static const auto X =
+        makeNewtonianContributionMatrix(NewtonianX, true);
+
+    switch (layout)
+    {
+        case PropulsionLayout::Y:
+            return Y;
+        case PropulsionLayout::X:
+            return X;
+        case PropulsionLayout::I:
+        default:
+            return I;
+    }
+}
+
+double newtonianRcsFloor(
+    const AuthorityMatrixResult& matrix
+) noexcept
+{
+    return std::min({
+        weakestAxisAuthority(matrix.authority.strafe),
+        weakestAxisAuthority(matrix.authority.lift),
+        weakestAxisAuthority(matrix.authority.pitch),
+        weakestAxisAuthority(matrix.authority.yaw),
+        weakestAxisAuthority(matrix.authority.roll)
+    });
+}
 
 PhysicalControlModelId modelId(PropulsionLayout layout) noexcept
 {
@@ -102,28 +193,29 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     if (state.size() != definition.size())
         return out;
 
+    const auto matrix = evaluateAuthorityContributionMatrix(
+        newtonianContributionMatrix(layout),
+        state
+    );
+    if (!matrix.valid)
+        return out;
+
     std::size_t mainSlots = 0;
     std::size_t manoeuvreSlots = 0;
     std::size_t operationalMain = 0;
     std::size_t operationalManoeuvre = 0;
-    double mainThrustSum01 = 0.0;
-    double mainVectoringSum01 = 0.0;
-    double manoeuvreThrustSum01 = 0.0;
 
     for (std::size_t i = 0; i < definition.size(); ++i)
     {
         if (definition[i].role == EngineSlotRole::AftMain)
         {
             ++mainSlots;
-            mainThrustSum01 += effectiveSlotThrust01(state[i]);
-            mainVectoringSum01 += effectiveSlotVectoring01(state[i]);
             if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalMain;
         }
         else if (definition[i].role == EngineSlotRole::ManoeuvreCluster)
         {
             ++manoeuvreSlots;
-            manoeuvreThrustSum01 += effectiveSlotThrust01(state[i]);
             if (effectiveSlotThrust01(state[i]) > 1.0e-9)
                 ++operationalManoeuvre;
         }
@@ -133,30 +225,33 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
     out.manoeuvreSlots = manoeuvreSlots;
     out.operationalMainSlots = operationalMain;
     out.operationalManoeuvreSlots = operationalManoeuvre;
-
-    const double mainFraction =
-        mainSlots > 0
-            ? mainThrustSum01 / static_cast<double>(mainSlots)
-            : 0.0;
-    const double mainVectoringFraction =
-        mainSlots > 0
-            ? mainVectoringSum01 / static_cast<double>(mainSlots)
-            : 0.0;
-    const double manoeuvreFraction =
-        manoeuvreSlots > 0
-            ? manoeuvreThrustSum01 / static_cast<double>(manoeuvreSlots)
-            : 0.0;
+    out.authority = matrix.authority;
+    out.poweredMainVectoring = matrix.poweredMainVectoring;
 
     const double nominalForward =
         game::ship::forwardMainAccelerationLimitMps2(nominalPhysics);
     const double nominalRcs =
         game::ship::manoeuvreAccelerationLimitMps2(nominalPhysics);
 
-    out.authority.longitudinal.positive =
-        nominalPhysics.forwardMainEngineAvailable ? mainFraction : 0.0;
+    if (!nominalPhysics.forwardMainEngineAvailable)
+        out.authority.longitudinal.positive = 0.0;
+
+    const double mainFraction =
+        out.authority.longitudinal.positive;
+    const double manoeuvreFraction =
+        newtonianRcsFloor(matrix);
+    const double mainVectoringFraction =
+        std::min({
+            matrix.poweredMainVectoring.trajectoryStrafe01,
+            matrix.poweredMainVectoring.trajectoryLift01,
+            matrix.poweredMainVectoring.pitch01,
+            matrix.poweredMainVectoring.yaw01
+        });
 
     // Newtonian has no fore main bank. Small negative/forward-axis correction
-    // may still be produced by its RCS clusters.
+    // may still be produced by its RCS clusters. Preserve the historical
+    // capability convention by expressing that trim relative to the main
+    // longitudinal authority rather than inventing a reverse main engine.
     out.authority.longitudinal.negative =
         nominalForward > 1.0e-9
             ? std::clamp(
@@ -166,24 +261,8 @@ PhysicalControlSnapshot NewtonianPhysicalControlModel::evaluate(
               )
             : manoeuvreFraction;
 
-    out.authority.strafe = symmetric(manoeuvreFraction);
-    out.authority.lift = symmetric(manoeuvreFraction);
-    out.authority.pitch = symmetric(manoeuvreFraction);
-    out.authority.yaw = symmetric(manoeuvreFraction);
-    out.authority.roll = symmetric(manoeuvreFraction);
-
-    // Newtonian main nozzles are thrust-vectoring as well. Unlike Assisted,
-    // this authority is coupled to an aft-main burn rather than being a
-    // high-authority independent velocity-control channel.
-    out.poweredMainVectoring.trajectoryStrafe01 = mainVectoringFraction;
-    out.poweredMainVectoring.trajectoryLift01 = mainVectoringFraction;
-    out.poweredMainVectoring.pitch01 = mainVectoringFraction;
-    out.poweredMainVectoring.yaw01 = mainVectoringFraction;
-    out.poweredMainVectoring.roll01 =
-        layout == PropulsionLayout::I ? 0.0 : mainVectoringFraction;
-
     // TVC redirects the main thrust instead of cancelling an opposed bank.
-    // Resource accounting later must model the axial/lateral split from the
+    // Resource accounting later may model the axial/lateral split from the
     // commanded vector angle; there is no Assisted-style cancellation penalty.
     out.thrustUtilization.axialTranslation01 = 1.0;
     out.thrustUtilization.lateralTranslation01 = 1.0;

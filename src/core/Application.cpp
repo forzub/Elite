@@ -964,6 +964,16 @@ void Application::mainLoop()
                     }
                 }
 
+                if (sessionReady && functionKey == 9 && ctrlDown && !altDown)
+                {
+                    space->cyclePhysicalControlLayout();
+                }
+
+                if (sessionReady && functionKey == 10 && ctrlDown && !altDown)
+                {
+                    space->cyclePhysicalControlFamily();
+                }
+
                 if (sessionReady && functionKey == 11 && ctrlDown && !altDown)
                 {
                     cycleCoordinateDisplayFormat();
@@ -1725,6 +1735,33 @@ bool Application::setConstellationsEnabled(bool enabled)
         return false;
     persistClientModeState();
     return true;
+}
+
+void Application::setPreferredPhysicalControlModel(
+    const std::string& modelId
+)
+{
+    using Model = game::ship::plant::PhysicalControlModelId;
+    Model parsed = Model::AssistedI;
+    if (!game::ship::plant::parsePhysicalControlModel(modelId, parsed))
+        return;
+
+    const std::string canonical =
+        game::ship::plant::physicalControlModelName(parsed);
+    if (m_clientPreferences.preferredPhysicalControlModel == canonical)
+        return;
+
+    m_clientPreferences.preferredPhysicalControlModel = canonical;
+
+    std::string preferencesError;
+    if (!ui::platform::ClientPreferencesStore::save(
+            m_clientPreferences,
+            &preferencesError))
+    {
+        std::cerr
+            << "[ClientPreferences] cannot persist physical model: "
+            << preferencesError << "\n";
+    }
 }
 
 bool Application::setSkyCultureId(const std::string& cultureId)

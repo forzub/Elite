@@ -5542,6 +5542,21 @@ void SpaceState::update(float dt)
                 stressTransform.motion.mainGimbalYawRad;
             obs.gimbalPitchRad =
                 stressTransform.motion.mainGimbalPitchRad;
+            obs.mainTorquePitchNm =
+                stressTransform.motion.mainPropulsionTorqueBodyNm.x;
+            obs.mainTorqueYawNm =
+                stressTransform.motion.mainPropulsionTorqueBodyNm.y;
+            obs.mainTorqueRollNm =
+                stressTransform.motion.mainPropulsionTorqueBodyNm.z;
+            obs.mainAngularAccelPitchRadPerSec2 =
+                stressTransform.motion.
+                    mainPropulsionAngularAccelerationBodyRadPerSec2.x;
+            obs.mainAngularAccelYawRadPerSec2 =
+                stressTransform.motion.
+                    mainPropulsionAngularAccelerationBodyRadPerSec2.y;
+            obs.mainAngularAccelRollRadPerSec2 =
+                stressTransform.motion.
+                    mainPropulsionAngularAccelerationBodyRadPerSec2.z;
         }
 
         obs.routeValid = m_dockAdvice.plan.valid();

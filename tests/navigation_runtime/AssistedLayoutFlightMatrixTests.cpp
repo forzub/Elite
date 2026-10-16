@@ -446,7 +446,7 @@ void runModel(Model model)
         << "\n";
 
     const std::filesystem::path logPath(
-        "D:/tmp/elite/assisted_layout_flight/summary.csv"
+        "D:/tmp/assisted_layout_flight_summary.csv"
     );
     std::filesystem::create_directories(logPath.parent_path());
     const bool writeHeader = !std::filesystem::exists(logPath);
@@ -475,7 +475,7 @@ void runModel(Model model)
 void testAllAssistedLayoutsFlySameAcceptedCorridor()
 {
     const std::filesystem::path logPath(
-        "D:/tmp/elite/assisted_layout_flight/summary.csv"
+        "D:/tmp/assisted_layout_flight_summary.csv"
     );
     std::error_code ec;
     std::filesystem::remove(logPath, ec);

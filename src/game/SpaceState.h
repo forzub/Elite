@@ -165,6 +165,12 @@ public:
     bool preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level);
     void toggleConstellationOverlay();
 
+    // Temporary diagnostic ship-construction controls. These mutate the
+    // authoritative ShipState through ClientShipCommand; they do not patch
+    // planner/autopilot state locally.
+    void cyclePhysicalControlLayout();
+    void cyclePhysicalControlFamily();
+
     // Navigation equipment/control seam. Cockpit buttons, debug controls or
     // future ship equipment can switch computation and presentation modules
     // independently without reaching into individual renderers/planners.

@@ -5423,6 +5423,68 @@ void SpaceState::update(float dt)
                 m_dockSafeCourse.stopFallback
             );
 
+        if (m_dockAssistedSafeRecovery.active)
+        {
+            const auto safeAgent = makeAgent();
+            const double safeSpeed =
+                glm::length(safeAgent.velocityMapMetersPerSecond);
+            const double selectedLength =
+                glm::length(m_dockAssistedSafeRecovery.direction);
+
+            if (safeSpeed > 1.0e-9 && selectedLength > 1.0e-9)
+            {
+                const glm::dvec3 currentCourse =
+                    safeAgent.velocityMapMetersPerSecond / safeSpeed;
+                const glm::dvec3 selectedCourse =
+                    m_dockAssistedSafeRecovery.direction / selectedLength;
+
+                obs.safeCourseErrorRad =
+                    std::acos(
+                        std::clamp(
+                            glm::dot(currentCourse, selectedCourse),
+                            -1.0,
+                            1.0
+                        )
+                    );
+
+                constexpr double MaxLeadRad =
+                    8.0 * 3.14159265358979323846 / 180.0;
+                const double step =
+                    std::min(obs.safeCourseErrorRad, MaxLeadRad);
+
+                glm::dvec3 intermediate = selectedCourse;
+                if (obs.safeCourseErrorRad > 1.0e-9)
+                {
+                    glm::dvec3 axis =
+                        glm::cross(currentCourse, selectedCourse);
+                    const double axisLength = glm::length(axis);
+                    if (axisLength > 1.0e-9)
+                    {
+                        axis /= axisLength;
+                        intermediate =
+                            currentCourse * std::cos(step) +
+                            glm::cross(axis, currentCourse) * std::sin(step) +
+                            axis * glm::dot(axis, currentCourse) *
+                                (1.0 - std::cos(step));
+                    }
+                }
+
+                const glm::dvec3 hullForward =
+                    glm::normalize(safeAgent.forwardMap);
+                obs.safeCourseHullTargetErrorRad =
+                    std::acos(
+                        std::clamp(
+                            glm::dot(
+                                hullForward,
+                                glm::normalize(intermediate)
+                            ),
+                            -1.0,
+                            1.0
+                        )
+                    );
+            }
+        }
+
         const auto& stressRequests =
             m_navigationWorkspace.dockingRouteRequests();
         obs.requestPending = stressRequests.pending().valid();
@@ -5496,6 +5558,9 @@ void SpaceState::update(float dt)
                     stressTransform.yawRate * stressTransform.yawRate +
                     stressTransform.rollRate * stressTransform.rollRate
                 );
+            obs.pitchRateRadPerSec = stressTransform.pitchRate;
+            obs.yawRateRadPerSec = stressTransform.yawRate;
+            obs.rollRateRadPerSec = stressTransform.rollRate;
 
             if (stressTransform.motion.travelFrame.valid &&
                 obs.speedMps > 0.5)

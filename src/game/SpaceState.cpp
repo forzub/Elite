@@ -6849,11 +6849,17 @@ m_systemMapRenderer.render(
                     m_terminalDiagnosticVisibleUntilServerSeconds;
 
             terminal.visible = dockingVisible || diagnosticVisible;
-            terminal.title = localizedUiText(
-                context().app,
-                "cockpit.terminal.title",
-                "NAV/SHIP"
-            );
+            terminal.title = dockingVisible
+                ? localizedUiText(
+                      context().app,
+                      "cockpit.terminal.title",
+                      "DOCKING"
+                  )
+                : localizedUiText(
+                      context().app,
+                      "cockpit.terminal.ship_diagnostic",
+                      "SHIP DIAGNOSTIC"
+                  );
 
             {
                 using namespace game::ship::plant;

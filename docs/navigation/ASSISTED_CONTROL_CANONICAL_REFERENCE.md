@@ -150,3 +150,42 @@ torque-allocation change was reverted.
 If the current control chain cannot be reconciled with sections 1–6 without
 inventing new semantics, rollback should target the last accepted Assisted restore
 rather than an arbitrary intermediate commit.
+
+
+## 9. Cross-family manual attitude doctrine — 2026-10-16
+
+This section is law-neutral and is included here because the cockpit family switch
+must not silently change the meaning of released pitch/yaw/roll controls.
+
+- Newtonian TRANSLATIONAL motion remains inertial when thrust is released.
+- Newtonian does NOT inherit Assisted velocity-vector stabilization.
+- Manual pitch/yaw/roll release commands zero angular rate on the released axis.
+- Angular-rate arrest must be produced through ordinary bounded angular authority
+  (manoeuvre thrusters / available vectoring authority); code must not directly
+  assign angular velocity or orientation.
+- If angular damping/authority is physically unavailable, rotation remains.
+- Assisted keeps its existing neutral angular-rate damping.
+
+Operational shorthand:
+
+```text
+Newtonian:
+linear controls released  -> coast
+angular control released  -> physical rate damping toward omega = 0
+```
+
+This is a manual-control doctrine and does not merge the Assisted and Newtonian
+planning pipelines.
+
+## 10. Cockpit diagnostic terminal doctrine — 2026-10-16
+
+The cockpit terminal is presentation-only.
+
+- it may display replicated ship model/control-law/topology facts;
+- it may display planner phase/progress and diagnostic worker activity;
+- decorative CALC/HEX activity is derived only from diagnostic counters and is
+  not represented as memory contents or planner data;
+- hiding the terminal must not clear its scrolling history;
+- changing I/Y/X or Assisted/Newtonian may briefly reveal the terminal and append
+  a new model/topology event;
+- deleting the terminal module must not alter flight, planning or physics.

@@ -34,7 +34,34 @@ public:
         if (viewport.width <= 0 || viewport.height <= 0)
             return;
 
-        const std::array<std::string, 5> items {
+        // Modified function-key chords are the primary purpose of
+        // this temporary strip. Ordinary utility shortcuts follow them.
+        const std::array<std::string, 10> items {
+            key("Ctrl+F10") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.flight_law",
+                    "FLIGHT LAW"
+                ),
+            key("Ctrl+F11") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.coordinates",
+                    "COORDS"
+                ),
+            key("Ctrl+F12") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.constellations",
+                    "CONSTELL."
+                ),
+            key("Alt+F12") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.sky_culture",
+                    "SKY"
+                ),
+            key("Ctrl+Alt+F12") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.language",
+                    "LANG"
+                ),
             key("Esc") + " " +
                 localization.text(
                     "cockpit.shortcut_strip.menu",
@@ -78,14 +105,11 @@ public:
         const float availableWidth =
             std::max(1.0f, static_cast<float>(viewport.width) - 24.0f);
 
-        if (labelWidth > availableWidth)
+        // Keep this temporary aid on exactly one line. It may shrink on narrow
+        // windows, but never grows into a second HUD row.
+        while (labelWidth > availableWidth && fontPx > 7)
         {
-            fontPx = 10;
-            labelWidth = text.measureTextPx(label, fontPx);
-        }
-        if (labelWidth > availableWidth)
-        {
-            fontPx = 9;
+            --fontPx;
             labelWidth = text.measureTextPx(label, fontPx);
         }
 

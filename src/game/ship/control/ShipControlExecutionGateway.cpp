@@ -1,5 +1,6 @@
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "src/game/navigation/DynamicMotionSystem.h"
@@ -117,6 +118,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     motion.mainPropulsionTorqueBodyNm = glm::dvec3(0.0);
     motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
         glm::dvec3(0.0);
+    motion.mainTrimLoad01 = 0.0;
+    motion.mainTrimUsableScale01 = 1.0;
 
     const TranslationPath path =
         selectTranslationPath(control, motion.localControlLaw);
@@ -281,6 +284,9 @@ ShipControlExecutionGateway::evaluateTranslationControl(
             // margin for balancing. Healthy trimLoad=0 => exact old behavior.
             const double usableMainScale =
                 1.0 - 0.20 * trimLoad01;
+
+            motion.mainTrimLoad01 = trimLoad01;
+            motion.mainTrimUsableScale01 = usableMainScale;
 
             if (usableMainScale < 1.0 - 1.0e-12)
             {

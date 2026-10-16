@@ -23,6 +23,7 @@ for forbidden in [
 
 # Modified F-key chords are the primary content of the strip.
 for required in [
+    "Ctrl+F9",
     "Ctrl+F10",
     "Ctrl+F11",
     "Ctrl+F12",
@@ -38,6 +39,7 @@ for required in ["Esc", "Backspace", "Ctrl+R", "L-Ctrl+Q"]:
     assert required in strip, f"missing shortcut hint: {required}"
 
 keys = [
+    "cockpit.shortcut_strip.layout",
     "cockpit.shortcut_strip.flight_law",
     "cockpit.shortcut_strip.coordinates",
     "cockpit.shortcut_strip.constellations",

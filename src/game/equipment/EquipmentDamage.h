@@ -37,6 +37,20 @@ struct EquipmentDamageSensitivity
     double wear = 0.0;
 };
 
+// Generic failure policy for one equipment function. The threshold is applied
+// to weighted functional damage, not to module existence/attachment state.
+struct EquipmentFailureProfile
+{
+    double failureAtDamage01 = 1.0;
+};
+
+struct EquipmentFunctionState
+{
+    double damage01 = 0.0;
+    double authority01 = 1.0;
+    bool failed = false;
+};
+
 // Service policy is descriptor data. Wear remains the fifth accumulated damage
 // cause; this only says how fast normal operation accumulates it and when BITE
 // should request maintenance.
@@ -53,6 +67,7 @@ struct EquipmentDamageLayer
 {
     EquipmentDamageState accumulated;
     EquipmentDamageSensitivity sensitivity;
+    EquipmentFailureProfile failure;
 };
 
 inline double clampDamage01(double value) noexcept
@@ -142,11 +157,30 @@ inline double weightedFunctionalDamage01(
     );
 }
 
+inline EquipmentFunctionState evaluateEquipmentFunction(
+    const EquipmentDamageLayer& layer
+) noexcept
+{
+    EquipmentFunctionState out;
+    out.damage01 = weightedFunctionalDamage01(layer);
+
+    const double threshold =
+        std::isfinite(layer.failure.failureAtDamage01)
+            ? std::clamp(layer.failure.failureAtDamage01, 0.0, 1.0)
+            : 1.0;
+
+    out.failed = out.damage01 + 1.0e-12 >= threshold;
+    out.authority01 = out.failed
+        ? 0.0
+        : std::clamp(1.0 - out.damage01, 0.0, 1.0);
+    return out;
+}
+
 inline double functionalAuthority01(
     const EquipmentDamageLayer& layer
 ) noexcept
 {
-    return 1.0 - weightedFunctionalDamage01(layer);
+    return evaluateEquipmentFunction(layer).authority01;
 }
 
 } // namespace game::equipment

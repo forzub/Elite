@@ -163,7 +163,8 @@ struct ShipActuatorState
                     return
                         a.operational == b.operational &&
                         a.thrust01 == b.thrust01 &&
-                        a.vectoring01 == b.vectoring01;
+                        a.vectoring01 == b.vectoring01 &&
+                        a.thrustIrregularity01 == b.thrustIrregularity01;
                 }
             );
 

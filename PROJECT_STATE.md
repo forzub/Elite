@@ -1,3 +1,18 @@
+## 2026-10-17 — BITE end-to-end presentation connection
+
+BITE is now connected end-to-end as a read-only diagnostic consumer:
+- compact per-ship `bite::Summary`: equipment/degraded/failed/maintenance counts + highest severity;
+- engine module snapshots are adapted outside the library into BITE DTOs;
+- engine HUD CHECK/bar attention uses BITE severity policy; physical bar capacity still comes from propulsion capability;
+- existing cockpit status terminal accepts generic diagnostic lines and now displays BITE engine faults even when docking is idle;
+- when BITE is the reason the terminal is visible its title is SYSTEM; docking still owns DOCKING mode;
+- terminal diagnostics are ready text/severity DTOs, so the terminal has no path back into equipment, damage, control or physics;
+- focused `bite_api` test covers silence below 30%, CAUTION at 30%, WARNING at 40%, maintenance threshold, FAILED, HUD attention and terminal identity;
+- engine widget geometry was also corrected: CHECK/model label centered, model label lowered toward bars, bars widened, physical I/Y/X groups uniformly distributed while Assisted fore/aft pairs stay grouped.
+
+BITE remains optional for NPC behavior. Ship physics/control never consumes BITE output; NPCs may use authoritative capability/ship state directly.
+
+
 ## 2026-10-17 — isolated BITE library and HUD fault authority
 
 BITE is now a separate static runtime library `EliteBite` under `src/game/bite`.

@@ -33,6 +33,8 @@
 #include "render/bitmap/stb_image.h"
 
 #include <clocale>
+#include <fstream>
+#include <sstream>
 
 
 
@@ -650,6 +652,60 @@ int main(int argc, char** argv)
                 }
 
                 diagnosticScenario = argv[++i];
+                std::cerr
+                    << "[RuntimeScenarioFile] source=inline value=\""
+                    << diagnosticScenario << "\"\n";
+                continue;
+            }
+
+            if (arg == "--diagnostic-scenario-file")
+            {
+                if (i + 1 >= argc)
+                {
+                    std::cerr
+                        << "[App] --diagnostic-scenario-file requires PATH\n";
+                    return -2;
+                }
+
+                const std::string path = argv[++i];
+                std::ifstream input(path);
+                if (!input)
+                {
+                    std::cerr
+                        << "[RuntimeScenarioFile] OPEN_FAIL path=\""
+                        << path << "\"\n";
+                    return -2;
+                }
+
+                std::ostringstream buffer;
+                buffer << input.rdbuf();
+                diagnosticScenario = buffer.str();
+
+                while (!diagnosticScenario.empty() &&
+                       (diagnosticScenario.back() == '\\r' ||
+                        diagnosticScenario.back() == '\\n' ||
+                        diagnosticScenario.back() == ' ' ||
+                        diagnosticScenario.back() == '\\t'))
+                {
+                    diagnosticScenario.pop_back();
+                }
+
+                const auto first =
+                    diagnosticScenario.find_first_not_of(" \t\r\n");
+                if (first == std::string::npos)
+                {
+                    std::cerr
+                        << "[RuntimeScenarioFile] EMPTY path=\""
+                        << path << "\"\n";
+                    return -2;
+                }
+                diagnosticScenario.erase(0, first);
+
+                std::cerr
+                    << "[RuntimeScenarioFile] LOADED path=\""
+                    << path << "\" bytes="
+                    << diagnosticScenario.size()
+                    << " spec=\"" << diagnosticScenario << "\"\n";
                 continue;
             }
 
@@ -783,7 +839,10 @@ int main(int argc, char** argv)
             std::cerr
                 << "[Startup] diagnostic scenario="
                 << diagnosticScenario
-                << "\n";
+                << "\n"
+                << "[RuntimeScenarioTrace] PARSED kind="
+                << static_cast<int>(selection.kind)
+                << " payload=\"" << selection.payload << "\"\n";
         }
 
         Application app;

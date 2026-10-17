@@ -3,40 +3,14 @@
 #include <algorithm>
 #include <cmath>
 
+#include "src/game/equipment/EquipmentDamage.h"
+
 namespace game::equipment::engine
 {
 
-// Immutable functional passport of one propulsion unit.
-//
-// Damage remains one scalar health value in the owning module runtime.
-// This descriptor only defines how that health loss degrades the engine's
-// useful functions and operating cost.
-struct EngineDamageInputs
-{
-    double laser01 = 0.0;
-    double impact01 = 0.0;
-    double thermal01 = 0.0;
-    double radiation01 = 0.0;
-    double wear01 = 0.0;
-};
+using EngineDamageInputs = game::equipment::EquipmentDamageState;
+using EngineDamageWeights = game::equipment::EquipmentDamageSensitivity;
 
-struct EngineDamageWeights
-{
-    double laser = 0.0;
-    double impact = 0.0;
-    double thermal = 0.0;
-    double radiation = 0.0;
-    double wear = 0.0;
-};
-
-// Immutable functional passport of one propulsion unit.
-//
-// Damage enters through five universal equipment channels. The engine maps
-// those channels into only two damaged outputs:
-//   1) thermodynamic/propulsive efficiency;
-//   2) nozzle-vectoring mechanical condition.
-// Everything else (available thrust, power draw, waste heat, gimbal envelope)
-// is derived from those outputs.
 struct EngineUnitDescriptor
 {
     double nominalThrustNewtons = 0.0;
@@ -53,15 +27,9 @@ struct EngineUnitDescriptor
     double nominalGimbalRangeRad = 0.0;
     double nominalGimbalRateRadPerSec = 0.0;
 
-    // Damage-channel weighting for the two independent useful outputs.
-    EngineDamageWeights efficiencyDamage {
-        0.30, // laser
-        0.45, // impact
-        0.15, // thermal
-        0.01, // radiation
-        0.09  // wear
-    };
-
+    // Primary functional sensitivity (efficiency) belongs to the common
+    // EquipmentDamageLayer. The engine adds one specialized mechanical
+    // response because nozzle vectoring is a distinct useful function.
     EngineDamageWeights gimbalDamage {
         0.15, // laser
         0.65, // impact
@@ -110,32 +78,20 @@ inline double positiveFiniteOr(
         : fallback;
 }
 
-inline double weightedDamage01(
-    const EngineDamageInputs& damage,
-    const EngineDamageWeights& weights
-) noexcept
-{
-    const double value =
-        finiteClamp01(damage.laser01) * std::max(0.0, weights.laser) +
-        finiteClamp01(damage.impact01) * std::max(0.0, weights.impact) +
-        finiteClamp01(damage.thermal01) * std::max(0.0, weights.thermal) +
-        finiteClamp01(damage.radiation01) * std::max(0.0, weights.radiation) +
-        finiteClamp01(damage.wear01) * std::max(0.0, weights.wear);
-
-    return std::clamp(value, 0.0, 1.0);
-}
-
 [[nodiscard]] inline EngineUnitEffectiveState evaluateEngineUnit(
     const EngineUnitDescriptor& descriptor,
-    const EngineDamageInputs& damage
+    const game::equipment::EquipmentDamageLayer& damage
 ) noexcept
 {
     EngineUnitEffectiveState out;
 
     const double efficiencyDamage01 =
-        weightedDamage01(damage, descriptor.efficiencyDamage);
+        game::equipment::weightedFunctionalDamage01(damage);
+
+    game::equipment::EquipmentDamageLayer gimbalLayer = damage;
+    gimbalLayer.sensitivity = descriptor.gimbalDamage;
     const double gimbalDamage01 =
-        weightedDamage01(damage, descriptor.gimbalDamage);
+        game::equipment::weightedFunctionalDamage01(gimbalLayer);
 
     out.efficiencyAuthority01 =
         std::clamp(1.0 - efficiencyDamage01, 0.0, 1.0);

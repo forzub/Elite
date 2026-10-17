@@ -103,10 +103,12 @@ State BiteApi::evaluate(
 
         const bool functionalFault =
             !sample.operational ||
+            sample.functionalFailed ||
             functionalLoss >= m_thresholds.cautionLoss01;
         const bool secondaryFault =
             sample.operational &&
-            secondaryLoss >= m_thresholds.cautionLoss01;
+            (sample.secondaryFailed ||
+             secondaryLoss >= m_thresholds.cautionLoss01);
 
         if (!functionalFault && !secondaryFault && !maintenance)
             continue;
@@ -135,14 +137,16 @@ State BiteApi::evaluate(
         else if (functionalFault)
         {
             fault.kind = FaultKind::FunctionalDegradation;
-            fault.severity =
-                severityForLoss(functionalLoss, m_thresholds);
+            fault.severity = sample.functionalFailed
+                ? Severity::Failed
+                : severityForLoss(functionalLoss, m_thresholds);
         }
         else if (secondaryFault)
         {
             fault.kind = FaultKind::NozzleDegradation;
-            fault.severity =
-                severityForLoss(secondaryLoss, m_thresholds);
+            fault.severity = sample.secondaryFailed
+                ? Severity::Failed
+                : severityForLoss(secondaryLoss, m_thresholds);
         }
         else
         {
@@ -161,7 +165,7 @@ State BiteApi::evaluate(
                 fault.severity
             );
 
-        if (fault.kind == FaultKind::EquipmentFailed)
+        if (fault.severity == Severity::Failed)
             ++out.summary.failedCount;
         else if (fault.kind != FaultKind::MaintenanceRequired)
             ++out.summary.degradedCount;

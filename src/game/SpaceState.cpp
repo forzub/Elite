@@ -1,4 +1,5 @@
 #include "src/audio/AudioEngine.h"
+#include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
 #include <glad/gl.h>
 #include "src/core/RuntimeTrace.h"
@@ -472,11 +473,13 @@ SpaceState::SpaceState(
 
     if (!damageScenarioConfigured)
     {
-        std::cerr
-            << "[RuntimeScenario] CONFIGURATION_ERROR spec="
-            << m_runtimeScenarioSelection.spec
-            << " expected=ship-damage:<PhysicalModel@slot,...>"
-            << "\n";
+        throw std::runtime_error(
+            std::string(
+                "invalid runtime diagnostic scenario: "
+            ) +
+            m_runtimeScenarioSelection.spec +
+            " expected ship-damage:<PhysicalModel@slot,...>"
+        );
     }
 
     if (m_runtimeScenarioSelection.active())

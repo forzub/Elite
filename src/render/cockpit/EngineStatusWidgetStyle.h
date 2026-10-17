@@ -28,10 +28,10 @@ struct EngineStatusWidgetStyle
     float paddingPx = 11.0f;
 
     float iconSizePx = 24.0f;
-    float iconToLabelGapPx = 8.0f;
-    float labelToBarsGapPx = 10.0f;
+    float iconToLabelGapPx = 12.0f;
+    float labelToBarsGapPx = 5.0f;
 
-    float barWidthPx = 8.0f;
+    float barWidthPx = 11.0f;
     float barHeightPx = 80.0f;
     float barGapPx = 4.5f;
     float groupGapPx = 12.0f;

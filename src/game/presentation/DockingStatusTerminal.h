@@ -29,6 +29,10 @@ struct DockingTerminalSnapshot
     std::string physics;
     std::string activity;
     std::string error;
+
+    // Generic ship diagnostics (BITE, later other read-only diagnostics).
+    // The terminal remains presentation-only; producers provide ready lines.
+    std::vector<std::pair<std::string, DockingTerminalSeverity>> diagnostics;
 };
 
 struct DockingTerminalLine
@@ -92,6 +96,8 @@ public:
             enqueue(snapshot.physics, DockingTerminalSeverity::Info);
             if (!snapshot.error.empty())
                 enqueue(snapshot.error, DockingTerminalSeverity::Error);
+            for (const auto& diagnostic : snapshot.diagnostics)
+                enqueue(diagnostic.first, diagnostic.second);
             enqueue(snapshot.activity, DockingTerminalSeverity::Info);
             m_last = snapshot;
         }
@@ -117,6 +123,21 @@ public:
                     snapshot.error,
                     DockingTerminalSeverity::Error
                 );
+            }
+
+            if (snapshot.diagnostics != m_last.diagnostics)
+            {
+                for (const auto& diagnostic : snapshot.diagnostics)
+                    enqueuePriority(diagnostic.first, diagnostic.second);
+
+                if (snapshot.diagnostics.empty() &&
+                    !m_last.diagnostics.empty())
+                {
+                    enqueuePriority(
+                        "BITE NOMINAL",
+                        DockingTerminalSeverity::Info
+                    );
+                }
             }
 
             enqueueChanged(m_last.activity, snapshot.activity,

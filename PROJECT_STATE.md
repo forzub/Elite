@@ -1,3 +1,68 @@
+## 2026-10-17 — engine damage model finalized for first live tests
+
+The first production engine-unit damage model now uses five universal equipment damage channels:
+- laser
+- impact/explosion
+- thermal/overheat
+- radiation
+- wear/time
+
+The engine itself maps those causes into only two damaged functional outputs:
+1) efficiency authority;
+2) nozzle/gimbal mechanical authority.
+
+Fixed Cobra engine weights for v1:
+
+Efficiency damage:
+- laser 0.30
+- impact 0.45
+- thermal 0.15
+- radiation 0.01
+- wear 0.09
+
+Gimbal damage:
+- laser 0.15
+- impact 0.65
+- thermal 0.05
+- radiation 0.00
+- wear 0.15
+
+Semantics:
+- impact/explosion is the dominant engine-damage mechanism, especially for nozzle/vectoring mechanics;
+- laser is important for an exposed rear engine but less mechanically destructive than impact;
+- overheat primarily reduces efficiency and only weakly affects gimbal mechanics;
+- radiation is negligible for the engine unit;
+- wear degrades slowly and is relevant to maintenance, with a stronger effect on gimbal mechanics than on efficiency.
+
+Derived physics:
+- available maximum thrust at fixed input power scales with efficiency authority;
+- for equal useful thrust, lower efficiency raises required electrical input approximately as 1/efficiencyAuthority;
+- waste heat is derived from input power minus useful power rather than being an independent arbitrary damage variable;
+- gimbal range and gimbal rate scale with gimbal authority;
+- sufficiently low efficiency makes the engine inoperative.
+
+Current compatibility bridge:
+- ObjectModuleRuntime still persists one legacy scalar health value rather than the five separate cause accumulators.
+- Until common five-channel per-module damage persistence is added, ShipCapabilityBuilder maps legacy lost health into the impact channel.
+- This is explicitly transitional and keeps existing damage paths functional without pretending generic health identifies the original cause.
+
+Contract test:
+- engine_unit_damage_model now locks the five channel weights and verifies:
+  - healthy passport preservation;
+  - impact is more severe than laser for efficiency and gimbal;
+  - laser remains materially damaging;
+  - thermal/wear primarily affect efficiency;
+  - radiation is negligible;
+  - efficiency couples thrust, electrical demand and waste heat;
+  - combined damage is bounded/monotonic and total accumulated damage can disable the engine.
+
+Next validation order:
+1) compile and run engine_unit_damage_model;
+2) run existing propulsion/capability damage tests to catch regressions;
+3) only after those are green, run the real-game ship-damage oracle and inspect per-engine HUD/physics behavior.
+4) Do not claim five-cause live damage provenance until ObjectModuleRuntime persists the cause channels instead of the legacy scalar bridge.
+
+
 ## 2026-10-17 — engine unit damage model becomes propulsion truth
 
 A concrete per-engine functional damage model has been added. The goal is to make each physical equipment unit own the mapping from damage to degraded functionality, instead of letting HUD, capability matrices or controllers guess from generic health.

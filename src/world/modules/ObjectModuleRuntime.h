@@ -29,6 +29,14 @@ public:
     void markModuleDestroyed(const std::string& moduleId, float health = 0.0f);
     void setModuleHealth(const std::string& moduleId, float health);
 
+    // Adds real accumulated equipment damage and increments revision only when
+    // the stored state actually changes.
+    bool addEquipmentDamage(
+        const std::string& moduleId,
+        game::equipment::EquipmentDamageKind kind,
+        double amount01
+    );
+
     void onModuleDestroyed(int index);
 
     void detachSubtree(int index);

@@ -291,7 +291,7 @@ void EngineThrustIndicatorRenderer::render(
         iconSize,
         presentation.warning
             ? withAlpha(style.warning, pulse)
-            : style.label
+            : style.idleWarningIcon
     );
 
     contentY += iconSize + iconGap;

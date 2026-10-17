@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "game/damage/HitVolume.h"
+#include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/equipment/engine/EngineUnit.h"
 
 enum class ModuleDetachPolicy
@@ -120,9 +121,11 @@ struct ModuleDescriptor
     // Если разрушение этого узла критично
     bool isCritical = false;
 
-    // Present only when this structural module is a functional propulsion
-    // engine. Module health remains the single runtime damage scalar; this
-    // descriptor defines how that damage affects thrust/vectoring/cost.
+    // Common equipment damage response. Runtime stores the five accumulated
+    // causes; this immutable descriptor stores only their influence weights.
+    game::equipment::EquipmentDamageSensitivity equipmentDamageSensitivity;
+
+    // Present only when this equipment module is a propulsion engine.
     std::optional<game::equipment::engine::EngineUnitDescriptor> engine;
 
     bool destroysParentIfCatastrophic = false;

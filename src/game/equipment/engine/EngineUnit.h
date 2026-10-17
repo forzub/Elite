@@ -38,6 +38,11 @@ struct EngineUnitDescriptor
         0.15  // wear
     };
     game::equipment::EquipmentFailureProfile gimbalFailure {0.95};
+
+    // Above this primary-damage level the thrust chamber can no longer hold
+    // steady output. Instability grows continuously until the authored thrust
+    // failure threshold is reached.
+    double irregularThrustStartsAtDamage01 = 0.70;
 };
 
 struct EngineUnitEffectiveState
@@ -49,6 +54,9 @@ struct EngineUnitEffectiveState
     double efficiencyAuthority01 = 1.0;
 
     double gimbalAuthority01 = 1.0;
+
+    // 0 = steady exhaust, 1 = maximum pre-failure intermittency.
+    double thrustIrregularity01 = 0.0;
 
     double maximumThrustNewtons = 0.0;
     double gimbalRangeRad = 0.0;
@@ -96,6 +104,35 @@ inline double positiveFiniteOr(
     out.gimbalFailed = gimbalFunction.failed;
     out.efficiencyAuthority01 = thrustFunction.authority01;
     out.gimbalAuthority01 = gimbalFunction.authority01;
+
+    const double instabilityStart =
+        std::clamp(
+            positiveFiniteOr(
+                descriptor.irregularThrustStartsAtDamage01,
+                0.70
+            ),
+            0.0,
+            1.0
+        );
+    const double thrustFailureDamage =
+        std::clamp(
+            damage.failure.failureAtDamage01,
+            instabilityStart,
+            1.0
+        );
+
+    if (!out.thrustFailed &&
+        thrustFunction.damage01 > instabilityStart &&
+        thrustFailureDamage > instabilityStart + 1.0e-12)
+    {
+        out.thrustIrregularity01 =
+            std::clamp(
+                (thrustFunction.damage01 - instabilityStart) /
+                    (thrustFailureDamage - instabilityStart),
+                0.0,
+                1.0
+            );
+    }
 
     const double nominalEfficiency =
         std::clamp(

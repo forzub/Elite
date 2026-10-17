@@ -1,3 +1,31 @@
+## 2026-10-17 — live damaged-propulsion oracle
+
+After the matrix/geometry/gateway tests passed, a dedicated in-game damage oracle was added.
+
+Authoritative diagnostic damage path:
+- ClientShipCommand now supports DebugFailPhysicalPropulsionSlot and DebugRestorePhysicalPropulsionSlots.
+- ShipCore exposes debugFailPhysicalPropulsionSlot(index) and debugRestorePhysicalPropulsionSlots().
+- These commands operate only on DiagnosticOverride actuator state, so production module-derived damage authority is not silently bypassed.
+- Server applies the slot failure to the authoritative ShipCore; subsequent capability projection and motion use the same normal runtime path.
+
+New live probe:
+- ShipRuntimeDamageOracle is separate from the healthy six-model oracle.
+- Manual arm script: scripts/run-ship-damage-oracle.ps1.
+- Marker: D:/tmp/elite/ship_damage_oracle.enable.
+- Report: D:/tmp/elite/ship_damage_oracle.log.
+- User starts EliteGame.exe manually.
+- Probe tests Assisted-Y then Newtonian-Y.
+- For both models physical propulsion slot 0 is failed on the authoritative server:
+  - Assisted-Y slot 0 = aft_top.
+  - Newtonian-Y slot 0 = main_top.
+- Same ordinary pilot forward-burn command is held until the expected damaged physical response is observed; no elapsed-time physics verdict.
+
+Expected live behavior:
+- Assisted-Y: forward thrust remains; mainTrimLoad01 > 0; mainTrimUsableScale01 < 1; avoidable residual pitch/yaw main reaction is nearly zero.
+- Newtonian-Y: no Assisted hidden trim; forward thrust remains; short-lever asymmetric main bank produces a real but bounded residual pitch/yaw angular acceleration (<0.25 rad/s^2 in this diagnostic).
+- The purpose is to prove that the new matrix/lever-arm/trim behavior survives the actual client -> server -> ShipCore -> capability -> gateway -> physics -> replicated snapshot path.
+
+
 ## 2026-10-16 — damage trim and Newtonian short-lever main geometry
 
 Damage behavior refinement after the first six-model healthy in-game oracle:

@@ -1,3 +1,14 @@
+## 2026-10-17 — damage pipeline fixture and release-test assertion correction
+
+Validation exposed two test-harness issues, not a production damage-matrix failure.
+
+- EquipmentDamageFailurePipelineTests authored 100 m/s^2 forward/reverse main acceleration but left ShipParams at the default 5 g common load envelope. ShipDynamics correctly clamped the nominal 100 m/s^2 to 49.03325 m/s^2, so a 50% surviving aft bank produced 24.516625 m/s^2 rather than the test's expected 50. The fixture now sets maxGs/maxLinearGs=20 so the intended 100 -> 50 authority split is actually tested.
+- ShipPhysicalActuatorPlantTests used C assert(). In the current release/NDEBUG build those assertions were compiled out; the unused-variable warnings proved the executable could report PASS without evaluating its predicates. All actuator-plant assertions are now explicit require()/exception checks and remain active in release builds.
+- The previous ship_physical_actuator_plant PASS from the NDEBUG run is therefore not accepted as evidence. It must be rerun after this correction.
+- ship_control_execution_gateway already used active require() checks; its PASS remains meaningful.
+
+Next validation: rerun equipment_damage_failure_pipeline and ship_physical_actuator_plant, then continue only if both are genuinely green.
+
 ## 2026-10-17 — severe engine damage causes deterministic irregular thrust
 
 Engine primary damage now has a pre-failure instability region:

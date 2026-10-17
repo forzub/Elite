@@ -1733,7 +1733,12 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 playerIt->second.transform.motion.localControlLaw;
     }
 
-    if (m_shipRuntimeControlOracle.enabled())
+    if (m_shipRuntimeDamageOracle.enabled())
+    {
+        m_playerControl = m_shipRuntimeDamageOracle.control();
+        m_client->submitInput(m_playerControl);
+    }
+    else if (m_shipRuntimeControlOracle.enabled())
     {
         // In-game control oracle owns the exact same ordinary pilot-control
         // surface as keyboard input. No direct physics/engine calls are
@@ -5352,6 +5357,120 @@ void SpaceState::update(float dt)
         );
         m_lastNavigationExecutionSnapshotTick =
             navigationExecutionSnapshotTick;
+    }
+
+
+    // Optional real-runtime damaged-propulsion oracle.
+    if (m_shipRuntimeDamageOracle.enabled())
+    {
+        game::debug::ShipRuntimeDamageOracle::Observation obs;
+        obs.universeSeconds =
+            m_client->lastSimulationMetadata().universeTimeSeconds;
+
+        const auto playerIt =
+            m_client->world().ships().find(m_playerId.value);
+        if (playerIt != m_client->world().ships().end())
+        {
+            const auto& transform = playerIt->second.transform;
+            const auto& motion = transform.motion;
+
+            obs.worldReady =
+                motion.matchedToReferenceFrame &&
+                motion.travelFrame.valid;
+            obs.physicalModelLabel =
+                game::ship::plant::physicalControlModelName(
+                    playerIt->second.physicalControlModel
+                );
+            obs.law = motion.localControlLaw;
+            obs.speedMps = glm::length(motion.localVelocityMps);
+            obs.pitchRateRadPerSec = transform.pitchRate;
+            obs.yawRateRadPerSec = transform.yawRate;
+            obs.rollRateRadPerSec = transform.rollRate;
+            obs.trimLoad01 = motion.mainTrimLoad01;
+            obs.trimUsableScale01 = motion.mainTrimUsableScale01;
+
+            if (motion.travelFrame.valid)
+            {
+                const glm::dvec3 forwardLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.forward())
+                        )
+                    );
+                const glm::dvec3 rightLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.right())
+                        )
+                    );
+                const glm::dvec3 upLocal =
+                    glm::normalize(
+                        motion.travelFrame.worldToLocalVector(
+                            glm::dvec3(transform.up())
+                        )
+                    );
+
+                obs.forwardVelocityMps =
+                    glm::dot(motion.localVelocityMps, forwardLocal);
+                obs.mainForwardAccelerationMps2 =
+                    glm::dot(motion.mainEngineAccelerationMps2, forwardLocal);
+                obs.mainRightAccelerationMps2 =
+                    glm::dot(motion.mainEngineAccelerationMps2, rightLocal);
+                obs.mainUpAccelerationMps2 =
+                    glm::dot(motion.mainEngineAccelerationMps2, upLocal);
+            }
+
+            obs.mainAlphaPitchRadPerSec2 =
+                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.x;
+            obs.mainAlphaYawRadPerSec2 =
+                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.y;
+            obs.mainAlphaRollRadPerSec2 =
+                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.z;
+        }
+
+        m_shipRuntimeDamageOracle.update(obs);
+
+        game::ship::plant::PhysicalControlModelId requestedModel;
+        if (m_shipRuntimeDamageOracle.takeModelRequest(requestedModel))
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type =
+                ClientShipCommand::SelectPhysicalControlModel;
+            command.index = static_cast<int>(requestedModel);
+            msg.payload = command;
+            m_client->sendMessage(msg);
+
+            std::cerr
+                << "[ShipDamageOracle] requested model="
+                << game::ship::plant::physicalControlModelName(requestedModel)
+                << std::endl;
+        }
+
+        std::size_t slotIndex = 0;
+        if (m_shipRuntimeDamageOracle.takeDamageRequest(slotIndex))
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type =
+                ClientShipCommand::DebugFailPhysicalPropulsionSlot;
+            command.index = static_cast<int>(slotIndex);
+            msg.payload = command;
+            m_client->sendMessage(msg);
+
+            std::cerr
+                << "[ShipDamageOracle] requested failed propulsion slot="
+                << slotIndex
+                << std::endl;
+        }
+
+        if (m_shipRuntimeDamageOracle.complete())
+        {
+            std::cerr
+                << "[ShipDamageOracle] COMPLETE report="
+                << m_shipRuntimeDamageOracle.reportPath()
+                << std::endl;
+        }
     }
 
 

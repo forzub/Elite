@@ -128,10 +128,10 @@ struct DynamicMotionState
     glm::dvec3 mainPropulsionTorqueBodyNm {0.0};
     glm::dvec3 mainPropulsionAngularAccelerationBodyRadPerSec2 {0.0};
 
-    // Damage-trim diagnostics. Healthy symmetric propulsion remains
-    // load=0 / usable=1. Assisted may reserve main-force margin to cancel
-    // parasitic r x F reaction. Newtonian currently exposes the raw reaction
-    // and therefore leaves these at their neutral values.
+    // Damaged-main feedback diagnostics. Healthy symmetric propulsion remains
+    // load=0 / usable=1. Both Assisted and Newtonian may reduce individual
+    // main-engine commands and use small automatic TVC trim when that makes
+    // the requested maneuver cleaner. Residual r x F reaction remains physical.
     double mainTrimLoad01 = 0.0;
     double mainTrimUsableScale01 = 1.0;
 

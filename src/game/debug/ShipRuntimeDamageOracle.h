@@ -82,10 +82,29 @@ public:
         m_enabled = false;
         m_cases.clear();
 
-        if (selection.kind != RuntimeScenarioKind::ShipDamage)
+        if (selection.kind == RuntimeScenarioKind::PropulsionMatrix)
+        {
+            // The matrix scenario owns the damaged half of the 12-pass probe.
+            // Healthy passes are performed by ShipRuntimeControlOracle using
+            // the same RuntimeScenarioSelection.
+            m_cases = {
+                { Model::AssistedI, 0 },
+                { Model::AssistedY, 0 },
+                { Model::AssistedX, 0 },
+                { Model::NewtonianI, 0 },
+                { Model::NewtonianY, 0 },
+                { Model::NewtonianX, 0 }
+            };
+            m_enabled = true;
+        }
+        else if (selection.kind == RuntimeScenarioKind::ShipDamage)
+        {
+            m_enabled = parseScenario(selection.payload);
+        }
+        else
+        {
             return true;
-
-        m_enabled = parseScenario(selection.payload);
+        }
         if (!m_enabled)
             return false;
 
@@ -93,6 +112,9 @@ public:
             std::getenv("ELITE_SHIP_DAMAGE_ORACLE_REPORT");
         if (report && *report)
             m_reportPath = report;
+        else if (selection.kind == RuntimeScenarioKind::PropulsionMatrix)
+            m_reportPath =
+                "D:/tmp/elite/ship_damage_oracle_matrix.log";
 
         return true;
     }

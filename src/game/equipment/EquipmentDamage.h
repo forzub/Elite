@@ -1,0 +1,143 @@
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+
+namespace game::equipment
+{
+
+// Five universal causes accumulated by every equipment instance.
+// These are DAMAGE VALUES (runtime state), never sensitivity weights.
+enum class EquipmentDamageKind
+{
+    Laser,
+    Impact,
+    Thermal,
+    Radiation,
+    Wear
+};
+
+struct EquipmentDamageState
+{
+    double laser01 = 0.0;
+    double impact01 = 0.0;
+    double thermal01 = 0.0;
+    double radiation01 = 0.0;
+    double wear01 = 0.0;
+};
+
+// Immutable sensitivity of this equipment type to each damage cause.
+// These are WEIGHTS, never accumulated damage values.
+struct EquipmentDamageSensitivity
+{
+    double laser = 0.0;
+    double impact = 0.0;
+    double thermal = 0.0;
+    double radiation = 0.0;
+    double wear = 0.0;
+};
+
+// Common equipment damage layer: one per equipment instance.
+// State changes only when damage/wear changes; sensitivity is copied from the
+// equipment descriptor and remains constant for the instance.
+struct EquipmentDamageLayer
+{
+    EquipmentDamageState accumulated;
+    EquipmentDamageSensitivity sensitivity;
+};
+
+inline double clampDamage01(double value) noexcept
+{
+    return std::isfinite(value)
+        ? std::clamp(value, 0.0, 1.0)
+        : 0.0;
+}
+
+inline double accumulatedDamage(
+    const EquipmentDamageState& state,
+    EquipmentDamageKind kind
+) noexcept
+{
+    switch (kind)
+    {
+        case EquipmentDamageKind::Laser:
+            return state.laser01;
+        case EquipmentDamageKind::Impact:
+            return state.impact01;
+        case EquipmentDamageKind::Thermal:
+            return state.thermal01;
+        case EquipmentDamageKind::Radiation:
+            return state.radiation01;
+        case EquipmentDamageKind::Wear:
+            return state.wear01;
+    }
+    return 0.0;
+}
+
+inline bool addEquipmentDamage(
+    EquipmentDamageState& state,
+    EquipmentDamageKind kind,
+    double amount01
+) noexcept
+{
+    if (!std::isfinite(amount01) || amount01 <= 0.0)
+        return false;
+
+    double* target = nullptr;
+    switch (kind)
+    {
+        case EquipmentDamageKind::Laser:
+            target = &state.laser01;
+            break;
+        case EquipmentDamageKind::Impact:
+            target = &state.impact01;
+            break;
+        case EquipmentDamageKind::Thermal:
+            target = &state.thermal01;
+            break;
+        case EquipmentDamageKind::Radiation:
+            target = &state.radiation01;
+            break;
+        case EquipmentDamageKind::Wear:
+            target = &state.wear01;
+            break;
+    }
+
+    if (!target)
+        return false;
+
+    const double before = clampDamage01(*target);
+    const double after = clampDamage01(before + amount01);
+    if (after == before)
+        return false;
+
+    *target = after;
+    return true;
+}
+
+inline double weightedFunctionalDamage01(
+    const EquipmentDamageLayer& layer
+) noexcept
+{
+    const auto& d = layer.accumulated;
+    const auto& w = layer.sensitivity;
+
+    return std::clamp(
+        clampDamage01(d.laser01) * std::max(0.0, w.laser) +
+        clampDamage01(d.impact01) * std::max(0.0, w.impact) +
+        clampDamage01(d.thermal01) * std::max(0.0, w.thermal) +
+        clampDamage01(d.radiation01) * std::max(0.0, w.radiation) +
+        clampDamage01(d.wear01) * std::max(0.0, w.wear),
+        0.0,
+        1.0
+    );
+}
+
+inline double functionalAuthority01(
+    const EquipmentDamageLayer& layer
+) noexcept
+{
+    return 1.0 - weightedFunctionalDamage01(layer);
+}
+
+} // namespace game::equipment

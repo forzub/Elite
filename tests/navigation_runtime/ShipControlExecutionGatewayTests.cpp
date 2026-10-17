@@ -178,13 +178,17 @@ void testPhysicalOverloadAppliesMainReactionTorque()
         std::abs(
             transform.motion.mainEngineAccelerationMps2.x
         ) > 1.0e-6,
-        "physical gateway did not redirect centered Newtonian-I main thrust laterally"
+        "physical gateway did not redirect Newtonian-I main thrust laterally"
     );
     require(
         std::abs(
             transform.motion.mainPropulsionTorqueBodyNm.y
-        ) < 1.0e-6,
-        "centered Newtonian-I main incorrectly generated lever-arm yaw torque"
+        ) > 1.0,
+        "aft-mounted Newtonian-I gimbaled main lost its real yaw reaction torque"
+    );
+    require(
+        std::abs(transform.yawRate) > 1.0e-6f,
+        "Newtonian-I gimbaled main reaction did not reach hull yaw rate"
     );
 }
 
@@ -342,7 +346,7 @@ int main()
         std::cout << " - manual/TVC input retains ordinary physical-path priority\n";
         std::cout << " - precision/Assisted/Newtonian execution selection is centralized\n";
         std::cout << " - callers no longer need to interpret ShipControlState\n";
-        std::cout << " - centered Newtonian-I TVC redirects main thrust without fake lever-arm torque\n";
+        std::cout << " - axial Newtonian-I main is centered radially, while aft-mounted TVC creates real yaw/pitch reaction\n";
         std::cout << " - Assisted damaged-main bias is trimmed before avoidable hull rotation\n";
         return EXIT_SUCCESS;
     }

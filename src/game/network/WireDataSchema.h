@@ -494,6 +494,11 @@ ELITE_WIRE_SCHEMA(
     v.moduleId,
     v.state,
     v.health,
+    v.laserDamage01,
+    v.impactDamage01,
+    v.thermalDamage01,
+    v.radiationDamage01,
+    v.wearDamage01,
     v.aliveSupportCount
 );
 

@@ -43,8 +43,12 @@ struct RuntimeScenarioSelection
         constexpr std::string_view DamagePrefix = "ship-damage:";
         if (value.rfind(DamagePrefix, 0) == 0)
         {
+            const auto payload = value.substr(DamagePrefix.size());
+            if (payload.empty())
+                return {};
+
             out.kind = RuntimeScenarioKind::ShipDamage;
-            out.payload = std::string(value.substr(DamagePrefix.size()));
+            out.payload = std::string(payload);
             return out;
         }
 
@@ -58,8 +62,19 @@ struct RuntimeScenarioSelection
         constexpr std::string_view NavPayloadPrefix = "nav-stress:";
         if (value.rfind(NavPayloadPrefix, 0) == 0)
         {
+            const auto payload =
+                value.substr(NavPayloadPrefix.size());
+
+            if (payload != "simple" &&
+                payload != "assisted-high-speed" &&
+                payload != "assisted-gameplay-parity" &&
+                payload != "assisted-safe-course-obstacle")
+            {
+                return {};
+            }
+
             out.kind = RuntimeScenarioKind::NavigationStress;
-            out.payload = std::string(value.substr(NavPayloadPrefix.size()));
+            out.payload = std::string(payload);
             return out;
         }
 

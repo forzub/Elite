@@ -630,6 +630,18 @@ void GameServer::update(double dt)
                     break;
                 }
 
+                case ClientShipCommand::DebugFailPhysicalPropulsionSlot:
+                    (void)ship.core().debugFailPhysicalPropulsionSlot(
+                        static_cast<std::size_t>(
+                            std::max(0, shipCmd.index)
+                        )
+                    );
+                    break;
+
+                case ClientShipCommand::DebugRestorePhysicalPropulsionSlots:
+                    (void)ship.core().debugRestorePhysicalPropulsionSlots();
+                    break;
+
                 default:
                     ship.applyCommand(shipCmd);
                     break;

@@ -43,9 +43,18 @@ int main()
     engine.functionalAuthority01 = 0.60;
     engine.powerCostMultiplier = 1.25;
     engine.heatMultiplier = 0.25;
+    engine.outputInstability01 = 0.40;
     state = bite.evaluate(4, {engine});
     require(state.faults.front().severity == game::bite::Severity::Warning,
             "40% loss did not emit warning");
+    require(state.faults.front().outputInstability01 == 0.40,
+            "BITE lost output instability symptom");
+    const auto unstableLines =
+        game::bite::BiteApi::terminalLines(state);
+    require(!unstableLines.empty() &&
+            unstableLines.front().find("output instability 40%") !=
+                std::string::npos,
+            "BITE terminal omitted output instability");
 
     engine.wear01 = 0.20;
     engine.maintenanceWearThreshold01 = 0.20;

@@ -467,7 +467,17 @@ SpaceState::SpaceState(
         game::debug::RuntimeScenarioSelection::fromProcessEnvironment();
     m_navigationStressHarness.configure(m_runtimeScenarioSelection);
     m_shipRuntimeControlOracle.configure(m_runtimeScenarioSelection);
-    m_shipRuntimeDamageOracle.configure(m_runtimeScenarioSelection);
+    const bool damageScenarioConfigured =
+        m_shipRuntimeDamageOracle.configure(m_runtimeScenarioSelection);
+
+    if (!damageScenarioConfigured)
+    {
+        std::cerr
+            << "[RuntimeScenario] CONFIGURATION_ERROR spec="
+            << m_runtimeScenarioSelection.spec
+            << " expected=ship-damage:<PhysicalModel@slot,...>"
+            << "\n";
+    }
 
     if (m_runtimeScenarioSelection.active())
     {

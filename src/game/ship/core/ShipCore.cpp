@@ -984,7 +984,68 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
     );
 
     auto result = m_hitComponent.resolve(localEvent);
+
+    const float healthBefore =
+        result.volume ? result.volume->health : 0.0f;
+    const float maxHealth =
+        result.volume ? result.volume->maxHealth : 0.0f;
+    const std::string damagedModuleId =
+        result.volume ? result.volume->moduleId : std::string {};
+
     m_damageHandler.handleDamage(result);
+
+    // Functional equipment damage records the CAUSE of actual health loss.
+    // The amount is normalized from the real hit-volume loss; sensitivity
+    // weights are not damage values and never enter this accumulation step.
+    if (result.volume &&
+        !result.volume->supportLinkVolume &&
+        !damagedModuleId.empty() &&
+        maxHealth > 0.0f)
+    {
+        const double lost01 = std::clamp(
+            static_cast<double>(
+                healthBefore - result.volume->health
+            ) / static_cast<double>(maxHealth),
+            0.0,
+            1.0
+        );
+
+        using Kind = game::equipment::EquipmentDamageKind;
+        bool hasEquipmentCause = true;
+        Kind cause = Kind::Impact;
+
+        switch (event.type)
+        {
+            case DamageType::Laser:
+                cause = Kind::Laser;
+                break;
+
+            case DamageType::Explosion:
+            case DamageType::Collision:
+                cause = Kind::Impact;
+                break;
+
+            case DamageType::Radiation:
+                cause = Kind::Radiation;
+                break;
+
+            case DamageType::EMP:
+                // EMP is not one of the five physical equipment-damage
+                // accumulators. Electrical effects need their own system.
+                hasEquipmentCause = false;
+                break;
+        }
+
+        if (hasEquipmentCause && lost01 > 0.0)
+        {
+            m_moduleRuntime.addEquipmentDamage(
+                damagedModuleId,
+                cause,
+                lost01
+            );
+        }
+    }
+
     syncDestroyedModulesFromHitVolumes();
 
     if (m_desc)

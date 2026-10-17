@@ -151,7 +151,7 @@ inline plant::EngineSlotState slotFromSnapshot(
             );
 
         return plant::EngineSlotState {
-            effective.operational,
+            true,
             effective.efficiencyAuthority01,
             effective.gimbalAuthority01
         };

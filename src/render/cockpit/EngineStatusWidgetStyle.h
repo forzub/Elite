@@ -20,6 +20,7 @@ struct EngineStatusWidgetStyle
     glm::vec4 capacity {0.98f, 0.72f, 0.06f, 0.94f};
     glm::vec4 thrust {1.00f, 0.13f, 0.045f, 0.98f};
     glm::vec4 label {0.96f, 0.73f, 0.18f, 0.98f};
+    glm::vec4 idleWarningIcon {0.42f, 0.44f, 0.48f, 0.24f};
     glm::vec4 warning {1.00f, 0.58f, 0.02f, 1.00f};
 
     float cornerRadiusPx = 7.0f;
@@ -27,7 +28,7 @@ struct EngineStatusWidgetStyle
     float paddingPx = 11.0f;
 
     float iconSizePx = 24.0f;
-    float iconToLabelGapPx = 5.0f;
+    float iconToLabelGapPx = 8.0f;
     float labelToBarsGapPx = 10.0f;
 
     float barWidthPx = 8.0f;

@@ -195,8 +195,7 @@ std::vector<std::string> BiteApi::terminalLines(
             line << ", power +" << increasePercent(
                 1.0 + fault.powerIncrease01);
         if (fault.heatIncrease01 > 0.0)
-            line << ", heat +" << increasePercent(
-                1.0 + fault.heatIncrease01);
+            line << ", heat +" << percent(fault.heatIncrease01);
 
         out.push_back(line.str());
     }

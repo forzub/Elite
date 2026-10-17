@@ -5,6 +5,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$healthyMarker = "D:\tmp\elite\ship_control_oracle.enable"
+if (Test-Path -LiteralPath $healthyMarker) {
+    Remove-Item -Force -LiteralPath $healthyMarker
+}
+
 $markerDir = Split-Path -Parent $MarkerPath
 if ($markerDir -and -not (Test-Path -LiteralPath $markerDir)) {
     New-Item -ItemType Directory -Force -Path $markerDir | Out-Null

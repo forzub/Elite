@@ -90,7 +90,7 @@ inline plant::EngineSlotState slotFromModule(
             );
 
         return plant::EngineSlotState {
-            effective.operational,
+            true,
             effective.efficiencyAuthority01,
             effective.gimbalAuthority01
         };
@@ -136,6 +136,8 @@ inline plant::EngineSlotState slotFromSnapshot(
         game::equipment::EquipmentDamageLayer damage;
         damage.sensitivity =
             definition->equipmentDamageSensitivity;
+        damage.failure =
+            definition->equipmentFailure;
         damage.accumulated.laser01 = module->laserDamage01;
         damage.accumulated.impact01 = module->impactDamage01;
         damage.accumulated.thermal01 = module->thermalDamage01;

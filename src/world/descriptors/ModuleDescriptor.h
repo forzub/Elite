@@ -2,8 +2,10 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 #include "game/damage/HitVolume.h"
+#include "src/game/equipment/engine/EngineUnit.h"
 
 enum class ModuleDetachPolicy
 {
@@ -117,6 +119,12 @@ struct ModuleDescriptor
 
     // Если разрушение этого узла критично
     bool isCritical = false;
+
+    // Present only when this structural module is a functional propulsion
+    // engine. Module health remains the single runtime damage scalar; this
+    // descriptor defines how that damage affects thrust/vectoring/cost.
+    std::optional<game::equipment::engine::EngineUnitDescriptor> engine;
+
     bool destroysParentIfCatastrophic = false;
     bool destroysWholeObjectIfCatastrophic = false;
 

@@ -53,14 +53,12 @@ if (Test-Path $ReportPath) {
     Remove-Item -Force $ReportPath
 }
 
-$oldStress = $env:ELITE_NAV_STRESS
 $oldReport = $env:ELITE_NAV_STRESS_REPORT
 $oldBuildId = $env:ELITE_NAV_STRESS_BUILD_ID
 $oldPhysicalHotStart = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START
 $oldPhysicalHotStartSpeed = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_SPEED_MPS
 $oldPhysicalHotStartNoseOffset = $env:ELITE_PHYSICAL_CORRIDOR_HOT_START_NOSE_OFFSET_DEG
 
-$env:ELITE_NAV_STRESS = "1"
 $env:ELITE_NAV_STRESS_REPORT = $ReportPath
 $env:ELITE_NAV_STRESS_BUILD_ID = $buildId
 
@@ -103,6 +101,20 @@ if ($assistedSafeCourseObstacle) {
     }
 }
 
+$scenario = "nav-stress"
+if ($env:ELITE_NAV_STRESS_SIMPLE -and $env:ELITE_NAV_STRESS_SIMPLE -ne "0") {
+    $scenario = "nav-stress:simple"
+}
+elseif ($assistedHighSpeed) {
+    $scenario = "nav-stress:assisted-high-speed"
+}
+elseif ($assistedGameplayParity) {
+    $scenario = "nav-stress:assisted-gameplay-parity"
+}
+elseif ($assistedSafeCourseObstacle) {
+    $scenario = "nav-stress:assisted-safe-course-obstacle"
+}
+
 if ($assistedGameplayParity) {
     # Mirror the manual gameplay probe:
     # - 500 m/s inertial entry;
@@ -118,6 +130,7 @@ if ($assistedGameplayParity) {
 
 Write-Host "[NavStressRunner] starting $exe"
 Write-Host "[NavStressRunner] build $buildId"
+Write-Host "[NavStressRunner] scenario $scenario"
 Write-Host "[NavStressRunner] report $ReportPath"
 Write-Host "[NavStressRunner] no-progress timeout $($NoProgressTimeoutSeconds)s; absolute timeout $($AbsoluteTimeoutSeconds)s"
 
@@ -132,7 +145,7 @@ $timedOut = $false
 $timeoutReason = ""
 
 try {
-    $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path -Parent $exe) -PassThru
+    $process = Start-Process -FilePath $exe -ArgumentList @("--diagnostic-scenario", $scenario) -WorkingDirectory (Split-Path -Parent $exe) -PassThru
 
     while (-not $process.HasExited) {
         Start-Sleep -Milliseconds 500
@@ -223,7 +236,6 @@ try {
     exit 3
 }
 finally {
-    $env:ELITE_NAV_STRESS = $oldStress
     $env:ELITE_NAV_STRESS_REPORT = $oldReport
     $env:ELITE_NAV_STRESS_BUILD_ID = $oldBuildId
     $env:ELITE_PHYSICAL_CORRIDOR_HOT_START = $oldPhysicalHotStart

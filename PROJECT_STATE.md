@@ -1,3 +1,74 @@
+## 2026-10-17 — runtime scenario infrastructure audit and ownership fix
+
+The live scenario/oracle infrastructure was audited after repeated runs failed to start or behaved inconsistently.
+
+Root architectural problem:
+- there was no single runtime scenario owner;
+- NavigationStressHarness activated itself from ELITE_NAV_STRESS;
+- ShipRuntimeControlOracle activated itself from ELITE_SHIP_CONTROL_ORACLE or a marker file;
+- ShipRuntimeDamageOracle activated from --diagnostic-scenario via ELITE_DIAGNOSTIC_SCENARIO;
+- all three objects existed simultaneously inside SpaceState.
+
+Critical control conflict found:
+- ship-control / ship-damage could submit their ShipControlState in handleInput();
+- later in the same frame SpaceState::update() always called updateDockingAdvisory();
+- updateDockingAdvisory() can submit m_clientAutopilotControl through the same m_client->submitInput() path;
+- therefore an ordinary docking/autopilot control sample could overwrite the scenario sample later in the same frame;
+- a stale pending docking request from a previous action could therefore corrupt an otherwise correctly selected runtime scenario.
+
+Additional scenario infrastructure defects:
+- ShipRuntimeControlOracle could silently activate from D:/tmp/elite/ship_control_oracle.enable.
+- m_navigationStressCompleteAnnounced was shared by NavigationStressHarness and ShipRuntimeControlOracle, so one diagnostic could suppress another diagnostic's COMPLETE announcement.
+- malformed ship-damage payload could select the damage scenario kind but leave the damage oracle disabled, producing a game that looked alive but had no valid scenario driver.
+- unknown nav-stress payloads could silently fall back toward default behavior.
+- scenario selection was spread across marker files, activation env vars and CLI.
+
+New canonical scenario contract:
+- EliteGame has one explicit entry point:
+      --diagnostic-scenario <spec>
+- RuntimeScenarioSelection is the single selector.
+- Supported specs:
+      ship-control
+      ship-damage:<PhysicalModel@slot,...>
+      nav-stress
+      nav-stress:simple
+      nav-stress:assisted-high-speed
+      nav-stress:assisted-gameplay-parity
+      nav-stress:assisted-safe-course-obstacle
+- unknown/empty scenario specs are rejected at startup.
+- invalid ship-damage model/slot configuration fails fast during SpaceState construction instead of silently running with no driver.
+
+Harness activation:
+- ShipRuntimeControlOracle no longer self-activates from marker/env; it is configured only when RuntimeScenarioSelection selects ShipControl.
+- ShipRuntimeDamageOracle is configured only from the selected ShipDamage payload.
+- NavigationStressHarness is enabled only when RuntimeScenarioSelection selects NavigationStress.
+- legacy nav env variables may still supply tuning/report/hot-start parameters, but they no longer select the active harness.
+- scripts/run-ship-control-oracle.ps1 no longer creates a marker; it prints an explicit ship-control CLI command.
+- scripts/run-ship-damage-oracle.ps1 already uses explicit CLI.
+- scripts/run-navigation-stress.ps1 now launches EliteGame with an explicit nav-stress scenario argument; legacy env mode flags are only translated into the corresponding scenario payload/tuning.
+
+Exclusive ShipControlState ownership:
+- for ShipControl and ShipDamage runtime scenarios, SpaceState skips updateDockingAdvisory();
+- pending docking route requests are cleared;
+- m_clientAutopilotControlActive is forced false;
+- stale m_clientAutopilotControl is reset;
+- therefore the selected direct-control scenario is the only source allowed to submit ordinary ShipControlState for that frame.
+- NavigationStress continues to use the normal docking/autopilot route because exercising that production path is the purpose of that scenario.
+
+Completion reporting:
+- NavigationStressHarness keeps m_navigationStressCompleteAnnounced.
+- ShipRuntimeControlOracle now has its own m_shipControlOracleCompleteAnnounced.
+- ShipRuntimeDamageOracle now has its own m_shipDamageOracleCompleteAnnounced.
+
+New architecture contract:
+- RuntimeScenarioSelectionTests validates explicit selection and payload preservation.
+- empty ship-damage payload is rejected.
+- unknown nav-stress payload is rejected.
+- unknown scenario names do not silently select another harness.
+
+Before trusting any further live physics result, run the runtime_scenario_selection contract and then a minimal ship-control scenario. Only after scenario ownership is proven should damaged propulsion / matrix runtime acceptance continue.
+
+
 ## 2026-10-17 — propulsion authority matrix: canonical model and current limits
 
 This section is the canonical cross-chat description of the propulsion authority matrix and how it relates to runtime physics.

@@ -640,11 +640,11 @@ void GameServer::update(double dt)
                         ship.core().debugFailPhysicalPropulsionSlot(
                             slotIndex
                         );
-                    std::cout
+                    std::cerr
                         << "[ShipDamageOracle][server] fail slot="
                         << slotIndex
                         << " accepted=" << (ok ? 1 : 0)
-                        << "\n";
+                        << std::endl;
                     break;
                 }
 

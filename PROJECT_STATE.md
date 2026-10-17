@@ -1,3 +1,23 @@
+### Engine damage recomputation/cache invariant
+
+Damage-derived engine capability is event/revision driven, not recomputed every physics tick.
+
+Existing runtime path already satisfies this:
+- ObjectModuleRuntime owns a monotonic revision.
+- ShipCore::refreshRuntimeState() returns immediately while that module revision is unchanged.
+- Only a changed module/damage revision rebuilds per-slot EngineEffectiveState -> EngineSlotState projection.
+- ShipActuatorState increments its own revision only when the projected slot state actually changes.
+- ShipCore::capabilities() is separately cached by constructionRevision + actuatorRevision + massRevision.
+
+Therefore:
+- damage-derived maximum thrust / efficiency authority / gimbal authority are recomputed only after equipment damage state changes;
+- ordinary per-tick propulsion evaluates only current commanded/generated thrust against the cached capability;
+- when the five persistent damage channels are added to ObjectModuleRuntime, every mutation of laser/impact/thermal/radiation/wear damage must increment the same module damage revision;
+- merely reading state or advancing an unchanged frame must not invalidate engine capability.
+
+Do not introduce a second per-engine timer/dirty cache unless this revision contract is later proven insufficient.
+
+
 ## 2026-10-17 — engine damage model finalized for first live tests
 
 The first production engine-unit damage model now uses five universal equipment damage channels:

@@ -27,13 +27,113 @@ double positiveFiniteOr(double value, double fallback) noexcept
         : fallback;
 }
 
+std::uint64_t mix64(std::uint64_t value) noexcept
+{
+    value ^= value >> 30u;
+    value *= 0xbf58476d1ce4e5b9ULL;
+    value ^= value >> 27u;
+    value *= 0x94d049bb133111ebULL;
+    value ^= value >> 31u;
+    return value;
+}
+
+double deterministicUnitSample(
+    std::size_t slotIndex,
+    std::uint64_t controlTick
+) noexcept
+{
+    // Hold one sample for four fixed-control ticks so the symptom is a
+    // perceptible thrust hiccup rather than high-frequency numerical noise.
+    const std::uint64_t bucket = controlTick / 4u;
+    const std::uint64_t seed =
+        bucket ^
+        (0x9e3779b97f4a7c15ULL *
+            (static_cast<std::uint64_t>(slotIndex) + 1u));
+
+    const std::uint64_t bits = mix64(seed);
+    return static_cast<double>(bits >> 11u) *
+        (1.0 / 9007199254740992.0);
+}
+
 } // namespace
+
+double instantaneousSlotThrust01(
+    const EngineSlotState& state,
+    std::size_t slotIndex,
+    std::uint64_t controlTick
+) noexcept
+{
+    const double base = effectiveSlotThrust01(state);
+    if (base <= Epsilon)
+        return 0.0;
+
+    const double irregularity =
+        std::clamp(state.thrustIrregularity01, 0.0, 1.0);
+    if (irregularity <= Epsilon)
+        return base;
+
+    const double sample =
+        deterministicUnitSample(slotIndex, controlTick);
+
+    // Irregularity only removes instantaneous thrust. It never fabricates
+    // authority above the damage-limited maximum. As damage approaches the
+    // 95% failure threshold, dips can approach zero.
+    const double multiplier =
+        (1.0 - irregularity) + irregularity * sample;
+
+    return base * std::clamp(multiplier, 0.0, 1.0);
+}
+
+double evaluateMainPropulsionInstantaneousScale(
+    PhysicalControlModelId model,
+    const std::vector<EngineSlotState>& state,
+    const glm::dvec3& mainAccelerationBodyMps2,
+    std::uint64_t controlTick
+) noexcept
+{
+    const auto& slots = physicalControlSlots(model);
+    if (state.size() != slots.size())
+        return 1.0;
+
+    if (glm::length(mainAccelerationBodyMps2) <= Epsilon)
+        return 1.0;
+
+    const EngineSlotRole activeRole =
+        activeLongitudinalBank(mainAccelerationBodyMps2);
+
+    double steadyTotal = 0.0;
+    double instantaneousTotal = 0.0;
+
+    for (std::size_t i = 0; i < slots.size(); ++i)
+    {
+        if (slots[i].role != activeRole)
+            continue;
+
+        steadyTotal += effectiveSlotThrust01(state[i]);
+        instantaneousTotal +=
+            instantaneousSlotThrust01(
+                state[i],
+                i,
+                controlTick
+            );
+    }
+
+    if (steadyTotal <= Epsilon)
+        return 1.0;
+
+    return std::clamp(
+        instantaneousTotal / steadyTotal,
+        0.0,
+        1.0
+    );
+}
 
 MainPropulsionReaction evaluateMainPropulsionReaction(
     PhysicalControlModelId model,
     const std::vector<EngineSlotState>& state,
     const ShipParams& physics,
-    const glm::dvec3& mainAccelerationBodyMps2
+    const glm::dvec3& mainAccelerationBodyMps2,
+    std::uint64_t controlTick
 ) noexcept
 {
     MainPropulsionReaction out;
@@ -62,7 +162,11 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
     {
         if (slots[i].role != activeRole)
             continue;
-        totalWeight += effectiveSlotThrust01(state[i]);
+        totalWeight += instantaneousSlotThrust01(
+            state[i],
+            i,
+            controlTick
+        );
     }
 
     if (totalWeight <= Epsilon)
@@ -98,7 +202,11 @@ MainPropulsionReaction evaluateMainPropulsionReaction(
         if (slots[i].role != activeRole)
             continue;
 
-        const double weight = effectiveSlotThrust01(state[i]);
+        const double weight = instantaneousSlotThrust01(
+            state[i],
+            i,
+            controlTick
+        );
         if (weight <= Epsilon)
             continue;
 

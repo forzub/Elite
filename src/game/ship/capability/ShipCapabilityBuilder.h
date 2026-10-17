@@ -61,6 +61,7 @@ inline plant::EngineSlotState healthySlot() noexcept
 }
 
 inline plant::EngineSlotState slotFromModule(
+    const ModuleDescriptor* definition,
     const world::modules::ObjectModuleState* module
 ) noexcept
 {
@@ -80,6 +81,23 @@ inline plant::EngineSlotState slotFromModule(
     const double health01 =
         healthFraction(module->health, module->maxHealth);
 
+    if (definition && definition->engine)
+    {
+        const auto effective =
+            game::equipment::engine::evaluateEngineUnit(
+                *definition->engine,
+                health01
+            );
+
+        return plant::EngineSlotState {
+            effective.operational,
+            effective.thrustAvailable01,
+            effective.vectoringAvailable01
+        };
+    }
+
+    // Legacy/fallback modules without an engine passport preserve the current
+    // linear behavior until their descriptor is migrated.
     return plant::EngineSlotState {
         health01 > 0.0,
         health01,
@@ -113,6 +131,21 @@ inline plant::EngineSlotState slotFromSnapshot(
 
     const double health01 =
         healthFraction(module->health, maxHealth);
+
+    if (definition && definition->engine)
+    {
+        const auto effective =
+            game::equipment::engine::evaluateEngineUnit(
+                *definition->engine,
+                health01
+            );
+
+        return plant::EngineSlotState {
+            effective.operational,
+            effective.thrustAvailable01,
+            effective.vectoringAvailable01
+        };
+    }
 
     return plant::EngineSlotState {
         health01 > 0.0,
@@ -149,7 +182,10 @@ inline std::vector<plant::EngineSlotState> slotStates(
         }
 
         out.push_back(
-            slotFromModule(runtime.findModule(moduleId))
+            slotFromModule(
+                findModuleDescriptor(descriptor, moduleId),
+                runtime.findModule(moduleId)
+            )
         );
     }
 
@@ -328,7 +364,12 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
         if (moduleId.empty())
             out.push_back(detail::healthySlot());
         else
-            out.push_back(detail::slotFromModule(runtime.findModule(moduleId)));
+            out.push_back(
+                detail::slotFromModule(
+                    detail::findModuleDescriptor(descriptor, moduleId),
+                    runtime.findModule(moduleId)
+                )
+            );
     }
     return out;
 }

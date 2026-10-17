@@ -677,29 +677,37 @@ int main(int argc, char** argv)
                     return -2;
                 }
 
-                std::ostringstream buffer;
-                buffer << input.rdbuf();
-                diagnosticScenario = buffer.str();
-
-                while (!diagnosticScenario.empty() &&
-                       (diagnosticScenario.back() == '\\r' ||
-                        diagnosticScenario.back() == '\\n' ||
-                        diagnosticScenario.back() == ' ' ||
-                        diagnosticScenario.back() == '\\t'))
+                // Human-readable scenario file: ignore blank/comment
+                // lines and require exactly one scenario spec.
+                std::string line;
+                diagnosticScenario.clear();
+                while (std::getline(input, line))
                 {
-                    diagnosticScenario.pop_back();
+                    const auto first = line.find_first_not_of(" \t\r");
+                    if (first == std::string::npos || line[first] == '#')
+                        continue;
+
+                    const auto last = line.find_last_not_of(" \t\r");
+                    const std::string spec =
+                        line.substr(first, last - first + 1);
+
+                    if (!diagnosticScenario.empty())
+                    {
+                        std::cerr
+                            << "[RuntimeScenarioFile] MULTIPLE_SPECS path=\""
+                            << path << "\"\n";
+                        return -2;
+                    }
+                    diagnosticScenario = spec;
                 }
 
-                const auto first =
-                    diagnosticScenario.find_first_not_of(" \t\r\n");
-                if (first == std::string::npos)
+                if (diagnosticScenario.empty())
                 {
                     std::cerr
                         << "[RuntimeScenarioFile] EMPTY path=\""
                         << path << "\"\n";
                     return -2;
                 }
-                diagnosticScenario.erase(0, first);
 
                 std::cerr
                     << "[RuntimeScenarioFile] LOADED path=\""

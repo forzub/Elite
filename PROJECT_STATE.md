@@ -1,3 +1,28 @@
+## 2026-10-17 — isolated BITE library and HUD fault authority
+
+BITE is now a separate static runtime library `EliteBite` under `src/game/bite`.
+
+Hard boundary:
+- BITE accepts only compact public DTO `EquipmentSample` + source revision;
+- BITE returns only `bite::State` / `bite::Fault` and terminal text lines;
+- BITE has no include/dependency on ShipCore, ObjectModuleRuntime, ClientWorldState, renderer/HUD, networking, damage handlers or concrete equipment implementation;
+- rich ship/equipment data is adapted outside the library in `ShipBitePresentation.h`;
+- BITE is presentation/diagnostics only and cannot affect physics/control.
+
+Current engine policy:
+- slow degradation below 30% functional loss is silent;
+- 30% loss -> CAUTION and HUD attention;
+- 40% loss -> WARNING;
+- inoperative -> FAILED;
+- wear crossing descriptor maintenance threshold creates MAINTENANCE REQUIRED;
+- Cobra engine maintenance threshold is 20% wear;
+- no fake service lifetime was invented: wearPerOperatingHour remains 0 until authored.
+
+Engine HUD no longer decides its own damage threshold. Capacity remains physical propulsion state, while CHECK/bar fault attention comes from BITE.
+
+BITE terminal formatter already produces unambiguous per-equipment lines including available output/nozzle authority and increased power/heat where applicable. Wiring those lines into the existing cockpit terminal surface is the remaining presentation connection; the BITE library itself must not include or call terminal/HUD code.
+
+
 ## 2026-10-17 — real common equipment damage layer replaces scalar-health bridge
 
 The transitional "lost module health == impact damage" bridge has been removed from propulsion capability.

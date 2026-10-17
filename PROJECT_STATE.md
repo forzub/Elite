@@ -1,3 +1,45 @@
+## 2026-10-17 — standalone adaptive engine-status HUD widget
+
+The existing main-engine thrust indicator has been promoted into a standalone engine-status widget.
+
+Architecture:
+- Telemetry/presentation stays in EngineThrustHudPresentation.
+- Rendering stays client-side in EngineThrustIndicatorRenderer.
+- New EngineStatusWidgetStyle contract isolates visual skin from engine semantics.
+- ShipHudProfile now carries engineStatusStyleId (default: human_amber).
+- A future race/faction/ship descriptor may select another registered style without changing propulsion telemetry, physical layout, damage logic or warning semantics.
+
+Adaptive layout:
+- The widget sizes itself from actual content bounds: check-engine icon + model label + real I/Y/X engine bars + padding.
+- No oversized decorative frame and no hardcoded Cobra-only width.
+- Existing physical topology still determines bars:
+  Assisted I/Y/X -> 2/3/4 paired groups, 4/6/8 main bars.
+  Newtonian I/Y/X -> only aft main bars.
+- Bars are slightly wider and spaced farther apart than the previous compact indicator.
+
+Visual style (human_amber):
+- deep black panel background;
+- thin amber/yellow-orange border with subtle glow;
+- small rounded/stepped corners;
+- automotive-style check-engine glyph above model label;
+- existing yellow capability + red actual-thrust semantics preserved.
+
+Damage warning:
+- EngineThrustBarPresentation now exposes fault.
+- EngineThrustHudPresentation exposes warning if any physical main slot is degraded/unavailable.
+- Fault is derived from per-slot physical availability in the presentation layer, not guessed by the renderer.
+- Client renderer animates only the presentation state.
+- Faulty engine bar fades smoothly in/out with a 1.6 s full cycle.
+- Check-engine icon uses the same synchronized pulse when any engine in the widget is faulty.
+- Healthy bars and icon remain steady.
+
+Tests:
+- EngineThrustHudPresentationTests keeps I/Y/X topology contracts.
+- Tests default and descriptor-selected style id.
+- Tests healthy widget does not raise warning.
+- Tests an unavailable bound physical engine slot raises both per-bar fault and widget warning.
+
+
 ## 2026-10-17 — damage oracle root-cause fix and explicit scenario CLI
 
 The first live damage-oracle runs were invalid. Root cause was in test plumbing, not propulsion physics:

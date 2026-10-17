@@ -57,22 +57,24 @@ public:
 
     ShipRuntimeDamageOracle() = default;
 
-    void configure(const RuntimeScenarioSelection& selection)
+    bool configure(const RuntimeScenarioSelection& selection)
     {
         m_enabled = false;
         m_cases.clear();
 
         if (selection.kind != RuntimeScenarioKind::ShipDamage)
-            return;
+            return true;
 
         m_enabled = parseScenario(selection.payload);
         if (!m_enabled)
-            return;
+            return false;
 
         const char* report =
             std::getenv("ELITE_SHIP_DAMAGE_ORACLE_REPORT");
         if (report && *report)
             m_reportPath = report;
+
+        return true;
     }
 
     bool enabled() const noexcept { return m_enabled; }

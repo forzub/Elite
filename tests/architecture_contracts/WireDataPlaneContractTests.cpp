@@ -74,6 +74,12 @@ SimulationSnapshot makeSnapshot()
         game::simulation::ShipMaterializedFidelity::Response;
     ship.acknowledgedControlTick = 77u;
     ship.motionLabKind = game::diagnostics::HubMotionLabActorKind::FastOrbit;
+    ship.transform.motion.mainPropulsionTorqueBodyNm =
+        glm::dvec3(100.0, 200.0, 300.0);
+    ship.transform.motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
+        glm::dvec3(0.11, 0.22, 0.33);
+    ship.transform.motion.mainTrimLoad01 = 0.375;
+    ship.transform.motion.mainTrimUsableScale01 = 0.925;
 
     game::simulation::NavigationExecutionSnapshot navigationExecution;
     navigationExecution.valid = true;
@@ -543,6 +549,32 @@ void testSnapshotRoundTrip()
         "ship manoeuvre-gas depletion latch did not round-trip");
     require(near(decoded.ships[0].transform.motion.manoeuvreAccelerationMps2.y, 0.22),
         "ship manoeuvre-thruster acceleration did not round-trip");
+    require(
+        near(
+            decoded.ships[0].transform.motion.mainPropulsionTorqueBodyNm.y,
+            200.0
+        ),
+        "main propulsion reaction torque did not round-trip"
+    );
+    require(
+        near(
+            decoded.ships[0].transform.motion.
+                mainPropulsionAngularAccelerationBodyRadPerSec2.z,
+            0.33
+        ),
+        "main propulsion angular acceleration did not round-trip"
+    );
+    require(
+        near(decoded.ships[0].transform.motion.mainTrimLoad01, 0.375),
+        "main trim load did not round-trip"
+    );
+    require(
+        near(
+            decoded.ships[0].transform.motion.mainTrimUsableScale01,
+            0.925
+        ),
+        "main trim usable scale did not round-trip"
+    );
     require(decoded.ships[0].graph.modules.size() == 1u,
         "module graph mismatch");
     require(decoded.ships[0].graph.detachedFragments.size() == 1u,

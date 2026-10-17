@@ -83,16 +83,22 @@ inline plant::EngineSlotState slotFromModule(
 
     if (definition && definition->engine)
     {
+        // Current module runtime still stores one scalar damage value.
+        // Treat that legacy loss as mechanical/impact damage until the common
+        // five-channel UnitDamageState is persisted by ObjectModuleRuntime.
+        game::equipment::engine::EngineDamageInputs damage;
+        damage.impact01 = 1.0 - health01;
+
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(
                 *definition->engine,
-                health01
+                damage
             );
 
         return plant::EngineSlotState {
             effective.operational,
-            effective.thrustAvailable01,
-            effective.vectoringAvailable01
+            effective.efficiencyAuthority01,
+            effective.gimbalAuthority01
         };
     }
 
@@ -134,16 +140,19 @@ inline plant::EngineSlotState slotFromSnapshot(
 
     if (definition && definition->engine)
     {
+        game::equipment::engine::EngineDamageInputs damage;
+        damage.impact01 = 1.0 - health01;
+
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(
                 *definition->engine,
-                health01
+                damage
             );
 
         return plant::EngineSlotState {
             effective.operational,
-            effective.thrustAvailable01,
-            effective.vectoringAvailable01
+            effective.efficiencyAuthority01,
+            effective.gimbalAuthority01
         };
     }
 

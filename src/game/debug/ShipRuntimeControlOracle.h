@@ -12,6 +12,7 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/debug/RuntimeScenarioSelection.h"
 
 namespace game::debug
 {
@@ -50,25 +51,12 @@ public:
         double gimbalPitchRad = 0.0;
     };
 
-    ShipRuntimeControlOracle()
-    {
-        const char* enabled = std::getenv("ELITE_SHIP_CONTROL_ORACLE");
-        m_enabled =
-            enabled != nullptr &&
-            std::string(enabled) != "" &&
-            std::string(enabled) != "0";
+    ShipRuntimeControlOracle() = default;
 
-        // Manual-launch mode: arm the test by creating this marker. This works
-        // when the user starts EliteGame.exe from Explorer/IDE and therefore
-        // does not inherit environment variables from a runner shell.
-        if (!m_enabled)
-        {
-            std::error_code ec;
-            m_enabled = std::filesystem::exists(
-                "D:/tmp/elite/ship_control_oracle.enable",
-                ec
-            );
-        }
+    void configure(const RuntimeScenarioSelection& selection)
+    {
+        m_enabled =
+            selection.kind == RuntimeScenarioKind::ShipControl;
 
         const char* report =
             std::getenv("ELITE_SHIP_CONTROL_ORACLE_REPORT");

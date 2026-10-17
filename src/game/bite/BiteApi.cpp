@@ -86,6 +86,8 @@ State BiteApi::evaluate(
 {
     State out;
     out.sourceRevision = sourceRevision;
+    out.summary.equipmentCount =
+        static_cast<std::uint32_t>(equipment.size());
 
     for (const auto& sample : equipment)
     {
@@ -153,8 +155,20 @@ State BiteApi::evaluate(
             fault.severity == Severity::Warning ||
             fault.severity == Severity::Failed;
 
-        out.highestSeverity =
-            maxSeverity(out.highestSeverity, fault.severity);
+        out.summary.highestSeverity =
+            maxSeverity(
+                out.summary.highestSeverity,
+                fault.severity
+            );
+
+        if (fault.kind == FaultKind::EquipmentFailed)
+            ++out.summary.failedCount;
+        else if (fault.kind != FaultKind::MaintenanceRequired)
+            ++out.summary.degradedCount;
+
+        if (fault.maintenanceRequired)
+            ++out.summary.maintenanceRequiredCount;
+
         out.faults.push_back(std::move(fault));
     }
 

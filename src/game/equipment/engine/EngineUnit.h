@@ -11,50 +11,86 @@ namespace game::equipment::engine
 // Damage remains one scalar health value in the owning module runtime.
 // This descriptor only defines how that health loss degrades the engine's
 // useful functions and operating cost.
+struct EngineDamageInputs
+{
+    double laser01 = 0.0;
+    double impact01 = 0.0;
+    double thermal01 = 0.0;
+    double radiation01 = 0.0;
+    double wear01 = 0.0;
+};
+
+struct EngineDamageWeights
+{
+    double laser = 0.0;
+    double impact = 0.0;
+    double thermal = 0.0;
+    double radiation = 0.0;
+    double wear = 0.0;
+};
+
+// Immutable functional passport of one propulsion unit.
+//
+// Damage enters through five universal equipment channels. The engine maps
+// those channels into only two damaged outputs:
+//   1) thermodynamic/propulsive efficiency;
+//   2) nozzle-vectoring mechanical condition.
+// Everything else (available thrust, power draw, waste heat, gimbal envelope)
+// is derived from those outputs.
 struct EngineUnitDescriptor
 {
-    // Healthy maximum thrust of this one physical engine.
     double nominalThrustNewtons = 0.0;
 
-    // Nominal electrical/thermal cost at full generated thrust. These are
-    // equipment ratings; the actuator allocator supplies actual throttle.
+    // Electrical input required to sustain nominal full thrust at healthy
+    // efficiency. Keep at zero when the ship's energy budget is not authored.
     double nominalElectricalPowerMW = 0.0;
-    double nominalWasteHeatMW = 0.0;
 
-    // Healthy TVC/gimbal capability. PhysicalControlModel still owns the
-    // geometric slot position and the ship-level hard gimbal envelope.
+    // Healthy overall conversion efficiency, 0..1. This is intentionally an
+    // abstract gameplay-level efficiency rather than a detailed rocket/jet
+    // thermodynamic cycle model.
+    double nominalEfficiency01 = 1.0;
+
     double nominalGimbalRangeRad = 0.0;
     double nominalGimbalRateRadPerSec = 0.0;
 
-    // Damage response exponents. 1.0 is linear. Values >1 make a function
-    // degrade faster as health falls; values <1 make it more tolerant.
-    double thrustHealthExponent = 1.0;
-    double vectoringHealthExponent = 1.35;
+    // Damage-channel weighting for the two independent useful outputs.
+    EngineDamageWeights efficiencyDamage {
+        0.30, // laser
+        0.45, // impact
+        0.15, // thermal
+        0.01, // radiation
+        0.09  // wear
+    };
 
-    // Extra operating cost at zero health, interpolated by damage=(1-health).
-    // Example 0.50 => at severe damage the surviving useful thrust may require
-    // up to 1.5x nominal electrical power per unit of generated thrust.
-    double maxPowerCostPenalty = 0.50;
-    double maxHeatPenalty = 1.00;
+    EngineDamageWeights gimbalDamage {
+        0.15, // laser
+        0.65, // impact
+        0.05, // thermal
+        0.00, // radiation
+        0.15  // wear
+    };
+
+    // Lowest surviving efficiency before the unit is considered unable to
+    // sustain useful thrust. Avoids singular power demand as efficiency -> 0.
+    double minimumOperationalEfficiency01 = 0.05;
 };
 
 struct EngineUnitEffectiveState
 {
     bool operational = true;
-    double health01 = 1.0;
 
-    // Maximum functional authority relative to the healthy unit.
-    double thrustAvailable01 = 1.0;
+    double efficiency01 = 1.0;
+    double efficiencyAuthority01 = 1.0;
+
+    double gimbalAuthority01 = 1.0;
+
     double maximumThrustNewtons = 0.0;
-    double vectoringAvailable01 = 1.0;
     double gimbalRangeRad = 0.0;
     double gimbalRateRadPerSec = 0.0;
 
-    // Multipliers applied to nominal cost for ACTUAL generated thrust.
-    // A dead engine has no generated-thrust demand, so these multipliers are
-    // irrelevant when operational=false.
+    // Multipliers relative to the healthy unit for the same generated thrust.
     double powerCostMultiplier = 1.0;
-    double heatMultiplier = 1.0;
+    double heatMultiplier = 0.0;
 };
 
 inline double finiteClamp01(double value) noexcept
@@ -74,80 +110,100 @@ inline double positiveFiniteOr(
         : fallback;
 }
 
+inline double weightedDamage01(
+    const EngineDamageInputs& damage,
+    const EngineDamageWeights& weights
+) noexcept
+{
+    const double value =
+        finiteClamp01(damage.laser01) * std::max(0.0, weights.laser) +
+        finiteClamp01(damage.impact01) * std::max(0.0, weights.impact) +
+        finiteClamp01(damage.thermal01) * std::max(0.0, weights.thermal) +
+        finiteClamp01(damage.radiation01) * std::max(0.0, weights.radiation) +
+        finiteClamp01(damage.wear01) * std::max(0.0, weights.wear);
+
+    return std::clamp(value, 0.0, 1.0);
+}
+
 [[nodiscard]] inline EngineUnitEffectiveState evaluateEngineUnit(
     const EngineUnitDescriptor& descriptor,
-    double health01
+    const EngineDamageInputs& damage
 ) noexcept
 {
     EngineUnitEffectiveState out;
-    out.health01 = finiteClamp01(health01);
 
-    if (out.health01 <= 1.0e-9)
+    const double efficiencyDamage01 =
+        weightedDamage01(damage, descriptor.efficiencyDamage);
+    const double gimbalDamage01 =
+        weightedDamage01(damage, descriptor.gimbalDamage);
+
+    out.efficiencyAuthority01 =
+        std::clamp(1.0 - efficiencyDamage01, 0.0, 1.0);
+    out.gimbalAuthority01 =
+        std::clamp(1.0 - gimbalDamage01, 0.0, 1.0);
+
+    const double nominalEfficiency =
+        std::clamp(
+            positiveFiniteOr(descriptor.nominalEfficiency01, 1.0),
+            1.0e-6,
+            1.0
+        );
+
+    out.efficiency01 =
+        nominalEfficiency * out.efficiencyAuthority01;
+
+    const double minimumOperationalEfficiency =
+        std::clamp(
+            positiveFiniteOr(
+                descriptor.minimumOperationalEfficiency01,
+                0.05
+            ),
+            0.0,
+            1.0
+        );
+
+    out.operational =
+        out.efficiencyAuthority01 > minimumOperationalEfficiency;
+
+    if (!out.operational)
     {
-        out.operational = false;
-        out.thrustAvailable01 = 0.0;
         out.maximumThrustNewtons = 0.0;
-        out.vectoringAvailable01 = 0.0;
         out.gimbalRangeRad = 0.0;
         out.gimbalRateRadPerSec = 0.0;
-        out.powerCostMultiplier = 1.0;
-        out.heatMultiplier = 1.0;
+        out.powerCostMultiplier = 0.0;
+        out.heatMultiplier = 0.0;
         return out;
     }
 
-    const double thrustExponent =
-        std::max(
-            0.01,
-            positiveFiniteOr(
-                descriptor.thrustHealthExponent,
-                1.0
-            )
-        );
-    const double vectoringExponent =
-        std::max(
-            0.01,
-            positiveFiniteOr(
-                descriptor.vectoringHealthExponent,
-                1.35
-            )
-        );
-
-    out.thrustAvailable01 =
-        std::pow(out.health01, thrustExponent);
-    out.vectoringAvailable01 =
-        std::pow(out.health01, vectoringExponent);
+    // With fixed available input power, useful output scales with efficiency.
     out.maximumThrustNewtons =
         positiveFiniteOr(
             descriptor.nominalThrustNewtons,
             0.0
-        ) * out.thrustAvailable01;
+        ) * out.efficiencyAuthority01;
 
     out.gimbalRangeRad =
         positiveFiniteOr(
             descriptor.nominalGimbalRangeRad,
             0.0
-        ) * out.vectoringAvailable01;
+        ) * out.gimbalAuthority01;
     out.gimbalRateRadPerSec =
         positiveFiniteOr(
             descriptor.nominalGimbalRateRadPerSec,
             0.0
-        ) * out.vectoringAvailable01;
+        ) * out.gimbalAuthority01;
 
-    const double damage01 = 1.0 - out.health01;
+    // For the same generated useful thrust, lower efficiency requires more
+    // electrical input. Waste heat is derived from input minus useful output.
     out.powerCostMultiplier =
-        1.0 +
-        damage01 *
-            positiveFiniteOr(
-                descriptor.maxPowerCostPenalty,
-                0.0
-            );
+        out.efficiencyAuthority01 > 1.0e-9
+            ? 1.0 / out.efficiencyAuthority01
+            : 0.0;
+
     out.heatMultiplier =
-        1.0 +
-        damage01 *
-            positiveFiniteOr(
-                descriptor.maxHeatPenalty,
-                0.0
-            );
+        out.efficiencyAuthority01 > 1.0e-9
+            ? (1.0 / out.efficiencyAuthority01) - 1.0
+            : 0.0;
 
     return out;
 }
@@ -179,13 +235,26 @@ inline double positiveFiniteOr(
     if (!state.operational)
         return 0.0;
 
-    return
+    const double inputMW =
+        requestedElectricalPowerMW(
+            descriptor,
+            state,
+            generatedThrust01
+        );
+
+    const double usefulHealthyMW =
         positiveFiniteOr(
-            descriptor.nominalWasteHeatMW,
+            descriptor.nominalElectricalPowerMW,
             0.0
         ) *
         finiteClamp01(generatedThrust01) *
-        state.heatMultiplier;
+        std::clamp(
+            positiveFiniteOr(descriptor.nominalEfficiency01, 1.0),
+            0.0,
+            1.0
+        );
+
+    return std::max(0.0, inputMW - usefulHealthyMW);
 }
 
 } // namespace game::equipment::engine

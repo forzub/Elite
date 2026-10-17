@@ -16,6 +16,7 @@ get_filename_component(
 
 set(ELITE_SHIP_CONTROL_EXECUTION_SOURCES
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/control/ShipControlExecutionGateway.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/plant/AssistedPhysicalControlModel.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/plant/NewtonianPhysicalControlModel.cpp"
@@ -223,7 +224,6 @@ add_executable(
     local_predicted_presentation_contract_tests
     LocalPredictedPresentationContractTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
-    "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/physics/ShipImpulseSystem.cpp"
     ${ELITE_SHIP_CONTROL_EXECUTION_SOURCES}
 )

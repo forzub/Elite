@@ -223,6 +223,54 @@ void testCombinedDamageIsBoundedAndMonotonic()
             "failed TVC function retained gimbal range");
 }
 
+
+void testSevereDamageCreatesProgressiveThrustIrregularity()
+{
+    const auto d = descriptor();
+
+    EquipmentDamageState atThreshold;
+    atThreshold.laser01 = 0.70;
+    atThreshold.impact01 = 0.70;
+    atThreshold.thermal01 = 0.70;
+    atThreshold.radiation01 = 0.70;
+    atThreshold.wear01 = 0.70;
+
+    const auto steady =
+        evaluateEngineUnit(d, damageLayer(atThreshold));
+    require(!steady.thrustFailed,
+            "70% damage prematurely failed thrust");
+    require(near(steady.thrustIrregularity01, 0.0),
+            "70% damage prematurely destabilized thrust");
+
+    EquipmentDamageState severe;
+    severe.laser01 = 0.80;
+    severe.impact01 = 0.80;
+    severe.thermal01 = 0.80;
+    severe.radiation01 = 0.80;
+    severe.wear01 = 0.80;
+
+    const auto unstable =
+        evaluateEngineUnit(d, damageLayer(severe));
+    require(!unstable.thrustFailed,
+            "80% damage prematurely failed thrust");
+    require(near(unstable.thrustIrregularity01, 0.40),
+            "80% damage did not produce expected progressive irregularity");
+
+    EquipmentDamageState nearFailure;
+    nearFailure.laser01 = 0.949;
+    nearFailure.impact01 = 0.949;
+    nearFailure.thermal01 = 0.949;
+    nearFailure.radiation01 = 0.949;
+    nearFailure.wear01 = 0.949;
+
+    const auto almostDead =
+        evaluateEngineUnit(d, damageLayer(nearFailure));
+    require(!almostDead.thrustFailed,
+            "94.9% damage prematurely failed thrust");
+    require(almostDead.thrustIrregularity01 > 0.99,
+            "near-failure engine did not become strongly intermittent");
+}
+
 void testThrustFailureThresholdZerosOnlyThrustFunction()
 {
     const auto d = descriptor();
@@ -317,6 +365,7 @@ int main()
         testRadiationIsNegligibleForEngine();
         testEfficiencyDrivesThrustPowerAndHeatTogether();
         testCombinedDamageIsBoundedAndMonotonic();
+        testSevereDamageCreatesProgressiveThrustIrregularity();
         testThrustFailureThresholdZerosOnlyThrustFunction();
         testTvcFailureLeavesThrustAvailable();
 
@@ -326,6 +375,7 @@ int main()
             << " - impact is dominant; laser is secondary\n"
             << " - thermal/wear degrade efficiency; radiation is negligible\n"
             << " - efficiency couples thrust, power demand and waste heat\n"
+            << " - thrust stays steady through 70% damage and becomes progressively intermittent above it\n"
             << " - 95% primary damage zeros thrust, power and heat without deleting equipment\n"
             << " - 95% TVC damage zeros vectoring while surviving thrust remains available\n";
         return EXIT_SUCCESS;

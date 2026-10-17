@@ -1,3 +1,6 @@
 # Elite runtime diagnostic scenario
-# The loader ignores comment/blank lines and joins the remaining scenario spec.
+# Actuator/physical-control matrix only.
+# IMPORTANT: failed slots here are diagnostic actuator overrides; this scenario
+# does NOT validate EquipmentDamage -> EngineUnit -> BITE. Use the dedicated
+# equipment damage failure pipeline contract for that causal chain.
 propulsion-matrix

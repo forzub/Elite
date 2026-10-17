@@ -133,6 +133,59 @@ void testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque()
     assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) < 0.25);
 }
 
+
+void testIrregularThrustIsDeterministicAndPhysicallyBounded()
+{
+    const auto model = PhysicalControlModelId::AssistedI;
+    auto state = healthySlotState(physicalControlSlots(model));
+
+    // Only aft_left is unstable. The other aft engine stays steady, so the
+    // whole active bank must pulse between 50% and 100% of its static output.
+    state[0].thrustIrregularity01 = 1.0;
+
+    double minScale = 1.0;
+    double maxScale = 0.0;
+
+    for (std::uint64_t tick = 0; tick < 256; tick += 4)
+    {
+        const double scale =
+            evaluateMainPropulsionInstantaneousScale(
+                model,
+                state,
+                {0.0, 0.0, -60.0},
+                tick
+            );
+
+        assert(scale >= 0.5 - 1.0e-12);
+        assert(scale <= 1.0 + 1.0e-12);
+
+        const double repeated =
+            evaluateMainPropulsionInstantaneousScale(
+                model,
+                state,
+                {0.0, 0.0, -60.0},
+                tick
+            );
+        assert(near(scale, repeated));
+
+        minScale = std::min(minScale, scale);
+        maxScale = std::max(maxScale, scale);
+    }
+
+    assert(maxScale - minScale > 0.20);
+
+    const auto stable = healthySlotState(physicalControlSlots(model));
+    assert(near(
+        evaluateMainPropulsionInstantaneousScale(
+            model,
+            stable,
+            {0.0, 0.0, -60.0},
+            12345
+        ),
+        1.0
+    ));
+}
+
 } // namespace
 
 int main()
@@ -142,12 +195,14 @@ int main()
     testHealthyNewtonianYAxialBankIsBalanced();
     testNewtonianYSingleMainLossCreatesPitchTorque();
     testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque();
+    testIrregularThrustIsDeterministicAndPhysicallyBounded();
 
     std::cout
         << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
         << " - balanced main banks produce zero parasitic torque\n"
         << " - Newtonian-I TVC produces rigid-body reaction torque\n"
         << " - Y/X single-main failures produce layout-dependent asymmetric torque\n"
+        << " - severe damage produces deterministic bounded per-engine thrust hiccups\n"
         << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
     return 0;
 }

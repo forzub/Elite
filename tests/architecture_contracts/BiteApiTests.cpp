@@ -53,12 +53,37 @@ int main()
     require(state.summary.maintenanceRequiredCount == 1,
             "maintenance threshold not reflected in summary");
 
-    engine.operational = false;
     engine.functionalAuthority01 = 0.0;
+    engine.functionalFailed = true;
     state = bite.evaluate(6, {engine});
-    require(state.summary.failedCount == 1, "failed engine missing from summary");
+    require(state.summary.failedCount == 1,
+            "failed thrust function missing from summary");
+    require(state.faults.front().kind ==
+                game::bite::FaultKind::FunctionalDegradation,
+            "failed thrust function was reported as whole equipment loss");
     require(state.faults.front().severity == game::bite::Severity::Failed,
-            "failed engine wrong severity");
+            "failed thrust function wrong severity");
+
+    engine.functionalAuthority01 = 1.0;
+    engine.functionalFailed = false;
+    engine.secondaryAuthority01 = 0.0;
+    engine.secondaryFailed = true;
+    state = bite.evaluate(7, {engine});
+    require(state.summary.failedCount == 1,
+            "failed nozzle function missing from summary");
+    require(state.faults.front().kind ==
+                game::bite::FaultKind::NozzleDegradation,
+            "failed nozzle function was not diagnosed independently");
+    require(state.faults.front().severity == game::bite::Severity::Failed,
+            "failed nozzle function wrong severity");
+
+    engine.operational = false;
+    engine.secondaryAuthority01 = 1.0;
+    engine.secondaryFailed = false;
+    state = bite.evaluate(8, {engine});
+    require(state.faults.front().kind ==
+                game::bite::FaultKind::EquipmentFailed,
+            "physically unavailable equipment lost whole-equipment failure");
 
     const auto lines = game::bite::BiteApi::terminalLines(state);
     require(!lines.empty(), "failed engine produced no terminal line");

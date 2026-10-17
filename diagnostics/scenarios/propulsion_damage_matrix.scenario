@@ -1,0 +1,3 @@
+# Elite runtime diagnostic scenario
+# The loader ignores comment/blank lines and joins the remaining scenario spec.
+propulsion-matrix

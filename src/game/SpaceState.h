@@ -50,6 +50,7 @@
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/debug/ShipRuntimeControlOracle.h"
+#include "src/game/debug/ShipRuntimeDamageOracle.h"
 #include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
@@ -330,6 +331,8 @@ private:
         m_navigationStressHarness {};
     game::debug::ShipRuntimeControlOracle
         m_shipRuntimeControlOracle {};
+    game::debug::ShipRuntimeDamageOracle
+        m_shipRuntimeDamageOracle {};
     bool m_navigationStressCompleteAnnounced = false;
     std::uint64_t m_lastNavigationExecutionSnapshotTick = 0;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;

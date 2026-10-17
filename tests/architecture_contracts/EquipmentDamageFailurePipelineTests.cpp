@@ -196,6 +196,8 @@ void testTvcFailureLeavesAxialThrustInCapability()
             "TVC-only failure changed surviving thrust authority");
     require(near(slots[0].vectoring01, 0.0),
             "95% TVC damage did not zero vectoring authority");
+    require(slots[0].thrustIrregularity01 > 0.0,
+            "severe surviving thrust did not carry instability into the slot");
 
     const auto capability =
         game::ship::capability::buildShipCapability(

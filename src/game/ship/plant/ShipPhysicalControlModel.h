@@ -173,6 +173,11 @@ struct EngineSlotState
     // Fraction of nominal thrust-vectoring authority currently available.
     // Manoeuvre clusters ignore this field.
     double vectoring01 = 1.0;
+
+    // Time-varying thrust instability authored by the equipment model.
+    // This is NOT another damage source: execution uses it to modulate the
+    // already-degraded thrust01 deterministically at the physical-force seam.
+    double thrustIrregularity01 = 0.0;
 };
 
 [[nodiscard]] inline double effectiveSlotThrust01(

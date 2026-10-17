@@ -1076,6 +1076,11 @@ desc.modules =
         {
             module.equipmentDamageSensitivity =
                 engineFunctionalDamage;
+            // Wear accumulation is enabled generically, but the Cobra engine
+            // service life is not authored yet. Zero avoids inventing a fake
+            // lifetime; the 20% maintenance threshold is already defined.
+            module.maintenance.wearPerOperatingHour = 0.0;
+            module.maintenance.maintenanceWearThreshold01 = 0.20;
             module.engine = engine;
         }
     }

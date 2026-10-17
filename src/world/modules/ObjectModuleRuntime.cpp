@@ -45,6 +45,9 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
 
         state.maxHealth = descMod.maxHealth;
         state.health = descMod.maxHealth;
+        state.equipmentDamage = {};
+        state.equipmentDamage.sensitivity =
+            descMod.equipmentDamageSensitivity;
         state.state = ObjectModuleRuntimeState::Attached;
 
         state.hangable = descMod.hangable;
@@ -372,6 +375,29 @@ void ObjectModuleRuntime::setModuleHealth(const std::string& moduleId, float hea
     ++m_revision;
 }
 
+bool ObjectModuleRuntime::addEquipmentDamage(
+    const std::string& moduleId,
+    game::equipment::EquipmentDamageKind kind,
+    double amount01
+)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+
+    auto& module = m_modules[index];
+    if (!game::equipment::addEquipmentDamage(
+            module.equipmentDamage.accumulated,
+            kind,
+            amount01))
+    {
+        return false;
+    }
+
+    ++m_revision;
+    return true;
+}
+
 bool ObjectModuleRuntime::setSupportLinkHealth(
     const std::string& moduleId,
     const std::string& linkId,
@@ -534,6 +560,7 @@ void ObjectModuleRuntime::restoreSubtree(int index)
     auto& module = m_modules[index];
     module.state = ObjectModuleRuntimeState::Attached;
     module.health = module.maxHealth;
+    module.equipmentDamage.accumulated = {};
 
     for (auto& link : module.supportLinks)
     {
@@ -555,6 +582,7 @@ void ObjectModuleRuntime::restoreAncestors(int index)
         auto& module = m_modules[current];
         module.state = ObjectModuleRuntimeState::Attached;
         module.health = module.maxHealth;
+        module.equipmentDamage.accumulated = {};
 
         for (auto& link : module.supportLinks)
         {

@@ -124,6 +124,7 @@ struct ModuleDescriptor
     // Common equipment damage response. Runtime stores the five accumulated
     // causes; this immutable descriptor stores only their influence weights.
     game::equipment::EquipmentDamageSensitivity equipmentDamageSensitivity;
+    game::equipment::EquipmentMaintenanceProfile maintenance;
 
     // Present only when this equipment module is a propulsion engine.
     std::optional<game::equipment::engine::EngineUnitDescriptor> engine;

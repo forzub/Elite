@@ -11,6 +11,8 @@
 #include <sstream>
 #include <string>
 
+#include "src/game/debug/RuntimeScenarioSelection.h"
+
 namespace game::navigation::debug
 {
 
@@ -121,11 +123,7 @@ public:
 
     NavigationStressHarness()
     {
-        const char* enabled = std::getenv("ELITE_NAV_STRESS");
-        m_enabled =
-            enabled != nullptr &&
-            std::string(enabled) != "0" &&
-            std::string(enabled) != "";
+        m_enabled = false;
 
         const char* report = std::getenv("ELITE_NAV_STRESS_REPORT");
         if (report && *report)
@@ -189,6 +187,35 @@ public:
             m_matrixRunIndex = std::max(0, std::atoi(runIndex));
         if (runTotal && *runTotal)
             m_matrixRunTotal = std::max(0, std::atoi(runTotal));
+    }
+
+    void configure(
+        const game::debug::RuntimeScenarioSelection& selection
+    )
+    {
+        m_enabled =
+            selection.kind ==
+            game::debug::RuntimeScenarioKind::NavigationStress;
+
+        if (!m_enabled)
+            return;
+
+        if (selection.payload == "simple")
+        {
+            m_simpleCorridor = true;
+        }
+        else if (selection.payload == "assisted-high-speed")
+        {
+            m_assistedHighSpeedManeuver = true;
+        }
+        else if (selection.payload == "assisted-gameplay-parity")
+        {
+            m_assistedGameplayParity = true;
+        }
+        else if (selection.payload == "assisted-safe-course-obstacle")
+        {
+            m_assistedSafeCourseObstacle = true;
+        }
     }
 
     bool enabled() const noexcept { return m_enabled; }

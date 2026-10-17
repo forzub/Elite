@@ -286,7 +286,7 @@ void EngineThrustIndicatorRenderer::render(
 
     drawCheckEngineIcon(
         text,
-        contentX,
+        contentX + (contentWidth - iconSize) * 0.5f,
         contentY,
         iconSize,
         presentation.warning
@@ -298,7 +298,7 @@ void EngineThrustIndicatorRenderer::render(
 
     text.textDrawPx(
         presentation.modelLabel,
-        contentX,
+        contentX + (contentWidth - labelWidth) * 0.5f,
         contentY,
         labelPx,
         style.label
@@ -307,11 +307,41 @@ void EngineThrustIndicatorRenderer::render(
     const float barsY =
         contentY + static_cast<float>(labelPx) + labelGap;
 
-    float x = contentX;
+    // Keep fore/aft bars inside one physical engine group close together,
+    // then distribute physical groups uniformly across the instrument width.
+    // This makes I/Y/X silhouettes readable instead of left-packed.
+    float totalGroupWidth = 0.0f;
+    std::size_t nonEmptyGroups = 0;
+    for (const auto& group : presentation.groups)
+    {
+        if (group.bars.empty())
+            continue;
+        ++nonEmptyGroups;
+        totalGroupWidth +=
+            static_cast<float>(group.bars.size()) * barWidth +
+            static_cast<float>(group.bars.size() - 1) * barGap;
+    }
 
+    const float distributedGroupGap =
+        nonEmptyGroups > 1
+            ? std::max(
+                  groupGap,
+                  (contentWidth - totalGroupWidth) /
+                      static_cast<float>(nonEmptyGroups - 1)
+              )
+            : 0.0f;
+
+    float x =
+        nonEmptyGroups == 1
+            ? contentX + (contentWidth - totalGroupWidth) * 0.5f
+            : contentX;
+
+    std::size_t renderedGroups = 0;
     for (std::size_t g = 0; g < presentation.groups.size(); ++g)
     {
         const auto& group = presentation.groups[g];
+        if (group.bars.empty())
+            continue;
 
         for (std::size_t b = 0; b < group.bars.size(); ++b)
         {
@@ -386,8 +416,9 @@ void EngineThrustIndicatorRenderer::render(
                 x += barGap;
         }
 
-        if (g + 1 < presentation.groups.size())
-            x += groupGap;
+        ++renderedGroups;
+        if (renderedGroups < nonEmptyGroups)
+            x += distributedGroupGap;
     }
 }
 

@@ -216,7 +216,7 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         return path;
     }
 
-    glm::dvec3 mainAccelerationWorld =
+    const glm::dvec3 requestedMainWorld =
         motion.mainEngineAccelerationMps2;
 
     const glm::dvec3 right(transform.right());
@@ -225,186 +225,102 @@ ShipControlExecutionGateway::evaluateTranslationControl(
 
     // Canonical body basis is +X right, +Y up, +Z aft. ShipTransform::forward
     // points along body -Z.
-    glm::dvec3 mainAccelerationBody(
-        glm::dot(mainAccelerationWorld, right),
-        glm::dot(mainAccelerationWorld, up),
-        -glm::dot(mainAccelerationWorld, forward)
+    const glm::dvec3 requestedMainBody(
+        glm::dot(requestedMainWorld, right),
+        glm::dot(requestedMainWorld, up),
+        -glm::dot(requestedMainWorld, forward)
     );
 
-    // Severe engine damage can make the thrust chamber intermittent before
-    // complete failure. Apply that symptom at the physical-force seam so the
-    // same deterministic controlTick produces the same jerk on authority,
-    // prediction and replay paths. Static capability remains the authored
-    // damage-limited maximum; instability can only remove instantaneous force.
-    const double instantaneousScale =
-        game::ship::plant::evaluateMainPropulsionInstantaneousScale(
-            model,
-            slotState,
-            mainAccelerationBody,
-            control.controlTick
-        );
+    const bool explicitMainGimbalCommand =
+        std::abs(control.mainGimbalRightInput) > 0.001f ||
+        std::abs(control.mainGimbalUpInput) > 0.001f;
 
-    if (instantaneousScale < 1.0 - 1.0e-12)
-    {
-        motion.mainEngineAccelerationMps2 *= instantaneousScale;
-        mainAccelerationWorld =
-            motion.mainEngineAccelerationMps2;
-        mainAccelerationBody = {
-            glm::dot(mainAccelerationWorld, right),
-            glm::dot(mainAccelerationWorld, up),
-            -glm::dot(mainAccelerationWorld, forward)
-        };
-    }
+    const bool newtonian =
+        game::ship::plant::familyOf(model) ==
+        game::ship::plant::PhysicalControlFamily::Newtonian;
 
-    auto reaction =
-        game::ship::plant::evaluateMainPropulsionReaction(
+    // Do not fight an explicit pilot/autopilot TVC command. Otherwise the
+    // feedback trim may use only the travel that remains inside the physical
+    // nozzle envelope. Assisted has no persistent manual gimbal state.
+    const double usedYawRad =
+        newtonian ? std::abs(motion.mainGimbalYawRad) : 0.0;
+    const double usedPitchRad =
+        newtonian ? std::abs(motion.mainGimbalPitchRad) : 0.0;
+
+    const double remainingYawTrimRad =
+        explicitMainGimbalCommand
+            ? 0.0
+            : std::max(
+                  0.0,
+                  static_cast<double>(
+                      capabilities.mainGimbalYawLimitRad
+                  ) - usedYawRad
+              );
+    const double remainingPitchTrimRad =
+        explicitMainGimbalCommand
+            ? 0.0
+            : std::max(
+                  0.0,
+                  static_cast<double>(
+                      capabilities.mainGimbalPitchLimitRad
+                  ) - usedPitchRad
+              );
+
+    const glm::dvec3 attitudeIntent01(
+        static_cast<double>(control.pitchInput),
+        static_cast<double>(control.yawInput),
+        static_cast<double>(control.rollInput)
+    );
+
+    const auto trim =
+        game::ship::plant::evaluateMainPropulsionFeedbackTrim(
             model,
             slotState,
             capabilities,
-            mainAccelerationBody,
+            requestedMainBody,
+            attitudeIntent01,
+            remainingYawTrimRad,
+            remainingPitchTrimRad,
             control.controlTick
         );
 
-    if (!reaction.valid)
+    if (!trim.valid || !trim.reaction.valid)
         return path;
 
-    // Assisted damage trim.
-    //
-    // A healthy symmetric bank has zero parasitic reaction and therefore this
-    // path is exactly inert. With asymmetric damage, Assisted spends part of
-    // its remaining automatic vectoring/attitude authority cancelling the
-    // reaction torque. That compensation is not free: some propulsive margin
-    // is reserved for trim, reducing usable main acceleration before the
-    // remaining reaction is applied to the rigid body.
-    //
-    // This is deliberately a cinematic allocator rather than a detailed
-    // per-nozzle solver. The important causal contract is:
-    //   damage -> parasitic torque -> trim effort -> lost usable thrust;
-    // if trim authority saturates, residual torque remains visible.
-    if (game::ship::plant::familyOf(model) ==
-        game::ship::plant::PhysicalControlFamily::Assisted)
-    {
-        const double trimAuthority =
-            std::max(
-                0.0,
-                static_cast<double>(capabilities.angularAccel)
-            );
+    // The allocator can only remove/redirect real main-engine force. Rebuild
+    // the world vector from its body-space result and keep all independent
+    // manoeuvre/stabilization forces intact.
+    motion.mainEngineAccelerationMps2 =
+        right * trim.accelerationBodyMps2.x +
+        up * trim.accelerationBodyMps2.y -
+        forward * trim.accelerationBodyMps2.z;
 
-        if (trimAuthority > 1.0e-9)
-        {
-            const glm::dvec3 rawAlpha =
-                reaction.angularAccelerationBodyRadPerSec2;
+    motion.engineAccelerationMps2 =
+        motion.mainEngineAccelerationMps2 +
+        motion.manoeuvreAccelerationMps2 +
+        motion.assistedStabilizationAccelerationMps2;
 
-            const double trimLoad01 =
-                std::clamp(
-                    std::max({
-                        std::abs(rawAlpha.x),
-                        std::abs(rawAlpha.y),
-                        std::abs(rawAlpha.z)
-                    }) / trimAuthority,
-                    0.0,
-                    1.0
-                );
-
-            // At full trim load reserve 20% of currently requested main-force
-            // margin for balancing. Healthy trimLoad=0 => exact old behavior.
-            const double usableMainScale =
-                1.0 - 0.20 * trimLoad01;
-
-            motion.mainTrimLoad01 = trimLoad01;
-            motion.mainTrimUsableScale01 = usableMainScale;
-
-            if (usableMainScale < 1.0 - 1.0e-12)
-            {
-                motion.mainEngineAccelerationMps2 *= usableMainScale;
-
-                const glm::dvec3 scaledMainAccelerationWorld =
-                    motion.mainEngineAccelerationMps2;
-                const glm::dvec3 scaledMainAccelerationBody(
-                    glm::dot(scaledMainAccelerationWorld, right),
-                    glm::dot(scaledMainAccelerationWorld, up),
-                    -glm::dot(scaledMainAccelerationWorld, forward)
-                );
-
-                reaction =
-                    game::ship::plant::evaluateMainPropulsionReaction(
-                        model,
-                        slotState,
-                        capabilities,
-                        scaledMainAccelerationBody,
-                        control.controlTick
-                    );
-            }
-
-            if (reaction.valid)
-            {
-                glm::dvec3 residualAlpha =
-                    reaction.angularAccelerationBodyRadPerSec2;
-
-                auto trimAxis =
-                    [trimAuthority](double value) noexcept
-                    {
-                        return
-                            value -
-                            std::clamp(
-                                value,
-                                -trimAuthority,
-                                trimAuthority
-                            );
-                    };
-
-                residualAlpha.x = trimAxis(residualAlpha.x);
-                residualAlpha.y = trimAxis(residualAlpha.y);
-                residualAlpha.z = trimAxis(residualAlpha.z);
-
-                reaction.angularAccelerationBodyRadPerSec2 =
-                    residualAlpha;
-
-                reaction.torqueBodyNm = {
-                    residualAlpha.x *
-                        std::max(
-                            1.0,
-                            static_cast<double>(
-                                capabilities.pitchInertiaKgM2
-                            )
-                        ),
-                    residualAlpha.y *
-                        std::max(
-                            1.0,
-                            static_cast<double>(
-                                capabilities.yawInertiaKgM2
-                            )
-                        ),
-                    -residualAlpha.z *
-                        std::max(
-                            1.0,
-                            static_cast<double>(
-                                capabilities.rollInertiaKgM2
-                            )
-                        )
-                };
-            }
-        }
-    }
+    motion.mainTrimLoad01 = trim.trimLoad01;
+    motion.mainTrimUsableScale01 = trim.thrustScale01;
 
     motion.mainPropulsionTorqueBodyNm =
-        reaction.torqueBodyNm;
+        trim.reaction.torqueBodyNm;
     motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
-        reaction.angularAccelerationBodyRadPerSec2;
+        trim.reaction.angularAccelerationBodyRadPerSec2;
 
-    // This is physical force application, not a controller request. Newtonian
-    // keeps the residual reaction directly visible. Assisted only reaches this
-    // point with torque left over after its automatic trim authority saturates.
+    // Whatever the cheap main-engine feedback cannot remove remains real hull
+    // reaction. Existing Assisted/Newtonian attitude feedback then sees that
+    // motion on the next control sample instead of a hidden synthetic cancel.
     transform.pitchRate += static_cast<float>(
-        reaction.angularAccelerationBodyRadPerSec2.x *
+        trim.reaction.angularAccelerationBodyRadPerSec2.x *
         static_cast<double>(dt)
     );
     transform.yawRate += static_cast<float>(
-        reaction.angularAccelerationBodyRadPerSec2.y *
+        trim.reaction.angularAccelerationBodyRadPerSec2.y *
         static_cast<double>(dt)
     );
     transform.rollRate += static_cast<float>(
-        reaction.angularAccelerationBodyRadPerSec2.z *
+        trim.reaction.angularAccelerationBodyRadPerSec2.z *
         static_cast<double>(dt)
     );
 

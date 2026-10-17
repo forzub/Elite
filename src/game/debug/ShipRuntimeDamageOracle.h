@@ -12,7 +12,7 @@
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
-#include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/ship/plant/ShipPhysicalControlModels.h"
 
 namespace game::debug
 {

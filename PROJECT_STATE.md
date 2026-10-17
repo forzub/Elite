@@ -1,3 +1,30 @@
+## 2026-10-17 — damage oracle root-cause fix and explicit scenario CLI
+
+The first live damage-oracle runs were invalid. Root cause was in test plumbing, not propulsion physics:
+- ClientShipCommand gained DebugFailPhysicalPropulsionSlot / DebugRestorePhysicalPropulsionSlots, but WireProtocol::decodeClientShipCommand still rejected every command type above SelectPhysicalControlModel.
+- Therefore the client printed "requested failed propulsion slot", but the command was discarded during decode and never reached GameServer/ShipCore.
+- The absence of the new server-side accepted=0/1 log was the key evidence.
+- DynamicMotionState wire schema also omitted mainPropulsionTorqueBodyNm, mainPropulsionAngularAccelerationBodyRadPerSec2, mainTrimLoad01 and mainTrimUsableScale01, so client-side oracle observations would have remained zero even after a successful server-side damage application.
+
+Fixes:
+- ClientShipCommand decoder range now includes DebugRestorePhysicalPropulsionSlots (and therefore the preceding fail-slot command).
+- SimulationSnapshot schema now replicates propulsion reaction + trim diagnostics; schema version advanced 13 -> 14.
+- WireProtocolContractTests now round-trip DebugFailPhysicalPropulsionSlot.
+- WireDataPlaneContractTests now round-trip propulsion torque/angular-acceleration/trim diagnostics.
+
+Diagnostic scenario architecture changed:
+- Damage-test model order/damage slot are no longer hardcoded in ShipRuntimeDamageOracle.
+- EliteGame accepts --diagnostic-scenario VALUE.
+- main exports this value to ELITE_DIAGNOSTIC_SCENARIO before Application construction.
+- Damage oracle activates only for syntax:
+  ship-damage:<PhysicalModel@slot,...>
+- Example full matrix:
+  ship-damage:Assisted-I@0,Assisted-Y@0,Assisted-X@0,Newtonian-I@0,Newtonian-Y@0,Newtonian-X@0
+- This starts with Assisted-I, then Y/X, then Newtonian I/Y/X.
+- scripts/run-ship-damage-oracle.ps1 no longer creates marker files; it only prints the explicit manual EliteGame command.
+- Legacy marker files no longer select the damage scenario.
+
+
 ## 2026-10-17 — live damaged-propulsion oracle
 
 After the matrix/geometry/gateway tests passed, a dedicated in-game damage oracle was added.

@@ -13,6 +13,7 @@
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/debug/RuntimeScenarioSelection.h"
 
 namespace game::debug
 {
@@ -54,18 +55,17 @@ public:
         double trimUsableScale01 = 1.0;
     };
 
-    ShipRuntimeDamageOracle()
+    ShipRuntimeDamageOracle() = default;
+
+    void configure(const RuntimeScenarioSelection& selection)
     {
-        const char* scenario = std::getenv("ELITE_DIAGNOSTIC_SCENARIO");
-        if (!scenario || !*scenario)
+        m_enabled = false;
+        m_cases.clear();
+
+        if (selection.kind != RuntimeScenarioKind::ShipDamage)
             return;
 
-        const std::string text(scenario);
-        constexpr const char* Prefix = "ship-damage:";
-        if (text.rfind(Prefix, 0) != 0)
-            return;
-
-        m_enabled = parseScenario(text.substr(std::char_traits<char>::length(Prefix)));
+        m_enabled = parseScenario(selection.payload);
         if (!m_enabled)
             return;
 

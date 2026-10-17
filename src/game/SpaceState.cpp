@@ -66,6 +66,7 @@
 #include "src/game/client/ClientModuleViewBuilder.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/presentation/ClientHudPresentation.h"
+#include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/presentation/NavigationHudPresentation.h"
 #include "src/game/presentation/GuidanceHudPresentation.h"
 #include "src/game/presentation/GalacticCompassPresentation.h"
@@ -7147,14 +7148,59 @@ m_systemMapRenderer.render(
                 !m_dockingGuidanceFailureReason.empty() ||
                 !m_dockingStatusWarning.empty();
 
-            // Physical-model/layout changes only append diagnostic lines.
-            // They do NOT own terminal visibility.
-            terminal.visible = dockingVisible;
+            const auto biteState =
+                playerShip.descriptor
+                    ? game::presentation::buildShipBiteState(
+                          *playerShip.descriptor,
+                          playerShip.modules
+                      )
+                    : game::bite::State {};
+
+            const auto biteLines =
+                game::bite::BiteApi::terminalLines(biteState);
+            const bool biteVisible = !biteLines.empty();
+
+            // BITE is allowed to request presentation attention, never control.
+            // The same terminal surface is shared with docking diagnostics so
+            // a propulsion fault remains visible even while docking is idle.
+            terminal.visible = dockingVisible || biteVisible;
             terminal.title = localizedUiText(
                 context().app,
-                "cockpit.terminal.title",
-                "DOCKING"
+                dockingVisible
+                    ? "cockpit.terminal.title"
+                    : "cockpit.terminal.system_title",
+                dockingVisible ? "DOCKING" : "SYSTEM"
             );
+
+            for (std::size_t i = 0; i < biteLines.size(); ++i)
+            {
+                game::presentation::DockingTerminalSeverity severity =
+                    game::presentation::DockingTerminalSeverity::Info;
+
+                if (i < biteState.faults.size())
+                {
+                    using BiteSeverity = game::bite::Severity;
+                    switch (biteState.faults[i].severity)
+                    {
+                        case BiteSeverity::Failed:
+                            severity =
+                                game::presentation::DockingTerminalSeverity::Error;
+                            break;
+                        case BiteSeverity::Warning:
+                        case BiteSeverity::Caution:
+                            severity =
+                                game::presentation::DockingTerminalSeverity::Warning;
+                            break;
+                        case BiteSeverity::Advisory:
+                            break;
+                    }
+                }
+
+                terminal.diagnostics.emplace_back(
+                    biteLines[i],
+                    severity
+                );
+            }
 
             {
                 using namespace game::ship::plant;
@@ -7206,7 +7252,7 @@ m_systemMapRenderer.render(
                  })
             {
                 if (auto* component = uiRoot->findById(id))
-                    component->visible = !dockingVisible;
+                    component->visible = !terminal.visible;
             }
 
             switch (m_clientDockingPhase)

@@ -28,6 +28,20 @@ namespace game::ship::plant
     std::uint64_t controlTick
 ) noexcept;
 
+struct MainPropulsionReaction
+{
+    bool valid = false;
+
+    // Sum of r x F for the currently firing longitudinal main bank, expressed
+    // in canonical ship-body axes (+X right, +Y up, +Z aft).
+    glm::dvec3 torqueBodyNm {0.0};
+
+    // Principal-axis angular acceleration derived from the real torque and
+    // current mass properties. Z is converted to ShipTransform roll sign,
+    // whose positive axis is ship forward (-body Z).
+    glm::dvec3 angularAccelerationBodyRadPerSec2 {0.0};
+};
+
 struct MainPropulsionTrimResult
 {
     bool valid = false;
@@ -62,20 +76,6 @@ struct MainPropulsionTrimResult
     double remainingPitchTrimRad,
     std::uint64_t controlTick
 ) noexcept;
-
-struct MainPropulsionReaction
-{
-    bool valid = false;
-
-    // Sum of r x F for the currently firing longitudinal main bank, expressed
-    // in canonical ship-body axes (+X right, +Y up, +Z aft).
-    glm::dvec3 torqueBodyNm {0.0};
-
-    // Principal-axis angular acceleration derived from the real torque and
-    // current mass properties. Z is converted to ShipTransform roll sign,
-    // whose positive axis is ship forward (-body Z).
-    glm::dvec3 angularAccelerationBodyRadPerSec2 {0.0};
-};
 
 // Convert the already-authorized net main-engine acceleration back into the
 // forces carried by the surviving physical slots and calculate their reaction

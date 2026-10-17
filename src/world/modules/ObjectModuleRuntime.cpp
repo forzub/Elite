@@ -48,6 +48,8 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
         state.equipmentDamage = {};
         state.equipmentDamage.sensitivity =
             descMod.equipmentDamageSensitivity;
+        state.equipmentDamage.failure =
+            descMod.equipmentFailure;
         state.state = ObjectModuleRuntimeState::Attached;
 
         state.hangable = descMod.hangable;

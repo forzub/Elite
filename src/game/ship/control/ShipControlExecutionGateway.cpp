@@ -216,7 +216,7 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         return path;
     }
 
-    const glm::dvec3 mainAccelerationWorld =
+    glm::dvec3 mainAccelerationWorld =
         motion.mainEngineAccelerationMps2;
 
     const glm::dvec3 right(transform.right());
@@ -225,18 +225,44 @@ ShipControlExecutionGateway::evaluateTranslationControl(
 
     // Canonical body basis is +X right, +Y up, +Z aft. ShipTransform::forward
     // points along body -Z.
-    const glm::dvec3 mainAccelerationBody(
+    glm::dvec3 mainAccelerationBody(
         glm::dot(mainAccelerationWorld, right),
         glm::dot(mainAccelerationWorld, up),
         -glm::dot(mainAccelerationWorld, forward)
     );
+
+    // Severe engine damage can make the thrust chamber intermittent before
+    // complete failure. Apply that symptom at the physical-force seam so the
+    // same deterministic controlTick produces the same jerk on authority,
+    // prediction and replay paths. Static capability remains the authored
+    // damage-limited maximum; instability can only remove instantaneous force.
+    const double instantaneousScale =
+        game::ship::plant::evaluateMainPropulsionInstantaneousScale(
+            model,
+            slotState,
+            mainAccelerationBody,
+            control.controlTick
+        );
+
+    if (instantaneousScale < 1.0 - 1.0e-12)
+    {
+        motion.mainEngineAccelerationMps2 *= instantaneousScale;
+        mainAccelerationWorld =
+            motion.mainEngineAccelerationMps2;
+        mainAccelerationBody = {
+            glm::dot(mainAccelerationWorld, right),
+            glm::dot(mainAccelerationWorld, up),
+            -glm::dot(mainAccelerationWorld, forward)
+        };
+    }
 
     auto reaction =
         game::ship::plant::evaluateMainPropulsionReaction(
             model,
             slotState,
             capabilities,
-            mainAccelerationBody
+            mainAccelerationBody,
+            control.controlTick
         );
 
     if (!reaction.valid)
@@ -305,7 +331,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
                         model,
                         slotState,
                         capabilities,
-                        scaledMainAccelerationBody
+                        scaledMainAccelerationBody,
+                        control.controlTick
                     );
             }
 

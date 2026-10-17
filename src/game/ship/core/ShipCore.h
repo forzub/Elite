@@ -244,6 +244,8 @@ public:
                                                     game::ship::plant::PhysicalControlModelId model
                                                 );
     void                                        clearPhysicalConstructionDiagnosticOverride();
+    bool                                        debugFailPhysicalPropulsionSlot(std::size_t index);
+    bool                                        debugRestorePhysicalPropulsionSlots();
 
     // Authoritative answer to "what can this ship do right now?". Physical
     // topology and damage stay below this boundary.

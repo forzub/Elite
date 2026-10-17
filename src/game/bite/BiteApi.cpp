@@ -126,6 +126,8 @@ State BiteApi::evaluate(
             std::max(0.0, sample.powerCostMultiplier - 1.0);
         fault.heatIncrease01 =
             std::max(0.0, sample.heatMultiplier);
+        fault.outputInstability01 =
+            clamp01(sample.outputInstability01);
         fault.wear01 = clamp01(sample.wear01);
         fault.maintenanceRequired = maintenance;
 
@@ -219,6 +221,9 @@ std::vector<std::string> BiteApi::terminalLines(
                 1.0 + fault.powerIncrease01);
         if (fault.heatIncrease01 > 0.0)
             line << ", heat +" << percent(fault.heatIncrease01);
+        if (fault.outputInstability01 > 0.0)
+            line << ", output instability "
+                 << percent(fault.outputInstability01);
 
         out.push_back(line.str());
     }

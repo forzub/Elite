@@ -631,12 +631,22 @@ void GameServer::update(double dt)
                 }
 
                 case ClientShipCommand::DebugFailPhysicalPropulsionSlot:
-                    (void)ship.core().debugFailPhysicalPropulsionSlot(
+                {
+                    const std::size_t slotIndex =
                         static_cast<std::size_t>(
                             std::max(0, shipCmd.index)
-                        )
-                    );
+                        );
+                    const bool ok =
+                        ship.core().debugFailPhysicalPropulsionSlot(
+                            slotIndex
+                        );
+                    std::cout
+                        << "[ShipDamageOracle][server] fail slot="
+                        << slotIndex
+                        << " accepted=" << (ok ? 1 : 0)
+                        << "\n";
                     break;
+                }
 
                 case ClientShipCommand::DebugRestorePhysicalPropulsionSlots:
                     (void)ship.core().debugRestorePhysicalPropulsionSlots();

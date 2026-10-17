@@ -33,6 +33,9 @@ struct EngineThrustBarPresentation
     // to the slot's undamaged nominal thrust.
     float capability01 = 0.0f;
     float thrust01 = 0.0f;
+
+    // Presentation fault signal only. Animation remains client-renderer state.
+    bool fault = false;
 };
 
 struct EngineThrustGroupPresentation
@@ -45,6 +48,8 @@ struct EngineThrustHudPresentation
 {
     bool visible = false;
     std::string modelLabel;
+    std::string styleId = "human_amber";
+    bool warning = false;
     std::vector<EngineThrustGroupPresentation> groups;
 };
 
@@ -149,6 +154,9 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
 
     out.modelLabel =
         detail::physicalModelLabel(model);
+    out.styleId = descriptor.hud.engineStatusStyleId.empty()
+        ? "human_amber"
+        : descriptor.hud.engineStatusStyleId;
 
     const auto family =
         plant::familyOf(model);
@@ -308,6 +316,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
                 available01
             )
         );
+        bar.fault = available01 < 1.0 - 1.0e-4;
+        out.warning = out.warning || bar.fault;
 
         groupIt->bars.push_back(std::move(bar));
     }

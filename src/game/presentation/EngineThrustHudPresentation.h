@@ -13,6 +13,7 @@
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/presentation/ShipBitePresentation.h"
 
 namespace game::presentation
 {
@@ -151,6 +152,9 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         );
     if (!shipCapability.valid)
         return out;
+
+    const auto biteState =
+        buildShipBiteState(descriptor, ship.modules);
 
     out.modelLabel =
         detail::physicalModelLabel(model);
@@ -316,7 +320,20 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
                 available01
             )
         );
-        bar.fault = available01 < 1.0 - 1.0e-4;
+        const auto& binding =
+            descriptor.physicalControl.slotModuleIds;
+        const std::string equipmentId =
+            i < binding.size() ? binding[i] : std::string {};
+
+        // HUD alarm thresholds belong to BITE. Capacity still comes from the
+        // physical propulsion projection; presentation does not invent a
+        // second damage policy.
+        bar.fault =
+            !equipmentId.empty() &&
+            biteHudAttentionForEquipment(
+                biteState,
+                equipmentId
+            );
         out.warning = out.warning || bar.fault;
 
         groupIt->bars.push_back(std::move(bar));

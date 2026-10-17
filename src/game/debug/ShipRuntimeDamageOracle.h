@@ -29,6 +29,26 @@ public:
         std::size_t failedSlot = 0;
     };
 
+    enum class Phase
+    {
+        ModelSelect = 0,
+        Prepare,
+        DamageSettle,
+        Burn,
+        Observe
+    };
+
+    struct Capture
+    {
+        double peakSpeedMps = 0.0;
+        double peakForwardVelocityMps = 0.0;
+        double peakMainAccelerationMps2 = 0.0;
+        double peakAngularRateRadPerSec = 0.0;
+        double peakResidualMainAlphaRadPerSec2 = 0.0;
+        double peakTrimLoad01 = 0.0;
+        double minimumUsableScale01 = 1.0;
+    };
+
     struct Observation
     {
         bool worldReady = false;
@@ -87,23 +107,26 @@ public:
         if (!m_enabled || m_complete || m_waitingForModel)
             return c;
 
-        if (m_preparing)
+        switch (m_phase)
         {
-            c.velocityAlignmentCommand =
-                game::navigation::VelocityAlignmentMode::BrakeToStop;
-            return c;
+            case Phase::Prepare:
+                c.velocityAlignmentCommand =
+                    game::navigation::VelocityAlignmentMode::BrakeToStop;
+                break;
+
+            case Phase::Burn:
+                // Bounded ordinary pilot longitudinal command. The probe never
+                // holds this until a physics expectation becomes true.
+                c.targetSpeedRate = 1.0f;
+                break;
+
+            case Phase::DamageSettle:
+            case Phase::Observe:
+            case Phase::ModelSelect:
+            default:
+                break;
         }
 
-        if (desiredModel() == Model::NewtonianI)
-        {
-            // With its only main failed, Newtonian-I should not invent
-            // longitudinal authority. Keep requesting forward thrust so the
-            // test proves the physical absence of response.
-            c.targetSpeedRate = 1.0f;
-            return c;
-        }
-
-        c.targetSpeedRate = 1.0f;
         return c;
     }
 
@@ -170,7 +193,8 @@ public:
 
             m_waitingForModel = false;
             m_modelStarted = true;
-            m_preparing = true;
+            m_phase = Phase::Prepare;
+            m_phaseStartedAt = o.universeSeconds;
             logModelStart(o);
             return;
         }
@@ -178,37 +202,71 @@ public:
         if (!m_modelStarted)
         {
             m_modelStarted = true;
-            m_preparing = true;
+            m_phase = Phase::Prepare;
+            m_phaseStartedAt = o.universeSeconds;
             logModelStart(o);
             return;
         }
 
-        if (m_preparing)
+        switch (m_phase)
         {
-            if (!settled(o))
-            {
-                heartbeat(o, "PREPARE");
+            case Phase::Prepare:
+                if (!settled(o))
+                {
+                    heartbeat(o, "PREPARE");
+                    return;
+                }
+
+                m_damageRequestPending = true;
+                m_damageIssued = true;
+                m_phase = Phase::DamageSettle;
+                m_phaseStartedAt = o.universeSeconds;
+                m_capture = {};
+                logDamageCommand(o);
                 return;
-            }
 
-            m_preparing = false;
-            m_damageRequestPending = true;
-            m_damageIssued = true;
-            logDamageCommand(o);
-            return;
+            case Phase::DamageSettle:
+                capture(o);
+                if (o.universeSeconds - m_phaseStartedAt < 0.25)
+                {
+                    heartbeat(o, "DAMAGE_SETTLE");
+                    return;
+                }
+
+                m_phase = Phase::Burn;
+                m_phaseStartedAt = o.universeSeconds;
+                logPhase(o, "BURN_START");
+                return;
+
+            case Phase::Burn:
+                capture(o);
+                if (o.universeSeconds - m_phaseStartedAt < 0.50)
+                {
+                    heartbeat(o, "BURN");
+                    return;
+                }
+
+                m_phase = Phase::Observe;
+                m_phaseStartedAt = o.universeSeconds;
+                logPhase(o, "BURN_COMPLETE");
+                return;
+
+            case Phase::Observe:
+                capture(o);
+                if (o.universeSeconds - m_phaseStartedAt < 1.50)
+                {
+                    heartbeat(o, "OBSERVE");
+                    return;
+                }
+
+                logCaptureComplete(o);
+                advanceCase(o);
+                return;
+
+            case Phase::ModelSelect:
+            default:
+                return;
         }
-
-        if (!m_damageIssued)
-            return;
-
-        if (!damageExpectationSatisfied(o))
-        {
-            heartbeat(o, "WAIT_DAMAGE_RESPONSE");
-            return;
-        }
-
-        logActualAndPass(o);
-        advanceCase(o);
     }
 
 private:
@@ -288,66 +346,14 @@ private:
             std::abs(o.rollRateRadPerSec) < 0.02;
     }
 
-    bool damageExpectationSatisfied(const Observation& o) const noexcept
-    {
-        const Model model = desiredModel();
-        const auto family = game::ship::plant::familyOf(model);
-
-        if (family == game::ship::plant::PhysicalControlFamily::Assisted)
-        {
-            const double residualAlpha =
-                std::max({
-                    std::abs(o.mainAlphaPitchRadPerSec2),
-                    std::abs(o.mainAlphaYawRadPerSec2),
-                    std::abs(o.mainAlphaRollRadPerSec2)
-                });
-
-            return
-                o.forwardVelocityMps >= 3.0 &&
-                o.trimLoad01 > 1.0e-4 &&
-                o.trimUsableScale01 < 0.9999 &&
-                residualAlpha < 1.0e-4;
-        }
-
-        if (model == Model::NewtonianI)
-        {
-            const double mainAcceleration =
-                std::sqrt(
-                    o.mainForwardAccelerationMps2 *
-                        o.mainForwardAccelerationMps2 +
-                    o.mainRightAccelerationMps2 *
-                        o.mainRightAccelerationMps2 +
-                    o.mainUpAccelerationMps2 *
-                        o.mainUpAccelerationMps2
-                );
-
-            return
-                o.speedMps < 0.20 &&
-                mainAcceleration < 0.01 &&
-                o.trimLoad01 < 1.0e-9 &&
-                o.trimUsableScale01 > 0.999999;
-        }
-
-        const double residualAlpha =
-            std::max(
-                std::abs(o.mainAlphaPitchRadPerSec2),
-                std::abs(o.mainAlphaYawRadPerSec2)
-            );
-
-        return
-            o.forwardVelocityMps >= 3.0 &&
-            o.trimLoad01 < 1.0e-9 &&
-            o.trimUsableScale01 > 0.999999 &&
-            residualAlpha > 1.0e-4 &&
-            residualAlpha < 0.25;
-    }
-
     void advanceCase(const Observation& o)
     {
         ++m_caseIndex;
         m_modelStarted = false;
-        m_preparing = false;
         m_damageIssued = false;
+        m_phase = Phase::ModelSelect;
+        m_phaseStartedAt = -1.0e30;
+        m_capture = {};
         m_modelRequestIssued = false;
         m_seenRequestedModelSnapshot = false;
 
@@ -389,8 +395,9 @@ private:
             m_stream
                 << "# Elite in-game propulsion damage oracle\n"
                 << "# scenario comes from --diagnostic-scenario ship-damage:<Model@slot,...>\n"
-                << "# condition-driven; no elapsed-time physics verdict\n"
-                << "# format: MODEL / DAMAGE / EXPECTED / ACTUAL / RESULT\n";
+                << "# bounded measurement probe; command durations are phase-local\n"
+                << "# no physics PASS condition can extend the burn indefinitely\n"
+                << "# format: MODEL / DAMAGE / PHASE / CAPTURE\n";
             m_stream.flush();
         }
     }
@@ -456,37 +463,98 @@ private:
 
         m_stream
             << "DAMAGE slot=" << currentCase().failedSlot << "\n"
-            << "COMMAND forward_burn\n";
-
-        if (game::ship::plant::familyOf(desiredModel()) ==
-            game::ship::plant::PhysicalControlFamily::Assisted)
-        {
-            m_stream
-                << "EXPECTED \"trim_load>0; usable_scale<1; forward thrust remains; residual main-reaction alpha approximately zero\"\n";
-        }
-        else if (desiredModel() == Model::NewtonianI)
-        {
-            m_stream
-                << "EXPECTED \"only main failed; no invented main acceleration; no Assisted trim\"\n";
-        }
-        else
-        {
-            m_stream
-                << "EXPECTED \"no hidden trim; forward thrust remains; short-lever asymmetric main produces moderate residual pitch/yaw reaction\"\n";
-        }
+            << "PHASE damage_settle duration_s=0.25 command=neutral\n"
+            << "PHASE burn duration_s=0.50 command=targetSpeedRate:+1\n"
+            << "PHASE observe duration_s=1.50 command=neutral\n";
         m_stream.flush();
     }
 
-    void logActualAndPass(const Observation& o)
+    void logPhase(const Observation& o, const char* name)
     {
         if (!m_stream.is_open())
             return;
 
-        m_stream << "ACTUAL";
+        m_stream << name;
         writeActual(o);
-        m_stream << "\nRESULT model=" << o.physicalModelLabel
-                 << " failed_slot=" << currentCase().failedSlot
-                 << " status=PASS\n";
+        m_stream << "\n";
+        m_stream.flush();
+    }
+
+    void capture(const Observation& o)
+    {
+        const double mainAcceleration =
+            std::sqrt(
+                o.mainForwardAccelerationMps2 *
+                    o.mainForwardAccelerationMps2 +
+                o.mainRightAccelerationMps2 *
+                    o.mainRightAccelerationMps2 +
+                o.mainUpAccelerationMps2 *
+                    o.mainUpAccelerationMps2
+            );
+        const double angularRate =
+            std::max({
+                std::abs(o.pitchRateRadPerSec),
+                std::abs(o.yawRateRadPerSec),
+                std::abs(o.rollRateRadPerSec)
+            });
+        const double residualAlpha =
+            std::max({
+                std::abs(o.mainAlphaPitchRadPerSec2),
+                std::abs(o.mainAlphaYawRadPerSec2),
+                std::abs(o.mainAlphaRollRadPerSec2)
+            });
+
+        m_capture.peakSpeedMps =
+            std::max(m_capture.peakSpeedMps, o.speedMps);
+        m_capture.peakForwardVelocityMps =
+            std::max(
+                m_capture.peakForwardVelocityMps,
+                std::abs(o.forwardVelocityMps)
+            );
+        m_capture.peakMainAccelerationMps2 =
+            std::max(
+                m_capture.peakMainAccelerationMps2,
+                mainAcceleration
+            );
+        m_capture.peakAngularRateRadPerSec =
+            std::max(
+                m_capture.peakAngularRateRadPerSec,
+                angularRate
+            );
+        m_capture.peakResidualMainAlphaRadPerSec2 =
+            std::max(
+                m_capture.peakResidualMainAlphaRadPerSec2,
+                residualAlpha
+            );
+        m_capture.peakTrimLoad01 =
+            std::max(m_capture.peakTrimLoad01, o.trimLoad01);
+        m_capture.minimumUsableScale01 =
+            std::min(
+                m_capture.minimumUsableScale01,
+                o.trimUsableScale01
+            );
+    }
+
+    void logCaptureComplete(const Observation& o)
+    {
+        if (!m_stream.is_open())
+            return;
+
+        m_stream << "FINAL";
+        writeActual(o);
+        m_stream
+            << "\nCAPTURE"
+            << " peak_speed=" << m_capture.peakSpeedMps
+            << " peak_v_forward=" << m_capture.peakForwardVelocityMps
+            << " peak_main_a=" << m_capture.peakMainAccelerationMps2
+            << " peak_rate=" << m_capture.peakAngularRateRadPerSec
+            << " peak_residual_main_alpha="
+            << m_capture.peakResidualMainAlphaRadPerSec2
+            << " peak_trim_load=" << m_capture.peakTrimLoad01
+            << " min_usable_scale=" << m_capture.minimumUsableScale01
+            << "\nRESULT model=" << o.physicalModelLabel
+            << " failed_slot=" << currentCase().failedSlot
+            << " status=CAPTURED\n";
         m_stream.flush();
     }
 
@@ -517,10 +585,12 @@ private:
     bool m_seenRequestedModelSnapshot = false;
     bool m_damageRequestPending = false;
     bool m_modelStarted = false;
-    bool m_preparing = false;
     bool m_damageIssued = false;
 
+    Phase m_phase = Phase::ModelSelect;
+    Capture m_capture {};
     int m_caseIndex = 0;
+    double m_phaseStartedAt = -1.0e30;
     double m_lastHeartbeatAt = -1.0e30;
     std::vector<ScenarioCase> m_cases;
 

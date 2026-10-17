@@ -51,6 +51,7 @@
 #include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/debug/ShipRuntimeControlOracle.h"
 #include "src/game/debug/ShipRuntimeDamageOracle.h"
+#include "src/game/debug/RuntimeScenarioSelection.h"
 #include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
@@ -327,6 +328,8 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
+    game::debug::RuntimeScenarioSelection
+        m_runtimeScenarioSelection {};
     game::navigation::debug::NavigationStressHarness
         m_navigationStressHarness {};
     game::debug::ShipRuntimeControlOracle
@@ -334,6 +337,8 @@ private:
     game::debug::ShipRuntimeDamageOracle
         m_shipRuntimeDamageOracle {};
     bool m_navigationStressCompleteAnnounced = false;
+    bool m_shipControlOracleCompleteAnnounced = false;
+    bool m_shipDamageOracleCompleteAnnounced = false;
     std::uint64_t m_lastNavigationExecutionSnapshotTick = 0;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;

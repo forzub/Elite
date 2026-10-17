@@ -148,6 +148,11 @@ State BiteApi::evaluate(
             fault.severity = Severity::Advisory;
         }
 
+        fault.hudAttention =
+            fault.severity == Severity::Caution ||
+            fault.severity == Severity::Warning ||
+            fault.severity == Severity::Failed;
+
         out.highestSeverity =
             maxSeverity(out.highestSeverity, fault.severity);
         out.faults.push_back(std::move(fault));

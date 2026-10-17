@@ -37,6 +37,15 @@ struct EquipmentDamageSensitivity
     double wear = 0.0;
 };
 
+// Service policy is descriptor data. Wear remains the fifth accumulated damage
+// cause; this only says how fast normal operation accumulates it and when BITE
+// should request maintenance.
+struct EquipmentMaintenanceProfile
+{
+    double wearPerOperatingHour = 0.0;
+    double maintenanceWearThreshold01 = 0.20;
+};
+
 // Common equipment damage layer: one per equipment instance.
 // State changes only when damage/wear changes; sensitivity is copied from the
 // equipment descriptor and remains constant for the instance.

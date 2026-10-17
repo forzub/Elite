@@ -19,6 +19,15 @@ struct ObjectModuleSnapshot
     std::string moduleId;
     std::uint8_t state = 0;
     float health = 0.0f;
+
+    // Runtime equipment damage causes. Sensitivity weights remain static in
+    // the local descriptor and are not retransmitted.
+    float laserDamage01 = 0.0f;
+    float impactDamage01 = 0.0f;
+    float thermalDamage01 = 0.0f;
+    float radiationDamage01 = 0.0f;
+    float wearDamage01 = 0.0f;
+
     int aliveSupportCount = 0;
 };
 

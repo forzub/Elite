@@ -34,6 +34,7 @@ struct EquipmentSample
     // Relative to healthy operation for the same useful output.
     double powerCostMultiplier = 1.0;
     double heatMultiplier = 0.0;
+    double outputInstability01 = 0.0;
 
     double wear01 = 0.0;
     double maintenanceWearThreshold01 = 0.20;
@@ -57,6 +58,7 @@ struct Fault
     double secondaryAuthority01 = 1.0;
     double powerIncrease01 = 0.0;
     double heatIncrease01 = 0.0;
+    double outputInstability01 = 0.0;
     double wear01 = 0.0;
 
     bool maintenanceRequired = false;

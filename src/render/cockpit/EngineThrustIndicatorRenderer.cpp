@@ -196,7 +196,7 @@ void EngineThrustIndicatorRenderer::render(
     const float iconGap =
         std::max(3.0f, style.iconToLabelGapPx * scale);
     const float labelGap =
-        std::max(6.0f, style.labelToBarsGapPx * scale);
+        std::max(2.0f, style.labelToBarsGapPx * scale);
     const float radius =
         std::max(4.0f, style.cornerRadiusPx * scale);
     const float borderWidth =
@@ -294,18 +294,24 @@ void EngineThrustIndicatorRenderer::render(
             : style.idleWarningIcon
     );
 
-    contentY += iconSize + iconGap;
+    // Keep the warning icon in the upper diagnostic area, but anchor the
+    // model label to the thrust bars instead of to the icon. This makes the
+    // requested vertical move visually meaningful rather than adding a few
+    // pixels to both label and bars.
+    const float labelY =
+        panelY + panelHeight - padding - barHeight -
+        labelGap - static_cast<float>(labelPx);
 
     text.textDrawPx(
         presentation.modelLabel,
         contentX + (contentWidth - labelWidth) * 0.5f,
-        contentY,
+        labelY,
         labelPx,
         style.label
     );
 
     const float barsY =
-        contentY + static_cast<float>(labelPx) + labelGap;
+        labelY + static_cast<float>(labelPx) + labelGap;
 
     // Keep fore/aft bars inside one physical engine group close together,
     // then distribute physical groups uniformly across the instrument width.

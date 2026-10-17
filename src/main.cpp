@@ -630,6 +630,7 @@ int main(int argc, char** argv)
     game::network::NetworkEndpoint remoteEndpoint;
     std::string clientProfileName;
     bool clientProfileExplicit = false;
+    std::string diagnosticScenario;
 
     try
     {
@@ -637,6 +638,19 @@ int main(int argc, char** argv)
         for (int i = 1; i < argc; ++i)
         {
             const std::string arg = argv[i];
+
+            if (arg == "--diagnostic-scenario")
+            {
+                if (i + 1 >= argc)
+                {
+                    std::cerr
+                        << "[App] --diagnostic-scenario requires VALUE\n";
+                    return -2;
+                }
+
+                diagnosticScenario = argv[++i];
+                continue;
+            }
 
             if (arg == "--profile")
             {
@@ -732,6 +746,26 @@ int main(int argc, char** argv)
         }
         std::cerr << "[Startup] LC_NUMERIC=C (JSON decimal point)\n";
         core::disableRuntimeStdoutNoise();
+
+        if (!diagnosticScenario.empty())
+        {
+#ifdef _WIN32
+            _putenv_s(
+                "ELITE_DIAGNOSTIC_SCENARIO",
+                diagnosticScenario.c_str()
+            );
+#else
+            setenv(
+                "ELITE_DIAGNOSTIC_SCENARIO",
+                diagnosticScenario.c_str(),
+                1
+            );
+#endif
+            std::cerr
+                << "[Startup] diagnostic scenario="
+                << diagnosticScenario
+                << "\n";
+        }
 
         Application app;
 

@@ -18,4 +18,9 @@ struct ShipHudProfile
     HudBoundary edgeBoundary;     // куда можно ставить edge-метки
 
     float edgeInset = 0.0f;       // внутренняя безопасная зона (норма)
+
+    // Presentation-only skin selector for the standalone engine-status widget.
+    // Ship race/faction descriptors may choose another registered style later
+    // without changing propulsion telemetry or layout semantics.
+    std::string engineStatusStyleId = "human_amber";
 };

@@ -1056,12 +1056,16 @@ desc.modules =
     engine.nominalEfficiency01 = 1.0;
     engine.minimumOperationalEfficiency01 = 0.05;
 
-    // Engine damage response, first production profile:
-    // efficiency: impact 45%, laser 30%, thermal 15%, radiation 1%, wear 9%
-    // gimbal:     impact 65%, laser 15%, thermal 5%,  radiation 0%, wear 15%
-    engine.efficiencyDamage = {
-        0.30, 0.45, 0.15, 0.01, 0.09
-    };
+    // Engine damage response, first production profile.
+    // Primary useful work (efficiency) uses the common equipment sensitivity:
+    // impact 45%, laser 30%, thermal 15%, radiation 1%, wear 9%.
+    const game::equipment::EquipmentDamageSensitivity
+        engineFunctionalDamage {
+            0.30, 0.45, 0.15, 0.01, 0.09
+        };
+
+    // Nozzle mechanics are a specialized second engine function:
+    // impact 65%, laser 15%, thermal 5%, radiation 0%, wear 15%.
     engine.gimbalDamage = {
         0.15, 0.65, 0.05, 0.00, 0.15
     };
@@ -1069,7 +1073,11 @@ desc.modules =
     for (auto& module : desc.modules)
     {
         if (module.zone == game::damage::HitZoneType::Engine)
+        {
+            module.equipmentDamageSensitivity =
+                engineFunctionalDamage;
             module.engine = engine;
+        }
     }
 }
 

@@ -1,3 +1,18 @@
+## 2026-10-17 — independent thrust/TVC failure contract
+
+- EquipmentDamage now owns a generic functional failure threshold.
+- Cobra thrust failure threshold: 95% weighted primary damage.
+- Cobra TVC failure threshold: 95% weighted gimbal damage.
+- Functional failure does not delete/detach the engine module.
+- Thrust failure => thrust=0, electrical demand=0, generated heat=0.
+- TVC failure => vectoring authority/range/rate=0 while surviving axial thrust remains available.
+- Physical slot state is derived from module damage; direct slot failure is not a valid EquipmentDamage/BITE acceptance path.
+- BITE diagnoses thrust-function FAILED separately from TVC/nozzle FAILED; whole-equipment failure remains reserved for unavailable/destroyed equipment.
+- New equipment_damage_failure_pipeline test verifies five-channel ObjectModuleRuntime damage -> EngineUnit -> slot -> capability.
+- propulsion_damage_matrix.scenario is explicitly actuator-only and must not be used as proof of EquipmentDamage/BITE behavior.
+
+Next: run bite_api, engine_unit_damage_model, equipment_damage_failure_pipeline; then make one native real-game damage pass through the module-damage path and inspect BITE + normal engine HUD.
+
 ## 2026-10-17 — BITE end-to-end presentation connection
 
 BITE is now connected end-to-end as a read-only diagnostic consumer:

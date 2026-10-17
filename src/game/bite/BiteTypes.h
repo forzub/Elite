@@ -38,7 +38,12 @@ struct EquipmentSample
     double wear01 = 0.0;
     double maintenanceWearThreshold01 = 0.20;
 
+    // Physical equipment availability is separate from function failure.
+    // An installed engine may keep axial thrust while its TVC function fails,
+    // or lose thrust while the module itself remains present.
     bool operational = true;
+    bool functionalFailed = false;
+    bool secondaryFailed = false;
 };
 
 struct Fault

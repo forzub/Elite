@@ -1027,6 +1027,44 @@ desc.modules =
     )
 };
 
+// Functional passport for every damageable Cobra main-engine module.
+//
+// One module health scalar is the runtime damage truth. The engine passport
+// converts that scalar into thrust/vectoring degradation and future operating
+// cost. Nominal electric/thermal ratings intentionally remain zero until the
+// ship energy budget is authored; inventing MW values here would create fake
+// resource accounting.
+{
+    game::equipment::engine::EngineUnitDescriptor engine;
+    engine.nominalThrustNewtons =
+        desc.physics.massKg *
+        static_cast<double>(
+            desc.physics.forwardMainEngineAccelerationMps2
+        ) /
+        2.0;
+    engine.nominalGimbalRangeRad =
+        static_cast<double>(
+            std::max(
+                desc.physics.mainGimbalPitchLimitRad,
+                desc.physics.mainGimbalYawLimitRad
+            )
+        );
+    engine.nominalGimbalRateRadPerSec =
+        static_cast<double>(
+            desc.physics.mainGimbalRateRadPerSec
+        );
+    engine.thrustHealthExponent = 1.0;
+    engine.vectoringHealthExponent = 1.35;
+    engine.maxPowerCostPenalty = 0.50;
+    engine.maxHeatPenalty = 1.00;
+
+    for (auto& module : desc.modules)
+    {
+        if (module.zone == game::damage::HitZoneType::Engine)
+            module.engine = engine;
+    }
+}
+
 desc.mainPropulsion.aftEngineModuleIds = {
     "ship_engine_L",
     "ship_engine_R"

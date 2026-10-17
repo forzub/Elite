@@ -490,6 +490,15 @@ SpaceState::SpaceState(
             << m_runtimeScenarioSelection.spec
             << " kind="
             << static_cast<int>(m_runtimeScenarioSelection.kind)
+            << " payload=\""
+            << m_runtimeScenarioSelection.payload
+            << "\""
+            << " nav_enabled="
+            << (m_navigationStressHarness.enabled() ? 1 : 0)
+            << " control_enabled="
+            << (m_shipRuntimeControlOracle.enabled() ? 1 : 0)
+            << " damage_enabled="
+            << (m_shipRuntimeDamageOracle.enabled() ? 1 : 0)
             << "\n";
     }
 

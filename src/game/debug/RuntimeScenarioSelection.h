@@ -11,6 +11,7 @@ enum class RuntimeScenarioKind
 {
     None = 0,
     ShipControl,
+    PropulsionMatrix,
     ShipDamage,
     NavigationStress
 };
@@ -37,6 +38,12 @@ struct RuntimeScenarioSelection
         if (value == "ship-control")
         {
             out.kind = RuntimeScenarioKind::ShipControl;
+            return out;
+        }
+
+        if (value == "propulsion-matrix")
+        {
+            out.kind = RuntimeScenarioKind::PropulsionMatrix;
             return out;
         }
 

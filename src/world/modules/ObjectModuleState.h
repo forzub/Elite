@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "src/world/descriptors/ModuleDescriptor.h"
+#include "src/game/equipment/EquipmentDamage.h"
 
 namespace world::modules
 {
@@ -71,6 +72,10 @@ struct ObjectModuleState
 
     float maxHealth = 100.0f;
     float health = 100.0f;
+
+    // Functional equipment damage. These five values are accumulated runtime
+    // damage causes; the five sensitivity values are immutable type weights.
+    game::equipment::EquipmentDamageLayer equipmentDamage;
 
     bool hangable = false;
 

@@ -1,5 +1,6 @@
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 #include "src/world/WorldParams.h"
 
 #include <cmath>
@@ -175,13 +176,15 @@ void testPhysicalOverloadAppliesMainReactionTorque()
     );
     require(
         std::abs(
-            transform.motion.mainPropulsionTorqueBodyNm.y
-        ) > 1.0,
-        "physical gateway lost r x F main reaction torque"
+            transform.motion.mainEngineAccelerationMps2.x
+        ) > 1.0e-6,
+        "physical gateway did not redirect centered Newtonian-I main thrust laterally"
     );
     require(
-        std::abs(transform.yawRate) > 1.0e-6f,
-        "physical gateway did not apply main reaction to hull angular rate"
+        std::abs(
+            transform.motion.mainPropulsionTorqueBodyNm.y
+        ) < 1.0e-6,
+        "centered Newtonian-I main incorrectly generated lever-arm yaw torque"
     );
 }
 
@@ -339,7 +342,7 @@ int main()
         std::cout << " - manual/TVC input retains ordinary physical-path priority\n";
         std::cout << " - precision/Assisted/Newtonian execution selection is centralized\n";
         std::cout << " - callers no longer need to interpret ShipControlState\n";
-        std::cout << " - physical overload restores per-slot main reaction torque\n";
+        std::cout << " - centered Newtonian-I TVC redirects main thrust without fake lever-arm torque\n";
         std::cout << " - Assisted damaged-main bias is trimmed before avoidable hull rotation\n";
         return EXIT_SUCCESS;
     }

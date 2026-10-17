@@ -178,6 +178,49 @@ set_tests_properties(
 )
 
 add_executable(
+    equipment_damage_failure_pipeline_tests
+    EquipmentDamageFailurePipelineTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/world/modules/ObjectModuleRuntime.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/AssistedPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/NewtonianPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/ShipPhysicalControlModels.cpp"
+)
+
+target_include_directories(
+    equipment_damage_failure_pipeline_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    equipment_damage_failure_pipeline_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        equipment_damage_failure_pipeline_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        equipment_damage_failure_pipeline_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME equipment_damage_failure_pipeline
+    COMMAND equipment_damage_failure_pipeline_tests
+)
+
+set_tests_properties(
+    equipment_damage_failure_pipeline
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     runtime_scenario_selection_tests
     RuntimeScenarioSelectionTests.cpp
 )

@@ -1,8 +1,8 @@
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 
-#include <cassert>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
 namespace
 {
@@ -12,6 +12,12 @@ using namespace game::ship::plant;
 bool near(double a, double b, double eps = 1.0e-9)
 {
     return std::abs(a - b) <= eps;
+}
+
+void require(bool condition, const char* message)
+{
+    if (!condition)
+        throw std::runtime_error(message);
 }
 
 ShipParams physics()
@@ -39,13 +45,13 @@ void testCenteredNewtonianIAxialBurnHasNoTorque()
         {0.0, 0.0, -60.0}
     );
 
-    assert(out.valid);
-    assert(near(glm::length(out.torqueBodyNm), 0.0, 1.0e-6));
-    assert(near(
+    require(out.valid, "physical reaction evaluation invalid");
+    require(near(glm::length(out.torqueBodyNm), 0.0, 1.0e-6), "centered Newtonian-I axial burn generated torque");
+    require(near(
         glm::length(out.angularAccelerationBodyRadPerSec2),
         0.0,
         1.0e-12
-    ));
+    ), "centered Newtonian-I axial burn generated angular acceleration");
 }
 
 void testNewtonianIGimbalCreatesYawTorque()
@@ -60,11 +66,11 @@ void testNewtonianIGimbalCreatesYawTorque()
         {7.0, 0.0, -59.0}
     );
 
-    assert(out.valid);
-    assert(std::abs(out.torqueBodyNm.y) > 1.0);
-    assert(out.angularAccelerationBodyRadPerSec2.y > 0.0);
-    assert(near(out.angularAccelerationBodyRadPerSec2.x, 0.0, 1.0e-12));
-    assert(near(out.angularAccelerationBodyRadPerSec2.z, 0.0, 1.0e-12));
+    require(out.valid, "physical reaction evaluation invalid");
+    require(std::abs(out.torqueBodyNm.y) > 1.0, "Newtonian-I TVC generated no yaw torque");
+    require(out.angularAccelerationBodyRadPerSec2.y > 0.0, "Newtonian-I TVC yaw reaction had wrong sign");
+    require(near(out.angularAccelerationBodyRadPerSec2.x, 0.0, 1.0e-12), "Newtonian-I yaw TVC leaked pitch reaction");
+    require(near(out.angularAccelerationBodyRadPerSec2.z, 0.0, 1.0e-12), "Newtonian-I yaw TVC leaked roll reaction");
 }
 
 void testHealthyNewtonianYAxialBankIsBalanced()
@@ -79,8 +85,8 @@ void testHealthyNewtonianYAxialBankIsBalanced()
         {0.0, 0.0, -60.0}
     );
 
-    assert(out.valid);
-    assert(near(glm::length(out.torqueBodyNm), 0.0, 1.0e-6));
+    require(out.valid, "physical reaction evaluation invalid");
+    require(near(glm::length(out.torqueBodyNm), 0.0, 1.0e-6), "centered Newtonian-I axial burn generated torque");
 }
 
 void testNewtonianYSingleMainLossCreatesPitchTorque()
@@ -100,11 +106,11 @@ void testNewtonianYSingleMainLossCreatesPitchTorque()
         {0.0, 0.0, -40.0}
     );
 
-    assert(out.valid);
-    assert(std::abs(out.torqueBodyNm.x) > 1.0);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25);
-    assert(near(out.angularAccelerationBodyRadPerSec2.y, 0.0, 1.0e-12));
+    require(out.valid, "physical reaction evaluation invalid");
+    require(std::abs(out.torqueBodyNm.x) > 1.0, "single-main loss generated no pitch torque");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3, "single-main loss generated negligible pitch acceleration");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25, "single-main loss pitch acceleration exceeded bound");
+    require(near(out.angularAccelerationBodyRadPerSec2.y, 0.0, 1.0e-12), "Newtonian-Y single-main loss leaked yaw reaction");
 }
 
 void testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque()
@@ -124,13 +130,13 @@ void testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque()
         {0.0, 0.0, -45.0}
     );
 
-    assert(out.valid);
-    assert(std::abs(out.torqueBodyNm.x) > 1.0);
-    assert(std::abs(out.torqueBodyNm.y) > 1.0);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) > 1.0e-3);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25);
-    assert(std::abs(out.angularAccelerationBodyRadPerSec2.y) < 0.25);
+    require(out.valid, "physical reaction evaluation invalid");
+    require(std::abs(out.torqueBodyNm.x) > 1.0, "single-main loss generated no pitch torque");
+    require(std::abs(out.torqueBodyNm.y) > 1.0, "Newtonian-I TVC generated no yaw torque");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.x) > 1.0e-3, "single-main loss generated negligible pitch acceleration");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.y) > 1.0e-3, "single-main loss generated negligible yaw acceleration");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.x) < 0.25, "single-main loss pitch acceleration exceeded bound");
+    require(std::abs(out.angularAccelerationBodyRadPerSec2.y) < 0.25, "single-main loss yaw acceleration exceeded bound");
 }
 
 
@@ -156,8 +162,8 @@ void testIrregularThrustIsDeterministicAndPhysicallyBounded()
                 tick
             );
 
-        assert(scale >= 0.5 - 1.0e-12);
-        assert(scale <= 1.0 + 1.0e-12);
+        require(scale >= 0.5 - 1.0e-12, "irregular bank pulse fell below physical lower bound");
+        require(scale <= 1.0 + 1.0e-12, "irregular bank pulse exceeded damage-limited maximum");
 
         const double repeated =
             evaluateMainPropulsionInstantaneousScale(
@@ -166,16 +172,16 @@ void testIrregularThrustIsDeterministicAndPhysicallyBounded()
                 {0.0, 0.0, -60.0},
                 tick
             );
-        assert(near(scale, repeated));
+        require(near(scale, repeated), "irregular thrust was not deterministic for the same control tick");
 
         minScale = std::min(minScale, scale);
         maxScale = std::max(maxScale, scale);
     }
 
-    assert(maxScale - minScale > 0.20);
+    require(maxScale - minScale > 0.20, "irregular thrust did not produce a meaningful pulse range");
 
     const auto stable = healthySlotState(physicalControlSlots(model));
-    assert(near(
+    require(near(
         evaluateMainPropulsionInstantaneousScale(
             model,
             stable,
@@ -183,26 +189,36 @@ void testIrregularThrustIsDeterministicAndPhysicallyBounded()
             12345
         ),
         1.0
-    ));
+    ), "healthy engine bank acquired artificial thrust irregularity");
 }
 
 } // namespace
 
 int main()
 {
-    testCenteredNewtonianIAxialBurnHasNoTorque();
-    testNewtonianIGimbalCreatesYawTorque();
-    testHealthyNewtonianYAxialBankIsBalanced();
-    testNewtonianYSingleMainLossCreatesPitchTorque();
-    testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque();
-    testIrregularThrustIsDeterministicAndPhysicallyBounded();
+    try
+    {
+        testCenteredNewtonianIAxialBurnHasNoTorque();
+        testNewtonianIGimbalCreatesYawTorque();
+        testHealthyNewtonianYAxialBankIsBalanced();
+        testNewtonianYSingleMainLossCreatesPitchTorque();
+        testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque();
+        testIrregularThrustIsDeterministicAndPhysicallyBounded();
 
-    std::cout
-        << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
-        << " - balanced main banks produce zero parasitic torque\n"
-        << " - Newtonian-I TVC produces rigid-body reaction torque\n"
-        << " - Y/X single-main failures produce layout-dependent asymmetric torque\n"
-        << " - severe damage produces deterministic bounded per-engine thrust hiccups\n"
-        << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
-    return 0;
+        std::cout
+            << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
+            << " - balanced main banks produce zero parasitic torque\n"
+            << " - Newtonian-I TVC produces rigid-body reaction torque\n"
+            << " - Y/X single-main failures produce layout-dependent asymmetric torque\n"
+            << " - severe damage produces deterministic bounded per-engine thrust hiccups\n"
+            << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
+        return 0;
+    }
+    catch (const std::exception& error)
+    {
+        std::cerr
+            << "SHIP PHYSICAL ACTUATOR PLANT: FAIL: "
+            << error.what() << "\n";
+        return 1;
+    }
 }

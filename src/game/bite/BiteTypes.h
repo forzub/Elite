@@ -55,6 +55,7 @@ struct Fault
     double wear01 = 0.0;
 
     bool maintenanceRequired = false;
+    bool hudAttention = false;
 };
 
 struct State

@@ -41,6 +41,11 @@ ShipDescriptor descriptor()
     d.physics.reverseMainEngineAccelerationMps2 = 100.0f;
     d.physics.strafeAccel = 100.0f;
     d.physics.angularAccel = 3.0f;
+    // Keep the fixture's 100 m/s^2 authored main rating below the common
+    // acceleration envelope. Otherwise ShipDynamics correctly clamps it to
+    // the default 5 g and the test no longer measures a 100 -> 50 split.
+    d.physics.maxGs = 20.0f;
+    d.physics.maxLinearGs = 20.0f;
     d.physics.massKg = 1000.0;
     d.physics.pitchInertiaKgM2 = 1000.0;
     d.physics.yawInertiaKgM2 = 1000.0;

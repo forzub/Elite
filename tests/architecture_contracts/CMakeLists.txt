@@ -108,6 +108,45 @@ set_tests_properties(
 )
 
 add_executable(
+    engine_unit_damage_model_tests
+    EngineUnitDamageModelTests.cpp
+)
+
+target_include_directories(
+    engine_unit_damage_model_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    engine_unit_damage_model_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        engine_unit_damage_model_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        engine_unit_damage_model_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME engine_unit_damage_model
+    COMMAND engine_unit_damage_model_tests
+)
+
+set_tests_properties(
+    engine_unit_damage_model
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     runtime_scenario_selection_tests
     RuntimeScenarioSelectionTests.cpp
 )

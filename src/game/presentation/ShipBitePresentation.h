@@ -68,6 +68,8 @@ inline game::bite::State buildShipBiteState(
             effective.powerCostMultiplier;
         sample.heatMultiplier =
             effective.heatMultiplier;
+        sample.outputInstability01 =
+            effective.thrustIrregularity01;
         sample.wear01 =
             damage.accumulated.wear01;
         sample.maintenanceWearThreshold01 =

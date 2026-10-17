@@ -1,6 +1,7 @@
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace game::ship::plant
@@ -9,6 +10,7 @@ namespace
 {
 
 constexpr double Epsilon = 1.0e-12;
+constexpr std::size_t MaxPhysicalSlots = 16;
 
 EngineSlotRole activeLongitudinalBank(
     const glm::dvec3& accelerationBody
@@ -152,7 +154,7 @@ AllocationEvaluation evaluateTrimmedAllocation(
     const std::vector<EngineSlotState>& state,
     const ShipParams& physics,
     const glm::dvec3& requestedAccelerationBodyMps2,
-    const std::vector<double>& throttleScale01,
+    const std::array<double, MaxPhysicalSlots>& throttleScale01,
     double yawTrimRad,
     double pitchTrimRad,
     std::uint64_t controlTick
@@ -161,7 +163,7 @@ AllocationEvaluation evaluateTrimmedAllocation(
     AllocationEvaluation out;
     const auto& slots = physicalControlSlots(model);
     if (state.size() != slots.size() ||
-        throttleScale01.size() != slots.size())
+        slots.size() > MaxPhysicalSlots)
     {
         return out;
     }
@@ -396,7 +398,11 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     const EngineSlotRole activeRole =
         activeLongitudinalBank(requestedAccelerationBodyMps2);
 
-    std::vector<double> throttleScale01(slots.size(), 1.0);
+    if (slots.size() > MaxPhysicalSlots)
+        return {};
+
+    std::array<double, MaxPhysicalSlots> throttleScale01 {};
+    throttleScale01.fill(1.0);
 
     std::size_t activeMainCount = 0;
     double commonVectoring01 = 1.0;

@@ -1029,9 +1029,9 @@ desc.modules =
 
 // Functional passport for every damageable Cobra main-engine module.
 //
-// One module health scalar is the runtime damage truth. The engine passport
-// converts that scalar into thrust/vectoring degradation and future operating
-// cost. Nominal electric/thermal ratings intentionally remain zero until the
+// Five accumulated equipment-damage causes are the functional runtime truth.
+// The engine passport converts them into independent thrust and TVC degradation
+// plus future operating cost. Nominal electric/thermal ratings remain zero until the
 // ship energy budget is authored; inventing MW values here would create fake
 // resource accounting.
 {
@@ -1054,7 +1054,7 @@ desc.modules =
             desc.physics.mainGimbalRateRadPerSec
         );
     engine.nominalEfficiency01 = 1.0;
-    engine.minimumOperationalEfficiency01 = 0.05;
+    engine.gimbalFailure.failureAtDamage01 = 0.95;
 
     // Engine damage response, first production profile.
     // Primary useful work (efficiency) uses the common equipment sensitivity:
@@ -1076,6 +1076,7 @@ desc.modules =
         {
             module.equipmentDamageSensitivity =
                 engineFunctionalDamage;
+            module.equipmentFailure.failureAtDamage01 = 0.95;
             // Wear accumulation is enabled generically, but the Cobra engine
             // service life is not authored yet. Zero avoids inventing a fake
             // lifetime; the 20% maintenance threshold is already defined.

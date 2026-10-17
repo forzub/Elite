@@ -170,6 +170,18 @@ target_link_libraries(EliteNavigationWorldRuntime
            EliteNavigationTrajectory
 )
 
+# BITE is a pure diagnostic library. Its public API accepts compact DTOs and
+# returns diagnostic state/text; it has no dependency on ship/module/runtime,
+# rendering, networking or damage implementation.
+add_library(EliteBite STATIC
+    src/game/bite/BiteApi.cpp
+)
+target_include_directories(EliteBite PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_compile_features(EliteBite PUBLIC cxx_std_17)
+
 # Headless production navigation scenario harness. This is intentionally a
 # real runtime library, not test-owned helper code: tests and debug tools drive
 # RoutePlanner -> ClientRouteAutopilot -> ordinary ship controls through this
@@ -672,6 +684,10 @@ add_executable(EliteGame
 )
 endif()
 
+if(TARGET EliteGame)
+    target_link_libraries(EliteGame PRIVATE EliteBite)
+endif()
+
 if(TARGET EliteGame AND WIN32)
     target_link_libraries(EliteGame PRIVATE winmm)
 endif()
@@ -788,6 +804,7 @@ if(ELITE_BUILD_SERVER)
         EliteNavigationRuckig
         EliteAssemblyGeometry
         EliteRuntimeModelAssets
+        EliteBite
         nlohmann_json::nlohmann_json
         Threads::Threads
     )

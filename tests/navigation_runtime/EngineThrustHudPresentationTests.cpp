@@ -236,6 +236,14 @@ void testFaultFlagComesFromPhysicalSlotAvailability()
     };
 
     auto ship = shipFor(descriptor);
+    game::simulation::ObjectModuleSnapshot unrelated;
+    unrelated.moduleId = "unrelated:module";
+    unrelated.state = static_cast<std::uint8_t>(
+        world::modules::ObjectModuleRuntimeState::Attached
+    );
+    unrelated.health = 100.0f;
+    ship.modules.push_back(unrelated);
+
     const auto p =
         game::presentation::buildEngineThrustHudPresentation(ship);
 

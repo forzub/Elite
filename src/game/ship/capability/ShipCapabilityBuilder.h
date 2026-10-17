@@ -83,16 +83,10 @@ inline plant::EngineSlotState slotFromModule(
 
     if (definition && definition->engine)
     {
-        // Current module runtime still stores one scalar damage value.
-        // Treat that legacy loss as mechanical/impact damage until the common
-        // five-channel UnitDamageState is persisted by ObjectModuleRuntime.
-        game::equipment::engine::EngineDamageInputs damage;
-        damage.impact01 = 1.0 - health01;
-
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(
                 *definition->engine,
-                damage
+                module->equipmentDamage
             );
 
         return plant::EngineSlotState {
@@ -102,8 +96,7 @@ inline plant::EngineSlotState slotFromModule(
         };
     }
 
-    // Legacy/fallback modules without an engine passport preserve the current
-    // linear behavior until their descriptor is migrated.
+    // Structural/non-migrated modules keep their legacy health projection.
     return plant::EngineSlotState {
         health01 > 0.0,
         health01,
@@ -140,8 +133,14 @@ inline plant::EngineSlotState slotFromSnapshot(
 
     if (definition && definition->engine)
     {
-        game::equipment::engine::EngineDamageInputs damage;
-        damage.impact01 = 1.0 - health01;
+        game::equipment::EquipmentDamageLayer damage;
+        damage.sensitivity =
+            definition->equipmentDamageSensitivity;
+        damage.accumulated.laser01 = module->laserDamage01;
+        damage.accumulated.impact01 = module->impactDamage01;
+        damage.accumulated.thermal01 = module->thermalDamage01;
+        damage.accumulated.radiation01 = module->radiationDamage01;
+        damage.accumulated.wear01 = module->wearDamage01;
 
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(

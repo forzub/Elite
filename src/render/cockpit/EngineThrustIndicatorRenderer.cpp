@@ -1,12 +1,159 @@
 #include "src/render/cockpit/EngineThrustIndicatorRenderer.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 #include "src/render/HUD/TextRenderer.h"
+#include "src/render/cockpit/EngineStatusWidgetStyle.h"
 
 namespace render::cockpit
 {
+namespace
+{
+
+constexpr float Pi = 3.14159265358979323846f;
+
+glm::vec4 withAlpha(
+    glm::vec4 color,
+    float alphaScale
+) noexcept
+{
+    color.a *= std::clamp(alphaScale, 0.0f, 1.0f);
+    return color;
+}
+
+float warningPulse(
+    const EngineStatusWidgetStyle& style
+) noexcept
+{
+    using Clock = std::chrono::steady_clock;
+    const double seconds =
+        std::chrono::duration<double>(
+            Clock::now().time_since_epoch()
+        ).count();
+
+    const double period =
+        std::max(0.25, static_cast<double>(style.warningPeriodSeconds));
+
+    const float wave =
+        0.5f +
+        0.5f * std::sin(
+            static_cast<float>(
+                seconds * (2.0 * static_cast<double>(Pi)) / period
+            )
+        );
+
+    // Smoothstep removes the sharp-looking speed change at mid-cycle and makes
+    // the damaged engine bar feel like a slow breathing warning lamp.
+    const float smooth =
+        wave * wave * (3.0f - 2.0f * wave);
+
+    return
+        style.warningMinimumAlpha +
+        (1.0f - style.warningMinimumAlpha) * smooth;
+}
+
+// TextRenderer currently exposes axis-aligned solid quads only. A small
+// stepped corner is sufficient at HUD scale and keeps this widget independent
+// from cockpit mesh/UI dependencies. When a generic rounded primitive arrives,
+// this helper is the only place that needs to change.
+void roundedRectPx(
+    TextRenderer& text,
+    float x,
+    float y,
+    float width,
+    float height,
+    float radius,
+    const glm::vec4& color
+)
+{
+    const float r = std::clamp(
+        radius,
+        0.0f,
+        std::min(width, height) * 0.25f
+    );
+
+    if (r <= 0.5f)
+    {
+        text.solidRectPx(x, y, width, height, color);
+        return;
+    }
+
+    text.solidRectPx(x + r, y, width - 2.0f * r, height, color);
+    text.solidRectPx(x, y + r, width, height - 2.0f * r, color);
+
+    const float step = std::max(1.0f, r * 0.42f);
+    text.solidRectPx(
+        x + step,
+        y + step,
+        width - 2.0f * step,
+        height - 2.0f * step,
+        color
+    );
+}
+
+void roundedOutlinePx(
+    TextRenderer& text,
+    float x,
+    float y,
+    float width,
+    float height,
+    float radius,
+    float borderWidth,
+    const glm::vec4& border,
+    const glm::vec4& inner
+)
+{
+    roundedRectPx(
+        text,
+        x,
+        y,
+        width,
+        height,
+        radius,
+        border
+    );
+
+    const float inset = std::max(1.0f, borderWidth);
+    roundedRectPx(
+        text,
+        x + inset,
+        y + inset,
+        std::max(0.0f, width - 2.0f * inset),
+        std::max(0.0f, height - 2.0f * inset),
+        std::max(0.0f, radius - inset),
+        inner
+    );
+}
+
+void drawCheckEngineIcon(
+    TextRenderer& text,
+    float x,
+    float y,
+    float size,
+    const glm::vec4& color
+)
+{
+    const float u = std::max(1.0f, size / 12.0f);
+
+    // Compact automotive-style engine silhouette built from HUD quads.
+    text.solidRectPx(x + 2.0f*u, y + 3.0f*u, 7.0f*u, 6.0f*u, color);
+    text.solidRectPx(x + 3.0f*u, y + 1.0f*u, 3.5f*u, 2.0f*u, color);
+    text.solidRectPx(x + 0.5f*u, y + 4.0f*u, 1.5f*u, 4.0f*u, color);
+    text.solidRectPx(x + 9.0f*u, y + 4.0f*u, 1.5f*u, 4.0f*u, color);
+
+    // Hollow the body enough that it reads as an icon rather than a block.
+    text.solidRectPx(
+        x + 3.0f*u,
+        y + 4.2f*u,
+        5.0f*u,
+        3.5f*u,
+        glm::vec4(0.0f, 0.0f, 0.0f, color.a)
+    );
+}
+
+} // namespace
 
 void EngineThrustIndicatorRenderer::render(
     const game::presentation::EngineThrustHudPresentation& presentation,
@@ -25,22 +172,39 @@ void EngineThrustIndicatorRenderer::render(
     }
 
     auto& text = TextRenderer::instance();
+    const auto& style =
+        resolveEngineStatusWidgetStyle(presentation.styleId);
 
     const float scale = std::clamp(
         static_cast<float>(viewport.height) / 1440.0f,
-        0.68f,
-        1.35f
+        0.72f,
+        1.40f
     );
 
-    const float barWidth = std::max(4.0f, 6.0f * scale);
-    const float barHeight = std::max(48.0f, 72.0f * scale);
-    const float barGap = std::max(2.0f, 2.5f * scale);
-    const float groupGap = std::max(7.0f, 10.0f * scale);
-    const float padding = std::max(5.0f, 7.0f * scale);
-    const float labelGap = std::max(4.0f, 5.0f * scale);
+    const float barWidth =
+        std::max(6.0f, style.barWidthPx * scale);
+    const float barHeight =
+        std::max(54.0f, style.barHeightPx * scale);
+    const float barGap =
+        std::max(3.0f, style.barGapPx * scale);
+    const float groupGap =
+        std::max(8.0f, style.groupGapPx * scale);
+    const float padding =
+        std::max(7.0f, style.paddingPx * scale);
+    const float iconSize =
+        std::max(18.0f, style.iconSizePx * scale);
+    const float iconGap =
+        std::max(3.0f, style.iconToLabelGapPx * scale);
+    const float labelGap =
+        std::max(6.0f, style.labelToBarsGapPx * scale);
+    const float radius =
+        std::max(4.0f, style.cornerRadiusPx * scale);
+    const float borderWidth =
+        std::max(1.0f, style.borderWidthPx * scale);
+
     const int labelPx = std::max(
-        10,
-        static_cast<int>(std::lround(12.0f * scale))
+        11,
+        static_cast<int>(std::lround(13.5f * scale))
     );
 
     float barsWidth = 0.0f;
@@ -58,44 +222,92 @@ void EngineThrustIndicatorRenderer::render(
             barsWidth += groupGap;
     }
 
-    const float panelWidth = barsWidth + padding * 2.0f;
+    const float labelWidth =
+        text.measureTextPx(presentation.modelLabel, labelPx);
+
+    // Content-derived dimensions: the panel is only as large as the icon,
+    // label and actual I/Y/X bar topology require.
+    const float contentWidth =
+        std::max({
+            barsWidth,
+            labelWidth,
+            iconSize
+        });
+
+    const float panelWidth =
+        contentWidth + 2.0f * padding;
     const float panelHeight =
-        barHeight + padding * 2.0f +
-        static_cast<float>(labelPx) + labelGap;
+        padding +
+        iconSize +
+        iconGap +
+        static_cast<float>(labelPx) +
+        labelGap +
+        barHeight +
+        padding;
 
     const float panelX =
         static_cast<float>(viewport.width) * 0.025f;
     const float panelBottom =
         static_cast<float>(viewport.height) * 0.965f;
-    const float panelY = panelBottom - panelHeight;
-    const float barsY =
-        panelY + padding +
-        static_cast<float>(labelPx) + labelGap;
+    const float panelY =
+        panelBottom - panelHeight;
 
-    const glm::vec4 panelColor(0.012f, 0.016f, 0.020f, 0.68f);
-    const glm::vec4 trackColor(0.10f, 0.085f, 0.045f, 0.82f);
-    const glm::vec4 outlineColor(0.55f, 0.46f, 0.18f, 0.56f);
-    const glm::vec4 capacityColor(0.98f, 0.74f, 0.08f, 0.82f);
-    const glm::vec4 thrustColor(1.00f, 0.12f, 0.055f, 0.98f);
-    const glm::vec4 labelColor(0.88f, 0.77f, 0.36f, 0.92f);
+    // A faint larger underlay approximates amber border glow without adding a
+    // second rendering subsystem.
+    roundedRectPx(
+        text,
+        panelX - 2.0f * scale,
+        panelY - 2.0f * scale,
+        panelWidth + 4.0f * scale,
+        panelHeight + 4.0f * scale,
+        radius + 2.0f * scale,
+        style.panelBorderGlow
+    );
 
-    text.solidRectPx(
+    roundedOutlinePx(
+        text,
         panelX,
         panelY,
         panelWidth,
         panelHeight,
-        panelColor
+        radius,
+        borderWidth,
+        style.panelBorder,
+        style.panelBackground
     );
+
+    const float pulse =
+        presentation.warning
+            ? warningPulse(style)
+            : 1.0f;
+
+    const float contentX = panelX + padding;
+    float contentY = panelY + padding;
+
+    drawCheckEngineIcon(
+        text,
+        contentX,
+        contentY,
+        iconSize,
+        presentation.warning
+            ? withAlpha(style.warning, pulse)
+            : style.label
+    );
+
+    contentY += iconSize + iconGap;
 
     text.textDrawPx(
         presentation.modelLabel,
-        panelX + padding,
-        panelY + padding,
+        contentX,
+        contentY,
         labelPx,
-        labelColor
+        style.label
     );
 
-    float x = panelX + padding;
+    const float barsY =
+        contentY + static_cast<float>(labelPx) + labelGap;
+
+    float x = contentX;
 
     for (std::size_t g = 0; g < presentation.groups.size(); ++g)
     {
@@ -104,20 +316,22 @@ void EngineThrustIndicatorRenderer::render(
         for (std::size_t b = 0; b < group.bars.size(); ++b)
         {
             const auto& bar = group.bars[b];
+            const float barPulse =
+                bar.fault ? pulse : 1.0f;
 
             text.solidRectPx(
-                x - 1.0f,
-                barsY - 1.0f,
-                barWidth + 2.0f,
-                barHeight + 2.0f,
-                outlineColor
+                x - 1.0f * scale,
+                barsY - 1.0f * scale,
+                barWidth + 2.0f * scale,
+                barHeight + 2.0f * scale,
+                withAlpha(style.barOutline, barPulse)
             );
             text.solidRectPx(
                 x,
                 barsY,
                 barWidth,
                 barHeight,
-                trackColor
+                withAlpha(style.track, barPulse)
             );
 
             const float capability =
@@ -147,7 +361,7 @@ void EngineThrustIndicatorRenderer::render(
                     capabilityY,
                     barWidth,
                     capabilityHeight,
-                    capacityColor
+                    withAlpha(style.capacity, barPulse)
                 );
             }
 
@@ -163,7 +377,7 @@ void EngineThrustIndicatorRenderer::render(
                     thrustY,
                     redWidth,
                     thrustHeight,
-                    thrustColor
+                    withAlpha(style.thrust, barPulse)
                 );
             }
 

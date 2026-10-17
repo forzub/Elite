@@ -402,6 +402,16 @@ namespace
         {
             ms.state = static_cast<uint8_t>(rt->state);
             ms.health = rt->health;
+            ms.laserDamage01 = static_cast<float>(
+                rt->equipmentDamage.accumulated.laser01);
+            ms.impactDamage01 = static_cast<float>(
+                rt->equipmentDamage.accumulated.impact01);
+            ms.thermalDamage01 = static_cast<float>(
+                rt->equipmentDamage.accumulated.thermal01);
+            ms.radiationDamage01 = static_cast<float>(
+                rt->equipmentDamage.accumulated.radiation01);
+            ms.wearDamage01 = static_cast<float>(
+                rt->equipmentDamage.accumulated.wear01);
             ms.aliveSupportCount = rt->aliveSupportCount;
         }
         else
@@ -7427,6 +7437,16 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                     const auto* rt = itRt->second;
                     ms.state = static_cast<uint8_t>(rt->state);
                     ms.health = rt->health;
+                    ms.laserDamage01 = static_cast<float>(
+                        rt->equipmentDamage.accumulated.laser01);
+                    ms.impactDamage01 = static_cast<float>(
+                        rt->equipmentDamage.accumulated.impact01);
+                    ms.thermalDamage01 = static_cast<float>(
+                        rt->equipmentDamage.accumulated.thermal01);
+                    ms.radiationDamage01 = static_cast<float>(
+                        rt->equipmentDamage.accumulated.radiation01);
+                    ms.wearDamage01 = static_cast<float>(
+                        rt->equipmentDamage.accumulated.wear01);
                     ms.aliveSupportCount = rt->aliveSupportCount;
                 }
                 else

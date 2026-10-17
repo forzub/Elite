@@ -816,7 +816,7 @@ int main(int argc, char** argv)
                     << "[App] unknown --diagnostic-scenario: "
                     << diagnosticScenario
                     << "\n"
-                    << "[App] supported: ship-control, "
+                    << "[App] supported: ship-control, propulsion-matrix, "
                     << "ship-damage:<Model@slot,...>, "
                     << "nav-stress[:simple|assisted-high-speed|"
                     << "assisted-gameplay-parity|"

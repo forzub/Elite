@@ -66,6 +66,24 @@ void testExplicitSelection()
 
     {
         const auto s =
+            RuntimeScenarioSelection::parse("ship-damage:");
+        require(
+            !s.active(),
+            "empty ship-damage payload unexpectedly became active"
+        );
+    }
+
+    {
+        const auto s =
+            RuntimeScenarioSelection::parse("nav-stress:unknown-mode");
+        require(
+            !s.active(),
+            "unknown nav-stress payload unexpectedly became active"
+        );
+    }
+
+    {
+        const auto s =
             RuntimeScenarioSelection::parse("something-else");
         require(
             !s.active(),

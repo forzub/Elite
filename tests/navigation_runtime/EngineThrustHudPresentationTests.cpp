@@ -105,6 +105,10 @@ void testAssistedLayoutGrouping()
                 "Assisted-I must render two paired groups");
         require(totalBars(p) == 4,
                 "Assisted-I must render four main-engine bars");
+        require(p.styleId == "human_amber",
+                "engine HUD did not inherit default ship HUD style");
+        require(!p.warning,
+                "healthy Assisted-I incorrectly raised engine warning");
 
         require(
             p.groups[0].bars[0].fillDirection == Direction::BottomUp &&
@@ -146,7 +150,8 @@ void testAssistedLayoutGrouping()
 
 void testRuntimeModelOverridesDescriptorModel()
 {
-    const auto descriptor = descriptorFor(Model::AssistedI);
+    auto descriptor = descriptorFor(Model::AssistedI);
+    descriptor.hud.engineStatusStyleId = "alien_blue";
     auto ship = shipFor(descriptor);
 
     ship.physicalControlModel = Model::AssistedY;
@@ -155,6 +160,8 @@ void testRuntimeModelOverridesDescriptorModel()
 
     require(p.modelLabel == "ASSISTED-Y",
             "HUD label ignored replicated runtime model");
+    require(p.styleId == "alien_blue",
+            "engine HUD style did not follow ship HUD profile");
     require(p.groups.size() == 3,
             "runtime Assisted-Y must replace descriptor Assisted-I geometry");
     require(totalBars(p) == 6,
@@ -212,6 +219,39 @@ void testNewtonianNeverRendersForeMainBars()
             }
         }
     }
+}
+
+void testFaultFlagComesFromPhysicalSlotAvailability()
+{
+    auto descriptor = descriptorFor(Model::AssistedI);
+
+    // Bind the first physical slot to a module id that is absent from the
+    // runtime module snapshot. The capability builder must therefore expose
+    // that slot as unavailable rather than allowing the renderer to guess.
+    descriptor.physicalControl.slotModuleIds = {
+        "engine:aft_left",
+        "",
+        "",
+        ""
+    };
+
+    auto ship = shipFor(descriptor);
+    const auto p =
+        game::presentation::buildEngineThrustHudPresentation(ship);
+
+    require(p.visible, "damaged engine HUD unexpectedly hidden");
+    require(p.warning,
+            "unavailable physical engine slot did not raise widget warning");
+
+    bool sawFault = false;
+    for (const auto& group : p.groups)
+    {
+        for (const auto& bar : group.bars)
+            sawFault = sawFault || bar.fault;
+    }
+
+    require(sawFault,
+            "unavailable physical engine slot did not mark its bar faulty");
 }
 
 void testAssistedForwardThrustUsesAftBars()
@@ -291,6 +331,7 @@ int main()
         testAssistedLayoutGrouping();
         testRuntimeModelOverridesDescriptorModel();
         testNewtonianNeverRendersForeMainBars();
+        testFaultFlagComesFromPhysicalSlotAvailability();
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
 
@@ -299,6 +340,8 @@ int main()
             << " - Assisted I/Y/X render 2/3/4 paired groups\n"
             << " - runtime model overrides descriptor spawn model\n"
             << " - Newtonian HUD never renders fore-main bars\n"
+            << " - widget style follows ShipHudProfile\n"
+            << " - damaged/unavailable slots raise per-bar + group warning\n"
             << " - yellow bars are per-slot capability\n"
             << " - red bars follow axial and vectoring main thrust\n";
         return EXIT_SUCCESS;

@@ -92,7 +92,8 @@ inline plant::EngineSlotState slotFromModule(
         return plant::EngineSlotState {
             true,
             effective.efficiencyAuthority01,
-            effective.gimbalAuthority01
+            effective.gimbalAuthority01,
+            effective.thrustIrregularity01
         };
     }
 

@@ -1,3 +1,82 @@
+## 2026-10-17 — engine unit damage model becomes propulsion truth
+
+A concrete per-engine functional damage model has been added. The goal is to make each physical equipment unit own the mapping from damage to degraded functionality, instead of letting HUD, capability matrices or controllers guess from generic health.
+
+Canonical engine model:
+- Runtime damage truth remains one scalar module health fraction health01 for now.
+- Each damageable engine module may carry an immutable EngineUnitDescriptor passport.
+- evaluateEngineUnit(descriptor, health01) produces the engine's effective functional state.
+- Consumers use the effective state; they do not reinterpret raw health independently.
+
+EngineUnitDescriptor currently contains:
+- nominalThrustNewtons;
+- nominalElectricalPowerMW;
+- nominalWasteHeatMW;
+- nominalGimbalRangeRad;
+- nominalGimbalRateRadPerSec;
+- thrustHealthExponent;
+- vectoringHealthExponent;
+- maxPowerCostPenalty;
+- maxHeatPenalty.
+
+EngineUnitEffectiveState contains:
+- operational;
+- health01;
+- thrustAvailable01;
+- maximumThrustNewtons;
+- vectoringAvailable01;
+- gimbalRangeRad;
+- gimbalRateRadPerSec;
+- powerCostMultiplier;
+- heatMultiplier.
+
+Damage mapping:
+- health is clamped to [0,1];
+- health=0 => engine offline, zero thrust and zero vectoring;
+- thrust authority = health^thrustHealthExponent;
+- vectoring authority = health^vectoringHealthExponent;
+- gimbal range/rate scale with vectoring authority;
+- per-generated-thrust electrical cost increases with damage according to maxPowerCostPenalty;
+- per-generated-thrust waste heat increases with damage according to maxHeatPenalty;
+- damage is monotonic and must never improve useful thrust/vectoring authority.
+
+Power/heat semantics:
+- requestedElectricalPowerMW() and generatedWasteHeatMW() are defined from ACTUAL generated-thrust fraction and the damaged engine state.
+- They are intentionally not yet connected to PowerBus/ThermalSystem because the current propulsion stack still does not expose truthful per-engine throttle/allocation.
+- Do not reconstruct engine power/heat from aggregate ship throttle. Wire these functions only after the per-engine force/torque allocator outputs actual engine loading.
+- Cobra engine nominal electrical/thermal ratings currently remain zero rather than inventing MW values without an authored energy budget.
+
+Integration:
+- ModuleDescriptor now has optional EngineUnitDescriptor engine.
+- ShipCapabilityBuilder checks the bound engine module's passport and uses evaluateEngineUnit() to derive EngineSlotState thrust01/vectoring01.
+- Legacy engine modules without a passport retain the previous linear health->thrust/vectoring fallback during migration.
+- Cobra's four damageable main-engine modules now receive the same first engine passport.
+- Cobra per-engine nominal thrust is derived from existing ship physics:
+      nominalThrust = ship mass * nominal bank acceleration / engines in bank
+  using 260000 kg, 73.549875 m/s^2 and two engines per bank.
+- Cobra v1 damage response:
+      thrustHealthExponent = 1.0
+      vectoringHealthExponent = 1.35
+      maxPowerCostPenalty = 0.50
+      maxHeatPenalty = 1.00
+- These coefficients are gameplay/technology data and can later differ by engine type/race without changing damage code.
+
+Architectural rule:
+- equipment unit runtime health is the damage source;
+- the equipment unit's own descriptor defines how health loss affects its functions;
+- propulsion authority matrix only aggregates the already-derived engine capabilities;
+- physical force/torque consumes those capabilities;
+- HUD/BITE must only present replicated functional state and must never independently derive engine health from unrelated data.
+
+BITE scope:
+- BITE is not required as a physics owner.
+- If retained, BITE should be presentation/diagnostic projection for HUD and maintenance only.
+- It must not become a second source of equipment health.
+
+Test:
+- engine_unit_damage_model contract verifies healthy preservation, damage-degraded thrust/vectoring, increased per-thrust power/heat cost, dead-engine zero output, and monotonic damage behavior.
+
+
 ## 2026-10-17 — damage runtime probe corrected
 
 The first ship-damage runtime oracle was invalid as an acceptance test.

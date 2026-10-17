@@ -287,30 +287,26 @@ void testAssistedSingleMainLossUsesTrimBeforeHullRotation()
 
     require(
         glm::length(transform.motion.mainEngineAccelerationMps2) > 1.0e-3,
-        "Assisted-Y damage trim suppressed main propulsion entirely"
+        "Assisted-Y feedback trim suppressed main propulsion entirely"
     );
     require(
         transform.motion.mainTrimLoad01 > 0.0,
-        "Assisted-Y damage did not register automatic trim load"
+        "Assisted-Y damage did not engage physical feedback trim"
     );
     require(
-        transform.motion.mainTrimUsableScale01 < 1.0,
-        "Assisted-Y damage trim did not reserve main-force margin"
-    );
-    require(
-        glm::length(transform.motion.mainEngineAccelerationMps2) <
-            physical.effectivePhysics.forwardMainEngineAccelerationMps2,
-        "Assisted-Y damage trim did not reserve any main-force margin"
+        transform.motion.mainTrimUsableScale01 > 0.99,
+        "Assisted-Y feedback hid pitch bias by unnecessarily killing thrust"
     );
     require(
         std::abs(
             transform.motion.mainPropulsionAngularAccelerationBodyRadPerSec2.x
-        ) < 1.0e-6,
-        "Assisted-Y automatic trim left avoidable pitch reaction"
+        ) <
+        std::abs(rawReaction.angularAccelerationBodyRadPerSec2.x),
+        "Assisted-Y physical feedback did not reduce pitch reaction"
     );
     require(
-        std::abs(transform.pitchRate) < 1.0e-5f,
-        "Assisted-Y hull rotated despite sufficient automatic trim authority"
+        std::abs(transform.pitchRate) > 1.0e-8f,
+        "Assisted-Y feedback magically erased all residual physical reaction"
     );
 }
 
@@ -347,7 +343,7 @@ int main()
         std::cout << " - precision/Assisted/Newtonian execution selection is centralized\n";
         std::cout << " - callers no longer need to interpret ShipControlState\n";
         std::cout << " - axial Newtonian-I main is centered radially, while aft-mounted TVC creates real yaw/pitch reaction\n";
-        std::cout << " - Assisted damaged-main bias is trimmed before avoidable hull rotation\n";
+        std::cout << " - damaged-main feedback physically reduces avoidable bias without synthetic cancellation\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

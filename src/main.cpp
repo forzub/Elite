@@ -25,6 +25,7 @@
 #include "src/game/session/RemoteGameSession.h"
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/game/client/GameClient.h"
+#include "src/game/debug/RuntimeScenarioSelection.h"
 #include "src/game/identity/ClientIdentityProfile.h"
 #include "src/game/identity/SecureRandom.h"
 #include "core/ConsoleOutput.h"
@@ -749,6 +750,24 @@ int main(int argc, char** argv)
 
         if (!diagnosticScenario.empty())
         {
+            const auto selection =
+                game::debug::RuntimeScenarioSelection::parse(
+                    diagnosticScenario
+                );
+            if (!selection.active())
+            {
+                std::cerr
+                    << "[App] unknown --diagnostic-scenario: "
+                    << diagnosticScenario
+                    << "\n"
+                    << "[App] supported: ship-control, "
+                    << "ship-damage:<Model@slot,...>, "
+                    << "nav-stress[:simple|assisted-high-speed|"
+                    << "assisted-gameplay-parity|"
+                    << "assisted-safe-course-obstacle]\n";
+                return -2;
+            }
+
 #ifdef _WIN32
             _putenv_s(
                 "ELITE_DIAGNOSTIC_SCENARIO",

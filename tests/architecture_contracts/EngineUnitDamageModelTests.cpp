@@ -8,7 +8,9 @@
 namespace
 {
 
-using game::equipment::engine::EngineDamageInputs;
+using game::equipment::EquipmentDamageLayer;
+using game::equipment::EquipmentDamageState;
+using game::equipment::EquipmentDamageSensitivity;
 using game::equipment::engine::EngineUnitDescriptor;
 using game::equipment::engine::evaluateEngineUnit;
 using game::equipment::engine::generatedWasteHeatMW;
@@ -35,19 +37,28 @@ EngineUnitDescriptor descriptor()
     d.nominalGimbalRateRadPerSec = 0.40;
     d.minimumOperationalEfficiency01 = 0.05;
 
-    d.efficiencyDamage = {
-        0.30, 0.45, 0.15, 0.01, 0.09
-    };
     d.gimbalDamage = {
         0.15, 0.65, 0.05, 0.00, 0.15
     };
     return d;
 }
 
+EquipmentDamageLayer damageLayer(
+    const EquipmentDamageState& accumulated = {}
+)
+{
+    EquipmentDamageLayer layer;
+    layer.accumulated = accumulated;
+    layer.sensitivity = {
+        0.30, 0.45, 0.15, 0.01, 0.09
+    };
+    return layer;
+}
+
 void testHealthyEnginePreservesPassport()
 {
     const auto d = descriptor();
-    const auto s = evaluateEngineUnit(d, {});
+    const auto s = evaluateEngineUnit(d, damageLayer());
 
     require(s.operational, "healthy engine became inoperative");
     require(near(s.efficiencyAuthority01, 1.0),
@@ -70,13 +81,13 @@ void testImpactIsMostCriticalMechanicalDamage()
 {
     const auto d = descriptor();
 
-    EngineDamageInputs damage;
+    EquipmentDamageState damage;
     damage.impact01 = 1.0;
-    const auto impact = evaluateEngineUnit(d, damage);
+    const auto impact = evaluateEngineUnit(d, damageLayer(damage));
 
     damage = {};
     damage.laser01 = 1.0;
-    const auto laser = evaluateEngineUnit(d, damage);
+    const auto laser = evaluateEngineUnit(d, damageLayer(damage));
 
     require(
         impact.efficiencyAuthority01 < laser.efficiencyAuthority01,
@@ -96,10 +107,10 @@ void testImpactIsMostCriticalMechanicalDamage()
 void testLaserIsImportantButLessMechanicalThanImpact()
 {
     const auto d = descriptor();
-    EngineDamageInputs damage;
+    EquipmentDamageState damage;
     damage.laser01 = 1.0;
 
-    const auto s = evaluateEngineUnit(d, damage);
+    const auto s = evaluateEngineUnit(d, damageLayer(damage));
 
     require(near(s.efficiencyAuthority01, 0.70),
             "laser efficiency weight changed");
@@ -111,18 +122,18 @@ void testThermalAndWearMostlyHitEfficiency()
 {
     const auto d = descriptor();
 
-    EngineDamageInputs thermal;
+    EquipmentDamageState thermal;
     thermal.thermal01 = 1.0;
-    const auto t = evaluateEngineUnit(d, thermal);
+    const auto t = evaluateEngineUnit(d, damageLayer(thermal));
 
     require(near(t.efficiencyAuthority01, 0.85),
             "thermal efficiency weight changed");
     require(near(t.gimbalAuthority01, 0.95),
             "thermal gimbal weight changed");
 
-    EngineDamageInputs wear;
+    EquipmentDamageState wear;
     wear.wear01 = 1.0;
-    const auto w = evaluateEngineUnit(d, wear);
+    const auto w = evaluateEngineUnit(d, damageLayer(wear));
 
     require(near(w.efficiencyAuthority01, 0.91),
             "wear efficiency weight changed");
@@ -133,10 +144,10 @@ void testThermalAndWearMostlyHitEfficiency()
 void testRadiationIsNegligibleForEngine()
 {
     const auto d = descriptor();
-    EngineDamageInputs damage;
+    EquipmentDamageState damage;
     damage.radiation01 = 1.0;
 
-    const auto s = evaluateEngineUnit(d, damage);
+    const auto s = evaluateEngineUnit(d, damageLayer(damage));
 
     require(near(s.efficiencyAuthority01, 0.99),
             "engine radiation efficiency sensitivity changed");
@@ -147,10 +158,10 @@ void testRadiationIsNegligibleForEngine()
 void testEfficiencyDrivesThrustPowerAndHeatTogether()
 {
     const auto d = descriptor();
-    EngineDamageInputs damage;
+    EquipmentDamageState damage;
     damage.impact01 = 1.0;
 
-    const auto s = evaluateEngineUnit(d, damage);
+    const auto s = evaluateEngineUnit(d, damageLayer(damage));
 
     // efficiency authority = 0.55:
     // max thrust at fixed available input power becomes 550 N.
@@ -174,15 +185,15 @@ void testCombinedDamageIsBoundedAndMonotonic()
 {
     const auto d = descriptor();
 
-    EngineDamageInputs a;
+    EquipmentDamageState a;
     a.impact01 = 0.25;
 
-    EngineDamageInputs b = a;
+    EquipmentDamageState b = a;
     b.laser01 = 0.25;
     b.thermal01 = 0.25;
 
-    const auto sa = evaluateEngineUnit(d, a);
-    const auto sb = evaluateEngineUnit(d, b);
+    const auto sa = evaluateEngineUnit(d, damageLayer(a));
+    const auto sb = evaluateEngineUnit(d, damageLayer(b));
 
     require(
         sb.efficiencyAuthority01 <= sa.efficiencyAuthority01,
@@ -193,14 +204,14 @@ void testCombinedDamageIsBoundedAndMonotonic()
         "additional damage improved gimbal condition"
     );
 
-    EngineDamageInputs all;
+    EquipmentDamageState all;
     all.laser01 = 1.0;
     all.impact01 = 1.0;
     all.thermal01 = 1.0;
     all.radiation01 = 1.0;
     all.wear01 = 1.0;
 
-    const auto dead = evaluateEngineUnit(d, all);
+    const auto dead = evaluateEngineUnit(d, damageLayer(all));
     require(!dead.operational,
             "fully accumulated engine damage remained operational");
     require(near(dead.maximumThrustNewtons, 0.0),

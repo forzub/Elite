@@ -1772,12 +1772,23 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 playerIt->second.transform.motion.localControlLaw;
     }
 
-    if (m_shipRuntimeDamageOracle.enabled())
+    const bool propulsionMatrixScenario =
+        m_runtimeScenarioSelection.kind ==
+            game::debug::RuntimeScenarioKind::PropulsionMatrix;
+    const bool matrixHealthyPhase =
+        propulsionMatrixScenario &&
+        !m_shipRuntimeControlOracle.complete();
+    const bool damageOracleOwnsControl =
+        m_shipRuntimeDamageOracle.enabled() &&
+        !matrixHealthyPhase;
+
+    if (damageOracleOwnsControl)
     {
         m_playerControl = m_shipRuntimeDamageOracle.control();
         m_client->submitInput(m_playerControl);
     }
-    else if (m_shipRuntimeControlOracle.enabled())
+    else if (m_shipRuntimeControlOracle.enabled() &&
+             !m_shipRuntimeControlOracle.complete())
     {
         // In-game control oracle owns the exact same ordinary pilot-control
         // surface as keyboard input. No direct physics/engine calls are
@@ -5400,7 +5411,12 @@ void SpaceState::update(float dt)
 
 
     // Optional real-runtime damaged-propulsion oracle.
-    if (m_shipRuntimeDamageOracle.enabled())
+    const bool matrixDamagePhase =
+        m_runtimeScenarioSelection.kind !=
+            game::debug::RuntimeScenarioKind::PropulsionMatrix ||
+        m_shipRuntimeControlOracle.complete();
+
+    if (m_shipRuntimeDamageOracle.enabled() && matrixDamagePhase)
     {
         game::debug::ShipRuntimeDamageOracle::Observation obs;
         obs.universeSeconds =
@@ -5520,7 +5536,12 @@ void SpaceState::update(float dt)
     // stream in handleInput() and observes the authoritative replicated ship
     // state here. No planner, corridor or direct physics shortcut participates.
     if (m_shipRuntimeControlOracle.enabled() &&
-        !m_shipRuntimeDamageOracle.enabled())
+        !m_shipRuntimeControlOracle.complete() &&
+        (
+            !m_shipRuntimeDamageOracle.enabled() ||
+            m_runtimeScenarioSelection.kind ==
+                game::debug::RuntimeScenarioKind::PropulsionMatrix
+        ))
     {
         game::debug::ShipRuntimeControlOracle::Observation obs;
         obs.universeSeconds =

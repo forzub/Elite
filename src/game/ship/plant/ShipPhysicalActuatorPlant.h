@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -9,6 +11,22 @@
 
 namespace game::ship::plant
 {
+
+// Deterministic instantaneous thrust after equipment-authored instability.
+[[nodiscard]] double instantaneousSlotThrust01(
+    const EngineSlotState& state,
+    std::size_t slotIndex,
+    std::uint64_t controlTick
+) noexcept;
+
+// Scale applied to the net main acceleration for the currently active bank.
+// Healthy/stable slots return exactly 1.0.
+[[nodiscard]] double evaluateMainPropulsionInstantaneousScale(
+    PhysicalControlModelId model,
+    const std::vector<EngineSlotState>& state,
+    const glm::dvec3& mainAccelerationBodyMps2,
+    std::uint64_t controlTick
+) noexcept;
 
 struct MainPropulsionReaction
 {
@@ -39,7 +57,8 @@ struct MainPropulsionReaction
     PhysicalControlModelId model,
     const std::vector<EngineSlotState>& state,
     const ShipParams& physics,
-    const glm::dvec3& mainAccelerationBodyMps2
+    const glm::dvec3& mainAccelerationBodyMps2,
+    std::uint64_t controlTick = 0
 ) noexcept;
 
 } // namespace game::ship::plant

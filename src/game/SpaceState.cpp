@@ -5478,7 +5478,8 @@ void SpaceState::update(float dt)
     // ELITE_SHIP_CONTROL_ORACLE=1. It drives the exact ordinary pilot-control
     // stream in handleInput() and observes the authoritative replicated ship
     // state here. No planner, corridor or direct physics shortcut participates.
-    if (m_shipRuntimeControlOracle.enabled())
+    if (m_shipRuntimeControlOracle.enabled() &&
+        !m_shipRuntimeDamageOracle.enabled())
     {
         game::debug::ShipRuntimeControlOracle::Observation obs;
         obs.universeSeconds =

@@ -108,6 +108,45 @@ set_tests_properties(
 )
 
 add_executable(
+    runtime_scenario_selection_tests
+    RuntimeScenarioSelectionTests.cpp
+)
+
+target_include_directories(
+    runtime_scenario_selection_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(
+    runtime_scenario_selection_tests
+    PRIVATE cxx_std_17
+)
+
+if(MSVC)
+    target_compile_options(
+        runtime_scenario_selection_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        runtime_scenario_selection_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME runtime_scenario_selection
+    COMMAND runtime_scenario_selection_tests
+)
+
+set_tests_properties(
+    runtime_scenario_selection
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     runtime_policy_contract_tests
     RuntimePolicyContractTests.cpp
 )

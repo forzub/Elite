@@ -8,6 +8,7 @@
 #include "src/game/equipment/engine/EngineUnit.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/simulation/ObjectModuleSnapshot.h"
+#include "src/world/modules/ObjectModuleState.h"
 
 namespace game::presentation
 {
@@ -42,6 +43,8 @@ inline game::bite::State buildShipBiteState(
         game::equipment::EquipmentDamageLayer damage;
         damage.sensitivity =
             definition.equipmentDamageSensitivity;
+        damage.failure =
+            definition.equipmentFailure;
         damage.accumulated.laser01 = it->laserDamage01;
         damage.accumulated.impact01 = it->impactDamage01;
         damage.accumulated.thermal01 = it->thermalDamage01;
@@ -70,8 +73,14 @@ inline game::bite::State buildShipBiteState(
         sample.maintenanceWearThreshold01 =
             definition.maintenance.maintenanceWearThreshold01;
         sample.operational =
-            effective.operational &&
+            it->state == static_cast<std::uint8_t>(
+                world::modules::ObjectModuleRuntimeState::Attached
+            ) &&
             it->health > 0.0f;
+        sample.functionalFailed =
+            effective.thrustFailed;
+        sample.secondaryFailed =
+            effective.gimbalFailed;
 
         samples.push_back(std::move(sample));
     }

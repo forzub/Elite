@@ -1,3 +1,44 @@
+## 2026-10-17 — damage runtime probe corrected
+
+The first ship-damage runtime oracle was invalid as an acceptance test.
+
+Observed failure pattern on ship-damage:Assisted-I@0:
+- DAMAGE slot 0 was issued;
+- the oracle then held targetSpeedRate=+1 indefinitely until a compound PASS predicate became true;
+- the Assisted PASS predicate required trim_load > 1e-4 and usable_scale < 0.9999;
+- live trim_load stayed around 1e-6..1e-5 while yaw rate rose to about 0.468 rad/s;
+- therefore the PASS predicate was mathematically unreachable and the test itself kept increasing the Assisted forward-speed setpoint forever.
+
+This made the probe capable of manufacturing a long-running acceleration/rotation episode even when the intended measurement had already been captured.
+
+Canonical correction:
+- ship-damage is now a bounded measurement probe, not a self-extending acceptance test.
+- Per case phases are:
+  1. model selection;
+  2. BrakeToStop preparation;
+  3. damage command;
+  4. 0.25 s neutral damage-settle phase;
+  5. 0.50 s ordinary targetSpeedRate=+1 burn;
+  6. 1.50 s neutral observation;
+  7. CAPTURED result and next case / COMPLETE.
+- No physics threshold can extend the burn duration.
+- The probe records:
+  peak speed,
+  peak forward velocity,
+  peak main acceleration magnitude,
+  peak angular-rate magnitude,
+  peak residual main angular acceleration,
+  peak trim load,
+  minimum usable main scale,
+  plus final instantaneous state.
+- Result is status=CAPTURED rather than PASS until correct damaged-flight acceptance limits are established from real runtime behavior.
+- GameServer diagnostic damage acceptance logging now uses stderr/std::endl so accepted=1/0 is visible immediately in the console.
+
+Important diagnostic observation from the invalid run:
+- after failing Assisted-I slot 0, observed main acceleration magnitude was still roughly in the healthy 7.5g region during parts of the run while trim diagnostics were nearly zero.
+- This must be re-measured with the bounded probe before concluding whether the damage capability projection itself is wrong, because the old probe continuously changed the Assisted target-speed setpoint and could not terminate.
+
+
 ## 2026-10-17 — runtime scenario infrastructure audit and ownership fix
 
 The live scenario/oracle infrastructure was audited after repeated runs failed to start or behaved inconsistently.

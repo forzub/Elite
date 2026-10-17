@@ -87,7 +87,7 @@ glm::dvec3 harmfulAngularAcceleration(
     return out;
 }
 
-double harmfulMetric(
+double rawHarmfulMetric(
     const MainPropulsionReaction& reaction,
     const glm::dvec3& attitudeIntent01
 ) noexcept
@@ -98,6 +98,27 @@ double harmfulMetric(
             attitudeIntent01
         );
     return glm::dot(harmful, harmful);
+}
+
+double normalizedHarmfulMetric(
+    const AllocationEvaluation& allocation,
+    const glm::dvec3& attitudeIntent01
+) noexcept
+{
+    const double raw =
+        rawHarmfulMetric(
+            allocation.reaction,
+            attitudeIntent01
+        );
+    const double acceleration =
+        glm::length(allocation.accelerationBodyMps2);
+
+    // Uniformly shutting down an already-unbalanced bank is not compensation:
+    // it reduces useful force and parasitic torque in the same proportion.
+    // Normalize by delivered main acceleration so throttle feedback is accepted
+    // only when the maneuver becomes cleaner, not merely weaker.
+    return raw /
+        std::max(acceleration * acceleration, 1.0e-12);
 }
 
 glm::dvec3 applicationPointBodyMeters(
@@ -436,10 +457,19 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     {
         for (int iteration = 0; iteration < 8; ++iteration)
         {
-            const double currentMetric =
-                harmfulMetric(current.reaction, attitudeIntent01);
-            if (currentMetric <= AngularMetricStop)
+            const double currentRawMetric =
+                rawHarmfulMetric(
+                    current.reaction,
+                    attitudeIntent01
+                );
+            if (currentRawMetric <= AngularMetricStop)
                 break;
+
+            const double currentMetric =
+                normalizedHarmfulMetric(
+                    current,
+                    attitudeIntent01
+                );
 
             std::size_t bestSlot = slots.size();
             double bestQuality = 0.0;
@@ -477,8 +507,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
                     continue;
 
                 const double candidateMetric =
-                    harmfulMetric(
-                        candidate.reaction,
+                    normalizedHarmfulMetric(
+                        candidate,
                         attitudeIntent01
                     );
                 const double improvement =
@@ -546,10 +576,19 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
 
     for (int iteration = 0; iteration < 2; ++iteration)
     {
-        const double currentMetric =
-            harmfulMetric(current.reaction, attitudeIntent01);
-        if (currentMetric <= AngularMetricStop)
+        const double currentRawMetric =
+            rawHarmfulMetric(
+                current.reaction,
+                attitudeIntent01
+            );
+        if (currentRawMetric <= AngularMetricStop)
             break;
+
+        const double currentMetric =
+            normalizedHarmfulMetric(
+                current,
+                attitudeIntent01
+            );
 
         AllocationEvaluation bestCandidate = current;
         double bestMetric = currentMetric;
@@ -574,8 +613,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
                     return;
 
                 const double metric =
-                    harmfulMetric(
-                        candidate.reaction,
+                    normalizedHarmfulMetric(
+                        candidate,
                         attitudeIntent01
                     );
 

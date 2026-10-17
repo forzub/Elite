@@ -1,13 +1,14 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -20,6 +21,12 @@ class ShipRuntimeDamageOracle final
 {
 public:
     using Model = game::ship::plant::PhysicalControlModelId;
+
+    struct ScenarioCase
+    {
+        Model model = Model::AssistedI;
+        std::size_t failedSlot = 0;
+    };
 
     struct Observation
     {
@@ -49,20 +56,18 @@ public:
 
     ShipRuntimeDamageOracle()
     {
-        const char* enabled = std::getenv("ELITE_SHIP_DAMAGE_ORACLE");
-        m_enabled =
-            enabled != nullptr &&
-            std::string(enabled) != "" &&
-            std::string(enabled) != "0";
+        const char* scenario = std::getenv("ELITE_DIAGNOSTIC_SCENARIO");
+        if (!scenario || !*scenario)
+            return;
 
+        const std::string text(scenario);
+        constexpr const char* Prefix = "ship-damage:";
+        if (text.rfind(Prefix, 0) != 0)
+            return;
+
+        m_enabled = parseScenario(text.substr(std::char_traits<char>::length(Prefix)));
         if (!m_enabled)
-        {
-            std::error_code ec;
-            m_enabled = std::filesystem::exists(
-                "D:/tmp/elite/ship_damage_oracle.enable",
-                ec
-            );
-        }
+            return;
 
         const char* report =
             std::getenv("ELITE_SHIP_DAMAGE_ORACLE_REPORT");
@@ -87,8 +92,15 @@ public:
             return c;
         }
 
-        // Keep the same ordinary pilot command active until the damaged
-        // physical signature is actually observed. No duration-based verdict.
+        if (desiredModel() == Model::NewtonianI)
+        {
+            // With its only main failed, Newtonian-I should not invent
+            // longitudinal authority. Keep requesting forward thrust so the
+            // test proves the physical absence of response.
+            c.targetSpeedRate = 1.0f;
+            return c;
+        }
+
         c.targetSpeedRate = 1.0f;
         return c;
     }
@@ -109,9 +121,7 @@ public:
         if (!m_damageRequestPending)
             return false;
 
-        // Slot zero is intentionally deterministic:
-        // Assisted-Y = aft_top, Newtonian-Y = main_top.
-        slotIndex = 0;
+        slotIndex = currentCase().failedSlot;
         m_damageRequestPending = false;
         return true;
     }
@@ -132,10 +142,9 @@ public:
             return;
         }
 
-        // Every damage case MUST force an explicit diagnostic construction
-        // selection on the authoritative server, even when the replicated
-        // label already equals the desired model. Matching the label alone
-        // does not prove ShipActuatorStateSource::DiagnosticOverride.
+        // Matching the model label is not sufficient: every case explicitly
+        // selects the diagnostic construction so server-side actuator state is
+        // guaranteed to be DiagnosticOverride before slot damage is requested.
         if (!m_modelRequestIssued)
         {
             m_waitingForModel = true;
@@ -147,10 +156,8 @@ public:
         if (actual != desiredModel())
             return;
 
-        // Wait for at least one subsequent authoritative snapshot after the
-        // explicit model request before issuing damage. This avoids racing the
-        // SelectPhysicalControlModel and DebugFailPhysicalPropulsionSlot
-        // commands in the same client frame.
+        // Require one replicated snapshot after the model request. Damage is
+        // deliberately never sent in the same client frame as model selection.
         if (m_waitingForModel)
         {
             if (!m_seenRequestedModelSnapshot)
@@ -199,50 +206,75 @@ public:
         }
 
         logActualAndPass(o);
-        ++m_modelIndex;
-        m_modelStarted = false;
-        m_preparing = false;
-        m_damageIssued = false;
-        m_modelRequestIssued = false;
-        m_seenRequestedModelSnapshot = false;
-
-        if (m_modelIndex >= static_cast<int>(Models.size()))
-        {
-            m_complete = true;
-            if (m_stream.is_open())
-            {
-                m_stream << "SUMMARY status=COMPLETE models=2 damaged_slot=0\n";
-                m_stream.flush();
-            }
-
-            std::error_code ec;
-            std::filesystem::remove(
-                "D:/tmp/elite/ship_damage_oracle.enable",
-                ec
-            );
-            return;
-        }
-
-        m_waitingForModel = true;
-        m_modelRequestPending = true;
-        logModelRequest(o);
+        advanceCase(o);
     }
 
 private:
-    static constexpr std::array<Model, 2> Models = {
-        Model::AssistedY,
-        Model::NewtonianY
-    };
+    bool parseScenario(const std::string& casesText)
+    {
+        std::stringstream stream(casesText);
+        std::string token;
+
+        while (std::getline(stream, token, ','))
+        {
+            if (token.empty())
+                return false;
+
+            const auto at = token.find('@');
+            if (at == std::string::npos || at == 0 || at + 1 >= token.size())
+                return false;
+
+            Model model {};
+            if (!game::ship::plant::parsePhysicalControlModel(
+                    token.substr(0, at),
+                    model
+                ))
+            {
+                return false;
+            }
+
+            std::size_t consumed = 0;
+            unsigned long slot = 0;
+            try
+            {
+                slot = std::stoul(token.substr(at + 1), &consumed);
+            }
+            catch (...)
+            {
+                return false;
+            }
+
+            if (consumed != token.size() - at - 1)
+                return false;
+
+            const auto& slots =
+                game::ship::plant::physicalControlSlots(model);
+            if (slot >= slots.size())
+                return false;
+
+            m_cases.push_back({
+                model,
+                static_cast<std::size_t>(slot)
+            });
+        }
+
+        return !m_cases.empty();
+    }
+
+    const ScenarioCase& currentCase() const noexcept
+    {
+        return m_cases[
+            std::clamp(
+                m_caseIndex,
+                0,
+                static_cast<int>(m_cases.size()) - 1
+            )
+        ];
+    }
 
     Model desiredModel() const noexcept
     {
-        return Models[
-            std::clamp(
-                m_modelIndex,
-                0,
-                static_cast<int>(Models.size()) - 1
-            )
-        ];
+        return currentCase().model;
     }
 
     static bool settled(const Observation& o) noexcept
@@ -257,24 +289,43 @@ private:
     bool damageExpectationSatisfied(const Observation& o) const noexcept
     {
         const Model model = desiredModel();
+        const auto family = game::ship::plant::familyOf(model);
 
-        if (model == Model::AssistedY)
+        if (family == game::ship::plant::PhysicalControlFamily::Assisted)
         {
-            // The raw asymmetric bank creates a pitch bias, but Assisted
-            // should spend trim authority before that avoidable torque reaches
-            // the hull. The trim diagnostics are the authoritative evidence
-            // that the failure was applied and compensation is active.
+            const double residualAlpha =
+                std::max({
+                    std::abs(o.mainAlphaPitchRadPerSec2),
+                    std::abs(o.mainAlphaYawRadPerSec2),
+                    std::abs(o.mainAlphaRollRadPerSec2)
+                });
+
             return
                 o.forwardVelocityMps >= 3.0 &&
                 o.trimLoad01 > 1.0e-4 &&
                 o.trimUsableScale01 < 0.9999 &&
-                std::abs(o.mainAlphaPitchRadPerSec2) < 1.0e-4 &&
-                std::abs(o.mainAlphaYawRadPerSec2) < 1.0e-4;
+                residualAlpha < 1.0e-4;
         }
 
-        // Newtonian-Y has the same failed top main but does not receive
-        // Assisted hidden trim. Its mains sit close to the axis, so the
-        // residual reaction must be real but moderate rather than explosive.
+        if (model == Model::NewtonianI)
+        {
+            const double mainAcceleration =
+                std::sqrt(
+                    o.mainForwardAccelerationMps2 *
+                        o.mainForwardAccelerationMps2 +
+                    o.mainRightAccelerationMps2 *
+                        o.mainRightAccelerationMps2 +
+                    o.mainUpAccelerationMps2 *
+                        o.mainUpAccelerationMps2
+                );
+
+            return
+                o.speedMps < 0.20 &&
+                mainAcceleration < 0.01 &&
+                o.trimLoad01 < 1.0e-9 &&
+                o.trimUsableScale01 > 0.999999;
+        }
+
         const double residualAlpha =
             std::max(
                 std::abs(o.mainAlphaPitchRadPerSec2),
@@ -287,6 +338,34 @@ private:
             o.trimUsableScale01 > 0.999999 &&
             residualAlpha > 1.0e-4 &&
             residualAlpha < 0.25;
+    }
+
+    void advanceCase(const Observation& o)
+    {
+        ++m_caseIndex;
+        m_modelStarted = false;
+        m_preparing = false;
+        m_damageIssued = false;
+        m_modelRequestIssued = false;
+        m_seenRequestedModelSnapshot = false;
+
+        if (m_caseIndex >= static_cast<int>(m_cases.size()))
+        {
+            m_complete = true;
+            if (m_stream.is_open())
+            {
+                m_stream
+                    << "SUMMARY status=COMPLETE cases="
+                    << m_cases.size()
+                    << "\n";
+                m_stream.flush();
+            }
+            return;
+        }
+
+        m_waitingForModel = true;
+        m_modelRequestPending = true;
+        logModelRequest(o);
     }
 
     void ensureOpen()
@@ -307,8 +386,8 @@ private:
         {
             m_stream
                 << "# Elite in-game propulsion damage oracle\n"
-                << "# manual launch; condition-driven, no physics timeout\n"
-                << "# Assisted-Y and Newtonian-Y; slot 0 main is failed\n"
+                << "# scenario comes from --diagnostic-scenario ship-damage:<Model@slot,...>\n"
+                << "# condition-driven; no elapsed-time physics verdict\n"
                 << "# format: MODEL / DAMAGE / EXPECTED / ACTUAL / RESULT\n";
             m_stream.flush();
         }
@@ -342,9 +421,12 @@ private:
             return;
 
         m_stream
-            << "MODEL_REQUEST from=" << o.physicalModelLabel
+            << "MODEL_REQUEST case=" << (m_caseIndex + 1)
+            << '/' << m_cases.size()
+            << " from=" << o.physicalModelLabel
             << " to="
             << game::ship::plant::physicalControlModelName(desiredModel())
+            << " fail_slot=" << currentCase().failedSlot
             << "\n";
         m_stream.flush();
     }
@@ -355,7 +437,9 @@ private:
             return;
 
         m_stream
-            << "\nMODEL_START model=" << o.physicalModelLabel
+            << "\nMODEL_START case=" << (m_caseIndex + 1)
+            << '/' << m_cases.size()
+            << " model=" << o.physicalModelLabel
             << " law="
             << game::navigation::localFlightControlLawName(o.law)
             << "\n"
@@ -369,13 +453,19 @@ private:
             return;
 
         m_stream
-            << "DAMAGE slot=0\n"
+            << "DAMAGE slot=" << currentCase().failedSlot << "\n"
             << "COMMAND forward_burn\n";
 
-        if (desiredModel() == Model::AssistedY)
+        if (game::ship::plant::familyOf(desiredModel()) ==
+            game::ship::plant::PhysicalControlFamily::Assisted)
         {
             m_stream
-                << "EXPECTED \"trim_load>0; usable_scale<1; forward thrust remains; avoidable pitch/yaw reaction suppressed\"\n";
+                << "EXPECTED \"trim_load>0; usable_scale<1; forward thrust remains; residual main-reaction alpha approximately zero\"\n";
+        }
+        else if (desiredModel() == Model::NewtonianI)
+        {
+            m_stream
+                << "EXPECTED \"only main failed; no invented main acceleration; no Assisted trim\"\n";
         }
         else
         {
@@ -393,6 +483,7 @@ private:
         m_stream << "ACTUAL";
         writeActual(o);
         m_stream << "\nRESULT model=" << o.physicalModelLabel
+                 << " failed_slot=" << currentCase().failedSlot
                  << " status=PASS\n";
         m_stream.flush();
     }
@@ -406,7 +497,10 @@ private:
             return;
 
         m_lastHeartbeatAt = o.universeSeconds;
-        m_stream << state << " model=" << o.physicalModelLabel;
+        m_stream
+            << state
+            << " model=" << o.physicalModelLabel
+            << " failed_slot=" << currentCase().failedSlot;
         writeActual(o);
         m_stream << "\n";
         m_stream.flush();
@@ -424,8 +518,9 @@ private:
     bool m_preparing = false;
     bool m_damageIssued = false;
 
-    int m_modelIndex = 0;
+    int m_caseIndex = 0;
     double m_lastHeartbeatAt = -1.0e30;
+    std::vector<ScenarioCase> m_cases;
 
     std::string m_reportPath =
         "D:/tmp/elite/ship_damage_oracle.log";

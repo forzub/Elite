@@ -192,6 +192,215 @@ void testIrregularThrustIsDeterministicAndPhysicallyBounded()
     ), "healthy engine bank acquired artificial thrust irregularity");
 }
 
+
+void testAssistedThrottleFeedbackBalancesUnequalPair()
+{
+    const auto model = PhysicalControlModelId::AssistedI;
+    auto state = healthySlotState(physicalControlSlots(model));
+    state[0].thrust01 = 0.80;
+
+    const auto raw = evaluateMainPropulsionReaction(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        0
+    );
+    require(raw.valid, "raw Assisted-I damaged reaction invalid");
+    require(
+        std::abs(raw.angularAccelerationBodyRadPerSec2.y) > 1.0e-6,
+        "unequal Assisted-I pair produced no yaw bias"
+    );
+
+    const auto trim = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        {0.0, 0.0, 0.0},
+        0.0,
+        0.0,
+        0
+    );
+
+    require(trim.valid, "Assisted-I feedback trim invalid");
+    require(
+        std::abs(trim.reaction.angularAccelerationBodyRadPerSec2.y) <
+            std::abs(raw.angularAccelerationBodyRadPerSec2.y) * 0.10,
+        "Assisted-I throttle feedback did not remove pair imbalance"
+    );
+    require(
+        trim.thrustScale01 < 1.0 &&
+        trim.thrustScale01 > 0.80,
+        "Assisted-I balancing sacrificed implausible thrust"
+    );
+}
+
+void testFeedbackDoesNotHideTorqueByUniformlyKillingThrust()
+{
+    const auto model = PhysicalControlModelId::AssistedY;
+    auto state = healthySlotState(physicalControlSlots(model));
+
+    // With the top aft main gone, both survivors have the same pitch lever-arm
+    // sign. Uniformly reducing them cannot improve torque per unit useful force.
+    state[0].operational = false;
+    state[0].thrust01 = 0.0;
+    state[0].vectoring01 = 0.0;
+
+    const auto trim = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -40.0},
+        {0.0, 0.0, 0.0},
+        0.0,
+        0.0,
+        0
+    );
+
+    require(trim.valid, "Assisted-Y no-TVC feedback trim invalid");
+    require(
+        near(trim.thrustScale01, 1.0, 1.0e-9),
+        "feedback hid uncorrectable torque by uniformly killing thrust"
+    );
+    require(
+        std::abs(trim.reaction.angularAccelerationBodyRadPerSec2.x) > 1.0e-4,
+        "uncorrectable no-TVC pitch bias was magically erased"
+    );
+}
+
+void testCommonTvcFeedbackReducesResidualWithoutKillingThrust()
+{
+    const auto model = PhysicalControlModelId::AssistedY;
+    auto state = healthySlotState(physicalControlSlots(model));
+    state[0].operational = false;
+    state[0].thrust01 = 0.0;
+    state[0].vectoring01 = 0.0;
+
+    const auto noTvc = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -40.0},
+        {0.0, 0.0, 0.0},
+        0.0,
+        0.0,
+        0
+    );
+
+    const auto withTvc = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -40.0},
+        {0.0, 0.0, 0.0},
+        0.12,
+        0.12,
+        0
+    );
+
+    require(withTvc.valid, "Assisted-Y TVC feedback trim invalid");
+    require(
+        near(withTvc.thrustScale01, 1.0, 1.0e-9),
+        "common TVC trim unnecessarily sacrificed main thrust"
+    );
+    require(
+        std::abs(withTvc.automaticPitchTrimRad) > 1.0e-6,
+        "common TVC feedback did not use available pitch trim"
+    );
+    require(
+        std::abs(withTvc.reaction.angularAccelerationBodyRadPerSec2.x) <
+            std::abs(noTvc.reaction.angularAccelerationBodyRadPerSec2.x),
+        "common TVC feedback did not reduce residual pitch bias"
+    );
+}
+
+void testNewtonianThrottleFeedbackUsesSameSimpleRule()
+{
+    const auto model = PhysicalControlModelId::NewtonianY;
+    auto state = healthySlotState(physicalControlSlots(model));
+
+    state[0].thrust01 = 0.80;
+
+    const auto raw = evaluateMainPropulsionReaction(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        0
+    );
+    require(raw.valid, "raw Newtonian-Y damaged reaction invalid");
+
+    const auto trim = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        {0.0, 0.0, 0.0},
+        0.0,
+        0.0,
+        0
+    );
+
+    require(trim.valid, "Newtonian-Y feedback trim invalid");
+    require(
+        glm::length(
+            trim.reaction.angularAccelerationBodyRadPerSec2
+        ) <
+        glm::length(
+            raw.angularAccelerationBodyRadPerSec2
+        ),
+        "Newtonian-Y throttle feedback did not reduce damaged-main bias"
+    );
+    require(
+        trim.thrustScale01 < 1.0,
+        "Newtonian-Y feedback never redistributed main thrust"
+    );
+}
+
+void testFeedbackLeavesHelpfulTurnReactionAlone()
+{
+    const auto model = PhysicalControlModelId::AssistedI;
+    auto state = healthySlotState(physicalControlSlots(model));
+    state[0].thrust01 = 0.80;
+
+    const auto raw = evaluateMainPropulsionReaction(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        0
+    );
+    require(raw.valid, "raw turn-help reaction invalid");
+
+    const double yawIntent =
+        raw.angularAccelerationBodyRadPerSec2.y >= 0.0
+            ? 1.0
+            : -1.0;
+
+    const auto trim = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        {0.0, yawIntent, 0.0},
+        0.12,
+        0.12,
+        0
+    );
+
+    require(trim.valid, "turn-help feedback trim invalid");
+    require(
+        near(trim.thrustScale01, 1.0, 1.0e-9),
+        "feedback reduced an engine reaction already helping requested yaw"
+    );
+    require(
+        near(trim.automaticYawTrimRad, 0.0, 1.0e-12) &&
+        near(trim.automaticPitchTrimRad, 0.0, 1.0e-12),
+        "feedback countered a reaction already helping requested turn"
+    );
+}
+
 } // namespace
 
 int main()
@@ -204,6 +413,11 @@ int main()
         testNewtonianYSingleMainLossCreatesPitchTorque();
         testNewtonianXSingleCornerMainLossCreatesTwoAxisTorque();
         testIrregularThrustIsDeterministicAndPhysicallyBounded();
+        testAssistedThrottleFeedbackBalancesUnequalPair();
+        testFeedbackDoesNotHideTorqueByUniformlyKillingThrust();
+        testCommonTvcFeedbackReducesResidualWithoutKillingThrust();
+        testNewtonianThrottleFeedbackUsesSameSimpleRule();
+        testFeedbackLeavesHelpfulTurnReactionAlone();
 
         std::cout
             << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
@@ -211,6 +425,9 @@ int main()
             << " - Newtonian-I TVC produces rigid-body reaction torque\n"
             << " - Y/X single-main failures produce layout-dependent asymmetric torque\n"
             << " - severe damage produces deterministic bounded per-engine thrust hiccups\n"
+            << " - cheap feedback reduces only torque-producing main imbalance\n"
+            << " - common TVC trim reduces residual bias without hiding it by killing thrust\n"
+            << " - the same feedback rule covers Assisted and Newtonian main banks\n"
             << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
         return 0;
     }

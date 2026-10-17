@@ -197,6 +197,11 @@ public:
             selection.kind ==
             game::debug::RuntimeScenarioKind::NavigationStress;
 
+        m_simpleCorridor = false;
+        m_assistedHighSpeedManeuver = false;
+        m_assistedGameplayParity = false;
+        m_assistedSafeCourseObstacle = false;
+
         if (!m_enabled)
             return;
 

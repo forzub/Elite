@@ -1,3 +1,34 @@
+## 2026-10-17 — severe engine damage causes deterministic irregular thrust
+
+Engine primary damage now has a pre-failure instability region:
+- weighted primary damage <= 70%: thrust remains steady;
+- damage > 70% and < 95%: thrust becomes increasingly intermittent;
+- at the existing 95% primary failure threshold: thrust function fails completely.
+
+Mechanics:
+- EngineUnit derives thrustIrregularity01 from the same five accumulated damage causes; no second damage state exists.
+- Irregularity ramps linearly from 0 at 70% damage toward 1 immediately before 95% failure.
+- EngineSlotState carries thrustIrregularity01 alongside thrust01 and vectoring01.
+- The static capability matrix continues to describe the maximum damage-limited thrust authority.
+- ShipPhysicalActuatorPlant applies a deterministic per-slot pulse at the real force seam using controlTick.
+- Pulses only remove instantaneous thrust; they never exceed the damage-limited maximum.
+- The same pulse affects net linear acceleration and per-slot reaction torque, so an unstable engine can physically jerk the ship and create changing asymmetric moments.
+- Pulse samples are deterministic and held for four fixed-control ticks, preserving server/client prediction/replay agreement while producing perceptible hiccups instead of frame-frequency noise.
+- Client capability reconstruction derives the same instability from replicated five-channel module damage.
+
+Diagnostics:
+- BITE remains read-only and now carries outputInstability01 as a symptom of the already-derived engine state.
+- Existing severity still comes from functional loss/failure; instability does not create a second damage/severity authority.
+- Terminal lines append output instability when present.
+
+Tests:
+- engine_unit_damage_model locks steady output through 70%, progressive instability above 70%, and near-maximal intermittency just below 95%.
+- ship_physical_actuator_plant verifies deterministic, bounded thrust pulses and exact healthy scale=1.
+- equipment_damage_failure_pipeline verifies severe surviving damage reaches physical slot instability through the real module damage path.
+
+Known presentation boundary:
+- the normal engine HUD still reconstructs per-bar red thrust from aggregate executed acceleration. The physical force path is now per-slot intermittent, but truthful per-engine instantaneous red-bar telemetry remains a separate presentation/data-plane task; do not fake it from throttle.
+
 ## 2026-10-17 — independent thrust/TVC failure contract
 
 - EquipmentDamage now owns a generic functional failure threshold.

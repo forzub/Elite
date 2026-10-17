@@ -463,6 +463,22 @@ SpaceState::SpaceState(
     : GameState(states),
       m_systemMapRenderer(m_navigationWorkspace)
 {
+    m_runtimeScenarioSelection =
+        game::debug::RuntimeScenarioSelection::fromProcessEnvironment();
+    m_navigationStressHarness.configure(m_runtimeScenarioSelection);
+    m_shipRuntimeControlOracle.configure(m_runtimeScenarioSelection);
+    m_shipRuntimeDamageOracle.configure(m_runtimeScenarioSelection);
+
+    if (m_runtimeScenarioSelection.active())
+    {
+        std::cerr
+            << "[RuntimeScenario] selected spec="
+            << m_runtimeScenarioSelection.spec
+            << " kind="
+            << static_cast<int>(m_runtimeScenarioSelection.kind)
+            << "\n";
+    }
+
     m_startupTotalBegin = ClientStartupClock::now();
 
     if (core::runtimeTraceEnabled())
@@ -5464,8 +5480,10 @@ void SpaceState::update(float dt)
                 << std::endl;
         }
 
-        if (m_shipRuntimeDamageOracle.complete())
+        if (m_shipRuntimeDamageOracle.complete() &&
+            !m_shipDamageOracleCompleteAnnounced)
         {
+            m_shipDamageOracleCompleteAnnounced = true;
             std::cerr
                 << "[ShipDamageOracle] COMPLETE report="
                 << m_shipRuntimeDamageOracle.reportPath()
@@ -5597,9 +5615,9 @@ void SpaceState::update(float dt)
         }
 
         if (m_shipRuntimeControlOracle.complete() &&
-            !m_navigationStressCompleteAnnounced)
+            !m_shipControlOracleCompleteAnnounced)
         {
-            m_navigationStressCompleteAnnounced = true;
+            m_shipControlOracleCompleteAnnounced = true;
             std::cerr
                 << "[ShipControlOracle] COMPLETE report="
                 << m_shipRuntimeControlOracle.reportPath()
@@ -6090,7 +6108,27 @@ void SpaceState::update(float dt)
     }
 
     const double dockingGuidanceStartMs = nowMs();
-    updateDockingAdvisory();
+
+    const bool directControlScenario =
+        m_runtimeScenarioSelection.kind ==
+            game::debug::RuntimeScenarioKind::ShipControl ||
+        m_runtimeScenarioSelection.kind ==
+            game::debug::RuntimeScenarioKind::ShipDamage;
+
+    if (directControlScenario)
+    {
+        // Runtime control scenarios exclusively own ShipControlState. A stale
+        // docking request/autopilot must never submit a second sample later in
+        // the same frame and overwrite the scenario command.
+        m_navigationWorkspace.dockingRouteRequests().clear();
+        m_clientAutopilotControlActive = false;
+        m_clientAutopilotControl = ShipControlState {};
+    }
+    else
+    {
+        updateDockingAdvisory();
+    }
+
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;
     m_perfDockingRequestActive =
         m_navigationWorkspace.dockingRouteRequests().pending().valid();

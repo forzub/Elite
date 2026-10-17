@@ -6136,7 +6136,9 @@ void SpaceState::update(float dt)
         m_runtimeScenarioSelection.kind ==
             game::debug::RuntimeScenarioKind::ShipControl ||
         m_runtimeScenarioSelection.kind ==
-            game::debug::RuntimeScenarioKind::ShipDamage;
+            game::debug::RuntimeScenarioKind::ShipDamage ||
+        m_runtimeScenarioSelection.kind ==
+            game::debug::RuntimeScenarioKind::PropulsionMatrix;
 
     if (directControlScenario)
     {

@@ -13,6 +13,9 @@ namespace game::equipment::engine
 // useful functions and operating cost.
 struct EngineUnitDescriptor
 {
+    // Healthy maximum thrust of this one physical engine.
+    double nominalThrustNewtons = 0.0;
+
     // Nominal electrical/thermal cost at full generated thrust. These are
     // equipment ratings; the actuator allocator supplies actual throttle.
     double nominalElectricalPowerMW = 0.0;
@@ -42,6 +45,7 @@ struct EngineUnitEffectiveState
 
     // Maximum functional authority relative to the healthy unit.
     double thrustAvailable01 = 1.0;
+    double maximumThrustNewtons = 0.0;
     double vectoringAvailable01 = 1.0;
     double gimbalRangeRad = 0.0;
     double gimbalRateRadPerSec = 0.0;
@@ -82,6 +86,7 @@ inline double positiveFiniteOr(
     {
         out.operational = false;
         out.thrustAvailable01 = 0.0;
+        out.maximumThrustNewtons = 0.0;
         out.vectoringAvailable01 = 0.0;
         out.gimbalRangeRad = 0.0;
         out.gimbalRateRadPerSec = 0.0;
@@ -111,6 +116,11 @@ inline double positiveFiniteOr(
         std::pow(out.health01, thrustExponent);
     out.vectoringAvailable01 =
         std::pow(out.health01, vectoringExponent);
+    out.maximumThrustNewtons =
+        positiveFiniteOr(
+            descriptor.nominalThrustNewtons,
+            0.0
+        ) * out.thrustAvailable01;
 
     out.gimbalRangeRad =
         positiveFiniteOr(

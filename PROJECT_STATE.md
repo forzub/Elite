@@ -1,3 +1,248 @@
+## 2026-10-17 — propulsion authority matrix: canonical model and current limits
+
+This section is the canonical cross-chat description of the propulsion authority matrix and how it relates to runtime physics.
+
+### Purpose
+
+The matrix is a capability projection layer. It answers:
+
+- which physical propulsion slots exist for the selected ship construction;
+- which of those slots are operational and at what health/availability fraction;
+- which translational/rotational control axes those slots can contribute to;
+- how much normalized authority remains on each axis after damage.
+
+The matrix is NOT the final per-nozzle thrust allocator and must not be treated as one.
+
+Current layering:
+
+engine slot topology + slot health
+    -> per-slot authority contribution rows
+    -> aggregate ShipPhysicalAuthorityMatrix result
+    -> effective ShipParams / capability envelope
+    -> ShipControlExecutionGateway
+    -> actual main force / reaction torque physics
+
+For damaged flight, the long-term target is:
+
+requested force + requested torque
+    -> bounded actuator allocator
+    -> per-engine throttle/gimbal/cluster commands
+    -> sum(F_i), sum(r_i x F_i)
+    -> rigid-body motion
+
+### Physical topologies
+
+Supported ordinary-flight construction models are fixed:
+
+- Assisted-I: 4 vectoring mains = 2 aft + 2 fore.
+- Assisted-Y: 6 vectoring mains = 3 aft + 3 fore.
+- Assisted-X: 8 vectoring mains = 4 aft + 4 fore.
+- Newtonian-I: 1 aft vectoring main + 4 omnidirectional manoeuvre clusters.
+- Newtonian-Y: 3 aft vectoring mains + 6 manoeuvre clusters.
+- Newtonian-X: 4 aft vectoring mains + 8 manoeuvre clusters.
+
+No private/custom engine count is authored by a ship descriptor. The descriptor may tune ratings and bind physical slots to damageable modules, but topology comes from PhysicalControlModelId.
+
+### Matrix row meaning
+
+Each physical slot contributes an AuthorityContributionRow with:
+
+- thrust: normalized translation/rotation contribution;
+- vectoring: normalized control authority available through nozzle vectoring;
+- poweredMainVectoring: trajectory/attitude control available specifically while main thrust is active.
+
+Axis authority uses positive/negative pairs where relevant:
+
+- longitudinal: forward / reverse;
+- strafe: right / left;
+- lift: up / down;
+- pitch;
+- yaw;
+- roll.
+
+The aggregate matrix combines surviving slot contributions and produces:
+
+- KinematicAuthorityEstimate authority;
+- PoweredMainVectoringEstimate poweredMainVectoring;
+- weakestAxisAuthority(...) where a scalar compatibility projection is still required.
+
+Damage is monotonic: reducing/failing a slot must never increase any reported authority.
+
+### Assisted matrix semantics
+
+Every Assisted main is a vectoring main.
+
+Aft mains contribute forward longitudinal thrust.
+Fore mains contribute reverse longitudinal thrust.
+All Assisted main slots also contribute vectoring authority to:
+
+- strafe;
+- lift;
+- pitch;
+- yaw;
+- roll;
+- powered trajectory strafe/lift;
+- powered pitch/yaw/roll.
+
+Assisted has no ordinary dedicated RCS slots in the new physical model.
+
+The transitional backend still consumes scalar lateral/angular limits, so the current Assisted capability projection uses the weakest relevant matrix axis as the surviving vectoring fraction. This preserves the accepted healthy response while ensuring damage can only reduce the envelope.
+
+Healthy I/Y/X intentionally preserve the accepted scalar flight envelope. Therefore healthy player-visible acceleration can be very similar across I/Y/X; their main gameplay difference is redundancy and degraded behavior after damage.
+
+### Newtonian matrix semantics
+
+Newtonian constructions have no fore main bank.
+
+Main engines contribute:
+
+- forward longitudinal main authority;
+- powered-main vectoring authority while thrusting.
+
+Manoeuvre clusters contribute independent translation/attitude authority.
+
+Newtonian-I:
+- one centered aft main;
+- powered roll authority from the main is zero;
+- four manoeuvre clusters provide fine translation/attitude correction.
+
+Newtonian-Y/X:
+- multiple aft mains;
+- powered main vectoring can contribute pitch/yaw and layout-dependent roll;
+- manoeuvre clusters remain the fine-control/self-stabilization system.
+
+Newtonian reverse translation remains manoeuvre-cluster/RCS-like trim, not a fore-main bank.
+
+### Newtonian main-engine lever arms
+
+The physical plant uses actual application points and center of mass:
+
+    torque_i = r_i x F_i
+
+where r_i is the vector from center of mass to the slot application point.
+
+Newtonian design intent is a tightly clustered main bank near the thrust axis.
+
+Current simplified geometry:
+
+- Newtonian-I main is radially centered.
+- Newtonian-Y/X main radial x/y placement is scaled by NewtonMainRadialScale = 0.12.
+- Their z position remains aft of the center of mass.
+- Manoeuvre clusters remain at large/full lever arms.
+
+Consequences:
+
+- a straight burn from centered Newtonian-I produces approximately zero lever-arm torque;
+- gimbaling that aft-centered main produces real pitch/yaw torque because the lateral force acts at a nonzero longitudinal z arm;
+- losing one Newtonian-Y/X main produces a real but deliberately moderate asymmetric reaction torque;
+- RCS/manoeuvre clusters retain strong attitude leverage.
+
+### Physical actuator reaction
+
+ShipPhysicalActuatorPlant::evaluateMainPropulsionReaction() is the current physical reaction calculation.
+
+For the active longitudinal main bank it:
+
+1. selects surviving slots of the active role;
+2. distributes requested main acceleration according to surviving thrust availability;
+3. converts slot normalized position to a physical application point using ship actuator half-extents;
+4. subtracts centerOfMassLocalMeters to obtain r_i;
+5. computes per-slot force;
+6. accumulates torque = sum(r_i x F_i);
+7. converts torque to pitch/yaw/roll angular acceleration through ship inertias.
+
+This reaction is applied by ShipControlExecutionGateway to the real hull angular rates.
+
+Therefore the matrix and r x F plant are separate concepts:
+
+- matrix = remaining command authority/envelope;
+- actuator plant = physical force/torque consequence of the actual surviving main bank.
+
+### Current Assisted damage trim — transitional and known inadequate
+
+Current ShipControlExecutionGateway contains a cinematic transitional Assisted trim:
+
+- compute raw asymmetric main reaction;
+- compare raw angular acceleration with surviving angularAccel trim authority;
+- derive mainTrimLoad01;
+- reserve up to 20% of requested main force at full trim;
+- expose mainTrimUsableScale01;
+- subtract available trim authority from residual angular acceleration;
+- apply any remaining reaction to the hull.
+
+Diagnostics:
+
+- mainTrimLoad01: 0 healthy, rising with required trim;
+- mainTrimUsableScale01: 1 healthy, below 1 when trim consumes propulsive margin;
+- mainPropulsionTorqueBodyNm;
+- mainPropulsionAngularAccelerationBodyRadPerSec2.
+
+This is NOT a real actuator allocator. It does not solve per-engine throttle/gimbal commands and does not guarantee that the requested net force and near-zero requested torque can be achieved simultaneously.
+
+The live in-game damage test exposed this limitation on Assisted-I: after losing one aft main, the ship can continue moving while rotating for too long instead of rapidly finding a stable compensated solution. The test correctly remains incomplete in that state.
+
+The current 20% trim reservation must not be treated as final physics.
+
+### Required next physics step
+
+Replace the current scalar Assisted pseudo-trim with a small bounded force/torque allocator.
+
+Desired constraint:
+
+    F_actual approximately F_requested
+    torque_actual approximately torque_requested
+
+For ordinary straight Assisted acceleration:
+
+    torque_requested = 0
+
+Allocator priorities:
+
+1. suppress dangerous parasitic torque;
+2. preserve requested force direction;
+3. preserve as much force magnitude as physically feasible;
+4. minimize additional actuator/energy use;
+5. obey per-engine thrust, health and gimbal limits;
+6. if no exact balanced solution exists, reduce usable thrust until the best stable solution is found;
+7. expose residual torque only when physical authority is genuinely insufficient.
+
+The allocator should eventually output real per-engine usage so the HUD and resource model can consume actual survivor loading instead of reconstructing it from aggregate throttle.
+
+### Newtonian degraded-flight intent
+
+Newtonian should expose asymmetry more visibly than Assisted, but ordinary self-stabilizing manoeuvre controls may still compensate where physically available.
+
+Preferred strategy order:
+
+1. find a static body attitude / main-vector solution whose surviving resultant aligns with the desired trajectory and minimizes parasitic torque;
+2. use main gimbal/vectoring trim;
+3. use small paired/pulsed manoeuvre-cluster corrections if a static solution is impossible;
+4. avoid secular unwanted linear acceleration by balancing correction impulse;
+5. use continuous roll only when it is mathematically useful, not as a visual effect.
+
+### Test/evidence hierarchy
+
+Do not infer gameplay correctness from the matrix unit tests alone.
+
+Evidence priority:
+
+1. manually launched in-game EliteGame runtime behavior;
+2. deterministic restore-vs-feature game A/B;
+3. lower-level control -> gateway -> physical plant oracle;
+4. structural/unit matrix contracts.
+
+Current structural coverage includes:
+
+- healthy matrix preserves accepted envelope;
+- damage never creates authority;
+- ShipPhysicalActuatorPlant verifies centered/offset r x F behavior;
+- Newtonian-Y/X single-main loss creates bounded real reaction;
+- gateway verifies Assisted trim diagnostics and Newtonian physical reaction;
+- damage matrix exercises all six physical models across healthy/degraded cases.
+
+The next acceptance task after HUD cleanup is to continue the explicit --diagnostic-scenario in-game damage run and then implement/falsify the real damaged Assisted allocator against that runtime oracle.
+
+
 ## 2026-10-17 — standalone adaptive engine-status HUD widget
 
 The existing main-engine thrust indicator has been promoted into a standalone engine-status widget.

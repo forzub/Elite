@@ -108,6 +108,37 @@ set_tests_properties(
 )
 
 add_executable(
+    bite_api_tests
+    BiteApiTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/bite/BiteApi.cpp"
+)
+
+target_include_directories(
+    bite_api_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_features(bite_api_tests PRIVATE cxx_std_17)
+
+if(MSVC)
+    target_compile_options(bite_api_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(bite_api_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(
+    NAME bite_api
+    COMMAND bite_api_tests
+)
+
+set_tests_properties(
+    bite_api
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     engine_unit_damage_model_tests
     EngineUnitDamageModelTests.cpp
 )

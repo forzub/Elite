@@ -27,9 +27,9 @@ struct EngineUnitDescriptor
     double nominalGimbalRangeRad = 0.0;
     double nominalGimbalRateRadPerSec = 0.0;
 
-    // Primary functional sensitivity (efficiency) belongs to the common
-    // EquipmentDamageLayer. The engine adds one specialized mechanical
-    // response because nozzle vectoring is a distinct useful function.
+    // Primary thrust failure policy belongs to the common EquipmentDamageLayer.
+    // The engine adds one specialized mechanical function because nozzle
+    // vectoring can fail independently while axial thrust remains available.
     EngineDamageWeights gimbalDamage {
         0.15, // laser
         0.65, // impact
@@ -37,15 +37,13 @@ struct EngineUnitDescriptor
         0.00, // radiation
         0.15  // wear
     };
-
-    // Lowest surviving efficiency before the unit is considered unable to
-    // sustain useful thrust. Avoids singular power demand as efficiency -> 0.
-    double minimumOperationalEfficiency01 = 0.05;
+    game::equipment::EquipmentFailureProfile gimbalFailure {0.95};
 };
 
 struct EngineUnitEffectiveState
 {
-    bool operational = true;
+    bool thrustFailed = false;
+    bool gimbalFailed = false;
 
     double efficiency01 = 1.0;
     double efficiencyAuthority01 = 1.0;
@@ -85,18 +83,19 @@ inline double positiveFiniteOr(
 {
     EngineUnitEffectiveState out;
 
-    const double efficiencyDamage01 =
-        game::equipment::weightedFunctionalDamage01(damage);
+    const auto thrustFunction =
+        game::equipment::evaluateEquipmentFunction(damage);
 
     game::equipment::EquipmentDamageLayer gimbalLayer = damage;
     gimbalLayer.sensitivity = descriptor.gimbalDamage;
-    const double gimbalDamage01 =
-        game::equipment::weightedFunctionalDamage01(gimbalLayer);
+    gimbalLayer.failure = descriptor.gimbalFailure;
+    const auto gimbalFunction =
+        game::equipment::evaluateEquipmentFunction(gimbalLayer);
 
-    out.efficiencyAuthority01 =
-        std::clamp(1.0 - efficiencyDamage01, 0.0, 1.0);
-    out.gimbalAuthority01 =
-        std::clamp(1.0 - gimbalDamage01, 0.0, 1.0);
+    out.thrustFailed = thrustFunction.failed;
+    out.gimbalFailed = gimbalFunction.failed;
+    out.efficiencyAuthority01 = thrustFunction.authority01;
+    out.gimbalAuthority01 = gimbalFunction.authority01;
 
     const double nominalEfficiency =
         std::clamp(
@@ -105,49 +104,39 @@ inline double positiveFiniteOr(
             1.0
         );
 
-    out.efficiency01 =
-        nominalEfficiency * out.efficiencyAuthority01;
+    out.efficiency01 = out.thrustFailed
+        ? 0.0
+        : nominalEfficiency * out.efficiencyAuthority01;
 
-    const double minimumOperationalEfficiency =
-        std::clamp(
-            positiveFiniteOr(
-                descriptor.minimumOperationalEfficiency01,
-                0.05
-            ),
-            0.0,
-            1.0
-        );
+    // A functional thrust failure does not delete the engine module. It zeros
+    // useful thrust, electrical demand and generated waste heat. The TVC
+    // mechanism remains an independently evaluated function.
+    out.maximumThrustNewtons = out.thrustFailed
+        ? 0.0
+        : positiveFiniteOr(
+              descriptor.nominalThrustNewtons,
+              0.0
+          ) * out.efficiencyAuthority01;
 
-    out.operational =
-        out.efficiencyAuthority01 > minimumOperationalEfficiency;
+    out.gimbalRangeRad = out.gimbalFailed
+        ? 0.0
+        : positiveFiniteOr(
+              descriptor.nominalGimbalRangeRad,
+              0.0
+          ) * out.gimbalAuthority01;
+    out.gimbalRateRadPerSec = out.gimbalFailed
+        ? 0.0
+        : positiveFiniteOr(
+              descriptor.nominalGimbalRateRadPerSec,
+              0.0
+          ) * out.gimbalAuthority01;
 
-    if (!out.operational)
+    if (out.thrustFailed)
     {
-        out.maximumThrustNewtons = 0.0;
-        out.gimbalRangeRad = 0.0;
-        out.gimbalRateRadPerSec = 0.0;
         out.powerCostMultiplier = 0.0;
         out.heatMultiplier = 0.0;
         return out;
     }
-
-    // With fixed available input power, useful output scales with efficiency.
-    out.maximumThrustNewtons =
-        positiveFiniteOr(
-            descriptor.nominalThrustNewtons,
-            0.0
-        ) * out.efficiencyAuthority01;
-
-    out.gimbalRangeRad =
-        positiveFiniteOr(
-            descriptor.nominalGimbalRangeRad,
-            0.0
-        ) * out.gimbalAuthority01;
-    out.gimbalRateRadPerSec =
-        positiveFiniteOr(
-            descriptor.nominalGimbalRateRadPerSec,
-            0.0
-        ) * out.gimbalAuthority01;
 
     // For the same generated useful thrust, lower efficiency requires more
     // electrical input. Waste heat is derived from input minus useful output.
@@ -170,7 +159,7 @@ inline double positiveFiniteOr(
     double generatedThrust01
 ) noexcept
 {
-    if (!state.operational)
+    if (state.thrustFailed)
         return 0.0;
 
     return
@@ -188,7 +177,7 @@ inline double positiveFiniteOr(
     double generatedThrust01
 ) noexcept
 {
-    if (!state.operational)
+    if (state.thrustFailed)
         return 0.0;
 
     const double inputMW =

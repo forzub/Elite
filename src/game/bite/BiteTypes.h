@@ -58,10 +58,26 @@ struct Fault
     bool hudAttention = false;
 };
 
+struct Summary
+{
+    std::uint32_t equipmentCount = 0;
+    std::uint32_t degradedCount = 0;
+    std::uint32_t failedCount = 0;
+    std::uint32_t maintenanceRequiredCount = 0;
+    Severity highestSeverity = Severity::Advisory;
+
+    [[nodiscard]] bool nominal() const noexcept
+    {
+        return degradedCount == 0 &&
+               failedCount == 0 &&
+               maintenanceRequiredCount == 0;
+    }
+};
+
 struct State
 {
     std::uint64_t sourceRevision = 0;
-    Severity highestSeverity = Severity::Advisory;
+    Summary summary;
     std::vector<Fault> faults;
 };
 

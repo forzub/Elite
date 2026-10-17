@@ -100,6 +100,7 @@ public:
 
         out = desiredModel();
         m_modelRequestPending = false;
+        m_modelRequestIssued = true;
         return true;
     }
 
@@ -131,20 +132,42 @@ public:
             return;
         }
 
-        if (actual != desiredModel())
+        // Every damage case MUST force an explicit diagnostic construction
+        // selection on the authoritative server, even when the replicated
+        // label already equals the desired model. Matching the label alone
+        // does not prove ShipActuatorStateSource::DiagnosticOverride.
+        if (!m_modelRequestIssued)
         {
-            if (!m_waitingForModel)
-            {
-                m_waitingForModel = true;
-                m_modelRequestPending = true;
-                logModelRequest(o);
-            }
+            m_waitingForModel = true;
+            m_modelRequestPending = true;
+            logModelRequest(o);
             return;
         }
 
-        if (m_waitingForModel || !m_modelStarted)
+        if (actual != desiredModel())
+            return;
+
+        // Wait for at least one subsequent authoritative snapshot after the
+        // explicit model request before issuing damage. This avoids racing the
+        // SelectPhysicalControlModel and DebugFailPhysicalPropulsionSlot
+        // commands in the same client frame.
+        if (m_waitingForModel)
         {
+            if (!m_seenRequestedModelSnapshot)
+            {
+                m_seenRequestedModelSnapshot = true;
+                return;
+            }
+
             m_waitingForModel = false;
+            m_modelStarted = true;
+            m_preparing = true;
+            logModelStart(o);
+            return;
+        }
+
+        if (!m_modelStarted)
+        {
             m_modelStarted = true;
             m_preparing = true;
             logModelStart(o);
@@ -180,6 +203,8 @@ public:
         m_modelStarted = false;
         m_preparing = false;
         m_damageIssued = false;
+        m_modelRequestIssued = false;
+        m_seenRequestedModelSnapshot = false;
 
         if (m_modelIndex >= static_cast<int>(Models.size()))
         {
@@ -392,6 +417,8 @@ private:
     bool m_complete = false;
     bool m_waitingForModel = true;
     bool m_modelRequestPending = true;
+    bool m_modelRequestIssued = false;
+    bool m_seenRequestedModelSnapshot = false;
     bool m_damageRequestPending = false;
     bool m_modelStarted = false;
     bool m_preparing = false;

@@ -1053,10 +1053,18 @@ desc.modules =
         static_cast<double>(
             desc.physics.mainGimbalRateRadPerSec
         );
-    engine.thrustHealthExponent = 1.0;
-    engine.vectoringHealthExponent = 1.35;
-    engine.maxPowerCostPenalty = 0.50;
-    engine.maxHeatPenalty = 1.00;
+    engine.nominalEfficiency01 = 1.0;
+    engine.minimumOperationalEfficiency01 = 0.05;
+
+    // Engine damage response, first production profile:
+    // efficiency: impact 45%, laser 30%, thermal 15%, radiation 1%, wear 9%
+    // gimbal:     impact 65%, laser 15%, thermal 5%,  radiation 0%, wear 15%
+    engine.efficiencyDamage = {
+        0.30, 0.45, 0.15, 0.01, 0.09
+    };
+    engine.gimbalDamage = {
+        0.15, 0.65, 0.05, 0.00, 0.15
+    };
 
     for (auto& module : desc.modules)
     {

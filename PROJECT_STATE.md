@@ -1,3 +1,42 @@
+## 2026-10-17 — real common equipment damage layer replaces scalar-health bridge
+
+The transitional "lost module health == impact damage" bridge has been removed from propulsion capability.
+
+Every equipment module instance now owns one common EquipmentDamageLayer:
+- accumulated runtime values: laser01, impact01, thermal01, radiation01, wear01;
+- immutable equipment-type sensitivity weights: laser, impact, thermal, radiation, wear.
+
+Damage values and weights are different data:
+- accumulated values answer "how much of this cause has this particular unit received?";
+- weights answer "how strongly does this equipment type react to that cause?";
+- functional damage is derived as sum(accumulated cause * sensitivity), clamped to 0..1.
+
+Runtime path is now real:
+DamageEvent -> hit-volume health loss -> cause-specific equipment accumulator -> module revision -> engine effective state -> propulsion slot capability -> physical-control matrix -> control execution -> force/torque -> ship motion.
+
+DamageEvent mapping:
+- Laser -> laser;
+- Explosion/Collision -> impact;
+- Radiation -> radiation;
+- EMP is deliberately not forced into the five physical channels; electrical effects remain separate;
+- Thermal and Wear are supported runtime accumulators and are to be fed by thermal/service simulation rather than fabricated from weapon hits.
+
+For engines:
+- the common equipment sensitivity is the primary useful-work/efficiency sensitivity:
+  laser .30, impact .45, thermal .15, radiation .01, wear .09;
+- nozzle/gimbal mechanics remain an engine-specific second functional response to the SAME accumulated five causes:
+  laser .15, impact .65, thermal .05, radiation .00, wear .15.
+- there are not two sets of damage values. There is one accumulated damage state; multiple useful functions may respond to it differently.
+
+Replication:
+- ObjectModuleSnapshot now carries the five accumulated runtime damage values;
+- weights remain static descriptor data and are not sent every snapshot;
+- wire protocol bumped 15 -> 16 for the schema change;
+- client capability/HUD projection can therefore consume the same real damage causes as server physics instead of reconstructing them from scalar health.
+
+Recomputation remains revision-driven: changing a damage accumulator increments ObjectModuleRuntime revision; unchanged frames do not recalculate damage-derived engine capability.
+
+
 ### Engine damage recomputation/cache invariant
 
 Damage-derived engine capability is event/revision driven, not recomputed every physics tick.

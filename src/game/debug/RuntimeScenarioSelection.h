@@ -26,16 +26,13 @@ struct RuntimeScenarioSelection
         return kind != RuntimeScenarioKind::None;
     }
 
-    static RuntimeScenarioSelection fromProcessEnvironment()
+    static RuntimeScenarioSelection parse(std::string_view value)
     {
         RuntimeScenarioSelection out;
+        out.spec = std::string(value);
 
-        const char* raw = std::getenv("ELITE_DIAGNOSTIC_SCENARIO");
-        if (!raw || !*raw)
+        if (value.empty())
             return out;
-
-        out.spec = raw;
-        const std::string_view value(out.spec);
 
         if (value == "ship-control")
         {
@@ -67,6 +64,14 @@ struct RuntimeScenarioSelection
         }
 
         return out;
+    }
+
+    static RuntimeScenarioSelection fromProcessEnvironment()
+    {
+        const char* raw = std::getenv("ELITE_DIAGNOSTIC_SCENARIO");
+        return raw && *raw
+            ? parse(raw)
+            : RuntimeScenarioSelection {};
     }
 };
 

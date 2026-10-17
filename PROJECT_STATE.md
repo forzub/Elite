@@ -1,3 +1,46 @@
+## 2026-10-17 — lightweight damaged-main feedback automation
+
+A new automatic damaged-main compensation layer now sits inside the existing physical execution path. It does not create a second pilot/autopilot path and does not use a general optimizer.
+
+Doctrine:
+- ordinary human/autopilot ShipControlState still defines the maneuver;
+- current active main bank is used exactly as before; opposite bank is not recruited by this first layer;
+- instantaneous per-engine authority includes five-channel damage plus >70% irregular-thrust dips;
+- the feedback only reduces engines whose reduction improves parasitic angular error per unit useful main acceleration;
+- uniformly reducing an already-unbalanced bank is explicitly not accepted as compensation;
+- at most eight 10% throttle coordinate steps are considered, and healthy/symmetric banks exit before that loop;
+- after throttle balancing, at most two small common-TVC correction steps are tried;
+- automatic common TVC is capped at 2 degrees and disabled when an explicit pilot/autopilot main-gimbal command is active;
+- common TVC is also disabled if any currently firing engine in the bank has no usable vectoring authority;
+- feedback never increases an engine above its instantaneous damage-limited thrust;
+- residual torque remains physical and reaches hull angular rates; there is no synthetic angular-acceleration subtraction.
+
+Family behavior:
+- Assisted and Newtonian use the same cheap main-bank feedback rule;
+- their existing flight laws, hardware topology and remaining attitude/RCS behavior stay different;
+- Newtonian-I with one main has no throttle redistribution path, so explicit TVC behavior remains physically visible;
+- no opposite-bank compensation and no new RCS allocator are included in this first implementation.
+
+Performance:
+- hot-path temporary throttle state uses a fixed stack array (no per-tick heap allocation);
+- healthy banks perform one allocation/reaction evaluation and exit;
+- extra candidate evaluations occur only when the current bank has a real harmful torque imbalance.
+
+Tests added/updated:
+- Assisted-I unequal-pair throttle feedback;
+- protection against hiding torque by uniformly killing thrust;
+- common TVC residual correction without thrust suppression;
+- Newtonian-Y damaged-main feedback using the same rule;
+- helpful reaction during a commanded turn is left alone;
+- gateway test now requires physical reduction of bias and explicitly rejects the old synthetic zero-residual behavior.
+
+The previous coarse Assisted-only block that reserved up to 20% main force and directly subtracted angular acceleration has been removed from ShipControlExecutionGateway.
+
+Next validation:
+1) build/run ship_physical_actuator_plant and ship_control_execution_gateway;
+2) if green, build EliteGame and run a native damaged-engine scenario through the real EquipmentDamage path;
+3) visually verify that a damaged ship still flies imperfectly but controllably, including >70% intermittent thrust.
+
 ## 2026-10-17 — damage pipeline fixture and release-test assertion correction
 
 Validation exposed two test-harness issues, not a production damage-matrix failure.

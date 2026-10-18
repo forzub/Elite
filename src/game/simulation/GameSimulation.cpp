@@ -7098,12 +7098,27 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             m_initializedShipGraphIds.find(id) !=
             m_initializedShipGraphIds.end();
 
+        // This MUST be a const read: mutable modules() invalidates the
+        // revision even when merely reading, causing continuous replication.
+        const auto& readOnlyModules =
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                ship.core().moduleRuntime()
+            );
+        const std::uint64_t moduleRevision = readOnlyModules.revision();
+        const auto lastModulePublication =
+            m_lastPublishedShipModuleRevision.find(id);
+        const bool moduleStateChanged =
+            lastModulePublication ==
+                m_lastPublishedShipModuleRevision.end() ||
+            lastModulePublication->second != moduleRevision;
+
         if (!detailedReplication)
         {
             // If this client-visible entity was detailed before, publish one
             // explicit empty graph so canonical snapshot merging cannot retain
             // stale heavy state forever after demotion.
             m_shipGraphPayloadPublicationsRemaining.erase(id);
+            m_lastPublishedShipModuleRevision.erase(id);
 
             if (hadDetailedGraph)
             {
@@ -7141,8 +7156,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                 graph.hasAssemblyModules = true;
                 graph.hasDebugHitVolumes = true;
 
-                const auto& runtimeModules =
-                    ship.core().moduleRuntime().modules();
+                const auto& runtimeModules = readOnlyModules.modules();
                 const auto& descModules =
                     ship.core().desc().moduleDescriptors();
 
@@ -7187,6 +7201,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
                     );
 
                 m_initializedShipGraphIds.insert(id);
+                m_lastPublishedShipModuleRevision[id] = moduleRevision;
 
                 if (resendIt !=
                     m_shipGraphPayloadPublicationsRemaining.end())
@@ -7202,14 +7217,47 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
 
                 ship.core().clearHitVolumesDirty();
             }
-            else if (ship.core().hitVolumesDirty())
+            else
             {
-                graph.hasDebugHitVolumes = true;
-                graph.debugHitVolumes =
-                    world::modules::HitVolumeSnapshotBuilder::build(
-                        ship.core().hitComponent()
-                    );
-                ship.core().clearHitVolumesDirty();
+                if (!motionLabProbe && moduleStateChanged)
+                {
+                    // Thermal protection, engine wear and replace-only annulus
+                    // work all change the authoritative module revision.
+                    // Publish only small module rows: structural links, mesh
+                    // assembly and debug hit geometry stay sparse.
+                    graph.hasModules = true;
+                    const auto& definitions =
+                        ship.core().desc().moduleDescriptors();
+                    std::unordered_map<
+                        std::string,
+                        const world::modules::ObjectModuleState*
+                    > runtimeById;
+                    runtimeById.reserve(readOnlyModules.modules().size());
+                    for (const auto& mod : readOnlyModules.modules())
+                        runtimeById[mod.moduleId] = &mod;
+                    graph.modules.reserve(definitions.size());
+                    for (const auto& definition : definitions)
+                    {
+                        const auto it =
+                            runtimeById.find(definition.moduleId);
+                        graph.modules.push_back(buildModuleSnapshot(
+                            definition,
+                            it != runtimeById.end() ? it->second : nullptr
+                        ));
+                    }
+                    m_lastPublishedShipModuleRevision[id] = moduleRevision;
+                }
+
+                // Independent debug geometry may change without module state.
+                if (ship.core().hitVolumesDirty())
+                {
+                    graph.hasDebugHitVolumes = true;
+                    graph.debugHitVolumes =
+                        world::modules::HitVolumeSnapshotBuilder::build(
+                            ship.core().hitComponent()
+                        );
+                    ship.core().clearHitVolumesDirty();
+                }
             }
         }
 

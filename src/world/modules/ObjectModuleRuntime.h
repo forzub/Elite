@@ -37,6 +37,14 @@ public:
         double amount01
     );
 
+    // Resolve an incident that actually hit a separately identified engine
+    // hot annulus. Surface loss is not direct thrust/gimbal damage.
+    bool exposeEngineEmitter(
+        const std::string& moduleId,
+        const game::equipment::engine::EngineUnitDescriptor& passport,
+        const game::physics::materials::SurfaceExposure& hit
+    );
+
     // Advance a real installed engine using physical allocator telemetry.
     // Returns true ONLY if the five-channel functional damage changed.
     // Temperature and service-hours updates do not trigger rebuild of the

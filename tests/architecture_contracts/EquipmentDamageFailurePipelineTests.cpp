@@ -1,6 +1,7 @@
 #include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/equipment/engine/EngineUnit.h"
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/game/simulation/ObjectModuleSnapshotBuilder.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/world/modules/ObjectModuleRuntime.h"
@@ -355,6 +356,107 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
             "replacement incorrectly repaired the engine itself");
 }
 
+
+void testLiveAndReplicatedEngineCapabilityRemainIdentical()
+{
+    auto d = descriptor();
+    for (auto& module : d.modules)
+    {
+        auto& motor = *module.engine;
+        motor.structureMaterialId = "elite.material.engine.tial-ht.v1";
+        motor.nominalElectricalPowerMW = 4850.0;
+        motor.nominalEfficiency01 = 0.9855;
+        motor.thermalEmitter.outerDiameterM = 4.5;
+        motor.thermalEmitter.apertureDiameterM = 2.5;
+        motor.thermalEmitter.surfaceTemperatureK = 2500.0;
+        motor.thermalEmitter.viewFactor01 = 0.90;
+        motor.thermalEmitter.materialId =
+            "elite.material.engine.hfc-c.v1";
+        motor.thermalConductanceMWperK =
+            (70.325 -
+             game::equipment::engine::ratedThermalEmitterPowerMW(motor)) /
+            150.0;
+    }
+
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    const auto verify = [&]()
+    {
+        const auto live =
+            game::ship::capability::buildPhysicalControlSlotState(
+                d, d.physicalControlModel, runtime
+            );
+        std::vector<game::simulation::ObjectModuleSnapshot> replicated;
+        for (const auto& module : d.modules)
+        {
+            replicated.push_back(
+                game::simulation::makeObjectModuleSnapshot(
+                    module, runtime.findModule(module.moduleId)
+                )
+            );
+        }
+        const auto client =
+            game::ship::capability::buildPhysicalControlSlotState(
+                d, d.physicalControlModel, replicated
+            );
+        require(live.size() == 4 && client.size() == live.size(),
+                "engine slot count changed under replication");
+        for (std::size_t i = 0; i < live.size(); ++i)
+        {
+            require(live[i].operational == client[i].operational &&
+                    std::abs(live[i].thrust01 - client[i].thrust01) < 1.0e-5 &&
+                    std::abs(live[i].vectoring01 -
+                             client[i].vectoring01) < 1.0e-5 &&
+                    std::abs(live[i].thrustIrregularity01 -
+                             client[i].thrustIrregularity01) < 1.0e-5,
+                    "server and client engine control authority diverged");
+        }
+        const auto serverShip =
+            game::ship::capability::buildShipCapability(
+                d, d.physicalControlModel, live
+            );
+        const auto clientShip =
+            game::ship::capability::buildShipCapability(
+                d, d.physicalControlModel, client
+            );
+        require(serverShip.valid && clientShip.valid &&
+                std::abs(
+                    serverShip.effectivePhysics.
+                        forwardMainEngineAccelerationMps2 -
+                    clientShip.effectivePhysics.
+                        forwardMainEngineAccelerationMps2) < 1.0e-4,
+                "server and replicated ship acceleration diverged");
+        return live[0].thrust01;
+    };
+
+    require(near(verify(), 1.0),
+            "healthy material must not change nominal flight authority");
+    require(runtime.exposeEngineEmitter(
+                "aft_left", *d.modules[0].engine,
+                {game::physics::materials::SurfaceImpactKind::Laser,
+                 60.0, 4.0, 2500.0, 0.0}
+            ), "could not damage hot annulus in parity test");
+    require(near(verify(), 1.0),
+            "cold damaged emitter should still initially deliver full thrust");
+    runtime.advanceEngineOperatingLife(
+        "aft_left", *d.modules[0].engine, 1.0, 600.0, 1050.0
+    );
+    require(verify() < 0.85,
+            "heated annulus did not reduce replicated thrust authority");
+    require(runtime.replaceEngineEmitter(
+                "aft_left", *d.modules[0].engine
+            ), "replacement did not restore independent hot emitter");
+    // Replaced annulus does not magically cool the already-hot engine.
+    verify();
+
+    // Thermal and radiation counters are intentionally passive for the
+    // annulus; having them in the canonical five-channel DTO adds no force.
+    auto* mounted = runtime.findModule("aft_left");
+    mounted->engineOperating.emitter.damage.thermal01 = 1.0;
+    mounted->engineOperating.emitter.damage.radiation01 = 1.0;
+    verify();
+}
+
 } // namespace
 
 int main()
@@ -366,6 +468,7 @@ int main()
         testThrustFailurePreservesInstalledModule();
         testInstalledEngineWearAndThermalAffectRealModuleProjection();
         testIndependentEmitterDamageReachesInstalledEngineSlot();
+        testLiveAndReplicatedEngineCapabilityRemainIdentical();
         std::cout
             << "EQUIPMENT DAMAGE FAILURE PIPELINE: PASS\n"
             << " - all five accumulated causes sum into real module thrust/TVC\n"

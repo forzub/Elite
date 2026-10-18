@@ -193,10 +193,20 @@ inline double positiveFiniteOr(
             ? 1.0 / out.efficiencyAuthority01
             : 0.0;
 
-    out.heatMultiplier =
-        out.efficiencyAuthority01 > 1.0e-9
-            ? (1.0 / out.efficiencyAuthority01) - 1.0
-            : 0.0;
+    // BITE heatMultiplier is the EXTRA fraction of waste heat compared
+    // with a healthy unit at the SAME delivered thrust, not the absolute
+    // heat-to-useful-work ratio. With a healthy 80% drive and half the
+    // remaining conversion efficiency, healthy heat is 0.2 units while
+    // damaged heat is 1.2 units per useful unit: +500%.
+    const double healthyWasteFraction =
+        1.0 - nominalEfficiency;
+    out.heatMultiplier = healthyWasteFraction > 1.0e-9
+        ? std::max(
+              0.0,
+              (out.powerCostMultiplier - 1.0) /
+                  healthyWasteFraction
+          )
+        : std::max(0.0, out.powerCostMultiplier - 1.0);
 
     return out;
 }

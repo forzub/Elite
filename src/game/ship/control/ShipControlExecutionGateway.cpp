@@ -300,15 +300,9 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         demand.angularAccelerationBodyRadPerSec2 = assisted
             ? motion.requestedMainAngularAccelerationBodyRadPerSec2
             : glm::dvec3(0.0); // Newtonian pilot attitude owns RCS.
-        demand.elapsedSeconds = static_cast<double>(dt);
+        // TVC is an immediate field-vector command in this game universe.
+        // Independent nozzles reach the requested cone angle this very tick.
         demand.tick = control.controlTick;
-        const auto& oldTelemetry = motion.engineTelemetry;
-        for (std::size_t i=0;i<oldTelemetry.count &&
-             i<demand.previousYawRad.size();++i)
-        {
-            demand.previousYawRad[i] = oldTelemetry.nozzleYawRad[i];
-            demand.previousPitchRad[i] = oldTelemetry.nozzlePitchRad[i];
-        }
         const auto actual =
             game::ship::plant::executeEngineControlMatrix(
                 model,*mountedEngines,capabilities,demand

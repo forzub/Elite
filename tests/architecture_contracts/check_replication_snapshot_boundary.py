@@ -67,4 +67,41 @@ if "m_shipGraphPayloadPublicationsRemaining" not in simulation_cpp:
 if "m_shipGraphPayloadPublicationsRemaining[id] = 2" not in simulation_cpp:
     fail("ship graph publication redundancy contract changed unexpectedly")
 
+# Engine temperature and replace-only annulus changes must reach remote
+# physical controllers WITHOUT resending the expensive structural hit graph.
+ship_module_builder = read("src/game/simulation/ObjectModuleSnapshotBuilder.h")
+simulation_snapshot = read("src/game/simulation/ObjectModuleSnapshot.h")
+capability_builder = read("src/game/ship/capability/ShipCapabilityBuilder.h")
+wire_schema = read("src/game/network/WireDataSchema.h")
+for token in (
+    "m_lastPublishedShipModuleRevision",
+    "moduleStateChanged",
+    "readOnlyModules.revision()",
+    "m_lastPublishedShipModuleRevision[id] = moduleRevision",
+    "graph.hasModules = true",
+    "buildModuleSnapshot(",
+):
+    if token not in simulation_cpp:
+        fail(f"engine/module revision replication seam missing: {token}")
+if "m_lastPublishedShipModuleRevision" not in simulation_h:
+    fail("ship module revision publication cache was removed")
+if "game::simulation::makeObjectModuleSnapshot" not in simulation_cpp:
+    fail("authoritative snapshot no longer uses canonical module builder")
+for token in (
+    "ms.engineTemperatureK", "ms.emitterIntactArea01",
+    "ms.emitterWearDamage01", "ms.emitterEquivalentOperatingHours",
+    "ms.emitterLaserDamage01", "ms.emitterImpactDamage01",
+    "ms.emitterThermalDamage01", "ms.emitterRadiationDamage01",
+):
+    if token not in ship_module_builder:
+        fail(f"canonical engine/emitter snapshot dropped {token}")
+for token in (
+    "hasEngineThermalState", "engineTemperatureK",
+    "emitterIntactArea01", "emitterWearDamage01",
+):
+    if token not in simulation_snapshot or "v." + token not in wire_schema:
+        fail(f"thermal engine field absent from DTO/wire schema: {token}")
+if "safeEmitterThrustFraction01(" not in capability_builder:
+    fail("client capability stopped using emitter thermal thrust limiter")
+
 print("Replication-snapshot architecture check passed.")

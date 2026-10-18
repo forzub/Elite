@@ -427,7 +427,55 @@ bool ObjectModuleRuntime::exposeEngineEmitter(
         after.microcrack01 == before.microcrack01)
         return false;
     module.engineOperating.emitterSurface = after;
+
+    // Every equipment component records the same five causes; these two
+    // kinds of hits are stored on the annulus, NOT the main thrust chamber.
+    // The area reduction has already been applied above and must not be
+    // subtracted a second time by the thermal evaluator.
+    const auto cause =
+        hit.kind == game::physics::materials::SurfaceImpactKind::Laser
+            ? game::equipment::EquipmentDamageKind::Laser
+            : game::equipment::EquipmentDamageKind::Impact;
+    const double lostArea01 = std::max(
+        0.0, before.intactArea01 - after.intactArea01
+    );
+    const double newCracks01 = std::max(
+        0.0, after.microcrack01 - before.microcrack01
+    );
+    game::equipment::addEquipmentDamage(
+        module.engineOperating.emitterDamage, cause,
+        std::max(lostArea01, 0.25 * newCracks01)
+    );
+
     ++m_revision; // available physical thrust must be rebuilt
+    return true;
+}
+
+bool ObjectModuleRuntime::replaceEngineEmitter(
+    const std::string& moduleId,
+    const game::equipment::engine::EngineUnitDescriptor& passport
+)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0 ||
+        passport.thermalEmitter.servicePolicy !=
+            game::equipment::engine::EngineThermalEmitterDescriptor::
+                ServicePolicy::ReplaceOnly ||
+        !game::physics::materials::findMaterial(
+            passport.thermalEmitter.materialId))
+        return false;
+    auto& module = m_modules[index];
+    if (module.state != ObjectModuleRuntimeState::Attached ||
+        module.health <= 0.0f)
+        return false;
+
+    // A new annulus, not a repair: none of the old annulus's five damage
+    // histories or consumed service hours is carried over. The engine
+    // itself retains its temperature, lifetime and other five causes.
+    module.engineOperating.emitterSurface = {};
+    module.engineOperating.emitterDamage = {};
+    module.engineOperating.emitterEquivalentOperatingHours = 0.0;
+    ++m_revision;
     return true;
 }
 
@@ -455,6 +503,13 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
         game::equipment::engine::evaluateEngineUnit(
             passport, module.equipmentDamage
         );
+    const auto thermalCapBefore =
+        game::equipment::engine::safeEmitterThrustFraction01(
+            passport, effective, module.engineOperating
+        );
+    const double wearBefore =
+        module.engineOperating.emitterDamage.wear01;
+
     const auto step =
         game::equipment::engine::advanceEngineOperatingState(
             passport,
@@ -465,6 +520,24 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
             coolantTemperatureK
         );
     module.engineOperating = step.next;
+
+    // The thermal limiter changes in 1%-point telemetry buckets rather
+    // than causing a full capability/network rebuild every simulation tick.
+    const auto thermalCapAfter =
+        game::equipment::engine::safeEmitterThrustFraction01(
+            passport, effective, module.engineOperating
+        );
+    const auto bucket01 = [](double v)
+    {
+        return static_cast<int>(std::floor(
+            game::equipment::engine::finiteClamp01(v) * 100.0 + 1.0e-7
+        ));
+    };
+    const bool protectionChanged =
+        bucket01(thermalCapBefore) != bucket01(thermalCapAfter);
+    const bool annulusWearChanged =
+        bucket01(wearBefore) !=
+            bucket01(module.engineOperating.emitterDamage.wear01);
 
     // Preserve fractional wear/heat precisely in engine service state, but
     // commit damage in 0.001%-point quanta. No per-frame revision storms,
@@ -501,10 +574,12 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
             game::equipment::EquipmentDamageKind::Thermal,
             thermalIncrement
         );
-    if (wearChanged || thermalChanged)
+    if (wearChanged || thermalChanged ||
+        protectionChanged || annulusWearChanged)
         ++m_revision;
 
-    return wearChanged || thermalChanged;
+    return wearChanged || thermalChanged ||
+        protectionChanged || annulusWearChanged;
 }
 
 bool ObjectModuleRuntime::setSupportLinkHealth(
@@ -670,9 +745,8 @@ void ObjectModuleRuntime::restoreSubtree(int index)
     module.state = ObjectModuleRuntimeState::Attached;
     module.health = module.maxHealth;
     module.equipmentDamage.accumulated = {};
-    // Full structural restoration also replaces the damaged hot surface.
-    // Service hours remain independent, so repair is not time travel.
-    module.engineOperating.emitterSurface = {};
+    // Structural repair cannot repair a replace-only annulus. It remains
+    // damaged/worn until replaceEngineEmitter is explicitly called.
 
     for (auto& link : module.supportLinks)
     {
@@ -695,7 +769,16 @@ void ObjectModuleRuntime::restoreAncestors(int index)
         module.state = ObjectModuleRuntimeState::Attached;
         module.health = module.maxHealth;
         module.equipmentDamage.accumulated = {};
+        // Do not silently replace annulus when restoring parent structure.
+        const auto oldEmitterSurface = module.engineOperating.emitterSurface;
+        const auto oldEmitterDamage = module.engineOperating.emitterDamage;
+        const double oldEmitterHours =
+            module.engineOperating.emitterEquivalentOperatingHours;
         module.engineOperating = {};
+        module.engineOperating.emitterSurface = oldEmitterSurface;
+        module.engineOperating.emitterDamage = oldEmitterDamage;
+        module.engineOperating.emitterEquivalentOperatingHours =
+            oldEmitterHours;
 
         for (auto& link : module.supportLinks)
         {

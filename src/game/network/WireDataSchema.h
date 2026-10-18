@@ -235,6 +235,20 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::ship::telemetry::EngineLiveTelemetry,
+    v.valid,
+    v.count,
+    v.controlTick,
+    v.thrust01,
+    v.available01,
+    v.nozzleYawRad,
+    v.nozzlePitchRad,
+    v.forceBodyNewtons,
+    v.electricalMW,
+    v.wasteHeatMW
+)
+
+ELITE_WIRE_SCHEMA(
     game::navigation::DynamicMotionState,
     v.mode,
     v.systemId,
@@ -265,6 +279,8 @@ ELITE_WIRE_SCHEMA(
     v.mainPropulsionAngularAccelerationBodyRadPerSec2,
     v.mainTrimLoad01,
     v.mainTrimUsableScale01,
+    v.engineTelemetry,
+    v.requestedMainAngularAccelerationBodyRadPerSec2,
     v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,
     v.manoeuvreGasPressure01,

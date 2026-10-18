@@ -14,6 +14,7 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/plant/ShipPresetEngineManeuvers.h"
 #include "src/game/ship/state/ShipState.h"
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
 
@@ -328,6 +329,10 @@ private:
     ShipTransform                               m_transform;
     game::ship::state::ShipState                m_state;
     ShipParams                                  m_params;
+    // Physical six-axis signed maneuver recipes: generated once for this
+    // vessel's installed I/Y/X engine layout, rebuilt on damage/repairs.
+    // Not serialized over the network; always derived from real hardware.
+    game::ship::plant::AssistedManeuverPrograms    m_assistedManeuvers;
 
     // Resolved response profile cache. Descriptor/topology/damage may be rich,
     // but motion consumes one compact coefficient set until one of those

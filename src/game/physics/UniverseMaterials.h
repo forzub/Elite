@@ -31,11 +31,14 @@ struct MaterialPassport
     double fragmentationAreaFactor;
 };
 
+// Fictional titanium-aluminide-based engine superalloy: one material for
+// BOTH thrust housing and TVC/nozzle hinge. Its 1200 K continuous service
+// temperature is a gameplay rating, NOT a claim about ordinary Ti alloys.
 // Carbon/SiC laminate: thin radiator skins, tolerant of 1050 K in vacuum.
 // HfC/graphitic toughened ceramic: much hotter but brittle engine annulus.
 // Failure fluences include geometry/thickness abstractions for the *surface*
 // only; they are not universal projectile penetration laws for an entire hull.
-inline constexpr std::array<MaterialPassport, 2> UniverseMaterialCatalog {{
+inline constexpr std::array<MaterialPassport, 3> UniverseMaterialCatalog {{
     {
         "elite.material.radiator.c-sic.v1",
         "Aster C/SiC radiator laminate",
@@ -55,6 +58,16 @@ inline constexpr std::array<MaterialPassport, 2> UniverseMaterialCatalog {{
         0.90, 0.82,
         2500.0, 2850.0, 3800.0,
         12.0, 6.0, 500.0, 1.5
+    },
+    {
+        "elite.material.engine.tial-ht.v1",
+        "Talon Ti-Al HT engine alloy",
+        "mat_engine_talon_tial_ht",
+        "commodity_tial_ht_engine_alloy",
+        4550.0, 720.0, 17.0,
+        0.68, 0.43,
+        1200.0, 1450.0, 1850.0,
+        9.0, 9.0, 280.0, 1.2
     }
 }};
 

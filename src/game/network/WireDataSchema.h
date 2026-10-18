@@ -280,6 +280,8 @@ ELITE_WIRE_SCHEMA(
     v.mainTrimLoad01,
     v.mainTrimUsableScale01,
     v.engineTelemetry,
+    v.mainEngineDeliveredThrust01,
+    v.mainEngineReportedSlotCount,
     v.requestedMainAngularAccelerationBodyRadPerSec2,
     v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,

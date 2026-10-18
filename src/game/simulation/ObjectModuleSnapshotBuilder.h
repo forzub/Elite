@@ -45,6 +45,12 @@ namespace game::simulation
         const auto& emitter = engine.emitter;
         ms.engineTemperatureK =
             static_cast<float>(engine.temperatureK);
+        ms.engineCoolantTemperatureK=
+            static_cast<float>(engine.coolantTemperatureK);
+        ms.engineImpactShock01=
+            static_cast<float>(engine.impactShock01);
+        ms.engineImpactShockSecondsRemaining=
+            static_cast<float>(engine.impactShockSecondsRemaining);
         ms.emitterIntactArea01 =
             static_cast<float>(emitter.surface.intactArea01);
         ms.emitterMicrocrack01 =

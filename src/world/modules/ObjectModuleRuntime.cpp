@@ -440,19 +440,40 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
         );
     module.engineOperating = step.next;
 
-    // Always preserve separate channels. Source rates already represent
-    // PERCENTAGE of useful engine damage, not unweighted physical inputs.
+    // Preserve fractional wear/heat precisely in engine service state, but
+    // commit damage in 0.001%-point quanta. No per-frame revision storms,
+    // capability rebuilds or network snapshots for 10^-11 damage changes.
+    constexpr double DamageQuantum01 = 1.0e-5;
+    auto quantizedIncrement = [](double& pending, double incoming)
+    {
+        pending += std::max(0.0, incoming);
+        const double quanta =
+            std::floor(pending / DamageQuantum01);
+        if (quanta < 1.0)
+            return 0.0;
+        const double committed = quanta * DamageQuantum01;
+        pending = std::max(0.0, pending - committed);
+        return committed;
+    };
+    const double wearIncrement = quantizedIncrement(
+        module.engineOperating.pendingWearDamage01,
+        step.wearDamageIncrement01
+    );
+    const double thermalIncrement = quantizedIncrement(
+        module.engineOperating.pendingThermalDamage01,
+        step.thermalDamageIncrement01
+    );
     const bool wearChanged =
         game::equipment::addEquipmentDamage(
             module.equipmentDamage.accumulated,
             game::equipment::EquipmentDamageKind::Wear,
-            step.wearDamageIncrement01
+            wearIncrement
         );
     const bool thermalChanged =
         game::equipment::addEquipmentDamage(
             module.equipmentDamage.accumulated,
             game::equipment::EquipmentDamageKind::Thermal,
-            step.thermalDamageIncrement01
+            thermalIncrement
         );
     if (wearChanged || thermalChanged)
         ++m_revision;

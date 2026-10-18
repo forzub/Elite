@@ -1,3 +1,36 @@
+## 2026-10-18 — GAMEPLAY TVC DOCTRINE: PRESERVE ACCEPTED ASSISTED HANDLING BY RELAXING REALITY (SOURCE COMMITTED, NATIVE PENDING)
+
+**User decision** after the six-axis regression: prioritize the old responsive flight law. Do NOT abandon engine physics or fake HUD force. Instead make fictional vectoring-engine NOZZLES turn effectively INSTANTLY and widen their travel as required to preserve original gameplay. No expensive dynamic/nozzle servo simulation. Keep the common Engine/preset and installed-motor matrix; evaluate per-engine `ΣF` and `Σ(r×F)`, but let the fictional actuator satisfy legacy manual/autopilot demand. Main mission: ENGINE PHYSICS MUST FIT ACCEPTED PILOT/AUTOPILOT BEHAVIOUR, not the opposite.
+
+### Changes in this iteration
+- `src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h`: nominal Assisted Cobretty CR-1 field-vector limit **75°** (`1.3089969389957472 rad`) instead of 7°; nominal rate 1000 rad/s as descriptive near-instant limit, NO stepwise gimbal physics simulated. Damage-reduced available gimbal remains from common engine equipment law. No change to nominal axial force (9,561,483.75 N/motor), efficiency, material, thermal, wear or BITE state.
+- `ShipEngineControlMatrix.h`: remove previous nozzle angle arrays, `elapsedSeconds` demand field, rotation slew dynamics/angle interpolation and old post-optimization lag. Choose nozzle direction afresh every control command, apply only real motor availability and cone-angle bounds. Instant idle returns nozzle directly to zero with no spent force. Increase thrust-cone projection ceiling from 1.2 rad (~68.8°) to 1.45 rad (~83.1°) so the preset's 75° is genuinely reachable; don't accidentally have a second hidden cap. Retain 6-axis finite-force matrix, FISTA optimizer and consistent hull forces/moments/telemetry, now 96 rather than 240 deterministic passes to spare game/NPC CPU. `ShipControlExecutionGateway.cpp` no longer copies historical servo angles into the matrix. HUD still reads the physically returned motor force, not old demand heuristics.
+- **Newtonian isolation:** when `familyOf(model) == Newtonian`, matrix bounds final independent main-nozzle angle by the existing `ShipParams.mainGimbalYawLimitRad/mainGimbalPitchLimitRad` (normally 7°) as well as damage-reduced engine max. Existing Newtonian `DynamicMotionSystem::updateNewtonianMainGimbal` continues to time-limit the INPUT request; we do NOT grant Newtonian the wide 75° Assisted field vectoring or replace independent RCS. A dedicated native test confirms the narrow limit. This prevents changing Newtonian manual-control doctrine as collateral damage from an Assisted gameplay tuning.
+- **Engine-to-orientation timing:** `GameSimulation.cpp` used to call `ship.propagateMotionOrientation(fdt)` BEFORE `shipPtr->updateTranslationControl` and thus before the actual new matrix generated its torque. Tactical ships with valid travel frames now integrate orientation immediately AFTER the physical motor control in the second loop, at the SAME authoritative fixed step. Coarse-cadence ships still integrate their held angular rate every physics tick, non-tactical/frame-unbound ones use the original earlier stage. No new direct attitude impulse bypassing Engine.
+- `InstalledEngineActuatorTests.cpp`: replace stale 8°/s slew assertions with physically bounded direct-angle checks; **demand original Cobra Assisted 73.549875 m/s² lateral**, require >=95% delivery in the one motor-execution step and no fake four-motor 100%-load on the maneuver; **demand 3.0 rad/s² pitch/yaw/roll**, require >=90% delivered torque-driven angular acceleration per axis. Extra Newtonian-I check ensures angle does not exceed original main-gimbal policy despite wide Cobretty passport. Existing damaged/failed motor, idle and HUD sample tests remain.
+- `check_engine_six_axis_matrix.py` (already called by the standard native architecture test runner) now asserts 75° passport, no historical angle/slew, separate narrow Newtonian clamp, 96 optimizer rounds and torque-before-orientation step. Do not interpret static code checks as native test PASS.
+
+### Numerical sanity check of the SAME allocation algebra, NOT compiled C++
+A small offline Numpy reproduction of the C++ matrix (Cobra 260 t, four healthy 9.561 MN motors at ±13 m lateral, ±11.1 m longitudinal, nominal rotational inertias, 75° cone, weighted 6-axis projected solver) found 96 passes delivered **72.96 m/s²** requested vs legacy 73.549875 m/s² sideways, approximately **0.514 of rated thrust per motor**; pure forward 72.96/73.55 with only the aft pair lit; pure pitch ~2.93/3, yaw ~2.92/3, roll ~2.92/3. This is an approximate *math/sanity* demonstration, not production gameplay proof and doesn't include client prediction, chassis-specific CoM changes, or damaged motors. Importantly, this is capability-compatible without adding fictitious side acceleration; all force originates in installed motors.
+
+### REQUIRED native validation before main
+```bash
+cd /d/__elite/work
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only
+cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
+cmake --build build/tests/architecture_contracts --target installed_engine_actuator_tests equipment_damage_failure_pipeline_tests wire_data_plane_contract_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R "installed_engine_actuator|equipment_damage_failure_pipeline|wire_data_plane_contracts" --output-on-failure
+python tests/architecture_contracts/check_engine_six_axis_matrix.py
+bash build_mingw64.sh
+```
+Then inspect Assisted-I/Y/X keypad side/up, forward/reverse, manual pitch/yaw/roll response and release braking, HOME/END and high-speed autopilot lead-turn/panic replans; separately Newtonian-I/Y/X gimbals/RCS. HUD red/available yellow + true angles are read-only and must agree with physically emitted force. Compare in-game behaviour with pre-matrix commit `f9d5a3b`; repair any new native compiler or closed-loop regression before calling it PASS. Network schema remains 16 in both processes; both need rebuild.
+
+**Status:** Source work committed to feature branch; not merged to main; NO native compiler/CTest/game testing completed in this remote coding environment. The physics is an explicitly fictional simplification to recover prior gameplay handling. Keep this single `PROJECT_STATE.md` as the only state file.
+
+---
+
 ## 2026-10-18 — CONTROL REGRESSION ROOT-CAUSE AUDIT (NO CONTROL CODE CHANGED)
 
 **User report:** severe chaotic ship response after six-axis matrix feature. Compared the SAME branch **pre-matrix `f9d5a3b696e9f4f721c106d06858c7aa292af539`** (stable baseline reported by user before the matrix) to **matrix head `7aae7dfcd911f8da78cfa1e624f2edce372d0c5a`**. 32 new commits, core runtime changes in `ShipCore.cpp`, `ShipControlExecutionGateway.cpp` and `ShipEngineControlMatrix.h`. `ShipController.cpp` and `DynamicMotionSystem.cpp` were NOT modified between these refs, which confirms the old autopilot/manual law remained tuned to the OLD execution dynamics.

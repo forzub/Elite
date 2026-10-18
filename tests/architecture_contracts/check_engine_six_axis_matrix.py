@@ -77,7 +77,7 @@ contains(
 )
 contains(
     "src/game/network/WireDataCodec.h",
-    "SimulationSnapshotWireSchemaVersion = 16u",
+    "SimulationSnapshotWireSchemaVersion = 17u",
 )
 # User-approved fictional TVC doctrine: no mechanical nozzle lag,
 # Assisted at its previous gameplay envelope, separate Newtonian law.

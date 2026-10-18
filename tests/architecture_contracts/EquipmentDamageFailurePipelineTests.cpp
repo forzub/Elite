@@ -296,6 +296,20 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
                     after->equipmentDamage.accumulated
                 ), 0.0
             ), "emitter hit wrongly injected direct thrust/TVC damage");
+    require(after->engineOperating.emitterDamage.laser01 > 0.0 &&
+            near(after->engineOperating.emitterDamage.impact01, 0.0),
+            "emitter must accumulate its OWN five-cause damage");
+    require(after->engineOperating.temperatureK < 1250.0,
+            "new annulus hit should not instantly heat the engine");
+    const auto cold = game::ship::capability::buildPhysicalControlSlotState(
+        d, d.physicalControlModel, runtime
+    );
+    require(near(cold[0].thrust01, 1.0),
+            "cold damaged engine should retain transient thrust");
+
+    // Allow the physical engine to heat before thermal governor engages.
+    auto* warmingEngine = runtime.findModule("aft_left");
+    warmingEngine->engineOperating.temperatureK = 1300.0;
 
     const auto slots = game::ship::capability::buildPhysicalControlSlotState(
         d, d.physicalControlModel, runtime
@@ -316,6 +330,29 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
             near(c.effectivePhysics.reverseMainEngineAccelerationMps2,
                  100.0),
             "emitter derating did not reach real physical propulsion bank");
+
+    const double oldArea =
+        runtime.findModule("aft_left")->engineOperating.emitterSurface.intactArea01;
+    runtime.restoreSubtree(runtime.findModuleIndex("aft_left"));
+    require(near(
+                runtime.findModule("aft_left")->
+                    engineOperating.emitterSurface.intactArea01,
+                oldArea
+            ), "ordinary engine repair illegally repaired the hot annulus");
+
+    require(runtime.addEquipmentDamage(
+                "aft_left", EquipmentDamageKind::Impact, 0.10
+            ), "engine housing fixture damage failed");
+    require(runtime.replaceEngineEmitter("aft_left", *d.modules[0].engine),
+            "explicit annulus replacement failed");
+    const auto* replaced = runtime.findModule("aft_left");
+    require(replaced &&
+            near(replaced->engineOperating.emitterSurface.intactArea01, 1.0) &&
+            near(replaced->engineOperating.emitterDamage.laser01, 0.0) &&
+            near(replaced->engineOperating.emitterEquivalentOperatingHours, 0.0),
+            "replace-only annulus did not reset just its own lifecycle");
+    require(near(replaced->equipmentDamage.accumulated.impact01, 0.10),
+            "replacement incorrectly repaired the engine itself");
 }
 
 } // namespace

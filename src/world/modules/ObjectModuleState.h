@@ -77,6 +77,11 @@ struct ObjectModuleState
     // damage causes; the five sensitivity values are immutable type weights.
     game::equipment::EquipmentDamageLayer equipmentDamage;
 
+    // Independent per-installed-engine operating history; maintained by
+    // the authoritative module runtime. Neither slot topology nor the
+    // descriptor owns mutable lifetime/temperature.
+    game::equipment::engine::EngineOperatingState engineOperating;
+
     bool hangable = false;
 
     // legacy summary для UI/совместимости

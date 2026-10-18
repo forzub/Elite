@@ -208,39 +208,56 @@ inline void projectThrustCone(
         for(auto& col:motor.columns)
             for(std::size_t k=0;k<6;++k) col[k]/=scales[k];
 
-    std::array<double,6> produced {};
-    // Coordinate descent with projection onto each engine's own constrained
-    // throttle/TVC cone. Both positive and negative axial banks participate
-    // in lateral and pure-torque maneuvers when physically necessary.
-    for (int pass=0;pass<96;++pass)
+    // Convex six-axis objective, projected on each engine's physical cone.
+    // FISTA uses a GLOBAL conservative Lipschitz step, so cross-coupled
+    // engine torques cannot drive the old cyclic-coordinate overshoot into
+    // equal 100% opposed burns. This is deterministic and matrix-size bounded.
+    constexpr double Regularization=0.001;
+    std::array<std::array<double,3>,Max> velocity {};
+    std::array<std::array<double,3>,Max> next {};
+    double lipschitz=Regularization;
+    for (std::size_t i=0;i<mounted.size();++i)
+        for (std::size_t j=0;j<3;++j)
+            for (std::size_t k=0;k<6;++k)
+                lipschitz += weights[k]*m[i].columns[j][k]*
+                             m[i].columns[j][k];
+    double momentum=1.0;
+    for (int pass=0;pass<240;++pass)
     {
+        std::array<double,6> residual {};
+        for (std::size_t k=0;k<6;++k) residual[k]=-target[k];
+        for (std::size_t i=0;i<mounted.size();++i)
+            for (std::size_t j=0;j<3;++j)
+                for (std::size_t k=0;k<6;++k)
+                    residual[k]+=m[i].columns[j][k]*velocity[i][j];
+
         for (std::size_t i=0;i<mounted.size();++i)
         {
-            if (m[i].rated<=0.0 || m[i].cap<=0.0) continue;
-            auto& motor=m[i];
-            for(std::size_t k=0;k<6;++k)
-                for(std::size_t j=0;j<3;++j)
-                    produced[k]-=motor.columns[j][k]*motor.q[j];
-            std::array<double,3> next = motor.q;
+            next[i]=velocity[i];
             for (std::size_t j=0;j<3;++j)
             {
-                double gradient = 0.0;
-                double norm = 0.035; // minimizes idle engine use
-                for(std::size_t k=0;k<6;++k)
-                {
-                    gradient += weights[k]*motor.columns[j][k]*
-                        (produced[k]-target[k]);
-                    norm += weights[k]*motor.columns[j][k]*
-                        motor.columns[j][k];
-                }
-                next[j] -= gradient/norm;
+                double gradient=Regularization*velocity[i][j];
+                for (std::size_t k=0;k<6;++k)
+                    gradient += weights[k]*m[i].columns[j][k]*residual[k];
+                next[i][j] -= gradient/lipschitz;
             }
-            matrix_detail::projectThrustCone(next,motor.cap,motor.limit);
-            motor.q=next;
-            for(std::size_t k=0;k<6;++k)
-                for(std::size_t j=0;j<3;++j)
-                    produced[k]+=motor.columns[j][k]*motor.q[j];
+            matrix_detail::projectThrustCone(
+                next[i],m[i].cap,m[i].limit
+            );
         }
+
+        const double newMomentum=
+            0.5*(1.0+std::sqrt(1.0+4.0*momentum*momentum));
+        const double extrapolation=(momentum-1.0)/newMomentum;
+        for (std::size_t i=0;i<mounted.size();++i)
+            for(std::size_t j=0;j<3;++j)
+            {
+                const double old=m[i].q[j];
+                m[i].q[j]=next[i][j];
+                velocity[i][j]=m[i].q[j]+
+                    extrapolation*(m[i].q[j]-old);
+            }
+        momentum=newMomentum;
     }
 
     out.count=mounted.size();

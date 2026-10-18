@@ -119,30 +119,6 @@ struct EngineUnitDescriptor
     double irregularThrustStartsAtDamage01 = 0.70;
 };
 
-// One immutable five-cause engine history plus reversible impact shock.
-[[nodiscard]] inline EngineUnitEffectiveState evaluateEngineUnit(
-    const EngineUnitDescriptor& descriptor,
-    const game::equipment::EquipmentDamageLayer& damage,
-    const EngineOperatingState& operating
-) noexcept
-{
-    auto transient=damage;
-    game::equipment::addEquipmentDamage(
-        transient.accumulated,
-        game::equipment::EquipmentDamageKind::Impact,
-        finiteClamp01(operating.impactShock01)
-    );
-    auto result=evaluateEngineUnit(descriptor,transient);
-    // During field-coupling shock the thrust becomes irregular even if total
-    // functional damage is exactly 70% (old steady irregularity starts >70%).
-    if (operating.impactShock01>1.0e-9 && !result.thrustFailed)
-        result.thrustIrregularity01=std::max(
-            result.thrustIrregularity01,
-            std::clamp(operating.impactShock01*0.85,0.0,1.0)
-        );
-    return result;
-}
-
 // Maximum MW that the engine's ONE-SIDED nozzle ring may radiate into
 // open space. effectiveArea01 allows future *real* hit-volume damage to
 // decrease the emitting surface. It does not create damage by itself.
@@ -419,6 +395,30 @@ struct EngineOperatingState
     // The mounted third component has its own replace-only life/damage.
     EngineEmitterOperatingState emitter {};
 };
+
+// One immutable five-cause engine history plus reversible impact shock.
+[[nodiscard]] inline EngineUnitEffectiveState evaluateEngineUnit(
+    const EngineUnitDescriptor& descriptor,
+    const game::equipment::EquipmentDamageLayer& damage,
+    const EngineOperatingState& operating
+) noexcept
+{
+    auto transient=damage;
+    game::equipment::addEquipmentDamage(
+        transient.accumulated,
+        game::equipment::EquipmentDamageKind::Impact,
+        finiteClamp01(operating.impactShock01)
+    );
+    auto result=evaluateEngineUnit(descriptor,transient);
+    // During field-coupling shock the thrust becomes irregular even if total
+    // functional damage is exactly 70% (old steady irregularity starts >70%).
+    if (operating.impactShock01>1.0e-9 && !result.thrustFailed)
+        result.thrustIrregularity01=std::max(
+            result.thrustIrregularity01,
+            std::clamp(operating.impactShock01*0.85,0.0,1.0)
+        );
+    return result;
+}
 
 // Only a hit resolved to the emitter surface may enter here. Callers supply
 // actual incident MJ and footprint m2; never reinterpret DamageEvent.energy.

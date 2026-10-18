@@ -155,9 +155,36 @@ inline plant::EngineSlotState slotFromSnapshot(
                 damage
             );
 
+        // Snapshot projection must use exactly the same thermal governor as
+        // the authoritative module path. Without this, damaged annulus state
+        // changes acceleration/braking only on the server and the remote ship
+        // predictor/autopilot sees a fictitious healthy engine.
+        game::equipment::engine::EngineOperatingState operating;
+        if (module->hasEngineThermalState)
+        {
+            operating.temperatureK = module->engineTemperatureK;
+            operating.emitter.surface.intactArea01 =
+                module->emitterIntactArea01;
+            operating.emitter.surface.microcrack01 =
+                module->emitterMicrocrack01;
+            operating.emitter.damage.laser01 =
+                module->emitterLaserDamage01;
+            operating.emitter.damage.impact01 =
+                module->emitterImpactDamage01;
+            operating.emitter.damage.thermal01 =
+                module->emitterThermalDamage01;
+            operating.emitter.damage.radiation01 =
+                module->emitterRadiationDamage01;
+            operating.emitter.damage.wear01 =
+                module->emitterWearDamage01;
+            operating.emitter.equivalentOperatingHours =
+                module->emitterEquivalentOperatingHours;
+        }
         return plant::EngineSlotState {
             true,
-            effective.efficiencyAuthority01,
+            game::equipment::engine::safeEmitterThrustFraction01(
+                *definition->engine, effective, operating
+            ),
             effective.gimbalAuthority01,
             effective.thrustIrregularity01
         };

@@ -556,7 +556,9 @@ void ShipCore::updateSystems(float dt)
         }
     }
 
-    m_cooling.update(dt, m_thermal);
+    // Radiators run AFTER installed engines have deposited their physically
+    // transferred heat in the same shared coolant volume. The engine nozzle
+    // already radiated its own part directly into space.
     m_lifeSupport.update(dt);
     m_avionics.update(dt);
     m_radiationShield.update(dt);
@@ -569,8 +571,8 @@ void ShipCore::updateSystems(float dt)
     // Engine life belongs to the real installed module, never to a pilot
     // command, diagnostic slot, or ship-wide time counter. The actual
     // physical allocator reports the delivered fraction of healthy thrust.
-    // The ideal coolant boundary is deliberate until reactor/cooling damage
-    // simulation is authorized; engines still have finite thermal inertia.
+    // Use the actual common coolant temperature: damaged pumps/radiator
+    // panels now heat every engine through its real finite thermal inertia.
     if (m_desc &&
         m_state.actuators.source ==
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
@@ -590,6 +592,10 @@ void ShipCore::updateSystems(float dt)
                 motion.mode == game::navigation::MotionMode::HubTactical &&
                 motion.mainEngineReportedSlotCount == bindings.size();
             bool changed = false;
+            // One shared coolant snapshot for this systems tick. Each engine
+            // deposits only its CONDUCTED part, never the nozzle's radiated
+            // heat. Engine internal heat storage remains on its own module.
+            const double coolantK=m_thermal.getTemperature();
             for (std::size_t i = 0; i < bindings.size(); ++i)
             {
                 if (bindings[i].empty() ||
@@ -611,20 +617,31 @@ void ShipCore::updateSystems(float dt)
                     !definition->engine)
                     continue;
 
+                double transferredMW=0.0;
                 changed |= m_moduleRuntime.advanceEngineOperatingLife(
                     bindings[i],
                     *definition->engine,
                     actualBurnSample
                         ? motion.mainEngineDeliveredThrust01[i] : 0.0,
                     static_cast<double>(dt),
-                    definition->engine->nominalCoolantTemperatureK
+                    coolantK,
+                    &transferredMW
                 );
+                if(std::isfinite(transferredMW))
+                {
+                    const double energyMJ=transferredMW*dt;
+                    if(energyMJ>=0.0)
+                        m_thermal.addHeat(energyMJ);
+                    else
+                        m_thermal.removeHeat(-energyMJ);
+                }
             }
 
             if (changed)
                 refreshRuntimeState();
         }
     }
+    m_cooling.update(dt, m_thermal);
 }
 
 
@@ -1213,11 +1230,22 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
 
         if (hasEquipmentCause && lost01 > 0.0)
         {
-            m_moduleRuntime.addEquipmentDamage(
-                damagedModuleId,
-                cause,
-                lost01
-            );
+            bool isInstalledEngine=false;
+            if (m_desc)
+                for (const auto& module : m_desc->modules)
+                    if (module.moduleId==damagedModuleId && module.engine)
+                    {
+                        isInstalledEngine=true;
+                        break;
+                    }
+            if (cause==Kind::Impact && isInstalledEngine)
+                m_moduleRuntime.addEngineImpactShock(
+                    damagedModuleId,lost01
+                );
+            else
+                m_moduleRuntime.addEquipmentDamage(
+                    damagedModuleId,cause,lost01
+                );
         }
     }
 

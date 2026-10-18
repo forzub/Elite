@@ -50,11 +50,9 @@ ShipDescriptor descriptor()
 
     game::equipment::engine::EngineUnitDescriptor engine;
     engine.nominalThrustNewtons = 50000.0;
-    engine.designReferenceSpeedMps = 500.0;
     engine.nominalEfficiency01 = 0.80;
-    engine.nominalElectricalPowerMW =
-        engine.nominalThrustNewtons * engine.designReferenceSpeedMps /
-        (engine.nominalEfficiency01 * 1.0e6);
+    // Fixture power is independently authored, not derived from F*v.
+    engine.nominalElectricalPowerMW = 31.25;
     engine.nominalGimbalRangeRad = 0.2;
     engine.nominalGimbalRateRadPerSec = 0.4;
     engine.gimbalFailure.failureAtDamage01 = 0.90;

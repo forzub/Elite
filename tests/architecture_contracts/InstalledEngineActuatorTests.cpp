@@ -147,6 +147,15 @@ void mountedAllocatorUsesEngineForceNotSlotFractions()
             near(damaged.deliveredThrust01[1], 0.5, 0.001),
             "damaged-engine torque balancing invented unequal forces");
 
+    // Precisely request the reduced balanced authority rather than the raw
+    // maximum. The engine plant must supply that full demand; it must not
+    // multiply the weak-bank penalty a second time.
+    const auto atLimit = run({0.0, 0.0, -36.7749375});
+    const auto atHalf = run({0.0, 0.0, -18.38746875});
+    require(near(atLimit.accelerationBodyMps2.z, -36.7749375, 0.01) &&
+            near(atHalf.accelerationBodyMps2.z, -18.38746875, 0.01),
+            "motor force envelope was derated twice after bank balancing");
+
     // A second engine TYPE can have a different rated thrust WITHOUT editing
     // the ship's physics or its slot, and that actual difference is respected.
     auto stronger = passport;

@@ -369,6 +369,11 @@ void testHubTacticalClientPredictionAdvancesLocalMotion()
 {
     ShipTransform transform;
     transform.motion.mode = game::navigation::MotionMode::HubTactical;
+    // This case asserts free ballistic propagation of the local-frame
+    // velocity. Assisted intentionally corrects velocity even with neutral
+    // input, so make the Newtonian flight law explicit.
+    transform.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
     transform.motion.systemId = 0;
     transform.motion.hubId = "hub";
     transform.motion.travelFrame.systemId = 0;

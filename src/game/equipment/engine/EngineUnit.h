@@ -294,6 +294,12 @@ struct EngineOperatingState
 {
     double temperatureK = 0.0;
     double equivalentOperatingHours = 0.0;
+
+    // Sub-quantum damage accrual is retained locally. It becomes canonical
+    // EquipmentDamage only when a measurable 0.001%-point increment is ready,
+    // keeping expensive module revision/snapshot work out of every frame.
+    double pendingWearDamage01 = 0.0;
+    double pendingThermalDamage01 = 0.0;
 };
 
 struct EngineLifeStep

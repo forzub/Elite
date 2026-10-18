@@ -277,7 +277,7 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
     world::modules::ObjectModuleRuntime runtime;
     runtime.init(d.modules);
     const auto* before = runtime.findModule("aft_left");
-    require(before && near(before->engineOperating.emitterSurface.intactArea01, 1.0),
+    require(before && near(before->engineOperating.emitter.surface.intactArea01, 1.0),
             "initial emitter area not pristine");
     const auto revisionBefore = runtime.revision();
     require(runtime.exposeEngineEmitter(
@@ -289,15 +289,15 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
     const auto* after = runtime.findModule("aft_left");
     require(after && runtime.revision() > revisionBefore,
             "emitter hit did not persist or invalidate physics projection");
-    require(after->engineOperating.emitterSurface.intactArea01 < 0.50,
+    require(after->engineOperating.emitter.surface.intactArea01 < 0.50,
             "laser did not remove localized physical emitter area");
     require(near(
                 game::equipment::totalAccumulatedDamage01(
                     after->equipmentDamage.accumulated
                 ), 0.0
             ), "emitter hit wrongly injected direct thrust/TVC damage");
-    require(after->engineOperating.emitterDamage.laser01 > 0.0 &&
-            near(after->engineOperating.emitterDamage.impact01, 0.0),
+    require(after->engineOperating.emitter.damage.laser01 > 0.0 &&
+            near(after->engineOperating.emitter.damage.impact01, 0.0),
             "emitter must accumulate its OWN five-cause damage");
     require(after->engineOperating.temperatureK < 1250.0,
             "new annulus hit should not instantly heat the engine");
@@ -332,11 +332,11 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
             "emitter derating did not reach real physical propulsion bank");
 
     const double oldArea =
-        runtime.findModule("aft_left")->engineOperating.emitterSurface.intactArea01;
+        runtime.findModule("aft_left")->engineOperating.emitter.surface.intactArea01;
     runtime.restoreSubtree(runtime.findModuleIndex("aft_left"));
     require(near(
                 runtime.findModule("aft_left")->
-                    engineOperating.emitterSurface.intactArea01,
+                    engineOperating.emitter.surface.intactArea01,
                 oldArea
             ), "ordinary engine repair illegally repaired the hot annulus");
 
@@ -347,9 +347,9 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
             "explicit annulus replacement failed");
     const auto* replaced = runtime.findModule("aft_left");
     require(replaced &&
-            near(replaced->engineOperating.emitterSurface.intactArea01, 1.0) &&
-            near(replaced->engineOperating.emitterDamage.laser01, 0.0) &&
-            near(replaced->engineOperating.emitterEquivalentOperatingHours, 0.0),
+            near(replaced->engineOperating.emitter.surface.intactArea01, 1.0) &&
+            near(replaced->engineOperating.emitter.damage.laser01, 0.0) &&
+            near(replaced->engineOperating.emitter.equivalentOperatingHours, 0.0),
             "replace-only annulus did not reset just its own lifecycle");
     require(near(replaced->equipmentDamage.accumulated.impact01, 0.10),
             "replacement incorrectly repaired the engine itself");

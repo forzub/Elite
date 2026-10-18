@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <string_view>
 
 #include "src/game/equipment/EquipmentDamage.h"

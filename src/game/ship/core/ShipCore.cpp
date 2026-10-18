@@ -237,58 +237,6 @@ void ShipCore::clearPhysicalConstructionDiagnosticOverride()
     }
 }
 
-bool ShipCore::debugFailPhysicalPropulsionSlot(std::size_t index)
-{
-    if (!m_state.valid() ||
-        m_state.actuators.source !=
-            game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
-        index >= m_state.actuators.propulsionSlots.size())
-    {
-        return false;
-    }
-
-    auto& slot = m_state.actuators.propulsionSlots[index];
-    slot.operational = false;
-    slot.thrust01 = 0.0;
-    slot.vectoring01 = 0.0;
-    m_state.actuators.touch();
-
-    std::cout
-        << "[ShipCore] diagnostic propulsion slot failed index="
-        << index
-        << " model="
-        << game::ship::plant::physicalControlModelName(
-               m_state.construction.physicalControlModel
-           )
-        << "\n";
-
-    return true;
-}
-
-bool ShipCore::debugRestorePhysicalPropulsionSlots()
-{
-    if (!m_state.valid() ||
-        m_state.actuators.source !=
-            game::ship::state::ShipActuatorStateSource::DiagnosticOverride)
-    {
-        return false;
-    }
-
-    m_state.actuators.resetHealthy(
-        m_state.construction.physicalControlModel,
-        game::ship::state::ShipActuatorStateSource::DiagnosticOverride
-    );
-
-    std::cout
-        << "[ShipCore] diagnostic propulsion slots restored model="
-        << game::ship::plant::physicalControlModelName(
-               m_state.construction.physicalControlModel
-           )
-        << "\n";
-
-    return true;
-}
-
 game::ship::capability::ShipCapabilitySnapshot
 ShipCore::capabilities() const
 {

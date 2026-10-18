@@ -80,6 +80,21 @@ SimulationSnapshot makeSnapshot()
         glm::dvec3(0.11, 0.22, 0.33);
     ship.transform.motion.mainTrimLoad01 = 0.375;
     ship.transform.motion.mainTrimUsableScale01 = 0.925;
+    ship.transform.motion.engineTelemetry.valid=true;
+    ship.transform.motion.engineTelemetry.count=4;
+    ship.transform.motion.engineTelemetry.controlTick=77;
+    ship.transform.motion.engineTelemetry.thrust01[0]=0.375;
+    ship.transform.motion.engineTelemetry.available01[0]=0.875;
+    ship.transform.motion.engineTelemetry.nozzleYawRad[0]=0.02;
+    ship.transform.motion.engineTelemetry.nozzlePitchRad[0]=-0.03;
+    ship.transform.motion.engineTelemetry.forceBodyNewtons[0]=
+        glm::dvec3(100.0,200.0,-3000000.0);
+    ship.transform.motion.engineTelemetry.electricalMW[0]=1818.75;
+    ship.transform.motion.engineTelemetry.wasteHeatMW[0]=26.371875;
+    ship.transform.motion.mainEngineReportedSlotCount=4;
+    ship.transform.motion.mainEngineDeliveredThrust01[0]=0.375;
+    ship.transform.motion.requestedMainAngularAccelerationBodyRadPerSec2=
+        glm::dvec3(0.1,0.2,0.3);
 
     game::simulation::NavigationExecutionSnapshot navigationExecution;
     navigationExecution.valid = true;
@@ -586,6 +601,23 @@ void testSnapshotRoundTrip()
         ),
         "main trim usable scale did not round-trip"
     );
+    const auto& telemetry=decoded.ships[0].transform.motion.engineTelemetry;
+    require(telemetry.valid && telemetry.count==4 &&
+            telemetry.controlTick==77 &&
+            near(telemetry.thrust01[0],0.375) &&
+            near(telemetry.available01[0],0.875) &&
+            near(telemetry.nozzleYawRad[0],0.02) &&
+            near(telemetry.nozzlePitchRad[0],-0.03) &&
+            near(telemetry.forceBodyNewtons[0].z,-3000000.0) &&
+            near(telemetry.electricalMW[0],1818.75) &&
+            near(telemetry.wasteHeatMW[0],26.371875),
+            "six-axis physical engine telemetry did not survive wire");
+    require(decoded.ships[0].transform.motion.mainEngineReportedSlotCount==4 &&
+            near(decoded.ships[0].transform.motion.
+                mainEngineDeliveredThrust01[0],0.375) &&
+            near(decoded.ships[0].transform.motion.
+                requestedMainAngularAccelerationBodyRadPerSec2.y,0.2),
+            "physical main-engine allocation telemetry was lost");
     require(decoded.ships[0].graph.modules.size() == 1u,
         "module graph mismatch");
     const auto& decodedEmitter = decoded.ships[0].graph.modules.front();

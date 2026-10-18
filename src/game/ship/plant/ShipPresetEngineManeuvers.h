@@ -293,6 +293,44 @@ struct AssistedManeuverPrograms final
                     requested=bankForce[direction==0 ? 1 : 0]/
                               ship.massKg;
                 if (requested<=1.0e-9) continue;
+                // Healthy, geometrically centered fore/aft bank: a literal
+                // equal-Newton signed AXIAL preset. This is the simplest
+                // possible program, with EXACT zero nozzle tilt and no
+                // artificial pitch/yaw/roll for Num8/Num2 or thrust.
+                if (axis==2)
+                {
+                    const double signZ=direction==0 ? 1.0 : -1.0;
+                    std::size_t active=0;
+                    double weakest=std::numeric_limits<double>::infinity();
+                    double sumX=0.0,sumY=0.0;
+                    for(std::size_t i=0;i<count;++i)
+                        if(motors[i].axisSign==signZ &&
+                           motors[i].capacity01>1.0e-9)
+                        {
+                            ++active;
+                            weakest=std::min(weakest,
+                                motors[i].capacity01*motors[i].ratedN);
+                            sumX+=motors[i].arm.x;
+                            sumY+=motors[i].arm.y;
+                        }
+                    if(active>0 &&
+                       std::abs(sumX)<1.0e-8 &&
+                       std::abs(sumY)<1.0e-8)
+                    {
+                        const double equalN=std::min(
+                            requested*ship.massKg/static_cast<double>(active),
+                            weakest
+                        );
+                        for(std::size_t i=0;i<count;++i)
+                            if(motors[i].axisSign==signZ &&
+                               motors[i].capacity01>1.0e-9)
+                                program.forceFractions[3*i]=
+                                    equalN/motors[i].ratedN;
+                        program.achievable=
+                            equalN*static_cast<double>(active)/ship.massKg;
+                        continue;
+                    }
+                }
                 std::array<double,Variables> solution {};
                 if(solve(axis,sign*requested,solution))
                 {
@@ -345,7 +383,9 @@ struct AssistedManeuverPrograms final
         for(std::size_t axis=0;axis<Axes;++axis)
         {
             const double wanted=command[axis];
-            if(!std::isfinite(wanted) || std::abs(wanted)<1.0e-9)
+            // Ignore float-frame basis noise instead of injecting a tiny
+            // undesired nozzle angle during a purely axial pilot command.
+            if(!std::isfinite(wanted) || std::abs(wanted)<1.0e-4)
                 continue;
             const auto& preset=programs[2*axis+(wanted<0.0 ? 1 : 0)];
             if(preset.achievable<=1.0e-9) continue;

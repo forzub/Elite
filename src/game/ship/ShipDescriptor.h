@@ -155,6 +155,9 @@ struct CoolingDescriptor
     double maxTransferPower;
     double nominalPower;
     double peakPower;
+    // Stable universe material ID, independent from any render texture or
+    // future trade commodity asset.
+    std::string radiatorMaterialId;
 };
 
 struct ThermalDescriptor

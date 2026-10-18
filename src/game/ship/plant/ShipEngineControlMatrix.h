@@ -45,9 +45,8 @@ struct EngineMatrixDemand
     glm::dvec3 accelerationBodyMps2 {0.0};
     // pitch, yaw, roll in ShipTransform sign convention
     glm::dvec3 angularAccelerationBodyRadPerSec2 {0.0};
-    std::array<double, 16> previousYawRad {};
-    std::array<double, 16> previousPitchRad {};
-    double elapsedSeconds = 0.0;
+    // No historical servo state or gimbal slew step: nozzle direction
+    // is a direct gameplay actuator, solved afresh for each control tick.
     std::uint64_t tick = 0;
 };
 
@@ -67,7 +66,7 @@ inline void projectThrustCone(
 ) noexcept
 {
     const double cap = clampFinite(cap01, 0.0, 1.0);
-    const double t = std::tan(clampFinite(maxAngleRad, 0.0, 1.2));
+    const double t = std::tan(clampFinite(maxAngleRad, 0.0, 1.45));
     if (cap <= 0.0) { q = {}; return; }
     if (t <= 1.0e-12)
     {
@@ -155,7 +154,24 @@ inline void projectThrustCone(
             0.0, topology[i].nominalForceDirectionBody, demand.tick
         });
         m[i].limit = idle.availableGimbalRangeRad;
+        // Mechanical slew is intentionally ignored for this fictional
+        // near-instant vectoring engine. One tick directly applies the
+        // requested nozzle direction; no last-frame state is integrated.
         m[i].rate = idle.availableGimbalRateRadPerSec;
+        if (familyOf(model) == PhysicalControlFamily::Newtonian)
+        {
+            // Newtonian preserves its modest 7-10 degree gimbal doctrine:
+            // the existing Newtonian main-gimbal controller already limits
+            // direction/rate at the INPUT layer. Do not give it Assisted's
+            // huge Cobretty field-steering cone by accident.
+            const double newtonianLimit = std::max(
+                0.0, std::min(
+                    static_cast<double>(ship.mainGimbalYawLimitRad),
+                    static_cast<double>(ship.mainGimbalPitchLimitRad)
+                )
+            );
+            m[i].limit = std::min(m[i].limit, newtonianLimit);
+        }
         // The installation topology, not a hard-coded engine kind,
         // supplies the neutral nozzle orientation. All present I/Y/X main
         // mounts are axial (+Z fore / -Z aft).
@@ -184,15 +200,14 @@ inline void projectThrustCone(
             c[4]=torque.y/inertia.y;
             c[5]=-torque.z/inertia.z;
             const double slope = j == 0 ? 1.0 :
-                std::tan(std::clamp(m[i].limit,0.0,1.2));
+                std::tan(std::clamp(m[i].limit,0.0,1.45));
             rotationalScale.x += std::abs(c[3])*slope;
             rotationalScale.y += std::abs(c[4])*slope;
             rotationalScale.z += std::abs(c[5])*slope;
         }
     }
-    // Most idle ship ticks need no optimizer at all. No electrical, thermal
-    // or thrust output when both demands are neutral; move unused TVC back
-    // toward center at the installed motor's mechanical slew rate.
+    // Neutral control: skip the solver, immediately return every
+    // nozzle to neutral without inventing a post-release servo transient.
     if (glm::length(demand.accelerationBodyMps2)<1.0e-12 &&
         glm::length(demand.angularAccelerationBodyRadPerSec2)<1.0e-12)
     {
@@ -205,15 +220,8 @@ inline void projectThrustCone(
             t.availableThrust01=m[i].rated>0.0
                 ? installed.availableThrustNewtons()/m[i].rated
                 : 0.0;
-            const double delta=
-                m[i].rate*std::max(0.0,demand.elapsedSeconds);
-            const auto moveHome=[delta](double value) {
-                return std::copysign(
-                    std::max(0.0,std::abs(value)-delta),value
-                );
-            };
-            t.nozzleYawRad=moveHome(demand.previousYawRad[i]);
-            t.nozzlePitchRad=moveHome(demand.previousPitchRad[i]);
+            t.nozzleYawRad = 0.0;
+            t.nozzlePitchRad = 0.0;
         }
         return out;
     }
@@ -320,13 +328,9 @@ inline void projectThrustCone(
         );
         double yaw=std::atan2(motor.q[1],std::max(1.0e-12,motor.q[0]));
         double pitch=std::atan2(motor.q[2],std::max(1.0e-12,motor.q[0]));
-        const double step=std::max(0.0,demand.elapsedSeconds)*motor.rate;
-        yaw=std::clamp(yaw,
-            demand.previousYawRad[i]-step,
-            demand.previousYawRad[i]+step);
-        pitch=std::clamp(pitch,
-            demand.previousPitchRad[i]-step,
-            demand.previousPitchRad[i]+step);
+        // Aim immediately at the solved direction, clamped ONLY by
+        // this engine's available nozzle cone. There is no simulated
+        // motor latency, previous-frame angle, or hidden second slew limit.
         const double combined=std::hypot(yaw,pitch);
         if (combined>motor.limit && combined>0.0)
         {

@@ -55,6 +55,10 @@ void ShipCore::init(
     // геттер из файла описания корабля (f.e. Cobra MKIII)
     // позиция корабля в пространстве
 
+    // Reinitializing an entity must never resurrect motor programs or stale
+    // autopilot authority from its previous installed ship.
+    m_assistedManeuvers = {};
+    m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
     m_desc = &descriptor; // compatibility mirror; construction truth is m_state.
     m_state.initialize(descriptor);

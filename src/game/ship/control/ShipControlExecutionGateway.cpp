@@ -199,7 +199,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     game::ship::plant::PhysicalControlModelId model,
     const std::vector<game::ship::plant::EngineSlotState>& slotState,
     float dt,
-    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines,
+    game::ship::plant::AssistedManeuverPrograms* maneuverPrograms
 )
 {
     const TranslationPath path =
@@ -303,10 +304,17 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         // TVC is an immediate field-vector command in this game universe.
         // Independent nozzles reach the requested cone angle this very tick.
         demand.tick = control.controlTick;
+        // Assisted: cached signed maneuver patterns from the installed
+        // geometry/capabilities. No per-tick 96-pass optimization.
+        // Newtonian remains on its independent main/TVC + RCS doctrine.
         const auto actual =
-            game::ship::plant::executeEngineControlMatrix(
-                model,*mountedEngines,capabilities,demand
-            );
+            assisted && maneuverPrograms
+                ? maneuverPrograms->execute(
+                    model,*mountedEngines,capabilities,demand
+                  )
+                : game::ship::plant::executeEngineControlMatrix(
+                    model,*mountedEngines,capabilities,demand
+                  );
         motion.engineTelemetry.reset(control.controlTick);
         if (!actual.valid)
             return path;

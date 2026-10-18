@@ -88,6 +88,10 @@ preset=contains(
 matrix=contains(
     "src/game/ship/plant/ShipEngineControlMatrix.h",
     "for (int pass=0;pass<96;++pass)",
+    "const bool mainAxisOnly =",
+    "equalDeliveredN / instantaneousN",
+    "out.torqueBodyNm +=",
+    "const std::array<double,6> weights {1.0,1.0,1.0,80.0,80.0,80.0};",
     "PhysicalControlFamily::Newtonian",
     "ship.mainGimbalYawLimitRad",
     "ship.mainGimbalPitchLimitRad",
@@ -120,4 +124,10 @@ if not after_force.split("}", 1)[0].__contains__(
     "shipPtr->propagateMotionOrientation(fdt);"
 ):
     raise SystemExit("[ENGINE MATRIX][FAIL] torque not applied before orientation")
+contains(
+    "tests/architecture_contracts/InstalledEngineActuatorTests.cpp",
+    "assistedKeypadAxialReleaseHasNoParasiticPitch();",
+    "KP8/KP2 axial motor bank generated unwanted angular rate",
+    "KP8/KP2 longitudinal braking",
+)
 print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY TVC CONTRACT: PASS")

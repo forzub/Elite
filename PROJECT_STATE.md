@@ -1,3 +1,31 @@
+## 2026-10-18 — fake slot-level damage harness removed
+
+Direct user rule: a test that exists only for implementation convenience and bypasses the behavior it claims to validate is deleted rather than kept as an alternate acceptance path.
+
+Removed completely:
+- propulsion-matrix and ship-damage:<...> runtime scenario kinds;
+- ShipRuntimeDamageOracle;
+- diagnostic scenario diagnostics/scenarios/propulsion_damage_matrix.scenario;
+- scripts/run-ship-damage-oracle.ps1;
+- scripts/run-ship-physical-damage-matrix.sh;
+- ShipPhysicalDamageMatrixTests.cpp and its CMake target;
+- ClientShipCommand::DebugFailPhysicalPropulsionSlot / DebugRestorePhysicalPropulsionSlots;
+- GameServer handlers and ShipCore debugFailPhysicalPropulsionSlot/debugRestorePhysicalPropulsionSlots;
+- wire-protocol coverage for those deleted commands.
+
+Canonical damage acceptance boundary:
+ObjectModuleRuntime::addEquipmentDamage(...)
+    -> EquipmentDamage
+    -> EngineUnit
+    -> buildPhysicalControlSlotState(...)
+    -> damaged-main automation
+    -> physical execution
+    -> replicated presentation/BITE
+
+No runtime damage acceptance may inject slot.operational=false, slot.thrust01=0, or other DiagnosticOverride actuator mutations as a substitute for engine/module damage.
+
+Low-level actuator tests may still construct EngineSlotState directly when their declared subject is actuator math itself; they must not be presented or named as end-to-end damage validation.
+
 ## 2026-10-18 — direct weakest-engine main-bank balancing
 
 The previous 10%-step greedy throttle trim was removed.
@@ -123,9 +151,9 @@ Known presentation boundary:
 - Physical slot state is derived from module damage; direct slot failure is not a valid EquipmentDamage/BITE acceptance path.
 - BITE diagnoses thrust-function FAILED separately from TVC/nozzle FAILED; whole-equipment failure remains reserved for unavailable/destroyed equipment.
 - New equipment_damage_failure_pipeline test verifies five-channel ObjectModuleRuntime damage -> EngineUnit -> slot -> capability.
-- propulsion_damage_matrix.scenario is explicitly actuator-only and must not be used as proof of EquipmentDamage/BITE behavior.
+- Slot-level diagnostic failure is not a valid EquipmentDamage/BITE acceptance path and no fake slot-damage runtime harness is retained.
 
-Next: run bite_api, engine_unit_damage_model, equipment_damage_failure_pipeline; then make one native real-game damage pass through the module-damage path and inspect BITE + normal engine HUD.
+Next: native real-game damage validation must enter through ObjectModuleRuntime::addEquipmentDamage(...) and then traverse EngineUnit -> slot projection -> automation -> physics -> BITE/HUD.
 
 ## 2026-10-17 — BITE end-to-end presentation connection
 
@@ -368,118 +396,6 @@ BITE scope:
 
 Test:
 - engine_unit_damage_model contract verifies healthy preservation, damage-degraded thrust/vectoring, increased per-thrust power/heat cost, dead-engine zero output, and monotonic damage behavior.
-
-
-## 2026-10-17 — damage runtime probe corrected
-
-The first ship-damage runtime oracle was invalid as an acceptance test.
-
-Observed failure pattern on ship-damage:Assisted-I@0:
-- DAMAGE slot 0 was issued;
-- the oracle then held targetSpeedRate=+1 indefinitely until a compound PASS predicate became true;
-- the Assisted PASS predicate required trim_load > 1e-4 and usable_scale < 0.9999;
-- live trim_load stayed around 1e-6..1e-5 while yaw rate rose to about 0.468 rad/s;
-- therefore the PASS predicate was mathematically unreachable and the test itself kept increasing the Assisted forward-speed setpoint forever.
-
-This made the probe capable of manufacturing a long-running acceleration/rotation episode even when the intended measurement had already been captured.
-
-Canonical correction:
-- ship-damage is now a bounded measurement probe, not a self-extending acceptance test.
-- Per case phases are:
-  1. model selection;
-  2. BrakeToStop preparation;
-  3. damage command;
-  4. 0.25 s neutral damage-settle phase;
-  5. 0.50 s ordinary targetSpeedRate=+1 burn;
-  6. 1.50 s neutral observation;
-  7. CAPTURED result and next case / COMPLETE.
-- No physics threshold can extend the burn duration.
-- The probe records:
-  peak speed,
-  peak forward velocity,
-  peak main acceleration magnitude,
-  peak angular-rate magnitude,
-  peak residual main angular acceleration,
-  peak trim load,
-  minimum usable main scale,
-  plus final instantaneous state.
-- Result is status=CAPTURED rather than PASS until correct damaged-flight acceptance limits are established from real runtime behavior.
-- GameServer diagnostic damage acceptance logging now uses stderr/std::endl so accepted=1/0 is visible immediately in the console.
-
-Important diagnostic observation from the invalid run:
-- after failing Assisted-I slot 0, observed main acceleration magnitude was still roughly in the healthy 7.5g region during parts of the run while trim diagnostics were nearly zero.
-- This must be re-measured with the bounded probe before concluding whether the damage capability projection itself is wrong, because the old probe continuously changed the Assisted target-speed setpoint and could not terminate.
-
-
-## 2026-10-17 — runtime scenario infrastructure audit and ownership fix
-
-The live scenario/oracle infrastructure was audited after repeated runs failed to start or behaved inconsistently.
-
-Root architectural problem:
-- there was no single runtime scenario owner;
-- NavigationStressHarness activated itself from ELITE_NAV_STRESS;
-- ShipRuntimeControlOracle activated itself from ELITE_SHIP_CONTROL_ORACLE or a marker file;
-- ShipRuntimeDamageOracle activated from --diagnostic-scenario via ELITE_DIAGNOSTIC_SCENARIO;
-- all three objects existed simultaneously inside SpaceState.
-
-Critical control conflict found:
-- ship-control / ship-damage could submit their ShipControlState in handleInput();
-- later in the same frame SpaceState::update() always called updateDockingAdvisory();
-- updateDockingAdvisory() can submit m_clientAutopilotControl through the same m_client->submitInput() path;
-- therefore an ordinary docking/autopilot control sample could overwrite the scenario sample later in the same frame;
-- a stale pending docking request from a previous action could therefore corrupt an otherwise correctly selected runtime scenario.
-
-Additional scenario infrastructure defects:
-- ShipRuntimeControlOracle could silently activate from D:/tmp/elite/ship_control_oracle.enable.
-- m_navigationStressCompleteAnnounced was shared by NavigationStressHarness and ShipRuntimeControlOracle, so one diagnostic could suppress another diagnostic's COMPLETE announcement.
-- malformed ship-damage payload could select the damage scenario kind but leave the damage oracle disabled, producing a game that looked alive but had no valid scenario driver.
-- unknown nav-stress payloads could silently fall back toward default behavior.
-- scenario selection was spread across marker files, activation env vars and CLI.
-
-New canonical scenario contract:
-- EliteGame has one explicit entry point:
-      --diagnostic-scenario <spec>
-- RuntimeScenarioSelection is the single selector.
-- Supported specs:
-      ship-control
-      ship-damage:<PhysicalModel@slot,...>
-      nav-stress
-      nav-stress:simple
-      nav-stress:assisted-high-speed
-      nav-stress:assisted-gameplay-parity
-      nav-stress:assisted-safe-course-obstacle
-- unknown/empty scenario specs are rejected at startup.
-- invalid ship-damage model/slot configuration fails fast during SpaceState construction instead of silently running with no driver.
-
-Harness activation:
-- ShipRuntimeControlOracle no longer self-activates from marker/env; it is configured only when RuntimeScenarioSelection selects ShipControl.
-- ShipRuntimeDamageOracle is configured only from the selected ShipDamage payload.
-- NavigationStressHarness is enabled only when RuntimeScenarioSelection selects NavigationStress.
-- legacy nav env variables may still supply tuning/report/hot-start parameters, but they no longer select the active harness.
-- scripts/run-ship-control-oracle.ps1 no longer creates a marker; it prints an explicit ship-control CLI command.
-- scripts/run-ship-damage-oracle.ps1 already uses explicit CLI.
-- scripts/run-navigation-stress.ps1 now launches EliteGame with an explicit nav-stress scenario argument; legacy env mode flags are only translated into the corresponding scenario payload/tuning.
-
-Exclusive ShipControlState ownership:
-- for ShipControl and ShipDamage runtime scenarios, SpaceState skips updateDockingAdvisory();
-- pending docking route requests are cleared;
-- m_clientAutopilotControlActive is forced false;
-- stale m_clientAutopilotControl is reset;
-- therefore the selected direct-control scenario is the only source allowed to submit ordinary ShipControlState for that frame.
-- NavigationStress continues to use the normal docking/autopilot route because exercising that production path is the purpose of that scenario.
-
-Completion reporting:
-- NavigationStressHarness keeps m_navigationStressCompleteAnnounced.
-- ShipRuntimeControlOracle now has its own m_shipControlOracleCompleteAnnounced.
-- ShipRuntimeDamageOracle now has its own m_shipDamageOracleCompleteAnnounced.
-
-New architecture contract:
-- RuntimeScenarioSelectionTests validates explicit selection and payload preservation.
-- empty ship-damage payload is rejected.
-- unknown nav-stress payload is rejected.
-- unknown scenario names do not silently select another harness.
-
-Before trusting any further live physics result, run the runtime_scenario_selection contract and then a minimal ship-control scenario. Only after scenario ownership is proven should damaged propulsion / matrix runtime acceptance continue.
 
 
 ## 2026-10-17 — propulsion authority matrix: canonical model and current limits
@@ -767,61 +683,6 @@ Tests:
 - Tests default and descriptor-selected style id.
 - Tests healthy widget does not raise warning.
 - Tests an unavailable bound physical engine slot raises both per-bar fault and widget warning.
-
-
-## 2026-10-17 — damage oracle root-cause fix and explicit scenario CLI
-
-The first live damage-oracle runs were invalid. Root cause was in test plumbing, not propulsion physics:
-- ClientShipCommand gained DebugFailPhysicalPropulsionSlot / DebugRestorePhysicalPropulsionSlots, but WireProtocol::decodeClientShipCommand still rejected every command type above SelectPhysicalControlModel.
-- Therefore the client printed "requested failed propulsion slot", but the command was discarded during decode and never reached GameServer/ShipCore.
-- The absence of the new server-side accepted=0/1 log was the key evidence.
-- DynamicMotionState wire schema also omitted mainPropulsionTorqueBodyNm, mainPropulsionAngularAccelerationBodyRadPerSec2, mainTrimLoad01 and mainTrimUsableScale01, so client-side oracle observations would have remained zero even after a successful server-side damage application.
-
-Fixes:
-- ClientShipCommand decoder range now includes DebugRestorePhysicalPropulsionSlots (and therefore the preceding fail-slot command).
-- SimulationSnapshot schema now replicates propulsion reaction + trim diagnostics; schema version advanced 13 -> 14.
-- WireProtocolContractTests now round-trip DebugFailPhysicalPropulsionSlot.
-- WireDataPlaneContractTests now round-trip propulsion torque/angular-acceleration/trim diagnostics.
-
-Diagnostic scenario architecture changed:
-- Damage-test model order/damage slot are no longer hardcoded in ShipRuntimeDamageOracle.
-- EliteGame accepts --diagnostic-scenario VALUE.
-- main exports this value to ELITE_DIAGNOSTIC_SCENARIO before Application construction.
-- Damage oracle activates only for syntax:
-  ship-damage:<PhysicalModel@slot,...>
-- Example full matrix:
-  ship-damage:Assisted-I@0,Assisted-Y@0,Assisted-X@0,Newtonian-I@0,Newtonian-Y@0,Newtonian-X@0
-- This starts with Assisted-I, then Y/X, then Newtonian I/Y/X.
-- scripts/run-ship-damage-oracle.ps1 no longer creates marker files; it only prints the explicit manual EliteGame command.
-- Legacy marker files no longer select the damage scenario.
-
-
-## 2026-10-17 — live damaged-propulsion oracle
-
-After the matrix/geometry/gateway tests passed, a dedicated in-game damage oracle was added.
-
-Authoritative diagnostic damage path:
-- ClientShipCommand now supports DebugFailPhysicalPropulsionSlot and DebugRestorePhysicalPropulsionSlots.
-- ShipCore exposes debugFailPhysicalPropulsionSlot(index) and debugRestorePhysicalPropulsionSlots().
-- These commands operate only on DiagnosticOverride actuator state, so production module-derived damage authority is not silently bypassed.
-- Server applies the slot failure to the authoritative ShipCore; subsequent capability projection and motion use the same normal runtime path.
-
-New live probe:
-- ShipRuntimeDamageOracle is separate from the healthy six-model oracle.
-- Manual arm script: scripts/run-ship-damage-oracle.ps1.
-- Marker: D:/tmp/elite/ship_damage_oracle.enable.
-- Report: D:/tmp/elite/ship_damage_oracle.log.
-- User starts EliteGame.exe manually.
-- Probe tests Assisted-Y then Newtonian-Y.
-- For both models physical propulsion slot 0 is failed on the authoritative server:
-  - Assisted-Y slot 0 = aft_top.
-  - Newtonian-Y slot 0 = main_top.
-- Same ordinary pilot forward-burn command is held until the expected damaged physical response is observed; no elapsed-time physics verdict.
-
-Expected live behavior:
-- Assisted-Y: forward thrust remains; mainTrimLoad01 > 0; mainTrimUsableScale01 < 1; avoidable residual pitch/yaw main reaction is nearly zero.
-- Newtonian-Y: no Assisted hidden trim; forward thrust remains; short-lever asymmetric main bank produces a real but bounded residual pitch/yaw angular acceleration (<0.25 rad/s^2 in this diagnostic).
-- The purpose is to prove that the new matrix/lever-arm/trim behavior survives the actual client -> server -> ShipCore -> capability -> gateway -> physics -> replicated snapshot path.
 
 
 ## 2026-10-16 — damage trim and Newtonian short-lever main geometry

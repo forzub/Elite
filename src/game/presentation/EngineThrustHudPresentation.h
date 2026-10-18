@@ -206,7 +206,10 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         // HUD alarm thresholds belong to BITE. Capacity still comes from the
         // physical propulsion projection; presentation does not invent a
         // second damage policy.
+        // Synthetic Ctrl+F9 engines have no native module damage identity.
+        // Do not attach an unrelated Cobra module's BITE alarm to them.
         bar.fault =
+            model == descriptor.physicalControlModel &&
             !equipmentId.empty() &&
             biteHudAttentionForEquipment(
                 biteState,

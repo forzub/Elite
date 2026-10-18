@@ -1054,20 +1054,48 @@ desc.modules =
         );
     // Fictional field-coupling drive: no expelled reaction mass. Its
     // external momentum sink is an explicit science-fiction assumption.
-    // At 500 m/s a 9.561 MN drive performs about 4.78 GW of mechanical
-    // work; with 80% rated conversion it requires about 5.98 GW electric.
-    // A two-engine longitudinal bank draws about 11.95 GW at full rating.
+    // At 500 m/s one 9.561 MN engine corresponds to 4.78 GW of
+    // design-point field work. At 99.8% rated efficiency it draws 4.79 GW
+    // and rejects 9.58 MW heat. ONE active pair rejects 19.16 MW.
+    // The opposite bank is not engaged during ordinary longitudinal burn.
     // Reactor and cooling are ideal/unlimited for now; this is a DEMAND
     // passport and must not be enforced by the old PowerBus.
     engine.propulsionPrinciple =
         game::equipment::engine::PropulsionPrinciple::FieldCoupling;
     engine.designReferenceSpeedMps =
         static_cast<double>(desc.physics.maxCombatSpeed);
-    engine.nominalEfficiency01 = 0.80;
+    engine.nominalEfficiency01 = 0.998;
     engine.nominalElectricalPowerMW =
         engine.nominalThrustNewtons *
         engine.designReferenceSpeedMps /
         (engine.nominalEfficiency01 * 1.0e6);
+    // Thermal design budget: physical 380 m^2 radiator surface, epsilon
+    // 0.9, 1050 K coolant/radiator design temperature => 23.57 MW
+    // radiation (Stefan-Boltzmann), > 19.16 MW from one full-power pair.
+    // Existing cooling simulation remains ideal/unlimited, not rewired.
+    engine.nominalCoolantTemperatureK = 1050.0;
+    engine.nominalOperatingTemperatureK = 1200.0;
+    engine.safeOperatingTemperatureK = 1300.0;
+    engine.thermalCapacityMJperK = 12.0;
+    const double nominalEngineWasteHeatMW =
+        engine.nominalElectricalPowerMW *
+        (1.0 - engine.nominalEfficiency01);
+    engine.thermalConductanceMWperK =
+        nominalEngineWasteHeatMW /
+        (engine.nominalOperatingTemperatureK -
+         engine.nominalCoolantTemperatureK);
+    // 100 K above the safe threshold adds 5% thermal damage per hour.
+    engine.overheatReferenceExcessK = 100.0;
+    engine.thermalDamagePerHourAtReferenceExcess01 = 0.05;
+
+    // Equivalent full-thrust hours, independent for each installed engine.
+    // Service at 30k h (20% accumulated wear); no-service limit 50k h
+    // (95% wear and therefore thrust-function failure).
+    engine.overhaulEquivalentHours = 30000.0;
+    engine.endOfLifeEquivalentHours = 50000.0;
+    engine.damageAtOverhaul01 = 0.20;
+    engine.damageAtEndOfLife01 = 0.95;
+    engine.wearThrottleExponent = 1.5;
     engine.gimbalFailure.failureAtDamage01 = 0.90;
 
     for (auto& module : desc.modules)
@@ -1075,8 +1103,9 @@ desc.modules =
         if (module.zone == game::damage::HitZoneType::Engine)
         {
             module.equipmentFailure.failureAtDamage01 = 0.95;
-            // The full-service life will be accumulated by an operating
-            // time law; do not fake it with a per-frame arbitrary percentage.
+            // Wear is integrated from each engine's actual commanded,
+            // damage-constrained delivered thrust, not elapsed ship age.
+            // Nonlinear life curve reaches 20% at the 30k-hour service mark.
             module.maintenance.wearPerOperatingHour = 0.0;
             module.maintenance.maintenanceWearThreshold01 = 0.20;
             module.engine = engine;

@@ -499,6 +499,16 @@ ELITE_WIRE_SCHEMA(
     v.thermalDamage01,
     v.radiationDamage01,
     v.wearDamage01,
+    v.hasEngineThermalState,
+    v.engineTemperatureK,
+    v.emitterIntactArea01,
+    v.emitterMicrocrack01,
+    v.emitterLaserDamage01,
+    v.emitterImpactDamage01,
+    v.emitterThermalDamage01,
+    v.emitterRadiationDamage01,
+    v.emitterWearDamage01,
+    v.emitterEquivalentOperatingHours,
     v.aliveSupportCount
 );
 

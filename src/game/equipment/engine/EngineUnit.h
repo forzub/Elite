@@ -37,6 +37,11 @@ struct EngineUnitDescriptor
     // speed. A damaged engine produces less thrust from the same rated input.
     double nominalEfficiency01 = 1.0;
 
+    // Thrust damage is loss of force authority, NOT an identical percentage
+    // loss in conversion efficiency. Near-ideal field drives need a separate
+    // modest conversion-loss law to avoid gigawatt waste heat at 20% wear.
+    double maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
+
     // Universal engine-only life passport. Thermal/radiation/duration inputs
     // are physical rates converted into the same direct damage percentages.
     // The ship's reactor and cooling are IDEAL during this phase, but an
@@ -167,9 +172,15 @@ inline double positiveFiniteOr(
             1.0
         );
 
+    const double conversionLoss =
+        std::clamp(
+            positiveFiniteOr(
+                descriptor.maxRelativeEfficiencyLossAtFullDamage01, 0.0
+            ), 0.0, 0.95
+        ) * totalDamage01;
     out.efficiency01 = out.thrustFailed
         ? 0.0
-        : nominalEfficiency * out.efficiencyAuthority01;
+        : nominalEfficiency * (1.0 - conversionLoss);
 
     // A functional thrust failure does not delete the engine module. It zeros
     // useful thrust, electrical demand and generated waste heat. The TVC
@@ -201,21 +212,17 @@ inline double positiveFiniteOr(
         return out;
     }
 
-    // For the same achieved fraction of HEALTHY nominal thrust, degradation
-    // demands more input power (if the rated supply is available). Use the
-    // achieved fraction as requestedElectricalPowerMW's input, not the
-    // percentage of the reduced damaged-engine maximum.
-    // Waste heat is rated input minus remaining useful field-coupling output.
+    // Damaged force authority caps maximum thrust independently of the
+    // small conversion-efficiency loss. For a given DELIVERED force, input
+    // rises by eta_nominal / eta_effective, without turning every percent
+    // of mechanical damage into one percent of energetic efficiency loss.
     out.powerCostMultiplier =
-        out.efficiencyAuthority01 > 1.0e-9
-            ? 1.0 / out.efficiencyAuthority01
+        out.efficiency01 > 1.0e-9
+            ? nominalEfficiency / out.efficiency01
             : 0.0;
 
-    // BITE heatMultiplier is the EXTRA fraction of waste heat compared
-    // with a healthy unit at the SAME delivered thrust, not the absolute
-    // heat-to-useful-work ratio. At 80% nominal conversion and 50% remaining
-    // authority: input doubles for the same useful output; waste heat goes
-    // from 0.2 to 1.2 units of healthy rated input (+500%).
+    // Extra waste-heat fraction relative to the healthy same-output heat.
+    // The denominator must be finite even for eta_nominal close to 1.
     const double healthyWasteFraction =
         1.0 - nominalEfficiency;
     out.heatMultiplier = healthyWasteFraction > 1.0e-9

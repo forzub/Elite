@@ -10,8 +10,8 @@ namespace
 
 using game::equipment::EquipmentDamageLayer;
 using game::equipment::EquipmentDamageState;
-using game::equipment::EquipmentDamageSensitivity;
 using game::equipment::engine::EngineUnitDescriptor;
+using game::equipment::engine::PropulsionPrinciple;
 using game::equipment::engine::evaluateEngineUnit;
 using game::equipment::engine::generatedWasteHeatMW;
 using game::equipment::engine::requestedElectricalPowerMW;
@@ -30,15 +30,16 @@ bool near(double a, double b, double eps = 1.0e-9)
 EngineUnitDescriptor descriptor()
 {
     EngineUnitDescriptor d;
+    d.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     d.nominalThrustNewtons = 1000.0;
-    d.nominalElectricalPowerMW = 10.0;
-    d.nominalEfficiency01 = 1.0;
+    d.designReferenceSpeedMps = 500.0;
+    d.nominalEfficiency01 = 0.80;
+    d.nominalElectricalPowerMW =
+        d.nominalThrustNewtons * d.designReferenceSpeedMps /
+        (d.nominalEfficiency01 * 1.0e6);
     d.nominalGimbalRangeRad = 0.20;
     d.nominalGimbalRateRadPerSec = 0.40;
-    d.gimbalDamage = {
-        0.15, 0.65, 0.05, 0.00, 0.15
-    };
-    d.gimbalFailure.failureAtDamage01 = 0.95;
+    d.gimbalFailure.failureAtDamage01 = 0.90;
     return d;
 }
 
@@ -48,308 +49,152 @@ EquipmentDamageLayer damageLayer(
 {
     EquipmentDamageLayer layer;
     layer.accumulated = accumulated;
-    layer.sensitivity = {
-        0.30, 0.45, 0.15, 0.01, 0.09
-    };
     layer.failure.failureAtDamage01 = 0.95;
+    // EngineUnit does not consult generic device sensitivity weights.
+    layer.sensitivity = {0.01, 0.01, 0.01, 0.01, 0.01};
     return layer;
 }
 
-void testHealthyEnginePreservesPassport()
+void testHealthyFieldDrivePassport()
 {
     const auto d = descriptor();
     const auto s = evaluateEngineUnit(d, damageLayer());
 
-    require(!s.thrustFailed, "healthy thrust function failed");
-    require(!s.gimbalFailed, "healthy TVC function failed");
-    require(near(s.efficiencyAuthority01, 1.0),
-            "healthy efficiency authority changed");
+    require(d.propulsionPrinciple == PropulsionPrinciple::FieldCoupling,
+            "field drive model is not explicit");
+    require(near(d.nominalElectricalPowerMW, 0.625),
+            "design-point F*v/eta electric power changed");
+    require(!s.thrustFailed && !s.gimbalFailed,
+            "healthy engine failed");
+    require(near(s.efficiency01, 0.80),
+            "healthy electric-to-field efficiency changed");
     require(near(s.maximumThrustNewtons, 1000.0),
-            "healthy nominal thrust changed");
-    require(near(s.gimbalAuthority01, 1.0),
-            "healthy gimbal authority changed");
-    require(near(s.gimbalRangeRad, 0.20),
-            "healthy gimbal range changed");
-    require(near(s.gimbalRateRadPerSec, 0.40),
-            "healthy gimbal rate changed");
-    require(near(s.powerCostMultiplier, 1.0),
-            "healthy power cost changed");
-    require(near(s.heatMultiplier, 0.0),
-            "healthy extra waste heat changed");
+            "healthy thrust rating changed");
+    require(near(s.gimbalRangeRad, 0.20) &&
+            near(s.gimbalRateRadPerSec, 0.40),
+            "healthy TVC rating changed");
+    require(near(requestedElectricalPowerMW(d, s, 1.0), 0.625),
+            "healthy full-thrust electrical draw changed");
+    require(near(generatedWasteHeatMW(d, s, 1.0), 0.125),
+            "healthy conversion losses changed");
 }
 
-void testImpactIsMostCriticalMechanicalDamage()
+void testFivePercentagesAddWithoutSensitivityWeights()
 {
-    const auto d = descriptor();
-
     EquipmentDamageState damage;
-    damage.impact01 = 1.0;
-    const auto impact = evaluateEngineUnit(d, damageLayer(damage));
+    damage.laser01 = 0.20;
+    damage.impact01 = 0.15;
+    damage.thermal01 = 0.08;
+    damage.radiation01 = 0.02;
+    damage.wear01 = 0.05;
+
+    const auto s = evaluateEngineUnit(descriptor(), damageLayer(damage));
+    require(near(s.efficiencyAuthority01, 0.50),
+            "five direct percentages did not sum to 50% loss");
+    require(near(s.gimbalAuthority01, 0.50),
+            "TVC reintroduced cause-specific weights");
+    require(near(s.maximumThrustNewtons, 500.0),
+            "five percentages did not reduce useful thrust");
 
     damage = {};
-    damage.laser01 = 1.0;
-    const auto laser = evaluateEngineUnit(d, damageLayer(damage));
+    damage.laser01 = 0.30;
+    const auto laser = evaluateEngineUnit(descriptor(), damageLayer(damage));
 
-    require(
-        impact.efficiencyAuthority01 < laser.efficiencyAuthority01,
-        "impact must hurt engine efficiency more than laser"
-    );
-    require(
-        impact.gimbalAuthority01 < laser.gimbalAuthority01,
-        "impact must hurt engine gimbal more than laser"
-    );
+    damage = {};
+    damage.impact01 = 0.30;
+    const auto impact = evaluateEngineUnit(descriptor(), damageLayer(damage));
 
-    require(near(impact.efficiencyAuthority01, 0.55),
-            "impact efficiency weight changed");
-    require(near(impact.gimbalAuthority01, 0.35),
-            "impact gimbal weight changed");
+    require(near(laser.efficiencyAuthority01, 0.70) &&
+            near(impact.efficiencyAuthority01, 0.70),
+            "same functional damage percentage depends on its cause");
+    require(near(laser.gimbalAuthority01, impact.gimbalAuthority01),
+            "nozzle still depends on removed damage weights");
 }
 
-void testLaserIsImportantButLessMechanicalThanImpact()
+void testSaturationAndChannelAccumulation()
+{
+    EquipmentDamageState damage;
+    require(game::equipment::addEquipmentDamage(
+                damage, game::equipment::EquipmentDamageKind::Laser, 0.6),
+            "laser increment rejected");
+    require(game::equipment::addEquipmentDamage(
+                damage, game::equipment::EquipmentDamageKind::Impact, 0.6),
+            "impact increment rejected");
+    require(near(damage.laser01, 0.6) &&
+            near(damage.impact01, 0.6),
+            "damage channels lost their independent histories");
+    require(near(game::equipment::totalAccumulatedDamage01(damage), 1.0),
+            "total functional damage did not saturate");
+
+    const auto s = evaluateEngineUnit(descriptor(), damageLayer(damage));
+    require(s.thrustFailed && s.gimbalFailed,
+            "saturated damage did not fail the engine functions");
+}
+
+void testInstabilityAndIndependentFunctionalThresholds()
 {
     const auto d = descriptor();
     EquipmentDamageState damage;
-    damage.laser01 = 1.0;
+    damage.impact01 = 0.70;
+    const auto steady = evaluateEngineUnit(d, damageLayer(damage));
+    require(!steady.thrustFailed &&
+            near(steady.thrustIrregularity01, 0.0),
+            "70% damage incorrectly destabilized thrust");
 
-    const auto s = evaluateEngineUnit(d, damageLayer(damage));
+    damage.impact01 = 0.80;
+    const auto unstable = evaluateEngineUnit(d, damageLayer(damage));
+    require(!unstable.thrustFailed &&
+            near(unstable.thrustIrregularity01, 0.40),
+            "80% damage should give 40% irregularity");
 
-    require(near(s.efficiencyAuthority01, 0.70),
-            "laser efficiency weight changed");
-    require(near(s.gimbalAuthority01, 0.85),
-            "laser gimbal weight changed");
+    damage.impact01 = 0.90;
+    const auto tvcFailed = evaluateEngineUnit(d, damageLayer(damage));
+    require(!tvcFailed.thrustFailed && tvcFailed.gimbalFailed,
+            "90% nozzle failure incorrectly destroyed axial thrust");
+    require(near(tvcFailed.maximumThrustNewtons, 100.0),
+            "TVC-only failure changed surviving thrust");
+    require(near(tvcFailed.gimbalRangeRad, 0.0),
+            "failed TVC still has travel");
+
+    damage.impact01 = 0.949;
+    const auto almostFailed = evaluateEngineUnit(d, damageLayer(damage));
+    require(!almostFailed.thrustFailed &&
+            almostFailed.thrustIrregularity01 > 0.99,
+            "94.9% thrust damage should be strongly intermittent");
+
+    damage.impact01 = 0.95;
+    const auto failed = evaluateEngineUnit(d, damageLayer(damage));
+    require(failed.thrustFailed &&
+            near(failed.maximumThrustNewtons, 0.0),
+            "95% damage must disable useful thrust");
+    require(near(requestedElectricalPowerMW(d, failed, 1.0), 0.0) &&
+            near(generatedWasteHeatMW(d, failed, 1.0), 0.0),
+            "failed thrust function must not draw power or generate heat");
 }
 
-void testThermalAndWearMostlyHitEfficiency()
-{
-    const auto d = descriptor();
-
-    EquipmentDamageState thermal;
-    thermal.thermal01 = 1.0;
-    const auto t = evaluateEngineUnit(d, damageLayer(thermal));
-
-    require(near(t.efficiencyAuthority01, 0.85),
-            "thermal efficiency weight changed");
-    require(near(t.gimbalAuthority01, 0.95),
-            "thermal gimbal weight changed");
-
-    EquipmentDamageState wear;
-    wear.wear01 = 1.0;
-    const auto w = evaluateEngineUnit(d, damageLayer(wear));
-
-    require(near(w.efficiencyAuthority01, 0.91),
-            "wear efficiency weight changed");
-    require(near(w.gimbalAuthority01, 0.85),
-            "wear gimbal weight changed");
-}
-
-void testRadiationIsNegligibleForEngine()
-{
-    const auto d = descriptor();
-    EquipmentDamageState damage;
-    damage.radiation01 = 1.0;
-
-    const auto s = evaluateEngineUnit(d, damageLayer(damage));
-
-    require(near(s.efficiencyAuthority01, 0.99),
-            "engine radiation efficiency sensitivity changed");
-    require(near(s.gimbalAuthority01, 1.0),
-            "engine gimbal should ignore radiation");
-}
-
-void testEfficiencyDrivesThrustPowerAndHeatTogether()
+void testDamageCostsMorePowerForSameDeliveredThrust()
 {
     const auto d = descriptor();
     EquipmentDamageState damage;
-    damage.impact01 = 1.0;
+    damage.thermal01 = 0.50;
+    const auto reduced = evaluateEngineUnit(d, damageLayer(damage));
+    const auto healthy = evaluateEngineUnit(d, damageLayer());
 
-    const auto s = evaluateEngineUnit(d, damageLayer(damage));
+    require(near(reduced.maximumThrustNewtons, 500.0),
+            "50% damage must halve available maximum thrust");
+    require(near(reduced.efficiency01, 0.40),
+            "damage did not degrade conversion efficiency");
+    require(near(reduced.powerCostMultiplier, 2.0),
+            "damaged engine cost per delivered newton is wrong");
 
-    // efficiency authority = 0.55:
-    // max thrust at fixed available input power becomes 550 N.
-    require(near(s.maximumThrustNewtons, 550.0),
-            "efficiency did not set maximum thrust");
-
-    // Same useful thrust costs 1/0.55 input power.
-    require(near(s.powerCostMultiplier, 1.0 / 0.55),
-            "efficiency did not set power cost");
-
-    const double power = requestedElectricalPowerMW(d, s, 0.50);
-    require(near(power, 5.0 / 0.55),
-            "requested power did not follow damaged efficiency");
-
-    const double heat = generatedWasteHeatMW(d, s, 0.50);
-    require(near(heat, power - 5.0),
-            "waste heat did not follow input minus useful power");
-}
-
-void testCombinedDamageIsBoundedAndMonotonic()
-{
-    const auto d = descriptor();
-
-    EquipmentDamageState a;
-    a.impact01 = 0.25;
-
-    EquipmentDamageState b = a;
-    b.laser01 = 0.25;
-    b.thermal01 = 0.25;
-
-    const auto sa = evaluateEngineUnit(d, damageLayer(a));
-    const auto sb = evaluateEngineUnit(d, damageLayer(b));
-
-    require(
-        sb.efficiencyAuthority01 <= sa.efficiencyAuthority01,
-        "additional damage improved efficiency"
-    );
-    require(
-        sb.gimbalAuthority01 <= sa.gimbalAuthority01,
-        "additional damage improved gimbal condition"
-    );
-
-    EquipmentDamageState all;
-    all.laser01 = 1.0;
-    all.impact01 = 1.0;
-    all.thermal01 = 1.0;
-    all.radiation01 = 1.0;
-    all.wear01 = 1.0;
-
-    const auto dead = evaluateEngineUnit(d, damageLayer(all));
-    require(dead.thrustFailed,
-            "fully accumulated engine damage did not fail thrust");
-    require(dead.gimbalFailed,
-            "fully accumulated engine damage did not fail TVC");
-    require(near(dead.maximumThrustNewtons, 0.0),
-            "failed thrust function retained thrust");
-    require(near(dead.gimbalRangeRad, 0.0),
-            "failed TVC function retained gimbal range");
-}
-
-
-void testSevereDamageCreatesProgressiveThrustIrregularity()
-{
-    const auto d = descriptor();
-
-    EquipmentDamageState atThreshold;
-    atThreshold.laser01 = 0.70;
-    atThreshold.impact01 = 0.70;
-    atThreshold.thermal01 = 0.70;
-    atThreshold.radiation01 = 0.70;
-    atThreshold.wear01 = 0.70;
-
-    const auto steady =
-        evaluateEngineUnit(d, damageLayer(atThreshold));
-    require(!steady.thrustFailed,
-            "70% damage prematurely failed thrust");
-    require(near(steady.thrustIrregularity01, 0.0),
-            "70% damage prematurely destabilized thrust");
-
-    EquipmentDamageState severe;
-    severe.laser01 = 0.80;
-    severe.impact01 = 0.80;
-    severe.thermal01 = 0.80;
-    severe.radiation01 = 0.80;
-    severe.wear01 = 0.80;
-
-    const auto unstable =
-        evaluateEngineUnit(d, damageLayer(severe));
-    require(!unstable.thrustFailed,
-            "80% damage prematurely failed thrust");
-    require(near(unstable.thrustIrregularity01, 0.40),
-            "80% damage did not produce expected progressive irregularity");
-
-    EquipmentDamageState nearFailure;
-    nearFailure.laser01 = 0.949;
-    nearFailure.impact01 = 0.949;
-    nearFailure.thermal01 = 0.949;
-    nearFailure.radiation01 = 0.949;
-    nearFailure.wear01 = 0.949;
-
-    const auto almostDead =
-        evaluateEngineUnit(d, damageLayer(nearFailure));
-    require(!almostDead.thrustFailed,
-            "94.9% damage prematurely failed thrust");
-    require(almostDead.thrustIrregularity01 > 0.99,
-            "near-failure engine did not become strongly intermittent");
-}
-
-void testThrustFailureThresholdZerosOnlyThrustFunction()
-{
-    const auto d = descriptor();
-
-    EquipmentDamageState below;
-    below.laser01 = 0.949;
-    below.impact01 = 0.949;
-    below.thermal01 = 0.949;
-    below.radiation01 = 0.949;
-    below.wear01 = 0.949;
-
-    const auto surviving = evaluateEngineUnit(d, damageLayer(below));
-    require(!surviving.thrustFailed,
-            "thrust failed below the authored 95% threshold");
-    require(surviving.maximumThrustNewtons > 0.0,
-            "surviving thrust function produced zero thrust");
-    require(requestedElectricalPowerMW(d, surviving, 1.0) > 0.0,
-            "surviving thrust function consumed zero power");
-
-    // Reach 95% primary weighted damage while keeping TVC below 95%:
-    // primary = .30 + .45 + .15 + .01 + .09*(4/9) = .95
-    // TVC    = .15 + .65 + .05 + .00 + .15*(4/9) < .95
-    EquipmentDamageState thrustFailure;
-    thrustFailure.laser01 = 1.0;
-    thrustFailure.impact01 = 1.0;
-    thrustFailure.thermal01 = 1.0;
-    thrustFailure.radiation01 = 1.0;
-    thrustFailure.wear01 = 4.0 / 9.0;
-
-    const auto failed = evaluateEngineUnit(d, damageLayer(thrustFailure));
-    require(failed.thrustFailed,
-            "95% primary damage did not fail thrust function");
-    require(!failed.gimbalFailed,
-            "thrust-only failure incorrectly failed TVC");
-    require(near(failed.efficiencyAuthority01, 0.0),
-            "failed thrust function retained functional authority");
-    require(near(failed.maximumThrustNewtons, 0.0),
-            "failed thrust function retained generated thrust");
-    require(near(failed.powerCostMultiplier, 0.0),
-            "failed thrust function retained power multiplier");
-    require(near(failed.heatMultiplier, 0.0),
-            "failed thrust function retained heat multiplier");
-    require(near(requestedElectricalPowerMW(d, failed, 1.0), 0.0),
-            "failed thrust function still requested electrical power");
-    require(near(generatedWasteHeatMW(d, failed, 1.0), 0.0),
-            "failed thrust function still generated waste heat");
-    require(failed.gimbalAuthority01 > 0.0,
-            "independent TVC function lost surviving authority");
-}
-
-void testTvcFailureLeavesThrustAvailable()
-{
-    const auto d = descriptor();
-
-    // TVC damage = .15 + .65 + .15 = .95.
-    // Primary thrust damage = .30 + .45 + .09 = .84.
-    EquipmentDamageState damage;
-    damage.laser01 = 1.0;
-    damage.impact01 = 1.0;
-    damage.wear01 = 1.0;
-
-    const auto s = evaluateEngineUnit(d, damageLayer(damage));
-
-    require(!s.thrustFailed,
-            "TVC-only failure incorrectly failed thrust");
-    require(s.gimbalFailed,
-            "95% TVC damage did not fail nozzle control");
-    require(near(s.gimbalAuthority01, 0.0),
-            "failed TVC retained vectoring authority");
-    require(near(s.gimbalRangeRad, 0.0),
-            "failed TVC retained gimbal range");
-    require(near(s.gimbalRateRadPerSec, 0.0),
-            "failed TVC retained gimbal slew");
-    require(near(s.efficiencyAuthority01, 0.16),
-            "TVC failure changed independent thrust authority");
-    require(near(s.maximumThrustNewtons, 160.0),
-            "TVC failure removed surviving axial thrust");
-    require(requestedElectricalPowerMW(d, s, 1.0) > 0.0,
-            "TVC failure incorrectly removed engine power demand");
+    // 0.5 is the achieved fraction of HEALTHY nominal thrust, not the
+    // position of the damaged-engine throttle lever.
+    require(near(requestedElectricalPowerMW(d, healthy, 0.50), 0.3125),
+            "healthy half-thrust power changed");
+    require(near(requestedElectricalPowerMW(d, reduced, 0.50), 0.625),
+            "degraded same-thrust power cost changed");
+    require(near(generatedWasteHeatMW(d, reduced, 0.50), 0.375),
+            "damaged waste heat did not equal input minus useful output");
 }
 
 } // namespace
@@ -358,34 +203,25 @@ int main()
 {
     try
     {
-        testHealthyEnginePreservesPassport();
-        testImpactIsMostCriticalMechanicalDamage();
-        testLaserIsImportantButLessMechanicalThanImpact();
-        testThermalAndWearMostlyHitEfficiency();
-        testRadiationIsNegligibleForEngine();
-        testEfficiencyDrivesThrustPowerAndHeatTogether();
-        testCombinedDamageIsBoundedAndMonotonic();
-        testSevereDamageCreatesProgressiveThrustIrregularity();
-        testThrustFailureThresholdZerosOnlyThrustFunction();
-        testTvcFailureLeavesThrustAvailable();
+        testHealthyFieldDrivePassport();
+        testFivePercentagesAddWithoutSensitivityWeights();
+        testSaturationAndChannelAccumulation();
+        testInstabilityAndIndependentFunctionalThresholds();
+        testDamageCostsMorePowerForSameDeliveredThrust();
 
         std::cout
             << "ENGINE UNIT DAMAGE MODEL: PASS\n"
-            << " - fixed five-channel engine damage weights\n"
-            << " - impact is dominant; laser is secondary\n"
-            << " - thermal/wear degrade efficiency; radiation is negligible\n"
-            << " - efficiency couples thrust, power demand and waste heat\n"
-            << " - thrust stays steady through 70% damage and becomes progressively intermittent above it\n"
-            << " - 95% primary damage zeros thrust, power and heat without deleting equipment\n"
-            << " - 95% TVC damage zeros vectoring while surviving thrust remains available\n";
+            << " - five independent accumulated percentages, direct summed loss\n"
+            << " - 70% instability start, 90% TVC failure, 95% thrust failure\n"
+            << " - explicit field drive rating from F*v_ref/eta\n"
+            << " - electrical demand and waste heat respond to reduced efficiency\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)
     {
         std::cerr
             << "ENGINE UNIT DAMAGE MODEL: FAIL: "
-            << e.what()
-            << "\n";
+            << e.what() << "\n";
         return EXIT_FAILURE;
     }
 }

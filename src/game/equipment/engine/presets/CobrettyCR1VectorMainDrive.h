@@ -11,6 +11,9 @@ namespace game::equipment::engine::presets
 [[nodiscard]] inline EngineUnitDescriptor CobrettyCR1VectorMainDrive() noexcept
 {
     EngineUnitDescriptor e;
+    e.engineTypeId = "elite.engine.cobretty.cr1-vector.v1";
+    e.engineDisplayName = "Cobretty CR-1 Vector Main Drive";
+    e.manufacturerName = "Cobretty Corporation";
     e.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     e.structureMaterialId = "elite.material.engine.tial-ht.v1";
     e.nominalThrustNewtons = 9561483.75;           // 9.56 MN per engine

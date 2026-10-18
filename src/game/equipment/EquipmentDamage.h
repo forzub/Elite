@@ -139,6 +139,48 @@ inline bool addEquipmentDamage(
     return true;
 }
 
+// Normalized functional loss already resolved by each physical cause.
+// No second set of weights belongs between these accumulated percentages
+// and the engine's output curve. Saturate the SUM, not the individual history.
+inline double totalAccumulatedDamage01(
+    const EquipmentDamageState& state
+) noexcept
+{
+    return std::clamp(
+        clampDamage01(state.laser01) +
+        clampDamage01(state.impact01) +
+        clampDamage01(state.thermal01) +
+        clampDamage01(state.radiation01) +
+        clampDamage01(state.wear01),
+        0.0,
+        1.0
+    );
+}
+
+// A common function curve, usable with either a generic weighted device
+// score or a directly accumulated engine-damage percentage.
+inline EquipmentFunctionState evaluateEquipmentFunctionAtDamage01(
+    double damage01,
+    const EquipmentFailureProfile& failure
+) noexcept
+{
+    EquipmentFunctionState out;
+    out.damage01 = clampDamage01(damage01);
+
+    const double threshold =
+        std::isfinite(failure.failureAtDamage01)
+            ? std::clamp(failure.failureAtDamage01, 0.0, 1.0)
+            : 1.0;
+
+    out.failed = out.damage01 + 1.0e-12 >= threshold;
+    out.authority01 = out.failed
+        ? 0.0
+        : std::clamp(1.0 - out.damage01, 0.0, 1.0);
+    return out;
+}
+
+// Legacy/generic non-engine equipment may still have authored sensitivities.
+// Engines consume totalAccumulatedDamage01 directly instead.
 inline double weightedFunctionalDamage01(
     const EquipmentDamageLayer& layer
 ) noexcept
@@ -161,19 +203,10 @@ inline EquipmentFunctionState evaluateEquipmentFunction(
     const EquipmentDamageLayer& layer
 ) noexcept
 {
-    EquipmentFunctionState out;
-    out.damage01 = weightedFunctionalDamage01(layer);
-
-    const double threshold =
-        std::isfinite(layer.failure.failureAtDamage01)
-            ? std::clamp(layer.failure.failureAtDamage01, 0.0, 1.0)
-            : 1.0;
-
-    out.failed = out.damage01 + 1.0e-12 >= threshold;
-    out.authority01 = out.failed
-        ? 0.0
-        : std::clamp(1.0 - out.damage01, 0.0, 1.0);
-    return out;
+    return evaluateEquipmentFunctionAtDamage01(
+        weightedFunctionalDamage01(layer),
+        layer.failure
+    );
 }
 
 inline double functionalAuthority01(

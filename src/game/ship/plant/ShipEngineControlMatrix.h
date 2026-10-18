@@ -186,6 +186,31 @@ inline void projectThrustCone(
             rotationalScale.z += std::abs(c[5])*slope;
         }
     }
+    // Most idle ship ticks need no optimizer at all. No electrical, thermal
+    // or thrust output when both demands are neutral; move unused TVC back
+    // toward center at the installed motor's mechanical slew rate.
+    if (glm::length(demand.accelerationBodyMps2)<1.0e-12 &&
+        glm::length(demand.angularAccelerationBodyRadPerSec2)<1.0e-12)
+    {
+        out.valid=true;
+        out.count=mounted.size();
+        for(std::size_t i=0;i<mounted.size();++i)
+        {
+            auto& t=out.engines[i];
+            t.availableThrust01=m[i].cap;
+            const double delta=
+                m[i].rate*std::max(0.0,demand.elapsedSeconds);
+            const auto moveHome=[delta](double value) {
+                return std::copysign(
+                    std::max(0.0,std::abs(value)-delta),value
+                );
+            };
+            t.nozzleYawRad=moveHome(demand.previousYawRad[i]);
+            t.nozzlePitchRad=moveHome(demand.previousPitchRad[i]);
+        }
+        return out;
+    }
+
     // Ordinary purely longitudinal acceleration must never ignite the
     // opposite bank just to improve an optimizer norm by a fraction.
     // For side forces and body turns both directions remain available.

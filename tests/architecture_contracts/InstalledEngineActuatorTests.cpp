@@ -10,6 +10,7 @@
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"
 #include "src/game/ship/plant/ShipPresetEngineManeuvers.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 
 namespace
@@ -382,6 +383,23 @@ void preparedManeuversSurviveSingleMainEngineFailure()
                 std::abs(damaged.accelerationBodyMps2.x)<0.25 &&
                 std::abs(damaged.accelerationBodyMps2.y)<0.25,
                 "one failed engine prevented slower balanced straight flight");
+        // The same damage-adjusted acceleration that this physical
+        // executor can produce must be what NPC/route autopilots observe.
+        const auto view=game::ship::telemetry::readAssistedControlAuthority(
+            cache,12u
+        );
+        require(view.valid && view.model==model &&
+                view.sourceActuatorRevision==12u &&
+                view.negative[2]>0.0 &&
+                view.negative[2]<physics.forwardMainEngineAccelerationMps2,
+                "autopilot authority telemetry ignored failed engine");
+        const auto adapted=game::ship::telemetry::applyAuthorityToControlParams(
+            physics,view
+        );
+        require(adapted.forwardMainEngineAccelerationMps2>0.0f &&
+                adapted.forwardMainEngineAccelerationMps2<
+                    physics.forwardMainEngineAccelerationMps2,
+                "autopilot was still promised undamaged longitudinal force");
         bool angled=false;
         for(std::size_t i=1;i<slots.size();++i)
             angled=angled ||

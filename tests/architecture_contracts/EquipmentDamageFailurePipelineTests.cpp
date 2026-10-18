@@ -58,6 +58,14 @@ ShipDescriptor descriptor()
     engine.nominalGimbalRangeRad = 0.2;
     engine.nominalGimbalRateRadPerSec = 0.4;
     engine.gimbalFailure.failureAtDamage01 = 0.90;
+    engine.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
+    engine.nominalCoolantTemperatureK = 1050.0;
+    engine.nominalOperatingTemperatureK = 1200.0;
+    engine.safeOperatingTemperatureK = 1300.0;
+    engine.thermalConductanceMWperK =
+        engine.nominalElectricalPowerMW *
+        (1.0 - engine.nominalEfficiency01) / 150.0;
+    engine.thermalCapacityMJperK = 12.0;
 
     const char* ids[] = {
         "aft_left",
@@ -208,6 +216,48 @@ void testThrustFailurePreservesInstalledModule()
             "failed aft engine did not halve longitudinal bank authority");
 }
 
+void testInstalledEngineWearAndThermalAffectRealModuleProjection()
+{
+    const auto d = descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+
+    const auto& engine = *d.modules.front().engine;
+    const auto firstRevision = runtime.revision();
+    // One actual full-thrust hour for aft_left only.
+    require(runtime.advanceEngineOperatingLife(
+                "aft_left", engine, 1.0, 3600.0, 1050.0),
+            "one hour of real engine burn did not add accumulated wear");
+
+    const auto* active = runtime.findModule("aft_left");
+    const auto* inactive = runtime.findModule("aft_right");
+    require(active && inactive &&
+            near(active->engineOperating.equivalentOperatingHours, 1.0) &&
+            near(inactive->engineOperating.equivalentOperatingHours, 0.0),
+            "operating hours leaked to an unpowered installed engine");
+    require(active->equipmentDamage.accumulated.wear01 > 0.0 &&
+            near(inactive->equipmentDamage.accumulated.wear01, 0.0),
+            "per-engine wear was not isolated");
+    require(runtime.revision() > firstRevision,
+            "new wear damage did not invalidate module capability cache");
+
+    const auto slots =
+        game::ship::capability::buildPhysicalControlSlotState(
+            d, d.physicalControlModel, runtime
+        );
+    require(slots[0].thrust01 < 1.0 &&
+            near(slots[1].thrust01, 1.0),
+            "operating wear did not propagate into physical engine slots");
+
+    require(runtime.advanceEngineOperatingLife(
+                "aft_left", engine, 0.0, 3600.0, 1500.0),
+            "overheated engine did not accumulate thermal damage while idle");
+    active = runtime.findModule("aft_left");
+    require(active->equipmentDamage.accumulated.thermal01 > 0.0 &&
+            active->engineOperating.temperatureK > 1300.0,
+            "real installed engine thermal damage was not stored");
+}
+
 } // namespace
 
 int main()
@@ -217,6 +267,7 @@ int main()
         testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();
+        testInstalledEngineWearAndThermalAffectRealModuleProjection();
         std::cout
             << "EQUIPMENT DAMAGE FAILURE PIPELINE: PASS\n"
             << " - all five accumulated causes sum into real module thrust/TVC\n"

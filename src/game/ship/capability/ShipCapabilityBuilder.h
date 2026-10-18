@@ -91,7 +91,11 @@ inline plant::EngineSlotState slotFromModule(
 
         return plant::EngineSlotState {
             true,
-            effective.efficiencyAuthority01,
+            game::equipment::engine::safeEmitterThrustFraction01(
+                *definition->engine,
+                effective,
+                module->engineOperating
+            ),
             effective.gimbalAuthority01,
             effective.thrustIrregularity01
         };

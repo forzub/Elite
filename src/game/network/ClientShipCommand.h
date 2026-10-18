@@ -9,9 +9,7 @@
             InjectReactorFailure,
             EjectCockpitCapsule,
             StartBestRepairJob,
-            SelectPhysicalControlModel,
-            DebugFailPhysicalPropulsionSlot,
-            DebugRestorePhysicalPropulsionSlots
+            SelectPhysicalControlModel
         };
         Type type;
 

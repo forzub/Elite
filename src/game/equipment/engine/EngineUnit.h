@@ -217,17 +217,18 @@ inline double positiveFiniteOr(
     double generatedThrust01
 ) noexcept
 {
-    // generatedThrust01 = delivered thrust / healthy rated thrust,
-    // NOT fraction of the degraded engine's available thrust.
     if (state.thrustFailed)
         return 0.0;
 
+    // Fraction of the HEALTHY nominal thrust actually delivered. Never bill
+    // for a force above the damaged engine's physical available maximum.
+    const double delivered01 = std::min(
+        finiteClamp01(generatedThrust01),
+        finiteClamp01(state.efficiencyAuthority01)
+    );
     return
-        positiveFiniteOr(
-            descriptor.nominalElectricalPowerMW,
-            0.0
-        ) *
-        finiteClamp01(generatedThrust01) *
+        positiveFiniteOr(descriptor.nominalElectricalPowerMW, 0.0) *
+        delivered01 *
         state.powerCostMultiplier;
 }
 
@@ -240,26 +241,25 @@ inline double positiveFiniteOr(
     if (state.thrustFailed)
         return 0.0;
 
+    const double delivered01 = std::min(
+        finiteClamp01(generatedThrust01),
+        finiteClamp01(state.efficiencyAuthority01)
+    );
     const double inputMW =
-        requestedElectricalPowerMW(
-            descriptor,
-            state,
-            generatedThrust01
-        );
+        requestedElectricalPowerMW(descriptor, state, delivered01);
 
-    const double usefulHealthyMW =
-        positiveFiniteOr(
-            descriptor.nominalElectricalPowerMW,
-            0.0
-        ) *
-        finiteClamp01(generatedThrust01) *
+    // At the reference operating point, nominal useful field-coupling
+    // power is F * designSpeed. Energy beyond useful field work is dumped as
+    // heat (temporarily sunk by the idealized cooling system).
+    const double usefulMW =
+        positiveFiniteOr(descriptor.nominalElectricalPowerMW, 0.0) *
+        delivered01 *
         std::clamp(
             positiveFiniteOr(descriptor.nominalEfficiency01, 1.0),
             0.0,
             1.0
         );
-
-    return std::max(0.0, inputMW - usefulHealthyMW);
+    return std::max(0.0, inputMW - usefulMW);
 }
 
 } // namespace game::equipment::engine

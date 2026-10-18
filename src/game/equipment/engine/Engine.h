@@ -65,7 +65,8 @@ public:
         if (!valid())
             return 0.0;
         const auto effective = evaluateEngineUnit(
-            *m_mounted.passport, *m_mounted.damage
+            *m_mounted.passport, *m_mounted.damage,
+            *m_mounted.operating
         );
         return ratedThrustNewtons() * safeEmitterThrustFraction01(
             *m_mounted.passport, effective, *m_mounted.operating
@@ -79,7 +80,8 @@ public:
         if (!valid())
             return 0.0;
         const auto effective = evaluateEngineUnit(
-            *m_mounted.passport, *m_mounted.damage
+            *m_mounted.passport, *m_mounted.damage,
+            *m_mounted.operating
         );
         const double base = ratedThrustNewtons() * safeEmitterThrustFraction01(
             *m_mounted.passport, effective, *m_mounted.operating
@@ -119,7 +121,8 @@ public:
         if (!valid())
             return out;
         const auto effective = evaluateEngineUnit(
-            *m_mounted.passport, *m_mounted.damage
+            *m_mounted.passport, *m_mounted.damage,
+            *m_mounted.operating
         );
         out.availableThrustNewtons = availableThrustNewtons();
         out.availableGimbalRangeRad = effective.gimbalRangeRad;

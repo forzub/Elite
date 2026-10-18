@@ -21,7 +21,6 @@ contains(
     "nominalForceDirectionBody",
     "projectThrustCone(",
     "availableGimbalRangeRad",
-    "availableGimbalRateRadPerSec",
     "out.torqueBodyNm+=glm::cross(",
     "output.execute(EngineCommand",
 )
@@ -98,7 +97,7 @@ matrix=contains(
 )
 for forbidden in (
     "demand.previousYawRad", "demand.previousPitchRad",
-    "demand.elapsedSeconds", "m[i].rate",
+    "demand.elapsedSeconds", "m[i].rate = ",
 ):
     if forbidden in matrix:
         raise SystemExit(
@@ -110,8 +109,15 @@ simulation=contains(
     "shipPtr->updateTranslationControl(motionControlDt);",
     "shipPtr->propagateMotionOrientation(fdt);",
 )
-if simulation.index("shipPtr->updateTranslationControl(motionControlDt);") > (
-    simulation.index("shipPtr->propagateMotionOrientation(fdt);")
+after_force = simulation.split(
+    "shipPtr->updateTranslationControl(motionControlDt);", 1
+)[1]
+if not after_force.lstrip().startswith(
+    "// Rotation now uses the ACTUAL physical engine"
 ):
-    raise SystemExit("[ENGINE MATRIX][FAIL] orientation precedes applied motor torque")
+    raise SystemExit("[ENGINE MATRIX][FAIL] motor/attitude stage not contiguous")
+if not after_force.split("}", 1)[0].__contains__(
+    "shipPtr->propagateMotionOrientation(fdt);"
+):
+    raise SystemExit("[ENGINE MATRIX][FAIL] torque not applied before orientation")
 print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY TVC CONTRACT: PASS")

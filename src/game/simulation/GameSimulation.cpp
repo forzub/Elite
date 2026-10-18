@@ -2728,7 +2728,10 @@ bool GameSimulation::updateNpcNavigationControl(
             pilotController.update(
                 tr.motion.localControlLaw,
                 pilotRequest,
-                ship.core().effectivePhysics()
+                game::ship::telemetry::applyAuthorityToControlParams(
+                    ship.core().effectivePhysics(),
+                    ship.core().controlAuthorityTelemetry()
+                )
             )
         );
     }

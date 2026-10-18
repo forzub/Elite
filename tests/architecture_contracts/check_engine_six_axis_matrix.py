@@ -80,4 +80,38 @@ contains(
     "src/game/network/WireDataCodec.h",
     "SimulationSnapshotWireSchemaVersion = 16u",
 )
-print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY CONTRACT: PASS")
+# User-approved fictional TVC doctrine: no mechanical nozzle lag,
+# Assisted at its previous gameplay envelope, separate Newtonian law.
+preset=contains(
+    "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h",
+    "e.nominalGimbalRangeRad = 1.3089969389957472;",
+)
+matrix=contains(
+    "src/game/ship/plant/ShipEngineControlMatrix.h",
+    "for (int pass=0;pass<96;++pass)",
+    "PhysicalControlFamily::Newtonian",
+    "ship.mainGimbalYawLimitRad",
+    "ship.mainGimbalPitchLimitRad",
+    "t.nozzleYawRad = 0.0;",
+    "t.nozzlePitchRad = 0.0;",
+    "std::tan(clampFinite(maxAngleRad, 0.0, 1.45))",
+)
+for forbidden in (
+    "demand.previousYawRad", "demand.previousPitchRad",
+    "demand.elapsedSeconds", "m[i].rate",
+):
+    if forbidden in matrix:
+        raise SystemExit(
+            f"[ENGINE MATRIX][FAIL] old servo-lag path returned: {forbidden}"
+        )
+simulation=contains(
+    "src/game/simulation/GameSimulation.cpp",
+    "const auto& angularMotion = ship.core().transform().motion;",
+    "shipPtr->updateTranslationControl(motionControlDt);",
+    "shipPtr->propagateMotionOrientation(fdt);",
+)
+if simulation.index("shipPtr->updateTranslationControl(motionControlDt);") > (
+    simulation.index("shipPtr->propagateMotionOrientation(fdt);")
+):
+    raise SystemExit("[ENGINE MATRIX][FAIL] orientation precedes applied motor torque")
+print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY TVC CONTRACT: PASS")

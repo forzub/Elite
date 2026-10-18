@@ -119,7 +119,6 @@ inline void projectThrustCone(
         double rated = 0.0;
         double cap = 0.0;
         double limit = 0.0;
-        double rate = 0.0;
         double sign = -1.0;
         glm::dvec3 arm {0.0};
         std::array<std::array<double, 6>, 3> columns {};
@@ -157,7 +156,6 @@ inline void projectThrustCone(
         // Mechanical slew is intentionally ignored for this fictional
         // near-instant vectoring engine. One tick directly applies the
         // requested nozzle direction; no last-frame state is integrated.
-        m[i].rate = idle.availableGimbalRateRadPerSec;
         if (familyOf(model) == PhysicalControlFamily::Newtonian)
         {
             // Newtonian preserves its modest 7-10 degree gimbal doctrine:

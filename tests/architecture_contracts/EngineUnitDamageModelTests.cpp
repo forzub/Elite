@@ -32,11 +32,9 @@ EngineUnitDescriptor descriptor()
     EngineUnitDescriptor d;
     d.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     d.nominalThrustNewtons = 1000.0;
-    d.designReferenceSpeedMps = 500.0;
     d.nominalEfficiency01 = 0.998;
-    d.nominalElectricalPowerMW =
-        d.nominalThrustNewtons * d.designReferenceSpeedMps /
-        (d.nominalEfficiency01 * 1.0e6);
+    // Authored electric rating is independent of current ship velocity.
+    d.nominalElectricalPowerMW = 0.625;
     d.nominalGimbalRangeRad = 0.20;
     d.nominalGimbalRateRadPerSec = 0.40;
     d.gimbalFailure.failureAtDamage01 = 0.90;
@@ -62,8 +60,8 @@ void testHealthyFieldDrivePassport()
 
     require(d.propulsionPrinciple == PropulsionPrinciple::FieldCoupling,
             "field drive model is not explicit");
-    require(near(d.nominalElectricalPowerMW, 0.500 / 0.998),
-            "design-point F*v/eta electric power changed");
+    require(near(d.nominalElectricalPowerMW, 0.625),
+            "authored nominal electric power changed");
     require(!s.thrustFailed && !s.gimbalFailed,
             "healthy engine failed");
     require(near(s.efficiency01, 0.998),
@@ -213,6 +211,55 @@ void testDamageCostsMorePowerForSameDeliveredThrust()
             "BITE did not see increased waste heat");
 }
 
+void testHotEmitterFeedsBulkHeatAndDamagedSurfaceOverheats()
+{
+    auto d = descriptor();
+    d.nominalElectricalPowerMW = 4850.0;
+    d.nominalEfficiency01 = 0.9855;
+    d.thermalEmitter.outerDiameterM = 4.5;
+    d.thermalEmitter.apertureDiameterM = 2.5;
+    d.thermalEmitter.surfaceTemperatureK = 2500.0;
+    d.thermalEmitter.emissivity01 = 0.90;
+    d.thermalEmitter.viewFactor01 = 0.90;
+
+    using game::equipment::engine::ratedThermalEmitterPowerMW;
+    using game::equipment::engine::advanceEngineOperatingState;
+    using game::equipment::engine::EngineOperatingState;
+
+    const auto healthy = evaluateEngineUnit(d, damageLayer());
+    const double fullHeatMW = generatedWasteHeatMW(d, healthy, 1.0);
+    const double ringMW = ratedThermalEmitterPowerMW(d);
+    require(near(fullHeatMW, 70.325, 1.0e-6),
+            "engine heat mismatch for new independent rated input");
+    require(near(ringMW, 49.319051525, 1.0e-5),
+            "Cobra emitter capacity mismatch");
+
+    d.thermalConductanceMWperK =
+        (fullHeatMW - ringMW) / 150.0;
+    d.thermalCapacityMJperK =
+        d.thermalConductanceMWperK * 15.0;
+    const EngineOperatingState hotStart {1200.0, 0.0};
+    const auto healthyRun = advanceEngineOperatingState(
+        d, healthy, hotStart, 1.0, 400.0, 1050.0, 1.0
+    );
+    require(near(healthyRun.emitterRadiatedHeatMW, ringMW, 1.0e-5) &&
+            near(healthyRun.coolantHeatMW, fullHeatMW - ringMW, 1.0e-5),
+            "hot ring did not unload shared coolant");
+    require(near(healthyRun.next.temperatureK, 1200.0, 1.0e-3) &&
+            near(healthyRun.thermalDamageIncrement01, 0.0),
+            "healthy ring overheated nominal engine housing");
+
+    const auto broken = advanceEngineOperatingState(
+        d, healthy, hotStart, 1.0, 400.0, 1050.0, 0.0
+    );
+    require(near(broken.emitterRadiatedHeatMW, 0.0) &&
+            near(broken.coolantHeatMW, fullHeatMW),
+            "destroyed emitter still radiates heat");
+    require(broken.next.temperatureK > 1500.0 &&
+            broken.thermalDamageIncrement01 > 0.0,
+            "a destroyed emitter did not overheat engine bulk");
+}
+
 void testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation()
 {
     auto d = descriptor();
@@ -282,6 +329,7 @@ int main()
         testSaturationAndChannelAccumulation();
         testInstabilityAndIndependentFunctionalThresholds();
         testDamageCostsMorePowerForSameDeliveredThrust();
+        testHotEmitterFeedsBulkHeatAndDamagedSurfaceOverheats();
         testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation();
 
         std::cout

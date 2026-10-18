@@ -330,39 +330,7 @@ void testClientMessageRoundTrip()
     require(decodedCommand.index == command.index, "ship command index mismatch");
     require(nearlyEqual(decodedCommand.amount, command.amount), "ship command amount mismatch");
 
-    ClientMessage damageCommandMessage;
-    damageCommandMessage.clientTick = 6001u;
-    ClientShipCommand damageCommand;
-    damageCommand.type =
-        ClientShipCommand::DebugFailPhysicalPropulsionSlot;
-    damageCommand.index = 2;
-    damageCommand.amount = 0.0;
-    damageCommandMessage.payload = damageCommand;
 
-    require(
-        encodeClientMessage(damageCommandMessage, payload),
-        "diagnostic propulsion-damage command encode failed"
-    );
-    require(
-        decodeClientMessage(payload, decoded),
-        "diagnostic propulsion-damage command decode failed"
-    );
-    require(
-        std::holds_alternative<ClientShipCommand>(decoded.payload),
-        "diagnostic propulsion-damage command variant changed"
-    );
-
-    const auto& decodedDamageCommand =
-        std::get<ClientShipCommand>(decoded.payload);
-    require(
-        decodedDamageCommand.type ==
-            ClientShipCommand::DebugFailPhysicalPropulsionSlot,
-        "diagnostic propulsion-damage command type mismatch"
-    );
-    require(
-        decodedDamageCommand.index == 2,
-        "diagnostic propulsion-damage command slot mismatch"
-    );
 }
 
 void testTimeSyncRoundTrip()

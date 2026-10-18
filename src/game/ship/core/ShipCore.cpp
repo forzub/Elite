@@ -3,6 +3,8 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstdint>
 
 #include "core/log.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"

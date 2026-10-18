@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -57,6 +58,14 @@ struct MainPropulsionTrimResult
     double trimLoad01 = 0.0;
     double automaticYawTrimRad = 0.0;
     double automaticPitchTrimRad = 0.0;
+
+    // Per-slot delivered force fraction of that engine's HEALTHY rated
+    // thrust. This is produced by the SAME physical allocator after actual
+    // damage, stochastic dropouts, bank selection and balancing. No inference
+    // from user throttle or a fake actuator test is allowed for operating age.
+    static constexpr std::size_t MaxReportedSlots = 16;
+    std::array<double, MaxReportedSlots> deliveredThrust01 {};
+    std::size_t reportedSlotCount = 0;
 };
 
 // Cheap damaged-main compensation.

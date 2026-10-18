@@ -1,3 +1,31 @@
+## 2026-10-18 — universal engine damage percentages and Cobra field-drive energy passport
+
+User-approved engine law: five per-module cumulative percentages laser/impact/thermal/radiation/wear are already converted into functional loss by their source mechanisms. Effective engine loss is clamp(laser + impact + thermal + radiation + wear, 0, 1), with NO extra per-cause weights. Source histories remain separate in ObjectModuleRuntime and replicated snapshots. Generic weightedFunctionalDamage01 remains ONLY for non-engine equipment compatibility. EngineUnit no longer uses EquipmentDamageSensitivity or separately weighted gimbalDamage.
+
+The common total damage drives output curves (descriptor thresholds):
+- Axial thrust authority: 1 - total damage until functional failure at 95%.
+- Irregular thrust starts at 70%, grows to failure at 95%.
+- TVC authority: 1 - total damage, with distinct function failure at 90%; surviving axial thrust is not deleted when nozzle fails.
+- Structural attachment and frame health remain independent from functional failure.
+- BITE reports power/heat increase for same achieved fraction of original nominal useful thrust.
+
+Cobra physical engine passport in EliteCobraMk1.cpp:
+- 260,000 kg; nominal forward/reverse acceleration 73.549875 m/s^2 (7.5 g).
+- Each of the 2 engines in one active longitudinal bank rated 9,561,483.75 N; bank 19,122,967.5 N.
+- PropulsionPrinciple::FieldCoupling: SCI-FI assumption (no expelled reaction mass; external momentum sink unimplemented/not known physics).
+- Reference point 500 m/s, nominal energy conversion efficiency 0.80.
+- Electrical design demand per full-thrust engine 5,975.92734375 MW; active bank 11,951.8546875 MW.
+- At reference speed nominal field work per full-thrust engine 4,780.741875 MW; nominal waste heat 1,195.18546875 MW per engine.
+- Power and waste-heat queries are clamped to current damage-limited deliverable force.
+- PowerBus and CoolingSystem remain IDEAL / NOT coupled to engine demands. The legacy Cobra reactor descriptor ratings of 2,500/3,200 MW cannot power these engines; no automatic reactor-rating or cooling edit was made. Fuel/resource consumption is reactor/jump ownership for a later phase, not engine propellant.
+- The power rating is a DESIGN-POINT fiction and not a physically viable reactionless thrust claim. Photon propulsion would require orders of magnitude more power.
+
+Changed direct engine test contracts EngineUnitDamageModelTests.cpp and EquipmentDamageFailurePipelineTests.cpp to verify percentages, nozzle/thrust thresholds, physical module survival, capability projection, electric demand and heat. Old weighted tests are replaced, not weakened.
+
+Explicit incomplete follow-up: runtime sources for thermal temperature history, radiation dose and actual operating-hours wear are NOT yet connected. Cobra wearPerOperatingHour remains zero rather than fabricating lifetime using a global dt; real per-engine burn telemetry is needed to accrue wear correctly. Keep reactor/cooling ideal until user changes scope. The real game damage acceptance must still use real EquipmentDamage and never fake slot shutdown.
+
+Validation has NOT been executed by assistant; require actual user build/ctest results.
+
 ## 2026-10-18 — hub tactical prediction contract fixture corrected
 
 User post-cleanup architecture run: 41/42 tests passed; the only failure was ArchitectureContractTests.cpp:415 ("hub tactical client prediction advances local motion"). The test expected ballistic p += v*dt but omitted localControlLaw, thereby using the current default Assisted flight law, which actively corrects velocity during neutral pilot input. This is a fixture mismatch, not grounds to alter production physics.

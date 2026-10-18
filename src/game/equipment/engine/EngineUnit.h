@@ -119,6 +119,30 @@ struct EngineUnitDescriptor
     double irregularThrustStartsAtDamage01 = 0.70;
 };
 
+// One immutable five-cause engine history plus reversible impact shock.
+[[nodiscard]] inline EngineUnitEffectiveState evaluateEngineUnit(
+    const EngineUnitDescriptor& descriptor,
+    const game::equipment::EquipmentDamageLayer& damage,
+    const EngineOperatingState& operating
+) noexcept
+{
+    auto transient=damage;
+    game::equipment::addEquipmentDamage(
+        transient.accumulated,
+        game::equipment::EquipmentDamageKind::Impact,
+        finiteClamp01(operating.impactShock01)
+    );
+    auto result=evaluateEngineUnit(descriptor,transient);
+    // During field-coupling shock the thrust becomes irregular even if total
+    // functional damage is exactly 70% (old steady irregularity starts >70%).
+    if (operating.impactShock01>1.0e-9 && !result.thrustFailed)
+        result.thrustIrregularity01=std::max(
+            result.thrustIrregularity01,
+            std::clamp(operating.impactShock01*0.85,0.0,1.0)
+        );
+    return result;
+}
+
 // Maximum MW that the engine's ONE-SIDED nozzle ring may radiate into
 // open space. effectiveArea01 allows future *real* hit-volume damage to
 // decrease the emitting surface. It does not create damage by itself.
@@ -381,6 +405,17 @@ struct EngineOperatingState
     double pendingWearDamage01 = 0.0;
     double pendingThermalDamage01 = 0.0;
 
+    // Actual shared-coolant boundary. Zero means legacy standalone fixture,
+    // not a second nominal 1050 K cooling system.
+    double coolantTemperatureK = 0.0;
+
+    // Temporary field-coupling shock is NOT permanent structural damage.
+    // Recovery resolves once after a deterministic 1..3 s timer.
+    double impactShock01 = 0.0;
+    double impactShockPermanentOnExpiry01 = 0.0;
+    double impactShockSecondsRemaining = 0.0;
+    std::uint64_t impactEventSerial = 0;
+
     // The mounted third component has its own replace-only life/damage.
     EngineEmitterOperatingState emitter {};
 };
@@ -418,7 +453,7 @@ applyEngineEmitterExposure(
         (1.0 - finiteClamp01(operating.emitter.damage.wear01));
 }
 
-// Quasi-steady protective thrust cap with an IDEAL fixed coolant boundary.
+// Quasi-steady thermal protection using the current coolant boundary.
 // A damaged annulus cannot be replaced by an imaginary cooling system.
 // This is independent from mechanical thrust and gimbal damage. For real
 // transient thermal abuse (emergency override), the existing temperature
@@ -448,10 +483,14 @@ applyEngineEmitterExposure(
     const double directRadiationMW = ratedThermalEmitterPowerMW(
         descriptor, effectiveEmitterArea01(operating)
     );
+    const double coolantK =
+        std::isfinite(operating.coolantTemperatureK) &&
+        operating.coolantTemperatureK > 0.0
+            ? operating.coolantTemperatureK
+            : descriptor.nominalCoolantTemperatureK;
     const double safeBulkMW = std::max(
         0.0, descriptor.thermalConductanceMWperK *
-            (descriptor.safeOperatingTemperatureK -
-             descriptor.nominalCoolantTemperatureK)
+            (descriptor.safeOperatingTemperatureK - coolantK)
     );
     const double steadySafe = std::min(
         availability,
@@ -533,6 +572,7 @@ inline EngineLifeStep advanceEngineOperatingState(
 {
     EngineLifeStep step;
     step.next = previous;
+    step.next.coolantTemperatureK = coolantTemperatureK;
 
     if (!std::isfinite(deltaSeconds) || deltaSeconds <= 0.0)
         return step;
@@ -622,7 +662,9 @@ inline EngineLifeStep advanceEngineOperatingState(
                 effectiveEmitterArea01(previous)
         )
     );
-    step.coolantHeatMW =
+    // Residual engine heating before finite thermal storage and coolant
+    // transfer. Actual heat transferred to coolant is computed below.
+    const double bulkHeatMW =
         step.dissipatedHeatMW - step.emitterRadiatedHeatMW;
 
     const double capacity =
@@ -634,11 +676,15 @@ inline EngineLifeStep advanceEngineOperatingState(
         previous.temperatureK > 0.0
             ? previous.temperatureK
             : coolant;
-    const double equilibriumT = coolant + step.coolantHeatMW / conductance;
+    const double equilibriumT = coolant + bulkHeatMW / conductance;
     const double decay =
         std::exp(-conductance * deltaSeconds / capacity);
     step.next.temperatureK =
         equilibriumT + (startT - equilibriumT) * decay;
+    // First law: what is not stored in the engine must reach (or be drawn
+    // from) coolant. May be negative when a cold engine absorbs coolant heat.
+    step.coolantHeatMW = bulkHeatMW -
+        capacity*(step.next.temperatureK-startT)/deltaSeconds;
 
     const auto heatDamageRate = [&](double temperatureK)
     {

@@ -87,7 +87,8 @@ inline plant::EngineSlotState slotFromModule(
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(
                 *definition->engine,
-                module->equipmentDamage
+                module->equipmentDamage,
+                module->engineOperating
             );
 
         return plant::EngineSlotState {

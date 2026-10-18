@@ -297,6 +297,9 @@ SimulationSnapshot makeSnapshot()
     // Exercise the full independent annulus lifecycle across actual wire I/O.
     module.hasEngineThermalState = true;
     module.engineTemperatureK = 1275.0f;
+    module.engineCoolantTemperatureK = 1340.0f;
+    module.engineImpactShock01 = 0.46666667f;
+    module.engineImpactShockSecondsRemaining = 2.5f;
     module.emitterIntactArea01 = 0.5f;
     module.emitterMicrocrack01 = 0.25f;
     module.emitterLaserDamage01 = 0.125f;
@@ -623,6 +626,9 @@ void testSnapshotRoundTrip()
     const auto& decodedEmitter = decoded.ships[0].graph.modules.front();
     require(decodedEmitter.hasEngineThermalState &&
             near(decodedEmitter.engineTemperatureK, 1275.0) &&
+            near(decodedEmitter.engineCoolantTemperatureK,1340.0) &&
+            near(decodedEmitter.engineImpactShock01,0.46666667,1.0e-6) &&
+            near(decodedEmitter.engineImpactShockSecondsRemaining,2.5) &&
             near(decodedEmitter.emitterIntactArea01, 0.5) &&
             near(decodedEmitter.emitterMicrocrack01, 0.25) &&
             near(decodedEmitter.emitterLaserDamage01, 0.125) &&

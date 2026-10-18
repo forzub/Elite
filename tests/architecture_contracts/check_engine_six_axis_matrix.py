@@ -130,4 +130,43 @@ contains(
     "KP8/KP2 axial motor bank generated unwanted angular rate",
     "KP8/KP2 longitudinal braking",
 )
-print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY TVC CONTRACT: PASS")
+# Gameplay authority is now generated ONCE per layout/health revision, and
+# each Assisted physics step mixes six physically executed prepared maneuvers.
+program=contains(
+    "src/game/ship/plant/ShipPresetEngineManeuvers.h",
+    "struct AssistedManeuverPrograms final",
+    "void build(",
+    "buildInverse()",
+    "void build(",
+    "programs[2*axis+direction]",
+    "matrix_detail::projectThrustCone(",
+    "program.achievable=requested*fraction",
+    "const double mix=std::min(",
+    "globalScale=std::min(globalScale",
+    "out.torqueBodyNm+=glm::cross(",
+)
+contains(
+    "src/game/ship/core/ShipCore.h",
+    "m_assistedManeuvers;",
+)
+contains(
+    "src/game/ship/core/ShipCore.cpp",
+    "&m_assistedManeuvers",
+)
+gateway=contains(
+    "src/game/ship/control/ShipControlExecutionGateway.cpp",
+    "assisted && maneuverPrograms",
+    "maneuverPrograms->execute(",
+)
+contains(
+    "tests/architecture_contracts/InstalledEngineActuatorTests.cpp",
+    "preparedManeuversSurviveSingleMainEngineFailure();",
+    "one failed engine prevented slower balanced straight flight",
+    "repair did not restore nominal maneuver program",
+)
+if program.count("for(int iteration=0;iteration<144;++iteration)")!=1:
+    raise SystemExit("[ENGINE PRESETS][FAIL] unexpected program-generation iteration count")
+if "execute(" not in program or "solve(axis," not in program:
+    raise SystemExit("[ENGINE PRESETS][FAIL] missing damage-only precompute")
+
+print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY PRESET MOTOR CONTRACT: PASS")

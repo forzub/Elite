@@ -173,6 +173,111 @@ void mountedAllocatorUsesEngineForceNotSlotFractions()
             near(mixed.deliveredThrust01[0], 1.0, 0.001),
             "different engine presets did not balance actual Newton force");
 }
+void assistedKeypadAxialReleaseHasNoParasiticPitch()
+{
+    using namespace game::equipment::engine;
+    using namespace game::ship::plant;
+    const auto passport=presets::CobrettyCR1VectorMainDrive();
+    ShipParams ship {};
+    ship.massKg=260000.0;
+    ship.physicalActuatorHalfExtentsMeters={13.0,2.5,11.1};
+    ship.centerOfMassLocalMeters={0.0,0.0,0.0};
+    ship.pitchInertiaKgM2=11219866.6666667;
+    ship.yawInertiaKgM2=25324866.6666667;
+    ship.rollInertiaKgM2=15188333.3333333;
+    const PhysicalControlModelId types[]={
+        PhysicalControlModelId::AssistedI,
+        PhysicalControlModelId::AssistedY,
+        PhysicalControlModelId::AssistedX
+    };
+    for(const auto model:types)
+    {
+        const auto& slots=physicalControlSlots(model);
+        require(slots.size()<=8u,"test topology exceeds engine set");
+        game::equipment::EquipmentDamageLayer damage[8];
+        EngineOperatingState operating[8];
+        std::vector<MountedEngine> motors(slots.size());
+        for(std::size_t i=0;i<slots.size();++i)
+        {
+            damage[i].failure.failureAtDamage01=0.95;
+            operating[i].temperatureK=1200.0;
+            motors[i]={
+                &passport,&damage[i],&operating[i],slots[i].id,true
+            };
+        }
+        for(const double requestedZ : {-73.549875,73.549875})
+        {
+            EngineMatrixDemand request;
+            request.accelerationBodyMps2={0.0,0.0,requestedZ};
+            request.tick=40u;
+            const auto actual=executeEngineControlMatrix(
+                model,motors,ship,request
+            );
+            require(actual.valid &&
+                    actual.accelerationBodyMps2.z*requestedZ>0.0,
+                    "KP8/KP2 body axial action lost its intended direction");
+            require(std::abs(actual.angularAccelerationBodyRadPerSec2.x)
+                        <1.0e-10 &&
+                    std::abs(actual.angularAccelerationBodyRadPerSec2.y)
+                        <1.0e-10 &&
+                    std::abs(actual.angularAccelerationBodyRadPerSec2.z)
+                        <1.0e-10,
+                    "KP8/KP2 axial motor bank generated unwanted angular rate");
+            for(std::size_t i=0;i<slots.size();++i)
+            {
+                const auto& motor=actual.engines[i];
+                require(motor.nozzlePitchRad==0.0 &&
+                        motor.nozzleYawRad==0.0,
+                        "KP8/KP2 angled a nozzle without a turn command");
+                if(requestedZ<0.0 &&
+                    slots[i].role==EngineSlotRole::ForeMain)
+                    require(motor.deliveredThrust01==0.0,
+                        "KP8 ignited nose engines instead of tail bank");
+                if(requestedZ>0.0 &&
+                    slots[i].role==EngineSlotRole::AftMain)
+                    require(motor.deliveredThrust01==0.0,
+                        "KP2 ignited tail engines instead of nose bank");
+            }
+
+            // A tiny float-frame cross-axis residual must not turn a strictly
+            // axial manual maneuver into an artificial pitch command.
+            request.accelerationBodyMps2.x = 1.0e-5;
+            request.accelerationBodyMps2.y = -1.0e-5;
+            const auto noisy=executeEngineControlMatrix(
+                model,motors,ship,request
+            );
+            require(std::abs(noisy.angularAccelerationBodyRadPerSec2.x)
+                        <1.0e-10 &&
+                    std::abs(noisy.angularAccelerationBodyRadPerSec2.y)
+                        <1.0e-10,
+                    "float-frame basis noise generated pitch from axial input");
+        }
+
+        // The released maneuver leaves no translation thrust. If the craft
+        // already has pitch rate, its normal Assisted damping must still
+        // produce a PHYSICAL counter-torque; do not silently mask it in the
+        // zero-angular axial fast path.
+        EngineMatrixDemand release;
+        release.angularAccelerationBodyRadPerSec2={-1.0,0.0,0.0};
+        release.tick=41u;
+        const auto correcting=executeEngineControlMatrix(
+            model,motors,ship,release
+        );
+        require(correcting.valid &&
+                correcting.angularAccelerationBodyRadPerSec2.x<-0.10,
+                "KP8/KP2 release could not generate physical pitch damping");
+        EngineMatrixDemand neutral;
+        neutral.tick=42u;
+        const auto fullyReleased=executeEngineControlMatrix(
+            model,motors,ship,neutral
+        );
+        require(fullyReleased.valid &&
+                glm::length(fullyReleased.forceBodyNewtons)<1.0e-4 &&
+                glm::length(fullyReleased.torqueBodyNm)<1.0e-4,
+                "fully released keypad maneuver kept parasitic motor torque");
+    }
+}
+
 void sixAxisMatrixControlsActualMotorVectors()
 {
     using namespace game::equipment::engine;
@@ -316,6 +421,7 @@ int main()
         commonEngineAndCobrettyPreset();
         mountedAllocatorUsesEngineForceNotSlotFractions();
         sixAxisMatrixControlsActualMotorVectors();
+        assistedKeypadAxialReleaseHasNoParasiticPitch();
         std::cout
             << "INSTALLED ENGINE ACTUATOR: PASS\n"
             << " - named Cobretty CR-1 preset -> common Engine instance\n"

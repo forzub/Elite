@@ -457,6 +457,39 @@ void testLiveAndReplicatedEngineCapabilityRemainIdentical()
     verify();
 }
 
+void testMountedBankCapabilityMatchesBalanceAndNetwork()
+{
+    auto d = descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    // An asymmetric 50%-damaged aft-left and 100%-healthy aft-right pair
+    // cannot safely accelerate at 75 m/s² with this bank-balancing law.
+    require(runtime.addEquipmentDamage(
+                "aft_left", EquipmentDamageKind::Impact, 0.50
+            ), "could not damage the physical engine");
+    const auto live = game::ship::capability::buildShipCapability(d, runtime);
+    require(live.valid &&
+            near(live.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 50.0, 1.0e-5) &&
+            near(live.effectivePhysics.reverseMainEngineAccelerationMps2,
+                 100.0, 1.0e-5),
+            "engine-force capability over-promised asymmetric bank thrust");
+
+    std::vector<game::simulation::ObjectModuleSnapshot> replicated;
+    for (const auto& module : d.modules)
+        replicated.push_back(game::simulation::makeObjectModuleSnapshot(
+            module, runtime.findModule(module.moduleId)
+        ));
+    const auto remote = game::ship::capability::buildShipCapability(
+        d, replicated
+    );
+    require(remote.valid &&
+            near(remote.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 live.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 1.0e-5),
+            "client and server differed on balanced main-engine envelope");
+}
+
 } // namespace
 
 int main()
@@ -469,6 +502,7 @@ int main()
         testInstalledEngineWearAndThermalAffectRealModuleProjection();
         testIndependentEmitterDamageReachesInstalledEngineSlot();
         testLiveAndReplicatedEngineCapabilityRemainIdentical();
+        testMountedBankCapabilityMatchesBalanceAndNetwork();
         std::cout
             << "EQUIPMENT DAMAGE FAILURE PIPELINE: PASS\n"
             << " - all five accumulated causes sum into real module thrust/TVC\n"

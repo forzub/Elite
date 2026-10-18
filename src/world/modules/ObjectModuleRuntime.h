@@ -37,6 +37,14 @@ public:
         double amount01
     );
 
+    // Collision/explosion on an ENGINE: persistent 1/3 of hit, reversible
+    // field shock 2/3. The outcome is deterministic per module/hit and
+    // settles after 1..3 sec; this does not repair mechanical structure.
+    bool addEngineImpactShock(
+        const std::string& moduleId,
+        double hitDamage01
+    );
+
     // Resolve an incident that actually hit a separately identified engine
     // hot annulus. Surface loss is not direct thrust/gimbal damage.
     bool exposeEngineEmitter(
@@ -61,7 +69,8 @@ public:
         const game::equipment::engine::EngineUnitDescriptor& passport,
         double deliveredNominalThrust01,
         double elapsedSeconds,
-        double coolantTemperatureK
+        double coolantTemperatureK,
+        double* transferredHeatMW = nullptr
     );
 
     void onModuleDestroyed(int index);

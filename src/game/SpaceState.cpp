@@ -469,20 +469,6 @@ SpaceState::SpaceState(
         game::debug::RuntimeScenarioSelection::fromProcessEnvironment();
     m_navigationStressHarness.configure(m_runtimeScenarioSelection);
     m_shipRuntimeControlOracle.configure(m_runtimeScenarioSelection);
-    const bool damageScenarioConfigured =
-        m_shipRuntimeDamageOracle.configure(m_runtimeScenarioSelection);
-
-    if (!damageScenarioConfigured)
-    {
-        throw std::runtime_error(
-            std::string(
-                "invalid runtime diagnostic scenario: "
-            ) +
-            m_runtimeScenarioSelection.spec +
-            " expected ship-damage:<PhysicalModel@slot,...>"
-        );
-    }
-
     if (m_runtimeScenarioSelection.active())
     {
         std::cerr
@@ -497,8 +483,6 @@ SpaceState::SpaceState(
             << (m_navigationStressHarness.enabled() ? 1 : 0)
             << " control_enabled="
             << (m_shipRuntimeControlOracle.enabled() ? 1 : 0)
-            << " damage_enabled="
-            << (m_shipRuntimeDamageOracle.enabled() ? 1 : 0)
             << "\n";
     }
 
@@ -1772,22 +1756,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
                 playerIt->second.transform.motion.localControlLaw;
     }
 
-    const bool propulsionMatrixScenario =
-        m_runtimeScenarioSelection.kind ==
-            game::debug::RuntimeScenarioKind::PropulsionMatrix;
-    const bool matrixHealthyPhase =
-        propulsionMatrixScenario &&
-        !m_shipRuntimeControlOracle.complete();
-    const bool damageOracleOwnsControl =
-        m_shipRuntimeDamageOracle.enabled() &&
-        !matrixHealthyPhase;
-
-    if (damageOracleOwnsControl)
-    {
-        m_playerControl = m_shipRuntimeDamageOracle.control();
-        m_client->submitInput(m_playerControl);
-    }
-    else if (m_shipRuntimeControlOracle.enabled() &&
+    if (m_shipRuntimeControlOracle.enabled() &&
              !m_shipRuntimeControlOracle.complete())
     {
         // In-game control oracle owns the exact same ordinary pilot-control
@@ -5410,138 +5379,12 @@ void SpaceState::update(float dt)
     }
 
 
-    // Optional real-runtime damaged-propulsion oracle.
-    const bool matrixDamagePhase =
-        m_runtimeScenarioSelection.kind !=
-            game::debug::RuntimeScenarioKind::PropulsionMatrix ||
-        m_shipRuntimeControlOracle.complete();
-
-    if (m_shipRuntimeDamageOracle.enabled() && matrixDamagePhase)
-    {
-        game::debug::ShipRuntimeDamageOracle::Observation obs;
-        obs.universeSeconds =
-            m_client->lastSimulationMetadata().universeTimeSeconds;
-
-        const auto playerIt =
-            m_client->world().ships().find(m_playerId.value);
-        if (playerIt != m_client->world().ships().end())
-        {
-            const auto& transform = playerIt->second.transform;
-            const auto& motion = transform.motion;
-
-            obs.worldReady =
-                motion.matchedToReferenceFrame &&
-                motion.travelFrame.valid;
-            obs.physicalModelLabel =
-                game::ship::plant::physicalControlModelName(
-                    playerIt->second.physicalControlModel
-                );
-            obs.law = motion.localControlLaw;
-            obs.speedMps = glm::length(motion.localVelocityMps);
-            obs.pitchRateRadPerSec = transform.pitchRate;
-            obs.yawRateRadPerSec = transform.yawRate;
-            obs.rollRateRadPerSec = transform.rollRate;
-            obs.trimLoad01 = motion.mainTrimLoad01;
-            obs.trimUsableScale01 = motion.mainTrimUsableScale01;
-
-            if (motion.travelFrame.valid)
-            {
-                const glm::dvec3 forwardLocal =
-                    glm::normalize(
-                        motion.travelFrame.worldToLocalVector(
-                            glm::dvec3(transform.forward())
-                        )
-                    );
-                const glm::dvec3 rightLocal =
-                    glm::normalize(
-                        motion.travelFrame.worldToLocalVector(
-                            glm::dvec3(transform.right())
-                        )
-                    );
-                const glm::dvec3 upLocal =
-                    glm::normalize(
-                        motion.travelFrame.worldToLocalVector(
-                            glm::dvec3(transform.up())
-                        )
-                    );
-
-                obs.forwardVelocityMps =
-                    glm::dot(motion.localVelocityMps, forwardLocal);
-                obs.mainForwardAccelerationMps2 =
-                    glm::dot(motion.mainEngineAccelerationMps2, forwardLocal);
-                obs.mainRightAccelerationMps2 =
-                    glm::dot(motion.mainEngineAccelerationMps2, rightLocal);
-                obs.mainUpAccelerationMps2 =
-                    glm::dot(motion.mainEngineAccelerationMps2, upLocal);
-            }
-
-            obs.mainAlphaPitchRadPerSec2 =
-                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.x;
-            obs.mainAlphaYawRadPerSec2 =
-                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.y;
-            obs.mainAlphaRollRadPerSec2 =
-                motion.mainPropulsionAngularAccelerationBodyRadPerSec2.z;
-        }
-
-        m_shipRuntimeDamageOracle.update(obs);
-
-        game::ship::plant::PhysicalControlModelId requestedModel;
-        if (m_shipRuntimeDamageOracle.takeModelRequest(requestedModel))
-        {
-            game::network::ClientMessage msg;
-            ClientShipCommand command;
-            command.type =
-                ClientShipCommand::SelectPhysicalControlModel;
-            command.index = static_cast<int>(requestedModel);
-            msg.payload = command;
-            m_client->sendMessage(msg);
-
-            std::cerr
-                << "[ShipDamageOracle] requested model="
-                << game::ship::plant::physicalControlModelName(requestedModel)
-                << std::endl;
-        }
-
-        std::size_t slotIndex = 0;
-        if (m_shipRuntimeDamageOracle.takeDamageRequest(slotIndex))
-        {
-            game::network::ClientMessage msg;
-            ClientShipCommand command;
-            command.type =
-                ClientShipCommand::DebugFailPhysicalPropulsionSlot;
-            command.index = static_cast<int>(slotIndex);
-            msg.payload = command;
-            m_client->sendMessage(msg);
-
-            std::cerr
-                << "[ShipDamageOracle] requested failed propulsion slot="
-                << slotIndex
-                << std::endl;
-        }
-
-        if (m_shipRuntimeDamageOracle.complete() &&
-            !m_shipDamageOracleCompleteAnnounced)
-        {
-            m_shipDamageOracleCompleteAnnounced = true;
-            std::cerr
-                << "[ShipDamageOracle] COMPLETE report="
-                << m_shipRuntimeDamageOracle.reportPath()
-                << std::endl;
-        }
-    }
-
-
     // Optional real-runtime ship control oracle. Enabled only with
     // ELITE_SHIP_CONTROL_ORACLE=1. It drives the exact ordinary pilot-control
     // stream in handleInput() and observes the authoritative replicated ship
     // state here. No planner, corridor or direct physics shortcut participates.
     if (m_shipRuntimeControlOracle.enabled() &&
-        !m_shipRuntimeControlOracle.complete() &&
-        (
-            !m_shipRuntimeDamageOracle.enabled() ||
-            m_runtimeScenarioSelection.kind ==
-                game::debug::RuntimeScenarioKind::PropulsionMatrix
-        ))
+        !m_shipRuntimeControlOracle.complete())
     {
         game::debug::ShipRuntimeControlOracle::Observation obs;
         obs.universeSeconds =
@@ -6155,11 +5998,7 @@ void SpaceState::update(float dt)
 
     const bool directControlScenario =
         m_runtimeScenarioSelection.kind ==
-            game::debug::RuntimeScenarioKind::ShipControl ||
-        m_runtimeScenarioSelection.kind ==
-            game::debug::RuntimeScenarioKind::ShipDamage ||
-        m_runtimeScenarioSelection.kind ==
-            game::debug::RuntimeScenarioKind::PropulsionMatrix;
+            game::debug::RuntimeScenarioKind::ShipControl;
 
     if (directControlScenario)
     {

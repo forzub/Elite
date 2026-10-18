@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -58,6 +59,12 @@ struct IsVector : std::false_type {};
 
 template<typename T, typename Alloc>
 struct IsVector<std::vector<T, Alloc>> : std::true_type {};
+
+template<typename T>
+struct IsArray : std::false_type {};
+
+template<typename T, std::size_t N>
+struct IsArray<std::array<T, N>> : std::true_type {};
 
 template<typename T>
 struct IsVariant : std::false_type {};
@@ -319,6 +326,14 @@ bool encodeValue(WireWriter& writer, const T& value)
             return false;
         return detail::encodeInteger(writer, raw);
     }
+    else if constexpr (IsArray<U>::value)
+    {
+        // Fixed layout for per-engine telemetry: no untrusted size field and
+        // no per-packet heap allocation. Both ends share schema version.
+        for (const auto& item : value)
+            if (!encodeValue(writer,item)) return false;
+        return true;
+    }
     else if constexpr (IsVector<U>::value)
     {
         if (value.size() > MaxWireContainerElements ||
@@ -457,6 +472,12 @@ bool decodeValue(WireReader& reader, T& value)
             return false;
 
         value = static_cast<U>(raw);
+        return true;
+    }
+    else if constexpr (IsArray<U>::value)
+    {
+        for (auto& item : value)
+            if (!decodeValue(reader,item)) return false;
         return true;
     }
     else if constexpr (IsVector<U>::value)

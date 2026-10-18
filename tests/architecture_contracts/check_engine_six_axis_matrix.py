@@ -39,6 +39,8 @@ contains(
     "requestedMainAngularAccelerationBodyRadPerSec2 =",
     "angularAfter-angularBefore",
     "m_transform.pitchRate = static_cast<float>(angularBefore.x)",
+    "CobrettyCR1VectorMainDrive()",
+    "physicalEngines=&installedEngines;",
 )
 hud = contains(
     "src/game/presentation/EngineThrustHudPresentation.h",

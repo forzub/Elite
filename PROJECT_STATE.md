@@ -1,3 +1,35 @@
+## 2026-10-19 — ASSISTED I/Y/X PRECOMPUTED SIX-AXIS MANEUVERS WITH DAMAGE-AWARE REBUILD (UNTESTED NATIVE)
+
+**User agreed** to replace the runtime general 96-pass optimizer with a simpler deterministic maneuver-program system; explicitly accepted that one lost engine does NOT always prevent stable forward motion when remaining engine nozzles can redirect by up to 75°. The exact surviving nozzle angle (e.g., 60°) is geometric/operating-state-dependent; 60° is NOT hard-coded. A single nozzle at 60° supplies 50% of its force axially and ~86.6% transversely; only the TOTAL `ΣF, Σ(r×F)` determines whether the hull travels straight without rotating.
+
+### Committed design / files
+- New `src/game/ship/plant/ShipPresetEngineManeuvers.h`: **12 signed physical basis maneuver programs**, +/− for body X,Y,Z and pitch,yaw,roll, for each Assisted-I/Y/X ship. Basis built from INSTALLED motor Newton rating, fore/aft placement, CoM, mass, inertia, damage/temperature-limited available thrust and TVC cone. Each basis is a vector of per-engine axial, transverse-X and transverse-Y force fractions (actual force not throttle guesses), derived using a 6x6 geometric force/torque pseudoinverse. Physical positive axial thrust cone, 75°/damage TVC and per-engine max thrust are enforced. Exact symmetric equal-Newton preset for ordinary pure forward/reverse; neither unwanted gimbal turn nor parasitic torque. For failed/uneven motors the one-time generator uses bounded affine projection onto the physical engine cones; when the nominal maneuver is impossible, it searches a **lower achievable acceleration** with no large lateral/torque residual. This yields a physically valid slower straight maneuver with surviving motors, if one exists.
+- The **per-ship** `game::ship::plant::AssistedManeuverPrograms m_assistedManeuvers` cache now lives in `src/game/ship/core/ShipCore.h`, not in network DTOs. On body/motor identity/capability/geometry changes `matches` invalidates and rebuilds all 12 templates. Up to 144 cone-correction iterations plus bounded binary scale search are a *one-off when rebuilding*, **NOT during flight execution**. This trades rare damage-event CPU work for deterministic cheap steady-state flight. Stochastic irregular delivered thrust is still measured each tick and common scaling prevents per-motor exceeding instantaneous rating. Minor wear changes below 0.5% threshold do not trigger unnecessary recomputations.
+- `ShipControlExecutionGateway.h/.cpp` accepts optional cache. For Assisted with attached motor views it calls `maneuverPrograms->execute` rather than `executeEngineControlMatrix`; it combines up to six basis programs in constant bounded time, globally scales mixed motor force vectors against instantaneous motor headroom (thus preserving mix force/torque balance), then runs every `Engine::execute`, obtains exact `ΣF` and `Σ(r×F)`, mechanical angular acceleration, per-motor RED, available YELLOW, actual per nozzle angle, MW and heat. No artificially applied body forces/attitude; existing controller and live telemetry remain.
+- **Newtonian deliberately unchanged** this turn: its independent RCS handling already works; old `executeEngineControlMatrix` remains active for mounted Newtonian motors, and optional cache not used in that law. Do NOT claim the six Newtonian/Assisted configurations all switched to the new preset runtime executor; **Assisted I/Y/X are migrated now, Newtonian is pending separate isolated verification**. Old 96-pass code remains for Newtonian and non-cached tests for compatibility, but NOT on native Assisted main motor execution.
+- `ShipCore.cpp` sends a pointer to its persistent physical-template cache for all native/virtual Assisted I/Y/X; templates regenerate on motor failure, repair, power/heat/CoM/load changes.
+- User's earlier agreed controller rules remain: manual rotations and keypad translation self-stabilize; +/− axial propulsion is inertial; autopilot is same input interface as pilot. The earlier autopilot corridor-centering overshoot remains **open** pending explicit authoritative capability export from this new cache; must not imply new motor controller fixed navigation automatically.
+
+### Source audit/tests added (NATIVE PENDING)
+- `InstalledEngineActuatorTests.cpp` now tests production `AssistedManeuverPrograms` rather than obsolete 96-iteration matrix for previous six-axis and Num8/Num2 acceptance; test `preparedManeuversSurviveSingleMainEngineFailure` loops Assisted I/Y/X, proves healthy axial/lateral no parasitic torque, detaches an aft engine mid-run, expects reduced real forward authority with negligible lateral/angular leak, survivor nozzle vectoring, residual pitch damping, and repaired full performance using SAME cached ship.
+- `tests/architecture_contracts/check_engine_six_axis_matrix.py` guards new cache, real forces, no per-frame optimization, checks tests and current motor gateway. Existing Newtonian tests remain.
+- **No native build/CTest/game was run in this GitHub-only session.** The prepared maneuvers must be tested on the user's actual MSYS2 Windows build, especially when the engine array is damaged, thermal throttle decreases, or multiple control axes saturate. The numerical prototype in Python on approximate 260t Cobra-I geometry with aft-left missing yielded one example of straight but reduced forward acceleration around 28 m/s² after full 73.55 m/s² command, with skewed remaining-engine thrust. This is **NOT a verified in-game speed**; actual I/Y/X and effectivePhysics limits must be observed. A 60° nozzle turn isn't mandated; in that prototype individual angles differed.
+- Recommended verification:
+```bash
+cd /d/__elite/work
+git fetch origin && git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
+cmake --build build/tests/architecture_contracts --target installed_engine_actuator_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R installed_engine_actuator --output-on-failure
+python tests/architecture_contracts/check_engine_six_axis_matrix.py
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+Run Assisted I/Y/X normal and one-engine-out, pure forward/reverse, lateral, pitch/yaw/roll, release damping, HUD power bars. Save runtime logs only `D:\\tmp`. If failure test fails, do NOT pretend healthy/stable; fix exact output and rerun. Benchmark damage-triggered basis rebuild vs NPC count; don't add per tick heavy inversions.
+
+---
+
 ## 2026-10-18 — ASSISTED Num8/Num2 POST-MANEUVER PITCH REGRESSION: PHYSICAL MAIN-BANK FIX (NATIVE PENDING)
 
 **User symptom:** In Assisted, keypad 8/2 body-forward/back after key release can trigger strong pitch oscillation. Newtonian RCS does not show it. Do not change Newtonian manual input or physics.

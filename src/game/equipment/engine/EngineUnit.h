@@ -2,9 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string_view>
 
 #include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/physics/UniverseThermalRadiation.h"
+#include "src/game/physics/UniverseMaterials.h"
 
 namespace game::equipment::engine
 {
@@ -30,6 +32,10 @@ struct EngineThermalEmitterDescriptor
     double surfaceTemperatureK = 2500.0;
     double emissivity01 = 0.9;
     double viewFactor01 = 1.0;
+    // Empty ID is backward-compatible legacy fixture. Production presets
+    // resolve emissivity and damage resistance from the universe catalog.
+    std::string_view materialId {};
+    std::string_view meshPartId {};
 };
 
 struct EngineUnitDescriptor
@@ -108,7 +114,9 @@ struct EngineUnitDescriptor
     return game::physics::thermal::radiatedPowerMW(
         oneSidedArea * std::clamp(effectiveArea01, 0.0, 1.0),
         emitter.surfaceTemperatureK,
-        emitter.emissivity01,
+        game::physics::materials::findMaterial(emitter.materialId)
+            ? game::physics::materials::findMaterial(emitter.materialId)->emissivity01
+            : emitter.emissivity01,
         emitter.viewFactor01
     );
 }
@@ -338,7 +346,78 @@ struct EngineOperatingState
     // keeping expensive module revision/snapshot work out of every frame.
     double pendingWearDamage01 = 0.0;
     double pendingThermalDamage01 = 0.0;
+
+    // Third independently damageable functional component: the hot annulus.
+    // Surface holes do not directly count as thrust or TVC functional damage.
+    game::physics::materials::SurfaceIntegrity emitterSurface {};
 };
+
+// Only a hit resolved to the emitter surface may enter here. Callers supply
+// actual incident MJ and footprint m2; never reinterpret DamageEvent.energy.
+[[nodiscard]] inline game::physics::materials::SurfaceIntegrity
+applyEngineEmitterExposure(
+    const EngineUnitDescriptor& descriptor,
+    game::physics::materials::SurfaceIntegrity previous,
+    const game::physics::materials::SurfaceExposure& hit
+) noexcept
+{
+    const auto* material = game::physics::materials::findMaterial(
+        descriptor.thermalEmitter.materialId
+    );
+    if (!material)
+        return previous;
+    const double area = game::physics::thermal::annulusAreaM2(
+        descriptor.thermalEmitter.outerDiameterM,
+        descriptor.thermalEmitter.apertureDiameterM
+    );
+    return game::physics::materials::exposeSurface(
+        *material, area, previous, hit
+    );
+}
+
+// Quasi-steady protective thrust cap with an IDEAL fixed coolant boundary.
+// A damaged annulus cannot be replaced by an imaginary cooling system.
+// This is independent from mechanical thrust and gimbal damage. For real
+// transient thermal abuse (emergency override), the existing temperature
+// integrator continues to calculate accumulated thermal damage.
+[[nodiscard]] inline double safeEmitterThrustFraction01(
+    const EngineUnitDescriptor& descriptor,
+    const EngineUnitEffectiveState& effective,
+    const EngineOperatingState& operating
+) noexcept
+{
+    const auto* material = game::physics::materials::findMaterial(
+        descriptor.thermalEmitter.materialId
+    );
+    if (!material || effective.thrustFailed)
+        return effective.thrustFailed ? 0.0 : effective.efficiencyAuthority01;
+
+    const double availability = finiteClamp01(effective.efficiencyAuthority01);
+    if (availability <= 0.0)
+        return 0.0;
+    const double wasteAtAvailableMW =
+        generatedWasteHeatMW(descriptor, effective, availability);
+    const double wastePerHealthyThrustMW =
+        wasteAtAvailableMW / availability;
+    if (wastePerHealthyThrustMW <= 0.0)
+        return availability;
+
+    const double directRadiationMW = ratedThermalEmitterPowerMW(
+        descriptor, operating.emitterSurface.intactArea01
+    );
+    const double safeBulkMW = std::max(
+        0.0, descriptor.thermalConductanceMWperK *
+            (descriptor.safeOperatingTemperatureK -
+             descriptor.nominalCoolantTemperatureK)
+    );
+    return std::min(
+        availability,
+        finiteClamp01(
+            (directRadiationMW + safeBulkMW) / wastePerHealthyThrustMW
+        )
+    );
+}
+
 
 struct EngineLifeStep
 {
@@ -431,7 +510,11 @@ inline EngineLifeStep advanceEngineOperatingState(
     // path and later the shared coolant. No double-counting of emission.
     step.emitterRadiatedHeatMW = std::min(
         step.dissipatedHeatMW,
-        ratedThermalEmitterPowerMW(descriptor, emitterEffectiveArea01)
+        ratedThermalEmitterPowerMW(
+            descriptor,
+            finiteClamp01(emitterEffectiveArea01) *
+                finiteClamp01(previous.emitterSurface.intactArea01)
+        )
     );
     step.coolantHeatMW =
         step.dissipatedHeatMW - step.emitterRadiatedHeatMW;

@@ -258,6 +258,34 @@ void sixAxisMatrixControlsActualMotorVectors()
                  75.0*3.14159265358979323846/180.0,1e-9),
             "Cobretty field-vector gameplay limit did not become 75 degrees");
 
+    // Newtonian-I keeps its original narrow manually commanded nozzle cone
+    // even when a generic Cobretty passport is capable of 75-degree Assisted
+    // field vectoring. RCS attitude and manual nozzle law remain independent.
+    const auto& newtonTopology=physicalControlSlots(
+        PhysicalControlModelId::NewtonianI
+    );
+    std::vector<MountedEngine> newtonMounts(newtonTopology.size());
+    for (std::size_t i=0;i<newtonTopology.size();++i)
+        if(newtonTopology[i].role==EngineSlotRole::AftMain)
+            newtonMounts[i]={
+                &passport,&damage[0],&operating[0],"newton_main",true
+            };
+    ShipParams newtonPhysics=physics;
+    newtonPhysics.mainGimbalYawLimitRad=0.122173048f;
+    newtonPhysics.mainGimbalPitchLimitRad=0.122173048f;
+    EngineMatrixDemand newtonDemand;
+    newtonDemand.accelerationBodyMps2={5.0,0.0,-10.0};
+    newtonDemand.tick=40u;
+    const auto newtonResult=executeEngineControlMatrix(
+        PhysicalControlModelId::NewtonianI,
+        newtonMounts,newtonPhysics,newtonDemand
+    );
+    require(newtonResult.valid && newtonResult.count==newtonTopology.size() &&
+            std::abs(newtonResult.engines[0].nozzleYawRad)
+                <=newtonPhysics.mainGimbalYawLimitRad+1.0e-6 &&
+            newtonResult.engines[0].deliveredThrust01>0.0,
+            "Newtonian main TVC illegally inherited large Assisted cone");
+
     mounted[0].attached=false;
     const auto damaged=run({0.0,0.0,-10.0},{});
     require(damaged.engines[0].deliveredThrust01==0.0 &&

@@ -322,9 +322,15 @@ inline void projectThrustCone(
         demand.angularAccelerationBodyRadPerSec2.y/scales[4],
         demand.angularAccelerationBodyRadPerSec2.z/scales[5]
     };
-    // Axis weights: don't sacrifice an entire turn just to eliminate a small
-    // incidental axial force. Regularization avoids wasteful opposing burns.
-    const std::array<double,6> weights {1.0,1.0,1.0,3.0,3.0,3.0};
+    // Priority: arrest hull angular velocity EVEN WHILE the fore/aft bank
+    // is executing a manual keypad impulse or subsequent assisted braking.
+    // The old 3:1 weight preserved axial force but delivered only ~18% of
+    // demanded pitch braking at nominal axial thrust, allowing uncontrolled
+    // pitch buildup and controller resonance after Num8/Num2 release.
+    // A dimensionless 80:1 angular-error weight keeps all I/Y/X layouts
+    // within the accepted rotational response while still using actual
+    // engine forces and moments (no fake attitude delta).
+    const std::array<double,6> weights {1.0,1.0,1.0,80.0,80.0,80.0};
     for (auto& motor:m)
         for(auto& col:motor.columns)
             for(std::size_t k=0;k<6;++k) col[k]/=scales[k];

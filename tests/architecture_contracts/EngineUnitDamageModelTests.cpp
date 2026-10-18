@@ -252,9 +252,13 @@ void testHotEmitterFeedsBulkHeatAndDamagedSurfaceOverheats()
     const auto broken = advanceEngineOperatingState(
         d, healthy, hotStart, 1.0, 400.0, 1050.0, 0.0
     );
+    // Heat split now includes finite ENGINE internal storage. It would be
+    // wrong to send all 70 MW instantly to coolant while the housing warms.
+    const double storedMW=d.thermalCapacityMJperK*
+        (broken.next.temperatureK-hotStart.temperatureK)/400.0;
     require(near(broken.emitterRadiatedHeatMW, 0.0) &&
-            near(broken.coolantHeatMW, fullHeatMW),
-            "destroyed emitter still radiates heat");
+            near(broken.coolantHeatMW+storedMW,fullHeatMW,1.0e-6),
+            "damaged emitter violated engine-to-coolant energy conservation");
     require(broken.next.temperatureK > 1500.0 &&
             broken.thermalDamageIncrement01 > 0.0,
             "a destroyed emitter did not overheat engine bulk");
@@ -318,6 +322,42 @@ void testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation()
             "hotter coolant did not cause actual accumulated thermal damage");
 }
 
+void testLiveCoolantOverheatReducesThrustAndConservesEnergy()
+{
+    using namespace game::equipment::engine;
+    auto d=descriptor();
+    d.nominalEfficiency01=0.9855;
+    d.nominalElectricalPowerMW=4850.0;
+    d.thermalEmitter.outerDiameterM=4.5;
+    d.thermalEmitter.apertureDiameterM=2.5;
+    d.thermalEmitter.materialId="elite.material.engine.hfc-c.v1";
+    d.thermalEmitter.surfaceTemperatureK=2500.0;
+    d.thermalConductanceMWperK=0.14;
+    d.thermalCapacityMJperK=12.0;
+    d.safeOperatingTemperatureK=1300.0;
+    const auto effective=evaluateEngineUnit(d,damageLayer());
+    EngineOperatingState operating;
+    operating.temperatureK=1200.0;
+    operating.coolantTemperatureK=1050.0;
+    const auto baseline=safeEmitterThrustFraction01(d,effective,operating);
+    operating.coolantTemperatureK=1320.0;
+    const auto unprotected=safeEmitterThrustFraction01(d,effective,operating);
+    require(unprotected<baseline,
+            "hot common coolant did not derate intact installed engine");
+    const auto step=advanceEngineOperatingState(
+        d,effective,operating,1.0,120.0,1320.0
+    );
+    require(step.next.temperatureK>operating.temperatureK &&
+            step.next.coolantTemperatureK==1320.0,
+            "engine ignored actual shared coolant boundary");
+    const double storedMW=d.thermalCapacityMJperK*
+        (step.next.temperatureK-operating.temperatureK)/120.0;
+    require(near(step.emitterRadiatedHeatMW+
+                 step.coolantHeatMW+storedMW,
+                 step.dissipatedHeatMW,1.0e-6),
+            "thermal simulation created or destroyed energy");
+}
+
 } // namespace
 
 int main()
@@ -330,6 +370,7 @@ int main()
         testInstabilityAndIndependentFunctionalThresholds();
         testDamageCostsMorePowerForSameDeliveredThrust();
         testHotEmitterFeedsBulkHeatAndDamagedSurfaceOverheats();
+        testLiveCoolantOverheatReducesThrustAndConservesEnergy();
         testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation();
 
         std::cout

@@ -449,6 +449,44 @@ void testDirectBankBalancingWorksAcrossXLayout()
     );
 }
 
+void testActualAllocatorTelemetryTracksOnlyFiringBank()
+{
+    const auto model = PhysicalControlModelId::AssistedI;
+    auto state = healthySlotState(physicalControlSlots(model));
+    state[0].thrust01 = 0.50;
+
+    auto p = physics();
+    p.forwardMainEngineAccelerationMps2 = 50.0f;
+    p.reverseMainEngineAccelerationMps2 = 50.0f;
+
+    const auto forward = evaluateMainPropulsionFeedbackTrim(
+        model, state, p,
+        {0.0, 0.0, -50.0}, {0.0, 0.0, 0.0},
+        0.0, 0.0, 0
+    );
+    require(forward.valid && forward.reportedSlotCount == 4,
+            "allocator did not report all four slot identities");
+    require(near(forward.deliveredThrust01[0], 0.50) &&
+            near(forward.deliveredThrust01[1], 0.50),
+            "physical balance did not report delivered aft-engine burn");
+    require(near(forward.deliveredThrust01[2], 0.0) &&
+            near(forward.deliveredThrust01[3], 0.0),
+            "inactive fore engines accrued fictitious burn");
+
+    const auto reverse = evaluateMainPropulsionFeedbackTrim(
+        model, state, p,
+        {0.0, 0.0, 25.0}, {0.0, 0.0, 0.0},
+        0.0, 0.0, 0
+    );
+    require(reverse.valid && reverse.reportedSlotCount == 4,
+            "reverse allocator lost engine identity");
+    require(near(reverse.deliveredThrust01[0], 0.0) &&
+            near(reverse.deliveredThrust01[1], 0.0) &&
+            near(reverse.deliveredThrust01[2], 0.50) &&
+            near(reverse.deliveredThrust01[3], 0.50),
+            "half-demand reverse burn incorrectly aged aft or overaged fore");
+}
+
 } // namespace
 
 int main()
@@ -467,6 +505,7 @@ int main()
         testNewtonianThrottleFeedbackUsesSameSimpleRule();
         testDamageAsymmetryIsNotUsedAsSteering();
         testDirectBankBalancingWorksAcrossXLayout();
+        testActualAllocatorTelemetryTracksOnlyFiringBank();
 
         std::cout
             << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"

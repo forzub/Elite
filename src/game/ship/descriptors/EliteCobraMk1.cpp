@@ -1,4 +1,5 @@
 
+#include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
 #include "src/game/ship/ShipDescriptor.h"
@@ -1028,102 +1029,16 @@ desc.modules =
     )
 };
 
-// Functional passport for every damageable Cobra main-engine module.
-//
-// Five accumulated equipment-damage causes are the functional runtime truth.
-// The engine passport converts them into independent thrust and TVC degradation
-// plus rated electrical demand and expected waste heat. The reactor/cooling
-// are intentionally ideal at this stage, so there is no PowerBus throttle.
+// Installed Cobra motors all reuse a single named engine TYPE, not
+// ship-specific copies of thrust, thermodynamics or service law.
 {
-    game::equipment::engine::EngineUnitDescriptor engine;
-    // One fictional titanium-aluminide superalloy for BOTH engine housing
-    // and nozzle gimbal, resolved through the universal material catalog.
-    engine.structureMaterialId = "elite.material.engine.tial-ht.v1";
-    engine.nominalThrustNewtons =
-        desc.physics.massKg *
-        static_cast<double>(
-            desc.physics.forwardMainEngineAccelerationMps2
-        ) /
-        2.0;
-    engine.nominalGimbalRangeRad =
-        static_cast<double>(
-            std::max(
-                desc.physics.mainGimbalPitchLimitRad,
-                desc.physics.mainGimbalYawLimitRad
-            )
-        );
-    engine.nominalGimbalRateRadPerSec =
-        static_cast<double>(
-            desc.physics.mainGimbalRateRadPerSec
-        );
-    // Fictional field coupling: no reaction mass expelled. Actual
-    // acceleration uses force and ship mass; electric demand is separately
-    // authored for this engine type (never inferred from 500 m/s).
-    // Only one 2-engine longitudinal bank is firing in normal flight.
-    engine.propulsionPrinciple =
-        game::equipment::engine::PropulsionPrinciple::FieldCoupling;
-    engine.nominalElectricalPowerMW = 4850.0;
-    engine.nominalEfficiency01 = 0.9855;
-    engine.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
-
-    // Approximate Cobra dimensions 30 x 25 x 6 m, aft engine outer diameter
-    // 4.5 m, exhaust aperture 2.5 m: one-sided annular emitter ~11 m².
-    // Both forward and aft drives share this engine TYPE for now.
-    // Geometry/material differ by engine type, universal thermal laws do not.
-    engine.thermalEmitter.outerDiameterM = 4.5;
-    engine.thermalEmitter.apertureDiameterM = 2.5;
-    engine.thermalEmitter.surfaceTemperatureK = 2500.0;
-    engine.thermalEmitter.emissivity01 = 0.9;
-    engine.thermalEmitter.viewFactor01 = 0.90;
-    engine.thermalEmitter.materialId =
-        "elite.material.engine.hfc-c.v1";
-    engine.thermalEmitter.meshPartId = "engine_hot_emitter_annulus";
-
-    // Shared 380 m² panels at 1050 K, epsilon=0.9 emit ~58.93 MW with
-    // universal radiation multiplier 2.5. One hot ring emits ~49.32 MW.
-    // Two full-power engines reject 140.65 MW combined: ~10.7% headroom
-    // relative to 157.57 MW total radiation capacity.
-    // Reactor is ideal for this phase; no restriction by old PowerBus.
-    engine.nominalCoolantTemperatureK = 1050.0;
-    engine.nominalOperatingTemperatureK = 1200.0;
-    engine.safeOperatingTemperatureK = 1300.0;
-    engine.thermalCapacityMJperK = 12.0;
-
-    // The emitter radiates part of the rated waste heat directly; only the
-    // balance flows into the bulk housing and shared thermal coolant.
-    const double nominalEngineWasteHeatMW =
-        engine.nominalElectricalPowerMW *
-        (1.0 - engine.nominalEfficiency01);
-    const double emitterHeatMW = std::min(
-        nominalEngineWasteHeatMW,
-        game::equipment::engine::ratedThermalEmitterPowerMW(engine)
-    );
-    engine.thermalConductanceMWperK =
-        (nominalEngineWasteHeatMW - emitterHeatMW) /
-        (engine.nominalOperatingTemperatureK -
-         engine.nominalCoolantTemperatureK);
-    // 100 K above the safe threshold adds 5% thermal damage per hour.
-    engine.overheatReferenceExcessK = 100.0;
-    engine.thermalDamagePerHourAtReferenceExcess01 = 0.05;
-
-    // Equivalent full-thrust hours, independent for each installed engine.
-    // Service at 30k h (20% accumulated wear); no-service limit 50k h
-    // (95% wear and therefore thrust-function failure).
-    engine.overhaulEquivalentHours = 30000.0;
-    engine.endOfLifeEquivalentHours = 50000.0;
-    engine.damageAtOverhaul01 = 0.20;
-    engine.damageAtEndOfLife01 = 0.95;
-    engine.wearThrottleExponent = 1.5;
-    engine.gimbalFailure.failureAtDamage01 = 0.90;
-
+    const auto engine =
+        game::equipment::engine::presets::CobrettyCR1VectorMainDrive();
     for (auto& module : desc.modules)
     {
         if (module.zone == game::damage::HitZoneType::Engine)
         {
             module.equipmentFailure.failureAtDamage01 = 0.95;
-            // Wear is integrated from each engine's actual commanded,
-            // damage-constrained delivered thrust, not elapsed ship age.
-            // Nonlinear life curve reaches 20% at the 30k-hour service mark.
             module.maintenance.wearPerOperatingHour = 0.0;
             module.maintenance.maintenanceWearThreshold01 = 0.20;
             module.engine = engine;

@@ -1031,9 +1031,8 @@ desc.modules =
 //
 // Five accumulated equipment-damage causes are the functional runtime truth.
 // The engine passport converts them into independent thrust and TVC degradation
-// plus future operating cost. Nominal electric/thermal ratings remain zero until the
-// ship energy budget is authored; inventing MW values here would create fake
-// resource accounting.
+// plus rated electrical demand and expected waste heat. The reactor/cooling
+// are intentionally ideal at this stage, so there is no PowerBus throttle.
 {
     game::equipment::engine::EngineUnitDescriptor engine;
     engine.nominalThrustNewtons =
@@ -1053,33 +1052,31 @@ desc.modules =
         static_cast<double>(
             desc.physics.mainGimbalRateRadPerSec
         );
-    engine.nominalEfficiency01 = 1.0;
-    engine.gimbalFailure.failureAtDamage01 = 0.95;
-
-    // Engine damage response, first production profile.
-    // Primary useful work (efficiency) uses the common equipment sensitivity:
-    // impact 45%, laser 30%, thermal 15%, radiation 1%, wear 9%.
-    const game::equipment::EquipmentDamageSensitivity
-        engineFunctionalDamage {
-            0.30, 0.45, 0.15, 0.01, 0.09
-        };
-
-    // Nozzle mechanics are a specialized second engine function:
-    // impact 65%, laser 15%, thermal 5%, radiation 0%, wear 15%.
-    engine.gimbalDamage = {
-        0.15, 0.65, 0.05, 0.00, 0.15
-    };
+    // Fictional field-coupling drive: no expelled reaction mass. Its
+    // external momentum sink is an explicit science-fiction assumption.
+    // At 500 m/s a 9.561 MN drive performs about 4.78 GW of mechanical
+    // work; with 80% rated conversion it requires about 5.98 GW electric.
+    // A two-engine longitudinal bank draws about 11.95 GW at full rating.
+    // Reactor and cooling are ideal/unlimited for now; this is a DEMAND
+    // passport and must not be enforced by the old PowerBus.
+    engine.propulsionPrinciple =
+        game::equipment::engine::PropulsionPrinciple::FieldCoupling;
+    engine.designReferenceSpeedMps =
+        static_cast<double>(desc.physics.maxCombatSpeed);
+    engine.nominalEfficiency01 = 0.80;
+    engine.nominalElectricalPowerMW =
+        engine.nominalThrustNewtons *
+        engine.designReferenceSpeedMps /
+        (engine.nominalEfficiency01 * 1.0e6);
+    engine.gimbalFailure.failureAtDamage01 = 0.90;
 
     for (auto& module : desc.modules)
     {
         if (module.zone == game::damage::HitZoneType::Engine)
         {
-            module.equipmentDamageSensitivity =
-                engineFunctionalDamage;
             module.equipmentFailure.failureAtDamage01 = 0.95;
-            // Wear accumulation is enabled generically, but the Cobra engine
-            // service life is not authored yet. Zero avoids inventing a fake
-            // lifetime; the 20% maintenance threshold is already defined.
+            // The full-service life will be accumulated by an operating
+            // time law; do not fake it with a per-frame arbitrary percentage.
             module.maintenance.wearPerOperatingHour = 0.0;
             module.maintenance.maintenanceWearThreshold01 = 0.20;
             module.engine = engine;

@@ -37,6 +37,18 @@ public:
         double amount01
     );
 
+    // Advance a real installed engine using physical allocator telemetry.
+    // Returns true ONLY if the five-channel functional damage changed.
+    // Temperature and service-hours updates do not trigger rebuild of the
+    // ship's capability snapshot every frame.
+    bool advanceEngineOperatingLife(
+        const std::string& moduleId,
+        const game::equipment::engine::EngineUnitDescriptor& passport,
+        double deliveredNominalThrust01,
+        double elapsedSeconds,
+        double coolantTemperatureK
+    );
+
     void onModuleDestroyed(int index);
 
     void detachSubtree(int index);

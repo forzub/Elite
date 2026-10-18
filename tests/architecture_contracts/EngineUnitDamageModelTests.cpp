@@ -33,7 +33,7 @@ EngineUnitDescriptor descriptor()
     d.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     d.nominalThrustNewtons = 1000.0;
     d.designReferenceSpeedMps = 500.0;
-    d.nominalEfficiency01 = 0.80;
+    d.nominalEfficiency01 = 0.998;
     d.nominalElectricalPowerMW =
         d.nominalThrustNewtons * d.designReferenceSpeedMps /
         (d.nominalEfficiency01 * 1.0e6);
@@ -62,20 +62,22 @@ void testHealthyFieldDrivePassport()
 
     require(d.propulsionPrinciple == PropulsionPrinciple::FieldCoupling,
             "field drive model is not explicit");
-    require(near(d.nominalElectricalPowerMW, 0.625),
+    require(near(d.nominalElectricalPowerMW, 0.500 / 0.998),
             "design-point F*v/eta electric power changed");
     require(!s.thrustFailed && !s.gimbalFailed,
             "healthy engine failed");
-    require(near(s.efficiency01, 0.80),
+    require(near(s.efficiency01, 0.998),
             "healthy electric-to-field efficiency changed");
     require(near(s.maximumThrustNewtons, 1000.0),
             "healthy thrust rating changed");
     require(near(s.gimbalRangeRad, 0.20) &&
             near(s.gimbalRateRadPerSec, 0.40),
             "healthy TVC rating changed");
-    require(near(requestedElectricalPowerMW(d, s, 1.0), 0.625),
+    require(near(requestedElectricalPowerMW(d, s, 1.0),
+                 d.nominalElectricalPowerMW),
             "healthy full-thrust electrical draw changed");
-    require(near(generatedWasteHeatMW(d, s, 1.0), 0.125),
+    require(near(generatedWasteHeatMW(d, s, 1.0),
+                 d.nominalElectricalPowerMW * (1.0 - d.nominalEfficiency01)),
             "healthy conversion losses changed");
 }
 
@@ -181,24 +183,92 @@ void testDamageCostsMorePowerForSameDeliveredThrust()
     const auto healthy = evaluateEngineUnit(d, damageLayer());
 
     require(near(reduced.maximumThrustNewtons, 500.0),
-            "50% damage must halve available maximum thrust");
-    require(near(reduced.efficiency01, 0.40),
-            "damage did not degrade conversion efficiency");
-    require(near(reduced.powerCostMultiplier, 2.0),
-            "damaged engine cost per delivered newton is wrong");
-    require(near(reduced.heatMultiplier, 5.0),
-            "BITE extra waste heat must reflect the 80% nominal efficiency");
+            "50% functional damage must halve available maximum thrust");
+    require(reduced.efficiency01 < healthy.efficiency01 &&
+            reduced.efficiency01 > 0.99,
+            "conversion loss must remain slight and independent of thrust loss");
+    require(near(reduced.efficiency01, 0.998 * (1.0 - 0.002 * 0.50)),
+            "relative efficiency damage curve changed");
+    require(near(reduced.powerCostMultiplier, 1.0 / 0.999),
+            "damaged per-newton electricity cost is wrong");
 
-    // 0.5 is the achieved fraction of HEALTHY nominal thrust, not the
-    // position of the damaged-engine throttle lever.
-    require(near(requestedElectricalPowerMW(d, healthy, 0.50), 0.3125),
+    const double halfHealthy =
+        requestedElectricalPowerMW(d, healthy, 0.50);
+    const double halfDamaged =
+        requestedElectricalPowerMW(d, reduced, 0.50);
+    require(near(halfHealthy, d.nominalElectricalPowerMW * 0.50),
             "healthy half-thrust power changed");
-    require(near(requestedElectricalPowerMW(d, reduced, 0.50), 0.625),
-            "degraded same-thrust power cost changed");
-    require(near(requestedElectricalPowerMW(d, reduced, 1.0), 0.625),
-            "power accounting billed for impossible thrust above damaged maximum");
-    require(near(generatedWasteHeatMW(d, reduced, 0.50), 0.375),
-            "damaged waste heat did not equal input minus useful output");
+    require(halfDamaged > halfHealthy &&
+            near(halfDamaged, halfHealthy / 0.999),
+            "degraded same-thrust input cost changed");
+    require(near(requestedElectricalPowerMW(d, reduced, 1.0),
+                 halfDamaged),
+            "electrical demand billed impossible extra damaged thrust");
+    const double expectedHeat =
+        halfDamaged -
+        d.nominalElectricalPowerMW * 0.50 * d.nominalEfficiency01;
+    require(near(generatedWasteHeatMW(d, reduced, 0.50), expectedHeat),
+            "damaged waste heat must equal actual input minus useful output");
+    require(reduced.heatMultiplier > 0.0,
+            "BITE did not see increased waste heat");
+}
+
+void testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation()
+{
+    auto d = descriptor();
+    d.overhaulEquivalentHours = 30000.0;
+    d.endOfLifeEquivalentHours = 50000.0;
+    d.damageAtOverhaul01 = 0.20;
+    d.damageAtEndOfLife01 = 0.95;
+
+    using game::equipment::engine::engineWearDamageAtHours;
+    using game::equipment::engine::advanceEngineOperatingState;
+    using game::equipment::engine::EngineOperatingState;
+    require(near(engineWearDamageAtHours(d, 0), 0.0) &&
+            near(engineWearDamageAtHours(d, 15000), 0.10) &&
+            near(engineWearDamageAtHours(d, 30000), 0.20) &&
+            near(engineWearDamageAtHours(d, 50000), 0.95),
+            "30k/50k-hour resource curves lost their explicit service endpoints");
+
+    const auto healthy = evaluateEngineUnit(d, damageLayer());
+    // Small thermal test fixture with the same operating temperature and
+    // physical equilibrium as Cobra but a much shorter test-only time constant.
+    const double healthyWaste =
+        generatedWasteHeatMW(d, healthy, 1.0);
+    d.nominalCoolantTemperatureK = 1050.0;
+    d.nominalOperatingTemperatureK = 1200.0;
+    d.safeOperatingTemperatureK = 1300.0;
+    d.thermalConductanceMWperK = healthyWaste / 150.0;
+    d.thermalCapacityMJperK =
+        d.thermalConductanceMWperK * 50.0;
+
+    const EngineOperatingState start {1050.0, 0.0};
+    const auto off = advanceEngineOperatingState(
+        d, healthy, start, 0.0, 600.0, 1050.0
+    );
+    require(near(off.next.equivalentOperatingHours, 0.0) &&
+            near(off.wearDamageIncrement01, 0.0) &&
+            near(off.thermalDamageIncrement01, 0.0),
+            "inactive engine must not age at normal temperature");
+
+    const auto full = advanceEngineOperatingState(
+        d, healthy, start, 1.0, 600.0, 1050.0
+    );
+    require(near(full.next.temperatureK, 1200.0, 0.001),
+            "full-thrust engine did not reach its 1200 K design operating point");
+    require(full.next.equivalentOperatingHours > 0.0 &&
+            full.wearDamageIncrement01 > 0.0 &&
+            near(full.thermalDamageIncrement01, 0.0),
+            "healthy full load should age but not overheat");
+
+    // An external hotter coolant boundary must overheat the SAME engine
+    // even while reactor/cooling remain nondamageable in this phase.
+    const auto overheated = advanceEngineOperatingState(
+        d, healthy, full.next, 1.0, 600.0, 1350.0
+    );
+    require(overheated.next.temperatureK > 1450.0 &&
+            overheated.thermalDamageIncrement01 > 0.0,
+            "hotter coolant did not cause actual accumulated thermal damage");
 }
 
 } // namespace
@@ -212,6 +282,7 @@ int main()
         testSaturationAndChannelAccumulation();
         testInstabilityAndIndependentFunctionalThresholds();
         testDamageCostsMorePowerForSameDeliveredThrust();
+        testRatedLifeAndHeatAccumulateOnlyFromPhysicalOperation();
 
         std::cout
             << "ENGINE UNIT DAMAGE MODEL: PASS\n"

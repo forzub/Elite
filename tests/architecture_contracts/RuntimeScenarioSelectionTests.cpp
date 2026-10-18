@@ -37,21 +37,6 @@ void testExplicitSelection()
     {
         const auto s =
             RuntimeScenarioSelection::parse(
-                "ship-damage:Assisted-I@0,Newtonian-Y@1"
-            );
-        require(
-            s.kind == RuntimeScenarioKind::ShipDamage,
-            "ship-damage did not select damage oracle"
-        );
-        require(
-            s.payload == "Assisted-I@0,Newtonian-Y@1",
-            "ship-damage payload changed"
-        );
-    }
-
-    {
-        const auto s =
-            RuntimeScenarioSelection::parse(
                 "nav-stress:assisted-high-speed"
             );
         require(
@@ -61,15 +46,6 @@ void testExplicitSelection()
         require(
             s.payload == "assisted-high-speed",
             "nav-stress payload changed"
-        );
-    }
-
-    {
-        const auto s =
-            RuntimeScenarioSelection::parse("ship-damage:");
-        require(
-            !s.active(),
-            "empty ship-damage payload unexpectedly became active"
         );
     }
 

@@ -1254,9 +1254,37 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
                         break;
                     }
             if (cause==Kind::Impact && isInstalledEngine)
+            {
+                // Incident-dependent seed. The same engine ID occurs on many
+                // ships, so module ID alone must not yield identical outcomes
+                // across the entire universe.
+                std::uint64_t incidentKey=0xcbf29ce484222325ULL;
+                const auto mix=[&](std::uint64_t value) {
+                    incidentKey^=value;
+                    incidentKey*=0x100000001b3ULL;
+                };
+                mix(static_cast<std::uint64_t>(
+                    event.worldPosition.cell.x
+                ));
+                mix(static_cast<std::uint64_t>(
+                    event.worldPosition.cell.y
+                ));
+                mix(static_cast<std::uint64_t>(
+                    event.worldPosition.cell.z
+                ));
+                mix(static_cast<std::uint64_t>(std::llround(
+                    event.worldPosition.localMeters.x*1000.0
+                )));
+                mix(static_cast<std::uint64_t>(std::llround(
+                    event.worldPosition.localMeters.y*1000.0
+                )));
+                mix(static_cast<std::uint64_t>(std::llround(
+                    event.worldPosition.localMeters.z*1000.0
+                )));
                 m_moduleRuntime.addEngineImpactShock(
-                    damagedModuleId,lost01
+                    damagedModuleId,lost01,incidentKey
                 );
+            }
             else
                 m_moduleRuntime.addEquipmentDamage(
                     damagedModuleId,cause,lost01

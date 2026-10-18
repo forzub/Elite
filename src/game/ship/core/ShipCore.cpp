@@ -398,6 +398,61 @@ void ShipCore::updateSystems(float dt)
         m_thermal.addHeat(5.0 * dt);
 
     m_thermal.update(dt);
+
+    // Engine life belongs to the real installed module, never to a pilot
+    // command, diagnostic slot, or ship-wide time counter. The actual
+    // physical allocator reports the delivered fraction of healthy thrust.
+    // The ideal coolant boundary is deliberate until reactor/cooling damage
+    // simulation is authorized; engines still have finite thermal inertia.
+    if (m_desc &&
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+    {
+        const auto& topology =
+            game::ship::plant::physicalControlSlots(
+                m_state.construction.physicalControlModel
+            );
+        const auto& bindings =
+            m_desc->physicalControl.slotModuleIds;
+        const auto& motion = m_transform.motion;
+        if (bindings.size() == topology.size() &&
+            motion.mainEngineReportedSlotCount == bindings.size())
+        {
+            bool changed = false;
+            for (std::size_t i = 0; i < bindings.size(); ++i)
+            {
+                if (bindings[i].empty() ||
+                    topology[i].role ==
+                        game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                {
+                    continue;
+                }
+
+                const auto definition = std::find_if(
+                    m_desc->modules.begin(),
+                    m_desc->modules.end(),
+                    [&](const auto& module)
+                    {
+                        return module.moduleId == bindings[i];
+                    }
+                );
+                if (definition == m_desc->modules.end() ||
+                    !definition->engine)
+                    continue;
+
+                changed |= m_moduleRuntime.advanceEngineOperatingLife(
+                    bindings[i],
+                    *definition->engine,
+                    motion.mainEngineDeliveredThrust01[i],
+                    static_cast<double>(dt),
+                    definition->engine->nominalCoolantTemperatureK
+                );
+            }
+
+            if (changed)
+                refreshRuntimeState();
+        }
+    }
 }
 
 

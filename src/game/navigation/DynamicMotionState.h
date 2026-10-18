@@ -1,3 +1,4 @@
+#include "src/game/ship/telemetry/EngineLiveTelemetry.h"
 #pragma once
 
 #include <array>
@@ -142,6 +143,12 @@ struct DynamicMotionState
     // Zero for the inactive front/rear bank; no dynamic per-tick allocations.
     std::array<double, 16> mainEngineDeliveredThrust01 {};
     std::size_t mainEngineReportedSlotCount = 0;
+
+    // Independent, factual actuator telemetry for cockpits/replay. The same
+    // state also holds the previous individual nozzle orientations, allowing
+    // slew-rate-limited TVC across successive control samples.
+    game::ship::telemetry::EngineLiveTelemetry engineTelemetry {};
+    glm::dvec3 requestedMainAngularAccelerationBodyRadPerSec2 {0.0};
 
     // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
     double manoeuvreGasPressure01 = 1.0;

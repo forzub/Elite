@@ -10,9 +10,13 @@ namespace game::ship::core
 {
 
 void CoolingSystem::init(double totalArea, int panelCount, 
-                         double emissivity, double maxCoolantTemp)
+                         double emissivity, double maxCoolantTemp,
+                         std::string_view materialId)
 {
-    m_secondaryCircuit.emissivity = std::clamp(emissivity, 0.0, 1.0);
+    m_secondaryCircuit.materialId = materialId;
+    const auto* material = game::physics::materials::findMaterial(materialId);
+    m_secondaryCircuit.emissivity = material
+        ? material->emissivity01 : std::clamp(emissivity, 0.0, 1.0);
     m_secondaryCircuit.maxCoolantTemp = maxCoolantTemp;
     
     double panelArea = totalArea / panelCount;
@@ -20,7 +24,9 @@ void CoolingSystem::init(double totalArea, int panelCount,
     
     for (int i = 0; i < panelCount; ++i)
     {
-        m_secondaryCircuit.panels.push_back({panelArea, 1.0, 1.0});
+        m_secondaryCircuit.panels.push_back(
+            {panelArea, 1.0, 1.0, materialId}
+        );
     }
 }
 

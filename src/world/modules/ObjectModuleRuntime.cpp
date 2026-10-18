@@ -405,6 +405,60 @@ bool ObjectModuleRuntime::addEquipmentDamage(
     return true;
 }
 
+bool ObjectModuleRuntime::addEngineImpactShock(
+    const std::string& moduleId, double hitDamage01
+)
+{
+    const int index=findModuleIndex(moduleId);
+    if(index<0 || !std::isfinite(hitDamage01) || hitDamage01<=0.0)
+        return false;
+    auto& module=m_modules[index];
+    if(module.state!=ObjectModuleRuntimeState::Attached ||
+       module.health<=0.0f)
+        return false;
+    auto& engine=module.engineOperating;
+    const double hit=std::clamp(hitDamage01,0.0,1.0);
+    // Irreversible structural/functional portion remains in Impact damage.
+    const double permanent=hit/3.0;
+    const double fieldShock=hit-permanent;
+    const bool changed=game::equipment::addEquipmentDamage(
+        module.equipmentDamage.accumulated,
+        game::equipment::EquipmentDamageKind::Impact,
+        permanent
+    );
+    // The remaining part is a transient field-system malfunction; no
+    // destroyed casing or emitter area is magically repaired.
+    engine.impactShock01=std::clamp(
+        engine.impactShock01+fieldShock,0.0,1.0
+    );
+    std::uint64_t seed=14695981039346656037ULL;
+    for(unsigned char c:moduleId)
+    {
+        seed^=c;
+        seed*=1099511628211ULL;
+    }
+    seed^=++engine.impactEventSerial*0x9e3779b97f4a7c15ULL;
+    seed^=seed>>30u;
+    seed*=0xbf58476d1ce4e5b9ULL;
+    seed^=seed>>27u;
+    seed*=0x94d049bb133111ebULL;
+    seed^=seed>>31u;
+    // Stable 50% outcome; never re-roll while simulating an impact.
+    const bool rebound=(seed & 1ULL)!=0;
+    if(!rebound)
+        engine.impactShockPermanentOnExpiry01=std::clamp(
+            engine.impactShockPermanentOnExpiry01+fieldShock,0.0,1.0
+        );
+    const double delaySeconds=
+        1.0+2.0*static_cast<double>((seed>>11u)&0xffffu)/65535.0;
+    engine.impactShockSecondsRemaining=std::max(
+        engine.impactShockSecondsRemaining,delaySeconds
+    );
+    (void)changed;
+    ++m_revision;
+    return true;
+}
+
 bool ObjectModuleRuntime::exposeEngineEmitter(
     const std::string& moduleId,
     const game::equipment::engine::EngineUnitDescriptor& passport,
@@ -484,7 +538,8 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
     const game::equipment::engine::EngineUnitDescriptor& passport,
     double deliveredNominalThrust01,
     double elapsedSeconds,
-    double coolantTemperatureK
+    double coolantTemperatureK,
+    double* transferredHeatMW
 )
 {
     if (!std::isfinite(elapsedSeconds) || elapsedSeconds <= 0.0)
@@ -501,7 +556,7 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
 
     const auto effective =
         game::equipment::engine::evaluateEngineUnit(
-            passport, module.equipmentDamage
+            passport, module.equipmentDamage, module.engineOperating
         );
     const auto thermalCapBefore =
         game::equipment::engine::safeEmitterThrustFraction01(
@@ -520,6 +575,32 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
             coolantTemperatureK
         );
     module.engineOperating = step.next;
+    if(transferredHeatMW)
+        *transferredHeatMW=installed ? step.coolantHeatMW : 0.0;
+
+    // Resolve cinematic field shock once. All temporary force loss is
+    // maintained for its scheduled duration, then either recovered or
+    // committed to the SAME permanent Impact channel. No healing laser
+    // scars, structural damage, emitter holes or wear.
+    bool shockResolved=false;
+    auto& shock=module.engineOperating;
+    if(shock.impactShockSecondsRemaining>0.0)
+    {
+        shock.impactShockSecondsRemaining=
+            std::max(0.0,shock.impactShockSecondsRemaining-elapsedSeconds);
+        if(shock.impactShockSecondsRemaining<=0.0)
+        {
+            if(shock.impactShockPermanentOnExpiry01>0.0)
+                game::equipment::addEquipmentDamage(
+                    module.equipmentDamage.accumulated,
+                    game::equipment::EquipmentDamageKind::Impact,
+                    shock.impactShockPermanentOnExpiry01
+                );
+            shock.impactShock01=0.0;
+            shock.impactShockPermanentOnExpiry01=0.0;
+            shockResolved=true;
+        }
+    }
 
     // The thermal limiter changes in 1%-point telemetry buckets rather
     // than causing a full capability/network rebuild every simulation tick.
@@ -575,11 +656,11 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
             thermalIncrement
         );
     if (wearChanged || thermalChanged ||
-        protectionChanged || annulusWearChanged)
+        protectionChanged || annulusWearChanged || shockResolved)
         ++m_revision;
 
     return wearChanged || thermalChanged ||
-        protectionChanged || annulusWearChanged;
+        protectionChanged || annulusWearChanged || shockResolved;
 }
 
 bool ObjectModuleRuntime::setSupportLinkHealth(

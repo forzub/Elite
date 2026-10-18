@@ -1,3 +1,53 @@
+## 2026-10-19 — IMPLEMENTED COOLANT→ENGINE DAMAGE, CINEMATIC IMPACT SHOCK, CONTROL-AUTHORITY TELEMETRY (NATIVE TESTS PENDING)
+
+**User approved and requested code:** couple engine heat to damaged ship cooling; impact-triggered 70%-style coughing power loss followed 1–3 s later by once-randomized self-recovery of two thirds of the hit or no recovery; add a read-only ship control-authority telemetry layer for the autopilot, then verify game manual/autopilot behaviour. Branch `feature/propulsion-authority-matrix-2026-10-16`. **Changes committed to branch; DO NOT claim native or gameplay PASS.** Previous simplified cached I/Y/X Assisted maneuver executor is retained; Newtonian continues separate RCS and main control.
+
+### Implemented physical heat/cooling
+- `src/game/equipment/engine/EngineUnit.h`: `EngineOperatingState.coolantTemperatureK` stores ACTUAL last common coolant boundary. `safeEmitterThrustFraction01` uses it (legacy 1050 K only when uninitialized). Existing direct annulus heat radiation is retained. `advanceEngineOperatingState` now respects finite engine thermal mass and separates actual conductive **coolant heat transfer** from internal energy storage: `P_coolant = P_waste - P_emitter - C*(T_next-T_start)/dt`, including negative transfer when coolant warms a colder engine. Trapezoidal thermal-damage calculation retains five damage causes; protective thermal governor automatically derates as coolant warms.
+- `ObjectModuleRuntime::advanceEngineOperatingLife` returns actual conducted heat via optional output pointer, preserving all previous call sites.
+- `ShipCore::updateSystems` now passes `m_thermal.getTemperature()` rather than engine descriptor's fixed nominal coolant K; adds signed transferred heat (MW*dt) once into the shared coolant; calls `m_cooling.update` AFTER engine heat has entered the reservoir. No double radiation of the nozzle's direct emitter heat.
+- `CoolingSystem::update` now caps radiator heat removal by available pump circulation and `maxHeatTransfer`, in addition to emissive surface. Damaged panels/overheated or unavailable pumps can elevate shared coolant temperature, thereby heating every mounted engine, temporarily limiting output and eventually adding permanent `Thermal` accumulated damage. Pump/radiator tuning needs IN-GAME validation.
+
+### Implemented cinematic engine-only impact rebound
+- Five canonical stored damage percentages stay **Laser/Impact/Thermal/Radiation/Wear**, no sixth permanent cause. `EngineOperatingState` stores a distinct transient `impactShock01`, timer, unrecovered portion and deterministic event serial; it is functional field instability, NOT structural healing. On collision or explosion that actually damaged an ENGINE hit-volume, `ShipCore::applyDamage` calls `ObjectModuleRuntime::addEngineImpactShock`, with reproducible per-world-incident entropy; other modules and laser/radiation remain on existing damage routes. The original hit-volume structural health loss is NOT reversed.
+- Each hit instantly applies ONE THIRD of its amount to accumulated Impact and TWO THIRDS as temporary motor-field shock. Outcome is decided ONCE at event time (50% seeded chance). After 1–3 seconds, temporary field loss disappears if recovery; otherwise remaining two thirds enters permanent Impact. Example 70% hit: temporary total effective damage 70%, later 23.333% or 70% permanent. A single event never re-rolls each frame. Multiple hits stack under caps and share the latest pending expiry. For catastrophic structural destruction, a torn/detached motor is not restored by transient recovery.
+- `evaluateEngineUnit(passport, damage, operating)` makes real `Engine.h` thrust, electricity, waste heat, gimbal and intermittent thrust reflect temporary shock immediately; adds a shock-specific irregular-thrust term so 70%-exact hits audibly/physically 'cough' even though normal sustained instability begins above 70%. It is physically executed and read by existing true RED/YELLOW motor telemetry.
+- `ShipCore::applyDamage` immediately refreshes module-derived actuator capability (incident-driven only), preventing old undamaged performance projections from persisting after a hit.
+- `ObjectModuleSnapshot`, its builder, `WireDataSchema` and client `ShipCapabilityBuilder` now replicate hot coolant boundary and active shock; schema version **17** in `WireDataCodec.h`. BOTH client/server must be rebuilt. No private transient countdown progression is computed by client: authoritative replicated snapshot is source.
+
+### Physical autopilot-control telemetry
+- New read-only `src/game/ship/telemetry/ShipControlAuthorityTelemetry.h` publishes **sign-separated six-axis** available acceleration and torque authority from the SAME 12 prepared damage-aware Assisted motor programs. Distinct from BITE fault history and `EngineLiveTelemetry` output-force HUD.
+- `ShipCore::controlAuthorityTelemetry()` publishes current per-vessel program capability, invalidated when the module projection revision changes. `applyAuthorityToControlParams` conservatively clamps existing `ShipParams` to actual program output, preserving public control API. Server `GameSimulation.cpp` NPC autopilot passes the telemetry-limited parameters directly into its `AutopilotLawController`; this helps stop over-promising physical acceleration as engines fail.
+- **OPEN:** legacy client-side `ClientRouteAutopilot`/`DedicatedClientRouteAutopilot` still take `ShipParams`; their replicated client physics envelope has been corrected for coolant/shock but a DIRECT control-authority readout is not yet wired into both client-specific speed/curve planners. Do not claim complete closed-loop corridor resonance solved. Need unify client route planner execution authority with physical six-axis readout, and test actual speed/curvature limits; no changes to established manual steering law in this task.
+
+### Tests and validation status
+- `tests/architecture_contracts/EngineUnitDamageModelTests.cpp`: added high-coolant derate and exact heat budget/storage assertion; adjusted damaged-annulus coolant expectation for nonzero housing energy storage.
+- `EquipmentDamageFailurePipelineTests.cpp`: 70% impact sets lasting 1/3 and field 2/3, irregular thrust, deterministic one-shot settling after <=3 s, permanent/no-rebound alternatives, no healing unrelated wear or laser.
+- `WireDataPlaneContractTests.cpp`: schema 17 payload round-trip includes engine coolant K, impact field shock and remaining timer.
+- `InstalledEngineActuatorTests.cpp`: actual six-axis authority telemetry tells autopilot reduced usable acceleration after removing one installed I/Y/X motor.
+- `check_engine_six_axis_matrix.py` source checks extended to new heat/coolant, impact, telemetry and wire wiring; the legacy v16 assertion changed to v17.
+- No local C++ project is available here and direct `github.com` from container is unresolvable; native CMake/CTest, actual run and screen inspection NOT done. Source wiring inspected only; **possible build/runtime regressions remain**. Keep ALL game logs under `D:\\tmp`. Review cooling pump power and thermal duration in gameplay; test Assisted-I/Y/X and Newtonian-I/Y/X, button release damping, manual Num8/Num2, highway/corridor autopilot overshoot, single-engine hit and 2-s recovery. Validate both client & server network v17.
+
+### User MSYS2 MinGW64 verification
+```bash
+cd /d/__elite/work
+git status --short
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
+cmake --build build/tests/architecture_contracts --target engine_unit_damage_model_tests equipment_damage_failure_pipeline_tests installed_engine_actuator_tests wire_data_plane_contract_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R "engine_unit_damage_model|equipment_damage_failure_pipeline|installed_engine_actuator|wire_data_plane_contracts" --output-on-failure
+python tests/architecture_contracts/check_engine_six_axis_matrix.py
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+Check exact CMake target names against `tests/architecture_contracts/CMakeLists.txt` if they differ. First compiler errors or failing tests are to be fixed before game acceptance.
+
+**Single source of context remains THIS ROOT PROJECT_STATE.md.** No new status files.
+
+---
+
 ## 2026-10-19 — ASSISTED I/Y/X PRECOMPUTED SIX-AXIS MANEUVERS WITH DAMAGE-AWARE REBUILD (UNTESTED NATIVE)
 
 **User agreed** to replace the runtime general 96-pass optimizer with a simpler deterministic maneuver-program system; explicitly accepted that one lost engine does NOT always prevent stable forward motion when remaining engine nozzles can redirect by up to 75°. The exact surviving nozzle angle (e.g., 60°) is geometric/operating-state-dependent; 60° is NOT hard-coded. A single nozzle at 60° supplies 50% of its force axially and ~86.6% transversely; only the TOTAL `ΣF, Σ(r×F)` determines whether the hull travels straight without rotating.

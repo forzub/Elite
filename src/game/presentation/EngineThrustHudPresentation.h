@@ -14,6 +14,7 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/presentation/ShipBitePresentation.h"
+#include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 
 namespace game::presentation
 {
@@ -144,102 +145,16 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         return out;
     }
 
-    const auto shipCapability =
-        capability::buildShipCapability(
-            descriptor,
-            model,
-            slotState
-        );
-    if (!shipCapability.valid)
-        return out;
-
-    const auto biteState =
-        buildShipBiteState(descriptor, ship.modules);
-
-    out.modelLabel =
-        detail::physicalModelLabel(model);
+    // BITE supplies faults only; live per-engine output is authoritative.
+    const auto biteState = buildShipBiteState(
+        descriptor, ship.modules
+    );
+    out.modelLabel = detail::physicalModelLabel(model);
     out.styleId = descriptor.hud.engineStatusStyleId.empty()
         ? "human_amber"
         : descriptor.hud.engineStatusStyleId;
-
-    const auto family =
-        plant::familyOf(model);
-    const bool assisted =
-        family == plant::PhysicalControlFamily::Assisted;
-
-    glm::dvec3 forward(ship.transform.forward());
-    const double forwardLength = glm::length(forward);
-    if (forwardLength <= 1.0e-9)
-        forward = glm::dvec3(0.0, 0.0, -1.0);
-    else
-        forward /= forwardLength;
-
-    double aftDemand01 = 0.0;
-    double foreDemand01 = 0.0;
-    double lateralDemand01 = 0.0;
-
-    const ShipParams& effective = shipCapability.effectivePhysics;
-
-    if (assisted)
-    {
-        // engineAccelerationMps2 is the actually executed propulsion
-        // acceleration after the controlled-speed envelope. In Assisted the
-        // physical model owns both axial thrust and lateral vectoring, so its
-        // axial/lateral decomposition is the closest current actuator truth.
-        const glm::dvec3 actual =
-            ship.transform.motion.engineAccelerationMps2;
-        const double axial = glm::dot(actual, forward);
-        const glm::dvec3 lateral =
-            actual - forward * axial;
-
-        if (axial >= 0.0)
-        {
-            aftDemand01 = detail::normalizedDemand(
-                axial,
-                forwardMainAccelerationLimitMps2(effective)
-            );
-        }
-        else
-        {
-            foreDemand01 = detail::normalizedDemand(
-                axial,
-                reverseMainAccelerationLimitMps2(effective)
-            );
-        }
-
-        lateralDemand01 = detail::normalizedDemand(
-            glm::length(lateral),
-            assistedLateralStabilizationAccelerationLimitMps2(
-                effective
-            )
-        );
-    }
-    else
-    {
-        // Newtonian currently keeps its main request separate from gas-limited
-        // manoeuvre clusters. Until the actuator allocator moves fully behind
-        // ShipControlExecutionGateway, use that isolated main vector rather
-        // than contaminating the red main-engine bars with RCS acceleration.
-        const double axial = glm::dot(
-            ship.transform.motion.mainEngineAccelerationMps2,
-            forward
-        );
-
-        if (axial >= 0.0)
-        {
-            aftDemand01 = detail::normalizedDemand(
-                axial,
-                forwardMainAccelerationLimitMps2(effective)
-            );
-        }
-        else
-        {
-            foreDemand01 = detail::normalizedDemand(
-                axial,
-                reverseMainAccelerationLimitMps2(effective)
-            );
-        }
-    }
+    const bool assisted = plant::familyOf(model) ==
+        plant::PhysicalControlFamily::Assisted;
 
     for (std::size_t i = 0; i < definitions.size(); ++i)
     {
@@ -288,21 +203,9 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         const double available01 =
             plant::effectiveSlotThrust01(slotState[i]);
 
-        double demand01 =
-            role == plant::EngineSlotRole::AftMain
-                ? aftDemand01
-                : foreDemand01;
-
-        if (assisted)
-        {
-            // Vectoring main engines can simultaneously spend thrust on axial
-            // and lateral components. The Euclidean demand is bounded by the
-            // slot's available nominal thrust.
-            demand01 = std::hypot(
-                demand01,
-                lateralDemand01
-            );
-        }
+        const auto live = readEngineMotorLiveView(
+            ship.transform.motion, i, available01
+        );
 
         EngineThrustBarPresentation bar;
         bar.slotId = definitions[i].id;
@@ -310,16 +213,10 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
             role == plant::EngineSlotRole::AftMain
                 ? EngineThrustFillDirection::BottomUp
                 : EngineThrustFillDirection::TopDown;
-        bar.capability01 = static_cast<float>(
-            std::clamp(available01, 0.0, 1.0)
-        );
-        bar.thrust01 = static_cast<float>(
-            std::clamp(
-                available01 * std::clamp(demand01, 0.0, 1.0),
-                0.0,
-                available01
-            )
-        );
+        bar.capability01 = static_cast<float>(live.available01);
+        // RED = actual executed thrust / THIS engine's healthy nominal.
+        // Never scale or reconstruct it from net ship acceleration.
+        bar.thrust01 = static_cast<float>(live.thrust01);
         const auto& binding =
             descriptor.physicalControl.slotModuleIds;
         const std::string equipmentId =

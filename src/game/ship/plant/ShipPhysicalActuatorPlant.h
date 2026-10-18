@@ -59,13 +59,14 @@ struct MainPropulsionTrimResult
     double automaticPitchTrimRad = 0.0;
 };
 
-// Cheap closed-loop damaged-main compensation.
+// Cheap damaged-main compensation.
 //
-// The ordinary flight law still decides the requested maneuver. This helper
-// only reduces individual engines that create harmful parasitic torque and,
-// if useful, adds a small common TVC correction. It never increases any engine
-// above its current damage-limited/instantaneous authority and never engages
-// the opposite main bank.
+// The ordinary flight law still decides the requested maneuver. The active
+// main bank is balanced directly to its weakest surviving instantaneous engine
+// in one pass; damage asymmetry is never used as steering authority. A small
+// common TVC correction may then reduce residual torque from missing geometry.
+// The helper never increases any engine above its current damage-limited/
+// instantaneous authority and never engages the opposite main bank.
 [[nodiscard]] MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     PhysicalControlModelId model,
     const std::vector<EngineSlotState>& state,

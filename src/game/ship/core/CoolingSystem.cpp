@@ -104,8 +104,18 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     m_coolantTemp = coolant.getTemperature();
     double maxRadiatedPower = calculateRadiatedPower(m_coolantTemp);
     
-    // 4. Реально отводимая мощность = из возможностей радиаторов
-    double actualRemovedPower =  maxRadiatedPower;
+    // 4. The radiator is NOT an infinite heat sink disconnected from the
+    // cooling pumps. Its radiation capability is limited by real coolant
+    // circulation and the plant's rated heat-transport capacity. Failed
+    // pumps/overheated primary circuit therefore warm all mounted engines.
+    const double transportedMW = std::max(
+        0.0, std::min(
+            m_primaryCircuit.pumpCapacity,
+            m_primaryCircuit.maxHeatTransfer
+        )
+    );
+    const double actualRemovedPower =
+        std::min(maxRadiatedPower, transportedMW);
     double heatRemovedMJ = actualRemovedPower * dt;
 
     

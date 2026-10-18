@@ -3,6 +3,8 @@
 #include "src/game/equipment/capabilities/IPowerConsumer.h"
 #include "src/game/equipment/capabilities/IHeatSource.h"
 #include "ThermalSystem.h"
+#include "src/game/physics/UniverseMaterials.h"
+#include <string_view>
 #include <vector>
 
 namespace game::ship::core
@@ -13,6 +15,7 @@ struct RadiatorPanel
     double area;        // м²
     double efficiency;  // 0..1 (повреждения)
     double health;      // 0..1
+    std::string_view materialId {};
 };
 
 struct PrimaryCircuit {
@@ -44,7 +47,8 @@ struct SecondaryCircuit
     // ----------- ПАНЕЛИ - второй контур------
     // ==========================
     std::vector<RadiatorPanel> panels;
-    double emissivity = 0.9;           // physical material emissivity 0..1
+    double emissivity = 0.9;           // fallback for legacy non-catalog hulls
+    std::string_view materialId {};
     double maxCoolantTemp = 900.0;      // K (макс температура антифриза)
 };
 
@@ -69,7 +73,8 @@ public:
     void init(double totalArea,          // общая площадь радиаторов
               int panelCount,            // количество панелей
               double emissivity,         // 0..1
-              double maxCoolantTemp);    // K (макс температура антифриза)
+              double maxCoolantTemp,     // K (legacy cooling boundary)
+              std::string_view materialId = {});
     
     // IPowerConsumer
     double getRequestedPower() const override;

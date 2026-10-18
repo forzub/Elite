@@ -1,3 +1,26 @@
+## 2026-10-18 — direct weakest-engine main-bank balancing
+
+The previous 10%-step greedy throttle trim was removed.
+
+Canonical main-bank rule now:
+- for the currently active main bank, read each surviving engine's instantaneous available thrust (already includes damage and >70% irregular-output dips);
+- find the weakest surviving engine;
+- in one O(N) pass, reduce every stronger surviving engine directly to that same instantaneous level;
+- failed/zero-output engines are excluded from the minimum so one dead engine does not shut the entire bank down;
+- damage asymmetry is never treated as steering authority, even if its accidental torque happens to help the requested turn;
+- after direct throttle balance, a small bounded common-TVC trim may reduce residual torque caused by missing geometry;
+- any remaining reaction stays physical and is left to the normal attitude/stabilization loop.
+
+This rule is common to I/Y/X layouts and to Assisted/Newtonian main banks. It replaces the previous coordinate-descent/10%-step search and is cheaper and more deterministic.
+
+Tests now explicitly cover:
+- Assisted-I unequal pair direct balance;
+- Newtonian-Y 80/100/100 -> balanced bank;
+- Newtonian-X four different available thrusts -> direct weakest-engine balance;
+- damage asymmetry is not reused as steering;
+- a dead slot does not force all surviving engines to zero;
+- TVC may reduce residual missing-slot torque without synthetic cancellation.
+
 ## 2026-10-18 — damaged-main feedback compile fix and validation rule
 
 - Fixed ShipPhysicalActuatorPlant.cpp feedback candidate accounting: instantaneousSlotThrust01 now receives state[i] rather than the whole EngineSlotState vector.

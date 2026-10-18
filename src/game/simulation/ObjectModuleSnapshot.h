@@ -34,6 +34,9 @@ struct ObjectModuleSnapshot
     // false maintains backward compatibility with old or non-engine modules.
     bool hasEngineThermalState = false;
     float engineTemperatureK = 0.0f;
+    float engineCoolantTemperatureK = 0.0f;
+    float engineImpactShock01 = 0.0f;
+    float engineImpactShockSecondsRemaining = 0.0f;
     float emitterIntactArea01 = 1.0f;
     float emitterMicrocrack01 = 0.0f;
     float emitterLaserDamage01 = 0.0f;

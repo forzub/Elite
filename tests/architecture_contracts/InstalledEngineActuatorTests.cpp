@@ -154,7 +154,9 @@ void mountedAllocatorUsesEngineForceNotSlotFractions()
     mounted[1].passport = &stronger;
     damages[0].accumulated.impact01 = 0.0;
     slots[0].thrust01 = 1.0;
-    const auto mixed = run(desired);
+    // Ask for the MIXED pair's full 2.5-engine rated force; the public
+    // control law will normally cap such demand to the type-derived envelope.
+    const auto mixed = run({0.0, 0.0, -91.93734375});
     require(mixed.valid &&
             near(mixed.deliveredThrust01[1], 2.0/3.0, 0.001) &&
             near(mixed.deliveredThrust01[0], 1.0, 0.001),

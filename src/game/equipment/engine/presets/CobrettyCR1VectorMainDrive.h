@@ -17,8 +17,12 @@ namespace game::equipment::engine::presets
     e.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     e.structureMaterialId = "elite.material.engine.tial-ht.v1";
     e.nominalThrustNewtons = 9561483.75;           // 9.56 MN per engine
-    e.nominalGimbalRangeRad = 0.122173048;        // 7 degrees
-    e.nominalGimbalRateRadPerSec = 0.139626340;  // 8 deg/s
+    // Game-universe TVC: field steering is effectively instantaneous.
+    // A deliberately generous angle lets the EXISTING Assisted law retain
+    // its 7.5 g lateral response without fabricating a separate side force.
+    // Newtonian installs continue using their smaller ShipParams TVC policy.
+    e.nominalGimbalRangeRad = 1.3089969389957472; // 75 degrees
+    e.nominalGimbalRateRadPerSec = 1000.0; // not simulated as servo motion
 
     e.nominalElectricalPowerMW = 4850.0; // Rated input; not F*v
     e.nominalEfficiency01 = 0.9855;

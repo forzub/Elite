@@ -277,7 +277,9 @@ inline void projectThrustCone(
                 lipschitz += weights[k]*m[i].columns[j][k]*
                              m[i].columns[j][k];
     double momentum=1.0;
-    for (int pass=0;pass<240;++pass)
+    // 96 rounds suffice for the nominal Cobra 6-DOF envelope without
+    // simulating nozzle kinematics; avoids expensive 240-pass NPC loops.
+    for (int pass=0;pass<96;++pass)
     {
         std::array<double,6> residual {};
         for (std::size_t k=0;k<6;++k) residual[k]=-target[k];

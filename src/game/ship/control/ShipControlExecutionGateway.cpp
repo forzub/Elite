@@ -6,6 +6,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
+#include "src/game/ship/plant/ShipEngineControlMatrix.h"
 
 namespace game::ship::control
 {
@@ -275,6 +276,86 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         static_cast<double>(control.rollInput)
     );
 
+    if (mountedEngines &&
+        game::ship::plant::familyOf(model) ==
+            game::ship::plant::PhysicalControlFamily::Assisted)
+    {
+        // All Assisted main-engine demands, including keypad vectoring and
+        // automatic stabilization, enter ONE force/torque matrix. There is
+        // no extra synthetic lateral acceleration or free pitch/yaw/roll.
+        const glm::dvec3 requestedAllWorld =
+            requestedMainWorld +
+            motion.assistedStabilizationAccelerationMps2;
+        game::ship::plant::EngineMatrixDemand demand;
+        demand.accelerationBodyMps2 = {
+            glm::dot(requestedAllWorld,right),
+            glm::dot(requestedAllWorld,up),
+            -glm::dot(requestedAllWorld,forward)
+        };
+        demand.angularAccelerationBodyRadPerSec2 =
+            motion.requestedMainAngularAccelerationBodyRadPerSec2;
+        demand.elapsedSeconds = static_cast<double>(dt);
+        demand.tick = control.controlTick;
+        const auto& oldTelemetry = motion.engineTelemetry;
+        for (std::size_t i=0;i<oldTelemetry.count &&
+             i<demand.previousYawRad.size();++i)
+        {
+            demand.previousYawRad[i] = oldTelemetry.nozzleYawRad[i];
+            demand.previousPitchRad[i] = oldTelemetry.nozzlePitchRad[i];
+        }
+        const auto actual =
+            game::ship::plant::executeEngineControlMatrix(
+                model,*mountedEngines,capabilities,demand
+            );
+        motion.engineTelemetry.reset(control.controlTick);
+        if (!actual.valid)
+            return path;
+
+        auto& telemetry = motion.engineTelemetry;
+        telemetry.valid = true;
+        telemetry.count = static_cast<std::uint8_t>(actual.count);
+        motion.mainEngineDeliveredThrust01.fill(0.0);
+        motion.mainEngineReportedSlotCount=actual.count;
+        for (std::size_t i=0;i<actual.count;++i)
+        {
+            const auto& e=actual.engines[i];
+            telemetry.thrust01[i] = e.deliveredThrust01;
+            telemetry.available01[i] = e.availableThrust01;
+            telemetry.nozzleYawRad[i] = e.nozzleYawRad;
+            telemetry.nozzlePitchRad[i] = e.nozzlePitchRad;
+            telemetry.forceBodyNewtons[i] = e.forceBodyNewtons;
+            telemetry.electricalMW[i] = e.electricalMW;
+            telemetry.wasteHeatMW[i] = e.heatMW;
+            motion.mainEngineDeliveredThrust01[i] = e.deliveredThrust01;
+        }
+        motion.mainEngineAccelerationMps2 =
+            right*actual.accelerationBodyMps2.x +
+            up*actual.accelerationBodyMps2.y -
+            forward*actual.accelerationBodyMps2.z;
+        motion.assistedStabilizationAccelerationMps2 = {};
+        motion.engineAccelerationMps2 =
+            motion.mainEngineAccelerationMps2 +
+            motion.manoeuvreAccelerationMps2;
+        motion.mainPropulsionTorqueBodyNm=actual.torqueBodyNm;
+        motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
+            actual.angularAccelerationBodyRadPerSec2;
+        motion.mainTrimLoad01=0.0;
+        motion.mainTrimUsableScale01=1.0;
+        transform.pitchRate += static_cast<float>(
+            actual.angularAccelerationBodyRadPerSec2.x * dt
+        );
+        transform.yawRate += static_cast<float>(
+            actual.angularAccelerationBodyRadPerSec2.y * dt
+        );
+        transform.rollRate += static_cast<float>(
+            actual.angularAccelerationBodyRadPerSec2.z * dt
+        );
+        return path;
+    }
+
+    // Diagnostic layouts and Newtonian/RCS legacy control keep their
+    // existing isolated executor until independent RCS actuator mapping.
+    motion.engineTelemetry.reset(control.controlTick);
     const auto trim =
         game::ship::plant::evaluateMainPropulsionFeedbackTrim(
             model,

@@ -405,6 +405,32 @@ bool ObjectModuleRuntime::addEquipmentDamage(
     return true;
 }
 
+bool ObjectModuleRuntime::exposeEngineEmitter(
+    const std::string& moduleId,
+    const game::equipment::engine::EngineUnitDescriptor& passport,
+    const game::physics::materials::SurfaceExposure& hit
+)
+{
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+    auto& module = m_modules[index];
+    if (module.state != ObjectModuleRuntimeState::Attached ||
+        module.health <= 0.0f)
+        return false;
+
+    const auto before = module.engineOperating.emitterSurface;
+    const auto after = game::equipment::engine::applyEngineEmitterExposure(
+        passport, before, hit
+    );
+    if (after.intactArea01 == before.intactArea01 &&
+        after.microcrack01 == before.microcrack01)
+        return false;
+    module.engineOperating.emitterSurface = after;
+    ++m_revision; // available physical thrust must be rebuilt
+    return true;
+}
+
 bool ObjectModuleRuntime::advanceEngineOperatingLife(
     const std::string& moduleId,
     const game::equipment::engine::EngineUnitDescriptor& passport,

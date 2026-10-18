@@ -265,7 +265,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // ─────────────────────────
         desc.cooling.radiatorArea       = 380.0;    // Площадь радиаторов (м²)	Из ТТХ - 380 м²
         desc.cooling.panelCount         = 40;       // количество панелей (160)
-        desc.cooling.emissivity         = 1.2;     // Коэф. черноты	Карбид кремния
+        desc.cooling.emissivity         = 0.9;     // Материальная излучательная способность; игровой x2.5 — общий закон
         desc.cooling.maxTransferPower   = 180,0;    // Макс. теплоперенос (МВт)
         desc.cooling.nominalPower       = 2.0;      // Мощность насосов номинал (МВт)
         desc.cooling.peakPower          = 4.5;      // Мощность насосов пик (МВт)
@@ -1052,37 +1052,47 @@ desc.modules =
         static_cast<double>(
             desc.physics.mainGimbalRateRadPerSec
         );
-    // Fictional field-coupling drive: no expelled reaction mass. Its
-    // external momentum sink is an explicit science-fiction assumption.
-    // At 500 m/s one 9.561 MN engine corresponds to 4.78 GW of
-    // design-point field work. At 99.8% rated efficiency it draws 4.79 GW
-    // and rejects 9.58 MW heat. ONE active pair rejects 19.16 MW.
-    // The opposite bank is not engaged during ordinary longitudinal burn.
-    // Reactor and cooling are ideal/unlimited for now; this is a DEMAND
-    // passport and must not be enforced by the old PowerBus.
+    // Fictional field coupling: no reaction mass expelled. Actual
+    // acceleration uses force and ship mass; electric demand is separately
+    // authored for this engine type (never inferred from 500 m/s).
+    // Only one 2-engine longitudinal bank is firing in normal flight.
     engine.propulsionPrinciple =
         game::equipment::engine::PropulsionPrinciple::FieldCoupling;
-    engine.designReferenceSpeedMps =
-        static_cast<double>(desc.physics.maxCombatSpeed);
-    engine.nominalEfficiency01 = 0.998;
+    engine.nominalElectricalPowerMW = 4850.0;
+    engine.nominalEfficiency01 = 0.9855;
     engine.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
-    engine.nominalElectricalPowerMW =
-        engine.nominalThrustNewtons *
-        engine.designReferenceSpeedMps /
-        (engine.nominalEfficiency01 * 1.0e6);
-    // Thermal design budget: physical 380 m^2 radiator surface, epsilon
-    // 0.9, 1050 K coolant/radiator design temperature => 23.57 MW
-    // radiation (Stefan-Boltzmann), > 19.16 MW from one full-power pair.
-    // Existing cooling simulation remains ideal/unlimited, not rewired.
+
+    // Approximate Cobra dimensions 30 x 25 x 6 m, aft engine outer diameter
+    // 4.5 m, exhaust aperture 2.5 m: one-sided annular emitter ~11 m².
+    // Both forward and aft drives share this engine TYPE for now.
+    // Geometry/material differ by engine type, universal thermal laws do not.
+    engine.thermalEmitter.outerDiameterM = 4.5;
+    engine.thermalEmitter.apertureDiameterM = 2.5;
+    engine.thermalEmitter.surfaceTemperatureK = 2500.0;
+    engine.thermalEmitter.emissivity01 = 0.9;
+    engine.thermalEmitter.viewFactor01 = 0.90;
+
+    // Shared 380 m² panels at 1050 K, epsilon=0.9 emit ~58.93 MW with
+    // universal radiation multiplier 2.5. One hot ring emits ~49.32 MW.
+    // Two full-power engines reject 140.65 MW combined: ~10.7% headroom
+    // relative to 157.57 MW total radiation capacity.
+    // Reactor is ideal for this phase; no restriction by old PowerBus.
     engine.nominalCoolantTemperatureK = 1050.0;
     engine.nominalOperatingTemperatureK = 1200.0;
     engine.safeOperatingTemperatureK = 1300.0;
     engine.thermalCapacityMJperK = 12.0;
+
+    // The emitter radiates part of the rated waste heat directly; only the
+    // balance flows into the bulk housing and shared thermal coolant.
     const double nominalEngineWasteHeatMW =
         engine.nominalElectricalPowerMW *
         (1.0 - engine.nominalEfficiency01);
+    const double emitterHeatMW = std::min(
+        nominalEngineWasteHeatMW,
+        game::equipment::engine::ratedThermalEmitterPowerMW(engine)
+    );
     engine.thermalConductanceMWperK =
-        nominalEngineWasteHeatMW /
+        (nominalEngineWasteHeatMW - emitterHeatMW) /
         (engine.nominalOperatingTemperatureK -
          engine.nominalCoolantTemperatureK);
     // 100 K above the safe threshold adds 5% thermal damage per hour.

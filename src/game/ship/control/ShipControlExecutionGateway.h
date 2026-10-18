@@ -9,6 +9,7 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 #include "src/game/equipment/engine/Engine.h"
+#include "src/game/ship/plant/ShipPresetEngineManeuvers.h"
 #include "src/world/WorldParams.h"
 
 namespace game::ship::control
@@ -82,7 +83,8 @@ public:
         const std::vector<game::ship::plant::EngineSlotState>& slotState,
         float dt,
         const std::vector<game::equipment::engine::MountedEngine>* mountedEngines =
-            nullptr
+            nullptr,
+        game::ship::plant::AssistedManeuverPrograms* maneuverPrograms = nullptr
     );
 
     // Advance HubTactical translation from the actuation state produced above.

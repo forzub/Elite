@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -403,6 +404,10 @@ inline void applyMountedEngineAxialAuthority(
 
     double aftThrustNewtons = 0.0;
     double foreThrustNewtons = 0.0;
+    double weakestAftNewtons = std::numeric_limits<double>::infinity();
+    double weakestForeNewtons = std::numeric_limits<double>::infinity();
+    std::size_t survivingAft = 0;
+    std::size_t survivingFore = 0;
     bool foundAft = false;
     bool foundFore = false;
     for (std::size_t i = 0; i < topology.size(); ++i)
@@ -423,13 +428,38 @@ inline void applyMountedEngineAxialAuthority(
         {
             aftThrustNewtons += availableN;
             foundAft = true;
+            if (availableN > 1.0e-12)
+            {
+                ++survivingAft;
+                weakestAftNewtons = std::min(
+                    weakestAftNewtons, availableN
+                );
+            }
         }
         else if (role == plant::EngineSlotRole::ForeMain)
         {
             foreThrustNewtons += availableN;
             foundFore = true;
+            if (availableN > 1.0e-12)
+            {
+                ++survivingFore;
+                weakestForeNewtons = std::min(
+                    weakestForeNewtons, availableN
+                );
+            }
         }
     }
+
+    // The physical main allocator balances every surviving motor down to
+    // the weakest rated available FORCE in its bank. Planner envelopes must
+    // use that same sum of balanced forces, otherwise autopilot over-promises
+    // acceleration in asymmetric damage or mixed motor configurations.
+    if (survivingAft > 1)
+        aftThrustNewtons =
+            weakestAftNewtons * static_cast<double>(survivingAft);
+    if (survivingFore > 1)
+        foreThrustNewtons =
+            weakestForeNewtons * static_cast<double>(survivingFore);
 
     const double massKg =
         std::max(1.0, capability.effectivePhysics.massKg);

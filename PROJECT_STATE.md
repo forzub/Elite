@@ -1,3 +1,9 @@
+## 2026-10-18 — hub tactical prediction contract fixture corrected
+
+User post-cleanup architecture run: 41/42 tests passed; the only failure was ArchitectureContractTests.cpp:415 ("hub tactical client prediction advances local motion"). The test expected ballistic p += v*dt but omitted localControlLaw, thereby using the current default Assisted flight law, which actively corrects velocity during neutral pilot input. This is a fixture mismatch, not grounds to alter production physics.
+
+ArchitectureContractTests.cpp now explicitly sets LocalFlightControlLaw::Newtonian in that ballistic test. The spatial/frame assertions remain unchanged. Compilation/rerun of this correction is pending user validation; do not claim a green test yet.
+
 ## 2026-10-18 — fake slot-level damage harness removed
 
 Direct user rule: a test that exists only for implementation convenience and bypasses the behavior it claims to validate is deleted rather than kept as an alternate acceptance path.

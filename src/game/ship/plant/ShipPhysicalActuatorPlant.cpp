@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 
 namespace game::ship::plant
 {
@@ -411,7 +412,9 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     std::size_t activeMainCount = 0;
     double commonVectoring01 = 1.0;
     bool hasVectoringMain = false;
-    double weakestSurvivingInstantaneousThrust01 = 1.0;
+    // Mounted mode uses Newtons (millions), not normalized slot fractions.
+    double weakestSurvivingInstantaneousThrust01 =
+        mountedEngines ? std::numeric_limits<double>::infinity() : 1.0;
     bool hasSurvivingMain = false;
 
     for (std::size_t i = 0; i < slots.size(); ++i)

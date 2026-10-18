@@ -1,3 +1,40 @@
+## 2026-10-18 — FINAL ENGINE-MATERIAL AND THERMAL-REPLICATION INTEGRATION CHECKPOINT (SOURCE COMPLETE, NATIVE TESTS PENDING)
+
+**Branch:** `feature/propulsion-authority-matrix-2026-10-16`. Code changes are committed to THIS feature branch, NOT merged into `main`. This section is authoritative over older historical notes below.
+
+### Agreed engine/material boundaries
+- One and the same fictional **Talon Ti-Al HT titanium-aluminide-based heat-resistant engine alloy** for BOTH the thrust housing and the TVC/nozzle gimbal mechanism. Stable catalog key: `elite.material.engine.tial-ht.v1`. Universal `MaterialPassport` includes stable mesh/commodity IDs, density 4550 kg/m³, cp 720 J/kg/K, conductivity 17 W/m/K, emissivity 0.68, laser absorption 0.43; nominal 1200 K, onset of weakening 1450 K, destruction 1850 K, gameplay laser/kinetic surface failure fluence 9/9 MJ/m². **FICTIONAL prototype/game balancing, not real Ti alloy certification.**
+- Catalog now has THREE material passports: C/SiC radiator, HfC/C replace-only emitter, shared Ti-Al engine housing/TVC. `EngineUnitDescriptor::structureMaterialId` is the one canonical material for both housing and TVC, authored once for each Cobra main engine via `EliteCobraMk1.cpp`. Existing mechanical damage-to-thrust/TVC functions are deliberately NOT rewritten; universal catalog is identity/physical-property authority for future hit conversion.
+- Cobra nominal per-engine **consumed** electric input still **4850 MW** (active engine pair 9700 MW), nominal useful-field budget 4779.675 MW, generated waste heat 70.325 MW per active full-power engine at eta 98.55%. User previously supplied 4790 MW input in a separate table; do not silently replace passport rating or retune thermal budget until resolved.
+- Per installed engine still has independent: thrust-function cumulative five causes, TVC-function degradation and replacement-only hot annulus `EngineEmitterOperatingState`, with its own five causes (Laser/Impact/Wear affecting surface heat rejection; Thermal/Radiation presently inert for emitter), surface integrity, and equivalent run-hours. Annulus normal replacement recommendation 8000 equivalent full-thrust hours, exhausted by 12000, no repair, only explicit replacement. If damaged, engine warms at original thrust then protective cap gradually activates at 1250–1300 K; over-temperature accumulates main-engine Thermal damage. Reactor/shared cooling intentionally ideal in this phase.
+
+### Closed replication/control parity gap
+- `src/game/simulation/ObjectModuleSnapshot.h`: now carries `hasEngineThermalState`, housing `engineTemperatureK`, emitter intact-area, microcracks, ALL FIVE emitter damage counters, emitter equivalent operating hours. Static material geometry/passports remain local to both endpoints; older/non-engine rows default safely to untouched thermal condition.
+- New single canonical, testable inline snapshot builder `src/game/simulation/ObjectModuleSnapshotBuilder.h`. Both ship and static-object graph generation in `GameSimulation.cpp` call it; removed duplicated packet packing. Unit test uses this ACTUAL producer.
+- `ShipCapabilityBuilder.h::slotFromSnapshot` now reconstructs `EngineOperatingState` and calls **the same** `safeEmitterThrustFraction01` as `slotFromModule`. Thus remote/server physically available thrust and acceleration should match for healthy, damaged, hot, and replaced emitters, without any change to Assisted or Newtonian control laws.
+- `WireDataSchema.h` serializes the new thermal/annulus fields. `SimulationSnapshotWireSchemaVersion` bumped **14 -> 15** in `WireDataCodec.h`; static schema checker updated. This intentionally prevents old-version decoders from interpreting a new layout; full client and server must be built from matching revision.
+- **Important publication fix**: prior ship graph publication only sent module rows on initial/structural graph changes, so thermal changes would have remained stale remotely. `GameSimulation.h/.cpp` now tracks `m_lastPublishedShipModuleRevision` for each detailed ship. When that revision changes, publishes **module rows only**, not heavy structural links, assembly modules, or debug hit geometry, and retains existing initial/structural redundancy. Resets revision cache when demoted. Uses const moduleRuntime inspections to avoid an unintentional `modules()` mutable-access revision increment. Compatible with runtime 1%-point temperature/thrust governor and wear revision batching.
+- No direct changes to pilot/autopilot commands, vehicle stabilization, Assisted/Newtonian law stacks or allocator internals; only available physical engine capability can differ on damage/overheat. Healthy baseline should remain the same. **Runtime behavior not yet verified in game.**
+
+### Tests/verification
+- Extended `UniverseMaterialEngineThermalTests.cpp` to check the 3-material catalog and titanium passport limits, and retained emitter radiation/wear/thermal tests.
+- Extended `EquipmentDamageFailurePipelineTests.cpp` with `testLiveAndReplicatedEngineCapabilityRemainIdentical`, exercising healthy, laser-hit but cool, damaged/hot, replacement, and passive radiation/thermal emitter counters using canonical snapshot producer and server/client control projection.
+- Extended `WireDataPlaneContractTests.cpp` to encode/decode a full object-module emitter state with all five causes + thermal readings + lifetime.
+- Extended `check_replication_snapshot_boundary.py` with guards for module revision-triggered sparse publication and the canonical emitter DTO. `check_wire_data_schema.py` now asserts simulation schema v15.
+- Conducted **GitHub-source cross-file static sanity audit: 10/10 PASS** on 2026-10-18, validating stable IDs, material assignment, DTO producer, ordered schema, consumer, publication seam, schema version and test inclusion.
+- **NO native MSYS2/Ninja compilation, CTest or in-game Assisted/Newtonian acceptance executed in this environment; do NOT claim test PASS or merge readiness.** Native suggested commands from repo root:
+  `cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja`
+  `cmake --build build/tests/architecture_contracts --target universe_material_engine_thermal_tests engine_unit_damage_model_tests equipment_damage_failure_pipeline_tests wire_data_plane_contract_tests`
+  `ctest --test-dir build/tests/architecture_contracts -R "universe_material_engine_thermal|engine_unit_damage_model|equipment_damage_failure_pipeline|wire_data_plane_contracts" --output-on-failure`
+  Run separate `tests/architecture_contracts/check_replication_snapshot_boundary.py`, `check_replication_static_definitions.py`, `check_wire_data_schema.py` or entire architecture regression, then real Assisted/Newtonian game control tests. User's Windows MSYS2 g++, CMake and Ninja setup is the expected runtime environment.
+
+### Explicitly deferred—not silently “complete”
+- Material properties are now in catalog, but live weapon damage `DamageEvent.energy` lacks converted MJ units/precise annulus hit-volume identity; do not connect live hits until the user's separate damage-mechanism phase. Live in-game annulus replacement UI/economy not implemented yet.
+- Physics budget and service curves are prototype gameplay values pending balance acceptance; no claim of measured real Ti-Al material capability. Shared coolant/reactor are still ideal; the unrelated old cooling parameter mismatch remains deferred.
+- Engine type/group tests, native runtime and network full roundtrip need proof; until then retain current feature branch, `main` unchanged.
+
+---
+
 ## 2026-10-18 — hot-annulus replace-only lifetime and dramatic but cheap engine overheating
 
 - **Scope:** engine internals only; reactor/external cooling stay ideal; no new weapon hit volume or combat routing. Standard five damage channels for all equipment: Laser, Impact, Thermal, Radiation, Wear. Hot emitter has its OWN five-channel history; only Laser/Impact (lost emitting area) and Wear (age-dependent surface-efficiency reduction) affect routine emitter performance; thermal/radiation channels are retained but have zero ordinary functional influence.

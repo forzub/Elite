@@ -65,64 +65,6 @@ struct AllocationEvaluation
     double feedbackThrustScale01 = 1.0;
 };
 
-glm::dvec3 harmfulAngularAcceleration(
-    const glm::dvec3& alpha,
-    const glm::dvec3& attitudeIntent01
-) noexcept
-{
-    glm::dvec3 out(0.0);
-    for (int axis = 0; axis < 3; ++axis)
-    {
-        const double intent =
-            std::clamp(attitudeIntent01[axis], -1.0, 1.0);
-
-        // With no requested turn, every parasitic component is harmful.
-        // During a requested turn, only reaction that opposes that turn is
-        // trimmed. Helpful reaction is left for the ordinary attitude feedback
-        // loop to account for on the next control sample.
-        if (std::abs(intent) <= 1.0e-3 ||
-            alpha[axis] * intent < 0.0)
-        {
-            out[axis] = alpha[axis];
-        }
-    }
-    return out;
-}
-
-double rawHarmfulMetric(
-    const MainPropulsionReaction& reaction,
-    const glm::dvec3& attitudeIntent01
-) noexcept
-{
-    const glm::dvec3 harmful =
-        harmfulAngularAcceleration(
-            reaction.angularAccelerationBodyRadPerSec2,
-            attitudeIntent01
-        );
-    return glm::dot(harmful, harmful);
-}
-
-double normalizedHarmfulMetric(
-    const AllocationEvaluation& allocation,
-    const glm::dvec3& attitudeIntent01
-) noexcept
-{
-    const double raw =
-        rawHarmfulMetric(
-            allocation.reaction,
-            attitudeIntent01
-        );
-    const double acceleration =
-        glm::length(allocation.accelerationBodyMps2);
-
-    // Uniformly shutting down an already-unbalanced bank is not compensation:
-    // it reduces useful force and parasitic torque in the same proportion.
-    // Normalize by delivered main acceleration so throttle feedback is accepted
-    // only when the maneuver becomes cleaner, not merely weaker.
-    return raw /
-        std::max(acceleration * acceleration, 1.0e-12);
-}
-
 glm::dvec3 applicationPointBodyMeters(
     const EngineSlotDefinition& slot,
     const ShipParams& physics
@@ -407,6 +349,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     std::size_t activeMainCount = 0;
     double commonVectoring01 = 1.0;
     bool hasVectoringMain = false;
+    double weakestSurvivingInstantaneousThrust01 = 1.0;
+    bool hasSurvivingMain = false;
 
     for (std::size_t i = 0; i < slots.size(); ++i)
     {
@@ -419,6 +363,12 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
             continue;
 
         ++activeMainCount;
+        hasSurvivingMain = true;
+        weakestSurvivingInstantaneousThrust01 =
+            std::min(
+                weakestSurvivingInstantaneousThrust01,
+                instantaneous
+            );
 
         if (slots[i].freedom == EngineSlotFreedom::VectoringMain)
         {
@@ -440,6 +390,37 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
         }
     }
 
+    // Main-bank balancing is direct, not iterative. The slot table already
+    // tells us each engine's instantaneous available thrust, including damage
+    // and >70% intermittent-output dips. Stronger surviving engines are cut
+    // straight to the weakest surviving level in one O(N) pass.
+    //
+    // A completely failed slot is excluded from the minimum: otherwise one
+    // dead engine would shut the whole bank down. Missing-slot geometry can
+    // leave an unavoidable residual moment; the following TVC trim attempts
+    // to reduce it and any remainder stays physical.
+    if (activeMainCount > 1 && hasSurvivingMain)
+    {
+        for (std::size_t i = 0; i < slots.size(); ++i)
+        {
+            if (slots[i].role != activeRole)
+                continue;
+
+            const double instantaneous =
+                instantaneousSlotThrust01(state[i], i, controlTick);
+            if (instantaneous <= Epsilon)
+                continue;
+
+            throttleScale01[i] =
+                std::clamp(
+                    weakestSurvivingInstantaneousThrust01 /
+                        instantaneous,
+                    0.0,
+                    1.0
+                );
+        }
+    }
+
     auto current =
         evaluateTrimmedAllocation(
             model,
@@ -453,105 +434,6 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
         );
     if (!current.valid)
         return {};
-
-    constexpr double AngularMetricStop = 1.0e-10;
-
-    // Cheap coordinate descent: at most eight 10% cuts, and only when more
-    // than one main engine is available to redistribute. Healthy symmetric
-    // banks exit immediately without entering this loop.
-    if (activeMainCount > 1)
-    {
-        for (int iteration = 0; iteration < 8; ++iteration)
-        {
-            const double currentRawMetric =
-                rawHarmfulMetric(
-                    current.reaction,
-                    attitudeIntent01
-                );
-            if (currentRawMetric <= AngularMetricStop)
-                break;
-
-            const double currentMetric =
-                normalizedHarmfulMetric(
-                    current,
-                    attitudeIntent01
-                );
-
-            std::size_t bestSlot = slots.size();
-            double bestQuality = 0.0;
-            AllocationEvaluation bestCandidate;
-
-            for (std::size_t i = 0; i < slots.size(); ++i)
-            {
-                if (slots[i].role != activeRole ||
-                    throttleScale01[i] <= Epsilon)
-                {
-                    continue;
-                }
-
-                const double oldScale = throttleScale01[i];
-                const double newScale =
-                    std::max(0.0, oldScale - 0.10);
-                if (newScale >= oldScale - Epsilon)
-                    continue;
-
-                throttleScale01[i] = newScale;
-                const auto candidate =
-                    evaluateTrimmedAllocation(
-                        model,
-                        state,
-                        physics,
-                        requestedAccelerationBodyMps2,
-                        throttleScale01,
-                        0.0,
-                        0.0,
-                        controlTick
-                    );
-                throttleScale01[i] = oldScale;
-
-                if (!candidate.valid)
-                    continue;
-
-                const double candidateMetric =
-                    normalizedHarmfulMetric(
-                        candidate,
-                        attitudeIntent01
-                    );
-                const double improvement =
-                    currentMetric - candidateMetric;
-                if (improvement <= 1.0e-14)
-                    continue;
-
-                const double lostThrust =
-                    instantaneousSlotThrust01(
-                        state[i],
-                        i,
-                        controlTick
-                    ) * (oldScale - newScale);
-
-                const double quality =
-                    improvement /
-                    std::max(lostThrust, 1.0e-9);
-
-                if (quality > bestQuality)
-                {
-                    bestQuality = quality;
-                    bestSlot = i;
-                    bestCandidate = candidate;
-                }
-            }
-
-            if (bestSlot == slots.size())
-                break;
-
-            throttleScale01[bestSlot] =
-                std::max(
-                    0.0,
-                    throttleScale01[bestSlot] - 0.10
-                );
-            current = bestCandidate;
-        }
-    }
 
     // One tiny common-TVC feedback stage after throttle balancing. It is
     // deliberately conservative and bounded to two degrees. If any active
@@ -582,19 +464,25 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
 
     for (int iteration = 0; iteration < 2; ++iteration)
     {
-        const double currentRawMetric =
-            rawHarmfulMetric(
-                current.reaction,
-                attitudeIntent01
-            );
-        if (currentRawMetric <= AngularMetricStop)
-            break;
+        const glm::dvec3 currentAlpha =
+            current.reaction.angularAccelerationBodyRadPerSec2;
+
+        glm::dvec3 harmfulCurrent(0.0);
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const double intent =
+                std::clamp(attitudeIntent01[axis], -1.0, 1.0);
+            if (std::abs(intent) <= 1.0e-3 ||
+                currentAlpha[axis] * intent < 0.0)
+            {
+                harmfulCurrent[axis] = currentAlpha[axis];
+            }
+        }
 
         const double currentMetric =
-            normalizedHarmfulMetric(
-                current,
-                attitudeIntent01
-            );
+            glm::dot(harmfulCurrent, harmfulCurrent);
+        if (currentMetric <= AngularMetricStop)
+            break;
 
         AllocationEvaluation bestCandidate = current;
         double bestMetric = currentMetric;
@@ -618,11 +506,21 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
                 if (!candidate.valid)
                     return;
 
+                const glm::dvec3 candidateAlpha =
+                    candidate.reaction.angularAccelerationBodyRadPerSec2;
+                glm::dvec3 harmfulCandidate(0.0);
+                for (int axis = 0; axis < 3; ++axis)
+                {
+                    const double intent =
+                        std::clamp(attitudeIntent01[axis], -1.0, 1.0);
+                    if (std::abs(intent) <= 1.0e-3 ||
+                        candidateAlpha[axis] * intent < 0.0)
+                    {
+                        harmfulCandidate[axis] = candidateAlpha[axis];
+                    }
+                }
                 const double metric =
-                    normalizedHarmfulMetric(
-                        candidate,
-                        attitudeIntent01
-                    );
+                    glm::dot(harmfulCandidate, harmfulCandidate);
 
                 // Do not bend the requested force direction for a negligible
                 // improvement. Five percent is enough to keep this feedback

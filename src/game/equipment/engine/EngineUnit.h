@@ -37,6 +37,24 @@ struct EngineUnitDescriptor
     // speed. A damaged engine produces less thrust from the same rated input.
     double nominalEfficiency01 = 1.0;
 
+    // Universal engine-only life passport. Thermal/radiation/duration inputs
+    // are physical rates converted into the same direct damage percentages.
+    // The ship's reactor and cooling are IDEAL during this phase, but an
+    // engine retains finite thermal inertia/conductance to its coolant.
+    double nominalCoolantTemperatureK = 1050.0;
+    double nominalOperatingTemperatureK = 1200.0;
+    double safeOperatingTemperatureK = 1300.0;
+    double thermalCapacityMJperK = 12.0;
+    double thermalConductanceMWperK = 0.0;
+    double overheatReferenceExcessK = 100.0;
+    double thermalDamagePerHourAtReferenceExcess01 = 0.05;
+
+    double overhaulEquivalentHours = 30000.0;
+    double endOfLifeEquivalentHours = 50000.0;
+    double damageAtOverhaul01 = 0.20;
+    double damageAtEndOfLife01 = 0.95;
+    double wearThrottleExponent = 1.5;
+
     double nominalGimbalRangeRad = 0.0;
     double nominalGimbalRateRadPerSec = 0.0;
 
@@ -261,5 +279,130 @@ inline double positiveFiniteOr(
         );
     return std::max(0.0, inputMW - usefulMW);
 }
+
+// Operating history belongs to each INSTALLED engine module, not the
+// ShipDescriptor and not a propulsion slot. These values are independent
+// from accumulated functional damage, which remains in EquipmentDamageState.
+struct EngineOperatingState
+{
+    double temperatureK = 0.0;
+    double equivalentOperatingHours = 0.0;
+};
+
+struct EngineLifeStep
+{
+    EngineOperatingState next;
+    double wearDamageIncrement01 = 0.0;
+    double thermalDamageIncrement01 = 0.0;
+    double dissipatedHeatMW = 0.0;
+};
+
+inline double engineWearDamageAtHours(
+    const EngineUnitDescriptor& descriptor,
+    double hours
+) noexcept
+{
+    if (!std::isfinite(hours) || hours <= 0.0)
+        return 0.0;
+
+    const double overhaul =
+        std::max(1.0, descriptor.overhaulEquivalentHours);
+    const double end =
+        std::max(overhaul + 1.0, descriptor.endOfLifeEquivalentHours);
+    const double atOverhaul =
+        std::clamp(descriptor.damageAtOverhaul01, 0.0, 1.0);
+    const double atEnd =
+        std::clamp(descriptor.damageAtEndOfLife01, atOverhaul, 1.0);
+
+    if (hours <= overhaul)
+        return atOverhaul * (hours / overhaul);
+
+    const double progress =
+        std::clamp((hours - overhaul) / (end - overhaul), 0.0, 1.0);
+    return atOverhaul +
+        (atEnd - atOverhaul) * progress * progress;
+}
+
+inline EngineLifeStep advanceEngineOperatingState(
+    const EngineUnitDescriptor& descriptor,
+    const EngineUnitEffectiveState& current,
+    const EngineOperatingState& previous,
+    double deliveredNominalThrust01,
+    double deltaSeconds,
+    double coolantTemperatureK
+) noexcept
+{
+    EngineLifeStep step;
+    step.next = previous;
+
+    if (!std::isfinite(deltaSeconds) || deltaSeconds <= 0.0)
+        return step;
+
+    const double delivered = std::min(
+        std::clamp(deliveredNominalThrust01, 0.0, 1.0),
+        std::clamp(current.efficiencyAuthority01, 0.0, 1.0)
+    );
+    const double coolant =
+        std::isfinite(coolantTemperatureK) && coolantTemperatureK > 0.0
+            ? coolantTemperatureK
+            : descriptor.nominalCoolantTemperatureK;
+
+    // Wear is based on DELIVERED force: no time accumulation for a failed
+    // engine or for an installed but inactive fore/aft main engine.
+    const double equivalentDeltaHours =
+        (deltaSeconds / 3600.0) *
+        std::pow(delivered,
+                 std::max(0.0, descriptor.wearThrottleExponent));
+    const double beforeHours =
+        std::max(0.0, previous.equivalentOperatingHours);
+    step.next.equivalentOperatingHours =
+        beforeHours + equivalentDeltaHours;
+    step.wearDamageIncrement01 = std::max(
+        0.0,
+        engineWearDamageAtHours(
+            descriptor, step.next.equivalentOperatingHours
+        ) - engineWearDamageAtHours(descriptor, beforeHours)
+    );
+
+    const double heat =
+        generatedWasteHeatMW(descriptor, current, delivered);
+    step.dissipatedHeatMW = std::max(0.0, heat);
+
+    const double capacity =
+        std::max(1.0e-9, descriptor.thermalCapacityMJperK);
+    const double conductance =
+        std::max(1.0e-9, descriptor.thermalConductanceMWperK);
+    const double startT =
+        std::isfinite(previous.temperatureK) &&
+        previous.temperatureK > 0.0
+            ? previous.temperatureK
+            : coolant;
+    const double equilibriumT = coolant + heat / conductance;
+    const double decay =
+        std::exp(-conductance * deltaSeconds / capacity);
+    step.next.temperatureK =
+        equilibriumT + (startT - equilibriumT) * decay;
+
+    const auto heatDamageRate = [&](double temperatureK)
+    {
+        const double excess =
+            std::max(0.0,
+                temperatureK - descriptor.safeOperatingTemperatureK);
+        const double normalized =
+            excess / std::max(1.0, descriptor.overheatReferenceExcessK);
+        return std::max(
+            0.0,
+            descriptor.thermalDamagePerHourAtReferenceExcess01
+        ) * normalized * normalized;
+    };
+
+    // Trapezoidal integration: stable even at the coarser systems cadence.
+    step.thermalDamageIncrement01 =
+        (deltaSeconds / 3600.0) * 0.5 *
+        (heatDamageRate(startT) +
+         heatDamageRate(step.next.temperatureK));
+    return step;
+}
+
 
 } // namespace game::equipment::engine

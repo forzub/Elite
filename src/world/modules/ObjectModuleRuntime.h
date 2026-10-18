@@ -45,6 +45,13 @@ public:
         const game::physics::materials::SurfaceExposure& hit
     );
 
+    // Replace-only consumable: discard the old annulus, preserving engine
+    // housing temperature, thrust/TVC history and main-engine wear.
+    bool replaceEngineEmitter(
+        const std::string& moduleId,
+        const game::equipment::engine::EngineUnitDescriptor& passport
+    );
+
     // Advance a real installed engine using physical allocator telemetry.
     // Returns true ONLY if the five-channel functional damage changed.
     // Temperature and service-hours updates do not trigger rebuild of the

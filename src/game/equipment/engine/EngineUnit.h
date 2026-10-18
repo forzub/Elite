@@ -56,6 +56,11 @@ struct EngineUnitDescriptor
     PropulsionPrinciple propulsionPrinciple =
         PropulsionPrinciple::FieldCoupling;
 
+    // SAME material passport for the thrust housing and nozzle/TVC hardware.
+    // Material-specific impact/laser conversion is deliberately deferred;
+    // functional damage percentages and actuator laws stay unchanged.
+    std::string_view structureMaterialId {};
+
     double nominalThrustNewtons = 0.0;
 
     // INDEPENDENT rated input at full thrust, in MW. A field drive is a

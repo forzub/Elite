@@ -266,7 +266,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.cooling.radiatorArea       = 380.0;    // Площадь радиаторов (м²)	Из ТТХ - 380 м²
         desc.cooling.panelCount         = 40;       // количество панелей (160)
         desc.cooling.emissivity         = 0.9;     // Материальная излучательная способность; игровой x2.5 — общий закон
-        desc.cooling.maxTransferPower   = 180,0;    // Макс. теплоперенос (МВт)
+        desc.cooling.maxTransferPower   = 180.0;
+        desc.cooling.radiatorMaterialId = "elite.material.radiator.c-sic.v1";    // Макс. теплоперенос (МВт)
         desc.cooling.nominalPower       = 2.0;      // Мощность насосов номинал (МВт)
         desc.cooling.peakPower          = 4.5;      // Мощность насосов пик (МВт)
 
@@ -1071,6 +1072,9 @@ desc.modules =
     engine.thermalEmitter.surfaceTemperatureK = 2500.0;
     engine.thermalEmitter.emissivity01 = 0.9;
     engine.thermalEmitter.viewFactor01 = 0.90;
+    engine.thermalEmitter.materialId =
+        "elite.material.engine.hfc-c.v1";
+    engine.thermalEmitter.meshPartId = "engine_hot_emitter_annulus";
 
     // Shared 380 m² panels at 1050 K, epsilon=0.9 emit ~58.93 MW with
     // universal radiation multiplier 2.5. One hot ring emits ~49.32 MW.

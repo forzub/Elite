@@ -85,7 +85,8 @@ void ShipCore::init(
         descriptor.cooling.radiatorArea,    // 1600 м²
         descriptor.cooling.panelCount,      // 160 панелей
         descriptor.cooling.emissivity,      // 0.85
-        descriptor.cooling.maxTransferPower // 90 МВт
+        descriptor.cooling.maxTransferPower, // legacy coolant boundary (deferred)
+        descriptor.cooling.radiatorMaterialId
     );
 
     m_powerBus = game::ship::core::PowerBus(m_reactor);

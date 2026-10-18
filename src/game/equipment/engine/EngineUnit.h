@@ -36,6 +36,21 @@ struct EngineThermalEmitterDescriptor
     // resolve emissivity and damage resistance from the universe catalog.
     std::string_view materialId {};
     std::string_view meshPartId {};
+
+    // The hot annulus is a replace-only consumable, NOT a repairable engine
+    // subsystem. 8k hours is the replacement recommendation; continued use
+    // wears it out at 12k equivalent full-power hours (gameplay values).
+    double replaceAfterEquivalentHours = 8000.0;
+    double exhaustedAfterEquivalentHours = 12000.0;
+    double wearAtReplacement01 = 0.25;
+    enum class ServicePolicy { ReplaceOnly };
+    ServicePolicy servicePolicy = ServicePolicy::ReplaceOnly;
+
+    // Damage weighting of the FIVE common equipment causes. Heat/radiation
+    // are recorded as history but do not affect this material's service life.
+    game::equipment::EquipmentDamageSensitivity wearInfluence {
+        1.0, 1.0, 0.0, 0.0, 1.0
+    };
 };
 
 struct EngineUnitDescriptor
@@ -350,6 +365,13 @@ struct EngineOperatingState
     // Third independently damageable functional component: the hot annulus.
     // Surface holes do not directly count as thrust or TVC functional damage.
     game::physics::materials::SurfaceIntegrity emitterSurface {};
+
+    // Five shared causes for ALL equipment, including the hot annulus.
+    // Laser/Impact also remove physical surface area; do not subtract them
+    // twice when calculating radiation. Thermal/Radiation have zero effect
+    // on this material, but their historical channels remain available.
+    game::equipment::EquipmentDamageState emitterDamage {};
+    double emitterEquivalentOperatingHours = 0.0;
 };
 
 // Only a hit resolved to the emitter surface may enter here. Callers supply
@@ -373,6 +395,16 @@ applyEngineEmitterExposure(
     return game::physics::materials::exposeSurface(
         *material, area, previous, hit
     );
+}
+
+// Effective emitting surface: holes/cracks from hits * gradual wear of the
+// emissive ceramic. No double subtraction of Laser/Impact channel history.
+[[nodiscard]] inline double effectiveEmitterArea01(
+    const EngineOperatingState& operating
+) noexcept
+{
+    return finiteClamp01(operating.emitterSurface.intactArea01) *
+        (1.0 - finiteClamp01(operating.emitterDamage.wear01));
 }
 
 // Quasi-steady protective thrust cap with an IDEAL fixed coolant boundary.
@@ -403,19 +435,39 @@ applyEngineEmitterExposure(
         return availability;
 
     const double directRadiationMW = ratedThermalEmitterPowerMW(
-        descriptor, operating.emitterSurface.intactArea01
+        descriptor, effectiveEmitterArea01(operating)
     );
     const double safeBulkMW = std::max(
         0.0, descriptor.thermalConductanceMWperK *
             (descriptor.safeOperatingTemperatureK -
              descriptor.nominalCoolantTemperatureK)
     );
-    return std::min(
+    const double steadySafe = std::min(
         availability,
         finiteClamp01(
             (directRadiationMW + safeBulkMW) / wastePerHealthyThrustMW
         )
     );
+
+    // Gameplay drama without heavy simulation: the damaged engine still
+    // delivers thrust when cool. At 50 K below housing's safe temperature,
+    // protection progressively reduces maximum power. At the limit it has
+    // reached the steady-state thermal ceiling. Temperature may briefly
+    // overshoot during a hard burn (existing thermal damage handles this).
+    const double currentTemperatureK =
+        std::isfinite(operating.temperatureK) &&
+        operating.temperatureK > 0.0
+            ? operating.temperatureK
+            : descriptor.nominalOperatingTemperatureK;
+    constexpr double ProtectionBandK = 50.0;
+    const double protection01 = std::clamp(
+        (currentTemperatureK -
+         (descriptor.safeOperatingTemperatureK - ProtectionBandK)) /
+            ProtectionBandK,
+        0.0, 1.0
+    );
+    return availability -
+        (availability - steadySafe) * protection01;
 }
 
 
@@ -424,6 +476,7 @@ struct EngineLifeStep
     EngineOperatingState next;
     double wearDamageIncrement01 = 0.0;
     double thermalDamageIncrement01 = 0.0;
+    double emitterWearDamageIncrement01 = 0.0;
     // Full generated waste heat, directly radiated hot-emitter component and
     // remaining heat that must pass through the bulk engine into coolant.
     double dissipatedHeatMW = 0.0;
@@ -503,6 +556,48 @@ inline EngineLifeStep advanceEngineOperatingState(
         ) - engineWearDamageAtHours(descriptor, beforeHours)
     );
 
+    // The annulus has its OWN replacement interval and wear percentage.
+    // Wear increases from operating hours, not elapsed idle time. Recording
+    // thermal/radiation channels never consumes annulus surface capacity.
+    if (game::physics::materials::findMaterial(
+            descriptor.thermalEmitter.materialId))
+    {
+        const double beforeEmitterHours =
+            std::max(0.0, previous.emitterEquivalentOperatingHours);
+        step.next.emitterEquivalentOperatingHours =
+            beforeEmitterHours + equivalentDeltaHours;
+        const auto emitterWearAt = [&](double hours)
+        {
+            const double service = std::max(
+                1.0, descriptor.thermalEmitter.replaceAfterEquivalentHours
+            );
+            const double exhausted = std::max(
+                service + 1.0,
+                descriptor.thermalEmitter.exhaustedAfterEquivalentHours
+            );
+            const double atService = finiteClamp01(
+                descriptor.thermalEmitter.wearAtReplacement01
+            );
+            return hours <= service
+                ? atService * std::clamp(hours / service, 0.0, 1.0)
+                : atService + (1.0 - atService) *
+                      std::clamp(
+                          (hours - service) / (exhausted - service),
+                          0.0, 1.0
+                      );
+        };
+        step.emitterWearDamageIncrement01 = std::max(
+            0.0,
+            emitterWearAt(step.next.emitterEquivalentOperatingHours) -
+                emitterWearAt(beforeEmitterHours)
+        );
+        step.next.emitterDamage.wear01 = std::clamp(
+            finiteClamp01(previous.emitterDamage.wear01) +
+                step.emitterWearDamageIncrement01,
+            0.0, 1.0
+        );
+    }
+
     const double heat =
         generatedWasteHeatMW(descriptor, current, delivered);
     step.dissipatedHeatMW = std::max(0.0, heat);
@@ -513,7 +608,7 @@ inline EngineLifeStep advanceEngineOperatingState(
         ratedThermalEmitterPowerMW(
             descriptor,
             finiteClamp01(emitterEffectiveArea01) *
-                finiteClamp01(previous.emitterSurface.intactArea01)
+                effectiveEmitterArea01(previous)
         )
     );
     step.coolantHeatMW =

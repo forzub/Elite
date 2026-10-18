@@ -1036,6 +1036,9 @@ desc.modules =
 // are intentionally ideal at this stage, so there is no PowerBus throttle.
 {
     game::equipment::engine::EngineUnitDescriptor engine;
+    // One fictional titanium-aluminide superalloy for BOTH engine housing
+    // and nozzle gimbal, resolved through the universal material catalog.
+    engine.structureMaterialId = "elite.material.engine.tial-ht.v1";
     engine.nominalThrustNewtons =
         desc.physics.massKg *
         static_cast<double>(

@@ -186,6 +186,10 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
     ship.pitchInertiaKgM2=11219866.6666667;
     ship.yawInertiaKgM2=25324866.6666667;
     ship.rollInertiaKgM2=15188333.3333333;
+    ship.angularAccel=3.0f;
+    ship.strafeAccel=73.549875f;
+    ship.forwardMainEngineAccelerationMps2=73.549875f;
+    ship.reverseMainEngineAccelerationMps2=73.549875f;
     const PhysicalControlModelId types[]={
         PhysicalControlModelId::AssistedI,
         PhysicalControlModelId::AssistedY,
@@ -206,12 +210,13 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
                 &passport,&damage[i],&operating[i],slots[i].id,true
             };
         }
+        AssistedManeuverPrograms programs;
         for(const double requestedZ : {-73.549875,73.549875})
         {
             EngineMatrixDemand request;
             request.accelerationBodyMps2={0.0,0.0,requestedZ};
             request.tick=40u;
-            const auto actual=executeEngineControlMatrix(
+            const auto actual=programs.execute(
                 model,motors,ship,request
             );
             require(actual.valid &&
@@ -244,7 +249,7 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
             // axial manual maneuver into an artificial pitch command.
             request.accelerationBodyMps2.x = 1.0e-5;
             request.accelerationBodyMps2.y = -1.0e-5;
-            const auto noisy=executeEngineControlMatrix(
+            const auto noisy=programs.execute(
                 model,motors,ship,request
             );
             require(std::abs(noisy.angularAccelerationBodyRadPerSec2.x)
@@ -259,7 +264,7 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
             // The matrix must not ignore the requested pitch braking.
             request.accelerationBodyMps2={0.0,0.0,requestedZ};
             request.angularAccelerationBodyRadPerSec2={-1.0,0.0,0.0};
-            const auto combined=executeEngineControlMatrix(
+            const auto combined=programs.execute(
                 model,motors,ship,request
             );
             require(combined.valid &&
@@ -276,7 +281,7 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
         EngineMatrixDemand release;
         release.angularAccelerationBodyRadPerSec2={-1.0,0.0,0.0};
         release.tick=41u;
-        const auto correcting=executeEngineControlMatrix(
+        const auto correcting=programs.execute(
             model,motors,ship,release
         );
         require(correcting.valid &&
@@ -284,7 +289,7 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
                 "KP8/KP2 release could not generate physical pitch damping");
         EngineMatrixDemand neutral;
         neutral.tick=42u;
-        const auto fullyReleased=executeEngineControlMatrix(
+        const auto fullyReleased=programs.execute(
             model,motors,ship,neutral
         );
         require(fullyReleased.valid &&
@@ -432,6 +437,11 @@ void sixAxisMatrixControlsActualMotorVectors()
     physics.pitchInertiaKgM2=12000000.0;
     physics.yawInertiaKgM2=25000000.0;
     physics.rollInertiaKgM2=16000000.0;
+    physics.angularAccel=3.0f;
+    physics.strafeAccel=73.549875f;
+    physics.forwardMainEngineAccelerationMps2=73.549875f;
+    physics.reverseMainEngineAccelerationMps2=73.549875f;
+    AssistedManeuverPrograms programs;
 
     auto run=[&](glm::dvec3 translation,glm::dvec3 rotation)
     {
@@ -441,7 +451,7 @@ void sixAxisMatrixControlsActualMotorVectors()
         // Servo motion is deliberately not simulated. Even one control
         // sample may request a full available nozzle deflection.
         demand.tick=40u;
-        return executeEngineControlMatrix(
+        return programs.execute(
             PhysicalControlModelId::AssistedI,mounted,physics,demand
         );
     };

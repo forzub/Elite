@@ -499,7 +499,8 @@ void ShipCore::updateTranslationControl(float dt)
             m_state.construction.physicalControlModel,
             m_state.actuators.propulsionSlots,
             dt,
-            physicalEngines
+            physicalEngines,
+            &m_assistedManeuvers
         );
 }
 

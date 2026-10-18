@@ -99,13 +99,15 @@ AllocationEvaluation evaluateTrimmedAllocation(
     const std::array<double, MaxPhysicalSlots>& throttleScale01,
     double yawTrimRad,
     double pitchTrimRad,
-    std::uint64_t controlTick
+    std::uint64_t controlTick,
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines
 ) noexcept
 {
     AllocationEvaluation out;
     const auto& slots = physicalControlSlots(model);
     if (state.size() != slots.size() ||
-        slots.size() > MaxPhysicalSlots)
+        slots.size() > MaxPhysicalSlots ||
+        (mountedEngines && mountedEngines->size() != slots.size()))
     {
         return out;
     }
@@ -128,13 +130,21 @@ AllocationEvaluation evaluateTrimmedAllocation(
         if (slots[i].role != activeRole)
             continue;
 
-        steadyTotal += effectiveSlotThrust01(state[i]);
-
-        const double instantaneous =
-            instantaneousSlotThrust01(state[i], i, controlTick);
+        // A topology slot is not an engine. In real installed mode these
+        // values are NEWTONS returned by the common Engine actuator, never
+        // dimensionless slot estimates.
+        const double steady = mountedEngines
+            ? game::equipment::engine::Engine(
+                (*mountedEngines)[i]).availableThrustNewtons()
+            : effectiveSlotThrust01(state[i]);
+        const double instantaneous = mountedEngines
+            ? game::equipment::engine::Engine(
+                (*mountedEngines)[i]).instantaneousAvailableThrustNewtons(
+                    controlTick)
+            : instantaneousSlotThrust01(state[i], i, controlTick);
+        steadyTotal += steady;
         instantaneousTotal += instantaneous;
-        commandedTotal +=
-            instantaneous *
+        commandedTotal += instantaneous *
             std::clamp(throttleScale01[i], 0.0, 1.0);
     }
 
@@ -163,6 +173,56 @@ AllocationEvaluation evaluateTrimmedAllocation(
     }
     direction /= directionLength;
 
+    if (mountedEngines)
+    {
+        // The pilot/autopilot requests NET acceleration only. The plant
+        // converts it to requested force and distributes a throttle demand
+        // to REAL installed Engine instances. Each one independently applies
+        // its passport, damage, heat limit and intermittent thrust.
+        // Mount geometry belongs only to the topology, not the engine model.
+        const double massKg = positiveFiniteOr(physics.massKg, 1.0);
+        const double demand01 = std::clamp(
+            (requestedMagnitude * massKg) /
+                std::max(steadyTotal, Epsilon),
+            0.0, 1.0
+        );
+        glm::dvec3 netForce(0.0);
+        glm::dvec3 netTorque(0.0);
+        for (std::size_t i = 0; i < slots.size(); ++i)
+        {
+            if (slots[i].role != activeRole)
+                continue;
+            const game::equipment::engine::Engine installed(
+                (*mountedEngines)[i]
+            );
+            const auto output = installed.execute({
+                demand01 * std::clamp(throttleScale01[i], 0.0, 1.0),
+                direction,
+                controlTick
+            });
+            netForce += output.forceBodyNewtons;
+            const glm::dvec3 lever =
+                applicationPointBodyMeters(slots[i], physics) -
+                physics.centerOfMassLocalMeters;
+            netTorque += glm::cross(lever, output.forceBodyNewtons);
+        }
+        out.accelerationBodyMps2 = netForce / massKg;
+        out.feedbackThrustScale01 = instantaneousTotal > Epsilon
+            ? std::clamp(commandedTotal / instantaneousTotal, 0.0, 1.0)
+            : 1.0;
+        out.reaction.torqueBodyNm = netTorque;
+        out.reaction.angularAccelerationBodyRadPerSec2 = {
+            netTorque.x /
+                positiveFiniteOr(physics.pitchInertiaKgM2, 1.0),
+            netTorque.y /
+                positiveFiniteOr(physics.yawInertiaKgM2, 1.0),
+            -netTorque.z /
+                positiveFiniteOr(physics.rollInertiaKgM2, 1.0)
+        };
+        return out;
+    }
+
+    // Compatibility only: legacy diagnostic models with no engine mounts.
     const double accelerationScale =
         std::clamp(commandedTotal / steadyTotal, 0.0, 1.0);
     out.accelerationBodyMps2 =
@@ -313,13 +373,15 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     const glm::dvec3& attitudeIntent01,
     double remainingYawTrimRad,
     double remainingPitchTrimRad,
-    std::uint64_t controlTick
+    std::uint64_t controlTick,
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines
 ) noexcept
 {
     MainPropulsionTrimResult out;
 
     const auto& slots = physicalControlSlots(model);
-    if (state.size() != slots.size())
+    if (state.size() != slots.size() ||
+        (mountedEngines && mountedEngines->size() != slots.size()))
         return out;
 
     if (!std::isfinite(requestedAccelerationBodyMps2.x) ||
@@ -357,8 +419,11 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
         if (slots[i].role != activeRole)
             continue;
 
-        const double instantaneous =
-            instantaneousSlotThrust01(state[i], i, controlTick);
+        const double instantaneous = mountedEngines
+            ? game::equipment::engine::Engine(
+                (*mountedEngines)[i]).instantaneousAvailableThrustNewtons(
+                    controlTick)
+            : instantaneousSlotThrust01(state[i], i, controlTick);
         if (instantaneous <= Epsilon)
             continue;
 
@@ -373,13 +438,22 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
         if (slots[i].freedom == EngineSlotFreedom::VectoringMain)
         {
             hasVectoringMain = true;
-            const double thrust =
-                std::max(effectiveSlotThrust01(state[i]), Epsilon);
-            const double relativeVectoring =
-                std::clamp(
-                    effectiveSlotVectoring01(state[i]) / thrust,
-                    0.0,
-                    1.0
+            const double relativeVectoring = mountedEngines
+                ? std::clamp(
+                    game::equipment::engine::Engine(
+                        (*mountedEngines)[i]).execute({
+                            0.0, {0.0, 0.0, -1.0}, controlTick
+                        }).availableGimbalRangeRad /
+                    std::max(1.0e-9,
+                        (*mountedEngines)[i].passport
+                            ? (*mountedEngines)[i].passport->
+                                nominalGimbalRangeRad : 0.0),
+                    0.0, 1.0
+                )
+                : std::clamp(
+                    effectiveSlotVectoring01(state[i]) /
+                        std::max(effectiveSlotThrust01(state[i]), Epsilon),
+                    0.0, 1.0
                 );
             commonVectoring01 =
                 std::min(commonVectoring01, relativeVectoring);
@@ -406,8 +480,11 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
             if (slots[i].role != activeRole)
                 continue;
 
-            const double instantaneous =
-                instantaneousSlotThrust01(state[i], i, controlTick);
+            const double instantaneous = mountedEngines
+                ? game::equipment::engine::Engine(
+                    (*mountedEngines)[i]).instantaneousAvailableThrustNewtons(
+                        controlTick)
+                : instantaneousSlotThrust01(state[i], i, controlTick);
             if (instantaneous <= Epsilon)
                 continue;
 
@@ -430,7 +507,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
             throttleScale01,
             0.0,
             0.0,
-            controlTick
+            controlTick,
+            mountedEngines
         );
     if (!current.valid)
         return {};
@@ -503,7 +581,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
                         throttleScale01,
                         candidateYaw,
                         candidatePitch,
-                        controlTick
+                        controlTick,
+                        mountedEngines
                     );
                 if (!candidate.valid)
                     return;
@@ -614,9 +693,22 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
                   physics.forwardMainEngineAccelerationMps2)
             : static_cast<double>(
                   physics.reverseMainEngineAccelerationMps2);
+    // With real engines the already-clamped requested acceleration divided
+    // by the sum of individually available NEWTONS is the actual throttle.
+    double ratedAvailableAcceleration = availableBankAcceleration;
+    if (mountedEngines)
+    {
+        double sumNewtons = 0.0;
+        for (std::size_t i = 0; i < slots.size(); ++i)
+            if (slots[i].role == activeRole)
+                sumNewtons += game::equipment::engine::Engine(
+                    (*mountedEngines)[i]).availableThrustNewtons();
+        ratedAvailableAcceleration = sumNewtons /
+            positiveFiniteOr(physics.massKg, 1.0);
+    }
     const double demand01 = std::clamp(
         requestedMagnitude /
-            std::max(availableBankAcceleration, Epsilon),
+            std::max(ratedAvailableAcceleration, Epsilon),
         0.0, 1.0
     );
     out.reportedSlotCount = slots.size();
@@ -624,10 +716,25 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     {
         if (slots[i].role != activeRole)
             continue;
-        out.deliveredThrust01[i] =
-            demand01 *
-            instantaneousSlotThrust01(state[i], i, controlTick) *
-            std::clamp(throttleScale01[i], 0.0, 1.0);
+        if (mountedEngines)
+        {
+            const game::equipment::engine::Engine installed(
+                (*mountedEngines)[i]
+            );
+            // Same engine command as the physical force accumulation.
+            out.deliveredThrust01[i] = installed.execute({
+                demand01 * std::clamp(throttleScale01[i], 0.0, 1.0),
+                current.accelerationBodyMps2,
+                controlTick
+            }).deliveredNominalThrust01;
+        }
+        else
+        {
+            out.deliveredThrust01[i] =
+                demand01 *
+                instantaneousSlotThrust01(state[i], i, controlTick) *
+                std::clamp(throttleScale01[i], 0.0, 1.0);
+        }
     }
 
     return out;

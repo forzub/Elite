@@ -278,24 +278,28 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         static_cast<double>(control.rollInput)
     );
 
-    if (mountedEngines &&
-        game::ship::plant::familyOf(model) ==
-            game::ship::plant::PhysicalControlFamily::Assisted)
+    if (mountedEngines)
     {
-        // All Assisted main-engine demands, including keypad vectoring and
-        // automatic stabilization, enter ONE force/torque matrix. There is
-        // no extra synthetic lateral acceleration or free pitch/yaw/roll.
+        // Both flight families execute their INSTALLED main engines through
+        // one physical matrix. Assisted adds its keyed lateral/stabilization
+        // demand; Newtonian independently retains its actual RCS subsystem.
+        // Assisted angular control is also engine-executed, never free.
+        const bool assisted =
+            game::ship::plant::familyOf(model) ==
+                game::ship::plant::PhysicalControlFamily::Assisted;
         const glm::dvec3 requestedAllWorld =
             requestedMainWorld +
-            motion.assistedStabilizationAccelerationMps2;
+            (assisted ? motion.assistedStabilizationAccelerationMps2 :
+                        glm::dvec3(0.0));
         game::ship::plant::EngineMatrixDemand demand;
         demand.accelerationBodyMps2 = {
             glm::dot(requestedAllWorld,right),
             glm::dot(requestedAllWorld,up),
             -glm::dot(requestedAllWorld,forward)
         };
-        demand.angularAccelerationBodyRadPerSec2 =
-            motion.requestedMainAngularAccelerationBodyRadPerSec2;
+        demand.angularAccelerationBodyRadPerSec2 = assisted
+            ? motion.requestedMainAngularAccelerationBodyRadPerSec2
+            : glm::dvec3(0.0); // Newtonian pilot attitude owns RCS.
         demand.elapsedSeconds = static_cast<double>(dt);
         demand.tick = control.controlTick;
         const auto& oldTelemetry = motion.engineTelemetry;
@@ -355,8 +359,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         return path;
     }
 
-    // Diagnostic layouts and Newtonian/RCS legacy control keep their
-    // existing isolated executor until independent RCS actuator mapping.
+    // Diagnostic layouts with no installed motors keep their historic
+    // isolated slot oracle; they do not publish invented motor data.
     motion.engineTelemetry.reset(control.controlTick);
     const auto trim =
         game::ship::plant::evaluateMainPropulsionFeedbackTrim(

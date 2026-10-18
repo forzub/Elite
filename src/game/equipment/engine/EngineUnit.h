@@ -53,6 +53,13 @@ struct EngineThermalEmitterDescriptor
 
 struct EngineUnitDescriptor
 {
+    // Manufacturer/type identity is DATA, not an engine subclass or
+    // duplicated ship-specific implementation. Future shipyards and markets
+    // can enumerate presets using these stable IDs.
+    std::string_view engineTypeId {};
+    std::string_view engineDisplayName {};
+    std::string_view manufacturerName {};
+
     PropulsionPrinciple propulsionPrinciple =
         PropulsionPrinciple::FieldCoupling;
 

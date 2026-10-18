@@ -1724,7 +1724,8 @@ void GameSimulation::updateShipSimulationDetail(double dt)
         if (!persistentDetailedHistory)
         {
             for (const auto& module :
-                 shipPtr->core().moduleRuntime().modules())
+                 static_cast<const world::modules::ObjectModuleRuntime&>(
+                     shipPtr->core().moduleRuntime()).modules())
             {
                 if (module.maxHealth > 0.0f &&
                     module.health + 1.0e-4f < module.maxHealth)
@@ -7432,7 +7433,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             obj.cachedModuleSnapshots.clear();
 
             const auto& objDesc = ObjectDescriptorRegistry::get(obj.type);
-            const auto& runtimeModules = obj.moduleRuntime.modules();
+            const auto& runtimeModules =
+                static_cast<const world::modules::ObjectModuleRuntime&>(
+                    obj.moduleRuntime).modules();
             const auto& descModules = objDesc.moduleDescriptors();
 
             std::unordered_map<std::string, const world::modules::ObjectModuleState*> runtimeById;
@@ -8862,7 +8865,9 @@ bool GameSimulation::dematerializeShip(
 
     double structuralSum = 0.0;
     std::size_t structuralCount = 0;
-    for (const auto& module : ship.core().moduleRuntime().modules())
+    for (const auto& module :
+         static_cast<const world::modules::ObjectModuleRuntime&>(
+             ship.core().moduleRuntime()).modules())
     {
         if (module.maxHealth <= 0.0f)
             continue;

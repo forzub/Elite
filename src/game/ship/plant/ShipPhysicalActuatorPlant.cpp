@@ -524,7 +524,7 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
 
                 const double lostThrust =
                     instantaneousSlotThrust01(
-                        state,
+                        state[i],
                         i,
                         controlTick
                     ) * (oldScale - newScale);

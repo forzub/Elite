@@ -246,7 +246,7 @@ ELITE_WIRE_SCHEMA(
     v.forceBodyNewtons,
     v.electricalMW,
     v.wasteHeatMW
-)
+);
 
 ELITE_WIRE_SCHEMA(
     game::navigation::DynamicMotionState,

@@ -139,6 +139,28 @@ set_tests_properties(
 )
 
 add_executable(
+    universe_thermal_radiation_tests
+    UniverseThermalRadiationTests.cpp
+)
+target_include_directories(
+    universe_thermal_radiation_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(universe_thermal_radiation_tests PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(universe_thermal_radiation_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(universe_thermal_radiation_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_test(NAME universe_thermal_radiation COMMAND universe_thermal_radiation_tests)
+set_tests_properties(
+    universe_thermal_radiation
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     engine_unit_damage_model_tests
     EngineUnitDamageModelTests.cpp
 )

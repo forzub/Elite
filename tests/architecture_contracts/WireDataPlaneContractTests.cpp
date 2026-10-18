@@ -627,7 +627,7 @@ void testSnapshotRoundTrip()
     require(decodedEmitter.hasEngineThermalState &&
             near(decodedEmitter.engineTemperatureK, 1275.0) &&
             near(decodedEmitter.engineCoolantTemperatureK,1340.0) &&
-            near(decodedEmitter.engineImpactShock01,0.46666667,1.0e-6) &&
+            std::abs(decodedEmitter.engineImpactShock01-0.46666667)<1.0e-6 &&
             near(decodedEmitter.engineImpactShockSecondsRemaining,2.5) &&
             near(decodedEmitter.emitterIntactArea01, 0.5) &&
             near(decodedEmitter.emitterMicrocrack01, 0.25) &&

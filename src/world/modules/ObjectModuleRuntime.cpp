@@ -1,6 +1,9 @@
 #include "ObjectModuleRuntime.h"
 
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 
 namespace world::modules
 {

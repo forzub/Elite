@@ -490,6 +490,57 @@ void testMountedBankCapabilityMatchesBalanceAndNetwork()
             "client and server differed on balanced main-engine envelope");
 }
 
+void testCinematicEngineImpactShockAndRecovery()
+{
+    const auto d=descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    const auto& passport=*d.modules.front().engine;
+    const std::string names[]={
+        "aft_left","aft_right","fore_left","fore_right"
+    };
+    int recovered=0,stayedDamaged=0;
+    for(const auto& name:names)
+    {
+        require(runtime.addEngineImpactShock(name,0.70),
+                "collision did not schedule installed engine field shock");
+        const auto* during=runtime.findModule(name);
+        require(during &&
+                near(during->equipmentDamage.accumulated.impact01,
+                     0.70/3.0,1.0e-6) &&
+                near(during->engineOperating.impactShock01,
+                     2.0*0.70/3.0,1.0e-6) &&
+                during->engineOperating.impactShockSecondsRemaining>=1.0 &&
+                during->engineOperating.impactShockSecondsRemaining<=3.0,
+                "impact did not separate durable third and transient two thirds");
+        const auto transient=game::equipment::engine::evaluateEngineUnit(
+            passport,during->equipmentDamage,during->engineOperating
+        );
+        require(near(transient.efficiencyAuthority01,0.30,1.0e-5) &&
+                transient.thrustIrregularity01>0.30,
+                "70 percent hit failed to cause immediate coughing force loss");
+        const double beforeWear=during->equipmentDamage.accumulated.wear01;
+        const auto beforeLaser=during->equipmentDamage.accumulated.laser01;
+        require(runtime.advanceEngineOperatingLife(
+                    name,passport,0.0,4.0,1050.0),
+                "scheduled engine impact failed to resolve after four seconds");
+        const auto* after=runtime.findModule(name);
+        require(after && after->engineOperating.impactShock01==0.0 &&
+                after->engineOperating.impactShockSecondsRemaining==0.0 &&
+                after->engineOperating.impactShockPermanentOnExpiry01==0.0,
+                "impact field shock persisted after its deadline");
+        const double retained=after->equipmentDamage.accumulated.impact01;
+        if(near(retained,0.70/3.0,1.0e-5))++recovered;
+        else if(near(retained,0.70,1.0e-5))++stayedDamaged;
+        else require(false,"impact had an invalid lasting damage outcome");
+        require(near(after->equipmentDamage.accumulated.wear01,beforeWear) &&
+                near(after->equipmentDamage.accumulated.laser01,beforeLaser),
+                "impact rebound illegally repaired wear or laser damage");
+    }
+    require(recovered+stayedDamaged==4,
+            "deterministic impact outcome was decided more than once");
+}
+
 } // namespace
 
 int main()
@@ -497,6 +548,7 @@ int main()
     try
     {
         testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
+        testCinematicEngineImpactShockAndRecovery();
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();
         testInstalledEngineWearAndThermalAffectRealModuleProjection();

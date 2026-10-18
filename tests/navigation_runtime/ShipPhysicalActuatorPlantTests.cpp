@@ -358,7 +358,7 @@ void testNewtonianThrottleFeedbackUsesSameSimpleRule()
     );
 }
 
-void testFeedbackLeavesHelpfulTurnReactionAlone()
+void testDamageAsymmetryIsNotUsedAsSteering()
 {
     const auto model = PhysicalControlModelId::AssistedI;
     auto state = healthySlotState(physicalControlSlots(model));
@@ -371,7 +371,7 @@ void testFeedbackLeavesHelpfulTurnReactionAlone()
         {0.0, 0.0, -60.0},
         0
     );
-    require(raw.valid, "raw turn-help reaction invalid");
+    require(raw.valid, "raw Assisted-I damaged reaction invalid");
 
     const double yawIntent =
         raw.angularAccelerationBodyRadPerSec2.y >= 0.0
@@ -389,15 +389,63 @@ void testFeedbackLeavesHelpfulTurnReactionAlone()
         0
     );
 
-    require(trim.valid, "turn-help feedback trim invalid");
+    require(trim.valid, "Assisted-I direct balance invalid");
     require(
-        near(trim.thrustScale01, 1.0, 1.0e-9),
-        "feedback reduced an engine reaction already helping requested yaw"
+        trim.thrustScale01 < 1.0,
+        "damaged bank was left asymmetric because its bias happened to help a turn"
     );
     require(
-        near(trim.automaticYawTrimRad, 0.0, 1.0e-12) &&
-        near(trim.automaticPitchTrimRad, 0.0, 1.0e-12),
-        "feedback countered a reaction already helping requested turn"
+        std::abs(
+            trim.reaction.angularAccelerationBodyRadPerSec2.y
+        ) < 1.0e-9,
+        "damage asymmetry leaked into steering instead of being balanced"
+    );
+}
+
+void testDirectBankBalancingWorksAcrossXLayout()
+{
+    const auto model = PhysicalControlModelId::NewtonianX;
+    auto state = healthySlotState(physicalControlSlots(model));
+
+    state[0].thrust01 = 0.92;
+    state[1].thrust01 = 0.47;
+    state[2].thrust01 = 0.73;
+    state[3].thrust01 = 1.00;
+
+    const auto raw = evaluateMainPropulsionReaction(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        0
+    );
+    require(raw.valid, "raw Newtonian-X damaged reaction invalid");
+    require(
+        glm::length(raw.angularAccelerationBodyRadPerSec2) > 1.0e-6,
+        "unequal Newtonian-X bank unexpectedly had no parasitic moment"
+    );
+
+    const auto trim = evaluateMainPropulsionFeedbackTrim(
+        model,
+        state,
+        physics(),
+        {0.0, 0.0, -60.0},
+        {0.0, 0.0, 0.0},
+        0.0,
+        0.0,
+        0
+    );
+
+    require(trim.valid, "Newtonian-X direct balance invalid");
+    require(
+        glm::length(
+            trim.reaction.angularAccelerationBodyRadPerSec2
+        ) < 1.0e-9,
+        "Newtonian-X four-engine bank was not balanced directly to weakest engine"
+    );
+    require(
+        trim.thrustScale01 < 1.0,
+        "Newtonian-X direct balance did not reduce stronger engines"
     );
 }
 
@@ -417,7 +465,8 @@ int main()
         testFeedbackDoesNotHideTorqueByUniformlyKillingThrust();
         testCommonTvcFeedbackReducesResidualWithoutKillingThrust();
         testNewtonianThrottleFeedbackUsesSameSimpleRule();
-        testFeedbackLeavesHelpfulTurnReactionAlone();
+        testDamageAsymmetryIsNotUsedAsSteering();
+        testDirectBankBalancingWorksAcrossXLayout();
 
         std::cout
             << "SHIP PHYSICAL ACTUATOR PLANT: PASS\n"
@@ -427,7 +476,8 @@ int main()
             << " - severe damage produces deterministic bounded per-engine thrust hiccups\n"
             << " - cheap feedback reduces only torque-producing main imbalance\n"
             << " - common TVC trim reduces residual bias without hiding it by killing thrust\n"
-            << " - the same feedback rule covers Assisted and Newtonian main banks\n"
+            << " - direct weakest-engine balancing covers I/Y/X main banks\n"
+            << " - damage asymmetry is never reused as steering authority\n"
             << " - Newtonian clustered mains keep failure angular acceleration bounded by their short radial lever arm\n";
         return 0;
     }

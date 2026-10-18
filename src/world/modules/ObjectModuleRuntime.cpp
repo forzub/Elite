@@ -670,6 +670,9 @@ void ObjectModuleRuntime::restoreSubtree(int index)
     module.state = ObjectModuleRuntimeState::Attached;
     module.health = module.maxHealth;
     module.equipmentDamage.accumulated = {};
+    // Full structural restoration also replaces the damaged hot surface.
+    // Service hours remain independent, so repair is not time travel.
+    module.engineOperating.emitterSurface = {};
 
     for (auto& link : module.supportLinks)
     {

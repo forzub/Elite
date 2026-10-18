@@ -415,9 +415,13 @@ void ShipCore::updateSystems(float dt)
         const auto& bindings =
             m_desc->physicalControl.slotModuleIds;
         const auto& motion = m_transform.motion;
-        if (bindings.size() == topology.size() &&
-            motion.mainEngineReportedSlotCount == bindings.size())
+        if (bindings.size() == topology.size())
         {
+            // Keep cooling on idle/docked/non-tactical engines. Only a
+            // currently valid allocator sample can consume operating life.
+            const bool actualBurnSample =
+                motion.mode == game::navigation::MotionMode::HubTactical &&
+                motion.mainEngineReportedSlotCount == bindings.size();
             bool changed = false;
             for (std::size_t i = 0; i < bindings.size(); ++i)
             {
@@ -443,7 +447,8 @@ void ShipCore::updateSystems(float dt)
                 changed |= m_moduleRuntime.advanceEngineOperatingLife(
                     bindings[i],
                     *definition->engine,
-                    motion.mainEngineDeliveredThrust01[i],
+                    actualBurnSample
+                        ? motion.mainEngineDeliveredThrust01[i] : 0.0,
                     static_cast<double>(dt),
                     definition->engine->nominalCoolantTemperatureK
                 );

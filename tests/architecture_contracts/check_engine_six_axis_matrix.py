@@ -169,4 +169,62 @@ if program.count("for(int iteration=0;iteration<144;++iteration)")!=1:
 if "execute(" not in program or "solve(axis," not in program:
     raise SystemExit("[ENGINE PRESETS][FAIL] missing damage-only precompute")
 
+# Thermal source: the common coolant circuit and local engine heat storage
+# are one energy-conserving simulation, not separate nominal coolants.
+contains(
+    "src/game/equipment/engine/EngineUnit.h",
+    "impactShockSecondsRemaining",
+    "impactShockPermanentOnExpiry01",
+    "operating.coolantTemperatureK",
+    "step.coolantHeatMW = bulkHeatMW -",
+    "capacity*(step.next.temperatureK-startT)/deltaSeconds",
+)
+contains(
+    "src/game/ship/core/ShipCore.cpp",
+    "m_thermal.addHeat(energyMJ)",
+    "m_thermal.removeHeat(-energyMJ)",
+    "&transferredMW",
+    "m_cooling.update(dt, m_thermal);",
+    "m_moduleRuntime.addEngineImpactShock(",
+)
+contains(
+    "src/game/ship/core/CoolingSystem.cpp",
+    "m_primaryCircuit.pumpCapacity",
+    "m_primaryCircuit.maxHeatTransfer",
+    "std::min(maxRadiatedPower, transportedMW)",
+)
+contains(
+    "src/world/modules/ObjectModuleRuntime.cpp",
+    "addEngineImpactShock(",
+    "impactEventSerial",
+    "impactShockPermanentOnExpiry01",
+    "shockResolved",
+)
+contains(
+    "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h",
+    "ShipControlAuthorityTelemetry",
+    "readAssistedControlAuthority(",
+    "applyAuthorityToControlParams(",
+    "telemetry.negative[2]",
+)
+contains(
+    "src/game/simulation/GameSimulation.cpp",
+    "ship.core().controlAuthorityTelemetry()",
+)
+contains(
+    "src/game/simulation/ObjectModuleSnapshotBuilder.h",
+    "engineCoolantTemperatureK",
+    "engineImpactShock01",
+)
+contains(
+    "src/game/network/WireDataSchema.h",
+    "v.engineCoolantTemperatureK",
+    "v.engineImpactShock01",
+    "v.engineImpactShockSecondsRemaining",
+)
+contains(
+    "tests/architecture_contracts/WireDataPlaneContractTests.cpp",
+    "near(decodedEmitter.engineCoolantTemperatureK,1340.0)",
+)
+
 print("ENGINE SIX-AXIS MATRIX + LIVE TELEMETRY + GAMEPLAY PRESET MOTOR CONTRACT: PASS")

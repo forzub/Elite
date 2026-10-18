@@ -542,6 +542,10 @@ private:
     // Heavy structural data is sent only on first sight / explicit dirty events.
     std::unordered_set<EntityId>        m_initializedShipGraphIds;
     std::unordered_map<EntityId, int>   m_shipGraphPayloadPublicationsRemaining;
+    // Independently publish small module-state deltas when propulsion/lifetime
+    // revision changes, without resending structural links and hit geometry.
+    std::unordered_map<EntityId, std::uint64_t>
+        m_lastPublishedShipModuleRevision;
     std::unordered_set<EntityId>        m_shipsWithDetachedFragmentPayload;
     std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
 

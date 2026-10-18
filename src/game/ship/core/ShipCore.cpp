@@ -297,6 +297,20 @@ ShipCore::capabilities() const
     return m_cachedCapability;
 }
 
+game::ship::telemetry::ShipControlAuthorityTelemetry
+ShipCore::controlAuthorityTelemetry() const
+{
+    // A damage/reconfiguration revision must invalidate even a previous
+    // tick's programs until actual mounted geometry has been refreshed.
+    if (m_preparedManeuverActuatorRevision!=m_state.actuators.revision ||
+        m_assistedManeuvers.model !=
+            m_state.construction.physicalControlModel)
+        return {};
+    return game::ship::telemetry::readAssistedControlAuthority(
+        m_assistedManeuvers,m_preparedManeuverActuatorRevision
+    );
+}
+
 ShipParams ShipCore::effectivePhysics() const
 {
     const auto capability = capabilities();
@@ -502,6 +516,7 @@ void ShipCore::updateTranslationControl(float dt)
             physicalEngines,
             &m_assistedManeuvers
         );
+    m_preparedManeuverActuatorRevision=m_state.actuators.revision;
 }
 
 bool ShipCore::propagateHubTacticalTranslation(double dt)

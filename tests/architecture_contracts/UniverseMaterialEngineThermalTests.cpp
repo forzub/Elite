@@ -22,6 +22,7 @@ bool near(double a, double b, double eps = 1.0e-6)
 game::equipment::engine::EngineUnitDescriptor cobraMotor()
 {
     game::equipment::engine::EngineUnitDescriptor d;
+    d.structureMaterialId = "elite.material.engine.tial-ht.v1";
     d.nominalThrustNewtons = 9561483.75;
     d.nominalElectricalPowerMW = 4850.0;
     d.nominalEfficiency01 = 0.9855;
@@ -43,13 +44,21 @@ game::equipment::engine::EngineUnitDescriptor cobraMotor()
 void materialCatalog()
 {
     using namespace game::physics::materials;
-    require(UniverseMaterialCatalog.size() == 2, "material catalog size");
+    require(UniverseMaterialCatalog.size() == 3, "material catalog size");
     const auto* plates = findMaterial("elite.material.radiator.c-sic.v1");
     const auto* ring = findMaterial("elite.material.engine.hfc-c.v1");
-    require(plates && ring && plates != ring, "material identities");
+    const auto* titanium = findMaterial("elite.material.engine.tial-ht.v1");
+    require(plates && ring && titanium && plates != ring &&
+            titanium != ring && titanium != plates,
+            "material identities");
+    require(titanium->nominalOperatingTemperatureK >= 1200.0 &&
+            titanium->damageOnsetTemperatureK > 1300.0,
+            "titanium engine alloy has invalid housing thermal limits");
     require(findMaterial("unknown") == nullptr, "unknown material accepted");
     require(plates->meshMaterialId != ring->meshMaterialId &&
-            plates->tradeCommodityId != ring->tradeCommodityId,
+            plates->tradeCommodityId != ring->tradeCommodityId &&
+            titanium->meshMaterialId != ring->meshMaterialId &&
+            titanium->tradeCommodityId != ring->tradeCommodityId,
             "mesh/economy material collision");
     for (const auto& material : UniverseMaterialCatalog)
     {

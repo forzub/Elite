@@ -251,6 +251,21 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
                     std::abs(noisy.angularAccelerationBodyRadPerSec2.y)
                         <1.0e-10,
                     "float-frame basis noise generated pitch from axial input");
+
+            // Worst case after releasing KP8/KP2: Assisted velocity
+            // stabilization applies nearly full reverse/forward thrust
+            // while angular damping must arrest a pre-existing pitch.
+            // The matrix must not ignore the requested pitch braking.
+            request.accelerationBodyMps2={0.0,0.0,requestedZ};
+            request.angularAccelerationBodyRadPerSec2={-1.0,0.0,0.0};
+            const auto combined=executeEngineControlMatrix(
+                model,motors,ship,request
+            );
+            require(combined.valid &&
+                    combined.angularAccelerationBodyRadPerSec2.x<-0.75 &&
+                    combined.accelerationBodyMps2.z*requestedZ>0.0,
+                    "Assisted motor matrix starved pitch damping during "
+                    "KP8/KP2 longitudinal braking");
         }
 
         // The released maneuver leaves no translation thrust. If the craft

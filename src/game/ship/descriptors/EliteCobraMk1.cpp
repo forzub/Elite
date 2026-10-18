@@ -1065,6 +1065,7 @@ desc.modules =
     engine.designReferenceSpeedMps =
         static_cast<double>(desc.physics.maxCombatSpeed);
     engine.nominalEfficiency01 = 0.998;
+    engine.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
     engine.nominalElectricalPowerMW =
         engine.nominalThrustNewtons *
         engine.designReferenceSpeedMps /

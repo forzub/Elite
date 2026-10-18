@@ -186,6 +186,8 @@ void testDamageCostsMorePowerForSameDeliveredThrust()
             "damage did not degrade conversion efficiency");
     require(near(reduced.powerCostMultiplier, 2.0),
             "damaged engine cost per delivered newton is wrong");
+    require(near(reduced.heatMultiplier, 5.0),
+            "BITE extra waste heat must reflect the 80% nominal efficiency");
 
     // 0.5 is the achieved fraction of HEALTHY nominal thrust, not the
     // position of the damaged-engine throttle lever.

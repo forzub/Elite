@@ -42,7 +42,8 @@ public:
     // settles after 1..3 sec; this does not repair mechanical structure.
     bool addEngineImpactShock(
         const std::string& moduleId,
-        double hitDamage01
+        double hitDamage01,
+        std::uint64_t incidentKey = 0u
     );
 
     // Resolve an incident that actually hit a separately identified engine

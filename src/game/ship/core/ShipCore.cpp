@@ -324,6 +324,11 @@ void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
 void ShipCore::updateMotionControl(float dt, const WorldParams& world)
 {
     const ShipParams physics = effectivePhysics();
+    const glm::dvec3 angularBefore {
+        m_transform.pitchRate,
+        m_transform.yawRate,
+        m_transform.rollRate
+    };
     game::ship::control::ShipControlExecutionGateway::
         evaluateAttitudeControl(
             m_transform,
@@ -332,6 +337,35 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
             world,
             dt
         );
+
+    auto& motion = m_transform.motion;
+    motion.requestedMainAngularAccelerationBodyRadPerSec2 = {};
+    // The accepted Assisted attitude law still computes the desired angular
+    // acceleration (including damping/autopilot). It may NO LONGER create
+    // that acceleration without actually commanding installed engines.
+    // Convert its rate delta into a six-axis MATRIX demand. Only the engine
+    // force/torque result later changes the angular velocity.
+    if (dt > 0.0f &&
+        motion.mode == game::navigation::MotionMode::HubTactical &&
+        game::ship::plant::familyOf(
+            m_state.construction.physicalControlModel
+        ) == game::ship::plant::PhysicalControlFamily::Assisted &&
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+        m_state.construction.physicalControlModel ==
+            m_state.construction.definition->physicalControlModel)
+    {
+        const glm::dvec3 angularAfter {
+            m_transform.pitchRate,
+            m_transform.yawRate,
+            m_transform.rollRate
+        };
+        motion.requestedMainAngularAccelerationBodyRadPerSec2 =
+            (angularAfter-angularBefore) / static_cast<double>(dt);
+        m_transform.pitchRate = static_cast<float>(angularBefore.x);
+        m_transform.yawRate = static_cast<float>(angularBefore.y);
+        m_transform.rollRate = static_cast<float>(angularBefore.z);
+    }
 }
 
 void ShipCore::propagateMotionOrientation(float dt)

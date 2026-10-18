@@ -224,6 +224,74 @@ inline void projectThrustCone(
         return out;
     }
 
+    // Main-axis only is a PREDEFINED actuator maneuver, not a 6-DOF
+    // optimization problem. Num8/Num2 and straight-line thrust must never
+    // turn a nozzle or introduce artificial pitch/yaw/roll torque on a
+    // healthy symmetric I/Y/X layout. Distribute an equal actual Newton
+    // force over surviving engines of the requested bank. This also keeps
+    // damaged-bank balancing deterministic; absent engines can still leave
+    // a physically unavoidable torque, which we do not hide.
+    const double axialDemand = demand.accelerationBodyMps2.z;
+    const double negligibleCrossAxis =
+        std::max(1.0e-6, std::abs(axialDemand)*1.0e-6);
+    const bool mainAxisOnly =
+        std::abs(axialDemand) > 1.0e-9 &&
+        std::abs(demand.accelerationBodyMps2.x) <= negligibleCrossAxis &&
+        std::abs(demand.accelerationBodyMps2.y) <= negligibleCrossAxis &&
+        glm::length(demand.angularAccelerationBodyRadPerSec2) < 1.0e-9;
+    if (mainAxisOnly)
+    {
+        const auto bank = axialDemand < 0.0
+            ? EngineSlotRole::AftMain : EngineSlotRole::ForeMain;
+        std::size_t surviving = 0;
+        double minimumAvailableN = std::numeric_limits<double>::infinity();
+        for (std::size_t i=0;i<mounted.size();++i)
+        {
+            if (topology[i].role != bank || m[i].cap <= 0.0)
+                continue;
+            ++surviving;
+            minimumAvailableN = std::min(
+                minimumAvailableN, m[i].rated*m[i].cap
+            );
+        }
+        out.valid = true;
+        out.count = mounted.size();
+        const double equalDeliveredN = surviving > 0
+            ? std::min(
+                std::abs(axialDemand)*mass/static_cast<double>(surviving),
+                minimumAvailableN
+            ) : 0.0;
+        for (std::size_t i=0;i<mounted.size();++i)
+        {
+            auto& sample = out.engines[i];
+            const Engine engine(mounted[i]);
+            sample.availableThrust01 = m[i].rated > 0.0
+                ? engine.availableThrustNewtons()/m[i].rated : 0.0;
+            if (topology[i].role != bank || m[i].cap <= 0.0)
+                continue;
+            const double instantaneousN = m[i].rated*m[i].cap;
+            const auto applied = engine.execute(EngineCommand {
+                equalDeliveredN / instantaneousN,
+                topology[i].nominalForceDirectionBody,
+                demand.tick
+            });
+            sample.deliveredThrust01 = applied.deliveredNominalThrust01;
+            sample.forceBodyNewtons = applied.forceBodyNewtons;
+            sample.electricalMW = applied.consumedElectricalMW;
+            sample.heatMW = applied.generatedWasteHeatMW;
+            out.forceBodyNewtons += applied.forceBodyNewtons;
+            out.torqueBodyNm +=
+                glm::cross(m[i].arm, applied.forceBodyNewtons);
+        }
+        out.accelerationBodyMps2 = out.forceBodyNewtons/mass;
+        out.angularAccelerationBodyRadPerSec2 = {
+            out.torqueBodyNm.x/inertia.x,
+            out.torqueBodyNm.y/inertia.y,
+            -out.torqueBodyNm.z/inertia.z
+        };
+        return out;
+    }
+
     // Ordinary purely longitudinal acceleration must never ignite the
     // opposite bank just to improve an optimizer norm by a fraction.
     // For side forces and body turns both directions remain available.

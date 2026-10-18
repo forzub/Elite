@@ -363,9 +363,13 @@ inline EngineLifeStep advanceEngineOperatingState(
     // Wear is based on DELIVERED force: no time accumulation for a failed
     // engine or for an installed but inactive fore/aft main engine.
     const double equivalentDeltaHours =
-        (deltaSeconds / 3600.0) *
-        std::pow(delivered,
-                 std::max(0.0, descriptor.wearThrottleExponent));
+        delivered > 0.0
+            ? (deltaSeconds / 3600.0) *
+                  std::pow(
+                      delivered,
+                      std::max(0.0, descriptor.wearThrottleExponent)
+                  )
+            : 0.0;
     const double beforeHours =
         std::max(0.0, previous.equivalentOperatingHours);
     step.next.equivalentOperatingHours =

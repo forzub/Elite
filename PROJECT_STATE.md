@@ -1,3 +1,30 @@
+## 2026-10-18 — engine thermal/wear operating life and realistic Cobra radiator budget
+
+Approved scope: universal engine mechanics only. Frames remain structural attachment / impulse paths. Reactor and cooling remain ideal, no functional failure, shortages or fuel flow; main drives are fictional field-coupling, without expelled reaction mass. Ordinary Assisted-I propulsion allocates exactly ONE bank of two engines per forward/reverse burn; front and rear banks are not burned simultaneously for ordinary thrust.
+
+DESIGN-POINT numbers for Cobra at 260,000 kg, 73.549875 m/s²:
+- 9,561,483.75 N of rated thrust for each of four engines.
+- Only active 2-engine bank supplies 19,122,967.5 N at full longitudinal acceleration.
+- 500 m/s design speed, η_nom = 0.998. Electric input = F * 500 / η at that reference point, not a claimed physical propellantless energy mechanism.
+- Per engine electric 4,790.322520 MW, waste heat 9.580645 MW. Active pair input 9,580.645040 MW, waste heat 19.161290 MW.
+- Physical heat rejection comparison: 380 m² radiators at emissivity 0.9 and 1050 K emit ~23.572 MW according to Stefan–Boltzmann, leaving ~4.41 MW radiator margin for the main active pair (not counting any future other ship heat loads). Existing CoolingSystem is NOT modified or claimed to actually achieve this yet; its legacy emissivity/temperature internals remain separate.
+- This high-efficiency field drive is pure science-fiction. No known reactionless drive exists. Existing Cobra descriptor reactor 2500/3200 MW is insufficient and is left unmodified because reactor supply is currently ideal and main propulsion is not connected to PowerBus.
+
+IMPORTANT ENERGY FIX: percent loss of THRUST AUTHORITY is NOT an equal percent loss of conversion efficiency. EngineUnit keeps F_max = F_nominal * (1 - totalDamage) until 95% failure, but eta_effective = eta_nominal * (1 - 0.002*totalDamage) for Cobra, i.e. only up to 0.2% relative efficiency loss even at complete damage. Electrical input and heat use the separately degraded eta; this prevents 20% mechanical wear from spuriously creating gigawatts of heat.
+
+Universal EngineUnitDescriptor thermal/service parameters, configured for Cobra:
+- coolant design boundary 1050 K (ideal); engine steady full-load temperature 1200 K; safe thermal damage limit 1300 K.
+- engine lumped thermal capacity 12 MJ/K; conductance (9.580645 MW)/(150 K) ≈ 0.063871 MW/K; temperature follows analytic exponential thermal equilibration over systems cadence.
+- overheat rate: 0.05 damage (5 percentage points) per hour at 100 K ABOVE safe temperature; quadratic excess dependence; damage accumulates over time, never heals by cooling.
+- overhaul at 30,000 EQUIVALENT full-thrust hours with 20% wear damage; no-overhaul functional end of life at 50,000 equivalent hours with 95% wear (below 30k linear, beyond 30k quadratic acceleration).
+- operating-hour conversion: dt/3600 * (delivered thrust / healthy nominal thrust)^1.5 per engine; no wear for idle engine or inactive opposite bank.
+- Per-engine state stored on installed ObjectModuleState: actual temperature, equivalent hours, pending fractional thermal and wear. Only increments >=1e-5 damage (=0.001 percentage point) committed into real EquipmentDamageLayer and module revision. No per-tick BITE/snapshot invalidation for tiny age increments.
+- Per-engine delivered fraction produced by EXACT ShipPhysicalActuatorPlant physical allocator after bank selection, damage, intermittent dips, throttle balance, and commanded load; transmitted via ShipControlExecutionGateway into the ship's DynamicMotionState. ShipCore.updateSystems runs engine life for each real bound module; time update uses accumulated systems-cadence dt. No fake slots, special test override, or pilot-throttle approximation as a substitute for physical actual output.
+- Unpowered/docked engines still thermally relax to coolant. Wear damage affects ShipCapability/Autopilot/BITE through the ordinary module-revision projection.
+- External radiation inputs, per-module reactor leak and fuel, actual ship heat network/cooling damage, client serialization of detailed service hours/temperature, and true game-runtime impact-damage acceptance remain outside this step.
+
+Tests revised/extended: EngineUnitDamageModelTests, EquipmentDamageFailurePipelineTests (real ObjectModuleRuntime wear and coolant overheat), ShipPhysicalActuatorPlantTests (per-bank delivered-thrust telemetry). This change has NOT been compiled/tested in the user's Windows environment; require local build and ctest, report failures before claiming PASS.
+
 ## 2026-10-18 — universal engine damage percentages and Cobra field-drive energy passport
 
 User-approved engine law: five per-module cumulative percentages laser/impact/thermal/radiation/wear are already converted into functional loss by their source mechanisms. Effective engine loss is clamp(laser + impact + thermal + radiation + wear, 0, 1), with NO extra per-cause weights. Source histories remain separate in ObjectModuleRuntime and replicated snapshots. Generic weightedFunctionalDamage01 remains ONLY for non-engine equipment compatibility. EngineUnit no longer uses EquipmentDamageSensitivity or separately weighted gimbalDamage.

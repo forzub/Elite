@@ -224,15 +224,15 @@ void testInstalledEngineWearAndThermalAffectRealModuleProjection()
 
     const auto& engine = *d.modules.front().engine;
     const auto firstRevision = runtime.revision();
-    // One actual full-thrust hour for aft_left only.
+    // Two actual full-thrust hours for aft_left only (wear quantum = 1e-5).
     require(runtime.advanceEngineOperatingLife(
-                "aft_left", engine, 1.0, 3600.0, 1050.0),
-            "one hour of real engine burn did not add accumulated wear");
+                "aft_left", engine, 1.0, 7200.0, 1050.0),
+            "real engine burn did not cross a quantized wear increment");
 
     const auto* active = runtime.findModule("aft_left");
     const auto* inactive = runtime.findModule("aft_right");
     require(active && inactive &&
-            near(active->engineOperating.equivalentOperatingHours, 1.0) &&
+            near(active->engineOperating.equivalentOperatingHours, 2.0) &&
             near(inactive->engineOperating.equivalentOperatingHours, 0.0),
             "operating hours leaked to an unpowered installed engine");
     require(active->equipmentDamage.accumulated.wear01 > 0.0 &&

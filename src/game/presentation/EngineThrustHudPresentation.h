@@ -11,7 +11,6 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
-#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
@@ -31,8 +30,9 @@ struct EngineThrustBarPresentation
     EngineThrustFillDirection fillDirection =
         EngineThrustFillDirection::BottomUp;
 
-    // Yellow capacity envelope and red current generated thrust, both relative
-    // to the slot's undamaged nominal thrust.
+    // Yellow availability and red ACTUALLY EXECUTED thrust, both relative
+    // to this installed engine's undamaged nominal Newton rating.
+    // The read-only HUD may not reconstruct actual firing from acceleration.
     float capability01 = 0.0f;
     float thrust01 = 0.0f;
 
@@ -73,25 +73,6 @@ inline const char* physicalModelLabel(
         case Model::NewtonianX: return "NEWTONIAN-X";
     }
     return "ENGINES";
-}
-
-inline double normalizedDemand(
-    double actual,
-    double authority
-) noexcept
-{
-    if (!std::isfinite(actual) ||
-        !std::isfinite(authority) ||
-        authority <= 1.0e-9)
-    {
-        return 0.0;
-    }
-
-    return std::clamp(
-        std::abs(actual) / authority,
-        0.0,
-        1.0
-    );
 }
 
 inline bool sameGroupPosition(

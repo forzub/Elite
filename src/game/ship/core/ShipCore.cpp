@@ -1279,6 +1279,10 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
 
         m_hitVolumesDirty = false;
     }
+    // An engine shock is observable immediately to the pilot/autopilot; no
+    // stale pre-impact capability snapshot may survive until a later system
+    // update. This rebuild is incident-driven, never per physics tick.
+    refreshRuntimeState();
 }
 
 

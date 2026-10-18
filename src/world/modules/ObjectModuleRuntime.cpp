@@ -409,7 +409,8 @@ bool ObjectModuleRuntime::addEquipmentDamage(
 }
 
 bool ObjectModuleRuntime::addEngineImpactShock(
-    const std::string& moduleId, double hitDamage01
+    const std::string& moduleId, double hitDamage01,
+    std::uint64_t incidentKey
 )
 {
     const int index=findModuleIndex(moduleId);
@@ -440,6 +441,7 @@ bool ObjectModuleRuntime::addEngineImpactShock(
         seed^=c;
         seed*=1099511628211ULL;
     }
+    seed^=incidentKey*0xd6e8feb86659fd93ULL;
     seed^=++engine.impactEventSerial*0x9e3779b97f4a7c15ULL;
     seed^=seed>>30u;
     seed*=0xbf58476d1ce4e5b9ULL;

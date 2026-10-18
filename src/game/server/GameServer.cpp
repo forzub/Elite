@@ -630,28 +630,6 @@ void GameServer::update(double dt)
                     break;
                 }
 
-                case ClientShipCommand::DebugFailPhysicalPropulsionSlot:
-                {
-                    const std::size_t slotIndex =
-                        static_cast<std::size_t>(
-                            std::max(0, shipCmd.index)
-                        );
-                    const bool ok =
-                        ship.core().debugFailPhysicalPropulsionSlot(
-                            slotIndex
-                        );
-                    std::cerr
-                        << "[ShipDamageOracle][server] fail slot="
-                        << slotIndex
-                        << " accepted=" << (ok ? 1 : 0)
-                        << std::endl;
-                    break;
-                }
-
-                case ClientShipCommand::DebugRestorePhysicalPropulsionSlots:
-                    (void)ship.core().debugRestorePhysicalPropulsionSlots();
-                    break;
-
                 default:
                     ship.applyCommand(shipCmd);
                     break;

@@ -9,35 +9,41 @@ namespace game::equipment::engine
 {
 
 using EngineDamageInputs = game::equipment::EquipmentDamageState;
-using EngineDamageWeights = game::equipment::EquipmentDamageSensitivity;
+
+// Field coupling is a fictional propulsion mechanism: no reaction mass is
+// expelled by the ship. Conservation of momentum therefore presupposes an
+// external field/momentum reservoir, which is not a known real drive.
+enum class PropulsionPrinciple
+{
+    FieldCoupling,
+    ReactionMass
+};
 
 struct EngineUnitDescriptor
 {
+    PropulsionPrinciple propulsionPrinciple =
+        PropulsionPrinciple::FieldCoupling;
+
     double nominalThrustNewtons = 0.0;
 
-    // Electrical input required to sustain nominal full thrust at healthy
-    // efficiency. Keep at zero when the ship's energy budget is not authored.
+    // Installed electric input at nominal full thrust, in MW. For the
+    // field-coupled Cobra this rating is F_nominal * designSpeed / eta;
+    // it is a DESIGN-POINT budget, not an assertion that reactionless thrust
+    // is possible under known physics. No fuel/propellant mass flow here.
     double nominalElectricalPowerMW = 0.0;
+    double designReferenceSpeedMps = 0.0;
 
-    // Healthy overall conversion efficiency, 0..1. This is intentionally an
-    // abstract gameplay-level efficiency rather than a detailed rocket/jet
-    // thermodynamic cycle model.
+    // Effective conversion into the hypothetical field coupling at design
+    // speed. A damaged engine produces less thrust from the same rated input.
     double nominalEfficiency01 = 1.0;
 
     double nominalGimbalRangeRad = 0.0;
     double nominalGimbalRateRadPerSec = 0.0;
 
-    // Primary thrust failure policy belongs to the common EquipmentDamageLayer.
-    // The engine adds one specialized mechanical function because nozzle
-    // vectoring can fail independently while axial thrust remains available.
-    EngineDamageWeights gimbalDamage {
-        0.15, // laser
-        0.65, // impact
-        0.05, // thermal
-        0.00, // radiation
-        0.15  // wear
-    };
-    game::equipment::EquipmentFailureProfile gimbalFailure {0.95};
+    // SAME total five-cause percentage drives both functions, with distinct
+    // output/failure curves, never separate per-cause sensitivity weights.
+    // Nozzle control may fail at 90% while axial thrust survives until 95%.
+    game::equipment::EquipmentFailureProfile gimbalFailure {0.90};
 
     // Above this primary-damage level the thrust chamber can no longer hold
     // steady output. Instability grows continuously until the authored thrust
@@ -91,14 +97,16 @@ inline double positiveFiniteOr(
 {
     EngineUnitEffectiveState out;
 
+    const double totalDamage01 =
+        game::equipment::totalAccumulatedDamage01(damage.accumulated);
     const auto thrustFunction =
-        game::equipment::evaluateEquipmentFunction(damage);
-
-    game::equipment::EquipmentDamageLayer gimbalLayer = damage;
-    gimbalLayer.sensitivity = descriptor.gimbalDamage;
-    gimbalLayer.failure = descriptor.gimbalFailure;
+        game::equipment::evaluateEquipmentFunctionAtDamage01(
+            totalDamage01, damage.failure
+        );
     const auto gimbalFunction =
-        game::equipment::evaluateEquipmentFunction(gimbalLayer);
+        game::equipment::evaluateEquipmentFunctionAtDamage01(
+            totalDamage01, descriptor.gimbalFailure
+        );
 
     out.thrustFailed = thrustFunction.failed;
     out.gimbalFailed = gimbalFunction.failed;
@@ -175,8 +183,11 @@ inline double positiveFiniteOr(
         return out;
     }
 
-    // For the same generated useful thrust, lower efficiency requires more
-    // electrical input. Waste heat is derived from input minus useful output.
+    // For the same achieved fraction of HEALTHY nominal thrust, degradation
+    // demands more input power (if the rated supply is available). Use the
+    // achieved fraction as requestedElectricalPowerMW's input, not the
+    // percentage of the reduced damaged-engine maximum.
+    // Waste heat is rated input minus remaining useful field-coupling output.
     out.powerCostMultiplier =
         out.efficiencyAuthority01 > 1.0e-9
             ? 1.0 / out.efficiencyAuthority01
@@ -196,6 +207,8 @@ inline double positiveFiniteOr(
     double generatedThrust01
 ) noexcept
 {
+    // generatedThrust01 = delivered thrust / healthy rated thrust,
+    // NOT fraction of the degraded engine's available thrust.
     if (state.thrustFailed)
         return 0.0;
 

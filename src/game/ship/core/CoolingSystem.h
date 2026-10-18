@@ -44,7 +44,7 @@ struct SecondaryCircuit
     // ----------- ПАНЕЛИ - второй контур------
     // ==========================
     std::vector<RadiatorPanel> panels;
-    double emissivity = 1.2;           // 0..1
+    double emissivity = 0.9;           // physical material emissivity 0..1
     double maxCoolantTemp = 900.0;      // K (макс температура антифриза)
 };
 
@@ -162,11 +162,9 @@ private:
     double m_dt = 0.0;
 
     
-    // Константы
-    static constexpr double STEFAN_BOLTZMANN = 5.67e-14;    // МВт/м²/К⁴
-    static constexpr double SPACE_TEMP = 2.725;             // K
-    static constexpr double PUMP_EFFICIENCY = 20.0;         // 1 МВт эл = 20 МВт тепла
-    static constexpr double RADIATOR_EFFECTIVENESS = 2.5;   // вводим для баланса по теплоохлаждению через панели (не реальное)
+    // Conversion between electric pump demand and coolant transport is a
+    // subsystem parameter, NOT the universe's thermal radiation law.
+    static constexpr double PUMP_EFFICIENCY = 20.0;
 };
 
 }

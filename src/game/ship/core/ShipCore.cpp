@@ -1,3 +1,4 @@
+#include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "ShipCore.h"
 #include <iostream>
 #include <algorithm>
@@ -350,10 +351,7 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         game::ship::plant::familyOf(
             m_state.construction.physicalControlModel
         ) == game::ship::plant::PhysicalControlFamily::Assisted &&
-        m_state.actuators.source ==
-            game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
-        m_state.construction.physicalControlModel ==
-            m_state.construction.definition->physicalControlModel)
+        m_state.construction.valid())
     {
         const glm::dvec3 angularAfter {
             m_transform.pitchRate,
@@ -436,6 +434,51 @@ void ShipCore::updateTranslationControl(float dt)
             }
             if (mainEnginesBound)
                 physicalEngines = &installedEngines;
+        }
+    }
+
+    // Ctrl+F9 I/Y/X layouts are synthetic diagnostic ships: their topology
+    // has no real module IDs. Mount healthy instances of the SAME generic
+    // engine type so diagnosis still tests ΣF / Σ(r×F), not a fake slot
+    // impulse. No wear/damage is written back to native ship modules.
+    std::array<game::equipment::engine::EngineUnitDescriptor, 16>
+        diagnosticPassports {};
+    std::array<game::equipment::EquipmentDamageLayer, 16>
+        diagnosticDamage {};
+    std::array<game::equipment::engine::EngineOperatingState, 16>
+        diagnosticOperating {};
+    if (!physicalEngines && m_state.construction.valid() &&
+        (m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
+         m_state.construction.physicalControlModel !=
+            m_state.construction.definition->physicalControlModel))
+    {
+        const auto& topology = game::ship::plant::physicalControlSlots(
+            m_state.construction.physicalControlModel
+        );
+        if (topology.size() <= diagnosticPassports.size())
+        {
+            installedEngines.assign(topology.size(), MountedEngine {});
+            for (std::size_t i=0;i<topology.size();++i)
+            {
+                if (topology[i].role ==
+                    game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                    continue;
+                diagnosticPassports[i] =
+                    game::equipment::engine::presets::
+                        CobrettyCR1VectorMainDrive();
+                diagnosticDamage[i].failure.failureAtDamage01=0.95;
+                diagnosticOperating[i].temperatureK =
+                    diagnosticPassports[i].nominalOperatingTemperatureK;
+                installedEngines[i]={
+                    &diagnosticPassports[i],
+                    &diagnosticDamage[i],
+                    &diagnosticOperating[i],
+                    topology[i].id,
+                    true
+                };
+            }
+            physicalEngines=&installedEngines;
         }
     }
 

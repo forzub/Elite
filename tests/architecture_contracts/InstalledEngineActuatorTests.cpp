@@ -9,6 +9,7 @@
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"
+#include "src/game/ship/plant/ShipPresetEngineManeuvers.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 
 namespace
@@ -293,6 +294,120 @@ void assistedKeypadAxialReleaseHasNoParasiticPitch()
     }
 }
 
+void preparedManeuversSurviveSingleMainEngineFailure()
+{
+    using namespace game::equipment::engine;
+    using namespace game::ship::plant;
+    const auto passport=presets::CobrettyCR1VectorMainDrive();
+    for(const auto model:{
+        PhysicalControlModelId::AssistedI,
+        PhysicalControlModelId::AssistedY,
+        PhysicalControlModelId::AssistedX
+    })
+    {
+        const auto& slots=physicalControlSlots(model);
+        require(slots.size()<=8u,"unexpected Assisted topology size");
+        game::equipment::EquipmentDamageLayer damage[8];
+        EngineOperatingState operating[8];
+        std::vector<MountedEngine> mounts(slots.size());
+        std::size_t aft=0,fore=0;
+        for(std::size_t i=0;i<slots.size();++i)
+        {
+            damage[i].failure.failureAtDamage01=0.95;
+            operating[i].temperatureK=1200.0;
+            mounts[i]={
+                &passport,&damage[i],&operating[i],slots[i].id,true
+            };
+            if(slots[i].role==EngineSlotRole::AftMain)++aft;
+            if(slots[i].role==EngineSlotRole::ForeMain)++fore;
+        }
+        ShipParams physics {};
+        physics.massKg=260000.0;
+        physics.physicalActuatorHalfExtentsMeters={13.0,2.5,11.1};
+        physics.centerOfMassLocalMeters={0.0,0.0,0.0};
+        physics.pitchInertiaKgM2=11219866.6666667;
+        physics.yawInertiaKgM2=25324866.6666667;
+        physics.rollInertiaKgM2=15188333.3333333;
+        physics.angularAccel=3.0f;
+        physics.strafeAccel=73.549875f;
+        physics.forwardMainEngineAccelerationMps2=static_cast<float>(
+            static_cast<double>(aft)*passport.nominalThrustNewtons/
+            physics.massKg
+        );
+        physics.reverseMainEngineAccelerationMps2=static_cast<float>(
+            static_cast<double>(fore)*passport.nominalThrustNewtons/
+            physics.massKg
+        );
+        AssistedManeuverPrograms cache;
+        EngineMatrixDemand move;
+        move.accelerationBodyMps2={0.0,0.0,-15.0};
+        move.tick=91u;
+        const auto healthy=cache.execute(
+            model,mounts,physics,move
+        );
+        require(healthy.valid &&
+                healthy.accelerationBodyMps2.z < -10.0 &&
+                glm::length(healthy.angularAccelerationBodyRadPerSec2)
+                    <0.01,
+                "healthy simplified engine program generated a spurious turn");
+        EngineMatrixDemand sideways;
+        sideways.accelerationBodyMps2={20.0,0.0,0.0};
+        sideways.tick=92u;
+        const auto lateral=cache.execute(
+            model,mounts,physics,sideways
+        );
+        require(lateral.valid && lateral.accelerationBodyMps2.x>10.0 &&
+                glm::length(lateral.angularAccelerationBodyRadPerSec2)
+                    <0.05,
+                "healthy simplified engine program cannot translate cleanly");
+
+        // Remove one aft engine IN THE SAME cached ship and preserve a
+        // purely straight, slower acceleration via all surviving nozzles.
+        mounts[0].attached=false;
+        const auto damaged=cache.execute(
+            model,mounts,physics,move
+        );
+        require(damaged.valid &&
+                damaged.engines[0].deliveredThrust01==0.0 &&
+                damaged.accelerationBodyMps2.z < -2.0 &&
+                damaged.accelerationBodyMps2.z >
+                    healthy.accelerationBodyMps2.z &&
+                glm::length(damaged.angularAccelerationBodyRadPerSec2)
+                    <0.05 &&
+                std::abs(damaged.accelerationBodyMps2.x)<0.25 &&
+                std::abs(damaged.accelerationBodyMps2.y)<0.25,
+                "one failed engine prevented slower balanced straight flight");
+        bool angled=false;
+        for(std::size_t i=1;i<slots.size();++i)
+            angled=angled ||
+                (damaged.engines[i].deliveredThrust01>0.001 &&
+                 (std::abs(damaged.engines[i].nozzleYawRad)>0.01 ||
+                  std::abs(damaged.engines[i].nozzlePitchRad)>0.01));
+        require(angled,
+            "single-engine failure did not vector surviving nozzles");
+
+        EngineMatrixDemand pitch;
+        pitch.angularAccelerationBodyRadPerSec2={-1.0,0.0,0.0};
+        pitch.tick=93u;
+        const auto stabilize=cache.execute(
+            model,mounts,physics,pitch
+        );
+        require(stabilize.valid &&
+                stabilize.angularAccelerationBodyRadPerSec2.x < -0.2,
+                "one failed engine prevented Assisted angular damping");
+
+        // Repair must restore cached full-bank performance automatically.
+        mounts[0].attached=true;
+        const auto repaired=cache.execute(
+            model,mounts,physics,move
+        );
+        require(repaired.valid &&
+                repaired.accelerationBodyMps2.z <=
+                    healthy.accelerationBodyMps2.z+0.25,
+                "repair did not restore nominal maneuver program");
+    }
+}
+
 void sixAxisMatrixControlsActualMotorVectors()
 {
     using namespace game::equipment::engine;
@@ -437,6 +552,7 @@ int main()
         mountedAllocatorUsesEngineForceNotSlotFractions();
         sixAxisMatrixControlsActualMotorVectors();
         assistedKeypadAxialReleaseHasNoParasiticPitch();
+        preparedManeuversSurviveSingleMainEngineFailure();
         std::cout
             << "INSTALLED ENGINE ACTUATOR: PASS\n"
             << " - named Cobretty CR-1 preset -> common Engine instance\n"

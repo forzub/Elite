@@ -226,6 +226,31 @@ add_test(
     COMMAND universe_material_engine_thermal_tests
 )
 
+# Generic installed engine execution must obtain force from the mounted
+# engine type/state; slot topology supplies only placement and grouping.
+add_executable(
+    installed_engine_actuator_tests
+    InstalledEngineActuatorTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/ShipPhysicalActuatorPlant.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/AssistedPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/NewtonianPhysicalControlModel.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/plant/ShipPhysicalControlModels.cpp"
+)
+target_include_directories(
+    installed_engine_actuator_tests PRIVATE
+        "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(installed_engine_actuator_tests PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(installed_engine_actuator_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(installed_engine_actuator_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_test(
+    NAME installed_engine_actuator
+    COMMAND installed_engine_actuator_tests
+)
+
 add_executable(
     equipment_damage_failure_pipeline_tests
     EquipmentDamageFailurePipelineTests.cpp

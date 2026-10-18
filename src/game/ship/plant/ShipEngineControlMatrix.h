@@ -156,7 +156,11 @@ inline void projectThrustCone(
         });
         m[i].limit = idle.availableGimbalRangeRad;
         m[i].rate = idle.availableGimbalRateRadPerSec;
-        m[i].sign = topology[i].role == EngineSlotRole::ForeMain ? 1.0 : -1.0;
+        // The installation topology, not a hard-coded engine kind,
+        // supplies the neutral nozzle orientation. All present I/Y/X main
+        // mounts are axial (+Z fore / -Z aft).
+        m[i].sign =
+            topology[i].nominalForceDirectionBody.z >= 0.0 ? 1.0 : -1.0;
         m[i].arm =
             topology[i].normalizedPositionBody * extents -
             ship.centerOfMassLocalMeters;

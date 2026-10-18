@@ -14,7 +14,7 @@ def contains(path: str, *tokens: str) -> str:
             raise SystemExit(f"[ENGINE MATRIX][FAIL] {path}: missing {token}")
     return text
 
-matrix = contains(
+contains(
     "src/game/ship/plant/ShipEngineControlMatrix.h",
     "executeEngineControlMatrix(",
     "normalizedPositionBody",
@@ -24,16 +24,6 @@ matrix = contains(
     "availableGimbalRateRadPerSec",
     "out.torqueBodyNm+=glm::cross(",
     "output.execute(EngineCommand",
-) if False else contains(
-    "src/game/ship/plant/ShipEngineControlMatrix.h",
-    "executeEngineControlMatrix(",
-    "normalizedPositionBody",
-    "nominalForceDirectionBody",
-    "projectThrustCone(",
-    "availableGimbalRangeRad",
-    "availableGimbalRateRadPerSec",
-    "out.torqueBodyNm+=glm::cross(",
-    "output.execute(EngineCommand" if False else "output.execute(EngineCommand",
 )
 contains(
     "src/game/ship/control/ShipControlExecutionGateway.cpp",

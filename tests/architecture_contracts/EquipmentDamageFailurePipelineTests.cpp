@@ -256,6 +256,68 @@ void testInstalledEngineWearAndThermalAffectRealModuleProjection()
             "real installed engine thermal damage was not stored");
 }
 
+void testIndependentEmitterDamageReachesInstalledEngineSlot()
+{
+    auto d = descriptor();
+    for (auto& module : d.modules)
+    {
+        auto& engine = *module.engine;
+        engine.nominalElectricalPowerMW = 4850.0;
+        engine.nominalEfficiency01 = 0.9855;
+        engine.thermalEmitter.outerDiameterM = 4.5;
+        engine.thermalEmitter.apertureDiameterM = 2.5;
+        engine.thermalEmitter.surfaceTemperatureK = 2500.0;
+        engine.thermalEmitter.viewFactor01 = 0.90;
+        engine.thermalEmitter.materialId = "elite.material.engine.hfc-c.v1";
+        engine.thermalConductanceMWperK =
+            (70.325 -
+             game::equipment::engine::ratedThermalEmitterPowerMW(engine)) /
+            150.0;
+    }
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    const auto* before = runtime.findModule("aft_left");
+    require(before && near(before->engineOperating.emitterSurface.intactArea01, 1.0),
+            "initial emitter area not pristine");
+    const auto revisionBefore = runtime.revision();
+    require(runtime.exposeEngineEmitter(
+                "aft_left",
+                *d.modules[0].engine,
+                {game::physics::materials::SurfaceImpactKind::Laser,
+                 60.0, 4.0, 2500.0, 0.0}
+            ), "actual installed emitter exposure was not accepted");
+    const auto* after = runtime.findModule("aft_left");
+    require(after && runtime.revision() > revisionBefore,
+            "emitter hit did not persist or invalidate physics projection");
+    require(after->engineOperating.emitterSurface.intactArea01 < 0.50,
+            "laser did not remove localized physical emitter area");
+    require(near(
+                game::equipment::totalAccumulatedDamage01(
+                    after->equipmentDamage.accumulated
+                ), 0.0
+            ), "emitter hit wrongly injected direct thrust/TVC damage");
+
+    const auto slots = game::ship::capability::buildPhysicalControlSlotState(
+        d, d.physicalControlModel, runtime
+    );
+    require(slots.size() == 4 && slots[0].thrust01 < 0.85 &&
+            slots[0].thrust01 > 0.0 &&
+            near(slots[1].thrust01, 1.0) &&
+            near(slots[2].thrust01, 1.0),
+            "hot surface loss did not isolate derating to damaged engine");
+    require(near(slots[0].vectoring01, 1.0),
+            "annulus hit incorrectly damaged independent TVC function");
+
+    const auto c = game::ship::capability::buildShipCapability(
+        d, d.physicalControlModel, slots
+    );
+    require(c.valid &&
+            c.effectivePhysics.forwardMainEngineAccelerationMps2 < 100.0f &&
+            near(c.effectivePhysics.reverseMainEngineAccelerationMps2,
+                 100.0),
+            "emitter derating did not reach real physical propulsion bank");
+}
+
 } // namespace
 
 int main()
@@ -266,6 +328,7 @@ int main()
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();
         testInstalledEngineWearAndThermalAffectRealModuleProjection();
+        testIndependentEmitterDamageReachesInstalledEngineSlot();
         std::cout
             << "EQUIPMENT DAMAGE FAILURE PIPELINE: PASS\n"
             << " - all five accumulated causes sum into real module thrust/TVC\n"

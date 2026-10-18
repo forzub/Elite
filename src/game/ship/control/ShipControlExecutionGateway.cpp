@@ -209,6 +209,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         );
 
     auto& motion = transform.motion;
+    motion.mainEngineDeliveredThrust01.fill(0.0);
+    motion.mainEngineReportedSlotCount = 0;
     if (dt <= 0.0f ||
         motion.mode != game::navigation::MotionMode::HubTactical ||
         !motion.travelFrame.valid)
@@ -302,6 +304,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
 
     motion.mainTrimLoad01 = trim.trimLoad01;
     motion.mainTrimUsableScale01 = trim.thrustScale01;
+    motion.mainEngineDeliveredThrust01 = trim.deliveredThrust01;
+    motion.mainEngineReportedSlotCount = trim.reportedSlotCount;
 
     motion.mainPropulsionTorqueBodyNm =
         trim.reaction.torqueBodyNm;

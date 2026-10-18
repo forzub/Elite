@@ -28,6 +28,21 @@ struct ObjectModuleSnapshot
     float radiationDamage01 = 0.0f;
     float wearDamage01 = 0.0f;
 
+    // Per-installed-engine state needed for IDENTICAL server/client physics
+    // capability projection. Static thermal constants/material IDs are held
+    // in both sides' immutable ship descriptor, not sent over the network.
+    // false maintains backward compatibility with old or non-engine modules.
+    bool hasEngineThermalState = false;
+    float engineTemperatureK = 0.0f;
+    float emitterIntactArea01 = 1.0f;
+    float emitterMicrocrack01 = 0.0f;
+    float emitterLaserDamage01 = 0.0f;
+    float emitterImpactDamage01 = 0.0f;
+    float emitterThermalDamage01 = 0.0f;
+    float emitterRadiationDamage01 = 0.0f;
+    float emitterWearDamage01 = 0.0f;
+    float emitterEquivalentOperatingHours = 0.0f;
+
     int aliveSupportCount = 0;
 };
 

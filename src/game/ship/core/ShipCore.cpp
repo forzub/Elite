@@ -267,7 +267,25 @@ ShipCore::capabilities() const
         );
 
     if (out.valid)
+    {
         m_state.massProperties.applyTo(out.effectivePhysics);
+        // After CURRENT mass is known, calculate force/mass from the actual
+        // mounted engine TYPES and their module-derived availability.
+        // Diagnostic construction overrides preserve the legacy matrix
+        // envelope so I/Y/X probe fixtures cannot invent engine mounts.
+        if (m_state.actuators.source ==
+                game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+            m_state.construction.physicalControlModel ==
+                m_state.construction.definition->physicalControlModel)
+        {
+            game::ship::capability::applyMountedEngineAxialAuthority(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel,
+                m_state.actuators.propulsionSlots,
+                out
+            );
+        }
+    }
 
     m_cachedCapability = out;
     m_cachedConstructionRevision = constructionRevision;

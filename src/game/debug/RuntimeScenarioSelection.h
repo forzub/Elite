@@ -11,8 +11,6 @@ enum class RuntimeScenarioKind
 {
     None = 0,
     ShipControl,
-    PropulsionMatrix,
-    ShipDamage,
     NavigationStress
 };
 
@@ -41,23 +39,6 @@ struct RuntimeScenarioSelection
             return out;
         }
 
-        if (value == "propulsion-matrix")
-        {
-            out.kind = RuntimeScenarioKind::PropulsionMatrix;
-            return out;
-        }
-
-        constexpr std::string_view DamagePrefix = "ship-damage:";
-        if (value.rfind(DamagePrefix, 0) == 0)
-        {
-            const auto payload = value.substr(DamagePrefix.size());
-            if (payload.empty())
-                return {};
-
-            out.kind = RuntimeScenarioKind::ShipDamage;
-            out.payload = std::string(payload);
-            return out;
-        }
 
         constexpr std::string_view NavPrefix = "nav-stress";
         if (value == NavPrefix)

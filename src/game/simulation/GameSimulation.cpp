@@ -6401,11 +6401,18 @@ m_hubVelocityMetersPerSecond[hubId] =
                 );
             }
 
-            // Keep orientation kinematics on the authoritative fixed step.
-            // Coarse mode therefore holds the last angular acceleration/rates
-            // between control evaluations, but snapshots never see a frozen
-            // hull followed by a 200 ms orientation jump.
-            ship.propagateMotionOrientation(fdt);
+            // Non-tactical or frame-unbound ships keep ordinary attitude
+            // propagation here. Tactical ships must apply ENGINE-produced
+            // torque before this step's orientation integration; moving this
+            // motion sample after translation control avoids a whole fixed
+            // tick of extra feedback delay for pitch/yaw/roll.
+            const auto& angularMotion = ship.core().transform().motion;
+            if (angularMotion.mode !=
+                    game::navigation::MotionMode::HubTactical ||
+                !angularMotion.travelFrame.valid)
+            {
+                ship.propagateMotionOrientation(fdt);
+            }
 
             if (shipUsesDetailedSimulation(id))
             {
@@ -6488,10 +6495,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (decisionIt == m_shipMotionControlStepDecisions.end() ||
                 !decisionIt->second.execute)
             {
-                // Keep the last authoritative engine acceleration between
-                // coarse control evaluations. Translation is still propagated
-                // every fixed tick below, so the entity never freezes or
-                // teleports merely because its control solver is sleeping.
+                // A coarse control cadence holds the last rates, but the
+                // physics still integrates attitude every fixed tick.
+                shipPtr->propagateMotionOrientation(fdt);
                 continue;
             }
 
@@ -6503,6 +6509,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             // ShipControlState semantics and actuator/backend selection are
             // isolated behind the ship control execution gateway.
             shipPtr->updateTranslationControl(motionControlDt);
+            // Rotation now uses the ACTUAL physical engine r x F of the
+            // current tick, not the previous tick's solver output.
+            shipPtr->propagateMotionOrientation(fdt);
         }
     }
 

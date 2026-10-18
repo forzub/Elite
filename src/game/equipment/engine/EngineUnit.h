@@ -46,11 +46,9 @@ struct EngineThermalEmitterDescriptor
     enum class ServicePolicy { ReplaceOnly };
     ServicePolicy servicePolicy = ServicePolicy::ReplaceOnly;
 
-    // Damage weighting of the FIVE common equipment causes. Heat/radiation
-    // are recorded as history but do not affect this material's service life.
-    game::equipment::EquipmentDamageSensitivity wearInfluence {
-        1.0, 1.0, 0.0, 0.0, 1.0
-    };
+    // Five damage channels live in EngineEmitterOperatingState; laser and
+    // kinetic hits affect geometry, wear ages the emitting surface, while
+    // thermal/radiation are recorded with zero functional effect here.
 };
 
 struct EngineUnitDescriptor
@@ -348,6 +346,15 @@ inline double positiveFiniteOr(
     return std::max(0.0, inputMW - usefulMW);
 }
 
+// A self-contained, replaceable hot-emitter unit mounted on one engine.
+// Mechanical engine history survives replacing this consumable component.
+struct EngineEmitterOperatingState
+{
+    game::physics::materials::SurfaceIntegrity surface {};
+    game::equipment::EquipmentDamageState damage {};
+    double equivalentOperatingHours = 0.0;
+};
+
 // Operating history belongs to each INSTALLED engine module, not the
 // ShipDescriptor and not a propulsion slot. These values are independent
 // from accumulated functional damage, which remains in EquipmentDamageState.
@@ -362,16 +369,8 @@ struct EngineOperatingState
     double pendingWearDamage01 = 0.0;
     double pendingThermalDamage01 = 0.0;
 
-    // Third independently damageable functional component: the hot annulus.
-    // Surface holes do not directly count as thrust or TVC functional damage.
-    game::physics::materials::SurfaceIntegrity emitterSurface {};
-
-    // Five shared causes for ALL equipment, including the hot annulus.
-    // Laser/Impact also remove physical surface area; do not subtract them
-    // twice when calculating radiation. Thermal/Radiation have zero effect
-    // on this material, but their historical channels remain available.
-    game::equipment::EquipmentDamageState emitterDamage {};
-    double emitterEquivalentOperatingHours = 0.0;
+    // The mounted third component has its own replace-only life/damage.
+    EngineEmitterOperatingState emitter {};
 };
 
 // Only a hit resolved to the emitter surface may enter here. Callers supply
@@ -403,8 +402,8 @@ applyEngineEmitterExposure(
     const EngineOperatingState& operating
 ) noexcept
 {
-    return finiteClamp01(operating.emitterSurface.intactArea01) *
-        (1.0 - finiteClamp01(operating.emitterDamage.wear01));
+    return finiteClamp01(operating.emitter.surface.intactArea01) *
+        (1.0 - finiteClamp01(operating.emitter.damage.wear01));
 }
 
 // Quasi-steady protective thrust cap with an IDEAL fixed coolant boundary.
@@ -563,8 +562,8 @@ inline EngineLifeStep advanceEngineOperatingState(
             descriptor.thermalEmitter.materialId))
     {
         const double beforeEmitterHours =
-            std::max(0.0, previous.emitterEquivalentOperatingHours);
-        step.next.emitterEquivalentOperatingHours =
+            std::max(0.0, previous.emitter.equivalentOperatingHours);
+        step.next.emitter.equivalentOperatingHours =
             beforeEmitterHours + equivalentDeltaHours;
         const auto emitterWearAt = [&](double hours)
         {
@@ -588,11 +587,11 @@ inline EngineLifeStep advanceEngineOperatingState(
         };
         step.emitterWearDamageIncrement01 = std::max(
             0.0,
-            emitterWearAt(step.next.emitterEquivalentOperatingHours) -
+            emitterWearAt(step.next.emitter.equivalentOperatingHours) -
                 emitterWearAt(beforeEmitterHours)
         );
-        step.next.emitterDamage.wear01 = std::clamp(
-            finiteClamp01(previous.emitterDamage.wear01) +
+        step.next.emitter.damage.wear01 = std::clamp(
+            finiteClamp01(previous.emitter.damage.wear01) +
                 step.emitterWearDamageIncrement01,
             0.0, 1.0
         );

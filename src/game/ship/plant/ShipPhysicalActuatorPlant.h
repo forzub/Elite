@@ -18,11 +18,7 @@ namespace game::ship::plant
 [[nodiscard]] double instantaneousSlotThrust01(
     const EngineSlotState& state,
     std::size_t slotIndex,
-    std::uint64_t controlTick,
-    // Real installed engine views, indexed by the placement/topology table.
-    // Null is allowed ONLY for legacy/diagnostic actors with no engine mount.
-    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines =
-        nullptr
+    std::uint64_t controlTick
 ) noexcept;
 
 // Scale applied to the net main acceleration for the currently active bank.
@@ -89,7 +85,11 @@ struct MainPropulsionTrimResult
     const glm::dvec3& attitudeIntent01,
     double remainingYawTrimRad,
     double remainingPitchTrimRad,
-    std::uint64_t controlTick
+    std::uint64_t controlTick,
+    // Mounted runtime engines are force authority; topology only locates.
+    // Null is reserved for diagnostic models without installed engines.
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines =
+        nullptr
 ) noexcept;
 
 // Convert the already-authorized net main-engine acceleration back into the

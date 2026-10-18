@@ -53,6 +53,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/navigation/TravelFrameSystem.h"
 #include "src/game/navigation/NpcNavigationIntentController.h"
 #include "src/game/navigation/autopilot/AutopilotLawController.h"

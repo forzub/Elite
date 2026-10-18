@@ -195,6 +195,8 @@ void testDamageCostsMorePowerForSameDeliveredThrust()
             "healthy half-thrust power changed");
     require(near(requestedElectricalPowerMW(d, reduced, 0.50), 0.625),
             "degraded same-thrust power cost changed");
+    require(near(requestedElectricalPowerMW(d, reduced, 1.0), 0.625),
+            "power accounting billed for impossible thrust above damaged maximum");
     require(near(generatedWasteHeatMW(d, reduced, 0.50), 0.375),
             "damaged waste heat did not equal input minus useful output");
 }

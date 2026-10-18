@@ -182,9 +182,23 @@ AllocationEvaluation evaluateTrimmedAllocation(
         // its passport, damage, heat limit and intermittent thrust.
         // Mount geometry belongs only to the topology, not the engine model.
         const double massKg = positiveFiniteOr(physics.massKg, 1.0);
+        // When the anti-yaw controller balances to a weak partner, the
+        // physically deliverable bank limit is the SUM AFTER balancing.
+        // Normalizing to raw unbalanced force would apply its loss TWICE
+        // (once in planner envelope, again in this execution plant).
+        double balancedSteadyNewtons = 0.0;
+        for (std::size_t i = 0; i < slots.size(); ++i)
+        {
+            if (slots[i].role != activeRole)
+                continue;
+            balancedSteadyNewtons +=
+                game::equipment::engine::Engine(
+                    (*mountedEngines)[i]).availableThrustNewtons() *
+                std::clamp(throttleScale01[i], 0.0, 1.0);
+        }
         const double demand01 = std::clamp(
             (requestedMagnitude * massKg) /
-                std::max(steadyTotal, Epsilon),
+                std::max(balancedSteadyNewtons, Epsilon),
             0.0, 1.0
         );
         glm::dvec3 netForce(0.0);
@@ -701,12 +715,16 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     double ratedAvailableAcceleration = availableBankAcceleration;
     if (mountedEngines)
     {
-        double sumNewtons = 0.0;
+        // Must exactly match evaluateTrimmedAllocation: divide demand by the
+        // balanced bank envelope, not the optimistic raw motor-force sum.
+        double balancedNewtons = 0.0;
         for (std::size_t i = 0; i < slots.size(); ++i)
             if (slots[i].role == activeRole)
-                sumNewtons += game::equipment::engine::Engine(
-                    (*mountedEngines)[i]).availableThrustNewtons();
-        ratedAvailableAcceleration = sumNewtons /
+                balancedNewtons +=
+                    game::equipment::engine::Engine(
+                        (*mountedEngines)[i]).availableThrustNewtons() *
+                    std::clamp(throttleScale01[i], 0.0, 1.0);
+        ratedAvailableAcceleration = balancedNewtons /
             positiveFiniteOr(physics.massKg, 1.0);
     }
     const double demand01 = std::clamp(

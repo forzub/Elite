@@ -382,6 +382,74 @@ inline void applyDescriptorActuatorGeometry(
 
 } // namespace detail
 
+// Project engine TYPE ratings and per-installed-engine availability into
+// the planner/control envelope. This is only a capability SUMMARY: execution
+// itself calls each real Engine and sums its output force/torque in newtons.
+// The slot array supplies location and ID binding, never engine constants.
+inline void applyMountedEngineAxialAuthority(
+    const ShipDescriptor& descriptor,
+    plant::PhysicalControlModelId model,
+    const std::vector<plant::EngineSlotState>& projected,
+    ShipCapabilitySnapshot& capability
+) noexcept
+{
+    if (!capability.valid)
+        return;
+    const auto& topology = plant::physicalControlSlots(model);
+    const auto& bindings = descriptor.physicalControl.slotModuleIds;
+    if (bindings.size() != topology.size() ||
+        projected.size() != topology.size())
+        return;
+
+    double aftThrustNewtons = 0.0;
+    double foreThrustNewtons = 0.0;
+    bool foundAft = false;
+    bool foundFore = false;
+    for (std::size_t i = 0; i < topology.size(); ++i)
+    {
+        const auto role = topology[i].role;
+        if (role == plant::EngineSlotRole::ManoeuvreCluster)
+            continue;
+        const auto* installed =
+            detail::findModuleDescriptor(descriptor, bindings[i]);
+        if (!installed || !installed->engine)
+            return; // Legacy/diagnostic model, preserve prior envelope.
+        const double ratedN = std::max(
+            0.0, installed->engine->nominalThrustNewtons
+        );
+        const double availableN =
+            ratedN * plant::effectiveSlotThrust01(projected[i]);
+        if (role == plant::EngineSlotRole::AftMain)
+        {
+            aftThrustNewtons += availableN;
+            foundAft = true;
+        }
+        else if (role == plant::EngineSlotRole::ForeMain)
+        {
+            foreThrustNewtons += availableN;
+            foundFore = true;
+        }
+    }
+
+    const double massKg =
+        std::max(1.0, capability.effectivePhysics.massKg);
+    if (foundAft)
+        capability.effectivePhysics.forwardMainEngineAccelerationMps2 =
+            static_cast<float>(aftThrustNewtons / massKg);
+    if (foundFore)
+        capability.effectivePhysics.reverseMainEngineAccelerationMps2 =
+            static_cast<float>(foreThrustNewtons / massKg);
+    // Newtonian reverse RCS remains independent; never fabricate a fore main.
+    capability.longitudinalAccelerationMps2 = {
+        game::ship::forwardMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        ),
+        game::ship::reverseMainAccelerationLimitMps2(
+            capability.effectivePhysics
+        )
+    };
+}
+
 // State-driven projection for a construction selected by ShipState. The
 // descriptor supplies immutable module bindings/ratings only; the per-instance
 // construction model is supplied explicitly.
@@ -521,6 +589,9 @@ inline ShipCapabilitySnapshot buildShipCapability(
         )
     );
     detail::applyDescriptorActuatorGeometry(descriptor, out);
+    applyMountedEngineAxialAuthority(
+        descriptor, descriptor.physicalControlModel, state, out
+    );
     return out;
 }
 
@@ -546,6 +617,9 @@ inline ShipCapabilitySnapshot buildShipCapability(
         )
     );
     detail::applyDescriptorActuatorGeometry(descriptor, out);
+    applyMountedEngineAxialAuthority(
+        descriptor, descriptor.physicalControlModel, state, out
+    );
     return out;
 }
 

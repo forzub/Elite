@@ -41,9 +41,6 @@ ShipDescriptor descriptor()
     d.physics.reverseMainEngineAccelerationMps2 = 100.0f;
     d.physics.strafeAccel = 100.0f;
     d.physics.angularAccel = 3.0f;
-    // Keep the fixture's 100 m/s^2 authored main rating below the common
-    // acceleration envelope. Otherwise ShipDynamics correctly clamps it to
-    // the default 5 g and the test no longer measures a 100 -> 50 split.
     d.physics.maxGs = 20.0f;
     d.physics.maxLinearGs = 20.0f;
     d.physics.massKg = 1000.0;
@@ -53,18 +50,14 @@ ShipDescriptor descriptor()
 
     game::equipment::engine::EngineUnitDescriptor engine;
     engine.nominalThrustNewtons = 50000.0;
-    engine.nominalElectricalPowerMW = 10.0;
-    engine.nominalEfficiency01 = 1.0;
+    engine.designReferenceSpeedMps = 500.0;
+    engine.nominalEfficiency01 = 0.80;
+    engine.nominalElectricalPowerMW =
+        engine.nominalThrustNewtons * engine.designReferenceSpeedMps /
+        (engine.nominalEfficiency01 * 1.0e6);
     engine.nominalGimbalRangeRad = 0.2;
     engine.nominalGimbalRateRadPerSec = 0.4;
-    engine.gimbalDamage = {
-        0.15, 0.65, 0.05, 0.00, 0.15
-    };
-    engine.gimbalFailure.failureAtDamage01 = 0.95;
-
-    const game::equipment::EquipmentDamageSensitivity thrustDamage {
-        0.30, 0.45, 0.15, 0.01, 0.09
-    };
+    engine.gimbalFailure.failureAtDamage01 = 0.90;
 
     const char* ids[] = {
         "aft_left",
@@ -78,7 +71,6 @@ ShipDescriptor descriptor()
         ModuleDescriptor module;
         module.moduleId = id;
         module.maxHealth = 100.0f;
-        module.equipmentDamageSensitivity = thrustDamage;
         module.equipmentFailure.failureAtDamage01 = 0.95;
         module.engine = engine;
         d.modules.push_back(std::move(module));
@@ -94,129 +86,126 @@ ShipDescriptor descriptor()
     return d;
 }
 
-void applyThrustFailureDamage(
-    world::modules::ObjectModuleRuntime& runtime,
-    const std::string& moduleId
-)
-{
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Laser, 1.0),
-            "laser damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Impact, 1.0),
-            "impact damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Thermal, 1.0),
-            "thermal damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Radiation, 1.0),
-            "radiation damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Wear, 4.0 / 9.0),
-            "wear damage was not accumulated");
-}
-
-void applyTvcFailureDamage(
-    world::modules::ObjectModuleRuntime& runtime,
-    const std::string& moduleId
-)
-{
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Laser, 1.0),
-            "laser damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Impact, 1.0),
-            "impact damage was not accumulated");
-    require(runtime.addEquipmentDamage(
-                moduleId, EquipmentDamageKind::Wear, 1.0),
-            "wear damage was not accumulated");
-}
-
-void testThrustFailureFlowsFromEquipmentDamageToCapability()
+void testFiveCauseDamageFlowsIntoLiveSlotAndCapability()
 {
     const auto d = descriptor();
     world::modules::ObjectModuleRuntime runtime;
     runtime.init(d.modules);
 
-    applyThrustFailureDamage(runtime, "aft_left");
+    // 20% laser + 15% impact + 8% thermal + 2% radiation + 5% wear
+    // = 50% direct engine damage. No cause-specific weighting at output.
+    const auto id = std::string("aft_left");
+    require(runtime.addEquipmentDamage(
+                id, EquipmentDamageKind::Laser, 0.20),
+            "laser damage did not enter module state");
+    require(runtime.addEquipmentDamage(
+                id, EquipmentDamageKind::Impact, 0.15),
+            "impact damage did not enter module state");
+    require(runtime.addEquipmentDamage(
+                id, EquipmentDamageKind::Thermal, 0.08),
+            "thermal damage did not enter module state");
+    require(runtime.addEquipmentDamage(
+                id, EquipmentDamageKind::Radiation, 0.02),
+            "radiation damage did not enter module state");
+    require(runtime.addEquipmentDamage(
+                id, EquipmentDamageKind::Wear, 0.05),
+            "wear damage did not enter module state");
+
+    const auto* module = runtime.findModule(id);
+    require(module && near(module->equipmentDamage.accumulated.laser01, 0.20)
+                       && near(module->equipmentDamage.accumulated.wear01, 0.05),
+            "individual damage histories were merged or lost");
 
     const auto slots =
         game::ship::capability::buildPhysicalControlSlotState(
-            d,
-            d.physicalControlModel,
-            runtime
+            d, d.physicalControlModel, runtime
         );
 
     require(slots.size() == 4, "Assisted-I slot projection size changed");
     require(slots[0].operational,
-            "functional thrust failure deleted the installed slot");
-    require(near(slots[0].thrust01, 0.0),
-            "95% thrust damage did not zero slot thrust");
-    require(slots[0].vectoring01 > 0.0,
-            "thrust-only failure incorrectly destroyed TVC function");
-    require(near(game::ship::plant::effectiveSlotThrust01(slots[0]), 0.0),
-            "failed thrust function still contributed physical force");
-    require(near(game::ship::plant::effectiveSlotVectoring01(slots[0]), 0.0),
-            "TVC produced authority without surviving thrust");
+            "functional damage falsely detached the engine");
+    require(near(slots[0].thrust01, 0.50),
+            "five percentages did not halve live available thrust");
+    require(near(slots[0].vectoring01, 0.50),
+            "five percentages did not reduce nozzle authority");
 
     const auto capability =
         game::ship::capability::buildShipCapability(
-            d,
-            d.physicalControlModel,
-            slots
+            d, d.physicalControlModel, slots
         );
 
-    require(capability.valid, "damaged capability projection became invalid");
-    require(near(
-                capability.effectivePhysics.forwardMainEngineAccelerationMps2,
-                50.0,
-                1.0e-6),
-            "one failed aft thrust function did not halve Assisted-I forward authority");
-    require(near(
-                capability.effectivePhysics.reverseMainEngineAccelerationMps2,
-                100.0,
-                1.0e-6),
-            "aft thrust failure incorrectly damaged fore-bank authority");
+    require(capability.valid, "damaged capability invalid");
+    require(near(capability.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 75.0, 1.0e-6),
+            "damaged aft-left engine did not reduce actual bank capability");
+    require(near(capability.effectivePhysics.reverseMainEngineAccelerationMps2,
+                 100.0, 1.0e-6),
+            "damaged aft engine modified the opposite bank");
 }
 
-void testTvcFailureLeavesAxialThrustInCapability()
+void testTvcFailurePreservesPartialAxialThrust()
 {
     const auto d = descriptor();
     world::modules::ObjectModuleRuntime runtime;
     runtime.init(d.modules);
 
-    applyTvcFailureDamage(runtime, "aft_left");
+    require(runtime.addEquipmentDamage(
+                "aft_left", EquipmentDamageKind::Impact, 0.90),
+            "impact damage did not enter engine module");
 
     const auto slots =
         game::ship::capability::buildPhysicalControlSlotState(
-            d,
-            d.physicalControlModel,
-            runtime
+            d, d.physicalControlModel, runtime
         );
 
-    require(slots.size() == 4, "Assisted-I slot projection size changed");
     require(slots[0].operational,
-            "TVC failure deleted the installed slot");
-    require(near(slots[0].thrust01, 0.16, 1.0e-9),
-            "TVC-only failure changed surviving thrust authority");
+            "nozzle failure falsely removed the physical engine");
+    require(near(slots[0].thrust01, 0.10),
+            "nozzle failure erased remaining 10% axial thrust");
     require(near(slots[0].vectoring01, 0.0),
-            "95% TVC damage did not zero vectoring authority");
+            "90% total damage did not disable TVC");
     require(slots[0].thrustIrregularity01 > 0.0,
-            "severe surviving thrust did not carry instability into the slot");
+            "severe surviving axial thrust lost instability");
 
     const auto capability =
         game::ship::capability::buildShipCapability(
-            d,
-            d.physicalControlModel,
-            slots
+            d, d.physicalControlModel, slots
+        );
+    require(capability.valid &&
+            near(capability.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 55.0, 1.0e-6),
+            "TVC failure removed or created extra axial thrust");
+}
+
+void testThrustFailurePreservesInstalledModule()
+{
+    const auto d = descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+
+    require(runtime.addEquipmentDamage(
+                "aft_left", EquipmentDamageKind::Laser, 0.95),
+            "laser damage did not enter engine module");
+
+    const auto slots =
+        game::ship::capability::buildPhysicalControlSlotState(
+            d, d.physicalControlModel, runtime
         );
 
-    require(capability.valid, "TVC-damaged capability projection became invalid");
-    require(near(
-                capability.effectivePhysics.forwardMainEngineAccelerationMps2,
-                58.0,
-                1.0e-6),
-            "TVC failure removed or fabricated axial thrust");
+    require(slots[0].operational,
+            "95% functional damage falsely detached engine module");
+    require(near(slots[0].thrust01, 0.0) &&
+            near(slots[0].vectoring01, 0.0),
+            "95% engine damage did not disable both functions");
+
+    const auto capability =
+        game::ship::capability::buildShipCapability(
+            d, d.physicalControlModel, slots
+        );
+    require(capability.valid &&
+            near(capability.effectivePhysics.forwardMainEngineAccelerationMps2,
+                 50.0, 1.0e-6),
+            "failed aft engine did not halve longitudinal bank authority");
 }
 
 } // namespace
@@ -225,14 +214,14 @@ int main()
 {
     try
     {
-        testThrustFailureFlowsFromEquipmentDamageToCapability();
-        testTvcFailureLeavesAxialThrustInCapability();
-
+        testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
+        testTvcFailurePreservesPartialAxialThrust();
+        testThrustFailurePreservesInstalledModule();
         std::cout
             << "EQUIPMENT DAMAGE FAILURE PIPELINE: PASS\n"
-            << " - five-channel module damage drives thrust failure without deleting the slot\n"
-            << " - 95% thrust damage zeros physical thrust authority\n"
-            << " - 95% TVC damage zeros vectoring while axial thrust survives\n";
+            << " - all five accumulated causes sum into real module thrust/TVC\n"
+            << " - TVC fails at 90% while 10% axial thrust remains\n"
+            << " - thrust fails at 95% without detaching engine module\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

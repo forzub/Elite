@@ -197,7 +197,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     const ShipControlState& control,
     game::ship::plant::PhysicalControlModelId model,
     const std::vector<game::ship::plant::EngineSlotState>& slotState,
-    float dt
+    float dt,
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines
 )
 {
     const TranslationPath path =
@@ -283,7 +284,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
             attitudeIntent01,
             remainingYawTrimRad,
             remainingPitchTrimRad,
-            control.controlTick
+            control.controlTick,
+            mountedEngines
         );
 
     if (!trim.valid || !trim.reaction.valid)

@@ -1,3 +1,4 @@
+#include "src/game/simulation/ObjectModuleSnapshotBuilder.h"
 #include "GameSimulation.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/simulation/RuntimeSystemPolicy.h"
@@ -391,61 +392,7 @@ namespace
         const world::modules::ObjectModuleState* rt
     )
     {
-        game::simulation::ObjectModuleSnapshot ms;
-
-        // Only authoritative per-instance state crosses the replication
-        // boundary. Static module metadata is available from the same local
-        // descriptor library on both server and client.
-        ms.moduleId = descMod.moduleId;
-
-        if (rt)
-        {
-            ms.state = static_cast<uint8_t>(rt->state);
-            ms.health = rt->health;
-            ms.laserDamage01 = static_cast<float>(
-                rt->equipmentDamage.accumulated.laser01);
-            ms.impactDamage01 = static_cast<float>(
-                rt->equipmentDamage.accumulated.impact01);
-            ms.thermalDamage01 = static_cast<float>(
-                rt->equipmentDamage.accumulated.thermal01);
-            ms.radiationDamage01 = static_cast<float>(
-                rt->equipmentDamage.accumulated.radiation01);
-            ms.wearDamage01 = static_cast<float>(
-                rt->equipmentDamage.accumulated.wear01);
-            if (descMod.engine)
-            {
-                ms.hasEngineThermalState = true;
-                const auto& engine = rt->engineOperating;
-                const auto& emitter = engine.emitter;
-                ms.engineTemperatureK =
-                    static_cast<float>(engine.temperatureK);
-                ms.emitterIntactArea01 =
-                    static_cast<float>(emitter.surface.intactArea01);
-                ms.emitterMicrocrack01 =
-                    static_cast<float>(emitter.surface.microcrack01);
-                ms.emitterLaserDamage01 =
-                    static_cast<float>(emitter.damage.laser01);
-                ms.emitterImpactDamage01 =
-                    static_cast<float>(emitter.damage.impact01);
-                ms.emitterThermalDamage01 =
-                    static_cast<float>(emitter.damage.thermal01);
-                ms.emitterRadiationDamage01 =
-                    static_cast<float>(emitter.damage.radiation01);
-                ms.emitterWearDamage01 =
-                    static_cast<float>(emitter.damage.wear01);
-                ms.emitterEquivalentOperatingHours =
-                    static_cast<float>(emitter.equivalentOperatingHours);
-            }
-            ms.aliveSupportCount = rt->aliveSupportCount;
-        }
-        else
-        {
-            ms.state = 0;
-            ms.health = descMod.maxHealth;
-            ms.aliveSupportCount = 0;
-        }
-
-        return ms;
+        return game::simulation::makeObjectModuleSnapshot(descMod, rt);
     }
 
     game::simulation::StructuralLinkSnapshot buildStructuralLinkSnapshot(

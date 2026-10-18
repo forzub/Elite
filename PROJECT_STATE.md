@@ -1,3 +1,9 @@
+## 2026-10-18 — damaged-main feedback compile fix and validation rule
+
+- Fixed ShipPhysicalActuatorPlant.cpp feedback candidate accounting: instantaneousSlotThrust01 now receives state[i] rather than the whole EngineSlotState vector.
+- The failed navigation_runtime build meant the immediately following ctest invocation executed stale pre-existing test binaries; those PASS results are not accepted as validation of the new feedback layer.
+- Validation commands for this work must chain build and ctest with && so tests never run after a failed rebuild.
+
 ## 2026-10-17 — lightweight damaged-main feedback automation
 
 A new automatic damaged-main compensation layer now sits inside the existing physical execution path. It does not create a second pilot/autopilot path and does not use a general optimizer.

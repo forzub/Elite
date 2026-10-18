@@ -1,5 +1,6 @@
 
 #include "CoolingSystem.h"
+#include "src/game/physics/UniverseThermalRadiation.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -11,7 +12,7 @@ namespace game::ship::core
 void CoolingSystem::init(double totalArea, int panelCount, 
                          double emissivity, double maxCoolantTemp)
 {
-    m_secondaryCircuit.emissivity = emissivity;
+    m_secondaryCircuit.emissivity = std::clamp(emissivity, 0.0, 1.0);
     m_secondaryCircuit.maxCoolantTemp = maxCoolantTemp;
     
     double panelArea = totalArea / panelCount;
@@ -37,12 +38,11 @@ double CoolingSystem::getEffectiveArea() const
 
 double CoolingSystem::calculateRadiatedPower(double temperature) const
 {
-    double T4 = std::pow(temperature, 4);
-    double Tspace4 = std::pow(SPACE_TEMP, 4);
-    double radiated = RADIATOR_EFFECTIVENESS * m_secondaryCircuit.emissivity * STEFAN_BOLTZMANN * 
-                      getEffectiveArea() * (T4 - Tspace4);
-    
-    return std::max(0.0, radiated);
+    return game::physics::thermal::radiatedPowerMW(
+        getEffectiveArea(),
+        temperature,
+        m_secondaryCircuit.emissivity
+    );
 }
 
 

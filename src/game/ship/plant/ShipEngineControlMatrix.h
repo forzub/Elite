@@ -197,7 +197,10 @@ inline void projectThrustCone(
         for(std::size_t i=0;i<mounted.size();++i)
         {
             auto& t=out.engines[i];
-            t.availableThrust01=m[i].cap;
+            const game::equipment::engine::Engine installed(mounted[i]);
+            t.availableThrust01=m[i].rated>0.0
+                ? installed.availableThrustNewtons()/m[i].rated
+                : 0.0;
             const double delta=
                 m[i].rate*std::max(0.0,demand.elapsedSeconds);
             const auto moveHome=[delta](double value) {
@@ -335,7 +338,11 @@ inline void projectThrustCone(
             direction,demand.tick
         });
         sample.deliveredThrust01=applied.deliveredNominalThrust01;
-        sample.availableThrust01=motor.cap;
+        // Yellow reports sustained damaged/thermal capability, not a
+        // stochastic instantaneous hiccup (only RED may fluctuate).
+        sample.availableThrust01=motor.rated>0.0
+            ? output.availableThrustNewtons()/motor.rated
+            : 0.0;
         sample.nozzleYawRad=yaw;
         sample.nozzlePitchRad=pitch;
         sample.forceBodyNewtons=applied.forceBodyNewtons;

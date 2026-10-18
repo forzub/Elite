@@ -5379,8 +5379,8 @@ void SpaceState::update(float dt)
     }
 
 
-    // Optional real-runtime ship control oracle. Enabled only with
-    // ELITE_SHIP_CONTROL_ORACLE=1. It drives the exact ordinary pilot-control
+    // Optional real-runtime ship control oracle. Enabled only by the explicit
+    // ship-control runtime scenario. It drives the exact ordinary pilot-control
     // stream in handleInput() and observes the authoritative replicated ship
     // state here. No planner, corridor or direct physics shortcut participates.
     if (m_shipRuntimeControlOracle.enabled() &&

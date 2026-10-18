@@ -604,6 +604,32 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
             1.0
         );
 
+    // One active longitudinal bank per maneuver: no opposite-bank fuel,
+    // electrical, heat, or wear accounting. The effectivePhysics envelope
+    // already contains steady damage; normalize the requested magnitude
+    // against THAT envelope before applying the allocator's per-slot output.
+    const double availableBankAcceleration =
+        activeRole == EngineSlotRole::AftMain
+            ? static_cast<double>(
+                  physics.forwardMainEngineAccelerationMps2)
+            : static_cast<double>(
+                  physics.reverseMainEngineAccelerationMps2);
+    const double demand01 = std::clamp(
+        requestedMagnitude /
+            std::max(availableBankAcceleration, Epsilon),
+        0.0, 1.0
+    );
+    out.reportedSlotCount = slots.size();
+    for (std::size_t i = 0; i < slots.size(); ++i)
+    {
+        if (slots[i].role != activeRole)
+            continue;
+        out.deliveredThrust01[i] =
+            demand01 *
+            instantaneousSlotThrust01(state[i], i, controlTick) *
+            std::clamp(throttleScale01[i], 0.0, 1.0);
+    }
+
     return out;
 }
 

@@ -1,3 +1,27 @@
+## 2026-10-18 — universal universe thermal-radiation law and Cobra ring emitters
+
+Current accepted scope: physics-law refactor + provisional Cobra emitter sizing/energy passport. Do not touch reactor design, structural hull or artificial damage tests. Reactor/cooling service remain ideal for engine power authorization; live reactor capacity remains legacy and is insufficient to power the engine bank until reactor is explicitly redesigned.
+
+A new header-only universe law is at src/game/physics/UniverseThermalRadiation.h (game::physics::thermal). One and only one RadiationEffectiveness = 2.5 gameplay multiplier applies to ALL thermal emitting surfaces, regardless of whether ship cooling panels or engine-mounted rings. Stefan-Boltzmann constant 5.670374419e-8 W/m2/K4, deep-space background 2.725 K, universal radiatedPowerMW(area, T, emissivity, viewFactor, background), annulusAreaM2(outerDiameter, apertureDiameter). Material emissivity strictly 0..1; the x2.5 multiplier is a fictional universal game law, not physical emissivity. Radiator dimensions and temperatures are device/ship properties, not hardcoded global constants.
+
+CoolingSystem.cpp now calls this shared law rather than keeping its own local STEFAN_BOLTZMANN, SPACE_TEMP, RADIATOR_EFFECTIVENESS. Cobra ship-panel emissivity corrected from nonphysical 1.2 to 0.9, still 380 m2 nominal effective radiating area and 1050 K DESIGN coolant boundary. At those inputs global panel capacity ~58.92981 MW (not earlier 78.57 MW which used emissivity 1.2).
+
+EngineUnitDescriptor now contains EngineThermalEmitterDescriptor {outerDiameterM, apertureDiameterM, surfaceTemperatureK, emissivity01, viewFactor01}. Engine types, not universe, author size and material. Geometry treated as ONE radiating annular side rather than whole disk or two unverified exposed surfaces; open-view occlusion is explicit.
+Approx Cobra body 30m wide x25m long x6m tall, suggested nozzle/ring external diameter 4.5m, inner aperture 2.5m, effective annular area 10.995574 m2, 2500 K, emissivity 0.9, view factor 0.9 -> emitted capacity ~49.31905 MW PER engine with universal gameplay multiplier. Provisional for all four Cobra main engines (fore nozzle geometry should be revised when actual art/CAD measured).
+
+At 100% requested thrust only ONE longitudinal bank of 2 main engines fires:
+- Cobra remains 260,000 kg and 7.5g nominal envelope; individual rated thrust 9.56148375 MN.
+- Electric power per full-thrust engine is NOW a *separately authored* 4850 MW (not a derived mechanical F*v at a 500m/s reference speed, which the user rightly rejected for a thruster that accelerates).
+- Engine nominal efficiency 0.9855 (98.55%); engine waste 70.325 MW, active pair 140.65 MW waste, 9700 MW electric.
+- Healthy engine ring rejects ~49.31905 MW; ~21.00595 MW remaining load flows via engine housing into ideal common coolant.
+- Full active pair + ship radiators can reject ~157.56791 MW; headroom (157.56791 - 140.65) / 157.56791 = ~10.74% for MAIN-ENGINE heat only. Does not include other equipment, reactor thermal output or directional shadowing beyond authored 0.9 view factor.
+- Engine housing steady full-burn temp remains 1200K above ideal 1050K coolant. Thermal conductance set from remaining ~21.006 MW /150K rather than all engine heat. At emitterEffectiveArea01=0 and full burn, direct hot emission drops to zero, coolant demand and engine temperature rise through real EngineLifeStep thermal integration (engine damage then feeds accumulated Thermal cause). The common cooling system has not been wired to receive this engine heat yet; surface damage is not yet wired to actual laser hit volumes.
+- No reaction mass, no reactor fuel consumption, no engine electric load on PowerBus yet. Independent rated power is an explicit field-drive gameplay specification, not a claim of physically verified reactionless propulsion.
+
+New acceptance target tests/architecture_contracts/UniverseThermalRadiationTests.cpp (universe multiplier, physical emissivity clamp, ring aperture geometry, shared/pair cooling and 10%-class design reserve), added to architecture CMake; existing EngineUnitDamageModelTests extended to exercise actual engine ring cooling and emitter-loss overheat; EquipmentDamageFailurePipelineTests power fixture no longer depends on F*v.
+
+NOTE: All writes are only in feature/propulsion-authority-matrix-2026-10-16. These commits have NOT been compiled or executed by assistant; user Windows build/ctest results required. Next stage, if user authorizes: actual hit volumes/material resistance for independent emitter surface, laser type/energy dependent damage, thermal feedback throttling and shared coolant network. No fake slot tests.
+
 ## 2026-10-18 — engine thermal/wear operating life and realistic Cobra radiator budget
 
 Approved scope: universal engine mechanics only. Frames remain structural attachment / impulse paths. Reactor and cooling remain ideal, no functional failure, shortages or fuel flow; main drives are fictional field-coupling, without expelled reaction mass. Ordinary Assisted-I propulsion allocates exactly ONE bank of two engines per forward/reverse burn; front and rear banks are not burned simultaneously for ordinary thrust.

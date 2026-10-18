@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/equipment/engine/Engine.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 
@@ -17,7 +18,11 @@ namespace game::ship::plant
 [[nodiscard]] double instantaneousSlotThrust01(
     const EngineSlotState& state,
     std::size_t slotIndex,
-    std::uint64_t controlTick
+    std::uint64_t controlTick,
+    // Real installed engine views, indexed by the placement/topology table.
+    // Null is allowed ONLY for legacy/diagnostic actors with no engine mount.
+    const std::vector<game::equipment::engine::MountedEngine>* mountedEngines =
+        nullptr
 ) noexcept;
 
 // Scale applied to the net main acceleration for the currently active bank.

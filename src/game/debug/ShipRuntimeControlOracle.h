@@ -56,8 +56,7 @@ public:
     void configure(const RuntimeScenarioSelection& selection)
     {
         m_enabled =
-            selection.kind == RuntimeScenarioKind::ShipControl ||
-            selection.kind == RuntimeScenarioKind::PropulsionMatrix;
+            selection.kind == RuntimeScenarioKind::ShipControl;
 
         const char* report =
             std::getenv("ELITE_SHIP_CONTROL_ORACLE_REPORT");

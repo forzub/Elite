@@ -50,6 +50,11 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
             descMod.equipmentDamageSensitivity;
         state.equipmentDamage.failure =
             descMod.equipmentFailure;
+        if (descMod.engine)
+        {
+            state.engineOperating.temperatureK =
+                descMod.engine->nominalCoolantTemperatureK;
+        }
         state.state = ObjectModuleRuntimeState::Attached;
 
         state.hangable = descMod.hangable;
@@ -400,6 +405,61 @@ bool ObjectModuleRuntime::addEquipmentDamage(
     return true;
 }
 
+bool ObjectModuleRuntime::advanceEngineOperatingLife(
+    const std::string& moduleId,
+    const game::equipment::engine::EngineUnitDescriptor& passport,
+    double deliveredNominalThrust01,
+    double elapsedSeconds,
+    double coolantTemperatureK
+)
+{
+    if (!std::isfinite(elapsedSeconds) || elapsedSeconds <= 0.0)
+        return false;
+
+    const int index = findModuleIndex(moduleId);
+    if (index < 0)
+        return false;
+
+    auto& module = m_modules[index];
+    const bool installed =
+        module.state == ObjectModuleRuntimeState::Attached &&
+        module.health > 0.0f;
+
+    const auto effective =
+        game::equipment::engine::evaluateEngineUnit(
+            passport, module.equipmentDamage
+        );
+    const auto step =
+        game::equipment::engine::advanceEngineOperatingState(
+            passport,
+            effective,
+            module.engineOperating,
+            installed ? deliveredNominalThrust01 : 0.0,
+            elapsedSeconds,
+            coolantTemperatureK
+        );
+    module.engineOperating = step.next;
+
+    // Always preserve separate channels. Source rates already represent
+    // PERCENTAGE of useful engine damage, not unweighted physical inputs.
+    const bool wearChanged =
+        game::equipment::addEquipmentDamage(
+            module.equipmentDamage.accumulated,
+            game::equipment::EquipmentDamageKind::Wear,
+            step.wearDamageIncrement01
+        );
+    const bool thermalChanged =
+        game::equipment::addEquipmentDamage(
+            module.equipmentDamage.accumulated,
+            game::equipment::EquipmentDamageKind::Thermal,
+            step.thermalDamageIncrement01
+        );
+    if (wearChanged || thermalChanged)
+        ++m_revision;
+
+    return wearChanged || thermalChanged;
+}
+
 bool ObjectModuleRuntime::setSupportLinkHealth(
     const std::string& moduleId,
     const std::string& linkId,
@@ -585,6 +645,7 @@ void ObjectModuleRuntime::restoreAncestors(int index)
         module.state = ObjectModuleRuntimeState::Attached;
         module.health = module.maxHealth;
         module.equipmentDamage.accumulated = {};
+        module.engineOperating = {};
 
         for (auto& link : module.supportLinks)
         {

@@ -444,7 +444,7 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
     // commit damage in 0.001%-point quanta. No per-frame revision storms,
     // capability rebuilds or network snapshots for 10^-11 damage changes.
     constexpr double DamageQuantum01 = 1.0e-5;
-    auto quantizedIncrement = [](double& pending, double incoming)
+    const auto quantizedIncrement = [&](double& pending, double incoming)
     {
         pending += std::max(0.0, incoming);
         const double quanta =

@@ -186,6 +186,21 @@ inline void projectThrustCone(
             rotationalScale.z += std::abs(c[5])*slope;
         }
     }
+    // Ordinary purely longitudinal acceleration must never ignite the
+    // opposite bank just to improve an optimizer norm by a fraction.
+    // For side forces and body turns both directions remain available.
+    const bool pureAxial =
+        std::abs(demand.accelerationBodyMps2.x)<1.0e-9 &&
+        std::abs(demand.accelerationBodyMps2.y)<1.0e-9 &&
+        glm::length(demand.angularAccelerationBodyRadPerSec2)<1.0e-9;
+    if (pureAxial)
+        for(std::size_t i=0;i<mounted.size();++i)
+            if ((demand.accelerationBodyMps2.z < -1.0e-9 &&
+                 topology[i].role == EngineSlotRole::ForeMain) ||
+                (demand.accelerationBodyMps2.z > 1.0e-9 &&
+                 topology[i].role == EngineSlotRole::AftMain))
+                m[i].cap=0.0;
+
     const double linearScale = std::max(1.0, totalForce / mass);
     const std::array<double,6> scales {
         linearScale,linearScale,linearScale,

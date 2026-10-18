@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "src/game/equipment/EquipmentDamage.h"
+#include "src/game/physics/UniverseThermalRadiation.h"
 
 namespace game::equipment::engine
 {
@@ -19,6 +20,18 @@ enum class PropulsionPrinciple
     ReactionMass
 };
 
+// Installed nozzle-side hot emitter. Every engine type authors its own
+// annulus and material; the universal Stefan-Boltzmann / gameplay multiplier
+// is NOT copied here. A missing emitter (outer diameter zero) is valid.
+struct EngineThermalEmitterDescriptor
+{
+    double outerDiameterM = 0.0;
+    double apertureDiameterM = 0.0;
+    double surfaceTemperatureK = 2500.0;
+    double emissivity01 = 0.9;
+    double viewFactor01 = 1.0;
+};
+
 struct EngineUnitDescriptor
 {
     PropulsionPrinciple propulsionPrinciple =
@@ -26,15 +39,14 @@ struct EngineUnitDescriptor
 
     double nominalThrustNewtons = 0.0;
 
-    // Installed electric input at nominal full thrust, in MW. For the
-    // field-coupled Cobra this rating is F_nominal * designSpeed / eta;
-    // it is a DESIGN-POINT budget, not an assertion that reactionless thrust
-    // is possible under known physics. No fuel/propellant mass flow here.
+    // INDEPENDENT rated input at full thrust, in MW. A field drive is a
+    // science-fiction actuator; F*v is instantaneous mechanical work against
+    // velocity, NOT a valid universal input-power rating for acceleration.
+    // The reactor will eventually be sized to the SHIP demand.
     double nominalElectricalPowerMW = 0.0;
-    double designReferenceSpeedMps = 0.0;
 
-    // Effective conversion into the hypothetical field coupling at design
-    // speed. A damaged engine produces less thrust from the same rated input.
+    // Fraction of rated electrical input NOT deposited as local waste heat.
+    // For this fictional drive, useful field work is a budget convention.
     double nominalEfficiency01 = 1.0;
 
     // Thrust damage is loss of force authority, NOT an identical percentage
@@ -46,6 +58,8 @@ struct EngineUnitDescriptor
     // are physical rates converted into the same direct damage percentages.
     // The ship's reactor and cooling are IDEAL during this phase, but an
     // engine retains finite thermal inertia/conductance to its coolant.
+    EngineThermalEmitterDescriptor thermalEmitter {};
+
     double nominalCoolantTemperatureK = 1050.0;
     double nominalOperatingTemperatureK = 1200.0;
     double safeOperatingTemperatureK = 1300.0;
@@ -73,6 +87,31 @@ struct EngineUnitDescriptor
     // failure threshold is reached.
     double irregularThrustStartsAtDamage01 = 0.70;
 };
+
+// Maximum MW that the engine's ONE-SIDED nozzle ring may radiate into
+// open space. effectiveArea01 allows future *real* hit-volume damage to
+// decrease the emitting surface. It does not create damage by itself.
+[[nodiscard]] inline double ratedThermalEmitterPowerMW(
+    const EngineUnitDescriptor& descriptor,
+    double effectiveArea01 = 1.0
+) noexcept
+{
+    const auto& emitter = descriptor.thermalEmitter;
+    const double oneSidedArea =
+        game::physics::thermal::annulusAreaM2(
+            emitter.outerDiameterM,
+            emitter.apertureDiameterM
+        );
+    if (!std::isfinite(effectiveArea01))
+        return 0.0;
+
+    return game::physics::thermal::radiatedPowerMW(
+        oneSidedArea * std::clamp(effectiveArea01, 0.0, 1.0),
+        emitter.surfaceTemperatureK,
+        emitter.emissivity01,
+        emitter.viewFactor01
+    );
+}
 
 struct EngineUnitEffectiveState
 {
@@ -273,9 +312,8 @@ inline double positiveFiniteOr(
     const double inputMW =
         requestedElectricalPowerMW(descriptor, state, delivered01);
 
-    // At the reference operating point, nominal useful field-coupling
-    // power is F * designSpeed. Energy beyond useful field work is dumped as
-    // heat (temporarily sunk by the idealized cooling system).
+    // Rated-input model for a fictional drive. Its useful field-work budget
+    // is a descriptor conversion fraction, independent of ship velocity.
     const double usefulMW =
         positiveFiniteOr(descriptor.nominalElectricalPowerMW, 0.0) *
         delivered01 *
@@ -307,7 +345,11 @@ struct EngineLifeStep
     EngineOperatingState next;
     double wearDamageIncrement01 = 0.0;
     double thermalDamageIncrement01 = 0.0;
+    // Full generated waste heat, directly radiated hot-emitter component and
+    // remaining heat that must pass through the bulk engine into coolant.
     double dissipatedHeatMW = 0.0;
+    double emitterRadiatedHeatMW = 0.0;
+    double coolantHeatMW = 0.0;
 };
 
 inline double engineWearDamageAtHours(
@@ -342,7 +384,8 @@ inline EngineLifeStep advanceEngineOperatingState(
     const EngineOperatingState& previous,
     double deliveredNominalThrust01,
     double deltaSeconds,
-    double coolantTemperatureK
+    double coolantTemperatureK,
+    double emitterEffectiveArea01 = 1.0
 ) noexcept
 {
     EngineLifeStep step;
@@ -384,6 +427,14 @@ inline EngineLifeStep advanceEngineOperatingState(
     const double heat =
         generatedWasteHeatMW(descriptor, current, delivered);
     step.dissipatedHeatMW = std::max(0.0, heat);
+    // The hot nozzle emits FIRST; any excess loads the engine's conductive
+    // path and later the shared coolant. No double-counting of emission.
+    step.emitterRadiatedHeatMW = std::min(
+        step.dissipatedHeatMW,
+        ratedThermalEmitterPowerMW(descriptor, emitterEffectiveArea01)
+    );
+    step.coolantHeatMW =
+        step.dissipatedHeatMW - step.emitterRadiatedHeatMW;
 
     const double capacity =
         std::max(1.0e-9, descriptor.thermalCapacityMJperK);
@@ -394,7 +445,7 @@ inline EngineLifeStep advanceEngineOperatingState(
         previous.temperatureK > 0.0
             ? previous.temperatureK
             : coolant;
-    const double equilibriumT = coolant + heat / conductance;
+    const double equilibriumT = coolant + step.coolantHeatMW / conductance;
     const double decay =
         std::exp(-conductance * deltaSeconds / capacity);
     step.next.temperatureK =

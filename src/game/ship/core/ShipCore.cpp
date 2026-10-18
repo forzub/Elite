@@ -2,6 +2,7 @@
 #include "ShipCore.h"
 #include <iostream>
 #include <algorithm>
+#include <array>
 
 #include "core/log.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
@@ -351,7 +352,15 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         game::ship::plant::familyOf(
             m_state.construction.physicalControlModel
         ) == game::ship::plant::PhysicalControlFamily::Assisted &&
-        m_state.construction.valid())
+        m_state.construction.valid() &&
+        (m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
+         m_state.construction.physicalControlModel !=
+            m_state.construction.definition->physicalControlModel ||
+         m_state.construction.definition->physicalControl.slotModuleIds.size()
+            == game::ship::plant::physicalControlSlots(
+                m_state.construction.physicalControlModel
+            ).size()))
     {
         const glm::dvec3 angularAfter {
             m_transform.pitchRate,

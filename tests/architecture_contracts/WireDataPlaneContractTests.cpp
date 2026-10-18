@@ -279,6 +279,17 @@ SimulationSnapshot makeSnapshot()
     module.moduleId = "module:a";
     module.state = 2u;
     module.health = 0.75f;
+    // Exercise the full independent annulus lifecycle across actual wire I/O.
+    module.hasEngineThermalState = true;
+    module.engineTemperatureK = 1275.0f;
+    module.emitterIntactArea01 = 0.5f;
+    module.emitterMicrocrack01 = 0.25f;
+    module.emitterLaserDamage01 = 0.125f;
+    module.emitterImpactDamage01 = 0.0625f;
+    module.emitterThermalDamage01 = 0.75f;
+    module.emitterRadiationDamage01 = 0.25f;
+    module.emitterWearDamage01 = 0.5f;
+    module.emitterEquivalentOperatingHours = 9000.0f;
     module.aliveSupportCount = 3;
     ship.graph.modules.push_back(module);
 
@@ -577,6 +588,18 @@ void testSnapshotRoundTrip()
     );
     require(decoded.ships[0].graph.modules.size() == 1u,
         "module graph mismatch");
+    const auto& decodedEmitter = decoded.ships[0].graph.modules.front();
+    require(decodedEmitter.hasEngineThermalState &&
+            near(decodedEmitter.engineTemperatureK, 1275.0) &&
+            near(decodedEmitter.emitterIntactArea01, 0.5) &&
+            near(decodedEmitter.emitterMicrocrack01, 0.25) &&
+            near(decodedEmitter.emitterLaserDamage01, 0.125) &&
+            near(decodedEmitter.emitterImpactDamage01, 0.0625) &&
+            near(decodedEmitter.emitterThermalDamage01, 0.75) &&
+            near(decodedEmitter.emitterRadiationDamage01, 0.25) &&
+            near(decodedEmitter.emitterWearDamage01, 0.5) &&
+            near(decodedEmitter.emitterEquivalentOperatingHours, 9000.0),
+            "hot emitter thermal/five-cause/lifetime wire round-trip failed");
     require(decoded.ships[0].graph.detachedFragments.size() == 1u,
         "detached fragment graph mismatch");
     require(decoded.ships[0].graph.detachedFragments[0].providedReplacementTags.size() == 2u,

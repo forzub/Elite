@@ -120,10 +120,10 @@ void annulusDamageBalancesPowerAndThrust()
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "healthy material derated engine");
 
-    run.emitterSurface.intactArea01 = 0.75;
+    run.emitter.surface.intactArea01 = 0.75;
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "25 percent emitter loss prematurely derated engine");
-    run.emitterSurface.intactArea01 = 0.50;
+    run.emitter.surface.intactArea01 = 0.50;
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "cold damaged engine should initially retain full thrust");
     const auto warming = advanceEngineOperatingState(
@@ -149,11 +149,11 @@ void annulusDamageBalancesPowerAndThrust()
             near(safeRun.thermalDamageIncrement01, 0.0, 1.0e-7),
             "limiting thrust should protect housing with ideal coolant");
 
-    run.emitterSurface.intactArea01 = 0.0;
+    run.emitter.surface.intactArea01 = 0.0;
     const double noRing = safeEmitterThrustFraction01(d, effective, run);
     require(noRing > 0.49 && noRing < 0.51,
             "zero emitter should leave ~49.8 percent safe thrust");
-    require(near(ratedThermalEmitterPowerMW(d, run.emitterSurface.intactArea01),
+    require(near(ratedThermalEmitterPowerMW(d, run.emitter.surface.intactArea01),
                  0.0),
             "destroyed ring still radiated heat");
 
@@ -175,13 +175,13 @@ void hotAnnulusAgesSeparatelyAndOnlyThreeCausesMatter()
     const auto age = advanceEngineOperatingState(
         d, effective, start, 1.0, 6000.0 * 3600.0, 1050.0
     );
-    require(near(age.next.emitterEquivalentOperatingHours, 6000.0),
+    require(near(age.next.emitter.equivalentOperatingHours, 6000.0),
             "independent annulus hours were not counted");
-    require(age.next.emitterDamage.wear01 > 0.18 &&
-            age.next.emitterDamage.wear01 < 0.20,
+    require(age.next.emitter.damage.wear01 > 0.18 &&
+            age.next.emitter.damage.wear01 < 0.20,
             "emitter 6000-hour wear mismatch");
-    require(near(age.next.emitterDamage.laser01, 0.0) &&
-            near(age.next.emitterDamage.impact01, 0.0),
+    require(near(age.next.emitter.damage.laser01, 0.0) &&
+            near(age.next.emitter.damage.impact01, 0.0),
             "normal aging created fake hits");
     require(effectiveEmitterArea01(age.next) < 1.0,
             "wear did not degrade radiator surface");
@@ -189,21 +189,21 @@ void hotAnnulusAgesSeparatelyAndOnlyThreeCausesMatter()
             "engine lost own independent service time");
 
     auto passive = start;
-    passive.emitterDamage.thermal01 = 1.0;
-    passive.emitterDamage.radiation01 = 1.0;
+    passive.emitter.damage.thermal01 = 1.0;
+    passive.emitter.damage.radiation01 = 1.0;
     require(near(effectiveEmitterArea01(passive), 1.0),
             "inert thermal/radiation causes changed hot-annulus function");
 
     auto both = age.next;
-    both.emitterSurface.intactArea01 = 0.6;
+    both.emitter.surface.intactArea01 = 0.6;
     require(near(effectiveEmitterArea01(both),
-                 0.6 * (1.0 - both.emitterDamage.wear01)),
+                 0.6 * (1.0 - both.emitter.damage.wear01)),
             "laser/impact area was subtracted twice");
 
     const auto exhausted = advanceEngineOperatingState(
         d, effective, start, 1.0, 12000.0 * 3600.0, 1050.0
     );
-    require(near(exhausted.next.emitterDamage.wear01, 1.0) &&
+    require(near(exhausted.next.emitter.damage.wear01, 1.0) &&
             near(effectiveEmitterArea01(exhausted.next), 0.0),
             "consumable should be exhausted at 12000 full-power hours");
 }

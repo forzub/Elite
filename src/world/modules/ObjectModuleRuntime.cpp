@@ -419,14 +419,14 @@ bool ObjectModuleRuntime::exposeEngineEmitter(
         module.health <= 0.0f)
         return false;
 
-    const auto before = module.engineOperating.emitterSurface;
+    const auto before = module.engineOperating.emitter.surface;
     const auto after = game::equipment::engine::applyEngineEmitterExposure(
         passport, before, hit
     );
     if (after.intactArea01 == before.intactArea01 &&
         after.microcrack01 == before.microcrack01)
         return false;
-    module.engineOperating.emitterSurface = after;
+    module.engineOperating.emitter.surface = after;
 
     // Every equipment component records the same five causes; these two
     // kinds of hits are stored on the annulus, NOT the main thrust chamber.
@@ -443,7 +443,7 @@ bool ObjectModuleRuntime::exposeEngineEmitter(
         0.0, after.microcrack01 - before.microcrack01
     );
     game::equipment::addEquipmentDamage(
-        module.engineOperating.emitterDamage, cause,
+        module.engineOperating.emitter.damage, cause,
         std::max(lostArea01, 0.25 * newCracks01)
     );
 
@@ -472,9 +472,9 @@ bool ObjectModuleRuntime::replaceEngineEmitter(
     // A new annulus, not a repair: none of the old annulus's five damage
     // histories or consumed service hours is carried over. The engine
     // itself retains its temperature, lifetime and other five causes.
-    module.engineOperating.emitterSurface = {};
-    module.engineOperating.emitterDamage = {};
-    module.engineOperating.emitterEquivalentOperatingHours = 0.0;
+    module.engineOperating.emitter.surface = {};
+    module.engineOperating.emitter.damage = {};
+    module.engineOperating.emitter.equivalentOperatingHours = 0.0;
     ++m_revision;
     return true;
 }
@@ -508,7 +508,7 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
             passport, effective, module.engineOperating
         );
     const double wearBefore =
-        module.engineOperating.emitterDamage.wear01;
+        module.engineOperating.emitter.damage.wear01;
 
     const auto step =
         game::equipment::engine::advanceEngineOperatingState(
@@ -537,7 +537,7 @@ bool ObjectModuleRuntime::advanceEngineOperatingLife(
         bucket01(thermalCapBefore) != bucket01(thermalCapAfter);
     const bool annulusWearChanged =
         bucket01(wearBefore) !=
-            bucket01(module.engineOperating.emitterDamage.wear01);
+            bucket01(module.engineOperating.emitter.damage.wear01);
 
     // Preserve fractional wear/heat precisely in engine service state, but
     // commit damage in 0.001%-point quanta. No per-frame revision storms,
@@ -770,14 +770,14 @@ void ObjectModuleRuntime::restoreAncestors(int index)
         module.health = module.maxHealth;
         module.equipmentDamage.accumulated = {};
         // Do not silently replace annulus when restoring parent structure.
-        const auto oldEmitterSurface = module.engineOperating.emitterSurface;
-        const auto oldEmitterDamage = module.engineOperating.emitterDamage;
+        const auto oldEmitterSurface = module.engineOperating.emitter.surface;
+        const auto oldEmitterDamage = module.engineOperating.emitter.damage;
         const double oldEmitterHours =
-            module.engineOperating.emitterEquivalentOperatingHours;
+            module.engineOperating.emitter.equivalentOperatingHours;
         module.engineOperating = {};
-        module.engineOperating.emitterSurface = oldEmitterSurface;
-        module.engineOperating.emitterDamage = oldEmitterDamage;
-        module.engineOperating.emitterEquivalentOperatingHours =
+        module.engineOperating.emitter.surface = oldEmitterSurface;
+        module.engineOperating.emitter.damage = oldEmitterDamage;
+        module.engineOperating.emitter.equivalentOperatingHours =
             oldEmitterHours;
 
         for (auto& link : module.supportLinks)

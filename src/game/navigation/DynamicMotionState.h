@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <string>
 #include <glm/glm.hpp>
 #include "src/game/navigation/KinematicFrame.h"
@@ -134,6 +136,12 @@ struct DynamicMotionState
     // the requested maneuver cleaner. Residual r x F reaction remains physical.
     double mainTrimLoad01 = 0.0;
     double mainTrimUsableScale01 = 1.0;
+
+    // Latest allocator-produced DELIVERED nominal-thrust fraction for each
+    // physical slot. Held between control ticks for the systems simulation.
+    // Zero for the inactive front/rear bank; no dynamic per-tick allocations.
+    std::array<double, 16> mainEngineDeliveredThrust01 {};
+    std::size_t mainEngineReportedSlotCount = 0;
 
     // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
     double manoeuvreGasPressure01 = 1.0;

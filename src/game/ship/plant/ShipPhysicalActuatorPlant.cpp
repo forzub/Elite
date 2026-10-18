@@ -435,6 +435,8 @@ MainPropulsionTrimResult evaluateMainPropulsionFeedbackTrim(
     if (!current.valid)
         return {};
 
+    constexpr double AngularMetricStop = 1.0e-10;
+
     // One tiny common-TVC feedback stage after throttle balancing. It is
     // deliberately conservative and bounded to two degrees. If any active
     // engine in the bank has lost TVC completely, common trim is disabled

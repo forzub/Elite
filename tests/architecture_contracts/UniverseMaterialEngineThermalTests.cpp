@@ -124,6 +124,15 @@ void annulusDamageBalancesPowerAndThrust()
     require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
             "25 percent emitter loss prematurely derated engine");
     run.emitterSurface.intactArea01 = 0.50;
+    require(near(safeEmitterThrustFraction01(d, effective, run), 1.0),
+            "cold damaged engine should initially retain full thrust");
+    const auto warming = advanceEngineOperatingState(
+        d, effective, run, 1.0, 60.0, 1050.0
+    );
+    require(warming.next.temperatureK > run.temperatureK &&
+            warming.next.temperatureK < 1300.0,
+            "damaged annulus should heat engine before power protection");
+    run.temperatureK = d.safeOperatingTemperatureK;
     const double half = safeEmitterThrustFraction01(d, effective, run);
     require(half > 0.84 && half < 0.86,
             "50 percent emitter loss should limit thrust to ~84.85 percent");
@@ -153,6 +162,52 @@ void annulusDamageBalancesPowerAndThrust()
     require(near(effective.efficiencyAuthority01, 1.0),
             "surface damage erroneously counted as five-cause engine damage");
 }
+
+void hotAnnulusAgesSeparatelyAndOnlyThreeCausesMatter()
+{
+    using namespace game::equipment::engine;
+    auto d = cobraMotor();
+    const game::equipment::EquipmentDamageLayer damage {};
+    const auto effective = evaluateEngineUnit(d, damage);
+    EngineOperatingState start;
+    start.temperatureK = 1200.0;
+
+    const auto age = advanceEngineOperatingState(
+        d, effective, start, 1.0, 6000.0 * 3600.0, 1050.0
+    );
+    require(near(age.next.emitterEquivalentOperatingHours, 6000.0),
+            "independent annulus hours were not counted");
+    require(age.next.emitterDamage.wear01 > 0.18 &&
+            age.next.emitterDamage.wear01 < 0.20,
+            "emitter 6000-hour wear mismatch");
+    require(near(age.next.emitterDamage.laser01, 0.0) &&
+            near(age.next.emitterDamage.impact01, 0.0),
+            "normal aging created fake hits");
+    require(effectiveEmitterArea01(age.next) < 1.0,
+            "wear did not degrade radiator surface");
+    require(age.next.equivalentOperatingHours > 0.0,
+            "engine lost own independent service time");
+
+    auto passive = start;
+    passive.emitterDamage.thermal01 = 1.0;
+    passive.emitterDamage.radiation01 = 1.0;
+    require(near(effectiveEmitterArea01(passive), 1.0),
+            "inert thermal/radiation causes changed hot-annulus function");
+
+    auto both = age.next;
+    both.emitterSurface.intactArea01 = 0.6;
+    require(near(effectiveEmitterArea01(both),
+                 0.6 * (1.0 - both.emitterDamage.wear01)),
+            "laser/impact area was subtracted twice");
+
+    const auto exhausted = advanceEngineOperatingState(
+        d, effective, start, 1.0, 12000.0 * 3600.0, 1050.0
+    );
+    require(near(exhausted.next.emitterDamage.wear01, 1.0) &&
+            near(effectiveEmitterArea01(exhausted.next), 0.0),
+            "consumable should be exhausted at 12000 full-power hours");
+}
+
 }
 
 int main()
@@ -162,6 +217,7 @@ int main()
         materialCatalog();
         localizedLaserAndKineticFracture();
         annulusDamageBalancesPowerAndThrust();
+        hotAnnulusAgesSeparatelyAndOnlyThreeCausesMatter();
         std::cout
             << "UNIVERSE MATERIAL ENGINE THERMAL: PASS\n"
             << " - material/mesh/trade stable IDs and temperature thresholds\n"

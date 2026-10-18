@@ -327,6 +327,66 @@ void ShipCore::propagateMotionOrientation(float dt)
 void ShipCore::updateTranslationControl(float dt)
 {
     const ShipParams physics = effectivePhysics();
+    using game::equipment::engine::MountedEngine;
+    std::vector<MountedEngine> installedEngines;
+    const std::vector<MountedEngine>* physicalEngines = nullptr;
+
+    // A slot is ONLY the location/bank and a binding to an engine ID.
+    // Read the ACTUAL installed engine passport, accumulated causes and
+    // operating state. No thrust or other physics is authored on the slot.
+    // Diagnostic layouts that deliberately substitute a different topology
+    // keep the existing isolated slot-only proof path.
+    if (m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+        m_state.construction.valid())
+    {
+        const auto& ship = *m_state.construction.definition;
+        const auto& topology = game::ship::plant::physicalControlSlots(
+            m_state.construction.physicalControlModel
+        );
+        const auto& ids = ship.physicalControl.slotModuleIds;
+        if (ids.size() == topology.size())
+        {
+            installedEngines.resize(ids.size());
+            bool mainEnginesBound = true;
+            const auto& runtime =
+                static_cast<const world::modules::ObjectModuleRuntime&>(
+                    m_moduleRuntime
+                );
+            for (std::size_t i = 0; i < ids.size(); ++i)
+            {
+                if (topology[i].role ==
+                    game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                    continue;
+
+                const auto descModule = std::find_if(
+                    ship.modules.begin(), ship.modules.end(),
+                    [&](const auto& module) {
+                        return module.moduleId == ids[i];
+                    }
+                );
+                const auto* state = runtime.findModule(ids[i]);
+                if (descModule == ship.modules.end() ||
+                    !descModule->engine || !state)
+                {
+                    mainEnginesBound = false;
+                    break;
+                }
+                installedEngines[i] = {
+                    &*descModule->engine,
+                    &state->equipmentDamage,
+                    &state->engineOperating,
+                    ids[i],
+                    state->state ==
+                        world::modules::ObjectModuleRuntimeState::Attached &&
+                        state->health > 0.0f
+                };
+            }
+            if (mainEnginesBound)
+                physicalEngines = &installedEngines;
+        }
+    }
+
     (void)game::ship::control::ShipControlExecutionGateway::
         evaluateTranslationControl(
             m_transform,
@@ -334,7 +394,8 @@ void ShipCore::updateTranslationControl(float dt)
             m_state.control,
             m_state.construction.physicalControlModel,
             m_state.actuators.propulsionSlots,
-            dt
+            dt,
+            physicalEngines
         );
 }
 

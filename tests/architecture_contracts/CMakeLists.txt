@@ -199,6 +199,33 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+# Universal material definitions and engine annulus laser/impact thermal
+# envelope are header-only and testable without the graphics game target.
+add_executable(
+    universe_material_engine_thermal_tests
+    UniverseMaterialEngineThermalTests.cpp
+)
+target_include_directories(
+    universe_material_engine_thermal_tests
+    PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(
+    universe_material_engine_thermal_tests PRIVATE cxx_std_17
+)
+if(MSVC)
+    target_compile_options(
+        universe_material_engine_thermal_tests PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        universe_material_engine_thermal_tests PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+add_test(
+    NAME universe_material_engine_thermal
+    COMMAND universe_material_engine_thermal_tests
+)
+
 add_executable(
     equipment_damage_failure_pipeline_tests
     EquipmentDamageFailurePipelineTests.cpp

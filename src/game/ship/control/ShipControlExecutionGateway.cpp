@@ -217,6 +217,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         motion.mode != game::navigation::MotionMode::HubTactical ||
         !motion.travelFrame.valid)
     {
+        // Never display a previous burn after changing motion mode.
+        motion.engineTelemetry.reset(control.controlTick);
         return path;
     }
 

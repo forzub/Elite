@@ -1,3 +1,19 @@
+## 2026-10-19 — DECISION: PLAYER AUTOPILOT IS ONLY A VIRTUAL PILOT; SERVER PHYSICS IS SOURCE-AGNOSTIC
+
+**User reiteration:** The ship simulation/server does NOT need to know whether the player has engaged autopilot. At most it needs the ordinary control commands the pilot would otherwise provide; the server should not receive a privileged autopilot/route execution mode or bypass physical actuators.
+
+**Verified existing code:** `SpaceState.cpp::submitAutopilotControl` calls exactly `GameClient::submitInput(ShipControlState)` used by `m_inputMapper` for humans; `GameClient.cpp::submitInput` retains the normalized pilot controls and fixed-tick discrete inputs; `GameSimulation.cpp::applyControl(id, control)` simply calls `ship->setControlState(control)`. `ShipControlState.h` explicitly forbids production player autopilot from using legacy direct world-acceleration/navigation target fields, and `ShipControlExecutionGateway` normally allocates real motor force/torque for ordinary inputs. Therefore the correct player-control boundary ALREADY exists. Maintain it, test it, and avoid designing a server-visible autopilot flag or privileged thrust call.
+
+**Clarification:** Replicating `ShipCore::controlAuthorityTelemetry()` from server to client is a READ-ONLY physics-state stream. It does NOT tell the server autopilot is active, nor authorize the client to apply forces. Server remains authoritative for damage, mass, motor availability, actuator allocation, physical movement and input validation. Client is responsible for planning player routes and choosing the same `ShipControlState` as a human would. Inputs are normalized commands/samples and one-shot events, not literal keyboard keycodes; keyboard mapping is local.
+
+**NPC exception:** `GameSimulation.cpp` also hosts server-owned NPC autonomous pilot controllers, legitimately, because NPCs need authoritatively generated inputs. They still call `ship.setControlState(...)` and must not bypass motor physics. This NPC decision-making component does not mean the server must distinguish a HUMAN player from client player-autopilot to execute player inputs.
+
+**Engineering consequence for current authority wire:** Maintain `server ShipCore physical telemetry -> client planning/virtual pilot -> ordinary ShipControlState -> server physical executor`. The new telemetry replication on schema v18 supports the client's route feasibility calculation; it must stay agnostic to who produces pilot input. Architecture/integration checks should cover equivalence of human and virtual-pilot input execution and prevent legacy direct-acceleration paths, WITHOUT an `autopilotEnabled` server field.
+
+**Status:** Design/architecture reaffirmed based on verified source. No changes to control source code in this step. The new direct-server telemetry wire fixes are still awaiting native tests and real-game acceptance; do not claim PASS. Only root `PROJECT_STATE.md` updated.
+
+---
+
 ## 2026-10-19 — LIVE DOCK REGRESSION: AUTHORITATIVE MOTOR TELEMETRY MISSING IN CLIENT; DIRECT WIRE FIX (NATIVE TESTS PENDING)
 
 **Live evidence:** user screenshot `image(20261019-141500).png` and console `Вставленный текст(20261019-141540).txt` (2664 lines). Game starts, player initiates `DockRequest serial=1 mode=automatic`, but `DockClient phase=failed reason=installed Assisted motor authority unavailable` floods **2572** consecutive times. No navigation planning occurs. Previously the standalone navigation CTests `assisted_authority_contract` and `route_entry_binder` were 2/2 PASS, but they missed this server-to-client availability seam. This is a REAL production-game regression despite green unit tests.

@@ -4880,6 +4880,20 @@ void SpaceState::updateDockingAdvisory()
                         << output.routeCurvaturePerMeter
                         << " radius_m="
                         << output.routeRadiusMeters
+                        << " required_curve_a_mps2="
+                        << glm::dot(
+                               motion.localVelocityMps,
+                               motion.localVelocityMps
+                           ) * output.routeCurvaturePerMeter
+                        << " installed_turn_a_mps2="
+                        << (liveAssistedAuthority.valid
+                              ? std::min({
+                                    liveAssistedAuthority.positive[0],
+                                    liveAssistedAuthority.negative[0],
+                                    liveAssistedAuthority.positive[1],
+                                    liveAssistedAuthority.negative[1]
+                                })
+                              : 0.0)
                         << " exact_remaining_m="
                         << output.exactRemainingRouteMeters
                         << " desired_course_omega_radps="
@@ -4954,6 +4968,14 @@ void SpaceState::updateDockingAdvisory()
                         << " main_a_mps2="
                         << glm::length(
                             motion.mainEngineAccelerationMps2
+                        )
+                        << " motor_angular_a_radps2="
+                        << glm::length(
+                            motion.mainPropulsionAngularAccelerationBodyRadPerSec2
+                        )
+                        << " assisted_aux_a_mps2="
+                        << glm::length(
+                            motion.assistedStabilizationAccelerationMps2
                         )
                         << " rcs_a_mps2="
                         << glm::length(

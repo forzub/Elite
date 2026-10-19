@@ -487,18 +487,18 @@ RoutePlan planContinuousAssisted(
                 input.vehicleLengthMeters
             );
 
-    // HOT-REPLAN CONTRACT: an already moving craft continues
-    // ballistically along its measured course before any curvature is allowed.
-    // initialForwardLeadMeters is therefore authored geometry, not advisory
-    // metadata. Optimize the curved path only from the END of this straight.
+    // Hot-start ships keep their ballistic initial lead as hard geometry.
+    // The terminal leg AFTER an authored BLUE exit is different: the
+    // mandatory release has already been built and validated separately.
+    // Its manoeuvre lead is a speed/curvature planning budget, NOT a hard
+    // straight extending kilometers beyond the 150m protected release.
     request.protectedStartStraightMeters =
-        std::max(
-            0.0,
-            std::max(
+        game::navigation::OrdinaryRoutePolicy::
+            assistedHardStartStraightMeters(
+                input.initialForwardLeadMeters,
                 input.initialProtectedStraightMeters,
-                input.initialForwardLeadMeters
-            )
-        );
+                input.assistedUseExactProtectedStart
+            );
     request.protectedGoalStraightMeters =
         std::max(0.0, input.terminalApproachLengthMeters);
     request.obstacles = input.obstacles;
@@ -654,6 +654,12 @@ RoutePlan planContinuousAssisted(
     out.diagnosticSummary =
         "continuous-assisted ready curves=" +
         std::to_string(out.routeCurves.size()) +
+        " hard_start_m=" +
+        std::to_string(request.protectedStartStraightMeters) +
+        " manoeuvre_lead_m=" +
+        std::to_string(input.initialForwardLeadMeters) +
+        " hard_goal_m=" +
+        std::to_string(request.protectedGoalStraightMeters) +
         " execution_gates=" +
         std::to_string(out.executionGates.size()) +
         " evals=" +

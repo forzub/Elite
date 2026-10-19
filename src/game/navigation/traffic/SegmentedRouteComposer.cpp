@@ -2,6 +2,7 @@
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -438,6 +439,11 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     out.failureCode = planner::RoutePlanFailureCode::None;
     out.userMessage = planner::routePlanFailureMessage(out.failureCode);
 
+    // Route planning remains pure. Keep performance/geometry diagnostics
+    // inside the returned route value, not global logging or side effects.
+    std::string freeLegDiagnostics;
+    double freeLegTotalMs = 0.0;
+
     planner::RoutePlanRequest legRequest = terminalRequest;
     legRequest.requiredViaPointsMeters.clear();
     legRequest.mandatoryTangentStraights.clear();
@@ -587,8 +593,24 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                     terminalRequest.vehicleLengthMeters
                 );
 
+        const auto inboundStarted = std::chrono::steady_clock::now();
         const auto inbound =
             planner::RoutePlanner::plan(legRequest);
+        const double inboundMs =
+            std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - inboundStarted
+            ).count();
+        freeLegTotalMs += inboundMs;
+        freeLegDiagnostics +=
+            " inbound_ms=" + std::to_string(inboundMs) +
+            " inbound_start_hard_m=" +
+            std::to_string(
+                std::max(legRequest.initialForwardLeadMeters,
+                         legRequest.initialProtectedStraightMeters)
+            ) +
+            " inbound_terminal_hard_m=" +
+            std::to_string(legRequest.terminalApproachLengthMeters) +
+            " inbound_detail={ " + inbound.diagnosticSummary + " }";
         if (!inbound.valid())
             return failedComposite(
                 inbound,
@@ -734,11 +756,55 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     finalRequest.initialProtectedStraightMeters =
         currentHasForward ? 150.0 : 0.0;
 
+    // Assisted final free leg is geometrically independent of the initial
+    // high-speed ballistic ship entry. The authoritative BLUE release is
+    // already an exact hard stage. Keep only its 150m exit straight, not the
+    // entire manoeuvre budget as a second mandatory straight.
+    finalRequest.assistedUseExactProtectedStart =
+        finalRequest.assistedCompactStartLead &&
+        finalRequest.useContinuousAssistedOptimizer;
+    if (finalRequest.assistedUseExactProtectedStart)
+    {
+        // The actual required physical arrival speed at the docking HOLD
+        // point is zero. The continuous optimizer already computes the
+        // feasible braking profile over the WHOLE terminal leg. Therefore
+        // maxSpeed^2/(2*braking) must not become an arbitrarily long *hard*
+        // final tangent. Retain the geometric minimum for docking approach.
+        finalRequest.terminalApproachLengthMeters =
+            game::navigation::OrdinaryRoutePolicy::
+                requiredDockingAxisMinimumMeters(
+                    finalRequest.terminalReferenceDistanceMeters,
+                    finalRequest.vehicleLengthMeters
+                );
+    }
+
     finalRequest.requiredViaPointsMeters.clear();
     finalRequest.mandatoryTangentStraights.clear();
 
+    const auto terminalLegStarted = std::chrono::steady_clock::now();
     const auto finalLeg =
         planner::RoutePlanner::plan(finalRequest);
+    const double finalLegMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - terminalLegStarted
+        ).count();
+    freeLegTotalMs += finalLegMs;
+    freeLegDiagnostics +=
+        " final_ms=" + std::to_string(finalLegMs) +
+        " final_start_hard_m=" +
+        std::to_string(
+            finalRequest.assistedUseExactProtectedStart
+                ? finalRequest.initialProtectedStraightMeters
+                : std::max(finalRequest.initialProtectedStraightMeters,
+                           finalRequest.initialForwardLeadMeters)
+        ) +
+        " final_lead_budget_m=" +
+        std::to_string(finalRequest.initialForwardLeadMeters) +
+        " final_goal_hard_m=" +
+        std::to_string(finalRequest.terminalApproachLengthMeters) +
+        " final_exit_speed_mps=" +
+        std::to_string(currentSpeed) +
+        " final_detail={ " + finalLeg.diagnosticSummary + " }";
     if (!finalLeg.valid())
         return failedComposite(
             finalLeg,
@@ -823,7 +889,10 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         " max_join_dk=" +
         std::to_string(
             maximumJoinCurvatureJump(out.routeCurves)
-        );
+        ) +
+        " free_leg_total_ms=" +
+        std::to_string(freeLegTotalMs) +
+        freeLegDiagnostics;
 
     if (out.routeCurves.empty() ||
         out.executionGates.size() < 2 ||

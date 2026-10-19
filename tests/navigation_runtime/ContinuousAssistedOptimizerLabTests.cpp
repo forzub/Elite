@@ -126,6 +126,49 @@ int main()
     if (!(turn.diagnostics.maxConstraintViolation <= 1.0e-7))
         return fail("optimizer reported residual hard-constraint violation");
 
+    // Passive candidate audit must cover every objective evaluation and
+    // include the final selected route among feasible comparisons.
+    const auto checkAudit = [](const Result& solution)
+    {
+        const auto& d = solution.diagnostics;
+        if (d.feasibleEvaluations + d.infeasibleEvaluations !=
+            d.objectiveEvaluations)
+            return false;
+        if (d.feasibleEvaluations == 0 ||
+            d.shortestFeasible.empty() ||
+            d.fastestFeasible.empty() ||
+            d.lowestObjectiveFeasible.empty())
+            return false;
+        if (d.shortestFeasible.size() > 5 ||
+            d.fastestFeasible.size() > 5 ||
+            d.lowestObjectiveFeasible.size() > 5)
+            return false;
+        if (d.shortestFeasible.front().lengthMeters >
+            d.pathLengthMeters + 1.0e-5)
+            return false;
+        if (d.fastestFeasible.front().estimatedTravelTimeSeconds >
+            d.estimatedTravelTimeSeconds + 1.0e-5)
+            return false;
+        if (d.lowestObjectiveFeasible.front().objective >
+            d.objective + 1.0e-5)
+            return false;
+        for (std::size_t i = 1; i < d.shortestFeasible.size(); ++i)
+        {
+            if (d.shortestFeasible[i].lengthMeters + 1.0e-6 <
+                d.shortestFeasible[i - 1].lengthMeters)
+                return false;
+        }
+        for (std::size_t i = 1; i < d.fastestFeasible.size(); ++i)
+        {
+            if (d.fastestFeasible[i].estimatedTravelTimeSeconds + 1.0e-6 <
+                d.fastestFeasible[i - 1].estimatedTravelTimeSeconds)
+                return false;
+        }
+        return true;
+    };
+    if (!checkAudit(turn))
+        return fail("reversed-heading candidate audit is inconsistent");
+
     // Case 2: high cruise ceiling. This is the regression for the 80-110 km
     // loops observed in production. The optimizer must be allowed to slow
     // locally instead of inflating all turns to R=Vmax^2/a_lat.
@@ -181,6 +224,9 @@ int main()
 
     if (!(fast.diagnostics.maxConstraintViolation <= 1.0e-7))
         return fail("high-speed optimizer retained hard-constraint violation");
+
+    if (!checkAudit(fast))
+        return fail("high-speed candidate audit is inconsistent");
 
     if (!std::isfinite(fast.diagnostics.maxLateralUtilization) ||
         fast.diagnostics.maxLateralUtilization < 0.0)

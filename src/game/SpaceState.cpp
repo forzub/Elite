@@ -2104,6 +2104,56 @@ void SpaceState::updateDockingAdvisory()
     const auto controlLaw =
         motion.localControlLaw;
 
+    game::ship::telemetry::ShipControlAuthorityTelemetry
+        liveAssistedAuthority;
+    if (pending.valid() &&
+        controlLaw == game::navigation::LocalFlightControlLaw::Assisted)
+    {
+        // Read the same installed motor passports + replicated per-engine
+        // damage, thermal shock and emitter state as the physical executor.
+        // ShipParams is only a compatibility adapter AFTER that read.
+        liveAssistedAuthority =
+            game::ship::telemetry::readReplicatedAssistedControlAuthority(
+                *player.descriptor,
+                player.physicalControlModel,
+                player.modules,
+                effectivePhysics,
+                m_dockReplicatedAssistedPrograms
+            );
+        if (!liveAssistedAuthority.valid)
+        {
+            fail("installed Assisted motor authority unavailable");
+            return; // Never plan a nominally flyable damaged craft.
+        }
+        effectivePhysics =
+            game::ship::telemetry::applyAuthorityToControlParams(
+                effectivePhysics, liveAssistedAuthority
+            );
+
+        const double steering = std::min({
+            liveAssistedAuthority.positive[3],
+            liveAssistedAuthority.negative[3],
+            liveAssistedAuthority.positive[4],
+            liveAssistedAuthority.negative[4]
+        });
+        const double lateral = std::min({
+            liveAssistedAuthority.positive[0],
+            liveAssistedAuthority.negative[0],
+            liveAssistedAuthority.positive[1],
+            liveAssistedAuthority.negative[1]
+        });
+        const double forward =
+            liveAssistedAuthority.negative[2];
+        const double reverse =
+            liveAssistedAuthority.positive[2];
+        if (steering <= 1.0e-6 || lateral <= 1.0e-6 ||
+            forward <= 1.0e-6 || reverse <= 1.0e-6)
+        {
+            fail("installed Assisted motors cannot execute a 3D docking path");
+            return;
+        }
+    }
+
     const auto frame =
         player.referenceFrame.kinematicFrame();
 
@@ -2323,6 +2373,8 @@ void SpaceState::updateDockingAdvisory()
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
         m_dockSafeCourse = {};
+        m_dockPlannedAssistedAuthority = {};
+        m_dockAcceptedAssistedAuthority = {};
         m_clientDockingPhase =
             ClientDockingPhase::Stabilizing;
         m_noSafeDockingGuidanceSolution = false;
@@ -3758,6 +3810,7 @@ void SpaceState::updateDockingAdvisory()
             );
         const auto compileControlLaw = controlLaw;
         const auto compilePhysics = effectivePhysics;
+        m_dockPlannedAssistedAuthority = liveAssistedAuthority;
         const std::uint64_t compileRequestSerial = pending.serial;
         const double compileExecutionUniverseTimeSeconds =
             job->executionStartUniverseTimeSeconds;
@@ -4505,6 +4558,18 @@ void SpaceState::updateDockingAdvisory()
             }
         }
 
+        // A worker's approved trajectory becomes stale if the installed
+        // motors lost physical authority during its multi-second compile.
+        if (automatic &&
+            controlLaw == game::navigation::LocalFlightControlLaw::Assisted &&
+            game::ship::telemetry::hasSignificantAssistedAuthorityLoss(
+                m_dockPlannedAssistedAuthority, liveAssistedAuthority
+            ))
+        {
+            fail("motors degraded during route compilation; new route required");
+            return;
+        }
+        m_dockAcceptedAssistedAuthority = liveAssistedAuthority;
         m_dockLateEntry = {};
         m_dockingStatusWarning.clear();
 

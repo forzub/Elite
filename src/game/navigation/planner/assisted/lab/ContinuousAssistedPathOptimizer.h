@@ -117,6 +117,18 @@ struct CandidateComparison
     double totalCurvatureRadians = 0.0;
 };
 
+// A distinct optimized search branch, not one tiny parameter perturbation.
+// Infeasible branches are retained for diagnosis but never compared for ETA.
+struct SeedBranchComparison
+{
+    std::size_t seedRank = 0;
+    bool feasible = false;
+    double lengthMeters = 0.0;
+    double estimatedTravelTimeSeconds = 0.0;
+    double objective = 0.0;
+    double maxConstraintViolation = 0.0;
+};
+
 struct Diagnostics
 {
     std::size_t objectiveEvaluations = 0;
@@ -132,6 +144,7 @@ struct Diagnostics
     std::vector<CandidateComparison> shortestFeasible;
     std::vector<CandidateComparison> fastestFeasible;
     std::vector<CandidateComparison> lowestObjectiveFeasible;
+    std::vector<SeedBranchComparison> searchBranchOutcomes;
 
     // Full route including protected start/goal straights.
     double pathLengthMeters = 0.0;

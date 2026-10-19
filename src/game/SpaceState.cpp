@@ -4750,6 +4750,24 @@ void SpaceState::updateDockingAdvisory()
     if (m_clientDockingPhase ==
         ClientDockingPhase::Executing)
     {
+        if (controlLaw == game::navigation::LocalFlightControlLaw::Assisted &&
+            game::ship::telemetry::hasSignificantAssistedAuthorityLoss(
+                m_dockAcceptedAssistedAuthority, liveAssistedAuthority
+            ))
+        {
+            // Do not continue a precomputed high-speed curve after physical
+            // engine damage has invalidated the simultaneous-force budget.
+            // Returning the pilot interface to the human is safer than
+            // pretending the old reference is still flyable. A fresh route
+            // request will use the newly replicated motor state.
+            std::cerr
+                << "[DockAuthority] request=" << pending.serial
+                << " phase=accepted-trajectory-invalidated"
+                << " reason=installed-motor-capability-loss"
+                << std::endl;
+            fail("motors degraded; committed route needs new planning");
+            return;
+        }
         const auto handleOutput = [&](const auto& output) -> bool
         {
             if (output.valid)

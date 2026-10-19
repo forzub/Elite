@@ -1,4 +1,5 @@
 #include "src/game/navigation/NavigationGeometryTolerance.h"
+#include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -2958,7 +2959,11 @@ void SpaceState::updateDockingAdvisory()
             std::max(
                 0.1,
                 (shipProfile.maxBrakingAccelerationMps2 -
-                 linearReserve) * 0.90
+                 linearReserve) * 0.90 *
+                    (assisted
+                        ? game::navigation::assisted_budget::
+                              ConcurrentTurnAxisFraction
+                        : 1.0)
             );
         const double executionCurveLateralMps2 =
             std::max(
@@ -2976,7 +2981,13 @@ void SpaceState::updateDockingAdvisory()
         // forces v=0 at tangent discontinuities.
         request.lateralMps2 =
             assisted
-                ? std::max(0.1, executionCurveLateralMps2)
+                ? std::max(
+                      0.1,
+                      game::navigation::assisted_budget::
+                          reservedCurveLateralAccelerationMps2(
+                              executionCurveLateralMps2
+                          )
+                  )
                 : request.acceleratingMps2;
         request.maxAngularVelocityRadPerSecond =
             shipProfile.maxAngularVelocityRadPerSecond;

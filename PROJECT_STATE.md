@@ -1,3 +1,27 @@
+## 2026-10-19 — FIX OBSOLETE SEGMENTED_ROUTE_COMPOSER TEST EXPECTATION (NATIVE RERUN PENDING)
+
+**User's actual MSYS2 output after Assisted terminal-geometry experiment:** CMake configure/build succeeded, `route_planner_api` PASS (0.24s), `ordinary_route_policy` PASS (0.04s), `segmented_route_composer` FAIL (0.05s) with `SEGMENTED ROUTE COMPOSER TESTS: FAIL: terminal free stage missing`; CTest 2/3. Python `check_assisted_docking_entry_contract.py` PASS, although its final printed handoff sentence was obsolete and has now been corrected.
+
+**Diagnosis verified in source and frozen pre-experiment restore branch:** The exact same `SegmentedRouteComposerTests.cpp` (same Git SHA `63b6d943...`) on both active and `restore/terminal-optimizer-contract-before-2026-10-19` expected last semantic `stages[4].kind == RouteStageKind::FreeTransit`. This expectation predates the established `TrafficRoutePlanAdapter::buildStageContract` code, which *intentionally* synthesizes last `RouteStageKind::TerminalApproach`, `RouteStageFramePolicy::DynamicTerminalFrame`, `RouteStageRefreshPolicy::LiveDuringStage` on free geometry after BLUE release, so docking frames may co-rotate with the dock. It does **not** erase the final free geometry; this stage describes semantic frame ownership, not whether geometry may move through free space. `request.roundTurns=false` in failing legacy test, so the new Assisted continuous optimizer terminal start/goal hard-straight opt-in could not have run in this test. This is stale test contract, **not evidence of regression in this experimental planning change**.
+
+**Fix now committed to active branch, restore point untouched:** `tests/navigation_runtime/SegmentedRouteComposerTests.cpp` expects final semantic `TerminalApproach`; now additionally checks live dynamic frame ownership, `LiveDuringStage`, no hard BLUE containment leak, positive actual geometry length, coverage to final curve progress and final endpoint equals authored docking HOLD point. Existing BLUE KeepInside/semantic/order checks preserved. `tests/architecture_contracts/check_assisted_docking_entry_contract.py` now asserts adapter's dynamic terminal contract + test assertions and replaces stale line 'one projected entry bind based on first-turn travel time' with correct measured connector-worker latency and forecast prefix validation.
+
+**Status:** User's original two positive C++ tests remain PASS. This source fix and strengthened test have **NOT YET BEEN NATIVELY RUN**; source contract/branch compare only. Do not state 3/3 until user's rerun proves it. No physical system, route optimizer, BLUE topology or actor controls modified during this fix; still follow user request for ONLY planner geometry preview after tests.
+
+**Minimal user rerun (MSYS2 MinGW64):**
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake --build build/tests/navigation_runtime --target segmented_route_composer_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^segmented_route_composer$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+```
+On green, full game build `bash build_mingw64.sh`, then in game just SHOW ROUTE and save log `D:\\tmp\elite_terminal_geometry_preview.log`, screenshot, no need to fly. Check `planner_diagnostics`, `final_start_hard_m=150`, `final_goal_hard_m~900`, `final_ms`, `inbound_ms`, and terminal stage length vs previous ~36.13km. If failing, send FIRST native failure; do NOT skip it.
+
+---
+
 ## 2026-10-19 — ASSISTED BLUE-EXIT TERMINAL GEOMETRY EXPERIMENT: FIX HARD-STRAIGHT INPUTS, PLANNER PREVIEW ONLY (SOURCE COMMITTED, NATIVE PENDING)
 
 **User authorization:** "хорошо. давай пробовать. прогон устраивать не обязательно, можно только смотреть результат работы планеровщика." Fix overly wide ~36.13km terminal loop **only in geometry**, inspect new live-planned cyan tunnel immediately after it appears; a full docking/flight acceptance is NOT required for this experiment. Preserve earlier steady flight stack.

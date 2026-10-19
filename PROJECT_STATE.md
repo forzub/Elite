@@ -1,3 +1,29 @@
+## 2026-10-19 — DOCK ROUTE READY BUT REJECTED AT SUB-MILLIMETRE START (SOURCE FIX; NATIVE/LIVE PENDING)
+
+**Live evidence:** START DOCKING #1 generated route stages (free, capture, BLUE lane, release, terminal), but never adopted the result. DockLateEntry logged disposition=1, along_m from -0.000147 to approximately -0.0000007 m, first-line prefix_m=remaining_m=1000, cross_m ~0.000002 m and effectively zero actual speed. DockClient repeatedly entered entry-rebind-retry (at least seven attempts). Initial worker lasted 9.74 s; rebound workers 5–6.6 s. The route stages exist; the immediately demonstrated failure is the route handoff predicate.
+
+**Code root cause:** src/game/navigation/planner/RouteEntryBinder.cpp::inspectBallisticPrefix rejected EVERY negative along position using along < 0.0. Disposition 1 means BeforeStart. SpaceState.cpp retried a fresh entry connector for any non-OnPrefix outcome, so floating-point start-position noise prevented route adoption even while effectively stationary.
+
+**Fix committed on feature/propulsion-authority-matrix-2026-10-16:** RouteEntryBinder.cpp now tolerates at most 0.001 m of negative along-track start noise, clamps accepted along distance to zero, recalculates remaining distance accordingly; real earlier position beyond tolerance remains BeforeStart. Cross-track and past-prefix checks remain intact. tests/navigation_runtime/RouteEntryBinderTests.cpp now checks -0.0005 m accepted and clamped, and -0.005 m rejected; existing larger early, off-axis and beyond-end tests remain. Changes do NOT touch motor physics, manual control, Assisted/Newtonian route geometry or autopilot law. Code commits 653425e77ebb and 67288a9be41c.
+
+**Validation:** GitHub code and tests committed; no native MinGW build, CTest, or game run was performed here. Do not report PASS before user Windows evidence. Run:
+
+```bash
+cd /d/__elite/work
+git status --short
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target route_entry_binder_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^route_entry_binder$' --output-on-failure
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+
+**Live success criterion:** DockLateEntry reports disposition=2 (OnPrefix) instead of disposition=1 and DockClient reaches phase=route-ready, renders the tunnel and begins actual flight. If not, inspect new DockPlanFailure, DockLateEntry and DockClient lines. Secondary issues NOT yet fixed: 9.74 s full planner and 5–6.6 s entry connector, plus malformed literal safe-course log reason= << safetyResult.message <<. All runtime logs under D:\tmp.
+
+---
 ## 2026-10-19 — IMPLEMENTED COOLANT→ENGINE DAMAGE, CINEMATIC IMPACT SHOCK, CONTROL-AUTHORITY TELEMETRY (NATIVE TESTS PENDING)
 
 **User approved and requested code:** couple engine heat to damaged ship cooling; impact-triggered 70%-style coughing power loss followed 1–3 s later by once-randomized self-recovery of two thirds of the hit or no recovery; add a read-only ship control-authority telemetry layer for the autopilot, then verify game manual/autopilot behaviour. Branch `feature/propulsion-authority-matrix-2026-10-16`. **Changes committed to branch; DO NOT claim native or gameplay PASS.** Previous simplified cached I/Y/X Assisted maneuver executor is retained; Newtonian continues separate RCS and main control.

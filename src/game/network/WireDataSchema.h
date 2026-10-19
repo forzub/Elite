@@ -642,6 +642,16 @@ ELITE_WIRE_SCHEMA(
     v.pendingCommandCount
 );
 
+// Signed motor-basis limits are authoritative server data, not HUD guesses.
+ELITE_WIRE_SCHEMA(
+    game::ship::telemetry::ShipControlAuthorityTelemetry,
+    v.valid,
+    v.model,
+    v.sourceActuatorRevision,
+    v.positive,
+    v.negative
+);
+
 ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
@@ -661,6 +671,7 @@ ELITE_WIRE_SCHEMA(
     v.radarContacts,
     v.damageEvents,
     v.shipCoreStatus,
+    v.controlAuthorityTelemetry,
     v.graph
 );
 

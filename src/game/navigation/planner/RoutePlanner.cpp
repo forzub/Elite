@@ -673,6 +673,25 @@ RoutePlan planContinuousAssisted(
             return summary + "]";
         };
 
+    const auto branchSummary =
+        [](const std::vector<assisted::lab::SeedBranchComparison>& branches)
+        {
+            std::string summary = "[";
+            for (const auto& branch : branches)
+            {
+                if (summary.size() > 1)
+                    summary += ";";
+                summary +=
+                    std::to_string(branch.seedRank) + ":" +
+                    std::to_string(branch.feasible ? 1 : 0) + ":" +
+                    std::to_string(branch.lengthMeters) + ":" +
+                    std::to_string(branch.estimatedTravelTimeSeconds) + ":" +
+                    std::to_string(branch.objective) + ":" +
+                    std::to_string(branch.maxConstraintViolation);
+            }
+            return summary + "]";
+        };
+
     out.diagnosticSummary =
         "continuous-assisted ready curves=" +
         std::to_string(out.routeCurves.size()) +
@@ -770,7 +789,10 @@ RoutePlan planContinuousAssisted(
         " fastest_feasible_candidates=" +
         candidateSummary(optimized.diagnostics.fastestFeasible) +
         " lowest_score_feasible_candidates=" +
-        candidateSummary(optimized.diagnostics.lowestObjectiveFeasible);
+        candidateSummary(optimized.diagnostics.lowestObjectiveFeasible) +
+        // Branch tuple: seed-rank:feasible:length-m:eta-s:objective:violation.
+        " optimized_seed_branches=" +
+        branchSummary(optimized.diagnostics.searchBranchOutcomes);
 
     return out;
 }

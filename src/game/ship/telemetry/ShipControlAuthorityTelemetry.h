@@ -59,16 +59,38 @@ readAssistedControlAuthority(
     // Conservative plan/controller limits: NO value may exceed physical
     // accepted motor-basis capability. Existing ShipParams API is kept as
     // an adapter until navigation directly takes the telemetry structure.
-    p.forwardMainEngineAccelerationMps2=static_cast<float>(std::min(
-        std::max(0.0,static_cast<double>(
-            p.forwardMainEngineAccelerationMps2)),
-        telemetry.negative[2] // body -Z is forward
-    ));
-    p.reverseMainEngineAccelerationMps2=static_cast<float>(std::min(
-        std::max(0.0,static_cast<double>(
-            p.reverseMainEngineAccelerationMps2)),
-        telemetry.positive[2] // body +Z is reverse
-    ));
+    // ShipDynamics reserves zero directional rating for legacy descriptors
+    // ("fall back to the load envelope"). ZERO FROM TELEMETRY is different:
+    // it is physical loss of the motor bank and must never trigger that
+    // legacy fallback. Explicitly clear availability when the motor cannot
+    // generate thrust; use the current load envelope only as the old-format
+    // descriptor's rating before applying the real six-axis bound.
+    const double structuralLoadMps2 =
+        std::max(0.0, static_cast<double>(
+            p.maxLinearGs > 0.0f ? p.maxLinearGs : p.maxGs
+        )) * 9.80665;
+    const double forwardRating =
+        p.forwardMainEngineAccelerationMps2 > 0.0f
+            ? static_cast<double>(p.forwardMainEngineAccelerationMps2)
+            : structuralLoadMps2;
+    const double reverseRating =
+        p.reverseMainEngineAccelerationMps2 > 0.0f
+            ? static_cast<double>(p.reverseMainEngineAccelerationMps2)
+            : structuralLoadMps2;
+    const double forward = std::min({
+        structuralLoadMps2, forwardRating,
+        std::max(0.0, telemetry.negative[2])
+    });
+    const double reverse = std::min({
+        structuralLoadMps2, reverseRating,
+        std::max(0.0, telemetry.positive[2])
+    });
+    p.forwardMainEngineAvailable =
+        p.forwardMainEngineAvailable && forward > 1.0e-6;
+    p.reverseMainEngineAvailable =
+        p.reverseMainEngineAvailable && reverse > 1.0e-6;
+    p.forwardMainEngineAccelerationMps2 = static_cast<float>(forward);
+    p.reverseMainEngineAccelerationMps2 = static_cast<float>(reverse);
     p.strafeAccel=static_cast<float>(std::min({
         std::max(0.0,static_cast<double>(p.strafeAccel)),
         telemetry.positive[0],telemetry.negative[0],

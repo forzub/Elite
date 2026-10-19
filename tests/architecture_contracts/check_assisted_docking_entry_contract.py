@@ -31,6 +31,41 @@ for forbidden in [
 ]:
     assert forbidden not in space, f"trajectory-style safe-course regression: {forbidden}"
 
+# Numeric route construction rules are distinct from physical clearances.
+precision = (
+    ROOT / "src/game/navigation/NavigationGeometryTolerance.h"
+).read_text(encoding="utf-8")
+binder = (
+    ROOT / "src/game/navigation/planner/RouteEntryBinder.cpp"
+).read_text(encoding="utf-8")
+for marker in [
+    "ConstructedPointMeters = 1.0e-3",
+    "EntryStartBackstepMeters = 1.0e-2",
+    "EntryEndOvershootMeters = 1.0e-2",
+    "ComposedStageLengthMeters = 1.0e-2",
+]:
+    assert marker in precision, f"route geometry precision drift: {marker}"
+for marker in [
+    "geometry_tolerance::EntryStartBackstepMeters",
+    "geometry_tolerance::EntryEndOvershootMeters",
+    "std::clamp(along, 0.0, length)",
+]:
+    assert marker in binder, f"route entry numerical guard missing: {marker}"
+assert "if (along < 0.0)" not in binder
+for relative_path in [
+    "src/game/navigation/DockingAdvisoryPlanner.cpp",
+    "src/game/navigation/planner/RoutePlanner.cpp",
+    "src/game/navigation/planner/RouteEntryBinder.cpp",
+    "src/game/navigation/traffic/RouteStageCompiler.cpp",
+    "src/game/navigation/traffic/SegmentedRouteComposer.cpp",
+    "src/game/navigation/traffic/TrafficRoutePlanAdapter.cpp",
+    "src/game/navigation/traffic/RouteVolumeContainmentValidator.cpp",
+]:
+    source = (ROOT / relative_path).read_text(encoding="utf-8")
+    assert "geometry_tolerance::" in source, (
+        f"authoritative route construction tolerance missing: {relative_path}"
+    )
+
 assert "double leadSeconds = 0.0;" in header
 assert "navigationAccelerationDemandValid = true;" not in space[
     space.index("const auto coastForPlanningControl"):

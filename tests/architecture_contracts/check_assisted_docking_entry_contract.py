@@ -32,6 +32,44 @@ required = [
 for token in required:
     assert token in space, f"missing restored Assisted docking-entry contract: {token}"
 
+# Assisted-only moving-start lead and moving-worker handoff contracts.
+# Newtonian keeps the original conservative generic lead policy.
+policy = (
+    ROOT / "src/game/navigation/OrdinaryRoutePolicy.h"
+).read_text(encoding="utf-8")
+composer = (
+    ROOT / "src/game/navigation/traffic/SegmentedRouteComposer.cpp"
+).read_text(encoding="utf-8")
+route_request = (
+    ROOT / "src/game/navigation/planner/RoutePlannerApi.h"
+).read_text(encoding="utf-8")
+handoff_policy = (
+    ROOT / "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
+).read_text(encoding="utf-8")
+for name in [
+    "requiredStartLeadMeters",
+    "requiredAssistedStartLeadMeters",
+    "requiredGuidanceTunnelRadiusMeters",
+]:
+    assert name in policy
+assert "assistedCompactStartLead = assisted" in space
+assert "bool assistedCompactStartLead = false;" in route_request
+assert composer.count("requiredAssistedStartLeadMeters(") == 2
+assert composer.count("requiredStartLeadMeters(") == 2
+assert "BallisticEntryHandoffPolicy::" in space
+assert "canReuseStraightPrefix(" in handoff_policy
+assert "const bool mustRebind =" in space
+assert "(!job->entryRebind && !forecastOnPrefix)" in space
+assert "const double leadSeconds = connectorLeadSeconds;" in space
+assert "firstTurnTravelSeconds," not in space[
+    space.index("const double leadSeconds = connectorLeadSeconds;"):
+    space.index("m_dockLateEntry = {};", space.index(
+        "const double leadSeconds = connectorLeadSeconds;"))
+], "first turn time leaked back into connector projection"
+assert "entrySolveDurationMs" in space
+assert "m_dockObservedConnectorWorkerSeconds" in header
+assert "first_turn_remaining_m=" in space
+
 # The original literal "one-shot handoff" error was retired when the
 # connector gained an explicit, bounded late-entry recovery budget. Verify
 # the LIVE control flow, rather than requiring a removed diagnostic string.

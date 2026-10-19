@@ -577,6 +577,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
+            state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(
@@ -658,6 +659,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
+            state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;
             {
                 const auto phaseBegin = HydrateClock::now();
                 applyGraphSnapshot(

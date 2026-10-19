@@ -15,7 +15,7 @@ required = [
     "submitAutopilotControl(safeOutput.control)",
     "firstTurnTravelSeconds",
     "m_dockLateEntry.leadSeconds",
-    "constexpr int MaxEntryConnectorMisses = 4;",
+    "constexpr std::uint32_t MaxEntryConnectorMisses = 4;",
     "phase=entry-rebind-exhausted",
     "dock entry connector handoff did not converge",
     "projected Assisted entry bind missed its one-shot handoff",

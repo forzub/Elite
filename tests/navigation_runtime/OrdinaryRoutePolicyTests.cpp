@@ -51,6 +51,37 @@ int main()
     if (!(movingLead > stoppedLead))
         return fail("moving-start lead did not grow with speed");
 
+    // Regress the high-speed Assisted handoff: do not count braking AND
+    // curvature radius twice as independent initial straight distances.
+    // Keep Newtonian/legacy's stricter formula unchanged.
+    const double fullLegacyLead =
+        OrdinaryRoutePolicy::requiredStartLeadMeters(
+            500.0, 500.0, 15.0, 24.5166333333, 0.5, 30.0
+        );
+    const double assistedLead =
+        OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
+            500.0, 500.0, 15.0, 24.5166333333, 0.5, 30.0
+        );
+    const double designSpeed = 400.0;
+    const double expectedBrakingMeters =
+        (500.0 * 500.0 - designSpeed * designSpeed) /
+            (2.0 * 15.0);
+    const double expectedTurnRadiusMeters =
+        designSpeed * designSpeed / 24.5166333333;
+    if (!near(assistedLead,
+              expectedBrakingMeters + expectedTurnRadiusMeters,
+              1.0e-5))
+        return fail("Assisted straight still double-counted braking/radius");
+    if (!near(fullLegacyLead, 2.0 * assistedLead, 1.0e-5))
+        return fail("Newtonian/legacy start lead changed");
+
+    // Assisted retains a real measured geometry minimum even at rest.
+    if (!near(
+            OrdinaryRoutePolicy::requiredAssistedStartLeadMeters(
+                0.0, 500.0, 15.0, 24.5166333333, 0.5, 30.0
+            ), 1000.0))
+        return fail("stationary Assisted start lost the 1 km minimum");
+
     // HUD/manual tunnel readability is geometric, not speed dependent.
     // With 500 m sparse frames and a 30 degree maximum heading change, a
     // quarter-turn must span at least three frame intervals.

@@ -104,4 +104,35 @@ readAssistedControlAuthority(
     }));
     return p;
 }
+
+// A committed trajectory must be revalidated against loss of installed
+// physical capability. This checks signed axes (including damaged asymmetric
+// turns), not just the overall hull health or a descriptor maximum.
+// A modest tolerance avoids invalidating plans on thermal snapshot jitter.
+// The caller decides whether to stop safely or request a new route.
+[[nodiscard]] inline bool hasSignificantAssistedAuthorityLoss(
+    const ShipControlAuthorityTelemetry& accepted,
+    const ShipControlAuthorityTelemetry& live,
+    double allowedFractionalLoss = 0.05
+) noexcept
+{
+    if (!accepted.valid)
+        return false;
+    if (!live.valid || accepted.model != live.model)
+        return true;
+    const double fraction = std::clamp(
+        allowedFractionalLoss, 0.0, 1.0
+    );
+    for (std::size_t i = 0; i < accepted.positive.size(); ++i)
+    {
+        if (accepted.positive[i] > 1.0e-6 &&
+            live.positive[i] < accepted.positive[i] * (1.0 - fraction))
+            return true;
+        if (accepted.negative[i] > 1.0e-6 &&
+            live.negative[i] < accepted.negative[i] * (1.0 - fraction))
+            return true;
+    }
+    return false;
+}
+
 } // namespace game::ship::telemetry

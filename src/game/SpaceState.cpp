@@ -1,5 +1,6 @@
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
+#include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -3029,8 +3030,19 @@ void SpaceState::updateDockingAdvisory()
             shipProfile.maxAngularAccelerationRadPerSecond2 * 0.90;
         request.initialSpeedMps = glm::length(startVelocityMps);
 
+        request.assistedCompactStartLead = assisted;
         request.initialForwardLeadMeters =
-            game::navigation::OrdinaryRoutePolicy::
+            assisted
+                ? game::navigation::OrdinaryRoutePolicy::
+                    requiredAssistedStartLeadMeters(
+                        request.initialSpeedMps,
+                        request.maxSpeedMps,
+                        request.brakingMps2,
+                        request.lateralMps2,
+                        request.maxAngularVelocityRadPerSecond,
+                        hull.lengthMeters
+                    )
+                : game::navigation::OrdinaryRoutePolicy::
                 requiredStartLeadMeters(
                     request.initialSpeedMps,
                     request.maxSpeedMps,
@@ -3923,6 +3935,8 @@ void SpaceState::updateDockingAdvisory()
                         std::memory_order_release
                     );
 
+                    const auto routeSolveStarted =
+                        std::chrono::steady_clock::now();
                     if (compileControlLaw ==
                         game::navigation::LocalFlightControlLaw::Assisted)
                     {
@@ -3959,6 +3973,15 @@ void SpaceState::updateDockingAdvisory()
                                           compiledTrafficRoute
                                       )
                                     : Pipeline::route(request);
+                    }
+
+                    if (job->entryRebind)
+                    {
+                        job->entrySolveDurationMs =
+                            std::chrono::duration<double, std::milli>(
+                                std::chrono::steady_clock::now() -
+                                routeSolveStarted
+                            ).count();
                     }
 
                     job->planningProgressPermille.store(
@@ -4334,6 +4357,16 @@ void SpaceState::updateDockingAdvisory()
 
         auto job = std::move(m_dockAdviceJob);
 
+        if (job->entryRebind &&
+            std::isfinite(job->workerDurationMs) &&
+            job->workerDurationMs > 0.0)
+        {
+            // Actual measured last connector + autopilot compilation latency,
+            // distinct from the original expensive backbone computation.
+            m_dockObservedConnectorWorkerSeconds =
+                job->workerDurationMs * 0.001;
+        }
+
         if (automatic &&
             job->entryRebind &&
             universeTimeSeconds + fixedDt <
@@ -4416,6 +4449,30 @@ void SpaceState::updateDockingAdvisory()
                         liveAgent.positionMapMeters,
                         handoffTolerance
                     );
+            // The original line may be valid now but end before the final
+            // connector could finish. Check spatial reachability at the
+            // predicted handoff epoch without replacing any valid route.
+            const double connectorLeadSeconds =
+                game::navigation::planner::BallisticEntryHandoffPolicy::
+                    forecastLeadSeconds(
+                        m_dockObservedConnectorWorkerSeconds
+                    );
+            const bool forecastOnPrefix =
+                game::navigation::planner::BallisticEntryHandoffPolicy::
+                    canReuseStraightPrefix(
+                        job->plan,
+                        liveAgent.positionMapMeters,
+                        liveAgent.velocityMapMetersPerSecond,
+                        handoffTolerance,
+                        connectorLeadSeconds
+                    );
+            // The projected connector worker is already FINISHED on a
+            // rebound, so only the present exact prefix needs validation.
+            const bool mustRebind =
+                prefix.disposition !=
+                    game::navigation::planner::
+                        BallisticPrefixDisposition::OnPrefix ||
+                (!job->entryRebind && !forecastOnPrefix);
 
             std::cerr
                 << "[DockLateEntry]"
@@ -4427,12 +4484,15 @@ void SpaceState::updateDockingAdvisory()
                 << " remaining_m=" << prefix.remainingMeters
                 << " cross_m=" << prefix.crossTrackMeters
                 << " worker_ms=" << job->workerDurationMs
+                << " connector_solve_ms="
+                << job->entrySolveDurationMs
+                << " connector_forecast_s=" << connectorLeadSeconds
+                << " forecast_on_prefix="
+                << (forecastOnPrefix ? 1 : 0)
                 << " rebound=" << (job->entryRebind ? 1 : 0)
                 << std::endl;
 
-            if (prefix.disposition !=
-                    game::navigation::planner::
-                        BallisticPrefixDisposition::OnPrefix)
+            if (mustRebind)
             {
                 if (job->entryRebind)
                 {
@@ -4462,13 +4522,12 @@ void SpaceState::updateDockingAdvisory()
                         fail("dock entry connector handoff did not converge");
                         return;
                     }
-                    const double workerSeconds =
-                        std::max(0.0, job->workerDurationMs * 0.001);
                     m_dockLateEntry.leadSeconds =
-                        std::max(
-                            0.75,
-                            workerSeconds * 1.25
-                        );
+                        game::navigation::planner::
+                            BallisticEntryHandoffPolicy::
+                                forecastLeadSeconds(
+                                    m_dockObservedConnectorWorkerSeconds
+                                );
 
                     m_dockingStatusWarning =
                         "warning: handoff drift; connector retry " +
@@ -4551,17 +4610,14 @@ void SpaceState::updateDockingAdvisory()
                         ? firstTurnProgressMeters / liveSpeedMps
                         : 0.0;
 
-                // Use only measured/route-derived time scales.  The first-turn
-                // travel time is the historical handoff delay.  Worker time is
-                // a lower bound so the projected point cannot be reached
-                // before a similarly expensive entry calculation can finish.
+                // The full planner worker's elapsed time is NOT the time
+                // required for a late connector; the flight time to the
+                // first turn is NOT its compute time either. Use the last
+                // observed connector-worker duration (or bootstrap before
+                // the first sample). Revalidate after the connector finishes.
                 const double measuredWorkerSeconds =
                     std::max(0.0, job->workerDurationMs * 0.001);
-                const double leadSeconds =
-                    std::max(
-                        firstTurnTravelSeconds,
-                        measuredWorkerSeconds
-                    );
+                const double leadSeconds = connectorLeadSeconds;
 
                 m_dockLateEntry = {};
                 m_dockLateEntry.active = true;
@@ -4577,14 +4633,13 @@ void SpaceState::updateDockingAdvisory()
                 // ============================================================
                 // PROJECTED ENTRY CONTRACT -- DO NOT TURN THIS INTO A LOOP.
                 //
-                // The expensive planner has finished.  Keep its downstream
-                // route.  Estimate the available handoff delay from the
-                // route's start-to-first-turn travel time, project the live
-                // ballistic craft by that delay, and calculate ONLY the final
-                // entry connector from that predicted point.
-                //
-                // Exactly one rebind is allowed.  Never discard/re-run the
-                // expensive route because its original start became stale.
+                // The expensive planner has finished. Keep its downstream
+                // route. Project the live ballistic craft by the measured
+                // last-connector worker latency, NOT time to the first turn.
+                // Calculate ONLY the final entry connector from that point.
+                // Connector misses are retried within the bounded budget.
+                // Never re-run the expensive downstream route just because
+                // its original start became stale.
                 // ============================================================
                 m_clientDockingPhase =
                     ClientDockingPhase::Stabilizing;
@@ -4596,8 +4651,11 @@ void SpaceState::updateDockingAdvisory()
                     << " first_turn_m="
                     << firstTurnProgressMeters
                     << " live_speed_mps=" << liveSpeedMps
+                    << " first_turn_s=" << firstTurnTravelSeconds
                     << " lead_s=" << leadSeconds
-                    << " worker_s=" << measuredWorkerSeconds
+                    << " whole_worker_s=" << measuredWorkerSeconds
+                    << " observed_connector_worker_s="
+                    << m_dockObservedConnectorWorkerSeconds
                     << std::endl;
                 return;
             }

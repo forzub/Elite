@@ -92,6 +92,36 @@ public:
         );
     }
 
+    // Assisted initial straight: one *braking distance* plus one complete
+    // *comfortable turn radius* is enough to reach the tangent arc. The old
+    // generic lead doubles BOTH terms, which builds kilometres of extra
+    // straight at 350-500 m/s. Keep the original conservative helper for
+    // Newtonian/legacy callers (different turn and braking laws).
+    // The separate HUD/manual-turn radius limit is untouched.
+    [[nodiscard]] static double requiredAssistedStartLeadMeters(
+        double initialSpeedMps,
+        double routeMaxSpeedMps,
+        double brakingAccelerationMps2,
+        double lateralAccelerationMps2,
+        double maxAngularVelocityRadPerSec,
+        double vehicleLengthMeters
+    ) noexcept
+    {
+        const double legacy =
+            requiredStartLeadMeters(
+                initialSpeedMps,
+                routeMaxSpeedMps,
+                brakingAccelerationMps2,
+                lateralAccelerationMps2,
+                maxAngularVelocityRadPerSec,
+                vehicleLengthMeters
+            );
+        const double minimum =
+            std::max(1000.0, std::max(0.0, vehicleLengthMeters) * 10.0);
+        // Legacy = max(minimum, 2*(D_brake+R_turn)).
+        return std::max(minimum, 0.5 * legacy);
+    }
+
     [[nodiscard]] static double requiredGuidanceTunnelRadiusMeters(
         double gateSpacingMeters,
         double vehicleLengthMeters

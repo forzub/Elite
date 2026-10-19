@@ -779,7 +779,7 @@ RoutePlan planContinuousAssisted(
         std::to_string(
             optimized.diagnostics.feasibleEvaluations
         ) +
-        " rejected_candidate_evals=" +
+        " infeasible_candidate_evals=" +
         std::to_string(
             optimized.diagnostics.infeasibleEvaluations
         ) +

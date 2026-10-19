@@ -1412,6 +1412,40 @@ set_tests_properties(
 
 
 add_executable(
+    assisted_authority_contract_tests
+    AssistedAuthorityContractTests.cpp
+)
+
+target_include_directories(assisted_authority_contract_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(assisted_authority_contract_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    assisted_authority_contract_tests PRIVATE EliteNavigationRuntimeControl
+)
+
+if(MSVC)
+    target_compile_options(
+        assisted_authority_contract_tests PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        assisted_authority_contract_tests PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME assisted_authority_contract
+    COMMAND assisted_authority_contract_tests
+)
+set_tests_properties(
+    assisted_authority_contract
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     route_entry_binder_tests
     RouteEntryBinderTests.cpp
 )

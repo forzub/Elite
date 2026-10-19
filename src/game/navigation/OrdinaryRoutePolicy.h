@@ -122,6 +122,46 @@ public:
         return std::max(minimum, 0.5 * legacy);
     }
 
+    // The required ballistic/turn lead is a flight envelope, not always a
+    // geometrically protected straight. Assisted traffic exits already carry
+    // their own exact, protected portal-release line. Do not turn the entire
+    // available manoeuvre lead into an extra hard straight after that exit.
+    [[nodiscard]] static double assistedHardStartStraightMeters(
+        double manoeuvreLeadMeters,
+        double explicitlyProtectedMeters,
+        bool exactPortalRelease
+    ) noexcept
+    {
+        const double protectedMeters =
+            std::max(0.0, finiteOrZero(explicitlyProtectedMeters));
+        if (exactPortalRelease)
+            return protectedMeters;
+
+        // Preserve existing hot-start/ballistic input geometry for initial
+        // ship entry, where a moving ship needs a safe forward prefix.
+        return std::max(
+            protectedMeters,
+            std::max(0.0, finiteOrZero(manoeuvreLeadMeters))
+        );
+    }
+
+    // Actual STOP on the docking axis is protected geometry. Braking from a
+    // theoretical route maximum is NOT: a speed-profile solver can reduce
+    // velocity earlier on the entire free leg after the BLUE release.
+    [[nodiscard]] static double requiredDockingAxisMinimumMeters(
+        double terminalReferenceDistanceMeters,
+        double vehicleLengthMeters
+    ) noexcept
+    {
+        return std::max({
+            700.0,
+            3.0 * std::max(
+                0.0, finiteOrZero(terminalReferenceDistanceMeters)
+            ),
+            10.0 * std::max(0.0, finiteOrZero(vehicleLengthMeters))
+        });
+    }
+
     [[nodiscard]] static double requiredGuidanceTunnelRadiusMeters(
         double gateSpacingMeters,
         double vehicleLengthMeters
@@ -184,11 +224,7 @@ public:
         // Geometry still needs a modest axis even when no braking is needed.
         // This is a minimum, not a preferred multi-kilometre magic constant.
         const double geometricMinimum =
-            std::max({
-                700.0,
-                3.0 * reference,
-                10.0 * vehicleLength
-            });
+            requiredDockingAxisMinimumMeters(reference, vehicleLength);
 
         return std::max(
             geometricMinimum,

@@ -496,6 +496,9 @@ private:
         double startedServerSeconds = 0.0;
         double executionStartUniverseTimeSeconds = 0.0;
         double workerDurationMs = 0.0;
+        // Time of RouteEntryBinder::bind itself; excludes autopilot compile
+        // and all of the first expensive full-route worker.
+        double entrySolveDurationMs = 0.0;
         DockAdvice context;
         game::navigation::planner::RoutePlan plan;
 
@@ -533,14 +536,17 @@ private:
         std::uint64_t serial = 0;
         game::navigation::planner::LateBoundRouteBackbone backbone;
 
-        // One-shot projected handoff.  The lead is derived from the accepted
-        // route's distance to its first real turn divided by live ballistic
-        // speed.  It gives the cheap entry bind time to finish without ever
-        // throwing away/re-running the expensive downstream route.
+        // Project using estimated time to compute the short connector, not
+        // the ship's travel time to the first curve. Never discard/re-run
+        // the expensive downstream route merely because the entry is stale.
         double leadSeconds = 0.0;
         std::uint32_t rebindAttempts = 0;
     };
     DockLateEntryState m_dockLateEntry {};
+    // Measured total latency of last entry worker, including compile. A new
+    // request can forecast its final connector without assuming that the
+    // original full-route 12-second computation is repeated.
+    double m_dockObservedConnectorWorkerSeconds = 0.0;
 
     // Server-authored motor basis accepted at worker launch/adoption.
     // A real route must not depend on sparse client module replicas.

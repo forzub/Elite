@@ -1,4 +1,5 @@
 #include "src/game/navigation/planner/RouteEntryBinder.h"
+#include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -79,6 +80,67 @@ void testLivePositionMayAdvanceAlongBallisticPrefix()
     require(
         std::abs(status.remainingMeters - 750.0) < 1.0e-9,
         "ballistic-prefix remaining distance is wrong"
+    );
+}
+
+void testProjectedSecondRunReusesExistingStraight()
+{
+    using game::navigation::planner::BallisticEntryHandoffPolicy;
+    auto plan = straightPrefixPlan();
+
+    // Actual 500 m/s second run after a 12.115-second worker.
+    // Current craft is 6129.79 m along an authored 23226.9 m prefix.
+    // It will still be on the very same safe straight at connector ETA.
+    plan.routeCurves.front().endMeters = {23226.9, 0.0, 0.0};
+    plan.routeCurves.front().endProgressMeters = 23226.9;
+    require(
+        BallisticEntryHandoffPolicy::canReuseStraightPrefix(
+            plan,
+            {6129.79, 43.8855, 0.0},
+            {500.0, 0.0, 0.0},
+            45.0,
+            BallisticEntryHandoffPolicy::forecastLeadSeconds(0.0)
+        ),
+        "500 m/s still-on-prefix flight triggered an unnecessary rebind"
+    );
+    require(
+        std::abs(
+            BallisticEntryHandoffPolicy::forecastLeadSeconds(2.0) - 2.5
+        ) < 1.0e-9,
+        "observed connector-worker latency was not used for handoff"
+    );
+    require(
+        std::abs(
+            BallisticEntryHandoffPolicy::forecastLeadSeconds(0.0) - 0.75
+        ) < 1.0e-9,
+        "first connector forecast did not use bounded bootstrap"
+    );
+}
+
+void testForecastCatchesStaleUpcomingHandoff()
+{
+    using game::navigation::planner::BallisticEntryHandoffPolicy;
+    const auto plan = straightPrefixPlan();
+    require(
+        !BallisticEntryHandoffPolicy::canReuseStraightPrefix(
+            plan, {950.0, 0.0, 0.0},
+            {500.0, 0.0, 0.0}, 20.0, 0.75
+        ),
+        "near-end 500 m/s craft was adopted though forecast passes first turn"
+    );
+    require(
+        !BallisticEntryHandoffPolicy::canReuseStraightPrefix(
+            plan, {250.0, 0.0, 0.0},
+            {500.0, 100.0, 0.0}, 20.0, 0.75
+        ),
+        "predicted lateral departure was accepted as ballistic safe entry"
+    );
+    require(
+        BallisticEntryHandoffPolicy::canReuseStraightPrefix(
+            plan, {250.0, 0.0, 0.0},
+            {500.0, 0.0, 0.0}, 20.0, 0.75
+        ),
+        "safe matching 500 m/s straight was spuriously rejected"
     );
 }
 
@@ -267,6 +329,8 @@ int main()
     try
     {
         testLivePositionMayAdvanceAlongBallisticPrefix();
+        testProjectedSecondRunReusesExistingStraight();
+        testForecastCatchesStaleUpcomingHandoff();
         testObservedLiveDockingHandoffIsAccepted();
         testSubMillimetreStartNoiseIsAccepted();
         testSmallStationaryBallisticBackstepIsAccepted();

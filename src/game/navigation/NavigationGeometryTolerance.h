@@ -20,6 +20,10 @@ inline constexpr double ConstructedPointMeters = 1.0e-3;
 // This is an entry-adoption tolerance, NOT a collision/route-width allowance.
 inline constexpr double EntryStartBackstepMeters = 1.0e-2;
 
+// Likewise, planner completion can find the craft centimetres past the end
+// of its first authored straight. This is not licence to skip a real turn.
+inline constexpr double EntryEndOvershootMeters = 1.0e-2;
+
 // Multi-leg semantic stage lengths add several independently calculated
 // double-precision lengths; a centimetre mismatch is bookkeeping noise, not
 // a missing tens/hundreds-of-metres mandatory straight.

@@ -1978,11 +1978,18 @@ void SpaceState::updateDockingAdvisory()
 
     const auto fail = [&](const std::string& reason)
     {
-        std::cerr
-            << "[DockClient] request="
-            << (pending.valid() ? pending.serial : 0)
-            << " phase=failed reason=" << reason
-            << std::endl;
+        // Fail is reached every frame while a pending request remains
+        // visible. Report a transition once, not thousands of copies of
+        // the same already-latched error.
+        if (m_dockingGuidanceFailureReason != reason ||
+            !m_noSafeDockingGuidanceSolution)
+        {
+            std::cerr
+                << "[DockClient] request="
+                << (pending.valid() ? pending.serial : 0)
+                << " phase=failed reason=" << reason
+                << std::endl;
+        }
         m_dockingGuidanceFailureReason = reason;
         m_noSafeDockingGuidanceSolution = true;
         releaseClientAutopilot();
@@ -2110,21 +2117,48 @@ void SpaceState::updateDockingAdvisory()
     if (pending.valid() &&
         controlLaw == game::navigation::LocalFlightControlLaw::Assisted)
     {
-        // Read the same installed motor passports + replicated per-engine
-        // damage, thermal shock and emitter state as the physical executor.
-        // ShipParams is only a compatibility adapter AFTER that read.
-        liveAssistedAuthority =
-            game::ship::telemetry::readReplicatedAssistedControlAuthority(
-                *player.descriptor,
-                player.physicalControlModel,
-                player.modules,
-                effectivePhysics,
-                m_dockReplicatedAssistedPrograms
-            );
-        if (!liveAssistedAuthority.valid)
+        // This is authored by the actual server ShipCore motor allocator,
+        // carried in every ship snapshot independent of sparse graph rows.
+        // Never infer motor health from a missing optional module payload.
+        liveAssistedAuthority = player.controlAuthorityTelemetry;
+        if (!liveAssistedAuthority.valid ||
+            liveAssistedAuthority.model != player.physicalControlModel)
         {
-            fail("installed Assisted motor authority unavailable");
-            return; // Never plan a nominally flyable damaged craft.
+            // The ship may have only just entered HubTactical or changed
+            // construction. Await the next authoritative sample instead of
+            // failing a brand-new docking request forever.
+            if (m_clientDockingPhase == ClientDockingPhase::Executing)
+            {
+                fail("authoritative motor telemetry lost during docking");
+                return;
+            }
+            if (m_dockingStatusWarning !=
+                    "awaiting authoritative motor telemetry")
+            {
+                std::cerr
+                    << "[DockAuthority] request=" << pending.serial
+                    << " phase=awaiting-server-capability"
+                    << " valid=" << liveAssistedAuthority.valid
+                    << " model=" << static_cast<int>(
+                           liveAssistedAuthority.model)
+                    << " expected=" << static_cast<int>(
+                           player.physicalControlModel)
+                    << std::endl;
+                m_dockingStatusWarning =
+                    "awaiting authoritative motor telemetry";
+            }
+            return;
+        }
+        if (m_dockingStatusWarning ==
+                "awaiting authoritative motor telemetry")
+        {
+            m_dockingStatusWarning.clear();
+            std::cerr
+                << "[DockAuthority] request=" << pending.serial
+                << " phase=capability-ready"
+                << " actuator_rev="
+                << liveAssistedAuthority.sourceActuatorRevision
+                << std::endl;
         }
         effectivePhysics =
             game::ship::telemetry::applyAuthorityToControlParams(

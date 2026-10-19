@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -3073,7 +3074,7 @@ void SpaceState::updateDockingAdvisory()
                     << safetyResult.turnAngleRad *
                         57.2957795130823208768
                     << " ray_m=" << safetyResult.sceneRayMeters
-                    << " reason="" << safetyResult.message << """
+                    << " reason=\"" << safetyResult.message << "\""
                     << std::endl;
 
                 if (!safetyResult.currentCourseSafe)
@@ -3489,7 +3490,7 @@ void SpaceState::updateDockingAdvisory()
 
                 if (glm::length(
                         terminalTrafficVia - localPort.positionMeters
-                    ) <= 1.0e-3)
+                    ) <= game::navigation::geometry_tolerance::ConstructedPointMeters)
                 {
                     std::cout
                         << "[TrafficDockAdapter]"
@@ -4346,6 +4347,23 @@ void SpaceState::updateDockingAdvisory()
                     // minimum useful lead because a connector authored for a
                     // point already passed cannot possibly be adopted.
                     ++m_dockLateEntry.rebindAttempts;
+                    // An unadoptable connector must not schedule workers
+                    // indefinitely. Fail safely after a bounded retry budget.
+                    constexpr int MaxEntryConnectorMisses = 4;
+                    if (m_dockLateEntry.rebindAttempts >=
+                            MaxEntryConnectorMisses)
+                    {
+                        std::cerr
+                            << "[DockClient] request=" << pending.serial
+                            << " phase=entry-rebind-exhausted"
+                            << " disposition="
+                            << static_cast<int>(prefix.disposition)
+                            << " along_m=" << prefix.alongMeters
+                            << " cross_m=" << prefix.crossTrackMeters
+                            << std::endl;
+                        fail("dock entry connector handoff did not converge");
+                        return;
+                    }
                     const double workerSeconds =
                         std::max(0.0, job->workerDurationMs * 0.001);
                     m_dockLateEntry.leadSeconds =

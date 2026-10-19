@@ -74,6 +74,16 @@ SimulationSnapshot makeSnapshot()
         game::simulation::ShipMaterializedFidelity::Response;
     ship.acknowledgedControlTick = 77u;
     ship.motionLabKind = game::diagnostics::HubMotionLabActorKind::FastOrbit;
+    ship.controlAuthorityTelemetry.valid = true;
+    ship.controlAuthorityTelemetry.model =
+        game::ship::plant::PhysicalControlModelId::AssistedI;
+    ship.controlAuthorityTelemetry.sourceActuatorRevision = 913u;
+    ship.controlAuthorityTelemetry.positive = {
+        10.0, 20.0, 30.0, 0.4, 0.5, 0.6
+    };
+    ship.controlAuthorityTelemetry.negative = {
+        11.0, 21.0, 31.0, 0.7, 0.8, 0.9
+    };
     ship.transform.motion.mainPropulsionTorqueBodyNm =
         glm::dvec3(100.0, 200.0, 300.0);
     ship.transform.motion.mainPropulsionAngularAccelerationBodyRadPerSec2 =
@@ -527,6 +537,18 @@ void testSnapshotRoundTrip()
         "removed hub lifecycle mismatch");
     require(decoded.ships.size() == 1u, "ship count mismatch");
     require(decoded.ships[0].id == EntityId{42u}, "ship identity mismatch");
+    // Autopilot authority is on the ship itself, not on its sparse/optional
+    // module graph. This must round-trip even for Response-tier ships.
+    const auto& reported = decoded.ships[0].controlAuthorityTelemetry;
+    require(reported.valid &&
+            reported.model ==
+                game::ship::plant::PhysicalControlModelId::AssistedI &&
+            reported.sourceActuatorRevision == 913u &&
+            near(reported.positive[0], 10.0) &&
+            near(reported.positive[4], 0.5) &&
+            near(reported.negative[2], 31.0) &&
+            near(reported.negative[5], 0.9),
+            "authoritative six-axis motor capability not on ship wire");
     require(
         decoded.ships[0].simulationTier ==
             source.ships[0].simulationTier,

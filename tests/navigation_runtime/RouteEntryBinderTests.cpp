@@ -82,6 +82,25 @@ void testLivePositionMayAdvanceAlongBallisticPrefix()
     );
 }
 
+void testObservedLiveDockingHandoffIsAccepted()
+{
+    const auto plan = straightPrefixPlan();
+    // Actual incident: along=-0.000147163 m, cross=0.000195785 m,
+    // prefix=1000 m and effectively zero ship speed after a 9.7 s worker.
+    const auto status = RouteEntryBinder::inspectBallisticPrefix(
+        plan, {-0.000147163, 0.000195785, 0.0}, 20.0
+    );
+    require(
+        status.disposition == BallisticPrefixDisposition::OnPrefix,
+        "actual live docking handoff was rejected again"
+    );
+    require(
+        status.alongMeters == 0.0 &&
+            status.remainingMeters == 1000.0,
+        "actual live docking handoff should begin at clamped route start"
+    );
+}
+
 void testSubMillimetreStartNoiseIsAccepted()
 {
     const auto plan = straightPrefixPlan();
@@ -248,6 +267,7 @@ int main()
     try
     {
         testLivePositionMayAdvanceAlongBallisticPrefix();
+        testObservedLiveDockingHandoffIsAccepted();
         testSubMillimetreStartNoiseIsAccepted();
         testSmallStationaryBallisticBackstepIsAccepted();
         testSmallBackstepDoesNotBypassOffAxisRejection();

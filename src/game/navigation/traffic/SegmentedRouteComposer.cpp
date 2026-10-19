@@ -882,6 +882,12 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         std::to_string(mandatoryStages.size()) +
         " compiled_traffic_stages=" +
         std::to_string(trafficRoute.stages.size()) +
+        " total_length_m=" +
+        std::to_string(routeEndProgress(out)) +
+        " direct_distance_m=" +
+        std::to_string(glm::length(
+            terminalRequest.goalMeters - terminalRequest.startMeters
+        )) +
         " min_radius_m=" +
         std::to_string(
             minimumSampledRadiusMeters(out.routeCurves)

@@ -306,14 +306,101 @@ ShipCore::capabilities() const
 game::ship::telemetry::ShipControlAuthorityTelemetry
 ShipCore::controlAuthorityTelemetry() const
 {
-    // A damage/reconfiguration revision must invalidate even a previous
-    // tick's programs until actual mounted geometry has been refreshed.
-    if (m_preparedManeuverActuatorRevision!=m_state.actuators.revision ||
-        m_assistedManeuvers.model !=
-            m_state.construction.physicalControlModel)
+    using namespace game::ship::plant;
+    using game::equipment::engine::MountedEngine;
+
+    if (!m_state.construction.valid() ||
+        familyOf(m_state.construction.physicalControlModel) !=
+            PhysicalControlFamily::Assisted)
         return {};
+
+    const auto model = m_state.construction.physicalControlModel;
+    const std::uint64_t revision = m_state.actuators.revision;
+    const ShipParams physics = effectivePhysics();
+    const auto& topology = physicalControlSlots(model);
+
+    // System/thermal updates may run AFTER the engine control tick, changing
+    // actuator revision before GameSimulation publishes its snapshot. Refresh
+    // the SAME motor-program cache as the executor, without applying forces.
+    // Checking revision alone would make live authority invalid every frame
+    // of continuous engine thermal evolution.
+    std::vector<MountedEngine> installed(topology.size());
+    std::array<game::equipment::engine::EngineUnitDescriptor,16> diagnostic {};
+    std::array<game::equipment::EquipmentDamageLayer,16> diagnosticDamage {};
+    std::array<game::equipment::engine::EngineOperatingState,16>
+        diagnosticOperating {};
+    if (topology.size() > diagnostic.size())
+        return {};
+
+    if (m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+        model == m_state.construction.definition->physicalControlModel)
+    {
+        const auto& desc = *m_state.construction.definition;
+        const auto& ids = desc.physicalControl.slotModuleIds;
+        if (ids.size() != topology.size())
+            return {};
+
+        const auto& runtime =
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                m_moduleRuntime
+            );
+        for (std::size_t i=0;i<ids.size();++i)
+        {
+            if (topology[i].role == EngineSlotRole::ManoeuvreCluster)
+                continue;
+            const auto def = std::find_if(
+                desc.modules.begin(), desc.modules.end(),
+                [&](const auto& m) { return m.moduleId == ids[i]; }
+            );
+            const auto* state = runtime.findModule(ids[i]);
+            if (def == desc.modules.end() || !def->engine || !state)
+                return {};
+            installed[i] = {
+                &*def->engine,
+                &state->equipmentDamage,
+                &state->engineOperating,
+                ids[i],
+                state->state ==
+                    world::modules::ObjectModuleRuntimeState::Attached &&
+                state->health > 0.0f
+            };
+        }
+    }
+    else
+    {
+        // Diagnostic I/Y/X construction uses the same intentionally
+        // synthetic healthy passports as updateTranslationControl(). Do
+        // not synthesize those motors for a genuine installed model.
+        for (std::size_t i=0;i<topology.size();++i)
+        {
+            if (topology[i].role == EngineSlotRole::ManoeuvreCluster)
+                continue;
+            diagnostic[i] =
+                game::equipment::engine::presets::
+                    CobrettyCR1VectorMainDrive();
+            diagnosticDamage[i].failure.failureAtDamage01 = 0.95;
+            diagnosticOperating[i].temperatureK =
+                diagnostic[i].nominalOperatingTemperatureK;
+            installed[i] = {
+                &diagnostic[i],
+                &diagnosticDamage[i],
+                &diagnosticOperating[i],
+                topology[i].id,
+                true
+            };
+        }
+    }
+
+    // matches() is cheap for unchanged engines; the expensive solver runs
+    // only when actual motor force/nozzle availability has changed.
+    if (!m_assistedManeuvers.matches(model, installed, physics))
+        m_assistedManeuvers.build(model, installed, physics);
+    if (!m_assistedManeuvers.valid)
+        return {};
+    m_preparedManeuverActuatorRevision = revision;
     return game::ship::telemetry::readAssistedControlAuthority(
-        m_assistedManeuvers,m_preparedManeuverActuatorRevision
+        m_assistedManeuvers,revision
     );
 }
 

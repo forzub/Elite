@@ -103,6 +103,12 @@ struct RoutePlanRequest
     // before curvature begins.
     double initialForwardLeadMeters = 0.0;
 
+    // Assisted and Newtonian have different start/flip laws. When enabled,
+    // each free leg needs one braking distance plus one turn radius, not
+    // the legacy twice-braking-plus-twice-radius lead. Default false means
+    // old callers and Newtonian planning remain bit-for-bit unchanged.
+    bool assistedCompactStartLead = false;
+
     // Minimum straight that must remain untouched before the first curve.
     // Zero keeps the backend legacy heuristic. Segmented mandatory passages
     // set this explicitly so a craft can clear the tunnel and begin a broad

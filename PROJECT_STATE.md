@@ -1,3 +1,41 @@
+## 2026-10-19 — ASSISTED BLUE-EXIT TERMINAL GEOMETRY EXPERIMENT: FIX HARD-STRAIGHT INPUTS, PLANNER PREVIEW ONLY (SOURCE COMMITTED, NATIVE PENDING)
+
+**User authorization:** "хорошо. давай пробовать. прогон устраивать не обязательно, можно только смотреть результат работы планеровщика." Fix overly wide ~36.13km terminal loop **only in geometry**, inspect new live-planned cyan tunnel immediately after it appears; a full docking/flight acceptance is NOT required for this experiment. Preserve earlier steady flight stack.
+
+**Immutable new recovery branch CREATED** `restore/terminal-optimizer-contract-before-2026-10-19` at `279ce5586aab2d7d177151eddc0f4ede6ab11e44`. Older previous frozen restore branch `restore/assisted-handoff-before-lead-fix-2026-10-19` remains at `c4429788de640d5487334733f60095bb117db570`. Work branch: `feature/propulsion-authority-matrix-2026-10-16`. Do NOT update either recovery branch or reset the user's worktree.
+
+**Verified root cause before change:** Production Assisted segmented planning DOES use `ContinuousAssistedPathOptimizer` on both free legs. The optimizer inherited `protectedStartStraight = max(initialProtectedStraightMeters, initialForwardLeadMeters)`, so its ~150m exact protected BLUE release became >1km (potentially much more) hard start. More importantly, the terminal final tangent `terminalApproachLengthMeters` came from `requiredTerminalApproachMeters(maxShipSpeed,0,smallConservativeBraking,..)`, making 500m/s hypothetical braking length about 10km a mandatory straight even though optimizer computes velocity/braking across the whole free leg. The old 1000m pre-arc straight and 36-angle old `DockingAdvisoryPlanner` are NOT active for this route. The new optimizer's 13 seeds / 11 parameters / thousands of full evaluations are expensive, hence independent per-leg measurement matters.
+
+**Experiment source changes (only Assisted final free leg):**
+- `OrdinaryRoutePolicy.h`: new pure `assistedHardStartStraightMeters(lead,protected,exactPortalRelease)`. Ordinary/hot initial entry remains `max(lead,protected)`. After a semantic BLUE exit, the protected geometry is EXACT `protected` (150m), no conversion of turn/braking budget into an additional hard line. New pure `requiredDockingAxisMinimumMeters(ref,shipLength) = max(700m,3*ref,10*shipLength)`; existing speed-dependent `requiredTerminalApproachMeters` and its previous callers still exist unchanged and now delegate their geometric minimum to this helper.
+- `RoutePlannerApi.h`: new per-request opt-in `assistedUseExactProtectedStart=false`, default fully backward compatible.
+- `SegmentedRouteComposer.cpp`: ONLY `finalRequest` opts into new exact protected start when `assistedCompactStartLead && useContinuousAssistedOptimizer`. Mandatory 150m after BLUE exit unchanged, mandatory BLUE entry/transit/exit untouched. Assisted final goal hard straight uses only dock axis geometry minimum (~900m for reference=300m, Cobra length~30m), not braking distance computed from route max 500m/s; physical feasibility still enforced by continuous optimizer's entire-leg speed profile (signed motor-derived accel/braking/curvature/omega) and route validation. Legacy/Newtonian request behavior untouched. Inbound free leg untouched. No new speed caps or hidden radius reductions.
+- `RoutePlanner.cpp::planContinuousAssisted`: reads new opt-in via `OrdinaryRoutePolicy::assistedHardStartStraightMeters`; *no changes to optimizer internals*, `minComfortRadius` from 500m frames/30deg still strict. The old initial ballistic moving ship still receives full physically justified protected lead.
+- **Planner-only diagnostics:** `SegmentedRouteComposer` measures actual wall-clock `inbound_ms`, `final_ms`, `free_leg_total_ms`; records hard-start and hard-goal extents, final post-BLUE handoff speed, total length and straight-line (loose) lower bound plus each free leg's `ContinuousAssistedPathOptimizer` evals/seeds/min-radius/length/stretch/time objective. `SpaceState.cpp` prints this in `[DockClient] phase=route-ready planner_diagnostics="..."`; semantic stages already logged as `[DockRouteStage]` for individual lengths. No separate new state/log files in repo. Redirect runtime output to D:\\tmp on user's Windows machine.
+- **Tests added/strengthened:** `OrdinaryRoutePolicyTests.cpp` asserts 8km original moving initial lead unchanged, BLUE-exit hard 150m, dock HOLD hard axis 900m and separate original nominal cruise-braking estimate; `RoutePlannerApiTests.cpp` adds an actual continuous optimizer scenario with manoeuvre lead 8km but 150m hard start and 900m hard goal, requiring exact terminal point and first line length. `tests/architecture_contracts/check_assisted_docking_entry_contract.py` checks source integration, Assisted-only flag, untouched inbound and diagnostics. Static cross-source content audit of 8 relevant files PASS (NOT compilation or CTest). Test scenario may expose feasibility bugs; fix on exact error rather than claiming PASS.
+
+**Next user action: planner visual comparison ONLY.** In MSYS2 MinGW64:
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target ordinary_route_policy_tests route_planner_api_tests segmented_route_composer_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(ordinary_route_policy|route_planner_api|segmented_route_composer)$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+mkdir -p /d/tmp
+set -o pipefail
+bash build_mingw64.sh 2>&1 | tee /d/tmp/elite_build.log
+./build/EliteGame.exe 2>&1 | tee /d/tmp/elite_terminal_geometry_preview.log
+```
+On 500m/s reference scene select dock/route, WAIT FOR `phase=route-ready`, visualize cyan tunnel and screenshot without completing the flight; compare old BLUE->dock ~36.13km to new last semantic `[DockRouteStage]` span. Include `planner_diagnostics` to see real final start 150m, final goal ~900m, `inbound_ms` vs `final_ms`, `free_leg_total_ms`, optimized length. A new short red-like trajectory is NOT automatically 3D safe; all hard collision and KeepInside validators still required. If optimize fails, report first compiler/CTest failure or `[DockPlanFailure] diagnostics` rather than loosening safety. If code compiles and route is shorter, subsequent eventual flight test still required to declare actual control PASS, but user explicitly deferred that.
+
+**Rollback:** `git switch restore/terminal-optimizer-contract-before-2026-10-19` after safeguarding local changes; do not hard-reset user's workspace. Root `PROJECT_STATE.md` remains the ONE persistent project context file.
+
+---
+
 ## 2026-10-19 — CORRECTION: CONTINUOUS ASSISTED OPTIMIZER *IS ACTIVE* FOR BOTH FREE LEGS; ROOT CAUSE PROTECTED-STRAIGHT CONTRACT AND SEARCH COST
 
 **User asks why the 1000m straight, why the route worker needs ~12.8s if only 36 candidates, and whether the earlier optimized planner regressed.** Full current GitHub call-graph + relevant commits inspected. **Important correction to immediately previous section of this document and prior assistant statements:** those concluded the live BLUE route uses the LEGACY 36x9 terminal fixed-circle `DockingAdvisoryPlanner`. This is WRONG for the ACTIVE Assisted segmented route. The older planner DOES contain `preArcStraightMeters=max(1000,angularRampDistance,2*hullRadius)` and 36 angles over 9 axis offsets, but those routines are BYPASSED for both live free legs described below. Do NOT base a patch or performance estimate for this live scene on the legacy 36 candidates.

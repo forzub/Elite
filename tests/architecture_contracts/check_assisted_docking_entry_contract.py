@@ -103,6 +103,22 @@ assert "legRequest.assistedUseExactProtectedStart =" not in composer
 assert ("finalRequest.assistedCompactStartLead &&" in composer and
         "finalRequest.useContinuousAssistedOptimizer;" in composer)
 
+# BLUE and terminal stages have DIFFERENT frame ownership. Do not
+# regress to treating the final free geometry as a frozen FreeTransit stage;
+# the currently stopped craft must track the rotating dock's frame.
+stage_adapter = (
+    ROOT / "src/game/navigation/traffic/TrafficRoutePlanAdapter.cpp"
+).read_text(encoding="utf-8")
+stage_test = (
+    ROOT / "tests/navigation_runtime/SegmentedRouteComposerTests.cpp"
+).read_text(encoding="utf-8")
+assert "planner::RouteStageKind::TerminalApproach" in stage_adapter
+assert "planner::RouteStageFramePolicy::DynamicTerminalFrame" in stage_adapter
+assert "planner::RouteStageRefreshPolicy::LiveDuringStage" in stage_adapter
+assert "stages[4].kind == RouteStageKind::TerminalApproach" in stage_test
+assert "stages[4].refreshPolicy ==" in stage_test
+assert "terminal free leg no longer reaches docking HOLD endpoint" in stage_test
+
 # The original literal "one-shot handoff" error was retired when the
 # connector gained an explicit, bounded late-entry recovery budget. Verify
 # the LIVE control flow, rather than requiring a removed diagnostic string.
@@ -254,5 +270,5 @@ print(" - safe-course selects one direction; it is not a trajectory follower.")
 print(" - safe-course emits ordinary Assisted hull controls; FA-on remains authoritative.")
 print(" - planning coast uses neutral physical controls, never a direct acceleration bypass.")
 print(" - expensive downstream route is retained.")
-print(" - live handoff uses one projected entry bind based on first-turn travel time.")
+print(" - live handoff uses observed connector-worker latency and projected-prefix validation.")
 print(" - repeated entry-rebind loops are bounded and explicitly reported.")

@@ -97,7 +97,7 @@ void testSubMillimetreStartNoiseIsAccepted()
 
     require(
         status.disposition == BallisticPrefixDisposition::OnPrefix,
-        "sub-millimetre start rounding was mistaken for a stale connector"
+        "sub-millimetre start drift was mistaken for a stale connector"
     );
     require(
         std::abs(status.alongMeters) < 1.0e-12,
@@ -109,13 +109,42 @@ void testSubMillimetreStartNoiseIsAccepted()
     );
 }
 
+void testSmallStationaryBallisticBackstepIsAccepted()
+{
+    const auto plan = straightPrefixPlan();
+    const auto status = RouteEntryBinder::inspectBallisticPrefix(
+        plan, {-0.005, 0.0, 0.0}, 5.0
+    );
+    require(
+        status.disposition == BallisticPrefixDisposition::OnPrefix,
+        "5 mm stationary backstep must remain inside 1 cm entry tolerance"
+    );
+    require(
+        status.alongMeters == 0.0 &&
+            status.remainingMeters == 1000.0,
+        "stationary entry backstep did not clamp to true route start"
+    );
+}
+
+void testSmallBackstepDoesNotBypassOffAxisRejection()
+{
+    const auto plan = straightPrefixPlan();
+    const auto status = RouteEntryBinder::inspectBallisticPrefix(
+        plan, {-0.005, 10.0, 0.0}, 5.0
+    );
+    require(
+        status.disposition == BallisticPrefixDisposition::OffAxis,
+        "entry backstep tolerance bypassed lateral corridor handoff check"
+    );
+}
+
 void testRealNegativeStartOffsetStillRequiresRebind()
 {
     const auto plan = straightPrefixPlan();
     const auto status =
         RouteEntryBinder::inspectBallisticPrefix(
             plan,
-            {-0.005, 0.0, 0.0},
+            {-0.05, 0.0, 0.0},
             5.0
         );
     require(
@@ -191,6 +220,8 @@ int main()
     {
         testLivePositionMayAdvanceAlongBallisticPrefix();
         testSubMillimetreStartNoiseIsAccepted();
+        testSmallStationaryBallisticBackstepIsAccepted();
+        testSmallBackstepDoesNotBypassOffAxisRejection();
         testRealNegativeStartOffsetStillRequiresRebind();
         testPastPrefixRequiresLateEntryRebind();
         testOffAxisRequiresLateEntryRebind();

@@ -1,3 +1,33 @@
+## 2026-10-20 — INSTRUMENT REJECTED ASSISTED CANDIDATE ETA WITHOUT CHANGING THE SEARCH (SOURCE COMMITTED; NATIVE TEST PENDING)
+
+**User idea:** Since selected-route ETA (~186s) agreed reasonably with the observed near-complete docking flight, inspect feasible routes discarded during optimization to see whether any were faster, rather than deducing inefficiency from length or guessing about alternative geometry. A longer route may truly be faster. **The OLD `D:/tmp/elite_docking_planner.log` did NOT retain rejected candidate ETAs**, only the selected route and aggregate 4,682/4,726 evaluations. Old candidates cannot be recovered from that text log; a new same-scene route calculation is required.
+
+**Changes on authoritative `main` (no new persistent state document):**
+- `src/game/navigation/planner/assisted/lab/ContinuousAssistedPathOptimizer.h/.cpp`: passive `CandidateAudit` records all pre-existing objective evaluations (13 seed evaluations plus 11-dimensional pattern-search evaluations; no extra `evaluate()` calls). Counts feasible/infeasible objective evaluations. Retains **5 shortest feasible**, **5 fastest-ETA feasible**, and **5 lowest-objective feasible** candidates, each with evaluation id, length (m), predicted ETA (s), objective, minimum radius and accumulated curvature. Also retains 4 independently optimized seed-branch end results (rank, feasibility, length, ETA, score, violation), to distinguish genuinely different optimized starting branches from nearly duplicate parameter tweaks. Infeasible candidates are NOT treated as valid competitors.
+- `src/game/navigation/planner/RoutePlanner.cpp` appends the above bounded data to existing `diagnosticSummary`. Consequently the existing `src/game/navigation/debug/DockPlannerFileLog.h` sink writes them in `[DockPlannerResult]` inside the **same** `D:/tmp/elite_docking_planner.log`. Keys: `feasible_candidate_evals`, `infeasible_candidate_evals`, `shortest_feasible_candidates`, `fastest_feasible_candidates`, `lowest_score_feasible_candidates`, `optimized_seed_branches`. Candidate tuples are `evaluation-id:length-m:eta-s:objective:min-radius-m`. Branch tuples are `rank:feasible:length-m:eta-s:objective:violation`. This is metadata only, not full alternative line geometry.
+- `tests/navigation_runtime/ContinuousAssistedOptimizerLabTests.cpp`: added audit consistency, feasible candidate ordering, candidate-count conservation, upper bound of 5 retained per metric and branch count 1–4, for reversed-heading and high-speed test problems.
+- Static source audit via GitHub re-fetch **PASS**: all three original evaluation call sites observed, unchanged total of 3 calls to `evaluate` in source (plus function definition), two unchanged `patternOptimize` invocations, unchanged objective weights (time 1.0, path length 0.35), diagnostics included in existing disk log path. **No native compiler, CTest, live optimizer execution or user game's disk log rerun has been performed by assistant; behavior PASS is NOT claimed.**
+
+**Interpretation caveat:** Candidates are compared with the SAME existing optimizer ETA predictor (`designSpeedMps`, normally 500 m/s); the composed execution route subsequently imposes a 0.8 cruise cap (400 m/s). Logged alternatives allow a fair comparison WITHIN this predictor, but do not prove the real selected route beats those alternatives under the final capped global speed profile. If results are close, recompute shortlisted candidates through the identical final execution speed-profile model before considering any ranking change. Some discarded feasible candidates may be faster but more expensive in other weighted safety/comfort penalties; inspect ALL columns.
+
+**Minimal user verification (MSYS2 MinGW64):**
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git pull --ff-only origin main
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target continuous_assisted_optimizer_lab_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^continuous_assisted_optimizer_lab$' --output-on-failure
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+Request/show exactly the same dock route; no complete flight required. Examine the new report appended to `D:/tmp/elite_docking_planner.log` for the six candidate audit keys inside `inbound_detail` and `final_detail`. Delete or rename the old file before the run only if a clean one-request file is desired. Send the new log to compare best shortest vs fastest vs selected and the four search branches, per leg. If tests/build fail, return the FIRST native compiler/CTest failure, do not claim native PASS.
+
+**Next engineering decision, NOT IMPLEMENTED:** Based on observed candidate ETA/length data, either leave time-first objective alone if chosen ETA really wins the physically executable comparison; or isolate a ranking/search deficiency with a same-snapshot feasible counterexample. Do not remove BLUE physical containment, 700m/150m authored straights, or change startup control modes in this diagnostic step.
+
+---
+
 ## 2026-10-20 — CORRECTION: BLUE 220 m/s IS TRAFFIC DATA, NOT A PREPLANNING MODE; FLIGHT TIME CHECKED AGAINST LIVE TRACK
 
 **User clarification (authoritative design):** Three startup/preplanning cases are distinct from traffic speed limits: (1) begin at rest, remove accelerations and rotation; (2) manual-control preparation, cancel accelerations/rotations and brake to rest; (3) automatic moving-start preparation, cancel acceleration/rotation and coast at existing velocity. None includes a user-specified fixed 220 m/s speed. Prior explanation improperly mixed these concepts; do not repeat that assumption.

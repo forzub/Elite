@@ -1,3 +1,37 @@
+## 2026-10-19 — RESTORE POINT + ASSISTED BALLISTIC HANDOFF / INITIAL-LEAD EXPERIMENT (SOURCE COMMITTED; NATIVE PENDING)
+
+**Permanent GitHub restoration branch** `restore/assisted-handoff-before-lead-fix-2026-10-19` pinned at pre-experiment commit `c4429788de640d5487334733f60095bb117db570`. Leave immutable, DO NOT move/reset user's worktree automatically; active development `feature/propulsion-authority-matrix-2026-10-16`.
+
+**Preserved user contract:** Current dock behavior is STOP BEFORE port entrance then maintain position and relative orientation as dock rotates, NOT enter port. Manually visible tunnel needs at least three frames per 90-degree turn (500m normal, 250m near finish); large physically feasible arcs are intentional. Preserve mandatory BLUE KeepInside transit, real motor allocation, Assisted/Newtonian isolation, server-agnostic virtual pilot input. Do not globally optimize distance if it makes curves too sharp for manual control.
+
+**Source changes implemented (not C++ runtime tested):**
+- `OrdinaryRoutePolicy.h::requiredAssistedStartLeadMeters`: for Assisted only, one physical braking distance + one comfortable turn radius, rather than generic `2*(braking distance+turn radius)`. Min 1km preserved, geometric turn radius / tunnel frame cadence unchanged. Existing `requiredStartLeadMeters` remains UNCHANGED for Newtonian/legacy.
+- `RoutePlannerApi.h::assistedCompactStartLead` explicit opt-in default false; `SpaceState.cpp` sets only in Assisted. `SegmentedRouteComposer.cpp` propagates this differentiated start-lead across BOTH initial and post-BLUE free flight legs, preserving hard topology.
+- NEW `planner/BallisticEntryHandoffPolicy.h`: accept original route without rebind when live AND predicted ballistic positions both remain on its first authored straight. Prediction = livePos + liveVel * expected FINAL connector computation latency, NOT time to first curve. When predicted craft would leave that straight, trigger bounded connector rebinding early.
+- `SpaceState.cpp/.h`: record `DockAdviceJob::entrySolveDurationMs` for actual bind solver, and remember measured full late-connector worker latency INCLUDING autopilot compile as `m_dockObservedConnectorWorkerSeconds` (distinct from expensive first-route worker). Forecast uses 0.75s bootstrap before measurement, afterwards max(0.75s, 1.25*last connector-worker seconds). No more `leadSeconds=max(firstTurnTravelSeconds, fullWorkerSeconds)`; flight time to first turn remains only for diagnostics. Connector retry budget remains 4; safe course, real control law and physics unchanged. `[DockLateEntry]` now logs `first_turn_remaining_m`, `start_lead_policy_m`, `forecast_distance_m`, `connector_solve_ms`, `connector_forecast_s`, `forecast_on_prefix`, `worker_ms` and `rebound`.
+- Added regression cases in `OrdinaryRoutePolicyTests.cpp` (v500 nominal Assisted compact lead, Newtonian untouched, stopped minimum; pre-existing HUD visibility test) and `RouteEntryBinderTests.cpp` (actual v500 second-run 6129.79m along 23226.9m prefix should reuse, near-end/v500 predicted PastPrefix must rebind, lateral departure, bootstrap/observed latency). Updated Python `check_assisted_docking_entry_contract.py` to enforce distinct forecasts, Assisted-only start lead and original safety invariants.
+- A read-only Github source consistency scan of 10 files was PASS. **No native MinGW64 C++ compilation, CTest, Python contract run or game flight were performed for these changes.** All remain pending user execution; previous flight stability is pinned at restore branch.
+
+**Next MSYS2 MinGW64 commands**, save uncommitted edits before switch:
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target ordinary_route_policy_tests route_entry_binder_tests assisted_authority_contract_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(ordinary_route_policy|route_entry_binder|assisted_authority_contract)$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+mkdir -p /d/tmp
+set -o pipefail
+bash build_mingw64.sh 2>&1 | tee /d/tmp/elite_build.log
+./build/EliteGame.exe
+```
+Stop on first error. In 0m/s and 500m/s safe-ballistic docking compare `[DockEntryPolicy] forward_lead_m`, `[DockLateEntry] first_turn_remaining_m/forecast_on_prefix/connector_forecast_s/rebound`, `[DockClientTrack] cross_track/course_err`. Count visible frames through turns and test dock-relative HOLD. If needed, roll back by `git switch restore/assisted-handoff-before-lead-fix-2026-10-19` after saving local changes; do not reset shared working branch. Logs only D:\\tmp; ONE permanent state document is this root PROJECT_STATE.md.
+
+---
+
 ## 2026-10-19 — USER REASSERTS DOCK HOLD, VISIBLE TUNNEL TURN SPACING; SECOND 500 M/S BALISTIC HANDOFF AUDIT
 
 **Canonical requirements (user clarification):** At present automatic docking is intended to STOP just before the port entrance and then HOLD position/orientation **relative to a rotating docking port**; actual ingress/occupancy is future work. Thus a stationary craft ~3.55 m from the route end is NOT, by itself, a docking failure. Keep frame cadence 500 m ordinary, 250 m near finish, and minimum visually readable number of frames through *every* turn (current OrdinaryRoutePolicy::requiredGuidanceTunnelRadiusMeters enforces 30° per characteristic 500 m interval). Physically flyable and hand-flyable arcs outrank minimum geometric distance. Do not blindly minimize terminal arc/radius or erase BLUE mandatory transit.

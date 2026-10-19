@@ -19,6 +19,7 @@
 #include "src/game/navigation/RouteFrameField.h"
 #include "src/game/navigation/TwoPointRollGeometry.h"
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
+#include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
@@ -683,6 +684,22 @@ public:
                     speedByCourseLag,
                     speedByAngularRate
                 );
+
+            if constexpr (Law == LocalFlightControlLaw::Assisted)
+            {
+                // Nose steering is NOT trajectory curvature authority.
+                // v^2*kappa must fit the real installed lateral motor basis,
+                // reserving simultaneous motor demand for braking/attitude.
+                // The navigator consumes this speed ceiling BEFORE the bend.
+                const double physicalCurveSpeed =
+                    game::navigation::assisted_budget::
+                        maximumSustainableCurveSpeedMps(
+                            executionAuthority.lateralAccelerationMps2,
+                            kappa
+                        );
+                turnSpeedCeilingMps =
+                    std::min(turnSpeedCeilingMps, physicalCurveSpeed);
+            }
             if (speedGuide.maxSpeedMps > 0.0)
                 turnSpeedCeilingMps =
                     std::min(
@@ -731,8 +748,16 @@ public:
                     distanceToTurnMeters;
                 slowdownRequest.targetSetpointRateMps2 =
                     targetSetpointRate;
+                // On an Assisted turn the same engines must brake,
+                // generate curve-normal force and orient the hull.
+                // A standalone reverse-engine rating is not three-axis
+                // simultaneous braking authority.
                 slowdownRequest.effectiveBrakingMps2 =
-                    effectiveTurnBraking;
+                    law == LocalFlightControlLaw::Assisted
+                        ? effectiveTurnBraking *
+                              game::navigation::assisted_budget::
+                                  ConcurrentTurnAxisFraction
+                        : effectiveTurnBraking;
                 slowdownRequest.feedbackResponseSeconds =
                     feedbackResponseSeconds;
 

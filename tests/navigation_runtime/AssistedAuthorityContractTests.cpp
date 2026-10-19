@@ -118,6 +118,66 @@ void testCombinedMotorBudgetBoundsTangentSpeed()
         "destroyed lateral authority still allowed positive curve speed");
 }
 
+void testActualHealthyCobraMotorBasis()
+{
+    using namespace game::ship::plant;
+    using namespace game::equipment::engine;
+    const auto model = PhysicalControlModelId::AssistedI;
+    const auto& topology = physicalControlSlots(model);
+    require(topology.size() == 4u,
+            "Assisted-I Cobra topology has unexpected engine count");
+
+    ShipParams ship = nominal();
+    ship.maxGs = 20.0f;
+    ship.maxLinearGs = 20.0f;
+    ship.forwardMainEngineAccelerationMps2 = 73.549875f;
+    ship.reverseMainEngineAccelerationMps2 = 73.549875f;
+    ship.strafeAccel = 73.549875f;
+    ship.physicalActuatorHalfExtentsMeters = {13.0, 2.5, 11.1};
+    ship.pitchInertiaKgM2 = 11219866.6666667;
+    ship.yawInertiaKgM2 = 25324866.6666667;
+    ship.rollInertiaKgM2 = 15188333.3333333;
+
+    const auto passport = presets::CobrettyCR1VectorMainDrive();
+    std::array<game::equipment::EquipmentDamageLayer,4> damage {};
+    std::array<EngineOperatingState,4> operating {};
+    std::vector<MountedEngine> installed;
+    installed.reserve(topology.size());
+    for (std::size_t i=0;i<topology.size();++i)
+    {
+        damage[i].failure.failureAtDamage01 = 0.95;
+        operating[i].temperatureK =
+            passport.nominalOperatingTemperatureK;
+        installed.push_back({
+            &passport, &damage[i], &operating[i], topology[i].id, true
+        });
+    }
+
+    AssistedManeuverPrograms programs;
+    programs.build(model, installed, ship);
+    const auto telemetry =
+        game::ship::telemetry::readAssistedControlAuthority(programs, 1u);
+    require(telemetry.valid,
+            "actual installed healthy Cobra motor basis did not build");
+    for (std::size_t axis : {std::size_t{0}, std::size_t{1},
+                             std::size_t{2}, std::size_t{3},
+                             std::size_t{4}})
+    {
+        require(telemetry.positive[axis] > 1.0e-6 &&
+                telemetry.negative[axis] > 1.0e-6,
+                "actual healthy Cobra lost a signed maneuver axis");
+    }
+    // The isolated motor-basis test is not a game CTest: prove at least the
+    // four-motor hardware solver produces meaningful limits, not fake axes.
+    installed[0].attached = false;
+    programs.build(model, installed, ship);
+    const auto damaged =
+        game::ship::telemetry::readAssistedControlAuthority(programs, 2u);
+    require(damaged.valid &&
+            damaged.negative[2] < telemetry.negative[2],
+            "destroyed aft motor failed to reduce physical forward authority");
+}
+
 void testAbsentReplicatedEngineDataCannotInventAuthority()
 {
     ShipDescriptor descriptor;
@@ -146,6 +206,7 @@ int main()
         testSignedDamageCannotBeHiddenByHealthyOppositeAxis();
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
+        testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";
         return EXIT_SUCCESS;

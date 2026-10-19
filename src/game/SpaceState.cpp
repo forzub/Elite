@@ -4474,6 +4474,24 @@ void SpaceState::updateDockingAdvisory()
                         BallisticPrefixDisposition::OnPrefix ||
                 (!job->entryRebind && !forecastOnPrefix);
 
+            double firstTurnProgressMetersForTrace =
+                job->plan.routeCurves.front().endProgressMeters;
+            for (const auto& curve : job->plan.routeCurves)
+            {
+                if (curve.kind !=
+                    game::navigation::planner::RouteCurveKind::Line)
+                {
+                    firstTurnProgressMetersForTrace =
+                        curve.startProgressMeters;
+                    break;
+                }
+            }
+            const double firstTurnRemainingMeters =
+                std::max(
+                    0.0,
+                    firstTurnProgressMetersForTrace - prefix.alongMeters
+                );
+
             std::cerr
                 << "[DockLateEntry]"
                 << " request=" << pending.serial
@@ -4482,6 +4500,12 @@ void SpaceState::updateDockingAdvisory()
                 << " along_m=" << prefix.alongMeters
                 << " prefix_m=" << prefix.prefixLengthMeters
                 << " remaining_m=" << prefix.remainingMeters
+                << " first_turn_remaining_m=" << firstTurnRemainingMeters
+                << " start_lead_policy_m="
+                << job->planningRequest.initialForwardLeadMeters
+                << " forecast_distance_m="
+                << glm::length(liveAgent.velocityMapMetersPerSecond) *
+                       connectorLeadSeconds
                 << " cross_m=" << prefix.crossTrackMeters
                 << " worker_ms=" << job->workerDurationMs
                 << " connector_solve_ms="

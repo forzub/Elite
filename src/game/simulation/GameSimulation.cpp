@@ -7093,6 +7093,10 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
         s.shipCoreStatus = ship.core().getCoreStatus();
+        // Publish physical actuator capability on every ship snapshot even
+        // when its large ObjectGraphSnapshot is sparse or suppressed.
+        s.controlAuthorityTelemetry =
+            ship.core().controlAuthorityTelemetry();
 
         // s.modules.clear();
         // for (const auto& mod : ship.core().moduleRuntime().modules())

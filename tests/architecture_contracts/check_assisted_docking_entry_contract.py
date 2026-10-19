@@ -24,10 +24,27 @@ required = [
     "hasSignificantAssistedAuthorityLoss",
     "accepted-trajectory-invalidated",
     "required_curve_a_mps2",
-    "projected Assisted entry bind missed its one-shot handoff",
+    "phase=entry-rebind-retry",
 ]
 for token in required:
     assert token in space, f"missing restored Assisted docking-entry contract: {token}"
+
+# The original literal "one-shot handoff" error was retired when the
+# connector gained an explicit, bounded late-entry recovery budget. Verify
+# the LIVE control flow, rather than requiring a removed diagnostic string.
+retry_start = space.index("++m_dockLateEntry.rebindAttempts;")
+retry_exhaustion = space.index("phase=entry-rebind-exhausted", retry_start)
+retry_fail = space.index(
+    'fail("dock entry connector handoff did not converge");',
+    retry_exhaustion,
+)
+retry_log = space.index("phase=entry-rebind-retry", retry_fail)
+retry_region = space[retry_start:retry_log]
+assert "constexpr std::uint32_t MaxEntryConnectorMisses = 4;" in retry_region
+assert "if (m_dockLateEntry.rebindAttempts >=" in retry_region
+assert "MaxEntryConnectorMisses)" in retry_region
+assert "return;" in space[retry_fail:retry_log]
+assert retry_start < retry_exhaustion < retry_fail < retry_log
 
 for forbidden in [
     "AssistedSafeCourseRecovery::assess",

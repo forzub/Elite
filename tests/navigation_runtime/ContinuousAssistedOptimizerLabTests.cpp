@@ -141,8 +141,16 @@ int main()
             return false;
         if (d.shortestFeasible.size() > 5 ||
             d.fastestFeasible.size() > 5 ||
-            d.lowestObjectiveFeasible.size() > 5)
+            d.lowestObjectiveFeasible.size() > 5 ||
+            d.searchBranchOutcomes.empty() ||
+            d.searchBranchOutcomes.size() > 4)
             return false;
+        for (const auto& branch : d.searchBranchOutcomes)
+        {
+            if (branch.seedRank >= 4 ||
+                !std::isfinite(branch.maxConstraintViolation))
+                return false;
+        }
         if (d.shortestFeasible.front().lengthMeters >
             d.pathLengthMeters + 1.0e-5)
             return false;

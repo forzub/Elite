@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/traffic/TrafficRoutePlanAdapter.h"
 
 #include <algorithm>
@@ -53,7 +54,7 @@ TrafficRoutePlanAdapter::buildStageContract(
             std::string volumeId,
             bool hardContainment)
         {
-            if (!(endProgressMeters > startProgressMeters + 1.0e-6))
+            if (!(endProgressMeters > startProgressMeters + game::navigation::geometry_tolerance::ConstructedPointMeters))
                 return;
 
             planner::RouteStageSpan span;
@@ -179,7 +180,7 @@ TrafficRoutePlanAdapter::buildStageContract(
     double cursor = routeStart;
     for (const auto& explicitStage : out.stages)
     {
-        if (explicitStage.startProgressMeters > cursor + 1.0e-6)
+        if (explicitStage.startProgressMeters > cursor + game::navigation::geometry_tolerance::ConstructedPointMeters)
         {
             planner::RouteStageSpan freeStage;
             freeStage.id =
@@ -204,7 +205,7 @@ TrafficRoutePlanAdapter::buildStageContract(
         cursor = std::max(cursor, explicitStage.endProgressMeters);
     }
 
-    if (routeEnd > cursor + 1.0e-6)
+    if (routeEnd > cursor + game::navigation::geometry_tolerance::ConstructedPointMeters)
     {
         planner::RouteStageSpan terminal;
         terminal.id = "terminal";

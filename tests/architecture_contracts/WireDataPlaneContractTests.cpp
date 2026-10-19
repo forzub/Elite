@@ -910,11 +910,37 @@ void testFullDataPlaneBytePipeline()
         "pipeline entity count mismatch");
 }
 
+void testSignedMotorAuthorityWithoutModuleGraph()
+{
+    SimulationSnapshot source = makeSnapshot();
+    // Ordinary ship replication is sparse; a motion-lab actor may omit
+    // optional module rows altogether while it is still a commandable ship.
+    source.ships.front().graph = {};
+
+    std::vector<std::uint8_t> payload;
+    require(encodeSimulationSnapshot(source, payload),
+            "graph-free motor snapshot encoding failed");
+    SimulationSnapshot decoded;
+    require(decodeSimulationSnapshot(payload, decoded),
+            "graph-free motor snapshot decoding failed");
+    require(decoded.ships.size() == 1u,
+            "graph-free motor snapshot lost the ship");
+    const auto& capability = decoded.ships.front().controlAuthorityTelemetry;
+    require(decoded.ships.front().graph.modules.empty() &&
+            !decoded.ships.front().graph.hasModules &&
+            capability.valid &&
+            capability.sourceActuatorRevision == 913u &&
+            near(capability.positive[4], 0.5) &&
+            near(capability.negative[2], 31.0),
+            "real six-axis motor authority incorrectly depends on module graph");
+}
+
 } // namespace
 
 int main()
 {
     testSnapshotRoundTrip();
+    testSignedMotorAuthorityWithoutModuleGraph();
     testMapResponsesRoundTrip();
     testSparseNavigationExecutionVariant();
     testContainerAndEnumValidation();

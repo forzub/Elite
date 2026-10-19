@@ -1270,6 +1270,101 @@ bool better(
     return false;
 }
 
+// Passive bounded telemetry over EVERY evaluated candidate. No new geometry
+// evaluations, no changes to feasibility, objective, or search decisions.
+struct CandidateAudit
+{
+    static constexpr std::size_t Retained = 5;
+    std::size_t feasible = 0;
+    std::size_t infeasible = 0;
+
+    std::array<CandidateComparison, Retained> shortest {};
+    std::array<CandidateComparison, Retained> fastest {};
+    std::array<CandidateComparison, Retained> bestScore {};
+    std::size_t shortestCount = 0;
+    std::size_t fastestCount = 0;
+    std::size_t bestScoreCount = 0;
+
+    static void retain(
+        std::array<CandidateComparison, Retained>& top,
+        std::size_t& count,
+        const CandidateComparison& candidate,
+        int metric
+    ) noexcept
+    {
+        const auto valueFor =
+            [metric](const CandidateComparison& item)
+            {
+                return metric == 0
+                    ? item.lengthMeters
+                    : (metric == 1
+                        ? item.estimatedTravelTimeSeconds
+                        : item.objective);
+            };
+
+        const double value = valueFor(candidate);
+        std::size_t position = 0;
+        while (position < count &&
+               value >= valueFor(top[position]))
+        {
+            ++position;
+        }
+        if (position == Retained)
+            return;
+
+        if (count < Retained)
+            ++count;
+        for (std::size_t i = count - 1; i > position; --i)
+            top[i] = top[i - 1];
+        top[position] = candidate;
+    }
+
+    void observe(
+        const Evaluation& evaluation,
+        std::size_t evaluationIndex
+    ) noexcept
+    {
+        if (!evaluation.finite || !evaluation.feasible)
+        {
+            ++infeasible;
+            return;
+        }
+
+        ++feasible;
+        CandidateComparison item;
+        item.evaluationIndex = evaluationIndex;
+        item.lengthMeters = evaluation.length;
+        item.estimatedTravelTimeSeconds =
+            evaluation.estimatedTravelTimeSeconds;
+        item.objective = evaluation.objective;
+        item.minimumRadiusMeters =
+            evaluation.maxCurvature > 1.0e-12
+                ? 1.0 / evaluation.maxCurvature
+                : 0.0;
+        item.totalCurvatureRadians =
+            evaluation.totalCurvatureRadians;
+
+        retain(shortest, shortestCount, item, 0);
+        retain(fastest, fastestCount, item, 1);
+        retain(bestScore, bestScoreCount, item, 2);
+    }
+
+    void publish(Diagnostics& diagnostics) const
+    {
+        diagnostics.feasibleEvaluations = feasible;
+        diagnostics.infeasibleEvaluations = infeasible;
+        diagnostics.shortestFeasible.assign(
+            shortest.begin(), shortest.begin() + shortestCount
+        );
+        diagnostics.fastestFeasible.assign(
+            fastest.begin(), fastest.begin() + fastestCount
+        );
+        diagnostics.lowestObjectiveFeasible.assign(
+            bestScore.begin(), bestScore.begin() + bestScoreCount
+        );
+    }
+};
+
 double geometryScale(const Request& request) noexcept
 {
     const glm::dvec3 startTangent =
@@ -1445,7 +1540,8 @@ SearchResult patternOptimize(
     const Request& request,
     const Variables& initial,
     std::size_t iterations,
-    std::size_t* objectiveEvaluations
+    std::size_t* objectiveEvaluations,
+    CandidateAudit* audit
 )
 {
     SearchResult out;
@@ -1456,6 +1552,7 @@ SearchResult patternOptimize(
             out.variables,
             objectiveEvaluations
         );
+    audit->observe(out.evaluation, *objectiveEvaluations);
 
     const double scale = geometryScale(request);
 
@@ -1610,6 +1707,7 @@ SearchResult patternOptimize(
                         candidate,
                         objectiveEvaluations
                     );
+                audit->observe(evaluation, *objectiveEvaluations);
 
                 if (better(
                         evaluation,
@@ -1720,21 +1818,16 @@ Result ContinuousAssistedPathOptimizer::optimize(
     };
 
     std::size_t objectiveEvaluations = 0;
+    CandidateAudit candidateAudit;
     std::vector<RankedSeed> ranked;
     ranked.reserve(seeds.size());
 
     for (const auto& seed : seeds)
     {
-        ranked.push_back(
-            {
-                seed,
-                evaluate(
-                    request,
-                    seed,
-                    &objectiveEvaluations
-                )
-            }
-        );
+        Evaluation evaluation =
+            evaluate(request, seed, &objectiveEvaluations);
+        candidateAudit.observe(evaluation, objectiveEvaluations);
+        ranked.push_back({seed, std::move(evaluation)});
     }
 
     std::stable_sort(
@@ -1781,7 +1874,8 @@ Result ContinuousAssistedPathOptimizer::optimize(
                 request,
                 ranked[i].variables,
                 perSeedIterations,
-                &objectiveEvaluations
+                &objectiveEvaluations,
+                &candidateAudit
             );
 
         if (!haveBest ||
@@ -1813,7 +1907,8 @@ Result ContinuousAssistedPathOptimizer::optimize(
                 12,
                 totalIterations / 2
             ),
-            &objectiveEvaluations
+            &objectiveEvaluations,
+            &candidateAudit
         );
 
     if (better(
@@ -1894,6 +1989,7 @@ Result ContinuousAssistedPathOptimizer::optimize(
         );
     }
 
+    candidateAudit.publish(result.diagnostics);
     result.diagnostics.objectiveEvaluations =
         objectiveEvaluations;
     result.diagnostics.acceptedSteps =

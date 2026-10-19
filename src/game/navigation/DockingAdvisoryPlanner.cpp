@@ -735,9 +735,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 return points;
 
             if(points.empty() ||
-               glm::length(points.front()-routeSearchStart)>1.0e-6)
+               glm::length(points.front()-routeSearchStart)>game::navigation::geometry_tolerance::ConstructedPointMeters)
                 points.insert(points.begin(),routeSearchStart);
-            if(glm::length(points.front()-r.startMeters)>1.0e-6)
+            if(glm::length(points.front()-r.startMeters)>game::navigation::geometry_tolerance::ConstructedPointMeters)
                 points.insert(points.begin(),r.startMeters);
             return points;
         };
@@ -851,7 +851,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         auto vertices = geometryPoints;
         if (vertices.empty() ||
-            glm::length(vertices.back() - finalPoint) > 1.0e-6)
+            glm::length(vertices.back() - finalPoint) > game::navigation::geometry_tolerance::ConstructedPointMeters)
         {
             vertices.push_back(finalPoint);
         }
@@ -1092,7 +1092,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         // which corrupted route-to-entry calls into
         // route -> entry -> HOLD before the exact terminal arc was appended.
         if(candidate.samples.empty() ||
-           glm::length(candidate.samples.back()-finalPoint)>1.0e-6)
+           glm::length(candidate.samples.back()-finalPoint)>game::navigation::geometry_tolerance::ConstructedPointMeters)
         {
             if(!candidate.samples.empty())
                 appendLineCurve(candidate.samples.back(),finalPoint);
@@ -1447,7 +1447,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             {
                 if(std::abs(
                        tested-candidateApproachLengthMeters
-                   )<=1.0e-6)
+                   )<=game::navigation::geometry_tolerance::ConstructedPointMeters)
                 {
                     duplicateAxis=true;
                     break;
@@ -1574,7 +1574,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                 if(transitCandidate.samples.empty() ||
                    glm::length(
                        transitCandidate.samples.back()-entry
-                   )>1.0e-6)
+                    )>game::navigation::geometry_tolerance::ConstructedPointMeters)
                 {
                     ++out.terminalArcTransitRejected;
                     out.terminalArcLastRejection =
@@ -1688,7 +1688,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
                 if(glm::length(
                        candidate.samples.back()-stop
-                   )>1.0e-6)
+                    )>game::navigation::geometry_tolerance::ConstructedPointMeters)
                 {
                     const glm::dvec3 lineStart=
                         candidate.samples.back();
@@ -1790,11 +1790,11 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         out.terminalApproachLengthMeters=
             finalApproachLengthMeters;
         out.terminalApproachShortened=
-            finalApproachLengthMeters+1.0e-6<
+            finalApproachLengthMeters+game::navigation::geometry_tolerance::ConstructedPointMeters<
                 preferredApproachLengthMeters;
         out.terminalApproachExtended=
             finalApproachLengthMeters>
-                preferredApproachLengthMeters+1.0e-6;
+                preferredApproachLengthMeters+game::navigation::geometry_tolerance::ConstructedPointMeters;
     }
 
     auto& samples=selected.samples;

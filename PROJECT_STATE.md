@@ -1,3 +1,28 @@
+## 2026-10-20 — AUTOMATIC DOCK PLANNER REPORT TO D:\\tmp (SOURCE COMMITTED; WINDOWS BUILD NOT YET RUN)
+
+**User asks:** save planner diagnostics automatically into D:\\tmp to upload after future route-only tests; no need to redirect all game stdout or complete a docking flight. Preserve single root `PROJECT_STATE.md` and keep generated runtime logs OUTSIDE repository.
+
+**Source changed in active branch** `feature/propulsion-authority-matrix-2026-10-16`:
+- New `src/game/navigation/debug/DockPlannerFileLog.h` is a small Windows-only, best-effort C++17 file sink on the CLIENT orchestration boundary, not in pure `RoutePlanner`/`ContinuousAssistedPathOptimizer` and not on server physics/control path. It creates D:/tmp if needed, opens `D:/tmp/elite_docking_planner.log` in APPEND mode, writes timestamp/serial/status, full worker ms and final-connector solve ms, input start/goal/speed/acceleration/initial lead, route length and straight-line distance, one row per semantic BLUE/terminal stage with length and ownership, plus `RoutePlan::diagnosticSummary` including per-leg `inbound_ms`, `final_ms`, bound straight lengths, optimizer evaluation statistics. Flushes and closes after every report to survive immediate window closing; mutex serializes reports. Does not run on a simulation frame hot path; failed logging only warns to stderr once, never changes flight state.
+- `SpaceState.cpp` invokes `appendDockPlannerReport()` **once at completion/adoption processing of each async route worker** (including invalid/retryable planner results), after a purposely future-dated projected connector has finished waiting, before route validity/timeline/handoff checks. Event `route-worker-ready`, `connector-worker-ready` or `route-worker-failed` denotes worker result, not necessarily accepted/autopilot-executed route. Old console diagnostics preserved; file avoids lost `std::cout` due buffer on immediate window exit.
+- `tests/architecture_contracts/check_assisted_docking_entry_contract.py` enforces file sink location, flush/append mode, semantic stage/result output and orchestrator hook.
+
+**Status:** GitHub source updated only. **No native Windows build, CTest or live file existence test run by assistant**; user must update branch and build `EliteGame` to activate. No changes to planner cost/search, geometry, BLUE constraints, controller or restoring branches. Previous live geometry comparison stationary start: ~79.72km total before versus ~49.14km after, terminal ~43.51km before versus ~12.40km after, worker still 11.54s. Single frozen restore point remains `restore/terminal-optimizer-contract-before-2026-10-19`.
+
+**Minimal next verification (MSYS2 MinGW64):**
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+In game request/show route and close after route appears. Verify `D:\\tmp\\elite_docking_planner.log` exists and includes `[DockPlannerFile]`, `[DockPlannerRequest]`, `[DockPlannerStage]`, `[DockPlannerResult]`, `inbound_ms=`, `final_ms=`. User can upload that ONE file plus route screenshot. It APPENDS across runs (delete file manually before clean A/B test if necessary). If log missing, check warning `[DockPlannerFile] unable to write D:/tmp/elite_docking_planner.log` and share build/runtime error. No game flight acceptance required for this inspection.
+
+---
+
 ## 2026-10-19 — FIRST USER GAME GEOMETRY PREVIEW AFTER ASSISTED TERMINAL HARD-STRAIGHT FIX
 
 **User evidence:** screenshot `image(20261019-204419).png` and full posted runtime/build log `Вставленный текст(20261019-204432).txt` (103 lines). Full EliteGame + EliteServer native MinGW builds LINK successfully; no blocking compile errors. `[DockRequest]` start, `[AssistedSafeCourse]` selects an alternate course (initial `speed_mps=0`, `current_safe=0 escape_found=1 turn_deg=15`), `[RouteStage]` and `[DockRouteStage]` show a valid five-stage topology: initial free, 700m BLUE capture, 1200m KeepInside, 150m BLUE exit, terminal dynamic. `[DockLateEntry]` OnPrefix, `forecast_on_prefix=1 rebound=0 worker_ms=11535.8`. `[DockClient] phase=executing control_path=ShipControlState`; user stopped early by closing GLFW as agreed (geometry-only preview, no completion claimed).

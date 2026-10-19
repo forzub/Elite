@@ -1,6 +1,7 @@
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
+#include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -4378,6 +4379,36 @@ void SpaceState::updateDockingAdvisory()
             submitAutopilotControl(coastForPlanningControl());
             m_dockAdviceJob = std::move(job);
             return;
+        }
+
+        // Publish one self-contained report from each completed planner
+        // worker directly to D:/tmp. std::cout diagnostics may otherwise
+        // remain buffered when the game closes immediately after SHOW ROUTE.
+        // Never write inside the optimizer or any frame-by-frame controller.
+        const bool plannerLogWritten =
+            game::navigation::debug::appendDockPlannerReport(
+                pending.serial,
+                job->plan.valid()
+                    ? (job->entryRebind
+                           ? "connector-worker-ready"
+                           : "route-worker-ready")
+                    : "route-worker-failed",
+                job->workerDurationMs,
+                job->entrySolveDurationMs,
+                job->planningRequest,
+                job->plan
+            );
+        if (!plannerLogWritten)
+        {
+            static bool warnedOnce = false;
+            if (!warnedOnce)
+            {
+                warnedOnce = true;
+                std::cerr
+                    << "[DockPlannerFile] unable to write "
+                    << "D:/tmp/elite_docking_planner.log"
+                    << std::endl;
+            }
         }
 
         if (m_client->lastSimulationMetadata().

@@ -4735,6 +4735,8 @@ void SpaceState::updateDockingAdvisory()
             << m_dockAdvice.plan.terminalTurnRadiusMeters
             << " worker_ms="
             << job->workerDurationMs
+            << " planner_diagnostics=\""
+            << m_dockAdvice.plan.diagnosticSummary << "\""
             << std::endl;
 
         for (std::size_t stageIndex = 0;

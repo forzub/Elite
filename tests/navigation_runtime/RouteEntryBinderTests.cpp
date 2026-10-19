@@ -82,6 +82,48 @@ void testLivePositionMayAdvanceAlongBallisticPrefix()
     );
 }
 
+void testSubMillimetreStartNoiseIsAccepted()
+{
+    const auto plan = straightPrefixPlan();
+
+    // A real stationary docking handoff reported along=-0.000147 m and
+    // cross-track <0.001 m. That must not trigger endless entry rebinding.
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {-0.0005, 0.0, 0.0},
+            5.0
+        );
+
+    require(
+        status.disposition == BallisticPrefixDisposition::OnPrefix,
+        "sub-millimetre start rounding was mistaken for a stale connector"
+    );
+    require(
+        std::abs(status.alongMeters) < 1.0e-12,
+        "accepted start rounding must clamp progress to zero"
+    );
+    require(
+        std::abs(status.remainingMeters - 1000.0) < 1.0e-9,
+        "accepted start rounding must not inflate prefix remaining distance"
+    );
+}
+
+void testRealNegativeStartOffsetStillRequiresRebind()
+{
+    const auto plan = straightPrefixPlan();
+    const auto status =
+        RouteEntryBinder::inspectBallisticPrefix(
+            plan,
+            {-0.005, 0.0, 0.0},
+            5.0
+        );
+    require(
+        status.disposition == BallisticPrefixDisposition::BeforeStart,
+        "real start offset beyond numerical tolerance was accepted"
+    );
+}
+
 void testPastPrefixRequiresLateEntryRebind()
 {
     const auto plan = straightPrefixPlan();
@@ -148,6 +190,8 @@ int main()
     try
     {
         testLivePositionMayAdvanceAlongBallisticPrefix();
+        testSubMillimetreStartNoiseIsAccepted();
+        testRealNegativeStartOffsetStillRequiresRebind();
         testPastPrefixRequiresLateEntryRebind();
         testOffAxisRequiresLateEntryRebind();
         testBeforeStartIsNotAcceptedAsOnPrefix();

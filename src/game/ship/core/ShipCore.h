@@ -335,8 +335,12 @@ private:
     // Physical six-axis signed maneuver recipes: generated once for this
     // vessel's installed I/Y/X engine layout, rebuilt on damage/repairs.
     // Not serialized over the network; always derived from real hardware.
-    game::ship::plant::AssistedManeuverPrograms    m_assistedManeuvers;
-    std::uint64_t m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
+    // Server snapshot reads may follow thermal/life updates in the SAME tick.
+    // Allow the read-only authority query to refresh this exact executor cache
+    // from current installed motors without commanding any engine.
+    mutable game::ship::plant::AssistedManeuverPrograms m_assistedManeuvers;
+    mutable std::uint64_t m_preparedManeuverActuatorRevision =
+        ~std::uint64_t{0};
 
     // Resolved response profile cache. Descriptor/topology/damage may be rich,
     // but motion consumes one compact coefficient set until one of those

@@ -1,3 +1,18 @@
+## 2026-10-19 — NATIVE ASSISTED AUTHORITY TESTS GREEN; ARCHITECTURE GATE STALE LITERAL FIXED
+
+**User executed in MSYS2 MinGW64** the navigation runtime CMake configure/build and two CTests:
+- `assisted_authority_contract`: PASS 0.05s.
+- `route_entry_binder`: PASS 0.01s.
+- Total 2/2, 0 failures. This CONFIRMS this part of the source builds/runs under user's MinGW64 toolchain, not the full EliteGame.
+
+**Architecture gate failure, not runtime failure:** `python tests/architecture_contracts/check_assisted_docking_entry_contract.py` failed on an obsolete literal string `projected Assisted entry bind missed its one-shot handoff`. Production SpaceState now implements finite, bounded connector recovery with `MaxEntryConnectorMisses=4`, `phase=entry-rebind-retry`, `phase=entry-rebind-exhausted`, explicit `fail(...)` and `return`; the retired one-shot diagnostic text is no longer present.
+
+**Fix published** in `tests/architecture_contracts/check_assisted_docking_entry_contract.py`: remove the obsolete literal assertion, demand `phase=entry-rebind-retry` plus verify ordering of increment -> bound check -> exhausted log -> fail and return -> retry log. Preserves protection against unlimited retries. Read-only cross-check against live GitHub sources confirms all test tokens and ordering now present; user's **actual Python rerun is pending**, so do NOT mark architecture gate PASS yet.
+
+**User next commands** (on correct feature branch, after ensuring no uncommitted work): `git fetch origin && git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16`; then `python tests/architecture_contracts/check_assisted_docking_entry_contract.py`. On PASS continue `bash build_mingw64.sh` and `./build/EliteGame.exe`; capture runtime logs to `D:\\tmp`. Full production build and live flight acceptance still PENDING.
+
+---
+
 ## 2026-10-19 — ASSISTED AUTOPILOT NOW READS REPLICATED INSTALLED-MOTOR MANEUVER BASIS (SOURCE IMPLEMENTED; TESTS NOT EXECUTED)
 
 **Reason:** Live docking after the numeric route-entry fix flew but performed severe somersaults when turn curvature required a_perp = v^2*kappa above installed actuator authority. Old SpaceState used `buildShipCapability(descriptor, snapshotSlots)` + nominal `ShipParams` without reading actual six-axis `AssistedManeuverPrograms` motor allocations, so damage/shock/heat and simultaneous turn+brake+attitude force could be overpromised. User reiterated that ONLY real ship acceleration may be trusted by autopilot, especially under damage.

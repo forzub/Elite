@@ -1,3 +1,38 @@
+## 2026-10-19 — ASSISTED AUTOPILOT NOW READS REPLICATED INSTALLED-MOTOR MANEUVER BASIS (SOURCE IMPLEMENTED; TESTS NOT EXECUTED)
+
+**Reason:** Live docking after the numeric route-entry fix flew but performed severe somersaults when turn curvature required a_perp = v^2*kappa above installed actuator authority. Old SpaceState used `buildShipCapability(descriptor, snapshotSlots)` + nominal `ShipParams` without reading actual six-axis `AssistedManeuverPrograms` motor allocations, so damage/shock/heat and simultaneous turn+brake+attitude force could be overpromised. User reiterated that ONLY real ship acceleration may be trusted by autopilot, especially under damage.
+
+**New read-only client-to-motor capability seam:** `src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h` reads replicated installed module damage, emitter and hot-engine/shock state from `ClientShipState.modules`, matches descriptor's ACTUAL installed `EngineUnitDescriptor`, reconstructs `MountedEngine` list and invokes the same `AssistedManeuverPrograms::matches/build` solver used by physical `ShipCore`. Cached per-ship on `SpaceState` to avoid optimizing on each tick. Ctrl+F9 synthetic I/Y/X layout uses the same explicitly synthetic healthy engine passport as ShipCore; REAL installed ships fail closed if any engine state absent. No new fake main/RCS actuator. This is a deterministic client projection from replicated state: it is NOT yet the server's native six-axis authority snapshot and can diverge if current server mass/inertia or replication freshness differs. **Open architectural improvement:** explicitly replicate read-only `ShipCore::controlAuthorityTelemetry()` and effective mass/inertia to client, with source revision and stale-snapshot guard. Until then do NOT claim fully authoritative round-trip wire integration.
+
+**Existing adapter fixed:** `ShipControlAuthorityTelemetry.h::applyAuthorityToControlParams` now clamps directional limits to signed physical motor basis AND clears `forwardMainEngineAvailable` / `reverseMainEngineAvailable` when respective acceleration becomes zero. This is essential because ShipDynamics historically interprets numeric zero with an available flag as the OLD descriptor's unspecified rating and substitutes the g-load envelope. Real destroyed motor bank must never be magically resurrected. Signed-axis minima also constrain lateral and angular values. New `hasSignificantAssistedAuthorityLoss` compares all 12 directional maneuvers with 5% hysteresis.
+
+**Navigation wiring:** `SpaceState.cpp` derives live Assisted basis before forming `makeNavigationVehicleProfile`, route `RoutePlanRequest`, asynchronous worker `compilePhysics`, or calling client virtual pilot. It refuses planning when installed forward/reverse/lateral/pitch/yaw basis is genuinely zero. Stores planned basis at worker launch, compares at adoption; stores accepted basis and checks it every execution update. Material loss invalidates unsafe old trajectory, logs `phase=accepted-trajectory-invalidated`, releases autopilot control safely for human takeover; a new request is required. **Automatic damage replan is NOT implemented**; fail-safe handback is the temporary deliberate behavior, not the final autopilot feature.
+
+**Simultaneous force sharing:** `src/game/navigation/AssistedConcurrentManeuverBudget.h` defines `ConcurrentTurnAxisFraction=1/3`. Physical motor force/cone sets are convex under reduced combinations; reserving a third each for path-normal curvature, braking, hull attitude prevents treating three independent peak axis readings as simultaneously available. Assisted route planning restricts lateral+braking estimates accordingly; `DedicatedClientRouteAutopilot.h` caps pre-curve target speed additionally by `sqrt((installed_lateral/3)/abs(kappa))` and computes pre-turn slowdown from one-third effective braking. Newtonian unchanged. This is a conservative bounding approximation; an **exact simultaneous achievable motor-wrench query** from the motor basis (including sign, thermal irregularity and attitude coupling) remains required to replace the fixed 1/3 model.
+
+**Important correction to previous somersault diagnosis:** In physical `ShipControlExecutionGateway.cpp`, installed-engine `actual.accelerationBodyMps2` overwrites `motion.mainEngineAccelerationMps2` and `motion.assistedStabilizationAccelerationMps2` is reset to zero after matrix delivery. Therefore `[DockClientTrack] main_a_mps2≈0.01557` on this path can indeed mean virtually zero **total delivered installed-engine acceleration**, NOT merely the longitudinal component. Check frame phase and `engineTelemetry` if attributing the cause. Added `required_curve_a_mps2`, `installed_turn_a_mps2`, `motor_angular_a_radps2`, and `assisted_aux_a_mps2` to live dock telemetry to resolve delivered accel/torque vs v²κ demand.
+
+**Regression tests SOURCE-ADDED (not yet native-run):** `tests/navigation_runtime/AssistedAuthorityContractTests.cpp` (new CMake target `assisted_authority_contract_tests`, CTest name `assisted_authority_contract`), checks lost forward bank never reverts to ideal, signed asymmetry, 30% damaged angular basis rejection, 2% jitter survival, unavailable installed data fail-closed, and curvature budget. `tests/architecture_contracts/check_assisted_docking_entry_contract.py` now checks the source contract. Need MSYS2 MinGW native C++ compilation and runtime proof before PASS; no claim that any native test or live flight has passed.
+
+**Commands on the real Windows repo worktree, preserving local edits:**
+
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target assisted_authority_contract_tests route_entry_binder_tests route_volume_containment_tests docking_advisory_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(assisted_authority_contract|route_entry_binder|route_volume_containment|docking_advisory)$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+
+**Live acceptance next:** stationary and 350–400 m/s Assisted-I dock starts into k≈0.0005–0.001 1/m, visible tunnel and tangent-aligned velocity, no 360° hull flips, inspect `required_curve_a_mps2` versus `installed_turn_a_mps2/3`, turn speed ceiling, early braking and actually delivered installed motor accel. Repeat Assisted-Y/X and damage/overheat/2s engine impact shock while route is pending and executing; require explicit invalidation/handback on loss. Include Newtonian isolation tests to ensure none changed. Keep all runtime logs in D:\tmp. Fix first compile/test issue based on exact native log, no speculative PASS.
+
+---
 ## 2026-10-19 — LIVE ASSISTED DOCK AUTOPILOT SOMERSAULTS: TURN-AUTHORITY / THRUST-STARVATION DIAGNOSIS (NO CONTROLLER CODE CHANGED)
 
 **User evidence:** recording `20261019-1221-12.4579931.mp4` (about 221.5 s) and console dump `Вставленный текст(20261019-122638).txt` (869 lines). Examined video frames and all 246 `[DockClientTrack]` records. Following numeric prefix fix, `DockLateEntry disposition=2` and `DockClient phase=executing`: route successfully adopted; thus the old BeforeStart failure is gone in this run. Five semantic route stages logged, initial planner worker 11238.6 ms. Do NOT claim dock completion: log ends with GLFW close; flight remains pending.

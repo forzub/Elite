@@ -115,6 +115,12 @@ struct RoutePlanRequest
     // tangent arc immediately afterward.
     double initialProtectedStraightMeters = 0.0;
 
+    // Only Assisted terminal free legs after a fully authored BLUE exit can
+    // interpret initialProtectedStraightMeters as EXACT mandatory geometry.
+    // The remaining manoeuvre lead stays available for curved approach and
+    // speed-profile braking. False protects legacy/hot ballistic starters.
+    bool assistedUseExactProtectedStart = false;
+
     double gateSpacingMeters = 500.0;
     double terminalGateSpacingMeters = 250.0;
     double terminalDenseDistanceMeters = 2000.0;

@@ -1,3 +1,15 @@
+## 2026-10-20 — MAIN IS NOW AUTHORITATIVE (FAST-FORWARD, NO HISTORY REWRITE)
+
+**Confirmed GitHub operation:** `main` was fast-forwarded from `52ec1372706e067193807be35e1a1b04e98ed1f2` to `cc3ae6b7819409757483d334f913bf7701b287d8`, the exact then-current HEAD of `feature/propulsion-authority-matrix-2026-10-16`. Compare reported **1336 commits ahead / 0 behind** before the update; post-update both refs pointed to `cc3ae6b`. No force push, merge-conflict resolution, squash or rebase occurred. All code, tests and this project's existing state entries moved into the default `main` branch unchanged.
+
+**Repository workflow decision:** The project is developed as one linear stream. **`main` is the single active development and project-state source**. New implementation and updates to the sole root `PROJECT_STATE.md` belong on `main`; do not continue development in stale feature branches by default. Before high-risk experiments, make a named recovery branch or immutable tag without changing active development ownership. User's local Windows worktree may still be switched to the old feature branch; switching locally to `main` is a separate action requiring attention to uncommitted changes.
+
+**Other branches inspected:** 15 older feature branches are ancestors of the new `main` (0 unmerged commits); `feature/propulsion-authority-matrix-2026-10-16` is identical to new `main` before this documentation commit. **Exception:** old 2026-10-11 experimental `feature/assisted-optimizer-planner-v3-2026-10-11` diverged (15 independent commits, 1125 commits behind) and adds its own `AssistedRoutePlanner` v3 backend; it was deliberately NOT merged into current production because blindly injecting this obsolete experimental implementation risks replacing the newer continuous Assisted optimizer. Keep it as an archival experimental reference, not a second active development line. Recovery branches also remain untouched; do not forcibly rewrite or delete them.
+
+**Current verification boundary:** The prior recorded `D:/tmp/elite_docking_planner.log` already demonstrates that planner file logging ran in the user's Windows build; this GitHub branch advancement changes no runtime logic. For further geometry/runtime diagnosis, use main's `PROJECT_STATE.md` and continue with route screenshots + `D:/tmp/elite_docking_planner.log`.
+
+---
+
 ## 2026-10-20 — AUTOMATIC DOCK PLANNER REPORT TO D:\\tmp (SOURCE COMMITTED; WINDOWS BUILD NOT YET RUN)
 
 **User asks:** save planner diagnostics automatically into D:\\tmp to upload after future route-only tests; no need to redirect all game stdout or complete a docking flight. Preserve single root `PROJECT_STATE.md` and keep generated runtime logs OUTSIDE repository.

@@ -82,6 +82,34 @@ int main()
             ), 1000.0))
         return fail("stationary Assisted start lost the 1 km minimum");
 
+    // A high-speed ship's first free leg still needs its authored ballistic
+    // corridor. After the mandatory BLUE release, however, the exact hard
+    // prefix is 150m; the manoeuvre lead must not become an 8km hard line.
+    if (!near(
+            OrdinaryRoutePolicy::assistedHardStartStraightMeters(
+                8000.0, 150.0, false
+            ), 8000.0))
+        return fail("initial ballistic lead was weakened");
+    if (!near(
+            OrdinaryRoutePolicy::assistedHardStartStraightMeters(
+                8000.0, 150.0, true
+            ), 150.0))
+        return fail("BLUE exit wrongly inherited full manoeuvre lead");
+
+    // Goal geometry is just the protected docking-axis HOLD approach. Full
+    // braking from 500m/s must be feasible over the entire free leg, not
+    // demanded exclusively on this final protected straight.
+    const double dockAxisMinimum =
+        OrdinaryRoutePolicy::requiredDockingAxisMinimumMeters(
+            300.0, 30.0
+        );
+    if (!near(dockAxisMinimum, 900.0))
+        return fail("dock final protected axis minimum is wrong");
+    if (!(OrdinaryRoutePolicy::requiredTerminalApproachMeters(
+              500.0, 0.0, 15.0, 300.0, 30.0
+          ) > dockAxisMinimum))
+        return fail("original cruise-speed braking policy no longer exists");
+
     // HUD/manual tunnel readability is geometric, not speed dependent.
     // With 500 m sparse frames and a 30 degree maximum heading change, a
     // quarter-turn must span at least three frame intervals.

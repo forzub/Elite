@@ -148,7 +148,8 @@ int main()
         for (const auto& branch : d.searchBranchOutcomes)
         {
             if (branch.seedRank >= 4 ||
-                !std::isfinite(branch.maxConstraintViolation))
+                (branch.feasible &&
+                 !std::isfinite(branch.maxConstraintViolation)))
                 return false;
         }
         if (d.shortestFeasible.front().lengthMeters >

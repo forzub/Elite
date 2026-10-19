@@ -1,3 +1,36 @@
+## 2026-10-19 — ROUTE BOUNDARY PRECISION AUDIT (COMMITTED; NATIVE/LIVE GATE PENDING)
+
+User requested a review of ALL analogous geometry comparisons after live docking entered an endless BeforeStart late-entry-rebind loop at along_m=-0.000147 m while almost stationary. This may reflect actual sub-millimetre coast drift during the 5–10 s asynchronous worker, world/frame arithmetic, or both; numeric rounding ALONE has NOT been proven. It is wrong to demand exactly nonnegative along at an authored prefix endpoint.
+
+**Reviewed runtime navigation surfaces:** SpaceState automatic docking orchestration; RouteEntryBinder; DockingAdvisoryPlanner; RoutePlanner; SegmentedRouteComposer; RouteStageCompiler; TrafficRoutePlanAdapter; RouteVolumeContainmentValidator; RouteFrameField; ClientRouteAutopilot and DedicatedClientRouteAutopilot; Assisted safe-course, route-speed, trajectory-safety and other nearby navigation modules. Differentiated strict computational degenerate-vector/curvature/speed checks from decisions about independent geometric representations of the same authored point.
+
+**Policy file (ONE source):** src/game/navigation/NavigationGeometryTolerance.h. Never round underlying dvec3/route curves, collision geometry, or double physics state. ConstructedPointMeters = 0.001 m for joins, via-point duplicates, portal-to-curve lookup and geometric stage boundaries. EntryStartBackstepMeters = 0.01 m, EntryEndOvershootMeters = 0.01 m for tiny stationary/ballistic drift around initial route-line endpoints, with returned along clamped to [0, line length]. ComposedStageLengthMeters = 0.01 m for aggregate multi-leg progress accounting. Units and intended domains are explicit. These are NOT hull/corridor/obstacle-clearance allowances and must NEVER weaken hard collision/BLUE containment or physical dynamics. Keep small 1e-9/1e-12 thresholds for vector degeneracy, parametric interpolation, normalized curvature and algebra where a physical metre comparison is not intended; kNumericalInsetMeters stays an inward (conservative) collision margin.
+
+**Production files modified:** RouteEntryBinder.cpp (start + end tolerance, clamp, anchor matches), DockingAdvisoryPlanner.cpp (authored waypoint/mandatory tangent interval matching), planner/RoutePlanner.cpp (duplicate presentation gates), traffic/SegmentedRouteComposer.cpp (duplicate gates and multi-leg stage accounting), traffic/RouteStageCompiler.cpp (duplicate points), traffic/TrafficRoutePlanAdapter.cpp (avoid invented microscopic semantic stages/gaps), traffic/RouteVolumeContainmentValidator.cpp (portal-to-canonical-curve lookup only, NOT collision clearance), SpaceState.cpp (match terminal dock via using same tolerance, fix previously malformed literal AssistedSafeCourse reason log, bound otherwise unlimited late-entry connector rebind misses to 4 and fail safely with explicit phase=entry-rebind-exhausted). Assisted/Newtonian control laws, thrust and actual collision/velocity constraints NOT modified.
+
+**Native regressions added:** RouteEntryBinderTests covers -0.5mm and -5mm start adopted/clamped, -5cm and -25m rejected, 5mm endpoint overshoot adopted/clamped, 5cm and 100m past-end rejected, and off-axis rejection unaffected. RouteVolumeContainmentValidatorTests checks portal reconstruction offset 0.5mm accepted but 5cm mismatch rejected, retaining existing invalid Bezier and hull-clearance checks. Existing segmented route/traffic compiler/docking planner tests must run. tests/architecture_contracts/check_assisted_docking_entry_contract.py now guards common policy, both endpoint checks, and finite rebind budget. All tests are SOURCE-ADDED, NOT native-executed here.
+
+**Important boundary:** on repeated non-OnPrefix rebind results at different real positions, four misses now produce an explicit DockClient failure and safe Human handback instead of an infinite CPU/replan loop. Do not claim the underlying route can always be recovered. Effective first-run worker ~9.74 s and 5–6.6 s rebound computations remain a separate performance issue.
+
+**MSYS2 MinGW64 validation (must run on target machine):**
+
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git switch feature/propulsion-authority-matrix-2026-10-16
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target route_entry_binder_tests route_stage_compiler_tests route_volume_containment_tests segmented_route_composer_tests docking_advisory_tests route_planner_api_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(route_entry_binder|route_stage_compiler|route_volume_containment|segmented_route_composer|docking_advisory|route_planner_api)$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+bash build_mingw64.sh
+./build/EliteGame.exe
+```
+
+**Live acceptance:** first START DOCKING produces OnPrefix disposition=2 then phase=route-ready, visible tunnel and physical ship traversal. Both Assisted and Newtonian route adoption, all I/Y/X layouts if available. Deliberately start at rest and at modest velocity, close to route origin, BLUE transit, and near an endpoint. Confirm real 5cm+ off-axis/back/past-prefix requires correction, no silent clipping, and no repeated planner-worker storm. Runtime logs only to D:\tmp. If command fails, share FIRST native compiler/CTest error before assuming source is accepted.
+
+---
 ## 2026-10-19 — DOCK ROUTE READY BUT REJECTED AT SUB-MILLIMETRE START (SOURCE FIX; NATIVE/LIVE PENDING)
 
 **Live evidence:** START DOCKING #1 generated route stages (free, capture, BLUE lane, release, terminal), but never adopted the result. DockLateEntry logged disposition=1, along_m from -0.000147 to approximately -0.0000007 m, first-line prefix_m=remaining_m=1000, cross_m ~0.000002 m and effectively zero actual speed. DockClient repeatedly entered entry-rebind-retry (at least seven attempts). Initial worker lasted 9.74 s; rebound workers 5–6.6 s. The route stages exist; the immediately demonstrated failure is the route handoff predicate.

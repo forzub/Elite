@@ -834,12 +834,14 @@ BallisticPrefixStatus RouteEntryBinder::inspectBallisticPrefix(
         return out;
     }
 
-    if (along <= length)
+    if (along <= length +
+            game::navigation::geometry_tolerance::EntryEndOvershootMeters)
     {
         out.disposition = BallisticPrefixDisposition::OnPrefix;
-        out.alongMeters = std::max(0.0, along);
-        out.remainingMeters =
-            std::max(0.0, length - out.alongMeters);
+        // Both endpoint roundoff and tiny real ballistic drift count as
+        // reaching the endpoint, not as travelling extra route distance.
+        out.alongMeters = std::clamp(along, 0.0, length);
+        out.remainingMeters = length - out.alongMeters;
         return out;
     }
 

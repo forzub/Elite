@@ -70,6 +70,39 @@ assert "entrySolveDurationMs" in space
 assert "m_dockObservedConnectorWorkerSeconds" in header
 assert "first_turn_remaining_m=" in space
 
+# The terminal free-leg optimizer must not turn corridor manoeuvre room
+# back into a nonnegotiable kilometre-scale straight. Keep the original
+# moving-ship ballistic prefix and the BLUE hard portal straight unchanged.
+route_planner = (
+    ROOT / "src/game/navigation/planner/RoutePlanner.cpp"
+).read_text(encoding="utf-8")
+for marker in [
+    "assistedHardStartStraightMeters(",
+    "input.assistedUseExactProtectedStart",
+    "hard_start_m=",
+    "hard_goal_m=",
+    "manoeuvre_lead_m=",
+]:
+    assert marker in route_planner, f"Assisted optimizer handoff lost: {marker}"
+assert "bool assistedUseExactProtectedStart = false;" in route_request
+assert "requiredDockingAxisMinimumMeters(" in policy
+assert "assistedHardStartStraightMeters(" in policy
+for marker in [
+    "finalRequest.assistedUseExactProtectedStart =",
+    "finalRequest.initialProtectedStraightMeters =",
+    "requiredDockingAxisMinimumMeters(",
+    "free_leg_total_ms=",
+    "final_goal_hard_m=",
+    "final_exit_speed_mps=",
+]:
+    assert marker in composer, f"segmented terminal geometry drift: {marker}"
+assert "inbound_start_hard_m=" in composer
+assert 'planner_diagnostics=' in space
+# Explicit mode must remain confined to Assisted's *final* free leg.
+assert "legRequest.assistedUseExactProtectedStart =" not in composer
+assert ("finalRequest.assistedCompactStartLead &&" in composer and
+        "finalRequest.useContinuousAssistedOptimizer;" in composer)
+
 # The original literal "one-shot handoff" error was retired when the
 # connector gained an explicit, bounded late-entry recovery budget. Verify
 # the LIVE control flow, rather than requiring a removed diagnostic string.

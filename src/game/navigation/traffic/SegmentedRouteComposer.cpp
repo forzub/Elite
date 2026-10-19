@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
 
 #include <algorithm>
@@ -17,7 +18,7 @@ namespace
 
 bool samePoint(const glm::dvec3& a, const glm::dvec3& b)
 {
-    return glm::length(a - b) <= 1.0e-6;
+    return glm::length(a - b) <= game::navigation::geometry_tolerance::ConstructedPointMeters;
 }
 
 void appendUniqueGate(
@@ -636,7 +637,7 @@ planner::RoutePlan SegmentedRouteComposer::plan(
 
         if (std::abs(
                 mandatoryEnd - expectedMandatoryEnd
-            ) > 1.0e-4)
+            ) > game::navigation::geometry_tolerance::ComposedStageLengthMeters)
         {
             planner::RoutePlan invalid = out;
             invalid.disposition =

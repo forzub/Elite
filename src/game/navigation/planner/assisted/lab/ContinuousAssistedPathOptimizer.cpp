@@ -1878,6 +1878,19 @@ Result ContinuousAssistedPathOptimizer::optimize(
                 &candidateAudit
             );
 
+        // Preserve one result per independently optimized seed branch.
+        // These four alternatives may represent different turn topologies.
+        SeedBranchComparison branch;
+        branch.seedRank = i;
+        branch.feasible = candidate.evaluation.feasible;
+        branch.lengthMeters = candidate.evaluation.length;
+        branch.estimatedTravelTimeSeconds =
+            candidate.evaluation.estimatedTravelTimeSeconds;
+        branch.objective = candidate.evaluation.objective;
+        branch.maxConstraintViolation =
+            candidate.evaluation.violation;
+        result.diagnostics.searchBranchOutcomes.push_back(branch);
+
         if (!haveBest ||
             better(
                 candidate.evaluation,

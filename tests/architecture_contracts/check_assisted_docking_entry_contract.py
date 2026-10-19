@@ -18,7 +18,10 @@ required = [
     "constexpr std::uint32_t MaxEntryConnectorMisses = 4;",
     "phase=entry-rebind-exhausted",
     "dock entry connector handoff did not converge",
-    "readReplicatedAssistedControlAuthority",
+    "player.controlAuthorityTelemetry",
+    "phase=awaiting-server-capability",
+    "phase=capability-ready",
+    "authoritative motor telemetry lost during docking",
     "applyAuthorityToControlParams",
     "m_dockPlannedAssistedAuthority = liveAssistedAuthority",
     "hasSignificantAssistedAuthorityLoss",
@@ -118,6 +121,37 @@ for token in [
     "deviation from an",
 ]:
     assert token in executor, f"missing executor contract guard: {token}"
+
+# The control loop must read a dedicated server-authored capability
+# snapshot; module graphs are intentionally sparse in normal replication.
+ship_snapshot = (
+    ROOT / "src/game/simulation/ShipSnapshot.h"
+).read_text(encoding="utf-8")
+client_snapshot = (
+    ROOT / "src/game/client/ClientWorldState.h"
+).read_text(encoding="utf-8")
+server = (
+    ROOT / "src/game/simulation/GameSimulation.cpp"
+).read_text(encoding="utf-8")
+client_receive = (
+    ROOT / "src/game/client/ClientWorldState.cpp"
+).read_text(encoding="utf-8")
+wire = (
+    ROOT / "src/game/network/WireDataSchema.h"
+).read_text(encoding="utf-8")
+schema = (
+    ROOT / "src/game/network/WireDataCodec.h"
+).read_text(encoding="utf-8")
+for src in [ship_snapshot, client_snapshot, server, client_receive, wire]:
+    assert "controlAuthorityTelemetry" in src
+assert "ship.core().controlAuthorityTelemetry()" in server
+assert client_receive.count(
+    "state.controlAuthorityTelemetry = s.controlAuthorityTelemetry;"
+) == 2
+assert "game::ship::telemetry::ShipControlAuthorityTelemetry," in wire
+assert "SimulationSnapshotWireSchemaVersion = 18u;" in schema
+assert "m_dockReplicatedAssistedPrograms" not in space
+assert "readReplicatedAssistedControlAuthority" not in space
 
 # A virtual pilot must not turn installed motor damage into ideal geometry.
 assert "reservedCurveLateralAccelerationMps2" in space

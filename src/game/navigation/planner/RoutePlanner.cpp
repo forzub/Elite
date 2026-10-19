@@ -651,6 +651,28 @@ RoutePlan planContinuousAssisted(
     out.terminalApproachLengthMeters =
         request.protectedGoalStraightMeters;
 
+    // Record only already evaluated, physically feasible alternatives.
+    // The selected candidate is still determined solely by optimizer::better.
+    const auto candidateSummary =
+        [](const std::vector<assisted::lab::CandidateComparison>& candidates)
+        {
+            std::string summary = "[";
+            for (const auto& candidate : candidates)
+            {
+                if (summary.size() > 1)
+                    summary += ";";
+                summary +=
+                    std::to_string(candidate.evaluationIndex) + ":" +
+                    std::to_string(candidate.lengthMeters) + ":" +
+                    std::to_string(
+                        candidate.estimatedTravelTimeSeconds
+                    ) + ":" +
+                    std::to_string(candidate.objective) + ":" +
+                    std::to_string(candidate.minimumRadiusMeters);
+            }
+            return summary + "]";
+        };
+
     out.diagnosticSummary =
         "continuous-assisted ready curves=" +
         std::to_string(out.routeCurves.size()) +
@@ -733,7 +755,22 @@ RoutePlan planContinuousAssisted(
         " objective=" +
         std::to_string(
             optimized.diagnostics.objective
-        );
+        ) +
+        " feasible_candidate_evals=" +
+        std::to_string(
+            optimized.diagnostics.feasibleEvaluations
+        ) +
+        " rejected_candidate_evals=" +
+        std::to_string(
+            optimized.diagnostics.infeasibleEvaluations
+        ) +
+        // Tuple format: evaluation-id:length-m:eta-s:objective:min-radius-m.
+        " shortest_feasible_candidates=" +
+        candidateSummary(optimized.diagnostics.shortestFeasible) +
+        " fastest_feasible_candidates=" +
+        candidateSummary(optimized.diagnostics.fastestFeasible) +
+        " lowest_score_feasible_candidates=" +
+        candidateSummary(optimized.diagnostics.lowestObjectiveFeasible);
 
     return out;
 }

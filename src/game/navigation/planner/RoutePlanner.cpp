@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 
 #include <algorithm>
@@ -270,7 +271,7 @@ void appendGateAtProgress(
         glm::length(
             gates.back().positionMeters -
             gate.positionMeters
-        ) <= 1.0e-6)
+        ) <= game::navigation::geometry_tolerance::ConstructedPointMeters)
     {
         gates.back() = gate;
         return;

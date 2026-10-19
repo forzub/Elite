@@ -10,6 +10,7 @@
 #include "src/world/types/ObjectType.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
@@ -52,5 +53,8 @@ struct ShipSnapshot
     // std::shared_ptr<game::ship::geometry::MeshData>     mesh;
     
     game::ShipCoreStatus                                shipCoreStatus;
+    // Per-tick server-authoritative six-axis installed-motor capability.
+    // Must not depend on optional heavy module/structural replication.
+    game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
     game::simulation::ObjectGraphSnapshot                graph;
 };

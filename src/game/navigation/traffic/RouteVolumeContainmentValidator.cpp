@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
 
 #include <algorithm>
@@ -143,7 +144,8 @@ bool progressAtPoint(
     double& progressMeters
 ) noexcept
 {
-    constexpr double toleranceMeters = 1.0e-4;
+    constexpr double toleranceMeters =
+        game::navigation::geometry_tolerance::ConstructedPointMeters;
     double bestDistance = std::numeric_limits<double>::infinity();
     double bestProgress = 0.0;
 

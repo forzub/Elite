@@ -452,6 +452,69 @@ int main()
             );
         }
 
+        // Production Assisted continuous backend: a mandatory BLUE release
+        // protects only the actual 150m release straight, not an unrelated
+        // 8000m "room to manoeuvre" budget. The final protected docking axis
+        // is 900m; braking must remain feasible on the whole free leg.
+        {
+            using namespace game::navigation::planner;
+            RoutePlanRequest terminal;
+            terminal.startMeters = {0.0, 0.0, 0.0};
+            terminal.goalMeters = {4500.0, 0.0, 15000.0};
+            terminal.terminalOutward = {0.0, 0.0, -1.0};
+            terminal.terminalReferenceDistanceMeters = 300.0;
+            terminal.agentRadiusMeters = 17.0;
+            terminal.vehicleLengthMeters = 30.0;
+            terminal.maxSpeedMps = 500.0;
+            terminal.initialSpeedMps = 80.0;
+            terminal.terminalSpeedMps = 0.0;
+            terminal.acceleratingMps2 = 25.0;
+            terminal.brakingMps2 = 15.0;
+            terminal.lateralMps2 = 24.5;
+            terminal.maxAngularVelocityRadPerSecond = 1.0;
+            terminal.maxAngularAccelerationRadPerSecond2 = 1.0;
+            terminal.gateSpacingMeters = 500.0;
+            terminal.terminalGateSpacingMeters = 250.0;
+            terminal.hasInitialForward = true;
+            terminal.initialForward = {0.0, 0.0, 1.0};
+            terminal.roundTurns = true;
+            terminal.useContinuousAssistedOptimizer = true;
+            terminal.assistedCompactStartLead = true;
+            terminal.assistedUseExactProtectedStart = true;
+            terminal.initialForwardLeadMeters = 8000.0;
+            terminal.initialProtectedStraightMeters = 150.0;
+            terminal.terminalApproachLengthMeters = 900.0;
+
+            const auto optimized = RoutePlanner::plan(terminal);
+            require(optimized.valid(),
+                    "BLUE exit continuous free-leg route was not feasible");
+            require(!optimized.routeCurves.empty() &&
+                    optimized.routeCurves.front().kind ==
+                        RouteCurveKind::Line,
+                    "BLUE exit lost its protected initial tangent");
+            requireNear(
+                optimized.routeCurves.front().endProgressMeters,
+                150.0,
+                1.0e-3,
+                "manoeuvre lead incorrectly became an 8km hard straight"
+            );
+            require(
+                optimized.diagnosticSummary.find("hard_start_m=150.") !=
+                    std::string::npos &&
+                optimized.diagnosticSummary.find("hard_goal_m=900.") !=
+                    std::string::npos,
+                "continuous optimizer did not expose hard geometry inputs"
+            );
+            requireNear(
+                glm::length(
+                    optimized.routeCurves.back().endMeters -
+                    terminal.goalMeters
+                ),
+                0.0, 1.0e-3,
+                "optimized terminal free leg moved the dock HOLD endpoint"
+            );
+        }
+
         game::navigation::planner::RoutePlanRequest invalid = request;
         invalid.maxSpeedMps = std::numeric_limits<double>::quiet_NaN();
         const auto invalidPlan =

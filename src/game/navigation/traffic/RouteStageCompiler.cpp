@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
 
 #include <cmath>
@@ -21,9 +22,9 @@ void appendUnique(
     const glm::dvec3& point
 )
 {
-    constexpr double epsilonMeters = 1.0e-6;
     if (!out.empty() &&
-        glm::length(out.back() - point) <= epsilonMeters)
+        glm::length(out.back() - point) <=
+            game::navigation::geometry_tolerance::ConstructedPointMeters)
     {
         return;
     }

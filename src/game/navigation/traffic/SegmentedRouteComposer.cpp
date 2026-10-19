@@ -546,8 +546,9 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         legRequest.initialForward = currentForward;
         legRequest.initialForwardLeadMeters =
             currentHasForward
-                ? game::navigation::OrdinaryRoutePolicy::
-                      requiredStartLeadMeters(
+                ? (legRequest.assistedCompactStartLead
+                  ? game::navigation::OrdinaryRoutePolicy::
+                      requiredAssistedStartLeadMeters(
                           currentSpeed,
                           legRequest.maxSpeedMps,
                           legRequest.brakingMps2,
@@ -555,6 +556,15 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                           legRequest.maxAngularVelocityRadPerSecond,
                           legRequest.vehicleLengthMeters
                       )
+                  : game::navigation::OrdinaryRoutePolicy::
+                      requiredStartLeadMeters(
+                          currentSpeed,
+                          legRequest.maxSpeedMps,
+                          legRequest.brakingMps2,
+                          legRequest.lateralMps2,
+                          legRequest.maxAngularVelocityRadPerSecond,
+                          legRequest.vehicleLengthMeters
+                      ))
                 : 0.0;
         legRequest.requiredViaPointsMeters.clear();
         legRequest.mandatoryTangentStraights.clear();
@@ -696,8 +706,9 @@ planner::RoutePlan SegmentedRouteComposer::plan(
     // original ship start.
     finalRequest.initialForwardLeadMeters =
         currentHasForward
-            ? game::navigation::OrdinaryRoutePolicy::
-                  requiredStartLeadMeters(
+            ? (finalRequest.assistedCompactStartLead
+              ? game::navigation::OrdinaryRoutePolicy::
+                  requiredAssistedStartLeadMeters(
                       currentSpeed,
                       finalRequest.maxSpeedMps,
                       finalRequest.brakingMps2,
@@ -705,6 +716,15 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                       finalRequest.maxAngularVelocityRadPerSecond,
                       finalRequest.vehicleLengthMeters
                   )
+              : game::navigation::OrdinaryRoutePolicy::
+                  requiredStartLeadMeters(
+                      currentSpeed,
+                      finalRequest.maxSpeedMps,
+                      finalRequest.brakingMps2,
+                      finalRequest.lateralMps2,
+                      finalRequest.maxAngularVelocityRadPerSecond,
+                      finalRequest.vehicleLengthMeters
+                  ))
             : 0.0;
 
     // The authored mandatory release already guarantees that the whole craft

@@ -144,9 +144,45 @@ int main()
                 RouteStageKind::VolumeExit,
             "BLUE exit stage missing"
         );
+        // The geometry of the final leg is free/unconstrained, but its
+        // SEMANTIC owner is TerminalApproach: docking-frame updates must
+        // rotate only this final stage, never an earlier BLUE gate.
         require(
-            stages[4].kind == RouteStageKind::FreeTransit,
-            "terminal free stage missing"
+            stages[4].kind == RouteStageKind::TerminalApproach,
+            "final free geometry lost terminal docking-stage ownership"
+        );
+        require(
+            stages[4].framePolicy ==
+                RouteStageFramePolicy::DynamicTerminalFrame,
+            "terminal docking frames are not dynamically owned"
+        );
+        require(
+            stages[4].refreshPolicy ==
+                RouteStageRefreshPolicy::LiveDuringStage,
+            "rotating dock stage stopped refreshing while active"
+        );
+        require(
+            stages[4].sourceId == "terminal" &&
+                !stages[4].hardContainment,
+            "unconstrained terminal stage inherited BLUE containment"
+        );
+        require(
+            stages[4].endProgressMeters >
+                stages[4].startProgressMeters + 1.0,
+            "geometric final free leg disappeared"
+        );
+        require(
+            std::abs(
+                stages[4].endProgressMeters -
+                plan.routeCurves.back().endProgressMeters
+            ) < 1.0e-3,
+            "terminal stage does not cover the final geometry"
+        );
+        require(
+            glm::length(
+                plan.routeCurves.back().endMeters - request.goalMeters
+            ) < 1.0e-3,
+            "terminal free leg no longer reaches docking HOLD endpoint"
         );
 
         const auto& transit = stages[2];
@@ -195,7 +231,8 @@ int main()
 
         std::cout
             << "SEGMENTED ROUTE COMPOSER TESTS: PASS\n"
-            << " - free -> BLUE entry -> BLUE transit -> BLUE exit -> free\n"
+            << " - free -> BLUE entry -> BLUE transit -> BLUE exit -> terminal\n"
+            << " - final unconstrained geometry owns live docking frame\n"
             << " - BLUE span retains lane/volume semantic ownership\n"
             << " - KeepInside is a hard route-stage contract\n"
             << " - canonical BLUE interval validates inside eroded volume\n";

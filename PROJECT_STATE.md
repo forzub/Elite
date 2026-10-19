@@ -1,3 +1,39 @@
+## 2026-10-19 — LIVE DOCK REGRESSION: AUTHORITATIVE MOTOR TELEMETRY MISSING IN CLIENT; DIRECT WIRE FIX (NATIVE TESTS PENDING)
+
+**Live evidence:** user screenshot `image(20261019-141500).png` and console `Вставленный текст(20261019-141540).txt` (2664 lines). Game starts, player initiates `DockRequest serial=1 mode=automatic`, but `DockClient phase=failed reason=installed Assisted motor authority unavailable` floods **2572** consecutive times. No navigation planning occurs. Previously the standalone navigation CTests `assisted_authority_contract` and `route_entry_binder` were 2/2 PASS, but they missed this server-to-client availability seam. This is a REAL production-game regression despite green unit tests.
+
+**Fault:** new `ReplicatedAssistedControlAuthority.h` client adapter demanded per-installed-engine `ObjectModuleSnapshot` + `hasEngineThermalState` to reconstruct the authoritative six-axis motor basis, but the normal ship graph is intentionally optional/sparse and sometimes entirely suppressed. `GameSimulation.cpp` publishes heavy module rows only under detailed-graph policy; certain probes skip them. Missing an optional graph does NOT prove engine failure. Repeated `fail()` every frame further produced log flood. Do not 'fix' by assuming nominal descriptor throttle or synthesizing a healthy real ship!
+
+**New proper authority wire:** `ShipSnapshot.h` and `ClientWorldState.h` carry `ShipControlAuthorityTelemetry` read directly from server `ShipCore::controlAuthorityTelemetry()`. `GameSimulation.cpp` publishes this compact snapshot independently of module graphs; `ClientWorldState.cpp` hydrates it on both new and existing ships; `WireDataSchema.h` serializes valid, model, actuator revision, signed six-axis +/- values in ShipSnapshot; `WireDataCodec.h` bumped `SimulationSnapshotWireSchemaVersion` 17 -> **18**. `SpaceState.cpp` consumes `player.controlAuthorityTelemetry`, NOT reconstructed client module tables. During initial no-telemetry state it waits/logs one `phase=awaiting-server-capability` until server delivers data (`phase=capability-ready`); loss during execution fails safe. Persistent identical fail reports are emitted once instead of thousands of times. `SpaceState.h` removes client-side motor-program cache; old standalone replicated helper remains only as a tested diagnostic adapter and is not on the live autopilot path.
+
+**Server source-of-truth after same-tick damage/thermal:** Engine systems may advance **after** the motor control tick, invalidating a freshly prepared actuator revision before snapshot publication. `ShipCore::controlAuthorityTelemetry() const` now reconstructs `MountedEngine` from the **authoritative runtime engine damage/operating state**, matches/refreshes the **same** cached `AssistedManeuverPrograms` object used by physical execution (mutable cache, never commands motors), sets current actuator revision, and returns signed actual basis. Explicit synthetic I/Y/X diagnostic layouts reuse the same diagnostic engine passports as the runtime; real installed engines never get a synthetic substitute.
+
+**New integration-oriented source tests:** `tests/architecture_contracts/WireDataPlaneContractTests.cpp` now exercises schema 18 round-trip of signed motor authority and its persistence when `ShipSnapshot.graph = {}` (NO module graph); target `wire_data_plane_contract_tests`, CTest `wire_data_plane_contracts`. `tests/navigation_runtime/AssistedAuthorityContractTests.cpp` additionally constructs actual 4x Cobretty CR-1 healthy Cobra installed motors and solves real signed basis (X/Y/Z/pitch/yaw) and verifies aft-motor loss reduces real forward authority. `tests/architecture_contracts/check_assisted_docking_entry_contract.py` now protects direct server-to-client authority wiring, schema bump, wait handling, absence of old live client reconstruct path, and existing docking contracts. Read-only GitHub source-level audit verified these 13 source files are internally consistent but **none of these new modifications has yet been native-built, CTest-run or live-tested**. Do not mark PASS.
+
+**User next actions (MSYS2 MinGW64, active branch, protect dirty files):**
+
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git pull --ff-only origin feature/propulsion-authority-matrix-2026-10-16
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
+cmake --build build/tests/navigation_runtime --target assisted_authority_contract_tests route_entry_binder_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(assisted_authority_contract|route_entry_binder)$' --output-on-failure
+cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
+cmake --build build/tests/architecture_contracts --target wire_data_plane_contract_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R '^wire_data_plane_contracts$' --output-on-failure
+python tests/architecture_contracts/check_assisted_docking_entry_contract.py
+mkdir -p /d/tmp
+set -o pipefail
+bash build_mingw64.sh 2>&1 | tee /d/tmp/elite_build.log
+./build/EliteGame.exe
+```
+
+**Expected live behavior:** server startup; client receives valid real per-engine six-axis signed authority; `DockClient phase=planning` and subsequently `phase=executing` with corridor visible. No `installed Assisted motor authority unavailable` flood. If `phase=awaiting-server-capability` never transitions, diagnose server capability invalid or network; if `installed Assisted motors cannot execute a 3D docking path`, capture actual per-axis server values and repair physics/planner rather than resurrect descriptor ideal authority. Once route executes, original 350–400 m/s turn/corridor instability still needs physical game acceptance. Keep all logs in D:\\tmp; single project state file ONLY this root PROJECT_STATE.md.
+
+---
+
 ## 2026-10-19 — NATIVE ASSISTED AUTHORITY TESTS GREEN; ARCHITECTURE GATE STALE LITERAL FIXED
 
 **User executed in MSYS2 MinGW64** the navigation runtime CMake configure/build and two CTests:

@@ -119,6 +119,31 @@ assert "stages[4].kind == RouteStageKind::TerminalApproach" in stage_test
 assert "stages[4].refreshPolicy ==" in stage_test
 assert "terminal free leg no longer reaches docking HOLD endpoint" in stage_test
 
+# Planner diagnostics must reach the user's Windows disk even if the
+# main console's std::cout is buffered on immediate window close. Never
+# do filesystem I/O inside the pure optimizer or the ship physics loop.
+planner_file_log = (
+    ROOT / "src/game/navigation/debug/DockPlannerFileLog.h"
+).read_text(encoding="utf-8")
+for token in [
+    '"D:/tmp/elite_docking_planner.log"',
+    'create_directories(path.parent_path(), error)',
+    'std::ios::out | std::ios::app',
+    'out.flush()',
+    '[DockPlannerStage]',
+    '[DockPlannerResult]',
+    'plan.diagnosticSummary',
+    'worker_ms=',
+]:
+    assert token in planner_file_log, (
+        f"planner file log contract missing: {token}"
+    )
+assert 'game::navigation::debug::appendDockPlannerReport(' in space
+assert 'job->planningRequest,' in space
+assert 'job->entrySolveDurationMs,' in space
+assert 'job->plan' in space
+assert 'D:/tmp/elite_docking_planner.log' in space
+
 # The original literal "one-shot handoff" error was retired when the
 # connector gained an explicit, bounded late-entry recovery budget. Verify
 # the LIVE control flow, rather than requiring a removed diagnostic string.

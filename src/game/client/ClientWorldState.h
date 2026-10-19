@@ -85,6 +85,7 @@ struct ClientShipState
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
 
     game::ShipCoreStatus                            shipCoreStatus;
+    game::ship::telemetry::ShipControlAuthorityTelemetry controlAuthorityTelemetry {};
     std::vector<game::damage::DamageEvent>           damageEvents;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;

@@ -4349,7 +4349,7 @@ void SpaceState::updateDockingAdvisory()
                     ++m_dockLateEntry.rebindAttempts;
                     // An unadoptable connector must not schedule workers
                     // indefinitely. Fail safely after a bounded retry budget.
-                    constexpr int MaxEntryConnectorMisses = 4;
+                    constexpr std::uint32_t MaxEntryConnectorMisses = 4;
                     if (m_dockLateEntry.rebindAttempts >=
                             MaxEntryConnectorMisses)
                     {

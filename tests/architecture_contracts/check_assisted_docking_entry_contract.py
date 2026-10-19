@@ -15,6 +15,9 @@ required = [
     "submitAutopilotControl(safeOutput.control)",
     "firstTurnTravelSeconds",
     "m_dockLateEntry.leadSeconds",
+    "constexpr int MaxEntryConnectorMisses = 4;",
+    "phase=entry-rebind-exhausted",
+    "dock entry connector handoff did not converge",
     "projected Assisted entry bind missed its one-shot handoff",
 ]
 for token in required:
@@ -64,4 +67,4 @@ print(" - safe-course emits ordinary Assisted hull controls; FA-on remains autho
 print(" - planning coast uses neutral physical controls, never a direct acceleration bypass.")
 print(" - expensive downstream route is retained.")
 print(" - live handoff uses one projected entry bind based on first-turn travel time.")
-print(" - repeated entry-rebind loops are forbidden.")
+print(" - repeated entry-rebind loops are bounded and explicitly reported.")

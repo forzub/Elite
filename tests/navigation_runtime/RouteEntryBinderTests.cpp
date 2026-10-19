@@ -153,6 +153,35 @@ void testRealNegativeStartOffsetStillRequiresRebind()
     );
 }
 
+void testCentimetreEndpointDriftIsAcceptedWithoutInventingProgress()
+{
+    const auto plan = straightPrefixPlan();
+    const auto status = RouteEntryBinder::inspectBallisticPrefix(
+        plan, {1000.005, 0.0, 0.0}, 5.0
+    );
+    require(
+        status.disposition == BallisticPrefixDisposition::OnPrefix,
+        "5 mm overshoot of prefix endpoint triggered a false rebind"
+    );
+    require(
+        status.alongMeters == 1000.0 &&
+            status.remainingMeters == 0.0,
+        "endpoint drift fabricated extra route progress"
+    );
+}
+
+void testRealPastPrefixStillRequiresRebind()
+{
+    const auto plan = straightPrefixPlan();
+    const auto status = RouteEntryBinder::inspectBallisticPrefix(
+        plan, {1000.05, 0.0, 0.0}, 5.0
+    );
+    require(
+        status.disposition == BallisticPrefixDisposition::PastPrefix,
+        "5 cm true prefix overshoot was accepted"
+    );
+}
+
 void testPastPrefixRequiresLateEntryRebind()
 {
     const auto plan = straightPrefixPlan();
@@ -223,6 +252,8 @@ int main()
         testSmallStationaryBallisticBackstepIsAccepted();
         testSmallBackstepDoesNotBypassOffAxisRejection();
         testRealNegativeStartOffsetStillRequiresRebind();
+        testCentimetreEndpointDriftIsAcceptedWithoutInventingProgress();
+        testRealPastPrefixStillRequiresRebind();
         testPastPrefixRequiresLateEntryRebind();
         testOffAxisRequiresLateEntryRebind();
         testBeforeStartIsNotAcceptedAsOnPrefix();

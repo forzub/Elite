@@ -824,7 +824,12 @@ BallisticPrefixStatus RouteEntryBinder::inspectBallisticPrefix(
         return out;
     }
 
-    if (along < 0.0)
+    // The authored start and the live double-precision position may differ
+    // by sub-millimetre rounding even when the ship is effectively stationary.
+    // Treat only this numerical noise as progress zero: a genuinely earlier
+    // position must still require a fresh connector.
+    constexpr double StartNumericalToleranceMeters = 1.0e-3;
+    if (along < -StartNumericalToleranceMeters)
     {
         out.disposition = BallisticPrefixDisposition::BeforeStart;
         return out;
@@ -833,7 +838,9 @@ BallisticPrefixStatus RouteEntryBinder::inspectBallisticPrefix(
     if (along <= length)
     {
         out.disposition = BallisticPrefixDisposition::OnPrefix;
-        out.remainingMeters = std::max(0.0, out.remainingMeters);
+        out.alongMeters = std::max(0.0, along);
+        out.remainingMeters =
+            std::max(0.0, length - out.alongMeters);
         return out;
     }
 

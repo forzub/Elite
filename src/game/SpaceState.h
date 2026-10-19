@@ -54,7 +54,7 @@
 #include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
-#include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -542,10 +542,8 @@ private:
     };
     DockLateEntryState m_dockLateEntry {};
 
-    // Client preview of the authoritative installed-engine six-axis basis.
-    // Never derive damaged maneuver authority from bare ShipParams.
-    game::ship::plant::AssistedManeuverPrograms
-        m_dockReplicatedAssistedPrograms {};
+    // Server-authored motor basis accepted at worker launch/adoption.
+    // A real route must not depend on sparse client module replicas.
     game::ship::telemetry::ShipControlAuthorityTelemetry
         m_dockPlannedAssistedAuthority {};
     game::ship::telemetry::ShipControlAuthorityTelemetry

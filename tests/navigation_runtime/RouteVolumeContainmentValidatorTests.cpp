@@ -115,6 +115,35 @@ int main()
             "BLUE interval rejected valid route with external tangent leads"
         );
 
+        // Portal positions independently reconstructed by the stage compiler
+        // may differ from the continuous line by a fraction of a millimetre.
+        // This only relaxes geometric lookup; hard BLUE hull containment
+        // remains fully enforced against the canonical route geometry.
+        const auto nearAuthoredPortals =
+            RouteVolumeContainmentValidator::validateKeepInsideRouteInterval(
+                blue,
+                {line({0.0, 0.0, -1300.0}, {0.0, 0.0, 1300.0})},
+                {0.0005, 0.0, -600.0},
+                {-0.0005, 0.0, 600.0},
+                10.0
+            );
+        require(
+            nearAuthoredPortals.valid,
+            "sub-millimetre authored portal offset rejected canonical BLUE axis"
+        );
+        const auto materiallyWrongPortals =
+            RouteVolumeContainmentValidator::validateKeepInsideRouteInterval(
+                blue,
+                {line({0.0, 0.0, -1300.0}, {0.0, 0.0, 1300.0})},
+                {0.05, 0.0, -600.0},
+                {0.0, 0.0, 600.0},
+                10.0
+            );
+        require(
+            !materiallyWrongPortals.valid,
+            "five-centimetre portal mismatch was accepted as a route boundary"
+        );
+
         // Endpoints are legal and exactly the same traffic portals, but the
         // Bezier bows 120 m sideways. A via-point-only system would accept
         // this topology; hard BLUE containment must reject it.

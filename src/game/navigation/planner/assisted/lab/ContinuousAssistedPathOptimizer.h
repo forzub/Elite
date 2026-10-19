@@ -105,11 +105,33 @@ struct OptimizedSegment
     glm::dvec3 endMeters {0.0};
 };
 
+// A bounded snapshot of a feasible candidate already evaluated by the
+// optimizer. These are diagnostic measurements, not extra search work.
+struct CandidateComparison
+{
+    std::size_t evaluationIndex = 0;
+    double lengthMeters = 0.0;
+    double estimatedTravelTimeSeconds = 0.0;
+    double objective = 0.0;
+    double minimumRadiusMeters = 0.0;
+    double totalCurvatureRadians = 0.0;
+};
+
 struct Diagnostics
 {
     std::size_t objectiveEvaluations = 0;
     std::size_t acceptedSteps = 0;
     std::size_t seedCount = 0;
+
+    // Counters cover all evaluated seeds and local-search candidates.
+    std::size_t feasibleEvaluations = 0;
+    std::size_t infeasibleEvaluations = 0;
+
+    // Top 5 from the same feasible set, sorted by the named metric.
+    // Candidate IDs refer to evaluation order, not independent routes.
+    std::vector<CandidateComparison> shortestFeasible;
+    std::vector<CandidateComparison> fastestFeasible;
+    std::vector<CandidateComparison> lowestObjectiveFeasible;
 
     // Full route including protected start/goal straights.
     double pathLengthMeters = 0.0;

@@ -18,6 +18,12 @@ required = [
     "constexpr std::uint32_t MaxEntryConnectorMisses = 4;",
     "phase=entry-rebind-exhausted",
     "dock entry connector handoff did not converge",
+    "readReplicatedAssistedControlAuthority",
+    "applyAuthorityToControlParams",
+    "m_dockPlannedAssistedAuthority = liveAssistedAuthority",
+    "hasSignificantAssistedAuthorityLoss",
+    "accepted-trajectory-invalidated",
+    "required_curve_a_mps2",
     "projected Assisted entry bind missed its one-shot handoff",
 ]
 for token in required:
@@ -95,6 +101,31 @@ for token in [
     "deviation from an",
 ]:
     assert token in executor, f"missing executor contract guard: {token}"
+
+# A virtual pilot must not turn installed motor damage into ideal geometry.
+assert "reservedCurveLateralAccelerationMps2" in space
+assert "ConcurrentTurnAxisFraction" in space
+client_follow = (
+    ROOT / "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
+).read_text(encoding="utf-8")
+assert "maximumSustainableCurveSpeedMps" in client_follow
+assert "ConcurrentTurnAxisFraction" in client_follow
+motor_read = (
+    ROOT / "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
+).read_text(encoding="utf-8")
+for marker in [
+    "state->engineImpactShock01",
+    "state->engineTemperatureK",
+    "state->emitterIntactArea01",
+    "cache.matches(model, mounted, physicalParams)",
+    "cache.build(model, mounted, physicalParams)",
+]:
+    assert marker in motor_read, f"missing installed motor projection: {marker}"
+authority_api = (
+    ROOT / "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
+).read_text(encoding="utf-8")
+assert "p.forwardMainEngineAvailable && forward > 1.0e-6" in authority_api
+assert "p.reverseMainEngineAvailable && reverse > 1.0e-6" in authority_api
 
 print("ASSISTED DOCKING ENTRY CONTRACT: PASS")
 print(" - safe-course selects one direction; it is not a trajectory follower.")

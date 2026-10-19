@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/DockingAdvisoryPlanner.h"
 
 #include <algorithm>
@@ -125,7 +126,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     const auto samePoint =
         [](const glm::dvec3& a, const glm::dvec3& b)
         {
-            return glm::length(a - b) <= 1.0e-6;
+            return glm::length(a - b) <= game::navigation::geometry_tolerance::ConstructedPointMeters;
         };
 
     for (const auto& straight : r.mandatoryTangentStraights)
@@ -142,8 +143,9 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         const glm::dvec3 delta =
             straight.endMeters - straight.startMeters;
         const double hardLength = glm::length(delta);
-        if (hardLength + 1.0e-6 < straight.minimumStraightMeters ||
-            hardLength <= 1.0e-6)
+        if (hardLength + game::navigation::geometry_tolerance::ConstructedPointMeters <
+                straight.minimumStraightMeters ||
+            hardLength <= game::navigation::geometry_tolerance::ConstructedPointMeters)
         {
             out.failure = "mandatory tangent straight shorter than minimum";
             return out;
@@ -454,14 +456,14 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         const double along = glm::dot(rel, axis);
                         const glm::dvec3 cross =
                             rel - axis * along;
-                        return glm::length(cross) <= 1.0e-6 &&
-                            along >= -1.0e-6 &&
-                            along <= axisLength + 1.0e-6;
+                        return glm::length(cross) <= game::navigation::geometry_tolerance::ConstructedPointMeters &&
+                            along >= -game::navigation::geometry_tolerance::ConstructedPointMeters &&
+                            along <= axisLength + game::navigation::geometry_tolerance::ConstructedPointMeters;
                     };
 
                 if (liesOnAxisInterval(legStart) &&
                     liesOnAxisInterval(legGoal) &&
-                    glm::dot(legGoal - legStart, axis) > 1.0e-6)
+                    glm::dot(legGoal - legStart, axis) > game::navigation::geometry_tolerance::ConstructedPointMeters)
                 {
                     return &straight;
                 }
@@ -538,7 +540,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         glm::length(
                             combined.pointsMeters.back() -
                             leg.pointsMeters[i]
-                        ) <= 1.0e-6)
+                        ) <= game::navigation::geometry_tolerance::ConstructedPointMeters)
                     {
                         continue;
                     }
@@ -551,7 +553,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
         for (const auto& via : plannerViaPoints)
         {
-            if (glm::length(via - legStart) <= 1.0e-6)
+            if (glm::length(via - legStart) <= game::navigation::geometry_tolerance::ConstructedPointMeters)
                 continue;
 
             world::navigation::GeometricPathResult leg;
@@ -629,7 +631,7 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
             legStart = via;
         }
 
-        if (glm::length(routeGoalMeters - legStart) > 1.0e-6)
+        if (glm::length(routeGoalMeters - legStart) > game::navigation::geometry_tolerance::ConstructedPointMeters)
         {
             const auto leg =
                 planOneLeg(legStart, routeGoalMeters);

@@ -1,3 +1,4 @@
+#include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
 
 #include <algorithm>
@@ -15,7 +16,7 @@ namespace
 
 bool samePoint(const glm::dvec3& a, const glm::dvec3& b)
 {
-    return glm::length(a - b) <= 1.0e-4;
+    return glm::length(a - b) <= game::navigation::geometry_tolerance::ConstructedPointMeters;
 }
 
 void appendUniqueGate(
@@ -824,12 +825,10 @@ BallisticPrefixStatus RouteEntryBinder::inspectBallisticPrefix(
         return out;
     }
 
-    // The authored start and the live double-precision position may differ
-    // by sub-millimetre rounding even when the ship is effectively stationary.
-    // Treat only this numerical noise as progress zero: a genuinely earlier
-    // position must still require a fresh connector.
-    constexpr double StartNumericalToleranceMeters = 1.0e-3;
-    if (along < -StartNumericalToleranceMeters)
+    // A physically settled ship may coast millimetres during an asynchronous
+    // job; world/frame rounding can add to the start-position difference.
+    // Accept only the small entry-capture backstep, not a genuinely stale start.
+    if (along < -game::navigation::geometry_tolerance::EntryStartBackstepMeters)
     {
         out.disposition = BallisticPrefixDisposition::BeforeStart;
         return out;

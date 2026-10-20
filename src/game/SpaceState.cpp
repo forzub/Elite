@@ -2464,7 +2464,52 @@ void SpaceState::updateDockingAdvisory()
 
             if (m_dockAssistedSafeRecovery.stopFallback)
             {
-                submitAutopilotControl(manualStopControl());
+                const ShipControlState stopControl =
+                    manualStopControl();
+                submitAutopilotControl(stopControl);
+
+                // Record the ACTUAL server-replicated physical acceleration
+                // vectors during STOP. Without signed XYZ telemetry it is
+                // impossible to tell whether the asymmetric surviving
+                // engines pushed the craft up/down or merely changed its
+                // view-relative velocity. One sample per simulation second.
+                const auto stopTick =
+                    m_client->lastSimulationMetadata().serverTick;
+                if (m_clientDockingTraceTick == 0 ||
+                    stopTick - m_clientDockingTraceTick >= 60)
+                {
+                    m_clientDockingTraceTick = stopTick;
+                    const auto logVector = [](const glm::dvec3& v)
+                    {
+                        std::ostringstream output;
+                        output << "(" << v.x << ","
+                               << v.y << "," << v.z << ")";
+                        return output.str();
+                    };
+                    std::cerr
+                        << "[AssistedSafeStop]"
+                        << " request=" << pending.serial
+                        << " speed_mps=" << speedMps
+                        << " velocity_xyz_mps="
+                        << logVector(motion.localVelocityMps)
+                        << " main_a_xyz_mps2="
+                        << logVector(motion.mainEngineAccelerationMps2)
+                        << " assisted_a_xyz_mps2="
+                        << logVector(
+                            motion.assistedStabilizationAccelerationMps2)
+                        << " total_a_xyz_mps2="
+                        << logVector(motion.engineAccelerationMps2)
+                        << " align_mode="
+                        << static_cast<int>(
+                            stopControl.velocityAlignmentCommand)
+                        << " pitch=" << stopControl.pitchInput
+                        << " yaw=" << stopControl.yawInput
+                        << " roll=" << stopControl.rollInput
+                        << " forward=" << stopControl.forwardInput
+                        << " strafe=" << stopControl.strafeInput
+                        << " lift=" << stopControl.liftInput
+                        << std::endl;
+                }
 
                 if (speedMps <= 0.05 &&
                     angularSpeedRadPerSec <= 0.01)

@@ -561,6 +561,76 @@
       "zh-Hans": "等待发动机遥测",
       "es": "esperando datos de motores",
       "ja": "エンジン情報待機"
+    },
+    "cockpit.terminal.failure_dock": {
+      "en": "dock unavailable or hull incompatible",
+      "ru": "док недоступен или не подходит по габаритам",
+      "zh-Hans": "船坞不可用或尺寸不符",
+      "es": "muelle no disponible o casco incompatible",
+      "ja": "ドック利用不可または船体寸法不一致"
+    },
+    "cockpit.terminal.failure_telemetry": {
+      "en": "motor telemetry unavailable",
+      "ru": "данные двигателей недоступны",
+      "zh-Hans": "发动机遥测不可用",
+      "es": "telemetría de motores no disponible",
+      "ja": "エンジン情報を取得不可"
+    },
+    "cockpit.terminal.failure_propulsion": {
+      "en": "insufficient propulsion capability",
+      "ru": "возможностей двигателей недостаточно",
+      "zh-Hans": "推进能力不足",
+      "es": "capacidad de propulsión insuficiente",
+      "ja": "推進能力不足"
+    },
+    "cockpit.terminal.failure_blue": {
+      "en": "BLUE corridor constraints failed",
+      "ru": "нарушены ограничения BLUE-коридора",
+      "zh-Hans": "蓝色通道约束失败",
+      "es": "fallo en restricciones del corredor AZUL",
+      "ja": "BLUE回廊の制約違反"
+    },
+    "cockpit.terminal.failure_traffic": {
+      "en": "traffic navigation data unavailable",
+      "ru": "данные транспортного коридора недоступны",
+      "zh-Hans": "航道数据不可用",
+      "es": "datos de tráfico no disponibles",
+      "ja": "航行通路データなし"
+    },
+    "cockpit.terminal.failure_handoff": {
+      "en": "route handoff failed",
+      "ru": "не удалось подключиться к маршруту",
+      "zh-Hans": "航路接入失败",
+      "es": "fallo al enlazar la ruta",
+      "ja": "経路への接続失敗"
+    },
+    "cockpit.terminal.failure_safety": {
+      "en": "cannot establish safe course",
+      "ru": "не удалось выбрать безопасный курс",
+      "zh-Hans": "无法建立安全航向",
+      "es": "no se puede establecer rumbo seguro",
+      "ja": "安全針路を確保できません"
+    },
+    "cockpit.terminal.failure_snapshot": {
+      "en": "navigation snapshot unavailable or stale",
+      "ru": "навигационные данные отсутствуют или устарели",
+      "zh-Hans": "导航快照不可用或已过期",
+      "es": "datos de navegación no disponibles o caducados",
+      "ja": "航法データが未取得または期限切れ"
+    },
+    "cockpit.terminal.failure_port": {
+      "en": "dock state or orientation unavailable",
+      "ru": "состояние или ориентация дока недоступны",
+      "zh-Hans": "船坞状态或朝向不可用",
+      "es": "estado u orientación del muelle no disponibles",
+      "ja": "ドック状態または姿勢を取得不可"
+    },
+    "cockpit.terminal.failure_route": {
+      "en": "route planning failed",
+      "ru": "расчёт маршрута не выполнен",
+      "zh-Hans": "航路规划失败",
+      "es": "falló el cálculo de ruta",
+      "ja": "経路計算失敗"
     }
   }
 }

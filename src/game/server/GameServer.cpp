@@ -180,6 +180,15 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 {
                     outcome = "unknown preset (expected aft-50, aft-80, aft-failed)";
                 }
+                else if (const char* overrideModel =
+                             std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
+                         overrideModel && *overrideModel)
+                {
+                    // Synthetic diagnostic model actuators are not the same
+                    // installed engine instances. Never claim a real-engine
+                    // damage test is valid under this construction override.
+                    outcome = "conflicting synthetic physical test model";
+                }
                 else if (Ship* ship =
                              m_simulation.getShip(m_simulation.playerId()))
                 {

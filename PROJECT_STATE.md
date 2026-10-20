@@ -1,3 +1,47 @@
+## 2026-10-20 — RESTORE POINT + OPT-IN SERVER-AUTHORITATIVE DAMAGED-ENGINE PRESETS (SOURCE COMMITTED; NATIVE VALIDATION PENDING)
+
+**User goal:** Create a recovery point for the now-verified Standard vs Extreme Assisted route experiment, then run REAL in-game autopilot through the existing guidance tunnel with degraded installed engine(s). No fake client damage, no bypass of pilot controls/physics, no change to production route geometry or ordinary ship baseline.
+
+**Immutable recovery anchor:** New branch `restore/before-damaged-engine-corridor-2026-10-20` points to `596fd41114f524fd95330d458fd1fd75d900af7a`, the exact `main` head before any damaged-engine diagnostic implementation. This is a RESTORE/ARCHIVE branch; all continued source edits remain exclusively on `main`.
+
+**One real-engine diagnostic preset, selected at authoritative server process startup:**
+- New `src/game/ship/debug/DamagedEnginePreset.h` defines `ELITE_SHIP_DAMAGE_PRESET` values `aft-50` (50% accumulated impact damage to the FIRST aft main motor), `aft-80` (80% impact damage -> surviving ~20% thrust and intermittent thrust according to the existing EngineUnit law), and `aft-failed` (100% damage -> physical engine failure). No env/unrecognized value means no damage applied.
+- `src/game/server/GameServer.cpp`: only when env var is explicitly nonempty, after the player ship is spawned and reference-frame placed but BEFORE snapshots/session admission/planning, resolve physical first-aft-main `EngineSlotDefinition` from native `PhysicalControlModelId` and its `ShipDescriptor::physicalControl.slotModuleIds`. Validate the selected module is a real installed engine and call `ship->core().moduleRuntime().addEquipmentDamage(moduleId, EquipmentDamageKind::Impact, fraction)`. This increments the **actual authoritative module revision**, so `ShipCore::refreshRuntimeState`, installed-engine `EngineUnit`, capability projection, BITE, telemetry and ordinary ship control can observe real damage. Do NOT alter actuator coefficients or autopilot instructions directly.
+- Explicit server diagnostic writes `[ShipDamagePreset] preset=... status=APPLIED|FAILED module=... impact_damage=... detail=...` to stderr and to `D:/tmp/elite_engine_damage_preset.log` on Windows. Existing planner log stays at `D:/tmp/elite_docking_planner.log`; full runtime results require BOTH.
+- `tests/navigation_runtime/ShipPhysicalControlModelsTests.cpp` adds parser, payload, I/Y/X first-aft role selection, and a 50%-damaged slot cannot increase original Assisted-I thrust capacity.
+- `tests/architecture_contracts/EngineUnitDamageModelTests.cpp` confirms actual `EngineUnit` output curves for these presets: 50% -> half maximum thrust/gimbal, 80% -> 20% maximum and irregular thrust, 100% -> engine & nozzle failed, zero force. Healthy control unchanged.
+- **Important experimental limit:** The old Ctrl+F9 I/Y/X diagnostic construction switch can substitute synthetic motor mount instances (see `ShipCore::updateTranslationControl`), so the initial REAL damage corridor experiment must use the native physical layout; do NOT switch Ctrl+F9 or use `ELITE_SHIP_PHYSICAL_TEST_MODEL` while measuring this installed engine's damage response. The preset selects whichever physical aft slot is FIRST in I/Y/X native topology, but only the actual bound engine instance can be degraded.
+
+**Validation:** GitHub source reread confirms server env guard, physical module damage API and before-session invocation, revision-based runtime projection and diagnostic logs; native MinGW build/CTest and full in-game tunnel follow have NOT been run by assistant and may still uncover integration issues. No simulated SUCCESS claimed. Do not remove hard hull/B L U E/safety constraints if severe damage makes route impossible; rejection is an expected safe outcome.
+
+**Minimal Windows/MSYS2 matrix:**
+```bash
+cd /d/__elite/work
+git status -sb
+git pull --ff-only origin main
+cmake --build build/tests/navigation_runtime --target ship_physical_control_models_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^ship_physical_control_models$' --output-on-failure
+cmake --build build/tests/architecture_contracts --target engine_unit_damage_model_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R '^engine_unit_damage_model$' --output-on-failure
+bash build_mingw64.sh
+
+# 1) Undamaged reference:
+unset ELITE_SHIP_DAMAGE_PRESET
+unset ELITE_ASSISTED_ROUTE_PRESET
+./build/EliteGame.exe
+# 2) Same initial scene, 1 actual aft engine at 50%:
+ELITE_SHIP_DAMAGE_PRESET=aft-50 ./build/EliteGame.exe
+# 3) Only after 50% scenario is understandable, heavier challenge:
+ELITE_SHIP_DAMAGE_PRESET=aft-80 ./build/EliteGame.exe
+# 4) Optional loss-of-bank safety rejection test:
+ELITE_SHIP_DAMAGE_PRESET=aft-failed ./build/EliteGame.exe
+```
+On each run make one automatic docking request, verify `status=APPLIED` in `D:/tmp/elite_engine_damage_preset.log`, compare real engine BITE/capability, planned route and actual pilot following the corridor. Do not assume `aft-failed` remains routeable. First inspect CTest/native build errors if any, then inspect route and cross-track/follower telemetry. Do not restart planning repeatedly while a route worker is running.
+
+**Next decision:** inspect actual damaged-ship full playthrough and logs (corridor cross-track, longitudinal speed, available left/right bank thrust/TVC, BITE notices, final handoff/docking); determine whether replan/recovery is logically safe when physical capability differs from launch snapshot. Source still single active `main`, only persistent context file `PROJECT_STATE.md`.
+
+---
+
 ## 2026-10-20 — SAME-SNAPSHOT STANDARD VS EXTREME: MEANINGFUL GEOMETRY DIFFERENCE; SPARSE HUD MAY HIDE IT
 
 **User observation:** Extreme looks visually indistinguishable from Standard. User supplied `elite_docking_planner(2).log` (EXTREME only) and `elite_docking_planner(3).log` (same identical EXTREME record followed by STANDARD). Treat as ONE Extreme and ONE Standard experiment, not three independent runs.

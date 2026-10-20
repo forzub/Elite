@@ -29,6 +29,8 @@ struct DockingTerminalSnapshot
     std::string physics;
     std::string activity;
     std::string error;
+    // Completed immutable planner measurements (separate from BITE faults).
+    std::vector<std::string> plannerDetails;
 
     // Generic ship diagnostics (BITE, later other read-only diagnostics).
     // The terminal remains presentation-only; producers provide ready lines.
@@ -99,6 +101,8 @@ public:
             for (const auto& diagnostic : snapshot.diagnostics)
                 enqueue(diagnostic.first, diagnostic.second);
             enqueue(snapshot.activity, DockingTerminalSeverity::Info);
+            for (const auto& line : snapshot.plannerDetails)
+                enqueue(line, DockingTerminalSeverity::Info);
             m_last = snapshot;
         }
         else
@@ -142,6 +146,11 @@ public:
 
             enqueueChanged(m_last.activity, snapshot.activity,
                            DockingTerminalSeverity::Info);
+            if (snapshot.plannerDetails != m_last.plannerDetails)
+            {
+                for (const auto& line : snapshot.plannerDetails)
+                    enqueue(line, DockingTerminalSeverity::Info);
+            }
             m_last = snapshot;
         }
 

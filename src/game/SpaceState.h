@@ -356,6 +356,7 @@ private:
     ClientDockingPhase m_clientDockingPhase =
         ClientDockingPhase::Idle;
     bool m_clientAutopilotControlActive = false;
+    bool m_clientDockingRecoverySpeedLimited = false;
     ShipControlState m_clientAutopilotControl {};
     double m_clientDockingSettledSinceServerSeconds = -1.0;
     std::uint64_t m_clientDockingTraceTick = 0;

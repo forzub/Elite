@@ -7309,6 +7309,8 @@ m_systemMapRenderer.render(
         // ------------------------------------------------------------
         {
             game::presentation::DockingTerminalSnapshot terminal;
+            terminal.localeId = context().app
+                ? context().app->localization().locale() : std::string();
             const game::presentation::TerminalLocalizedText::Lookup terminalText =
                 [app = context().app](const char* key)
                 {

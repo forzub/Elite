@@ -69,9 +69,12 @@ public:
         out.divergingNearBoundary =
             outwardSpeed > 0.5 &&
             predictedCrossTrack >= trackingToleranceMeters;
-        out.requireSafeStop =
-            out.fullToleranceExceeded ||
-            out.divergingNearBoundary;
+        // Prediction can inform the progressive speed governor, but it
+        // cannot justify abandoning a still-valid route.  In particular a
+        // brief start-of-route lateral error must not turn into a full STOP
+        // while the ship remains inside the authored 64 m corridor.
+        // Emergency fallback is for a REAL lost corridor (or invalid state).
+        out.requireSafeStop = out.fullToleranceExceeded;
         return out;
     }
 };

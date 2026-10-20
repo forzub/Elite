@@ -1,3 +1,22 @@
+## 2026-10-20 — SAME-SNAPSHOT STANDARD VS EXTREME: MEANINGFUL GEOMETRY DIFFERENCE; SPARSE HUD MAY HIDE IT
+
+**User observation:** Extreme looks visually indistinguishable from Standard. User supplied `elite_docking_planner(2).log` (EXTREME only) and `elite_docking_planner(3).log` (same identical EXTREME record followed by STANDARD). Treat as ONE Extreme and ONE Standard experiment, not three independent runs.
+
+**Facts directly from user logs:** Both start (-10000,2500,0), goal (668.255,350,2659.507), start speed=0, vmax=500, acceleration/lateral braking constraints 17.652, direct 11202.997m, fixed 700m capture + 1200m BLUE volume + 150m release, terminal approach 900m, inbound hard goal 7138.013651m. Actual `assisted_preset` and optimizer `preset` agree per run.
+
+STANDARD: total 48579.862490m; inbound 34133.101035m, ETA 100.812542s; last 12396.761455m, ETA 75.745003s; composed minimum sampled radius 955.047950m; 13 curves, 105 HUD gates, 669 execution gates, worker_ms 10340.614.
+EXTREME: total 41782.855758m; inbound 29314.755329m, ETA 90.152742s; last 10418.100429m, ETA 62.116780s; composed minimum sampled radius 223.262971m; 12 curves, 92 HUD gates, 640 execution gates, worker_ms 11055.136.
+
+DIFFERENCES: -6797.006732m (-13.9914%) total length, -4818.345706m inbound, -1978.661026m terminal, ~4.28x tighter reported composed minimum radius. Nominal ETA incl same mandatory 2050/220 = 185.875727s Standard vs 161.587704s Extreme (-24.288023s, -13.07%) using local optimizer ETA, NOT an actual flown full-global speed profile. Worker runtime not significantly faster; EXTREME was ~0.715s slower to calculate.
+
+**Why visually similar despite math:** BLUE path and authored straights are unchanged; free legs share mandatory traffic portal topology. More importantly, `RoutePlanner.cpp::buildPresentationGates` still samples `routeCurves` at fixed `gateSpacingMeters=500m` and `terminalGateSpacingMeters=250m`. `GuidanceHudPresentation.h` uses exactly those sparse HUD frames without further interpolation, and `GuidanceCorridorRenderer.cpp` draws their corners/connectors. Therefore EXTREME curves with ~223m assembled sampled radius (and ~62.1045m MINIMUM inbound optimizer sample radius!) can be poorly resolved by 500m HUD gate spacings; visual comparison of rib tunnel alone is insufficient to assess mathematical curvature. Separate dense execution gates exist but do not directly become the displayed tunnel. Do NOT change cinematic standard spacing or constraints as part of analysis. Potential opt-in Extreme-only adaptive HUD sampling (not implemented) could make shape differences obvious, keeping geometry unchanged.
+
+**Important diagnostic mismatch:** `inbound_detail min_radius_m=62.104519` (optimizer sample) vs assembled `segmented min_radius_m=223.262971`. These are DIFFERENT discretization metrics: the latter samples each compiled curve only 32 times with `minimumSampledRadiusMeters`, potentially misses narrow curvature peaks. Before safety/visual claims, verify actual differential curvature maxima at high-resolution sampling and the entire execution gate speed profile. In EXTREME `peak_lat_util=1.047810` inbound and `1.001753` final, despite declared feasibility; this is a segment-level calculated authority utilization above 1 and should be investigated rather than claiming all authority limits strictly respected in execution. Hard validator `out.feasible` checks `maxViolation`, which does not directly reject these `peak_lat_util` summary numbers. Leave physics unchanged until precise cause is verified.
+
+**Changes in this turn:** No source code/physics/planner modifications; this analytical note only. User may share equal-camera screenshots to compare geometry if still visually identical. For future work, consider a visual audit of gate spacing in Extreme and curvature sampling validation, but preserve Standard's visual 500/250m rule and default behavior.
+
+---
+
 ## 2026-10-20 — COMPLETE DOCKING TERMINAL LOCALIZATION + PRESET LABEL (SOURCE COMMITTED; NATIVE TESTS PENDING)
 
 **User request:** Always display the active Standard/Extreme planner preset on the in-game docking terminal; every visible terminal message must use the canonical localization catalog, with no hardcoded human-readable text. Do not modify planner geometry, ship physics, flight laws or experimental preset behavior.

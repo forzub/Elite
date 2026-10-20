@@ -631,6 +631,13 @@
       "zh-Hans": "航路规划失败",
       "es": "falló el cálculo de ruta",
       "ja": "経路計算失敗"
+    },
+    "cockpit.terminal.warning_corridor_lost": {
+      "en": "Autopilot lost corridor; braking to safe stop",
+      "ru": "Автопилот потерял туннель; выполняется безопасное торможение",
+      "zh-Hans": "自动驾驶偏离通道，正在安全制动",
+      "es": "Piloto automático fuera del corredor; frenando hasta detenerse",
+      "ja": "自動操縦が回廊を逸脱・安全停止のため減速中"
     }
   }
 }

@@ -4,6 +4,7 @@
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
+#include "src/game/ship/telemetry/AssistedCoupledAcceleration.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -48,6 +49,49 @@ Telemetry healthyAuthority()
     t.positive = {40.0, 40.0, 60.0, 3.0, 3.0, 3.0};
     t.negative = {40.0, 40.0, 60.0, 3.0, 3.0, 3.0};
     return t;
+}
+
+void testCoupledEngineAuthorityRejectsIndependentAxisFantasy()
+{
+    using namespace game::ship::telemetry;
+    AssistedCoupledMotorAuthority motor;
+    motor.valid=true;
+    motor.motorCount=1;
+    motor.available01[0]=1.0f;
+    motor.achievable[0]=1.0;
+    motor.achievable[8]=1.0;
+    motor.fractions[0][1]=1.0f; // +X on the only motor
+    motor.fractions[8][2]=1.0f; // +yaw on that SAME motor
+
+    std::array<double,6> forceOnly {0.8,0.,0.,0.,0.,0.};
+    std::array<double,6> yawOnly {0.,0.,0.,0.,0.8,0.};
+    std::array<double,6> together {0.8,0.,0.,0.,0.8,0.};
+    require(assistedCombinedDemandFeasible(motor,forceOnly),
+            "standalone lateral demand falsely rejected");
+    require(assistedCombinedDemandFeasible(motor,yawOnly),
+            "standalone angular demand falsely rejected");
+    require(!assistedCombinedDemandFeasible(motor,together),
+            "individual axis limits falsely admitted combined motor overload");
+
+    ShipControlAuthorityTelemetry physical;
+    physical.valid=true;
+    physical.positive[0]=1.0;
+    physical.negative[0]=1.0;
+    const glm::dvec3 lateral(1.0,0.0,0.0);
+    const std::array<double,6> quiet {};
+    const double withoutYaw=
+        maximumAssistedCurveNormalAccelerationMps2(
+            motor,physical,lateral,quiet);
+    const double withYaw=
+        maximumAssistedCurveNormalAccelerationMps2(
+            motor,physical,lateral,yawOnly);
+    require(withoutYaw>0.999 && withoutYaw<=1.001,
+            "quiet motor must support physical full lateral demand");
+    require(withYaw>0.59 && withYaw<0.61,
+            "angular motor load did not reduce attainable curve acceleration");
+    require(maximumAssistedCurveNormalAccelerationMps2(
+            motor,physical,lateral,together)==0.0,
+            "overcommitted hull torque was accepted as curve authority");
 }
 
 void testNoUndamagedDescriptorFallbackAfterMotorLoss()
@@ -352,6 +396,7 @@ int main()
 {
     try
     {
+        testCoupledEngineAuthorityRejectsIndependentAxisFantasy();
         testNoUndamagedDescriptorFallbackAfterMotorLoss();
         testSignedDamageCannotBeHiddenByHealthyOppositeAxis();
         testDamageInvalidatesAcceptedRoute();

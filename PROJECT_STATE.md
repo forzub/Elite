@@ -1,3 +1,31 @@
+## 2026-10-20 — THREE RESTORED ASSISTED-I LIVE FLIGHTS ANALYZED; SOURCE UNCHANGED
+
+**User's direct observation:** healthy and one aft-main with 50% impact damage are PASS; 100% failure is conditionally acceptable as convincing rough flight EXCEPT recurrent severe/uncontrolled hull rotations; request is ANALYSIS AND THEORIES ONLY, no controller/planner edits.
+
+**Exact diagnostics:** Same native Assisted-I dock scene; preset validation `aft-50 status=APPLIED module=ship_engine_L impact_damage=0.500000`, `aft-failed status=APPLIED module=ship_engine_L impact_damage=1.000000`. Three supplied user logs: `elite_assisted_healthy.log`, `elite_assisted_aft50.log`, `elite_assisted_failed.log`, supplementary appended `elite_docking_planner(20261020-180833).log`, `elite_engine_damage_preset(7).log`. Parsed EVERY `[DockClientTrack]` sample (159 / 161 / 111). Each began with ~15.24° nose/course vs first tunnel tangent after selected `[AssistedSafeCourse] turn_deg=15`; this residual mismatch also occurs in the two completed flights and is NOT unique to engine-out.
+
+| Observable | healthy | aft-50 | aft-failed |
+| --- | ---: | ---: | ---: |
+| max cross_track_m | 8.156 | 10.108 | 1134.160 |
+| last remaining_m | 7.148 | 5.611 | 25517.1 |
+| last actual_speed_mps | 0.0 | 0.0 | 61.312 |
+| peak hull_omega_radps | 0.205 | 0.331 | 1.974 |
+| peak hull_err_deg | 15.24 | 15.24 | 169.596 |
+| peak motor_angular_a_radps2 | 0.338 | 0.338 | 4.908 |
+| number samples abs(yaw)>0.95 | 11/159 | 12/161 | 86/111 |
+| installed_turn_a_mps2 | 73.550 | 64.356 | 55.162 |
+| max recorded required_curve_a_mps2 | 21.446 | 18.154 | 16.470 |
+
+**Chronology of aft-failed:** At route page ~81: v=402.4 m/s, cross=38.9m, yaw command 0.36, hull angular speed 0.342 rad/s, required curve a=4.29m/s2 (< installed lateral basis 55.16). At page 89: v=398.2, cross=23.35, yaw=1.0, hull error 47.55°, motor angular acceleration=4.908 rad/s2, auxiliary lateral acceleration at max 55.162. At page 93: v=386.76, cross=91.40m (64m tracking corridor exceeded), hull speed 1.291rad/s, hull error66.27°, yaw+1.0, motor angular acceleration4.908. At page101: v=407.15, cross=334.43m, motor angular acceleration4.908. Page113: cross=501.90m, v398.4, target v400, turn limit 500 (straight/nearly straight). At page~143: hull speed peaks 1.974rad/s (113°/s); rotation fluctuates rather than increasing monotonically. At page238: hull error reaches169.60°, cross878.5m; flight ends page239 still ~25.5km from destination, cross1134m. Logs provide unsigned scalar angular-acceleration magnitude only, so they CANNOT prove the physical moment always had same sign, or distinguish intended yaw-actuation vs uncompensated off-axis motor reaction; do not assert either as established root.
+
+**Verified relevant source behavior:** `DedicatedClientRouteAutopilot.h` computes Assisted bend speed as `sqrt((executionAuthority.lateralAccelerationMps2/3)/curvature)`, bounded by course response, angular rate and spline speed, with braking preview. This addresses BASELINE circular-arc requirement v²κ only. The `InCorridorCenteringGuidance` operates within tracking tolerance; outside it `CourseCaptureGuidance` selects capture direction, but source does NOT impose a separate recovery-speed ceiling using physically achievable required recapture vector + angular stabilization + braking. At long shallow curve with speed ceiling 500 and target 400, the corridor-occupancy blending cannot slow down a ship already hundreds of meters outside. `AssistedAutopilot.h` commands yaw/pitch via `HullAttitudeControl`, learns each angular authority from observed rates vs previous stick and speed response separately; this scalar identification cannot represent signed coupled yaw+translation authority lost through asymmetric engines. `ShipPresetEngineManeuvers.h` has distinct signed basis patterns, scales every motor when combined demands reach physical caps; this maintains feasibility but can underdeliver demanded combined force/torque. `ShipControlExecutionGateway.cpp` physically adds torque from installed motor allocator to angular rates, not a free/nozzle-bypassing autopilot.
+
+**Most likely working theory (NOT PROVEN):** engine-out yields yaw-control/translation coupling + saturated yaw feedback. At 400m/s even nominal 55m/s² lateral authority turns velocity only ~0.138rad/s; meanwhile hull rotates ~0.45–1.29 and peaks 1.97rad/s, so nose/velocity separation rapidly becomes unmanageable. First xtrack blowout occurs before steep bend; thus not simply missing `v²κ` bound. With yaw saturated, 4.908rad/s² angular command/response and 55m/s² available lateral axis saturate simultaneously. Existing turn governor considers geometric curvature but not coupled 6-DOF recovery and heading slew under damaged allocator, and speed may stay 400 beyond 64m. Recovery mode then chases tunnel while physically rotating too aggressively, amplifying excursion. Directional moment, per-engine wrench delivery, and signed body-rate errors would be necessary to distinguish whether motor matrix introduces unintended torque vs pilot commanding excessive intentional yaw.
+
+**Status:** Analysis only. No source, tuned settings, physics, tests, or safety-mode edits. Preserve restored `main`; keep the diagnostic branch isolated. User should choose next step only after theory discussion. If later authorized, address coupling/authority model and physically computed maximum speed including recapture plus attitude, without touching known-good healthy/aft50 baseline; first make observable signed demand vs delivered wrench rather than changing arbitrary gains.
+
+---
+
 ## 2026-10-20 — THREE REAL-ENGINE FLIGHT COMPARISON, CHECKPOINT PRESERVED (TEST RUNS PENDING)
 
 **Restored production baseline:** main at `ad084a1f0a91e08115728c4db1388ddefaabc230` has exact tree of checkpoint `596fd41114f524fd95330d458fd1fd75d900af7a`, no later damaged-engine autopilot fixes retained. User requires three comparable real-flight trials with Assisted-I: one healthy installed engine, left aft engine impacted at 50%, same engine failed at 100%. No more controller/planer redesign or test-for-test detours.

@@ -2924,6 +2924,12 @@ void SpaceState::updateDockingAdvisory()
         // with ELITE_ASSISTED_ROUTE_PRESET=extreme to compare tunnel geometry.
         const char* assistedPresetEnv =
             std::getenv("ELITE_ASSISTED_ROUTE_PRESET");
+        const bool lateEntryRebind =
+            automatic &&
+            m_dockLateEntry.active &&
+            m_dockLateEntry.serial == pending.serial;
+
+        game::navigation::planner::RoutePlanRequest request;
         request.assistedRoutePreset =
             assisted && assistedPresetEnv &&
             (std::string(assistedPresetEnv) == "extreme" ||
@@ -2931,12 +2937,6 @@ void SpaceState::updateDockingAdvisory()
                 ? game::navigation::planner::AssistedRoutePreset::Extreme
                 : game::navigation::planner::AssistedRoutePreset::Standard;
 
-        const bool lateEntryRebind =
-            automatic &&
-            m_dockLateEntry.active &&
-            m_dockLateEntry.serial == pending.serial;
-
-        game::navigation::planner::RoutePlanRequest request;
         const glm::dvec3 startVelocityMps =
             automatic
                 ? snapshot.controlledShip.localVelocityMps

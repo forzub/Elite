@@ -312,6 +312,54 @@ void testAssistedCourseResponseMeasuresVelocityNotHullNose()
             "increasing route-course error was mistaken for fast response");
 }
 
+void testAssistedPilotDoesNotSnapControlSticks()
+{
+    using game::navigation::autopilot::AssistedAutopilot;
+    using game::navigation::autopilot::AutopilotControlRequest;
+    ShipParams parameters = nominal();
+    parameters.maxPitchRate = 1.0f;
+    parameters.maxYawRate = 1.0f;
+    parameters.maxRollRate = 1.0f;
+
+    AutopilotControlRequest request;
+    request.deltaSeconds = 0.02;
+    request.actualVelocityMapMps = {0.0, 0.0, -100.0};
+    request.desiredVelocityMapMps = {100.0, 0.0, 0.0};
+    request.desiredUpMap = {0.0, 1.0, 0.0};
+
+    AssistedAutopilot pilot;
+    float previousYaw = 0.0f;
+    bool actuallyTurned = false;
+    // High course error must not generate an instantaneous full-scale
+    // yaw command, even at startup or when reversing the requested turn.
+    for (int tick = 0; tick < 60; ++tick)
+    {
+        if (tick == 30)
+            request.desiredVelocityMapMps = {-100.0, 0.0, 0.0};
+        const auto control = pilot.update(request, parameters);
+        const double change =
+            std::abs(control.yawInput - previousYaw);
+        require(change <= 0.051,
+                "Assisted virtual pilot snapped the yaw stick");
+        if (std::abs(control.yawInput) > 0.01f)
+            actuallyTurned = true;
+        require(std::isfinite(control.pitchInput) &&
+                std::isfinite(control.yawInput) &&
+                std::isfinite(control.rollInput),
+                "Assisted slew emitted invalid stick positions");
+        previousYaw = control.yawInput;
+    }
+    require(actuallyTurned,
+            "Assisted virtual pilot suppressed the turn completely");
+
+    // Physical emergency STOP must not wait for the normal comfort stroke.
+    request.stopRequested = true;
+    request.desiredVelocityMapMps = {100.0, 0.0, 0.0};
+    const auto emergency = pilot.update(request, parameters);
+    require(std::abs(emergency.yawInput) > 0.5,
+            "Emergency STOP incorrectly kept normal stick slew");
+}
+
 void testActualHealthyCobraMotorBasis()
 {
     using namespace game::ship::plant;
@@ -417,6 +465,7 @@ int main()
         testAssistedLostCorridorSafeStop();
         testAssistedSpeedGovernorForRealEngineOutStraight();
         testAssistedCourseResponseMeasuresVelocityNotHullNose();
+        testAssistedPilotDoesNotSnapControlSticks();
         testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";

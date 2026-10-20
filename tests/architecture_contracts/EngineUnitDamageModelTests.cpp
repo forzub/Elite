@@ -1,4 +1,5 @@
 #include "src/game/equipment/engine/EngineUnit.h"
+#include "src/game/ship/debug/DamagedEnginePreset.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -51,6 +52,38 @@ EquipmentDamageLayer damageLayer(
     // EngineUnit does not consult generic device sensitivity weights.
     layer.sensitivity = {0.01, 0.01, 0.01, 0.01, 0.01};
     return layer;
+}
+
+void testRealInstalledEnginePresetRatings()
+{
+    using game::ship::debug::DamagedEnginePreset;
+    using game::ship::debug::engineDamageForPreset;
+    auto d = descriptor();
+    const auto check = [&](DamagedEnginePreset preset)
+    {
+        EquipmentDamageState state;
+        state.impact01 = engineDamageForPreset(preset);
+        return evaluateEngineUnit(d, damageLayer(state));
+    };
+
+    const auto healthy = check(DamagedEnginePreset::None);
+    const auto half = check(DamagedEnginePreset::Aft50);
+    const auto unstable = check(DamagedEnginePreset::Aft80);
+    const auto dead = check(DamagedEnginePreset::AftFailed);
+
+    require(near(half.maximumThrustNewtons, 500.0) &&
+            near(half.gimbalAuthority01, 0.50) &&
+            !half.thrustFailed,
+            "50% preset failed to damage actual thrust and gimbal");
+    require(near(unstable.maximumThrustNewtons, 200.0) &&
+            unstable.thrustIrregularity01 > 0.0 &&
+            !unstable.thrustFailed,
+            "80% preset failed to produce real intermittent engine");
+    require(dead.thrustFailed && dead.gimbalFailed &&
+            near(dead.maximumThrustNewtons, 0.0),
+            "failed preset did not disable both real installed functions");
+    require(near(healthy.maximumThrustNewtons, 1000.0),
+            "damage test accidentally altered the healthy baseline");
 }
 
 void testHealthyFieldDrivePassport()
@@ -365,6 +398,7 @@ int main()
     try
     {
         testHealthyFieldDrivePassport();
+        testRealInstalledEnginePresetRatings();
         testFivePercentagesAddWithoutSensitivityWeights();
         testSaturationAndChannelAccumulation();
         testInstabilityAndIndependentFunctionalThresholds();

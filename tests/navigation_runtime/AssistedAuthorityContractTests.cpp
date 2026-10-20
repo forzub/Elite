@@ -1,4 +1,5 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
+#include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
 
@@ -118,6 +119,26 @@ void testCombinedMotorBudgetBoundsTangentSpeed()
         "destroyed lateral authority still allowed positive curve speed");
 }
 
+void testAssistedLostCorridorSafeStop()
+{
+    using Policy =
+        game::navigation::autopilot::AssistedCorridorDeviationPolicy;
+    // Existing good aft-50 trace never exceeded ~8.3m: do not change
+    // successful Assisted cruising and centering inside the corridor.
+    require(!Policy::evaluate(8.3, -1.0, 64.0).requireSafeStop,
+            "ordinary damaged-engine centering aborted");
+    require(!Policy::evaluate(31.9, -10.0, 64.0).requireSafeStop,
+            "half tolerance guard triggered too early");
+    require(Policy::evaluate(33.3425, -4.63167, 64.0).requireSafeStop,
+            "full engine-failure growing error was not stopped");
+    require(Policy::evaluate(40.9567, -8.57893, 64.0).requireSafeStop,
+            "damaged engine kept accelerating with diverging route error");
+    require(Policy::evaluate(70.0, +12.0, 64.0).requireSafeStop,
+            "once outside validated corridor recapture must not silently proceed");
+    require(Policy::evaluate(std::nan(""), 0.0, 64.0).requireSafeStop,
+            "nonfinite tracking measurement silently permitted cruise");
+}
+
 void testActualHealthyCobraMotorBasis()
 {
     using namespace game::ship::plant;
@@ -206,6 +227,7 @@ int main()
         testSignedDamageCannotBeHiddenByHealthyOppositeAxis();
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
+        testAssistedLostCorridorSafeStop();
         testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";

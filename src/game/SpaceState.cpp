@@ -5050,7 +5050,14 @@ void SpaceState::updateDockingAdvisory()
             if (controlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted)
             {
-                if (output.coupledCurveAccelerationMps2 >= 0.0 &&
+                // A zero look-ahead reserve on the FIRST STRAIGHT only
+                // means current longitudinal/yaw demand occupies the mixed
+                // motor basis. It is not proof that a turn 1 km ahead is
+                // impossible after those pilot commands settle. Keep the
+                // speed preview (which can demand slowing to zero), but
+                // invoke emergency STOP only at a curve being flown now.
+                if (output.routeCurvaturePerMeter > 1.0e-12 &&
+                    output.coupledCurveAccelerationMps2 >= 0.0 &&
                     output.coupledCurveAccelerationMps2 <= 1.0e-4)
                 {
                     std::cerr

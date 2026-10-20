@@ -22,6 +22,7 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
 #include "src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h"
+#include "src/game/ship/telemetry/AssistedCoupledAcceleration.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
@@ -52,6 +53,10 @@ struct AutopilotAgentState
     glm::dvec3 forwardMap {0.0, 0.0, -1.0};
     glm::dvec3 rightMap {1.0, 0.0, 0.0};
     glm::dvec3 upMap {0.0, 1.0, 0.0};
+    // The authoritative execution result and the current motor torque
+    // request, never the planner's desired acceleration.
+    glm::dvec3 installedAccelerationMapMps2 {0.0};
+    glm::dvec3 requestedAngularAccelerationBodyRadPerSec2 {0.0};
     double pitchRateRadPerSec = 0.0;
     double yawRateRadPerSec = 0.0;
     double rollRateRadPerSec = 0.0;
@@ -149,6 +154,7 @@ public:
         double effectiveBrakingAuthorityMps2 = 0.0;
         double requiredTerminalStopDistanceMeters = 0.0;
         double turnSpeedCeilingMps = 0.0;
+        double coupledCurveAccelerationMps2 = -1.0;
         double distanceToTurnMeters = 0.0;
         double requiredTurnSlowdownDistanceMeters = 0.0;
         double turnSpeedSetpointSlewSeconds = 0.0;
@@ -360,7 +366,9 @@ public:
         const AutopilotAgentState& agent,
         const ShipParams& params,
         double universeTimeSeconds,
-        double deltaSeconds
+        double deltaSeconds,
+        const game::ship::telemetry::ShipControlAuthorityTelemetry*
+            installedMotors = nullptr
     ) noexcept
     {
         constexpr LocalFlightControlLaw law = Law;
@@ -533,6 +541,7 @@ public:
             game::ship::maximumAngularSpeedRadPerSec(params);
 
         double turnSpeedCeilingMps = 0.0;
+        double coupledCurveAccelerationMps2 = -1.0;
         double distanceToTurnMeters = 0.0;
         double requiredTurnSlowdownDistanceMeters = 0.0;
         double turnSpeedSetpointSlewSeconds = 0.0;
@@ -704,6 +713,61 @@ public:
                         );
                 turnSpeedCeilingMps =
                     std::min(turnSpeedCeilingMps, physicalCurveSpeed);
+
+                if (installedMotors && installedMotors->valid)
+                {
+                    // Planner speed is merely a suggestion. The runtime
+                    // ceiling must fit the very same physical motor basis
+                    // that the server executor actually mixes.
+                    const glm::dvec3 tangent = normalizedOr(
+                        speedGuide.tangentMap, nominalForward);
+                    const glm::dvec3 normal = normalizedOr(
+                        glm::cross(
+                            speedGuide.turnNormalMap, tangent),
+                        glm::dvec3(0.0)
+                    );
+                    const glm::dvec3 bodyNormal(
+                        glm::dot(normal, agent.rightMap),
+                        glm::dot(normal, agent.upMap),
+                        -glm::dot(normal, agent.forwardMap)
+                    );
+                    // Reserve the executed longitudinal demand AND the
+                    // current actual hull angular demand. Existing normal
+                    // acceleration is not reserved twice: it is the variable
+                    // whose available authority is being calculated.
+                    const double axialDemand =
+                        glm::dot(
+                            agent.installedAccelerationMapMps2,
+                            tangent);
+                    const glm::dvec3 axialBody(
+                        glm::dot(tangent, agent.rightMap),
+                        glm::dot(tangent, agent.upMap),
+                        -glm::dot(tangent, agent.forwardMap)
+                    );
+                    const glm::dvec3 longitudinalBody =
+                        axialBody * axialDemand;
+                    const auto& angular =
+                        agent.requestedAngularAccelerationBodyRadPerSec2;
+                    const std::array<double,6> concurrent {
+                        longitudinalBody.x, longitudinalBody.y,
+                        longitudinalBody.z,
+                        angular.x, angular.y, angular.z
+                    };
+                    coupledCurveAccelerationMps2 =
+                        game::ship::telemetry::
+                            maximumAssistedCurveNormalAccelerationMps2(
+                                installedMotors->coupled,
+                                *installedMotors,
+                                bodyNormal,
+                                concurrent
+                            );
+                    const double jointSpeed =
+                        std::sqrt(
+                            std::max(0.0,
+                                coupledCurveAccelerationMps2) / kappa);
+                    turnSpeedCeilingMps =
+                        std::min(turnSpeedCeilingMps, jointSpeed);
+                }
             }
             if (speedGuide.maxSpeedMps > 0.0)
                 turnSpeedCeilingMps =
@@ -1584,6 +1648,8 @@ public:
         out.requiredTerminalStopDistanceMeters =
             requiredTerminalStopDistanceMeters;
         out.turnSpeedCeilingMps = turnSpeedCeilingMps;
+        out.coupledCurveAccelerationMps2 =
+            coupledCurveAccelerationMps2;
         out.distanceToTurnMeters = distanceToTurnMeters;
         out.requiredTurnSlowdownDistanceMeters =
             requiredTurnSlowdownDistanceMeters;

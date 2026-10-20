@@ -480,12 +480,32 @@ RoutePlan planContinuousAssisted(
     // Geometric tunnel safety is independent of speed. The speed profiler may
     // slow down for dynamic authority, but it may not buy an unreadably sharp
     // HUD/manual corridor by crawling through a tiny-radius turn.
+    const bool extreme =
+        input.assistedRoutePreset == AssistedRoutePreset::Extreme;
     request.minimumComfortRadiusMeters =
-        game::navigation::OrdinaryRoutePolicy::
-            requiredGuidanceTunnelRadiusMeters(
-                input.gateSpacingMeters,
-                input.vehicleLengthMeters
-            );
+        extreme
+            ? 0.0
+            : game::navigation::OrdinaryRoutePolicy::
+                  requiredGuidanceTunnelRadiusMeters(
+                      input.gateSpacingMeters,
+                      input.vehicleLengthMeters
+                  );
+
+    if (extreme)
+    {
+        // Diagnostic preset: optimize time/length, not cinematic turn shape
+        // or unused comfort reserve. All hard physical/collision/portal
+        // constraints continue through the unchanged evaluate() validator.
+        request.weights.lateralAccelerationEnergy = 0.0;
+        request.weights.peakLateralUtilization = 0.0;
+        request.weights.brakingDemand = 0.0;
+        request.weights.totalCurvature = 0.0;
+        request.weights.curvatureConcentration = 0.0;
+        request.weights.curvatureUniformity = 0.0;
+        request.weights.angularVelocityDemand = 0.0;
+        request.weights.angularAccelerationDemand = 0.0;
+        request.weights.curvatureVariation = 0.0;
+    }
 
     // Hot-start ships keep their ballistic initial lead as hard geometry.
     // The terminal leg AFTER an authored BLUE exit is different: the
@@ -693,7 +713,9 @@ RoutePlan planContinuousAssisted(
         };
 
     out.diagnosticSummary =
-        "continuous-assisted ready curves=" +
+        "continuous-assisted preset=" +
+        std::string(assistedRoutePresetName(input.assistedRoutePreset)) +
+        " ready curves=" +
         std::to_string(out.routeCurves.size()) +
         " hard_start_m=" +
         std::to_string(request.protectedStartStraightMeters) +

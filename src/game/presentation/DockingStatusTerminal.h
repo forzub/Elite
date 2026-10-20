@@ -29,6 +29,7 @@ struct DockingTerminalSnapshot
     std::string physics;
     std::string activity;
     std::string error;
+    std::string biteNominalText;
     // Completed immutable planner measurements (separate from BITE faults).
     std::vector<std::string> plannerDetails;
 
@@ -88,8 +89,7 @@ public:
         {
             m_initialized = true;
             m_lastNowSeconds = nowSeconds;
-            enqueue(snapshot.title.empty() ? "DOCKING" : snapshot.title,
-                    DockingTerminalSeverity::Info);
+            enqueue(snapshot.title, DockingTerminalSeverity::Info);
             enqueue(snapshot.phase, DockingTerminalSeverity::Info);
             enqueue(snapshot.planner, DockingTerminalSeverity::Info);
             enqueue(snapshot.safety, DockingTerminalSeverity::Info);
@@ -138,7 +138,7 @@ public:
                     !m_last.diagnostics.empty())
                 {
                     enqueuePriority(
-                        "BITE NOMINAL",
+                        snapshot.biteNominalText,
                         DockingTerminalSeverity::Info
                     );
                 }

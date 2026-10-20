@@ -1495,10 +1495,12 @@ public:
         out.assistedRecoverySpeedCeilingMps =
             recoverySpeedLimited ? recoverySpeedCeilingMps : 0.0;
         out.targetLongitudinalAccelerationMps2 =
-            glm::dot(
-                continuous.reference.linearAccelerationFeedForwardMapMps2,
-                referenceTangent
-            );
+            recoverySpeedLimited
+                ? 0.0
+                : glm::dot(
+                      continuous.reference.linearAccelerationFeedForwardMapMps2,
+                      referenceTangent
+                  );
         const glm::dvec3 actualCrossVelocity =
             agent.velocityMapMetersPerSecond -
             referenceTangent *

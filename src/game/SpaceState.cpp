@@ -2205,6 +2205,10 @@ void SpaceState::updateDockingAdvisory()
             motion.localPositionMeters;
         agent.velocityMapMetersPerSecond =
             motion.localVelocityMps;
+        agent.installedAccelerationMapMps2 =
+            motion.engineAccelerationMps2;
+        agent.requestedAngularAccelerationBodyRadPerSec2 =
+            motion.requestedMainAngularAccelerationBodyRadPerSec2;
         agent.forwardMap = glm::normalize(
             frame.worldToLocalVector(
                 glm::dvec3(transform.forward())
@@ -5231,6 +5235,8 @@ void SpaceState::updateDockingAdvisory()
                         << (output.assistedRecoverySpeedLimited ? 1 : 0)
                         << " recovery_speed_ceiling_mps="
                         << output.assistedRecoverySpeedCeilingMps
+                        << " coupled_curve_a_mps2="
+                        << output.coupledCurveAccelerationMps2
                         << " turn_vmax_mps="
                         << output.turnSpeedCeilingMps
                         << " turn_distance_m="
@@ -5329,7 +5335,8 @@ void SpaceState::updateDockingAdvisory()
                     makeAgent(),
                     effectivePhysics,
                     universeTimeSeconds,
-                    fixedDt
+                    fixedDt,
+                    &liveAssistedAuthority
                 );
             if (!handleOutput(output))
                 return;

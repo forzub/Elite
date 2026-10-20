@@ -4,6 +4,7 @@
 #include <string>
 
 #include "src/game/presentation/DockingStatusTerminal.h"
+#include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 
 namespace
 {
@@ -21,6 +22,55 @@ int main()
         using game::presentation::DockingStatusTerminal;
         using game::presentation::DockingTerminalSeverity;
         using game::presentation::DockingTerminalSnapshot;
+
+        using game::presentation::DockPlannerTerminalTelemetry;
+        using game::navigation::planner::AssistedRoutePreset;
+        using game::navigation::planner::RoutePlanRequest;
+
+        RoutePlanRequest request;
+        request.assistedRoutePreset = AssistedRoutePreset::Extreme;
+        request.initialSpeedMps = 0.0;
+        request.maxSpeedMps = 500.0;
+        request.acceleratingMps2 = 19.2;
+        request.brakingMps2 = 17.652;
+        request.lateralMps2 = 17.652;
+        require(
+            DockPlannerTerminalTelemetry::preset(request).find("EXTREME") !=
+                std::string::npos,
+            "terminal did not expose actual experiment preset"
+        );
+        require(
+            DockPlannerTerminalTelemetry::elapsed(6.9, request).find("T=6s") !=
+                std::string::npos,
+            "terminal displayed fabricated or unbucketed worker duration"
+        );
+        require(
+            DockPlannerTerminalTelemetry::limits(request).find("BRK=17.7") !=
+                std::string::npos,
+            "terminal did not use real braking authority"
+        );
+
+        game::navigation::planner::RoutePlan plan;
+        plan.diagnosticSummary =
+            "segmented route: inbound_ms=5300.94 inbound_detail={ "
+            "continuous-assisted ready evals=4682 eta_s=101.129 } "
+            "final_ms=5678.55 final_detail={ "
+            "continuous-assisted ready evals=4726 eta_s=75.745 }";
+        require(
+            DockPlannerTerminalTelemetry::legTimings(plan) ==
+                "SOLVE IN=5.30s OUT=5.68s",
+            "terminal did not render measured per-leg solve times"
+        );
+        require(
+            DockPlannerTerminalTelemetry::legEta(plan) ==
+                "ETA IN=101.1s OUT=75.7s",
+            "terminal did not render real per-leg ETA"
+        );
+        require(
+            DockPlannerTerminalTelemetry::legEvaluations(plan) ==
+                "EVAL IN=4682 OUT=4726",
+            "terminal did not render measured evaluation counts"
+        );
 
         DockingStatusTerminal terminal;
 
@@ -48,7 +98,10 @@ int main()
         snapshot.phase = "planning";
         snapshot.ship = "SHIP Assisted-I LAW ASSISTED";
         snapshot.physics = "ACT main=4 aft=2 fore=2 rcs=0";
-        snapshot.activity = "CALC A1B2 C3D4 E5F6 0718";
+        snapshot.activity = DockPlannerTerminalTelemetry::elapsed(6.9, request);
+        snapshot.plannerDetails.push_back(
+            DockPlannerTerminalTelemetry::limits(request)
+        );
         out = terminal.update(snapshot, 2.0);
         require(out.typedCharacters > 0, "changed status was not queued");
 
@@ -98,7 +151,7 @@ int main()
         std::cout << " - typewriter queue and cursor state\n";
         std::cout << " - error severity preserved\n";
         std::cout << " - hidden intervals preserve scrolling diagnostic history\n";
-        std::cout << " - ship/physics/activity streams append as terminal events\n";
+        std::cout << " - ship/physics/activity streams append as terminal events\n";        std::cout << " - real planner input, ETA and solve-time formatting\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)

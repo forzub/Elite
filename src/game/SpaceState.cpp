@@ -1,6 +1,5 @@
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
-#include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
@@ -1972,7 +1971,6 @@ void SpaceState::updateDockingAdvisory()
 
     const auto releaseClientAutopilot = [&]()
     {
-        m_clientDockingRecoverySpeedLimited = false;
         m_clientAutopilotControlActive = false;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
@@ -2205,10 +2203,6 @@ void SpaceState::updateDockingAdvisory()
             motion.localPositionMeters;
         agent.velocityMapMetersPerSecond =
             motion.localVelocityMps;
-        agent.installedAccelerationMapMps2 =
-            motion.engineAccelerationMps2;
-        agent.requestedAngularAccelerationBodyRadPerSec2 =
-            motion.requestedMainAngularAccelerationBodyRadPerSec2;
         agent.forwardMap = glm::normalize(
             frame.worldToLocalVector(
                 glm::dvec3(transform.forward())
@@ -2468,52 +2462,7 @@ void SpaceState::updateDockingAdvisory()
 
             if (m_dockAssistedSafeRecovery.stopFallback)
             {
-                const ShipControlState stopControl =
-                    manualStopControl();
-                submitAutopilotControl(stopControl);
-
-                // Record the ACTUAL server-replicated physical acceleration
-                // vectors during STOP. Without signed XYZ telemetry it is
-                // impossible to tell whether the asymmetric surviving
-                // engines pushed the craft up/down or merely changed its
-                // view-relative velocity. One sample per simulation second.
-                const auto stopTick =
-                    m_client->lastSimulationMetadata().serverTick;
-                if (m_clientDockingTraceTick == 0 ||
-                    stopTick - m_clientDockingTraceTick >= 60)
-                {
-                    m_clientDockingTraceTick = stopTick;
-                    const auto logVector = [](const glm::dvec3& v)
-                    {
-                        std::ostringstream output;
-                        output << "(" << v.x << ","
-                               << v.y << "," << v.z << ")";
-                        return output.str();
-                    };
-                    std::cerr
-                        << "[AssistedSafeStop]"
-                        << " request=" << pending.serial
-                        << " speed_mps=" << speedMps
-                        << " velocity_xyz_mps="
-                        << logVector(motion.localVelocityMps)
-                        << " main_a_xyz_mps2="
-                        << logVector(motion.mainEngineAccelerationMps2)
-                        << " assisted_a_xyz_mps2="
-                        << logVector(
-                            motion.assistedStabilizationAccelerationMps2)
-                        << " total_a_xyz_mps2="
-                        << logVector(motion.engineAccelerationMps2)
-                        << " align_mode="
-                        << static_cast<int>(
-                            stopControl.velocityAlignmentCommand)
-                        << " pitch=" << stopControl.pitchInput
-                        << " yaw=" << stopControl.yawInput
-                        << " roll=" << stopControl.rollInput
-                        << " forward=" << stopControl.forwardInput
-                        << " strafe=" << stopControl.strafeInput
-                        << " lift=" << stopControl.liftInput
-                        << std::endl;
-                }
+                submitAutopilotControl(manualStopControl());
 
                 if (speedMps <= 0.05 &&
                     angularSpeedRadPerSec <= 0.01)
@@ -2525,12 +2474,6 @@ void SpaceState::updateDockingAdvisory()
                         << " fallback=1"
                         << std::endl;
 
-                    if (m_dockingStatusWarning ==
-                            "autopilot-coupled-curve-unavailable")
-                    {
-                        fail("installed Assisted motors cannot jointly execute turn and stabilization");
-                        return;
-                    }
                     m_dockAssistedSafeRecovery = {};
                     m_clientDockingPhase =
                         ClientDockingPhase::Stabilizing;
@@ -3292,15 +3235,6 @@ void SpaceState::updateDockingAdvisory()
                     }
 
                     planningWhileSecuringCourse = true;
-
-                    // The safety executor is physically rotating the hull
-                    // onto this selected SAFE heading.  The concurrently
-                    // compiled first straight must use that same heading,
-                    // never the stale pre-selection hull snapshot.  The
-                    // worker may keep its stale start POSITION; late entry
-                    // already handles that, but direction is known now.
-                    request.initialForward =
-                        m_dockAssistedSafeRecovery.direction;
 
                     std::cerr
                         << "[AssistedSafeCourse]"
@@ -5056,142 +4990,6 @@ void SpaceState::updateDockingAdvisory()
                 return false;
             }
     
-            if (controlLaw ==
-                    game::navigation::LocalFlightControlLaw::Assisted)
-            {
-                // A zero look-ahead reserve on the FIRST STRAIGHT only
-                // means current longitudinal/yaw demand occupies the mixed
-                // motor basis. It is not proof that a turn 1 km ahead is
-                // impossible after those pilot commands settle. Keep the
-                // speed preview (which can demand slowing to zero), but
-                // invoke emergency STOP only at a curve being flown now.
-                if (output.routeCurvaturePerMeter > 1.0e-12 &&
-                    output.coupledCurveAccelerationMps2 >= 0.0 &&
-                    output.coupledCurveAccelerationMps2 <= 1.0e-4)
-                {
-                    std::cerr
-                        << "[DockAuthority]"
-                        << " request=" << pending.serial
-                        << " phase=coupled-curve-no-go"
-                        << " available_normal_a_mps2="
-                        << output.coupledCurveAccelerationMps2
-                        << " turn_distance_m="
-                        << output.distanceToTurnMeters
-                        << " actual_speed_mps="
-                        << glm::length(motion.localVelocityMps)
-                        << std::endl;
-                    releaseClientAutopilot();
-                    m_dockAssistedSafeRecovery = {};
-                    m_dockAssistedSafeRecovery.active = true;
-                    m_dockAssistedSafeRecovery.stopFallback = true;
-                    m_dockAssistedSafeRecovery.serial = pending.serial;
-                    m_clientDockingPhase =
-                        ClientDockingPhase::SecuringCourse;
-                    m_clientDockingSettledSinceServerSeconds = -1.0;
-                    m_dockingStatusWarning =
-                        "autopilot-coupled-curve-unavailable";
-                    submitAutopilotControl(manualStopControl());
-                    return false;
-                }
-                if (output.assistedRecoverySpeedLimited !=
-                        m_clientDockingRecoverySpeedLimited)
-                {
-                    std::cerr
-                        << "[DockAuthority]"
-                        << " request=" << pending.serial
-                        << " phase=recovery-speed-governor"
-                        << " active="
-                        << (output.assistedRecoverySpeedLimited ? 1 : 0)
-                        << " cap_mps="
-                        << output.assistedRecoverySpeedCeilingMps
-                        << " actual_speed_mps="
-                        << glm::length(motion.localVelocityMps)
-                        << " cross_track_m="
-                        << output.crossTrackErrorMeters
-                        << " closing_mps="
-                        << output.crossTrackClosingSpeedMps
-                        << std::endl;
-                    m_clientDockingRecoverySpeedLimited =
-                        output.assistedRecoverySpeedLimited;
-                }
-                if (output.assistedRecoverySpeedLimited)
-                {
-                    m_dockingStatusWarning =
-                        "autopilot-corridor-speed-recovery";
-                }
-                else if (m_dockingStatusWarning ==
-                         "autopilot-corridor-speed-recovery")
-                {
-                    m_dockingStatusWarning.clear();
-                }
-
-                const double tolerance =
-                    m_clientAssistedRouteAutopilot.
-                        trackingPositionToleranceMeters;
-                const auto deviation =
-                    game::navigation::autopilot::
-                        AssistedCorridorDeviationPolicy::evaluate(
-                            output.crossTrackErrorMeters,
-                            output.crossTrackClosingSpeedMps,
-                            tolerance,
-                            output.courseResponseSeconds,
-                            liveAssistedAuthority.valid
-                                ? game::navigation::assisted_budget::
-                                    reservedCurveLateralAccelerationMps2(
-                                        std::min({
-                                            liveAssistedAuthority.positive[0],
-                                            liveAssistedAuthority.negative[0],
-                                            liveAssistedAuthority.positive[1],
-                                            liveAssistedAuthority.negative[1]
-                                        })
-                                    )
-                                : 0.0
-                        );
-                if (deviation.requireSafeStop)
-                {
-                    // The signed-axis motor basis is measured, but a missing
-                    // engine may leave no simultaneously executable wrench
-                    // for route turn + acceleration + hull stabilization.
-                    // Do not let the virtual pilot keep accelerating along a
-                    // lost route. Stop via EXACTLY the ordinary Assisted
-                    // controls, never direct engine forces.
-                    std::cerr
-                        << "[DockAuthority]"
-                        << " request=" << pending.serial
-                        << " phase=corridor-lost-safe-stop"
-                        << " cross_track_m="
-                        << output.crossTrackErrorMeters
-                        << " tolerance_m=" << tolerance
-                        << " closing_mps="
-                        << output.crossTrackClosingSpeedMps
-                        << " actual_speed_mps="
-                        << glm::length(motion.localVelocityMps)
-                        << " requested_speed_mps="
-                        << output.targetSpeedMps
-                        << " installed_lateral_basis_mps2="
-                        << (liveAssistedAuthority.valid
-                            ? std::min({
-                                liveAssistedAuthority.positive[0],
-                                liveAssistedAuthority.negative[0],
-                                liveAssistedAuthority.positive[1],
-                                liveAssistedAuthority.negative[1]
-                            }) : 0.0)
-                        << std::endl;
-
-                    releaseClientAutopilot();
-                    m_dockAssistedSafeRecovery = {};
-                    m_dockAssistedSafeRecovery.active = true;
-                    m_dockAssistedSafeRecovery.stopFallback = true;
-                    m_dockAssistedSafeRecovery.serial = pending.serial;
-                    m_clientDockingPhase =
-                        ClientDockingPhase::SecuringCourse;
-                    m_clientDockingSettledSinceServerSeconds = -1.0;
-                    m_dockingStatusWarning = "autopilot-corridor-loss";
-                    submitAutopilotControl(manualStopControl());
-                    return false;
-                }
-            }
-
             if (output.complete)
             {
                 releaseClientAutopilot();
@@ -5280,12 +5078,6 @@ void SpaceState::updateDockingAdvisory()
                         << output.requiredTerminalStopDistanceMeters
                         << " terminal_brake="
                         << (output.terminalBrakeActive ? 1 : 0)
-                        << " recovery_speed_limited="
-                        << (output.assistedRecoverySpeedLimited ? 1 : 0)
-                        << " recovery_speed_ceiling_mps="
-                        << output.assistedRecoverySpeedCeilingMps
-                        << " coupled_curve_a_mps2="
-                        << output.coupledCurveAccelerationMps2
                         << " turn_vmax_mps="
                         << output.turnSpeedCeilingMps
                         << " turn_distance_m="
@@ -5384,8 +5176,7 @@ void SpaceState::updateDockingAdvisory()
                     makeAgent(),
                     effectivePhysics,
                     universeTimeSeconds,
-                    fixedDt,
-                    &liveAssistedAuthority
+                    fixedDt
                 );
             if (!handleOutput(output))
                 return;
@@ -7820,35 +7611,11 @@ m_systemMapRenderer.render(
             else if (terminal.error.empty() &&
                      !m_dockingStatusWarning.empty())
             {
-                if (m_dockingStatusWarning ==
-                        "awaiting authoritative motor telemetry")
-                {
-                    terminal.error = terminalText(
-                        "cockpit.terminal.warning_authority");
-                }
-                else if (m_dockingStatusWarning ==
-                             "autopilot-corridor-loss")
-                {
-                    terminal.error = terminalText(
-                        "cockpit.terminal.warning_corridor_lost");
-                }
-                else if (m_dockingStatusWarning ==
-                             "autopilot-corridor-speed-recovery")
-                {
-                    terminal.error = terminalText(
-                        "cockpit.terminal.warning_corridor_speed_recovery");
-                }
-                else if (m_dockingStatusWarning ==
-                             "autopilot-coupled-curve-unavailable")
-                {
-                    terminal.error = terminalText(
-                        "cockpit.terminal.warning_coupled_curve_unavailable");
-                }
-                else
-                {
-                    terminal.error = terminalText(
-                        "cockpit.terminal.failure_generic");
-                }
+                terminal.error =
+                    m_dockingStatusWarning ==
+                        "awaiting authoritative motor telemetry"
+                        ? terminalText("cockpit.terminal.warning_authority")
+                        : terminalText("cockpit.terminal.failure_generic");
             }
 
             const auto terminalOutput =

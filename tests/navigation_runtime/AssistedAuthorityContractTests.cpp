@@ -1,10 +1,6 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
-#include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
-#include "src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h"
-#include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
-#include "src/game/ship/telemetry/AssistedCoupledAcceleration.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -49,49 +45,6 @@ Telemetry healthyAuthority()
     t.positive = {40.0, 40.0, 60.0, 3.0, 3.0, 3.0};
     t.negative = {40.0, 40.0, 60.0, 3.0, 3.0, 3.0};
     return t;
-}
-
-void testCoupledEngineAuthorityRejectsIndependentAxisFantasy()
-{
-    using namespace game::ship::telemetry;
-    AssistedCoupledMotorAuthority motor;
-    motor.valid=true;
-    motor.motorCount=1;
-    motor.available01[0]=1.0f;
-    motor.achievable[0]=1.0;
-    motor.achievable[8]=1.0;
-    motor.fractions[0][1]=1.0f; // +X on the only motor
-    motor.fractions[8][2]=1.0f; // +yaw on that SAME motor
-
-    std::array<double,6> forceOnly {0.8,0.,0.,0.,0.,0.};
-    std::array<double,6> yawOnly {0.,0.,0.,0.,0.8,0.};
-    std::array<double,6> together {0.8,0.,0.,0.,0.8,0.};
-    require(assistedCombinedDemandFeasible(motor,forceOnly),
-            "standalone lateral demand falsely rejected");
-    require(assistedCombinedDemandFeasible(motor,yawOnly),
-            "standalone angular demand falsely rejected");
-    require(!assistedCombinedDemandFeasible(motor,together),
-            "individual axis limits falsely admitted combined motor overload");
-
-    ShipControlAuthorityTelemetry physical;
-    physical.valid=true;
-    physical.positive[0]=1.0;
-    physical.negative[0]=1.0;
-    const glm::dvec3 lateral(1.0,0.0,0.0);
-    const std::array<double,6> quiet {};
-    const double withoutYaw=
-        maximumAssistedCurveNormalAccelerationMps2(
-            motor,physical,lateral,quiet);
-    const double withYaw=
-        maximumAssistedCurveNormalAccelerationMps2(
-            motor,physical,lateral,yawOnly);
-    require(withoutYaw>0.999 && withoutYaw<=1.001,
-            "quiet motor must support physical full lateral demand");
-    require(withYaw>0.59 && withYaw<0.61,
-            "angular motor load did not reduce attainable curve acceleration");
-    require(maximumAssistedCurveNormalAccelerationMps2(
-            motor,physical,lateral,together)==0.0,
-            "overcommitted hull torque was accepted as curve authority");
 }
 
 void testNoUndamagedDescriptorFallbackAfterMotorLoss()
@@ -165,158 +118,6 @@ void testCombinedMotorBudgetBoundsTangentSpeed()
         "destroyed lateral authority still allowed positive curve speed");
 }
 
-void testAssistedLostCorridorSafeStop()
-{
-    using Policy =
-        game::navigation::autopilot::AssistedCorridorDeviationPolicy;
-    // An isolated drift of 2m/s at half tolerance is recoverable with the
-    // actual installed lateral basis. Do not abandon the route needlessly.
-    require(!Policy::evaluate(8.3, -1.0, 64.0, 2.0, 18.0).requireSafeStop,
-            "healthy aft-50 centering aborted");
-    require(!Policy::evaluate(31.9, -10.0, 64.0, 1.0, 18.0).requireSafeStop,
-            "sufficient room for recovery incorrectly rejected");
-    require(!Policy::evaluate(33.3425, -4.63167, 64.0, 1.8, 18.0)
-                 .requireSafeStop,
-            "engine-out trace at 33m should be speed-governed, not STOP");
-    require(!Policy::evaluate(40.9567, -8.57893, 64.0, 2.0, 18.0)
-                 .requireSafeStop,
-            "recoverable outward drift was interrupted without prediction");
-    require(!Policy::evaluate(8.71636, -11.1469, 64.0, 3.21281, 18.0)
-                 .requireSafeStop,
-            "real 2026-10-20 flight aborted at only 8.7m of 64m");
-    require(!Policy::evaluate(55.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
-            "predicted loss incorrectly replaced speed recovery with STOP");
-    require(Policy::evaluate(64.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
-            "actual corridor boundary did not trigger safe STOP");
-    require(Policy::evaluate(70.0, +12.0, 64.0, 2.0, 18.0)
-                 .requireSafeStop,
-            "exceeded validated corridor continued");
-    require(Policy::evaluate(std::nan(""), 0.0, 64.0, 2.0, 18.0)
-                 .requireSafeStop,
-            "nonfinite tracking observation permitted cruise");
-}
-
-void testAssistedSpeedGovernorForRealEngineOutStraight()
-{
-    using Governor =
-        game::navigation::autopilot::AssistedCorridorSpeedGovernor;
-    Governor::State state;
-    const double tolerance = 64.0;
-    const double forwardAuthority = 50.0;
-    const double dt = 0.02;
-
-    // Within the known healthy/aft-50 range there is NO change of speed.
-    auto healthy = Governor::evaluate(
-        state, 8.3, -1.0, tolerance, 180.0, 400.0,
-        forwardAuthority, dt
-    );
-    require(healthy.valid && !healthy.recoveryActive,
-            "baseline Assisted cruising was altered");
-
-    // Full loss trace diverged while the route was still a STRAIGHT, long
-    // before any turn. Start reducing speed at 25% corridor occupancy.
-    auto recovery = Governor::evaluate(
-        state, 19.0848, -2.47967, tolerance, 121.448, 141.842,
-        forwardAuthority, dt
-    );
-    require(recovery.valid && recovery.recoveryActive &&
-            recovery.speedCeilingMps < 121.448,
-            "failed engine did not decelerate on the initial straight");
-    const double initialCap = recovery.speedCeilingMps;
-
-    // Continued outward drift cannot re-authorize a fast cruising target.
-    recovery = Governor::evaluate(
-        state, 23.5164, -3.40039, tolerance, 115.0, 163.024,
-        forwardAuthority, dt
-    );
-    require(recovery.recoveryActive &&
-            recovery.speedCeilingMps <= initialCap,
-            "velocity governor accelerated during growing drift");
-
-    // While trajectory is moving inward, restore acceleration slowly and
-    // in physical units; never jump straight to the nominal 400m/s.
-    const double previousCap = recovery.speedCeilingMps;
-    recovery = Governor::evaluate(
-        state, 20.0, +3.0, tolerance, 95.0, 300.0,
-        forwardAuthority, dt
-    );
-    require(recovery.recoveryActive &&
-            recovery.speedCeilingMps > previousCap &&
-            recovery.speedCeilingMps <=
-                previousCap + forwardAuthority * 0.20 * dt + 1.e-9,
-            "recovery reacceleration ignored physical slew limit");
-
-    // Once the capped trajectory is genuinely stable, the governor may
-    // rejoin the already accepted speed profile.
-    for (int i = 0; i < 1500 && recovery.recoveryActive; ++i)
-        recovery = Governor::evaluate(
-            state, 5.0, +0.5, tolerance, 150.0, 300.0,
-            forwardAuthority, 0.1
-        );
-    require(!recovery.recoveryActive,
-            "recovered Assisted corridor never released governor");
-
-    auto invalid = Governor::evaluate(
-        state, std::nan(""), 0.0, tolerance, 80.0, 400.0,
-        forwardAuthority, dt
-    );
-    require(!invalid.valid,
-            "invalid speed-governor input was accepted");
-}
-
-void testAssistedCourseResponseMeasuresVelocityNotHullNose()
-{
-    using game::navigation::autopilot::AssistedAutopilot;
-    using game::navigation::autopilot::AutopilotControlRequest;
-    const ShipParams parameters = nominal();
-    AutopilotControlRequest request;
-    request.deltaSeconds = 0.05;
-    request.desiredVelocityMapMps = {0.0, 0.0, -100.0};
-    request.actualVelocityMapMps = {0.0, 0.0, -100.0};
-    request.desiredForwardMap = {0.0, 0.0, -1.0};
-    request.desiredUpMap = {0.0, 1.0, 0.0};
-    request.upMap = request.desiredUpMap;
-
-    AssistedAutopilot pilot;
-    // A damaged ship can move its NOSE through 80 degrees while its actual
-    // velocity is stationary. Previous code interpreted the shrinking
-    // nose/velocity gap as a very fast turn of the velocity vector.
-    for (int i = 0; i <= 80; ++i)
-    {
-        const double angle = 1.4 * (1.0 - i / 80.0);
-        request.forwardMap = {
-            std::sin(angle), 0.0, -std::cos(angle)
-        };
-        request.rightMap = {
-            std::cos(angle), 0.0, std::sin(angle)
-        };
-        (void)pilot.update(request, parameters);
-    }
-    require(
-        std::abs(pilot.telemetry(parameters).courseResponseSeconds - 2.0) <
-            1.0e-6,
-        "fast hull nose rotation falsely improved measured course response"
-    );
-
-    // A growing VELOCITY-to-target error is a real failure to turn the
-    // trajectory; it must lengthen rather than shorten reaction estimate.
-    AssistedAutopilot diverging;
-    request.forwardMap = {0.0, 0.0, -1.0};
-    request.rightMap = {1.0, 0.0, 0.0};
-    for (int i = 0; i <= 50; ++i)
-    {
-        const double angle = 0.08 + i * 0.004;
-        request.actualVelocityMapMps = {
-            100.0 * std::sin(angle),
-            0.0,
-            -100.0 * std::cos(angle)
-        };
-        (void)diverging.update(request, parameters);
-    }
-    require(diverging.telemetry(parameters).courseResponseSeconds > 2.5,
-            "increasing route-course error was mistaken for fast response");
-}
-
 void testActualHealthyCobraMotorBasis()
 {
     using namespace game::ship::plant;
@@ -356,9 +157,8 @@ void testActualHealthyCobraMotorBasis()
     programs.build(model, installed, ship);
     const auto telemetry =
         game::ship::telemetry::readAssistedControlAuthority(programs, 1u);
-    require(telemetry.valid && telemetry.coupled.valid &&
-            telemetry.coupled.motorCount == 4,
-            "actual installed Cobra failed to publish coupled motor basis");
+    require(telemetry.valid,
+            "actual installed healthy Cobra motor basis did not build");
     for (std::size_t axis : {std::size_t{0}, std::size_t{1},
                              std::size_t{2}, std::size_t{3},
                              std::size_t{4}})
@@ -373,21 +173,9 @@ void testActualHealthyCobraMotorBasis()
     programs.build(model, installed, ship);
     const auto damaged =
         game::ship::telemetry::readAssistedControlAuthority(programs, 2u);
-    require(damaged.valid && damaged.coupled.valid &&
-            damaged.coupled.available01[0] <= 1.0e-6f &&
+    require(damaged.valid &&
             damaged.negative[2] < telemetry.negative[2],
-            "destroyed aft motor leaked into joint control capability");
-    const std::array<double,6> noOtherDemand {};
-    const double physicalCurveAcceleration =
-        game::ship::telemetry::
-            maximumAssistedCurveNormalAccelerationMps2(
-                damaged.coupled,damaged,
-                glm::dvec3(1.0,0.0,0.0),noOtherDemand
-            );
-    require(std::isfinite(physicalCurveAcceleration) &&
-            physicalCurveAcceleration>=0.0 &&
-            physicalCurveAcceleration <= damaged.positive[0]+1.0e-5,
-            "joint lateral capacity exceeded installed damaged motor basis");
+            "destroyed aft motor failed to reduce physical forward authority");
 }
 
 void testAbsentReplicatedEngineDataCannotInventAuthority()
@@ -414,14 +202,10 @@ int main()
 {
     try
     {
-        testCoupledEngineAuthorityRejectsIndependentAxisFantasy();
         testNoUndamagedDescriptorFallbackAfterMotorLoss();
         testSignedDamageCannotBeHiddenByHealthyOppositeAxis();
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
-        testAssistedLostCorridorSafeStop();
-        testAssistedSpeedGovernorForRealEngineOutStraight();
-        testAssistedCourseResponseMeasuresVelocityNotHullNose();
         testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";

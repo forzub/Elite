@@ -21,10 +21,6 @@
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipDynamics.h"
-#include "src/game/ship/debug/DamagedEnginePreset.h"
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include "src/world/coordinates/WorldPosition.h"
 
 
@@ -160,107 +156,6 @@ m_simulation.setCelestialBodyKinematicStateAu(
             throw std::runtime_error(
                 "validated player_start reference frame could not be resolved"
             );
-        }
-
-        // EXPLICIT DIAGNOSTIC: one damaged INSTALLED engine in the
-        // authoritative simulated ship, before snapshots, pilot admission
-        // and route planning. This is not a client-only capability override.
-        // Without the environment variable, the ordinary ship is untouched.
-        if (const char* raw =
-                std::getenv("ELITE_SHIP_DAMAGE_PRESET"))
-        {
-            if (*raw)
-            {
-                using namespace game::ship::debug;
-                const auto preset = parseDamagedEnginePreset(raw);
-                bool applied = false;
-                std::string engineId;
-                std::string outcome;
-                if (preset == DamagedEnginePreset::None)
-                {
-                    outcome = "unknown preset (expected aft-50, aft-80, aft-failed)";
-                }
-                else if (const char* overrideModel =
-                             std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
-                         overrideModel && *overrideModel)
-                {
-                    // Synthetic diagnostic model actuators are not the same
-                    // installed engine instances. Never claim a real-engine
-                    // damage test is valid under this construction override.
-                    outcome = "conflicting synthetic physical test model";
-                }
-                else if (Ship* ship =
-                             m_simulation.getShip(m_simulation.playerId()))
-                {
-                    const auto& desc = ship->core().descriptor();
-                    const std::size_t slot =
-                        firstAftMainSlot(desc.physicalControlModel);
-                    const auto& bindings =
-                        desc.physicalControl.slotModuleIds;
-                    if (slot >= bindings.size())
-                    {
-                        outcome = "aft-main slot has no installed module binding";
-                    }
-                    else
-                    {
-                        engineId = bindings[slot];
-                        const auto def = std::find_if(
-                            desc.modules.begin(), desc.modules.end(),
-                            [&engineId](const auto& module)
-                            {
-                                return module.moduleId == engineId;
-                            });
-                        const auto* installed =
-                            static_cast<const world::modules::ObjectModuleRuntime&>(
-                                ship->core().moduleRuntime()
-                            ).findModule(engineId);
-                        if (def == desc.modules.end() ||
-                            !def->engine || !installed)
-                        {
-                            outcome = "physical aft engine module not found";
-                        }
-                        else
-                        {
-                            applied =
-                                ship->core().moduleRuntime().addEquipmentDamage(
-                                    engineId,
-                                    game::equipment::EquipmentDamageKind::Impact,
-                                    engineDamageForPreset(preset)
-                                );
-                            outcome = applied
-                                ? "applied before planning"
-                                : "installed engine did not accept damage";
-                        }
-                    }
-                }
-                else
-                {
-                    outcome = "primary player ship absent";
-                }
-
-                const std::string report =
-                    std::string("[ShipDamagePreset] preset=") +
-                    raw +
-                    " status=" + (applied ? "APPLIED" : "FAILED") +
-                    " module=" + engineId +
-                    " impact_damage=" +
-                    std::to_string(engineDamageForPreset(preset)) +
-                    " detail=" + outcome;
-                std::cerr << report << '\n';
-
-#ifdef _WIN32
-                // Only the explicit diagnostic writes additional files.
-                // Never create output in source/build folders.
-                std::error_code logError;
-                std::filesystem::create_directories(
-                    "D:/tmp", logError);
-                std::ofstream log(
-                    "D:/tmp/elite_engine_damage_preset.log",
-                    std::ios::app);
-                if (log)
-                    log << report << '\n';
-#endif
-            }
         }
 
         std::vector<EntityId> bootstrapPlayerEntities;

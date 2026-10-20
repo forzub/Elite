@@ -21,8 +21,6 @@
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
-#include "src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h"
-#include "src/game/ship/telemetry/AssistedCoupledAcceleration.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
@@ -53,10 +51,6 @@ struct AutopilotAgentState
     glm::dvec3 forwardMap {0.0, 0.0, -1.0};
     glm::dvec3 rightMap {1.0, 0.0, 0.0};
     glm::dvec3 upMap {0.0, 1.0, 0.0};
-    // The authoritative execution result and the current motor torque
-    // request, never the planner's desired acceleration.
-    glm::dvec3 installedAccelerationMapMps2 {0.0};
-    glm::dvec3 requestedAngularAccelerationBodyRadPerSec2 {0.0};
     double pitchRateRadPerSec = 0.0;
     double yawRateRadPerSec = 0.0;
     double rollRateRadPerSec = 0.0;
@@ -93,8 +87,6 @@ public:
         std::uint64_t speedProfileRevision = 0;
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
-        AssistedCorridorSpeedGovernor::State
-            assistedCorridorSpeedGovernor {};
 
         // Authoritative spatial geometry. Accepted maneuver samples still own
         // timing/speed/attitude feed-forward, but they no longer define the
@@ -129,8 +121,6 @@ public:
         double targetLongitudinalAccelerationMps2 = 0.0;
         double crossTrackClosingSpeedMps = 0.0;
         double crossTrackCaptureSpeedMps = 0.0;
-        bool assistedRecoverySpeedLimited = false;
-        double assistedRecoverySpeedCeilingMps = 0.0;
         // Authoritative navigation-direction error. While moving this is
         // angle(actual velocity direction, desired route course).
         double forwardErrorRad = 0.0;
@@ -154,7 +144,6 @@ public:
         double effectiveBrakingAuthorityMps2 = 0.0;
         double requiredTerminalStopDistanceMeters = 0.0;
         double turnSpeedCeilingMps = 0.0;
-        double coupledCurveAccelerationMps2 = -1.0;
         double distanceToTurnMeters = 0.0;
         double requiredTurnSlowdownDistanceMeters = 0.0;
         double turnSpeedSetpointSlewSeconds = 0.0;
@@ -366,9 +355,7 @@ public:
         const AutopilotAgentState& agent,
         const ShipParams& params,
         double universeTimeSeconds,
-        double deltaSeconds,
-        const game::ship::telemetry::ShipControlAuthorityTelemetry*
-            installedMotors = nullptr
+        double deltaSeconds
     ) noexcept
     {
         constexpr LocalFlightControlLaw law = Law;
@@ -541,7 +528,6 @@ public:
             game::ship::maximumAngularSpeedRadPerSec(params);
 
         double turnSpeedCeilingMps = 0.0;
-        double coupledCurveAccelerationMps2 = -1.0;
         double distanceToTurnMeters = 0.0;
         double requiredTurnSlowdownDistanceMeters = 0.0;
         double turnSpeedSetpointSlewSeconds = 0.0;
@@ -713,61 +699,6 @@ public:
                         );
                 turnSpeedCeilingMps =
                     std::min(turnSpeedCeilingMps, physicalCurveSpeed);
-
-                if (installedMotors && installedMotors->valid)
-                {
-                    // Planner speed is merely a suggestion. The runtime
-                    // ceiling must fit the very same physical motor basis
-                    // that the server executor actually mixes.
-                    const glm::dvec3 tangent = normalizedOr(
-                        speedGuide.tangentMap, nominalForward);
-                    const glm::dvec3 normal = normalizedOr(
-                        glm::cross(
-                            speedGuide.turnNormalMap, tangent),
-                        glm::dvec3(0.0)
-                    );
-                    const glm::dvec3 bodyNormal(
-                        glm::dot(normal, agent.rightMap),
-                        glm::dot(normal, agent.upMap),
-                        -glm::dot(normal, agent.forwardMap)
-                    );
-                    // Reserve the executed longitudinal demand AND the
-                    // current actual hull angular demand. Existing normal
-                    // acceleration is not reserved twice: it is the variable
-                    // whose available authority is being calculated.
-                    const double axialDemand =
-                        glm::dot(
-                            agent.installedAccelerationMapMps2,
-                            tangent);
-                    const glm::dvec3 axialBody(
-                        glm::dot(tangent, agent.rightMap),
-                        glm::dot(tangent, agent.upMap),
-                        -glm::dot(tangent, agent.forwardMap)
-                    );
-                    const glm::dvec3 longitudinalBody =
-                        axialBody * axialDemand;
-                    const auto& angular =
-                        agent.requestedAngularAccelerationBodyRadPerSec2;
-                    const std::array<double,6> concurrent {
-                        longitudinalBody.x, longitudinalBody.y,
-                        longitudinalBody.z,
-                        angular.x, angular.y, angular.z
-                    };
-                    coupledCurveAccelerationMps2 =
-                        game::ship::telemetry::
-                            maximumAssistedCurveNormalAccelerationMps2(
-                                installedMotors->coupled,
-                                *installedMotors,
-                                bodyNormal,
-                                concurrent
-                            );
-                    const double jointSpeed =
-                        std::sqrt(
-                            std::max(0.0,
-                                coupledCurveAccelerationMps2) / kappa);
-                    turnSpeedCeilingMps =
-                        std::min(turnSpeedCeilingMps, jointSpeed);
-                }
             }
             if (speedGuide.maxSpeedMps > 0.0)
                 turnSpeedCeilingMps =
@@ -899,50 +830,6 @@ public:
                 turnSpeedCeilingMps * smoothOccupancy;
             targetSpeed =
                 std::min(targetSpeed, recoveryCeiling);
-        }
-
-        // Unlike geometric turn speed, this must also handle a damaged
-        // craft's inability to hold a STRAIGHT. The old turn-speed-only
-        // limiter ignored divergence on the first straight, continued to
-        // accelerate, then forced an abrupt emergency STOP at 32m offset.
-        bool recoverySpeedLimited = false;
-        double recoverySpeedCeilingMps =
-            std::numeric_limits<double>::infinity();
-        if constexpr (Law == LocalFlightControlLaw::Assisted)
-        {
-            const glm::dvec3 crossVelocity =
-                agent.velocityMapMetersPerSecond -
-                referenceTangent *
-                    glm::dot(
-                        agent.velocityMapMetersPerSecond,
-                        referenceTangent
-                    );
-            const double closingSpeed =
-                crossTrackErrorMeters > 1.0e-9
-                    ? glm::dot(
-                        crossVelocity,
-                        -crossPositionError / crossTrackErrorMeters
-                    )
-                    : 0.0;
-            const auto recovery =
-                AssistedCorridorSpeedGovernor::evaluate(
-                    state.assistedCorridorSpeedGovernor,
-                    crossTrackErrorMeters,
-                    closingSpeed,
-                    corridorToleranceMeters,
-                    actualSpeed,
-                    targetSpeed,
-                    executionAuthority.forwardAccelerationMps2,
-                    deltaSeconds
-                );
-            if (!recovery.valid)
-                return out;
-            recoverySpeedLimited = recovery.recoveryActive;
-            recoverySpeedCeilingMps = recovery.speedCeilingMps;
-            if (recoverySpeedLimited)
-                targetSpeed = std::min(
-                    targetSpeed, recoverySpeedCeilingMps
-                );
         }
 
         // VELOCITY-COURSE CONTRACT.
@@ -1324,19 +1211,6 @@ public:
                 ? tracking.intent.idealLinearAccelerationLocalMps2
                 : continuous.reference.
                     linearAccelerationFeedForwardMapMps2;
-        if constexpr (Law == LocalFlightControlLaw::Assisted)
-        {
-            if (recoverySpeedLimited)
-            {
-                // The accepted spatial acceleration feed-forward is for
-                // nominal speed. It must not cancel the reduction in speed
-                // requested by the live damaged-craft recovery governor.
-                // No hidden actuator: ordinary Assisted scalar speed input
-                // remains the only authority to decelerate.
-                request.desiredLinearAccelerationMapMps2 =
-                    glm::dvec3(0.0);
-            }
-        }
 
         glm::dvec3 routeAngularRateMap(0.0);
         if (curvatureGuide.valid &&
@@ -1554,17 +1428,11 @@ public:
                     continuous.spatialProgressMeters
             );
         out.targetSpeedMps = targetSpeed;
-        out.assistedRecoverySpeedLimited =
-            recoverySpeedLimited;
-        out.assistedRecoverySpeedCeilingMps =
-            recoverySpeedLimited ? recoverySpeedCeilingMps : 0.0;
         out.targetLongitudinalAccelerationMps2 =
-            recoverySpeedLimited
-                ? 0.0
-                : glm::dot(
-                      continuous.reference.linearAccelerationFeedForwardMapMps2,
-                      referenceTangent
-                  );
+            glm::dot(
+                continuous.reference.linearAccelerationFeedForwardMapMps2,
+                referenceTangent
+            );
         const glm::dvec3 actualCrossVelocity =
             agent.velocityMapMetersPerSecond -
             referenceTangent *
@@ -1648,8 +1516,6 @@ public:
         out.requiredTerminalStopDistanceMeters =
             requiredTerminalStopDistanceMeters;
         out.turnSpeedCeilingMps = turnSpeedCeilingMps;
-        out.coupledCurveAccelerationMps2 =
-            coupledCurveAccelerationMps2;
         out.distanceToTurnMeters = distanceToTurnMeters;
         out.requiredTurnSlowdownDistanceMeters =
             requiredTurnSlowdownDistanceMeters;

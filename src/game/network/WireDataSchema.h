@@ -642,17 +642,6 @@ ELITE_WIRE_SCHEMA(
     v.pendingCommandCount
 );
 
-// The coupled basis is published from the same installed motor patterns
-// used by the authoritative Assisted executor, not rebuilt by navigation.
-ELITE_WIRE_SCHEMA(
-    game::ship::telemetry::AssistedCoupledMotorAuthority,
-    v.valid,
-    v.motorCount,
-    v.available01,
-    v.achievable,
-    v.fractions
-);
-
 // Signed motor-basis limits are authoritative server data, not HUD guesses.
 ELITE_WIRE_SCHEMA(
     game::ship::telemetry::ShipControlAuthorityTelemetry,
@@ -660,8 +649,7 @@ ELITE_WIRE_SCHEMA(
     v.model,
     v.sourceActuatorRevision,
     v.positive,
-    v.negative,
-    v.coupled
+    v.negative
 );
 
 ELITE_WIRE_SCHEMA(

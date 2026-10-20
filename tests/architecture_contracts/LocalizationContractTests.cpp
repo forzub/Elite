@@ -37,6 +37,10 @@ int main()
            "English locale direction must be LTR");
     expect(localization.localeScript() == "Latn",
            "English locale script metadata must be Latin");
+    expect(
+        localization.text("cockpit.terminal.preset.extreme", "BAD") == "EXTREME",
+        "English terminal must translate Extreme preset"
+    );
     expect(localization.text("main.new_local_game", "BAD") == "NEW LOCAL GAME",
            "English UI lookup changed");
     expect(localization.catalogName("systems", "0", "BAD") == "Sol",
@@ -52,6 +56,35 @@ int main()
     expect(localization.catalogName("systems", "0", "BAD") == "Солнечная система",
            "Russian system catalog lookup changed");
 
+    // Cockpit terminal text and experiment presets must use the SAME global
+    // locale as all other native UI, including numeric-format templates.
+    const std::string terminalKeys[] = {
+        "cockpit.terminal.preset.standard",
+        "cockpit.terminal.preset.extreme",
+        "cockpit.terminal.preset_line",
+        "cockpit.terminal.metric.planning",
+        "cockpit.terminal.metric.elapsed",
+        "cockpit.terminal.metric.limits",
+        "cockpit.terminal.metric.route",
+        "cockpit.terminal.metric.solve",
+        "cockpit.terminal.metric.eta",
+        "cockpit.terminal.metric.evaluations",
+        "cockpit.terminal.ship",
+        "cockpit.terminal.actuators",
+        "cockpit.terminal.bite.failed",
+        "cockpit.terminal.bite.inoperative",
+        "cockpit.terminal.bite.fault",
+        "cockpit.terminal.failure_generic"
+    };
+    for (const std::string& key : terminalKeys)
+        expect(localization.text(key, "<missing>") != "<missing>",
+               "Russian docking terminal localization key missing");
+    expect(
+        localization.text("cockpit.terminal.preset.extreme", "BAD") ==
+            "ЭКСТРИМ",
+        "Russian terminal must translate Extreme preset"
+    );
+
     expect(localization.setLocale("zh-Hans"), "Chinese locale must be selectable");
     expect(localization.text("main.exit", "BAD") == "退出",
            "Chinese UI lookup changed");
@@ -66,7 +99,22 @@ int main()
     expect(localization.text("cockpit.mode.newtonian", "BAD") == "牛顿模式",
            "native cockpit-service UI lookup changed");
 
+    expect(
+        localization.text("cockpit.terminal.preset.standard", "BAD") == "标准",
+        "Chinese terminal must translate Standard preset"
+    );
+
+    expect(localization.setLocale("es"), "Spanish locale must be selectable");
+    expect(
+        localization.text("cockpit.terminal.preset.extreme", "BAD") == "EXTREMO",
+        "Spanish terminal must translate Extreme preset"
+    );
+
     expect(localization.setLocale("ja"), "Japanese locale must be selectable");
+    expect(
+        localization.text("cockpit.terminal.preset.standard", "BAD") == "標準",
+        "Japanese terminal must translate Standard preset"
+    );
     expect(localization.localeDirection() == "ltr" && localization.localeScript() == "Jpan",
            "Japanese locale metadata must reach the native localization service");
     expect(localization.catalogName("systems", "3", "BAD") == "Wolf 359",

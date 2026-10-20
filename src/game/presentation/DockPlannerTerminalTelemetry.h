@@ -62,6 +62,44 @@ public:
     using Plan = game::navigation::planner::RoutePlan;
     using Lookup = TerminalLocalizedText::Lookup;
 
+    // Map internal diagnostic reasons to localized operator categories.
+    // The original full technical string remains in the existing log.
+    [[nodiscard]] static std::string failure(
+        const Lookup& lookup,
+        const std::string& technicalReason
+    )
+    {
+        const auto has = [&technicalReason](const char* token)
+        {
+            return technicalReason.find(token) != std::string::npos;
+        };
+        const char* key = "cockpit.terminal.failure_generic";
+        if (has("hull does not fit") || has("dock unavailable"))
+            key = "cockpit.terminal.failure_dock";
+        else if (has("motor telemetry") || has("motor authority"))
+            key = "cockpit.terminal.failure_telemetry";
+        else if (has("motors cannot") || has("motors degraded") ||
+                 has("propulsion"))
+            key = "cockpit.terminal.failure_propulsion";
+        else if (has("KeepInside") || has("blue lane") ||
+                 has("blue transit") || has("BLUE"))
+            key = "cockpit.terminal.failure_blue";
+        else if (has("traffic graph") || has("navigation volume"))
+            key = "cockpit.terminal.failure_traffic";
+        else if (has("handoff") || has("connector"))
+            key = "cockpit.terminal.failure_handoff";
+        else if (has("safe-course"))
+            key = "cockpit.terminal.failure_safety";
+        else if (has("snapshot") || has("authoritative ship state") ||
+                 has("target Hub frame"))
+            key = "cockpit.terminal.failure_snapshot";
+        else if (has("dock local pose") || has("dock state"))
+            key = "cockpit.terminal.failure_port";
+        else if (has("planner") || has("route") || has("planning"))
+            key = "cockpit.terminal.failure_route";
+        return lookup(key);
+    }
+
     [[nodiscard]] static const char* stageKey(std::uint8_t stage) noexcept
     {
         switch (stage)

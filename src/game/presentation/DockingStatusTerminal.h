@@ -20,6 +20,8 @@ enum class DockingTerminalSeverity
 struct DockingTerminalSnapshot
 {
     bool visible = false;
+    // Language switches invalidate rendered history, but not ship diagnostics.
+    std::string localeId;
     std::string title;
     std::string phase;
     std::string planner;
@@ -74,6 +76,11 @@ public:
     )
     {
         Output out;
+
+        // Do not retain or type out old-language messages when UI locale
+        // changes. The next snapshot rebuilds visible lines in the new locale.
+        if (m_initialized && snapshot.localeId != m_last.localeId)
+            reset();
 
         // Visibility is a renderer concern. Keep history/state while hidden so
         // model-family/layout changes and planner activity continue as one

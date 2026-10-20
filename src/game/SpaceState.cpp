@@ -5002,7 +5002,19 @@ void SpaceState::updateDockingAdvisory()
                         AssistedCorridorDeviationPolicy::evaluate(
                             output.crossTrackErrorMeters,
                             output.crossTrackClosingSpeedMps,
-                            tolerance
+                            tolerance,
+                            output.courseResponseSeconds,
+                            liveAssistedAuthority.valid
+                                ? game::navigation::assisted_budget::
+                                    reservedCurveLateralAccelerationMps2(
+                                        std::min({
+                                            liveAssistedAuthority.positive[0],
+                                            liveAssistedAuthority.negative[0],
+                                            liveAssistedAuthority.positive[1],
+                                            liveAssistedAuthority.negative[1]
+                                        })
+                                    )
+                                : 0.0
                         );
                 if (deviation.requireSafeStop)
                 {
@@ -5137,6 +5149,10 @@ void SpaceState::updateDockingAdvisory()
                         << output.requiredTerminalStopDistanceMeters
                         << " terminal_brake="
                         << (output.terminalBrakeActive ? 1 : 0)
+                        << " recovery_speed_limited="
+                        << (output.assistedRecoverySpeedLimited ? 1 : 0)
+                        << " recovery_speed_ceiling_mps="
+                        << output.assistedRecoverySpeedCeilingMps
                         << " turn_vmax_mps="
                         << output.turnSpeedCeilingMps
                         << " turn_distance_m="

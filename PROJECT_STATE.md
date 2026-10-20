@@ -1,3 +1,35 @@
+## 2026-10-20 — ASSISTED ROUTE STANDARD/EXTREME EXPERIMENT + REAL DOCK TERMINAL TELEMETRY (SOURCE COMMITTED; NATIVE BUILD PENDING)
+
+**User intent:** Keep the existing Assisted planner unchanged in standard production. Make one opt-in `Extreme` experiment removing cinematic/visual minimum turn radius and comfort preferences to measure how much route geometry/time depend on visual corridor design. Never bypass real ship capability, hull/obstacle collision, mandatory BLUE transit or authored 700m entry/150m exit. Also replace decorative random-looking CALC hex numbers in the cockpit docking terminal with actual calculation parameters/results.
+
+**Implementation committed on the sole active `main` branch:**
+- `src/game/navigation/planner/RoutePlannerApi.h`: explicit `AssistedRoutePreset::{Standard,Extreme}`, default Standard; passed by value across the existing Assisted-only pipeline and segmented free legs. Newtonian planning receives no new logic.
+- `RoutePlanner.cpp::planContinuousAssisted`: Standard keeps the SAME `requiredGuidanceTunnelRadiusMeters(500m gate, hull length)` floor (~955m) and SAME original objective weights. Extreme sets `minimumComfortRadiusMeters=0` and zeroes the SOFT reserve/comfort/curvature/angular smoothness penalties, retaining travel-time and path-length objectives and ALL hard constraints in the unchanged `ContinuousAssistedPathOptimizer::evaluate`. This is an experiment; Extreme may yield ugly/unreadable tight tunnel curves, hence Standard is the default.
+- `SpaceState.cpp`: launch-time environment `ELITE_ASSISTED_ROUTE_PRESET=extreme` (or uppercase EXTREME) opts the Assisted client into Extreme per docking request. If absent, Standard. Compare **same dock/stationary start** in two processes, without a permanent setting or changes to pilot/autopilot execution logic. Output includes `continuous-assisted preset=STANDARD/EXTREME` and `[DockPlannerRequest] assisted_preset=...` in the same `D:/tmp/elite_docking_planner.log`. Planner input speed/acceleration/obstacle clearance and authored BLUE constraints are unchanged.
+- Removed the former `SpaceState.cpp` presentation-only pseudo-hex `CALC XXXX XXXX...` activity stream, which was derived from request serial/stage/progress/time, NOT real solver values. A new pure `src/game/presentation/DockPlannerTerminalTelemetry.h` derives live stage from actual async worker state (PREPARE / GEOMETRY / FRAMES / CONTROL / COMPLETE), real monotonically elapsed wall time (3-second UI update buckets to avoid typewriter backlog), input V0/VMAX, actual accelerating/braking/lateral acceleration and obstacle count, plus chosen preset. After adoption, terminal displays actual worker duration, route km and curve count, per-free-leg solve times, optimizers' per-leg `eta_s` and `evals` parsed from the existing `RoutePlan::diagnosticSummary`. The ETA displayed is explicitly two free-leg estimates (not a guaranteed full execution ETA). `DockAdvice` retains measured worker milliseconds and the request preset.
+- `DockingStatusTerminal.h` adds independently updated `plannerDetails` lines to its presentation DTO, separate from BITE faults. No terminal-to-planner calls or flight-state effects.
+- Source tests extended: `tests/navigation_runtime/RoutePlannerApiTests.cpp` checks default Standard and explicit Extreme, zero extreme HUD radius floor and intact final docking endpoint on a synthetic physical free leg. `tests/navigation_runtime/DockingStatusTerminalTests.cpp` checks formatting of preset, real elapsed seconds, actual acceleration limits, per-leg worker timings, ETA and evaluation counts. No new parallel state file.
+- Connector re-read static source checks: all required integration markers PASS (correct request declaration order, no old `nextHexWord`/hex CALC, log preset, real monotonic time, Standard default, unchanged optimizer hard constraint integration). **No native Windows build/CTest or game visual preview has been run yet. Do not claim runtime success or any Extreme route length/ETA until user reports it.**
+
+**Minimal MSYS2 MinGW64 native validation:**
+```bash
+cd /d/__elite/work
+git status -sb
+git fetch origin
+git pull --ff-only origin main
+cmake --build build/tests/navigation_runtime --target route_planner_api_tests docking_status_terminal_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^(route_planner_api|docking_status_terminal)$' --output-on-failure
+bash build_mingw64.sh
+# First Standard baseline, with preset unset:
+unset ELITE_ASSISTED_ROUTE_PRESET
+./build/EliteGame.exe
+# Then relaunch from the same stationary scene:
+ELITE_ASSISTED_ROUTE_PRESET=extreme ./build/EliteGame.exe
+```
+Each time request the same dock, inspect the drawn route and the appended `D:/tmp/elite_docking_planner.log`. Full docking acceptance is NOT necessary for visual/ETA comparison; a route appearance screenshot and that log suffice. If the test fails, return FIRST native compilation/CTest error instead of skipping. Compare stage lengths (inbound/BLUE/terminal), full length, calculated ETA, minimum radii, objective and feasibility/rejected candidates. If Extreme fails constraints or draws too-tight HUD tunnel, do not relax hull or physical gates and do not alter Standard baseline. Active development + context remains solely `main` and root `PROJECT_STATE.md`.
+
+---
+
 ## 2026-10-20 — REJECTED ROUTE CANDIDATES: FIRST REAL WINDOWS REPORT
 
 New user log `elite_docking_planner(1).log`, second report: selected total 48728.543 m. Inbound free leg 34281.782 m, ETA 101.064 s; mandatory traffic 2050 m, approximately 9.318 s at 220 m/s; final free leg 12396.761 m, ETA 75.745 s. Nominal total ETA 186.127 s. The old report in the same file predates candidate instrumentation.

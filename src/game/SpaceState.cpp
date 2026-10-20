@@ -3293,6 +3293,15 @@ void SpaceState::updateDockingAdvisory()
 
                     planningWhileSecuringCourse = true;
 
+                    // The safety executor is physically rotating the hull
+                    // onto this selected SAFE heading.  The concurrently
+                    // compiled first straight must use that same heading,
+                    // never the stale pre-selection hull snapshot.  The
+                    // worker may keep its stale start POSITION; late entry
+                    // already handles that, but direction is known now.
+                    request.initialForward =
+                        m_dockAssistedSafeRecovery.direction;
+
                     std::cerr
                         << "[AssistedSafeCourse]"
                         << " request=" << pending.serial

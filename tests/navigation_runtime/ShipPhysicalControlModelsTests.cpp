@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/debug/DamagedEnginePreset.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
 
@@ -80,6 +81,51 @@ void expectCounts(
     assert(counts.aft == aft);
     assert(counts.fore == fore);
     assert(counts.manoeuvre == manoeuvre);
+}
+
+void testExplicitServerEngineDamagePresets()
+{
+    using namespace game::ship::debug;
+    assert(parseDamagedEnginePreset("") == DamagedEnginePreset::None);
+    assert(parseDamagedEnginePreset("nonsense") == DamagedEnginePreset::None);
+    assert(parseDamagedEnginePreset("aft-50") == DamagedEnginePreset::Aft50);
+    assert(parseDamagedEnginePreset("aft-80") == DamagedEnginePreset::Aft80);
+    assert(parseDamagedEnginePreset("aft-failed") == DamagedEnginePreset::AftFailed);
+
+    assert(near(engineDamageForPreset(DamagedEnginePreset::None), 0.0));
+    assert(near(engineDamageForPreset(DamagedEnginePreset::Aft50), 0.50));
+    assert(near(engineDamageForPreset(DamagedEnginePreset::Aft80), 0.80));
+    assert(near(engineDamageForPreset(DamagedEnginePreset::AftFailed), 1.0));
+
+    // Never select a synthetic RCS/fore slot. The first aft-main physical
+    // motor exists in all six canonical ship layouts.
+    for (const auto model : {
+        PhysicalControlModelId::AssistedI,
+        PhysicalControlModelId::AssistedY,
+        PhysicalControlModelId::AssistedX,
+        PhysicalControlModelId::NewtonianI,
+        PhysicalControlModelId::NewtonianY,
+        PhysicalControlModelId::NewtonianX
+    })
+    {
+        const auto& slots = physicalControlSlots(model);
+        const auto index = firstAftMainSlot(model);
+        assert(index < slots.size());
+        assert(slots[index].role == EngineSlotRole::AftMain);
+    }
+
+    const auto model = PhysicalControlModelId::AssistedI;
+    const auto slots = physicalControlSlots(model);
+    const auto healthy = evaluatePhysicalControlModel(
+        model, nominalPhysics(), healthySlotState(slots));
+    auto damagedSlots = healthySlotState(slots);
+    damagedSlots[firstAftMainSlot(model)].thrust01 = 0.50;
+    damagedSlots[firstAftMainSlot(model)].vectoring01 = 0.50;
+    const auto damaged = evaluatePhysicalControlModel(
+        model, nominalPhysics(), damagedSlots);
+    assert(damaged.valid);
+    assert(damaged.authority.longitudinal.positive <
+           healthy.authority.longitudinal.positive);
 }
 
 void testSixFixedTopologies()
@@ -546,6 +592,7 @@ void testStateShapeIsPartOfTopology()
 int main()
 {
     testSixFixedTopologies();
+    testExplicitServerEngineDamagePresets();
     testSlotSemantics();
     testAssistedDegradation();
     testAssistedHasNoGhostRcs();

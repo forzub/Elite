@@ -12,6 +12,8 @@
 - `tests/architecture_contracts/EngineUnitDamageModelTests.cpp` confirms actual `EngineUnit` output curves for these presets: 50% -> half maximum thrust/gimbal, 80% -> 20% maximum and irregular thrust, 100% -> engine & nozzle failed, zero force. Healthy control unchanged.
 - **Important experimental limit:** The old Ctrl+F9 I/Y/X diagnostic construction switch can substitute synthetic motor mount instances (see `ShipCore::updateTranslationControl`), so the initial REAL damage corridor experiment must use the native physical layout; do NOT switch Ctrl+F9 or use `ELITE_SHIP_PHYSICAL_TEST_MODEL` while measuring this installed engine's damage response. The preset selects whichever physical aft slot is FIRST in I/Y/X native topology, but only the actual bound engine instance can be degraded.
 
+**Conflict safety:** If `ELITE_SHIP_PHYSICAL_TEST_MODEL` is also set and nonempty, the server explicitly REFUSES the installed-engine damage preset and emits `status=FAILED` with reason `conflicting synthetic physical test model`; this avoids a fake PASS with synthetic mount substitution.
+
 **Validation:** GitHub source reread confirms server env guard, physical module damage API and before-session invocation, revision-based runtime projection and diagnostic logs; native MinGW build/CTest and full in-game tunnel follow have NOT been run by assistant and may still uncover integration issues. No simulated SUCCESS claimed. Do not remove hard hull/B L U E/safety constraints if severe damage makes route impossible; rejection is an expected safe outcome.
 
 **Minimal Windows/MSYS2 matrix:**

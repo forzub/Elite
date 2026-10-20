@@ -239,18 +239,61 @@ public:
                 )
             );
         attitudeRequest.deltaSeconds = dt;
+        // Predict over the time the virtual pilot needs to move the stick,
+        // not a single 16-ms frame. Otherwise (targetRate-rate)/(a*dt)
+        // becomes bang-bang +/-1 even for a few degrees of course error.
+        // A weaker physical attitude actuator requires a longer horizon.
+        const double planarRateLimit = std::max(
+            static_cast<double>(params.maxPitchRate),
+            static_cast<double>(params.maxYawRate)
+        );
+        const double planarAuthority = std::min(
+            effectivePitchAuthority, effectiveYawAuthority
+        );
+        constexpr double MinimumPilotStrokeSeconds = 0.40;
+        const double pilotStrokeSeconds = std::clamp(
+            planarRateLimit / std::max(1.0e-6, planarAuthority),
+            MinimumPilotStrokeSeconds, 2.0
+        );
+        attitudeRequest.controlHorizonSeconds =
+            request.stopRequested ? 0.0 : pilotStrokeSeconds;
 
         const auto attitude =
             HullAttitudeControl::evaluate(attitudeRequest);
         if (!attitude.valid)
             return {};
 
-        out.pitchInput =
-            static_cast<float>(attitude.pitchYawInput.x);
-        out.yawInput =
-            static_cast<float>(attitude.pitchYawInput.y);
-        out.rollInput =
-            static_cast<float>(attitude.rollInput);
+        // A virtual pilot manipulates the SAME normalized controls as a
+        // human; it may not teleport them from -1 to +1 each simulation tick.
+        // Limit the planar vector change jointly (no diagonal bypass), and
+        // keep roll independent. Emergency STOP retains immediate authority.
+        glm::dvec2 requestedPlanar(
+            attitude.pitchYawInput.x, attitude.pitchYawInput.y
+        );
+        double requestedRoll = attitude.rollInput;
+        if (!request.stopRequested)
+        {
+            const double maximumStickChange =
+                std::clamp(dt / pilotStrokeSeconds, 0.0, 1.0);
+            const glm::dvec2 previousPlanar(
+                state.previousPitchInput, state.previousYawInput
+            );
+            glm::dvec2 change = requestedPlanar - previousPlanar;
+            const double length = glm::length(change);
+            if (length > maximumStickChange && length > 1.0e-12)
+                change *= maximumStickChange / length;
+            requestedPlanar = previousPlanar + change;
+            requestedRoll = std::clamp(
+                requestedRoll,
+                static_cast<double>(state.previousRollInput) -
+                    maximumStickChange,
+                static_cast<double>(state.previousRollInput) +
+                    maximumStickChange
+            );
+        }
+        out.pitchInput = finiteClamp(requestedPlanar.x);
+        out.yawInput = finiteClamp(requestedPlanar.y);
+        out.rollInput = finiteClamp(requestedRoll);
 
         const double actualSpeed = finiteLength(request.actualVelocityMapMps);
         constexpr double PrecisionStopEntrySpeedMps = 0.50;

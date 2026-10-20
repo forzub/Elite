@@ -1,3 +1,31 @@
+## 2026-10-20 — ASSISTED CONTROL INPUT SLEW / NO-GO STRAIGHT REGRESSION; SOURCE COMMITTED, NATIVE TEST PENDING
+
+**New user report:** Fully failed aft-left engine (`ELITE_SHIP_DAMAGE_PRESET=aft-failed`) makes Assisted aggressively jerk controls; pilot flew better before recent physical capability constraints. User provided `Вставленный текст(20261020-123829).txt`, `elite_engine_damage_preset(4).log`, `elite_docking_planner(8).log`. Source branch `main`; authoritative project context remains this **single** PROJECT_STATE.md. Preserve `restore/before-damaged-engine-corridor-2026-10-20`, do not modify Newtonian baseline, Standard route geometry, physical motor execution or independent controller stacks.
+
+**Grounded failure:** Engine damage physically APPLIED to `ship_engine_L` at 1.0. On initial authored STRAIGHT (`curve=0`), yaw command is effectively 1.0 from 18 to 81 m/s although navigation course error is only ~3-4 degrees; hull yaw rate ~0.29-0.31 rad/s and course yaw tracking oscillates. Cross-track grows from ~0.56 to 16.7 m. `[DockAuthority] phase=recovery-speed-governor active=1` at 16.03m/98.66m/s; then `phase=coupled-curve-no-go` at `turn_distance_m=1045.85` and 96.83m/s while STILL on the first straight. Emergency physical STOP is observed: speed falls to ~0.25m/s. This is NOT evidence the curve is physically impossible; the mixed-motor query is run with **current** executed axial demand and current requested yaw torque, which can be heavily saturated at this instant and may settle before the future curve.
+
+**New implementation on main (code review, no native build):**
+- `src/game/navigation/autopilot/HullAttitudeControl.h` now accepts optional `controlHorizonSeconds` (default 0 preserves existing caller semantics). Predictive angular desired-rate control uses max(dt, control horizon) for lag/reaction travel and acceleration demand instead of forcing the whole angular correction into one tiny simulation dt. This is a VIRTUAL PILOT command calculation, not physical engine dynamics.
+- `src/game/navigation/autopilot/AssistedAutopilot.h` computes Assisted-only virtual-pilot stroke horizon from actual angular authority and ship angular-rate envelope, clamped to 0.40..2.0s; regular steering commands ramp from previous normalized controls with at most dt/horizon vector magnitude of pitch/yaw change and independent roll change. Prevents instant +/-1 command reversals. Source-only; do NOT claim tuned/validated flight dynamics. `stopRequested` bypasses regular command shaping and latency horizon for safety. Throttle remains ordinary existing scalar pilot control and was NOT separately slewed.
+- `src/game/SpaceState.cpp` no longer declares immediate `coupled-curve-no-go` merely because a **future** turn reports zero motor reserve while craft is currently on a STRAIGHT. Pre-turn speed preview remains active (may demand deceleration), and zero reserve ON the current curve still triggers physical safety STOP. This prevents the specific false early abort at 1045m from future turn. No claim all engine-out turns are feasible.
+- `tests/navigation_runtime/AssistedAuthorityContractTests.cpp` adds a deterministic steering-input slew test (20ms tick, high course error, demanded steering reversal) and emergency STOP bypass assertion.
+
+**Source commits (main, sequential):** `74a44ead0e10` control-horizon field; `e9bc979ea267` Assisted pilot stick shaping; `f5e46b6d44cf` gate no-go to currently flown curve; `170bd0a08e` deterministic test. Files reread via GitHub after writes, `routeCurvaturePerMeter` confirmed to derive from CURRENT `curveNow`, not lookahead `speedGuide`. No MinGW compile, CTest, or game flight executed by assistant: **PENDING**. Potential downside: virtual-pilot slew may reduce corner response; joint force+torque capacity and braking/capture must be proven in native tests; never automatically assert engine-out docking passes.
+
+**Minimal next acceptance on Windows MSYS2:**
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+cmake --build build/tests/navigation_runtime --target assisted_authority_contract_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^assisted_authority_contract$' --output-on-failure
+bash build_mingw64.sh
+unset ELITE_ASSISTED_ROUTE_PRESET ELITE_SHIP_PHYSICAL_TEST_MODEL
+ELITE_SHIP_DAMAGE_PRESET=aft-failed ./build/EliteGame.exe
+```
+Inspect `[DockClientTrack]` for yaw/pitch/roll continuity, actual-course ω vs desired, cross-track, `coupled_curve_a_mps2`, turn_vmax and activation of governor; on first straight there should be no `coupled-curve-no-go`. Compare ONE healthy flight first if desired. Save logs to D:/tmp. Treat incomplete route as unresolved, never compensate by blind coefficient tuning. If rate limiting makes tracking worse, revisit the actuator-aware trajectory control/combined wrench allocation instead of overriding physical authority.
+
+---
+
 ## 2026-10-20 — ASSISTED ENGINE-OUT: JOINT MOTOR-BASED CURVE SPEED LIMIT, SOURCE IMPLEMENTED; NATIVE ACCEPTANCE PENDING
 
 **User directive:** Stop repeated gain/offset tuning and base autopilot permissible speed on physically available acceleration, NOT planner's desired speed. Preserve Assisted/ Newtonian separation, Standard tunnel geometry, actual installed physical engine model, and restore branch `restore/before-damaged-engine-corridor-2026-10-20`.

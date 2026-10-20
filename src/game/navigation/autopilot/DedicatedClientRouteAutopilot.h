@@ -1476,7 +1476,10 @@ public:
         request.stopRequested =
             terminalStopAuthored &&
             (atFinalContinuousSegment || terminalBrakeActive);
-        request.terminalAttitudeHold = terminalAttitudeHold;
+        // Stationary launch alignment is a hull-pose task, not a request
+        // to bend a velocity vector that may be undefined at low speed.
+        request.terminalAttitudeHold =
+            terminalAttitudeHold || assistedLaunchAlignmentHold;
         request.deltaSeconds = deltaSeconds;
 
         if (law == LocalFlightControlLaw::Newtonian &&

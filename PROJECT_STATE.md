@@ -1,3 +1,32 @@
+## 2026-10-20 — COMPLETE DOCKING TERMINAL LOCALIZATION + PRESET LABEL (SOURCE COMMITTED; NATIVE TESTS PENDING)
+
+**User request:** Always display the active Standard/Extreme planner preset on the in-game docking terminal; every visible terminal message must use the canonical localization catalog, with no hardcoded human-readable text. Do not modify planner geometry, ship physics, flight laws or experimental preset behavior.
+
+**Changes committed on sole authoritative `main`:**
+- Canonical `src/assets/localization/ui/cockpit/flight.json` now contains localized templates for all docking terminal stages, planner metrics, explicit STANDARD / EXTREME labels, ship/control-law/engine group identifiers, safety status and handoff, BITE fault severity/detail/suffixes and classified navigation failure reasons. All five enabled locales: `en`, `ru`, `zh-Hans`, `es`, `ja`. Existing global locale setting remains authoritative; no parallel translation table.
+- `src/game/presentation/DockPlannerTerminalTelemetry.h` now accepts an injected UI translation lookup and substitutes actual numbers into catalog templates. All visible labels/units including live elapsed time, V0/Vmax, braking/lateral/acceleration authority, obstacle count, true completion time, route length, curves, per-free-leg worker times, ETA, evaluations, and BOTH preset names are translated. Parsing stable machine-readable `diagnosticSummary` identifiers (`eta_s=`, `inbound_detail`, etc.) remains internal and untranslated by design.
+- New `src/game/presentation/DockTerminalBitePresentation.h` translates typed BITE faults on the UI side. Existing `BiteApi::terminalLines` legacy English implementation remains in domain API for compatibility/tests but is no longer used by cockpit terminal; engine ID is a stable technical identifier, not a generated English sentence.
+- `SpaceState.cpp` builds ONLY translated terminal DTO text: planner preset line is visible during an active solve and after adopting an accepted route; physical model family label is localized while immutable I/Y/X layout code is retained; flight law and actuator group labels are localized. Existing project statuses and warnings use localization keys instead of hardcoded fallback strings. Source technical diagnostics remain unchanged in normal console/`D:/tmp` log; terminal maps known failure reasons to translated actionable categories, falling back to localized “see log” for unclassified errors rather than leaking untranslated backend text. Pseudo-random `CALC` was removed in previous step and stays removed.
+- `DockingStatusTerminal.h` no longer owns English `DOCKING` or `BITE NOMINAL` fallback strings; all texts are supplied through localized DTO. `localeId` triggers history/typing reset on language switch so old-language and new-language lines do not mix.
+- `tests/navigation_runtime/DockingStatusTerminalTests.cpp` updated for new localization-aware formatter interface and checks Russian Extreme label, translated numeric lines, translated BITE faults and failure category, and live locale switch handling.
+- `tests/architecture_contracts/LocalizationContractTests.cpp` asserts catalog translations for presets in all five active languages and scans EVERY `cockpit.terminal.*` catalog entry to ensure non-empty values in `en/ru/zh-Hans/es/ja`, bypassing fallback masking.
+
+**Validation boundary:** GitHub source re-read and static key coverage audit PASS: 64 unique terminal/flight-law keys used by terminal source and adapters are present with nonempty translation in all five locales; no decorative CALC, old BiteApi UI call, raw SHIP/ACT/ROUTE MODE English assembly, direct untranslated guidance error or untranslated status warning in the visible terminal block. **Windows MinGW build, navigation_runtime CTest, architecture_contracts localization CTest and live font/layout verification have NOT been run**. Preserve an honest PENDING status until user reports these results.
+
+**Recommended MSYS2 MinGW64 checks:**
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+cmake --build build/tests/navigation_runtime --target docking_status_terminal_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^docking_status_terminal$' --output-on-failure
+cmake --build build/tests/architecture_contracts --target localization_contract_tests -j 8
+ctest --test-dir build/tests/architecture_contracts -R '^localization_contracts$' --output-on-failure
+bash build_mingw64.sh
+```
+Run the SAME docking route first without `ELITE_ASSISTED_ROUTE_PRESET` and then with `ELITE_ASSISTED_ROUTE_PRESET=extreme`. Inspect localized preset label during and after planning. Switch global UI locale (existing Ctrl+Alt+F12) while terminal is visible and check no stale language remnants or glyph rendering. Never alter Standard route geometry to fix a terminal string.
+
+---
+
 ## 2026-10-20 — ASSISTED ROUTE STANDARD/EXTREME EXPERIMENT + REAL DOCK TERMINAL TELEMETRY (SOURCE COMMITTED; NATIVE BUILD PENDING)
 
 **User intent:** Keep the existing Assisted planner unchanged in standard production. Make one opt-in `Extreme` experiment removing cinematic/visual minimum turn radius and comfort preferences to measure how much route geometry/time depend on visual corridor design. Never bypass real ship capability, hull/obstacle collision, mandatory BLUE transit or authored 700m entry/150m exit. Also replace decorative random-looking CALC hex numbers in the cockpit docking terminal with actual calculation parameters/results.

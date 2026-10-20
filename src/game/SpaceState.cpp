@@ -7408,9 +7408,26 @@ m_systemMapRenderer.render(
                 const bool assistedLaw =
                     playerShip.renderTransform.motion.localControlLaw ==
                         game::navigation::LocalFlightControlLaw::Assisted;
+                // Physical model identity is translated as flight family
+                // plus its immutable I/Y/X topology code.
+                const auto familyLabel = terminalText(
+                    familyOf(model) == PhysicalControlFamily::Assisted
+                        ? "cockpit.mode.assisted"
+                        : "cockpit.mode.newtonian"
+                );
+                const auto layoutName = [](PropulsionLayout layout)
+                {
+                    switch (layout)
+                    {
+                        case PropulsionLayout::Y: return "Y";
+                        case PropulsionLayout::X: return "X";
+                        case PropulsionLayout::I:
+                        default: return "I";
+                    }
+                };
                 terminal.ship = lineText(
                     "cockpit.terminal.ship",
-                    {physicalControlModelName(model),
+                    {familyLabel + "-" + layoutName(layoutOf(model)),
                      terminalText(assistedLaw
                          ? "cockpit.mode.assisted"
                          : "cockpit.mode.newtonian")});

@@ -638,6 +638,13 @@
       "zh-Hans": "自动驾驶偏离通道，正在安全制动",
       "es": "Piloto automático fuera del corredor; frenando hasta detenerse",
       "ja": "自動操縦が回廊を逸脱・安全停止のため減速中"
+    },
+    "cockpit.terminal.warning_corridor_speed_recovery": {
+      "en": "Drift detected — reducing speed to recapture tunnel",
+      "ru": "Снос с оси — снижаю скорость для возвращения в туннель",
+      "zh-Hans": "检测到偏离航道，正在减速返回通道",
+      "es": "Deriva detectada: reduciendo velocidad para volver al corredor",
+      "ja": "航路からの逸脱を検出・減速して回廊へ復帰中"
     }
   }
 }

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
-#include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/ship/plant/ShipPhysicalControlModels.h"
 
 namespace game::ship::debug
 {

@@ -3,6 +3,7 @@
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
+#include "src/game/presentation/DockTerminalBitePresentation.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -7308,6 +7309,17 @@ m_systemMapRenderer.render(
         // ------------------------------------------------------------
         {
             game::presentation::DockingTerminalSnapshot terminal;
+            const game::presentation::TerminalLocalizedText::Lookup terminalText =
+                [app = context().app](const char* key)
+                {
+                    return localizedUiText(app, key, key);
+                };
+            const auto lineText = [&terminalText](
+                const char* key, std::initializer_list<std::string> values)
+            {
+                return game::presentation::TerminalLocalizedText::render(
+                    terminalText, key, values);
+            };
 
             const double terminalNowSeconds =
                 m_client->lastSimulationMetadata().serverTimeSeconds;
@@ -7326,20 +7338,20 @@ m_systemMapRenderer.render(
                     : game::bite::State {};
 
             const auto biteLines =
-                game::bite::BiteApi::terminalLines(biteState);
+                game::presentation::DockTerminalBitePresentation::lines(
+                    biteState, terminalText);
             const bool biteVisible = !biteLines.empty();
 
             // BITE is allowed to request presentation attention, never control.
             // The same terminal surface is shared with docking diagnostics so
             // a propulsion fault remains visible even while docking is idle.
             terminal.visible = dockingVisible || biteVisible;
-            terminal.title = localizedUiText(
-                context().app,
+            terminal.title = terminalText(
                 dockingVisible
                     ? "cockpit.terminal.title"
-                    : "cockpit.terminal.system_title",
-                dockingVisible ? "DOCKING" : "SYSTEM"
-            );
+                    : "cockpit.terminal.system_title");
+            terminal.biteNominalText =
+                terminalText("cockpit.terminal.bite.nominal");
 
             for (std::size_t i = 0; i < biteLines.size(); ++i)
             {
@@ -7391,22 +7403,21 @@ m_systemMapRenderer.render(
                     }
                 }
 
-                std::ostringstream shipLine;
-                shipLine
-                    << "SHIP " << physicalControlModelName(model)
-                    << " LAW "
-                    << game::navigation::localFlightControlLawName(
-                           playerShip.renderTransform.motion.localControlLaw
-                       );
-                terminal.ship = shipLine.str();
-
-                std::ostringstream physicsLine;
-                physicsLine
-                    << "ACT main=" << (aft + fore)
-                    << " aft=" << aft
-                    << " fore=" << fore
-                    << " rcs=" << manoeuvre;
-                terminal.physics = physicsLine.str();
+                const bool assistedLaw =
+                    playerShip.renderTransform.motion.localControlLaw ==
+                        game::navigation::LocalFlightControlLaw::Assisted;
+                terminal.ship = lineText(
+                    "cockpit.terminal.ship",
+                    {physicalControlModelName(model),
+                     terminalText(assistedLaw
+                         ? "cockpit.mode.assisted"
+                         : "cockpit.mode.newtonian")});
+                terminal.physics = lineText(
+                    "cockpit.terminal.actuators",
+                    {std::to_string(aft + fore),
+                     std::to_string(aft),
+                     std::to_string(fore),
+                     std::to_string(manoeuvre)});
             }
 
             // The terminal intentionally occupies the legacy coordinate block
@@ -7427,54 +7438,26 @@ m_systemMapRenderer.render(
             switch (m_clientDockingPhase)
             {
                 case ClientDockingPhase::Idle:
-                    terminal.phase = localizedUiText(
-                        context().app,
-                        "cockpit.terminal.idle",
-                        "idle"
-                    );
+                    terminal.phase = terminalText("cockpit.terminal.idle");
                     break;
                 case ClientDockingPhase::Stabilizing:
-                    terminal.phase = localizedUiText(
-                        context().app,
-                        "cockpit.terminal.stabilization",
-                        "stabilization"
-                    );
+                    terminal.phase = terminalText("cockpit.terminal.stabilization");
                     break;
                 case ClientDockingPhase::Planning:
-                    terminal.phase = localizedUiText(
-                        context().app,
-                        "cockpit.terminal.planning",
-                        "planning"
-                    );
+                    terminal.phase = terminalText("cockpit.terminal.planning");
                     break;
                 case ClientDockingPhase::RouteReady:
-                    terminal.phase = localizedUiText(
-                        context().app,
-                        "cockpit.terminal.route_ready",
-                        "route ready"
-                    );
+                    terminal.phase = terminalText("cockpit.terminal.route_ready");
                     break;
                 case ClientDockingPhase::Executing:
-                    terminal.phase = localizedUiText(
-                        context().app,
-                        "cockpit.terminal.autopilot",
-                        "autopilot"
-                    );
+                    terminal.phase = terminalText("cockpit.terminal.autopilot");
                     break;
                 case ClientDockingPhase::SecuringCourse:
                     terminal.phase =
                         m_dockAssistedSafeRecovery.stopFallback ||
                         m_dockSafeCourse.stopFallback
-                            ? localizedUiText(
-                                  context().app,
-                                  "cockpit.terminal.stop",
-                                  "stop"
-                              )
-                            : localizedUiText(
-                                  context().app,
-                                  "cockpit.terminal.safe_course",
-                                  "safe-course"
-                              );
+                            ? terminalText("cockpit.terminal.stop")
+                            : terminalText("cockpit.terminal.safe_course");
                     break;
             }
 
@@ -7492,21 +7475,26 @@ m_systemMapRenderer.render(
                     ).count();
                 terminal.planner =
                     game::presentation::DockPlannerTerminalTelemetry::running(
-                        stage,
+                        terminalText, stage,
                         m_dockWorkerCount->load(std::memory_order_acquire)
                     );
                 terminal.activity =
                     game::presentation::DockPlannerTerminalTelemetry::elapsed(
-                        elapsedWallSeconds, job.planningRequest
+                        terminalText, elapsedWallSeconds, job.planningRequest
                     );
                 terminal.plannerDetails.push_back(
-                    game::presentation::DockPlannerTerminalTelemetry::preset(
-                        job.planningRequest
+                    game::presentation::DockPlannerTerminalTelemetry::presetLine(
+                        terminalText, job.planningRequest.assistedRoutePreset
                     )
                 );
                 terminal.plannerDetails.push_back(
                     game::presentation::DockPlannerTerminalTelemetry::limits(
-                        job.planningRequest
+                        terminalText, job.planningRequest
+                    )
+                );
+                terminal.plannerDetails.push_back(
+                    game::presentation::DockPlannerTerminalTelemetry::obstacles(
+                        terminalText, job.planningRequest
                     )
                 );
             }
@@ -7518,27 +7506,26 @@ m_systemMapRenderer.render(
             {
                 terminal.planner =
                     game::presentation::DockPlannerTerminalTelemetry::completed(
-                        m_dockAdvice.workerDurationMs
+                        terminalText, m_dockAdvice.workerDurationMs
                     );
                 terminal.activity =
                     game::presentation::DockPlannerTerminalTelemetry::route(
-                        m_dockAdvice.plan
+                        terminalText, m_dockAdvice.plan
                     );
-                terminal.plannerDetails.emplace_back(
-                    std::string("ROUTE MODE ") +
-                    game::navigation::planner::assistedRoutePresetName(
-                        m_dockAdvice.assistedRoutePreset
+                terminal.plannerDetails.push_back(
+                    game::presentation::DockPlannerTerminalTelemetry::presetLine(
+                        terminalText, m_dockAdvice.assistedRoutePreset
                     )
                 );
                 for (const auto& line : {
                     game::presentation::DockPlannerTerminalTelemetry::legTimings(
-                        m_dockAdvice.plan
+                        terminalText, m_dockAdvice.plan
                     ),
                     game::presentation::DockPlannerTerminalTelemetry::legEta(
-                        m_dockAdvice.plan
+                        terminalText, m_dockAdvice.plan
                     ),
                     game::presentation::DockPlannerTerminalTelemetry::legEvaluations(
-                        m_dockAdvice.plan
+                        terminalText, m_dockAdvice.plan
                     )
                 })
                 {
@@ -7548,60 +7535,36 @@ m_systemMapRenderer.render(
             }
             else
             {
-                terminal.planner = localizedUiText(
-                    context().app,
-                    "cockpit.terminal.planner_off",
-                    "planner off"
-                );
+                terminal.planner = terminalText("cockpit.terminal.planner_off");
             }
 
             if (m_dockAssistedSafeRecovery.active)
             {
-                terminal.safety = localizedUiText(
-                    context().app,
-                    "cockpit.terminal.safe_course_acquiring",
-                    "safe-course acquiring"
-                );
+                terminal.safety = terminalText("cockpit.terminal.safe_course_acquiring");
             }
             else if (m_dockSafeCourse.active)
             {
-                terminal.safety = localizedUiText(
-                    context().app,
-                    "cockpit.terminal.safe_course_active",
-                    "safe-course active"
-                );
+                terminal.safety = terminalText("cockpit.terminal.safe_course_active");
             }
             else
             {
-                terminal.safety = localizedUiText(
-                    context().app,
-                    "cockpit.terminal.safe_course_clear",
-                    "safe-course clear"
-                );
+                terminal.safety = terminalText("cockpit.terminal.safe_course_clear");
             }
 
             if (m_dockLateEntry.active)
             {
                 terminal.handoff =
-                    localizedUiText(
-                        context().app,
-                        "cockpit.terminal.handoff_rebind",
-                        "handoff rebind"
-                    ) +
+                    terminalText("cockpit.terminal.handoff_rebind") +
                     " " +
                     std::to_string(
                         m_dockLateEntry.rebindAttempts
                     );
 
                 terminal.error =
-                    localizedUiText(
-                        context().app,
+                    terminalText(
                         m_dockLateEntry.rebindAttempts > 0
                             ? "cockpit.terminal.warning_handoff_retry"
-                            : "cockpit.terminal.warning_handoff_rebinding",
-                        m_dockLateEntry.rebindAttempts > 0
-                            ? "warning: handoff drift; connector retry"
-                            : "warning: handoff drift; rebinding connector"
+                            : "cockpit.terminal.warning_handoff_rebinding"
                     );
 
                 if (m_dockLateEntry.rebindAttempts > 0)
@@ -7615,27 +7578,24 @@ m_systemMapRenderer.render(
             }
             else if (m_clientDockingPhase == ClientDockingPhase::Executing)
             {
-                terminal.handoff = localizedUiText(
-                    context().app,
-                    "cockpit.terminal.handoff_accepted",
-                    "handoff accepted"
-                );
+                terminal.handoff = terminalText("cockpit.terminal.handoff_accepted");
             }
 
             if (!m_dockingGuidanceFailureReason.empty())
             {
+                // Raw failure details stay in the diagnostics log.
+                // HUD must never emit an unlocalized internal sentence.
                 terminal.error =
-                    localizedUiText(
-                        context().app,
-                        "cockpit.terminal.error_prefix",
-                        "error:"
-                    ) +
-                    " " +
-                    m_dockingGuidanceFailureReason;
+                    terminalText("cockpit.terminal.failure_generic");
             }
-            else if (terminal.error.empty())
+            else if (terminal.error.empty() &&
+                     !m_dockingStatusWarning.empty())
             {
-                terminal.error = m_dockingStatusWarning;
+                terminal.error =
+                    m_dockingStatusWarning ==
+                        "awaiting authoritative motor telemetry"
+                        ? terminalText("cockpit.terminal.warning_authority")
+                        : terminalText("cockpit.terminal.failure_generic");
             }
 
             const auto terminalOutput =

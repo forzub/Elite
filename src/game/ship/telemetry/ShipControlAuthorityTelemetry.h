@@ -13,6 +13,23 @@ namespace game::ship::telemetry
 // diagnostics and from actual-red-thrust HUD samples. The autopilot sees the
 // same precomputed six-axis limits that the Assisted motor executor uses.
 // Basis entries are sign-specific, and include active cooling/impact damage.
+// Server-computed motor mixing basis. The same twelve signed motor
+// programs are used by the ACTUAL installed Assisted executor. Navigation
+// may inspect concurrent acceleration+torque demands without synthesizing
+// a fictitious independent lateral engine.
+struct AssistedCoupledMotorAuthority
+{
+    static constexpr std::size_t MaxMotors = 16;
+    static constexpr std::size_t ForceComponents = 3 * MaxMotors;
+    static constexpr std::size_t SignedAxes = 12;
+
+    bool valid = false;
+    std::uint8_t motorCount = 0;
+    std::array<float, MaxMotors> available01 {};
+    std::array<double, SignedAxes> achievable {};
+    std::array<std::array<float, ForceComponents>, SignedAxes> fractions {};
+};
+
 struct ShipControlAuthorityTelemetry
 {
     bool valid = false;
@@ -21,6 +38,7 @@ struct ShipControlAuthorityTelemetry
     std::uint64_t sourceActuatorRevision = 0;
     std::array<double,6> positive {};
     std::array<double,6> negative {};
+    AssistedCoupledMotorAuthority coupled {};
     // Indices: body X (strafe), body Y (lift), body Z (reverse positive),
     // angular pitch, yaw, roll. Magnitudes always nonnegative.
 };
@@ -36,6 +54,25 @@ readAssistedControlAuthority(
     out.valid=true;
     out.model=motorPrograms.model;
     out.sourceActuatorRevision=actuatorRevision;
+    out.coupled.valid = true;
+    out.coupled.motorCount =
+        static_cast<std::uint8_t>(motorPrograms.count);
+    for (std::size_t motor=0;motor<motorPrograms.count;++motor)
+        out.coupled.available01[motor] =
+            static_cast<float>(
+                std::clamp(motorPrograms.motors[motor].capacity01,0.0,1.0));
+    for (std::size_t signedAxis=0;
+         signedAxis<out.coupled.SignedAxes;++signedAxis)
+    {
+        const auto& preset=motorPrograms.programs[signedAxis];
+        out.coupled.achievable[signedAxis]=preset.achievable;
+        for (std::size_t component=0;
+             component<3*motorPrograms.count;++component)
+        {
+            out.coupled.fractions[signedAxis][component] =
+                static_cast<float>(preset.forceFractions[component]);
+        }
+    }
     for(std::size_t axis=0;axis<6;++axis)
     {
         out.positive[axis]=std::max(

@@ -489,6 +489,34 @@ int main()
             const auto optimized = RoutePlanner::plan(terminal);
             require(optimized.valid(),
                     "BLUE exit continuous free-leg route was not feasible");
+            require(
+                optimized.diagnosticSummary.find("preset=STANDARD") !=
+                    std::string::npos,
+                "default Assisted route was not Standard"
+            );
+
+            RoutePlanRequest extremeRequest = terminal;
+            extremeRequest.assistedRoutePreset = AssistedRoutePreset::Extreme;
+            const auto extremePlan = RoutePlanner::plan(extremeRequest);
+            require(
+                extremePlan.valid(),
+                "Extreme Assisted planner failed same physical free-leg case"
+            );
+            require(
+                extremePlan.diagnosticSummary.find("preset=EXTREME") !=
+                    std::string::npos &&
+                extremePlan.diagnosticSummary.find(
+                    "tunnel_radius_floor_m=0.000000"
+                ) != std::string::npos,
+                "Extreme Assisted did not remove the visual minimum radius"
+            );
+            requireNear(
+                glm::length(extremePlan.routeCurves.back().endMeters -
+                            terminal.goalMeters),
+                0.0,
+                1.0e-3,
+                "Extreme Assisted did not preserve the physical docking goal"
+            );
             require(!optimized.routeCurves.empty() &&
                     optimized.routeCurves.front().kind ==
                         RouteCurveKind::Line,

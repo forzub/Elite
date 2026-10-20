@@ -645,6 +645,13 @@
       "zh-Hans": "检测到偏离航道，正在减速返回通道",
       "es": "Deriva detectada: reduciendo velocidad para volver al corredor",
       "ja": "航路からの逸脱を検出・減速して回廊へ復帰中"
+    },
+    "cockpit.terminal.warning_coupled_curve_unavailable": {
+      "en": "Cannot turn with available engines; safely braking and cancelling dock",
+      "ru": "Двигателей недостаточно для поворота; безопасное торможение, стыковка отменена",
+      "zh-Hans": "剩余发动机无法完成转弯，正在安全制动并取消对接",
+      "es": "Motores insuficientes para girar; frenado seguro y atraque cancelado",
+      "ja": "残存エンジンでは旋回不能・安全停止後にドッキングを中止"
     }
   }
 }

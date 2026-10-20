@@ -50,6 +50,7 @@ public:
         double assistedBrakingResponseMps2 = 0.0;
 
         double lastMeasuredCourseErrorRad = 0.0;
+        glm::dvec3 previousDesiredCourseMap {0.0};
         bool hasMeasuredCourseError = false;
     };
 
@@ -104,7 +105,7 @@ public:
         const glm::dvec3 up =
             normalizedOr(request.upMap, {0.0, 1.0, 0.0});
 
-        updateIdentification(request, params, forward, dt, state);
+        updateIdentification(request, params, dt, state);
 
         ShipControlState out;
 
@@ -473,7 +474,6 @@ private:
     static void updateIdentification(
         const Request& request,
         const ShipParams& params,
-        const glm::dvec3& forward,
         double dt,
         State& state
     ) noexcept
@@ -554,14 +554,25 @@ private:
             }
         }
 
-        const double speed = finiteLength(request.actualVelocityMapMps);
-        if (speed > 0.5)
+        const double speed =
+            finiteLength(request.actualVelocityMapMps);
+        const double desiredSpeed =
+            finiteLength(request.desiredVelocityMapMps);
+        if (speed > 0.5 && desiredSpeed > 0.5)
         {
+            // IDENTIFICATION CONTRACT: measure the ACTUAL velocity vector's
+            // response to desired route course. Nose/velocity misalignment
+            // says how fast the hull turns, NOT how fast a damaged ship can
+            // bend its trajectory. One failed gimballed engine makes the
+            // difference critical. Keep the hull attitude controller
+            // entirely separate from this measured course response.
             const glm::dvec3 velocityDir =
                 request.actualVelocityMapMps / speed;
+            const glm::dvec3 desiredCourse =
+                request.desiredVelocityMapMps / desiredSpeed;
             const double courseError = std::acos(
                 std::clamp(
-                    glm::dot(velocityDir, forward),
+                    glm::dot(velocityDir, desiredCourse),
                     -1.0,
                     1.0
                 )
@@ -569,25 +580,56 @@ private:
 
             if (state.hasMeasuredCourseError && dt > 1.0e-5)
             {
-                const double closureRate =
-                    (state.lastMeasuredCourseErrorRad - courseError) / dt;
-                if (courseError > 0.01 && closureRate > 1.0e-4)
+                const double targetShift = std::acos(
+                    std::clamp(
+                        glm::dot(
+                            state.previousDesiredCourseMap,
+                            desiredCourse
+                        ),
+                        -1.0,
+                        1.0
+                    )
+                );
+                // Ignore discontinuous reference jumps; they do not
+                // measure a plant response. Normal smooth curve progression
+                // changes the desired direction continuously.
+                if (targetShift <= 0.01)
                 {
-                    const double measuredTau =
-                        courseError / closureRate;
-                    if (std::isfinite(measuredTau))
+                    const double closureRate =
+                        (state.lastMeasuredCourseErrorRad - courseError) / dt;
+                    if (courseError > 0.01 && closureRate > 1.0e-4)
                     {
-                        const double boundedTau =
-                            std::clamp(measuredTau, 0.25, 5.0);
+                        const double measuredTau =
+                            courseError / closureRate;
+                        if (std::isfinite(measuredTau))
+                        {
+                            const double boundedTau =
+                                std::clamp(measuredTau, 0.25, 5.0);
+                            state.assistedCourseResponseSeconds =
+                                state.assistedCourseResponseSeconds * 0.95 +
+                                boundedTau * 0.05;
+                        }
+                    }
+                    else if (courseError > 0.05 &&
+                             closureRate < -0.01)
+                    {
+                        // An increasingly divergent VELOCITY course under
+                        // active guidance is evidence of lost response, not
+                        // a reason to assume the nose has become faster.
                         state.assistedCourseResponseSeconds =
-                            state.assistedCourseResponseSeconds * 0.95 +
-                            boundedTau * 0.05;
+                            state.assistedCourseResponseSeconds * 0.96 +
+                            5.0 * 0.04;
                     }
                 }
             }
 
             state.lastMeasuredCourseErrorRad = courseError;
+            state.previousDesiredCourseMap = desiredCourse;
             state.hasMeasuredCourseError = true;
+        }
+        else
+        {
+            state.hasMeasuredCourseError = false;
         }
     }
 

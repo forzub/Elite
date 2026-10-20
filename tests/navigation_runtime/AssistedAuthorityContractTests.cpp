@@ -351,8 +351,9 @@ void testActualHealthyCobraMotorBasis()
     programs.build(model, installed, ship);
     const auto telemetry =
         game::ship::telemetry::readAssistedControlAuthority(programs, 1u);
-    require(telemetry.valid,
-            "actual installed healthy Cobra motor basis did not build");
+    require(telemetry.valid && telemetry.coupled.valid &&
+            telemetry.coupled.motorCount == 4,
+            "actual installed Cobra failed to publish coupled motor basis");
     for (std::size_t axis : {std::size_t{0}, std::size_t{1},
                              std::size_t{2}, std::size_t{3},
                              std::size_t{4}})
@@ -367,9 +368,21 @@ void testActualHealthyCobraMotorBasis()
     programs.build(model, installed, ship);
     const auto damaged =
         game::ship::telemetry::readAssistedControlAuthority(programs, 2u);
-    require(damaged.valid &&
+    require(damaged.valid && damaged.coupled.valid &&
+            damaged.coupled.available01[0] <= 1.0e-6f &&
             damaged.negative[2] < telemetry.negative[2],
-            "destroyed aft motor failed to reduce physical forward authority");
+            "destroyed aft motor leaked into joint control capability");
+    const std::array<double,6> noOtherDemand {};
+    const double physicalCurveAcceleration =
+        game::ship::telemetry::
+            maximumAssistedCurveNormalAccelerationMps2(
+                damaged.coupled,damaged,
+                glm::dvec3(1.0,0.0,0.0),noOtherDemand
+            );
+    require(std::isfinite(physicalCurveAcceleration) &&
+            physicalCurveAcceleration>=0.0 &&
+            physicalCurveAcceleration <= damaged.positive[0]+1.0e-5,
+            "joint lateral capacity exceeded installed damaged motor basis");
 }
 
 void testAbsentReplicatedEngineDataCannotInventAuthority()

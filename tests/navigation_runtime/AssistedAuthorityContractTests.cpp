@@ -1,5 +1,6 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
+#include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
 
@@ -139,6 +140,59 @@ void testAssistedLostCorridorSafeStop()
             "nonfinite tracking measurement silently permitted cruise");
 }
 
+void testAssistedCourseResponseMeasuresVelocityNotHullNose()
+{
+    using game::navigation::autopilot::AssistedAutopilot;
+    using game::navigation::autopilot::AutopilotControlRequest;
+    const ShipParams parameters = nominal();
+    AutopilotControlRequest request;
+    request.deltaSeconds = 0.05;
+    request.desiredVelocityMapMps = {0.0, 0.0, -100.0};
+    request.actualVelocityMapMps = {0.0, 0.0, -100.0};
+    request.desiredForwardMap = {0.0, 0.0, -1.0};
+    request.desiredUpMap = {0.0, 1.0, 0.0};
+    request.upMap = request.desiredUpMap;
+
+    AssistedAutopilot pilot;
+    // A damaged ship can move its NOSE through 80 degrees while its actual
+    // velocity is stationary. Previous code interpreted the shrinking
+    // nose/velocity gap as a very fast turn of the velocity vector.
+    for (int i = 0; i <= 80; ++i)
+    {
+        const double angle = 1.4 * (1.0 - i / 80.0);
+        request.forwardMap = {
+            std::sin(angle), 0.0, -std::cos(angle)
+        };
+        request.rightMap = {
+            std::cos(angle), 0.0, std::sin(angle)
+        };
+        (void)pilot.update(request, parameters);
+    }
+    require(
+        std::abs(pilot.telemetry(parameters).courseResponseSeconds - 2.0) <
+            1.0e-6,
+        "fast hull nose rotation falsely improved measured course response"
+    );
+
+    // A growing VELOCITY-to-target error is a real failure to turn the
+    // trajectory; it must lengthen rather than shorten reaction estimate.
+    AssistedAutopilot diverging;
+    request.forwardMap = {0.0, 0.0, -1.0};
+    request.rightMap = {1.0, 0.0, 0.0};
+    for (int i = 0; i <= 50; ++i)
+    {
+        const double angle = 0.08 + i * 0.004;
+        request.actualVelocityMapMps = {
+            100.0 * std::sin(angle),
+            0.0,
+            -100.0 * std::cos(angle)
+        };
+        (void)diverging.update(request, parameters);
+    }
+    require(diverging.telemetry(parameters).courseResponseSeconds > 2.5,
+            "increasing route-course error was mistaken for fast response");
+}
+
 void testActualHealthyCobraMotorBasis()
 {
     using namespace game::ship::plant;
@@ -228,6 +282,7 @@ int main()
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
         testAssistedLostCorridorSafeStop();
+        testAssistedCourseResponseMeasuresVelocityNotHullNose();
         testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";

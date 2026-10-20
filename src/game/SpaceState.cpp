@@ -7670,11 +7670,23 @@ m_systemMapRenderer.render(
             else if (terminal.error.empty() &&
                      !m_dockingStatusWarning.empty())
             {
-                terminal.error =
-                    m_dockingStatusWarning ==
-                        "awaiting authoritative motor telemetry"
-                        ? terminalText("cockpit.terminal.warning_authority")
-                        : terminalText("cockpit.terminal.failure_generic");
+                if (m_dockingStatusWarning ==
+                        "awaiting authoritative motor telemetry")
+                {
+                    terminal.error = terminalText(
+                        "cockpit.terminal.warning_authority");
+                }
+                else if (m_dockingStatusWarning ==
+                             "autopilot-corridor-loss")
+                {
+                    terminal.error = terminalText(
+                        "cockpit.terminal.warning_corridor_lost");
+                }
+                else
+                {
+                    terminal.error = terminalText(
+                        "cockpit.terminal.failure_generic");
+                }
             }
 
             const auto terminalOutput =

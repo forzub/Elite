@@ -27,15 +27,21 @@ public:
     [[nodiscard]] static Decision evaluate(
         double crossTrackMeters,
         double closingSpeedMps,
-        double trackingToleranceMeters
+        double trackingToleranceMeters,
+        double responseSeconds,
+        double availableLateralAccelerationMps2
     ) noexcept
     {
         Decision out;
         if (!std::isfinite(crossTrackMeters) ||
             !std::isfinite(closingSpeedMps) ||
             !std::isfinite(trackingToleranceMeters) ||
+            !std::isfinite(responseSeconds) ||
+            !std::isfinite(availableLateralAccelerationMps2) ||
             crossTrackMeters < 0.0 ||
-            trackingToleranceMeters <= 0.0)
+            trackingToleranceMeters <= 0.0 ||
+            responseSeconds <= 0.0 ||
+            availableLateralAccelerationMps2 <= 0.0)
         {
             // Invalid observability is NOT permission to keep accelerating.
             out.requireSafeStop = true;
@@ -44,13 +50,25 @@ public:
 
         out.fullToleranceExceeded =
             crossTrackMeters >= trackingToleranceMeters;
-        // Start braking before the error reaches the safety boundary when
-        // the ship is still clearly moving away from the centreline.
-        // The half-tolerance and 2 m/s outward drift are conservative
-        // diagnostics; a future coupled-wrench predictor can supersede them.
+        // There is no justification for abandoning the visible route at
+        // 32m simply because it is moving outward at 2m/s: the craft may
+        // still have enough room and lateral authority to capture it.
+        //
+        // Escalate inside the tunnel only when predicted outward drift during
+        // the measured control response PLUS ideal lateral stopping distance
+        // consumes the remaining corridor. This is still a conservative
+        // lower-bound estimate, not a claim of coupled-wrench feasibility.
+        const double outwardSpeed = std::max(0.0, -closingSpeedMps);
+        const double stoppingDistance =
+            outwardSpeed * outwardSpeed /
+            (2.0 * availableLateralAccelerationMps2);
+        const double predictedCrossTrack =
+            crossTrackMeters +
+            outwardSpeed * responseSeconds +
+            stoppingDistance;
         out.divergingNearBoundary =
-            crossTrackMeters >= trackingToleranceMeters * 0.5 &&
-            closingSpeedMps <= -2.0;
+            outwardSpeed > 0.5 &&
+            predictedCrossTrack >= trackingToleranceMeters;
         out.requireSafeStop =
             out.fullToleranceExceeded ||
             out.divergingNearBoundary;

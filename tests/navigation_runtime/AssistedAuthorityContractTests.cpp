@@ -1,5 +1,6 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
+#include "src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/telemetry/ReplicatedAssistedControlAuthority.h"
@@ -124,20 +125,94 @@ void testAssistedLostCorridorSafeStop()
 {
     using Policy =
         game::navigation::autopilot::AssistedCorridorDeviationPolicy;
-    // Existing good aft-50 trace never exceeded ~8.3m: do not change
-    // successful Assisted cruising and centering inside the corridor.
-    require(!Policy::evaluate(8.3, -1.0, 64.0).requireSafeStop,
-            "ordinary damaged-engine centering aborted");
-    require(!Policy::evaluate(31.9, -10.0, 64.0).requireSafeStop,
-            "half tolerance guard triggered too early");
-    require(Policy::evaluate(33.3425, -4.63167, 64.0).requireSafeStop,
-            "full engine-failure growing error was not stopped");
-    require(Policy::evaluate(40.9567, -8.57893, 64.0).requireSafeStop,
-            "damaged engine kept accelerating with diverging route error");
-    require(Policy::evaluate(70.0, +12.0, 64.0).requireSafeStop,
-            "once outside validated corridor recapture must not silently proceed");
-    require(Policy::evaluate(std::nan(""), 0.0, 64.0).requireSafeStop,
-            "nonfinite tracking measurement silently permitted cruise");
+    // An isolated drift of 2m/s at half tolerance is recoverable with the
+    // actual installed lateral basis. Do not abandon the route needlessly.
+    require(!Policy::evaluate(8.3, -1.0, 64.0, 2.0, 18.0).requireSafeStop,
+            "healthy aft-50 centering aborted");
+    require(!Policy::evaluate(31.9, -10.0, 64.0, 1.0, 18.0).requireSafeStop,
+            "sufficient room for recovery incorrectly rejected");
+    require(!Policy::evaluate(33.3425, -4.63167, 64.0, 1.8, 18.0)
+                 .requireSafeStop,
+            "engine-out trace at 33m should be speed-governed, not STOP");
+    require(!Policy::evaluate(40.9567, -8.57893, 64.0, 2.0, 18.0)
+                 .requireSafeStop,
+            "recoverable outward drift was interrupted without prediction");
+    require(Policy::evaluate(55.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
+            "imminent physical corridor boundary missed");
+    require(Policy::evaluate(70.0, +12.0, 64.0, 2.0, 18.0)
+                 .requireSafeStop,
+            "exceeded validated corridor continued");
+    require(Policy::evaluate(std::nan(""), 0.0, 64.0, 2.0, 18.0)
+                 .requireSafeStop,
+            "nonfinite tracking observation permitted cruise");
+}
+
+void testAssistedSpeedGovernorForRealEngineOutStraight()
+{
+    using Governor =
+        game::navigation::autopilot::AssistedCorridorSpeedGovernor;
+    Governor::State state;
+    const double tolerance = 64.0;
+    const double forwardAuthority = 50.0;
+    const double dt = 0.02;
+
+    // Within the known healthy/aft-50 range there is NO change of speed.
+    auto healthy = Governor::evaluate(
+        state, 8.3, -1.0, tolerance, 180.0, 400.0,
+        forwardAuthority, dt
+    );
+    require(healthy.valid && !healthy.recoveryActive,
+            "baseline Assisted cruising was altered");
+
+    // Full loss trace diverged while the route was still a STRAIGHT, long
+    // before any turn. Start reducing speed at 25% corridor occupancy.
+    auto recovery = Governor::evaluate(
+        state, 19.0848, -2.47967, tolerance, 121.448, 141.842,
+        forwardAuthority, dt
+    );
+    require(recovery.valid && recovery.recoveryActive &&
+            recovery.speedCeilingMps < 121.448,
+            "failed engine did not decelerate on the initial straight");
+    const double initialCap = recovery.speedCeilingMps;
+
+    // Continued outward drift cannot re-authorize a fast cruising target.
+    recovery = Governor::evaluate(
+        state, 23.5164, -3.40039, tolerance, 115.0, 163.024,
+        forwardAuthority, dt
+    );
+    require(recovery.recoveryActive &&
+            recovery.speedCeilingMps <= initialCap,
+            "velocity governor accelerated during growing drift");
+
+    // While trajectory is moving inward, restore acceleration slowly and
+    // in physical units; never jump straight to the nominal 400m/s.
+    const double previousCap = recovery.speedCeilingMps;
+    recovery = Governor::evaluate(
+        state, 20.0, +3.0, tolerance, 95.0, 300.0,
+        forwardAuthority, dt
+    );
+    require(recovery.recoveryActive &&
+            recovery.speedCeilingMps > previousCap &&
+            recovery.speedCeilingMps <=
+                previousCap + forwardAuthority * 0.20 * dt + 1.e-9,
+            "recovery reacceleration ignored physical slew limit");
+
+    // Once the capped trajectory is genuinely stable, the governor may
+    // rejoin the already accepted speed profile.
+    for (int i = 0; i < 1500 && recovery.recoveryActive; ++i)
+        recovery = Governor::evaluate(
+            state, 5.0, +0.5, tolerance, 150.0, 300.0,
+            forwardAuthority, 0.1
+        );
+    require(!recovery.recoveryActive,
+            "recovered Assisted corridor never released governor");
+
+    auto invalid = Governor::evaluate(
+        state, std::nan(""), 0.0, tolerance, 80.0, 400.0,
+        forwardAuthority, dt
+    );
+    require(!invalid.valid,
+            "invalid speed-governor input was accepted");
 }
 
 void testAssistedCourseResponseMeasuresVelocityNotHullNose()
@@ -282,6 +357,7 @@ int main()
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
         testAssistedLostCorridorSafeStop();
+        testAssistedSpeedGovernorForRealEngineOutStraight();
         testAssistedCourseResponseMeasuresVelocityNotHullNose();
         testActualHealthyCobraMotorBasis();
         testAbsentReplicatedEngineDataCannotInventAuthority();

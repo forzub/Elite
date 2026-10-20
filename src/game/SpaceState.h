@@ -428,6 +428,7 @@ private:
     std::string m_dockingStatusWarning;
     struct DockAdvice
     {
+        double workerDurationMs = 0.0;
         std::uint64_t serial = 0;
         int systemId = -1;
         std::string hubId;
@@ -494,6 +495,8 @@ private:
         std::atomic<std::uint8_t> planningProgressStage {0};
         std::uint64_t timelineRevision = 0;
         double startedServerSeconds = 0.0;
+        std::chrono::steady_clock::time_point wallClockStart =
+            std::chrono::steady_clock::now();
         double executionStartUniverseTimeSeconds = 0.0;
         double workerDurationMs = 0.0;
         // Time of RouteEntryBinder::bind itself; excludes autopilot compile

@@ -7605,7 +7605,8 @@ m_systemMapRenderer.render(
                 // Raw failure details stay in the diagnostics log.
                 // HUD must never emit an unlocalized internal sentence.
                 terminal.error =
-                    terminalText("cockpit.terminal.failure_generic");
+                    game::presentation::DockPlannerTerminalTelemetry::failure(
+                        terminalText, m_dockingGuidanceFailureReason);
             }
             else if (terminal.error.empty() &&
                      !m_dockingStatusWarning.empty())

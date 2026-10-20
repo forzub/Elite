@@ -309,6 +309,258 @@
       "zh-Hans": "I/Y/X",
       "es": "I/Y/X",
       "ja": "I/Y/X"
+    },
+    "cockpit.terminal.system_title": {
+      "en": "SYSTEM",
+      "ru": "СИСТЕМА",
+      "zh-Hans": "系统",
+      "es": "SISTEMA",
+      "ja": "システム"
+    },
+    "cockpit.terminal.preset.standard": {
+      "en": "STANDARD",
+      "ru": "СТАНДАРТ",
+      "zh-Hans": "标准",
+      "es": "ESTÁNDAR",
+      "ja": "標準"
+    },
+    "cockpit.terminal.preset.extreme": {
+      "en": "EXTREME",
+      "ru": "ЭКСТРИМ",
+      "zh-Hans": "极限",
+      "es": "EXTREMO",
+      "ja": "極限"
+    },
+    "cockpit.terminal.preset_line": {
+      "en": "MODE {0}",
+      "ru": "РЕЖИМ {0}",
+      "zh-Hans": "模式 {0}",
+      "es": "MODO {0}",
+      "ja": "モード {0}"
+    },
+    "cockpit.terminal.planner_stage.prepare": {
+      "en": "PREPARE",
+      "ru": "ПОДГОТОВКА",
+      "zh-Hans": "准备",
+      "es": "PREPARAR",
+      "ja": "準備"
+    },
+    "cockpit.terminal.planner_stage.geometry": {
+      "en": "GEOMETRY",
+      "ru": "ГЕОМЕТРИЯ",
+      "zh-Hans": "几何",
+      "es": "GEOMETRÍA",
+      "ja": "形状計算"
+    },
+    "cockpit.terminal.planner_stage.frames": {
+      "en": "FRAMES",
+      "ru": "ОРИЕНТАЦИЯ",
+      "zh-Hans": "姿态框架",
+      "es": "MARCOS",
+      "ja": "座標フレーム"
+    },
+    "cockpit.terminal.planner_stage.control": {
+      "en": "CONTROL",
+      "ru": "УПРАВЛЕНИЕ",
+      "zh-Hans": "控制",
+      "es": "CONTROL",
+      "ja": "制御"
+    },
+    "cockpit.terminal.planner_stage.complete": {
+      "en": "COMPLETE",
+      "ru": "ГОТОВО",
+      "zh-Hans": "完成",
+      "es": "COMPLETO",
+      "ja": "完了"
+    },
+    "cockpit.terminal.planner_stage.unknown": {
+      "en": "UNKNOWN",
+      "ru": "НЕИЗВЕСТНО",
+      "zh-Hans": "未知",
+      "es": "DESCONOCIDO",
+      "ja": "不明"
+    },
+    "cockpit.terminal.metric.planning": {
+      "en": "PLAN {0} W={1}",
+      "ru": "ПЛАН {0} П={1}",
+      "zh-Hans": "规划 {0} 工={1}",
+      "es": "PLAN {0} T={1}",
+      "ja": "経路 {0} 処理={1}"
+    },
+    "cockpit.terminal.metric.elapsed": {
+      "en": "T={0}s V0={1} MAX={2}m/s",
+      "ru": "ВР={0}с V0={1} МАКС={2}м/с",
+      "zh-Hans": "耗时={0}秒 V0={1} 上限={2}米/秒",
+      "es": "T={0}s V0={1} MÁX={2}m/s",
+      "ja": "経過={0}秒 V0={1} 上限={2}m/s"
+    },
+    "cockpit.terminal.metric.limits": {
+      "en": "ACC={0} BRK={1} LAT={2}",
+      "ru": "УСК={0} ТОРМ={1} БОК={2}",
+      "zh-Hans": "加速={0} 制动={1} 侧向={2}",
+      "es": "ACE={0} FRE={1} LAT={2}",
+      "ja": "加速={0} 減速={1} 横加速={2}"
+    },
+    "cockpit.terminal.metric.obstacles": {
+      "en": "OBSTACLES={0}",
+      "ru": "ПРЕПЯТСТВИЙ={0}",
+      "zh-Hans": "障碍物={0}",
+      "es": "OBSTÁCULOS={0}",
+      "ja": "障害物={0}"
+    },
+    "cockpit.terminal.metric.completed": {
+      "en": "PLAN READY {0}s",
+      "ru": "ПЛАН ГОТОВ {0}с",
+      "zh-Hans": "规划完成 {0}秒",
+      "es": "PLAN LISTO {0}s",
+      "ja": "経路完了 {0}秒"
+    },
+    "cockpit.terminal.metric.route": {
+      "en": "PATH={0}km CURVES={1}",
+      "ru": "ПУТЬ={0}км КРИВЫХ={1}",
+      "zh-Hans": "路程={0}公里 曲线={1}",
+      "es": "RUTA={0}km CURVAS={1}",
+      "ja": "距離={0}km 曲線={1}"
+    },
+    "cockpit.terminal.metric.solve": {
+      "en": "SOLVE IN={0}s OUT={1}s",
+      "ru": "РАСЧ ВХ={0}с ВЫХ={1}с",
+      "zh-Hans": "计算 入={0}秒 出={1}秒",
+      "es": "CÁLC EN={0}s SAL={1}s",
+      "ja": "計算 前={0}秒 後={1}秒"
+    },
+    "cockpit.terminal.metric.eta": {
+      "en": "ETA IN={0}s OUT={1}s",
+      "ru": "ВРЕМЯ ВХ={0}с ВЫХ={1}с",
+      "zh-Hans": "预计 入={0}秒 出={1}秒",
+      "es": "TIEMPO EN={0}s SAL={1}s",
+      "ja": "所要 前={0}秒 後={1}秒"
+    },
+    "cockpit.terminal.metric.evaluations": {
+      "en": "EVAL IN={0} OUT={1}",
+      "ru": "ПРОВ ВХ={0} ВЫХ={1}",
+      "zh-Hans": "评估 入={0} 出={1}",
+      "es": "EVAL EN={0} SAL={1}",
+      "ja": "評価 前={0} 後={1}"
+    },
+    "cockpit.terminal.ship": {
+      "en": "SHIP {0} LAW {1}",
+      "ru": "КОРАБЛЬ {0} ЗАКОН {1}",
+      "zh-Hans": "飞船 {0} 模式 {1}",
+      "es": "NAVE {0} LEY {1}",
+      "ja": "船体 {0} 法則 {1}"
+    },
+    "cockpit.terminal.actuators": {
+      "en": "ENGINE={0} AFT={1} FORE={2} RCS={3}",
+      "ru": "ДВИГ={0} КОРМ={1} НОС={2} РСУ={3}",
+      "zh-Hans": "主机={0} 后={1} 前={2} 姿控={3}",
+      "es": "MOTOR={0} POPA={1} PROA={2} RCS={3}",
+      "ja": "主機={0} 後={1} 前={2} RCS={3}"
+    },
+    "cockpit.terminal.bite.nominal": {
+      "en": "BITE NOMINAL",
+      "ru": "BITE: НОРМА",
+      "zh-Hans": "自检正常",
+      "es": "BITE NORMAL",
+      "ja": "自己診断正常"
+    },
+    "cockpit.terminal.bite.advisory": {
+      "en": "ADVISORY",
+      "ru": "ИНФО",
+      "zh-Hans": "提示",
+      "es": "AVISO",
+      "ja": "通知"
+    },
+    "cockpit.terminal.bite.caution": {
+      "en": "CAUTION",
+      "ru": "ВНИМАНИЕ",
+      "zh-Hans": "注意",
+      "es": "PRECAUCIÓN",
+      "ja": "注意"
+    },
+    "cockpit.terminal.bite.warning": {
+      "en": "WARNING",
+      "ru": "ПРЕДУПР.",
+      "zh-Hans": "警告",
+      "es": "ADVERTENCIA",
+      "ja": "警告"
+    },
+    "cockpit.terminal.bite.failed": {
+      "en": "FAILED",
+      "ru": "ОТКАЗ",
+      "zh-Hans": "故障",
+      "es": "FALLO",
+      "ja": "故障"
+    },
+    "cockpit.terminal.bite.inoperative": {
+      "en": "equipment inoperative",
+      "ru": "оборудование не работает",
+      "zh-Hans": "设备无法工作",
+      "es": "equipo inoperativo",
+      "ja": "機器停止"
+    },
+    "cockpit.terminal.bite.output": {
+      "en": "available thrust {0}%",
+      "ru": "доступная тяга {0}%",
+      "zh-Hans": "可用推力 {0}%",
+      "es": "empuje disponible {0}%",
+      "ja": "有効推力 {0}%"
+    },
+    "cockpit.terminal.bite.nozzle": {
+      "en": "nozzle authority {0}%",
+      "ru": "управление соплом {0}%",
+      "zh-Hans": "喷口控制能力 {0}%",
+      "es": "control de tobera {0}%",
+      "ja": "ノズル制御 {0}%"
+    },
+    "cockpit.terminal.bite.maintenance": {
+      "en": "maintenance; wear {0}%",
+      "ru": "нужно ТО; износ {0}%",
+      "zh-Hans": "需维护；磨损 {0}%",
+      "es": "requiere mantenimiento; desgaste {0}%",
+      "ja": "整備必要・摩耗 {0}%"
+    },
+    "cockpit.terminal.bite.fault": {
+      "en": "{0} · {1}: {2}",
+      "ru": "{0} · {1}: {2}",
+      "zh-Hans": "{0} · {1}：{2}",
+      "es": "{0} · {1}: {2}",
+      "ja": "{0} · {1}：{2}"
+    },
+    "cockpit.terminal.bite.power": {
+      "en": ", power +{0}%",
+      "ru": ", мощность +{0}%",
+      "zh-Hans": "，功耗 +{0}%",
+      "es": ", consumo +{0}%",
+      "ja": "、消費電力 +{0}%"
+    },
+    "cockpit.terminal.bite.heat": {
+      "en": ", heat +{0}%",
+      "ru": ", нагрев +{0}%",
+      "zh-Hans": "，发热 +{0}%",
+      "es": ", calor +{0}%",
+      "ja": "、発熱 +{0}%"
+    },
+    "cockpit.terminal.bite.instability": {
+      "en": ", output instability {0}%",
+      "ru": ", нестабильность тяги {0}%",
+      "zh-Hans": "，推力不稳定 {0}%",
+      "es": ", inestabilidad {0}%",
+      "ja": "、推力不安定 {0}%"
+    },
+    "cockpit.terminal.failure_generic": {
+      "en": "navigation error; see log",
+      "ru": "ошибка навигации; см. журнал",
+      "zh-Hans": "导航错误；请查看日志",
+      "es": "error de navegación; ver registro",
+      "ja": "航法エラー・ログを確認"
+    },
+    "cockpit.terminal.warning_authority": {
+      "en": "waiting for motor telemetry",
+      "ru": "ожидание данных двигателей",
+      "zh-Hans": "等待发动机遥测",
+      "es": "esperando datos de motores",
+      "ja": "エンジン情報待機"
     }
   }
 }

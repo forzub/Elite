@@ -1,3 +1,35 @@
+## 2026-10-20 — IMPLEMENTED EARLY ASSISTED SPEED RECOVERY IN ENGINE-OUT STRAIGHT; NATIVE BUILD / FLIGHT PENDING
+
+**User asks what next after previous unsafe abrupt STOP at 32m cross-track.** Applied source changes on ONLY `main`, preserving the restore anchor `restore/before-damaged-engine-corridor-2026-10-20` at `596fd41`. Do not claim successful dock or native test run.
+
+**Observed from user-uploaded `Вставленный текст(20261020-074355).txt`:** Fully failed installed `ship_engine_L`; first request ends tracking at `[DockAuthority] phase=corridor-lost-safe-stop cross_track_m=32.4693 tolerance_m=64 closing_mps=-2.135 actual_speed_mps=180.463`. It was on the FIRST STRAIGHT `curve=0 curvature=0`, not at the curve; at 6m-28m off-centre the ship was already moving outward while accelerating. The previous hard intervention was too aggressive and happened while a theoretical recovery margin remained. Later UI `ui-clear reason=card-closed` explicitly erased visible route. There was no logged explicit keypad lift input, and no signed after-STOP acceleration evidence, so do not assert upward thrust.
+
+**New changes committed:**
+- `src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h` is a pure scalar governor with tiny instance state (no route mutation, no physical engine bypass). It notices persistent outward course drift when cross-track >= 25% tracking tolerance (~16m of 64m), rather than waiting until the now-removed half-width abrupt STOP. It caps target speed below ACTUAL speed by 15%-65% according to corridor occupancy, maintains a nonincreasing cap during outward drift and restores it gradually (20% of live forward-acceleration authority per second) once no longer diverging. This is a **conservative feedback mitigation heuristic**, NOT a mathematically certified coupled-motor-wrench or direction-sensitive agility model. In the failed engine-out trace it should intervene from ~19.1m / 121.45m/s onward (prior to 180m/s/32m event); healthy/aft-50 observed 8.3m maximum remains below the activation threshold. No physical law or planner score changed.
+- `src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h`: for **Assisted only** after it computes actual position/cross-track from the existing continuous route curve, invoke governor; apply resulting live cap to `targetSpeed` even on straights where `turnSpeedCeilingMps` is not meaningful. While governed, disable conflicting nominal positive longitudinal acceleration feed-forward (`desiredLinearAccelerationMapMps2=0`) so the Assisted pilot's real scalar speed feedback can actually decelerate. Newtonian remains compiled through its unmodified constexpr branch. Publish `assistedRecoverySpeedLimited` and `assistedRecoverySpeedCeilingMps` on route output, and report zero longitudinal feedforward when active.
+- `src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h`: replace the old crude `crossTrack >= 0.5*tolerance && outward>=2m/s` hard abort with a predictor using actual outward cross-track speed, reported Assisted course-response seconds and a conservative 1/3 signed lateral-motor basis: `crossTrack + outward*response + outward^2/(2*reservedLateralAuthority) >= tolerance`. Hard stop still fires if out of full accepted tolerance, invalid geometry, or imminent predicted escape; does not pretend to guarantee safety after a stop outside validated obstacle-free corridor. THIS IS NOT COUPLED WRENCH CERTIFICATION.
+- `src/game/SpaceState.cpp/.h`: wire predictor to measured follower output, log `[DockAuthority] phase=recovery-speed-governor active=0|1 cap_mps=... actual_speed_mps=... cross_track_m=... closing_mps=...` on transitions; normal `[DockClientTrack]` now includes `recovery_speed_limited` and `recovery_speed_ceiling_mps` for every sampled update; keep old emergency `SecuringCourse -> manualStopControl -> normal ShipControlState` for genuine imminent loss. When STOP is active, log periodic `[AssistedSafeStop] velocity_xyz_mps=(...) main_a_xyz_mps2=(...) assisted_a_xyz_mps2=(...) total_a_xyz_mps2=(...) align_mode=... pitch=... yaw=... roll=... forward=... strafe=... lift=...` so future tests can decisively identify upward/downward thrust and axis allocations. These vectors are real currently replicated motion outputs, not predicted plans.
+- `src/assets/localization/ui/cockpit/flight.json`: localized human-readable speed-recovery warning for all five locales; resets state with ordinary pilot releases.
+- `tests/navigation_runtime/AssistedAuthorityContractTests.cpp`: update abrupt-stop expectations to new predicted safety boundary (33m/-4.6m/s should slow, not STOP), add first-straight engine-out speed cap and healthy baseline tests, cap monotonicity, gradual recovery, invalid-input checks. Original nose/velocity course-response unit test remains.
+
+**Honesty & architectural caveat:** This guard intentionally gives up some time-optimality and may still end in emergency STOP if damaged asymmetric motors cannot execute simultaneous torque+normal force+braking. It does NOT fix joint feasible-wrench solver nor prove safe engine-out corner tracking. Do not remove this safety or alter Standard route geometry. Follow-up should measure signed actual velocity/course, demanded vs executed acceleration in the live application, then pursue an explicit multi-axis motor-wrench capability or slower independently validated speed profile. The ‘15%-65%’ factor is a transient feedback safety heuristic, not a validated physical constant.
+
+**Status:** SOURCE changes committed and reread; no access to user's MSYS2 native build/game. Require native acceptance before claiming PASS.
+
+**User Windows commands:**
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+cmake --build build/tests/navigation_runtime --target assisted_authority_contract_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R '^assisted_authority_contract$' --output-on-failure
+bash build_mingw64.sh
+unset ELITE_ASSISTED_ROUTE_PRESET ELITE_SHIP_PHYSICAL_TEST_MODEL
+ELITE_SHIP_DAMAGE_PRESET=aft-failed ./build/EliteGame.exe
+```
+Keep `D:/tmp/elite_engine_damage_preset.log`, `D:/tmp/elite_docking_planner.log`, and console `[DockClientTrack]`, `[DockAuthority]`, `[AssistedSafeStop]`. First compare first straight around cross track 16-32m; if `recovery-speed-governor active=1` does not appear, inspect actual state path and logging. The autopilot should brake/recapture, not suddenly leave the visible tunnel at 32m; full docking still unverified.
+
+---
+
 ## 2026-10-20 — WHY TUNNEL WENT OFF-SCREEN AFTER FAILED-ENGINE SAFETY PATCH (USER LOG, NO SOURCE CHANGE)
 
 **User report:** With `ELITE_SHIP_DAMAGE_PRESET=aft-failed`, the tunnel visually flew off screen; user asks if the autopilot thrust upward. Inputs: `Вставленный текст(20261020-074355).txt`, `elite_engine_damage_preset(2).log`, `elite_docking_planner(6).log`. The two appended damage events report `status=APPLIED module=ship_engine_L impact_damage=1.000000`. Recent route requests both Standard with lateral_mps2=14.848, braking_mps2=20.364, max_speed_mps=500; no planner geometry code changes.

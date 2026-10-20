@@ -1972,6 +1972,7 @@ void SpaceState::updateDockingAdvisory()
 
     const auto releaseClientAutopilot = [&]()
     {
+        m_clientDockingRecoverySpeedLimited = false;
         m_clientAutopilotControlActive = false;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
@@ -4994,6 +4995,38 @@ void SpaceState::updateDockingAdvisory()
             if (controlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted)
             {
+                if (output.assistedRecoverySpeedLimited !=
+                        m_clientDockingRecoverySpeedLimited)
+                {
+                    std::cerr
+                        << "[DockAuthority]"
+                        << " request=" << pending.serial
+                        << " phase=recovery-speed-governor"
+                        << " active="
+                        << (output.assistedRecoverySpeedLimited ? 1 : 0)
+                        << " cap_mps="
+                        << output.assistedRecoverySpeedCeilingMps
+                        << " actual_speed_mps="
+                        << glm::length(motion.localVelocityMps)
+                        << " cross_track_m="
+                        << output.crossTrackErrorMeters
+                        << " closing_mps="
+                        << output.crossTrackClosingSpeedMps
+                        << std::endl;
+                    m_clientDockingRecoverySpeedLimited =
+                        output.assistedRecoverySpeedLimited;
+                }
+                if (output.assistedRecoverySpeedLimited)
+                {
+                    m_dockingStatusWarning =
+                        "autopilot-corridor-speed-recovery";
+                }
+                else if (m_dockingStatusWarning ==
+                         "autopilot-corridor-speed-recovery")
+                {
+                    m_dockingStatusWarning.clear();
+                }
+
                 const double tolerance =
                     m_clientAssistedRouteAutopilot.
                         trackingPositionToleranceMeters;
@@ -7697,6 +7730,12 @@ m_systemMapRenderer.render(
                 {
                     terminal.error = terminalText(
                         "cockpit.terminal.warning_corridor_lost");
+                }
+                else if (m_dockingStatusWarning ==
+                             "autopilot-corridor-speed-recovery")
+                {
+                    terminal.error = terminalText(
+                        "cockpit.terminal.warning_corridor_speed_recovery");
                 }
                 else
                 {

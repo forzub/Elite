@@ -1,3 +1,17 @@
+## 2026-10-20 — REJECTED ROUTE CANDIDATES: FIRST REAL WINDOWS REPORT
+
+New user log `elite_docking_planner(1).log`, second report: selected total 48728.543 m. Inbound free leg 34281.782 m, ETA 101.064 s; mandatory traffic 2050 m, approximately 9.318 s at 220 m/s; final free leg 12396.761 m, ETA 75.745 s. Nominal total ETA 186.127 s. The old report in the same file predates candidate instrumentation.
+
+Shortest feasible candidates: inbound 31187.522 m, ETA 114.017 s; final 12235.242 m, ETA 76.354 s. Combined approximate total 45472.764 m and 199.689 s, 3.256 km shorter but 13.562 s slower than selected.
+
+Fastest feasible candidates: inbound 34880.584 m, ETA 99.509 s; final 12515.286 m, ETA 75.636 s. Combined approximate total 49445.870 m and 184.463 s, 717 m longer and 1.664 s faster than selected. Selected weighted objectives are lower: inbound 2.673129 vs fastest 2.686599; final 6.792346 vs fastest 6.808122. This supports user claim that longer paths can be faster; the selected solution trades ~0.9% ETA for reserve/shape preferences. All comparisons are made with optimizer ETA, not independent final execution-profile validation.
+
+Terminal feasible evaluations: 806/4726 (17.1%); inbound 2979/4814 (61.9%). Crucial rejected independent terminal search branch: 8891.814 m, ETA 56.413 s, violation=1.0, infeasible. The current optimizer sets violation=1.0 when sampled geometry intersects navigation obstacles; this suggests collision, but exact cause and blocker remain unlogged. Two other terminal branch outcomes at 12087.017m and 12306.405m also violate constraints (0.044247 and 0.039610). Do not count any of these as feasible improvements.
+
+No planner source, weights or physics changed during this analysis. Next diagnostic: log per-reason constraint failures and blocking obstacle identifiers for each rejected independent branch, then compare executable ETAs with the same final speed cap. Final docking acceptance remains unproven.
+
+---
+
 ## 2026-10-20 — INSTRUMENT REJECTED ASSISTED CANDIDATE ETA WITHOUT CHANGING THE SEARCH (SOURCE COMMITTED; NATIVE TEST PENDING)
 
 **User idea:** Since selected-route ETA (~186s) agreed reasonably with the observed near-complete docking flight, inspect feasible routes discarded during optimization to see whether any were faster, rather than deducing inefficiency from length or guessing about alternative geometry. A longer route may truly be faster. **The OLD `D:/tmp/elite_docking_planner.log` did NOT retain rejected candidate ETAs**, only the selected route and aggregate 4,682/4,726 evaluations. Old candidates cannot be recovered from that text log; a new same-scene route calculation is required.

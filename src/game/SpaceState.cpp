@@ -2,6 +2,7 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
+#include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 #include "src/audio/AudioEngine.h"
 #include <stdexcept>
 #include "src/render/legacy/CoreGlLegacyBridge.h"
@@ -2918,6 +2919,18 @@ void SpaceState::updateDockingAdvisory()
             controlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
 
+        // Explicit experimental switch. Normal launches remain byte-for-byte
+        // Standard; Newtonian is not affected. Run a second identical scene
+        // with ELITE_ASSISTED_ROUTE_PRESET=extreme to compare tunnel geometry.
+        const char* assistedPresetEnv =
+            std::getenv("ELITE_ASSISTED_ROUTE_PRESET");
+        request.assistedRoutePreset =
+            assisted && assistedPresetEnv &&
+            (std::string(assistedPresetEnv) == "extreme" ||
+             std::string(assistedPresetEnv) == "EXTREME")
+                ? game::navigation::planner::AssistedRoutePreset::Extreme
+                : game::navigation::planner::AssistedRoutePreset::Standard;
+
         const bool lateEntryRebind =
             automatic &&
             m_dockLateEntry.active &&
@@ -3772,6 +3785,7 @@ void SpaceState::updateDockingAdvisory()
         job->preferredEntryAnchor = preferredEntryAnchor;
         job->preferredEntryForward = preferredEntryForward;
         job->context.serial = pending.serial;
+        job->context.assistedRoutePreset = request.assistedRoutePreset;
         job->context.systemId = snapshot.systemId;
         job->context.hubId =
             snapshot.hubPredictionSource.hubId;
@@ -4732,6 +4746,7 @@ void SpaceState::updateDockingAdvisory()
         m_dockingStatusWarning.clear();
 
         m_dockAdvice = std::move(job->context);
+        m_dockAdvice.workerDurationMs = job->workerDurationMs;
         m_dockAdvice.plan = std::move(job->plan);
         m_clientDockingRouteProgressMeters = 0.0;
         m_clientDockingRouteCurveIndex = 0;
@@ -7465,85 +7480,79 @@ m_systemMapRenderer.render(
 
             if (m_dockAdviceJob)
             {
-                const int permille =
-                    std::clamp(
-                        m_dockAdviceJob->planningProgressPermille.load(
-                            std::memory_order_acquire
-                        ),
-                        0,
-                        1000
+                const auto& job = *m_dockAdviceJob;
+                const std::uint8_t stage =
+                    job.planningProgressStage.load(
+                        std::memory_order_acquire
                     );
-                const int stage =
-                    static_cast<int>(
-                        m_dockAdviceJob->planningProgressStage.load(
-                            std::memory_order_acquire
-                        )
+                const double elapsedWallSeconds =
+                    std::chrono::duration<double>(
+                        std::chrono::steady_clock::now() -
+                        job.wallClockStart
+                    ).count();
+                terminal.planner =
+                    game::presentation::DockPlannerTerminalTelemetry::running(
+                        stage,
+                        m_dockWorkerCount->load(std::memory_order_acquire)
                     );
-
-                std::ostringstream plannerLine;
-                plannerLine
-                    << localizedUiText(
-                           context().app,
-                           "cockpit.terminal.planner_on",
-                           "planner on"
-                       )
-                    << " S" << stage
-                    << " " << (permille / 10) << "%"
-                    << " W="
-                    << m_dockWorkerCount->load(
-                           std::memory_order_acquire
-                       );
-                terminal.planner = plannerLine.str();
-
-                // Presentation-only activity trace. This is intentionally a
-                // deterministic pseudo-hex visualization of diagnostic state,
-                // not memory contents and not planner input/output.
-                const std::uint64_t bucket =
-                    static_cast<std::uint64_t>(
-                        std::max(0.0, std::floor(terminalNowSeconds))
+                terminal.activity =
+                    game::presentation::DockPlannerTerminalTelemetry::elapsed(
+                        elapsedWallSeconds, job.planningRequest
                     );
-                std::uint64_t x =
-                    m_dockAdviceJob->context.serial *
-                        0x9E3779B97F4A7C15ULL ^
-                    static_cast<std::uint64_t>(stage + 1) *
-                        0xBF58476D1CE4E5B9ULL ^
-                    static_cast<std::uint64_t>(permille + 1) *
-                        0x94D049BB133111EBULL ^
-                    bucket;
-                auto nextHexWord = [&]()
+                terminal.plannerDetails.push_back(
+                    game::presentation::DockPlannerTerminalTelemetry::preset(
+                        job.planningRequest
+                    )
+                );
+                terminal.plannerDetails.push_back(
+                    game::presentation::DockPlannerTerminalTelemetry::limits(
+                        job.planningRequest
+                    )
+                );
+            }
+            else if (
+                (m_clientDockingPhase == ClientDockingPhase::Executing ||
+                 m_clientDockingPhase == ClientDockingPhase::RouteReady) &&
+                m_dockAdvice.plan.valid()
+            )
+            {
+                terminal.planner =
+                    game::presentation::DockPlannerTerminalTelemetry::completed(
+                        m_dockAdvice.workerDurationMs
+                    );
+                terminal.activity =
+                    game::presentation::DockPlannerTerminalTelemetry::route(
+                        m_dockAdvice.plan
+                    );
+                terminal.plannerDetails.emplace_back(
+                    std::string("ROUTE MODE ") +
+                    game::navigation::planner::assistedRoutePresetName(
+                        m_dockAdvice.assistedRoutePreset
+                    )
+                );
+                for (const auto& line : {
+                    game::presentation::DockPlannerTerminalTelemetry::legTimings(
+                        m_dockAdvice.plan
+                    ),
+                    game::presentation::DockPlannerTerminalTelemetry::legEta(
+                        m_dockAdvice.plan
+                    ),
+                    game::presentation::DockPlannerTerminalTelemetry::legEvaluations(
+                        m_dockAdvice.plan
+                    )
+                })
                 {
-                    x ^= x >> 12;
-                    x ^= x << 25;
-                    x ^= x >> 27;
-                    x *= 0x2545F4914F6CDD1DULL;
-                    return static_cast<unsigned int>(x & 0xFFFFULL);
-                };
-
-                std::ostringstream activity;
-                activity
-                    << "CALC "
-                    << std::hex << std::uppercase << std::setfill('0')
-                    << std::setw(4) << nextHexWord() << " "
-                    << std::setw(4) << nextHexWord() << " "
-                    << std::setw(4) << nextHexWord() << " "
-                    << std::setw(4) << nextHexWord();
-                terminal.activity = activity.str();
+                    if (!line.empty())
+                        terminal.plannerDetails.push_back(line);
+                }
             }
             else
             {
-                terminal.planner =
-                    m_clientDockingPhase == ClientDockingPhase::Executing ||
-                    m_clientDockingPhase == ClientDockingPhase::RouteReady
-                        ? localizedUiText(
-                              context().app,
-                              "cockpit.terminal.planner_ready",
-                              "planner ready"
-                          )
-                        : localizedUiText(
-                              context().app,
-                              "cockpit.terminal.planner_off",
-                              "planner off"
-                          );
+                terminal.planner = localizedUiText(
+                    context().app,
+                    "cockpit.terminal.planner_off",
+                    "planner off"
+                );
             }
 
             if (m_dockAssistedSafeRecovery.active)

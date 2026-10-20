@@ -41,7 +41,8 @@ int main()
                     {"cockpit.terminal.metric.evaluations", "EVAL IN={0} OUT={1}"},
                     {"cockpit.terminal.bite.failed", "FAILED"},
                     {"cockpit.terminal.bite.inoperative", "equipment inoperative"},
-                    {"cockpit.terminal.bite.fault", "{0} · {1}: {2}"}
+                    {"cockpit.terminal.bite.fault", "{0} · {1}: {2}"},
+                    {"cockpit.terminal.failure_dock", "dock unavailable or hull incompatible"}
                 };
                 return translations.at(key);
             };
@@ -115,6 +116,13 @@ int main()
         require(localizedBite.size() == 1 &&
                 localizedBite.front().find("equipment inoperative") != std::string::npos,
                 "BITE descriptions must be localized at UI boundary");
+
+        require(
+            DockPlannerTerminalTelemetry::failure(
+                en, "dock unavailable or hull does not fit") ==
+                "dock unavailable or hull incompatible",
+            "technical failure must render its translated category"
+        );
 
         DockingStatusTerminal terminal;
 

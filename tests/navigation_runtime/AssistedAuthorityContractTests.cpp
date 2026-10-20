@@ -181,8 +181,13 @@ void testAssistedLostCorridorSafeStop()
     require(!Policy::evaluate(40.9567, -8.57893, 64.0, 2.0, 18.0)
                  .requireSafeStop,
             "recoverable outward drift was interrupted without prediction");
-    require(Policy::evaluate(55.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
-            "imminent physical corridor boundary missed");
+    require(!Policy::evaluate(8.71636, -11.1469, 64.0, 3.21281, 18.0)
+                 .requireSafeStop,
+            "real 2026-10-20 flight aborted at only 8.7m of 64m");
+    require(!Policy::evaluate(55.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
+            "predicted loss incorrectly replaced speed recovery with STOP");
+    require(Policy::evaluate(64.0, -8.6, 64.0, 2.0, 18.0).requireSafeStop,
+            "actual corridor boundary did not trigger safe STOP");
     require(Policy::evaluate(70.0, +12.0, 64.0, 2.0, 18.0)
                  .requireSafeStop,
             "exceeded validated corridor continued");

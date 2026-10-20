@@ -93,9 +93,6 @@ public:
         std::uint64_t speedProfileRevision = 0;
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
-        // At zero-speed handoff, orient toward the accepted first tangent
-        // before applying the route's longitudinal acceleration program.
-        bool assistedLaunchAlignmentPending = false;
         AssistedCorridorSpeedGovernor::State
             assistedCorridorSpeedGovernor {};
 
@@ -256,11 +253,6 @@ public:
         state = {};
         state.active = true;
         state.requestSerial = requestSerial;
-        if constexpr (Law == LocalFlightControlLaw::Assisted)
-        {
-            state.assistedLaunchAlignmentPending =
-                glm::length(initialAgent.velocityMapMetersPerSecond) < 0.5;
-        }
         state.holdAtTerminal = holdAtTerminal;
         state.trackingPositionToleranceMeters =
             std::max(0.0, trackingPositionToleranceMeters);
@@ -1285,45 +1277,6 @@ public:
             targetSpeed = std::min(targetSpeed, terminalSafeSpeed);
         }
 
-        // A stopped ship has no defined VELOCITY heading. After safe-course
-        // acquisition the compiled first tangent can differ from the hull by
-        // many degrees. Accelerating before this initial attitude correction
-        // creates cross-track speed which the damaged craft cannot recapture.
-        // This is launch sequencing, NOT a new steering law, speed governor,
-        // or motor override. Once aligned, normal Assisted control resumes.
-        bool assistedLaunchAlignmentHold = false;
-        if constexpr (Law == LocalFlightControlLaw::Assisted)
-        {
-            if (state.assistedLaunchAlignmentPending)
-            {
-                const double angularRate = std::hypot(
-                    agent.pitchRateRadPerSec, agent.yawRateRadPerSec
-                );
-                const double initialCourseError =
-                    angleBetween(agent.forwardMap, steeringForward);
-                // Keep the expected lateral drift over the first manoeuvre
-                // within a quarter of the existing corridor tolerance.
-                const double lead = std::max(
-                    100.0, distanceToTurnMeters
-                );
-                const double allowedError = std::clamp(
-                    std::atan(
-                        0.25 * state.trackingPositionToleranceMeters / lead
-                    ), 0.008, 0.035
-                );
-                if (initialCourseError <= allowedError &&
-                    angularRate <= 0.04)
-                {
-                    state.assistedLaunchAlignmentPending = false;
-                }
-                else
-                {
-                    assistedLaunchAlignmentHold = true;
-                    targetSpeed = 0.0;
-                }
-            }
-        }
-
         // Navigation owns velocity, not hull attitude. The desired velocity
         // vector is the authored route tangent (except explicit out-of-corridor
         // recovery). flight-law autopilot may move the hull however the actuator
@@ -1373,10 +1326,13 @@ public:
                     linearAccelerationFeedForwardMapMps2;
         if constexpr (Law == LocalFlightControlLaw::Assisted)
         {
-            if (recoverySpeedLimited || assistedLaunchAlignmentHold)
+            if (recoverySpeedLimited)
             {
-                // No forward launch thrust while the hull is still pointing
-                // away from the accepted route tangent.
+                // The accepted spatial acceleration feed-forward is for
+                // nominal speed. It must not cancel the reduction in speed
+                // requested by the live damaged-craft recovery governor.
+                // No hidden actuator: ordinary Assisted scalar speed input
+                // remains the only authority to decelerate.
                 request.desiredLinearAccelerationMapMps2 =
                     glm::dvec3(0.0);
             }
@@ -1476,10 +1432,7 @@ public:
         request.stopRequested =
             terminalStopAuthored &&
             (atFinalContinuousSegment || terminalBrakeActive);
-        // Stationary launch alignment is a hull-pose task, not a request
-        // to bend a velocity vector that may be undefined at low speed.
-        request.terminalAttitudeHold =
-            terminalAttitudeHold || assistedLaunchAlignmentHold;
+        request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
 
         if (law == LocalFlightControlLaw::Newtonian &&
@@ -1606,7 +1559,7 @@ public:
         out.assistedRecoverySpeedCeilingMps =
             recoverySpeedLimited ? recoverySpeedCeilingMps : 0.0;
         out.targetLongitudinalAccelerationMps2 =
-            (recoverySpeedLimited || assistedLaunchAlignmentHold)
+            recoverySpeedLimited
                 ? 0.0
                 : glm::dot(
                       continuous.reference.linearAccelerationFeedForwardMapMps2,

@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <array>
+#include <nlohmann/json.hpp>
 
 #include "src/game/localization/LocalizationService.h"
 #include "src/game/ui/GameUiHotkeyPolicy.h"
@@ -31,6 +33,36 @@ int main()
            "committed localization tree must contain no skipped files");
     expect(localization.loadedFileCount() >= 80,
            "categorized localization tree unexpectedly lost files");
+
+    // Validate literal JSON coverage rather than relying on English fallback
+    // (which would mask a missing translation in a non-English locale).
+    {
+        std::ifstream in(
+            "src/assets/localization/ui/cockpit/flight.json"
+        );
+        expect(static_cast<bool>(in),
+               "cockpit terminal locale catalog must exist");
+        if (in)
+        {
+            const auto json = nlohmann::json::parse(in);
+            const auto& strings = json.at("strings");
+            const std::array<const char*, 5> locales {
+                "en", "ru", "zh-Hans", "es", "ja"
+            };
+            for (auto it = strings.begin(); it != strings.end(); ++it)
+            {
+                if (it.key().rfind("cockpit.terminal.", 0) != 0)
+                    continue;
+                for (const char* locale : locales)
+                    expect(
+                        it.value().contains(locale) &&
+                        it.value().at(locale).is_string() &&
+                        !it.value().at(locale).get<std::string>().empty(),
+                        "cockpit terminal translation missing in a supported locale"
+                    );
+            }
+        }
+    }
 
     expect(localization.locale() == "en", "English must remain the initial locale");
     expect(localization.localeDirection() == "ltr",

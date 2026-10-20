@@ -2525,6 +2525,12 @@ void SpaceState::updateDockingAdvisory()
                         << " fallback=1"
                         << std::endl;
 
+                    if (m_dockingStatusWarning ==
+                            "autopilot-coupled-curve-unavailable")
+                    {
+                        fail("installed Assisted motors cannot jointly execute turn and stabilization");
+                        return;
+                    }
                     m_dockAssistedSafeRecovery = {};
                     m_clientDockingPhase =
                         ClientDockingPhase::Stabilizing;
@@ -5044,6 +5050,33 @@ void SpaceState::updateDockingAdvisory()
             if (controlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted)
             {
+                if (output.coupledCurveAccelerationMps2 >= 0.0 &&
+                    output.coupledCurveAccelerationMps2 <= 1.0e-4)
+                {
+                    std::cerr
+                        << "[DockAuthority]"
+                        << " request=" << pending.serial
+                        << " phase=coupled-curve-no-go"
+                        << " available_normal_a_mps2="
+                        << output.coupledCurveAccelerationMps2
+                        << " turn_distance_m="
+                        << output.distanceToTurnMeters
+                        << " actual_speed_mps="
+                        << glm::length(motion.localVelocityMps)
+                        << std::endl;
+                    releaseClientAutopilot();
+                    m_dockAssistedSafeRecovery = {};
+                    m_dockAssistedSafeRecovery.active = true;
+                    m_dockAssistedSafeRecovery.stopFallback = true;
+                    m_dockAssistedSafeRecovery.serial = pending.serial;
+                    m_clientDockingPhase =
+                        ClientDockingPhase::SecuringCourse;
+                    m_clientDockingSettledSinceServerSeconds = -1.0;
+                    m_dockingStatusWarning =
+                        "autopilot-coupled-curve-unavailable";
+                    submitAutopilotControl(manualStopControl());
+                    return false;
+                }
                 if (output.assistedRecoverySpeedLimited !=
                         m_clientDockingRecoverySpeedLimited)
                 {
@@ -7788,6 +7821,12 @@ m_systemMapRenderer.render(
                 {
                     terminal.error = terminalText(
                         "cockpit.terminal.warning_corridor_speed_recovery");
+                }
+                else if (m_dockingStatusWarning ==
+                             "autopilot-coupled-curve-unavailable")
+                {
+                    terminal.error = terminalText(
+                        "cockpit.terminal.warning_coupled_curve_unavailable");
                 }
                 else
                 {

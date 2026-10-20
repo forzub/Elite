@@ -1,3 +1,26 @@
+## 2026-10-20 — THREE REAL-ENGINE FLIGHT COMPARISON, CHECKPOINT PRESERVED (TEST RUNS PENDING)
+
+**Restored production baseline:** main at `ad084a1f0a91e08115728c4db1388ddefaabc230` has exact tree of checkpoint `596fd41114f524fd95330d458fd1fd75d900af7a`, no later damaged-engine autopilot fixes retained. User requires three comparable real-flight trials with Assisted-I: one healthy installed engine, left aft engine impacted at 50%, same engine failed at 100%. No more controller/planer redesign or test-for-test detours.
+
+**Isolated temporary branch:** `test/engine-damage-three-flights-2026-10-20`, based on restored `main`. Only functional changes: re-added known historical test-only selector in `src/game/ship/debug/DamagedEnginePreset.h` and its opt-in GameServer bootstrap hook before planning. Env `ELITE_SHIP_DAMAGE_PRESET` omitted => healthy; `aft-50` => 0.50 impact damage on ONE actual installed aft engine; `aft-failed` => 1.00. The hook reports status=APPLIED|FAILED and installed module ID to D:/tmp/elite_engine_damage_preset.log; use real `ShipCore.moduleRuntime().addEquipmentDamage`, not a fake physics override. No autopilot, planner, HUD, ship physics or production branch changes. Verified by GitHub diff: exactly 2 changed source paths prior to this PROJECT_STATE.md entry. This branch is purely for reproducible live diagnostic and must NOT be merged into main.
+
+**No native game run, no native build/CTest by assistant.** On Windows MSYS2:
+```bash
+cd /d/__elite/work
+git fetch origin
+git switch --track origin/test/engine-damage-three-flights-2026-10-20
+bash build_mingw64.sh
+mkdir -p /d/tmp
+unset ELITE_SHIP_PHYSICAL_TEST_MODEL ELITE_ASSISTED_ROUTE_PRESET
+unset ELITE_SHIP_DAMAGE_PRESET
+./build/EliteGame.exe 2>&1 | tee /d/tmp/elite_assisted_healthy.log
+ELITE_SHIP_DAMAGE_PRESET=aft-50 ./build/EliteGame.exe 2>&1 | tee /d/tmp/elite_assisted_aft50.log
+ELITE_SHIP_DAMAGE_PRESET=aft-failed ./build/EliteGame.exe 2>&1 | tee /d/tmp/elite_assisted_failed.log
+```
+Run one program at a time, perform SAME dock route and same Assisted-I scene in each, close before next. Observe cross track, route hold/turn, abnormal angular oscillations, premature safety stops and finishing. Check damage preset `status=APPLIED` for the two damaged cases; if it says FAILED stop, as no valid damage test occurred. Main branch must remain at checkpoint. After comparison return via `git switch main` or `git switch -C main origin/main` ONLY if local main has no uncommitted work; do not force-reset.
+
+---
+
 ## 2026-10-20 — SAME-SNAPSHOT STANDARD VS EXTREME: MEANINGFUL GEOMETRY DIFFERENCE; SPARSE HUD MAY HIDE IT
 
 **User observation:** Extreme looks visually indistinguishable from Standard. User supplied `elite_docking_planner(2).log` (EXTREME only) and `elite_docking_planner(3).log` (same identical EXTREME record followed by STANDARD). Treat as ONE Extreme and ONE Standard experiment, not three independent runs.

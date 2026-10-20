@@ -21,6 +21,7 @@
 #include "src/game/navigation/autopilot/CourseCaptureGuidance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
+#include "src/game/navigation/autopilot/AssistedCorridorSpeedGovernor.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
@@ -87,6 +88,8 @@ public:
         std::uint64_t speedProfileRevision = 0;
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
+        AssistedCorridorSpeedGovernor::State
+            assistedCorridorSpeedGovernor {};
 
         // Authoritative spatial geometry. Accepted maneuver samples still own
         // timing/speed/attitude feed-forward, but they no longer define the
@@ -121,6 +124,8 @@ public:
         double targetLongitudinalAccelerationMps2 = 0.0;
         double crossTrackClosingSpeedMps = 0.0;
         double crossTrackCaptureSpeedMps = 0.0;
+        bool assistedRecoverySpeedLimited = false;
+        double assistedRecoverySpeedCeilingMps = 0.0;
         // Authoritative navigation-direction error. While moving this is
         // angle(actual velocity direction, desired route course).
         double forwardErrorRad = 0.0;
@@ -832,6 +837,50 @@ public:
                 std::min(targetSpeed, recoveryCeiling);
         }
 
+        // Unlike geometric turn speed, this must also handle a damaged
+        // craft's inability to hold a STRAIGHT. The old turn-speed-only
+        // limiter ignored divergence on the first straight, continued to
+        // accelerate, then forced an abrupt emergency STOP at 32m offset.
+        bool recoverySpeedLimited = false;
+        double recoverySpeedCeilingMps =
+            std::numeric_limits<double>::infinity();
+        if constexpr (Law == LocalFlightControlLaw::Assisted)
+        {
+            const glm::dvec3 crossVelocity =
+                agent.velocityMapMetersPerSecond -
+                referenceTangent *
+                    glm::dot(
+                        agent.velocityMapMetersPerSecond,
+                        referenceTangent
+                    );
+            const double closingSpeed =
+                crossTrackErrorMeters > 1.0e-9
+                    ? glm::dot(
+                        crossVelocity,
+                        -crossPositionError / crossTrackErrorMeters
+                    )
+                    : 0.0;
+            const auto recovery =
+                AssistedCorridorSpeedGovernor::evaluate(
+                    state.assistedCorridorSpeedGovernor,
+                    crossTrackErrorMeters,
+                    closingSpeed,
+                    corridorToleranceMeters,
+                    actualSpeed,
+                    targetSpeed,
+                    executionAuthority.forwardAccelerationMps2,
+                    deltaSeconds
+                );
+            if (!recovery.valid)
+                return out;
+            recoverySpeedLimited = recovery.recoveryActive;
+            recoverySpeedCeilingMps = recovery.speedCeilingMps;
+            if (recoverySpeedLimited)
+                targetSpeed = std::min(
+                    targetSpeed, recoverySpeedCeilingMps
+                );
+        }
+
         // VELOCITY-COURSE CONTRACT.
         //
         // Inside the authored corridor the navigation course is ALWAYS the
@@ -1211,6 +1260,19 @@ public:
                 ? tracking.intent.idealLinearAccelerationLocalMps2
                 : continuous.reference.
                     linearAccelerationFeedForwardMapMps2;
+        if constexpr (Law == LocalFlightControlLaw::Assisted)
+        {
+            if (recoverySpeedLimited)
+            {
+                // The accepted spatial acceleration feed-forward is for
+                // nominal speed. It must not cancel the reduction in speed
+                // requested by the live damaged-craft recovery governor.
+                // No hidden actuator: ordinary Assisted scalar speed input
+                // remains the only authority to decelerate.
+                request.desiredLinearAccelerationMapMps2 =
+                    glm::dvec3(0.0);
+            }
+        }
 
         glm::dvec3 routeAngularRateMap(0.0);
         if (curvatureGuide.valid &&
@@ -1428,6 +1490,10 @@ public:
                     continuous.spatialProgressMeters
             );
         out.targetSpeedMps = targetSpeed;
+        out.assistedRecoverySpeedLimited =
+            recoverySpeedLimited;
+        out.assistedRecoverySpeedCeilingMps =
+            recoverySpeedLimited ? recoverySpeedCeilingMps : 0.0;
         out.targetLongitudinalAccelerationMps2 =
             glm::dot(
                 continuous.reference.linearAccelerationFeedForwardMapMps2,

@@ -4,7 +4,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <iomanip>
+#include <initializer_list>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -14,141 +16,211 @@
 namespace game::presentation
 {
 
-// Formatting only. Every displayed number comes from a real worker request,
-// monotonic elapsed time, or completed RoutePlan diagnostics. No fake progress
-// percentages and no hash/random decorative CALC stream.
+// One client-owned localization entry point. The text of EVERY terminal
+// label/template comes from the active localization catalog; numerical values
+// and stable internal IDs are data, not translatable literals.
+class TerminalLocalizedText final
+{
+public:
+    using Lookup = std::function<std::string(const char*)>;
+
+    [[nodiscard]] static std::string render(
+        const Lookup& lookup,
+        const char* key,
+        std::initializer_list<std::string> args = {}
+    )
+    {
+        std::string line = lookup(key);
+        std::size_t index = 0;
+        for (const auto& value : args)
+        {
+            const std::string placeholder =
+                "{" + std::to_string(index++) + "}";
+            std::size_t pos = 0;
+            while ((pos = line.find(placeholder, pos)) !=
+                   std::string::npos)
+            {
+                line.replace(pos, placeholder.size(), value);
+                pos += value.size();
+            }
+        }
+        return line;
+    }
+
+    [[nodiscard]] static std::string number(double value, int digits = 0)
+    {
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(digits) << value;
+        return out.str();
+    }
+};
+
 class DockPlannerTerminalTelemetry final
 {
 public:
     using Request = game::navigation::planner::RoutePlanRequest;
     using Plan = game::navigation::planner::RoutePlan;
+    using Lookup = TerminalLocalizedText::Lookup;
 
-    [[nodiscard]] static const char* phase(std::uint8_t stage) noexcept
+    [[nodiscard]] static const char* stageKey(std::uint8_t stage) noexcept
     {
         switch (stage)
         {
-            case 0: return "PREPARE";
-            case 1: return "GEOMETRY";
-            case 2: return "FRAMES";
-            case 3: return "CONTROL";
-            case 4: return "COMPLETE";
-            default: return "UNKNOWN";
+            case 0: return "cockpit.terminal.planner_stage.prepare";
+            case 1: return "cockpit.terminal.planner_stage.geometry";
+            case 2: return "cockpit.terminal.planner_stage.frames";
+            case 3: return "cockpit.terminal.planner_stage.control";
+            case 4: return "cockpit.terminal.planner_stage.complete";
+            default: return "cockpit.terminal.planner_stage.unknown";
         }
     }
 
+    [[nodiscard]] static std::string presetName(
+        const Lookup& lookup,
+        game::navigation::planner::AssistedRoutePreset preset
+    )
+    {
+        return lookup(preset ==
+            game::navigation::planner::AssistedRoutePreset::Extreme
+                ? "cockpit.terminal.preset.extreme"
+                : "cockpit.terminal.preset.standard");
+    }
+
+    [[nodiscard]] static std::string presetLine(
+        const Lookup& lookup,
+        game::navigation::planner::AssistedRoutePreset preset
+    )
+    {
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.preset_line",
+            {presetName(lookup, preset)});
+    }
+
     [[nodiscard]] static std::string running(
+        const Lookup& lookup,
         std::uint8_t stage,
         int activeWorkers
     )
     {
-        return std::string("PLANNER ") + phase(stage) +
-            " W=" + std::to_string(std::max(0, activeWorkers));
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.planning",
+            {lookup(stageKey(stage)),
+             std::to_string(std::max(0, activeWorkers))});
     }
 
     [[nodiscard]] static std::string elapsed(
+        const Lookup& lookup,
         double elapsedWallSeconds,
         const Request& request
     )
     {
-        // Bucket only UI updates, not values. This prevents the 38 cps
-        // terminal typewriter from accumulating a new line each frame.
+        // Actual monotonic runtime, quantized only to avoid typewriter spam.
         const int seconds = static_cast<int>(
-            std::clamp(std::floor(std::max(0.0, elapsedWallSeconds) / 3.0) * 3.0,
-                       0.0, 999999.0)
+            std::clamp(
+                std::floor(std::max(0.0, elapsedWallSeconds) / 3.0) * 3.0,
+                0.0, 999999.0)
         );
-        std::ostringstream out;
-        out << "T=" << seconds << "s"
-            << " V0=" << std::fixed << std::setprecision(0)
-            << request.initialSpeedMps
-            << " MAX=" << request.maxSpeedMps << "m/s";
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.elapsed",
+            {std::to_string(seconds),
+             TerminalLocalizedText::number(request.initialSpeedMps),
+             TerminalLocalizedText::number(request.maxSpeedMps)});
     }
 
-    [[nodiscard]] static std::string limits(const Request& request)
+    [[nodiscard]] static std::string limits(
+        const Lookup& lookup,
+        const Request& request
+    )
     {
-        std::ostringstream out;
-        out << std::fixed << std::setprecision(1)
-            << "ACC=" << request.acceleratingMps2
-            << " BRK=" << request.brakingMps2
-            << " LAT=" << request.lateralMps2;
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.limits",
+            {TerminalLocalizedText::number(request.acceleratingMps2, 1),
+             TerminalLocalizedText::number(request.brakingMps2, 1),
+             TerminalLocalizedText::number(request.lateralMps2, 1)});
     }
 
-    [[nodiscard]] static std::string preset(const Request& request)
+    [[nodiscard]] static std::string obstacles(
+        const Lookup& lookup,
+        const Request& request
+    )
     {
-        return std::string("ROUTE MODE ") +
-            game::navigation::planner::assistedRoutePresetName(
-                request.assistedRoutePreset
-            ) + " OBS=" + std::to_string(request.obstacles.size());
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.obstacles",
+            {std::to_string(request.obstacles.size())});
     }
 
-    [[nodiscard]] static std::string completed(double actualWorkerMs)
+    [[nodiscard]] static std::string completed(
+        const Lookup& lookup,
+        double workerMs
+    )
     {
-        std::ostringstream out;
-        out << "PLANNER READY " << std::fixed << std::setprecision(2)
-            << std::max(0.0, actualWorkerMs / 1000.0) << "s";
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.completed",
+            {TerminalLocalizedText::number(
+                std::max(0.0, workerMs / 1000.0), 2)});
     }
 
     [[nodiscard]] static std::string route(
+        const Lookup& lookup,
         const Plan& plan
     )
     {
-        const double length = plan.routeCurves.empty()
-            ? 0.0
-            : plan.routeCurves.back().endProgressMeters -
-                plan.routeCurves.front().startProgressMeters;
-        std::ostringstream out;
-        out << "PATH=" << std::fixed << std::setprecision(2)
-            << length / 1000.0 << "km"
-            << " CURVES=" << plan.routeCurves.size();
-        return out.str();
+        const double length = plan.routeCurves.empty() ? 0.0 :
+            plan.routeCurves.back().endProgressMeters -
+            plan.routeCurves.front().startProgressMeters;
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.route",
+            {TerminalLocalizedText::number(length / 1000.0, 2),
+             std::to_string(plan.routeCurves.size())});
     }
 
-    [[nodiscard]] static std::string legTimings(const Plan& plan)
+    [[nodiscard]] static std::string legTimings(
+        const Lookup& lookup,
+        const Plan& plan
+    )
     {
         const double inbound = readNumber(plan.diagnosticSummary, "inbound_ms=");
-        const double finalLeg = readNumber(plan.diagnosticSummary, "final_ms=");
-        if (!std::isfinite(inbound) || !std::isfinite(finalLeg))
+        const double last = readNumber(plan.diagnosticSummary, "final_ms=");
+        if (!std::isfinite(inbound) || !std::isfinite(last))
             return {};
-        std::ostringstream out;
-        out << std::fixed << std::setprecision(2)
-            << "SOLVE IN=" << inbound / 1000.0
-            << "s OUT=" << finalLeg / 1000.0 << "s";
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.solve",
+            {TerminalLocalizedText::number(inbound / 1000.0, 2),
+             TerminalLocalizedText::number(last / 1000.0, 2)});
     }
 
-    [[nodiscard]] static std::string legEta(const Plan& plan)
+    [[nodiscard]] static std::string legEta(
+        const Lookup& lookup,
+        const Plan& plan
+    )
     {
         const double inbound = readInside(
-            plan.diagnosticSummary, "inbound_detail={", "eta_s="
-        );
-        const double finalLeg = readInside(
-            plan.diagnosticSummary, "final_detail={", "eta_s="
-        );
-        if (!std::isfinite(inbound) || !std::isfinite(finalLeg))
+            plan.diagnosticSummary, "inbound_detail={", "eta_s=");
+        const double last = readInside(
+            plan.diagnosticSummary, "final_detail={", "eta_s=");
+        if (!std::isfinite(inbound) || !std::isfinite(last))
             return {};
-        std::ostringstream out;
-        out << std::fixed << std::setprecision(1)
-            << "ETA IN=" << inbound
-            << "s OUT=" << finalLeg << "s";
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.eta",
+            {TerminalLocalizedText::number(inbound, 1),
+             TerminalLocalizedText::number(last, 1)});
     }
 
-    [[nodiscard]] static std::string legEvaluations(const Plan& plan)
+    [[nodiscard]] static std::string legEvaluations(
+        const Lookup& lookup,
+        const Plan& plan
+    )
     {
         const double inbound = readInside(
-            plan.diagnosticSummary, "inbound_detail={", "evals="
-        );
-        const double finalLeg = readInside(
-            plan.diagnosticSummary, "final_detail={", "evals="
-        );
-        if (!std::isfinite(inbound) || !std::isfinite(finalLeg))
+            plan.diagnosticSummary, "inbound_detail={", "evals=");
+        const double last = readInside(
+            plan.diagnosticSummary, "final_detail={", "evals=");
+        if (!std::isfinite(inbound) || !std::isfinite(last))
             return {};
-        std::ostringstream out;
-        out << "EVAL IN=" << static_cast<unsigned long long>(inbound)
-            << " OUT=" << static_cast<unsigned long long>(finalLeg);
-        return out.str();
+        return TerminalLocalizedText::render(
+            lookup, "cockpit.terminal.metric.evaluations",
+            {std::to_string(static_cast<unsigned long long>(inbound)),
+             std::to_string(static_cast<unsigned long long>(last))});
     }
 
 private:
@@ -163,7 +235,6 @@ private:
         if (found == std::string::npos ||
             (before != std::string::npos && found >= before))
             return std::numeric_limits<double>::quiet_NaN();
-
         const char* first = text.c_str() + found + token.size();
         char* end = nullptr;
         const double value = std::strtod(first, &end);

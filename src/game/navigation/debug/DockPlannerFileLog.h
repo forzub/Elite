@@ -83,6 +83,10 @@ namespace game::navigation::debug
             << '\n';
 
         out << "[DockPlannerRequest]"
+            << " assisted_preset="
+            << planner::assistedRoutePresetName(
+                request.assistedRoutePreset
+            )
             << " start_xyz_m=("
             << request.startMeters.x << ','
             << request.startMeters.y << ','

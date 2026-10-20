@@ -56,6 +56,24 @@ struct MandatoryTangentStraightConstraint
     bool inbound = true;
 };
 
+// Opt-in geometric/comfort experiment for Assisted only. Standard is the
+// unchanged production path; Extreme never removes collision, hull, dynamic
+// acceleration, angular-authority or mandatory traffic constraints.
+enum class AssistedRoutePreset : std::uint8_t
+{
+    Standard = 0,
+    Extreme = 1
+};
+
+[[nodiscard]] inline const char* assistedRoutePresetName(
+    AssistedRoutePreset preset
+) noexcept
+{
+    return preset == AssistedRoutePreset::Extreme
+        ? "EXTREME"
+        : "STANDARD";
+}
+
 struct RoutePlanRequest
 {
     glm::dvec3 startMeters {0.0};
@@ -94,6 +112,8 @@ struct RoutePlanRequest
     // False keeps the established planner backend. Live Assisted flight may
     // opt in while Newtonian and compatibility callers remain unchanged.
     bool useContinuousAssistedOptimizer = false;
+
+    AssistedRoutePreset assistedRoutePreset = AssistedRoutePreset::Standard;
 
     bool hasInitialForward = false;
     glm::dvec3 initialForward {0.0, 0.0, -1.0};

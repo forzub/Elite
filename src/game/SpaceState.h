@@ -429,6 +429,8 @@ private:
     struct DockAdvice
     {
         double workerDurationMs = 0.0;
+        game::navigation::planner::AssistedRoutePreset assistedRoutePreset =
+            game::navigation::planner::AssistedRoutePreset::Standard;
         std::uint64_t serial = 0;
         int systemId = -1;
         std::string hubId;

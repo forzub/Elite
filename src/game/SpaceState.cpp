@@ -1,5 +1,6 @@
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
+#include "src/game/navigation/autopilot/AssistedCorridorDeviationPolicy.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
@@ -4990,6 +4991,64 @@ void SpaceState::updateDockingAdvisory()
                 return false;
             }
     
+            if (controlLaw ==
+                    game::navigation::LocalFlightControlLaw::Assisted)
+            {
+                const double tolerance =
+                    m_clientAssistedRouteAutopilot.
+                        trackingPositionToleranceMeters;
+                const auto deviation =
+                    game::navigation::autopilot::
+                        AssistedCorridorDeviationPolicy::evaluate(
+                            output.crossTrackErrorMeters,
+                            output.crossTrackClosingSpeedMps,
+                            tolerance
+                        );
+                if (deviation.requireSafeStop)
+                {
+                    // The signed-axis motor basis is measured, but a missing
+                    // engine may leave no simultaneously executable wrench
+                    // for route turn + acceleration + hull stabilization.
+                    // Do not let the virtual pilot keep accelerating along a
+                    // lost route. Stop via EXACTLY the ordinary Assisted
+                    // controls, never direct engine forces.
+                    std::cerr
+                        << "[DockAuthority]"
+                        << " request=" << pending.serial
+                        << " phase=corridor-lost-safe-stop"
+                        << " cross_track_m="
+                        << output.crossTrackErrorMeters
+                        << " tolerance_m=" << tolerance
+                        << " closing_mps="
+                        << output.crossTrackClosingSpeedMps
+                        << " actual_speed_mps="
+                        << glm::length(motion.localVelocityMps)
+                        << " requested_speed_mps="
+                        << output.targetSpeedMps
+                        << " installed_lateral_basis_mps2="
+                        << (liveAssistedAuthority.valid
+                            ? std::min({
+                                liveAssistedAuthority.positive[0],
+                                liveAssistedAuthority.negative[0],
+                                liveAssistedAuthority.positive[1],
+                                liveAssistedAuthority.negative[1]
+                            }) : 0.0)
+                        << std::endl;
+
+                    releaseClientAutopilot();
+                    m_dockAssistedSafeRecovery = {};
+                    m_dockAssistedSafeRecovery.active = true;
+                    m_dockAssistedSafeRecovery.stopFallback = true;
+                    m_dockAssistedSafeRecovery.serial = pending.serial;
+                    m_clientDockingPhase =
+                        ClientDockingPhase::SecuringCourse;
+                    m_clientDockingSettledSinceServerSeconds = -1.0;
+                    m_dockingStatusWarning = "autopilot-corridor-loss";
+                    submitAutopilotControl(manualStopControl());
+                    return false;
+                }
+            }
+
             if (output.complete)
             {
                 releaseClientAutopilot();

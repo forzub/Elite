@@ -39,10 +39,6 @@ public:
         double pitchYawAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double rollAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double deltaSeconds = 0.0;
-        // Optional virtual-pilot response horizon. The physical simulation
-        // still integrates at deltaSeconds; only the requested stick motion
-        // anticipates the pilot/actuator settling interval.
-        double controlHorizonSeconds = 0.0;
     };
 
     struct Result
@@ -68,18 +64,13 @@ public:
             return out;
         }
 
-        const double responseSeconds = std::max(
-            request.deltaSeconds,
-            std::max(0.0, request.controlHorizonSeconds)
-        );
-
         out.pitchYawInput = predictivePlanarInput(
             request.pitchYawErrorRad,
             request.pitchYawRateRadPerSec,
             request.desiredPitchYawRateRadPerSec,
             request.maxPitchYawRateRadPerSec,
             request.pitchYawAngularAccelerationAuthorityRadPerSec2,
-            responseSeconds
+            request.deltaSeconds
         );
 
         out.rollInput = predictiveAxisInput(
@@ -88,7 +79,7 @@ public:
             request.desiredRollRateRadPerSec,
             request.maxRollRateRadPerSec,
             request.rollAngularAccelerationAuthorityRadPerSec2,
-            responseSeconds
+            request.deltaSeconds
         );
 
         out.valid =

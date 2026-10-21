@@ -684,7 +684,7 @@ void ShipCore::updateTranslationControl(float dt)
             }
             installed[i]={
                 &*def->engine,&state->equipmentDamage,
-                &state->engineOperating,id,
+                &state->engineOperating,mounts[i].nozzleId,
                 state->state ==
                     world::modules::ObjectModuleRuntimeState::Attached &&
                 state->health>0.0f

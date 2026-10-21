@@ -889,6 +889,45 @@ void ShipCore::updateSystems(float dt)
                 refreshRuntimeState();
         }
     }
+    // Newtonian's 24 real RCS units have independent operating clocks and
+    // thermal state. The duty values come from the executed physical wrench,
+    // never from pilot key states. A destroyed unit remains disabled by the
+    // same ObjectModuleRuntime damage law as a main engine.
+    if (m_desc && m_newtonianRcsPhysical &&
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+    {
+        const auto& nozzles=
+            game::ship::presets::cobra::newtonianRcsNozzles();
+        const double coolantK=m_thermal.getTemperature();
+        bool changed=false;
+        for(std::size_t i=0;i<nozzles.size();++i)
+        {
+            const std::string id(nozzles[i].nozzleId);
+            const auto definition=std::find_if(
+                m_desc->modules.begin(),m_desc->modules.end(),
+                [&](const auto& module){return module.moduleId==id;});
+            if(definition==m_desc->modules.end() ||
+                !definition->engine) continue;
+            double transferredMW=0.0;
+            changed |= m_moduleRuntime.advanceEngineOperatingLife(
+                id,*definition->engine,
+                m_transform.motion.mode ==
+                    game::navigation::MotionMode::HubTactical
+                    ? m_newtonianRcsDelivered01[i] : 0.0,
+                static_cast<double>(dt),coolantK,&transferredMW
+            );
+            if(std::isfinite(transferredMW))
+            {
+                const double energyMJ=transferredMW*dt;
+                if(energyMJ>=0.0)
+                    m_thermal.addHeat(energyMJ);
+                else
+                    m_thermal.removeHeat(-energyMJ);
+            }
+        }
+        if(changed) refreshRuntimeState();
+    }
     m_cooling.update(dt, m_thermal);
 }
 

@@ -55,6 +55,7 @@
 #include "src/game/navigation/AssistedSafeCourseRecovery.h"
 #include "src/game/navigation/planner/RouteEntryBinder.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
+#include "src/game/ship/computer/MotherComputer.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -308,6 +309,12 @@ private:
     game::session::IGameSession*                   m_session = nullptr;
     game::debug::IDebugSessionControl*              m_debugSession = nullptr;
     GameClient*                                      m_client = nullptr;
+
+    // Client-only cockpit/avionics computer; authoritative ship dynamics
+    // remain on ServerRuntime. Never passes a mutable ShipCore to its worker.
+    game::ship::computer::MotherComputer m_motherComputer;
+    std::uint64_t m_motherObservedServerTick = 0;
+    std::uint64_t m_motherObservedShipInstanceId = 0;
 
     PlayerInputMapper                               m_inputMapper;
     bool                                            m_persistedPhysicalModelApplied = false;

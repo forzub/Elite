@@ -140,16 +140,25 @@ public:
             if (snapshot.diagnostics != m_last.diagnostics)
             {
                 for (const auto& diagnostic : snapshot.diagnostics)
-                    enqueuePriority(diagnostic.first, diagnostic.second);
-
+                {
+                    if (std::find(m_last.diagnostics.begin(),
+                                  m_last.diagnostics.end(),
+                                  diagnostic) == m_last.diagnostics.end())
+                        enqueuePriority(diagnostic.first,diagnostic.second);
+                }
+                for (const auto& previous : m_last.diagnostics)
+                {
+                    if (std::find(snapshot.diagnostics.begin(),
+                                  snapshot.diagnostics.end(),
+                                  previous) == snapshot.diagnostics.end())
+                        enqueuePriority("RECOVERED: " + previous.first,
+                                        DockingTerminalSeverity::Info);
+                }
+                m_lastReminderSeconds = nowSeconds;
                 if (snapshot.diagnostics.empty() &&
                     !m_last.diagnostics.empty())
-                {
-                    enqueuePriority(
-                        snapshot.biteNominalText,
-                        DockingTerminalSeverity::Info
-                    );
-                }
+                    enqueuePriority(snapshot.biteNominalText,
+                                    DockingTerminalSeverity::Info);
             }
 
             if (!snapshot.diagnostics.empty() &&

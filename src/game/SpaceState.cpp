@@ -7358,7 +7358,7 @@ m_systemMapRenderer.render(
             // seen by MotherComputer; never synthesize temperatures.
             if (cockpit.valid)
                 m_engineThrustIndicatorRenderer.renderThermalSystems(
-                    cockpit.systems, vp
+                    cockpit.systems, engineThrustInstrument, vp
                 );
 
             // The hull boresight is a fundamental attitude cue, not a velocity

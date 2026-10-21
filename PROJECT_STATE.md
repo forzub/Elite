@@ -1,3 +1,9 @@
+## 2026-10-21 — HUD TEXT BOTTOM ANCHOR FIX (SCREENSHOT FOLLOW-UP)
+
+User screenshot showed REACTOR and COOLANT textual telemetry overlapping graphics after compact thermal HUD update. Changed `src/render/cockpit/EngineThrustIndicatorRenderer.cpp` at commit `a24797c7`: BOTH widgets' status text Y positions now derive from common actual panel height `y+h-offset*scale`, not fixed `y+offset*scale`. Reactor last 3 lines at h-52/h-34/h-16; coolant 4 lines at h-63/h-47/h-31/h-15. Moved reactor chain and radiator drawing higher to leave text-only bottom area. No physics or telemetry changed. Needs actual screenshot and MinGW compilation verification. Run git pull and EliteGame build as before.
+
+---
+
 ## 2026-10-21 — REACTOR / COOLANT COMPACT HUD, PHYSICAL RADIATOR OVERHEAT, REPEATING ALARMS (SOURCE ONLY)
 
 User game screenshot showed working tiny ASSISTED-I/REACTOR/COOLANT HUD and requested: panel graphic on COOLANT with captions below, panel & coolant temperatures, functional panel percentage, heat IN and OUT; REACTOR panel reactor-column→line→square pump (amber when energized)→line→coolant square, real power and temperature/damage-dependent efficiency, distinct reactor vs radiator alarm lights; all active system fault texts repeat in docking terminal every 10 seconds, recovery message when resolved; radiator panel damage when exceeding material critical temperature.

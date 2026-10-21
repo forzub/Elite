@@ -52,6 +52,12 @@ MotherComputerInput makeInput(std::uint64_t shipId,
     input.thermalCriticalK = 1200.0;
     input.biteCriticalSystems = 1;
     input.biteAndSystems.criticalSystems.push_back("engine");
+    input.installedEquipmentBite.sourceRevision = tick;
+    input.installedEquipmentBite.summary.failedCount = 1;
+    game::bite::Fault fault;
+    fault.equipmentId = "aft-left";
+    fault.severity = game::bite::Severity::Failed;
+    input.installedEquipmentBite.faults.push_back(fault);
     return input;
 }
 
@@ -78,7 +84,9 @@ void testImmediateAuthorityDoesNotWaitForWorker()
     require(latest.valid &&
             latest.input.serverTick == 1 &&
             latest.input.biteCriticalSystems == 1 &&
-            latest.input.biteAndSystems.criticalSystems.size() == 1,
+            latest.input.biteAndSystems.criticalSystems.size() == 1 &&
+            latest.input.installedEquipmentBite.sourceRevision == 1 &&
+            latest.input.installedEquipmentBite.faults.size() == 1,
             "BITE and source revision were not retained in cockpit snapshot");
 }
 

@@ -526,7 +526,7 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         status.reactor.criticalTemp>0
             ? status.reactor.temperature/status.reactor.criticalTemp : 0),
         0.0f,1.0f);
-    const float chainY=y+33*scale;
+    const float chainY=y+19*scale;
     roundedOutlinePx(text,reactorX+10*scale,chainY,
         15*scale,37*scale,3*scale,1*scale,amber,style.track);
     text.solidRectPx(reactorX+12*scale,chainY+(35-31*r)*scale,
@@ -559,17 +559,17 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         text.solidRectPx(reactorX+120*scale,chainY+8*scale,
             7*scale,7*scale,withAlpha(warn,blink));
     std::snprintf(buffer,sizeof(buffer),"%.0f K",status.reactor.temperature);
-    text.textDrawPx(buffer,reactorX+8*scale,y+78*scale,caption,amber);
+    text.textDrawPx(buffer,reactorX+8*scale,y+h-52*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f MW  %.0f%%",
         status.reactor.outputMW,status.reactor.efficiency01*100.0);
-    text.textDrawPx(buffer,reactorX+8*scale,y+96*scale,caption,amber);
-    text.textDrawPx("PWR / EFF",reactorX+8*scale,y+113*scale,tiny,amber);
+    text.textDrawPx(buffer,reactorX+8*scale,y+h-34*scale,caption,amber);
+    text.textDrawPx("PWR / EFF",reactorX+8*scale,y+h-16*scale,tiny,amber);
 
     text.textDrawPx("COOLANT",coolantX+8*scale,y+7*scale,small,amber);
     const float sx=coolantX+10*scale;
-    const float sy=y+29*scale;
+    const float sy=y+19*scale;
     const float sw=w-20*scale;
-    const float sh=24*scale;
+    const float sh=20*scale;
     roundedOutlinePx(text,sx,sy,sw,sh,4*scale,1*scale,
         amber,style.track);
     for(int i=1;i<9;++i)
@@ -579,16 +579,16 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     std::snprintf(buffer,sizeof(buffer),"P %.0f / C %.0f K",
         status.cooling.effectiveRadiatorTemperatureK,
         status.cooling.coolantTemp);
-    text.textDrawPx(buffer,coolantX+8*scale,y+58*scale,tiny,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+h-63*scale,tiny,amber);
     std::snprintf(buffer,sizeof(buffer),"OK %.0f%%",
         status.cooling.panelHealthPercent);
-    text.textDrawPx(buffer,coolantX+8*scale,y+73*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+h-47*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"IN %.1f MW",
         status.cooling.heatIntoCoolantMW);
-    text.textDrawPx(buffer,coolantX+8*scale,y+91*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+h-31*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"OUT %.1f MW",
         status.cooling.radiatedPowerMW);
-    text.textDrawPx(buffer,coolantX+8*scale,y+109*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+h-15*scale,caption,amber);
 }
 
 } // namespace render::cockpit

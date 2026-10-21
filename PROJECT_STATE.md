@@ -1,3 +1,13 @@
+## 2026-10-21 — NEWTONIAN INDIVIDUAL RCS DAMAGE REQUIREMENT; CURRENT GAP
+
+User requires engine damage simulation to include independent Newtonian maneuver nozzles. Common Newtonian-I/Y/X design is 8 mount nodes x 3 independently actuated fixed-direction nozzles = 24 damageable units, distinct from aft main drive modules. Damage to a nozzle must persist in the SAME authoritative ObjectModuleRuntime as main engine damage, propagate through real physical RCS actuator execution, reflected six-axis force/torque capability, BITE, MotherComputer, HUD/terminal, and conserve/inherit damage state through installation changes. Cluster-level damage only if explicitly modeled as damage to a shared node, not substitute for per-nozzle wear/fault.
+
+AUDIT: Current Cobra propulsion presets STILL encode 4/6/8 `ManoeuvreCluster` omnidirectional slots rather than 8 mount nodes and 24 individual directional nozzles; `ShipCapabilityBuilder::slotStates` treats any empty `slotModuleIds` binding as healthy, which hides individual damage; `applyMountedEngineAxialAuthority` explicitly skips ManoeuvreCluster. DO NOT claim per-nozzle damage works already. First build physical 24-nozzle plant with correct oriented forces/moments and compatible installed module bindings; only then map authoritative equipment damage into each nozzle's usable thrust. Validate signed 6D authority with failure cases and real server execution; never just blink BITE or multiply one global RCS coefficient. Preserve existing Assisted physics and avoid modifying Newtonian autopilot until plant is valid.
+
+This is recorded as required work, NOT implemented by this note; no native runtime verification.
+
+---
+
 ## 2026-10-21 — COBRA SIX PROPULSION PRESETS EXTRACTED (SOURCE ONLY, BUILD PENDING)
 
 User selected cheap cinematic fixed-CoM ship skeleton: reactor/fuel center is the reference, hull mass plus three principal inertias, nominal engine mount coordinates (normalized, scaled by existing hull bounds) and installed motor units. Requested Cobra folder with six interchangeable schemes, including separate Newtonian maneuvering units, while finishing Assisted before Newtonian controller changes.

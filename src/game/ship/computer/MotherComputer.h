@@ -21,11 +21,14 @@
 //   extend the server's minimal factual snapshot only after profiling and
 //   documenting the missing authoritative datum, never transplant logic.
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include <limits>
 #include <thread>
 #include <utility>
 
@@ -89,6 +92,29 @@ struct MotherComputerInput
     game::ship::capability::ShipMobilityEvidence mobilityEvidence {};
 };
 
+// Not an airworthiness certificate. This fast status derives useful
+// information from existing signed motor-basis samples and systems counters
+// while the full power/thermal and combined 6DOF proof is still missing.
+struct MotherComputerAdvisory
+{
+    bool installedMotorBasisKnown = false;
+    bool oneAxisForward = false;
+    bool oneAxisReverse = false;
+    bool yawBidirectional = false;
+    bool pitchBidirectional = false;
+    bool rollBidirectional = false;
+    double optimisticHalfTurnSeconds =
+        std::numeric_limits<double>::infinity();
+    double observedBusHeadroomMW = 0.0;
+    double observedThermalHeadroomK = 0.0;
+    double lastMotorElectricalDemandMW = 0.0;
+    double lastMotorWasteHeatMW = 0.0;
+    bool powerBusOverloaded = false;
+    bool reactorShutdown = false;
+    bool motorPowerAllocationProofMissing = true;
+    bool thermalEnduranceProofMissing = true;
+};
+
 struct MotherComputerSnapshot
 {
     bool valid = false;
@@ -98,6 +124,7 @@ struct MotherComputerSnapshot
     // ship and server tick in input, never an older worker generation.
     bool analysisCurrent = false;
     game::ship::capability::ShipMobilityAssessment mobility {};
+    MotherComputerAdvisory advisory {};
 
     // Fast lane can be current even when the asynchronous computer is busy.
     bool autopilotAuthorityCurrent = false;
@@ -226,6 +253,46 @@ private:
                     input.mobilityEvidence
                 );
 
+            MotherComputerAdvisory advisory;
+            const auto& a = input.installedMotorAuthority;
+            advisory.installedMotorBasisKnown = a.valid;
+            if (a.valid)
+            {
+                constexpr double eps=1.0e-6;
+                advisory.oneAxisForward =
+                    a.negative[2]>eps ||
+                    a.workingForwardAccelerationMps2>eps;
+                advisory.oneAxisReverse = a.positive[2]>eps;
+                advisory.pitchBidirectional =
+                    a.positive[3]>eps && a.negative[3]>eps;
+                advisory.yawBidirectional =
+                    a.positive[4]>eps && a.negative[4]>eps;
+                advisory.rollBidirectional =
+                    a.positive[5]>eps && a.negative[5]>eps;
+                if (advisory.yawBidirectional)
+                {
+                    // Lower bound only: assumes instantaneous maximum
+                    // symmetric +/- yaw acceleration. Does not account for
+                    // coupling, preload, lag, energy or thermal capacity.
+                    const double yawA =
+                        std::min(a.positive[4],a.negative[4]);
+                    advisory.optimisticHalfTurnSeconds =
+                        2.0 * std::sqrt(
+                            3.14159265358979323846 / yawA
+                        );
+                }
+            }
+            advisory.observedBusHeadroomMW =
+                input.reactorOutputMW-input.busRequestedMW;
+            advisory.observedThermalHeadroomK =
+                input.thermalCriticalK-input.thermalTemperatureK;
+            advisory.lastMotorElectricalDemandMW =
+                input.measuredEngineElectricalMW;
+            advisory.lastMotorWasteHeatMW =
+                input.measuredEngineWasteHeatMW;
+            advisory.powerBusOverloaded = input.busOverloaded;
+            advisory.reactorShutdown = input.reactorShutdown;
+
             {
                 std::lock_guard<std::mutex> lock(m_mutex);
                 if (m_stopping)
@@ -236,6 +303,7 @@ private:
                     m_latest.input.serverTick == input.serverTick)
                 {
                     m_latest.mobility = result;
+                    m_latest.advisory = advisory;
                     m_latest.analysisCurrent = true;
                 }
             }

@@ -1,4 +1,13 @@
-#include <cassert>
+#include <stdexcept>
+#include <string>
+
+// These are real Release-mode acceptance assertions: CMake Release defines
+// NDEBUG, which would silently eliminate all standard CHECK(...) checks.
+#define CHECK(expr) do { \
+    if (!(expr)) throw std::runtime_error( \
+        std::string("physical model test failed, line ") + \
+        std::to_string(__LINE__) + ": " #expr); \
+} while(false)
 #include <cmath>
 #include <cstddef>
 #include <iostream>
@@ -77,9 +86,9 @@ void expectCounts(
 )
 {
     const Counts counts = countRoles(physicalControlSlots(model));
-    assert(counts.aft == aft);
-    assert(counts.fore == fore);
-    assert(counts.manoeuvre == manoeuvre);
+    CHECK(counts.aft == aft);
+    CHECK(counts.fore == fore);
+    CHECK(counts.manoeuvre == manoeuvre);
 }
 
 void testSixFixedTopologies()
@@ -92,11 +101,11 @@ void testSixFixedTopologies()
     expectCounts(PhysicalControlModelId::NewtonianY, 3, 0, 6);
     expectCounts(PhysicalControlModelId::NewtonianX, 4, 0, 8);
 
-    assert(
+    CHECK(
         nativeFlightLaw(PhysicalControlModelId::AssistedI) ==
         game::navigation::LocalFlightControlLaw::Assisted
     );
-    assert(
+    CHECK(
         nativeFlightLaw(PhysicalControlModelId::NewtonianX) ==
         game::navigation::LocalFlightControlLaw::Newtonian
     );
@@ -112,12 +121,12 @@ void testSlotSemantics()
     {
         for (const auto& slot : physicalControlSlots(model))
         {
-            assert(slot.role != EngineSlotRole::ManoeuvreCluster);
-            assert(slot.freedom == EngineSlotFreedom::VectoringMain);
+            CHECK(slot.role != EngineSlotRole::ManoeuvreCluster);
+            CHECK(slot.freedom == EngineSlotFreedom::VectoringMain);
             if (slot.role == EngineSlotRole::AftMain)
-                assert(slot.nominalForceDirectionBody.z < -0.999);
+                CHECK(slot.nominalForceDirectionBody.z < -0.999);
             if (slot.role == EngineSlotRole::ForeMain)
-                assert(slot.nominalForceDirectionBody.z > 0.999);
+                CHECK(slot.nominalForceDirectionBody.z > 0.999);
         }
     }
 
@@ -131,17 +140,17 @@ void testSlotSemantics()
         {
             if (slot.role == EngineSlotRole::AftMain)
             {
-                assert(slot.freedom == EngineSlotFreedom::VectoringMain);
-                assert(slot.nominalForceDirectionBody.z < -0.999);
+                CHECK(slot.freedom == EngineSlotFreedom::VectoringMain);
+                CHECK(slot.nominalForceDirectionBody.z < -0.999);
             }
             else
             {
-                assert(slot.role == EngineSlotRole::ManoeuvreCluster);
-                assert(
+                CHECK(slot.role == EngineSlotRole::ManoeuvreCluster);
+                CHECK(
                     slot.freedom ==
                     EngineSlotFreedom::OmnidirectionalCluster
                 );
-                assert(near(glm::length(slot.nominalForceDirectionBody), 0.0));
+                CHECK(near(glm::length(slot.nominalForceDirectionBody), 0.0));
             }
         }
     }
@@ -160,23 +169,23 @@ void testAssistedDegradation()
         state
     );
 
-    assert(full.valid);
-    assert(full.regime == RuntimeFlightRegime::FullAssisted);
-    assert(full.mainSlots == 4);
-    assert(full.manoeuvreSlots == 0);
-    assert(near(full.authority.longitudinal.positive, 1.0));
-    assert(near(full.authority.longitudinal.negative, 1.0));
-    assert(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
-    assert(near(full.effectivePhysics.reverseMainEngineAccelerationMps2, 60.0));
-    assert(near(full.effectivePhysics.manoeuvreThrusterAccel, 0.0));
-    assert(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
-    assert(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
+    CHECK(full.valid);
+    CHECK(full.regime == RuntimeFlightRegime::FullAssisted);
+    CHECK(full.mainSlots == 4);
+    CHECK(full.manoeuvreSlots == 0);
+    CHECK(near(full.authority.longitudinal.positive, 1.0));
+    CHECK(near(full.authority.longitudinal.negative, 1.0));
+    CHECK(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
+    CHECK(near(full.effectivePhysics.reverseMainEngineAccelerationMps2, 60.0));
+    CHECK(near(full.effectivePhysics.manoeuvreThrusterAccel, 0.0));
+    CHECK(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
+    CHECK(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
 
     // With nominal 40 m/s^2 useful lateral authority and 60+60 m/s^2 gross
     // opposed-bank authority, only one third of generated thrust becomes net
     // lateral translation. This is propulsive utilization, not engine eta.
-    assert(near(full.thrustUtilization.lateralTranslation01, 1.0 / 3.0));
-    assert(near(full.thrustUtilization.cancelledDuringLateral01, 2.0 / 3.0));
+    CHECK(near(full.thrustUtilization.lateralTranslation01, 1.0 / 3.0));
+    CHECK(near(full.thrustUtilization.cancelledDuringLateral01, 2.0 / 3.0));
 
     // Assisted-I slot order is aft L/R, fore L/R.
     state[2].operational = false;
@@ -186,15 +195,15 @@ void testAssistedDegradation()
         state
     );
 
-    assert(oneForeLost.valid);
-    assert(oneForeLost.regime == RuntimeFlightRegime::DegradedAssisted);
-    assert(near(oneForeLost.authority.longitudinal.positive, 1.0));
-    assert(near(oneForeLost.authority.longitudinal.negative, 0.5));
-    assert(near(
+    CHECK(oneForeLost.valid);
+    CHECK(oneForeLost.regime == RuntimeFlightRegime::DegradedAssisted);
+    CHECK(near(oneForeLost.authority.longitudinal.positive, 1.0));
+    CHECK(near(oneForeLost.authority.longitudinal.negative, 0.5));
+    CHECK(near(
         oneForeLost.effectivePhysics.reverseMainEngineAccelerationMps2,
         30.0
     ));
-    assert(near(oneForeLost.authority.strafe.positive, 0.75));
+    CHECK(near(oneForeLost.authority.strafe.positive, 0.75));
 
     state[3].operational = false;
     auto bothForeLost = evaluatePhysicalControlModel(
@@ -203,13 +212,13 @@ void testAssistedDegradation()
         state
     );
 
-    assert(bothForeLost.valid);
-    assert(
+    CHECK(bothForeLost.valid);
+    CHECK(
         bothForeLost.regime ==
         RuntimeFlightRegime::ThrustAxisFallback
     );
-    assert(!bothForeLost.effectivePhysics.reverseMainEngineAvailable);
-    assert(near(
+    CHECK(!bothForeLost.effectivePhysics.reverseMainEngineAvailable);
+    CHECK(near(
         bothForeLost.effectivePhysics.reverseMainEngineAccelerationMps2,
         0.0
     ));
@@ -225,15 +234,15 @@ void testAssistedHasNoGhostRcs()
         healthySlotState(physicalControlSlots(model))
     );
 
-    assert(snapshot.valid);
-    assert(snapshot.effectivePhysics.manoeuvreThrusterAuthorityExplicit);
-    assert(near(
+    CHECK(snapshot.valid);
+    CHECK(snapshot.effectivePhysics.manoeuvreThrusterAuthorityExplicit);
+    CHECK(near(
         game::ship::manoeuvreAccelerationLimitMps2(
             snapshot.effectivePhysics
         ),
         0.0
     ));
-    assert(
+    CHECK(
         game::ship::assistedLateralStabilizationAccelerationLimitMps2(
             snapshot.effectivePhysics
         ) > 0.0
@@ -265,8 +274,8 @@ void testAssistedHasNoGhostRcs()
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
 
-    assert(near(glm::length(motion.manoeuvreAccelerationMps2), 0.0));
-    assert(glm::length(
+    CHECK(near(glm::length(motion.manoeuvreAccelerationMps2), 0.0));
+    CHECK(glm::length(
         motion.assistedStabilizationAccelerationMps2
     ) > 1.0e-6);
 }
@@ -287,29 +296,29 @@ void testNewtonianDegradation()
         state
     );
 
-    assert(full.valid);
-    assert(full.regime == RuntimeFlightRegime::FullNewtonian);
-    assert(full.mainSlots == 1);
-    assert(full.manoeuvreSlots == 4);
-    assert(!full.effectivePhysics.reverseMainEngineAvailable);
-    assert(near(
+    CHECK(full.valid);
+    CHECK(full.regime == RuntimeFlightRegime::FullNewtonian);
+    CHECK(full.mainSlots == 1);
+    CHECK(full.manoeuvreSlots == 4);
+    CHECK(!full.effectivePhysics.reverseMainEngineAvailable);
+    CHECK(near(
         full.effectivePhysics.reverseMainEngineAccelerationMps2,
         0.0
     ));
-    assert(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
-    assert(near(full.effectivePhysics.manoeuvreThrusterAccel, 4.0));
-    assert(near(full.effectivePhysics.mainGimbalPitchLimitRad, 0.12, 1.0e-6));
-    assert(near(full.effectivePhysics.mainGimbalYawLimitRad, 0.12, 1.0e-6));
-    assert(near(full.effectivePhysics.mainGimbalRateRadPerSec, 0.14, 1.0e-6));
+    CHECK(near(full.effectivePhysics.forwardMainEngineAccelerationMps2, 60.0));
+    CHECK(near(full.effectivePhysics.manoeuvreThrusterAccel, 4.0));
+    CHECK(near(full.effectivePhysics.mainGimbalPitchLimitRad, 0.12, 1.0e-6));
+    CHECK(near(full.effectivePhysics.mainGimbalYawLimitRad, 0.12, 1.0e-6));
+    CHECK(near(full.effectivePhysics.mainGimbalRateRadPerSec, 0.14, 1.0e-6));
 
     // Newtonian-I main is gimbaled. It can bend a powered trajectory and
     // generate pitch/yaw, but a centred single main has no direct roll moment.
-    assert(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
-    assert(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
-    assert(near(full.poweredMainVectoring.pitch01, 1.0));
-    assert(near(full.poweredMainVectoring.yaw01, 1.0));
-    assert(near(full.poweredMainVectoring.roll01, 0.0));
-    assert(near(full.thrustUtilization.cancelledDuringLateral01, 0.0));
+    CHECK(near(full.poweredMainVectoring.trajectoryStrafe01, 1.0));
+    CHECK(near(full.poweredMainVectoring.trajectoryLift01, 1.0));
+    CHECK(near(full.poweredMainVectoring.pitch01, 1.0));
+    CHECK(near(full.poweredMainVectoring.yaw01, 1.0));
+    CHECK(near(full.poweredMainVectoring.roll01, 0.0));
+    CHECK(near(full.thrustUtilization.cancelledDuringLateral01, 0.0));
 
     const auto newtonY = evaluatePhysicalControlModel(
         PhysicalControlModelId::NewtonianY,
@@ -325,8 +334,8 @@ void testNewtonianDegradation()
             physicalControlSlots(PhysicalControlModelId::NewtonianX)
         )
     );
-    assert(newtonY.poweredMainVectoring.roll01 > 0.999);
-    assert(newtonX.poweredMainVectoring.roll01 > 0.999);
+    CHECK(newtonY.poweredMainVectoring.roll01 > 0.999);
+    CHECK(newtonX.poweredMainVectoring.roll01 > 0.999);
 
     // Vectoring damage shrinks real nozzle travel/slew; it must not be
     // converted into hidden RCS authority.
@@ -336,22 +345,22 @@ void testNewtonianDegradation()
         nominal,
         state
     );
-    assert(near(
+    CHECK(near(
         halfVectoring.effectivePhysics.mainGimbalPitchLimitRad,
         0.06,
         1.0e-6
     ));
-    assert(near(
+    CHECK(near(
         halfVectoring.effectivePhysics.mainGimbalYawLimitRad,
         0.06,
         1.0e-6
     ));
-    assert(near(
+    CHECK(near(
         halfVectoring.effectivePhysics.mainGimbalRateRadPerSec,
         0.07,
         1.0e-6
     ));
-    assert(near(
+    CHECK(near(
         halfVectoring.effectivePhysics.manoeuvreThrusterAccel,
         4.0
     ));
@@ -365,10 +374,10 @@ void testNewtonianDegradation()
         state
     );
 
-    assert(rcsLost.valid);
-    assert(rcsLost.regime == RuntimeFlightRegime::DegradedNewtonian);
-    assert(near(rcsLost.authority.strafe.positive, 0.75));
-    assert(near(rcsLost.effectivePhysics.manoeuvreThrusterAccel, 3.0));
+    CHECK(rcsLost.valid);
+    CHECK(rcsLost.regime == RuntimeFlightRegime::DegradedNewtonian);
+    CHECK(near(rcsLost.authority.strafe.positive, 0.75));
+    CHECK(near(rcsLost.effectivePhysics.manoeuvreThrusterAccel, 3.0));
 
     state[0].operational = false;
     auto mainLost = evaluatePhysicalControlModel(
@@ -377,9 +386,9 @@ void testNewtonianDegradation()
         state
     );
 
-    assert(mainLost.valid);
-    assert(mainLost.regime == RuntimeFlightRegime::SurvivalControl);
-    assert(!mainLost.effectivePhysics.forwardMainEngineAvailable);
+    CHECK(mainLost.valid);
+    CHECK(mainLost.regime == RuntimeFlightRegime::SurvivalControl);
+    CHECK(!mainLost.effectivePhysics.forwardMainEngineAvailable);
 }
 
 
@@ -429,37 +438,37 @@ void testHealthyMatrixPreservesAcceptedEnvelope()
             healthySlotState(physicalControlSlots(model))
         );
 
-        assert(snapshot.valid);
-        assert(near(snapshot.authority.longitudinal.positive, 1.0));
-        assert(near(
+        CHECK(snapshot.valid);
+        CHECK(near(snapshot.authority.longitudinal.positive, 1.0));
+        CHECK(near(
             snapshot.effectivePhysics.forwardMainEngineAccelerationMps2,
             60.0
         ));
 
         if (familyOf(model) == PhysicalControlFamily::Assisted)
         {
-            assert(snapshot.regime == RuntimeFlightRegime::FullAssisted);
-            assert(near(snapshot.authority.longitudinal.negative, 1.0));
-            assert(snapshot.effectivePhysics.reverseMainEngineAvailable);
-            assert(near(
+            CHECK(snapshot.regime == RuntimeFlightRegime::FullAssisted);
+            CHECK(near(snapshot.authority.longitudinal.negative, 1.0));
+            CHECK(snapshot.effectivePhysics.reverseMainEngineAvailable);
+            CHECK(near(
                 snapshot.effectivePhysics.reverseMainEngineAccelerationMps2,
                 60.0
             ));
-            assert(near(snapshot.effectivePhysics.strafeAccel, 40.0));
-            assert(near(snapshot.effectivePhysics.angularAccel, 3.0));
-            assert(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 0.0));
+            CHECK(near(snapshot.effectivePhysics.strafeAccel, 40.0));
+            CHECK(near(snapshot.effectivePhysics.angularAccel, 3.0));
+            CHECK(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 0.0));
         }
         else
         {
-            assert(snapshot.regime == RuntimeFlightRegime::FullNewtonian);
-            assert(!snapshot.effectivePhysics.reverseMainEngineAvailable);
-            assert(near(
+            CHECK(snapshot.regime == RuntimeFlightRegime::FullNewtonian);
+            CHECK(!snapshot.effectivePhysics.reverseMainEngineAvailable);
+            CHECK(near(
                 snapshot.effectivePhysics.reverseMainEngineAccelerationMps2,
                 0.0
             ));
-            assert(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 4.0));
-            assert(near(snapshot.effectivePhysics.strafeAccel, 40.0));
-            assert(near(snapshot.effectivePhysics.angularAccel, 3.0));
+            CHECK(near(snapshot.effectivePhysics.manoeuvreThrusterAccel, 4.0));
+            CHECK(near(snapshot.effectivePhysics.strafeAccel, 40.0));
+            CHECK(near(snapshot.effectivePhysics.angularAccel, 3.0));
         }
     }
 }
@@ -486,7 +495,7 @@ void testDamageMatrixNeverCreatesAuthority()
             nominal,
             healthyState
         );
-        assert(healthy.valid);
+        CHECK(healthy.valid);
 
         for (std::size_t failed = 0; failed < slots.size(); ++failed)
         {
@@ -499,27 +508,27 @@ void testDamageMatrixNeverCreatesAuthority()
                 damagedState
             );
 
-            assert(damaged.valid);
-            assert(authorityNotGreater(damaged.authority, healthy.authority));
-            assert(
+            CHECK(damaged.valid);
+            CHECK(authorityNotGreater(damaged.authority, healthy.authority));
+            CHECK(
                 damaged.effectivePhysics.forwardMainEngineAccelerationMps2 <=
                 healthy.effectivePhysics.forwardMainEngineAccelerationMps2 +
                     1.0e-6f
             );
-            assert(
+            CHECK(
                 damaged.effectivePhysics.reverseMainEngineAccelerationMps2 <=
                 healthy.effectivePhysics.reverseMainEngineAccelerationMps2 +
                     1.0e-6f
             );
-            assert(
+            CHECK(
                 damaged.effectivePhysics.strafeAccel <=
                 healthy.effectivePhysics.strafeAccel + 1.0e-6f
             );
-            assert(
+            CHECK(
                 damaged.effectivePhysics.angularAccel <=
                 healthy.effectivePhysics.angularAccel + 1.0e-6f
             );
-            assert(
+            CHECK(
                 damaged.effectivePhysics.manoeuvreThrusterAccel <=
                 healthy.effectivePhysics.manoeuvreThrusterAccel + 1.0e-6f
             );
@@ -538,7 +547,7 @@ void testStateShapeIsPartOfTopology()
         wrong
     );
 
-    assert(!out.valid);
+    CHECK(!out.valid);
 }
 
 } // namespace

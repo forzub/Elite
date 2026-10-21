@@ -7707,9 +7707,23 @@ m_systemMapRenderer.render(
                         : terminalText("cockpit.terminal.failure_generic");
             }
 
+            // Presenters may compose local navigation phase strings, but
+            // the actual terminal receives its complete state only from
+            // MotherComputer, sharing cockpit BITE, ship identity and tick.
+            game::ship::computer::MotherComputerTerminalView terminalView;
+            terminalView.valid = cockpit.valid;
+            terminalView.shipInstanceId = cockpit.shipInstanceId;
+            terminalView.serverTick = cockpit.serverTick;
+            terminalView.presentation = std::move(terminal);
+            m_motherComputer.publishTerminal(std::move(terminalView));
+            const auto currentTerminal = m_motherComputer.terminalSnapshot(
+                cockpit.shipInstanceId,cockpit.serverTick
+            );
             const auto terminalOutput =
                 m_dockingStatusTerminal.update(
-                    terminal,
+                    currentTerminal.valid
+                        ? currentTerminal.presentation
+                        : game::presentation::DockingTerminalSnapshot {},
                     terminalNowSeconds
                 );
 

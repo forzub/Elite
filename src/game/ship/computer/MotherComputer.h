@@ -7,6 +7,19 @@
 // asynchronous, latest-wins advisory analysis lane. Neither may directly
 // command an engine, mutate a ShipCore, or query the authoritative server.
 // Never treat the worker's previous ship/tick as current control authority.
+//
+// SERVER BOUNDARY (intentional no-extra-RPC policy):
+//   ServerRuntime owns canonical fixed-tick kinematics, forces/torques,
+//   equipment health/damage, energy and heat simulation, collisions, docking
+//   validation, persistence, ship identity and world time.
+//   Client MotherComputer owns read-only BITE aggregation, feasibility
+//   certificates, HUD, route feasibility analysis and pilot planning.
+//   The only inputs here are fields ALREADY copied into ClientShipState.
+//   Neither MotherComputer nor its worker may call a transport/session or
+//   request complete NPC engineering graphs just to plan the player ship.
+//   If an existing payload lacks a required source, mark its proof UNVERIFIED;
+//   extend the server's minimal factual snapshot only after profiling and
+//   documenting the missing authoritative datum, never transplant logic.
 
 #include <array>
 #include <condition_variable>

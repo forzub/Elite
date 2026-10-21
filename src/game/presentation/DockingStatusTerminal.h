@@ -111,6 +111,7 @@ public:
             for (const auto& line : snapshot.plannerDetails)
                 enqueue(line, DockingTerminalSeverity::Info);
             m_last = snapshot;
+            m_lastReminderSeconds = nowSeconds;
         }
         else
         {
@@ -151,6 +152,13 @@ public:
                 }
             }
 
+            if (!snapshot.diagnostics.empty() &&
+                nowSeconds - m_lastReminderSeconds >= 10.0)
+            {
+                for (const auto& diagnostic : snapshot.diagnostics)
+                    enqueuePriority(diagnostic.first,diagnostic.second);
+                m_lastReminderSeconds = nowSeconds;
+            }
             enqueueChanged(m_last.activity, snapshot.activity,
                            DockingTerminalSeverity::Info);
             if (snapshot.plannerDetails != m_last.plannerDetails)
@@ -225,6 +233,7 @@ public:
 
 private:
     static constexpr std::size_t MaxHistoryLines = 64;
+    double m_lastReminderSeconds = 0.0;
     static constexpr std::size_t MaxVisibleLines = 14;
 
     void enqueue(

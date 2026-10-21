@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace
@@ -34,6 +35,7 @@ ShipMobilityEvidence nominal()
     e.power.continuouslyAvailableMW = 12000.0;
     e.power.essentialSystemsMW = 400.0;
     e.power.maneuverActuatorsMW = 8000.0;
+    e.power.maximumStorageDischargeMW = 0.0;
     e.power.usableStoredEnergyMJ = 0.0;
 
     e.thermal.verified = true;
@@ -108,6 +110,7 @@ void testTransientElectricAndCoolingBudget()
     auto e = nominal();
     e.control.safeManeuverDurationSeconds = 80.0;
     e.power.continuouslyAvailableMW = 5000.0;
+    e.power.maximumStorageDischargeMW = 3400.0;
     e.power.usableStoredEnergyMJ = 80.0 * 3400.0;
     // 8400 - 5000 = 3400 MW; emergency storage lasts exactly 80s.
     auto a = assessShipMobility(e);
@@ -141,7 +144,12 @@ void testFailedEssentialPowerAndMissingReverseManeuver()
     e.power.continuouslyAvailableMW = 100.0;
     e.power.usableStoredEnergyMJ = 1.0e9;
     require(assessShipMobility(e).mobility == MobilityClass::Inoperable,
-            "temporary store masked absent essential continuous power");
+            "battery energy masked missing peak power output capability");
+    // When its discharge circuit can actually meet MW demand, a battery
+    // can operate even essential systems for a finite emergency maneuver.
+    e.power.maximumStorageDischargeMW = 8300.0;
+    require(assessShipMobility(e).mobility == MobilityClass::Emergency,
+            "physically deliverable temporary battery power was rejected");
     e = nominal();
     e.control.canBrakeAfterReorientation = false;
     require(assessShipMobility(e).mobility == MobilityClass::Inoperable,

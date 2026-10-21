@@ -541,26 +541,24 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     text.textDrawPx("EFF: --",reactorX+43*scale,y+98*scale,caption,amber);
 
     // This is the reactor's own heat-transfer pump, not a radiator pump.
-    const float pumpX=reactorX+18.0f*scale;
-    const float pumpY=y+105.0f*scale;
-    roundedOutlinePx(text,pumpX,pumpY,21*scale,17*scale,
+    const float pumpX=reactorX+107.0f*scale;
+    const float pumpY=y+41.0f*scale;
+    roundedOutlinePx(text,pumpX,pumpY,18*scale,17*scale,
         3*scale,1*scale,amber,style.track);
     if(status.cooling.reactorPumpActive)
         text.solidRectPx(pumpX+7*scale,pumpY+5*scale,
             7*scale,7*scale,cyan);
-    text.solidRectPx(reactorX+39*scale,pumpY+8*scale,
-        12*scale,2*scale,amber);
-    text.textDrawPx("PUMP",reactorX+52*scale,pumpY+2*scale,
-        caption,amber);
+    text.solidRectPx(reactorX+101*scale,pumpY+8*scale,
+        6*scale,2*scale,amber);
 
     panel(coolantX);
     text.textDrawPx("COOLANT",coolantX+10*scale,y+10*scale,small,amber);
     // The coolant bath directly wets the radiator bank. No fictitious
     // second pump appears here. One rectangle represents all panels.
     const float sx=coolantX+11*scale;
-    const float sy=y+35*scale;
+    const float sy=y+32*scale;
     const float sw=w-22*scale;
-    const float sh=47*scale;
+    const float sh=36*scale;
     roundedOutlinePx(text,sx,sy,sw,sh,4*scale,1*scale,
         amber,style.track);
     for(int i=1;i<9;++i)
@@ -568,17 +566,17 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
             sy+5*scale,2*scale,sh-10*scale,amber);
     std::snprintf(buffer,sizeof(buffer),"~%.0f K",
         status.cooling.effectiveRadiatorTemperatureK);
-    text.textDrawPx(buffer,coolantX+10*scale,y+86*scale,
+    text.textDrawPx(buffer,coolantX+10*scale,y+73*scale,
         caption,amber);
     // Thermal powers are real last-step accounting, not pump electricity:
     // IN = deposited into coolant; OUT = radiated to space.
     std::snprintf(buffer,sizeof(buffer),"IN %.1f MW",
         status.cooling.heatIntoCoolantMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+h-44*scale,
+    text.textDrawPx(buffer,coolantX+10*scale,y+90*scale,
         caption,amber);
     std::snprintf(buffer,sizeof(buffer),"OUT %.1f MW",
         status.cooling.radiatedPowerMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+h-22*scale,
+    text.textDrawPx(buffer,coolantX+10*scale,y+106*scale,
         caption,amber);
 }
 

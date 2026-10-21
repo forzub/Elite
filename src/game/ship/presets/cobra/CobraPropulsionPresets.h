@@ -107,4 +107,87 @@ static const std::vector<EngineSlotDefinition> NewtonianX = {
     }
     return AssistedI;
 }
+
+ // Propulsion layout is also the installation skeleton for independent
+ // engine generators and the ship's common thermal/power services.
+ // Coordinates are normalized and evaluated relative to the actual CoM.
+ // Engine IDs refer to the physical main-engine slot names above, not to
+ // separate ship-specific equipment instances.
+ struct EngineReactorSlotDefinition
+ {
+     const char* slotId;
+     glm::dvec3 normalizedPositionBody;
+     std::vector<const char*> poweredEngineSlots;
+ };
+ struct ShipServiceSlotDefinition
+ {
+     const char* slotId;
+     glm::dvec3 normalizedPositionBody;
+ };
+ struct CobraInstallationSlots
+ {
+     std::vector<EngineReactorSlotDefinition> engineReactors;
+     ShipServiceSlotDefinition shipReactor;
+     ShipServiceSlotDefinition commonCooling;
+ };
+
+ [[nodiscard]] inline const CobraInstallationSlots& installationSlots(
+     PhysicalControlModelId model)
+ {
+     // Assisted: one 5 GW generator shared by each fore/aft pair.
+     // Newtonian: one generator per aft main engine. RCS and ordinary
+     // equipment draw from the separate ship power/cooling buses.
+     static const CobraInstallationSlots assistedI {
+         {{"drive_left",{-0.70,0.0,0.0},{"aft_left","fore_left"}},
+          {"drive_right",{0.70,0.0,0.0},{"aft_right","fore_right"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     static const CobraInstallationSlots assistedY {
+         {{"drive_top",{0.0,0.70,0.0},{"aft_top","fore_top"}},
+          {"drive_lower_left",{-0.61,-0.35,0.0},{"aft_lower_left","fore_lower_left"}},
+          {"drive_lower_right",{0.61,-0.35,0.0},{"aft_lower_right","fore_lower_right"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     static const CobraInstallationSlots assistedX {
+         {{"drive_upper_left",{-0.50,0.50,0.0},{"aft_upper_left","fore_upper_left"}},
+          {"drive_upper_right",{0.50,0.50,0.0},{"aft_upper_right","fore_upper_right"}},
+          {"drive_lower_left",{-0.50,-0.50,0.0},{"aft_lower_left","fore_lower_left"}},
+          {"drive_lower_right",{0.50,-0.50,0.0},{"aft_lower_right","fore_lower_right"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     static const CobraInstallationSlots newtonianI {
+         {{"drive_center",{0.0,0.0,0.65},{"main_center"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     static const CobraInstallationSlots newtonianY {
+         {{"drive_top",{0.0,0.12,0.65},{"main_top"}},
+          {"drive_lower_left",{-0.104,-0.06,0.65},{"main_lower_left"}},
+          {"drive_lower_right",{0.104,-0.06,0.65},{"main_lower_right"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     static const CobraInstallationSlots newtonianX {
+         {{"drive_upper_left",{-0.085,0.085,0.65},{"main_upper_left"}},
+          {"drive_upper_right",{0.085,0.085,0.65},{"main_upper_right"}},
+          {"drive_lower_left",{-0.085,-0.085,0.65},{"main_lower_left"}},
+          {"drive_lower_right",{0.085,-0.085,0.65},{"main_lower_right"}}},
+         {"ship_reactor",{0.0,0.0,0.15}},
+         {"shared_cooling",{0.0,0.0,0.0}}
+     };
+     switch(model)
+     {
+         case PhysicalControlModelId::AssistedI: return assistedI;
+         case PhysicalControlModelId::AssistedY: return assistedY;
+         case PhysicalControlModelId::AssistedX: return assistedX;
+         case PhysicalControlModelId::NewtonianI: return newtonianI;
+         case PhysicalControlModelId::NewtonianY: return newtonianY;
+         case PhysicalControlModelId::NewtonianX: return newtonianX;
+     }
+     return assistedI;
+ }
+
 } // namespace game::ship::presets::cobra

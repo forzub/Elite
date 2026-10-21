@@ -81,6 +81,9 @@ struct PowerMobilityProof
     double continuouslyAvailableMW = 0.0;
     double essentialSystemsMW = 0.0;
     double maneuverActuatorsMW = 0.0;
+    // Emergency battery/storage power electronics must ALSO have adequate
+    // discharge rate. Energy (MJ) alone cannot supply missing MW.
+    double maximumStorageDischargeMW = 0.0;
     // Verified electrical storage usable for the chosen maneuver, in MJ.
     double usableStoredEnergyMJ = 0.0;
 };
@@ -145,6 +148,7 @@ struct ShipMobilityAssessment
         !finiteNonNegative(p.continuouslyAvailableMW) ||
         !finiteNonNegative(p.essentialSystemsMW) ||
         !finiteNonNegative(p.maneuverActuatorsMW) ||
+        !finiteNonNegative(p.maximumStorageDischargeMW) ||
         !finiteNonNegative(p.usableStoredEnergyMJ))
     {
         out.blockers |= MissingPowerProof;
@@ -176,15 +180,13 @@ struct ShipMobilityAssessment
 
     const double totalPowerMW =
         p.essentialSystemsMW + p.maneuverActuatorsMW;
-    // The electric bus must at least keep the essential attitude, control
-    // and safety systems alive continuously; propulsive load may use
-    // explicit finite emergency storage if verified.
-    if (p.continuouslyAvailableMW + 1.0e-9 <
-        p.essentialSystemsMW)
-        out.blockers |= PowerUnavailable;
-
+    // Both energy (MJ) AND instantaneous discharge power (MW) are needed
+    // for an emergency battery-assisted maneuver. A backup may power
+    // essential systems temporarily; this is never a factory rating.
     const double powerDeficitMW =
         std::max(0.0, totalPowerMW - p.continuouslyAvailableMW);
+    if (powerDeficitMW > p.maximumStorageDischargeMW + 1.0e-9)
+        out.blockers |= PowerUnavailable;
     const double thermalExcessMW =
         std::max(0.0, t.maneuverHeatInputMW -
                          t.sustainableHeatRejectionMW);

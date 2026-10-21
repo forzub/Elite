@@ -67,8 +67,14 @@ public:
         const double thermalEfficiency = t <= m_workTemp
             ? m_efficiencyMinTemp+(m_efficiency-m_efficiencyMinTemp)*low
             : m_efficiency+(m_efficiencyMaxTemp-m_efficiency)*high;
-        return std::clamp(thermalEfficiency *
-            std::clamp(m_structuralIntegrity,0.0,1.0),0.05,1.0);
+        // Structural integrity already reduces reactor output capacity.
+        // Do NOT multiply conversion efficiency by integrity: at 10 GW
+        // even 1% damage would create ~100 MW of fictitious waste heat.
+        // A separate bounded 0.03 percentage-point loss at total damage
+        // gives diagnostic degradation without inevitable thermal runaway.
+        const double structuralLoss = 0.0003 *
+            (1.0-std::clamp(m_structuralIntegrity,0.0,1.0));
+        return std::clamp(thermalEfficiency-structuralLoss,0.05,1.0);
     }
     double getMinimumOperatingTemperatureK() const { return m_minWorkTemp; }
     double getOptimalTemperatureK() const { return m_workTemp; }

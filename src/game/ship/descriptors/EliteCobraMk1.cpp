@@ -252,9 +252,9 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.reactor.temperature        = 3500.0;           // Начальная температура (K)
         desc.reactor.thermalMass        = 120.0;            // Теплоемкость (МДж/К)	Масса реактора 25т, теплоемкость стали ~0.5 МДж/т/К ×25т ×10 = 125
         
-        desc.reactor.efficiencyMinTemp      =  0.9990;            // 0.35 — мин КПД (при мин/макс температуре)
-        desc.reactor.efficiencyPeak         =  0.9995;            // 0.45 — макс КПД
-        desc.reactor.efficiencyMaxTemp      =  0.9985;             // 0.40 — мин КПД (при мин/макс температуре)
+        desc.reactor.efficiencyMinTemp      =  0.9960;            // cold boundary
+        desc.reactor.efficiencyPeak         =  0.9965;            // peak at 3500K
+        desc.reactor.efficiencyMaxTemp      =  0.9955;             // hot boundary
 
        
         // ─────────────────────────

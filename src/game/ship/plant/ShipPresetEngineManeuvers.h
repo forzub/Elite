@@ -496,6 +496,18 @@ struct AssistedManeuverPrograms final
                 if (std::abs(predicted)>allowable+1.0e-9)
                     globalScale*=allowable/std::abs(predicted);
             }
+            // Pitch + yaw share a single crew/load angular envelope.
+            double pitch=0.0,yaw=0.0;
+            for(std::size_t k=0;k<3*count;++k)
+            {
+                pitch+=wrench[3][k]*q[k];
+                yaw+=wrench[4][k]*q[k];
+            }
+            pitch*=scales[3]*globalScale;
+            yaw*=scales[4]*globalScale;
+            const double planar=std::hypot(pitch,yaw);
+            if(planar>safeAngular && planar>1.0e-12)
+                globalScale*=safeAngular/planar;
         }
         const double mass=std::max(1.0,ship.massKg);
         const glm::dvec3 inertia {

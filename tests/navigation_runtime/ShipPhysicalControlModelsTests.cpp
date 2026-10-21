@@ -1,17 +1,17 @@
+#include <cmath>
+#include <cstddef>
+#include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
-// These are real Release-mode acceptance assertions: CMake Release defines
-// NDEBUG, which would silently eliminate all standard CHECK(...) checks.
+// Standard assert(expr) disappears under CMake Release (-DNDEBUG).
+// Keep actual acceptance checks active in BOTH Release and Debug.
 #define CHECK(expr) do { \
     if (!(expr)) throw std::runtime_error( \
         std::string("physical model test failed, line ") + \
         std::to_string(__LINE__) + ": " #expr); \
 } while(false)
-#include <cmath>
-#include <cstddef>
-#include <iostream>
-#include <vector>
 
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/core/ShipDynamics.h"

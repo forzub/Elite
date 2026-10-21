@@ -1,3 +1,9 @@
+## 2026-10-21 — PATCH RECAP: ACTUAL COMPILATION ERROR AND RELEASE ASSERTIONS
+
+User-provided MinGW/Ninja build log `Вставленный текст(20261021-133721).txt`: compiler stops in `WorkingThrustAxisAnalysis.h` on undefined `determin`; because `ShipCapabilityBuilder.h` includes that header, both `working_thrust_axis_analysis_tests` and `engine_thrust_hud_presentation_tests` fail to compile. Exact symbol fixed to `determinant` (`71cdbe48`). Build process stops before CTest; no testing PASS evidence at all. In `ShipPhysicalControlModelsTests.cpp`, 98 former `assert` calls were disabled by the user's `-DNDEBUG` Release configuration; replaced with always-live `CHECK` that throws a detailed failure (`70da4b1d`) and corrected introductory comment/include order (`e68651a0`). This changes NO physical game logic and adds NO synthetic test suite. Next user `git pull --ff-only` and rerun original PowerShell script from native PowerShell or via properly quoted MSYS2 path, then fix any actual compiled/runtime failure. No success may be claimed until then.
+
+---
+
 ## 2026-10-21 — USER DIRECTIVE: GENERAL CONTROL-PLANT INPUT/OUTPUT/TIME ANALYSIS; DO NOT GIVE SERVER CLIENT MOTHERCOMPUTER; NO TESTS FOR TESTS
 
 **User insists:** Never special-case "one aft engine", even by stacking more ifs. Enumerate ALL actual control inputs, dynamic states, outputs, temporal delays, and disabled/degraded variations, and derive flight controllability from the complete available plant. Clarify whether server needs MotherComputer at all. Every test and interface must protect genuine executable flight behavior or a dangerous boundary; do not add abstract mocks, redundant files, contracts, or acceptance ceremony for its own sake. Keep ONE permanent state file PROJECT_STATE.md.

@@ -105,6 +105,7 @@ public:
     void damagePanel(int index, double amount);
     void damageRandomPanel(double amount);
     double getTotalEfficiency() const;
+    bool isPanelThermalCritical() const { return m_panelThermalCritical; }
     void repairAllPanels();
     
     // Геттеры для PrimaryCircuit
@@ -171,6 +172,7 @@ private:
     // Временные переменные для отладки
     double m_coolantTemp = 293.0;
     double m_dt = 0.0;
+    bool m_panelThermalCritical = false;
 
     
     // Conversion between electric pump demand and coolant transport is a

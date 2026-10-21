@@ -54,7 +54,9 @@ readAssistedControlAuthority(
             motorPrograms.model
         );
         for(std::size_t i=0;i<motorPrograms.count;++i)
-            if(slots[i].role==game::ship::plant::EngineSlotRole::AftMain)
+            if(slots[i].role==game::ship::plant::EngineSlotRole::AftMain &&
+                static_cast<int>(i) ==
+                    motorPrograms.shape.assistedWorkingThrustMotorIndex)
             {
                 const auto& m=motorPrograms.motors[i];
                 out.workingForwardAccelerationMps2+=

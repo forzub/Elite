@@ -10,10 +10,10 @@ try {
     Write-Host "[EngineOut] Configure navigation runtime tests"
     & cmake -S (Join-Path $repoRoot "tests\navigation_runtime") -B $testBuild -G Ninja
     if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
-    $targets = @("assisted_authority_contract_tests", "ship_physical_control_models_tests", "ship_control_execution_gateway_tests", "client_route_autopilot_tests")
+    $targets = @("ship_mobility_assessment_tests", "assisted_authority_contract_tests", "ship_physical_control_models_tests", "ship_control_execution_gateway_tests", "client_route_autopilot_tests")
     & cmake --build $testBuild --target $targets -j 8
     if ($LASTEXITCODE -ne 0) { throw "Navigation test build failed: $LASTEXITCODE" }
-    & ctest --test-dir $testBuild -R "^(assisted_authority_contract|ship_physical_control_models|ship_control_execution_gateway|client_route_autopilot)$" --output-on-failure
+    & ctest --test-dir $testBuild -R "^(ship_mobility_assessment|assisted_authority_contract|ship_physical_control_models|ship_control_execution_gateway|client_route_autopilot)$" --output-on-failure
     if ($LASTEXITCODE -ne 0) { throw "Navigation tests failed: $LASTEXITCODE" }
     Write-Host "[EngineOut] Building EliteGame (HUD, wire schema and control)"
     & cmake --build $gameBuild --target EliteGame -j 8

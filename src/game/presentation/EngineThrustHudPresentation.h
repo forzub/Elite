@@ -39,6 +39,12 @@ struct EngineThrustBarPresentation
 
     // Presentation fault signal only. Animation remains client-renderer state.
     bool fault = false;
+    bool hasEngineTemperature = false;
+    float engineTemperatureK = 0.0f;
+    float engineSafeTemperatureK = 0.0f;
+    // Surface emitter temperature is not separately replicated yet.
+    bool hasEmitterTemperature = false;
+    float emitterTemperatureK = 0.0f;
 };
 
 struct EngineThrustGroupPresentation
@@ -216,6 +222,32 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
                 biteState,
                 equipmentId
             );
+        if (!equipmentId.empty() &&
+            model == descriptor.physicalControlModel)
+        {
+            const auto module = std::find_if(
+                ship.modules.begin(), ship.modules.end(),
+                [&](const auto& state) {
+                    return state.moduleId == equipmentId;
+                });
+            const auto definition = std::find_if(
+                descriptor.modules.begin(), descriptor.modules.end(),
+                [&](const auto& state) {
+                    return state.moduleId == equipmentId;
+                });
+            if (module != ship.modules.end() &&
+                definition != descriptor.modules.end() &&
+                definition->engine &&
+                module->hasEngineThermalState &&
+                std::isfinite(module->engineTemperatureK))
+            {
+                bar.hasEngineTemperature = true;
+                bar.engineTemperatureK =
+                    module->engineTemperatureK;
+                bar.engineSafeTemperatureK = static_cast<float>(
+                    definition->engine->safeOperatingTemperatureK);
+            }
+        }
         out.warning = out.warning || bar.fault;
 
         groupIt->bars.push_back(std::move(bar));

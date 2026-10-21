@@ -14,10 +14,18 @@ ReactorSystem::ReactorSystem(const ReactorDescriptor& desc)
 
 void ReactorSystem::init(const ReactorDescriptor& desc)
 {
-    // m_peakElectricPowerMW = desc.peakPowerMW;
-    // m_thermalMass         = desc.thermalMass;
-    // m_temperature         = desc.temperature;
-    // m_criticalTemp        = desc.maxTempK;
+    // Read the installed reactor passport. The active flight model must
+    // never silently use the old 70MW/2000K development defaults.
+    m_peakPowerMW = std::max(0.0,desc.peakPowerMW);
+    m_thermalMass = std::max(1.0,desc.thermalMass);
+    m_temperature = std::max(0.0,desc.temperature);
+    m_criticalTemp = std::max(1.0,desc.maxTempK);
+    m_minWorkTemp = std::max(0.0,desc.minTempK);
+    m_workTemp = std::max(m_minWorkTemp,desc.optimalTempK);
+    m_maxWorkTemp = m_workTemp +
+        (m_criticalTemp-m_workTemp)*0.5;
+    m_maxWarringTemp = m_workTemp +
+        (m_criticalTemp-m_workTemp)*0.75;
 
     m_efficiency = std::clamp(desc.efficiencyPeak,0.05,1.0);
     m_efficiencyMinTemp = std::clamp(desc.efficiencyMinTemp,0.05,1.0);
@@ -25,8 +33,8 @@ void ReactorSystem::init(const ReactorDescriptor& desc)
     m_throttle = 0.0;
     m_structuralIntegrity = 1.0;
     m_status = ReactorStatus::Normal;
-    m_workTemp = 1500.0;
-
+    // The working temperature and emergency boundaries above come from
+    // this installed reactor configuration.
 
     m_emergencyMode = false;
     m_emergencyPowerLimit = 12.0; // Можно сделать параметром дескриптора

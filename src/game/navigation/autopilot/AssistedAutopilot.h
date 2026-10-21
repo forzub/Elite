@@ -104,7 +104,23 @@ public:
         const glm::dvec3 up =
             normalizedOr(request.upMap, {0.0, 1.0, 0.0});
 
-        updateIdentification(request, params, forward, dt, state);
+        // In a damaged Assisted engine-out flight the true "forward"
+        // propulsion response is not the nose: the survivor's thrust line
+        // passes through the center of mass at an offset angle. Keep the
+        // physical body axes for controls, but track the REAL working axis
+        // when estimating course response and selecting hull attitude.
+        const glm::dvec3 workingForward =
+            params.assistedWorkingThrustAxisEmergency
+                ? normalizedOr(
+                    right*params.assistedWorkingThrustAxisBody.x +
+                    up*params.assistedWorkingThrustAxisBody.y -
+                    forward*params.assistedWorkingThrustAxisBody.z,
+                    forward
+                  )
+                : forward;
+        updateIdentification(
+            request, params, workingForward, dt, state
+        );
 
         ShipControlState out;
 
@@ -165,6 +181,34 @@ public:
 
             pitchYawError =
                 course.pitchYawErrorLocalRad;
+
+            if (params.assistedWorkingThrustAxisEmergency)
+            {
+                // Separate the velocity-course correction from alignment
+                // of the damaged drive's ACTUAL propulsion axis. Otherwise
+                // velocity may be on route with the nose ~49.5 deg wrong
+                // for the next engine-out burn. Only this physically
+                // degraded mode adds the working-axis attitude error;
+                // healthy Assisted remains velocity-course primary.
+                const glm::dvec3 axisError =
+                    glm::cross(workingForward, desiredCourse);
+                const double axisSin = glm::length(axisError);
+                const double axisAngle = std::atan2(
+                    axisSin,
+                    std::clamp(
+                        glm::dot(workingForward,desiredCourse),-1.0,1.0
+                    )
+                );
+                if (axisSin > 1.0e-9)
+                {
+                    const glm::dvec3 correction =
+                        axisError * (axisAngle/axisSin);
+                    pitchYawError += {
+                        glm::dot(correction,right),
+                        glm::dot(correction,up)
+                    };
+                }
+            }
         }
 
         // Roll remains an independent hull channel.

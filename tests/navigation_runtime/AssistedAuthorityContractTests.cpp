@@ -241,7 +241,7 @@ void testEmergencySingleAftCoMThrustHasNoYaw()
     require(actual.engines[0].deliveredThrust01<1.0e-6 &&
             actual.engines[1].deliveredThrust01>0.5,
             "emergency burn did not use the correct surviving aft engine");
-    require(std::abs(actual.engines[1].nozzleYawRad)-angle<0.02,
+    require(std::abs(std::abs(actual.engines[1].nozzleYawRad)-angle)<0.02,
             "outward nozzle did not acquire the required CoM angle");
     require(angle<=passport.nominalGimbalRangeRad,
             "single aft CoM solution exceeds physical nozzle range");

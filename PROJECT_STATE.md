@@ -1,3 +1,9 @@
+## 2026-10-21 — COMPACT THERMAL HUD SIZING UPDATE (SOURCE ONLY)
+
+User game screenshot confirmed first compact reactor/coolant widgets rendered but were shorter/narrower than engine panel, labels cramped, and position must follow engine panel width for I/Y/X. Updated `src/render/cockpit/EngineThrustIndicatorRenderer.cpp` commits `0c9bc59b`, `ddc28d7e`. Reactor and coolant frames now use exactly the engine widget height expression (padding/icon/iconGap/label/labelGap/bar/padding), 142px-at-reference auxiliary width vs previous 110px, 9px gap, larger fonts and separated captions. Reactor X now computes actual content-derived engine width from groups, per-bar widths/gaps, padding, icon and measured text width (not estimated constants), then coolant follows reactor width. Top and bottom align through same bottom anchor; Assisted I/Y/X adaptation applies without duplicating engine widget UI. **Not yet built or screenshot-tested by user after these changes.** Verify with `git pull --ff-only origin feature/assisted-engine-out-axis-2026-10-21`, `cmake --build build --target EliteGame -j 8`; inspect all I/Y/X and collect screenshot. Do not claim verified before runtime screenshot.
+
+---
+
 ## 2026-10-21 — COMPACT ENGINE / REACTOR / COOLING HUD SOURCE WIRED (BUILD/SCREENSHOT PENDING)
 
 User specifically rejected full-sized cinematographic panels; HUD must match existing tiny `ASSISTED-Y` lower-left amber bordered engine gauge, with two small neighboring widgets and colored thin strips beside EACH thrust bar.

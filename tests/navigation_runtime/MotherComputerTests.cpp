@@ -181,7 +181,17 @@ void testMotherComputerChoosesOnlyPhysicsApprovedDoctrine()
             out.assistedWorkingThrustMotorIndex==1,
             "autopilot did not receive motherboard-selected working axis");
 
-    auto foreFailed=makeInput(41,2);
+    // Different live CoM or an incoherent client projection must NOT hand
+    // an unexecuted working axis to the autopilot as physical truth.
+    auto mismatch=engineOut;
+    mismatch.serverTick=2;
+    mismatch.workingThrustAxisBody={0.0,0.0,-1.0};
+    computer.observe(mismatch);
+    require(!computer.snapshot().flightProfile.valid &&
+            !computer.assistedFlightEnvelope(41,2,out,authority),
+            "motherboard accepted thrust axis contradictory to server");
+    
+    auto foreFailed=makeInput(41,3);
     foreFailed.physicalEnvelope.reverseMainEngineAvailable=false;
     foreFailed.installedMotorAuthority.positive[2]=0.0;
     computer.observe(foreFailed);

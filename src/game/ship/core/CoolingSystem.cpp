@@ -18,6 +18,7 @@ void CoolingSystem::init(double totalArea, int panelCount,
     m_secondaryCircuit.emissivity = material
         ? material->emissivity01 : std::clamp(emissivity, 0.0, 1.0);
     m_secondaryCircuit.maxCoolantTemp = maxCoolantTemp;
+    m_panelThermalCritical = false;
     
     double panelArea = totalArea / panelCount;
     m_secondaryCircuit.panels.clear();
@@ -109,6 +110,31 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     // ===== ВТОРОЙ КОНТУР (РАДИАТОРЫ) =====
     // 3. Сколько могут излучить радиаторы при текущей температуре
     m_coolantTemp = coolant.getTemperature();
+    // Real catalogue material limit: sustained high panel temperature
+    // progressively damages radiator surface and its effective area.
+    // Effective surface temperature currently equals coolant temperature.
+    const auto* radiatorMaterial =
+        game::physics::materials::findMaterial(
+            m_secondaryCircuit.materialId);
+    const double onsetK = radiatorMaterial
+        ? radiatorMaterial->damageOnsetTemperatureK
+        : m_secondaryCircuit.maxCoolantTemp;
+    m_panelThermalCritical = m_coolantTemp >= onsetK;
+    if(m_panelThermalCritical && dt>0.0)
+    {
+        const double excess=std::max(0.0,m_coolantTemp-onsetK);
+        const double range=std::max(1.0, radiatorMaterial
+            ? radiatorMaterial->destructionTemperatureK-onsetK
+            : 500.0);
+        const double wearPerSecond =
+            0.0001 * (1.0+excess/range);
+        for(auto& panel : m_secondaryCircuit.panels)
+        {
+            panel.health=std::clamp(
+                panel.health-wearPerSecond*dt,0.0,1.0);
+            panel.efficiency=panel.health;
+        }
+    }
     double maxRadiatedPower = calculateRadiatedPower(m_coolantTemp);
     
     // 4. The radiator panels ARE the surface of the shared coolant loop.

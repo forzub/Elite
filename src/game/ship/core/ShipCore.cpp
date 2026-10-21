@@ -1329,6 +1329,9 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.cooling.allocatedPowerMW = m_cooling.getAllocatedPower();
     status.cooling.requestedPowerMW = m_cooling.getRequestedPower();
     status.cooling.radiatedPowerMW = m_cooling.getLastRadiatedPower();
+    status.cooling.heatIntoCoolantMW = m_cooling.getDT() > 0.0
+        ? std::max(0.0,m_thermal.getHeatVolume()/m_cooling.getDT())
+        : 0.0;
     
     status.cooling.pumpCapacity = m_cooling.getPumpCapacity();
     status.cooling.reactorPumpActive = m_cooling.isReactorPumpActive();

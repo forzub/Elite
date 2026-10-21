@@ -161,6 +161,9 @@ void testMotherComputerChoosesOnlyPhysicsApprovedDoctrine()
     engineOut.physicalEnvelope.assistedWorkingThrustAxisBody=
         glm::normalize(glm::dvec3(-13.0,0.0,-11.1));
     engineOut.physicalEnvelope.assistedWorkingThrustMotorIndex=1;
+    engineOut.emergencyWorkingThrustAxis=true;
+    engineOut.workingThrustAxisBody=
+        engineOut.physicalEnvelope.assistedWorkingThrustAxisBody;
     engineOut.installedMotorAuthority.workingForwardAccelerationMps2=30.0;
     computer.observe(engineOut);
     auto snapshot=computer.snapshot();

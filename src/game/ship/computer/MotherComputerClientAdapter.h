@@ -83,8 +83,7 @@ namespace game::ship::computer
                     game::ship::plant::effectiveSlotThrust01(
                         slotState[i])>1.0e-9)
                     ++survivingAft;
-            if (survivingAft == 1 &&
-                game::ship::plant::familyOf(ship.physicalControlModel) ==
+            if (game::ship::plant::familyOf(ship.physicalControlModel) ==
                     game::ship::plant::PhysicalControlFamily::Assisted)
                 game::ship::capability::applyMountedEngineAxialAuthority(
                     *ship.descriptor,

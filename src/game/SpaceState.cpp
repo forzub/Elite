@@ -5662,11 +5662,20 @@ void SpaceState::update(float dt)
                     m_motherObservedShipInstanceId
             ))
         {
-            m_motherComputer.observe(
+            auto motherInput =
                 game::ship::computer::collectReplicatedShipFacts(
                     shipIt->second, observedTick
-                )
-            );
+                );
+            if (shipIt->second.descriptor)
+            {
+                motherInput.installedEquipmentBite =
+                    game::presentation::buildShipBiteState(
+                        *shipIt->second.descriptor,
+                        shipIt->second.modules,
+                        observedTick
+                    );
+            }
+            m_motherComputer.observe(std::move(motherInput));
             m_motherObservedServerTick = observedTick;
             m_motherObservedShipInstanceId =
                 static_cast<std::uint64_t>(
@@ -7381,13 +7390,22 @@ m_systemMapRenderer.render(
                 !m_dockingGuidanceFailureReason.empty() ||
                 !m_dockingStatusWarning.empty();
 
+            const auto computerBite = m_motherComputer.snapshot();
+            const bool computerBiteFresh =
+                computerBite.valid &&
+                computerBite.input.shipInstanceId ==
+                    static_cast<std::uint64_t>(playerShip.instanceId) &&
+                computerBite.input.serverTick ==
+                    m_client->lastSimulationMetadata().serverTick;
             const auto biteState =
-                playerShip.descriptor
-                    ? game::presentation::buildShipBiteState(
-                          *playerShip.descriptor,
-                          playerShip.modules
-                      )
-                    : game::bite::State {};
+                computerBiteFresh
+                    ? computerBite.input.installedEquipmentBite
+                    : (playerShip.descriptor
+                        ? game::presentation::buildShipBiteState(
+                              *playerShip.descriptor,
+                              playerShip.modules
+                          )
+                        : game::bite::State {});
 
             const auto biteLines =
                 game::presentation::DockTerminalBitePresentation::lines(

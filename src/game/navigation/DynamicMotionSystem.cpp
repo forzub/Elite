@@ -298,6 +298,29 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
                     params.assistedWorkingThrustAxisBody.z
               )
             : hullForward;
+    // A damaged ship MUST first rotate its hull until its reachable working
+    // thrust axis points along the planned velocity course. Forcing the
+    // ordinary nose-based lateral stabilizer during that transition spends
+    // propulsion authority trying to "correct" a deliberate hull offset.
+    // While attitude is acquiring the new propulsion heading, keep the
+    // existing world velocity ballistic; attitude motors remain active.
+    const glm::dvec3 presentVelocity =
+        frame.localToWorldVector(motion.localVelocityMps);
+    const double targetSpeed = glm::length(targetVelocitySystemMps);
+    if (params.assistedWorkingThrustAxisEmergency &&
+        glm::length(presentVelocity)>1.0 &&
+        targetSpeed>1.0 &&
+        glm::dot(forward,targetVelocitySystemMps/targetSpeed) <
+            static_cast<double>(params.brakeAlignmentCosine))
+    {
+        motion.mainEngineAccelerationMps2 = {};
+        motion.assistedStabilizationAccelerationMps2 = {};
+        motion.manoeuvreAccelerationMps2 = {};
+        motion.engineAccelerationMps2 = {};
+        motion.desiredTacticalVelocityMps = presentVelocity;
+        return;
+    }
+
     const double targetForwardSpeedMps = std::max(
         0.0, glm::dot(targetVelocitySystemMps, forward)
     );

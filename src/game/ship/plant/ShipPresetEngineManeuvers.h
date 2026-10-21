@@ -67,7 +67,11 @@ struct AssistedManeuverPrograms final
             !almost(shape.forwardMainEngineAccelerationMps2,
                     ship.forwardMainEngineAccelerationMps2) ||
             !almost(shape.reverseMainEngineAccelerationMps2,
-                    ship.reverseMainEngineAccelerationMps2))
+                    ship.reverseMainEngineAccelerationMps2) ||
+            shape.assistedWorkingThrustAxisEmergency !=
+                ship.assistedWorkingThrustAxisEmergency ||
+            shape.assistedWorkingThrustMotorIndex !=
+                ship.assistedWorkingThrustMotorIndex)
             return false;
         const auto checkVector=[&](glm::dvec3 a,glm::dvec3 b) {
             return almost(a.x,b.x) && almost(a.y,b.y) &&
@@ -389,6 +393,13 @@ struct AssistedManeuverPrograms final
             const auto& topology = physicalControlSlots(selected);
             for (std::size_t i=0;i<count && requested>1.0e-9;++i)
             {
+                // The candidate was validated for THIS exact physical slot
+                // against its installed capability and gimbal cone. Never
+                // silently use another, differently positioned aft motor.
+                if (ship.assistedWorkingThrustMotorIndex<0 ||
+                    static_cast<std::size_t>(
+                        ship.assistedWorkingThrustMotorIndex)!=i)
+                    continue;
                 if (topology[i].role!=EngineSlotRole::AftMain ||
                     motors[i].capacity01<=1.0e-9 ||
                     motors[i].ratedN<=0.0)

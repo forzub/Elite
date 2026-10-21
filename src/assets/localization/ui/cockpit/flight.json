@@ -72,6 +72,13 @@
       "es": "FRENAR",
       "ja": "制動"
     },
+    "cockpit.emergency.thrust_axis": {
+      "en": "THRUST AXIS",
+      "ru": "ОСЬ ТЯГИ",
+      "zh-Hans": "推力轴",
+      "es": "EJE DE EMPUJE",
+      "ja": "推力軸"
+    },
     "hud.time_simulation_mode": {
       "en": "TIME SIMULATION MODE",
       "ru": "РЕЖИМ СИМУЛЯЦИИ ВРЕМЕНИ",

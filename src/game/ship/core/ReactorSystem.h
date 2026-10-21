@@ -4,6 +4,7 @@
 #include "src/game/ship/ShipDescriptor.h"
 #include "ThermalSystem.h"
 #include "CoolingSystem.h"
+#include <algorithm>
 
 namespace game::ship::core
 {
@@ -51,7 +52,24 @@ public:
 
     // Состояние
     double getTemperature() const { return m_temperature; }
-    double getEfficiency01() const { return m_efficiency * m_structuralIntegrity; }
+    double getEfficiency01() const
+    {
+        // The original live reactor remains on its existing 1300/1400/2000 K
+        // operating envelope until the full reactor power model migrates.
+        // Only efficiency is sampled against that currently active envelope.
+        const double t=m_temperature;
+        const double low=std::clamp(
+            (t-m_minWorkTemp)/std::max(1.0,m_workTemp-m_minWorkTemp),
+            0.0,1.0);
+        const double high=std::clamp(
+            (t-m_workTemp)/std::max(1.0,m_criticalTemp-m_workTemp),
+            0.0,1.0);
+        const double thermalEfficiency = t <= m_workTemp
+            ? m_efficiencyMinTemp+(m_efficiency-m_efficiencyMinTemp)*low
+            : m_efficiency+(m_efficiencyMaxTemp-m_efficiency)*high;
+        return std::clamp(thermalEfficiency *
+            std::clamp(m_structuralIntegrity,0.0,1.0),0.05,1.0);
+    }
     double getMinimumOperatingTemperatureK() const { return m_minWorkTemp; }
     double getOptimalTemperatureK() const { return m_workTemp; }
     double getCriticalTemperature() const { return m_criticalTemp; }
@@ -87,7 +105,9 @@ private:
 private:
     // Параметры
     double m_peakPowerMW    = 70.0;        // МВт (электрических)
-    double m_efficiency     = 0.45;        // 45%
+    double m_efficiency     = 0.45;        // peak at optimal T
+    double m_efficiencyMinTemp = 0.35;
+    double m_efficiencyMaxTemp = 0.40;
     double m_thermalMass    = 30.0;        // МДж/К
 
     double m_minWorkTemp    = 1300.0;      // K

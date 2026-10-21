@@ -125,6 +125,16 @@ void testLatestWinsAndInvalidDoesNotPromiseFlight()
             "power/thermal and 6DOF proof gaps were misreported as flyable");
     require(latest.autopilotAuthorityCurrent,
             "async advisory mistakenly disabled the current flight lane");
+    require(latest.advisory.installedMotorBasisKnown &&
+            latest.advisory.oneAxisForward &&
+            latest.advisory.oneAxisReverse &&
+            latest.advisory.yawBidirectional &&
+            latest.advisory.pitchBidirectional &&
+            latest.advisory.rollBidirectional &&
+            latest.advisory.optimisticHalfTurnSeconds > 0.0 &&
+            latest.advisory.motorPowerAllocationProofMissing &&
+            latest.advisory.thermalEnduranceProofMissing,
+            "advisory did not separate signed motor preview from proof");
 
     auto replacement=makeInput(10,1);
     replacement.installedMotorAuthority.valid=false;

@@ -7353,6 +7353,13 @@ m_systemMapRenderer.render(
                 engineThrustInstrument,
                 vp
             );
+            // Compact amber system instruments beside the existing motor
+            // gauge. Read the same authoritative replicated ship systems
+            // seen by MotherComputer; never synthesize temperatures.
+            if (cockpit.valid)
+                m_engineThrustIndicatorRenderer.renderThermalSystems(
+                    cockpit.bite, vp
+                );
 
             // The hull boresight is a fundamental attitude cue, not a velocity
             // cue and not a navigation-module product. Keep it present whenever

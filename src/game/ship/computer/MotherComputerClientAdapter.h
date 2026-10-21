@@ -12,6 +12,8 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/computer/MotherComputer.h"
+#include "src/game/presentation/EngineLiveTelemetryPresentation.h"
+#include "src/game/presentation/ShipBitePresentation.h"
 
 namespace game::ship::computer
 {
@@ -131,6 +133,101 @@ namespace game::ship::computer
     // No combined 6-DOF reachability certificate, true electrical motor
     // bus allocation or time-bounded coolant certificate is yet provided.
     out.mobilityEvidence = {};
+    return out;
+}
+
+
+[[nodiscard]] inline MotherComputerCockpitView collectCockpitView(
+    const ClientShipState& ship,
+    const MotherComputerSnapshot& motherboard
+)
+{
+    MotherComputerCockpitView out;
+    if (!motherboard.valid ||
+        motherboard.input.shipInstanceId !=
+            static_cast<std::uint64_t>(ship.instanceId) ||
+        motherboard.input.serverTick == 0)
+        return out;
+
+    // Even though render position/attitude is interpolated, all equipment,
+    // fault and energy facts belong to exactly ONE authoritative snapshot.
+    out.valid = true;
+    out.shipInstanceId = motherboard.input.shipInstanceId;
+    out.serverTick = motherboard.input.serverTick;
+    out.renderTransform = ship.renderTransform;
+    out.bite = motherboard.input.installedEquipmentBite;
+    out.systems = motherboard.input.biteAndSystems;
+
+    if (!ship.descriptor)
+        return out;
+
+    out.nominalSpeedLimitMps = std::max(
+        0.0, static_cast<double>(
+            ship.descriptor->physics.maxCombatSpeed)
+    );
+    out.engineHudStyleId =
+        ship.descriptor->hud.engineStatusStyleId.empty()
+            ? "human_amber"
+            : ship.descriptor->hud.engineStatusStyleId;
+    out.physicalModelLabel =
+        game::ship::plant::physicalControlModelName(
+            ship.physicalControlModel
+        );
+    for (char& ch : out.physicalModelLabel)
+        if (ch >= 'a' && ch <= 'z')
+            ch = static_cast<char>(ch - 'a' + 'A');
+
+    const auto& slots =
+        game::ship::plant::physicalControlSlots(
+            ship.physicalControlModel
+        );
+    const bool diagnostic =
+        ship.physicalControlModel !=
+            ship.descriptor->physicalControlModel;
+    const auto states = diagnostic
+        ? game::ship::plant::healthySlotState(slots)
+        : game::ship::capability::buildPhysicalControlSlotState(
+              *ship.descriptor,
+              ship.physicalControlModel,
+              ship.modules
+          );
+    if (states.size() != slots.size())
+        return out;
+
+    out.engineSlots.reserve(slots.size());
+    const auto& bindings =
+        ship.descriptor->physicalControl.slotModuleIds;
+    for (std::size_t i=0;i<slots.size();++i)
+    {
+        const auto role = slots[i].role;
+        if (role != game::ship::plant::EngineSlotRole::AftMain &&
+            role != game::ship::plant::EngineSlotRole::ForeMain)
+            continue;
+        if (game::ship::plant::familyOf(ship.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Newtonian &&
+            role == game::ship::plant::EngineSlotRole::ForeMain)
+            continue;
+
+        MotherComputerEngineHudSlot slot;
+        slot.id = slots[i].id;
+        slot.groupX = slots[i].normalizedPositionBody.x;
+        slot.groupY = slots[i].normalizedPositionBody.y;
+        slot.fore =
+            role == game::ship::plant::EngineSlotRole::ForeMain;
+        const auto live =
+            game::presentation::readEngineMotorLiveView(
+                ship.renderTransform.motion, i,
+                game::ship::plant::effectiveSlotThrust01(states[i])
+            );
+        slot.available01 = static_cast<float>(live.available01);
+        slot.delivered01 = static_cast<float>(live.thrust01);
+        slot.fault = !diagnostic &&
+            i < bindings.size() && !bindings[i].empty() &&
+            game::presentation::biteHudAttentionForEquipment(
+                out.bite, bindings[i]
+            );
+        out.engineSlots.push_back(std::move(slot));
+    }
     return out;
 }
 

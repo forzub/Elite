@@ -6,6 +6,7 @@
 #include <glm/mat3x3.hpp>
 
 #include "src/game/client/ClientWorldState.h"
+#include "src/game/ship/computer/MotherComputer.h"
 
 class UIComponent;
 
@@ -33,6 +34,11 @@ struct PlayerHudTelemetryTextProfile
 
 PlayerHudTelemetry buildPlayerHudTelemetry(
     const ClientShipState& ship,
+    const PlayerHudTelemetryTextProfile& textProfile = {}
+);
+
+PlayerHudTelemetry buildPlayerHudTelemetry(
+    const game::ship::computer::MotherComputerCockpitView& cockpit,
     const PlayerHudTelemetryTextProfile& textProfile = {}
 );
 
@@ -77,6 +83,11 @@ struct FlightVectorIndicatorPresentation
 
 FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
     const ClientShipState& ship,
+    const FlightInstrumentTextProfile& textProfile = {}
+);
+
+FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
+    const game::ship::computer::MotherComputerCockpitView& cockpit,
     const FlightInstrumentTextProfile& textProfile = {}
 );
 

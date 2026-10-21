@@ -28,6 +28,17 @@ namespace game::ship::computer
     out.physicalControlModel =
         static_cast<int>(ship.physicalControlModel);
     out.installedMotorAuthority = ship.controlAuthorityTelemetry;
+    out.engines = ship.transform.motion.engineTelemetry;
+    out.biteAndSystems = ship.shipCoreStatus;
+    out.velocityLocalMps = ship.transform.motion.localVelocityMps;
+    out.deliveredAngularAccelerationBodyRadPerSec2 =
+        ship.transform.motion.mainPropulsionAngularAccelerationBodyRadPerSec2;
+    out.requestedAngularAccelerationBodyRadPerSec2 =
+        ship.transform.motion.requestedMainAngularAccelerationBodyRadPerSec2;
+    out.workingThrustAxisBody =
+        ship.transform.motion.assistedWorkingThrustAxisBody;
+    out.emergencyWorkingThrustAxis =
+        ship.transform.motion.assistedWorkingThrustAxisEmergency;
 
     if (ship.descriptor)
     {

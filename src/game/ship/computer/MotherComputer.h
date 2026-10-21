@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/bite/BiteTypes.h"
 #include "src/game/simulation/ShipCoreStatus.h"
 #include "src/game/ship/telemetry/EngineLiveTelemetry.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
@@ -43,6 +44,9 @@ struct MotherComputerInput
     // feedback. The asynchronous worker never touches the live source.
     game::ship::telemetry::EngineLiveTelemetry engines {};
     game::ShipCoreStatus biteAndSystems {};
+    // Existing engine BITE becomes an immutable motherboard channel.
+    // Renderers no longer have to rebuild equipment faults independently.
+    game::bite::State installedEquipmentBite {};
     glm::dvec3 velocityLocalMps {0.0};
     glm::dvec3 deliveredAngularAccelerationBodyRadPerSec2 {0.0};
     glm::dvec3 requestedAngularAccelerationBodyRadPerSec2 {0.0};
@@ -122,7 +126,8 @@ public:
             m_latest.analysisCurrent = false;
             m_latest.mobility = {};
             m_latest.autopilotAuthorityCurrent =
-                m_latest.input.physicalEnvelopeValid;
+                m_latest.input.physicalEnvelopeValid &&
+                m_latest.input.installedMotorAuthority.valid;
             m_pending = m_latest.input;
             m_pendingGeneration = ++m_latestGeneration;
             m_pendingAvailable = true;

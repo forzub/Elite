@@ -1,6 +1,8 @@
 
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h"
+#include <stdexcept>
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
 #include "src/game/ship/ShipDescriptor.h"
 
@@ -1102,6 +1104,24 @@ if (const char* rawModel =
                 desc.physicalControlModel
             );
         desc.physicalControl.slotModuleIds.clear();
+    }
+}
+
+
+// Newtonian Cobra has the same 24 individually installed RCS nozzle
+// equipment units for I/Y/X. Create these before the module runtime is
+// initialized so hits, wear and BITE refer to real module identities.
+// This does NOT enable the unfinished 24-nozzle executor: the old
+// omnidirectional cluster flight path remains unchanged for now.
+if (game::ship::plant::familyOf(desc.physicalControlModel) ==
+        game::ship::plant::PhysicalControlFamily::Newtonian)
+{
+    if (!game::ship::presets::cobra::addNewtonianRcsEquipmentModules(
+            desc.modules))
+    {
+        throw std::logic_error(
+            "Cobra Newtonian RCS module IDs are not unique"
+        );
     }
 }
 

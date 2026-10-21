@@ -517,67 +517,78 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     const int caption=std::max(11,static_cast<int>(13.0f*scale));
     char buffer[48];
     panel(reactorX);
-    text.textDrawPx("REACTOR",reactorX+10*scale,y+10*scale,small,amber);
-    // Temperature fills a single small core symbol; this isn't a power bar.
-    const float r=std::clamp(static_cast<float>(
-        status.reactor.criticalTemp>0.0
-          ? status.reactor.temperature/status.reactor.criticalTemp : 0.0),
-        0.0f,1.0f);
-    const float cx=reactorX+14.0f*scale;
-    const float cy=y+44.0f*scale;
-    const float ch=46.0f*scale;
-    roundedOutlinePx(text,cx,cy,16*scale,ch,3*scale,1*scale,
-        amber,style.track);
-    text.solidRectPx(cx+2*scale,cy+ch-(ch-4*scale)*r-2*scale,
-        12*scale,(ch-4*scale)*r,
-        r>0.85f?warn:cyan);
-    std::snprintf(buffer,sizeof(buffer),"%.0f K",
-        status.reactor.temperature);
-    text.textDrawPx(buffer,reactorX+43*scale,y+50*scale,small,amber);
-    std::snprintf(buffer,sizeof(buffer),"%.0f MW",
-        status.reactor.outputMW);
-    text.textDrawPx(buffer,reactorX+43*scale,y+75*scale,caption,amber);
-    // There is no authoritative reactor thermal efficiency in ShipCoreStatus.
-    text.textDrawPx("EFF: --",reactorX+43*scale,y+98*scale,caption,amber);
-
-    // This is the reactor's own heat-transfer pump, not a radiator pump.
-    const float pumpX=reactorX+107.0f*scale;
-    const float pumpY=y+41.0f*scale;
-    roundedOutlinePx(text,pumpX,pumpY,18*scale,17*scale,
-        3*scale,1*scale,amber,style.track);
-    if(status.cooling.reactorPumpActive)
-        text.solidRectPx(pumpX+7*scale,pumpY+5*scale,
-            7*scale,7*scale,cyan);
-    text.solidRectPx(reactorX+101*scale,pumpY+8*scale,
-        6*scale,2*scale,amber);
-
     panel(coolantX);
-    text.textDrawPx("COOLANT",coolantX+10*scale,y+10*scale,small,amber);
-    // The coolant bath directly wets the radiator bank. No fictitious
-    // second pump appears here. One rectangle represents all panels.
-    const float sx=coolantX+11*scale;
-    const float sy=y+32*scale;
-    const float sw=w-22*scale;
-    const float sh=36*scale;
+    const int tiny=std::max(9,static_cast<int>(11.0f*scale));
+    text.textDrawPx("REACTOR",reactorX+8*scale,y+7*scale,small,amber);
+    // Core | reactor pump | common coolant. Pump lights amber only if it
+    // receives power and hysteresis requests it; otherwise empty square.
+    const float r=std::clamp(static_cast<float>(
+        status.reactor.criticalTemp>0
+            ? status.reactor.temperature/status.reactor.criticalTemp : 0),
+        0.0f,1.0f);
+    const float chainY=y+33*scale;
+    roundedOutlinePx(text,reactorX+10*scale,chainY,
+        15*scale,37*scale,3*scale,1*scale,amber,style.track);
+    text.solidRectPx(reactorX+12*scale,chainY+(35-31*r)*scale,
+        11*scale,31*r*scale,r>0.85f?warn:cyan);
+    text.solidRectPx(reactorX+25*scale,chainY+17*scale,
+        17*scale,2*scale,amber);
+    roundedOutlinePx(text,reactorX+42*scale,chainY+9*scale,
+        22*scale,20*scale,2*scale,1*scale,amber,style.track);
+    const bool pumping=status.cooling.reactorPumpActive &&
+        status.cooling.allocatedPowerMW>0.0;
+    if(pumping)
+        text.solidRectPx(reactorX+46*scale,chainY+13*scale,
+            14*scale,12*scale,style.capacity);
+    text.solidRectPx(reactorX+64*scale,chainY+17*scale,
+        14*scale,2*scale,amber);
+    roundedOutlinePx(text,reactorX+78*scale,chainY+9*scale,
+        23*scale,20*scale,3*scale,1*scale,cyan,style.track);
+    text.solidRectPx(reactorX+81*scale,chainY+19*scale,
+        17*scale,7*scale,cyan);
+    const bool radiatorAlarm=status.cooling.panelThermalCritical ||
+        status.cooling.criticalPanelCount>0;
+    const bool reactorAlarm=status.reactor.status>=1 ||
+        status.reactor.integrity<0.95 ||
+        status.reactor.temperature<status.reactor.minOperatingTemperatureK;
+    const float blink=warningPulse(style);
+    if(radiatorAlarm)
+        text.solidRectPx(reactorX+108*scale,chainY+8*scale,
+            7*scale,7*scale,withAlpha(warn,blink));
+    if(reactorAlarm)
+        text.solidRectPx(reactorX+120*scale,chainY+8*scale,
+            7*scale,7*scale,withAlpha(warn,blink));
+    std::snprintf(buffer,sizeof(buffer),"%.0f K",status.reactor.temperature);
+    text.textDrawPx(buffer,reactorX+8*scale,y+78*scale,caption,amber);
+    std::snprintf(buffer,sizeof(buffer),"%.0f MW  %.0f%%",
+        status.reactor.outputMW,status.reactor.efficiency01*100.0);
+    text.textDrawPx(buffer,reactorX+8*scale,y+96*scale,caption,amber);
+    text.textDrawPx("PWR / EFF",reactorX+8*scale,y+113*scale,tiny,amber);
+
+    text.textDrawPx("COOLANT",coolantX+8*scale,y+7*scale,small,amber);
+    const float sx=coolantX+10*scale;
+    const float sy=y+29*scale;
+    const float sw=w-20*scale;
+    const float sh=24*scale;
     roundedOutlinePx(text,sx,sy,sw,sh,4*scale,1*scale,
         amber,style.track);
     for(int i=1;i<9;++i)
         text.solidRectPx(sx+sw*(static_cast<float>(i)/9.0f),
-            sy+5*scale,2*scale,sh-10*scale,amber);
-    std::snprintf(buffer,sizeof(buffer),"~%.0f K",
-        status.cooling.effectiveRadiatorTemperatureK);
-    text.textDrawPx(buffer,coolantX+10*scale,y+73*scale,
-        caption,amber);
-    // Thermal powers are real last-step accounting, not pump electricity:
-    // IN = deposited into coolant; OUT = radiated to space.
+            sy+4*scale,2*scale,sh-8*scale,
+            status.cooling.panelThermalCritical?warn:amber);
+    std::snprintf(buffer,sizeof(buffer),"P %.0f / C %.0f K",
+        status.cooling.effectiveRadiatorTemperatureK,
+        status.cooling.coolantTemp);
+    text.textDrawPx(buffer,coolantX+8*scale,y+58*scale,tiny,amber);
+    std::snprintf(buffer,sizeof(buffer),"OK %.0f%%",
+        status.cooling.panelHealthPercent);
+    text.textDrawPx(buffer,coolantX+8*scale,y+73*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"IN %.1f MW",
         status.cooling.heatIntoCoolantMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+90*scale,
-        caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+91*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"OUT %.1f MW",
         status.cooling.radiatedPowerMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+106*scale,
-        caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+109*scale,caption,amber);
 }
 
 } // namespace render::cockpit

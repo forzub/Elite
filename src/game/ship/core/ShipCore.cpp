@@ -1307,6 +1307,9 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.reactor.temperature = m_reactor.getTemperature();
     status.reactor.criticalTemp = m_reactor.getCriticalTemperature();
     status.reactor.outputMW = m_reactor.getCurrentOutput();
+    status.reactor.efficiency01 = m_reactor.getEfficiency01();
+    status.reactor.minOperatingTemperatureK = m_reactor.getMinimumOperatingTemperatureK();
+    status.reactor.optimalTemperatureK = m_reactor.getOptimalTemperatureK();
     status.reactor.maxOutputMW = m_reactor.getMaxOutput();
     status.reactor.throttle = m_reactor.getThrottle();
     status.reactor.instability = m_reactor.getInstability();
@@ -1326,6 +1329,9 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     // ----- Cooling (только то, что реально есть) -----
     status.cooling.coolantTemp = m_thermal.getTemperature(); // берем из thermal
     status.cooling.totalEfficiency = m_cooling.getTotalEfficiency();
+    status.cooling.panelHealthPercent = 100.0 * status.cooling.totalEfficiency;
+    status.cooling.panelThermalCritical =
+        m_cooling.isPanelThermalCritical();
     status.cooling.allocatedPowerMW = m_cooling.getAllocatedPower();
     status.cooling.requestedPowerMW = m_cooling.getRequestedPower();
     status.cooling.radiatedPowerMW = m_cooling.getLastRadiatedPower();

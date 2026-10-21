@@ -559,10 +559,15 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     for(int i=0;i<4;++i)
         text.solidRectPx(coolantX+(74+6*i)*scale,sy+4*scale,
             2*scale,18*scale,amber);
-    std::snprintf(buffer,sizeof(buffer),"%.0f K  %.1f MW",
+    std::snprintf(buffer,sizeof(buffer),"%.0f K  P:%.1f MW",
         status.thermal.temperature,status.cooling.allocatedPowerMW);
     text.textDrawPx(buffer,coolantX+10*scale,y+h-42*scale,caption,amber);
-    text.textDrawPx("PANEL: -- K",coolantX+10*scale,y+h-21*scale,
+    // Effective panel temperature is an explicit simplifying assumption
+    // of the current Stefan-Boltzmann model (panel ~= coolant), not a
+    // measured independent surface temperature. Prefix with '~'.
+    std::snprintf(buffer,sizeof(buffer),"PANEL ~%.0f K",
+        status.cooling.effectiveRadiatorTemperatureK);
+    text.textDrawPx(buffer,coolantX+10*scale,y+h-21*scale,
         caption,amber);
 }
 

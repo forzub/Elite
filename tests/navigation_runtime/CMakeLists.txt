@@ -5,6 +5,7 @@ project(NavigationRuntimeControlTests LANGUAGES CXX)
 include(CTest)
 
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -1410,6 +1411,32 @@ set_tests_properties(
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+
+# Client-only MotherComputer data-plane and async advisory contracts.
+add_executable(
+    mother_computer_tests
+    MotherComputerTests.cpp
+)
+target_include_directories(mother_computer_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(mother_computer_tests PRIVATE cxx_std_17)
+target_link_libraries(mother_computer_tests PRIVATE
+    EliteNavigationRuntimeControl
+    Threads::Threads
+)
+if(MSVC)
+    target_compile_options(mother_computer_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(
+        mother_computer_tests PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+add_test(NAME mother_computer COMMAND mother_computer_tests)
+set_tests_properties(mother_computer
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
 
 # Layout-independent ship mobility capability/evidence contract.
 # No graphics, simulation server, or external engine assumptions.

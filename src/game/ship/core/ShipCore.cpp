@@ -10,6 +10,7 @@
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/plant/NewtonianRcsAllocator.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/data/radars.h"
 
@@ -60,6 +61,9 @@ void ShipCore::init(
     // Reinitializing an entity must never resurrect motor programs or stale
     // autopilot authority from its previous installed ship.
     m_assistedManeuvers = {};
+    m_newtonianRcsAngularDemandRadPerSec2 = {};
+    m_newtonianRcsDelivered01.fill(0.0);
+    m_newtonianRcsPhysical = false;
     m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
     m_desc = &descriptor; // compatibility mirror; construction truth is m_state.
@@ -448,6 +452,47 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         );
 
     auto& motion = m_transform.motion;
+    m_newtonianRcsAngularDemandRadPerSec2 = {};
+    m_newtonianRcsPhysical = false;
+    // Only the native installed Newtonian construction uses the new nozzle
+    // executor. Diagnostic override and Assisted retain existing behavior.
+    if (dt > 0.0f &&
+        motion.mode == game::navigation::MotionMode::HubTactical &&
+        m_state.construction.valid() &&
+        game::ship::plant::familyOf(
+            m_state.construction.physicalControlModel) ==
+            game::ship::plant::PhysicalControlFamily::Newtonian &&
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+    {
+        const auto& runtime =
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                m_moduleRuntime);
+        m_newtonianRcsPhysical = true;
+        for (const auto& mount :
+                game::ship::presets::cobra::newtonianRcsNozzles())
+        {
+            if (!runtime.findModule(std::string(mount.nozzleId)))
+            {
+                m_newtonianRcsPhysical = false;
+                break;
+            }
+        }
+        if (m_newtonianRcsPhysical)
+        {
+            const glm::dvec3 after {
+                m_transform.pitchRate, m_transform.yawRate,
+                m_transform.rollRate
+            };
+            m_newtonianRcsAngularDemandRadPerSec2 =
+                (after-angularBefore)/static_cast<double>(dt);
+            // These rates were calculated from a command law, not produced by
+            // any hardware. Restore physical rates until nozzle torque acts.
+            m_transform.pitchRate=static_cast<float>(angularBefore.x);
+            m_transform.yawRate=static_cast<float>(angularBefore.y);
+            m_transform.rollRate=static_cast<float>(angularBefore.z);
+        }
+    }
     motion.requestedMainAngularAccelerationBodyRadPerSec2 = {};
     // The accepted Assisted attitude law still computes the desired angular
     // acceleration (including damping/autopilot). It may NO LONGER create
@@ -609,6 +654,101 @@ void ShipCore::updateTranslationControl(float dt)
             physicalEngines,
             &m_assistedManeuvers
         );
+    // Replace the legacy free Newtonian manoeuvre force with the real
+    // fixed-direction RCS bank. Main thrust/torque remains separate.
+    m_newtonianRcsDelivered01.fill(0.0);
+    if (m_newtonianRcsPhysical && dt > 0.0f &&
+        m_transform.motion.mode ==
+            game::navigation::MotionMode::HubTactical)
+    {
+        using game::equipment::engine::MountedEngine;
+        std::array<MountedEngine,24> installed {};
+        const auto& desc=*m_state.construction.definition;
+        const auto& runtime=
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                m_moduleRuntime);
+        const auto& mounts =
+            game::ship::presets::cobra::newtonianRcsNozzles();
+        bool complete=true;
+        for(std::size_t i=0;i<mounts.size();++i)
+        {
+            const std::string id(mounts[i].nozzleId);
+            const auto def=std::find_if(
+                desc.modules.begin(),desc.modules.end(),
+                [&](const auto& module){return module.moduleId==id;});
+            const auto* state=runtime.findModule(id);
+            if(def==desc.modules.end() || !def->engine || !state)
+            {
+                complete=false;
+                break;
+            }
+            installed[i]={
+                &*def->engine,&state->equipmentDamage,
+                &state->engineOperating,id,
+                state->state ==
+                    world::modules::ObjectModuleRuntimeState::Attached &&
+                state->health>0.0f
+            };
+        }
+        if (complete)
+        {
+            auto& motion=m_transform.motion;
+            const glm::dvec3 oldRcsWorld=
+                motion.manoeuvreAccelerationMps2;
+            const glm::dvec3 right(m_transform.right());
+            const glm::dvec3 up(m_transform.up());
+            const glm::dvec3 forward(m_transform.forward());
+            const double mass=std::max(1.0,physics.massKg);
+            const game::ship::plant::NewtonianRcsDemand demand {
+                glm::dvec3 {
+                    glm::dot(oldRcsWorld,right),
+                    glm::dot(oldRcsWorld,up),
+                    -glm::dot(oldRcsWorld,forward)
+                }*mass,
+                m_newtonianRcsAngularDemandRadPerSec2*
+                    glm::dvec3{
+                        physics.pitchInertiaKgM2,
+                        physics.yawInertiaKgM2,
+                        physics.rollInertiaKgM2},
+                physics.physicalActuatorHalfExtentsMeters,
+                m_state.control.controlTick
+            };
+            const auto executed=
+                game::ship::plant::allocateNewtonianRcs(
+                    installed,demand);
+            if(executed.valid)
+            {
+                const glm::dvec3 a=executed.deliveredForceN/mass;
+                const glm::dvec3 actualWorld=
+                    right*a.x+up*a.y-forward*a.z;
+                motion.manoeuvreAccelerationMps2=actualWorld;
+                motion.engineAccelerationMps2+=
+                    actualWorld-oldRcsWorld;
+                const glm::dvec3 inertias {
+                    std::max(1.0,physics.pitchInertiaKgM2),
+                    std::max(1.0,physics.yawInertiaKgM2),
+                    std::max(1.0,physics.rollInertiaKgM2)
+                };
+                const auto angular=executed.deliveredMomentNm/inertias;
+                m_transform.pitchRate+=
+                    static_cast<float>(angular.x*dt);
+                m_transform.yawRate+=
+                    static_cast<float>(angular.y*dt);
+                m_transform.rollRate+=
+                    static_cast<float>(angular.z*dt);
+                m_newtonianRcsDelivered01=executed.throttle01;
+            }
+        }
+        // No fallback to fictitious thrusters if the installed plant is
+        // inconsistent. A missing/destroyed nozzle simply delivers zero.
+        else
+        {
+            auto& motion=m_transform.motion;
+            motion.engineAccelerationMps2-=
+                motion.manoeuvreAccelerationMps2;
+            motion.manoeuvreAccelerationMps2={};
+        }
+    }
     m_preparedManeuverActuatorRevision=m_state.actuators.revision;
 }
 

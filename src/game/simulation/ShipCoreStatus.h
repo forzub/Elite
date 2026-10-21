@@ -36,7 +36,10 @@ struct CoolingStatus {
     double totalEfficiency = 1.0;
     double allocatedPowerMW = 0.0;      // из getAllocatedPower()
     double requestedPowerMW = 0.0;      // из getRequestedPower()
-    double radiatedPowerMW = 0.0;       // из getLastRadiatedPower()
+    double radiatedPowerMW = 0.0;
+    // Actual heat deposited into the common fluid during the last systems
+    // step, including reactor transfer, equipment and pump losses (MW).
+    double heatIntoCoolantMW = 0.0;       // из getLastRadiatedPower()
     double pumpCapacity = 0.0;
     bool reactorPumpActive = false;
     bool coolantOverheatLatched = false;

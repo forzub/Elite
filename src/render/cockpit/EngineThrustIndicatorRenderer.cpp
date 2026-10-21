@@ -457,6 +457,7 @@ void EngineThrustIndicatorRenderer::render(
 
 void EngineThrustIndicatorRenderer::renderThermalSystems(
     const game::ShipCoreStatus& status,
+    const game::presentation::EngineThrustHudPresentation& engines,
     const Viewport& viewport
 )
 {
@@ -471,7 +472,16 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     // Reserve space to the right of the existing compact engine gauge.
     // Only text/geometry; no full-sized instrument windows.
     const float w=110.0f*scale,h=104.0f*scale,gap=7.0f*scale;
-    const float reactorX=x+110.0f*scale;
+    std::size_t bars=0, groups=0;
+    for (const auto& group : engines.groups)
+    {
+        bars+=group.bars.size();
+        if (!group.bars.empty()) ++groups;
+    }
+    const float motorWidth = (22.0f+static_cast<float>(bars)*11.0f+
+        static_cast<float>(bars>groups?bars-groups:0)*8.0f+
+        static_cast<float>(groups>0?groups-1:0)*12.0f)*scale;
+    const float reactorX=x+std::max(110.0f*scale,motorWidth+7.0f*scale);
     const float coolantX=reactorX+w+gap;
     const float y=bottom-h;
     auto panel=[&](float px) {

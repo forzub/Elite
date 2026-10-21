@@ -17,6 +17,8 @@
 #include <utility>
 
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/simulation/ShipCoreStatus.h"
+#include "src/game/ship/telemetry/EngineLiveTelemetry.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/capability/ShipMobilityAssessment.h"
 
@@ -35,6 +37,17 @@ struct MotherComputerInput
     ShipParams physicalEnvelope {};
     game::ship::telemetry::ShipControlAuthorityTelemetry
         installedMotorAuthority {};
+
+    // Factual copied detailed diagnostics: per-engine thrust/vector
+    // and electrical/thermal motor consumption, BITE conditions, and motion
+    // feedback. The asynchronous worker never touches the live source.
+    game::ship::telemetry::EngineLiveTelemetry engines {};
+    game::ShipCoreStatus biteAndSystems {};
+    glm::dvec3 velocityLocalMps {0.0};
+    glm::dvec3 deliveredAngularAccelerationBodyRadPerSec2 {0.0};
+    glm::dvec3 requestedAngularAccelerationBodyRadPerSec2 {0.0};
+    glm::dvec3 workingThrustAxisBody {0.0,0.0,-1.0};
+    bool emergencyWorkingThrustAxis = false;
 
     // Read-only BITE / life-support / resource evidence. These are observed
     // powers and temperatures, NOT proof of forward maneuver endurance.
@@ -111,6 +124,7 @@ public:
             m_latest.autopilotAuthorityCurrent =
                 m_latest.input.physicalEnvelopeValid;
             m_pending = m_latest.input;
+            m_pendingGeneration = ++m_latestGeneration;
             m_pendingAvailable = true;
             if (!m_worker.joinable())
                 m_worker = std::thread([this]() { workerLoop(); });
@@ -174,6 +188,7 @@ private:
         for (;;)
         {
             MotherComputerInput input;
+            std::uint64_t generation = 0;
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 m_cv.wait(lock, [this]() {
@@ -182,6 +197,7 @@ private:
                 if (m_stopping)
                     return;
                 input = std::move(m_pending);
+                generation = m_pendingGeneration;
                 m_pendingAvailable = false;
             }
 
@@ -197,6 +213,7 @@ private:
                 if (m_stopping)
                     return;
                 if (m_latest.valid &&
+                    m_latestGeneration == generation &&
                     m_latest.input.shipInstanceId == input.shipInstanceId &&
                     m_latest.input.serverTick == input.serverTick)
                 {
@@ -212,6 +229,8 @@ private:
     std::thread m_worker;
     bool m_stopping = false;
     bool m_pendingAvailable = false;
+    std::uint64_t m_latestGeneration = 0;
+    std::uint64_t m_pendingGeneration = 0;
     MotherComputerInput m_pending {};
     MotherComputerSnapshot m_latest {};
 };

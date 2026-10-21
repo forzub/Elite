@@ -7451,7 +7451,8 @@ m_systemMapRenderer.render(
             // BITE is allowed to request presentation attention, never control.
             // The same terminal surface is shared with docking diagnostics so
             // a propulsion fault remains visible even while docking is idle.
-            terminal.visible = dockingVisible || biteVisible;
+            terminal.visible = dockingVisible || biteVisible ||
+                (cockpit.valid && !cockpit.systems.alerts.empty());
             terminal.title = terminalText(
                 dockingVisible
                     ? "cockpit.terminal.title"
@@ -7489,6 +7490,15 @@ m_systemMapRenderer.render(
                 );
             }
 
+            // A system fault reaches the same historical diagnostic terminal
+            // as BITE. State changes and reminders are terminal policy only.
+            if(cockpit.valid)
+                for(const auto& alert : cockpit.systems.alerts)
+                    terminal.diagnostics.emplace_back(
+                        alert.system + ": " + alert.message,
+                        alert.severity>=2
+                            ? game::presentation::DockingTerminalSeverity::Error
+                            : game::presentation::DockingTerminalSeverity::Warning);
             {
                 using namespace game::ship::plant;
                 const auto model = playerShip.physicalControlModel;

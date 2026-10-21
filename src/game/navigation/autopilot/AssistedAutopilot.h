@@ -203,10 +203,10 @@ public:
                 {
                     const glm::dvec3 correction =
                         axisError * (axisAngle/axisSin);
-                    pitchYawError += {
+                    pitchYawError += glm::dvec2(
                         glm::dot(correction,right),
                         glm::dot(correction,up)
-                    };
+                    );
                 }
             }
         }

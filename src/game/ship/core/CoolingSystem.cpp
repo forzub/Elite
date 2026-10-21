@@ -81,6 +81,13 @@ void CoolingSystem::setAvailablePower(double power)
 
 
 
+void CoolingSystem::prepareTransport() noexcept
+{
+    m_primaryCircuit.pumpCapacity = std::clamp(
+        m_primaryCircuit.allocatedPower, 0.0,
+        m_primaryCircuit.maxPumpPower) * PUMP_EFFICIENCY;
+}
+
 void CoolingSystem::update(double dt, ThermalSystem& coolant)
 {
     m_primaryCircuit.lastReactorTemp = m_reactorState.reactorT;
@@ -91,7 +98,7 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     coolant.addHeat(pumpHeatMW * dt);
     
     // 2. Рассчитываем переносимую мощность насосов
-    m_primaryCircuit.pumpCapacity = m_primaryCircuit.allocatedPower * PUMP_EFFICIENCY;
+    prepareTransport();
     
     // Сохраняем dt для отладки
     m_dt = dt;

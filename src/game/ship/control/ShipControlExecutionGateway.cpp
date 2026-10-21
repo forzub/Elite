@@ -212,6 +212,10 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         );
 
     auto& motion = transform.motion;
+    motion.assistedWorkingThrustAxisEmergency =
+        capabilities.assistedWorkingThrustAxisEmergency;
+    motion.assistedWorkingThrustAxisBody =
+        capabilities.assistedWorkingThrustAxisBody;
     motion.mainEngineDeliveredThrust01.fill(0.0);
     motion.mainEngineReportedSlotCount = 0;
     if (dt <= 0.0f ||

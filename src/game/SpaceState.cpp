@@ -99,6 +99,7 @@
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/computer/MotherComputerClientAdapter.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
@@ -2124,8 +2125,15 @@ void SpaceState::updateDockingAdvisory()
         // This is authored by the actual server ShipCore motor allocator,
         // carried in every ship snapshot independent of sparse graph rows.
         // Never infer motor health from a missing optional module payload.
-        liveAssistedAuthority = player.controlAuthorityTelemetry;
-        if (!liveAssistedAuthority.valid ||
+        ShipParams motherEnvelope {};
+        const bool motherEnvelopeValid =
+            m_motherComputer.assistedFlightEnvelope(
+                static_cast<std::uint64_t>(player.instanceId),
+                m_client->lastSimulationMetadata().serverTick,
+                motherEnvelope,
+                liveAssistedAuthority
+            );
+        if (!motherEnvelopeValid || !liveAssistedAuthority.valid ||
             liveAssistedAuthority.model != player.physicalControlModel)
         {
             // The ship may have only just entered HubTactical or changed
@@ -2164,10 +2172,9 @@ void SpaceState::updateDockingAdvisory()
                 << liveAssistedAuthority.sourceActuatorRevision
                 << std::endl;
         }
-        effectivePhysics =
-            game::ship::telemetry::applyAuthorityToControlParams(
-                effectivePhysics, liveAssistedAuthority
-            );
+        // Read the motor-constrained envelope via the ship computer's
+        // synchronous flight lane, never an asynchronously stale diagnosis.
+        effectivePhysics = motherEnvelope;
 
         const double steering = std::min({
             liveAssistedAuthority.positive[3],
@@ -5637,6 +5644,35 @@ void SpaceState::update(float dt)
     {
         std::cerr << "[HubMotionLab][bad_alloc] phase=client-update\n";
         throw;
+    }
+
+    // One local ship computer per controlled player ship. Only new
+    // replicated server ticks are sampled, not every render/prediction frame.
+    // This is a COPY-only server->client read, never a new server query.
+    {
+        const auto& ships = m_client->world().ships();
+        const auto shipIt = ships.find(m_playerId.value);
+        const std::uint64_t observedTick =
+            m_client->lastSimulationMetadata().serverTick;
+        if (shipIt != ships.end() &&
+            observedTick != 0 &&
+            (
+                observedTick != m_motherObservedServerTick ||
+                static_cast<std::uint64_t>(shipIt->second.instanceId) !=
+                    m_motherObservedShipInstanceId
+            ))
+        {
+            m_motherComputer.observe(
+                game::ship::computer::collectReplicatedShipFacts(
+                    shipIt->second, observedTick
+                )
+            );
+            m_motherObservedServerTick = observedTick;
+            m_motherObservedShipInstanceId =
+                static_cast<std::uint64_t>(
+                    shipIt->second.instanceId
+                );
+        }
     }
 
     if (m_client->hasSessionSnapshot())

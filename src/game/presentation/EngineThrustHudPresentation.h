@@ -339,6 +339,9 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         bar.capability01 = input.available01;
         bar.thrust01 = input.delivered01;
         bar.fault = input.fault;
+        bar.hasEngineTemperature = input.hasEngineTemperature;
+        bar.engineTemperatureK = input.engineTemperatureK;
+        bar.engineSafeTemperatureK = input.engineSafeTemperatureK;
         out.warning = out.warning || input.fault;
         groupIt->bars.push_back(std::move(bar));
     }

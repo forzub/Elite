@@ -51,6 +51,9 @@ public:
 
     // Состояние
     double getTemperature() const { return m_temperature; }
+    double getEfficiency01() const { return m_efficiency * m_structuralIntegrity; }
+    double getMinimumOperatingTemperatureK() const { return m_minWorkTemp; }
+    double getOptimalTemperatureK() const { return m_workTemp; }
     double getCriticalTemperature() const { return m_criticalTemp; }
     ReactorStatus getStatus() const { return m_status; }
     

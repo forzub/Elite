@@ -81,7 +81,7 @@ inline bool conventionalAxialRayFeasible(
             const double dot=a.x*b.x+a.y*b.y;
             // An opposite pair with positive available forces can be
             // balanced by throttling, regardless of mismatched ratings.
-            if(std::abs(determin)<eps &&
+            if(std::abs(determinant)<eps &&
                 dot < -eps)
                 return true;
             for(std::size_t k=j+1;k<n;++k)

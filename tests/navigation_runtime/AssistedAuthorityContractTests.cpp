@@ -178,6 +178,75 @@ void testActualHealthyCobraMotorBasis()
             "destroyed aft motor failed to reduce physical forward authority");
 }
 
+void testEmergencySingleAftCoMThrustHasNoYaw()
+{
+    using namespace game::ship::plant;
+    using namespace game::equipment::engine;
+    ShipParams ship=nominal();
+    ship.maxGs=5.0f;
+    ship.maxLinearGs=7.5f;
+    ship.turnRadius=20.0f;
+    ship.strafeAccel=73.549875f;
+    ship.angularAccel=3.0f;
+    ship.forwardMainEngineAccelerationMps2=36.7749375f;
+    ship.reverseMainEngineAccelerationMps2=73.549875f;
+    ship.physicalActuatorHalfExtentsMeters={13.0,2.5,11.1};
+    ship.pitchInertiaKgM2=11219866.6666667;
+    ship.yawInertiaKgM2=25324866.6666667;
+    ship.rollInertiaKgM2=15188333.3333333;
+
+    // aft-left is destroyed; right aft is the only forward drive.
+    constexpr double halfWidth=13.0;
+    constexpr double aftLever=11.1;
+    const double length=std::hypot(halfWidth,aftLever);
+    const glm::dvec3 workingAxis {
+        -halfWidth/length,0.0,-aftLever/length
+    };
+    const double angle=std::acos(-workingAxis.z);
+    require(std::abs(angle*180.0/3.141592653589793-49.50777)<1.0e-3,
+            "emergency Cobra working-axis geometry changed");
+    ship.assistedWorkingThrustAxisEmergency=true;
+    ship.assistedWorkingThrustAxisBody=workingAxis;
+    ship.assistedWorkingThrustAxisAngleRad=angle;
+
+    const auto model=PhysicalControlModelId::AssistedI;
+    const auto& topology=physicalControlSlots(model);
+    const auto passport=presets::CobrettyCR1VectorMainDrive();
+    std::array<game::equipment::EquipmentDamageLayer,4> damage {};
+    std::array<EngineOperatingState,4> operating {};
+    std::vector<MountedEngine> installed;
+    for(std::size_t i=0;i<4;++i)
+    {
+        damage[i].failure.failureAtDamage01=0.95;
+        operating[i].temperatureK=passport.nominalOperatingTemperatureK;
+        installed.push_back({
+            &passport,&damage[i],&operating[i],topology[i].id,i!=0
+        });
+    }
+    AssistedManeuverPrograms programs;
+    EngineMatrixDemand demand;
+    demand.accelerationBodyMps2=workingAxis*30.0;
+    demand.tick=42;
+    const auto actual=programs.execute(model,installed,ship,demand);
+    require(actual.valid,"emergency installed-motor program was invalid");
+    require(glm::length(actual.accelerationBodyMps2)>20.0,
+            "single aft motor failed to generate useful forward acceleration");
+    require(glm::dot(actual.accelerationBodyMps2,workingAxis)>20.0,
+            "surviving aft thrust is not directed along working axis");
+    require(std::abs(actual.angularAccelerationBodyRadPerSec2.y)<0.01,
+            "single aft CoM-aligned burn generated parasitic yaw");
+    require(std::abs(actual.angularAccelerationBodyRadPerSec2.x)<0.01 &&
+            std::abs(actual.angularAccelerationBodyRadPerSec2.z)<0.01,
+            "single aft CoM-aligned burn generated parasitic pitch or roll");
+    require(actual.engines[0].deliveredThrust01<1.0e-6 &&
+            actual.engines[1].deliveredThrust01>0.5,
+            "emergency burn did not use the correct surviving aft engine");
+    require(std::abs(actual.engines[1].nozzleYawRad)-angle<0.02,
+            "outward nozzle did not acquire the required CoM angle");
+    require(angle<=passport.nominalGimbalRangeRad,
+            "single aft CoM solution exceeds physical nozzle range");
+}
+
 void testAbsentReplicatedEngineDataCannotInventAuthority()
 {
     ShipDescriptor descriptor;
@@ -207,6 +276,7 @@ int main()
         testDamageInvalidatesAcceptedRoute();
         testCombinedMotorBudgetBoundsTangentSpeed();
         testActualHealthyCobraMotorBasis();
+        testEmergencySingleAftCoMThrustHasNoYaw();
         testAbsentReplicatedEngineDataCannotInventAuthority();
         std::cout << "ASSISTED AUTHORITY CONTRACT: PASS\n";
         return EXIT_SUCCESS;

@@ -152,6 +152,70 @@ void testLatestWinsAndInvalidDoesNotPromiseFlight()
     computer.stop();
 }
 
+void testHudAndTerminalShareMotherboardShipTick()
+{
+    MotherComputer computer;
+    const auto sample=makeInput(71,900);
+    computer.observe(sample);
+
+    game::ship::computer::MotherComputerCockpitView cockpit;
+    cockpit.valid = true;
+    cockpit.shipInstanceId = 71;
+    cockpit.serverTick = 900;
+    cockpit.physicalModelLabel = "ASSISTED-I";
+    cockpit.bite = sample.installedEquipmentBite;
+    cockpit.systems = sample.biteAndSystems;
+    cockpit.renderTransform.motion.localVelocityMps = {12.0,0.0,0.0};
+    game::ship::computer::MotherComputerEngineHudSlot aft;
+    aft.id="aft-right";
+    aft.available01=0.8f;
+    aft.delivered01=0.5f;
+    aft.fault=true;
+    cockpit.engineSlots.push_back(aft);
+
+    computer.publishCockpit(cockpit);
+    auto visible=computer.cockpitSnapshot(71,900);
+    require(visible.valid && visible.engineSlots.size()==1 &&
+            visible.engineSlots[0].delivered01==0.5f &&
+            visible.engineSlots[0].available01==0.8f &&
+            visible.bite.faults.size()==1 &&
+            visible.systems.criticalSystems.size()==1,
+            "HUD and BITE did not retain identical motherboard sample");
+    require(!computer.cockpitSnapshot(71,901).valid &&
+            !computer.cockpitSnapshot(72,900).valid,
+            "cockpit data from other ship/tick was accepted");
+
+    game::ship::computer::MotherComputerTerminalView t;
+    t.valid=true;
+    t.shipInstanceId=71;
+    t.serverTick=900;
+    t.presentation.title="System status";
+    t.presentation.visible=true;
+    computer.publishTerminal(t);
+    require(computer.terminalSnapshot(71,900).valid &&
+            computer.terminalSnapshot(71,900).presentation.title ==
+                "System status",
+            "terminal did not receive motherboard status");
+    require(!computer.terminalSnapshot(71,899).valid,
+            "terminal leaked different tick");
+
+    // The old display state is invalid as soon as new physical facts arrive.
+    computer.observe(makeInput(71,901));
+    require(!computer.cockpitSnapshot(71,900).valid &&
+            !computer.terminalSnapshot(71,900).valid,
+            "obsolete mother HUD/terminal view remained visible after tick");
+
+    t.serverTick=900;
+    computer.publishTerminal(t);
+    require(!computer.terminalSnapshot(71,900).valid,
+            "old terminal presentation was republished to new tick");
+
+    cockpit.serverTick=901;
+    computer.publishCockpit(cockpit);
+    require(computer.cockpitSnapshot(71,901).valid,
+            "new cockpit view failed to publish at fresh tick");
+}
+
 void testSameTickNewGenerationCannotPublishObsoleteWork()
 {
     MotherComputer computer;
@@ -186,6 +250,7 @@ int main()
         testImmediateAuthorityDoesNotWaitForWorker();
         testLatestWinsAndInvalidDoesNotPromiseFlight();
         testSameTickNewGenerationCannotPublishObsoleteWork();
+        testHudAndTerminalShareMotherboardShipTick();
         std::cout << "MOTHER COMPUTER: PASS\n";
         return EXIT_SUCCESS;
     }

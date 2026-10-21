@@ -37,7 +37,13 @@ struct CoolingStatus {
     double allocatedPowerMW = 0.0;      // из getAllocatedPower()
     double requestedPowerMW = 0.0;      // из getRequestedPower()
     double radiatedPowerMW = 0.0;       // из getLastRadiatedPower()
-    double pumpCapacity = 0.0;          // переносмая мощность
+    double pumpCapacity = 0.0;
+    bool reactorPumpActive = false;
+    bool coolantOverheatLatched = false;
+    double radiatorPotentialMW = 0.0;
+    // Current legacy model assumes radiator surface = circulating coolant.
+    // This is a model input, NOT a separately simulated panel temperature.
+    double effectiveRadiatorTemperatureK = 0.0;          // переносмая мощность
     double pumpHeatMJ = 0.0;            // переносмая тепло
     double dt = 1/60;
     

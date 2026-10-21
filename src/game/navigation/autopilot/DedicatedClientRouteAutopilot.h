@@ -519,11 +519,47 @@ public:
         const AutopilotControlTelemetry pilotTelemetry =
             state.pilotController.telemetry(params);
 
+        // The damaged engine-out hull may first need to SLEW its off-nose
+        // working thrust axis onto the desired course. Include actual
+        // attitude capture and arrest time in the curved-course governor.
+        // It is computed from present hull attitude/angular rate and the
+        // physical acceleration bound, not from a fixed "damaged speed %".
+        double emergencyOrientationSeconds = 0.0;
+        if (law == LocalFlightControlLaw::Assisted &&
+            params.assistedWorkingThrustAxisEmergency)
+        {
+            const auto& axis = params.assistedWorkingThrustAxisBody;
+            const glm::dvec3 worldAxis = normalizedOr(
+                agent.rightMap*axis.x +
+                agent.upMap*axis.y -
+                agent.forwardMap*axis.z,
+                agent.forwardMap
+            );
+            const double remainingAngle = std::acos(std::clamp(
+                glm::dot(worldAxis,
+                    normalizedOr(nominalForward,agent.forwardMap)),
+                -1.0,1.0
+            ));
+            const double angularA =
+                game::ship::angularAccelerationLimitRadPerSec2(params);
+            if (angularA>1.0e-9)
+            {
+                emergencyOrientationSeconds =
+                    2.0*std::sqrt(remainingAngle/angularA) +
+                    std::hypot(
+                        agent.pitchRateRadPerSec,
+                        agent.yawRateRadPerSec
+                    )/angularA;
+            }
+            else
+                emergencyOrientationSeconds =
+                    std::numeric_limits<double>::infinity();
+        }
         const double courseResponseSeconds =
             std::max(
                 deltaSeconds,
                 pilotTelemetry.courseResponseSeconds
-            );
+            ) + emergencyOrientationSeconds;
         const double angularRateLimit =
             game::ship::maximumAngularSpeedRadPerSec(params);
 
@@ -759,7 +795,8 @@ public:
                                   ConcurrentTurnAxisFraction
                         : effectiveTurnBraking;
                 slowdownRequest.feedbackResponseSeconds =
-                    feedbackResponseSeconds;
+                    feedbackResponseSeconds +
+                    emergencyOrientationSeconds;
 
                 const auto slowdown =
                     RouteSpeedGuidance::evaluateTurnSlowdown(

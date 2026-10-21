@@ -19,6 +19,9 @@ void ReactorSystem::init(const ReactorDescriptor& desc)
     // m_temperature         = desc.temperature;
     // m_criticalTemp        = desc.maxTempK;
 
+    m_efficiency = std::clamp(desc.efficiencyPeak,0.05,1.0);
+    m_efficiencyMinTemp = std::clamp(desc.efficiencyMinTemp,0.05,1.0);
+    m_efficiencyMaxTemp = std::clamp(desc.efficiencyMaxTemp,0.05,1.0);
     m_throttle = 0.0;
     m_structuralIntegrity = 1.0;
     m_status = ReactorStatus::Normal;
@@ -62,7 +65,7 @@ double ReactorSystem::getHeatGeneration() const
         return 0.0;
     
     double P_el = getCurrentOutput();
-    double P_heat = P_el * ((1.0 / m_efficiency) - 1.0);
+    double P_heat = P_el * ((1.0 / getEfficiency01()) - 1.0);
     
     return std::max(0.0, P_heat);
 }

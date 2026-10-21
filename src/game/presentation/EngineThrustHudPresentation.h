@@ -14,6 +14,7 @@
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
+#include "src/game/ship/computer/MotherComputer.h"
 
 namespace game::presentation
 {
@@ -261,6 +262,76 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         );
     }
 
+    out.visible = !out.groups.empty();
+    return out;
+}
+
+
+/**
+ * MotherComputer is the ONLY live data source for cockpit thrust bars.
+ * This renderer adapter receives a compact, verified ship/tick-matched
+ * snapshot; it never evaluates engine damage, BITE, or server state itself.
+ */
+inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
+    const game::ship::computer::MotherComputerCockpitView& cockpit
+)
+{
+    EngineThrustHudPresentation out;
+    if (!cockpit.valid)
+        return out;
+    out.modelLabel = cockpit.physicalModelLabel;
+    out.styleId = cockpit.engineHudStyleId;
+    for (const auto& input : cockpit.engineSlots)
+    {
+        const glm::dvec2 position(input.groupX,input.groupY);
+        auto groupIt = std::find_if(
+            out.groups.begin(),out.groups.end(),
+            [&](const auto& g)
+            {
+                return detail::sameGroupPosition(g.positionBodyXY,position);
+            }
+        );
+        if(groupIt == out.groups.end())
+        {
+            EngineThrustGroupPresentation group;
+            group.positionBodyXY = position;
+            out.groups.push_back(std::move(group));
+            groupIt = std::prev(out.groups.end());
+        }
+
+        EngineThrustBarPresentation bar;
+        bar.slotId = input.id;
+        bar.fillDirection = input.fore
+            ? EngineThrustFillDirection::TopDown
+            : EngineThrustFillDirection::BottomUp;
+        bar.capability01 = input.available01;
+        bar.thrust01 = input.delivered01;
+        bar.fault = input.fault;
+        out.warning = out.warning || input.fault;
+        groupIt->bars.push_back(std::move(bar));
+    }
+    std::sort(out.groups.begin(),out.groups.end(),
+        [](const auto& a,const auto& b)
+        {
+            if(std::abs(a.positionBodyXY.x-b.positionBodyXY.x)>1.0e-8)
+                return a.positionBodyXY.x < b.positionBodyXY.x;
+            return a.positionBodyXY.y > b.positionBodyXY.y;
+        });
+    for(auto& group : out.groups)
+    {
+        const bool rightSide = group.positionBodyXY.x>1.0e-8;
+        std::stable_sort(group.bars.begin(),group.bars.end(),
+            [rightSide](const auto& a,const auto& b)
+            {
+                const auto rank=[rightSide](const auto& bar)
+                {
+                    const bool fore =
+                        bar.fillDirection == EngineThrustFillDirection::TopDown;
+                    return rightSide ? (fore?0:1) : (fore?1:0);
+                };
+                return rank(a)<rank(b);
+            });
+    }
     out.visible = !out.groups.empty();
     return out;
 }

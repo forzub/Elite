@@ -9,6 +9,9 @@ struct ReactorStatus {
     double temperature = 0.0;
     double criticalTemp = 0.0;
     double outputMW = 0.0;
+    double efficiency01 = 0.0;
+    double minOperatingTemperatureK = 0.0;
+    double optimalTemperatureK = 0.0;
     double maxOutputMW = 0.0;
     double throttle = 0.0;
     double instability = 0.0;
@@ -34,6 +37,8 @@ struct RadiatorPanelStatus {
 struct CoolingStatus {
     double coolantTemp = 293.0;         // K (из ThermalSystem)
     double totalEfficiency = 1.0;
+    double panelHealthPercent = 100.0;
+    bool panelThermalCritical = false;
     double allocatedPowerMW = 0.0;      // из getAllocatedPower()
     double requestedPowerMW = 0.0;      // из getRequestedPower()
     double radiatedPowerMW = 0.0;

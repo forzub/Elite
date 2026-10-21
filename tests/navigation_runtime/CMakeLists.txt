@@ -1411,6 +1411,36 @@ set_tests_properties(
 )
 
 
+# Layout-independent ship mobility capability/evidence contract.
+# No graphics, simulation server, or external engine assumptions.
+add_executable(
+    ship_mobility_assessment_tests
+    ShipMobilityAssessmentTests.cpp
+)
+target_include_directories(ship_mobility_assessment_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(ship_mobility_assessment_tests PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(
+        ship_mobility_assessment_tests PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        ship_mobility_assessment_tests PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+add_test(
+    NAME ship_mobility_assessment
+    COMMAND ship_mobility_assessment_tests
+)
+set_tests_properties(
+    ship_mobility_assessment
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
 add_executable(
     assisted_authority_contract_tests
     AssistedAuthorityContractTests.cpp

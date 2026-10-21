@@ -8,6 +8,8 @@
 // selected motor; the computer decides how to present/use it. The server
 // remains free to reject any physically infeasible command.
 
+#include <algorithm>
+
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"

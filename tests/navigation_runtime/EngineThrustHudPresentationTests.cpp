@@ -330,6 +330,35 @@ void testAssistedLateralVectoringUsesBothBanks()
     }
 }
 
+void testMotherComputerCockpitBarsPreserveLayoutAndBite()
+{
+    using game::ship::computer::MotherComputerCockpitView;
+    using game::ship::computer::MotherComputerEngineHudSlot;
+    MotherComputerCockpitView cockpit;
+    cockpit.valid=true;
+    cockpit.physicalModelLabel="ASSISTED-I";
+    cockpit.engineHudStyleId="human_amber";
+    cockpit.engineSlots = {
+        MotherComputerEngineHudSlot{"aft-left",-1.0,0.0,false,0.0f,0.0f,true},
+        MotherComputerEngineHudSlot{"aft-right",1.0,0.0,false,1.0f,0.5f,false},
+        MotherComputerEngineHudSlot{"fore-left",-1.0,0.0,true,1.0f,0.2f,false},
+        MotherComputerEngineHudSlot{"fore-right",1.0,0.0,true,1.0f,0.2f,false}
+    };
+    const auto view =
+        game::presentation::buildEngineThrustHudPresentation(cockpit);
+    require(view.visible && view.warning &&
+            view.groups.size()==2 && totalBars(view)==4,
+            "MotherComputer cockpit did not preserve Assisted-I group layout");
+    require(view.groups[0].bars[0].fault &&
+            view.groups[0].bars[0].capability01==0.0f,
+            "MotherComputer missing damaged aft-left BITE flag and yellow bar");
+    require(view.groups[1].bars[1].thrust01==0.5f,
+            "MotherComputer red bar diverged from executed aft-right thrust");
+    require(view.groups[0].bars[0].fillDirection==Direction::BottomUp &&
+            view.groups[1].bars[0].fillDirection==Direction::TopDown,
+            "MotherComputer HUD silently rearranged engine ordering");
+}
+
 } // namespace
 
 int main()
@@ -342,6 +371,7 @@ int main()
         testFaultFlagComesFromPhysicalSlotAvailability();
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
+        testMotherComputerCockpitBarsPreserveLayoutAndBite();
 
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"

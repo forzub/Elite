@@ -36,6 +36,7 @@
 
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
+#include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/bite/BiteTypes.h"
 #include "src/game/simulation/ShipCoreStatus.h"
 #include "src/game/ship/telemetry/EngineLiveTelemetry.h"
@@ -146,6 +147,17 @@ struct MotherComputerCockpitView
     game::ShipCoreStatus systems {};
 };
 
+// Terminal composition from docking/navigation is published through the
+// motherboard channel. UI's typewriter is still an independent renderer,
+// but never reads ship core diagnostics or motor states directly.
+struct MotherComputerTerminalView
+{
+    bool valid = false;
+    std::uint64_t shipInstanceId = 0;
+    std::uint64_t serverTick = 0;
+    game::presentation::DockingTerminalSnapshot presentation {};
+};
+
 struct MotherComputerSnapshot
 {
     bool valid = false;
@@ -196,6 +208,10 @@ public:
                 (m_cockpit.shipInstanceId != input.shipInstanceId ||
                  m_cockpit.serverTick != input.serverTick))
                 m_cockpit = {};
+            if (m_terminal.valid &&
+                (m_terminal.shipInstanceId != input.shipInstanceId ||
+                 m_terminal.serverTick != input.serverTick))
+                m_terminal = {};
             m_latest.valid = true;
             m_latest.input = std::move(input);
             m_latest.analysisCurrent = false;
@@ -290,6 +306,33 @@ public:
             m_cockpit.serverTick != serverTick)
             return {};
         return m_cockpit;
+    }
+
+    // Temporary presentation-adapter seam: docking/navigation produces
+    // events locally; the terminal receives them only from the computer.
+    // Future navigator integration can publish structured event codes here.
+    void publishTerminal(MotherComputerTerminalView view)
+    {
+        if(!view.valid || view.shipInstanceId==0)
+            return;
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if(m_stopping || !m_latest.valid ||
+           m_latest.input.shipInstanceId!=view.shipInstanceId ||
+           m_latest.input.serverTick!=view.serverTick)
+            return;
+        m_terminal=std::move(view);
+    }
+
+    [[nodiscard]] MotherComputerTerminalView terminalSnapshot(
+        std::uint64_t shipId,std::uint64_t serverTick
+    ) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if(!m_terminal.valid ||
+           m_terminal.shipInstanceId!=shipId ||
+           m_terminal.serverTick!=serverTick)
+            return {};
+        return m_terminal;
     }
 
     [[nodiscard]] MotherComputerSnapshot snapshot() const
@@ -405,6 +448,7 @@ private:
     MotherComputerInput m_pending {};
     MotherComputerSnapshot m_latest {};
     MotherComputerCockpitView m_cockpit {};
+    MotherComputerTerminalView m_terminal {};
 };
 
 } // namespace game::ship::computer

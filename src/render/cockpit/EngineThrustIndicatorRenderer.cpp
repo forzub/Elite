@@ -540,34 +540,45 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     // There is no authoritative reactor thermal efficiency in ShipCoreStatus.
     text.textDrawPx("EFF: --",reactorX+43*scale,y+98*scale,caption,amber);
 
+    // This is the reactor's own heat-transfer pump, not a radiator pump.
+    const float pumpX=reactorX+18.0f*scale;
+    const float pumpY=y+105.0f*scale;
+    roundedOutlinePx(text,pumpX,pumpY,21*scale,17*scale,
+        3*scale,1*scale,amber,style.track);
+    if(status.cooling.reactorPumpActive)
+        text.solidRectPx(pumpX+7*scale,pumpY+5*scale,
+            7*scale,7*scale,cyan);
+    text.solidRectPx(reactorX+39*scale,pumpY+8*scale,
+        12*scale,2*scale,amber);
+    text.textDrawPx("PUMP",reactorX+52*scale,pumpY+2*scale,
+        caption,amber);
+
     panel(coolantX);
     text.textDrawPx("COOLANT",coolantX+10*scale,y+10*scale,small,amber);
-    const float sy=y+48*scale;
-    // Flask -> pump -> one aggregate panel (panel T is not replicated).
-    roundedOutlinePx(text,coolantX+9*scale,sy,18*scale,23*scale,
-        4*scale,1*scale,cyan,style.track);
-    text.solidRectPx(coolantX+10*scale,sy+13*scale,
-        16*scale,9*scale,cyan);
-    text.solidRectPx(coolantX+28*scale,sy+11*scale,
-        12*scale,2*scale,amber);
-    roundedOutlinePx(text,coolantX+40*scale,sy+6*scale,
-        19*scale,18*scale,2*scale,1*scale,amber,style.track);
-    text.solidRectPx(coolantX+60*scale,sy+11*scale,
-        8*scale,2*scale,amber);
-    roundedOutlinePx(text,coolantX+68*scale,sy,
-        30*scale,26*scale,2*scale,1*scale,amber,style.track);
-    for(int i=0;i<4;++i)
-        text.solidRectPx(coolantX+(74+6*i)*scale,sy+4*scale,
-            2*scale,18*scale,amber);
-    std::snprintf(buffer,sizeof(buffer),"%.0f K  P:%.1f MW",
-        status.thermal.temperature,status.cooling.allocatedPowerMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+h-42*scale,caption,amber);
-    // Effective panel temperature is an explicit simplifying assumption
-    // of the current Stefan-Boltzmann model (panel ~= coolant), not a
-    // measured independent surface temperature. Prefix with '~'.
-    std::snprintf(buffer,sizeof(buffer),"PANEL ~%.0f K",
+    // The coolant bath directly wets the radiator bank. No fictitious
+    // second pump appears here. One rectangle represents all panels.
+    const float sx=coolantX+11*scale;
+    const float sy=y+35*scale;
+    const float sw=w-22*scale;
+    const float sh=47*scale;
+    roundedOutlinePx(text,sx,sy,sw,sh,4*scale,1*scale,
+        amber,style.track);
+    for(int i=1;i<9;++i)
+        text.solidRectPx(sx+sw*(static_cast<float>(i)/9.0f),
+            sy+5*scale,2*scale,sh-10*scale,amber);
+    std::snprintf(buffer,sizeof(buffer),"~%.0f K",
         status.cooling.effectiveRadiatorTemperatureK);
-    text.textDrawPx(buffer,coolantX+10*scale,y+h-21*scale,
+    text.textDrawPx(buffer,coolantX+10*scale,y+86*scale,
+        caption,amber);
+    // Thermal powers are real last-step accounting, not pump electricity:
+    // IN = deposited into coolant; OUT = radiated to space.
+    std::snprintf(buffer,sizeof(buffer),"IN %.1f MW",
+        status.cooling.heatIntoCoolantMW);
+    text.textDrawPx(buffer,coolantX+10*scale,y+h-44*scale,
+        caption,amber);
+    std::snprintf(buffer,sizeof(buffer),"OUT %.1f MW",
+        status.cooling.radiatedPowerMW);
+    text.textDrawPx(buffer,coolantX+10*scale,y+h-22*scale,
         caption,amber);
 }
 

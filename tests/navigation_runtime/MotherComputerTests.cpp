@@ -138,11 +138,17 @@ void testLatestWinsAndInvalidDoesNotPromiseFlight()
 
     auto replacement=makeInput(10,1);
     replacement.installedMotorAuthority.valid=false;
+    replacement.physicalControlModel = static_cast<int>(
+        game::ship::plant::PhysicalControlModelId::NewtonianI
+    );
     computer.observe(replacement);
     ShipParams effective {};
     game::ship::telemetry::ShipControlAuthorityTelemetry authority {};
+    require(computer.physicalFlightEnvelope(10,1,effective) &&
+            effective.massKg == 260000.0,
+            "Newtonian physical envelope failed generic MotherComputer seam");
     require(!computer.assistedFlightEnvelope(10,1,effective,authority),
-            "new ship inherited healthy motors from previous ship");
+            "new ship inherited healthy Assisted motors from previous ship");
     computer.stop();
 }
 

@@ -437,6 +437,7 @@ inline void applyMountedEngineAxialAuthority(
             if (availableN > 1.0e-12)
             {
                 ++survivingAft;
+                soleAftIndex = i;
                 weakestAftNewtons = std::min(
                     weakestAftNewtons, availableN
                 );
@@ -466,6 +467,46 @@ inline void applyMountedEngineAxialAuthority(
     if (survivingFore > 1)
         foreThrustNewtons =
             weakestForeNewtons * static_cast<double>(survivingFore);
+
+    // An isolated surviving aft motor has a real torque-neutral direction:
+    // along the line from its mounting point toward the CURRENT center of
+    // mass. For the 26 m wide Cobra-I this is roughly 49.5 degrees inward
+    // for the thrust force (outward for the exhaust nozzle). Do not select
+    // this emergency mode while both aft engines still exist: preserve the
+    // healthy and partial-damage nose-coupled flight contract.
+    auto& working = capability.effectivePhysics;
+    working.assistedWorkingThrustAxisEmergency = false;
+    working.assistedWorkingThrustAxisBody = {0.0, 0.0, -1.0};
+    working.assistedWorkingThrustAxisAngleRad = 0.0;
+    if (plant::familyOf(model) == plant::PhysicalControlFamily::Assisted &&
+        survivingAft == 1 && soleAftIndex < topology.size())
+    {
+        const auto& slot = topology[soleAftIndex];
+        const auto* installed =
+            detail::findModuleDescriptor(descriptor, bindings[soleAftIndex]);
+        const glm::dvec3 arm =
+            slot.normalizedPositionBody *
+                working.physicalActuatorHalfExtentsMeters -
+            working.centerOfMassLocalMeters;
+        const double length = glm::length(arm);
+        if (installed && installed->engine && length > 1.0e-6)
+        {
+            const glm::dvec3 axis = -arm / length;
+            const double angle = std::acos(
+                std::clamp(-axis.z, -1.0, 1.0)
+            );
+            const double cone = std::max(
+                0.0, installed->engine->nominalGimbalRangeRad *
+                    plant::effectiveSlotVectoring01(projected[soleAftIndex])
+            );
+            if (axis.z < -1.0e-6 && angle <= cone + 1.0e-8)
+            {
+                working.assistedWorkingThrustAxisEmergency = true;
+                working.assistedWorkingThrustAxisBody = axis;
+                working.assistedWorkingThrustAxisAngleRad = angle;
+            }
+        }
+    }
 
     const double massKg =
         std::max(1.0, capability.effectivePhysics.massKg);

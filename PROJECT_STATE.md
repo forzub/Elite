@@ -1,3 +1,9 @@
+## 2026-10-21 — Reactor damage efficiency runaway corrected
+
+At 10 GW electrical capacity, previous ReactorSystem::getEfficiency01 multiplied conversion efficiency by structuralIntegrity. Even 1% damage changed 99.95% to ~98.95% and raised full-load waste heat from ~5 MW to ~105 MW, exceeding 380 m2 radiator capacity. Fixed in commit 6e7d1d69: integrity still derates available electric output; independent small bounded damage-related conversion penalty (up to 0.0003 absolute efficiency loss at full structural damage) replaces proportional efficiency multiplication. Temperature curve remains independent and can reduce efficiency, and hot panels can degrade. This fixes a catastrophic mathematical coupling, not a certified thermal or electrical supply simulation. Build and playtest pending. The 10 GW main-engine consumer is not yet wired into PowerBus. Never claim thermal equilibrium without real load measurements.
+
+---
+
 ## 2026-10-21 — HUD TEXT BOTTOM ANCHOR FIX (SCREENSHOT FOLLOW-UP)
 
 User screenshot showed REACTOR and COOLANT textual telemetry overlapping graphics after compact thermal HUD update. Changed `src/render/cockpit/EngineThrustIndicatorRenderer.cpp` at commit `a24797c7`: BOTH widgets' status text Y positions now derive from common actual panel height `y+h-offset*scale`, not fixed `y+offset*scale`. Reactor last 3 lines at h-52/h-34/h-16; coolant 4 lines at h-63/h-47/h-31/h-15. Moved reactor chain and radiator drawing higher to leave text-only bottom area. No physics or telemetry changed. Needs actual screenshot and MinGW compilation verification. Run git pull and EliteGame build as before.

@@ -150,6 +150,11 @@ struct DynamicMotionState
     game::ship::telemetry::EngineLiveTelemetry engineTelemetry {};
     glm::dvec3 requestedMainAngularAccelerationBodyRadPerSec2 {0.0};
 
+    // Factual damage-dependent propulsion reference for cockpit and flight
+    // control. Body +X right/+Y up/-Z forward; -Z is the healthy default.
+    bool assistedWorkingThrustAxisEmergency = false;
+    glm::dvec3 assistedWorkingThrustAxisBody {0.0, 0.0, -1.0};
+
     // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
     double manoeuvreGasPressure01 = 1.0;
     bool manoeuvreGasDepleted = false;

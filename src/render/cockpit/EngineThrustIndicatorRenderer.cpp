@@ -471,17 +471,36 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     const float bottom=static_cast<float>(viewport.height)*0.965f;
     // Reserve space to the right of the existing compact engine gauge.
     // Only text/geometry; no full-sized instrument windows.
-    const float w=110.0f*scale,h=104.0f*scale,gap=7.0f*scale;
-    std::size_t bars=0, groups=0;
-    for (const auto& group : engines.groups)
+    // Use exactly the same sizing equations as render() above. The model
+    // label can be wider than the actual I/Y/X engine columns.
+    const float barWidth = std::max(6.0f,style.barWidthPx*scale);
+    const float barHeight = std::max(54.0f,style.barHeightPx*scale);
+    const float barGap = std::max(8.0f,style.barGapPx*scale);
+    const float groupGap = std::max(8.0f,style.groupGapPx*scale);
+    const float padding = std::max(7.0f,style.paddingPx*scale);
+    const float iconSize = std::max(18.0f,style.iconSizePx*scale);
+    const float iconGap = std::max(3.0f,style.iconToLabelGapPx*scale);
+    const float labelGap = std::max(2.0f,style.labelToBarsGapPx*scale);
+    const int labelPx = std::max(11,
+        static_cast<int>(std::lround(13.5f*scale)));
+    float barsWidth=0.0f;
+    for(std::size_t i=0;i<engines.groups.size();++i)
     {
-        bars+=group.bars.size();
-        if (!group.bars.empty()) ++groups;
+        const auto& group=engines.groups[i];
+        if(!group.bars.empty())
+            barsWidth+=static_cast<float>(group.bars.size())*barWidth+
+                static_cast<float>(group.bars.size()-1)*barGap;
+        if(i+1<engines.groups.size())
+            barsWidth+=groupGap;
     }
-    const float motorWidth = (22.0f+static_cast<float>(bars)*11.0f+
-        static_cast<float>(bars>groups?bars-groups:0)*8.0f+
-        static_cast<float>(groups>0?groups-1:0)*12.0f)*scale;
-    const float reactorX=x+std::max(110.0f*scale,motorWidth+7.0f*scale);
+    const float engineWidth=std::max({
+        barsWidth,text.measureTextPx(engines.modelLabel,labelPx),iconSize
+    })+2.0f*padding;
+    const float h=padding+iconSize+iconGap+static_cast<float>(labelPx)+
+        labelGap+barHeight+padding;
+    const float w=142.0f*scale;
+    const float gap=9.0f*scale;
+    const float reactorX=x+engineWidth+gap;
     const float coolantX=reactorX+w+gap;
     const float y=bottom-h;
     auto panel=[&](float px) {
@@ -494,18 +513,19 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     const glm::vec4 amber=style.label;
     const glm::vec4 cyan(0.2f,0.72f,0.94f,1.0f);
     const glm::vec4 warn(1.0f,0.35f,0.12f,1.0f);
-    const int small=std::max(10,static_cast<int>(12.0f*scale));
+    const int small=std::max(12,static_cast<int>(15.0f*scale));
+    const int caption=std::max(11,static_cast<int>(13.0f*scale));
     char buffer[48];
     panel(reactorX);
-    text.textDrawPx("REACTOR",reactorX+9*scale,y+6*scale,small,amber);
+    text.textDrawPx("REACTOR",reactorX+10*scale,y+10*scale,small,amber);
     // Temperature fills a single small core symbol; this isn't a power bar.
     const float r=std::clamp(static_cast<float>(
         status.reactor.criticalTemp>0.0
           ? status.reactor.temperature/status.reactor.criticalTemp : 0.0),
         0.0f,1.0f);
-    const float cx=reactorX+12.0f*scale;
-    const float cy=y+26.0f*scale;
-    const float ch=36.0f*scale;
+    const float cx=reactorX+14.0f*scale;
+    const float cy=y+44.0f*scale;
+    const float ch=46.0f*scale;
     roundedOutlinePx(text,cx,cy,16*scale,ch,3*scale,1*scale,
         amber,style.track);
     text.solidRectPx(cx+2*scale,cy+ch-(ch-4*scale)*r-2*scale,
@@ -513,16 +533,16 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         r>0.85f?warn:cyan);
     std::snprintf(buffer,sizeof(buffer),"%.0f K",
         status.reactor.temperature);
-    text.textDrawPx(buffer,reactorX+36*scale,y+30*scale,small,amber);
+    text.textDrawPx(buffer,reactorX+43*scale,y+50*scale,small,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f MW",
         status.reactor.outputMW);
-    text.textDrawPx(buffer,reactorX+9*scale,y+69*scale,small,amber);
+    text.textDrawPx(buffer,reactorX+10*scale,y+h-49*scale,caption,amber);
     // There is no authoritative reactor thermal efficiency in ShipCoreStatus.
-    text.textDrawPx("EFF: --",reactorX+9*scale,y+86*scale,small,amber);
+    text.textDrawPx("EFF: --",reactorX+10*scale,y+h-28*scale,caption,amber);
 
     panel(coolantX);
-    text.textDrawPx("COOLANT",coolantX+7*scale,y+6*scale,small,amber);
-    const float sy=y+30*scale;
+    text.textDrawPx("COOLANT",coolantX+10*scale,y+10*scale,small,amber);
+    const float sy=y+48*scale;
     // Flask -> pump -> one aggregate panel (panel T is not replicated).
     roundedOutlinePx(text,coolantX+9*scale,sy,18*scale,23*scale,
         4*scale,1*scale,cyan,style.track);
@@ -541,9 +561,9 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
             2*scale,18*scale,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f K  %.1f MW",
         status.thermal.temperature,status.cooling.allocatedPowerMW);
-    text.textDrawPx(buffer,coolantX+7*scale,y+69*scale,small,amber);
-    text.textDrawPx("PANEL: -- K",coolantX+7*scale,y+86*scale,
-        small,amber);
+    text.textDrawPx(buffer,coolantX+10*scale,y+h-49*scale,caption,amber);
+    text.textDrawPx("PANEL: -- K",coolantX+10*scale,y+h-28*scale,
+        caption,amber);
 }
 
 } // namespace render::cockpit

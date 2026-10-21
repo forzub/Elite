@@ -335,6 +335,76 @@ void FlightVectorIndicatorRenderer::renderBoresight(
     flushBatch();
 }
 
+void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
+    const Viewport& viewport,
+    const glm::dvec3& workingAxisBody,
+    const std::string& localizedLabel
+)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+    const double norm = glm::length(workingAxisBody);
+    if (!std::isfinite(norm) || norm < 1.0e-9)
+        return;
+    const glm::dvec3 axis = workingAxisBody / norm;
+    const double offset = std::atan2(
+        std::hypot(axis.x,axis.y), -axis.z
+    );
+    if (offset < 0.01 || axis.z >= -1.0e-4)
+        return;
+
+    if (!m_program)
+        init();
+    m_screenW = viewport.width;
+    m_screenH = viewport.height;
+
+    // The optical center always identifies the physical hull nose. This
+    // additional sight identifies the actual propulsion reference. Project
+    // its body-space deviation to the HUD plane and retain an edge pointer
+    // if the new thrust direction falls outside the visible viewport.
+    const glm::vec2 center(
+        static_cast<float>(viewport.width)*0.5f,
+        static_cast<float>(viewport.height)*0.5f
+    );
+    const double focal =
+        std::min(viewport.width,viewport.height)*0.48;
+    const glm::vec2 projected = center + glm::vec2(
+        static_cast<float>(focal*axis.x/(-axis.z)),
+        static_cast<float>(-focal*axis.y/(-axis.z))
+    );
+    const float margin=28.0f;
+    const glm::vec2 marker(
+        std::clamp(projected.x,margin,
+                   static_cast<float>(viewport.width)-margin),
+        std::clamp(projected.y,margin,
+                   static_cast<float>(viewport.height)-margin)
+    );
+    const glm::vec4 amber(1.0f,0.72f,0.28f,0.96f);
+    beginBatch();
+    emitCircle(marker,11.0f,1.7f,amber,32);
+    emitLine(marker+glm::vec2(-21.0f,0.0f),
+             marker+glm::vec2(-13.0f,0.0f),2.0f,amber);
+    emitLine(marker+glm::vec2(13.0f,0.0f),
+             marker+glm::vec2(21.0f,0.0f),2.0f,amber);
+    emitLine(marker+glm::vec2(0.0f,-21.0f),
+             marker+glm::vec2(0.0f,-13.0f),2.0f,amber);
+    emitLine(marker+glm::vec2(0.0f,13.0f),
+             marker+glm::vec2(0.0f,21.0f),2.0f,amber);
+    // Center gap leaves the apparent course unobscured.
+    flushBatch();
+
+    ensureFonts("assets/fonts/Roboto-Light.ttf",14,13);
+    if (m_secondaryFont && !localizedLabel.empty())
+    {
+        drawCenteredText(
+            *m_secondaryFont,localizedLabel,marker.x,
+            std::min(static_cast<float>(viewport.height)-5.0f,
+                     marker.y+31.0f),
+            glm::vec3(1.0f,0.72f,0.28f)
+        );
+    }
+}
+
 void FlightVectorIndicatorRenderer::render(
     const game::presentation::FlightVectorIndicatorPresentation& presentation,
     const Viewport& viewport

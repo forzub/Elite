@@ -1438,6 +1438,30 @@ set_tests_properties(mother_computer
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+# Shared physical-geometry reference, independent of law I/Y/X and pilot.
+add_executable(
+    working_thrust_axis_analysis_tests
+    WorkingThrustAxisAnalysisTests.cpp
+)
+target_include_directories(working_thrust_axis_analysis_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(
+    working_thrust_axis_analysis_tests PRIVATE cxx_std_17
+)
+if(MSVC)
+    target_compile_options(working_thrust_axis_analysis_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(
+        working_thrust_axis_analysis_tests PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+add_test(NAME working_thrust_axis_analysis
+    COMMAND working_thrust_axis_analysis_tests)
+set_tests_properties(working_thrust_axis_analysis PROPERTIES
+    WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}")
+
 # Layout-independent ship mobility capability/evidence contract.
 # No graphics, simulation server, or external engine assumptions.
 add_executable(

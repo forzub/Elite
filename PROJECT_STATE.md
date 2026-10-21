@@ -1,3 +1,18 @@
+## 2026-10-21 — PHYSICAL NEWTONIAN 24-NOZZLE ALLOCATOR ADDED; SIX-GAME VERIFICATION NOT DONE
+
+Added `src/game/ship/plant/NewtonianRcsAllocator.h` commit `cf540490`. This new PURE bounded fixed-iteration 24-nozzle allocator takes actual `MountedEngine` pointers, physical demands for Fx/Fy/Fz/Mx/My/Mz, fixed centre-of-mass-relative hull half-extents in metres, returns individual throttle, real `Engine::execute` force and torque, actual MW and thermal MW. Capabilities are limited by each individual available engine's accumulated equipment damage. Algorithm bounded to 32x24 coordinate descent operations and zero per-tick dynamic allocations. NO new parallel damage engine. Pure geometry rank of 6x24 signed wrench matrix checked offline with numpy: rank 6, both positive/negative contributions available for each of 6 dimensions. **This is only algebraic reachability, not tested engine execution.**
+
+**Critical unfinished integrations** after careful source audit:
+- Existing `ShipCore` has no mounting of the 24 ModuleDescriptors into the actual live ship descriptor/runtime, skips RCS when creating `MountedEngine` motor views and when advancing engine operating life. `CobraRcsEquipmentAssembly.h` must be called by the actual Cobra descriptor factory before `ObjectModuleRuntime::init`, with real hit geometry/hull mounting. No dynamic descriptor ownership rewrite without auditing object lifecycle.
+- `ShipControlExecutionGateway` still allows Newtonian scalar `motion.manoeuvreAccelerationMps2`/attitude RCS through legacy `DynamicMotionSystem`; new allocator is **NOT** connected to server, so **RCS in live game is NOT yet independently physically constrained by this new implementation**. Must divert execution to this physical wrench and suppress duplicated old artificial RCS forces once wired.
+- `EngineLiveTelemetry` and `ShipEngineControlMatrix` have <=16 motor samples; new 24 RCS measurements need separate fixed-size RCS DTO, including per-nozzle BITE identity, not an array overrun.
+- BITE only scans module definitions with `module.engine`. Once real 24 `ModuleDescriptor` entries are attached and replicated, existing `buildShipBiteState` can report them; MotherComputer cockpit/terminal currently consumes BITE, but per-nozzle HUD is a future renderer.
+- Engine operating lifetime must be advanced from allocated RCS throttle with actual coolant, worn/damaged through existing `ObjectModuleRuntime`. Same physical engine passport retains electrical/heat budgets, but current reactor bus doesn't enforce motor demand. No claim of energy-constrained flight.
+- **No access to user's Windows game runtime; no compiled game/CTests and no six successful in-game flights. Do not present these as finished or PASS.** A local numpy-only 6D geometric rank sanity check is NOT a game test. Do not change Assisted.
+Record this before subsequent work; the current step is incremental source development, not completion.
+
+---
+
 ## 2026-10-21 — RCS MODULE DESCRIPTOR ASSEMBLY; SERVER EXECUTOR MIGRATION BLOCKERS
 
 Added `src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h` (commit e2a0643) to assemble **24 unique ModuleDescriptor objects** for Newtonian Cobra RCS into the existing module graph using the universal `EngineUnitDescriptor` + 5-cause `EquipmentDamageLayer` path. Each nozzle ID from the fixed-direction Cobra RCS mount catalog becomes a separately damageable, repairable installed equipment unit; no second damage system, no fake hit volumes. Helper deliberately requires caller to invoke it BEFORE ObjectModuleRuntime::init and to provide actual hit geometry; it does NOT mutate a live server ship behind the construction API. **No actual Cobra construction caller wired yet, so this does not yet make RCS damage live.**

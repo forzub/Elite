@@ -132,6 +132,9 @@ struct MotherComputerEngineHudSlot
     float available01 = 0.0f; // damaged real capacity (yellow)
     float delivered01 = 0.0f; // actually fired motor output (red)
     bool fault = false;       // same canonical BITE state as terminal
+    bool hasEngineTemperature = false;
+    float engineTemperatureK = 0.0f;
+    float engineSafeTemperatureK = 0.0f;
 };
 
 struct MotherComputerCockpitView

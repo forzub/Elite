@@ -536,9 +536,9 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     text.textDrawPx(buffer,reactorX+43*scale,y+50*scale,small,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f MW",
         status.reactor.outputMW);
-    text.textDrawPx(buffer,reactorX+10*scale,y+h-49*scale,caption,amber);
+    text.textDrawPx(buffer,reactorX+43*scale,y+75*scale,caption,amber);
     // There is no authoritative reactor thermal efficiency in ShipCoreStatus.
-    text.textDrawPx("EFF: --",reactorX+10*scale,y+h-28*scale,caption,amber);
+    text.textDrawPx("EFF: --",reactorX+43*scale,y+98*scale,caption,amber);
 
     panel(coolantX);
     text.textDrawPx("COOLANT",coolantX+10*scale,y+10*scale,small,amber);
@@ -561,8 +561,8 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
             2*scale,18*scale,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f K  %.1f MW",
         status.thermal.temperature,status.cooling.allocatedPowerMW);
-    text.textDrawPx(buffer,coolantX+10*scale,y+h-49*scale,caption,amber);
-    text.textDrawPx("PANEL: -- K",coolantX+10*scale,y+h-28*scale,
+    text.textDrawPx(buffer,coolantX+10*scale,y+h-42*scale,caption,amber);
+    text.textDrawPx("PANEL: -- K",coolantX+10*scale,y+h-21*scale,
         caption,amber);
 }
 

@@ -130,6 +130,9 @@ struct ShipParams
     bool assistedWorkingThrustAxisEmergency = false;
     glm::dvec3 assistedWorkingThrustAxisBody {0.0, 0.0, -1.0};
     double assistedWorkingThrustAxisAngleRad = 0.0;
+    // Exact installed aft actuator chosen for a validated emergency ray.
+    // -1 means ordinary balanced bank operation (no forced single motor).
+    int assistedWorkingThrustMotorIndex = -1;
     
     
 };

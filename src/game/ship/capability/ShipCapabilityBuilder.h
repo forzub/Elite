@@ -414,8 +414,7 @@ inline void applyMountedEngineAxialAuthority(
     double weakestForeNewtons = std::numeric_limits<double>::infinity();
     std::size_t survivingAft = 0;
     std::size_t survivingFore = 0;
-    std::size_t soleAftIndex = topology.size();
-    bool foundAft = false;
+     bool foundAft = false;
     bool foundFore = false;
     for (std::size_t i = 0; i < topology.size(); ++i)
     {
@@ -438,8 +437,7 @@ inline void applyMountedEngineAxialAuthority(
             if (availableN > 1.0e-12)
             {
                 ++survivingAft;
-                soleAftIndex = i;
-                weakestAftNewtons = std::min(
+                 weakestAftNewtons = std::min(
                     weakestAftNewtons, availableN
                 );
             }

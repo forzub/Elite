@@ -371,15 +371,52 @@ struct AssistedManeuverPrograms final
         if(!valid) return out;
         out.valid=true;
         out.count=count;
+        glm::dvec3 linearDemand = demand.accelerationBodyMps2;
+        std::array<double,Variables> q {};
+
+        // Emergency working axis: when one aft drive survives, the primary
+        // translational thrust MUST pass through the CoM. An independent
+        // pure-Z preset would otherwise push off-center and inject up to
+        // 4.908 rad/s^2 unwanted yaw into the actual rigid body.
+        // Build this exact physical ray before mixing the residual six-axis
+        // correction. The surviving fore engines may still steer/trim.
+        if (ship.assistedWorkingThrustAxisEmergency)
+        {
+            const glm::dvec3 axis = ship.assistedWorkingThrustAxisBody;
+            const double requested = std::max(
+                0.0, glm::dot(linearDemand, axis)
+            );
+            const auto& topology = physicalControlSlots(selected);
+            for (std::size_t i=0;i<count && requested>1.0e-9;++i)
+            {
+                if (topology[i].role!=EngineSlotRole::AftMain ||
+                    motors[i].capacity01<=1.0e-9 ||
+                    motors[i].ratedN<=0.0)
+                    continue;
+                const double available =
+                    motors[i].capacity01 * motors[i].ratedN;
+                const double allocatedN = std::min(
+                    available, requested*std::max(1.0,ship.massKg)
+                );
+                const double fraction = allocatedN/motors[i].ratedN;
+                q[3*i] = std::max(0.0,-axis.z)*fraction;
+                q[3*i+1] = axis.x*fraction;
+                q[3*i+2] = axis.y*fraction;
+                linearDemand -= axis *
+                    (allocatedN/std::max(1.0,ship.massKg));
+                // The mode is constructed only with exactly one aft motor.
+                break;
+            }
+        }
+
         const double command[Axes] {
-            demand.accelerationBodyMps2.x,
-            demand.accelerationBodyMps2.y,
-            demand.accelerationBodyMps2.z,
+            linearDemand.x,
+            linearDemand.y,
+            linearDemand.z,
             demand.angularAccelerationBodyRadPerSec2.x,
             demand.angularAccelerationBodyRadPerSec2.y,
             demand.angularAccelerationBodyRadPerSec2.z
         };
-        std::array<double,Variables> q {};
         for(std::size_t axis=0;axis<Axes;++axis)
         {
             const double wanted=command[axis];

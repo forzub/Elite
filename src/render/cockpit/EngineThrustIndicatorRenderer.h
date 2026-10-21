@@ -12,6 +12,7 @@ class EngineThrustIndicatorRenderer final
 public:
     void renderThermalSystems(
         const game::ShipCoreStatus& status,
+        const game::presentation::EngineThrustHudPresentation& engines,
         const Viewport& viewport
     );
     void render(

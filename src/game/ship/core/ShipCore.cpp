@@ -1428,6 +1428,29 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
         }
     }
     
+    if (status.cooling.panelThermalCritical) {
+        game::AlertStatus alert;
+        alert.severity = 2;
+        alert.system = "Radiators";
+        alert.message = "RADIATOR THERMAL DAMAGE";
+        alert.value = status.cooling.effectiveRadiatorTemperatureK;
+        alert.threshold = m_cooling.getPanelDamageOnsetK();
+        status.alerts.push_back(alert);
+        status.criticalSystems.push_back("Radiators");
+    }
+    if(status.reactor.integrity < 0.95 ||
+       status.reactor.temperature < status.reactor.minOperatingTemperatureK)
+    {
+        game::AlertStatus alert;
+        alert.severity = 1;
+        alert.system = "Reactor";
+        alert.message = status.reactor.integrity < 0.95
+            ? "REACTOR DAMAGED" : "REACTOR BELOW OPERATING TEMPERATURE";
+        alert.value = status.reactor.temperature;
+        alert.threshold = status.reactor.minOperatingTemperatureK;
+        status.alerts.push_back(alert);
+        status.warningSystems.push_back("Reactor");
+    }
     // Повреждения панелей
     if (status.cooling.criticalPanelCount > 0) {
         game::AlertStatus alert;

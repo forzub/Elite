@@ -2665,3 +2665,13 @@ set_tests_properties(
     ship_simulation_detail_policy
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+# Actual installed-nozzle execution and damage test (not a synthetic slot oracle).
+add_executable(newtonian_rcs_physical_tests NewtonianRcsPhysicalTests.cpp)
+target_include_directories(newtonian_rcs_physical_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(newtonian_rcs_physical_tests PRIVATE cxx_std_17)
+add_test(NAME newtonian_rcs_physical COMMAND newtonian_rcs_physical_tests)

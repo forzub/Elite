@@ -1,3 +1,13 @@
+## 2026-10-21 — ASSISTED DAMAGE SIX-FLIGHT RUNNER; HUD AXIS & CONTROL STATUS
+
+Created `scripts/run-assisted-engine-damage-flights.ps1` on isolated feature branch (commit `3560b33`), using existing `run-navigation-stress.ps1` and environment presets `ELITE_SHIP_DAMAGE_PRESET=aft-50|aft-failed` for Assisted I/Y/X. Runs all six even after individual failure, restores environment, logs at `D:/tmp/elite_engine_out/` with CSV summary. **Not executed/compiled locally, no PASS assertion.** Requires authoritative fixture to actually honor each preset; inspect per-engine damage and measured thrust in the game logs before accepting an engine-out result. This runner itself does NOT yet implement ideal reactor/cooling, which are still pending separate, isolated fixture overrides.
+
+Verified `SpaceState.cpp` production cockpit render already calls `renderBoresight` unconditionally and `renderEmergencyThrustAxis` from `cockpit.renderTransform.motion.assistedWorkingThrustAxisBody` when emergency flag is true. Therefore the existing emergency thrust-axis reticle is hull-fixed, not a moving instant-force arrow. The geometrical working-axis analyzer proves a conservative ZERO-parasitic-torque CoM ray when possible; it does NOT yet solve the globally minimal nonzero moment among all feasible multi-engine allocations. May remain center-aligned for damage compensated by other motors. No HUD graphics source changed in this commit.
+
+**Architecture answer:** local client MotherComputer is already the read-only authoritative-data aggregation / operational doctrine source for own-ship HUD and Assisted autopilot envelope; the server still applies manual/autopilot controls source-agnostically through `ShipControlExecutionGateway` / `ShipCore` and validates physical motor actuation. Not all flight commands are physically routed THROUGH MotherComputer, and its energy/thermal/mobility providers are unfinished. Do not describe full migration as complete. Newtonian remains untouched.
+
+---
+
 ## 2026-10-21 — ASSISTED-ONLY ENGINE-OUT ACCEPTANCE AND TELEMETRY PRIORITY (USER DECISION; NOT YET EXECUTED)
 
 **Scope:** Finish Assisted I/Y/X first. Do NOT change Newtonian planner/autopilot/RCS or use its unfinished flights as a gate. User observed three healthy Assisted game corridor flights behaving well; Newtonian-I yaw/side-slip and broken-segment route remain out of scope.

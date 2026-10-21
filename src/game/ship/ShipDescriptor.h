@@ -121,6 +121,17 @@ struct ShipPhysicalControlBinding
     std::vector<std::string> slotModuleIds;
 };
 
+// Layout defines physical reactor/cooling positions; each ship descriptor
+// binds actual damageable equipment module IDs into those existing slots.
+// The order of engineReactorModuleIds matches installationSlots(model).
+// An empty binding leaves the slot uninstalled; it is NOT a free reactor.
+struct ShipPowerThermalInstallationBinding
+{
+    std::vector<std::string> engineReactorModuleIds;
+    std::string shipReactorModuleId;
+    std::string commonCoolingModuleId;
+};
+
 struct CockpitData
 {
     bool enabled = false;
@@ -249,6 +260,7 @@ public:
     SignalProfile       signalProfile;
     ShipMainPropulsionBinding mainPropulsion;
     ShipPhysicalControlBinding physicalControl;
+    ShipPowerThermalInstallationBinding powerThermalInstallation;
 
     ReactorDescriptor               reactor;
     CoolingDescriptor               cooling;

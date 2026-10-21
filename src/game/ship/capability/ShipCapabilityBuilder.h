@@ -8,6 +8,7 @@
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/capability/ShipCapabilitySnapshot.h"
+#include "src/game/ship/capability/WorkingThrustAxisAnalysis.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/simulation/ObjectModuleSnapshot.h"
@@ -468,43 +469,66 @@ inline void applyMountedEngineAxialAuthority(
         foreThrustNewtons =
             weakestForeNewtons * static_cast<double>(survivingFore);
 
-    // An isolated surviving aft motor has a real torque-neutral direction:
-    // along the line from its mounting point toward the CURRENT center of
-    // mass. For the 26 m wide Cobra-I this is roughly 49.5 degrees inward
-    // for the thrust force (outward for the exhaust nozzle). Do not select
-    // this emergency mode while both aft engines still exist: preserve the
-    // healthy and partial-damage nose-coupled flight contract.
-    auto& working = capability.effectivePhysics;
-    working.assistedWorkingThrustAxisEmergency = false;
-    working.assistedWorkingThrustAxisBody = {0.0, 0.0, -1.0};
-    working.assistedWorkingThrustAxisAngleRad = 0.0;
-    if (plant::familyOf(model) == plant::PhysicalControlFamily::Assisted &&
-        survivingAft == 1 && soleAftIndex < topology.size())
+    // All layouts share one geometry-only physical feasibility provider.
+    // A healthy or throttle-balanceable bank retains the factory nose axis;
+    // after asymmetrical damage a candidate single-motor CoM ray is proposed.
+    // MotherComputer may select a strategy using these physically attainable
+    // candidates; the server remains authoritative over their execution.
+    auto& working=capability.effectivePhysics;
+    working.assistedWorkingThrustAxisEmergency=false;
+    working.assistedWorkingThrustAxisBody={0.0,0.0,-1.0};
+    working.assistedWorkingThrustAxisAngleRad=0.0;
+    working.assistedWorkingThrustMotorIndex=-1;
+    if(plant::familyOf(model)==plant::PhysicalControlFamily::Assisted)
     {
-        const auto& slot = topology[soleAftIndex];
-        const auto* installed =
-            detail::findModuleDescriptor(descriptor, bindings[soleAftIndex]);
-        const glm::dvec3 arm =
-            slot.normalizedPositionBody *
-                working.physicalActuatorHalfExtentsMeters -
-            working.centerOfMassLocalMeters;
-        const double length = glm::length(arm);
-        if (installed && installed->engine && length > 1.0e-6)
+        std::vector<ForwardMotorGeometry> physicalMotors;
+        physicalMotors.reserve(topology.size());
+        for(std::size_t i=0;i<topology.size();++i)
         {
-            const glm::dvec3 axis = -arm / length;
-            const double angle = std::acos(
-                std::clamp(-axis.z, -1.0, 1.0)
-            );
-            const double cone = std::max(
-                0.0, installed->engine->nominalGimbalRangeRad *
-                    plant::effectiveSlotVectoring01(projected[soleAftIndex])
-            );
-            if (axis.z < -1.0e-6 && angle <= cone + 1.0e-8)
-            {
-                working.assistedWorkingThrustAxisEmergency = true;
-                working.assistedWorkingThrustAxisBody = axis;
-                working.assistedWorkingThrustAxisAngleRad = angle;
-            }
+            if(topology[i].role!=plant::EngineSlotRole::AftMain)
+                continue;
+            const auto* installed =
+                detail::findModuleDescriptor(descriptor,bindings[i]);
+            if(!installed || !installed->engine)
+                continue;
+            const double ratedN=std::max(0.0,
+                installed->engine->nominalThrustNewtons);
+            const glm::dvec3 arm =
+                topology[i].normalizedPositionBody *
+                    working.physicalActuatorHalfExtentsMeters -
+                working.centerOfMassLocalMeters;
+            physicalMotors.push_back({
+                i, arm,
+                ratedN*plant::effectiveSlotThrust01(projected[i]),
+                std::max(0.0,
+                    installed->engine->nominalGimbalRangeRad *
+                    plant::effectiveSlotVectoring01(projected[i]))
+            });
+        }
+        const auto candidate=analyzeWorkingThrustGeometry(physicalMotors);
+        if(candidate.offAxis &&
+            candidate.preferredAftSlot<topology.size())
+        {
+            working.assistedWorkingThrustAxisEmergency=true;
+            working.assistedWorkingThrustAxisBody =
+                candidate.forceDirectionBody;
+            working.assistedWorkingThrustAxisAngleRad =
+                candidate.axisOffsetRad;
+            working.assistedWorkingThrustMotorIndex =
+                static_cast<int>(candidate.preferredAftSlot);
+            // A safe outboard emergency burn uses exactly the selected
+            // engine; never advertise total bank thrust when the other
+            // engines cannot be trimmed to a zero-moment axial program.
+            aftThrustNewtons =
+                candidate.conservativeMotorForceNewtons;
+        }
+        else if(survivingAft>0 &&
+                !candidate.centeredForwardAvailable)
+        {
+            // No verified zero-torque forward working axis: retain the
+            // ability to command attitude pulses, but DO NOT promise a
+            // forward straight burn for this damaged installation.
+            aftThrustNewtons=0.0;
         }
     }
 
@@ -513,6 +537,8 @@ inline void applyMountedEngineAxialAuthority(
     if (foundAft)
         capability.effectivePhysics.forwardMainEngineAccelerationMps2 =
             static_cast<float>(aftThrustNewtons / massKg);
+    if (foundAft && aftThrustNewtons<=1.0e-9)
+        capability.effectivePhysics.forwardMainEngineAvailable=false;
     if (foundFore)
         capability.effectivePhysics.reverseMainEngineAccelerationMps2 =
             static_cast<float>(foreThrustNewtons / massKg);

@@ -102,7 +102,7 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     
     // Сохраняем dt для отладки
     m_dt = dt;
-    m_primaryCircuit.pumpHeatMJ = m_primaryCircuit.pumpCapacity * dt;
+    m_primaryCircuit.pumpHeatMJ = pumpHeatMW * dt;
   
 
 
@@ -111,18 +111,16 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     m_coolantTemp = coolant.getTemperature();
     double maxRadiatedPower = calculateRadiatedPower(m_coolantTemp);
     
-    // 4. The radiator is NOT an infinite heat sink disconnected from the
-    // cooling pumps. Its radiation capability is limited by real coolant
-    // circulation and the plant's rated heat-transport capacity. Failed
-    // pumps/overheated primary circuit therefore warm all mounted engines.
-    const double transportedMW = std::max(
-        0.0, std::min(
-            m_primaryCircuit.pumpCapacity,
-            m_primaryCircuit.maxHeatTransfer
-        )
-    );
+    // 4. The radiator panels ARE the surface of the shared coolant loop.
+    // Their radiation does not depend on the separate reactor heat-pump.
+    // Individual equipment deposits heat into this shared coolant directly.
+    // Limit the radiated energy by stored sensible heat; never cool below 0 K.
+    const double availableMW = dt > 0.0
+        ? std::max(0.0, coolant.getTemperature() *
+                  coolant.getThermalMass() / dt)
+        : 0.0;
     const double actualRemovedPower =
-        std::min(maxRadiatedPower, transportedMW);
+        std::max(0.0, std::min(maxRadiatedPower, availableMW));
     double heatRemovedMJ = actualRemovedPower * dt;
 
     

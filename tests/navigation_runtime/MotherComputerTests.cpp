@@ -152,6 +152,59 @@ void testLatestWinsAndInvalidDoesNotPromiseFlight()
     computer.stop();
 }
 
+void testMotherComputerChoosesOnlyPhysicsApprovedDoctrine()
+{
+    using game::ship::computer::PropulsionDoctrine;
+    MotherComputer computer;
+    auto engineOut=makeInput(41,1);
+    engineOut.physicalEnvelope.assistedWorkingThrustAxisEmergency=true;
+    engineOut.physicalEnvelope.assistedWorkingThrustAxisBody=
+        glm::normalize(glm::dvec3(-13.0,0.0,-11.1));
+    engineOut.physicalEnvelope.assistedWorkingThrustMotorIndex=1;
+    engineOut.installedMotorAuthority.workingForwardAccelerationMps2=30.0;
+    computer.observe(engineOut);
+    auto snapshot=computer.snapshot();
+    require(snapshot.flightProfile.valid &&
+            snapshot.flightProfile.doctrine==
+                PropulsionDoctrine::DamageOffsetAxis &&
+            snapshot.flightProfile.preferredDriveMotorIndex==1 &&
+            snapshot.flightProfile.workingForwardBody.x<-0.7 &&
+            !snapshot.flightProfile.mobilityCertified,
+            "motherboard selected illegal engine-out reference or certified it");
+    ShipParams out {};
+    game::ship::telemetry::ShipControlAuthorityTelemetry authority {};
+    require(computer.assistedFlightEnvelope(41,1,out,authority) &&
+            out.assistedWorkingThrustAxisEmergency &&
+            out.assistedWorkingThrustMotorIndex==1,
+            "autopilot did not receive motherboard-selected working axis");
+
+    auto foreFailed=makeInput(41,2);
+    foreFailed.physicalEnvelope.reverseMainEngineAvailable=false;
+    foreFailed.installedMotorAuthority.positive[2]=0.0;
+    computer.observe(foreFailed);
+    snapshot=computer.snapshot();
+    require(snapshot.flightProfile.doctrine==
+                PropulsionDoctrine::BallisticFlipBurnCandidate,
+            "fore-failure flight doctrine not selected at motherboard");
+    require(!snapshot.flightProfile.mobilityCertified,
+            "flip-burn candidate was claimed as proven safe");
+
+    auto unknown=makeInput(41,3);
+    unknown.installedMotorAuthority.valid=false;
+    computer.observe(unknown);
+    require(computer.snapshot().flightProfile.doctrine==
+                PropulsionDoctrine::AwaitingPhysicalEvidence,
+            "missing actuator telemetry was promoted to safety doctrine");
+
+    auto noThrust=makeInput(41,4);
+    noThrust.installedMotorAuthority.negative[2]=0.0;
+    noThrust.physicalEnvelope.forwardMainEngineAvailable=false;
+    computer.observe(noThrust);
+    require(computer.snapshot().flightProfile.doctrine==
+                PropulsionDoctrine::NoSafeAxialThrust,
+            "motor-off was declared propulsively controllable");
+}
+
 void testHudAndTerminalShareMotherboardShipTick()
 {
     MotherComputer computer;
@@ -251,6 +304,7 @@ int main()
         testLatestWinsAndInvalidDoesNotPromiseFlight();
         testSameTickNewGenerationCannotPublishObsoleteWork();
         testHudAndTerminalShareMotherboardShipTick();
+        testMotherComputerChoosesOnlyPhysicsApprovedDoctrine();
         std::cout << "MOTHER COMPUTER: PASS\n";
         return EXIT_SUCCESS;
     }

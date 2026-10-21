@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <cstdint>
 
 #include <unordered_map>
@@ -332,6 +333,12 @@ private:
     ShipTransform                               m_transform;
     game::ship::state::ShipState                m_state;
     ShipParams                                  m_params;
+    // Authoritative Newtonian RCS demands and actual nozzle usage for the
+    // next systems tick. The old control law expresses intent only; installed
+    // nozzle forces/moments are applied by the 24-unit physical allocator.
+    glm::dvec3 m_newtonianRcsAngularDemandRadPerSec2 {0.0};
+    std::array<double,24> m_newtonianRcsDelivered01 {};
+    bool m_newtonianRcsPhysical = false;
     // Physical six-axis signed maneuver recipes: generated once for this
     // vessel's installed I/Y/X engine layout, rebuilt on damage/repairs.
     // Not serialized over the network; always derived from real hardware.

@@ -858,6 +858,42 @@ void DynamicMotionSystem::applyLocalFrameInput(
     // stabilization. The input semantics survive; the fake manoeuvre actuator
     // does not.
     motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+
+    // With the fore/reverse bank destroyed, Assisted cannot pretend it has
+    // an instantaneous reverse main. END/BrakeToStop uses the existing
+    // physical flip-and-burn attitude controller: coast while it turns the
+    // hull anti-velocity, then burn only when the aft thrust line is aligned.
+    // Actual angular motion remains engine-controlled; velocity stays
+    // ballistic throughout the turn.
+    if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&
+        reverseMainAccel <= 1.0e-9 && forwardMainAccel > 1.0e-9)
+    {
+        const double speed = glm::length(relativeWorldVelocity);
+        motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+        if (speed <= static_cast<double>(params.stopSpeedEpsilonMps))
+        {
+            motion.localVelocityMps = glm::dvec3(0.0);
+            (void)LocalFlightControlStateMachine::
+                completeVelocityAlignment(motion);
+            motion.targetForwardSpeedMps = 0.0;
+            motion.engineAccelerationMps2 = glm::dvec3(0.0);
+            return;
+        }
+        if (dtD > 0.0)
+        {
+            const glm::dvec3 opposite = -relativeWorldVelocity/speed;
+            if (glm::dot(assistedTravelForward,opposite) >=
+                static_cast<double>(params.brakeAlignmentCosine))
+            {
+                motion.mainEngineAccelerationMps2 =
+                    assistedTravelForward *
+                    std::min(forwardMainAccel,speed/dtD);
+            }
+        }
+        motion.engineAccelerationMps2=motion.mainEngineAccelerationMps2;
+        return;
+    }
+
     const double targetSpeedChangeRate =
         std::max(
             static_cast<double>(

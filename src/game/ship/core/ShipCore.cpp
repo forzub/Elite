@@ -786,6 +786,8 @@ void ShipCore::updateSystems(float dt)
     m_cooling.calcRequestedPower();
 
     m_powerBus.update();
+    // Do not feed the reactor last frame's circulation capacity.
+    m_cooling.prepareTransport();
     m_reactor.update(dt, m_thermal, m_cooling.getPumpCapacity());
 
     for (auto* consumer : m_powerBus.getConsumers())
@@ -1329,6 +1331,10 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.cooling.radiatedPowerMW = m_cooling.getLastRadiatedPower();
     
     status.cooling.pumpCapacity = m_cooling.getPumpCapacity();
+    status.cooling.reactorPumpActive = m_cooling.isReactorPumpActive();
+    status.cooling.coolantOverheatLatched = m_cooling.isCoolantOverheatLatched();
+    status.cooling.radiatorPotentialMW = m_cooling.getRadiatorPotentialMW();
+    status.cooling.effectiveRadiatorTemperatureK = m_cooling.getEffectiveRadiatorTemperatureK();
     status.cooling.pumpHeatMJ = m_cooling.getPumpHeatMJ();
     status.cooling.dt = m_cooling.getDT();
     

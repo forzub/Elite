@@ -62,7 +62,9 @@ inline bool conventionalAxialRayFeasible(
     const auto alive=[](const ForwardMotorGeometry& m)
     {
         return positive(m.availableThrustNewtons) &&
-            glm::all(glm::isfinite(m.armFromComMeters));
+            (std::isfinite(m.armFromComMeters.x) &&
+             std::isfinite(m.armFromComMeters.y) &&
+             std::isfinite(m.armFromComMeters.z));
     };
     const std::size_t n=motors.size();
     for(std::size_t i=0;i<n;++i)
@@ -134,7 +136,9 @@ inline bool conventionalAxialRayFeasible(
         if(!working_axis_detail::positive(m.availableThrustNewtons) ||
             !std::isfinite(m.availableConeRad) ||
             m.availableConeRad<0.0 ||
-            !glm::all(glm::isfinite(m.armFromComMeters)))
+            !(std::isfinite(m.armFromComMeters.x) &&
+             std::isfinite(m.armFromComMeters.y) &&
+             std::isfinite(m.armFromComMeters.z)))
             continue;
         const double armLength=glm::length(m.armFromComMeters);
         if(armLength<=1.0e-9) continue;

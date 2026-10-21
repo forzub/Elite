@@ -450,6 +450,53 @@ struct AssistedManeuverPrograms final
                 globalScale=std::min(globalScale,
                     std::clamp(cap/magnitude,0.0,1.0));
         }
+        if (ship.assistedWorkingThrustAxisEmergency)
+        {
+            // A safe requested attitude limit is not a license for an
+            // asymmetrically mounted engine to inject an UNREQUESTED moment.
+            // The precomputed wrench rows let us check the actual combined
+            // motor command without adding a per-tick iterative solver.
+            // Prefer losing thrust to creating runaway hull rotation.
+            const double angularGoal[3] {
+                demand.angularAccelerationBodyRadPerSec2.x,
+                demand.angularAccelerationBodyRadPerSec2.y,
+                demand.angularAccelerationBodyRadPerSec2.z
+            };
+            const double safeAngular =
+                std::max(0.0, std::min(
+                    static_cast<double>(ship.angularAccel),
+                    ship.maxGs>0.0f && ship.turnRadius>0.0f
+                        ? static_cast<double>(ship.maxGs)*9.80665/
+                              static_cast<double>(ship.turnRadius)
+                        : static_cast<double>(ship.angularAccel)
+                ));
+            for (std::size_t axis=0;axis<3;++axis)
+            {
+                double predicted=0.0;
+                for (std::size_t k=0;k<3*count;++k)
+                    predicted+=wrench[axis+3][k]*q[k];
+                predicted*=scales[axis+3]*globalScale;
+                const double desired=angularGoal[axis];
+                // An accidental residual torque above numerical tolerance
+                // is not "some rotation authority". Do not accept it.
+                if (std::abs(desired)<0.01 &&
+                    std::abs(predicted)>0.01)
+                {
+                    globalScale=0.0;
+                    break;
+                }
+                if (desired*predicted < -1.0e-4)
+                {
+                    globalScale=0.0;
+                    break;
+                }
+                const double allowable=std::min(
+                    safeAngular, std::abs(desired)+0.01
+                );
+                if (std::abs(predicted)>allowable+1.0e-9)
+                    globalScale*=allowable/std::abs(predicted);
+            }
+        }
         const double mass=std::max(1.0,ship.massKg);
         const glm::dvec3 inertia {
             std::max(1.0,ship.pitchInertiaKgM2),

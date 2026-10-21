@@ -26,6 +26,14 @@ public:
     // vector indicator, which may move away from center in Newtonian flight.
     void renderBoresight(const Viewport& viewport);
 
+    // Engine-out reference is independent of hull optical boresight and
+    // measured velocity. In emergency it moves off the screen center.
+    void renderEmergencyThrustAxis(
+        const Viewport& viewport,
+        const glm::dvec3& workingAxisBody,
+        const std::string& localizedLabel
+    );
+
     void render(
         const game::presentation::FlightVectorIndicatorPresentation& presentation,
         const Viewport& viewport

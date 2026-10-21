@@ -225,6 +225,29 @@ public:
                 m_latest.input.installedMotorAuthority,
                 m_latest.input.physicalEnvelopeValid
             );
+            // The client-side analysis may not know a changed live CoM
+            // before replication. The server-executed axis is the final
+            // authority; NEVER hand the autopilot a contrary body reference.
+            const bool clientOffset =
+                m_latest.flightProfile.doctrine ==
+                    PropulsionDoctrine::DamageOffsetAxis;
+            if (m_latest.input.physicalEnvelopeValid &&
+                clientOffset !=
+                    m_latest.input.emergencyWorkingThrustAxis)
+                m_latest.flightProfile = {};
+            if (clientOffset &&
+                m_latest.input.emergencyWorkingThrustAxis)
+            {
+                const auto& serverAxis =
+                    m_latest.input.workingThrustAxisBody;
+                const auto& clientAxis =
+                    m_latest.flightProfile.workingForwardBody;
+                if (!std::isfinite(glm::length(serverAxis)) ||
+                    glm::length(serverAxis)<1.0e-8 ||
+                    glm::dot(glm::normalize(serverAxis),
+                             glm::normalize(clientAxis)) < 0.999)
+                    m_latest.flightProfile = {};
+            }
             m_latest.analysisCurrent = false;
             m_latest.mobility = {};
             m_latest.autopilotAuthorityCurrent =

@@ -42,6 +42,7 @@
 #include "src/game/ship/telemetry/EngineLiveTelemetry.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/ship/capability/ShipMobilityAssessment.h"
+#include "src/game/ship/computer/FlightControlProfile.h"
 
 namespace game::ship::computer
 {
@@ -168,6 +169,9 @@ struct MotherComputerSnapshot
     bool analysisCurrent = false;
     game::ship::capability::ShipMobilityAssessment mobility {};
     MotherComputerAdvisory advisory {};
+    // The MotherComputer's current physical DOCTRINE, independent of the
+    // asynchronous mobility certificate. Source is one matched ship/tick.
+    FlightControlProfile flightProfile {};
 
     // Fast lane can be current even when the asynchronous computer is busy.
     bool autopilotAuthorityCurrent = false;
@@ -214,6 +218,13 @@ public:
                 m_terminal = {};
             m_latest.valid = true;
             m_latest.input = std::move(input);
+            m_latest.flightProfile = selectFlightDoctrine(
+                m_latest.input.physicalEnvelope,
+                static_cast<game::ship::plant::PhysicalControlModelId>(
+                    m_latest.input.physicalControlModel),
+                m_latest.input.installedMotorAuthority,
+                m_latest.input.physicalEnvelopeValid
+            );
             m_latest.analysisCurrent = false;
             m_latest.mobility = {};
             m_latest.autopilotAuthorityCurrent =
@@ -270,11 +281,21 @@ public:
             liveAuthority.model !=
                 static_cast<game::ship::plant::PhysicalControlModelId>(
                     m_latest.input.physicalControlModel
-                ))
+                ) ||
+            !m_latest.flightProfile.valid)
             return false;
         out = game::ship::telemetry::applyAuthorityToControlParams(
             out, liveAuthority
         );
+        // A physical plant proposes a feasible vector; the ship computer
+        // publishes the actual chosen reference to the autopilot.
+        out.assistedWorkingThrustAxisEmergency =
+            m_latest.flightProfile.doctrine ==
+                PropulsionDoctrine::DamageOffsetAxis;
+        out.assistedWorkingThrustAxisBody =
+            m_latest.flightProfile.workingForwardBody;
+        out.assistedWorkingThrustMotorIndex =
+            m_latest.flightProfile.preferredDriveMotorIndex;
         return true;
     }
 

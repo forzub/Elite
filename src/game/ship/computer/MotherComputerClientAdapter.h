@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cmath>
 #include <cstdint>
 #include <utility>
 
@@ -225,6 +226,32 @@ namespace game::ship::computer
             game::presentation::biteHudAttentionForEquipment(
                 out.bite, bindings[i]
             );
+        if (!diagnostic && i < bindings.size() &&
+            !bindings[i].empty())
+        {
+            const auto module = std::find_if(
+                ship.modules.begin(),ship.modules.end(),
+                [&](const auto& state) {
+                    return state.moduleId == bindings[i];
+                });
+            const auto definition = std::find_if(
+                ship.descriptor->modules.begin(),
+                ship.descriptor->modules.end(),
+                [&](const auto& def) {
+                    return def.moduleId == bindings[i];
+                });
+            if (module != ship.modules.end() &&
+                definition != ship.descriptor->modules.end() &&
+                definition->engine &&
+                module->hasEngineThermalState &&
+                std::isfinite(module->engineTemperatureK))
+            {
+                slot.hasEngineTemperature = true;
+                slot.engineTemperatureK = module->engineTemperatureK;
+                slot.engineSafeTemperatureK = static_cast<float>(
+                    definition->engine->safeOperatingTemperatureK);
+            }
+        }
         out.engineSlots.push_back(std::move(slot));
     }
     return out;

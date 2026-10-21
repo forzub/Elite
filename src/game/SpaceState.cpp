@@ -7273,6 +7273,20 @@ m_systemMapRenderer.render(
             // the cockpit HUD is present.
             m_flightVectorIndicatorRenderer.renderBoresight(vp);
 
+            const auto& cockpitMotion = playerShip.renderTransform.motion;
+            if (cockpitMotion.assistedWorkingThrustAxisEmergency)
+            {
+                m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
+                    vp,
+                    cockpitMotion.assistedWorkingThrustAxisBody,
+                    localizedUiText(
+                        context().app,
+                        "cockpit.emergency.thrust_axis",
+                        "THRUST AXIS"
+                    )
+                );
+            }
+
             game::presentation::FlightInstrumentTextProfile textProfile;
             textProfile.newtonianModeLabel =
                 localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");

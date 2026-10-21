@@ -63,26 +63,22 @@ std::string formatSpeedText(
 }
 }
 
-FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
-    const ClientShipState& ship,
+FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
+    const ShipTransform& transform,
+    double speedLimitMps,
     const FlightInstrumentTextProfile& textProfile
 )
 {
     FlightVectorIndicatorPresentation out;
     out.visible = true;
 
-    const auto& transform = ship.renderTransform;
     const auto& motion = transform.motion;
 
     out.controlLaw = motion.localControlLaw;
     out.alignmentMode = motion.velocityAlignmentMode;
     out.speedMps = glm::length(motion.localVelocityMps);
 
-    if (ship.descriptor)
-        out.speedLimitMps = std::max(
-            0.0,
-            static_cast<double>(ship.descriptor->physics.maxCombatSpeed)
-        );
+    out.speedLimitMps = std::max(0.0, speedLimitMps);
 
     if (out.speedLimitMps > 0.0)
     {
@@ -165,14 +161,14 @@ FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
     return out;
 }
 
-PlayerHudTelemetry buildPlayerHudTelemetry(
-    const ClientShipState& ship,
+PlayerHudTelemetry buildHudFromTransform(
+    const ShipTransform& transform,
     const PlayerHudTelemetryTextProfile& textProfile
 )
 {
     PlayerHudTelemetry out;
 
-    const auto& wp = ship.renderTransform.worldPosition;
+    const auto& wp = transform.worldPosition;
     out.globalMeters =
         glm::dvec3(
             static_cast<double>(wp.cell.x),
@@ -184,7 +180,7 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     // Pilot-local speed is defined relative to the ship travel frame. Legacy
     // float mirrors are not authoritative and may legitimately remain zero.
     out.speedMps =
-        glm::length(ship.renderTransform.motion.localVelocityMps);
+        glm::length(transform.motion.localVelocityMps);
 
     char buffer[128];
 
@@ -209,7 +205,7 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     out.zLabel = buffer;
 
     const std::string& controlLawLabel =
-        ship.renderTransform.motion.localControlLaw ==
+        transform.motion.localControlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted
             ? textProfile.assistedModeLabel
             : textProfile.newtonianModeLabel;
@@ -225,6 +221,48 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     out.speedLabel = buffer;
 
     return out;
+}
+
+FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
+    const ClientShipState& ship,
+    const FlightInstrumentTextProfile& textProfile
+)
+{
+    return buildFlightVectorFromTransform(
+        ship.renderTransform,
+        ship.descriptor ? ship.descriptor->physics.maxCombatSpeed : 0.0,
+        textProfile
+    );
+}
+
+FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
+    const game::ship::computer::MotherComputerCockpitView& cockpit,
+    const FlightInstrumentTextProfile& textProfile
+)
+{
+    if(!cockpit.valid)
+        return {};
+    return buildFlightVectorFromTransform(
+        cockpit.renderTransform,cockpit.nominalSpeedLimitMps,textProfile
+    );
+}
+
+PlayerHudTelemetry buildPlayerHudTelemetry(
+    const ClientShipState& ship,
+    const PlayerHudTelemetryTextProfile& textProfile
+)
+{
+    return buildHudFromTransform(ship.renderTransform,textProfile);
+}
+
+PlayerHudTelemetry buildPlayerHudTelemetry(
+    const game::ship::computer::MotherComputerCockpitView& cockpit,
+    const PlayerHudTelemetryTextProfile& textProfile
+)
+{
+    if(!cockpit.valid)
+        return {};
+    return buildHudFromTransform(cockpit.renderTransform,textProfile);
 }
 
 bool applyPlayerHudTelemetry(

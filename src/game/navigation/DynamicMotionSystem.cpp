@@ -285,8 +285,19 @@ void DynamicMotionSystem::applyNavigationAssistedFlightModel(
 
     const double maxSpeed =
         game::ship::controlledSpeedLimitMps(params);
-    const glm::dvec3 forward =
+    const glm::dvec3 hullForward =
         glm::normalize(glm::dvec3(shipForward));
+    const glm::dvec3 forward =
+        params.assistedWorkingThrustAxisEmergency
+            ? glm::normalize(
+                glm::dvec3(shipRight) *
+                    params.assistedWorkingThrustAxisBody.x +
+                glm::dvec3(shipUp) *
+                    params.assistedWorkingThrustAxisBody.y -
+                hullForward *
+                    params.assistedWorkingThrustAxisBody.z
+              )
+            : hullForward;
     const double targetForwardSpeedMps = std::max(
         0.0, glm::dot(targetVelocitySystemMps, forward)
     );
@@ -668,7 +679,15 @@ void DynamicMotionSystem::applyLocalFrameInput(
         forwardMainAccel <= 1.0e-9 &&
         reverseMainAccel > 1.0e-9;
     const glm::dvec3 assistedTravelForward =
-        assistedUsesForeMainAsPrimary ? -f : f;
+        assistedUsesForeMainAsPrimary
+            ? -f
+            : (params.assistedWorkingThrustAxisEmergency
+                ? glm::normalize(
+                    r*params.assistedWorkingThrustAxisBody.x +
+                    u*params.assistedWorkingThrustAxisBody.y -
+                    f*params.assistedWorkingThrustAxisBody.z
+                  )
+                : f);
 
     motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
     motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
@@ -904,10 +923,14 @@ void DynamicMotionSystem::applyLocalFrameInput(
             ? 1.0 / dtD
             : lateralResponse;
 
+    // After aft-engine loss, "longitudinal" is the attainable CoM-aligned
+    // working-thrust direction, not the hull's nose. Otherwise the ordinary
+    // Assisted stabilizer immediately fights the intended safe off-axis burn.
     const double longitudinalVelocityError =
-        glm::dot(velocityError, f);
+        glm::dot(velocityError, assistedTravelForward);
     const glm::dvec3 lateralVelocityError =
-        velocityError - f * longitudinalVelocityError;
+        velocityError -
+            assistedTravelForward * longitudinalVelocityError;
 
     const double requestedLongitudinalAcceleration =
         longitudinalVelocityError * longitudinalGain;
@@ -966,7 +989,7 @@ void DynamicMotionSystem::applyLocalFrameInput(
         automaticAssistedStabilizationAcceleration;
 
     const glm::dvec3 requestedMainAcceleration =
-        f * requestedMainLongitudinalAcceleration;
+        assistedTravelForward * requestedMainLongitudinalAcceleration;
     motion.mainEngineAccelerationMps2 =
         clampSecondaryToTotalAccelerationEnvelope(
             motion.assistedStabilizationAccelerationMps2,
@@ -975,9 +998,9 @@ void DynamicMotionSystem::applyLocalFrameInput(
         );
 
     const double actualMainLongitudinalAcceleration =
-        glm::dot(motion.mainEngineAccelerationMps2, f);
+        glm::dot(motion.mainEngineAccelerationMps2, assistedTravelForward);
     const glm::dvec3 unservedLongitudinalAcceleration =
-        f * (
+        assistedTravelForward * (
             requestedLongitudinalAcceleration -
             actualMainLongitudinalAcceleration
         );

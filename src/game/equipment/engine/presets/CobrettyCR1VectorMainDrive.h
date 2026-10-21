@@ -12,7 +12,7 @@ namespace game::equipment::engine::presets
 {
     EngineUnitDescriptor e;
     e.engineTypeId = "elite.engine.cobretty.cr1-vector.v1";
-    e.engineDisplayName = "Cobretty CR-1 Vector Main Drive";
+    e.engineDisplayName = "Cobretty Cobra CR-1 Vector Main Drive";
     e.manufacturerName = "Cobretty Corporation";
     e.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     e.structureMaterialId = "elite.material.engine.tial-ht.v1";

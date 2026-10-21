@@ -9382,7 +9382,19 @@ void SpaceState::pushShipCoreState()
 
     const auto& ship = it->second;
 
-    json payload = shipCoreStatusToJson(ship.shipCoreStatus);
+    // The player's own engineering terminal reads the same motherboard
+    // as cockpit HUD and docking status. Selecting a different NPC remains
+    // an external inspector, not a claim to own that NPC's ship computer.
+    const auto computerSystems = m_motherComputer.cockpitSnapshot(
+        static_cast<std::uint64_t>(ship.instanceId),
+        m_client->lastSimulationMetadata().serverTick
+    );
+    const bool ownShip = it->first == m_playerId.value;
+    if (ownShip && !computerSystems.valid)
+        return; // do not silently invent a healthy status
+    json payload = shipCoreStatusToJson(
+        ownShip ? computerSystems.systems : ship.shipCoreStatus
+    );
 
     // список доступных кораблей для будущего selector в HTML
     payload["ships"] = json::array();

@@ -28,13 +28,13 @@ namespace game::equipment::engine::presets
     e.nominalEfficiency01 = 0.9855;
     e.maxRelativeEfficiencyLossAtFullDamage01 = 0.002;
 
-    e.thermalEmitter.outerDiameterM = 4.5;
-    e.thermalEmitter.apertureDiameterM = 2.5;
+    e.thermalEmitter.outerDiameterM = 5.0;
+    e.thermalEmitter.apertureDiameterM = 0.0;
     e.thermalEmitter.surfaceTemperatureK = 2500.0;
     e.thermalEmitter.emissivity01 = 0.9;
     e.thermalEmitter.viewFactor01 = 0.90;
     e.thermalEmitter.materialId = "elite.material.engine.hfc-c.v1";
-    e.thermalEmitter.meshPartId = "engine_hot_emitter_annulus";
+    e.thermalEmitter.meshPartId = "engine_hot_emitter_annulus"; // existing mesh ID; physics surface is solid
 
     e.nominalCoolantTemperatureK = 1050.0;
     e.nominalOperatingTemperatureK = 1200.0;
@@ -42,11 +42,16 @@ namespace game::equipment::engine::presets
     e.thermalCapacityMJperK = 12.0;
     const double wasteMW =
         e.nominalElectricalPowerMW * (1.0 - e.nominalEfficiency01);
-    const double radiatorMW = std::min(
-        wasteMW, ratedThermalEmitterPowerMW(e)
-    );
+    // Keep the finite physical housing→coolant heat path used before
+    // conversion to a solid 5m radiating pad. Do not recalculate it as
+    // (waste - emitter capacity): that would become zero when healthy and
+    // would prevent a damaged emitter from heating the coolant.
+    constexpr double previousAnnulusCapacityMW =
+        game::physics::thermal::radiatedPowerMW(
+            game::physics::thermal::annulusAreaM2(4.5, 2.5),
+            2500.0, 0.9, 0.90);
     e.thermalConductanceMWperK =
-        (wasteMW - radiatorMW) /
+        std::max(0.0, wasteMW - previousAnnulusCapacityMW) /
         (e.nominalOperatingTemperatureK - e.nominalCoolantTemperatureK);
     e.overheatReferenceExcessK = 100.0;
     e.thermalDamagePerHourAtReferenceExcess01 = 0.05;

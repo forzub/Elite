@@ -95,6 +95,8 @@ public:
 
     // Основной метод: забираем тепло из антифриза и излучаем
     void update(double dt, ThermalSystem& coolant);
+    // Resolve newly allocated electric power BEFORE reactor heat extraction.
+    void prepareTransport() noexcept;
     
     // Расчет максимальной излучаемой мощности при данной температуре
     double calculateRadiatedPower(double temperature) const;
@@ -111,6 +113,10 @@ public:
     double getMaxPumpPower() const { return m_primaryCircuit.maxPumpPower; }
     double getMaxHeatTransfer() const { return m_primaryCircuit.maxHeatTransfer; }
     double getPumpCapacity() const { return m_primaryCircuit.pumpCapacity; }
+    bool isReactorPumpActive() const { return m_primaryCircuit.isPumpActive; }
+    bool isCoolantOverheatLatched() const { return m_primaryCircuit.coolantOverheatFlag; }
+    double getRadiatorPotentialMW() const { return calculateRadiatedPower(m_coolantTemp); }
+    double getEffectiveRadiatorTemperatureK() const { return m_coolantTemp; }
     double getPumpHeatMJ() const { return m_primaryCircuit.pumpHeatMJ; }
     
     // Геттеры для SecondaryCircuit

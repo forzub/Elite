@@ -106,6 +106,12 @@ public:
     void damageRandomPanel(double amount);
     double getTotalEfficiency() const;
     bool isPanelThermalCritical() const { return m_panelThermalCritical; }
+    double getPanelDamageOnsetK() const {
+        const auto* material=game::physics::materials::findMaterial(
+            m_secondaryCircuit.materialId);
+        return material ? material->damageOnsetTemperatureK
+            : m_secondaryCircuit.maxCoolantTemp;
+    }
     void repairAllPanels();
     
     // Геттеры для PrimaryCircuit

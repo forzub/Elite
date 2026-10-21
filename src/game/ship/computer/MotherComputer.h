@@ -29,10 +29,13 @@
 #include <cstdint>
 #include <mutex>
 #include <limits>
+#include <string>
+#include <vector>
 #include <thread>
 #include <utility>
 
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/ship/core/ShipTransform.h"
 #include "src/game/bite/BiteTypes.h"
 #include "src/game/simulation/ShipCoreStatus.h"
 #include "src/game/ship/telemetry/EngineLiveTelemetry.h"
@@ -115,6 +118,34 @@ struct MotherComputerAdvisory
     bool thermalEnduranceProofMissing = true;
 };
 
+// Pure factual cockpit snapshot, refreshed on CLIENT presentation time.
+// Owns no client-world, descriptor, server or texture pointers; renderers
+// consume only this node. Separate from slower diagnostic worker revisions.
+struct MotherComputerEngineHudSlot
+{
+    std::string id;
+    double groupX = 0.0;
+    double groupY = 0.0;
+    bool fore = false;
+    float available01 = 0.0f; // damaged real capacity (yellow)
+    float delivered01 = 0.0f; // actually fired motor output (red)
+    bool fault = false;       // same canonical BITE state as terminal
+};
+
+struct MotherComputerCockpitView
+{
+    bool valid = false;
+    std::uint64_t shipInstanceId = 0;
+    std::uint64_t serverTick = 0;
+    ShipTransform renderTransform {};
+    double nominalSpeedLimitMps = 0.0;
+    std::string physicalModelLabel;
+    std::string engineHudStyleId = "human_amber";
+    std::vector<MotherComputerEngineHudSlot> engineSlots {};
+    game::bite::State bite {};
+    game::ShipCoreStatus systems {};
+};
+
 struct MotherComputerSnapshot
 {
     bool valid = false;
@@ -161,6 +192,10 @@ public:
             // Only one pending sample. If ten frames arrive while a report
             // is running, diagnostics analyze the newest, not a queue of
             // obsolete data. Flight-critical controls never wait for it.
+            if (m_cockpit.valid &&
+                (m_cockpit.shipInstanceId != input.shipInstanceId ||
+                 m_cockpit.serverTick != input.serverTick))
+                m_cockpit = {};
             m_latest.valid = true;
             m_latest.input = std::move(input);
             m_latest.analysisCurrent = false;
@@ -225,6 +260,36 @@ public:
             out, liveAuthority
         );
         return true;
+    }
+
+    // The caller is a presentation-thread adapter, never a server or
+    // renderer. This supports higher-frequency client interpolated attitude
+    // and velocity while BITE and motor health remain server-tick based.
+    void publishCockpit(MotherComputerCockpitView view)
+    {
+        if (!view.valid || view.shipInstanceId==0)
+            return;
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_stopping)
+            return;
+        if (m_latest.valid &&
+            (m_latest.input.shipInstanceId != view.shipInstanceId ||
+             view.serverTick != m_latest.input.serverTick))
+            return; // don't splice different time/ship facts
+        m_cockpit = std::move(view);
+    }
+
+    [[nodiscard]] MotherComputerCockpitView cockpitSnapshot(
+        std::uint64_t shipId,
+        std::uint64_t serverTick
+    ) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_cockpit.valid ||
+            m_cockpit.shipInstanceId != shipId ||
+            m_cockpit.serverTick != serverTick)
+            return {};
+        return m_cockpit;
     }
 
     [[nodiscard]] MotherComputerSnapshot snapshot() const
@@ -339,6 +404,7 @@ private:
     std::uint64_t m_pendingGeneration = 0;
     MotherComputerInput m_pending {};
     MotherComputerSnapshot m_latest {};
+    MotherComputerCockpitView m_cockpit {};
 };
 
 } // namespace game::ship::computer

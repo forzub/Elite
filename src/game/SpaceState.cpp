@@ -2114,6 +2114,18 @@ void SpaceState::updateDockingAdvisory()
             ? plannerCapability.effectivePhysics
             : ShipParams {};
 
+    // Both physical-law autopilots consume this one motherboard reader.
+    // The separate Assisted path below requires an additional installed
+    // signed motor certificate; Newtonian currently retains its legacy
+    // projected limits until the multi-engine wrench provider is finished.
+    ShipParams motherPhysics {};
+    if (m_motherComputer.physicalFlightEnvelope(
+            static_cast<std::uint64_t>(player.instanceId),
+            m_client->lastSimulationMetadata().serverTick,
+            motherPhysics
+        ))
+        effectivePhysics = motherPhysics;
+
     const auto controlLaw =
         motion.localControlLaw;
 

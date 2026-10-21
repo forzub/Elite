@@ -122,6 +122,14 @@ struct ShipParams
     // capability projection derives this from ShipDescriptor::logicalDimensions
     // when available. Zero keeps a conservative legacy fallback.
     glm::dvec3 physicalActuatorHalfExtentsMeters {0.0};
+
+    // Damage-aware Assisted propulsion heading in canonical body coordinates
+    // (+X right, +Y up, -Z nose). Ordinary healthy ships keep -Z.
+    // Valid only when a real surviving aft drive can place its thrust line
+    // through the live CoM within its physical nozzle cone.
+    bool assistedWorkingThrustAxisEmergency = false;
+    glm::dvec3 assistedWorkingThrustAxisBody {0.0, 0.0, -1.0};
+    double assistedWorkingThrustAxisAngleRad = 0.0;
     
     
 };

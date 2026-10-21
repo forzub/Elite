@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 
 #include "src/render/HUD/TextRenderer.h"
 #include "src/render/cockpit/EngineStatusWidgetStyle.h"
@@ -186,7 +187,7 @@ void EngineThrustIndicatorRenderer::render(
     const float barHeight =
         std::max(54.0f, style.barHeightPx * scale);
     const float barGap =
-        std::max(3.0f, style.barGapPx * scale);
+        std::max(8.0f, style.barGapPx * scale);
     const float groupGap =
         std::max(8.0f, style.groupGapPx * scale);
     const float padding =
@@ -417,6 +418,32 @@ void EngineThrustIndicatorRenderer::render(
                 );
             }
 
+            // Independent observed temperature strips. A dark track means
+            // telemetry is unavailable; never imply a healthy cold emitter.
+            const auto strip = [&](float sx, bool valid, float kelvin,
+                                   float safeK) {
+                const float w = std::max(2.0f, 2.7f * scale);
+                text.solidRectPx(
+                    sx, barsY, w, barHeight,
+                    glm::vec4(0.12f, 0.14f, 0.18f, 0.8f));
+                if (!valid || !std::isfinite(kelvin) || safeK <= 0.0f)
+                    return;
+                const float fraction = std::clamp(
+                    kelvin / (safeK * 1.25f), 0.0f, 1.0f);
+                const glm::vec4 cold(0.1f,0.55f,0.95f,0.94f);
+                const glm::vec4 green(0.2f,0.85f,0.42f,0.94f);
+                const glm::vec4 hot(1.0f,0.24f,0.09f,0.98f);
+                const auto color = fraction < 0.5f
+                    ? glm::mix(cold,green,fraction*2.0f)
+                    : glm::mix(green,hot,(fraction-0.5f)*2.0f);
+                text.solidRectPx(sx,barsY+barHeight*(1.0f-fraction),
+                    w,barHeight*fraction,color);
+            };
+            strip(x-4.0f*scale, bar.hasEmitterTemperature,
+                  bar.emitterTemperatureK, 2500.0f);
+            strip(x+barWidth+1.0f*scale, bar.hasEngineTemperature,
+                  bar.engineTemperatureK, bar.engineSafeTemperatureK);
+
             x += barWidth;
             if (b + 1 < group.bars.size())
                 x += barGap;
@@ -426,6 +453,87 @@ void EngineThrustIndicatorRenderer::render(
         if (renderedGroups < nonEmptyGroups)
             x += distributedGroupGap;
     }
+}
+
+void EngineThrustIndicatorRenderer::renderThermalSystems(
+    const game::ShipCoreStatus& status,
+    const Viewport& viewport
+)
+{
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+    auto& text = TextRenderer::instance();
+    const auto& style=resolveEngineStatusWidgetStyle("human_amber");
+    const float scale=std::clamp(
+        static_cast<float>(viewport.height)/1440.0f,0.72f,1.40f);
+    const float x=static_cast<float>(viewport.width)*0.025f;
+    const float bottom=static_cast<float>(viewport.height)*0.965f;
+    // Reserve space to the right of the existing compact engine gauge.
+    // Only text/geometry; no full-sized instrument windows.
+    const float w=110.0f*scale,h=104.0f*scale,gap=7.0f*scale;
+    const float reactorX=x+110.0f*scale;
+    const float coolantX=reactorX+w+gap;
+    const float y=bottom-h;
+    auto panel=[&](float px) {
+        roundedOutlinePx(text,px,y,w,h,7.0f*scale,1.0f*scale,
+            style.panelBorder,style.panelBackground);
+    };
+    // When this resolution is too narrow, do not obscure the boresight.
+    if(coolantX+w > viewport.width*0.44f)
+        return;
+    const glm::vec4 amber=style.label;
+    const glm::vec4 cyan(0.2f,0.72f,0.94f,1.0f);
+    const glm::vec4 warn(1.0f,0.35f,0.12f,1.0f);
+    const int small=std::max(10,static_cast<int>(12.0f*scale));
+    char buffer[48];
+    panel(reactorX);
+    text.textDrawPx("REACTOR",reactorX+9*scale,y+6*scale,small,amber);
+    // Temperature fills a single small core symbol; this isn't a power bar.
+    const float r=std::clamp(static_cast<float>(
+        status.reactor.criticalTemp>0.0
+          ? status.reactor.temperature/status.reactor.criticalTemp : 0.0),
+        0.0f,1.0f);
+    const float cx=reactorX+12.0f*scale;
+    const float cy=y+26.0f*scale;
+    const float ch=36.0f*scale;
+    roundedOutlinePx(text,cx,cy,16*scale,ch,3*scale,1*scale,
+        amber,style.track);
+    text.solidRectPx(cx+2*scale,cy+ch-(ch-4*scale)*r-2*scale,
+        12*scale,(ch-4*scale)*r,
+        r>0.85f?warn:cyan);
+    std::snprintf(buffer,sizeof(buffer),"%.0f K",
+        status.reactor.temperature);
+    text.textDrawPx(buffer,reactorX+36*scale,y+30*scale,small,amber);
+    std::snprintf(buffer,sizeof(buffer),"%.0f MW",
+        status.reactor.outputMW);
+    text.textDrawPx(buffer,reactorX+9*scale,y+69*scale,small,amber);
+    // There is no authoritative reactor thermal efficiency in ShipCoreStatus.
+    text.textDrawPx("EFF: --",reactorX+9*scale,y+86*scale,small,amber);
+
+    panel(coolantX);
+    text.textDrawPx("COOLANT",coolantX+7*scale,y+6*scale,small,amber);
+    const float sy=y+30*scale;
+    // Flask -> pump -> one aggregate panel (panel T is not replicated).
+    roundedOutlinePx(text,coolantX+9*scale,sy,18*scale,23*scale,
+        4*scale,1*scale,cyan,style.track);
+    text.solidRectPx(coolantX+10*scale,sy+13*scale,
+        16*scale,9*scale,cyan);
+    text.solidRectPx(coolantX+28*scale,sy+11*scale,
+        12*scale,2*scale,amber);
+    roundedOutlinePx(text,coolantX+40*scale,sy+6*scale,
+        19*scale,18*scale,2*scale,1*scale,amber,style.track);
+    text.solidRectPx(coolantX+60*scale,sy+11*scale,
+        8*scale,2*scale,amber);
+    roundedOutlinePx(text,coolantX+68*scale,sy,
+        30*scale,26*scale,2*scale,1*scale,amber,style.track);
+    for(int i=0;i<4;++i)
+        text.solidRectPx(coolantX+(74+6*i)*scale,sy+4*scale,
+            2*scale,18*scale,amber);
+    std::snprintf(buffer,sizeof(buffer),"%.0f K  %.1f MW",
+        status.thermal.temperature,status.cooling.allocatedPowerMW);
+    text.textDrawPx(buffer,coolantX+7*scale,y+69*scale,small,amber);
+    text.textDrawPx("PANEL: -- K",coolantX+7*scale,y+86*scale,
+        small,amber);
 }
 
 } // namespace render::cockpit

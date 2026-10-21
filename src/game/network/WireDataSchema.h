@@ -283,6 +283,8 @@ ELITE_WIRE_SCHEMA(
     v.mainEngineDeliveredThrust01,
     v.mainEngineReportedSlotCount,
     v.requestedMainAngularAccelerationBodyRadPerSec2,
+    v.assistedWorkingThrustAxisEmergency,
+    v.assistedWorkingThrustAxisBody,
     v.assistedStabilizationAccelerationMps2,
     v.engineAccelerationMps2,
     v.manoeuvreGasPressure01,

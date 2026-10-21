@@ -5688,6 +5688,14 @@ void SpaceState::update(float dt)
                     );
             }
             m_motherComputer.observe(std::move(motherInput));
+            // The engineering/diagnostic HTML panel may refresh BEFORE
+            // renderUI(); publish its first factual snapshot on this same
+            // server tick, then update only interpolation during rendering.
+            m_motherComputer.publishCockpit(
+                game::ship::computer::collectCockpitView(
+                    shipIt->second, m_motherComputer.snapshot()
+                )
+            );
             m_motherObservedServerTick = observedTick;
             m_motherObservedShipInstanceId =
                 static_cast<std::uint64_t>(

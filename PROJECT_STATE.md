@@ -1,3 +1,17 @@
+## 2026-10-21 — COMPACT ENGINE / REACTOR / COOLING HUD SOURCE WIRED (BUILD/SCREENSHOT PENDING)
+
+User specifically rejected full-sized cinematographic panels; HUD must match existing tiny `ASSISTED-Y` lower-left amber bordered engine gauge, with two small neighboring widgets and colored thin strips beside EACH thrust bar.
+
+Source modifications:
+- `EngineThrustHudPresentation.h` adds per-bar measured engine operating temperature and safe-temperature threshold; pads/emitter are explicitly marked unavailable (no actual emitter temperature measurement in replicated `ObjectModuleSnapshot`).
+- `MotherComputer.h::MotherComputerEngineHudSlot` + `MotherComputerClientAdapter.h` pass actual native installed engine `module.engineTemperatureK` and descriptor safe temperature via MotherComputer cockpit view; synthetic diagnostic slots remain unknown, never fake measured values.
+- `EngineThrustIndicatorRenderer.cpp/.h`: draws thin track left of each motor bar for pad/emitter (dark until independent authoritative pad temperature exists), right of each motor bar for engine operating temperature with blue→green→red fill. Uses existing amber widget scale/background, preserves original yellow thrust capacity/red active thrust bars. Adds two adjacent compact rounded amber widgets: reactor temperature fill and output MW; coolant flask→pump→single aggregate radiator pictogram, coolant K and allocated pump MW. Reactor efficiency and panel temperature show `--` because `ShipCoreStatus` doesn't supply reactor instantaneous efficiency or panel material temperature. Widget position accounts for engine group width of I/Y/X to avoid overlap, and hides when insufficient free lower-left width.
+- `SpaceState.cpp` calls `renderThermalSystems(cockpit.systems, engineThrustInstrument, vp)` in cockpit pass. Same MotherComputer verified ship systems snapshot, no direct server reads.
+
+**SOURCE CHANGES ONLY: NOT COMPILED, NO SCREENSHOT OF ACTUAL GAME, NO IN-GAME HUD PASS.** The user needs MinGW build `cmake --build build --target EliteGame -j 8` and in-game visual check. If build fails, get compiler error. Future work: add reactor instantaneous efficiency and aggregate effective panel temperature to authoritative `ShipCoreStatus`, plus a real individual emitter-pad temperature telemetry value; do not invent values. Panels intentionally tiny, no new widget framework. Changed no physics or NPC simulation.
+
+---
+
 ## 2026-10-21 — NEWTONIAN PHYSICAL RCS EXECUTION WIRED (FIRST UNCOMPILED INTEGRATION)
 
 In isolated branch only, implemented first server-physical Newtonian 24-nozzle execution path:

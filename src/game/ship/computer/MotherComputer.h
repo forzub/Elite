@@ -177,8 +177,28 @@ public:
         m_cv.notify_one();
     }
 
-    // Read the currently published *synchronous* flight authority. No stale
-    // asynchronous analysis may override control.
+    // All control-law pilots read their *observed physical envelope* here.
+    // For Newtonian this is still the legacy nominal/projection envelope:
+    // a future installed 6DOF torque certificate must extend it; it is NOT
+    // evidence that every commanded force/torque is reachable.
+    [[nodiscard]] bool physicalFlightEnvelope(
+        std::uint64_t shipId,
+        std::uint64_t serverTick,
+        ShipParams& out
+    ) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_latest.valid ||
+            m_latest.input.shipInstanceId != shipId ||
+            m_latest.input.serverTick != serverTick ||
+            !m_latest.input.physicalEnvelopeValid)
+            return false;
+        out = m_latest.input.physicalEnvelope;
+        return true;
+    }
+
+    // Assisted additionally requires measured INSTALLED motor authority;
+    // a bare nominal descriptor is forbidden as an autopilot substitute.
     [[nodiscard]] bool assistedFlightEnvelope(
         std::uint64_t shipId,
         std::uint64_t serverTick,

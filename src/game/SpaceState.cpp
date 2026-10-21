@@ -6699,6 +6699,18 @@ void SpaceState::renderUI()
 
         if (it != ships.end())
         {
+            const auto mother = m_motherComputer.snapshot();
+            m_motherComputer.publishCockpit(
+                game::ship::computer::collectCockpitView(
+                    it->second, mother
+                )
+            );
+            const auto cockpit = m_motherComputer.cockpitSnapshot(
+                static_cast<std::uint64_t>(it->second.instanceId),
+                mother.input.serverTick
+            );
+            if (cockpit.valid)
+            {
             game::presentation::PlayerHudTelemetryTextProfile textProfile;
             textProfile.cellLabel = localizedUiText(context().app, "cockpit.cell", "CELL");
             textProfile.relativeVelocityLabel = localizedUiText(context().app, "cockpit.vrel", "VREL");
@@ -6709,7 +6721,7 @@ void SpaceState::renderUI()
 
             const auto telemetry =
                 game::presentation::buildPlayerHudTelemetry(
-                    it->second,
+                    cockpit,
                     textProfile
                 );
 
@@ -6717,6 +6729,7 @@ void SpaceState::renderUI()
                 *uiRoot,
                 telemetry
             );
+            }
         }
     }
 
@@ -7024,6 +7037,14 @@ m_systemMapRenderer.render(
 
 
     const auto& playerShip = it->second;
+    const auto mother = m_motherComputer.snapshot();
+    m_motherComputer.publishCockpit(
+        game::ship::computer::collectCockpitView(playerShip, mother)
+    );
+    const auto cockpit = m_motherComputer.cockpitSnapshot(
+        static_cast<std::uint64_t>(playerShip.instanceId),
+        mother.input.serverTick
+    );
     const auto& radarContacts = playerShip.radarContacts;
 
 
@@ -7318,7 +7339,7 @@ m_systemMapRenderer.render(
         {
             const auto engineThrustInstrument =
                 game::presentation::buildEngineThrustHudPresentation(
-                    playerShip
+                    cockpit
                 );
             m_engineThrustIndicatorRenderer.render(
                 engineThrustInstrument,
@@ -7330,8 +7351,9 @@ m_systemMapRenderer.render(
             // the cockpit HUD is present.
             m_flightVectorIndicatorRenderer.renderBoresight(vp);
 
-            const auto& cockpitMotion = playerShip.renderTransform.motion;
-            if (cockpitMotion.assistedWorkingThrustAxisEmergency)
+            const auto& cockpitMotion = cockpit.renderTransform.motion;
+            if (cockpit.valid &&
+                cockpitMotion.assistedWorkingThrustAxisEmergency)
             {
                 m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
                     vp,
@@ -7361,7 +7383,7 @@ m_systemMapRenderer.render(
             {
                 const auto flightInstrument =
                     game::presentation::buildFlightVectorIndicatorPresentation(
-                        playerShip,
+                        cockpit,
                         textProfile
                     );
 
@@ -7402,22 +7424,9 @@ m_systemMapRenderer.render(
                 !m_dockingGuidanceFailureReason.empty() ||
                 !m_dockingStatusWarning.empty();
 
-            const auto computerBite = m_motherComputer.snapshot();
-            const bool computerBiteFresh =
-                computerBite.valid &&
-                computerBite.input.shipInstanceId ==
-                    static_cast<std::uint64_t>(playerShip.instanceId) &&
-                computerBite.input.serverTick ==
-                    m_client->lastSimulationMetadata().serverTick;
-            const auto biteState =
-                computerBiteFresh
-                    ? computerBite.input.installedEquipmentBite
-                    : (playerShip.descriptor
-                        ? game::presentation::buildShipBiteState(
-                              *playerShip.descriptor,
-                              playerShip.modules
-                          )
-                        : game::bite::State {});
+            // Engine HUD and terminal consume the SAME BITE source,
+            // including its authoritative ship/tick provenance.
+            const auto& biteState = cockpit.bite;
 
             const auto biteLines =
                 game::presentation::DockTerminalBitePresentation::lines(

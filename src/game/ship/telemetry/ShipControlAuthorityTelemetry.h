@@ -21,6 +21,9 @@ struct ShipControlAuthorityTelemetry
     std::uint64_t sourceActuatorRevision = 0;
     std::array<double,6> positive {};
     std::array<double,6> negative {};
+    // Usable physical acceleration along the engine-out CoM-aligned primary
+    // thrust axis. Distinct from negative[2], which means pure hull -Z.
+    double workingForwardAccelerationMps2 = 0.0;
     // Indices: body X (strafe), body Y (lift), body Z (reverse positive),
     // angular pitch, yaw, roll. Magnitudes always nonnegative.
 };
@@ -44,6 +47,20 @@ readAssistedControlAuthority(
         out.negative[axis]=std::max(
             0.0,motorPrograms.programs[2*axis+1].achievable
         );
+    }
+    if(motorPrograms.shape.assistedWorkingThrustAxisEmergency)
+    {
+        const auto& slots=game::ship::plant::physicalControlSlots(
+            motorPrograms.model
+        );
+        for(std::size_t i=0;i<motorPrograms.count;++i)
+            if(slots[i].role==game::ship::plant::EngineSlotRole::AftMain)
+            {
+                const auto& m=motorPrograms.motors[i];
+                out.workingForwardAccelerationMps2+=
+                    m.capacity01*m.ratedN/
+                    std::max(1.0,motorPrograms.shape.massKg);
+            }
     }
     return out;
 }
@@ -77,9 +94,13 @@ readAssistedControlAuthority(
         p.reverseMainEngineAccelerationMps2 > 0.0f
             ? static_cast<double>(p.reverseMainEngineAccelerationMps2)
             : structuralLoadMps2;
+    const double workingOrHullForward =
+        p.assistedWorkingThrustAxisEmergency
+            ? telemetry.workingForwardAccelerationMps2
+            : telemetry.negative[2];
     const double forward = std::min({
         structuralLoadMps2, forwardRating,
-        std::max(0.0, telemetry.negative[2])
+        std::max(0.0, workingOrHullForward)
     });
     const double reverse = std::min({
         structuralLoadMps2, reverseRating,
@@ -123,6 +144,10 @@ readAssistedControlAuthority(
     const double fraction = std::clamp(
         allowedFractionalLoss, 0.0, 1.0
     );
+    if (accepted.workingForwardAccelerationMps2 > 1.0e-6 &&
+        live.workingForwardAccelerationMps2 <
+            accepted.workingForwardAccelerationMps2 * (1.0-fraction))
+        return true;
     for (std::size_t i = 0; i < accepted.positive.size(); ++i)
     {
         if (accepted.positive[i] > 1.0e-6 &&

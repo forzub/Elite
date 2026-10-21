@@ -239,8 +239,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // ─────────────────────────
         // CoreSystems params 
         // ─────────────────────────
-        desc.reactor.nominalPowerMW = 2500.0;           // Номинальная мощность (МВт)
-        desc.reactor.peakPowerMW    = 3200.0;           // Пиковая мощность (МВт)
+        desc.reactor.nominalPowerMW = 10000.0;           // Номинальная мощность (МВт)
+        desc.reactor.peakPowerMW    = 10000.0;           // Пиковая мощность (МВт)
         
         // desc.reactor.heatFactor     = 2.2;              // Коэф. тепловыделения При КПД 45%: 1/0.45 - 1 ≈ 1.22, плюс запас
 
@@ -249,12 +249,12 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.reactor.maxTempK = 4500;                   // 4500 — макс. до разрушения
         
 
-        desc.reactor.temperature        = 300.0;           // Начальная температура (K)
+        desc.reactor.temperature        = 3500.0;           // Начальная температура (K)
         desc.reactor.thermalMass        = 120.0;            // Теплоемкость (МДж/К)	Масса реактора 25т, теплоемкость стали ~0.5 МДж/т/К ×25т ×10 = 125
         
-        desc.reactor.efficiencyMinTemp      =  0.35;            // 0.35 — мин КПД (при мин/макс температуре)
-        desc.reactor.efficiencyPeak         =  0.45;            // 0.45 — макс КПД
-        desc.reactor.efficiencyMaxTemp      =  0.4;             // 0.40 — мин КПД (при мин/макс температуре)
+        desc.reactor.efficiencyMinTemp      =  0.9990;            // 0.35 — мин КПД (при мин/макс температуре)
+        desc.reactor.efficiencyPeak         =  0.9995;            // 0.45 — макс КПД
+        desc.reactor.efficiencyMaxTemp      =  0.9985;             // 0.40 — мин КПД (при мин/макс температуре)
 
        
         // ─────────────────────────

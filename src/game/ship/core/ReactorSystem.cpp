@@ -105,11 +105,18 @@ void ReactorSystem::update(double dt, ThermalSystem& coolant, double pumpCapacit
     double generatedMJ = P_heat * dt;
     m_temperature += generatedMJ / m_thermalMass;
     
-    double transferredMJ = pumpCapacityMW * dt;
+    // Transfer is bounded by electric pump circulation AND the available
+    // temperature difference. Never move heat uphill or cool reactor below
+    // the shared coolant temperature through this one-way heat exchanger.
+    const double transferableMJ = std::max(0.0,
+        (m_temperature - coolant.getTemperature()) * m_thermalMass);
+    const double transferredMJ = std::min(
+        std::max(0.0,pumpCapacityMW) * std::max(0.0,dt),
+        transferableMJ);
     m_temperature -= transferredMJ / m_thermalMass;
     coolant.addHeat(transferredMJ);
 
-    m_heatVolume =  pumpCapacityMW;
+    m_heatVolume = dt > 0.0 ? transferredMJ / dt : 0.0;
     m_heatGenerationMW =  transferredMJ;
 
     updateEmergencyMode();

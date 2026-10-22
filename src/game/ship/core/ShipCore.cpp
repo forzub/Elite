@@ -65,6 +65,8 @@ void ShipCore::init(
     m_newtonianRcsAngularDemandRadPerSec2 = {};
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsPhysical = false;
+    m_propulsionReactorsOn = true;
+    m_propulsionReactorsStartupRemainingSeconds = 0.0;
     m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
     m_desc = &descriptor; // compatibility mirror; construction truth is m_state.
@@ -701,6 +703,8 @@ void ShipCore::updateTranslationControl(float dt)
                         std::max(1.0,reactorType.endOfLifeEquivalentHours),
                         0.0,1.0);
                     group.availableMW =
+                        (m_propulsionReactorsOn &&
+                        m_propulsionReactorsStartupRemainingSeconds<=0.0 ? 1.0:0.0) *
                         std::max(0.0,reactorType.ratedElectricalMW) *
                         function.authority01 * ready * thermal *
                         (1.0-0.20*age);
@@ -831,10 +835,40 @@ bool ShipCore::propagateHubTacticalTranslation(double dt)
         );
 }
 
+void ShipCore::togglePropulsionReactors() noexcept
+{
+    if(m_propulsionReactorsOn)
+    {
+        m_propulsionReactorsOn=false;
+        m_propulsionReactorsStartupRemainingSeconds=0.0;
+    }
+    else
+    {
+        m_propulsionReactorsOn=true;
+        m_propulsionReactorsStartupRemainingSeconds=10.0;
+    }
+}
+
+void ShipCore::toggleAssistedFreeRotation() noexcept
+{
+    auto& motion=m_transform.motion;
+    if(motion.localControlLaw!=game::navigation::LocalFlightControlLaw::Assisted)
+        return;
+    motion.assistedFreeRotation=!motion.assistedFreeRotation;
+    motion.assistedTargetSpeedHold=false;
+    motion.assistedThrottleTrimWasActive=false;
+    motion.velocityAlignmentMode=motion.assistedFreeRotation
+        ? game::navigation::VelocityAlignmentMode::None
+        : game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+}
+
 void ShipCore::updateSystems(float dt)
 {
     if (dt <= 0.0f)
         return;
+    if(m_propulsionReactorsOn && m_propulsionReactorsStartupRemainingSeconds>0.0)
+        m_propulsionReactorsStartupRemainingSeconds=std::max(0.0,
+            m_propulsionReactorsStartupRemainingSeconds-static_cast<double>(dt));
 
     // Internal service simulation is deliberately separated from motion.
     // Activation may decimate this lane for non-player ships while world
@@ -1009,7 +1043,9 @@ void ShipCore::updateSystems(float dt)
                 module->health>0.0f;
             const auto tick=game::equipment::reactor::advanceEngineReactor(
                 *def->engineReactor,state,
-                installed?electricalMW:0.0,
+                installed && m_propulsionReactorsOn &&
+                    m_propulsionReactorsStartupRemainingSeconds<=0.0
+                    ? electricalMW:0.0,
                 padHeadroomMW,0.0,static_cast<double>(dt));
             (void)tick;
         }

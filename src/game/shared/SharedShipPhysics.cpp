@@ -89,7 +89,14 @@ void evaluateControl(
     // Direct pilot attitude input always wins over an alignment autopilot.
     // A valid navigation acceleration demand also owns attitude for this
     // control sample unless the player supplies material manual attitude input.
-    if (hasManualAttitudeInput(control) ||
+    // After Backspace exits Assisted free rotation, the physical alignment
+    // must finish before ordinary manual rotation can regain attitude.
+    const bool returningFromFreeRotation =
+        motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted &&
+        motion.velocityAlignmentMode ==
+            game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+    if ((hasManualAttitudeInput(control) && !returningFromFreeRotation) ||
         control.navigationAccelerationDemandValid)
     {
         (void)game::navigation::LocalFlightControlStateMachine::

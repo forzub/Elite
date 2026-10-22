@@ -47,6 +47,8 @@ struct EngineThrustBarPresentation
     float emitterTemperatureK = 0.0f;
     bool hasEmitterIntegrity = false;
     float emitterIntegrity01 = 0.0f;
+    bool hasNozzleAngle = false;
+    float nozzleAngleDeg = 0.0f;
 };
 
 struct EngineThrustGroupPresentation
@@ -72,6 +74,8 @@ struct EngineRcsHudPresentation
     std::string id;
     bool known = false;
     float integrity01 = 0.0f;
+    bool firingKnown = false;
+    float firing01 = 0.0f;
 };
 
 struct EngineThrustHudPresentation
@@ -367,6 +371,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         bar.engineSafeTemperatureK = input.engineSafeTemperatureK;
         bar.hasEmitterIntegrity = input.hasEmitterIntegrity;
         bar.emitterIntegrity01 = input.emitterIntegrity01;
+        bar.hasNozzleAngle = input.hasNozzleAngle;
+        bar.nozzleAngleDeg = input.nozzleAngleDeg;
         out.warning = out.warning || input.fault;
         groupIt->bars.push_back(std::move(bar));
     }
@@ -406,7 +412,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         out.drives.push_back(std::move(entry));
     }
     for(const auto& rcs : cockpit.rcsSlots)
-        out.rcsSlots.push_back({rcs.id,rcs.known,rcs.integrity01});
+        out.rcsSlots.push_back({rcs.id,rcs.known,rcs.integrity01,
+            rcs.firingKnown,rcs.firing01});
     out.visible = !out.groups.empty();
     return out;
 }

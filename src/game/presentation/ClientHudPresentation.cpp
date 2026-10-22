@@ -75,6 +75,7 @@ FlightVectorIndicatorPresentation buildFlightVectorFromTransform(
     const auto& motion = transform.motion;
 
     out.controlLaw = motion.localControlLaw;
+    out.assistedFreeRotation = motion.assistedFreeRotation;
     out.alignmentMode = motion.velocityAlignmentMode;
     out.speedMps = glm::length(motion.localVelocityMps);
 

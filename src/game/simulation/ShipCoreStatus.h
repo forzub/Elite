@@ -85,8 +85,18 @@ struct AlertStatus {
     double threshold = 0.0;
 };
 
+struct EngineReactorStatus {
+    std::string moduleId;
+    bool installed = false;
+    double coreTemperatureK = 0.0;
+    double safeTemperatureK = 0.0;
+    double generatedHeatMW = 0.0;
+    double electricalOutputMW = 0.0;
+};
+
 struct ShipCoreStatus {
     ReactorStatus reactor;
+    std::vector<EngineReactorStatus> engineReactors;
     ThermalStatus thermal;
     CoolingStatus cooling;
     PowerBusStatus powerBus;

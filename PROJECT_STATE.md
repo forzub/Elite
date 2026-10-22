@@ -1,3 +1,20 @@
+## 2026-10-22 — Fix blank ER-5 gauges, diagnostic Assisted-Y dead thrust, ignition acknowledgement
+
+User screenshot showed `ASSISTED-Y` thrust HUD with `-- K` on every ER-5, plus unrelated legacy services `REACTOR` widget at 3500 K. Ignition chord appeared to do nothing; RCS moved but main propulsion only twitched; docking/status terminal emitted no start/off messages.
+
+**Confirmed source defects and main-only fixes**:
+1. Snapshot binary `WireDataSchema.h` serialized `ShipCoreStatus` WITHOUT `engineReactors` or actual `newtonianRcsExecuted01`; these server fields were silently lost every replication. Added `EngineReactorStatus` nested schema, their full list + 24 RCS values + ignition fields. Snapshot schema version 18 -> 19.
+2. `ShipCore::getCoreStatus` gated core-temperature visibility on thermal load/lifetime even though a running idle ER-5 at 900K is valid. Now report finite positive temperature immediately, including idling.
+3. `ASSISTED-Y/X` use synthetic test motor layouts on top of native Cobra I. `updateTranslationControl` attempted to find matching real ER-5 IDs for all synthetic groups and set unbound groups to 0 MW, disabling physical motor wrench despite motor widgets. Diagnostic layouts now have a synthetic 5000 MW per group when switches enabled and restart countdown complete; **native models still require actual physical reactor modules**. UI shows `SIM ER-5` instead of `-- K` for synthetic reactors: do not pretend their synthetic temperature is a real reading.
+4. Added server-side `propulsionSwitchRevision` increment each toggle and `propulsionReactorsOn` / startup remaining seconds into replicated `ShipCoreStatus`; mothercomputer cockpit view carries state to HUD; tiny per-reactor ignition lamps: GREEN=online, YELLOW=10-second restart, DARK=off. No unconfirmed green on client keypress.
+5. Existing docking diagnostic terminal now opens on a received ignition transition and prints OFF, STARTING countdown, READY, DIAGNOSTIC 5GW simulation, or ERROR no functional physical ER-5. If command does not arrive, no revision: terminal does not fabricate acknowledgement.
+6. Service ReactorSystem power had been forced to 0.8 on all normal server ticks after restart by previous prototype, independent of prior load. Now preserves/restores actual pre-shutdown service throttle; the old `REACTOR` HUD at 3500K is **services reactor, NOT an ER-5**. Its heat model not rewritten.
+7. Main plus RCS are gated by ignition state already; do not imply RCS can move on reactor off intentionally. Remaining jerks with power on still need in-game tracing, not treated as solved.
+
+Changes committed **directly to main**; no new branches, no in-game build/compile completed by assistant. Validation sequence: build; inspect `ASSISTED-Y` simulated generator indicators, powered rotation, `Ctrl+Alt+Shift+I` OFF->DARK, no main torque/RCS; ON->YELLOW 10s->GREEN, terminal messages; then actual native layout measured ER-5 temperatures/G-P-S and physical damage limits. Check fresh game startup and existing snapshots schema version 19 both client/server. Log captures to D:/tmp. Never claim full game verification before run.
+
+---
+
 ## 2026-10-22 — Power-toggle scope correction
 
 Follow-up in main `9ae2ddc`: all-reactor switch also sets existing ship-services `ReactorSystem` throttle to zero on OFF and throughout 10-second ON startup delay; restores 0.8 normal idle on startup completion. Unlike propulsion ER-5, ship-service power feeds the current `PowerBus`. Newtonian RCS 24-nozzle executor now presents its physically mounted nozzle availability as false when all reactors are off/starting. Executor outputs zero force/torque and replaces nominal fake maneuver demand with executed zero result. The earlier saved reactor switch name `TogglePropulsionReactors` remains a protocol label but its actual behavior is all reactors. This is a deliberate game-wide safety stop, not just motor-specific.

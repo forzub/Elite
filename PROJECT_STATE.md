@@ -1,3 +1,18 @@
+## 2026-10-22 — ER-5 power toggle + Assisted independent hull mode (MAIN only)
+
+User-requested commands wired into existing single codebase:
+- `Ctrl+Alt+Shift+I`: send `ClientShipCommand::TogglePropulsionReactors` to server. `ShipCore` initially starts with installed ER-5 active at idle (900 K; main engine CR-1 450 K). First press disables the propulsion-reactor electrical group budget (all primary motors receive 0 MW); next press starts a temporary **10-second** delay before generator electrical authority returns. Countdown advances on server systems ticks, no five-minute start yet. No new branch. This is an on/off electric authority prototype, NOT a fully implemented thermal cool-down / cold-restart sequence.
+- `Backspace` in gameplay Assisted: send `ClientShipCommand::ToggleAssistedFreeRotation`. Server-owned state `DynamicMotionState.assistedFreeRotation` replicated in `WireDataSchema.h`. While enabled, the ordinary Assisted speed-setpoint and lateral velocity servo are bypassed; + and - have no authority; pilot pitch/yaw/roll controls and numeric-keypad translation still drive installed main motors through existing physically budgeted 6D allocator. No invented manoeuvre force. Newtonian ignores this toggle.
+- On disabling free rotation, server starts bounded `VelocityAlignmentMode::ForwardToVelocity` in Assisted; the existing ShipController aligns the nose to the real relative velocity direction, with body rotation still executed by physical main motors; longitudinal speed servo remains disabled until alignment completes. Neutral/manual attitude does not interrupt the return alignment. At tiny/zero speed alignment finishes directly.
+- `FlightVectorIndicatorPresentation` transports free-rotation mode to `FlightVectorIndicatorRenderer`; ring becomes 4 px thick and green when active, normal thin blue otherwise.
+- Temporary bottom shortcut strip describes `Backspace FREE ROT` and `Ctrl+Alt+Shift+I REACTORS`, localized in five languages in `src/assets/localization/ui/cockpit/flight.json`. SystemMap Backspace continues to mean map BACK.
+
+Code touched: `ClientShipCommand.h`, `DynamicMotionState.h`, `WireDataSchema.h`, `ShipCore.h/.cpp`, `GameServer.cpp`, `DynamicMotionSystem.cpp`, `LocalFlightControlStateMachine.h`, `SharedShipPhysics.cpp`, `SpaceState.cpp`, `ClientHudPresentation.h/.cpp`, `FlightVectorIndicatorRenderer.cpp`, `TemporaryShortcutStrip.h`, locale JSON.
+
+**Verification:** Source-level presence checks performed; native MinGW build/runtime test NOT performed by assistant. Need compile + manual game test: press chord off: main engine thrust zero, NumPad RCS Newtonian works independent of ER-5; restart: exact 10 s inactive then power returns; Assisted free-mode: rotate without automatically changing local velocity, +/- no response, numeric keypad translation works; Backspace again: bounded physical nose-to-velocity turn, ring returns blue, ordinary Assisted throttle resumes after alignment. Observe return alignment during near-zero velocity and under reactor shutdown. WARNING: restart countdown currently gates electrical output; it is not a 10-second temperature warm-up, and there is no actual reactor shutoff cooling state yet.
+
+---
+
 ## 2026-10-22 — No automatic cold start; correct unpowered Assisted torque leak
 
 User clarified: game always spawns ER-5 and main CR-1 engines ALREADY AT IDLE TEMPERATURE, and no cold-start countdown or shutoff mechanic is active yet. Startup/shutdown remains future explicit machinery. **Main commits** `00eb1f4` restores engine operating temperature initialization to descriptor nominal idle (CR-1 450 K); ER-5 previously fixed to nominal idle (900 K).

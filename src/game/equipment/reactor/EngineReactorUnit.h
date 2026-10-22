@@ -36,6 +36,9 @@ struct EngineReactorState
     double equivalentOperatingHours = 0.0;
     double lastElectricalOutputMW = 0.0;
     double lastGeneratedHeatMW = 0.0;
+    double lastPadHeatMW = 0.0;
+    double lastCoolantHeatMW = 0.0;
+    double lastStoredHeatMW = 0.0;
     game::equipment::EquipmentDamageState damage {};
 };
 
@@ -138,6 +141,10 @@ struct EngineReactorTick
     out.temperatureK = state.temperatureK;
     state.lastElectricalOutputMW = out.electricalOutputMW;
     state.lastGeneratedHeatMW = out.thermalPowerMW;
+    state.lastPadHeatMW = out.depositedToEnginePadsMW;
+    state.lastCoolantHeatMW = out.overflowToSharedCoolantMW;
+    state.lastStoredHeatMW = out.thermalPowerMW -
+        out.depositedToEnginePadsMW - out.overflowToSharedCoolantMW;
     return out;
 }
 } // namespace game::equipment::reactor

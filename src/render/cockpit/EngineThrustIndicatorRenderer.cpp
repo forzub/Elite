@@ -286,6 +286,13 @@ void EngineThrustIndicatorRenderer::render(
             }
             roundedOutlinePx(text,rx,cy-sq*0.5f,sq,sq,1*scale,
                 1*scale,style.panelBorder,style.track);
+            // Ignition lamp: verified reactor state from server snapshot.
+            // Green = energized, amber = 10 s restart, dark = switched off.
+            const glm::vec4 ignitionColor=drive.ignitionStarting
+                ? yellow : (drive.ignitionOn ? green : dead);
+            roundedOutlinePx(text,rx+sq*0.5f-3.5f*scale,
+                cy-sq*0.5f-10*scale,7*scale,7*scale,3*scale,
+                1*scale,style.panelBorder,ignitionColor);
             if(drive.installed && drive.integrity01>0.0f)
             {
                 const float fraction=std::clamp(

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string_view>
 #include "src/game/equipment/EquipmentDamage.h"
+#include "src/game/physics/UniverseThermalRadiation.h"
 
 namespace game::equipment::reactor
 {
@@ -17,7 +18,10 @@ struct EngineReactorDescriptor
     double ratedElectricalMW = 5000.0;
     double nominalEfficiency01 = 0.90;
     double hotStandbyThermalMW = 0.0;
-    double thermalCapacityMJPerK = 100.0;
+    double thermalCapacityMJPerK = 1000.0;
+    double padSideM = 10.0;
+    double idleTemperatureK = 900.0;
+    double startupTimeSeconds = 420.0;
     double operatingTemperatureK = 2500.0;
     double safeTemperatureK = 2750.0;
     double criticalTemperatureK = 3200.0;
@@ -32,7 +36,7 @@ struct EngineReactorDescriptor
 
 struct EngineReactorState
 {
-    double temperatureK = 2500.0;
+    double temperatureK = game::physics::thermal::DeepSpaceTemperatureK;
     double equivalentOperatingHours = 0.0;
     double lastElectricalOutputMW = 0.0;
     double lastGeneratedHeatMW = 0.0;
@@ -73,78 +77,80 @@ struct EngineReactorTick
     const double damage = game::equipment::totalAccumulatedDamage01(state.damage);
     const auto function = game::equipment::evaluateEquipmentFunctionAtDamage01(
         damage,type.failure);
-    out.failed = function.failed;
-    const double ageRatio = std::clamp(
-        state.equivalentOperatingHours/
-            std::max(1.0,type.endOfLifeEquivalentHours),0.0,1.0);
-    const double lifeDerating = 1.0-0.20*ageRatio;
-    out.availableElectricalMW = out.failed ? 0.0 :
-        std::max(0.0,type.ratedElectricalMW)*function.authority01*lifeDerating;
-    out.electricalOutputMW = std::clamp(
-        std::max(0.0,requestedElectricalMW),0.0,out.availableElectricalMW);
-    const double loss = std::clamp(
-        type.maxEfficiencyLossAtFailure01*damage +
+    out.failed=function.failed;
+    const double ageRatio=std::clamp(state.equivalentOperatingHours/
+        std::max(1.0,type.endOfLifeEquivalentHours),0.0,1.0);
+    const double derating=std::max(0.0,1.0-0.20*ageRatio);
+    const double ready=std::clamp(
+        (state.temperatureK-game::physics::thermal::DeepSpaceTemperatureK)/
+        std::max(1.0,type.idleTemperatureK-
+            game::physics::thermal::DeepSpaceTemperatureK),0.0,1.0);
+    const double thermalAuthority=state.temperatureK<=type.safeTemperatureK
+        ? 1.0 : std::clamp(
+            (type.criticalTemperatureK-state.temperatureK)/
+            std::max(1.0,type.criticalTemperatureK-type.safeTemperatureK),
+            0.0,1.0);
+    out.availableElectricalMW=out.failed?0.0:
+        type.ratedElectricalMW*function.authority01*derating*
+        thermalAuthority*ready;
+    out.electricalOutputMW=std::clamp(
+        requestedElectricalMW,0.0,out.availableElectricalMW);
+    const double efficiencyLoss=std::clamp(
+        type.maxEfficiencyLossAtFailure01*damage+
         0.005*ageRatio,0.0,0.20);
-    out.effectiveEfficiency01 = std::clamp(
-        type.nominalEfficiency01-loss,0.05,1.0);
-    const double generated = out.electricalOutputMW*
-        (1.0/out.effectiveEfficiency01-1.0);
-    out.thermalPowerMW = std::max(0.0,type.hotStandbyThermalMW) + generated;
-    // Heat exchange is bounded, never silently disappears when a pad fails.
-    out.depositedToEnginePadsMW = std::min(
-        out.thermalPowerMW,std::max(0.0,remainingPadCapacityMW));
-    const double overflow = out.thermalPowerMW-out.depositedToEnginePadsMW;
-    out.overflowToSharedCoolantMW = std::min(
-        overflow,std::max(0.0,maxOverflowTransferMW));
-    const double storedMW = overflow-out.overflowToSharedCoolantMW;
-
-    // Surplus heat is stored in the installed reactor's finite thermal mass.
-    // When demand falls, previously stored heat must be able to escape using
-    // ONLY the unused pad/coolant capacity. Never cool below the operating
-    // baseline and never spend the same sink capacity twice.
-    const double heatCapacity = std::max(1.0,type.thermalCapacityMJPerK);
-    if (dt > 0.0)
-    {
-        state.temperatureK += storedMW*dt/heatCapacity;
-        const double storedExcessMW = std::max(
-            0.0,(state.temperatureK-type.operatingTemperatureK)*
-                heatCapacity/dt);
-        const double sparePadMW = std::max(
-            0.0,remainingPadCapacityMW-out.depositedToEnginePadsMW);
-        const double spareCoolantMW = std::max(
-            0.0,maxOverflowTransferMW-out.overflowToSharedCoolantMW);
-        const double recoveredToPadMW = std::min(storedExcessMW,sparePadMW);
-        const double recoveredToCoolantMW = std::min(
-            storedExcessMW-recoveredToPadMW,spareCoolantMW);
-        out.depositedToEnginePadsMW += recoveredToPadMW;
-        out.overflowToSharedCoolantMW += recoveredToCoolantMW;
-        state.temperatureK -=
-            (recoveredToPadMW+recoveredToCoolantMW)*dt/heatCapacity;
-    }
+    out.effectiveEfficiency01=std::clamp(
+        type.nominalEfficiency01-efficiencyLoss,0.05,1.0);
+    // Zero electrical output at idle. Heat generation includes only a
+    // small fixed standby source; startup warmth is tracked separately.
+    out.thermalPowerMW=std::max(0.0,type.hotStandbyThermalMW)+
+        out.electricalOutputMW*(1.0/out.effectiveEfficiency01-1.0);
+    const double idle=type.idleTemperatureK;
+    const double design=type.safeTemperatureK;
+    const double area=std::max(0.0,type.padSideM*type.padSideM);
+    const double rated=game::physics::thermal::propulsionPadCoolingMW(
+        area,1.0,design,idle,design);
+    // Headroom is supplied as actual damage/availability from the installed
+    // pad. The engine pads are independent sinks and are not shared.
+    const double realPadCapacity=std::min(rated,
+        std::max(0.0,remainingPadCapacityMW));
+    const double cooling=game::physics::thermal::propulsionPadCoolingMW(
+        area,rated>0.0?realPadCapacity/rated:0.0,
+        state.temperatureK,idle,design);
+    out.depositedToEnginePadsMW=std::min(cooling,
+        out.thermalPowerMW+
+        std::max(0.0,(state.temperatureK-idle)*
+            type.thermalCapacityMJPerK/std::max(1.0e-6,dt)));
+    out.overflowToSharedCoolantMW=0.0;
+    // Startup thermal conditioning: 99% of idle temperature in the
+    // specified startup time, independent of propulsion electrical output.
+    const double cold=game::physics::thermal::DeepSpaceTemperatureK;
+    const double warmTarget=idle;
     if(dt>0.0)
     {
-        state.equivalentOperatingHours +=
-            dt/3600.0*(out.electricalOutputMW/
-                std::max(1.0,type.ratedElectricalMW));
-        const double thermalExcess = std::max(0.0,
+        const double tau=std::max(1.0,type.startupTimeSeconds/4.60517);
+        const double base=std::max(cold,state.temperatureK);
+        const double warm=base<warmTarget
+            ? (warmTarget-base)*(1.0-std::exp(-dt/tau)):0.0;
+        state.temperatureK=std::max(cold,
+            base+warm+(out.thermalPowerMW-
+                out.depositedToEnginePadsMW)*dt/
+                std::max(1.0,type.thermalCapacityMJPerK));
+        state.equivalentOperatingHours+=dt/3600.0*
+            (out.electricalOutputMW/std::max(1.0,type.ratedElectricalMW));
+        const double thermalExcess=std::max(0.0,
             state.temperatureK-type.safeTemperatureK);
         game::equipment::addEquipmentDamage(
             state.damage,game::equipment::EquipmentDamageKind::Thermal,
             type.overheatDamagePerHourAt100K*dt/3600.0*
-            (thermalExcess/100.0));
-        const double wear = dt/3600.0/
-            std::max(1.0,type.endOfLifeEquivalentHours)*
-            out.electricalOutputMW/std::max(1.0,type.ratedElectricalMW);
-        game::equipment::addEquipmentDamage(
-            state.damage,game::equipment::EquipmentDamageKind::Wear,wear);
+                (thermalExcess/100.0));
     }
-    out.temperatureK = state.temperatureK;
-    state.lastElectricalOutputMW = out.electricalOutputMW;
-    state.lastGeneratedHeatMW = out.thermalPowerMW;
-    state.lastPadHeatMW = out.depositedToEnginePadsMW;
-    state.lastCoolantHeatMW = out.overflowToSharedCoolantMW;
-    state.lastStoredHeatMW = out.thermalPowerMW -
-        out.depositedToEnginePadsMW - out.overflowToSharedCoolantMW;
+    out.temperatureK=state.temperatureK;
+    state.lastElectricalOutputMW=out.electricalOutputMW;
+    state.lastGeneratedHeatMW=out.thermalPowerMW;
+    state.lastPadHeatMW=out.depositedToEnginePadsMW;
+    state.lastCoolantHeatMW=0.0;
+    state.lastStoredHeatMW=out.thermalPowerMW-
+        out.depositedToEnginePadsMW;
     return out;
 }
 } // namespace game::equipment::reactor

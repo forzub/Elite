@@ -11,6 +11,7 @@
 // equipment passport; this file defines only topology.
 
 #include <vector>
+#include <string>
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
 
 namespace game::ship::presets::cobra
@@ -188,6 +189,44 @@ static const std::vector<EngineSlotDefinition> NewtonianX = {
          case PhysicalControlModelId::NewtonianX: return newtonianX;
      }
      return assistedI;
+ }
+
+ // Real Cobra hardware identities, independent of diagnostic slot state.
+ // All three sets exist as persistent ObjectModuleRuntime equipment;
+ // only the selected set contributes forces, electrical draw or telemetry.
+ [[nodiscard]] inline std::vector<std::string> installedAssistedEngineModuleIds(
+     PhysicalControlModelId model)
+ {
+     if(model == PhysicalControlModelId::AssistedI)
+         return {"ship_engine_L","ship_engine_R",
+                 "ship_fore_engine_L","ship_fore_engine_R"};
+     if(model != PhysicalControlModelId::AssistedY &&
+        model != PhysicalControlModelId::AssistedX)
+         return {};
+     const char* prefix =
+         model == PhysicalControlModelId::AssistedY
+             ? "ship_assisted_y_" : "ship_assisted_x_";
+     std::vector<std::string> ids;
+     for(const auto& slot : propulsionSlots(model))
+         ids.push_back(std::string(prefix) + slot.id);
+     return ids;
+ }
+
+ [[nodiscard]] inline std::vector<std::string> installedAssistedReactorModuleIds(
+     PhysicalControlModelId model)
+ {
+     if(model == PhysicalControlModelId::AssistedI)
+         return {"ship_drive_left_reactor","ship_drive_right_reactor"};
+     if(model != PhysicalControlModelId::AssistedY &&
+        model != PhysicalControlModelId::AssistedX)
+         return {};
+     const char* prefix =
+         model == PhysicalControlModelId::AssistedY
+             ? "ship_assisted_y_" : "ship_assisted_x_";
+     std::vector<std::string> ids;
+     for(const auto& group : installationSlots(model).engineReactors)
+         ids.push_back(std::string(prefix) + group.slotId + "_reactor");
+     return ids;
  }
 
 } // namespace game::ship::presets::cobra

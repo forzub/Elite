@@ -20,6 +20,8 @@
 
 #include <cstdlib>
 #include <string>
+#include <array>
+#include <algorithm>
 
 // #include "game/damage/HitVolume.h"
 
@@ -1050,6 +1052,42 @@ desc.modules =
     }
 }
 
+// Preinstall the complete Assisted hardware inventory in the real module
+// runtime. Ctrl+F9 selects ONE persistent set; it never manufactures motors.
+// Extra configurations have logical damageable units but no duplicate mesh
+// ownership: the exterior geometry remains the Cobra's common hull.
+if (game::ship::plant::familyOf(desc.physicalControlModel) ==
+        game::ship::plant::PhysicalControlFamily::Assisted)
+{
+    const auto findPrototype=[&](const char* id) -> ModuleDescriptor {
+        const auto it=std::find_if(desc.modules.begin(),desc.modules.end(),
+            [&](const ModuleDescriptor& m){return m.moduleId==id;});
+        if(it==desc.modules.end() || !it->engine)
+            throw std::logic_error("Missing Cobra CR-1 hardware prototype");
+        return *it;
+    };
+    const ModuleDescriptor aftPrototype=findPrototype("ship_engine_L");
+    const ModuleDescriptor forePrototype=findPrototype("ship_fore_engine_L");
+    for(const auto model: {
+            game::ship::plant::PhysicalControlModelId::AssistedY,
+            game::ship::plant::PhysicalControlModelId::AssistedX})
+    {
+        const auto ids=
+            game::ship::presets::cobra::installedAssistedEngineModuleIds(model);
+        const auto& slots=game::ship::presets::cobra::propulsionSlots(model);
+        for(std::size_t i=0;i<slots.size();++i)
+        {
+            ModuleDescriptor module=
+                slots[i].role==game::ship::plant::EngineSlotRole::AftMain
+                    ? aftPrototype : forePrototype;
+            module.moduleId=ids[i];
+            module.meshPartIds.clear();
+            module.supportLinks.clear();
+            desc.modules.push_back(std::move(module));
+        }
+    }
+}
+
 desc.mainPropulsion.aftEngineModuleIds = {
     "ship_engine_L",
     "ship_engine_R"
@@ -1110,21 +1148,33 @@ if (const char* rawModel =
 }
 
 
-// Every chosen construction installs distinct, damageable reactor modules.
-// Their engine-side energy/heat execution will be wired in the next stage;
-// until then no phantom thrust or power is introduced by these slot records.
+// A real ER-5 belongs to each installed hardware group, with independent
+// damage, temperature, output and lifetime. Alternate Assisted layouts keep
+// their own reactor identities across Ctrl+F9 selections.
 {
-    const auto& installation =
-        game::ship::presets::cobra::installationSlots(
-            desc.physicalControlModel);
+    using Model=game::ship::plant::PhysicalControlModelId;
+    const bool installedAssisted =
+        game::ship::plant::familyOf(desc.physicalControlModel)==
+            game::ship::plant::PhysicalControlFamily::Assisted;
     const auto er5 =
         game::equipment::reactor::presets::
             CobraCobrettyER5PropulsionReactor();
     desc.powerThermalInstallation.engineReactorModuleIds.clear();
-    for (const auto& slot : installation.engineReactors)
+    const auto addReactorSet=[&](Model model)
     {
-        ModuleDescriptor m;
-        m.moduleId = std::string("ship_") + slot.slotId + "_reactor";
+        const auto& installation =
+            game::ship::presets::cobra::installationSlots(model);
+        const auto realIds=installedAssisted
+            ? game::ship::presets::cobra::installedAssistedReactorModuleIds(model)
+            : std::vector<std::string> {};
+        for(std::size_t i=0;i<installation.engineReactors.size();++i)
+        {
+            const auto& slot=installation.engineReactors[i];
+            const std::string reactorId=installedAssisted
+                ? realIds[i]
+                : std::string("ship_")+slot.slotId+"_reactor";
+            ModuleDescriptor m;
+            m.moduleId = reactorId;
         m.parentModuleId = "ship_frame_CB";
         m.subsystemId = "propulsion_reactor";
         m.moduleClass = "cobra_engine_reactor";
@@ -1139,10 +1189,17 @@ if (const char* rawModel =
         m.equipmentFailure = er5.failure;
         m.maintenance = er5.maintenance;
         m.engineReactor = er5;
-        desc.powerThermalInstallation.engineReactorModuleIds.push_back(
-            m.moduleId);
-        desc.modules.push_back(std::move(m));
-    }
+            if(model==desc.physicalControlModel)
+                desc.powerThermalInstallation.engineReactorModuleIds.push_back(
+                    m.moduleId);
+            desc.modules.push_back(std::move(m));
+        }
+    };
+    if(installedAssisted)
+        for(const auto model: {Model::AssistedI,Model::AssistedY,Model::AssistedX})
+            addReactorSet(model);
+    else
+        addReactorSet(desc.physicalControlModel);
     // Ordinary ship services remain separately powered and cooled.
     desc.powerThermalInstallation.shipReactorModuleId =
         "ship_service_reactor";

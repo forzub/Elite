@@ -36,7 +36,48 @@ using namespace game::ship::geometry;
 
 namespace game::ship::core
 {
-
+namespace
+{
+// Cobra publishes one immutable descriptor per *installed* Assisted layout.
+// Module definitions (including dormant layouts) are identical across these
+// profiles; only the active engine/reactor bindings and model differ.
+const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
+    const ShipDescriptor& original)
+{
+    static const std::array<ShipDescriptor,3> profiles = [&] {
+        std::array<ShipDescriptor,3> installed {original,original,original};
+        for(std::size_t k=0;k<installed.size();++k)
+        {
+            const auto model=static_cast<
+                game::ship::plant::PhysicalControlModelId>(k);
+            auto& desc=installed[k];
+            desc.physicalControlModel=model;
+            desc.localFlightControlLaw=
+                game::ship::plant::nativeFlightLaw(model);
+            desc.physicalControl.slotModuleIds=
+                game::ship::presets::cobra::installedAssistedEngineModuleIds(model);
+            desc.powerThermalInstallation.engineReactorModuleIds=
+                game::ship::presets::cobra::installedAssistedReactorModuleIds(model);
+            desc.mainPropulsion.aftEngineModuleIds.clear();
+            desc.mainPropulsion.foreEngineModuleIds.clear();
+            const auto& topology=
+                game::ship::presets::cobra::propulsionSlots(model);
+            for(std::size_t i=0;i<topology.size();++i)
+            {
+                const auto role=topology[i].role;
+                if(role==game::ship::plant::EngineSlotRole::AftMain)
+                    desc.mainPropulsion.aftEngineModuleIds.push_back(
+                        desc.physicalControl.slotModuleIds[i]);
+                else if(role==game::ship::plant::EngineSlotRole::ForeMain)
+                    desc.mainPropulsion.foreEngineModuleIds.push_back(
+                        desc.physicalControl.slotModuleIds[i]);
+            }
+        }
+        return installed;
+    }();
+    return profiles;
+}
+} // namespace
 
 
 
@@ -74,8 +115,18 @@ void ShipCore::init(
     m_propulsionReactorsStartupRemainingSeconds = 0.0;
     m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
-    m_desc = &descriptor; // compatibility mirror; construction truth is m_state.
-    m_state.initialize(descriptor);
+    m_initialPhysicalModel=descriptor.physicalControlModel;
+    m_assistedHardwareProfiles=nullptr;
+    m_desc=&descriptor;
+    if(descriptor.typeId==ObjectType::CobraMk1 &&
+       game::ship::plant::familyOf(descriptor.physicalControlModel)==
+           game::ship::plant::PhysicalControlFamily::Assisted)
+    {
+        m_assistedHardwareProfiles=&assistedCobraInstalledProfiles(descriptor);
+        const auto idx=static_cast<std::size_t>(descriptor.physicalControlModel);
+        m_desc=&(*m_assistedHardwareProfiles)[idx];
+    }
+    m_state.initialize(*m_desc);
     m_transform.setWorldPositionMeters(glm::dvec3(position));
 
     // Every Ship -- player, NPC, bot or diagnostic actor -- starts from the
@@ -87,8 +138,8 @@ void ShipCore::init(
 
     // собираем корабль
     // Устанавливаем оборудование по умолчанию из дескриптора
-    initShipSlotsFromDescriptor(descriptor);
-    installDefaultEquipment(descriptor);
+    initShipSlotsFromDescriptor(*m_desc);
+    installDefaultEquipment(*m_desc);
 
 
 
@@ -240,6 +291,32 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
     if (!m_state.construction.valid())
         return false;
 
+    // Ctrl+F9 on a Cobra selects real already-installed equipment. The
+    // construction binding changes, but module damage/temperatures and ship
+    // position, linear/angular velocity are deliberately untouched.
+    if(m_assistedHardwareProfiles &&
+       game::ship::plant::familyOf(model)==
+           game::ship::plant::PhysicalControlFamily::Assisted)
+    {
+        const auto idx=static_cast<std::size_t>(model);
+        if(idx>=m_assistedHardwareProfiles->size())
+            return false;
+        m_desc=&(*m_assistedHardwareProfiles)[idx];
+        m_state.construction.bind(*m_desc);
+        m_state.actuators.resetHealthy(
+            model,game::ship::state::ShipActuatorStateSource::ModuleRuntime);
+        ++m_state.revision;
+        m_assistedManeuvers={};
+        m_preparedManeuverActuatorRevision=~std::uint64_t{0};
+        m_lastModuleProjectionRevision=~std::uint64_t{0};
+        m_transform.motion.localControlLaw=
+            m_state.construction.nativeFlightControlLaw;
+        refreshRuntimeState();
+        return m_state.valid();
+    }
+
+    // Newtonian and isolated laboratory models retain their existing
+    // diagnostic path; they are not silently mapped onto Assisted hardware.
     m_state.selectConstructionForDiagnostic(model);
     m_transform.motion.localControlLaw =
         m_state.construction.nativeFlightControlLaw;
@@ -248,6 +325,13 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
 
 void ShipCore::clearPhysicalConstructionDiagnosticOverride()
 {
+    if(m_assistedHardwareProfiles &&
+       game::ship::plant::familyOf(m_initialPhysicalModel)==
+           game::ship::plant::PhysicalControlFamily::Assisted)
+    {
+        (void)selectPhysicalConstructionForDiagnostic(m_initialPhysicalModel);
+        return;
+    }
     m_state.clearDiagnosticConstructionOverride();
     m_lastModuleProjectionRevision = ~std::uint64_t{0};
     if (m_state.construction.valid())

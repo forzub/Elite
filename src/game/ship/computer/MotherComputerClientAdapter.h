@@ -285,6 +285,21 @@ namespace game::ship::computer
                         ? static_cast<float>(1.0-damage):0.0f;
                 }
             }
+            // The 24 physical nozzle slots form eight 3-nozzle modules;
+            // group duty is the maximum physically executed nozzle output.
+            // Slot I/Y/X visual ordering may differ from mount ordering.
+            if(out.systems.newtonianRcsSampleValid)
+            {
+                const std::size_t groupIndex=out.rcsSlots.size();
+                if(groupIndex<8)
+                {
+                    rcs.firingKnown=true;
+                    for(std::size_t nozzle=groupIndex*3;
+                        nozzle<groupIndex*3+3;++nozzle)
+                        rcs.firing01=std::max(rcs.firing01,
+                            out.systems.newtonianRcsExecuted01[nozzle]);
+                }
+            }
             out.rcsSlots.push_back(std::move(rcs));
         }
 
@@ -315,6 +330,17 @@ namespace game::ship::computer
             );
         slot.available01 = static_cast<float>(live.available01);
         slot.delivered01 = static_cast<float>(live.thrust01);
+        const auto& motorTelemetry=ship.transform.motion.engineTelemetry;
+        if(motorTelemetry.valid && i<motorTelemetry.count &&
+           std::isfinite(motorTelemetry.nozzleYawRad[i]) &&
+           std::isfinite(motorTelemetry.nozzlePitchRad[i]))
+        {
+            const double yaw=motorTelemetry.nozzleYawRad[i];
+            const double pitch=motorTelemetry.nozzlePitchRad[i];
+            slot.hasNozzleAngle=true;
+            slot.nozzleAngleDeg=static_cast<float>(
+                std::hypot(yaw,pitch)*57.29577951308232);
+        }
         slot.fault = !diagnostic &&
             i < bindings.size() && !bindings[i].empty() &&
             game::presentation::biteHudAttentionForEquipment(

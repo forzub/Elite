@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <vector>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
@@ -14,6 +15,14 @@
 
 namespace game::ship::control
 {
+
+// Maximum electrical generation and corresponding actual motor-slot indices
+// for a single installed propulsion reactor. No engine may bypass this bus.
+struct MainEnginePowerGroup
+{
+    std::vector<std::size_t> engineIndices;
+    double availableMW = 0.0;
+};
 
 // Public execution seam between pilot/autopilot commands and the current
 // vehicle-motion backend.
@@ -84,7 +93,8 @@ public:
         float dt,
         const std::vector<game::equipment::engine::MountedEngine>* mountedEngines =
             nullptr,
-        game::ship::plant::AssistedManeuverPrograms* maneuverPrograms = nullptr
+        game::ship::plant::AssistedManeuverPrograms* maneuverPrograms = nullptr,
+        const std::vector<MainEnginePowerGroup>* powerGroups = nullptr
     );
 
     // Advance HubTactical translation from the actuation state produced above.

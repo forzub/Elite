@@ -17,10 +17,13 @@ CobraCobrettyER5PropulsionReactor() noexcept
     d.ratedElectricalMW=5000.0;
     d.nominalEfficiency01=0.90;
     d.hotStandbyThermalMW=2.0;
-    d.thermalCapacityMJPerK=180.0;
-    d.operatingTemperatureK=2500.0;
-    d.safeTemperatureK=2750.0;
-    d.criticalTemperatureK=3200.0;
+    d.thermalCapacityMJPerK=600.0;
+    d.padSideM=10.0;
+    d.idleTemperatureK=900.0;
+    d.startupTimeSeconds=420.0;
+    d.operatingTemperatureK=900.0;
+    d.safeTemperatureK=2100.0;
+    d.criticalTemperatureK=2400.0;
     d.overhaulEquivalentHours=30000.0;
     d.endOfLifeEquivalentHours=50000.0;
     d.overheatDamagePerHourAt100K=0.05;

@@ -710,6 +710,22 @@ void ShipCore::updateTranslationControl(float dt)
                         function.authority01 * ready * thermal *
                         (1.0-0.20*age);
                 }
+                // I/Y/X diagnostic layouts already mount synthetic CR-1
+                // motors. They must also have matching synthetic ER-5
+                // electrical budgets, otherwise non-native layouts have
+                // zero thrust even though motors are visibly installed.
+                // Native construction NEVER receives this fallback.
+                const bool diagnosticLayout=
+                    m_state.actuators.source ==
+                        game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
+                    m_state.construction.physicalControlModel !=
+                        m_state.construction.definition->physicalControlModel;
+                if(diagnosticLayout && group.availableMW<=0.0 &&
+                   m_propulsionReactorsOn &&
+                   m_propulsionReactorsStartupRemainingSeconds<=0.0)
+                {
+                    group.availableMW=5000.0;
+                }
                 powerGroups.push_back(std::move(group));
             }
         }

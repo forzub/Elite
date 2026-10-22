@@ -45,12 +45,33 @@ struct EngineThrustBarPresentation
     // Surface emitter temperature is not separately replicated yet.
     bool hasEmitterTemperature = false;
     float emitterTemperatureK = 0.0f;
+    bool hasEmitterIntegrity = false;
+    float emitterIntegrity01 = 0.0f;
 };
 
 struct EngineThrustGroupPresentation
 {
     glm::dvec2 positionBodyXY {0.0};
     std::vector<EngineThrustBarPresentation> bars;
+};
+
+struct EngineDriveHudPresentation
+{
+    std::string id;
+    std::vector<std::string> poweredEngineSlots;
+    bool installed = false;
+    bool failed = false;
+    float integrity01 = 0.0f;
+    bool hasCoreTemperature = false;
+    float coreTemperatureK = 0.0f;
+    float safeCoreTemperatureK = 0.0f;
+};
+
+struct EngineRcsHudPresentation
+{
+    std::string id;
+    bool known = false;
+    float integrity01 = 0.0f;
 };
 
 struct EngineThrustHudPresentation
@@ -60,6 +81,8 @@ struct EngineThrustHudPresentation
     std::string styleId = "human_amber";
     bool warning = false;
     std::vector<EngineThrustGroupPresentation> groups;
+    std::vector<EngineDriveHudPresentation> drives;
+    std::vector<EngineRcsHudPresentation> rcsSlots;
 };
 
 namespace detail
@@ -342,6 +365,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         bar.hasEngineTemperature = input.hasEngineTemperature;
         bar.engineTemperatureK = input.engineTemperatureK;
         bar.engineSafeTemperatureK = input.engineSafeTemperatureK;
+        bar.hasEmitterIntegrity = input.hasEmitterIntegrity;
+        bar.emitterIntegrity01 = input.emitterIntegrity01;
         out.warning = out.warning || input.fault;
         groupIt->bars.push_back(std::move(bar));
     }
@@ -367,6 +392,21 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
                 return rank(a)<rank(b);
             });
     }
+    for(const auto& drive : cockpit.drives)
+    {
+        EngineDriveHudPresentation entry;
+        entry.id=drive.id;
+        entry.poweredEngineSlots=drive.poweredEngineSlots;
+        entry.installed=drive.installed;
+        entry.failed=drive.failed;
+        entry.integrity01=drive.integrity01;
+        entry.hasCoreTemperature=drive.hasCoreTemperature;
+        entry.coreTemperatureK=drive.coreTemperatureK;
+        entry.safeCoreTemperatureK=drive.safeCoreTemperatureK;
+        out.drives.push_back(std::move(entry));
+    }
+    for(const auto& rcs : cockpit.rcsSlots)
+        out.rcsSlots.push_back({rcs.id,rcs.known,rcs.integrity01});
     out.visible = !out.groups.empty();
     return out;
 }

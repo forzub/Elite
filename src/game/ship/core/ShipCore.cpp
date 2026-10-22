@@ -1008,7 +1008,7 @@ void ShipCore::updateSystems(float dt)
                     const double emitterMax=
                         game::equipment::engine::ratedThermalEmitterPowerMW(
                             *engineDef->engine,
-                            engineState->engineOperating.emitter.intactArea01);
+                            engineState->engineOperating.emitter.surface.intactArea01);
                     // Conservatively reserve engine waste before allocating
                     // remaining pad emission to this paired generator.
                     padHeadroomMW+=std::max(0.0,emitterMax-motorHeat);

@@ -10,12 +10,12 @@ namespace game::physics::thermal
 //
 // The Stefan-Boltzmann constant, deep-space background and *gameplay*
 // multiplier belong here, never to a ship, engine or cooling implementation.
-// RADIATION_EFFECTIVENESS = 2.5 is a deliberate universal gameplay rule,
+// RADIATION_EFFECTIVENESS = 10.0 is a deliberate universal gameplay rule,
 // not a material emissivity and not a real-world physical coefficient.
 // Material emissivity itself is physically bounded to [0, 1].
 inline constexpr double StefanBoltzmannWPerM2K4 = 5.670374419e-8;
 inline constexpr double DeepSpaceTemperatureK = 2.725;
-inline constexpr double RadiationEffectiveness = 2.5;
+inline constexpr double RadiationEffectiveness = 10.0;
 inline constexpr double Pi = 3.14159265358979323846;
 
 // One-sided hot annulus (no fictitious solid disk over the exhaust opening).
@@ -49,7 +49,7 @@ inline constexpr double Pi = 3.14159265358979323846;
 //               occlusion/reflection into the ship must not disappear as heat.
 // ambientTemperatureK: receiving blackbody environment.
 //
-// The universal x2.5 gameplay factor is applied exactly ONCE by this law.
+// The universal x10 gameplay factor is applied exactly ONCE by this law.
 [[nodiscard]] inline double radiatedPowerMW(
     double areaM2,
     double surfaceTemperatureK,

@@ -200,7 +200,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     const std::vector<game::ship::plant::EngineSlotState>& slotState,
     float dt,
     const std::vector<game::equipment::engine::MountedEngine>* mountedEngines,
-    game::ship::plant::AssistedManeuverPrograms* maneuverPrograms
+    game::ship::plant::AssistedManeuverPrograms* maneuverPrograms,
+    const std::vector<MainEnginePowerGroup>* powerGroups
 )
 {
     const TranslationPath path =
@@ -311,7 +312,7 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         // Assisted: cached signed maneuver patterns from the installed
         // geometry/capabilities. No per-tick 96-pass optimization.
         // Newtonian remains on its independent main/TVC + RCS doctrine.
-        const auto actual =
+        auto actual =
             assisted && maneuverPrograms
                 ? maneuverPrograms->execute(
                     model,*mountedEngines,capabilities,demand
@@ -322,6 +323,57 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         motion.engineTelemetry.reset(control.controlTick);
         if (!actual.valid)
             return path;
+
+        // Scale already-resolved physical nozzle forces by the electrical
+        // budget of their INSTALLED reactor, then recompute the real rigid
+        // body wrench. This is an execution constraint, not HUD bookkeeping.
+        // Both the Assisted cached programs and Newtonian matrix use it.
+        if (powerGroups && !powerGroups->empty())
+        {
+            for (const auto& group : *powerGroups)
+            {
+                double demandMW=0.0;
+                for (const auto i : group.engineIndices)
+                    if (i<actual.count)
+                        demandMW+=std::max(0.0,actual.engines[i].electricalMW);
+                const double factor=demandMW>0.0
+                    ? std::clamp(std::max(0.0,group.availableMW)/demandMW,
+                                 0.0,1.0)
+                    : 1.0;
+                if (factor>=1.0) continue;
+                for (const auto i : group.engineIndices)
+                {
+                    if(i>=actual.count) continue;
+                    auto& e=actual.engines[i];
+                    e.deliveredThrust01*=factor;
+                    e.forceBodyNewtons*=factor;
+                    e.electricalMW*=factor;
+                    e.heatMW*=factor;
+                }
+            }
+            const auto& topology =
+                game::ship::plant::physicalControlSlots(model);
+            glm::dvec3 force(0.0),torque(0.0);
+            glm::dvec3 extents=capabilities.physicalActuatorHalfExtentsMeters;
+            if(extents.x<=0.0 || extents.y<=0.0 || extents.z<=0.0)
+                extents=glm::dvec3(std::max(1.0f,capabilities.turnRadius));
+            for(std::size_t i=0;i<actual.count && i<topology.size();++i)
+            {
+                const auto& f=actual.engines[i].forceBodyNewtons;
+                force+=f;
+                torque+=glm::cross(
+                    topology[i].normalizedPositionBody*extents-
+                    capabilities.centerOfMassLocalMeters,f);
+            }
+            actual.forceBodyNewtons=force;
+            actual.torqueBodyNm=torque;
+            actual.accelerationBodyMps2=
+                force/std::max(1.0,capabilities.massKg);
+            actual.angularAccelerationBodyRadPerSec2={
+                torque.x/std::max(1.0,capabilities.pitchInertiaKgM2),
+                torque.y/std::max(1.0,capabilities.yawInertiaKgM2),
+                -torque.z/std::max(1.0,capabilities.rollInertiaKgM2)};
+        }
 
         auto& telemetry = motion.engineTelemetry;
         telemetry.valid = true;

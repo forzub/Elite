@@ -265,6 +265,7 @@ ELITE_WIRE_SCHEMA(
     v.localVelocityMps,
     v.targetForwardSpeedMps,
     v.assistedTargetSpeedHold,
+    v.assistedFreeRotation,
     v.assistedThrottleTrimWasActive,
     v.forwardSpeedMps,
     v.strafeSpeedMps,

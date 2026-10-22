@@ -78,6 +78,8 @@ struct DynamicMotionState
     // setpoint. Neutral +/- input must not immediately recapture the currently
     // reached speed on the next frame; any later +/- trim or END cancels it.
     bool assistedTargetSpeedHold = false;
+    // Backspace mode: free hull rotation; no Assisted speed servo.
+    bool assistedFreeRotation = false;
 
     // True only while/after a real +/- Assisted trim. It lets the release edge
     // capture reached forward speed once without allowing keypad RCS or an

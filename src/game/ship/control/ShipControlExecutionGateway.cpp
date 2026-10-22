@@ -330,25 +330,57 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         // Both the Assisted cached programs and Newtonian matrix use it.
         if (powerGroups && !powerGroups->empty())
         {
-            for (const auto& group : *powerGroups)
+            // Assisted wrench programs balance forces and torques ACROSS
+            // generator groups. Scaling each group independently breaks that
+            // balance and injects unintended yaw/pitch after a key release.
+            // Use one common feasible fraction for ALL Assisted motors.
+            double commonFactor=1.0;
+            if(assisted)
             {
-                double demandMW=0.0;
-                for (const auto i : group.engineIndices)
-                    if (i<actual.count)
-                        demandMW+=std::max(0.0,actual.engines[i].electricalMW);
-                const double factor=demandMW>0.0
-                    ? std::clamp(std::max(0.0,group.availableMW)/demandMW,
-                                 0.0,1.0)
-                    : 1.0;
-                if (factor>=1.0) continue;
-                for (const auto i : group.engineIndices)
+                for(const auto& group:*powerGroups)
                 {
-                    if(i>=actual.count) continue;
+                    double demandMW=0.0;
+                    for(const auto i:group.engineIndices)
+                        if(i<actual.count)
+                            demandMW+=std::max(
+                                0.0,actual.engines[i].electricalMW);
+                    if(demandMW>0.0)
+                        commonFactor=std::min(commonFactor,
+                            std::clamp(std::max(0.0,group.availableMW)/
+                                demandMW,0.0,1.0));
+                }
+                for(std::size_t i=0;i<actual.count;++i)
+                {
                     auto& e=actual.engines[i];
-                    e.deliveredThrust01*=factor;
-                    e.forceBodyNewtons*=factor;
-                    e.electricalMW*=factor;
-                    e.heatMW*=factor;
+                    e.deliveredThrust01*=commonFactor;
+                    e.forceBodyNewtons*=commonFactor;
+                    e.electricalMW*=commonFactor;
+                    e.heatMW*=commonFactor;
+                }
+            }
+            else
+            {
+                // Newtonian does not use Assisted's paired-force program.
+                for(const auto& group:*powerGroups)
+                {
+                    double demandMW=0.0;
+                    for(const auto i:group.engineIndices)
+                        if(i<actual.count)
+                            demandMW+=std::max(
+                                0.0,actual.engines[i].electricalMW);
+                    const double factor=demandMW>0.0
+                        ? std::clamp(std::max(0.0,group.availableMW)/
+                            demandMW,0.0,1.0):1.0;
+                    if(factor>=1.0)continue;
+                    for(const auto i:group.engineIndices)
+                    {
+                        if(i>=actual.count)continue;
+                        auto& e=actual.engines[i];
+                        e.deliveredThrust01*=factor;
+                        e.forceBodyNewtons*=factor;
+                        e.electricalMW*=factor;
+                        e.heatMW*=factor;
+                    }
                 }
             }
             const auto& topology =

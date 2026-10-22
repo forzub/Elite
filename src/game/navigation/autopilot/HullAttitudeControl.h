@@ -39,6 +39,10 @@ public:
         double pitchYawAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double rollAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double deltaSeconds = 0.0;
+
+        // Optional Assisted-only inner attitude servo. Zero preserves the
+        // existing predictive controller for all other callers / Newtonian.
+        double pitchYawResponseSeconds = 0.0;
     };
 
     struct Result
@@ -64,14 +68,23 @@ public:
             return out;
         }
 
-        out.pitchYawInput = predictivePlanarInput(
-            request.pitchYawErrorRad,
-            request.pitchYawRateRadPerSec,
-            request.desiredPitchYawRateRadPerSec,
-            request.maxPitchYawRateRadPerSec,
-            request.pitchYawAngularAccelerationAuthorityRadPerSec2,
-            request.deltaSeconds
-        );
+        out.pitchYawInput = request.pitchYawResponseSeconds > 0.0
+            ? dampedPlanarInput(
+                  request.pitchYawErrorRad,
+                  request.pitchYawRateRadPerSec,
+                  request.desiredPitchYawRateRadPerSec,
+                  request.maxPitchYawRateRadPerSec,
+                  request.pitchYawAngularAccelerationAuthorityRadPerSec2,
+                  request.pitchYawResponseSeconds
+              )
+            : predictivePlanarInput(
+                  request.pitchYawErrorRad,
+                  request.pitchYawRateRadPerSec,
+                  request.desiredPitchYawRateRadPerSec,
+                  request.maxPitchYawRateRadPerSec,
+                  request.pitchYawAngularAccelerationAuthorityRadPerSec2,
+                  request.deltaSeconds
+              );
 
         out.rollInput = predictiveAxisInput(
             request.rollErrorRad,
@@ -113,6 +126,48 @@ private:
         return std::isfinite(limit)
             ? std::max(0.0, limit)
             : std::numeric_limits<double>::infinity();
+    }
+
+    [[nodiscard]] static glm::dvec2 dampedPlanarInput(
+        const glm::dvec2& error,
+        const glm::dvec2& rate,
+        const glm::dvec2& desiredRate,
+        const glm::dvec2& maxRate,
+        double authority,
+        double responseSeconds
+    ) noexcept
+    {
+        // A body angle error is NOT a command to reach an angular speed in
+        // ONE simulation tick. The prior predictive /dt formula saturated
+        // the pilot inputs at +/-1 on tiny heading errors and reversed the
+        // installed engine torque dozens of times per second.
+        //
+        // Critically damped second-order servo:
+        //   a = error/T^2 + 2 * (feedforwardRate - measuredRate)/T
+        // The acceleration and the motors remain bounded by actual authority.
+        // This controller has no memory; it cannot accumulate wind-up.
+        if (!(std::isfinite(authority) && authority>1.0e-9 &&
+              std::isfinite(responseSeconds) &&
+              responseSeconds>1.0e-6) ||
+            !finiteVec(error) || !finiteVec(rate) ||
+            !finiteVec(desiredRate) || !finiteVec(maxRate))
+            return {};
+        const double T=responseSeconds;
+        const glm::dvec2 boundedDesiredRate {
+            std::clamp(desiredRate.x,
+                -std::max(0.0,maxRate.x),std::max(0.0,maxRate.x)),
+            std::clamp(desiredRate.y,
+                -std::max(0.0,maxRate.y),std::max(0.0,maxRate.y))
+        };
+        glm::dvec2 requestedAcceleration =
+            error/(T*T) +
+            (boundedDesiredRate-rate)*(2.0/T);
+        // Normalize by the CURRENT physically executable angular authority.
+        glm::dvec2 input=requestedAcceleration/authority;
+        const double magnitude=glm::length(input);
+        if(magnitude>1.0)
+            input/=magnitude;
+        return input;
     }
 
     [[nodiscard]] static glm::dvec2 predictivePlanarInput(

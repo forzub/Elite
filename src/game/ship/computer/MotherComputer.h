@@ -137,6 +137,8 @@ struct MotherComputerEngineHudSlot
     float engineSafeTemperatureK = 0.0f;
     bool hasEmitterIntegrity = false;
     float emitterIntegrity01 = 0.0f;
+    bool hasNozzleAngle = false;
+    float nozzleAngleDeg = 0.0f;
 };
 
 struct MotherComputerDriveHudGroup
@@ -156,6 +158,8 @@ struct MotherComputerRcsHudSlot
     std::string id;
     bool known = false;
     float integrity01 = 0.0f;
+    bool firingKnown = false;
+    float firing01 = 0.0f;
 };
 
 struct MotherComputerCockpitView

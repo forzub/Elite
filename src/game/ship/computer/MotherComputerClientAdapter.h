@@ -231,6 +231,23 @@ namespace game::ship::computer
                         module->wearDamage01),0.0,1.0);
                 drive.integrity01=static_cast<float>(1.0-damage);
                 drive.failed=module->state!=0 || module->health<=0.0f;
+                // No fabricated reactor core telemetry: only valid samples
+                // from the authoritative installed generator are displayed.
+                const auto sample=std::find_if(
+                    out.systems.engineReactors.begin(),
+                    out.systems.engineReactors.end(),
+                    [&](const auto& item){return item.moduleId==id;});
+                if(sample!=out.systems.engineReactors.end() &&
+                   sample->safeTemperatureK>0.0 &&
+                   std::isfinite(sample->coreTemperatureK) &&
+                   sample->coreTemperatureK>0.0)
+                {
+                    drive.hasCoreTemperature=true;
+                    drive.coreTemperatureK=static_cast<float>(
+                        sample->coreTemperatureK);
+                    drive.safeCoreTemperatureK=static_cast<float>(
+                        sample->safeTemperatureK);
+                }
             }
         }
         out.drives.push_back(std::move(drive));

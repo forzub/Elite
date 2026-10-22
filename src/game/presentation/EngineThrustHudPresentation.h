@@ -67,6 +67,10 @@ struct EngineDriveHudPresentation
     bool hasCoreTemperature = false;
     float coreTemperatureK = 0.0f;
     float safeCoreTemperatureK = 0.0f;
+    float generatedHeatMW = 0.0f;
+    float padHeatMW = 0.0f;
+    float coolantHeatMW = 0.0f;
+    float storedHeatMW = 0.0f;
 };
 
 struct EngineRcsHudPresentation
@@ -409,6 +413,10 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         entry.hasCoreTemperature=drive.hasCoreTemperature;
         entry.coreTemperatureK=drive.coreTemperatureK;
         entry.safeCoreTemperatureK=drive.safeCoreTemperatureK;
+        entry.generatedHeatMW=drive.generatedHeatMW;
+        entry.padHeatMW=drive.padHeatMW;
+        entry.coolantHeatMW=drive.coolantHeatMW;
+        entry.storedHeatMW=drive.storedHeatMW;
         out.drives.push_back(std::move(entry));
     }
     for(const auto& rcs : cockpit.rcsSlots)

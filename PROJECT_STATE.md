@@ -1,3 +1,11 @@
+## 2026-10-22 — Single mainline policy (user's binding directive)
+
+**Only `main` is authorized for all subsequent development and commits.** Do not create additional feature, test, diagnostic, release or restore branches. Do not claim any side branch is the current working branch. All normal work, including ER-5 physics/telemetry and cockpit widgets, remains on `main`.
+
+GitHub ancestry audit on 2026-10-22: recent `feature/assisted-engine-out-axis-2026-10-21` is already **fully contained** in `main` (zero commits ahead). All tested prior feature, restore, test and baseline branches likewise have zero unique commits. TWO obsolete experimental branch tips retain distinct commits not in `main`: `diagnostic/assisted-safe-course-frozen-ab-2026-10-16` (2, modifies recovery algorithm and adds diagnostic probe), `experiment/traffic-route-graph-2026-10-08` (22, changes outdated planner). Their heads are **not merged**: replaying these old algorithms would replace newer, accepted navigator behavior. They are retained as historical records, not development targets. No branch force update or deletion was performed. A safe history-only merge with unchanged main tree would require authoritative tree SHA; connector's create_tree rejects using a commit SHA as base. Do not claim all branch histories are merged until that is resolved, but do not resume work outside main.
+
+---
+
 ## 2026-10-22 — Per-ER-5 telemetry relay to MotherComputer; live source still pending
 
 Commits `49ce46b` and `da4c464` on main: `ShipCore::getCoreStatus` now publishes one `EngineReactorStatus` per bound installed ER-5 module via existing `ShipCoreStatus.engineReactors`, and the existing `MotherComputerClientAdapter::collectCockpitView` looks up matching moduleId to feed the reactor square's genuine temperature/safe limit. No new RPC, duplicated status bus, dummy temperature or ship-services reactor confusion. Source remains guarded: zero/uninitialized status must not be interpreted as real ER-5 core heat.

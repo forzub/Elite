@@ -988,6 +988,8 @@ void ShipCore::updateTranslationControl(float dt)
                           << ",motor" << i << "_yaw_rad"
                           << ",motor" << i << "_pitch_rad"
                           << ",motor" << i << "_MW";
+                trace << ",axis_emergency,axis_body_x,axis_body_y,"
+                         "axis_body_z,axis_offset_deg,axis_motor_index";
                 trace << '\n';
                 std::cerr << "[AttitudeJitterTrace] BEGIN "
                              "D:/tmp/elite_attitude_jitter.csv"
@@ -1053,6 +1055,14 @@ void ShipCore::updateTranslationControl(float dt)
                 else
                     trace << ",0,0,0,0";
             }
+            trace << ','
+                  << (physics.assistedWorkingThrustAxisEmergency?1:0) << ','
+                  << physics.assistedWorkingThrustAxisBody.x << ','
+                  << physics.assistedWorkingThrustAxisBody.y << ','
+                  << physics.assistedWorkingThrustAxisBody.z << ','
+                  << physics.assistedWorkingThrustAxisAngleRad*
+                       57.29577951308232 << ','
+                  << physics.assistedWorkingThrustMotorIndex;
             trace << '\n';
             if(records%30==0)trace.flush();
             if(seconds>=90.0)

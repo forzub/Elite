@@ -7491,7 +7491,11 @@ m_systemMapRenderer.render(
             // BITE is allowed to request presentation attention, never control.
             // The same terminal surface is shared with docking diagnostics so
             // a propulsion fault remains visible even while docking is idle.
+            const bool ignitionEvent =
+                cockpit.valid &&
+                cockpit.systems.propulsionSwitchRevision>0;
             terminal.visible = dockingVisible || biteVisible ||
+                ignitionEvent ||
                 (cockpit.valid && !cockpit.systems.alerts.empty());
             terminal.title = terminalText(
                 dockingVisible
@@ -7530,6 +7534,29 @@ m_systemMapRenderer.render(
                 );
             }
 
+            // The command is acknowledged only by the server's next
+            // replicated ShipCoreStatus, never by a local key press.
+            if (ignitionEvent)
+            {
+                const auto& power=cockpit.systems;
+                std::string message;
+                game::presentation::DockingTerminalSeverity severity =
+                    game::presentation::DockingTerminalSeverity::Info;
+                if(!power.propulsionReactorsOn)
+                {
+                    message="REACTORS OFF / main and RCS thrust disabled";
+                    severity=game::presentation::DockingTerminalSeverity::Warning;
+                }
+                else if(power.propulsionStartupSeconds>0.0)
+                {
+                    message="REACTORS STARTING / "+std::to_string(
+                        static_cast<int>(std::ceil(power.propulsionStartupSeconds)))+
+                        " s remaining";
+                }
+                else
+                    message="REACTORS READY / propulsion power enabled";
+                terminal.diagnostics.emplace_back(message,severity);
+            }
             // A system fault reaches the same historical diagnostic terminal
             // as BITE. State changes and reminders are terminal policy only.
             if(cockpit.valid)

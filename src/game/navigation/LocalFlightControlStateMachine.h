@@ -49,6 +49,7 @@ public:
         // Physical velocity/orientation are never rewritten.
         motion.velocityAlignmentMode = VelocityAlignmentMode::None;
         motion.assistedTargetSpeedHold = false;
+        motion.assistedFreeRotation = false;
         motion.assistedThrottleTrimWasActive = false;
         motion.assistedStabilizationAccelerationMps2 = glm::dvec3(0.0);
 
@@ -290,9 +291,11 @@ public:
             return forwardMainAvailable || reverseMainAvailable;
         }
 
-        return law == LocalFlightControlLaw::Newtonian &&
+        return (law == LocalFlightControlLaw::Newtonian &&
             (mode == VelocityAlignmentMode::ForwardToVelocity ||
-             mode == VelocityAlignmentMode::BackwardToVelocity);
+             mode == VelocityAlignmentMode::BackwardToVelocity)) ||
+            (law == LocalFlightControlLaw::Assisted &&
+             mode == VelocityAlignmentMode::ForwardToVelocity);
     }
 };
 

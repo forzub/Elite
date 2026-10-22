@@ -6,6 +6,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 
 #include "core/log.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
@@ -447,6 +450,7 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         m_transform.yawRate,
         m_transform.rollRate
     };
+    m_attitudeRatesAtTickStart=angularBefore;
     game::ship::control::ShipControlExecutionGateway::
         evaluateAttitudeControl(
             m_transform,
@@ -842,6 +846,137 @@ void ShipCore::updateTranslationControl(float dt)
         }
     }
     m_preparedManeuverActuatorRevision=m_state.actuators.revision;
+
+    // Bounded player-only server instrumentation. Does NOT change flight
+    // dynamics, actuator commands, allocator state or timing of control.
+    // Starts at the first manual attitude or autopilot angular command and
+    // records 90 s into D:/tmp for correlation with the user's video.
+    if (m_role==ShipRole::Player && dt>0.0f &&
+        m_transform.motion.mode==
+            game::navigation::MotionMode::HubTactical)
+    {
+        static std::ofstream trace;
+        static bool attempted=false;
+        static bool finished=false;
+        static double seconds=0.0;
+        static std::uint64_t records=0;
+        const auto& ctrl=m_state.control;
+        const auto& motion=m_transform.motion;
+        const auto& commanded=
+            motion.requestedMainAngularAccelerationBodyRadPerSec2;
+        const bool triggered=
+            std::abs(ctrl.pitchInput)>0.01f ||
+            std::abs(ctrl.yawInput)>0.01f ||
+            std::abs(ctrl.rollInput)>0.01f ||
+            glm::length(commanded)>1.0e-4 ||
+            ctrl.navigationAccelerationDemandValid;
+        if (!attempted && !finished && triggered)
+        {
+            attempted=true;
+            std::error_code ec;
+            std::filesystem::create_directories("D:/tmp",ec);
+            trace.open("D:/tmp/elite_attitude_jitter.csv",
+                std::ios::out | std::ios::trunc);
+            if(trace)
+            {
+                trace << std::fixed << std::setprecision(8);
+                trace << "seconds,dt,control_tick,model,source,manual_pitch,"
+                      << "manual_yaw,manual_roll,nav_angular,reactor_on,"
+                      << "reactor_start_s,angular_before_pitch,"
+                      << "angular_before_yaw,angular_before_roll,"
+                      << "angular_after_pitch,angular_after_yaw,"
+                      << "angular_after_roll,request_pitch_acc,"
+                      << "request_yaw_acc,request_roll_acc,"
+                      << "actual_pitch_acc,actual_yaw_acc,"
+                      << "actual_roll_acc,actual_pitch_torque,"
+                      << "actual_yaw_torque,actual_roll_torque,"
+                      << "linear_body_ax,linear_body_ay,linear_body_az,"
+                      << "velocity_mps,program_valid,engine_sample_valid,"
+                      << "engine_count,total_generator_MW";
+                for(std::size_t i=0;i<8;++i)
+                    trace << ",motor" << i << "_thrust01"
+                          << ",motor" << i << "_yaw_rad"
+                          << ",motor" << i << "_pitch_rad"
+                          << ",motor" << i << "_MW";
+                trace << '\n';
+                std::cerr << "[AttitudeJitterTrace] BEGIN "
+                             "D:/tmp/elite_attitude_jitter.csv"
+                          << std::endl;
+            }
+            else
+            {
+                finished=true;
+                std::cerr << "[AttitudeJitterTrace] ERROR cannot open "
+                             "D:/tmp/elite_attitude_jitter.csv"
+                          << std::endl;
+            }
+        }
+        if(trace.is_open() && !finished)
+        {
+            seconds+=static_cast<double>(dt);
+            ++records;
+            double totalAvailableMW=0.0;
+            for(const auto& group:powerGroups)
+                totalAvailableMW+=std::max(0.0,group.availableMW);
+            const auto& a=
+                motion.mainPropulsionAngularAccelerationBodyRadPerSec2;
+            const auto& torque=motion.mainPropulsionTorqueBodyNm;
+            const auto& acc=motion.mainEngineAccelerationMps2;
+            const glm::dvec3 currentRate {
+                m_transform.pitchRate,m_transform.yawRate,
+                m_transform.rollRate
+            };
+            trace << seconds << ',' << dt << ','
+                  << ctrl.controlTick << ','
+                  << static_cast<int>(
+                      m_state.construction.physicalControlModel) << ','
+                  << static_cast<int>(m_state.actuators.source) << ','
+                  << ctrl.pitchInput << ',' << ctrl.yawInput << ','
+                  << ctrl.rollInput << ','
+                  << (ctrl.navigationAccelerationDemandValid?1:0) << ','
+                  << (m_propulsionReactorsOn?1:0) << ','
+                  << m_propulsionReactorsStartupRemainingSeconds << ','
+                  << m_attitudeRatesAtTickStart.x << ','
+                  << m_attitudeRatesAtTickStart.y << ','
+                  << m_attitudeRatesAtTickStart.z << ','
+                  << currentRate.x << ',' << currentRate.y << ','
+                  << currentRate.z << ','
+                  << commanded.x << ',' << commanded.y << ','
+                  << commanded.z << ','
+                  << a.x << ',' << a.y << ',' << a.z << ','
+                  << torque.x << ',' << torque.y << ','
+                  << torque.z << ','
+                  << acc.x << ',' << acc.y << ',' << acc.z << ','
+                  << glm::length(motion.localVelocityMps) << ','
+                  << (m_assistedManeuvers.valid?1:0) << ','
+                  << (motion.engineTelemetry.valid?1:0) << ','
+                  << static_cast<int>(motion.engineTelemetry.count) << ','
+                  << totalAvailableMW;
+            for(std::size_t i=0;i<8;++i)
+            {
+                if(motion.engineTelemetry.valid &&
+                   i<motion.engineTelemetry.count)
+                    trace << ',' << motion.engineTelemetry.thrust01[i]
+                          << ',' << motion.engineTelemetry.nozzleYawRad[i]
+                          << ',' << motion.engineTelemetry.nozzlePitchRad[i]
+                          << ',' << motion.engineTelemetry.electricalMW[i];
+                else
+                    trace << ",0,0,0,0";
+            }
+            trace << '\n';
+            if(records%30==0)trace.flush();
+            if(seconds>=90.0)
+            {
+                trace.flush();
+                trace.close();
+                finished=true;
+                std::cerr << "[AttitudeJitterTrace] COMPLETE rows="
+                          << records << " path="
+                             "D:/tmp/elite_attitude_jitter.csv"
+                          << std::endl;
+            }
+        }
+    }
 }
 
 bool ShipCore::propagateHubTacticalTranslation(double dt)

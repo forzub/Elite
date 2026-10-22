@@ -248,6 +248,10 @@ namespace game::ship::computer
                         sample->coreTemperatureK);
                     drive.safeCoreTemperatureK=static_cast<float>(
                         sample->safeTemperatureK);
+                    drive.generatedHeatMW=static_cast<float>(sample->generatedHeatMW);
+                    drive.padHeatMW=static_cast<float>(sample->padHeatMW);
+                    drive.coolantHeatMW=static_cast<float>(sample->coolantHeatMW);
+                    drive.storedHeatMW=static_cast<float>(sample->storedHeatMW);
                 }
             }
         }

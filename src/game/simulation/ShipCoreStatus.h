@@ -93,6 +93,9 @@ struct EngineReactorStatus {
     double safeTemperatureK = 0.0;
     double generatedHeatMW = 0.0;
     double electricalOutputMW = 0.0;
+    double padHeatMW = 0.0;
+    double coolantHeatMW = 0.0;
+    double storedHeatMW = 0.0;
 };
 
 struct ShipCoreStatus {

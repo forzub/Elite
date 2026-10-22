@@ -58,6 +58,15 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
             state.engineOperating.temperatureK =
                 game::physics::thermal::DeepSpaceTemperatureK;
         }
+        // Ships currently enter tactical flight with their propulsion
+        // generators already running. Until a start/stop lifecycle exists,
+        // spawning ER-5 at deep-space temperature gives zero electrical
+        // authority and silently disables ALL main-engine controls.
+        if (descMod.engineReactor)
+        {
+            state.engineReactorOperating.temperatureK =
+                descMod.engineReactor->idleTemperatureK;
+        }
         state.state = ObjectModuleRuntimeState::Attached;
 
         state.hangable = descMod.hangable;

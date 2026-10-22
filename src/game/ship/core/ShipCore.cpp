@@ -1363,6 +1363,12 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
 {
     game::ShipCoreStatus status;
     
+    status.newtonianRcsSampleValid=m_newtonianRcsPhysical;
+    if(status.newtonianRcsSampleValid)
+        for(std::size_t i=0;i<status.newtonianRcsExecuted01.size();++i)
+            status.newtonianRcsExecuted01[i]=static_cast<float>(
+                std::clamp(m_newtonianRcsDelivered01[i],0.0,1.0));
+
     // ----- Реактор (все методы есть) -----
     status.reactor.temperature = m_reactor.getTemperature();
     status.reactor.criticalTemp = m_reactor.getCriticalTemperature();

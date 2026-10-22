@@ -66,6 +66,7 @@ void ShipCore::init(
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
+    m_propulsionSwitchRevision = 0;
     m_propulsionReactorsStartupRemainingSeconds = 0.0;
     m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
@@ -839,6 +840,7 @@ bool ShipCore::propagateHubTacticalTranslation(double dt)
 
 void ShipCore::togglePropulsionReactors() noexcept
 {
+    ++m_propulsionSwitchRevision;
     if(m_propulsionReactorsOn)
     {
         m_propulsionReactorsOn=false;
@@ -1491,6 +1493,10 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.reactor.generatedHeat = m_reactor.getHeatVolume();
     status.reactor.heatGenerationMW = m_reactor.getGeneratedHeatMJ();
     
+    status.propulsionReactorsOn = m_propulsionReactorsOn;
+    status.propulsionStartupSeconds =
+        m_propulsionReactorsStartupRemainingSeconds;
+    status.propulsionSwitchRevision = m_propulsionSwitchRevision;
     // One factual status per installed propulsion generator. The legacy
     // ship-services reactor above is NOT one of these ER-5 modules.
     if (m_desc)
@@ -1515,12 +1521,11 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
                 sample.installed=module->state ==
                     world::modules::ObjectModuleRuntimeState::Attached &&
                     module->health>0.0f;
-                // The generator state is persistent, but its thermal service
-                // tick is not wired yet. An initial 2500 K passport value
-                // must not be presented as a measured core temperature.
+                // A ready idle ER-5 is a valid core temperature even when
+                // no thrust has ever been demanded.
                 const auto& state=module->engineReactorOperating;
-                if(state.lastGeneratedHeatMW>0.0 ||
-                   state.equivalentOperatingHours>0.0)
+                if(std::isfinite(state.temperatureK) &&
+                   state.temperatureK>0.0)
                 {
                     sample.coreTemperatureK=state.temperatureK;
                     sample.safeTemperatureK=

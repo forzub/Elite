@@ -305,6 +305,8 @@ void EngineThrustIndicatorRenderer::render(
             if(drive.hasCoreTemperature)
                 std::snprintf(temp,sizeof(temp),"%.0f K",
                     drive.coreTemperatureK);
+            else if(drive.simulatedPower)
+                std::snprintf(temp,sizeof(temp),"SIM ER-5");
             else std::snprintf(temp,sizeof(temp),"-- K");
             text.textDrawPx(temp,rx-12*scale,cy-18*scale,
                 std::max(9,static_cast<int>(10*scale)),style.label);

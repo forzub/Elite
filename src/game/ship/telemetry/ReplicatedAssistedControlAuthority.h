@@ -7,6 +7,7 @@
 
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/game/simulation/ObjectModuleSnapshot.h"
@@ -47,9 +48,15 @@ readReplicatedAssistedControlAuthority(
     std::array<EngineUnitDescriptor, AssistedManeuverPrograms::Max> diagnostic {};
     std::vector<MountedEngine> mounted(topology.size());
 
-    if (model != descriptor.physicalControlModel)
+    const auto installed =
+        game::ship::capability::replicatedInstalledAssistedDescriptor(
+            descriptor,model);
+    const ShipDescriptor& selected =
+        installed ? *installed : descriptor;
+
+    if (model != selected.physicalControlModel)
     {
-        // Ctrl+F9 diagnostic layouts use the same synthetic healthy motor
+        // Noninstalled diagnostic layouts use the same synthetic motor
         // passports as ShipCore::updateTranslationControl. Never synthesize
         // such motors for a normal installed (potentially damaged) ship.
         for (std::size_t i = 0; i < topology.size(); ++i)
@@ -68,7 +75,7 @@ readReplicatedAssistedControlAuthority(
     }
     else
     {
-        const auto& ids = descriptor.physicalControl.slotModuleIds;
+        const auto& ids = selected.physicalControl.slotModuleIds;
         if (ids.size() != topology.size() || modules.empty())
             return {};
 
@@ -77,14 +84,14 @@ readReplicatedAssistedControlAuthority(
             if (topology[i].role == EngineSlotRole::ManoeuvreCluster)
                 continue;
             const auto definition = std::find_if(
-                descriptor.modules.begin(), descriptor.modules.end(),
+                selected.modules.begin(), selected.modules.end(),
                 [&](const auto& m) { return m.moduleId == ids[i]; }
             );
             const auto state = std::find_if(
                 modules.begin(), modules.end(),
                 [&](const auto& m) { return m.moduleId == ids[i]; }
             );
-            if (definition == descriptor.modules.end() ||
+            if (definition == selected.modules.end() ||
                 !definition->engine || state == modules.end() ||
                 !state->hasEngineThermalState)
             {
@@ -98,6 +105,8 @@ readReplicatedAssistedControlAuthority(
             damage[i].accumulated.thermal01 = state->thermalDamage01;
             damage[i].accumulated.radiation01 = state->radiationDamage01;
             damage[i].accumulated.wear01 = state->wearDamage01;
+            damage[i].accumulated.internalFailure01 =
+                state->internalFailureDamage01;
 
             operating[i].temperatureK = state->engineTemperatureK;
             operating[i].coolantTemperatureK =

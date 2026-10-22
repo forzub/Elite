@@ -12,6 +12,7 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
 #include "src/game/ship/computer/MotherComputer.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 #include "src/game/presentation/ShipBitePresentation.h"
@@ -48,9 +49,14 @@ namespace game::ship::computer
 
     if (ship.descriptor)
     {
+        const auto installed =
+            game::ship::capability::replicatedInstalledAssistedDescriptor(
+                *ship.descriptor, ship.physicalControlModel);
+        const ShipDescriptor& selected =
+            installed ? *installed : *ship.descriptor;
         const bool diagnosticLayout =
             ship.physicalControlModel !=
-                ship.descriptor->physicalControlModel;
+                selected.physicalControlModel;
         const auto slotState =
             diagnosticLayout
                 ? game::ship::plant::healthySlotState(
@@ -58,14 +64,10 @@ namespace game::ship::computer
                         ship.physicalControlModel
                     ))
                 : game::ship::capability::buildPhysicalControlSlotState(
-                    *ship.descriptor,
-                    ship.physicalControlModel,
-                    ship.modules
+                    selected, ship.physicalControlModel, ship.modules
                 );
         auto capability = game::ship::capability::buildShipCapability(
-            *ship.descriptor,
-            ship.physicalControlModel,
-            slotState
+            selected, ship.physicalControlModel, slotState
         );
 
         // Keep the accepted healthy/partially damaged flight envelope
@@ -90,7 +92,7 @@ namespace game::ship::computer
             if (game::ship::plant::familyOf(ship.physicalControlModel) ==
                     game::ship::plant::PhysicalControlFamily::Assisted)
                 game::ship::capability::applyMountedEngineAxialAuthority(
-                    *ship.descriptor,
+                    selected,
                     ship.physicalControlModel,
                     slotState,
                     capability
@@ -184,15 +186,17 @@ namespace game::ship::computer
         game::ship::plant::physicalControlSlots(
             ship.physicalControlModel
         );
+    const auto installed =
+        game::ship::capability::replicatedInstalledAssistedDescriptor(
+            *ship.descriptor, ship.physicalControlModel);
+    const ShipDescriptor& selected =
+        installed ? *installed : *ship.descriptor;
     const bool diagnostic =
-        ship.physicalControlModel !=
-            ship.descriptor->physicalControlModel;
+        ship.physicalControlModel != selected.physicalControlModel;
     const auto states = diagnostic
         ? game::ship::plant::healthySlotState(slots)
         : game::ship::capability::buildPhysicalControlSlotState(
-              *ship.descriptor,
-              ship.physicalControlModel,
-              ship.modules
+              selected, ship.physicalControlModel, ship.modules
           );
     if (states.size() != slots.size())
         return out;
@@ -203,7 +207,7 @@ namespace game::ship::computer
         game::ship::presets::cobra::installationSlots(
             ship.physicalControlModel);
     const auto& reactorIds =
-        ship.descriptor->powerThermalInstallation.engineReactorModuleIds;
+        selected.powerThermalInstallation.engineReactorModuleIds;
     for (std::size_t n=0;n<installation.engineReactors.size();++n)
     {
         MotherComputerDriveHudGroup drive;
@@ -234,7 +238,8 @@ namespace game::ship::computer
                         module->impactDamage01+
                         module->thermalDamage01+
                         module->radiationDamage01+
-                        module->wearDamage01),0.0,1.0);
+                        module->wearDamage01+
+                        module->internalFailureDamage01),0.0,1.0);
                 drive.integrity01=static_cast<float>(1.0-damage);
                 drive.failed=module->state!=0 || module->health<=0.0f;
                 // No fabricated reactor core telemetry: only valid samples
@@ -290,7 +295,8 @@ namespace game::ship::computer
                 const double damage=std::clamp(
                     static_cast<double>(module->laserDamage01+
                         module->impactDamage01+module->thermalDamage01+
-                        module->radiationDamage01+module->wearDamage01),
+                        module->radiationDamage01+module->wearDamage01+
+                        module->internalFailureDamage01),
                     0.0,1.0);
                 minIntegrity=std::min(minIntegrity,
                     module->state==0 && module->health>0.0f
@@ -310,7 +316,7 @@ namespace game::ship::computer
 
     out.engineSlots.reserve(slots.size());
     const auto& bindings =
-        ship.descriptor->physicalControl.slotModuleIds;
+        selected.physicalControl.slotModuleIds;
     for (std::size_t i=0;i<slots.size();++i)
     {
         const auto role = slots[i].role;

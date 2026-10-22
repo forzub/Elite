@@ -11,6 +11,7 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
+#include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
@@ -136,7 +137,11 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
     if (!ship.descriptor)
         return out;
 
-    const ShipDescriptor& descriptor = *ship.descriptor;
+    const auto installed =
+        capability::replicatedInstalledAssistedDescriptor(
+            *ship.descriptor,ship.physicalControlModel);
+    const ShipDescriptor& descriptor =
+        installed ? *installed : *ship.descriptor;
 
     // The descriptor describes the ship type, but the selected I/Y/X +
     // Assisted/Newtonian construction is per-instance runtime state. Ctrl+F9

@@ -6,7 +6,7 @@
 namespace game::equipment
 {
 
-// Five universal causes accumulated by every equipment instance.
+// Five external causes plus a persistent internal equipment fault.
 // These are DAMAGE VALUES (runtime state), never sensitivity weights.
 enum class EquipmentDamageKind
 {
@@ -14,7 +14,8 @@ enum class EquipmentDamageKind
     Impact,
     Thermal,
     Radiation,
-    Wear
+    Wear,
+    InternalFailure
 };
 
 struct EquipmentDamageState
@@ -24,6 +25,7 @@ struct EquipmentDamageState
     double thermal01 = 0.0;
     double radiation01 = 0.0;
     double wear01 = 0.0;
+    double internalFailure01 = 0.0;
 };
 
 // Immutable sensitivity of this equipment type to each damage cause.
@@ -94,6 +96,8 @@ inline double accumulatedDamage(
             return state.radiation01;
         case EquipmentDamageKind::Wear:
             return state.wear01;
+        case EquipmentDamageKind::InternalFailure:
+            return state.internalFailure01;
     }
     return 0.0;
 }
@@ -125,6 +129,9 @@ inline bool addEquipmentDamage(
         case EquipmentDamageKind::Wear:
             target = &state.wear01;
             break;
+        case EquipmentDamageKind::InternalFailure:
+            target = &state.internalFailure01;
+            break;
     }
 
     if (!target)
@@ -151,7 +158,8 @@ inline double totalAccumulatedDamage01(
         clampDamage01(state.impact01) +
         clampDamage01(state.thermal01) +
         clampDamage01(state.radiation01) +
-        clampDamage01(state.wear01),
+        clampDamage01(state.wear01) +
+        clampDamage01(state.internalFailure01),
         0.0,
         1.0
     );
@@ -193,7 +201,8 @@ inline double weightedFunctionalDamage01(
         clampDamage01(d.impact01) * std::max(0.0, w.impact) +
         clampDamage01(d.thermal01) * std::max(0.0, w.thermal) +
         clampDamage01(d.radiation01) * std::max(0.0, w.radiation) +
-        clampDamage01(d.wear01) * std::max(0.0, w.wear),
+        clampDamage01(d.wear01) * std::max(0.0, w.wear) +
+        clampDamage01(d.internalFailure01),
         0.0,
         1.0
     );

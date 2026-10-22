@@ -37,6 +37,12 @@ public:
         double amount01
     );
 
+    // A sudden fault of any installed equipment, expressed as the target
+    // aggregate functional-damage fraction. Existing damage counts toward
+    // the target; this never modifies structural health or attachment.
+    bool injectEquipmentFailure(const std::string& moduleId,
+                                double targetDamage01);
+
     // Collision/explosion on an ENGINE: persistent 1/3 of hit, reversible
     // field shock 2/3. The outcome is deterministic per module/hit and
     // settles after 1..3 sec; this does not repair mechanical structure.

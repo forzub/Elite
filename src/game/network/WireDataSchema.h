@@ -539,6 +539,7 @@ ELITE_WIRE_SCHEMA(
     v.thermalDamage01,
     v.radiationDamage01,
     v.wearDamage01,
+    v.internalFailureDamage01,
     v.hasEngineThermalState,
     v.engineTemperatureK,
     v.engineCoolantTemperatureK,

@@ -27,6 +27,7 @@ struct ObjectModuleSnapshot
     float thermalDamage01 = 0.0f;
     float radiationDamage01 = 0.0f;
     float wearDamage01 = 0.0f;
+    float internalFailureDamage01 = 0.0f;
 
     // Per-installed-engine state needed for IDENTICAL server/client physics
     // capability projection. Static thermal constants/material IDs are held

@@ -36,6 +36,8 @@ namespace game::simulation
         rt->equipmentDamage.accumulated.radiation01);
     ms.wearDamage01 = static_cast<float>(
         rt->equipmentDamage.accumulated.wear01);
+    ms.internalFailureDamage01 = static_cast<float>(
+        rt->equipmentDamage.accumulated.internalFailure01);
     ms.aliveSupportCount = rt->aliveSupportCount;
 
     if (descMod.engine)

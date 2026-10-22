@@ -541,6 +541,49 @@ void testCinematicEngineImpactShockAndRecovery()
             "deterministic impact outcome was decided more than once");
 }
 
+
+void testInjectedInternalEquipmentFault()
+{
+    const auto d=descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    require(!runtime.injectEquipmentFailure("aft_left",0.0),
+            "invalid zero-level fault accepted");
+    require(!runtime.injectEquipmentFailure("not-installed",1.0),
+            "nonexistent equipment accepted sudden fault");
+    require(runtime.injectEquipmentFailure("aft_left",0.50),
+            "sudden fault did not enter module damage state");
+    require(!runtime.injectEquipmentFailure("aft_left",0.50),
+            "reapplying unchanged fault should be idempotent");
+    const auto* m=runtime.findModule("aft_left");
+    require(m &&
+            near(m->equipmentDamage.accumulated.internalFailure01,0.50) &&
+            near(m->equipmentDamage.accumulated.impact01,0.0) &&
+            near(m->health,100.0),
+            "fault forged impact history or structural destruction");
+    const auto slots=game::ship::capability::buildPhysicalControlSlotState(
+        d,d.physicalControlModel,runtime);
+    require(slots.size()==4 && near(slots[0].thrust01,0.50) &&
+            near(slots[1].thrust01,1.0),
+            "fault did not reduce only the installed target");
+    const auto replicated=game::simulation::makeObjectModuleSnapshot(
+        d.modules[0],m);
+    require(near(replicated.internalFailureDamage01,0.50),
+            "fault not represented in replicated module state");
+    game::equipment::EquipmentDamageLayer generic;
+    generic.accumulated.internalFailure01=1.0;
+    require(game::equipment::evaluateEquipmentFunction(generic).failed,
+            "generic equipment ignored internal failure cause");
+    require(runtime.injectEquipmentFailure("aft_left",1.0),
+            "full sudden fault failed to latch");
+    const auto failed=game::ship::capability::buildPhysicalControlSlotState(
+        d,d.physicalControlModel,runtime);
+    require(failed.size()==4 && near(failed[0].thrust01,0.0) &&
+            near(failed[0].vectoring01,0.0) &&
+            near(failed[1].thrust01,1.0),
+            "full internal fault failed to disable only target engine");
+}
+
 } // namespace
 
 int main()
@@ -548,6 +591,7 @@ int main()
     try
     {
         testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
+        testInjectedInternalEquipmentFault();
         testCinematicEngineImpactShockAndRecovery();
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();

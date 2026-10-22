@@ -304,6 +304,7 @@ SimulationSnapshot makeSnapshot()
     module.moduleId = "module:a";
     module.state = 2u;
     module.health = 0.75f;
+    module.internalFailureDamage01 = 0.5f;
     // Exercise the full independent annulus lifecycle across actual wire I/O.
     module.hasEngineThermalState = true;
     module.engineTemperatureK = 1275.0f;
@@ -646,6 +647,8 @@ void testSnapshotRoundTrip()
     require(decoded.ships[0].graph.modules.size() == 1u,
         "module graph mismatch");
     const auto& decodedEmitter = decoded.ships[0].graph.modules.front();
+    require(near(decodedEmitter.internalFailureDamage01, 0.5),
+            "internal failure lost in object-module wire round-trip");
     require(decodedEmitter.hasEngineThermalState &&
             near(decodedEmitter.engineTemperatureK, 1275.0) &&
             near(decodedEmitter.engineCoolantTemperatureK,1340.0) &&

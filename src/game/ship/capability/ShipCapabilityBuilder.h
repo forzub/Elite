@@ -151,6 +151,7 @@ inline plant::EngineSlotState slotFromSnapshot(
         damage.accumulated.thermal01 = module->thermalDamage01;
         damage.accumulated.radiation01 = module->radiationDamage01;
         damage.accumulated.wear01 = module->wearDamage01;
+        damage.accumulated.internalFailure01 = module->internalFailureDamage01;
 
         // Snapshot projection must use exactly the same thermal governor as
         // the authoritative module path. Without this, damaged annulus state

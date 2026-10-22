@@ -417,6 +417,24 @@ bool ObjectModuleRuntime::addEquipmentDamage(
     return true;
 }
 
+bool ObjectModuleRuntime::injectEquipmentFailure(
+    const std::string& moduleId, double targetDamage01)
+{
+    if (!std::isfinite(targetDamage01) ||
+        targetDamage01 <= 0.0 || targetDamage01 > 1.0)
+        return false;
+    const int index=findModuleIndex(moduleId);
+    if(index<0)
+        return false;
+    const double existing=game::equipment::totalAccumulatedDamage01(
+        m_modules[index].equipmentDamage.accumulated);
+    if(existing>=targetDamage01)
+        return false;
+    return addEquipmentDamage(moduleId,
+        game::equipment::EquipmentDamageKind::InternalFailure,
+        targetDamage01-existing);
+}
+
 bool ObjectModuleRuntime::addEngineImpactShock(
     const std::string& moduleId, double hitDamage01,
     std::uint64_t incidentKey

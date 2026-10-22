@@ -16,6 +16,7 @@
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 #include "src/game/presentation/ShipBitePresentation.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/equipment/EquipmentDamage.h"
 
 namespace game::ship::computer
@@ -254,54 +255,49 @@ namespace game::ship::computer
     }
     if(game::ship::plant::familyOf(ship.physicalControlModel)==
            game::ship::plant::PhysicalControlFamily::Newtonian)
-        for(std::size_t i=0;i<slots.size();++i)
+    {
+        // Eight actual mount nodes, each with three installed nozzle modules.
+        // Never use the obsolete 4/6/8 omnidirectional control-slot count.
+        const auto& nozzles =
+            game::ship::presets::cobra::newtonianRcsNozzles();
+        for(std::size_t group=0;group<8;++group)
         {
-            if(slots[i].role!=
-                game::ship::plant::EngineSlotRole::ManoeuvreCluster)
-                continue;
             MotherComputerRcsHudSlot rcs;
-            rcs.id=slots[i].id;
-            if(diagnostic)
+            rcs.id=std::string(nozzles[group*3].nodeId);
+            rcs.known=true;
+            float minIntegrity=1.0f;
+            for(std::size_t n=0;n<3;++n)
             {
-                rcs.known=true;
-                rcs.integrity01=1.0f;
-            }
-            else if(i<ship.descriptor->physicalControl.slotModuleIds.size())
-            {
-                const auto& id=ship.descriptor->physicalControl.slotModuleIds[i];
+                const auto& id=nozzles[group*3+n].nozzleId;
                 const auto module=std::find_if(
                     ship.modules.begin(),ship.modules.end(),
                     [&](const auto& m){return m.moduleId==id;});
-                if(module!=ship.modules.end())
+                if(module==ship.modules.end())
                 {
-                    rcs.known=true;
-                    const double damage=std::clamp(
-                        static_cast<double>(module->laserDamage01+
-                            module->impactDamage01+module->thermalDamage01+
-                            module->radiationDamage01+module->wearDamage01),
-                        0.0,1.0);
-                    rcs.integrity01=module->state==0 &&
-                        module->health>0.0f
-                        ? static_cast<float>(1.0-damage):0.0f;
+                    rcs.known=false;
+                    minIntegrity=0.0f;
+                    continue;
                 }
+                const double damage=std::clamp(
+                    static_cast<double>(module->laserDamage01+
+                        module->impactDamage01+module->thermalDamage01+
+                        module->radiationDamage01+module->wearDamage01),
+                    0.0,1.0);
+                minIntegrity=std::min(minIntegrity,
+                    module->state==0 && module->health>0.0f
+                        ? static_cast<float>(1.0-damage):0.0f);
             }
-            // The 24 physical nozzle slots form eight 3-nozzle modules;
-            // group duty is the maximum physically executed nozzle output.
-            // Slot I/Y/X visual ordering may differ from mount ordering.
+            rcs.integrity01=minIntegrity;
             if(out.systems.newtonianRcsSampleValid)
             {
-                const std::size_t groupIndex=out.rcsSlots.size();
-                if(groupIndex<8)
-                {
-                    rcs.firingKnown=true;
-                    for(std::size_t nozzle=groupIndex*3;
-                        nozzle<groupIndex*3+3;++nozzle)
-                        rcs.firing01=std::max(rcs.firing01,
-                            out.systems.newtonianRcsExecuted01[nozzle]);
-                }
+                rcs.firingKnown=true;
+                for(std::size_t n=0;n<3;++n)
+                    rcs.firing01=std::max(rcs.firing01,
+                        out.systems.newtonianRcsExecuted01[group*3+n]);
             }
             out.rcsSlots.push_back(std::move(rcs));
         }
+    }
 
     out.engineSlots.reserve(slots.size());
     const auto& bindings =

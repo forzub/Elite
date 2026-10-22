@@ -1,3 +1,13 @@
+## 2026-10-22 — Stage 4 preparation: ER-5 stored-heat recovery (source only)
+
+Commit `efd77c7` updates only `src/game/equipment/reactor/EngineReactorUnit.h`. Existing `advanceEngineReactor` previously stored un-rejected reactor heat but never released it when engine load fell. It now returns above-operating-baseline stored heat through ONLY the remaining engine-pad radiative headroom and bounded shared-coolant transfer headroom, without spending sink capacity twice. The reactor state keeps finite thermal capacity and cannot radiatively cool below its authored operating baseline by this discharge. Generator operating conditions, engine/ship control, and HUD were not changed.
+
+**Validation boundary:** Code committed directly to authoritative `main`; no native compilation or dynamic game test was run. Crucially, this fixes the standalone thermal primitive ONLY. `EngineReactorState` is NOT yet persisted per installed `ObjectModuleState`, and `ShipCore::updateSystems` does NOT yet call `advanceEngineReactor`; reactor thermal generation/temperature still has NO live effect on ship coolant, propulsion derating or HUD. Do not call Stage 4 complete.
+
+**Next focused step:** Persist one reactor operating state on each installed module, advance it once per service tick using actually delivered per-motor electrical telemetry, subtract the engine's own emitted heat before assigning remaining pad capacity, deposit bounded reactor overflow into the existing shared `ThermalSystem` before `CoolingSystem::update`, and make authoritative power allocation read thermally available output. Resolve the Newtonian single-pad heat deficit without inventing heat disappearance. Preserve one main branch and single root state file. Tests should check energy balance at load, overload and recovery; logs in D:/tmp.
+
+---
+
 ## 2026-10-22 — Stage 3: real installed propulsion-reactor power limits on main thrust
 
 Commits `d5546965` (gateway power group definition), `c9b9ecd4` (enforce budgets on real physical motor force/torque/telemetry), `548b11ce` and `b7941b41` (construct powered groups by actual installed reactor modules and fail closed for missing bindings).

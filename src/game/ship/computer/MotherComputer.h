@@ -148,6 +148,8 @@ struct MotherComputerDriveHudGroup
     bool installed = false;
     bool failed = false;
     float integrity01 = 0.0f;
+    bool ignitionOn = false;
+    bool ignitionStarting = false;
     bool hasCoreTemperature = false;
     float coreTemperatureK = 0.0f;
     float safeCoreTemperatureK = 0.0f;

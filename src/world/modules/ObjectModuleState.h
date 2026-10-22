@@ -6,6 +6,7 @@
 
 #include "src/world/descriptors/ModuleDescriptor.h"
 #include "src/game/equipment/EquipmentDamage.h"
+#include "src/game/equipment/reactor/EngineReactorUnit.h"
 
 namespace world::modules
 {
@@ -81,6 +82,10 @@ struct ObjectModuleState
     // the authoritative module runtime. Neither slot topology nor the
     // descriptor owns mutable lifetime/temperature.
     game::equipment::engine::EngineOperatingState engineOperating;
+
+    // One persistent thermal/age state per installed propulsion reactor.
+    // This is not the ship-services ReactorSystem.
+    game::equipment::reactor::EngineReactorState engineReactorOperating;
 
     bool hangable = false;
 

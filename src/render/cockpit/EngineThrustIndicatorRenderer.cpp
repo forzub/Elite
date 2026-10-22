@@ -184,7 +184,7 @@ void EngineThrustIndicatorRenderer::render(
         const float x=static_cast<float>(viewport.width)*0.025f;
         const float bottom=static_cast<float>(viewport.height)*0.965f;
         const float w=260.0f*scale;
-        const float h=134.0f*scale;
+        const float h=165.0f*scale;
         const float y=bottom-h;
         roundedOutlinePx(text,x,y,w,h,7*scale,1*scale,
             style.panelBorder,style.panelBackground);
@@ -199,7 +199,7 @@ void EngineThrustIndicatorRenderer::render(
         const bool newtonian=presentation.modelLabel.find("NEWTONIAN")
             !=std::string::npos;
         const float top=y+30*scale;
-        const float rowStep=(newtonian?75.0f:96.0f)*scale/
+        const float rowStep=(newtonian?111.0f:128.0f)*scale/
             static_cast<float>(std::max<std::size_t>(
                 1,presentation.drives.size()));
         const float sq=12.0f*scale;
@@ -244,11 +244,11 @@ void EngineThrustIndicatorRenderer::render(
                 bar->nozzleAngleDeg>0.5f)
             {
                 char angle[20];
-                std::snprintf(angle,sizeof(angle),"%.0f°",
+                std::snprintf(angle,sizeof(angle),"%.0f deg",
                     bar->nozzleAngleDeg);
                 text.textDrawPx(angle,outwardRight?rx+8*scale:rx-31*scale,
-                    centerY+7*scale,
-                    std::max(9,static_cast<int>(9*scale)),style.label);
+                    centerY+6*scale,
+                    std::max(10,static_cast<int>(11*scale)),style.label);
             }
             const float padX=outwardRight?bx+length:bx;
             glm::vec4 padColor=style.track;
@@ -301,6 +301,28 @@ void EngineThrustIndicatorRenderer::render(
             else std::snprintf(temp,sizeof(temp),"-- K");
             text.textDrawPx(temp,rx-12*scale,cy-18*scale,
                 std::max(9,static_cast<int>(10*scale)),style.label);
+            // Actual measured heat balance, not an inferred temperature trend.
+            // G = generator waste; P = heat sent to pads; S = stored thermal
+            // power (positive => current overheating risk, even at fixed K).
+            if(drive.hasCoreTemperature)
+            {
+                char heat[96];
+                std::snprintf(heat,sizeof(heat),
+                    "G %.0f  P %.0f  S %+.0f MW",
+                    drive.generatedHeatMW,drive.padHeatMW,
+                    drive.storedHeatMW);
+                text.textDrawPx(heat,x+27*scale,cy+14*scale,
+                    std::max(9,static_cast<int>(10*scale)),
+                    drive.storedHeatMW>0.1f?hot:style.label);
+                // Remaining headroom to the safe core temperature, in K.
+                char margin[32];
+                std::snprintf(margin,sizeof(margin),"%.0f K left",
+                    drive.safeCoreTemperatureK-drive.coreTemperatureK);
+                text.textDrawPx(margin,x+176*scale,cy-18*scale,
+                    std::max(9,static_cast<int>(9*scale)),
+                    drive.safeCoreTemperatureK<=drive.coreTemperatureK
+                        ?hot:style.label);
+            }
             if(newtonian)
             {
                 if(!drive.poweredEngineSlots.empty())
@@ -673,7 +695,7 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     const float h=padding+iconSize+iconGap+static_cast<float>(labelPx)+
         labelGap+barHeight+padding;
     const float w=142.0f*scale;
-    const float displayH=engines.drives.empty()?h:134.0f*scale;
+    const float displayH=engines.drives.empty()?h:165.0f*scale;
     const float gap=9.0f*scale;
     const float reactorX=x+(engines.drives.empty()?engineWidth:260.0f*scale)+gap;
     const float coolantX=reactorX+w+gap;

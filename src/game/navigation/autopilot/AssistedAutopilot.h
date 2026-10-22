@@ -179,8 +179,58 @@ public:
             if (!course.valid)
                 return {};
 
-            pitchYawError =
-                course.pitchYawErrorLocalRad;
+            // Cascaded velocity-course / hull-attitude control.
+            // The OUTER guidance loop remains velocity-vector primary:
+            // it decides which way the actual trajectory must bend.
+            // The INNER hull controller, however, must receive the REAL
+            // nose-to-target attitude error. Passing course error directly
+            // as hull angle made the inner controller keep rotating the
+            // ship while its velocity vector was still catching up, and
+            // then abruptly reverse the command (visible pitch/yaw chatter).
+            //
+            // Aim the nose a bounded angle ahead of the actual velocity
+            // toward the accepted course. This is NOT a snap to the route
+            // tangent: as the course converges, the lead vanishes smoothly
+            // and the nose settles back onto the velocity vector.
+            const glm::dvec3 actualCourse=course.actualCourseMap;
+            const glm::dvec3 targetCourse=course.desiredCourseMap;
+            const glm::dvec3 courseSide=
+                targetCourse-actualCourse*
+                    glm::dot(actualCourse,targetCourse);
+            const double courseSideLength=glm::length(courseSide);
+            glm::dvec3 desiredHullForward=actualCourse;
+            if(courseSideLength>1.0e-9)
+            {
+                constexpr double maxSteeringLeadRad=0.17453292519943295;
+                const double lead=std::min(
+                    maxSteeringLeadRad,
+                    std::max(0.0,course.courseErrorRad));
+                desiredHullForward=normalizedOr(
+                    actualCourse*std::cos(lead)+
+                    courseSide/courseSideLength*std::sin(lead),
+                    actualCourse);
+            }
+            else if(glm::dot(actualCourse,targetCourse)<0.0)
+            {
+                // At an exact 180-degree reversal there is no unique
+                // course-side vector. Use the same deterministic body-up
+                // turn direction that the hull-pose controller uses.
+                desiredHullForward=targetCourse;
+            }
+            HullPoseGuidance::Request coursePoseRequest;
+            coursePoseRequest.currentForward=forward;
+            coursePoseRequest.currentRight=right;
+            coursePoseRequest.currentUp=up;
+            coursePoseRequest.targetForward=desiredHullForward;
+            coursePoseRequest.targetUp=up;
+            const auto coursePose=
+                HullPoseGuidance::evaluate(coursePoseRequest);
+            if(!coursePose.valid)
+                return {};
+            pitchYawError={
+                coursePose.pitchYawErrorLocalRad.x,
+                coursePose.pitchYawErrorLocalRad.y
+            };
 
             if (params.assistedWorkingThrustAxisEmergency)
             {

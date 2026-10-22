@@ -61,6 +61,7 @@ struct FlightInstrumentTextProfile
 struct FlightVectorIndicatorPresentation
 {
     bool visible = false;
+    bool assistedFreeRotation = false;
 
     double speedMps = 0.0;
     double speedLimitMps = 0.0;

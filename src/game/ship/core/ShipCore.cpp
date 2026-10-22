@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <stdexcept>
 
 #include "core/log.h"
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
@@ -117,6 +118,7 @@ void ShipCore::init(
     m_role = inRole;
     m_initialPhysicalModel=descriptor.physicalControlModel;
     m_assistedHardwareProfiles=nullptr;
+    m_nativeDescriptor=&descriptor;
     m_desc=&descriptor;
     if(descriptor.typeId==ObjectType::CobraMk1 &&
        game::ship::plant::familyOf(descriptor.physicalControlModel)==
@@ -315,8 +317,12 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
         return m_state.valid();
     }
 
-    // Newtonian and isolated laboratory models retain their existing
-    // diagnostic path; they are not silently mapped onto Assisted hardware.
+    // Non-Assisted diagnostics retain native construction bindings.
+    if(m_nativeDescriptor)
+    {
+        m_desc=m_nativeDescriptor;
+        m_state.construction.definition=m_desc;
+    }
     m_state.selectConstructionForDiagnostic(model);
     m_transform.motion.localControlLaw =
         m_state.construction.nativeFlightControlLaw;

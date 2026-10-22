@@ -231,7 +231,7 @@ void EngineThrustIndicatorRenderer::render(
     const float contentWidth =
         std::max({
             barsWidth,
-            labelWidth,
+            labelWidth + iconSize + 7.0f * scale,
             iconSize
         });
 
@@ -287,7 +287,7 @@ void EngineThrustIndicatorRenderer::render(
 
     drawCheckEngineIcon(
         text,
-        contentX + (contentWidth - iconSize) * 0.5f,
+        contentX,
         contentY,
         iconSize,
         presentation.warning
@@ -295,24 +295,20 @@ void EngineThrustIndicatorRenderer::render(
             : style.idleWarningIcon
     );
 
-    // Keep the warning icon in the upper diagnostic area, but anchor the
-    // model label to the thrust bars instead of to the icon. This makes the
-    // requested vertical move visually meaningful rather than adding a few
-    // pixels to both label and bars.
-    const float labelY =
-        panelY + panelHeight - padding - barHeight -
-        labelGap - static_cast<float>(labelPx);
+    // Fault icon and construction label share one header row. Keep the
+    // existing bar baseline and panel height unchanged.
+    const float labelY = contentY +
+        (iconSize - static_cast<float>(labelPx)) * 0.5f;
 
     text.textDrawPx(
         presentation.modelLabel,
-        contentX + (contentWidth - labelWidth) * 0.5f,
+        contentX + iconSize + 7.0f * scale,
         labelY,
         labelPx,
         style.label
     );
 
-    const float barsY =
-        labelY + static_cast<float>(labelPx) + labelGap;
+    const float barsY = panelY + panelHeight - padding - barHeight;
 
     // Keep fore/aft bars inside one physical engine group close together,
     // then distribute physical groups uniformly across the instrument width.
@@ -494,7 +490,8 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
             barsWidth+=groupGap;
     }
     const float engineWidth=std::max({
-        barsWidth,text.measureTextPx(engines.modelLabel,labelPx),iconSize
+        barsWidth,
+        text.measureTextPx(engines.modelLabel,labelPx)+iconSize+7.0f*scale
     })+2.0f*padding;
     const float h=padding+iconSize+iconGap+static_cast<float>(labelPx)+
         labelGap+barHeight+padding;
@@ -527,37 +524,45 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
             ? status.reactor.temperature/status.reactor.criticalTemp : 0),
         0.0f,1.0f);
     const float chainY=y+19*scale;
-    roundedOutlinePx(text,reactorX+10*scale,chainY,
-        15*scale,37*scale,3*scale,1*scale,amber,style.track);
-    text.solidRectPx(reactorX+12*scale,chainY+(35-31*r)*scale,
-        11*scale,31*r*scale,r>0.85f?warn:cyan);
-    text.solidRectPx(reactorX+25*scale,chainY+17*scale,
-        17*scale,2*scale,amber);
-    roundedOutlinePx(text,reactorX+42*scale,chainY+9*scale,
-        22*scale,20*scale,2*scale,1*scale,amber,style.track);
+    // Fill the available reactor panel width proportionally. The two fault
+    // lamps belong BELOW the pump and coolant icons, not at the right edge.
+    const float chainLeft=reactorX+10*scale;
+    const float chainRight=reactorX+w-10*scale;
+    const float unit=(chainRight-chainLeft)/(101.0f*scale);
+    const auto cx=[&](float v){return chainLeft+v*scale*unit;};
+    const auto cw=[&](float v){return v*scale*unit;};
+    const float r=std::clamp(static_cast<float>(
+        status.reactor.criticalTemp>0
+            ? status.reactor.temperature/status.reactor.criticalTemp : 0),
+        0.0f,1.0f);
+    roundedOutlinePx(text,cx(0),chainY,cw(15),37*scale,
+        3*scale,1*scale,amber,style.track);
+    text.solidRectPx(cx(2),chainY+(35-31*r)*scale,
+        cw(11),31*r*scale,r>0.85f?warn:cyan);
+    text.solidRectPx(cx(15),chainY+17*scale,cw(17),2*scale,amber);
+    roundedOutlinePx(text,cx(32),chainY+9*scale,
+        cw(22),20*scale,2*scale,1*scale,amber,style.track);
     const bool pumping=status.cooling.reactorPumpActive &&
         status.cooling.allocatedPowerMW>0.0;
     if(pumping)
-        text.solidRectPx(reactorX+46*scale,chainY+13*scale,
-            14*scale,12*scale,style.capacity);
-    text.solidRectPx(reactorX+64*scale,chainY+17*scale,
-        14*scale,2*scale,amber);
-    roundedOutlinePx(text,reactorX+78*scale,chainY+9*scale,
-        23*scale,20*scale,3*scale,1*scale,cyan,style.track);
-    text.solidRectPx(reactorX+81*scale,chainY+19*scale,
-        17*scale,7*scale,cyan);
+        text.solidRectPx(cx(36),chainY+13*scale,
+            cw(14),12*scale,style.capacity);
+    text.solidRectPx(cx(54),chainY+17*scale,cw(14),2*scale,amber);
+    roundedOutlinePx(text,cx(68),chainY+9*scale,
+        cw(23),20*scale,3*scale,1*scale,cyan,style.track);
+    text.solidRectPx(cx(71),chainY+19*scale,cw(17),7*scale,cyan);
     const bool radiatorAlarm=status.cooling.panelThermalCritical ||
         status.cooling.criticalPanelCount>0;
     const bool reactorAlarm=status.reactor.status>=1 ||
         status.reactor.integrity<0.95 ||
         status.reactor.temperature<status.reactor.minOperatingTemperatureK;
     const float blink=warningPulse(style);
-    if(radiatorAlarm)
-        text.solidRectPx(reactorX+108*scale,chainY+8*scale,
-            7*scale,7*scale,withAlpha(warn,blink));
     if(reactorAlarm)
-        text.solidRectPx(reactorX+120*scale,chainY+8*scale,
-            7*scale,7*scale,withAlpha(warn,blink));
+        text.solidRectPx(cx(39),chainY+32*scale,
+            cw(7),5*scale,withAlpha(warn,blink));
+    if(radiatorAlarm)
+        text.solidRectPx(cx(76),chainY+32*scale,
+            cw(7),5*scale,withAlpha(warn,blink));
     std::snprintf(buffer,sizeof(buffer),"%.0f K",status.reactor.temperature);
     text.textDrawPx(buffer,reactorX+8*scale,y+h-52*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f MW  %.0f%%",

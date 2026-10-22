@@ -1,3 +1,9 @@
+## 2026-10-22 — Assisted HUD motor sides fixed; Newtonian eight display positions
+
+Commit `0dbbf4f` modifies only `src/render/cockpit/EngineThrustIndicatorRenderer.cpp` on `main`. Assisted fore/aft drawing corrected to user convention: **aft on LEFT**, **fore on RIGHT** of each ER-5 square, with both thrust fills starting at the square and proceeding outward. Newtonian instrument reserves **eight RCS circles** across I/Y/X; positions beyond the actual installed maneuver clusters display dark/unavailable, NOT fabricated working nozzles. Actual `CobraPropulsionPresets.h` defines four `ManoeuvreCluster` slots for Newtonian-I, six for Newtonian-Y, eight for Newtonian-X. Those are distinct from 24 detailed Newtonian nozzle units; no physics or equipment counts were changed. A future design decision is needed if eight truly independent indicators are required for every construction rather than eight visual locations. No build/game verification performed via GitHub; ask user to compile and send screenshot.
+
+---
+
 ## 2026-10-22 — User's actual paired-reactor propulsion HUD implemented (source; native validation pending)
 
 Replaced legacy vertical engine thrust bars' ACTIVE motherboard-driven rendering with the user-specified horizontal installation diagram, committed DIRECTLY to main in `a5f8cfb`, `af0df38`, `2c958fa`, `77b34cc`, `7f2da83`. Updated ONLY MotherComputer cockpit DTO/adapter, existing engine presentation adapter, and existing `EngineThrustIndicatorRenderer`; no extra telemetry channel, service, standalone widget, autopilot or ship physics introduced.

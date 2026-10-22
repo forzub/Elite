@@ -341,6 +341,8 @@ private:
     glm::dvec3 m_newtonianRcsAngularDemandRadPerSec2 {0.0};
     std::array<double,24> m_newtonianRcsDelivered01 {};
     bool m_newtonianRcsPhysical = false;
+    bool m_propulsionReactorsOn = true;
+    double m_propulsionReactorsStartupRemainingSeconds = 0.0;
     // Physical six-axis signed maneuver recipes: generated once for this
     // vessel's installed I/Y/X engine layout, rebuilt on damage/repairs.
     // Not serialized over the network; always derived from real hardware.

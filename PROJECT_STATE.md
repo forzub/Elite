@@ -1,3 +1,9 @@
+## 2026-10-22 — Assisted release jerk: preserve cross-reactor wrench balance
+
+User reports manual center-of-mass attitude rotation brakes after key release, then visibly jerks into an unrelated acceleration, likely also shaking autopilot. Source analysis found in `ShipControlExecutionGateway::evaluateTranslationControl`: an Assisted six-axis program calculates a balanced motor wrench, but a subsequent per-ER-5 independent power-budget scaling changed fore/aft and across-generator engine forces by different factors and recomputed actual torque. New 7-minute cold-start/thermal power authority makes these group ratios naturally unequal, so this violated the physical command's precomputed balanced torque and added cross-axis moments. **Commit `0820bd2` in main** applies one conservative common minimum power scaling factor to ALL Assisted motors, preserving resultant force/torque direction and cross-axis cancellation while respecting every group MW limit; Newtonian retains independent power-group allocation. No free angular impulse, hidden attitude override, or damping changes. This is a targeted probable root-cause fix, **not native-built/game-verified**. Validate holding/releasing pitch/yaw/roll in Assisted during cold warm-up and at full generator readiness, and autoguidance straight flight; actual remaining oscillation may need a separate trace. Keep all work only in main.
+
+---
+
 ## 2026-10-22 — Simplified balanced ER-5/CR-1 pad thermals (main; native build unverified)
 
 User authorized replacing complex thermal calculations with a readable game model. Updated **main only**:

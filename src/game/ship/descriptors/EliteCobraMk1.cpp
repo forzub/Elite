@@ -241,8 +241,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // ─────────────────────────
         // CoreSystems params 
         // ─────────────────────────
-        desc.reactor.nominalPowerMW = 10000.0;           // Номинальная мощность (МВт)
-        desc.reactor.peakPowerMW    = 10000.0;           // Пиковая мощность (МВт)
+        desc.reactor.nominalPowerMW = 70.0;           // Номинальная мощность (МВт)
+        desc.reactor.peakPowerMW    = 70.0;           // Пиковая мощность (МВт)
         
         // desc.reactor.heatFactor     = 2.2;              // Коэф. тепловыделения При КПД 45%: 1/0.45 - 1 ≈ 1.22, плюс запас
 

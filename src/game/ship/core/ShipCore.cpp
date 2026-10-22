@@ -502,18 +502,10 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
     // force/torque result later changes the angular velocity.
     if (dt > 0.0f &&
         motion.mode == game::navigation::MotionMode::HubTactical &&
+        m_state.construction.valid() &&
         game::ship::plant::familyOf(
             m_state.construction.physicalControlModel
-        ) == game::ship::plant::PhysicalControlFamily::Assisted &&
-        m_state.construction.valid() &&
-        (m_state.actuators.source ==
-            game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
-         m_state.construction.physicalControlModel !=
-            m_state.construction.definition->physicalControlModel ||
-         m_state.construction.definition->physicalControl.slotModuleIds.size()
-            == game::ship::plant::physicalControlSlots(
-                m_state.construction.physicalControlModel
-            ).size()))
+        ) == game::ship::plant::PhysicalControlFamily::Assisted)
     {
         const glm::dvec3 angularAfter {
             m_transform.pitchRate,

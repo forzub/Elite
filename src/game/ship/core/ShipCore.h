@@ -342,6 +342,7 @@ private:
     std::array<double,24> m_newtonianRcsDelivered01 {};
     bool m_newtonianRcsPhysical = false;
     bool m_propulsionReactorsOn = true;
+    std::uint32_t m_propulsionSwitchRevision = 0;
     double m_propulsionReactorsStartupRemainingSeconds = 0.0;
     // Physical six-axis signed maneuver recipes: generated once for this
     // vessel's installed I/Y/X engine layout, rebuilt on damage/repairs.

@@ -266,8 +266,8 @@ void EngineThrustIndicatorRenderer::render(
             glm::vec4 color=drive.failed?dead:cold;
             if(drive.installed && !drive.failed)
             {
-                color=normal; // Temperature channel pending: not a
-                // measured temperature/status, indicated by dash above.
+                // Unknown temperature is explicitly unclassified, not a
+                // fictional assertion that the generator is at nominal heat.
                 if(drive.hasCoreTemperature)
                     color=drive.coreTemperatureK>drive.safeCoreTemperatureK
                         ? hot:normal;
@@ -654,12 +654,13 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     const float h=padding+iconSize+iconGap+static_cast<float>(labelPx)+
         labelGap+barHeight+padding;
     const float w=142.0f*scale;
+    const float displayH=engines.drives.empty()?h:134.0f*scale;
     const float gap=9.0f*scale;
     const float reactorX=x+(engines.drives.empty()?engineWidth:260.0f*scale)+gap;
     const float coolantX=reactorX+w+gap;
-    const float y=bottom-(engines.drives.empty()?h:134.0f*scale);
+    const float y=bottom-displayH;
     auto panel=[&](float px) {
-        roundedOutlinePx(text,px,y,w,engines.drives.empty()?h:134.0f*scale,7.0f*scale,1.0f*scale,
+        roundedOutlinePx(text,px,y,w,displayH,7.0f*scale,1.0f*scale,
             style.panelBorder,style.panelBackground);
     };
     // When this resolution is too narrow, do not obscure the boresight.
@@ -718,11 +719,11 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         text.solidRectPx(cx(76),chainY+32*scale,
             cw(7),5*scale,withAlpha(warn,blink));
     std::snprintf(buffer,sizeof(buffer),"%.0f K",status.reactor.temperature);
-    text.textDrawPx(buffer,reactorX+8*scale,y+h-52*scale,caption,amber);
+    text.textDrawPx(buffer,reactorX+8*scale,y+displayH-52*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"%.0f MW  %.0f%%",
         status.reactor.outputMW,status.reactor.efficiency01*100.0);
-    text.textDrawPx(buffer,reactorX+8*scale,y+h-34*scale,caption,amber);
-    text.textDrawPx("PWR / EFF",reactorX+8*scale,y+h-16*scale,tiny,amber);
+    text.textDrawPx(buffer,reactorX+8*scale,y+displayH-34*scale,caption,amber);
+    text.textDrawPx("PWR / EFF",reactorX+8*scale,y+displayH-16*scale,tiny,amber);
 
     text.textDrawPx("COOLANT",coolantX+8*scale,y+7*scale,small,amber);
     const float sx=coolantX+10*scale;
@@ -738,16 +739,16 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     std::snprintf(buffer,sizeof(buffer),"P %.0f / C %.0f K",
         status.cooling.effectiveRadiatorTemperatureK,
         status.cooling.coolantTemp);
-    text.textDrawPx(buffer,coolantX+8*scale,y+h-63*scale,tiny,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+displayH-63*scale,tiny,amber);
     std::snprintf(buffer,sizeof(buffer),"OK %.0f%%",
         status.cooling.panelHealthPercent);
-    text.textDrawPx(buffer,coolantX+8*scale,y+h-47*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+displayH-47*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"IN %.1f MW",
         status.cooling.heatIntoCoolantMW);
-    text.textDrawPx(buffer,coolantX+8*scale,y+h-31*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+displayH-31*scale,caption,amber);
     std::snprintf(buffer,sizeof(buffer),"OUT %.1f MW",
         status.cooling.radiatedPowerMW);
-    text.textDrawPx(buffer,coolantX+8*scale,y+h-15*scale,caption,amber);
+    text.textDrawPx(buffer,coolantX+8*scale,y+displayH-15*scale,caption,amber);
 }
 
 } // namespace render::cockpit

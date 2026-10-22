@@ -1,3 +1,13 @@
+## 2026-10-22 — HUD geometry updated, existing MotherComputer feed retained (native validation pending)
+
+Commits `ecf9c75`, `9141bdd`: minimal edits only to `src/render/cockpit/EngineThrustIndicatorRenderer.cpp`. Engine fault icon is now left of the Assisted/Newtonian I/Y/X model label on the SAME header row; width accounts for both and the original bar baseline/panel height remains. The thermal-system renderer's engine-width estimate was updated identically, retaining the adjacent REACTOR and COOLANT layout. Reactor chain (core→pump→coolant) now scales horizontally to its available width, with reactor and radiator warning lamps BELOW the pump and coolant glyphs instead of at the far right. Cooling panel, actual engine fill colors and source telemetry were not modified.
+
+**Computer connection:** This is already implemented: `SpaceState.cpp` publishes a cockpit snapshot into the sole client `MotherComputer` and renders the engine HUD from `buildEngineThrustHudPresentation(cockpit)`, thermal HUD from `cockpit.systems`. No new UI data provider, duplicate BITE pipeline, engine controller or network fields introduced. IMPORTANT: current system reactor HUD refers to the separate legacy 70 MW ship-services reactor, NOT the installed 5 GW ER-5 generators, whose per-reactor thermal telemetry is not yet available. Do not display fictional ER-5 temperature/efficiency.
+
+**Validation boundary:** Source edits committed directly to `main`; no Windows MinGW build or in-game screenshot was run. Inspect alignment for Assisted I/Y/X and Newtonian I/Y/X and warning icon placement at native screen resolution. Reactor ER-5 live thermal integration remains separate pending work.
+
+---
+
 ## 2026-10-22 — Stage 4 preparation: ER-5 stored-heat recovery (source only)
 
 Commit `efd77c7` updates only `src/game/equipment/reactor/EngineReactorUnit.h`. Existing `advanceEngineReactor` previously stored un-rejected reactor heat but never released it when engine load fell. It now returns above-operating-baseline stored heat through ONLY the remaining engine-pad radiative headroom and bounded shared-coolant transfer headroom, without spending sink capacity twice. The reactor state keeps finite thermal capacity and cannot radiatively cool below its authored operating baseline by this discharge. Generator operating conditions, engine/ship control, and HUD were not changed.

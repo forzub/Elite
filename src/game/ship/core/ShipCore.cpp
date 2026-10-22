@@ -692,10 +692,26 @@ void ShipCore::updateTranslationControl(float dt)
                             game::equipment::totalAccumulatedDamage01(
                                 reactor->equipmentDamage.accumulated),
                             definition->engineReactor->failure);
+                    const auto& reactorType=*definition->engineReactor;
+                    const double t=reactor->engineReactorOperating.temperatureK;
+                    const double ready=std::clamp(
+                        (t-game::physics::thermal::DeepSpaceTemperatureK)/
+                        std::max(1.0,reactorType.idleTemperatureK-
+                            game::physics::thermal::DeepSpaceTemperatureK),
+                        0.0,1.0);
+                    const double thermal= t<=reactorType.safeTemperatureK
+                        ? 1.0 : std::clamp(
+                            (reactorType.criticalTemperatureK-t)/
+                            std::max(1.0,reactorType.criticalTemperatureK-
+                                reactorType.safeTemperatureK),0.0,1.0);
+                    const double age=std::clamp(
+                        reactor->engineReactorOperating.equivalentOperatingHours/
+                        std::max(1.0,reactorType.endOfLifeEquivalentHours),
+                        0.0,1.0);
                     group.availableMW =
-                        std::max(0.0,
-                            definition->engineReactor->ratedElectricalMW) *
-                        function.authority01;
+                        std::max(0.0,reactorType.ratedElectricalMW) *
+                        function.authority01 * ready * thermal *
+                        (1.0-0.20*age);
                 }
                 powerGroups.push_back(std::move(group));
             }
@@ -981,39 +997,19 @@ void ShipCore::updateSystems(float dt)
             if(!module || def==m_desc->modules.end() ||
                 !def->engineReactor) continue;
             double electricalMW=0.0;
-            double padHeadroomMW=0.0;
             for(const char* slotId:generators[g].poweredEngineSlots)
-            {
                 for(std::size_t i=0;i<engineSlots.size() &&
                     i<engineIds.size();++i)
-                {
-                    if(std::string_view(engineSlots[i].id)!=slotId ||
-                       engineIds[i].empty()) continue;
-                    const auto engineDef=std::find_if(
-                        m_desc->modules.begin(),m_desc->modules.end(),
-                        [&](const auto& item){
-                            return item.moduleId==engineIds[i];});
-                    const auto* engineState=
-                        m_moduleRuntime.findModule(engineIds[i]);
-                    if(engineDef==m_desc->modules.end() ||
-                       !engineDef->engine || !engineState) continue;
-                    const bool sample=motors.valid && i<motors.count &&
-                        std::isfinite(motors.electricalMW[i]) &&
-                        std::isfinite(motors.wasteHeatMW[i]);
-                    const double usedPower=sample
-                        ? std::max(0.0,motors.electricalMW[i]):0.0;
-                    const double motorHeat=sample
-                        ? std::max(0.0,motors.wasteHeatMW[i]):0.0;
-                    electricalMW+=usedPower;
-                    const double emitterMax=
-                        game::equipment::engine::ratedThermalEmitterPowerMW(
-                            *engineDef->engine,
-                            engineState->engineOperating.emitter.surface.intactArea01);
-                    // Conservatively reserve engine waste before allocating
-                    // remaining pad emission to this paired generator.
-                    padHeadroomMW+=std::max(0.0,emitterMax-motorHeat);
-                }
-            }
+                    if(std::string_view(engineSlots[i].id)==slotId &&
+                       motors.valid && i<motors.count &&
+                       std::isfinite(motors.electricalMW[i]))
+                        electricalMW+=std::max(0.0,motors.electricalMW[i]);
+            // ER-5 has its OWN square heat pad, never borrows a main motor
+            // emitter. One universe cooling density applies to ALL pads.
+            const double padHeadroomMW=
+                game::physics::thermal::PropulsionPadCoolingMWPerM2*
+                def->engineReactor->padSideM*
+                def->engineReactor->padSideM;
             auto& state=module->engineReactorOperating;
             state.damage=module->equipmentDamage.accumulated;
             const bool installed=module->state ==

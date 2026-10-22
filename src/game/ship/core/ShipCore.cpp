@@ -759,7 +759,9 @@ void ShipCore::updateTranslationControl(float dt)
                 &state->engineOperating,mounts[i].nozzleId,
                 state->state ==
                     world::modules::ObjectModuleRuntimeState::Attached &&
-                state->health>0.0f
+                state->health>0.0f &&
+                m_propulsionReactorsOn &&
+                m_propulsionReactorsStartupRemainingSeconds<=0.0
             };
         }
         if (complete)
@@ -847,6 +849,9 @@ void ShipCore::togglePropulsionReactors() noexcept
         m_propulsionReactorsOn=true;
         m_propulsionReactorsStartupRemainingSeconds=10.0;
     }
+    // The service reactor is also part of "ALL reactors". No electrical
+    // output before the explicit startup countdown has finished.
+    m_reactor.setThrottle(0.0);
 }
 
 void ShipCore::toggleAssistedFreeRotation() noexcept
@@ -869,6 +874,9 @@ void ShipCore::updateSystems(float dt)
     if(m_propulsionReactorsOn && m_propulsionReactorsStartupRemainingSeconds>0.0)
         m_propulsionReactorsStartupRemainingSeconds=std::max(0.0,
             m_propulsionReactorsStartupRemainingSeconds-static_cast<double>(dt));
+    if(m_propulsionReactorsOn &&
+       m_propulsionReactorsStartupRemainingSeconds<=0.0)
+        m_reactor.setThrottle(0.8);
 
     // Internal service simulation is deliberately separated from motion.
     // Activation may decimate this lane for non-player ships while world

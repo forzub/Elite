@@ -46,13 +46,11 @@ namespace game::equipment::engine::presets
     // conversion to a solid 5m radiating pad. Do not recalculate it as
     // (waste - emitter capacity): that would become zero when healthy and
     // would prevent a damaged emitter from heating the coolant.
-    constexpr double previousAnnulusCapacityMW =
-        game::physics::thermal::radiatedPowerMW(
-            game::physics::thermal::annulusAreaM2(4.5, 2.5),
-            2500.0, 0.9, 0.90);
-    e.thermalConductanceMWperK =
-        std::max(0.0, wasteMW - previousAnnulusCapacityMW) /
-        (e.nominalOperatingTemperatureK - e.nominalCoolantTemperatureK);
+    // Calibrated independent housing-to-coolant conductance: not tied to
+    // the universe's radiation multiplier or any emitter surface geometry.
+    // Otherwise increasing pad radiation could silently remove the
+    // damaged engine's only finite thermal path into shared coolant.
+    e.thermalConductanceMWperK = 0.14004;
     e.overheatReferenceExcessK = 100.0;
     e.thermalDamagePerHourAtReferenceExcess01 = 0.05;
 

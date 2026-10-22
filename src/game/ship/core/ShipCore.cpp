@@ -1,4 +1,5 @@
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
+#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
 #include "ShipCore.h"
 #include <iostream>
 #include <algorithm>
@@ -643,6 +644,62 @@ void ShipCore::updateTranslationControl(float dt)
         }
     }
 
+    // Resolve the already-installed propulsion generators by slot identity.
+    // Missing/destroyed ER-5 equipment grants NO free propulsion electricity.
+    // One assisted reactor shares its rated output across its fore/aft pair.
+    std::vector<game::ship::control::MainEnginePowerGroup> powerGroups;
+    if (physicalEngines && m_desc)
+    {
+        const auto& installation =
+            game::ship::presets::cobra::installationSlots(
+                m_state.construction.physicalControlModel);
+        const auto& reactorIds =
+            m_desc->powerThermalInstallation.engineReactorModuleIds;
+        const auto& engineTopology =
+            game::ship::plant::physicalControlSlots(
+                m_state.construction.physicalControlModel);
+        const auto& runtime =
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                m_moduleRuntime);
+        if (reactorIds.size() == installation.engineReactors.size())
+        {
+            powerGroups.reserve(reactorIds.size());
+            for (std::size_t n=0; n<reactorIds.size(); ++n)
+            {
+                game::ship::control::MainEnginePowerGroup group;
+                for (const auto* engineId :
+                     installation.engineReactors[n].poweredEngineSlots)
+                    for (std::size_t i=0; i<engineTopology.size(); ++i)
+                        if (std::string_view(engineTopology[i].id) == engineId)
+                            group.engineIndices.push_back(i);
+
+                const auto* reactor = runtime.findModule(reactorIds[n]);
+                const auto definition = std::find_if(
+                    m_desc->modules.begin(),m_desc->modules.end(),
+                    [&](const auto& module) {
+                        return module.moduleId == reactorIds[n];
+                    });
+                if (reactor && definition != m_desc->modules.end() &&
+                    definition->engineReactor &&
+                    reactor->state ==
+                        world::modules::ObjectModuleRuntimeState::Attached &&
+                    reactor->health > 0.0f)
+                {
+                    const auto function =
+                        game::equipment::evaluateEquipmentFunctionAtDamage01(
+                            game::equipment::totalAccumulatedDamage01(
+                                reactor->equipmentDamage.accumulated),
+                            definition->engineReactor->failure);
+                    group.availableMW =
+                        std::max(0.0,
+                            definition->engineReactor->ratedElectricalMW) *
+                        function.authority01;
+                }
+                powerGroups.push_back(std::move(group));
+            }
+        }
+    }
+
     (void)game::ship::control::ShipControlExecutionGateway::
         evaluateTranslationControl(
             m_transform,
@@ -652,7 +709,8 @@ void ShipCore::updateTranslationControl(float dt)
             m_state.actuators.propulsionSlots,
             dt,
             physicalEngines,
-            &m_assistedManeuvers
+            &m_assistedManeuvers,
+            powerGroups.empty() ? nullptr : &powerGroups
         );
     // Replace the legacy free Newtonian manoeuvre force with the real
     // fixed-direction RCS bank. Main thrust/torque remains separate.

@@ -34,6 +34,8 @@ struct EngineReactorState
 {
     double temperatureK = 2500.0;
     double equivalentOperatingHours = 0.0;
+    double lastElectricalOutputMW = 0.0;
+    double lastGeneratedHeatMW = 0.0;
     game::equipment::EquipmentDamageState damage {};
 };
 
@@ -134,6 +136,8 @@ struct EngineReactorTick
             state.damage,game::equipment::EquipmentDamageKind::Wear,wear);
     }
     out.temperatureK = state.temperatureK;
+    state.lastElectricalOutputMW = out.electricalOutputMW;
+    state.lastGeneratedHeatMW = out.thermalPowerMW;
     return out;
 }
 } // namespace game::equipment::reactor

@@ -1,3 +1,9 @@
+## 2026-10-22 — User correction: Assisted-I works; defect specific to Assisted-Y; jitter OPEN
+
+User clarified screenshot shows **ASSISTED-Y**, while **I layout functions normally**. Hence previous description of universally disabled main propulsion is incorrect. The non-native Y diagnostic topology has 3 fore/aft ER-5 powered groups (vs I with 2), plus synthetic CR-1 motors; group-to-reactor identity mismatch explains the unpowered Y HUD. The targeted diagnostic synthetic-group power-budget fix is committed in main (`c8d591f`), NOT game-verified. Critically, **ship shaking persists**, including after past equal-factor Assisted power-limit correction; do not mark the shaking as fixed or conflate it with the Y no-thrust defect. Next required work: game-build verification of Y vs I physical thrust, then capture time series of angular requested/actual acceleration, motor forces/torque and rates during release to identify controller chatter. Do not tune damping blindly. No additional feature branches.
+
+---
+
 ## 2026-10-22 — Fix blank ER-5 gauges, diagnostic Assisted-Y dead thrust, ignition acknowledgement
 
 User screenshot showed `ASSISTED-Y` thrust HUD with `-- K` on every ER-5, plus unrelated legacy services `REACTOR` widget at 3500 K. Ignition chord appeared to do nothing; RCS moved but main propulsion only twitched; docking/status terminal emitted no start/off messages.

@@ -180,15 +180,6 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 {
                     outcome = "unknown preset (expected aft-50, aft-80, aft-failed)";
                 }
-                else if (const char* overrideModel =
-                             std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL");
-                         overrideModel && *overrideModel)
-                {
-                    // Synthetic diagnostic model actuators are not the same
-                    // installed engine instances. Never claim a real-engine
-                    // damage test is valid under this construction override.
-                    outcome = "conflicting synthetic physical test model";
-                }
                 else if (Ship* ship =
                              m_simulation.getShip(m_simulation.playerId()))
                 {
@@ -197,7 +188,12 @@ m_simulation.setCelestialBodyKinematicStateAu(
                         firstAftMainSlot(desc.physicalControlModel);
                     const auto& bindings =
                         desc.physicalControl.slotModuleIds;
-                    if (slot >= bindings.size())
+                    if (ship->core().state().actuators.source !=
+                            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+                    {
+                        outcome = "layout has no real installed engine bindings";
+                    }
+                    else if (slot >= bindings.size())
                     {
                         outcome = "aft-main slot has no installed module binding";
                     }
@@ -222,10 +218,8 @@ m_simulation.setCelestialBodyKinematicStateAu(
                         else
                         {
                             applied =
-                                ship->core().moduleRuntime().addEquipmentDamage(
-                                    engineId,
-                                    game::equipment::EquipmentDamageKind::Impact,
-                                    engineDamageForPreset(preset)
+                                ship->core().moduleRuntime().injectEquipmentFailure(
+                                    engineId, engineDamageForPreset(preset)
                                 );
                             outcome = applied
                                 ? "applied before planning"
@@ -243,7 +237,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
                     raw +
                     " status=" + (applied ? "APPLIED" : "FAILED") +
                     " module=" + engineId +
-                    " impact_damage=" +
+                    " internal_failure_target=" +
                     std::to_string(engineDamageForPreset(preset)) +
                     " detail=" + outcome;
                 std::cerr << report << '\n';
@@ -727,6 +721,92 @@ void GameServer::update(double dt)
                 case ClientShipCommand::ToggleAssistedFreeRotation:
                     ship.core().toggleAssistedFreeRotation();
                     break;
+
+                case ClientShipCommand::InjectEquipmentFailure:
+                {
+                    // A deliberate test fault on this player's authoritative
+                    // installed hardware. The UI cannot pick another ship.
+                    auto& core=ship.core();
+                    const auto& desc=core.descriptor();
+                    const auto& ids=desc.physicalControl.slotModuleIds;
+                    const auto& slots=game::ship::plant::physicalControlSlots(
+                        core.state().construction.physicalControlModel);
+                    int slot=shipCmd.index;
+                    const auto& runtime=static_cast<const
+                        world::modules::ObjectModuleRuntime&>(
+                            core.moduleRuntime());
+                    if(slot<0)
+                    {
+                        // Repeat the chord to fail successive installed main
+                        // engines. All IDs are server-resolved, not client IDs.
+                        for(std::size_t i=0;i<ids.size() &&
+                            i<slots.size();++i)
+                        {
+                            if(slots[i].role==
+                                game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                                continue;
+                            const auto* mod=runtime.findModule(ids[i]);
+                            if(mod && mod->state==
+                                world::modules::ObjectModuleRuntimeState::Attached &&
+                                mod->health>0.0f &&
+                                !game::equipment::
+                                    evaluateEquipmentFunctionAtDamage01(
+                                        game::equipment::totalAccumulatedDamage01(
+                                            mod->equipmentDamage.accumulated),
+                                        mod->equipmentDamage.failure).failed)
+                            {
+                                slot=static_cast<int>(i);
+                                break;
+                            }
+                        }
+                    }
+                    bool applied=false;
+                    std::string moduleId;
+                    if(core.state().actuators.source==
+                           game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+                       slot>=0 && static_cast<std::size_t>(slot)<ids.size() &&
+                       static_cast<std::size_t>(slot)<slots.size() &&
+                       slots[slot].role!=
+                           game::ship::plant::EngineSlotRole::ManoeuvreCluster &&
+                       std::isfinite(shipCmd.amount) &&
+                       shipCmd.amount>0.0 && shipCmd.amount<=1.0)
+                    {
+                        moduleId=ids[slot];
+                        const auto definition=std::find_if(
+                            desc.modules.begin(),desc.modules.end(),
+                            [&](const auto& m){return m.moduleId==moduleId;});
+                        const auto* mod=runtime.findModule(moduleId);
+                        if(definition!=desc.modules.end() &&
+                           definition->engine && mod &&
+                           mod->state==
+                               world::modules::ObjectModuleRuntimeState::Attached &&
+                           mod->health>0.0f)
+                        {
+                            applied=core.moduleRuntime().injectEquipmentFailure(
+                                moduleId,shipCmd.amount);
+                            if(applied)
+                                core.refreshRuntimeState();
+                        }
+                    }
+                    const std::string report=
+                        std::string("[EquipmentFailure] active_model=")+
+                        game::ship::plant::physicalControlModelName(
+                            core.state().construction.physicalControlModel)+
+                        " slot="+std::to_string(slot)+
+                        " module="+moduleId+
+                        " target="+std::to_string(shipCmd.amount)+
+                        " status="+(applied?"APPLIED":"SKIPPED");
+                    std::cerr<<report<<'\n';
+#ifdef _WIN32
+                    std::error_code error;
+                    std::filesystem::create_directories("D:/tmp",error);
+                    std::ofstream log(
+                        "D:/tmp/elite_equipment_failures.log",std::ios::app);
+                    if(log)
+                        log<<report<<'\n';
+#endif
+                    break;
+                }
 
                 case ClientShipCommand::SelectPhysicalControlModel:
                 {

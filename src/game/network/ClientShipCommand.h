@@ -11,7 +11,8 @@
             StartBestRepairJob,
             SelectPhysicalControlModel,
             TogglePropulsionReactors,
-            ToggleAssistedFreeRotation
+            ToggleAssistedFreeRotation,
+            InjectEquipmentFailure // developer-only main-engine malfunction
         };
         Type type;
 

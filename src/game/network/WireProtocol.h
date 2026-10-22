@@ -670,7 +670,7 @@ inline bool decodeClientShipCommand(
     }
 
     if (type > static_cast<std::uint8_t>(
-            ClientShipCommand::SelectPhysicalControlModel))
+            ClientShipCommand::InjectEquipmentFailure))
     {
         return false;
     }

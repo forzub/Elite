@@ -1765,6 +1765,25 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
         return;
     }
 
+    // Explicit test fault: fail the next still-operating physical main drive
+    // in the active layout. The server selects the module and applies the
+    // same persistent equipment-damage law used by all installed equipment.
+    if(ctrlDown && altDown && shiftDown &&
+       Input::instance().isKeyPressedOnce(GLFW_KEY_F))
+    {
+        if(m_client)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type=ClientShipCommand::InjectEquipmentFailure;
+            command.index=-1;     // next available installed main motor
+            command.amount=1.0;  // complete functional failure
+            msg.payload=command;
+            m_client->sendMessage(msg);
+        }
+        return;
+    }
+
     // Backspace toggles independent hull attitude only in Assisted flight.
     // The SystemMap already handles its own Backspace before this block.
     if(Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))

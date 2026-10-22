@@ -330,6 +330,23 @@ void testClientMessageRoundTrip()
     require(decodedCommand.index == command.index, "ship command index mismatch");
     require(nearlyEqual(decodedCommand.amount, command.amount), "ship command amount mismatch");
 
+    // Sudden failure is one authenticated ship-command message, with the
+    // target slot and absolute functional-loss level kept across TCP.
+    command.type=ClientShipCommand::InjectEquipmentFailure;
+    command.index=-1;
+    command.amount=1.0;
+    commandMessage.payload=command;
+    require(encodeClientMessage(commandMessage,payload),
+            "equipment failure command encode failed");
+    require(decodeClientMessage(payload,decoded),
+            "equipment failure command decode failed");
+    require(std::holds_alternative<ClientShipCommand>(decoded.payload),
+            "equipment failure was not decoded as ship command");
+    const auto& fault=std::get<ClientShipCommand>(decoded.payload);
+    require(fault.type==ClientShipCommand::InjectEquipmentFailure &&
+            fault.index==-1 && nearlyEqual(fault.amount,1.0),
+            "equipment failure slot/level lost over network");
+
 
 }
 

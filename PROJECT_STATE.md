@@ -1,3 +1,13 @@
+## 2026-10-22 — ER-5 thermal balance and thrust-angle HUD follow-up; straight-flight shake still unresolved
+
+User reported ER-5 temperature fixed, heat dissipation/overheat risk invisible, maneuvers only looking like accelerate/brake, gimbal angle not visible, and visible straight-flight ship shaking. Attached `elite_docking_planner(20261022-144221).log` is a ROUTE BUILD diagnostic, not per-frame actual control/pose trace: contains route-worker-ready and long route geometry but no nozzle/yaw/pitch/angular-rate or thruster state samples; cannot attribute observed shake to planner or claim it fixed.
+
+**Implemented on main:** added factual per-ER-5 `lastPadHeatMW`, `lastCoolantHeatMW`, `lastStoredHeatMW` persisted in installed reactor state after thermal tick; exposed via `ShipCoreStatus.engineReactors`, `MotherComputerCockpitView`, and engine HUD projection. Active HUD displays `G` generated MW, `P` radiated via main-engine pads MW, `S` stored MW (positive heat accumulation risk) and safe-temperature margin. Enlarged instrument slightly to make room and increased visible nozzle angular magnitude text. Crucial correction: `collectCockpitView` now reads executed motor thrust from `ship.transform.motion` instead of interpolated `ship.renderTransform.motion`, matching existing actual-gimbal-angle source; never infer thrust by speed change. **No changes to physics damping/autopilot or planner** because runtime cause of straight-flight shake is not established. For Assisted with two healthy solid 5m pads, 2500 K can legitimately remain constant if P >= G: heat-flow figures now explain this. Existing ER-5-to-common-coolant flow is still zero by design until transport is physically modeled; pad thermal margin and genuine overheat derating remain incomplete.
+
+This is CODE ONLY: no MinGW game build, CTest or runtime reproduction performed. Next: compile, inspect HUD at I/Y/X including crowded four-group rows; capture time-series executed per-motor thrust/yaw/pitch, angular rate/accel, requested angular accel, stabilizer demand and interpolation/camera motion on a STRAIGHT run (with autopilot on/off); diagnose and fix actual shake based on those traces. Do not declare shake fixed on current evidence. One branch only: main.
+
+---
+
 ## 2026-10-22 — MotherComputer engine telemetry: executed thrust vector, real RCS firing, ER-5 thermal tick (source, NOT compiled)
 
 Commits on **main only**: `5311db0`, `1581033`, `bb102d7`, `95ed34d`, `aaa04d5`, `89e2b17`, `fee260e`, `494c5ac`, `5ad8b4e`.

@@ -36,7 +36,7 @@ public:
 
         // Modified function-key chords are the primary purpose of
         // this temporary strip. Ordinary utility shortcuts follow them.
-        const std::array<std::string, 11> items {
+        const std::array<std::string, 12> items {
             key("Ctrl+F9") + " " +
                 localization.text(
                     "cockpit.shortcut_strip.layout",
@@ -79,8 +79,13 @@ public:
                 ),
             key("Backspace") + " " +
                 localization.text(
-                    "cockpit.shortcut_strip.back",
-                    "BACK"
+                    "cockpit.shortcut_strip.free_rotation",
+                    "FREE ROT"
+                ),
+            key("Ctrl+Alt+Shift+I") + " " +
+                localization.text(
+                    "cockpit.shortcut_strip.reactor_toggle",
+                    "REACTORS"
                 ),
             key("Ctrl+R") + " " +
                 localization.text(

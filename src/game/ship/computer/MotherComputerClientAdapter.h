@@ -15,6 +15,8 @@
 #include "src/game/ship/computer/MotherComputer.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 #include "src/game/presentation/ShipBitePresentation.h"
+#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/equipment/EquipmentDamage.h"
 
 namespace game::ship::computer
 {
@@ -194,6 +196,81 @@ namespace game::ship::computer
     if (states.size() != slots.size())
         return out;
 
+    // One physical drive group for each installed ER-5, using canonical
+    // installation bindings (not inferred from visual proximity).
+    const auto& installation =
+        game::ship::presets::cobra::installationSlots(
+            ship.physicalControlModel);
+    const auto& reactorIds =
+        ship.descriptor->powerThermalInstallation.engineReactorModuleIds;
+    for (std::size_t n=0;n<installation.engineReactors.size();++n)
+    {
+        MotherComputerDriveHudGroup drive;
+        drive.id = installation.engineReactors[n].slotId;
+        for (const auto* id : installation.engineReactors[n].poweredEngineSlots)
+            drive.poweredEngineSlots.emplace_back(id);
+        if (!diagnostic && n<reactorIds.size())
+        {
+            const auto& id=reactorIds[n];
+            const auto module=std::find_if(
+                ship.modules.begin(),ship.modules.end(),
+                [&](const auto& m){return m.moduleId==id;});
+            const auto def=std::find_if(
+                ship.descriptor->modules.begin(),
+                ship.descriptor->modules.end(),
+                [&](const auto& d){return d.moduleId==id;});
+            if(module!=ship.modules.end() &&
+               def!=ship.descriptor->modules.end() && def->engineReactor)
+            {
+                drive.installed=true;
+                const auto damage=std::clamp(
+                    static_cast<double>(module->laserDamage01+
+                        module->impactDamage01+
+                        module->thermalDamage01+
+                        module->radiationDamage01+
+                        module->wearDamage01),0.0,1.0);
+                drive.integrity01=static_cast<float>(1.0-damage);
+                drive.failed=module->state!=0 || module->health<=0.0f;
+            }
+        }
+        out.drives.push_back(std::move(drive));
+    }
+    if(game::ship::plant::familyOf(ship.physicalControlModel)==
+           game::ship::plant::PhysicalControlFamily::Newtonian)
+        for(std::size_t i=0;i<slots.size();++i)
+        {
+            if(slots[i].role!=
+                game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                continue;
+            MotherComputerRcsHudSlot rcs;
+            rcs.id=slots[i].id;
+            if(diagnostic)
+            {
+                rcs.known=true;
+                rcs.integrity01=1.0f;
+            }
+            else if(i<ship.descriptor->physicalControl.slotModuleIds.size())
+            {
+                const auto& id=ship.descriptor->physicalControl.slotModuleIds[i];
+                const auto module=std::find_if(
+                    ship.modules.begin(),ship.modules.end(),
+                    [&](const auto& m){return m.moduleId==id;});
+                if(module!=ship.modules.end())
+                {
+                    rcs.known=true;
+                    const double damage=std::clamp(
+                        static_cast<double>(module->laserDamage01+
+                            module->impactDamage01+module->thermalDamage01+
+                            module->radiationDamage01+module->wearDamage01),
+                        0.0,1.0);
+                    rcs.integrity01=module->state==0 &&
+                        module->health>0.0f
+                        ? static_cast<float>(1.0-damage):0.0f;
+                }
+            }
+            out.rcsSlots.push_back(std::move(rcs));
+        }
+
     out.engineSlots.reserve(slots.size());
     const auto& bindings =
         ship.descriptor->physicalControl.slotModuleIds;
@@ -250,6 +327,12 @@ namespace game::ship::computer
                 slot.engineTemperatureK = module->engineTemperatureK;
                 slot.engineSafeTemperatureK = static_cast<float>(
                     definition->engine->safeOperatingTemperatureK);
+            }
+            if(module!=ship.modules.end())
+            {
+                slot.hasEmitterIntegrity=true;
+                slot.emitterIntegrity01=std::clamp(
+                    module->emitterIntactArea01,0.0f,1.0f);
             }
         }
         out.engineSlots.push_back(std::move(slot));

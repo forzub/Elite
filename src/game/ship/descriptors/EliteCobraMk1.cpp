@@ -1,5 +1,7 @@
 
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
+#include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
+#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h"
 #include <stdexcept>
@@ -1107,6 +1109,64 @@ if (const char* rawModel =
     }
 }
 
+
+// Every chosen construction installs distinct, damageable reactor modules.
+// Their engine-side energy/heat execution will be wired in the next stage;
+// until then no phantom thrust or power is introduced by these slot records.
+{
+    const auto& installation =
+        game::ship::presets::cobra::installationSlots(
+            desc.physicalControlModel);
+    const auto er5 =
+        game::equipment::reactor::presets::
+            CobraCobrettyER5PropulsionReactor();
+    desc.powerThermalInstallation.engineReactorModuleIds.clear();
+    for (const auto& slot : installation.engineReactors)
+    {
+        ModuleDescriptor m;
+        m.moduleId = std::string("ship_") + slot.slotId + "_reactor";
+        m.parentModuleId = "ship_frame_CB";
+        m.subsystemId = "propulsion_reactor";
+        m.moduleClass = "cobra_engine_reactor";
+        m.zone = game::damage::HitZoneType::Reactor;
+        m.attachmentType = ModuleAttachmentType::Internal;
+        m.structuralKind = ModuleStructuralKind::Equipment;
+        m.supportModuleIds = {"ship_frame_CB"};
+        m.maxHealth = 100.0f;
+        m.destructible = true;
+        m.repairable = true;
+        m.isCritical = false;
+        m.equipmentFailure = er5.failure;
+        m.maintenance = er5.maintenance;
+        m.engineReactor = er5;
+        desc.powerThermalInstallation.engineReactorModuleIds.push_back(
+            m.moduleId);
+        desc.modules.push_back(std::move(m));
+    }
+    // Ordinary ship services remain separately powered and cooled.
+    desc.powerThermalInstallation.shipReactorModuleId =
+        "ship_service_reactor";
+    desc.powerThermalInstallation.commonCoolingModuleId =
+        "ship_common_cooling";
+    for (const auto& service :
+            {desc.powerThermalInstallation.shipReactorModuleId,
+             desc.powerThermalInstallation.commonCoolingModuleId})
+    {
+        ModuleDescriptor m;
+        m.moduleId = service;
+        m.parentModuleId = "ship_frame_CB";
+        m.subsystemId = service;
+        m.moduleClass = service;
+        m.zone = game::damage::HitZoneType::Generic;
+        m.attachmentType = ModuleAttachmentType::Internal;
+        m.structuralKind = ModuleStructuralKind::Equipment;
+        m.supportModuleIds = {"ship_frame_CB"};
+        m.maxHealth = 100.0f;
+        m.destructible = true;
+        m.repairable = true;
+        desc.modules.push_back(std::move(m));
+    }
+}
 
 // Newtonian Cobra has the same 24 individually installed RCS nozzle
 // equipment units for I/Y/X. Create these before the module runtime is

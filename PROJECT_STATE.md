@@ -1,3 +1,11 @@
+## 2026-10-22 — Power-toggle scope correction
+
+Follow-up in main `9ae2ddc`: all-reactor switch also sets existing ship-services `ReactorSystem` throttle to zero on OFF and throughout 10-second ON startup delay; restores 0.8 normal idle on startup completion. Unlike propulsion ER-5, ship-service power feeds the current `PowerBus`. Newtonian RCS 24-nozzle executor now presents its physically mounted nozzle availability as false when all reactors are off/starting. Executor outputs zero force/torque and replaces nominal fake maneuver demand with executed zero result. The earlier saved reactor switch name `TogglePropulsionReactors` remains a protocol label but its actual behavior is all reactors. This is a deliberate game-wide safety stop, not just motor-specific.
+
+The 10-second sequence currently gates electrical authority, not fully simulates a cold-core temperature ramp/cooldown. Preserve the future cold-start/stop machinery boundary. No native build/flight test executed.
+
+---
+
 ## 2026-10-22 — ER-5 power toggle + Assisted independent hull mode (MAIN only)
 
 User-requested commands wired into existing single codebase:

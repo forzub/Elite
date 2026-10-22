@@ -1746,6 +1746,46 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
     return;
 }
 
+    // Explicit propulsion lifecycle: one chord controls every installed ER-5.
+    const bool altDown = Input::instance().isKeyPressed(GLFW_KEY_LEFT_ALT) ||
+        Input::instance().isKeyPressed(GLFW_KEY_RIGHT_ALT);
+    const bool shiftDown = Input::instance().isKeyPressed(GLFW_KEY_LEFT_SHIFT) ||
+        Input::instance().isKeyPressed(GLFW_KEY_RIGHT_SHIFT);
+    if(ctrlDown && altDown && shiftDown &&
+       Input::instance().isKeyPressedOnce(GLFW_KEY_I))
+    {
+        if(m_client)
+        {
+            game::network::ClientMessage msg;
+            ClientShipCommand command;
+            command.type=ClientShipCommand::TogglePropulsionReactors;
+            msg.payload=command;
+            m_client->sendMessage(msg);
+        }
+        return;
+    }
+
+    // Backspace toggles independent hull attitude only in Assisted flight.
+    // The SystemMap already handles its own Backspace before this block.
+    if(Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
+    {
+        if(m_client)
+        {
+            const auto it=m_client->world().ships().find(m_playerId.value);
+            if(it!=m_client->world().ships().end() &&
+               it->second.transform.motion.localControlLaw ==
+                   game::navigation::LocalFlightControlLaw::Assisted)
+            {
+                game::network::ClientMessage msg;
+                ClientShipCommand command;
+                command.type=ClientShipCommand::ToggleAssistedFreeRotation;
+                msg.payload=command;
+                m_client->sendMessage(msg);
+            }
+        }
+        return;
+    }
+
     // === управление кораблём ===
     // The mapper derives the requested opposite mode from the client's
     // current predicted/authoritative ship state. It must not keep a private

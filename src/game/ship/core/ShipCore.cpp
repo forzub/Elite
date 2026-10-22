@@ -66,6 +66,7 @@ void ShipCore::init(
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
+    m_serviceThrottleSaved = 0.0;
     m_propulsionSwitchRevision = 0;
     m_propulsionReactorsStartupRemainingSeconds = 0.0;
     m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
@@ -859,6 +860,7 @@ void ShipCore::togglePropulsionReactors() noexcept
     ++m_propulsionSwitchRevision;
     if(m_propulsionReactorsOn)
     {
+        m_serviceThrottleSaved=m_reactor.getThrottle();
         m_propulsionReactorsOn=false;
         m_propulsionReactorsStartupRemainingSeconds=0.0;
     }
@@ -894,7 +896,7 @@ void ShipCore::updateSystems(float dt)
             m_propulsionReactorsStartupRemainingSeconds-static_cast<double>(dt));
     if(m_propulsionReactorsOn &&
        m_propulsionReactorsStartupRemainingSeconds<=0.0)
-        m_reactor.setThrottle(0.8);
+        m_reactor.setThrottle(m_serviceThrottleSaved);
 
     // Internal service simulation is deliberately separated from motion.
     // Activation may decimate this lane for non-player ships while world

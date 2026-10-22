@@ -951,6 +951,81 @@ void ShipCore::updateSystems(float dt)
                 refreshRuntimeState();
         }
     }
+    // Installed ER-5 generator thermal clocks run from EXECUTED motor
+    // electrical draw. Passive standby is accounted for every service tick.
+    // Heat not accepted by a real emitter is stored in its thermal mass;
+    // shared-coolant transfer remains zero until a dedicated generator
+    // transfer-capacity interface is available (never invent a pump).
+    if(m_desc &&
+       m_state.actuators.source ==
+           game::ship::state::ShipActuatorStateSource::ModuleRuntime)
+    {
+        const auto& generators=
+            game::ship::presets::cobra::installationSlots(
+                m_state.construction.physicalControlModel).engineReactors;
+        const auto& reactorIds=
+            m_desc->powerThermalInstallation.engineReactorModuleIds;
+        const auto& engineSlots=
+            game::ship::plant::physicalControlSlots(
+                m_state.construction.physicalControlModel);
+        const auto& engineIds=m_desc->physicalControl.slotModuleIds;
+        const auto& motors=m_transform.motion.engineTelemetry;
+        for(std::size_t g=0;g<generators.size() &&
+            g<reactorIds.size();++g)
+        {
+            auto* module=m_moduleRuntime.findModule(reactorIds[g]);
+            const auto def=std::find_if(
+                m_desc->modules.begin(),m_desc->modules.end(),
+                [&](const auto& item){
+                    return item.moduleId==reactorIds[g];});
+            if(!module || def==m_desc->modules.end() ||
+                !def->engineReactor) continue;
+            double electricalMW=0.0;
+            double padHeadroomMW=0.0;
+            for(const char* slotId:generators[g].poweredEngineSlots)
+            {
+                for(std::size_t i=0;i<engineSlots.size() &&
+                    i<engineIds.size();++i)
+                {
+                    if(std::string_view(engineSlots[i].id)!=slotId ||
+                       engineIds[i].empty()) continue;
+                    const auto engineDef=std::find_if(
+                        m_desc->modules.begin(),m_desc->modules.end(),
+                        [&](const auto& item){
+                            return item.moduleId==engineIds[i];});
+                    const auto* engineState=
+                        m_moduleRuntime.findModule(engineIds[i]);
+                    if(engineDef==m_desc->modules.end() ||
+                       !engineDef->engine || !engineState) continue;
+                    const bool sample=motors.valid && i<motors.count &&
+                        std::isfinite(motors.electricalMW[i]) &&
+                        std::isfinite(motors.wasteHeatMW[i]);
+                    const double usedPower=sample
+                        ? std::max(0.0,motors.electricalMW[i]):0.0;
+                    const double motorHeat=sample
+                        ? std::max(0.0,motors.wasteHeatMW[i]):0.0;
+                    electricalMW+=usedPower;
+                    const double emitterMax=
+                        game::equipment::engine::ratedThermalEmitterPowerMW(
+                            *engineDef->engine,
+                            engineState->engineOperating.emitter.intactArea01);
+                    // Conservatively reserve engine waste before allocating
+                    // remaining pad emission to this paired generator.
+                    padHeadroomMW+=std::max(0.0,emitterMax-motorHeat);
+                }
+            }
+            auto& state=module->engineReactorOperating;
+            state.damage=module->equipmentDamage.accumulated;
+            const bool installed=module->state ==
+                world::modules::ObjectModuleRuntimeState::Attached &&
+                module->health>0.0f;
+            const auto tick=game::equipment::reactor::advanceEngineReactor(
+                *def->engineReactor,state,
+                installed?electricalMW:0.0,
+                padHeadroomMW,0.0,static_cast<double>(dt));
+            (void)tick;
+        }
+    }
     // Newtonian's 24 real RCS units have independent operating clocks and
     // thermal state. The duty values come from the executed physical wrench,
     // never from pilot key states. A destroyed unit remains disabled by the

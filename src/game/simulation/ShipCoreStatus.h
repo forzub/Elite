@@ -101,6 +101,10 @@ struct EngineReactorStatus {
 struct ShipCoreStatus {
     ReactorStatus reactor;
     std::vector<EngineReactorStatus> engineReactors;
+    // Server-confirmed ignition; not inferred from old reactor temperature.
+    bool propulsionReactorsOn = true;
+    double propulsionStartupSeconds = 0.0;
+    std::uint32_t propulsionSwitchRevision = 0;
     std::array<float,24> newtonianRcsExecuted01 {};
     bool newtonianRcsSampleValid = false;
     ThermalStatus thermal;

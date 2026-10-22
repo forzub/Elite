@@ -207,6 +207,7 @@ namespace game::ship::computer
     for (std::size_t n=0;n<installation.engineReactors.size();++n)
     {
         MotherComputerDriveHudGroup drive;
+        drive.simulatedPower=diagnostic;
         drive.ignitionOn=out.systems.propulsionReactorsOn &&
             out.systems.propulsionStartupSeconds<=0.0;
         drive.ignitionStarting=out.systems.propulsionReactorsOn &&

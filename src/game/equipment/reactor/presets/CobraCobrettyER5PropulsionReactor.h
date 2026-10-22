@@ -18,7 +18,7 @@ CobraCobrettyER5PropulsionReactor() noexcept
     d.nominalEfficiency01=0.90;
     d.hotStandbyThermalMW=2.0;
     d.thermalCapacityMJPerK=600.0;
-    d.padSideM=10.0;
+    d.padSideM=11.0;
     d.idleTemperatureK=900.0;
     d.startupTimeSeconds=420.0;
     d.operatingTemperatureK=900.0;

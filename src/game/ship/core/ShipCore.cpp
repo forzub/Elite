@@ -1496,6 +1496,9 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
                     sample.generatedHeatMW=state.lastGeneratedHeatMW;
                     sample.electricalOutputMW=
                         state.lastElectricalOutputMW;
+                    sample.padHeatMW=state.lastPadHeatMW;
+                    sample.coolantHeatMW=state.lastCoolantHeatMW;
+                    sample.storedHeatMW=state.lastStoredHeatMW;
                 }
             }
             status.engineReactors.push_back(std::move(sample));

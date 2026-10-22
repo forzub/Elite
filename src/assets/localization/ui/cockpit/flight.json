@@ -638,6 +638,20 @@
       "zh-Hans": "航路规划失败",
       "es": "falló el cálculo de ruta",
       "ja": "経路計算失敗"
+    },
+    "cockpit.shortcut_strip.free_rotation": {
+      "en": "FREE ROT",
+      "ru": "СВОБ. ПОВОРОТ",
+      "zh-Hans": "自由旋转",
+      "es": "GIRO LIBRE",
+      "ja": "自由回転"
+    },
+    "cockpit.shortcut_strip.reactor_toggle": {
+      "en": "REACTORS",
+      "ru": "РЕАКТОРЫ",
+      "zh-Hans": "反应堆",
+      "es": "REACTORES",
+      "ja": "原子炉"
     }
   }
 }

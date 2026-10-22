@@ -325,7 +325,7 @@ namespace game::ship::computer
             role == game::ship::plant::EngineSlotRole::ForeMain;
         const auto live =
             game::presentation::readEngineMotorLiveView(
-                ship.renderTransform.motion, i,
+                ship.transform.motion, i,
                 game::ship::plant::effectiveSlotThrust01(states[i])
             );
         slot.available01 = static_cast<float>(live.available01);

@@ -92,8 +92,30 @@ struct EngineReactorTick
     out.overflowToSharedCoolantMW = std::min(
         overflow,std::max(0.0,maxOverflowTransferMW));
     const double storedMW = overflow-out.overflowToSharedCoolantMW;
-    state.temperatureK += storedMW*dt/
-        std::max(1.0,type.thermalCapacityMJPerK);
+
+    // Surplus heat is stored in the installed reactor's finite thermal mass.
+    // When demand falls, previously stored heat must be able to escape using
+    // ONLY the unused pad/coolant capacity. Never cool below the operating
+    // baseline and never spend the same sink capacity twice.
+    const double heatCapacity = std::max(1.0,type.thermalCapacityMJPerK);
+    if (dt > 0.0)
+    {
+        state.temperatureK += storedMW*dt/heatCapacity;
+        const double storedExcessMW = std::max(
+            0.0,(state.temperatureK-type.operatingTemperatureK)*
+                heatCapacity/dt);
+        const double sparePadMW = std::max(
+            0.0,remainingPadCapacityMW-out.depositedToEnginePadsMW);
+        const double spareCoolantMW = std::max(
+            0.0,maxOverflowTransferMW-out.overflowToSharedCoolantMW);
+        const double recoveredToPadMW = std::min(storedExcessMW,sparePadMW);
+        const double recoveredToCoolantMW = std::min(
+            storedExcessMW-recoveredToPadMW,spareCoolantMW);
+        out.depositedToEnginePadsMW += recoveredToPadMW;
+        out.overflowToSharedCoolantMW += recoveredToCoolantMW;
+        state.temperatureK -=
+            (recoveredToPadMW+recoveredToCoolantMW)*dt/heatCapacity;
+    }
     if(dt>0.0)
     {
         state.equivalentOperatingHours +=

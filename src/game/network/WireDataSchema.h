@@ -497,8 +497,27 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
+    game::EngineReactorStatus,
+    v.moduleId,
+    v.installed,
+    v.coreTemperatureK,
+    v.safeTemperatureK,
+    v.generatedHeatMW,
+    v.electricalOutputMW,
+    v.padHeatMW,
+    v.coolantHeatMW,
+    v.storedHeatMW
+);
+
+ELITE_WIRE_SCHEMA(
     game::ShipCoreStatus,
     v.reactor,
+    v.engineReactors,
+    v.propulsionReactorsOn,
+    v.propulsionStartupSeconds,
+    v.propulsionSwitchRevision,
+    v.newtonianRcsExecuted01,
+    v.newtonianRcsSampleValid,
     v.thermal,
     v.cooling,
     v.powerBus,

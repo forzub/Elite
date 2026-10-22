@@ -1,3 +1,13 @@
+## 2026-10-22 — No automatic cold start; correct unpowered Assisted torque leak
+
+User clarified: game always spawns ER-5 and main CR-1 engines ALREADY AT IDLE TEMPERATURE, and no cold-start countdown or shutoff mechanic is active yet. Startup/shutdown remains future explicit machinery. **Main commits** `00eb1f4` restores engine operating temperature initialization to descriptor nominal idle (CR-1 450 K); ER-5 previously fixed to nominal idle (900 K).
+
+User rightly reported residual rotation despite cold ER-5 zero power. Root cause from `ShipCore::updateMotionControl`: `evaluateAttitudeControl` mutates pitch/yaw/roll rates BEFORE installed engine wrench runs; code rolls this mutation back and transfers it into `requestedMainAngularAccelerationBodyRadPerSec2` only inside an overconstrained Assisted topology predicate. If the predicate fails, virtual angular acceleration survives without engine power. **Main commit** `0b3356f`: all valid HubTactical Assisted constructions unconditionally translate the hypothetical controller delta into a motor angular-demand and RESTORE actual old rates before engine allocation. Engine power 0 therefore cannot produce angular torque via this path. Newtonian RCS path remains unchanged. No global damping bypass or free control torque added.
+
+No native Windows build/game confirmation; validate zero-power engine gives zero Assisted turn while independent RCS still physically runs, and powered neutral pitch/yaw/roll control stops. If any residual, instrument and inspect the actual server tick motor moment.
+
+---
+
 ## 2026-10-22 — CRITICAL FIX: main thrust dead on fresh spawn (main)
 
 User video `20261022-1731-45.2307400.mp4` reports entire main flight/attitude control disabled while keypad RCS still works. Root-cause confirmed from source: ER-5 `EngineReactorState` defaulted to 2.725 K while `ShipCore::updateTranslationControl` scales generator electrical authority by `ready=clamp((T-2.725)/(idle-2.725),0,1)`. New game ships spawned directly into tactical flight without running a reactor startup procedure. Every main motor therefore initially had zero available electrical power; RCS uses its separate real executor. No pilot-input regression or missing bindings required to explain symptom.

@@ -301,8 +301,10 @@ void EngineThrustIndicatorRenderer::render(
                 {
                     const auto* bar=findBar(id);
                     if(!bar)continue;
+                    // Assisted: aft motor LEFT, fore motor RIGHT.
+                    // Both thrust fills start at the reactor and move outward.
                     if(bar->fillDirection==
-                        game::presentation::EngineThrustFillDirection::TopDown)
+                        game::presentation::EngineThrustFillDirection::BottomUp)
                         drawMotor(id,rx,cy,false);
                     else drawMotor(id,rx+sq,cy,true);
                 }
@@ -311,17 +313,20 @@ void EngineThrustIndicatorRenderer::render(
         if(newtonian)
         {
             const float dotY=y+h-13*scale;
-            const std::size_t count=presentation.rcsSlots.size();
+            // Eight physical display positions are reserved on all Newtonian
+            // layouts. Uninstalled positions remain dark; no fake healthy
+            // thrusters are added to Newtonian-I's four-cluster topology.
+            constexpr std::size_t count=8;
             for(std::size_t i=0;i<count;++i)
             {
-                const auto& rcs=presentation.rcsSlots[i];
+                const auto* rcs=i<presentation.rcsSlots.size()
+                    ? &presentation.rcsSlots[i] : nullptr;
                 const float cx=x+14*scale+
-                    (i+0.5f)*(w-28*scale)/
-                    static_cast<float>(std::max<std::size_t>(1,count));
-                const glm::vec4 color=!rcs.known?style.track:
-                    rcs.integrity01<=0.0f?dead:
-                    rcs.integrity01<0.5f?hot:
-                    rcs.integrity01<0.9f?yellow:green;
+                    (i+0.5f)*(w-28*scale)/static_cast<float>(count);
+                const glm::vec4 color=!rcs || !rcs->known?style.track:
+                    rcs->integrity01<=0.0f?dead:
+                    rcs->integrity01<0.5f?hot:
+                    rcs->integrity01<0.9f?yellow:green;
                 roundedOutlinePx(text,cx-4*scale,dotY-4*scale,
                     8*scale,8*scale,4*scale,1*scale,
                     style.panelBorder,color);

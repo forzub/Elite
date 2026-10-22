@@ -661,10 +661,9 @@ void ShipCore::updateTranslationControl(float dt)
         const auto& runtime =
             static_cast<const world::modules::ObjectModuleRuntime&>(
                 m_moduleRuntime);
-        if (reactorIds.size() == installation.engineReactors.size())
         {
-            powerGroups.reserve(reactorIds.size());
-            for (std::size_t n=0; n<reactorIds.size(); ++n)
+            powerGroups.reserve(installation.engineReactors.size());
+            for (std::size_t n=0; n<installation.engineReactors.size(); ++n)
             {
                 game::ship::control::MainEnginePowerGroup group;
                 for (const auto* engineId :
@@ -673,11 +672,14 @@ void ShipCore::updateTranslationControl(float dt)
                         if (std::string_view(engineTopology[i].id) == engineId)
                             group.engineIndices.push_back(i);
 
-                const auto* reactor = runtime.findModule(reactorIds[n]);
+                const std::string reactorId =
+                    n < reactorIds.size() ? reactorIds[n] : std::string {};
+                const auto* reactor = reactorId.empty()
+                    ? nullptr : runtime.findModule(reactorId);
                 const auto definition = std::find_if(
                     m_desc->modules.begin(),m_desc->modules.end(),
                     [&](const auto& module) {
-                        return module.moduleId == reactorIds[n];
+                        return module.moduleId == reactorId;
                     });
                 if (reactor && definition != m_desc->modules.end() &&
                     definition->engineReactor &&

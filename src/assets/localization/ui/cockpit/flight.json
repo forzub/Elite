@@ -646,6 +646,13 @@
       "es": "GIRO LIBRE",
       "ja": "自由回転"
     },
+    "cockpit.shortcut_strip.equipment_failure": {
+      "en": "FAIL ENG",
+      "ru": "ОТКАЗ ДВ.",
+      "zh-Hans": "引擎故障",
+      "es": "FALLO MOTOR",
+      "ja": "エンジン故障"
+    },
     "cockpit.shortcut_strip.reactor_toggle": {
       "en": "REACTORS",
       "ru": "РЕАКТОРЫ",

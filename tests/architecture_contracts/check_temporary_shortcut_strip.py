@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import json
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,7 +34,8 @@ for required in [
     assert required in strip, f"missing modified function-key hint: {required}"
 
 # No Shift+Fxx command exists in the current runtime contract.
-assert "Shift+F" not in strip
+assert not re.search(r"Shift\+F(?:[1-9]|1[0-2])\b", strip)
+assert "Ctrl+Alt+Shift+F" in strip
 
 for required in ["Esc", "Backspace", "Ctrl+R", "L-Ctrl+Q"]:
     assert required in strip, f"missing shortcut hint: {required}"
@@ -49,6 +51,7 @@ keys = [
     "cockpit.shortcut_strip.detail",
     "cockpit.shortcut_strip.back",
     "cockpit.shortcut_strip.repair",
+    "cockpit.shortcut_strip.equipment_failure",
     "cockpit.shortcut_strip.eject",
 ]
 locales = ["en", "ru", "zh-Hans", "es", "ja"]

@@ -50,6 +50,7 @@ inline game::bite::State buildShipBiteState(
         damage.accumulated.thermal01 = it->thermalDamage01;
         damage.accumulated.radiation01 = it->radiationDamage01;
         damage.accumulated.wear01 = it->wearDamage01;
+        damage.accumulated.internalFailure01 = it->internalFailureDamage01;
 
         const auto effective =
             game::equipment::engine::evaluateEngineUnit(

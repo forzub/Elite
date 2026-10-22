@@ -151,6 +151,10 @@ struct MotherComputerDriveHudGroup
     bool hasCoreTemperature = false;
     float coreTemperatureK = 0.0f;
     float safeCoreTemperatureK = 0.0f;
+    float generatedHeatMW = 0.0f;
+    float padHeatMW = 0.0f;
+    float coolantHeatMW = 0.0f;
+    float storedHeatMW = 0.0f;
 };
 
 struct MotherComputerRcsHudSlot

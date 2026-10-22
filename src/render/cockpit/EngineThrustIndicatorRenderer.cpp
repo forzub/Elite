@@ -238,6 +238,18 @@ void EngineThrustIndicatorRenderer::render(
                 text.solidRectPx(outwardRight?bx+scale:bx+length-scale-fill,
                     centerY-bh*0.5f+scale,fill,
                     std::max(1.0f,bh-2*scale),style.thrust);
+            // Real vectoring angle complements thrust: manoeuvring Assisted
+            // engines still show their executed thrust on these bars.
+            if(bar->hasNozzleAngle && bar->thrust01>0.005f &&
+                bar->nozzleAngleDeg>0.5f)
+            {
+                char angle[20];
+                std::snprintf(angle,sizeof(angle),"%.0f°",
+                    bar->nozzleAngleDeg);
+                text.textDrawPx(angle,outwardRight?rx+8*scale:rx-31*scale,
+                    centerY+7*scale,
+                    std::max(9,static_cast<int>(9*scale)),style.label);
+            }
             const float padX=outwardRight?bx+length:bx;
             glm::vec4 padColor=style.track;
             if(bar->hasEmitterIntegrity)
@@ -325,6 +337,8 @@ void EngineThrustIndicatorRenderer::render(
                     (i+0.5f)*(w-28*scale)/static_cast<float>(count);
                 const glm::vec4 color=!rcs || !rcs->known?style.track:
                     rcs->integrity01<=0.0f?dead:
+                    rcs->firingKnown && rcs->firing01>0.005f
+                        ? normal:
                     rcs->integrity01<0.5f?hot:
                     rcs->integrity01<0.9f?yellow:green;
                 roundedOutlinePx(text,cx-4*scale,dotY-4*scale,

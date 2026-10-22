@@ -7554,7 +7554,24 @@ m_systemMapRenderer.render(
                         " s remaining";
                 }
                 else
-                    message="REACTORS READY / propulsion power enabled";
+                {
+                    const bool synthetic=std::any_of(
+                        cockpit.drives.begin(),cockpit.drives.end(),
+                        [](const auto& d){return d.simulatedPower;});
+                    const bool live=std::any_of(
+                        cockpit.drives.begin(),cockpit.drives.end(),
+                        [](const auto& d){return d.installed && !d.failed &&
+                            d.integrity01>0.0f;});
+                    if(synthetic)
+                        message="REACTORS READY / diagnostic simulated 5 GW";
+                    else if(!live)
+                    {
+                        message="REACTOR ERROR / no functional installed ER-5";
+                        severity=game::presentation::DockingTerminalSeverity::Error;
+                    }
+                    else
+                        message="REACTORS READY / propulsion power enabled";
+                }
                 terminal.diagnostics.emplace_back(message,severity);
             }
             // A system fault reaches the same historical diagnostic terminal

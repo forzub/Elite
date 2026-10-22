@@ -1,4 +1,8 @@
 #include "src/game/presentation/EngineThrustHudPresentation.h"
+#include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
+#include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
+#include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
+#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -359,6 +363,89 @@ void testMotherComputerCockpitBarsPreserveLayoutAndBite()
             "MotherComputer HUD silently rearranged engine ordering");
 }
 
+
+void testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic()
+{
+    using namespace game::ship;
+    auto descriptor=descriptorFor(Model::AssistedI);
+    // A native Assisted-I descriptor contains all dormant installed Cobra
+    // engine and ER-5 passports. Replicated active model changes at runtime,
+    // while the client's catalog descriptor remains Assisted-I.
+    for(const auto model:{Model::AssistedI,Model::AssistedY,Model::AssistedX})
+    {
+        for(const auto& id:
+                presets::cobra::installedAssistedEngineModuleIds(model))
+        {
+            ModuleDescriptor m;
+            m.moduleId=id;
+            m.engine=game::equipment::engine::presets::
+                CobrettyCR1VectorMainDrive();
+            m.equipmentFailure.failureAtDamage01=0.95;
+            descriptor.modules.push_back(std::move(m));
+        }
+        for(const auto& id:
+                presets::cobra::installedAssistedReactorModuleIds(model))
+        {
+            ModuleDescriptor m;
+            m.moduleId=id;
+            m.engineReactor=game::equipment::reactor::presets::
+                CobraCobrettyER5PropulsionReactor();
+            descriptor.modules.push_back(std::move(m));
+        }
+    }
+    descriptor.physicalControl.slotModuleIds =
+        presets::cobra::installedAssistedEngineModuleIds(Model::AssistedI);
+    auto ship=shipFor(descriptor);
+    for(const auto& def:descriptor.modules)
+    {
+        game::simulation::ObjectModuleSnapshot m;
+        m.moduleId=def.moduleId;
+        m.state=static_cast<std::uint8_t>(
+            world::modules::ObjectModuleRuntimeState::Attached);
+        m.health=100.0f;
+        if(def.engine)
+        {
+            m.hasEngineThermalState=true;
+            m.engineTemperatureK=static_cast<float>(
+                def.engine->nominalOperatingTemperatureK);
+            m.emitterIntactArea01=1.0f;
+        }
+        ship.modules.push_back(std::move(m));
+    }
+    for(const auto model:{Model::AssistedY,Model::AssistedX})
+    {
+        ship.physicalControlModel=model;
+        const auto selected=
+            capability::replicatedInstalledAssistedDescriptor(
+                descriptor,model);
+        require(selected.has_value(),
+                "installed Y/X wrongly classified synthetic diagnostic");
+        const auto ids=
+            presets::cobra::installedAssistedEngineModuleIds(model);
+        const auto reactors=
+            presets::cobra::installedAssistedReactorModuleIds(model);
+        require(selected->physicalControl.slotModuleIds==ids &&
+                selected->powerThermalInstallation.engineReactorModuleIds==
+                    reactors,
+                "installed Y/X descriptor bound to native I hardware");
+        const auto damaged=std::find_if(ship.modules.begin(),ship.modules.end(),
+            [&](const auto& m){return m.moduleId==ids.front();});
+        require(damaged!=ship.modules.end(),"missing Y/X engine snapshot");
+        damaged->internalFailureDamage01=1.0f;
+        const auto states=capability::buildPhysicalControlSlotState(
+            *selected,model,ship.modules);
+        require(states.size()==ids.size() &&
+                std::abs(states.front().thrust01)<1.0e-6 &&
+                states[1].thrust01>0.90f,
+                "Y/X client projected healthy motor after server failure");
+        const auto hud=game::presentation::buildEngineThrustHudPresentation(
+            ship);
+        require(totalBars(hud)==ids.size() && hud.warning,
+                "Y/X engine-out HUD lost real slot fault or layout count");
+        damaged->internalFailureDamage01=0.0f;
+    }
+}
+
 } // namespace
 
 int main()
@@ -372,6 +459,7 @@ int main()
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
         testMotherComputerCockpitBarsPreserveLayoutAndBite();
+        testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic();
 
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"

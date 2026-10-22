@@ -584,6 +584,48 @@ void testInjectedInternalEquipmentFault()
             "full internal fault failed to disable only target engine");
 }
 
+
+void testEngineOutWorkingAxisIsTorqueNeutral()
+{
+    auto d=descriptor();
+    d.physics.physicalActuatorHalfExtentsMeters={13.0,2.5,11.1};
+    d.physics.centerOfMassLocalMeters={0.0,0.0,0.0};
+    // The CR-1's 75-degree physical gimbal is sufficient for the surviving
+    // outboard motor's COM ray; a fictitious straight-ahead impulse is not.
+    for(auto& module:d.modules)
+        module.engine->nominalGimbalRangeRad=
+            75.0*3.14159265358979323846/180.0;
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    require(runtime.injectEquipmentFailure("aft_left",1.0),
+            "engine-out scenario could not fail real aft-left CR-1");
+    const auto capability=
+        game::ship::capability::buildShipCapability(d,runtime);
+    require(capability.valid,
+            "installed engine-out capability invalid");
+    const auto& physics=capability.effectivePhysics;
+    require(physics.assistedWorkingThrustAxisEmergency &&
+            physics.assistedWorkingThrustMotorIndex==1 &&
+            physics.assistedWorkingThrustAxisBody.x<0.0 &&
+            physics.assistedWorkingThrustAxisBody.z<0.0,
+            "dead aft-left failed to select outboard right drive axis");
+    const auto arm=glm::dvec3(13.0,0.0,11.1);
+    const auto axis=physics.assistedWorkingThrustAxisBody;
+    require(glm::length(glm::cross(arm,axis))<1.0e-6,
+            "emergency main thrust misses real center of mass");
+    require(std::abs(physics.assistedWorkingThrustAxisAngleRad*
+                180.0/3.14159265358979323846-49.5)<0.25,
+            "outboard drive 49.5-degree fallback angle changed");
+    require(physics.forwardMainEngineAvailable &&
+            physics.forwardMainEngineAccelerationMps2>0.0f,
+            "one surviving main drive falsely reported zero propulsion");
+    const auto current=game::ship::capability::buildPhysicalControlSlotState(
+        d,d.physicalControlModel,runtime);
+    require(current.size()==4 && near(current[0].thrust01,0.0) &&
+            current[1].thrust01>0.0,
+            "one engine-out was not represented in real slot capabilities");
+}
+
 } // namespace
 
 int main()
@@ -592,6 +634,7 @@ int main()
     {
         testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
         testInjectedInternalEquipmentFault();
+        testEngineOutWorkingAxisIsTorqueNeutral();
         testCinematicEngineImpactShockAndRecovery();
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();

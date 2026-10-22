@@ -1378,6 +1378,49 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.reactor.generatedHeat = m_reactor.getHeatVolume();
     status.reactor.heatGenerationMW = m_reactor.getGeneratedHeatMJ();
     
+    // One factual status per installed propulsion generator. The legacy
+    // ship-services reactor above is NOT one of these ER-5 modules.
+    if (m_desc)
+    {
+        const auto& ids =
+            m_desc->powerThermalInstallation.engineReactorModuleIds;
+        const auto& runtime =
+            static_cast<const world::modules::ObjectModuleRuntime&>(
+                m_moduleRuntime);
+        status.engineReactors.reserve(ids.size());
+        for (const auto& id : ids)
+        {
+            game::EngineReactorStatus sample;
+            sample.moduleId = id;
+            const auto* module=runtime.findModule(id);
+            const auto definition=std::find_if(
+                m_desc->modules.begin(),m_desc->modules.end(),
+                [&](const auto& d){return d.moduleId==id;});
+            if(module && definition!=m_desc->modules.end() &&
+                definition->engineReactor)
+            {
+                sample.installed=module->state ==
+                    world::modules::ObjectModuleRuntimeState::Attached &&
+                    module->health>0.0f;
+                // The generator state is persistent, but its thermal service
+                // tick is not wired yet. An initial 2500 K passport value
+                // must not be presented as a measured core temperature.
+                const auto& state=module->engineReactorOperating;
+                if(state.lastGeneratedHeatMW>0.0 ||
+                   state.equivalentOperatingHours>0.0)
+                {
+                    sample.coreTemperatureK=state.temperatureK;
+                    sample.safeTemperatureK=
+                        definition->engineReactor->safeTemperatureK;
+                    sample.generatedHeatMW=state.lastGeneratedHeatMW;
+                    sample.electricalOutputMW=
+                        state.lastElectricalOutputMW;
+                }
+            }
+            status.engineReactors.push_back(std::move(sample));
+        }
+    }
+
     // ----- Thermal (все методы есть) -----
     status.thermal.temperature = m_thermal.getTemperature();
     status.thermal.thermalMass = m_thermal.getThermalMass();

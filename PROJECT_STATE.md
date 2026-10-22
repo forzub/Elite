@@ -1,3 +1,13 @@
+## 2026-10-22 — ER-5 missing HUD telemetry diagnosed; partial source groundwork only
+
+User confirmed drive reactor temperature does not reach HUD. Root cause verified: `ShipCore::updateSystems` still does not advance installed ER-5 thermal state; `ShipCore::getCoreStatus` reports only the 70MW ship-service reactor; `MotherComputer` has no actual ER-5 temperature. Do NOT represent an ER-5 nominal 2500K value as measured temperature.
+
+Commits `23cdda8`, `b25e052`, `d80d43a` add per-installed engine reactor mutable state in `ObjectModuleState`, a separate `ShipCoreStatus::engineReactors` DTO, and last measured output/heat fields in `EngineReactorState`. **This is incomplete wiring, not working new telemetry.** A further attempt to update `ShipCore.cpp` was not applied (tool rejected request). The renderer should continue to mark ER-5 temperature unknown until the complete authoritative chain is connected.
+
+Next: once only in `ShipCore::updateSystems`, tick each installed ER-5 from delivered `motion.engineTelemetry.electricalMW`, calculate remaining pad radiation headroom after actual motor waste, and handle finite reactor-to-shared-coolant heat transfer without introducing fictional extra pump. Then publish per-reactor status in `getCoreStatus`, map module IDs to `MotherComputerCockpitView.drives` and to the actual HUD reactor squares. Confirm Windows build/game behavior. Newtonian single pad cannot reject nominal full generator waste. No native build run. Work on main only.
+
+---
+
 ## 2026-10-22 — Assisted HUD motor sides fixed; Newtonian eight display positions
 
 Commit `0dbbf4f` modifies only `src/render/cockpit/EngineThrustIndicatorRenderer.cpp` on `main`. Assisted fore/aft drawing corrected to user convention: **aft on LEFT**, **fore on RIGHT** of each ER-5 square, with both thrust fills starting at the square and proceeding outward. Newtonian instrument reserves **eight RCS circles** across I/Y/X; positions beyond the actual installed maneuver clusters display dark/unavailable, NOT fabricated working nozzles. Actual `CobraPropulsionPresets.h` defines four `ManoeuvreCluster` slots for Newtonian-I, six for Newtonian-Y, eight for Newtonian-X. Those are distinct from 24 detailed Newtonian nozzle units; no physics or equipment counts were changed. A future design decision is needed if eight truly independent indicators are required for every construction rather than eight visual locations. No build/game verification performed via GitHub; ask user to compile and send screenshot.

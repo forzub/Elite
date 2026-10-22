@@ -9,7 +9,9 @@
             InjectReactorFailure,
             EjectCockpitCapsule,
             StartBestRepairJob,
-            SelectPhysicalControlModel
+            SelectPhysicalControlModel,
+            TogglePropulsionReactors,
+            ToggleAssistedFreeRotation
         };
         Type type;
 

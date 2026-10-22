@@ -64,6 +64,7 @@ struct EngineDriveHudPresentation
     bool installed = false;
     bool failed = false;
     float integrity01 = 0.0f;
+    bool simulatedPower = false;
     bool ignitionOn = false;
     bool ignitionStarting = false;
     bool hasCoreTemperature = false;
@@ -415,6 +416,7 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         entry.hasCoreTemperature=drive.hasCoreTemperature;
         entry.coreTemperatureK=drive.coreTemperatureK;
         entry.safeCoreTemperatureK=drive.safeCoreTemperatureK;
+        entry.simulatedPower=drive.simulatedPower;
         entry.ignitionOn=drive.ignitionOn;
         entry.ignitionStarting=drive.ignitionStarting;
         entry.generatedHeatMW=drive.generatedHeatMW;

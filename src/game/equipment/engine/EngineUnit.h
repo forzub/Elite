@@ -650,43 +650,34 @@ inline EngineLifeStep advanceEngineOperatingState(
         );
     }
 
-    const double heat =
-        generatedWasteHeatMW(descriptor, current, delivered);
-    step.dissipatedHeatMW = std::max(0.0, heat);
-    // The hot nozzle emits FIRST; any excess loads the engine's conductive
-    // path and later the shared coolant. No double-counting of emission.
-    step.emitterRadiatedHeatMW = std::min(
-        step.dissipatedHeatMW,
-        ratedThermalEmitterPowerMW(
-            descriptor,
-            finiteClamp01(emitterEffectiveArea01) *
-                effectiveEmitterArea01(previous)
-        )
-    );
-    // Residual engine heating before finite thermal storage and coolant
-    // transfer. Actual heat transferred to coolant is computed below.
-    const double bulkHeatMW =
-        step.dissipatedHeatMW - step.emitterRadiatedHeatMW;
-
-    const double capacity =
-        std::max(1.0e-9, descriptor.thermalCapacityMJperK);
-    const double conductance =
-        std::max(1.0e-9, descriptor.thermalConductanceMWperK);
-    const double startT =
-        std::isfinite(previous.temperatureK) &&
-        previous.temperatureK > 0.0
-            ? previous.temperatureK
-            : coolant;
-    const double equilibriumT = coolant + bulkHeatMW / conductance;
-    const double decay =
-        std::exp(-conductance * deltaSeconds / capacity);
-    step.next.temperatureK =
-        equilibriumT + (startT - equilibriumT) * decay;
-    // First law: what is not stored in the engine must reach (or be drawn
-    // from) coolant. May be negative when a cold engine absorbs coolant heat.
-    step.coolantHeatMW = bulkHeatMW -
-        capacity*(step.next.temperatureK-startT)/deltaSeconds;
-
+    // Unified universe pad density; main-engine thermal mass is separate
+    // from reactor and ship coolant. No parallel Stefan-Boltzmann channel.
+    const double heat=generatedWasteHeatMW(descriptor,current,delivered);
+    step.dissipatedHeatMW=std::max(0.0,heat);
+    const double idle=descriptor.nominalOperatingTemperatureK;
+    const double design=descriptor.safeOperatingTemperatureK;
+    const double capacity=std::max(1.0,descriptor.thermalCapacityMJperK);
+    const double startT=previous.temperatureK>0.0
+        ? previous.temperatureK
+        : game::physics::thermal::DeepSpaceTemperatureK;
+    const double effectiveArea=finiteClamp01(emitterEffectiveArea01)*
+        effectiveEmitterArea01(previous);
+    const double area=game::physics::thermal::annulusAreaM2(
+        descriptor.thermalEmitter.outerDiameterM,
+        descriptor.thermalEmitter.apertureDiameterM);
+    const double padMW=game::physics::thermal::propulsionPadCoolingMW(
+        area,effectiveArea,startT,idle,design);
+    // A 300-second cold start reaches 99% of engine idle temperature.
+    const double warm=startT<idle ?
+        (idle-startT)*(1.0-std::exp(-deltaSeconds/(300.0/4.60517)))
+        : 0.0;
+    step.next.temperatureK=std::max(
+        game::physics::thermal::DeepSpaceTemperatureK,
+        startT+warm+(step.dissipatedHeatMW-padMW)*deltaSeconds/capacity);
+    step.emitterRadiatedHeatMW=std::min(padMW,
+        step.dissipatedHeatMW+
+        std::max(0.0,(startT-idle)*capacity/deltaSeconds));
+    step.coolantHeatMW=0.0; // dedicated pad sink, no double counted coolant
     const auto heatDamageRate = [&](double temperatureK)
     {
         const double excess =

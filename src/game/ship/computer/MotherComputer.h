@@ -135,6 +135,27 @@ struct MotherComputerEngineHudSlot
     bool hasEngineTemperature = false;
     float engineTemperatureK = 0.0f;
     float engineSafeTemperatureK = 0.0f;
+    bool hasEmitterIntegrity = false;
+    float emitterIntegrity01 = 0.0f;
+};
+
+struct MotherComputerDriveHudGroup
+{
+    std::string id;
+    std::vector<std::string> poweredEngineSlots;
+    bool installed = false;
+    bool failed = false;
+    float integrity01 = 0.0f;
+    bool hasCoreTemperature = false;
+    float coreTemperatureK = 0.0f;
+    float safeCoreTemperatureK = 0.0f;
+};
+
+struct MotherComputerRcsHudSlot
+{
+    std::string id;
+    bool known = false;
+    float integrity01 = 0.0f;
 };
 
 struct MotherComputerCockpitView
@@ -147,6 +168,8 @@ struct MotherComputerCockpitView
     std::string physicalModelLabel;
     std::string engineHudStyleId = "human_amber";
     std::vector<MotherComputerEngineHudSlot> engineSlots {};
+    std::vector<MotherComputerDriveHudGroup> drives {};
+    std::vector<MotherComputerRcsHudSlot> rcsSlots {};
     game::bite::State bite {};
     game::ShipCoreStatus systems {};
 };

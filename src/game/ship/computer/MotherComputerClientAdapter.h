@@ -207,6 +207,10 @@ namespace game::ship::computer
     for (std::size_t n=0;n<installation.engineReactors.size();++n)
     {
         MotherComputerDriveHudGroup drive;
+        drive.ignitionOn=out.systems.propulsionReactorsOn &&
+            out.systems.propulsionStartupSeconds<=0.0;
+        drive.ignitionStarting=out.systems.propulsionReactorsOn &&
+            out.systems.propulsionStartupSeconds>0.0;
         drive.id = installation.engineReactors[n].slotId;
         for (const auto* id : installation.engineReactors[n].poweredEngineSlots)
             drive.poweredEngineSlots.emplace_back(id);

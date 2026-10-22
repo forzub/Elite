@@ -56,7 +56,7 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
         if (descMod.engine)
         {
             state.engineOperating.temperatureK =
-                descMod.engine->nominalCoolantTemperatureK;
+                game::physics::thermal::DeepSpaceTemperatureK;
         }
         state.state = ObjectModuleRuntimeState::Attached;
 

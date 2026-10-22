@@ -519,10 +519,6 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
     text.textDrawPx("REACTOR",reactorX+8*scale,y+7*scale,small,amber);
     // Core | reactor pump | common coolant. Pump lights amber only if it
     // receives power and hysteresis requests it; otherwise empty square.
-    const float r=std::clamp(static_cast<float>(
-        status.reactor.criticalTemp>0
-            ? status.reactor.temperature/status.reactor.criticalTemp : 0),
-        0.0f,1.0f);
     const float chainY=y+19*scale;
     // Fill the available reactor panel width proportionally. The two fault
     // lamps belong BELOW the pump and coolant icons, not at the right edge.

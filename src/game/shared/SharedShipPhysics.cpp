@@ -121,7 +121,12 @@ void evaluateControl(
     transform.forwardInput    = control.forwardInput;
     transform.strafeInput     = control.strafeInput;
     transform.liftInput       = control.liftInput;
-    transform.targetSpeedRate = control.targetSpeedRate;
+    transform.targetSpeedRate =
+        motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted &&
+        (motion.assistedFreeRotation ||
+         motion.velocityAlignmentMode ==
+             game::navigation::VelocityAlignmentMode::ForwardToVelocity)
+            ? 0.0f : control.targetSpeedRate;
 
     // TVC commands live in DynamicMotionState because nozzle position is a
     // rate-limited physical actuator state, not a presentation/input transient.

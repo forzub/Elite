@@ -75,6 +75,8 @@ class ShipCore
 {
 public:
     ShipCore() = default;
+    void togglePropulsionReactors() noexcept;
+    void toggleAssistedFreeRotation() noexcept;
     
     void init(
         ShipRole role,

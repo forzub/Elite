@@ -56,7 +56,7 @@ void ObjectModuleRuntime::init(const std::vector<ModuleDescriptor>& descriptors)
         if (descMod.engine)
         {
             state.engineOperating.temperatureK =
-                game::physics::thermal::DeepSpaceTemperatureK;
+                descMod.engine->nominalOperatingTemperatureK;
         }
         // Ships currently enter tactical flight with their propulsion
         // generators already running. Until a start/stop lifecycle exists,

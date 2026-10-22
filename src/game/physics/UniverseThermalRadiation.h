@@ -18,6 +18,29 @@ inline constexpr double DeepSpaceTemperatureK = 2.725;
 inline constexpr double RadiationEffectiveness = 10.0;
 inline constexpr double Pi = 3.14159265358979323846;
 
+// Game-world universal pad cooling density, independent of equipment type.
+// This intentionally replaces Stefan-Boltzmann in propulsion pads; legacy
+// ship-wide radiator panels may continue using the radiative law below.
+inline constexpr double PropulsionPadCoolingMWPerM2 = 6.0;
+
+// Each pad has its own area and integrity, but shares the SAME world law.
+// At idle there is no load cooling demand; at nominal thermal limit the pad
+// reaches its rated capacity. Do not silently multiply by a second factor.
+[[nodiscard]] inline double propulsionPadCoolingMW(
+    double areaM2, double intact01, double temperatureK,
+    double idleTemperatureK, double designTemperatureK
+) noexcept
+{
+    if(!std::isfinite(areaM2) || !std::isfinite(intact01) ||
+       !std::isfinite(temperatureK) || areaM2<=0.0 ||
+       designTemperatureK<=idleTemperatureK) return 0.0;
+    const double ratio=std::clamp(
+        (temperatureK-idleTemperatureK)/
+            (designTemperatureK-idleTemperatureK),0.0,1.0);
+    return areaM2*PropulsionPadCoolingMWPerM2*
+        std::clamp(intact01,0.0,1.0)*ratio;
+}
+
 // One-sided hot annulus (no fictitious solid disk over the exhaust opening).
 // Geometry belongs to the installed engine type, not these universe laws.
 [[nodiscard]] inline double annulusAreaM2(

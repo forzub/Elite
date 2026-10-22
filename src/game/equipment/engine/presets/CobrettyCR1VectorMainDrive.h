@@ -37,9 +37,9 @@ namespace game::equipment::engine::presets
     e.thermalEmitter.meshPartId = "engine_hot_emitter_annulus"; // existing mesh ID; physics surface is solid
 
     e.nominalCoolantTemperatureK = 1050.0;
-    e.nominalOperatingTemperatureK = 1200.0;
-    e.safeOperatingTemperatureK = 1300.0;
-    e.thermalCapacityMJperK = 12.0;
+    e.nominalOperatingTemperatureK = 450.0;
+    e.safeOperatingTemperatureK = 1250.0;
+    e.thermalCapacityMJperK = 70.0;
     const double wasteMW =
         e.nominalElectricalPowerMW * (1.0 - e.nominalEfficiency01);
     // Keep the finite physical housing→coolant heat path used before

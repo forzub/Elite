@@ -432,8 +432,15 @@ void FlightVectorIndicatorRenderer::render(
 
     beginBatch();
 
-    emitCircle(center, radius, 1.4f, dim, 72);
-    emitCircle(center, radius * 0.94f, 0.8f, glm::vec4(dim.r, dim.g, dim.b, 0.16f), 72);
+    const glm::vec4 freeRing(0.19f, 0.92f, 0.37f, 0.96f);
+    const glm::vec4 ring = presentation.assistedFreeRotation ? freeRing : dim;
+    emitCircle(center, radius,
+        presentation.assistedFreeRotation ? 4.0f : 1.4f, ring, 72);
+    emitCircle(center, radius * 0.94f,
+        presentation.assistedFreeRotation ? 1.7f : 0.8f,
+        presentation.assistedFreeRotation
+            ? glm::vec4(freeRing.r,freeRing.g,freeRing.b,0.35f)
+            : glm::vec4(dim.r,dim.g,dim.b,0.16f), 72);
 
     const float axisBottom = center.y + radius * 0.48f;
     const float axisTop = center.y - radius * 0.68f;

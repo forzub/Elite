@@ -172,6 +172,164 @@ void EngineThrustIndicatorRenderer::render(
         return;
     }
 
+    // Installation diagram replaces legacy vertical-bar instrument when the
+    // MotherComputer supplies reactor-group topology.
+    if (!presentation.drives.empty())
+    {
+        auto& text=TextRenderer::instance();
+        const auto& style=resolveEngineStatusWidgetStyle(
+            presentation.styleId);
+        const float scale=std::clamp(
+            static_cast<float>(viewport.height)/1440.0f,0.72f,1.40f);
+        const float x=static_cast<float>(viewport.width)*0.025f;
+        const float bottom=static_cast<float>(viewport.height)*0.965f;
+        const float w=260.0f*scale;
+        const float h=134.0f*scale;
+        const float y=bottom-h;
+        roundedOutlinePx(text,x,y,w,h,7*scale,1*scale,
+            style.panelBorder,style.panelBackground);
+        const int font=std::max(11,static_cast<int>(13*scale));
+        const float pulse=presentation.warning?warningPulse(style):1.0f;
+        drawCheckEngineIcon(text,x+8*scale,y+6*scale,17*scale,
+            presentation.warning?withAlpha(style.warning,pulse):
+                style.idleWarningIcon);
+        text.textDrawPx(presentation.modelLabel,x+31*scale,y+8*scale,
+            font,style.label);
+
+        const bool newtonian=presentation.modelLabel.find("NEWTONIAN")
+            !=std::string::npos;
+        const float top=y+30*scale;
+        const float rowStep=(newtonian?75.0f:96.0f)*scale/
+            static_cast<float>(std::max<std::size_t>(
+                1,presentation.drives.size()));
+        const float sq=12.0f*scale;
+        const float segment=83.0f*scale;
+        const glm::vec4 cold(0.08f,0.19f,0.36f,1.0f);
+        const glm::vec4 hot(1.0f,0.22f,0.12f,1.0f);
+        const glm::vec4 normal(0.96f,0.49f,0.12f,1.0f);
+        const glm::vec4 dead(0.02f,0.02f,0.03f,1.0f);
+        const glm::vec4 green(0.18f,0.85f,0.36f,1.0f);
+        const glm::vec4 yellow(0.95f,0.79f,0.10f,1.0f);
+        const auto findBar=[&](const std::string& id)
+            -> const game::presentation::EngineThrustBarPresentation*
+        {
+            for(const auto& group:presentation.groups)
+                for(const auto& bar:group.bars)
+                    if(bar.slotId==id) return &bar;
+            return nullptr;
+        };
+        const auto drawMotor=[&](const std::string& id,
+            float rx,float centerY,bool outwardRight)
+        {
+            const auto* bar=findBar(id);
+            if(!bar) return;
+            const float available=std::clamp(bar->capability01,0.0f,1.0f);
+            const float length=segment*available;
+            const float bx=outwardRight?rx:rx-length;
+            const float bh=7.0f*scale;
+            roundedOutlinePx(text,bx,centerY-bh*0.5f,
+                std::max(0.0f,length),bh,1*scale,1*scale,
+                normal,style.track);
+            // Filled from generator outward, with real executed motor thrust.
+            const float fired=available>0.0f
+                ? std::clamp(bar->thrust01/available,0.0f,1.0f):0.0f;
+            const float fill=std::max(0.0f,length-2*scale)*fired;
+            if(fill>0.0f)
+                text.solidRectPx(outwardRight?bx+scale:bx+length-scale-fill,
+                    centerY-bh*0.5f+scale,fill,
+                    std::max(1.0f,bh-2*scale),style.thrust);
+            const float padX=outwardRight?bx+length:bx;
+            glm::vec4 padColor=style.track;
+            if(bar->hasEmitterIntegrity)
+            {
+                const float integrity=std::clamp(
+                    bar->emitterIntegrity01,0.0f,1.0f);
+                // The pad thermal-balance status is not yet replicated;
+                // integrity is shown, while heat-condition color is unknown.
+                padColor=integrity<=0.0f?dead:style.label;
+                char pct[16];
+                std::snprintf(pct,sizeof(pct),"%.0f%%",integrity*100.0f);
+                text.textDrawPx(pct,padX-12*scale,
+                    centerY-17*scale,std::max(9,static_cast<int>(10*scale)),
+                    style.label);
+            }
+            roundedOutlinePx(text,padX-4*scale,centerY-4*scale,
+                8*scale,8*scale,4*scale,1*scale,
+                style.panelBorder,padColor);
+        };
+        for(std::size_t i=0;i<presentation.drives.size();++i)
+        {
+            const auto& drive=presentation.drives[i];
+            const float cy=top+(i+0.5f)*rowStep;
+            const float reactorX=x+(newtonian?225.0f:130.0f)*scale;
+            const float rx=reactorX-sq*0.5f;
+            glm::vec4 color=drive.failed?dead:cold;
+            if(drive.installed && !drive.failed)
+            {
+                color=normal; // Temperature channel pending: not a
+                // measured temperature/status, indicated by dash above.
+                if(drive.hasCoreTemperature)
+                    color=drive.coreTemperatureK>drive.safeCoreTemperatureK
+                        ? hot:normal;
+            }
+            roundedOutlinePx(text,rx,cy-sq*0.5f,sq,sq,1*scale,
+                1*scale,style.panelBorder,style.track);
+            if(drive.installed && drive.integrity01>0.0f)
+            {
+                const float fraction=std::clamp(
+                    drive.integrity01,0.0f,1.0f);
+                text.solidRectPx(rx+scale,
+                    cy+sq*0.5f-scale-(sq-2*scale)*fraction,
+                    sq-2*scale,(sq-2*scale)*fraction,color);
+            }
+            char temp[24];
+            if(drive.hasCoreTemperature)
+                std::snprintf(temp,sizeof(temp),"%.0f K",
+                    drive.coreTemperatureK);
+            else std::snprintf(temp,sizeof(temp),"-- K");
+            text.textDrawPx(temp,rx-12*scale,cy-18*scale,
+                std::max(9,static_cast<int>(10*scale)),style.label);
+            if(newtonian)
+            {
+                if(!drive.poweredEngineSlots.empty())
+                    drawMotor(drive.poweredEngineSlots.front(),
+                        rx,cy,false);
+            }
+            else
+            {
+                for(const auto& id:drive.poweredEngineSlots)
+                {
+                    const auto* bar=findBar(id);
+                    if(!bar)continue;
+                    if(bar->fillDirection==
+                        game::presentation::EngineThrustFillDirection::TopDown)
+                        drawMotor(id,rx,cy,false);
+                    else drawMotor(id,rx+sq,cy,true);
+                }
+            }
+        }
+        if(newtonian)
+        {
+            const float dotY=y+h-13*scale;
+            const std::size_t count=presentation.rcsSlots.size();
+            for(std::size_t i=0;i<count;++i)
+            {
+                const auto& rcs=presentation.rcsSlots[i];
+                const float cx=x+14*scale+
+                    (i+0.5f)*(w-28*scale)/
+                    static_cast<float>(std::max<std::size_t>(1,count));
+                const glm::vec4 color=!rcs.known?style.track:
+                    rcs.integrity01<=0.0f?dead:
+                    rcs.integrity01<0.5f?hot:
+                    rcs.integrity01<0.9f?yellow:green;
+                roundedOutlinePx(text,cx-4*scale,dotY-4*scale,
+                    8*scale,8*scale,4*scale,1*scale,
+                    style.panelBorder,color);
+            }
+        }
+        return;
+    }
+
     auto& text = TextRenderer::instance();
     const auto& style =
         resolveEngineStatusWidgetStyle(presentation.styleId);
@@ -497,11 +655,11 @@ void EngineThrustIndicatorRenderer::renderThermalSystems(
         labelGap+barHeight+padding;
     const float w=142.0f*scale;
     const float gap=9.0f*scale;
-    const float reactorX=x+engineWidth+gap;
+    const float reactorX=x+(engines.drives.empty()?engineWidth:260.0f*scale)+gap;
     const float coolantX=reactorX+w+gap;
-    const float y=bottom-h;
+    const float y=bottom-(engines.drives.empty()?h:134.0f*scale);
     auto panel=[&](float px) {
-        roundedOutlinePx(text,px,y,w,h,7.0f*scale,1.0f*scale,
+        roundedOutlinePx(text,px,y,w,engines.drives.empty()?h:134.0f*scale,7.0f*scale,1.0f*scale,
             style.panelBorder,style.panelBackground);
     };
     // When this resolution is too narrow, do not obscure the boresight.

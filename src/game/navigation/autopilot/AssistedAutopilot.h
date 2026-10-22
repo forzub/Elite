@@ -332,6 +332,12 @@ public:
                 )
             );
         attitudeRequest.deltaSeconds = dt;
+        // The outer velocity-course guidance selects a nose target; the
+        // inner hull attitude loop settles toward it with a physically
+        // bounded, non-impulsive response. At 50 Hz, targeting a rate in
+        // one 20-ms tick caused near-continuous full-power reversals.
+        // Fixed half-second time constant, not tied to frame / network rate.
+        attitudeRequest.pitchYawResponseSeconds = 0.50;
 
         const auto attitude =
             HullAttitudeControl::evaluate(attitudeRequest);

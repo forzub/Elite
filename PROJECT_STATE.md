@@ -1,3 +1,11 @@
+## 2026-10-22 — Per-ER-5 telemetry relay to MotherComputer; live source still pending
+
+Commits `49ce46b` and `da4c464` on main: `ShipCore::getCoreStatus` now publishes one `EngineReactorStatus` per bound installed ER-5 module via existing `ShipCoreStatus.engineReactors`, and the existing `MotherComputerClientAdapter::collectCockpitView` looks up matching moduleId to feed the reactor square's genuine temperature/safe limit. No new RPC, duplicated status bus, dummy temperature or ship-services reactor confusion. Source remains guarded: zero/uninitialized status must not be interpreted as real ER-5 core heat.
+
+**NOT COMPLETE:** This only connects the telemetric pathway. `ShipCore::updateSystems` still does not invoke `advanceEngineReactor`; no continuous, live temperature or output readings yet. The preexisting `EngineReactorState` runtime stores electrical output and heat only WHEN actually ticked, and the HUD should therefore retain `-- K` until the real generator service tick is integrated. Thermal emitter headroom and pad temperature-based color are also not yet measured. Avoid presenting this wiring alone as delivery of reactor telemetry. Next: authoritative per-installed ER-5 service tick using executed motor electrical output, real residual pad radiative capacity, bounded common coolant overflow; then validate build/game. Latest edits not compiled locally through GitHub.
+
+---
+
 ## 2026-10-22 — ER-5 missing HUD telemetry diagnosed; partial source groundwork only
 
 User confirmed drive reactor temperature does not reach HUD. Root cause verified: `ShipCore::updateSystems` still does not advance installed ER-5 thermal state; `ShipCore::getCoreStatus` reports only the 70MW ship-service reactor; `MotherComputer` has no actual ER-5 temperature. Do NOT represent an ER-5 nominal 2500K value as measured temperature.

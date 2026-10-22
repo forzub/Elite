@@ -882,6 +882,27 @@ void DynamicMotionSystem::applyLocalFrameInput(
     // does not.
     motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
 
+    // Free-rotation mode and its bounded return-to-velocity alignment own NO
+    // longitudinal cruise servo. Only keypad body translation is admitted.
+    // Attitude input still reaches the installed main-engine torque allocator.
+    if (motion.assistedFreeRotation ||
+        motion.velocityAlignmentMode == VelocityAlignmentMode::ForwardToVelocity)
+    {
+        motion.targetForwardSpeedMps=glm::dot(relativeWorldVelocity,f);
+        motion.assistedTargetSpeedHold=false;
+        motion.assistedThrottleTrimWasActive=false;
+        motion.desiredTacticalVelocityMps=relativeWorldVelocity;
+        motion.mainEngineAccelerationMps2=clampMagnitude(
+            f*(static_cast<double>(forwardInput)*assistedLateralStabilizationAccel)+
+            r*(static_cast<double>(strafeInput)*assistedLateralStabilizationAccel)+
+            u*(static_cast<double>(liftInput)*assistedLateralStabilizationAccel),
+            assistedLateralStabilizationAccel);
+        motion.manoeuvreAccelerationMps2=glm::dvec3(0.0);
+        motion.assistedStabilizationAccelerationMps2=glm::dvec3(0.0);
+        motion.engineAccelerationMps2=motion.mainEngineAccelerationMps2;
+        return;
+    }
+
     // With the fore/reverse bank destroyed, Assisted cannot pretend it has
     // an instantaneous reverse main. END/BrakeToStop uses the existing
     // physical flip-and-burn attitude controller: coast while it turns the

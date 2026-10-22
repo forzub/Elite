@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <array>
 
 namespace game
 {
@@ -97,6 +98,8 @@ struct EngineReactorStatus {
 struct ShipCoreStatus {
     ReactorStatus reactor;
     std::vector<EngineReactorStatus> engineReactors;
+    std::array<float,24> newtonianRcsExecuted01 {};
+    bool newtonianRcsSampleValid = false;
     ThermalStatus thermal;
     CoolingStatus cooling;
     PowerBusStatus powerBus;

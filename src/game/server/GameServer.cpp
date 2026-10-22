@@ -720,6 +720,14 @@ void GameServer::update(double dt)
                     m_simulation.startBestRepairJobForFirstMissingSlot(id);
                     break;
 
+                case ClientShipCommand::TogglePropulsionReactors:
+                    ship.core().togglePropulsionReactors();
+                    break;
+
+                case ClientShipCommand::ToggleAssistedFreeRotation:
+                    ship.core().toggleAssistedFreeRotation();
+                    break;
+
                 case ClientShipCommand::SelectPhysicalControlModel:
                 {
                     using Model = game::ship::plant::PhysicalControlModelId;

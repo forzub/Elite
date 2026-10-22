@@ -1,3 +1,46 @@
+# ELITE — CURRENT PROJECT STATE (2026-10-22, 22:30 Europe/Kyiv)
+
+> **Authoritative continuation point.** Maintain **this file only** for Elite project context. Update this top summary and, if needed, the historical log below after each substantive code/flight finding. Do not create parallel state/status files. Work directly on `main`; preserve working Assisted behavior while investigating other modes. Keep diagnostic logs under `D:/tmp`. Distinguish code-confirmed, numerical/log-confirmed, gameplay-confirmed, and still unverified outcomes; no tests merely for the sake of tests.
+
+## Current focus and result
+
+**Assisted-I autopilot pitch/yaw jitter is FIXED IN OBSERVED GAMEPLAY**, as reported by user on 2026-10-22: ship movement now smooth, no visible tremor. Independently, the newly supplied 90.02-second server flight capture strongly corroborates that outcome. This closes the specific **high-frequency pitch/yaw full-authority bang-bang** diagnosis; it does **NOT** certify every Assisted-Y/X layout, Newtonian behavior, exact docking completion, or all flight envelopes.
+
+- Implementation on `main`: `3ee3209` added physically bounded damped planar PD input to `src/game/navigation/autopilot/HullAttitudeControl.h` (`pitchYawResponseSeconds`, separate from default legacy predictive path); `7afe8dc` opted **AssistedAutopilot only** into T=0.50 s via `src/game/navigation/autopilot/AssistedAutopilot.h`. Direct GitHub source inspection confirms both paths and `pitchYawResponseSeconds = 0.50`.
+- Previous `b4620b0` separated course/velocity guidance from true **hull nose-to-lead** pose error, preserving the outer velocity-course loop and a bounded 10° nose lead. Both fixes were necessary: the first corrected the reference; the later PD inner servo corrected excessive 50-Hz gain.
+- New user flight evidence `elite_attitude_jitter(2).csv`: 4501 samples, dt=0.020 s, 90.02 s, Assisted physical model `model=0`, 4 powered main motors, `reactor_on=1`, valid motor program/sample for all frames, generator ~10,000 MW, maximum measured velocity **412.07 m/s**. Emulated pitch+yaw control vector at saturation (norm >=0.95): **0%** at 10–20, 70–80, and 80–90 s (previous affected trace: **98.6%, 95.0%, 97.0%** in those windows). Over the 90s, pitch command sign reversals (ignoring |command|<=0.1) **2** and yaw **1**, compared with earlier **588** and **722** in the prior automatic trace. Only 27/4501 frames (0.6%) had control-vector saturation; all were in the initial 0–10 seconds. This is direct evidence that sustained bang-bang has disappeared, **not** a claim of literally zero fine-grained angular acceleration changes.
+- Companion `elite_docking_planner(20261022-192708).log`: 36 route results, all with `failure=""`; route-construction log, **not** a per-frame actuator trace and not proof that docking was completed.
+- User feedback is **qualitative gameplay acceptance** for smoothness; no CTest matrix or independent full Windows build was executed by assistant this turn. Do not accidentally revert this to `unverified jitter` when reading older entries below.
+
+## Architecture and non-negotiable boundaries
+
+1. **Autopilot substitutes pilot controls**, never teleports state or commands engines outside the same physical actuator pathway. Server computes installed motor/RCS forces and torques with real thrust/authority/power/thermal/damage limitations; planner/controller must work from real achievable acceleration envelopes, not desired performance.
+2. Maintain **strict Assisted vs Newtonian flight-law isolation**: independent planners, autopilots, associated helpers/control doctrine. Working Assisted behavior is baseline; avoid changes to Assisted to solve Newtonian faults.
+3. Assisted outer guidance is about **velocity vector following the route**; hull attitude is an inner controller, with modest course-dependent nose lead. Do not conflate nose-to-course angle with velocity-to-course error. Preserve continuous authored route curves, lead-turn, tunnel visualization, physical stopping/braking and corridor constraint.
+4. MotherComputer is an orchestration/telemetry/presentation consumer of the capability model, not an alternative physical actuator. Separate raw ship plant and its timed inputs/outputs from advisor, planner, guidance, HUD and diagnostic layers. Handle missing/damaged modules by capability, not one-engine-out special cases.
+5. Current real propulsion architecture includes ER-5 reactor-backed CR-1 main thrusters, thermal pads and separate services/coolant concepts; six I/Y/X + Assisted/Newtonian layouts and physical Newtonian RCS modules have been under development. Existing HUD/thermal/synthetic-layout work is described in dated entries below; a source patch without gameplay verification is not a PASS.
+6. Keep changes small and local; no redundant tests/contracts, no side branch, no additional state files. Preserve all other prior decisions below as historical context, but treat this summary as the most recent outcome where they conflict.
+
+## Open work / next practical verification
+
+- **Do not retune the fixed Assisted-I attitude loop without new evidence.** If needed, use actual in-game smooth flight, first turn and approach to confirm corridor behavior; never declare complete docking based only on a route-builder result.
+- **Assisted-Y/X**: the earlier no-main-thrust / synthetic ER-5 group-power / gauge defects had targeted source patches, but are not established as fully game-verified by this 4-motor `model=0` trace. Verify only the affected layout(s) in-game rather than touching the good I baseline.
+- **Newtonian I/Y/X and RCS**: separate capability, self-stabilizing release, real installed thrusters/power, engine-out/damage and turn/braking behavior still require mode-specific flight acceptance; this Assisted trace cannot validate Newtonian.
+- Thermal/ignition/cooling/damage/HUD: check against observed snapshots and real server readings as separate work; do not promote source-only fixes to runtime PASS.
+- On future failure: collect **minimal targeted** frame-level actuator/attitude data in `D:/tmp`; compare requested controls, physical executed angular acceleration, angular rate, motor power and render motion before changing controller gains.
+
+## Current repository anchor
+
+Repository: `forzub/Elite`; branch: `main`. At review, head was `96aeaa1` (state-document update after code commits `3ee3209` and `7afe8dc`). This snapshot records the **subsequent user gameplay confirmation and new 90-s telemetry**, not a new physics change. The remaining sections are preserved project history, **including entries with superseded open/unverified jitter status**.
+
+---
+
+## 2026-10-22 — Post-fix flight confirmation, no code changes
+
+User: “все, движется как по попке младенца. гладко.” The final trace above confirms pitch/yaw control now behaves without nearly permanent full-stick reversal. Future continuation should begin with the real smooth-flight result, not resume the already-solved jitter diagnosis. The files `elite_attitude_jitter(2).csv` and `elite_docking_planner(20261022-192708).log` were analyzed in this conversation and **are not committed to GitHub**. Keep diagnostics in `D:/tmp`.
+
+---
+
 ## 2026-10-22 — 19:05 flight: measured AUTOPILOT pitch/yaw bang-bang; fix the inner attitude loop (main ONLY)
 
 User supplied `elite_attitude_jitter(1).csv` (4501 complete 50Hz server frames, 90.02 s, Assisted-I physical model 0, four main engines, generators continuously on at 10,000 MW), console `Вставленный текст(20261022-190553).txt`, and `elite_docking_planner(20261022-190605).log`. This is a new AUTO docking run after earlier `b4620b0` course/hull separation, not manual data. Console confirms `[AttitudeJitterTrace] BEGIN` and `COMPLETE rows=4501`; dock follower tracks and advances; no planner failure. At times 10–20 sec, automatic pitch/yaw input vector magnitude is >=0.95 for **98.6%** of frames, despite very small steering angle reported in follower; 70–80 sec 95.0%, 80–90 sec 97.0%. Across the trace pilot-emulated automatic inputs switch sign directly 588 times for pitch and 722 times for yaw (nonzero >0.1 threshold). Actual motor-executed pitch/yaw accelerations also alternate sign (577 and 771 flips respectively); servo instability is REAL physical torque, NOT just render/camera. Example at 12.10–12.24 sec measured command pitch -0.187 -> +1.0 -> -1.0 with yaw +0.982 -> near zero -> +0.003; physical pitch angular acceleration follows sign. The common 10 GW engine budget never disappeared; primary root cause NOT reactor ignition and NOT planner geometry.

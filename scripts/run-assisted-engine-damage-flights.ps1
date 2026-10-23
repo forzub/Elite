@@ -2,7 +2,9 @@ param(
     [int]$NoProgressTimeoutSeconds = 15,
     [int]$PerFlightTimeoutSeconds = 240,
     [string]$ReportDirectory = "D:\\tmp\\elite_engine_out",
-    [switch]$AssistedIOnly
+    [switch]$AssistedIOnly,
+    [ValidateSet("aft-50", "aft-failed")]
+    [string]$OnlyPreset
 )
 $ErrorActionPreference = "Stop"
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
@@ -14,7 +16,9 @@ New-Item -ItemType Directory -Force -Path $ReportDirectory | Out-Null
 # The fixtures exercise the actual game diagnostic scenario, not synthetic test
 # slots. Reactor/cooling idealization is a future fixture, NOT implied here.
 $models = if ($AssistedIOnly) { @("Assisted-I") } else { @("Assisted-I", "Assisted-Y", "Assisted-X") }
-$presets = @("aft-50", "aft-failed")
+# Focus a known failure without needlessly repeating the accepted 50% run.
+# Omitted OnlyPreset preserves the original full matrix behavior.
+$presets = if ($OnlyPreset) { @($OnlyPreset) } else { @("aft-50", "aft-failed") }
 $total = $models.Count * $presets.Count
 $receiptLog = "D:\tmp\elite_engine_damage_preset.log"
 $attitudeTrace = "D:\tmp\elite_attitude_jitter.csv"

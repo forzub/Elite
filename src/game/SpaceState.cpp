@@ -2259,14 +2259,30 @@ void SpaceState::updateDockingAdvisory()
             liveAssistedAuthority.positive[1],
             liveAssistedAuthority.negative[1]
         });
+        // Engine-out forward acceleration is along the physically viable
+        // working thrust ray, NOT the hull's -Z axis. The intact centered
+        // installation naturally uses the ordinary signed -Z basis.
         const double forward =
-            liveAssistedAuthority.negative[2];
+            effectivePhysics.assistedWorkingThrustAxisEmergency
+                ? liveAssistedAuthority.workingForwardAccelerationMps2
+                : liveAssistedAuthority.negative[2];
         const double reverse =
             liveAssistedAuthority.positive[2];
         if (steering <= 1.0e-6 || lateral <= 1.0e-6 ||
             forward <= 1.0e-6 || reverse <= 1.0e-6)
         {
-            fail("installed Assisted motors cannot execute a 3D docking path");
+            // This is a pre-planner feasibility rejection. Record the actual
+            // signed basis that failed, never let a generic "no route" hide it.
+            std::ostringstream reason;
+            reason << "installed Assisted motor basis insufficient:"
+                   << " steering=" << steering
+                   << " lateral=" << lateral
+                   << " working_forward=" << forward
+                   << " hull_forward=" << liveAssistedAuthority.negative[2]
+                   << " reverse=" << reverse
+                   << " axis_emergency="
+                   << (effectivePhysics.assistedWorkingThrustAxisEmergency?1:0);
+            fail(reason.str());
             return;
         }
     }

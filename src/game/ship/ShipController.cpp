@@ -270,8 +270,7 @@ bool applyVelocityAlignmentAttitude(
     // still comes from the installed engine allocator.
     glm::vec3 currentAlignmentForward = currentForward;
     if (ship.motion.localControlLaw ==
-            game::navigation::LocalFlightControlLaw::Assisted &&
-        params.assistedWorkingThrustAxisEmergency)
+            game::navigation::LocalFlightControlLaw::Assisted)
     {
         const auto& body = params.assistedWorkingThrustAxisBody;
         const glm::dvec3 ray =

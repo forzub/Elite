@@ -2259,13 +2259,12 @@ void SpaceState::updateDockingAdvisory()
             liveAssistedAuthority.positive[1],
             liveAssistedAuthority.negative[1]
         });
-        // Engine-out forward acceleration is along the physically viable
-        // working thrust ray, NOT the hull's -Z axis. The intact centered
-        // installation naturally uses the ordinary signed -Z basis.
+        // The server actuator matrix now publishes a working-forward
+        // acceleration for EVERY Assisted installation: the centered -Z
+        // basis when healthy, or the attainable CoM-aligned off-axis ray
+        // when damaged. Pure -Z is retained only for diagnostics.
         const double forward =
-            effectivePhysics.assistedWorkingThrustAxisEmergency
-                ? liveAssistedAuthority.workingForwardAccelerationMps2
-                : liveAssistedAuthority.negative[2];
+            liveAssistedAuthority.workingForwardAccelerationMps2;
         const double reverse =
             liveAssistedAuthority.positive[2];
         if (steering <= 1.0e-6 || lateral <= 1.0e-6 ||

@@ -101,12 +101,15 @@ makeManeuverExecutionAuthority(
 
     ManeuverExecutionAuthority out;
     out.feedbackReserveMps2 = reserve;
+    // Never manufacture thrust at zero installed authority. Geometry
+    // planning must be able to reject an impossible manoeuvre instead of
+    // accepting a fictitious 0.1 m/s2 on every missing axis.
     out.forwardAccelerationMps2 =
-        std::max(0.1, (forward - reserve) * fraction);
+        std::max(0.0, (forward - reserve) * fraction);
     out.brakingAccelerationMps2 =
-        std::max(0.1, (reverse - reserve) * fraction);
+        std::max(0.0, (reverse - reserve) * fraction);
     out.lateralAccelerationMps2 =
-        std::max(0.1, (lateral - reserve) * fraction);
+        std::max(0.0, (lateral - reserve) * fraction);
     return out;
 }
 

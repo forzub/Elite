@@ -780,7 +780,7 @@ void testAssistedVelocityAlignmentUsesWorkingAxis()
     );
     command(aligned,physics);
     require(
-        std::abs(aligned.yawInput)<0.001f &&
+        std::abs(aligned.yawRate)<0.001f &&
         aligned.motion.velocityAlignmentMode ==
             VelocityAlignmentMode::None,
         "damaged Assisted HOME rejected correct offset-thrust alignment"
@@ -791,7 +791,7 @@ void testAssistedVelocityAlignmentUsesWorkingAxis()
     physics.assistedWorkingThrustAxisEmergency=false;
     auto flagLagged=makeTransform(Model::AssistedI,300.0);
     command(flagLagged,physics);
-    require(std::abs(flagLagged.yawInput)>0.001f &&
+    require(std::abs(flagLagged.yawRate)>0.001f &&
             flagLagged.motion.velocityAlignmentMode ==
                 VelocityAlignmentMode::ForwardToVelocity,
         "Assisted HOME used nose because emergency flag was false");

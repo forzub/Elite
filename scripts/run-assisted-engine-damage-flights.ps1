@@ -78,7 +78,7 @@ try {
                 $_.Contains("module=ship_engine_L")
             }).Count -gt 0
             if (-not $damageApplied) {
-                Write-Warning "$model $preset: no fresh APPLIED receipt for the installed aft-left CR-1"
+                Write-Warning "$model ${preset}: no fresh APPLIED receipt for the installed aft-left CR-1"
                 if ($code -eq 0) { $code = 5 }
             }
 
@@ -90,7 +90,7 @@ try {
             if ($hasFreshTrace) {
                 Copy-Item -LiteralPath $attitudeTrace -Destination $tracePath -Force
             } else {
-                Write-Warning "$model $preset: no fresh attitude trace at $attitudeTrace"
+                Write-Warning "$model ${preset}: no fresh attitude trace at $attitudeTrace"
             }
             # Results are only accepted with both the authoritative damage
             # receipt and a new flight trace; no stale file passes the batch.

@@ -144,6 +144,42 @@ void testFractionalSampleClampsToOneFixedStep()
     );
 }
 
+void testServerKinematicsNeverReexecutesPilotThrust()
+{
+    const ShipTransform fixed=makeHubTacticalTransform();
+    const auto frame=makeHubFrame();
+    ShipParams params=zeroShipParams();
+    params.forwardMainEngineAvailable=true;
+    params.forwardMainEngineAccelerationMps2=60.0f;
+    ShipControlState pilot;
+    pilot.forwardInput=1.0f;
+    pilot.targetSpeedRate=1.0f;
+    pilot.yawInput=1.0f;
+
+    const ShipTransform sample=
+        game::client::presentation::sampleLocalPredictedPresentationTarget(
+            fixed,frame,params,pilot,WorldParams{},0.010f,0.020f);
+    requireNear(sample.motion.localPositionMeters.x,1.0,1.0e-6,
+                "client re-executed thrust instead of known velocity");
+    requireNear(sample.motion.localVelocityMps.x,100.0,1.0e-9,
+                "client invented acceleration from controls");
+    requireNear(sample.yawRate,0.0,1.0e-9,
+                "client invented angular response from controls");
+    requireNear(fixed.motion.localPositionMeters.x,0.0,1.0e-12,
+                "kinematic presentation mutated snapshot");
+
+    ShipTransform one=makeHubTacticalTransform();
+    ShipTransform halves=makeHubTacticalTransform();
+    require(game::client::advanceReplicatedHubKinematics(one,frame,0.020f),
+            "kinematic fixed extrapolation rejected valid frame");
+    require(game::client::advanceReplicatedHubKinematics(halves,frame,0.010f) &&
+            game::client::advanceReplicatedHubKinematics(halves,frame,0.010f),
+            "fractional kinematic extrapolation rejected valid frame");
+    requireNear(one.motion.localPositionMeters.x,
+                halves.motion.localPositionMeters.x,1.0e-6,
+                "fixed/fractional kinematics are not continuous");
+}
+
 void testZeroRemainderIsIdentity()
 {
     const ShipTransform fixed = makeHubTacticalTransform();
@@ -186,6 +222,7 @@ int main()
         {"fractional sample advances presentation copy", testFractionalSampleAdvancesPresentationCopy},
         {"fractional sample clamps to one fixed step", testFractionalSampleClampsToOneFixedStep},
         {"zero remainder is identity", testZeroRemainderIsIdentity},
+        {"replicated kinematics cannot invent thrust", testServerKinematicsNeverReexecutesPilotThrust},
     };
 
     std::size_t passed = 0;

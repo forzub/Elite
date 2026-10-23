@@ -520,6 +520,14 @@ void testFailedAftMotorReachesMotherComputerHudAndEmergencySight()
     require(serverSight.valid && serverSight.emergencyWorkingThrustAxis &&
             serverSight.workingThrustAxisBody.x<-0.7,
             "HUD hid server-proven emergency thrust ray during sparse graph");
+    // A lagging server emergency flag must not conceal its authoritative
+    // non-axial physical direction. Read-only display, no control fallback.
+    observed.input.emergencyWorkingThrustAxis=false;
+    const auto vectorSight=game::ship::computer::collectCockpitView(
+        ship,observed);
+    require(vectorSight.valid && vectorSight.emergencyWorkingThrustAxis &&
+            vectorSight.workingThrustAxisBody.x<-0.7,
+            "HUD ignored authoritative non-axial thrust vector when flag lags");
     const auto hud=game::presentation::buildEngineThrustHudPresentation(
         cockpit);
     require(hud.warning,
@@ -561,6 +569,15 @@ void testInstalledAftMotorMissingSnapshotNeverLooksHealthy()
     require(states.size()==4 && !states[0].operational &&
             states[0].thrust01<=1.0e-6,
             "missing installed equipment graph manufactured healthy CR-1");
+    // An accidentally blank SINGLE binding is not a request to recreate
+    // one healthy engine in an otherwise installed physical bank.
+    auto partiallyBound=d;
+    partiallyBound.physicalControl.slotModuleIds.front().clear();
+    const auto incomplete=capability::buildPhysicalControlSlotState(
+        partiallyBound,Model::AssistedI,ship.modules);
+    require(incomplete.size()==4 && !incomplete[0].operational &&
+            incomplete[0].thrust01<=1.0e-6,
+            "blank installed motor ID manufactured healthy thrust");
     const auto hud=game::presentation::buildEngineThrustHudPresentation(ship);
     require(hud.visible && hud.warning && totalBars(hud)==4,
             "installed motor with no equipment facts looks operable on HUD");

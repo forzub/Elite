@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
@@ -36,8 +37,8 @@ travelFrameForPrediction(
     return source.kinematicFrame();
 }
 
-// Damaged Assisted prediction must not synthesize engine wrench from
-// slot-only coefficients. Advance the last replicated kinematic state
+// No client should synthesize engine wrench from slot-only coefficients.
+// Advance the last replicated kinematic state
 // (pose/rates/velocity), without solving thrust or re-running controls.
 // Shared by fixed client ticks AND the fractional render sample.
 inline bool advanceReplicatedHubKinematics(
@@ -70,6 +71,9 @@ inline bool advanceReplicatedHubKinematics(
     return true;
 }
 
+// Legacy prediction entry points are retained for source compatibility,
+// but deliberately have NO local engine/actuator physics. Both use the same
+// authoritative-state kinematic extrapolator as active ClientWorldState.
 inline bool predictHubTacticalMotion(
     ShipTransform& transform,
     const game::simulation::ShipReferenceFrameSnapshot& frameSnapshot,
@@ -78,41 +82,10 @@ inline bool predictHubTacticalMotion(
     float dt
 )
 {
-    if (!canPredictHubTacticalMotion(transform, frameSnapshot))
-        return false;
-
-    const game::navigation::KinematicFrame frame =
-        travelFrameForPrediction(frameSnapshot);
-
-    transform.motion.travelFrame = frame;
-    transform.motion.matchedToReferenceFrame =
-        frameSnapshot.matchedToReferenceFrame;
-
-    (void)game::ship::control::ShipControlExecutionGateway::
-        evaluateTranslationControl(
-            transform,
-            params,
-            control,
-            dt
-        );
-
-    const bool propagated =
-        game::ship::control::ShipControlExecutionGateway::
-            propagateHubTacticalTranslation(
-                transform,
-                params,
-                static_cast<double>(dt)
-            );
-
-    if (propagated)
-    {
-        transform.referenceVelocityMetersPerSecond =
-            transform.motion.referenceVelocityMps;
-    }
-
-    return propagated;
+    (void)params;
+    (void)control;
+    return advanceReplicatedHubKinematics(transform,frameSnapshot,dt);
 }
-
 
 inline bool predictHubTacticalMotion(
     ShipTransform& transform,
@@ -124,41 +97,11 @@ inline bool predictHubTacticalMotion(
     float dt
 )
 {
-    if (!canPredictHubTacticalMotion(transform, frameSnapshot))
-        return false;
-
-    const game::navigation::KinematicFrame frame =
-        travelFrameForPrediction(frameSnapshot);
-
-    transform.motion.travelFrame = frame;
-    transform.motion.matchedToReferenceFrame =
-        frameSnapshot.matchedToReferenceFrame;
-
-    (void)game::ship::control::ShipControlExecutionGateway::
-        evaluateTranslationControl(
-            transform,
-            params,
-            control,
-            model,
-            slotState,
-            dt
-        );
-
-    const bool propagated =
-        game::ship::control::ShipControlExecutionGateway::
-            propagateHubTacticalTranslation(
-                transform,
-                params,
-                static_cast<double>(dt)
-            );
-
-    if (propagated)
-    {
-        transform.referenceVelocityMetersPerSecond =
-            transform.motion.referenceVelocityMps;
-    }
-
-    return propagated;
+    (void)params;
+    (void)control;
+    (void)model;
+    (void)slotState;
+    return advanceReplicatedHubKinematics(transform,frameSnapshot,dt);
 }
 
 } // namespace game::client

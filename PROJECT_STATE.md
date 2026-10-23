@@ -89,8 +89,10 @@ the failing request never activates the autopilot.
   `d8879888` maps precise known warning categories into
   HUD terminal rather than generic log message.
   `94767dbf` adds translation keys in existing five-language
-  cockpit localization file. Existing asynchronous planner result
-  remains in its normal `job_result` diagnostics once worker starts.
+  cockpit localization file. `041d886f` also surfaces a
+  FINISHED BUT INVALID planner job's existing failure category in
+  the same cockpit terminal (no duplicate planner/logger), while full
+  worker details remain in `job_result` and planner log.
 - Existing two source tests previously FAILED for unrelated fixture
   mistakes. `307bd36d`: healthy-on-course test incorrectly demanded
   a nonzero yaw command while nose/course were already aligned; now

@@ -1106,13 +1106,14 @@ desc.physicalControl.slotModuleIds = {
     "ship_fore_engine_R"
 };
 
-// TEST-ONLY healthy physical-model substitution.
+// TEST-ONLY selection of an installed physical-model topology.
 //
-// Ordinary runtime never sets this environment variable. The live corridor
-// matrix launches a fresh game process for each model, so the static
-// descriptor remains immutable inside one run. Alternate I/Y/X topologies do
-// not pretend to map onto Cobra's real four damage modules: clearing the
-// binding deliberately asks the capability builder for a healthy topology.
+// An earlier diagnostic test cleared the actuator module bindings to get
+// synthetic healthy motors. That breaks the actual server->client
+// equipment-state contract: the server executes REAL installed CR-1s while
+// the client/HUD fabricates healthy motors and suppresses emergency-axis
+// evidence. Assisted-I/Y/X always bind their genuine installed module IDs.
+// The legacy unbound Newtonian test topology remains separate.
 if (const char* rawModel =
         std::getenv("ELITE_SHIP_PHYSICAL_TEST_MODEL"))
 {
@@ -1143,7 +1144,21 @@ if (const char* rawModel =
             game::ship::plant::nativeFlightLaw(
                 desc.physicalControlModel
             );
-        desc.physicalControl.slotModuleIds.clear();
+        if (game::ship::plant::familyOf(desc.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Assisted)
+        {
+            // Exact IDs of persistent installed CR-1s in the module runtime.
+            // No diagnostic healthy fallback on the client.
+            desc.physicalControl.slotModuleIds =
+                game::ship::presets::cobra::installedAssistedEngineModuleIds(
+                    desc.physicalControlModel);
+        }
+        else
+        {
+            // Newtonian diagnostic work has its own independent physical
+            // stack; do not bind its RCS slots to CR-1 motor modules.
+            desc.physicalControl.slotModuleIds.clear();
+        }
     }
 }
 

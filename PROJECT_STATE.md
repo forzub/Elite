@@ -9,6 +9,114 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 2026-10-23 late — Exact pre-planner rejection + false client yaw (LOG-VERIFIED, SOURCE PATCH PENDING WINDOWS)
+
+**Fresh Windows artifacts from user:**
+`Вставленный текст(20261023-201529).txt` contains actual full client/server
+MinGW builds PASS, `mother_computer` and `working_thrust_axis_analysis`
+PASS; however `hull_pose_guidance` FAIL and
+`ship_control_behavior_oracle` FAIL. The new
+`01_Assisted_I_aft_failed.log` is build
+`23407d1e0f1c@main/clean` (prior to the changes below);
+the single-engine-failure matrix still exits 3, no route.
+Video `20261023-2013-15.6001157.mp4`, equipment state CSV,
+`elite_attitude_jitter(5).csv` and scenario
+`01_Assisted_I_aft_failed_attitude.csv` are associated evidence.
+
+**Exactly observed route gate:** `pending=1, serial=1` but
+`workers=0, job_stage=-1, phase=0, failed=0`.
+The planner and follower NEVER START. Snapshot on that same ship/tick:
+`mother_current=1`, `mother_envelope=1`,
+`mother_motors=1`, `mother_model_match=1`, but
+`mother_doctrine_valid=0`, `mother_server_axis=0`,
+`mother_client_axis=1`, `mother_axis_dot=0.649345`,
+`mother_working_forward=36.774938 m/s²`,
+`mother_hull_forward=28.353333 m/s²`,
+`mother_steering=2.25`, `mother_lateral=55.162407`,
+`mother_reverse=73.549875`.
+Log explicitly says `authority_status="rejected physical flight doctrine"`.
+`MotherComputer::observe` intentionally rejects a client emergency
+working-axis candidate whose server boolean remains nominal.
+This is **axis provenance/replication disagreement**, not absence of
+real acceleration and not a geometric planner failure.
+
+**Exactly observed yaw discrepancy:** the actual SERVER player
+`ShipCore` physical 50-Hz CSV (90 s) shows
+`axis_emergency=1`, angle `49.50776982°` constant,
+`manual_yaw=0`, `nav_angular=0`, angular yaw rate
+~`-0.000124` down to `-0.0000034 rad/s` and
+physical residual yaw torque from ~-2307 N·m briefly to ~+10 N·m,
+with controlled thrust after 10 s near zero.
+The stress CLIENT world observed `omega≈0.66..0.78 rad/s`,
+`main_torque_yaw_nm≈124,299,000 N·m`,
+`main_alpha_yaw≈4.908 rad/s²`, even with `autopilot=0`
+and `main_cmd=0`. These are **not matching physical states**.
+This is why a new large controller-gain correction or a one-shot
+instantaneous hull rotation would be wrong; the SERVER already
+arrests angular velocity by actual motor torque.
+
+**Confirmed code source of two truths:** local
+`ClientWorldState::predict()` calls
+`ShipControlExecutionGateway::integrateAttitude` and then
+`predictHubTacticalMotion` with projected `EngineSlotState`
+and NO actual installed MountedEngine/operating/thermal/power state.
+The server `ShipCore` uses real motor passports and accepted
+six-axis `AssistedManeuverPrograms`. Local client prediction
+therefore fabricates an unrelated off-axis force/torque. Its
+yaw acceleration can saturate at 4.908 rad/s² despite correct
+server motion. This explains the client/server yaw disagreement
+more directly than an endlessly compensating autopilot:
+the failing request never activates the autopilot.
+
+**Source changes published on main, WINDOWS UNVERIFIED:**
+- `e8a06ec2` in `GameSimulation::buildReplicationSnapshot` now stamps
+  the authoritative Assisted working axis and emergency condition
+  from the same `ShipCore::effectivePhysics()` that commands real
+  motors, instead of a potentially stale last motor-tick field
+  in the presentation transform. This should let `MotherComputer`
+  compare matching server/client physical axes.
+- `c5805530` in `ClientWorldState::predict` disables only the
+  impossible *off-axis Assisted* local actuator/attitude predictor.
+  It uses the existing server-replicated ship motion + render
+  smoothing, not imaginary slot-only forces. Healthy centered
+  Assisted and Newtonian local prediction are unchanged.
+  Check whether losing damaged-mode client prediction produces
+  visual smoothing/lag before designing a future real motor-powered
+  predictor. Do NOT synthesize engines.
+- `638ad118` reports pre-planner gate cause only on changed reason,
+  with source ship/tick, server/client emergency flags, axis dot,
+  motor model, and rejects unknown data conservatively.
+  `d8879888` maps precise known warning categories into
+  HUD terminal rather than generic log message.
+  `94767dbf` adds translation keys in existing five-language
+  cockpit localization file. Existing asynchronous planner result
+  remains in its normal `job_result` diagnostics once worker starts.
+- Existing two source tests previously FAILED for unrelated fixture
+  mistakes. `307bd36d`: healthy-on-course test incorrectly demanded
+  a nonzero yaw command while nose/course were already aligned; now
+  expects ZERO yaw. `1c651ce5`/`9901720a`: HOME test inspected
+  `ship.yawInput`, but `SharedShipPhysics::evaluateControl`
+  explicitly clears input after a tick; test now inspects
+  actual `ship.yawRate` and terminal mode. These change no
+  physics/control parameters. Native rerun is required.
+
+**Next Windows acceptance gate:** pull main, full
+`bash build_mingw64.sh`; rebuild focused
+`hull_pose_guidance_tests`, `mother_computer_tests`,
+`working_thrust_axis_analysis_tests`,
+`ship_control_behavior_oracle_tests`; run selected CTest entries.
+Then one existing Assisted-I `-OnlyPreset aft-failed` run
+into `D:/tmp/elite_engine_out_gate`.
+Key checks: `mother_doctrine_valid=1`,
+`mother_server_axis=1`, `mother_client_axis=1`,
+`mother_axis_dot≈1.0`, then
+`workers>0`, `job_result`, `route_valid`.
+At the same time compare player rendered yaw with physical server
+`elite_attitude_jitter.csv` yaw: if discrepancy remains,
+inspect temporal/replication path, not another gain change.
+Even a built and accepted planner does NOT prove damaged ship
+can complete docking. No claim of new gameplay pass yet.
+
 ## 2026-10-23 — Axial-zero audit and mesh coordinate conventions (SOURCE, WINDOWS GATE OPEN)
 
 **Request:** review every meaningful flight/navigation prerequisite that equates

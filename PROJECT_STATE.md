@@ -9,6 +9,116 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 2026-10-23 21:00+ — Client/server dataflow and clock regression audit (SOURCE, WINDOWS GATE OPEN)
+
+**User request:** examine all command/physics/replication/render stages after
+severe player motion and visible nearby ship jitter in
+`20261023-2054-07.1108583.mp4`. Choose one physical authority, remove
+duplicated calculations. Reviewed latest user files
+`01_Assisted_I_aft_failed(1).log` (build
+`486de16ff7f0@main/clean`),
+`01_Assisted_I_aft_failed_attitude(1).csv`,
+`elite_attitude_jitter(6).csv`, equipment status and receipt.
+
+**LOG-VERIFIED:**
+- PREVIOUS pre-planner server/client axis mismatch IS FIXED:
+  `mother_current=1`, `mother_doctrine_valid=1`,
+  `mother_server_axis=1`, `mother_client_axis=1`,
+  `mother_axis_dot=1.000000`; physical working-forward=36.774938 m/s².
+  Planner worker runs, finishes `job_ready=1`, `job_plan_valid=1`.
+- Route adoption is STILL BLOCKED by never-completing physical
+  `SecuringCourse`, not planner failure:
+  `phase=5`, `safety_active=1`, `route_valid=0` until stop.
+  Real SERVER angular yaw begins ~0 and then repeatedly changes direction
+  up to ~1 rad/s after safe-course control begins. It is not *only*
+  client visual artifact. Server `manual_yaw` (automatic pilot command)
+  swings near -1/+1, actuator delivers about 0.7 rad/s² in typical
+  periods, while requested acceleration approaches 2.25 rad/s².
+  Continued investigation must target actual simultaneous
+  Assisted force+torque feasibility and safe-course angular braking,
+  NOT retune healthy controller gains or invent hardware.
+- User reports nearby ship jitter. SOURCE demonstrates another plausible
+  presentation discontinuity: low-fidelity remotes were extrapolated from
+  `itOld` alone; `itNew` position was ignored until next snapshot-pair
+  switch. Across that boundary the drawn position could jump even with
+  correct network clocks. The 0.2-second remote presentation delay versus
+  local predicted-player timeline is an independent *deliberate* epoch
+  difference; must quantify its effect rather than allege broken wire protocol.
+
+**Complete physical/data path audited:**
+`GameClient::sendAndPredictFixedStep` sends numbered
+`ShipControlState` in `ClientMessage`; `GameServer` consumes
+one command per fixed simulation step from
+`FixedStepControlQueue` and calls
+`GameSimulation::update` -> `ShipCore` physical execution (real installed
+`ObjectModuleRuntime`, motors, power, torque, collision and NPC world).
+`GameSimulation::buildReplicationSnapshot` publishes
+`ShipSnapshot::transform` plus per-tick
+`controlAuthorityTelemetry`; `GameServer` stamps server time/tick
+and last acknowledged input. Existing `WireDataSchema.h` serializes
+these fields and was NOT EDITED by our recent commits;
+`GameClient::acceptSnapshot` monotonic-tick-fences and
+`ClientWorldState::applySnapshot` hydrates.
+`ClientPresentationClock` selects one delayed remote render epoch;
+`ClientWorldState::update` samples remote snapshots, while local player
+uses latest locally extrapolated state for low-latency controls.
+
+**ARCHITECTURE DECISION (source):** SERVER owns equipment state, damaged motor
+allocation, physical forces/torques, rigid-body/collision, thermal/reactor,
+world time and NPCs. CLIENT owns pilot/autopilot guidance, route planning,
+HUD, commands and strictly kinematic presentation (position/orientation
+from replicated velocity/rotation). Client's outgoing packet remains
+numbered pilot controls; accepting client-authored position/engine
+force as truth would violate authoritative collisions/equipment/NPC
+in this existing world, so not adopted. Avoid any second client motor
+allocator in runtime.
+
+**SOURCE patches on main, not yet Windows/gameplay-verified:**
+- `72aa299b`: add shared `advanceReplicatedHubKinematics` using current
+  server-replicated velocity and angular velocity only, with frame position
+  conversion. No active control, motor program, acceleration or fake damage.
+- `f8cfecfd` identified/fixed a regression in prior `c5805530`:
+  off-axis fixed prediction was guarded, but the fractional render path
+  still re-ran physical `MountedEngine`-less slot approximation each frame.
+- `4cc1bb90`: remove ALL motor and angular-control calculations from
+  ACTIVE `ClientWorldState::predict` AND
+  `prepareLocalPredictedPresentation` for every ship flight family.
+  Both fixed and fractional paths use one kinematic provider.
+- `acc79cba` and `05add0cb`: old compatibility prediction helpers,
+  including the fractional helper used by architecture tests, now
+  exclusively call the same kinematic provider; no executable
+  client-side actuator physics remains in these client helpers.
+  `3442b78e` extends existing fractional contract test to ensure
+  pilot throttle/yaw cannot synthesize thrust or angular acceleration
+  in the client and to check fixed/fractional positional continuity.
+- `d7f89b17` + `2174fa3c`: low-fidelity remote rendering now uses
+  both adjacent canonical snapshots and endpoint velocities (Hermite)
+  instead of old-only extrapolation, with one shared delayed playhead
+  for all remote ships. Boundary velocity/position are continuous;
+  `f110babf` extends existing remote presentation contract tests.
+  High-fidelity remote rendering and server network codec unchanged.
+- This removes *duplicated* physics, but **does not yet solve**
+  the server's physically unstable Assisted safe-course; it may
+  reduce visual player-vs-neighbor artifacts but the video outcome
+  must be verified after a new native build.
+- No changes to `WireDataSchema.h`, `ShipControlState` network DTO or
+  `GameServer` command consumption; hence no wire-layout regression
+  introduced by this change series. This is SOURCE inspection, NOT proof
+  against runtime clock starvation or lost snapshots.
+
+**Next concrete gate:** Windows user `git pull --ff-only origin main`,
+`bash build_mingw64.sh`, build/run EXISTING
+`local_predicted_presentation_contract_tests` and
+`remote_ship_presentation_contract_tests` in
+`build/tests/architecture_contracts` using their CTest names,
+and existing `assisted_safe_course_executor_isolation` +
+`assisted_safe_course_recovery` in nav runtime. Repeat single
+`-AssistedIOnly -OnlyPreset aft-failed` matrix,
+check `phase=5` acquisition, yaw request/actual acceleration,
+render jitter, and valid plan admission. If phase 5 persists,
+inspect server plant simultaneous wrench and safe-course braking
+using the same existing D:/tmp stress+jitter traces before changes.
+
 ## 2026-10-23 late — Exact pre-planner rejection + false client yaw (LOG-VERIFIED, SOURCE PATCH PENDING WINDOWS)
 
 **Fresh Windows artifacts from user:**

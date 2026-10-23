@@ -54,6 +54,12 @@ namespace game::ship::computer
                 *ship.descriptor, ship.physicalControlModel);
         const ShipDescriptor& selected =
             installed ? *installed : *ship.descriptor;
+        // The systems terminal already reports module failures, but the
+        // MotherComputer BITE channel was never hydrated. Use exactly this
+        // replicated installed equipment graph for the CHECK lamp and bars.
+        out.installedEquipmentBite =
+            game::presentation::buildShipBiteState(
+                selected,ship.modules,serverTick);
         const bool diagnosticLayout =
             ship.physicalControlModel !=
                 selected.physicalControlModel;
@@ -160,6 +166,21 @@ namespace game::ship::computer
     out.shipInstanceId = motherboard.input.shipInstanceId;
     out.serverTick = motherboard.input.serverTick;
     out.renderTransform = ship.renderTransform;
+    // The tactical working-axis sight is factual equipment capability, NOT
+    // an interpolated orientation/velocity cue. Preserve the same-tick
+    // computed installed-motor evidence instead of reading a renderTransform
+    // flag that can be stale or absent while the HUD interpolates poses.
+    const auto& axisSource = motherboard.input.physicalEnvelope;
+    if (motherboard.input.physicalEnvelopeValid &&
+        axisSource.assistedWorkingThrustAxisEmergency &&
+        axisSource.assistedWorkingThrustMotorIndex >= 0 &&
+        std::isfinite(glm::length(axisSource.assistedWorkingThrustAxisBody)) &&
+        glm::length(axisSource.assistedWorkingThrustAxisBody)>1.0e-9)
+    {
+        out.emergencyWorkingThrustAxis = true;
+        out.workingThrustAxisBody =
+            glm::normalize(axisSource.assistedWorkingThrustAxisBody);
+    }
     out.bite = motherboard.input.installedEquipmentBite;
     out.systems = motherboard.input.biteAndSystems;
 

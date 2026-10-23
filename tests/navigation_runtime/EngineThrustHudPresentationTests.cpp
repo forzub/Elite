@@ -3,6 +3,7 @@
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
 #include "src/game/ship/capability/ReplicatedInstalledAssistedDescriptor.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/computer/MotherComputerClientAdapter.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -446,6 +447,87 @@ void testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic()
     }
 }
 
+
+void testFailedAftMotorReachesMotherComputerHudAndEmergencySight()
+{
+    using namespace game::ship;
+    // The client catalog stays Assisted-I; one real CR-1 is fully failed in
+    // the replicated module graph, including its own internal-failure cause.
+    auto desc=descriptorFor(Model::AssistedI);
+    desc.physics.physicalActuatorHalfExtentsMeters={13.0,2.5,11.1};
+    desc.physics.centerOfMassLocalMeters={0.0,0.0,0.0};
+    desc.physicalControl.slotModuleIds=
+        presets::cobra::installedAssistedEngineModuleIds(Model::AssistedI);
+    for(const auto& id:desc.physicalControl.slotModuleIds)
+    {
+        ModuleDescriptor m;
+        m.moduleId=id;
+        m.maxHealth=100.0f;
+        m.equipmentFailure.failureAtDamage01=0.95;
+        m.engine=game::equipment::engine::presets::
+            CobrettyCR1VectorMainDrive();
+        desc.modules.push_back(std::move(m));
+    }
+    auto ship=shipFor(desc);
+    ship.instanceId=84;
+    for(const auto& id:desc.physicalControl.slotModuleIds)
+    {
+        game::simulation::ObjectModuleSnapshot module;
+        module.moduleId=id;
+        module.health=100.0f;
+        module.state=static_cast<std::uint8_t>(
+            world::modules::ObjectModuleRuntimeState::Attached);
+        module.hasEngineThermalState=true;
+        module.engineTemperatureK=450.0f;
+        module.emitterIntactArea01=1.0f;
+        if(id==desc.physicalControl.slotModuleIds.front())
+            module.internalFailureDamage01=1.0f;
+        ship.modules.push_back(std::move(module));
+    }
+    ship.transform.motion.engineTelemetry.valid=true;
+    ship.transform.motion.engineTelemetry.count=4;
+    // Deliberately stale healthy live sample: real damage must cap the HUD.
+    ship.transform.motion.engineTelemetry.available01[0]=1.0;
+    ship.transform.motion.engineTelemetry.thrust01[0]=0.0;
+    ship.transform.motion.engineTelemetry.available01[1]=1.0;
+    ship.transform.motion.engineTelemetry.thrust01[1]=0.65;
+
+    const auto input=game::ship::computer::collectReplicatedShipFacts(
+        ship,42);
+    require(input.installedEquipmentBite.summary.failedCount>=1,
+            "MotherComputer BITE lost the fully failed physical CR-1");
+    require(input.physicalEnvelopeValid &&
+            input.physicalEnvelope.assistedWorkingThrustAxisEmergency &&
+            input.physicalEnvelope.assistedWorkingThrustMotorIndex==1,
+            "failed motor did not activate physically projected emergency axis");
+
+    game::ship::computer::MotherComputerSnapshot motherboard;
+    motherboard.valid=true;
+    motherboard.input=input;
+    // Deliberately leave interpolated renderTransform emergency flag FALSE:
+    // the HUD must never source emergency axis from that interpolated flag.
+    const auto cockpit=game::ship::computer::collectCockpitView(
+        ship,motherboard);
+    require(cockpit.valid && cockpit.emergencyWorkingThrustAxis &&
+            cockpit.workingThrustAxisBody.x<-0.7,
+            "HUD emergency marker depends on stale rendered motion");
+    const auto hud=game::presentation::buildEngineThrustHudPresentation(
+        cockpit);
+    require(hud.warning,
+            "CHECK lamp did not receive installed engine BITE failure");
+    bool failedVisible=false;
+    // IDs are topology-defined, not synthetic runtime IDs.
+    const auto& slot0=
+        game::ship::plant::physicalControlSlots(Model::AssistedI)[0];
+    for(const auto& group:hud.groups)
+        for(const auto& bar:group.bars)
+            if(bar.slotId==std::string(slot0.id))
+                failedVisible=bar.fault && bar.capability01<=1.0e-6f &&
+                    bar.thrust01<=1.0e-6f;
+    require(failedVisible,
+            "dead aft motor was represented as an orange live-capability bar");
+}
+
 } // namespace
 
 int main()
@@ -460,6 +542,7 @@ int main()
         testAssistedLateralVectoringUsesBothBanks();
         testMotherComputerCockpitBarsPreserveLayoutAndBite();
         testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic();
+        testFailedAftMotorReachesMotherComputerHudAndEmergencySight();
 
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"

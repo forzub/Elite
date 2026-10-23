@@ -226,10 +226,17 @@ void EngineThrustIndicatorRenderer::render(
             const float available=std::clamp(bar->capability01,0.0f,1.0f);
             const float length=segment*available;
             const float bx=outwardRight?rx:rx-length;
+            const float fullBx=outwardRight?rx:rx-segment;
             const float bh=7.0f*scale;
-            roundedOutlinePx(text,bx,centerY-bh*0.5f,
-                std::max(0.0f,length),bh,1*scale,1*scale,
-                normal,style.track);
+            // Full-size neutral track is always visible. A motor with zero
+            // actual available thrust is entirely GREY, never orange; a
+            // partially damaged motor has only its reachable portion amber.
+            const glm::vec4 unavailable(0.30f,0.33f,0.38f,0.90f);
+            roundedOutlinePx(text,fullBx,centerY-bh*0.5f,
+                segment,bh,1*scale,1*scale,unavailable,style.track);
+            if(available>0.001f)
+                roundedOutlinePx(text,bx,centerY-bh*0.5f,
+                    length,bh,1*scale,1*scale,normal,style.track);
             // Filled from generator outward, with real executed motor thrust.
             const float fired=available>0.0f
                 ? std::clamp(bar->thrust01/available,0.0f,1.0f):0.0f;
@@ -250,7 +257,8 @@ void EngineThrustIndicatorRenderer::render(
                     centerY+6*scale,
                     std::max(10,static_cast<int>(11*scale)),style.label);
             }
-            const float padX=outwardRight?bx+length:bx;
+            // A damaged motor does not move its physical radiator pad.
+            const float padX=outwardRight?rx+segment:rx-segment;
             glm::vec4 padColor=style.track;
             if(bar->hasEmitterIntegrity)
             {

@@ -7425,13 +7425,13 @@ m_systemMapRenderer.render(
             // the cockpit HUD is present.
             m_flightVectorIndicatorRenderer.renderBoresight(vp);
 
-            const auto& cockpitMotion = cockpit.renderTransform.motion;
-            if (cockpit.valid &&
-                cockpitMotion.assistedWorkingThrustAxisEmergency)
+            // Use the installed-motor capability resolved by MotherComputer
+            // for this exact snapshot, not a smoothed rendering transform.
+            if (cockpit.valid && cockpit.emergencyWorkingThrustAxis)
             {
                 m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
                     vp,
-                    cockpitMotion.assistedWorkingThrustAxisBody,
+                    cockpit.workingThrustAxisBody,
                     localizedUiText(
                         context().app,
                         "cockpit.emergency.thrust_axis",

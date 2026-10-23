@@ -175,6 +175,10 @@ struct MotherComputerCockpitView
     std::uint64_t shipInstanceId = 0;
     std::uint64_t serverTick = 0;
     ShipTransform renderTransform {};
+    // Emergency direction projected from installed equipment at the same
+    // server tick as the cockpit; deliberately independent from smoothed pose.
+    bool emergencyWorkingThrustAxis = false;
+    glm::dvec3 workingThrustAxisBody {0.0,0.0,-1.0};
     double nominalSpeedLimitMps = 0.0;
     std::string physicalModelLabel;
     std::string engineHudStyleId = "human_amber";

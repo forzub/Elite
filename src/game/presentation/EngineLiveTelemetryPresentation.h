@@ -37,7 +37,11 @@ struct EngineMotorLiveView
         out.sampled=true;
         out.hasDetailedActuatorSample=true;
         out.thrust01=std::clamp(t.thrust01[index],0.0,1.0);
-        out.available01=std::clamp(t.available01[index],0.0,1.0);
+        // An executed-actuator sample can lag the module-damage snapshot.
+        // Never let an older healthy sample resurrect a failed motor on the
+        // HUD. The physical damage projection is a hard availability ceiling.
+        out.available01=std::min(out.available01,
+            std::clamp(t.available01[index],0.0,1.0));
         out.nozzleYawRad=t.nozzleYawRad[index];
         out.nozzlePitchRad=t.nozzlePitchRad[index];
         out.forceBodyNewtons=t.forceBodyNewtons[index];

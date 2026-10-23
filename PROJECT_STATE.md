@@ -23,7 +23,8 @@ motors but was not a sufficient assembly-invariant check.
 - `574ddd51` validates ALL I/Y/X installed Cobra engine and reactor
   bindings at profile creation: correct slot/group counts, nonempty unique IDs,
   actual CR-1/ER-5 module passports. Violations raise a direct construction
-  error before such a profile is activated.
+  error before such a profile is activated. `8f68f0df` then reuses this same
+  already-declared topology (avoids a duplicate local declaration).
 - `38ac7751` rejects a partially populated installed actuator binding
   entirely in both runtime and replicated capability projections. No fictitious
   healthy motor AND no pretending that an invalid construction is ordinary
@@ -62,7 +63,10 @@ during steering, reverse burn and attitude correction. Those can differ in a
 maneuver; the amber HUD currently depicts the working reference. Do not
 mislabel it as the instantaneous total-force vector.
 
-**Verification:** All above are SOURCE / GitHub changes only. The agent cannot
+**Verification:** All above are SOURCE / GitHub changes only. A post-write
+source scan caught and removed a duplicate local declaration in the construction
+validator before final handoff; this does NOT substitute for native compilation.
+ The agent cannot
 compile the Windows MinGW client/server or observe a new flight in this
 environment. Do not claim acceptance before the focused native tests and
 50%/100% Assisted-I flights. The accepted smooth healthy Assisted regulator

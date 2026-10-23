@@ -9,6 +9,107 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 2026-10-23 — Axial-zero audit and mesh coordinate conventions (SOURCE, WINDOWS GATE OPEN)
+
+**Request:** review every meaningful flight/navigation prerequisite that equates
+"flyable" with nonzero motor acceleration along hull local -Z. DO NOT
+replace geometric Z coordinates, pitch/yaw body bases, signed motor-wrench
+telemetry, or Newtonian rear-main conventions with a new "thrust axis" position
+coordinate. They have different meanings.
+
+**Audited active flow:** Cobra installed engine slots and `ShipCore` real
+motor allocator -> `ShipCapabilityBuilder` geometry/CoM working axis ->
+`ShipControlAuthorityTelemetry` signed acceleration matrix ->
+`MotherComputer` flight doctrine and envelope ->
+`SpaceState::updateDockingAdvisory` admission ->
+`ManeuverCapabilityAdapters` / trajectory programmer ->
+`AcceptedManeuverProgramBuilder` feasibility ->
+`DedicatedClientRouteAutopilot` response horizon ->
+`AssistedAutopilot` -> `ShipController` -> runtime actuator executor.
+Examined Newtonian primary-main selector, physical-maneuver compiler,
+route geometry and safe-course separately to avoid incorrectly replacing
+body axes with course axes. Source results:
+- `b9568691`: real six-axis actuator telemetry now ALWAYS publishes
+  `workingForwardAccelerationMps2`: healthy symmetric bank gets
+  `negative[2]`; off-axis case gets selected CoM-aligned motor's attainable
+  acceleration. `applyAuthorityToControlParams` ALWAYS uses working-forward
+  magnitude to set Assisted forward availability/rating, irrespective of
+  potentially delayed emergency status. `negative[2]` is retained as
+  distinct pure hull -Z *diagnostic* or wrench basis; it is not necessarily
+  physically useful course authority.
+- `6a02c239`: the docking pre-planner gate now ALWAYS checks actual
+  `workingForwardAccelerationMps2`, no mode-conditional pure -Z.
+  It still requires bidirectional lateral, pitch/yaw and reverse basis.
+  Those are separate feasibility conditions: full engine-out still might be
+  rejected as a 3D docking craft even when working-forward thrust exists,
+  and those constraints must be evaluated against reachable manoeuvres;
+  do NOT remove or fake them merely to make a test pass. The exact failing
+  magnitudes are logged via `DockClient::fail`.
+- `d593011f`: `ManeuverCapabilityAdapters::makeManeuverExecutionAuthority`
+  no longer grants a fictitious 0.1 m/s² to forward, reverse or lateral
+  Assisted when physically absent; minimum is 0.0, so validation correctly
+  reports impossible movement rather than adopting a fake manoeuvre.
+- `3b851ddc`: the active Assisted route follower's extra off-axis
+  angular alignment allowance uses actual body working-axis geometry,
+  not solely a damage boolean; centered healthy behavior remains unchanged.
+  An invalid working axis has no healthy-nose fallback.
+- `62886924`, `2eb43012` extend EXISTING MotherComputer tests:
+  healthy basis provides a working-forward component; missing pure -Z
+  with a valid working ray preserves control authority even when status
+  boolean lags; nonzero -Z with zero actual working authority grants none.
+  SOURCE commits only; tests not compiled in this environment.
+- A **remaining deliberate boundary**: direction-tagged sample
+  `forwardMap` in `AcceptedManeuverProgramBuilder`, follower and
+  trajectory planner is a WORLD/ROUTE tangent, not the ship's body -Z.
+  Its acceleration projections are necessary and should remain. Newtonian
+  `choosePrimaryMainBurn` still steers a physically rear main using
+  an explicit hull turnaround model; this is a distinct flight law.
+  No blind global substitute `z -> workingForward` is permitted.
+- **Potential further requirement beyond this audit:** true loss of
+  lateral or reverse *pure-body* basis does not alone prove a curved route
+  impossible if the craft can reorient an angled main and execute
+  sequential burns. That is a reachable-set/time-feasibility question,
+  distinct from the now-correct basic working-forward admission. Must
+  read new authority log before changing planner/reachability assumptions.
+
+**Ship body coordinates remain a stable, immutable convention:**
+`+X right, +Y up, -Z geometric nose, +Z stern`. Body coordinates
+describe slot positions, mesh dimensions, inertia and torques; they never
+need to swivel with a damaged propulsion axis. The working thrust ray is
+a **dynamic vector expressed in that fixed body frame**, transformed
+through the current ship attitude into world/navigation coordinates.
+E.g. healthy `(0,0,-1)`; emergency `(-0.760494,0,-0.649345)`.
+No new coordinate system or alternate ship "front" is created.
+
+**Authoring/import:** `IObjectDescriptor::meshToLogicalBasis4()`
+already converts the object's authored `meshForwardAxis` and
+`meshUpAxis` into the canonical logical body frame. The
+`AssemblyMeshLibrary` applies that matrix to OBJ mesh vertices,
+module positions, pivots and rotation axes. Other ecosystems are
+different: Blender mesh default Z-up and a common art-facing -Y
+front, whereas this Cobra OBJ specifically has authored
+`meshForwardAxis=(-1,0,0)` and `meshUpAxis=(0,1,0)`; its actual
+right is -Z. `1bee56d6` corrected a contradictory comment
+in `EliteCobraMk1.cpp`; NO visual/physics basis changed.
+`visualBasisRotationDegValue` remains a legacy fallback and
+`AssemblyMeshLibrary` currently copies authored
+`module.localRotationDeg` without basis conversion: verify the
+full asset-animation path for future new OBJ model orientations
+before shipping them. Keep physical mounts and visual orientation
+consistent through their intended authored/logical binding, not
+by changing the world flight law.
+
+**Verification:** all listed modifications are SOURCE ONLY. The last
+uploaded native run was pre-audit `71bf09e8e001`, with one 50%
+successful route and one 100% pre-planner blocked request.
+Run a fresh MinGW64 client+server build, existing `mother_computer`
+and navigation tests, then the existing single-case
+`-AssistedIOnly -OnlyPreset aft-failed` flight. Look for
+`mother_current`, `mother_doctrine_valid`,
+`mother_axis_dot`, `mother_working_forward`, separately
+`mother_hull_forward`, and `mother_lateral/steering/reverse`
+to identify any *remaining* true gate. Do not claim pass yet.
+
 ## TOP PRIORITY — 2026-10-23 evening: damaged-I docking never starts planning (LOG-VERIFIED; SOURCE PATCH UNVERIFIED)
 
 **Fresh target Windows evidence from build `71bf09e8e001@main/clean`:**

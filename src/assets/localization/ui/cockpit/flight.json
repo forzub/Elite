@@ -569,6 +569,34 @@
       "es": "esperando datos de motores",
       "ja": "エンジン情報待機"
     },
+    "cockpit.terminal.warning_thrust_axis_mismatch": {
+      "en": "route blocked: ship computer thrust-axis disagreement",
+      "ru": "маршрут заблокирован: оси тяги не согласованы",
+      "zh-Hans": "航线受阻：推力轴数据不一致",
+      "es": "ruta bloqueada: desacuerdo del eje de empuje",
+      "ja": "経路保留：推力軸の不一致"
+    },
+    "cockpit.terminal.warning_motor_matrix": {
+      "en": "route blocked: installed motor authority unavailable",
+      "ru": "маршрут заблокирован: нет матрицы тяги двигателей",
+      "zh-Hans": "航线受阻：发动机控制能力数据缺失",
+      "es": "ruta bloqueada: falta autoridad de motores",
+      "ja": "経路保留：エンジン能力情報なし"
+    },
+    "cockpit.terminal.warning_physics_envelope": {
+      "en": "route blocked: installed ship physics unavailable",
+      "ru": "маршрут заблокирован: нет физических параметров корабля",
+      "zh-Hans": "航线受阻：飞船物理参数缺失",
+      "es": "ruta bloqueada: faltan datos físicos",
+      "ja": "経路保留：船体物理情報なし"
+    },
+    "cockpit.terminal.warning_flight_doctrine": {
+      "en": "route blocked: flight control doctrine rejected",
+      "ru": "маршрут заблокирован: режим управления отклонён",
+      "zh-Hans": "航线受阻：飞行控制模式被拒绝",
+      "es": "ruta bloqueada: modo de control rechazado",
+      "ja": "経路保留：飛行制御モードが拒否"
+    },
     "cockpit.terminal.failure_dock": {
       "en": "dock unavailable or hull incompatible",
       "ru": "док недоступен или не подходит по габаритам",

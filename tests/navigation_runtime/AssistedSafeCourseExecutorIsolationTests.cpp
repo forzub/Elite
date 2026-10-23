@@ -279,6 +279,29 @@ void testSafeCourseExecutorConvergesWithoutPlanner()
 }
 
 
+void testSmallCourseCorrectionDoesNotSaturateInstalledYaw()
+{
+    Executor::Input in;
+    constexpr double smallAngle=5.0*Pi/180.0;
+    in.actualVelocityMapMps={0.0,0.0,-300.0};
+    in.selectedCourseMap={0.0,0.0,-1.0};
+    in.forwardMap={std::sin(smallAngle),0.0,-std::cos(smallAngle)};
+    in.rightMap={std::cos(smallAngle),0.0,std::sin(smallAngle)};
+    in.upMap={0.0,1.0,0.0};
+    in.workingThrustAxisBody={0.0,0.0,-1.0};
+    in.maxPitchRateRadPerSec=2.5;
+    in.maxYawRateRadPerSec=2.5;
+    in.maxRollRateRadPerSec=2.5;
+    in.angularAccelerationAuthorityRadPerSec2=2.25;
+    in.deltaSeconds=Dt;
+
+    const auto sample=Executor::evaluate(in);
+    require(sample.valid && !sample.acquired &&
+            std::abs(sample.control.yawInput)>0.01f &&
+            std::abs(sample.control.yawInput)<0.5f,
+            "safe-course selected the old +/-1 bang-bang yaw for a 5-degree correction");
+}
+
 void testEngineOutCourseAcquisitionUsesWorkingThrustAxis()
 {
     constexpr double offset=49.50776982*Pi/180.0;
@@ -324,6 +347,7 @@ int main()
     {
         testSafeCourseExecutorConvergesWithoutPlanner();
         testEngineOutCourseAcquisitionUsesWorkingThrustAxis();
+        testSmallCourseCorrectionDoesNotSaturateInstalledYaw();
         std::cout
             << "ASSISTED SAFE COURSE EXECUTOR ISOLATION: PASS\n"
             << " - no obstacle checker in execution loop\n"

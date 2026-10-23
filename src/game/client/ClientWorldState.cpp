@@ -1728,6 +1728,31 @@ void ClientWorldState::prepareLocalPredictedPresentation(
     const ShipParams effectivePhysics =
         capability.valid ? capability.effectivePhysics : ShipParams {};
 
+    const bool physicalOffAxisAssisted =
+        ship.transform.motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted &&
+        (effectivePhysics.assistedWorkingThrustAxisEmergency ||
+         ship.transform.motion.assistedWorkingThrustAxisEmergency);
+    if (physicalOffAxisAssisted)
+    {
+        // Last render-fraction path used to re-run the old slot-only motor
+        // allocator after fixed-step prediction had already been guarded.
+        // This was an independent source of fictitious force/yaw and camera
+        // jitter at every render frame. Advance ONLY replicated kinematics.
+        m_localPredictedPresentationTarget=ship.transform;
+        (void)game::client::advanceReplicatedHubKinematics(
+            m_localPredictedPresentationTarget,
+            ship.referenceFrame,
+            std::clamp(fractionalStepSeconds,0.0f,
+                       std::max(0.0f,fixedStepSeconds)));
+        m_localPredictedPresentationShipId=id.value;
+        m_localPredictionRemainderSeconds=
+            std::clamp(fractionalStepSeconds,0.0f,
+                       std::max(0.0f,fixedStepSeconds));
+        m_hasLocalPredictedPresentationTarget=true;
+        return;
+    }
+
     m_localPredictedPresentationTarget =
         game::client::presentation::sampleLocalPredictedPresentationTarget(
             ship.transform,
@@ -1808,7 +1833,13 @@ void ClientWorldState::predict(
         (effectivePhysics.assistedWorkingThrustAxisEmergency ||
          ship.transform.motion.assistedWorkingThrustAxisEmergency);
     if (physicalOffAxisAssisted)
+    {
+        // Shared kinematic extrapolation, NOT an independent motor solver.
+        // Reconciliation still starts with every new authoritative snapshot.
+        (void)game::client::advanceReplicatedHubKinematics(
+            ship.transform,ship.referenceFrame,dt);
         return;
+    }
 
     game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         ship.transform,

@@ -6082,6 +6082,61 @@ void SpaceState::update(float dt)
         obs.autopilotActive = m_clientAutopilotControlActive;
         obs.failed = m_noSafeDockingGuidanceSolution;
         obs.failureReason = m_dockingGuidanceFailureReason;
+        obs.authorityStatus = m_dockingStatusWarning;
+        // Capture the exact pre-planner MotherComputer gate in the SAME
+        // nav-stress SAMPLE/EVENT log. No parallel diagnostics file or
+        // synthetic capability reconstruction is involved.
+        const auto motherGate = m_motherComputer.snapshot();
+        if(motherGate.valid)
+        {
+            const auto& facts=motherGate.input;
+            const auto observedPlayer =
+                m_client->world().ships().find(m_playerId.value);
+            obs.motherboardCurrent =
+                observedPlayer != m_client->world().ships().end() &&
+                facts.shipInstanceId ==
+                    static_cast<std::uint64_t>(
+                        observedPlayer->second.instanceId) &&
+                facts.serverTick ==
+                    m_client->lastSimulationMetadata().serverTick;
+            obs.motherboardEnvelopeValid=facts.physicalEnvelopeValid;
+            obs.motherboardMotorAuthorityValid=
+                facts.installedMotorAuthority.valid;
+            obs.motherboardDoctrineValid=motherGate.flightProfile.valid;
+            obs.motherboardDoctrine=
+                static_cast<int>(motherGate.flightProfile.doctrine);
+            obs.motherboardServerAxisEmergency=
+                facts.emergencyWorkingThrustAxis;
+            obs.motherboardClientAxisEmergency=
+                facts.physicalEnvelopeValid &&
+                facts.physicalEnvelope.assistedWorkingThrustAxisEmergency;
+            const auto& motors=facts.installedMotorAuthority;
+            obs.motherboardHullForwardMps2=motors.negative[2];
+            obs.motherboardWorkingForwardMps2=
+                motors.workingForwardAccelerationMps2;
+            obs.motherboardSteeringMps2=std::min({
+                motors.positive[3],motors.negative[3],
+                motors.positive[4],motors.negative[4]});
+            obs.motherboardLateralMps2=std::min({
+                motors.positive[0],motors.negative[0],
+                motors.positive[1],motors.negative[1]});
+            obs.motherboardReverseMps2=motors.positive[2];
+            if(obs.requestPending || m_navigationWorkspace.dockingRouteRequests().pending().valid())
+            {
+                if(!obs.motherboardCurrent)
+                    obs.authorityStatus="waiting for current ship/tick";
+                else if(!obs.motherboardEnvelopeValid)
+                    obs.authorityStatus="missing installed physics envelope";
+                else if(!obs.motherboardMotorAuthorityValid)
+                    obs.authorityStatus="missing installed motor basis";
+                else if(!obs.motherboardDoctrineValid)
+                    obs.authorityStatus="rejected physical flight doctrine";
+                else if(obs.authorityStatus.empty())
+                    obs.authorityStatus="authority ready";
+            }
+        }
+        else if(m_navigationWorkspace.dockingRouteRequests().pending().valid())
+            obs.authorityStatus="motherboard has no ship snapshot";
         obs.workerCount =
             m_dockWorkerCount
                 ? m_dockWorkerCount->load(std::memory_order_acquire)

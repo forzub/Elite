@@ -34,9 +34,18 @@ duplicated calculations. Reviewed latest user files
   client visual artifact. Server `manual_yaw` (automatic pilot command)
   swings near -1/+1, actuator delivers about 0.7 rad/s² in typical
   periods, while requested acceleration approaches 2.25 rad/s².
-  Continued investigation must target actual simultaneous
-  Assisted force+torque feasibility and safe-course angular braking,
-  NOT retune healthy controller gains or invent hardware.
+  **Source of excessive steering FOUND:** the ordinary Assisted pilot
+  already selects `HullAttitudeControl::dampedPlanarInput` with its
+  accepted `pitchYawResponseSeconds=0.50`, whereas
+  `AssistedSafeCourseExecutor` left that field at zero and therefore
+  selected legacy `predictivePlanarInput` with dt^-1 saturation.
+  `f81282e2` switches ONLY the Assisted safe-course stage to the
+  established 0.50-second damped inner attitude law. This reuses a proven
+  controller, does NOT change healthy route follower or engine physics.
+  `4c730bce` adds a focused regression to the EXISTING isolation tests:
+  a five-degree yaw correction must not demand full-scale +/-1.
+  Server safe-course stability and 3D route handoff still require a
+  fresh native/gameplay run; never claim the change is sufficient until then.
 - User reports nearby ship jitter. SOURCE demonstrates another plausible
   presentation discontinuity: low-fidelity remotes were extrapolated from
   `itOld` alone; `itNew` position was ignored until next snapshot-pair

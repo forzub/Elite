@@ -8059,11 +8059,27 @@ m_systemMapRenderer.render(
             else if (terminal.error.empty() &&
                      !m_dockingStatusWarning.empty())
             {
-                terminal.error =
-                    m_dockingStatusWarning ==
-                        "awaiting authoritative motor telemetry"
-                        ? terminalText("cockpit.terminal.warning_authority")
-                        : terminalText("cockpit.terminal.failure_generic");
+                // Present the SAME pre-planner reason that is logged by
+                // DockAuthority; do not hide an engine-axis mismatch behind
+                // "navigation error; see log".
+                const char* messageKey =
+                    "cockpit.terminal.failure_generic";
+                if(m_dockingStatusWarning ==
+                       "awaiting authoritative motor telemetry")
+                    messageKey="cockpit.terminal.warning_authority";
+                else if(m_dockingStatusWarning ==
+                            "working thrust axis mismatch")
+                    messageKey="cockpit.terminal.warning_thrust_axis_mismatch";
+                else if(m_dockingStatusWarning ==
+                            "installed motor matrix unavailable")
+                    messageKey="cockpit.terminal.warning_motor_matrix";
+                else if(m_dockingStatusWarning ==
+                            "installed physics envelope unavailable")
+                    messageKey="cockpit.terminal.warning_physics_envelope";
+                else if(m_dockingStatusWarning ==
+                            "physical flight doctrine rejected")
+                    messageKey="cockpit.terminal.warning_flight_doctrine";
+                terminal.error=terminalText(messageKey);
             }
 
             // Presenters may compose local navigation phase strings, but

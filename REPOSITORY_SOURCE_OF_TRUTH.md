@@ -1,6 +1,6 @@
 # Elite — Repository source of truth
 
-**Updated:** 2026-09-16  
+**Updated:** 2026-10-23  
 **Canonical repository:** `forzub/Elite`  
 **Canonical development branch:** `main`
 
@@ -58,7 +58,7 @@ After these merges every non-`main` branch tip present in the repository invento
 For every game-development iteration:
 
 ```text
-1. Read CURRENT_STATE.md and CURRENT_TASK.md from main.
+1. Read PROJECT_STATE.md from main (the sole current state/continuation file).
 2. Resolve origin/main HEAD on GitHub.
 3. Inspect code/CMake/tests from that exact ref.
 4. Verify any named implementation exists on main before calling it local-only or missing.
@@ -81,13 +81,14 @@ src/world/navigation/NAVIGATION_PLANNING_ARCHITECTURE.md
 NAVIGATION_WORLD_V2.md
 ```
 
-Current state/task authority:
+Current state/continuation authority (single living file):
 
 ```text
-CURRENT_STATE.md
-CURRENT_TASK.md
 PROJECT_STATE.md
 ```
+
+`CURRENT_STATE.md` and `CURRENT_TASK.md` remain historical snapshots;
+do not maintain them as parallel project-state sources.
 
 Runtime decomposition authority:
 

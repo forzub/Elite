@@ -59,10 +59,12 @@ public:
         bool motherboardCurrent = false;
         bool motherboardEnvelopeValid = false;
         bool motherboardMotorAuthorityValid = false;
+        bool motherboardModelMatches = false;
         bool motherboardDoctrineValid = false;
         int motherboardDoctrine = -1;
         bool motherboardServerAxisEmergency = false;
         bool motherboardClientAxisEmergency = false;
+        double motherboardAxisAgreement = -2.0; // unverified sentinel
         double motherboardHullForwardMps2 = 0.0;
         double motherboardWorkingForwardMps2 = 0.0;
         double motherboardSteeringMps2 = 0.0;
@@ -1126,10 +1128,12 @@ private:
             << " mother_current=" << (o.motherboardCurrent?1:0)
             << " mother_envelope=" << (o.motherboardEnvelopeValid?1:0)
             << " mother_motors=" << (o.motherboardMotorAuthorityValid?1:0)
+            << " mother_model_match=" << (o.motherboardModelMatches?1:0)
             << " mother_doctrine_valid=" << (o.motherboardDoctrineValid?1:0)
             << " mother_doctrine=" << o.motherboardDoctrine
             << " mother_server_axis=" << (o.motherboardServerAxisEmergency?1:0)
             << " mother_client_axis=" << (o.motherboardClientAxisEmergency?1:0)
+            << " mother_axis_dot=" << o.motherboardAxisAgreement
             << " mother_hull_forward=" << o.motherboardHullForwardMps2
             << " mother_working_forward=" << o.motherboardWorkingForwardMps2
             << " mother_steering=" << o.motherboardSteeringMps2

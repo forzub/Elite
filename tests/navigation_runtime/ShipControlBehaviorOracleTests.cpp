@@ -766,7 +766,7 @@ void testAssistedVelocityAlignmentUsesWorkingAxis()
     auto misaligned=makeTransform(Model::AssistedI,300.0);
     command(misaligned,physics);
     require(
-        std::abs(misaligned.yawInput)>0.001f &&
+        std::abs(misaligned.yawRate)>0.001f &&
         misaligned.motion.velocityAlignmentMode ==
             VelocityAlignmentMode::ForwardToVelocity,
         "damaged Assisted HOME incorrectly aligned the hull nose, not thrust"

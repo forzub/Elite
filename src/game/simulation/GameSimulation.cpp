@@ -7033,6 +7033,21 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
         s.transform = tr;
+        // The working propulsion axis is a CURRENT equipment/CoM capability,
+        // not a stale actuator sample carried through presentation transforms.
+        // The engine executor itself uses ShipCore::effectivePhysics().
+        // Publish that SAME server-computed reference into the authoritative
+        // ship snapshot, even when this tick did not execute translation.
+        if (game::ship::plant::familyOf(
+                s.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Assisted)
+        {
+            const ShipParams flight=ship.core().effectivePhysics();
+            s.transform.motion.assistedWorkingThrustAxisEmergency =
+                flight.assistedWorkingThrustAxisEmergency;
+            s.transform.motion.assistedWorkingThrustAxisBody =
+                flight.assistedWorkingThrustAxisBody;
+        }
 
         s.referenceFrame.systemId = tr.motion.systemId;
         s.referenceFrame.frameId = tr.motion.travelFrame.frameId;

@@ -92,6 +92,41 @@ void testImmediateAuthorityDoesNotWaitForWorker()
             "BITE and source revision were not retained in cockpit snapshot");
 }
 
+void testAssistedForwardAuthorityAlwaysUsesWorkingRay()
+{
+    // A lagging emergency status must not force an off-axis ship to use
+    // the unavailable pure-body -Z motor program. This checks the same
+    // adapter that feeds MotherComputer and the docking admission gate.
+    ShipParams params {};
+    params.maxGs=5.0f;
+    params.maxLinearGs=5.0f;
+    params.forwardMainEngineAvailable=true;
+    params.forwardMainEngineAccelerationMps2=35.0f;
+    params.reverseMainEngineAvailable=true;
+    params.reverseMainEngineAccelerationMps2=35.0f;
+    params.assistedWorkingThrustAxisEmergency=false;
+    game::ship::telemetry::ShipControlAuthorityTelemetry basis;
+    basis.valid=true;
+    basis.model=game::ship::plant::PhysicalControlModelId::AssistedI;
+    basis.negative[2]=0.0; // no pure -Z motor program
+    basis.positive[2]=18.0;
+    basis.workingForwardAccelerationMps2=14.0; // real off-nose ray
+    const auto flight=game::ship::telemetry::
+        applyAuthorityToControlParams(params,basis);
+    require(flight.forwardMainEngineAvailable &&
+            flight.forwardMainEngineAccelerationMps2>13.99f &&
+            flight.forwardMainEngineAccelerationMps2<14.01f,
+            "working off-axis thrust was lost to an old -Z requirement");
+
+    basis.negative[2]=20.0;
+    basis.workingForwardAccelerationMps2=0.0;
+    const auto unavailable=game::ship::telemetry::
+        applyAuthorityToControlParams(params,basis);
+    require(!unavailable.forwardMainEngineAvailable &&
+            unavailable.forwardMainEngineAccelerationMps2<=1.0e-6f,
+            "a nonzero body -Z basis manufactured missing working thrust");
+}
+
 void testLatestWinsAndInvalidDoesNotPromiseFlight()
 {
     MotherComputer computer;
@@ -316,6 +351,7 @@ int main()
     try
     {
         testImmediateAuthorityDoesNotWaitForWorker();
+        testAssistedForwardAuthorityAlwaysUsesWorkingRay();
         testLatestWinsAndInvalidDoesNotPromiseFlight();
         testSameTickNewGenerationCannotPublishObsoleteWork();
         testHudAndTerminalShareMotherboardShipTick();

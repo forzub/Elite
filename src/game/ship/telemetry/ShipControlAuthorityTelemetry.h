@@ -21,8 +21,11 @@ struct ShipControlAuthorityTelemetry
     std::uint64_t sourceActuatorRevision = 0;
     std::array<double,6> positive {};
     std::array<double,6> negative {};
-    // Usable physical acceleration along the engine-out CoM-aligned primary
-    // thrust axis. Distinct from negative[2], which means pure hull -Z.
+    // Usable physical acceleration along the selected CoM-compatible
+    // working-forward thrust ray: body -Z on a healthy symmetric ship,
+    // or a geometrically selected off-nose ray when damaged. This is what
+    // flight planning consumes. negative[2] separately measures pure
+    // hull -Z motor-program authority and can correctly be zero.
     double workingForwardAccelerationMps2 = 0.0;
     // Indices: body X (strafe), body Y (lift), body Z (reverse positive),
     // angular pitch, yaw, roll. Magnitudes always nonnegative.

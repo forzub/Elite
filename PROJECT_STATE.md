@@ -28,6 +28,24 @@
 
 **IMPORTANT ACCEPTANCE BOUNDARY:** This environment can inspect and edit GitHub `main` but cannot resolve github.com from local container, so **no game binary, Windows compilation, CTest execution, or actual aircraft-in-flight/autopilot outcome has been observed in this response**. Source logic and tests are ready, NOT proof of successful damaged-engine corridor passage. Before changing existing smooth Assisted controller, inspect captured real flight first. Maintain single state file on `main`.
 
+## 2026-10-23 — Requested two-run Assisted-I aft-engine damage acceptance
+
+**Request:** Exactly two identically configured game-level navigation stress runs on Assisted-I: first `aft-50` (50% FUNCTIONAL damage of left aft installed CR-1), then `aft-failed` (100% INTERNAL functional failure of the same physical motor). Both use the existing simple-stress diagnostic scene with hot-start 300 m/s, nose offset 0°, unchanged autopilot and path. Do not run six I/Y/X combinations or use the isolated ideal flight-matrix test as proof of live damage handling.
+
+**Runner update:** `scripts/run-assisted-engine-damage-flights.ps1` now accepts optional `-AssistedIOnly` switch, narrowing the existing six-case matrix to the two named I cases without changing the default six-case behavior. Correctly sets `ELITE_SHIP_PHYSICAL_TEST_TOTAL=2`; checks newly appended `D:/tmp/elite_engine_damage_preset.log` receipts for the exact requested preset, `status=APPLIED`, `module=ship_engine_L`; preserves the original navigation stress report plus **separate** copied `D:/tmp/elite_attitude_jitter.csv` per flight before the next run overwrites it. Writes per-flight receipts and combined `assisted_damage_flights_summary.csv`. No fresh receipt or no fresh flight trace cannot receive a successful status, even if runner reports COMPLETE. Restores original process environment after the batch.
+
+**Expected physics (hypotheses to verify):** 50% left-aft: the two remaining operational aft CR-1s can preserve central torque-neutral forward thrust by throttling the healthy right motor, though maximum forward acceleration falls. No amber off-axis marker should be required merely from 50% loss. 100% left-aft: right-aft is sole aft candidate; physical CoM ray is offset ~49.5° toward body-negative X, amber THRUST AXIS sight should appear away from the fixed nose boresight; the ship computer must select the engine-out flight doctrine, never attempt a fixed -Z burn using phantom balancing torque. Autopilot must reflect sharply reduced achievable force and be judged by actual corridor/stability/termination evidence rather than forcing a pass.
+
+**Windows operator command** from the updated Elite repo root after building BOTH game and server:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-assisted-engine-damage-flights.ps1 -AssistedIOnly -ReportDirectory 'D:\tmp\elite_assisted_I_2runs'
+```
+
+Collect the resulting two distinct `*_attitude.csv`, two `*.log` scenario reports, receipt files and summary CSV; evaluate `axis_emergency`, `axis_offset_deg`, `axis_motor_index`, executed yaw torque/angular velocity, motor thrust/nozzle angle, and autoplanner corridor error. `D:/tmp/elite_equipment_failures.log` belongs to live keypress events and need not have entries in these PRESTART scenario runs.
+
+**Verification status:** Runner source prepared and reviewed, **the two executable/game runs have NOT been performed inside ChatGPT's Linux container** (no local Windows EliteGame.exe, PowerShell or repo build). Do not claim pass/fail before actual logs. Keep this as one focused acceptance batch, no changes to healthy Assisted regulator or broader navigation experiments.
+
 ## Current focus and result
 
 **Assisted-I autopilot pitch/yaw jitter is FIXED IN OBSERVED GAMEPLAY**, as reported by user on 2026-10-22: ship movement now smooth, no visible tremor. Independently, the newly supplied 90.02-second server flight capture strongly corroborates that outcome. This closes the specific **high-frequency pitch/yaw full-authority bang-bang** diagnosis; it does **NOT** certify every Assisted-Y/X layout, Newtonian behavior, exact docking completion, or all flight envelopes.

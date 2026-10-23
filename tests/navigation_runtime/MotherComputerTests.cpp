@@ -46,6 +46,8 @@ MotherComputerInput makeInput(std::uint64_t shipId,
     input.installedMotorAuthority.negative = {
         10.0,10.0,20.0,1.0,1.0,1.0
     };
+    // Healthy centered hardware's working ray IS the -Z basis.
+    input.installedMotorAuthority.workingForwardAccelerationMps2=20.0;
     input.reactorOutputMW = 45.0;
     input.busRequestedMW = 35.0;
     input.thermalTemperatureK = 700.0;

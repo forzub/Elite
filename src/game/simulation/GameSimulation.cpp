@@ -7237,8 +7237,11 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             }
             else
             {
-                if (!motionLabProbe && moduleStateChanged)
+                if (moduleStateChanged)
                 {
+                    // Preserve real module damage on motion-lab probes as
+                    // well. They skip large structural and mesh graphs, but
+                    // installed-equipment state must reach the client.
                     // Thermal protection, engine wear and replace-only annulus
                     // work all change the authoritative module revision.
                     // Publish only small module rows: structural links, mesh
@@ -7279,9 +7282,10 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             }
         }
 
-        // Motion-lab probes exercise only authoritative transform -> snapshot
-        // -> client presentation. Shipping their complete damage/repair graph
-        // multiplies startup snapshot memory without testing anything useful.
+        // Motion-lab probes omit the heavy damage/repair *structure*, but
+        // MUST replicate module state above (engine faults/thermal authority).
+        // Without module rows, the client cockpit and MotherComputer have
+        // no factual equipment graph to reconcile with server thrust.
         if (!motionLabProbe && detailedReplication)
         {
             auto detachedFragments =

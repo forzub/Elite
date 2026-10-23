@@ -5742,15 +5742,111 @@ void SpaceState::update(float dt)
                 game::ship::computer::collectReplicatedShipFacts(
                     shipIt->second, observedTick
                 );
-            if (shipIt->second.descriptor)
+            // collectReplicatedShipFacts already resolves the selected
+            // per-instance installed I/Y/X descriptor and evaluates BITE
+            // against exactly the current module graph. Never replace it
+            // with a second native-type BITE projection in the UI layer.
+#ifdef _WIN32
+            // Diagnostics ONLY for the two damaged-flight acceptance runs:
+            // record what ACTUALLY crossed server -> client, rather than
+            // guessing from the engine-colored HUD. No extra state/cache
+            // feeds this trace, MotherComputer or the real flight controller.
+            if (const char* preset = std::getenv("ELITE_SHIP_DAMAGE_PRESET"))
             {
-                motherInput.installedEquipmentBite =
-                    game::presentation::buildShipBiteState(
-                        *shipIt->second.descriptor,
-                        shipIt->second.modules,
-                        observedTick
-                    );
+                const std::string scenario(preset);
+                if (scenario == "aft-50" || scenario == "aft-failed")
+                {
+                    static std::uint64_t lastTraceTick = 0;
+                    static std::string lastTraceScenario;
+                    const bool firstSample =
+                        lastTraceScenario != scenario;
+                    if (firstSample ||
+                        observedTick >= lastTraceTick + 50)
+                    {
+                        lastTraceTick = observedTick;
+                        lastTraceScenario = scenario;
+                        const auto& ship = shipIt->second;
+                        const auto failed = std::find_if(
+                            ship.modules.begin(), ship.modules.end(),
+                            [](const auto& m) {
+                                return m.moduleId == "ship_engine_L";
+                            });
+                        const bool found = failed != ship.modules.end();
+                        double projected = -1.0;
+                        if (ship.descriptor)
+                        {
+                            const auto installed =
+                                game::ship::capability::
+                                    replicatedInstalledAssistedDescriptor(
+                                        *ship.descriptor,
+                                        ship.physicalControlModel);
+                            const auto& definition =
+                                installed ? *installed : *ship.descriptor;
+                            const auto states =
+                                game::ship::capability::
+                                    buildPhysicalControlSlotState(
+                                        definition,
+                                        ship.physicalControlModel,
+                                        ship.modules);
+                            if (!states.empty())
+                                projected =
+                                    game::ship::plant::
+                                        effectiveSlotThrust01(states.front());
+                        }
+                        std::error_code error;
+                        std::filesystem::create_directories(
+                            "D:/tmp",error);
+                        const std::string path =
+                            "D:/tmp/elite_equipment_state_" +
+                            scenario + ".csv";
+                        std::ofstream trace(path,
+                            firstSample ? std::ios::trunc : std::ios::app);
+                        if (trace)
+                        {
+                            if (firstSample)
+                                trace <<
+                                    "tick,model,module_count,found,state,"
+                                    "health,internal_failure,projected_available,"
+                                    "live_available,live_thrust,bite_fault_count,"
+                                    "bite_hud_attention,bite_failed,"
+                                    "physical_envelope_valid,emergency_axis,"
+                                    "axis_x,axis_y,axis_z\n";
+                            const auto& motor =
+                                ship.transform.motion.engineTelemetry;
+                            trace << observedTick << ','
+                                << static_cast<int>(ship.physicalControlModel)
+                                << ',' << ship.modules.size() << ','
+                                << (found?1:0) << ','
+                                << (found?static_cast<int>(failed->state):-1)
+                                << ',' << (found?failed->health:-1.0f)
+                                << ','
+                                << (found?failed->internalFailureDamage01:-1.0f)
+                                << ',' << projected << ','
+                                << (motor.valid && motor.count>0
+                                    ?motor.available01[0]:-1.0) << ','
+                                << (motor.valid && motor.count>0
+                                    ?motor.thrust01[0]:-1.0) << ','
+                                << motherInput.installedEquipmentBite.faults.size()
+                                << ',' << (std::any_of(
+                                    motherInput.installedEquipmentBite.faults.begin(),
+                                    motherInput.installedEquipmentBite.faults.end(),
+                                    [](const auto& fault){return fault.hudAttention;}
+                                )?1:0)
+                                << ',' << motherInput.installedEquipmentBite.summary.failedCount
+                                << ',' << (motherInput.physicalEnvelopeValid?1:0)
+                                << ','
+                                << (motherInput.physicalEnvelopeValid &&
+                                    motherInput.physicalEnvelope.
+                                        assistedWorkingThrustAxisEmergency?1:0)
+                                << ',' << motherInput.workingThrustAxisBody.x
+                                << ',' << motherInput.workingThrustAxisBody.y
+                                << ',' << motherInput.workingThrustAxisBody.z
+                                << '\n';
+                        }
+                    }
+                }
             }
+#endif
             m_motherComputer.observe(std::move(motherInput));
             // The engineering/diagnostic HTML panel may refresh BEFORE
             // renderUI(); publish its first factual snapshot on this same

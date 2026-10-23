@@ -92,7 +92,7 @@ Do not claim that video tests the later corrections.
   `MotherComputer` -> cockpit, CHECK, engine bars and Assisted authority.
   Compact module rows are now sent on module revision changes also to
   motion-lab probes; the larger structural/repair graph remains omitted.
-- `CobraMk1.cpp` `ELITE_SHIP_PHYSICAL_TEST_MODEL=Assisted-I/Y/X` now
+- `EliteCobraMk1.cpp` `ELITE_SHIP_PHYSICAL_TEST_MODEL=Assisted-I/Y/X` now
   binds `installedAssistedEngineModuleIds(model)` rather than calling
   `slotModuleIds.clear()`. This fixed a **confirmed source cause**:
   a client descriptor with an empty binding was silently reconstructed as
@@ -138,14 +138,27 @@ Do not claim that video tests the later corrections.
    installed ID never becomes healthy and that the off-axis server vector
    remains visible even if the separate emergency flag is false. No new
    testing infrastructure or test-only production paths.
-4. `2d6b9e3b`, `c7500d1a` — fixed `AGENTS.md` and
+4. `d7b792ed` — `ShipController.cpp`: the legacy velocity-alignment
+   path (Assisted HOME/return from free rotation and damaged
+   flip-and-burn END) was STILL aligning the bare hull nose to velocity,
+   independently of the already corrected navigation autopilot and
+   safe-course executor. It now compares the actual body-to-world working
+   thrust ray to velocity or anti-velocity, leaving physical body control
+   axes and healthy/Newtonian behavior intact. Invalid off-axis reference
+   fails closed instead of reverting to a fictional nominal nose direction.
+   This is SOURCE ONLY, not accepted gameplay.
+5. `9c55d026` — extended existing `ShipControlBehaviorOracleTests.cpp`:
+   nose on velocity with 49.5-degree off-axis thrust must request yaw;
+   counter-rotated hull with thrust on velocity must finish alignment;
+   nominal nose-on-velocity behavior stays intact.
+6. `2d6b9e3b`, `c7500d1a` — fixed `AGENTS.md` and
    `REPOSITORY_SOURCE_OF_TRUTH.md` instructions that previously told
    agents to maintain three parallel living status files. Only
    `PROJECT_STATE.md` now owns current project status; normative architecture
    documents remain independently authoritative on their actual contracts.
 
-**VERIFICATION LEVEL: SOURCE REVIEW ONLY** for this slice and previous
-`dd8702c` diagnostic-descriptor fix. GitHub writes succeeded; no MinGW
+**VERIFICATION LEVEL: SOURCE REVIEW ONLY** for this slice (including
+manual alignment correction) and previous `dd8702c` diagnostic-descriptor fix. GitHub writes succeeded; no MinGW
 compilation, CTest, native Windows binary or new in-game video/trace has
 confirmed the changed behavior. Do not mark engine-out or HUD accepted.
 
@@ -157,7 +170,7 @@ On user's Windows MinGW64 checkout, pull the current `main`, rebuild
 ```bash
 git pull --ff-only origin main
 bash build_mingw64.sh
-ctest --test-dir <actual-test-build-directory> -R "engine_thrust_hud_presentation|mother_computer|working_thrust_axis_analysis|assisted_safe_course_executor_isolation|hull_pose_guidance|equipment_damage_failure_pipeline" --output-on-failure
+ctest --test-dir <actual-test-build-directory> -R "engine_thrust_hud_presentation|mother_computer|working_thrust_axis_analysis|assisted_safe_course_executor_isolation|hull_pose_guidance|equipment_damage_failure_pipeline|ship_control_behavior_oracle" --output-on-failure
 ```
 
 Use actual CTest directory; do not assume the placeholder path exists.
@@ -185,6 +198,9 @@ Expected client observations (NOT yet confirmed):
   physical envelope and cockpit. If modules have not replicated, fix ONLY
   the server->client graph edge. If they have but bar/CHECK lies, fix
   ONLY MotherComputer/HUD consumption. Never create a healthy fallback.
+- Independently check Assisted HOME and damaged END/flip-and-burn:
+  the actual world-space working thrust axis must align with velocity
+  (or anti-velocity for aft-main braking), not the hull nose.
 - If HUD is finally correct but full-out flight still fails, use per-run
   acquired/route/admission data and yaw/torque/nozzle logs to isolate the
   actual physical feasibility, control allocation or safe-course phase.

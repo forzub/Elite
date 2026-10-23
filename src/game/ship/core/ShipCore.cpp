@@ -59,6 +59,50 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
                 game::ship::presets::cobra::installedAssistedEngineModuleIds(model);
             desc.powerThermalInstallation.engineReactorModuleIds=
                 game::ship::presets::cobra::installedAssistedReactorModuleIds(model);
+            // Construction is a mandatory installed equipment mapping, not
+            // optional damage telemetry. Detect missing/duplicate IDs and
+            // absent hardware passports before this profile can fly.
+            const auto& installedIds=desc.physicalControl.slotModuleIds;
+            const auto& reactorIds=
+                desc.powerThermalInstallation.engineReactorModuleIds;
+            const auto& topology=
+                game::ship::presets::cobra::propulsionSlots(model);
+            const auto& groups=
+                game::ship::presets::cobra::installationSlots(model).engineReactors;
+            if(installedIds.size()!=topology.size() ||
+               reactorIds.size()!=groups.size())
+                throw std::logic_error(
+                    "Invalid Cobra Assisted installation: slot count");
+            const auto requirePassport=[&](const std::string& id,
+                                            bool engine) {
+                if(id.empty())
+                    throw std::logic_error(
+                        "Invalid Cobra Assisted installation: empty module ID");
+                const auto it=std::find_if(desc.modules.begin(),desc.modules.end(),
+                    [&](const ModuleDescriptor& module) {
+                        return module.moduleId==id;
+                    });
+                if(it==desc.modules.end() ||
+                   (engine ? !it->engine : !it->engineReactor))
+                    throw std::logic_error(
+                        "Invalid Cobra Assisted installation: missing passport "+id);
+            };
+            for(std::size_t i=0;i<installedIds.size();++i)
+            {
+                if(std::find(installedIds.begin(),installedIds.begin()+i,
+                             installedIds[i])!=installedIds.begin()+i)
+                    throw std::logic_error(
+                        "Invalid Cobra Assisted installation: duplicate engine ID");
+                requirePassport(installedIds[i],true);
+            }
+            for(std::size_t i=0;i<reactorIds.size();++i)
+            {
+                if(std::find(reactorIds.begin(),reactorIds.begin()+i,
+                             reactorIds[i])!=reactorIds.begin()+i)
+                    throw std::logic_error(
+                        "Invalid Cobra Assisted installation: duplicate reactor ID");
+                requirePassport(reactorIds[i],false);
+            }
             desc.mainPropulsion.aftEngineModuleIds.clear();
             desc.mainPropulsion.foreEngineModuleIds.clear();
             const auto& topology=

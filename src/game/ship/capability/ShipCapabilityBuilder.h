@@ -227,12 +227,7 @@ inline std::vector<plant::EngineSlotState> slotStates(
     for (const auto& moduleId : binding)
     {
         if (moduleId.empty())
-        {
-            // A partially bound installed bank is INCOMPLETE, never
-            // permission to create an imaginary healthy motor.
-            out.push_back({false, 0.0, 0.0});
-            continue;
-        }
+            return {}; // Invalid installation, not a damaged engine.
 
         out.push_back(
             slotFromModule(
@@ -270,12 +265,7 @@ inline std::vector<plant::EngineSlotState> slotStates(
     for (const auto& moduleId : binding)
     {
         if (moduleId.empty())
-        {
-            // A partially bound installed bank is INCOMPLETE, never
-            // permission to create an imaginary healthy motor.
-            out.push_back({false, 0.0, 0.0});
-            continue;
-        }
+            return {}; // Invalid installation, not a damaged engine.
 
         const auto it = std::find_if(
             modules.begin(),
@@ -581,9 +571,8 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     for (const auto& moduleId : binding)
     {
         if (moduleId.empty())
-            out.push_back({false, 0.0, 0.0});
-        else
-            out.push_back(
+            return {}; // Invalid installation, not a damaged engine.
+        out.push_back(
                 detail::slotFromModule(
                     detail::findModuleDescriptor(descriptor, moduleId),
                     runtime.findModule(moduleId)
@@ -615,10 +604,7 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     for (const auto& moduleId : binding)
     {
         if (moduleId.empty())
-        {
-            out.push_back({false, 0.0, 0.0});
-            continue;
-        }
+            return {}; // Invalid installation, not a damaged engine.
 
         const auto it = std::find_if(
             modules.begin(),

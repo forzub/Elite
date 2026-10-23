@@ -159,8 +159,17 @@ void testEmergencyPilotTargetsWorkingAxisNotNose()
             std::abs(settled.pitchInput)<0.01f,
         "engine-out pilot fought physically correct displaced-nose pose");
 
-    // Healthy Assisted must still align the NOSE with the velocity course.
+    // Axis steering must depend on the physical vector, NOT the diagnostic
+    // emergency flag. A delayed flag must not redirect the craft to its nose.
     physics.assistedWorkingThrustAxisEmergency=false;
+    req.forwardMap={0.0,0.0,-1.0};
+    req.rightMap={1.0,0.0,0.0};
+    AssistedAutopilot flagLagged;
+    const auto lagged=flagLagged.update(req,physics);
+    require(std::abs(lagged.yawInput)>0.01f,
+        "Assisted pilot ignored real off-axis vector when flag was false");
+
+    // Healthy Assisted must still align the NOSE with the velocity course.
     physics.assistedWorkingThrustAxisBody={0.0,0.0,-1.0};
     physics.assistedWorkingThrustMotorIndex=-1;
     AssistedAutopilot healthy;

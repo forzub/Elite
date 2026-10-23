@@ -77,10 +77,21 @@ the worker result is logged by the existing `job_result` only
 after it has actually run.
 **No C++ build or game test after these source edits is available yet.**
 
-**Immediate next action:** Windows pull/build BOTH game/server, then run
-**only `aft-failed` first** or the unchanged existing `-AssistedIOnly`
-two-run matrix. The required deliverable is the newly generated
-`D:/tmp/elite_assisted_I_2runs/02_Assisted_I_aft_failed.log`.
+**Immediate next action:** Windows pull/build BOTH game/server, then
+use the **existing** runner's new `-OnlyPreset aft-failed` selector
+(commit `0e2b6aa5`) with `-AssistedIOnly` to run just the broken case.
+Omitting `-OnlyPreset` keeps the original two/six-case matrix.
+
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+bash build_mingw64.sh
+MSYS2_ARG_CONV_EXCL='*' powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$PWD/scripts/run-assisted-engine-damage-flights.ps1")" -AssistedIOnly -OnlyPreset aft-failed -ReportDirectory 'D:\\tmp\\elite_engine_out_gate'
+```
+
+The required deliverable for this one-case run is the NEW
+`D:/tmp/elite_engine_out_gate/01_Assisted_I_aft_failed.log`,
+plus its summary and receipt; numbering is 01 when only one case runs.
 Determine whether `mother_current=0`, envelope/motor missing, doctrine
 invalid from disagreement, or 3D actuator-basis deficit. If the gate
 becomes ready, check actual `workers`, `job_result`,

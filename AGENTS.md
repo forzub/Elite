@@ -4,40 +4,30 @@ This file defines repository-level working rules for coding/maintenance agents.
 
 ## Canonical project context
 
-Before changing project behavior or project state, read:
-- `CURRENT_STATE.md`;
-- `CURRENT_TASK.md`;
-- `PROJECT_STATE.md`;
-- the authoritative document for the active stage.
+`PROJECT_STATE.md` on `main` is the ONE living project-state and
+continuation file. Read it before implementing a new slice; corroborate its
+claims against current code and target-machine logs. Do not reconstruct
+project state from old chats or superseded summaries.
 
-For NavigationWorld v2 Stage 12 the active stage document is:
-- `src/game/navigation/STAGE12_END_TO_END.md`.
-
-Do not reconstruct current project state from old chat context when repository
-Markdown and target-machine evidence are available.
+`CURRENT_STATE.md` and `CURRENT_TASK.md` are legacy dated histories, NOT
+parallel living state files. Read them or stage-specific architecture contracts
+only when investigating the relevant historical design. The normative
+navigation architecture remains in its dedicated source contracts (for example
+`src/game/navigation/NAVIGATION_V2_EXECUTION_ARCHITECTURE.md`).
 
 ## Mandatory state recording
 
-After every **state-affecting event**, synchronize the Markdown context before
-starting the next implementation slice.
+After every **state-affecting event**, update `PROJECT_STATE.md` only,
+before beginning the next implementation slice. Record changed scope,
+ownership or acceptance criteria, real gate results, diagnosed root causes,
+completed changes and explicit next steps. Do not append similar status
+sections into `CURRENT_STATE.md`, `CURRENT_TASK.md`, or stage documents.
+Update a separate architecture/contract document only when THAT document's
+actual normative contract changes.
 
-State-affecting events include:
-- activating a new candidate/slice;
-- changing scope, ownership, architecture, or an acceptance contract;
-- receiving a target-machine gate result;
-- diagnosing a failed gate/root cause that changes the next action;
-- accepting/closing a slice;
-- changing the current task/next step.
-
-At minimum update:
-- `CURRENT_STATE.md`;
-- `CURRENT_TASK.md`;
-- `PROJECT_STATE.md`;
-- the active stage document.
-
-A code edit that does not change project state/contract does not require a
-fictional state transition, but any meaningful gate result or change of direction
-must be recorded.
+Separate source-audited changes from compiled tests and live Windows flight
+evidence. Never turn a proposed fix into an accepted result just by committing
+it.
 
 ## Evidence semantics
 

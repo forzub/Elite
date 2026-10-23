@@ -180,13 +180,24 @@ namespace game::ship::computer
     // when the separately replicated equipment graph is momentarily sparse:
     // the client must not hide a REAL engine-out thrust direction just
     // because its read-only capability reconstruction has not caught up.
-    const bool observedEmergency =
-        motherboard.input.emergencyWorkingThrustAxis;
-    const glm::dvec3 candidate = observedEmergency
-        ? motherboard.input.workingThrustAxisBody
-        : axisSource.assistedWorkingThrustAxisBody;
+    // The authoritative server direction is a stronger fact than a
+    // potentially stale boolean flag. If the direction is measurably off
+    // the hull's -Z boresight, the marker must remain visible even when
+    // the emergency flag was not replicated in lockstep. This does NOT
+    // grant flight authority or alter the engine allocator.
+    const auto& observedAxis=motherboard.input.workingThrustAxisBody;
+    const double observedLength=glm::length(observedAxis);
+    const bool observedValid=std::isfinite(observedLength) &&
+        observedLength>1.0e-9;
+    const bool observedOffset=observedValid &&
+        (std::hypot(observedAxis.x,observedAxis.y)>0.01*observedLength ||
+         observedAxis.z>0.0);
+    const bool preferObserved=observedValid &&
+        (motherboard.input.emergencyWorkingThrustAxis || observedOffset);
+    const glm::dvec3 candidate=preferObserved
+        ? observedAxis : axisSource.assistedWorkingThrustAxisBody;
     const double candidateLength=glm::length(candidate);
-    if((observedEmergency || projectedEmergency) &&
+    if((preferObserved || projectedEmergency) &&
        std::isfinite(candidateLength) && candidateLength>1.0e-9)
     {
         out.emergencyWorkingThrustAxis=true;

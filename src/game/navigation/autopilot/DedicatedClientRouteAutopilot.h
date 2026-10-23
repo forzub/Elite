@@ -525,35 +525,39 @@ public:
         // It is computed from present hull attitude/angular rate and the
         // physical acceleration bound, not from a fixed "damaged speed %".
         double emergencyOrientationSeconds = 0.0;
-        if (law == LocalFlightControlLaw::Assisted &&
-            params.assistedWorkingThrustAxisEmergency)
+        if (law == LocalFlightControlLaw::Assisted)
         {
-            const auto& axis = params.assistedWorkingThrustAxisBody;
-            const glm::dvec3 worldAxis = normalizedOr(
-                agent.rightMap*axis.x +
-                agent.upMap*axis.y -
-                agent.forwardMap*axis.z,
-                agent.forwardMap
-            );
-            const double remainingAngle = std::acos(std::clamp(
-                glm::dot(worldAxis,
-                    normalizedOr(nominalForward,agent.forwardMap)),
-                -1.0,1.0
-            ));
-            const double angularA =
-                game::ship::angularAccelerationLimitRadPerSec2(params);
-            if (angularA>1.0e-9)
-            {
-                emergencyOrientationSeconds =
-                    2.0*std::sqrt(remainingAngle/angularA) +
-                    std::hypot(
-                        agent.pitchRateRadPerSec,
-                        agent.yawRateRadPerSec
-                    )/angularA;
-            }
-            else
+            const auto& body = params.assistedWorkingThrustAxisBody;
+            const double length=glm::length(body);
+            if (!std::isfinite(length) || length<=1.0e-9)
                 emergencyOrientationSeconds =
                     std::numeric_limits<double>::infinity();
+            else if (glm::dot(body/length,glm::dvec3(0.0,0.0,-1.0)) <
+                     1.0-1.0e-9)
+            {
+                // The geometric working-axis offset, not a possibly delayed
+                // damage flag, determines the extra orientation lead.
+                // Healthy centered craft keep the existing speed governor.
+                const glm::dvec3 worldAxis=(
+                    agent.rightMap*body.x +
+                    agent.upMap*body.y -
+                    agent.forwardMap*body.z)/length;
+                const double remainingAngle=std::acos(std::clamp(
+                    glm::dot(worldAxis,
+                        normalizedOr(nominalForward,agent.forwardMap)),
+                    -1.0,1.0
+                ));
+                const double angularA =
+                    game::ship::angularAccelerationLimitRadPerSec2(params);
+                if (angularA>1.0e-9)
+                    emergencyOrientationSeconds =
+                        2.0*std::sqrt(remainingAngle/angularA) +
+                        std::hypot(agent.pitchRateRadPerSec,
+                                  agent.yawRateRadPerSec)/angularA;
+                else
+                    emergencyOrientationSeconds =
+                        std::numeric_limits<double>::infinity();
+            }
         }
         const double courseResponseSeconds =
             std::max(

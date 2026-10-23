@@ -1794,6 +1794,22 @@ void ClientWorldState::predict(
     const ShipParams effectivePhysics =
         capability.valid ? capability.effectivePhysics : ShipParams {};
 
+    // Local prediction has only projected slot health, not the server's
+    // installed MountedEngine program and power-constrained six-axis wrench.
+    // For an off-axis Assisted installation the old slot-only prediction
+    // manufactures thrust/torque (up to the yaw acceleration cap), even
+    // while the authoritative server reports near-zero residual yaw.
+    // NEVER feed that invented actuator result into client ship pose.
+    // Use replicated server motion and the existing presentation smoothing
+    // until a genuine installed-motor prediction provider is available.
+    const bool physicalOffAxisAssisted =
+        ship.transform.motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted &&
+        (effectivePhysics.assistedWorkingThrustAxisEmergency ||
+         ship.transform.motion.assistedWorkingThrustAxisEmergency);
+    if (physicalOffAxisAssisted)
+        return;
+
     game::ship::control::ShipControlExecutionGateway::integrateAttitude(
         ship.transform,
         effectivePhysics,

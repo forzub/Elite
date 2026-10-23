@@ -18,16 +18,10 @@ namespace game::client::presentation
 /*
     Build a presentation-only sample between two fixed prediction ticks.
 
-    Client prediction remains authoritative only at fixed simulation ticks.
-    Rendering, however, may run faster than that fixed rate. Rendering the
-    latest fixed predicted transform directly therefore feeds the camera a
-    staircase (50 Hz in the current runtime) and then asks an exponential
-    smoother to hide it.
-
-    Instead, copy the latest fixed predicted state and advance only the copy by
-    the accumulator remainder. At the next fixed tick the fixed state advances
-    by the same deterministic equations and the remainder wraps, so this target
-    is continuous without mutating prediction/reconciliation history.
+    Rendering can run faster than fixed prediction ticks. Copy the latest
+    server-based kinematic prediction and extrapolate only that copy by the
+    accumulator remainder, using the SAME rates/velocity as the fixed path.
+    No client physics or engine allocator is ever invoked.
 */
 inline ShipTransform sampleLocalPredictedPresentationTarget(
     const ShipTransform& fixedPredictedTransform,
@@ -54,25 +48,13 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
     if (dt <= 0.0f)
         return target;
 
-    // Attitude uses exactly the same deterministic controller as fixed-step
-    // prediction; this mutates only the presentation copy.
-    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
-        target,
-        shipParams,
-        control,
-        world,
-        dt
-    );
-
-    // Hub-local translation crosses the same ship-control execution gateway as
-    // both server simulation and fixed client prediction.
-    (void)game::client::predictHubTacticalMotion(
-        target,
-        referenceFrame,
-        shipParams,
-        control,
-        dt
-    );
+    // Presentation copy only. No attitude-control or motor-force replay;
+    // the server has already solved both in its authoritative snapshot.
+    (void)shipParams;
+    (void)control;
+    (void)world;
+    (void)game::client::advanceReplicatedHubKinematics(
+        target,referenceFrame,dt);
 
     return target;
 }
@@ -105,23 +87,13 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
     if (dt <= 0.0f)
         return target;
 
-    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
-        target,
-        shipParams,
-        control,
-        world,
-        dt
-    );
-
-    (void)game::client::predictHubTacticalMotion(
-        target,
-        referenceFrame,
-        shipParams,
-        control,
-        model,
-        slotState,
-        dt
-    );
+    (void)shipParams;
+    (void)control;
+    (void)world;
+    (void)model;
+    (void)slotState;
+    (void)game::client::advanceReplicatedHubKinematics(
+        target,referenceFrame,dt);
 
 
     return target;

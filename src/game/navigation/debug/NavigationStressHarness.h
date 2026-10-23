@@ -52,6 +52,22 @@ public:
         std::uint64_t speedProfileRevision = 0;
         bool failed = false;
         std::string failureReason;
+        // Pre-planner authority gate. A pending request with phase=Idle and
+        // failed=false is otherwise indistinguishable from a missing request.
+        // Facts are copied from the existing MotherComputer snapshot only.
+        std::string authorityStatus;
+        bool motherboardCurrent = false;
+        bool motherboardEnvelopeValid = false;
+        bool motherboardMotorAuthorityValid = false;
+        bool motherboardDoctrineValid = false;
+        int motherboardDoctrine = -1;
+        bool motherboardServerAxisEmergency = false;
+        bool motherboardClientAxisEmergency = false;
+        double motherboardHullForwardMps2 = 0.0;
+        double motherboardWorkingForwardMps2 = 0.0;
+        double motherboardSteeringMps2 = 0.0;
+        double motherboardLateralMps2 = 0.0;
+        double motherboardReverseMps2 = 0.0;
         int workerCount = 0;
         std::uint64_t jobSerial = 0;
         bool jobReady = false;
@@ -1106,6 +1122,19 @@ private:
             << " route_curve=" << o.routeCurveIndex
             << " profile_rev=" << o.speedProfileRevision
             << " failed=" << (o.failed ? 1 : 0)
+            << " authority_status=\"" << escaped(o.authorityStatus) << "\""
+            << " mother_current=" << (o.motherboardCurrent?1:0)
+            << " mother_envelope=" << (o.motherboardEnvelopeValid?1:0)
+            << " mother_motors=" << (o.motherboardMotorAuthorityValid?1:0)
+            << " mother_doctrine_valid=" << (o.motherboardDoctrineValid?1:0)
+            << " mother_doctrine=" << o.motherboardDoctrine
+            << " mother_server_axis=" << (o.motherboardServerAxisEmergency?1:0)
+            << " mother_client_axis=" << (o.motherboardClientAxisEmergency?1:0)
+            << " mother_hull_forward=" << o.motherboardHullForwardMps2
+            << " mother_working_forward=" << o.motherboardWorkingForwardMps2
+            << " mother_steering=" << o.motherboardSteeringMps2
+            << " mother_lateral=" << o.motherboardLateralMps2
+            << " mother_reverse=" << o.motherboardReverseMps2
             << " workers=" << o.workerCount
             << " job_serial=" << o.jobSerial
             << " job_ready=" << (o.jobReady ? 1 : 0)

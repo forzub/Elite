@@ -1697,83 +1697,28 @@ void ClientWorldState::prepareLocalPredictedPresentation(
     float fixedStepSeconds
 )
 {
+    (void)control;
+    (void)world;
     clearLocalPredictedPresentation();
 
-    auto it = m_ships.find(id.value);
-    if (it == m_ships.end())
+    auto it=m_ships.find(id.value);
+    if(it==m_ships.end() || !isLocalControlledEntity(id))
         return;
 
-    const auto& ship = it->second;
-    if (!isLocalControlledEntity(id) || !ship.descriptor)
-        return;
+    // Fractional presentation must use the SAME law as the fixed client
+    // prediction: authoritative kinematics only. No second engine solver,
+    // including in healthy Assisted, Newtonian, or damaged layouts.
+    m_localPredictedPresentationTarget=it->second.transform;
+    m_localPredictionRemainderSeconds=
+        std::clamp(fractionalStepSeconds,0.0f,
+                   std::max(0.0f,fixedStepSeconds));
+    (void)game::client::advanceReplicatedHubKinematics(
+        m_localPredictedPresentationTarget,
+        it->second.referenceFrame,
+        m_localPredictionRemainderSeconds);
 
-    const auto slotState =
-        ship.physicalControlModel != ship.descriptor->physicalControlModel
-            ? game::ship::plant::healthySlotState(
-                  game::ship::plant::physicalControlSlots(
-                      ship.physicalControlModel
-                  )
-              )
-            : game::ship::capability::buildPhysicalControlSlotState(
-                  *ship.descriptor,
-                  ship.physicalControlModel,
-                  ship.modules
-              );
-    const auto capability =
-        game::ship::capability::buildShipCapability(
-            *ship.descriptor,
-            ship.physicalControlModel,
-            slotState
-        );
-    const ShipParams effectivePhysics =
-        capability.valid ? capability.effectivePhysics : ShipParams {};
-
-    const bool physicalOffAxisAssisted =
-        ship.transform.motion.localControlLaw ==
-            game::navigation::LocalFlightControlLaw::Assisted &&
-        (effectivePhysics.assistedWorkingThrustAxisEmergency ||
-         ship.transform.motion.assistedWorkingThrustAxisEmergency);
-    if (physicalOffAxisAssisted)
-    {
-        // Last render-fraction path used to re-run the old slot-only motor
-        // allocator after fixed-step prediction had already been guarded.
-        // This was an independent source of fictitious force/yaw and camera
-        // jitter at every render frame. Advance ONLY replicated kinematics.
-        m_localPredictedPresentationTarget=ship.transform;
-        (void)game::client::advanceReplicatedHubKinematics(
-            m_localPredictedPresentationTarget,
-            ship.referenceFrame,
-            std::clamp(fractionalStepSeconds,0.0f,
-                       std::max(0.0f,fixedStepSeconds)));
-        m_localPredictedPresentationShipId=id.value;
-        m_localPredictionRemainderSeconds=
-            std::clamp(fractionalStepSeconds,0.0f,
-                       std::max(0.0f,fixedStepSeconds));
-        m_hasLocalPredictedPresentationTarget=true;
-        return;
-    }
-
-    m_localPredictedPresentationTarget =
-        game::client::presentation::sampleLocalPredictedPresentationTarget(
-            ship.transform,
-            ship.referenceFrame,
-            effectivePhysics,
-            control,
-            world,
-            ship.physicalControlModel,
-            slotState,
-            fractionalStepSeconds,
-            fixedStepSeconds
-        );
-
-    m_localPredictedPresentationShipId = id.value;
-    m_localPredictionRemainderSeconds =
-        std::clamp(
-            fractionalStepSeconds,
-            0.0f,
-            std::max(0.0f, fixedStepSeconds)
-        );
-    m_hasLocalPredictedPresentationTarget = true;
+    m_localPredictedPresentationShipId=id.value;
+    m_hasLocalPredictedPresentationTarget=true;
 }
 
 void ClientWorldState::clearLocalPredictedPresentation() noexcept
@@ -1790,84 +1735,23 @@ void ClientWorldState::predict(
     const WorldParams& world,
     float dt)
 {
-    auto it = m_ships.find(id.value);
-    if (it == m_ships.end())
+    (void)control;
+    (void)world;
+
+    auto it=m_ships.find(id.value);
+    if(it==m_ships.end() || !isLocalControlledEntity(id))
         return;
 
-    auto& ship = it->second;
-    if (!isLocalControlledEntity(id) || !ship.descriptor)
-        return;
-
-    const auto slotState =
-        ship.physicalControlModel != ship.descriptor->physicalControlModel
-            ? game::ship::plant::healthySlotState(
-                  game::ship::plant::physicalControlSlots(
-                      ship.physicalControlModel
-                  )
-              )
-            : game::ship::capability::buildPhysicalControlSlotState(
-                  *ship.descriptor,
-                  ship.physicalControlModel,
-                  ship.modules
-              );
-    const auto capability =
-        game::ship::capability::buildShipCapability(
-            *ship.descriptor,
-            ship.physicalControlModel,
-            slotState
-        );
-    const ShipParams effectivePhysics =
-        capability.valid ? capability.effectivePhysics : ShipParams {};
-
-    // Local prediction has only projected slot health, not the server's
-    // installed MountedEngine program and power-constrained six-axis wrench.
-    // For an off-axis Assisted installation the old slot-only prediction
-    // manufactures thrust/torque (up to the yaw acceleration cap), even
-    // while the authoritative server reports near-zero residual yaw.
-    // NEVER feed that invented actuator result into client ship pose.
-    // Use replicated server motion and the existing presentation smoothing
-    // until a genuine installed-motor prediction provider is available.
-    const bool physicalOffAxisAssisted =
-        ship.transform.motion.localControlLaw ==
-            game::navigation::LocalFlightControlLaw::Assisted &&
-        (effectivePhysics.assistedWorkingThrustAxisEmergency ||
-         ship.transform.motion.assistedWorkingThrustAxisEmergency);
-    if (physicalOffAxisAssisted)
-    {
-        // Shared kinematic extrapolation, NOT an independent motor solver.
-        // Reconciliation still starts with every new authoritative snapshot.
-        (void)game::client::advanceReplicatedHubKinematics(
-            ship.transform,ship.referenceFrame,dt);
-        return;
-    }
-
-    game::ship::control::ShipControlExecutionGateway::integrateAttitude(
-        ship.transform,
-        effectivePhysics,
-        control,
-        world,
-        dt
-    );
-
-    /*
-        The ship-control execution gateway owns the shared deterministic
-        control backend. HubTactical translation is advanced separately below
-        because fixed prediction mirrors the server's control/kinematic phase
-        split. Otherwise localPositionMeters would change only on snapshots and
-        nearby co-frame infrastructure would appear to pulse.
-    */
-    (void)game::client::predictHubTacticalMotion(
-        ship.transform,
-        ship.referenceFrame,
-        effectivePhysics,
-        control,
-        ship.physicalControlModel,
-        slotState,
-        dt
-    );
-
+    // The simulation/engine/thermal/rigid-body solver runs ONCE, on the
+    // authoritative server, for every player, NPC and collision.
+    // Prediction advances only the last replicated motion state. It never
+    // replays commands through a divergent slot-only engine approximation.
+    // This is also the replay law for unacknowledged numbered inputs.
+    (void)game::client::advanceReplicatedHubKinematics(
+        it->second.transform,
+        it->second.referenceFrame,
+        dt);
 }
-
 
 
 //    ###                                                            ##                ##

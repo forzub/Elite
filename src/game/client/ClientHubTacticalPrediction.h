@@ -36,6 +36,40 @@ travelFrameForPrediction(
     return source.kinematicFrame();
 }
 
+// Damaged Assisted prediction must not synthesize engine wrench from
+// slot-only coefficients. Advance the last replicated kinematic state
+// (pose/rates/velocity), without solving thrust or re-running controls.
+// Shared by fixed client ticks AND the fractional render sample.
+inline bool advanceReplicatedHubKinematics(
+    ShipTransform& transform,
+    const game::simulation::ShipReferenceFrameSnapshot& frameSnapshot,
+    float dt
+)
+{
+    if (!canPredictHubTacticalMotion(transform,frameSnapshot) ||
+        !std::isfinite(dt) || dt<=0.0f)
+        return false;
+
+    game::ship::control::ShipControlExecutionGateway::
+        propagateOrientation(transform,dt);
+
+    auto& motion=transform.motion;
+    motion.localPositionMeters+=
+        motion.localVelocityMps*static_cast<double>(dt);
+
+    const auto frame=travelFrameForPrediction(frameSnapshot);
+    motion.travelFrame=frame;
+    transform.setWorldPositionMeters(
+        frame.localToWorldPosition(motion.localPositionMeters));
+    motion.worldVelocityMps=frame.localToWorldVelocity(
+        motion.localPositionMeters,motion.localVelocityMps);
+    motion.referenceVelocityMps=frame.localToWorldVelocity(
+        motion.localPositionMeters,glm::dvec3(0.0));
+    transform.referenceVelocityMetersPerSecond=
+        motion.referenceVelocityMps;
+    return true;
+}
+
 inline bool predictHubTacticalMotion(
     ShipTransform& transform,
     const game::simulation::ShipReferenceFrameSnapshot& frameSnapshot,

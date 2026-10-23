@@ -575,9 +575,8 @@ void testInstalledAftMotorMissingSnapshotNeverLooksHealthy()
     partiallyBound.physicalControl.slotModuleIds.front().clear();
     const auto incomplete=capability::buildPhysicalControlSlotState(
         partiallyBound,Model::AssistedI,ship.modules);
-    require(incomplete.size()==4 && !incomplete[0].operational &&
-            incomplete[0].thrust01<=1.0e-6,
-            "blank installed motor ID manufactured healthy thrust");
+    require(incomplete.empty(),
+            "blank installed motor ID was accepted as a valid construction");
     const auto hud=game::presentation::buildEngineThrustHudPresentation(ship);
     require(hud.visible && hud.warning && totalBars(hud)==4,
             "installed motor with no equipment facts looks operable on HUD");

@@ -9,6 +9,80 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## TOP PRIORITY — 2026-10-23 evening: damaged-I docking never starts planning (LOG-VERIFIED; SOURCE PATCH UNVERIFIED)
+
+**Fresh target Windows evidence from build `71bf09e8e001@main/clean`:**
+User sent `20261023-1820-25.3876699.mp4`, two per-scenario
+`*_attitude(2).csv`, two `*_receipt(2).log`, two nav stress `(2).log`,
+and `assisted_damage_flights_summary(2).csv`. Both failure injections are
+`status=APPLIED` on real installed `ship_engine_L`.
+
+- `aft-50`: approximately 82.2 simulated seconds, stress
+  `COMPLETE/exit=0`. Planner returned `job_ready=1`,
+  `job_plan_valid=1` (twice); an accepted 12-curve
+  `route_valid=1`, `phase=4` executed through
+  `BLUE_ENTER` and `BLUE_EXIT`. The planner/follower infrastructure
+  works in the reduced-but-balanced configuration.
+- `aft-failed`: approximately 137.16 simulated seconds, stress
+  `GAME_EXIT/exit=3`; **every** sampled `phase=0`, `autopilot=0`,
+  `workers=0`, `job_ready=0`, `route_valid=0`, `failed=0`, while
+  `pending=1,serial=1`. This is a **PRE-PLANNER admission/authority
+  wait**, not evidence of an invalid planner result or a follower-rejected
+  route. In particular, a terminal `fail(...)` from the 3D motor-basis
+  guard would have set `failed=1`, which is NOT observed. Source
+  `SpaceState::updateDockingAdvisory` has an early `return`
+  when `MotherComputer::assistedFlightEnvelope` is not ready/valid
+  and only prints an `awaiting authoritative motor telemetry` note to
+  stderr. The existing stress file omitted `m_dockingStatusWarning`
+  and MotherComputer's specific gate facts, so the *precise* refusal cause
+  is not yet measured.
+- Physical `aft-failed` CSV still confirms
+  `axis_emergency=1`, direction
+  `(-0.76049403,0,-0.64934492)`, offset `49.50776982°`,
+  left motor thrust 0, right motor active. Before request admission
+  the fully damaged ship already produces large yaw torque and
+  angular velocity despite `main_cmd=0`; this is an independent
+  physical/control instability to investigate AFTER unblocking/identifying
+  the entrance guard. Do not attribute it to planner or invent thrust.
+
+**Confirmed additional SOURCE defect (not yet observed as direct second-run
+failure):** after the MotherComputer authority gate, `SpaceState.cpp`
+performed a 3D feasibility check with
+`forward=liveAssistedAuthority.negative[2]`, which is **pure hull -Z**
+and can be zero under a physical offset axis. It ignored the existing
+`workingForwardAccelerationMps2` from the same signed physical matrix.
+Commit `146b8fd` now uses the work-axis acceleration for emergency mode
+and retains pure -Z for healthy. It still checks real lateral,
+steering, and reverse authority (NO artificial authority / bypass).
+A rejection now logs the exact signed magnitudes into the normal
+`fail()` reason.
+
+**Targeted missing instrumentation on main:** `bac6a937` and
+`062e0fb5` extend the existing `NavigationStressHarness` observation
+and `SpaceState` reporting, **not** another logger/test or an alternate
+state source. Existing `SAMPLE/EVENT` lines now contain
+`authority_status`, `mother_current`, `mother_envelope`,
+`mother_motors`, `mother_doctrine_valid`,
+`mother_doctrine`, `mother_server_axis`,
+`mother_client_axis`, `mother_hull_forward`,
+`mother_working_forward`, `mother_steering`,
+`mother_lateral`, `mother_reverse`. This makes a
+pending/idle/failed=0 admission wait identifiable; the worker result is
+logged by the existing `job_result` only after it has actually run.
+**No C++ build or game test after these source edits is available yet.**
+
+**Immediate next action:** Windows pull/build BOTH game/server, then run
+**only `aft-failed` first** or the unchanged existing `-AssistedIOnly`
+two-run matrix. The required deliverable is the newly generated
+`D:/tmp/elite_assisted_I_2runs/02_Assisted_I_aft_failed.log`.
+Determine whether `mother_current=0`, envelope/motor missing, doctrine
+invalid from disagreement, or 3D actuator-basis deficit. If the gate
+becomes ready, check actual `workers`, `job_result`,
+`route_valid` and `phase` before altering planner math. Do NOT
+reinterpret `job_stage=-1` as a planner failure. Keep healthy Y/X
+smoothing and the installed-engine physics unchanged until supported
+by more flight evidence.
+
 ## 0. 2026-10-23 — Explicit construction invariants and universal working-axis steering (SOURCE)
 
 **User clarification:** A real installed CR-1/ER-5 cannot "lose its ID" as equipment
@@ -187,12 +261,11 @@ Do not claim that video tests the later corrections.
 
 ## 4. This 2026-10-23 source-audit slice, published on main
 
-1. `f0d2a192` — `ShipCapabilityBuilder.h`: an EMPTY *individual* module
-   binding inside an otherwise bound installed motor bank now projects
-   `{operational=false, thrust=0, vectoring=0}` in both ObjectModuleRuntime
-   and replicated snapshot overloads, including explicit-model overloads.
-   Only an ENTIRELY unbound explicit diagnostic topology may use synthetic
-   healthy motors. Prevents a second, obscure healthy fallback.
+1. Historical `f0d2a192` replaced an invented healthy motor with
+   zero authority; this behavior was **superseded by `38ac7751`**:
+   partially empty installed bindings now reject the entire invalid
+   configuration. Entirely binding-free isolated diagnostic topology
+   is a separate explicit case, never normal installed Cobra hardware.
 2. `fd39c175` — `MotherComputerClientAdapter.h`: the HUD now treats the
    replicated physical working-axis *vector* itself as evidence of an off-nose
    sight when the emergency boolean lags; validates a finite, nonzero vector.

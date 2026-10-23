@@ -48,7 +48,13 @@ readAssistedControlAuthority(
             0.0,motorPrograms.programs[2*axis+1].achievable
         );
     }
-    if(motorPrograms.shape.assistedWorkingThrustAxisEmergency)
+    // A centered healthy bank's physical working ray is hull -Z.
+    // For damage-offset operation the surviving CoM-aligned motor below
+    // supplies the physical working acceleration instead. In BOTH cases
+    // callers consume this one value, never select pure -Z by a mode flag.
+    if(!motorPrograms.shape.assistedWorkingThrustAxisEmergency)
+        out.workingForwardAccelerationMps2=out.negative[2];
+    else
     {
         const auto& slots=game::ship::plant::physicalControlSlots(
             motorPrograms.model
@@ -96,13 +102,11 @@ readAssistedControlAuthority(
         p.reverseMainEngineAccelerationMps2 > 0.0f
             ? static_cast<double>(p.reverseMainEngineAccelerationMps2)
             : structuralLoadMps2;
-    const double workingOrHullForward =
-        p.assistedWorkingThrustAxisEmergency
-            ? telemetry.workingForwardAccelerationMps2
-            : telemetry.negative[2];
+    // Always plan along the installed, torque-neutral working thrust ray.
+    // negative[2] is only the separate pure-body -Z diagnostic basis.
     const double forward = std::min({
         structuralLoadMps2, forwardRating,
-        std::max(0.0, workingOrHullForward)
+        std::max(0.0, telemetry.workingForwardAccelerationMps2)
     });
     const double reverse = std::min({
         structuralLoadMps2, reverseRating,

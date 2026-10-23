@@ -9,6 +9,65 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 0. 2026-10-23 — Explicit construction invariants and universal working-axis steering (SOURCE)
+
+**User clarification:** A real installed CR-1/ER-5 cannot "lose its ID" as equipment
+damage. The selected I/Y/X assembly has fixed slot-to-module identity, valid
+installed equipment passports and a separately mutable runtime health record.
+An empty/duplicate engine or reactor ID, absent module definition, or wrong
+binding count means **invalid ship construction**, not a damaged motor. The
+earlier fail-closed zero-thrust fallback protected against fabricated healthy
+motors but was not a sufficient assembly-invariant check.
+
+**Changes on main:**
+- `574ddd51` validates ALL I/Y/X installed Cobra engine and reactor
+  bindings at profile creation: correct slot/group counts, nonempty unique IDs,
+  actual CR-1/ER-5 module passports. Violations raise a direct construction
+  error before such a profile is activated.
+- `38ac7751` rejects a partially populated installed actuator binding
+  entirely in both runtime and replicated capability projections. No fictitious
+  healthy motor AND no pretending that an invalid construction is ordinary
+  engine damage. Entirely binding-free explicit isolated diagnostics remain
+  separate legacy behavior, not a production Cobra installation.
+- `0712a3fa` makes AssistedAutopilot always transform
+  `assistedWorkingThrustAxisBody` from ship body to world; the offset
+  orientation branch depends on vector geometry, **not** a damage flag.
+  Healthy symmetric hardware supplies body `(0,0,-1)` and retains the
+  existing nominal attitude controller. `7cf1efa4` applies the same
+  universal vector rule to manual HOME/INSERT/END alignment in
+  `ShipController`. The already corrected safe-course executor used the
+  physical working-axis body vector unconditionally.
+- Existing `EngineThrustHudPresentationTests`, `HullPoseGuidanceTests`
+  and `ShipControlBehaviorOracleTests` now directly exercise only these
+  failure modes (invalid binding, off-axis vector even with lagging emergency
+  flag); no extra testing system, engine fake or new contract.
+
+**Geometry and its limits:** The 49.50776982° offset is NOT a constant.
+`ShipCapabilityBuilder::applyMountedEngineAxialAuthority` uses each motor's
+normalized installation coordinate * the physical half-extents in metres
+minus the current ship CoM. `analyzeWorkingThrustGeometry` checks the
+feasible balanced centered axis, otherwise selects a surviving motor's
+torque-neutral force direction `-arm/length(arm)` inside its gimbal cone
+and computes `acos(-force.z)`. For surviving right aft I: arm
+`(+13,0,+11.1)` m, hence force `(-0.760494,0,-0.649345)` and
+`atan2(13,11.1)=49.5078°`. Different installed slot positions, logical
+physical extents or CoM produce another result **when those physical
+parameters are updated**. Merely changing the drawn 3D mesh without
+updating physical installation geometry does not change physics.
+
+**Critical semantic boundary:** This is the *feasible reference forward
+working thrust ray* used for torque-neutral drive/course alignment, not
+a continuously sampled instantaneous vector of `sum(executed motor forces)`
+during steering, reverse burn and attitude correction. Those can differ in a
+maneuver; the amber HUD currently depicts the working reference. Do not
+mislabel it as the instantaneous total-force vector.
+
+**Verification:** All above are SOURCE / GitHub changes only. The agent cannot
+compile the Windows MinGW client/server or observe a new flight in this
+environment. Do not claim acceptance before the focused native tests and
+50%/100% Assisted-I flights. The accepted smooth healthy Assisted regulator
+gains and navigation route geometry were NOT retuned.
+
 ## 1. Immediate task and acceptance criteria
 
 Continue fixing the Assisted ship's engineering HUD and engine-out control.
@@ -170,10 +229,12 @@ On user's Windows MinGW64 checkout, pull the current `main`, rebuild
 ```bash
 git pull --ff-only origin main
 bash build_mingw64.sh
-ctest --test-dir <actual-test-build-directory> -R "engine_thrust_hud_presentation|mother_computer|working_thrust_axis_analysis|assisted_safe_course_executor_isolation|hull_pose_guidance|equipment_damage_failure_pipeline|ship_control_behavior_oracle" --output-on-failure
+cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/tests/navigation_runtime --target engine_thrust_hud_presentation_tests mother_computer_tests working_thrust_axis_analysis_tests assisted_safe_course_executor_isolation_tests hull_pose_guidance_tests ship_control_behavior_oracle_tests -j 8
+ctest --test-dir build/tests/navigation_runtime -R "^(engine_thrust_hud_presentation|mother_computer|working_thrust_axis_analysis|assisted_safe_course_executor_isolation|hull_pose_guidance|ship_control_behavior_oracle)$" --output-on-failure
 ```
 
-Use actual CTest directory; do not assume the placeholder path exists.
+The test directory above is explicitly configured first, then only the six relevant existing targets are built and run.
 Then rerun ONLY the existing two Assisted-I game-level scenarios:
 
 ```powershell

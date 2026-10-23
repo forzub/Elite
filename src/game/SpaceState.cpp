@@ -2215,25 +2215,67 @@ void SpaceState::updateDockingAdvisory()
                 fail("authoritative motor telemetry lost during docking");
                 return;
             }
-            if (m_dockingStatusWarning !=
-                    "awaiting authoritative motor telemetry")
+            // Explain the PRE-PLANNER rejection using the already
+            // observed motherboard ship/tick. No second capability
+            // calculation and no fake engine state.
+            const auto gate=m_motherComputer.snapshot();
+            std::string reason="awaiting authoritative motor telemetry";
+            double axisDot=-2.0;
+            if(gate.valid &&
+               gate.input.shipInstanceId==
+                   static_cast<std::uint64_t>(player.instanceId) &&
+               gate.input.serverTick==
+                   m_client->lastSimulationMetadata().serverTick)
             {
-                std::cerr
-                    << "[DockAuthority] request=" << pending.serial
-                    << " phase=awaiting-server-capability"
-                    << " valid=" << liveAssistedAuthority.valid
+                const auto& facts=gate.input;
+                if(!facts.physicalEnvelopeValid)
+                    reason="installed physics envelope unavailable";
+                else if(!facts.installedMotorAuthority.valid ||
+                        facts.installedMotorAuthority.model !=
+                            player.physicalControlModel)
+                    reason="installed motor matrix unavailable";
+                else if(!gate.flightProfile.valid)
+                {
+                    const auto& body=facts.physicalEnvelope;
+                    const double sl=glm::length(
+                        facts.workingThrustAxisBody);
+                    const double cl=glm::length(
+                        body.assistedWorkingThrustAxisBody);
+                    if(std::isfinite(sl) && std::isfinite(cl) &&
+                       sl>1.0e-9 && cl>1.0e-9)
+                        axisDot=glm::dot(
+                            facts.workingThrustAxisBody/sl,
+                            body.assistedWorkingThrustAxisBody/cl);
+                    if(facts.emergencyWorkingThrustAxis !=
+                           body.assistedWorkingThrustAxisEmergency ||
+                       (axisDot>=-1.0 && axisDot<0.999))
+                        reason="working thrust axis mismatch";
+                    else
+                        reason="physical flight doctrine rejected";
+                }
+            }
+            if(m_dockingStatusWarning != reason)
+            {
+                std::cerr << "[DockAuthority] request=" << pending.serial
+                    << " phase=preplanner-blocked"
+                    << " reason=\"" << reason << "\""
+                    << " server_axis="
+                    << (gate.valid && gate.input.emergencyWorkingThrustAxis?1:0)
+                    << " client_axis="
+                    << (gate.valid && gate.input.physicalEnvelope.
+                        assistedWorkingThrustAxisEmergency?1:0)
+                    << " axis_dot=" << axisDot
+                    << " motor_valid=" << liveAssistedAuthority.valid
                     << " model=" << static_cast<int>(
-                           liveAssistedAuthority.model)
+                        liveAssistedAuthority.model)
                     << " expected=" << static_cast<int>(
-                           player.physicalControlModel)
+                        player.physicalControlModel)
                     << std::endl;
-                m_dockingStatusWarning =
-                    "awaiting authoritative motor telemetry";
+                m_dockingStatusWarning=reason;
             }
             return;
         }
-        if (m_dockingStatusWarning ==
-                "awaiting authoritative motor telemetry")
+        if (!m_dockingStatusWarning.empty())
         {
             m_dockingStatusWarning.clear();
             std::cerr

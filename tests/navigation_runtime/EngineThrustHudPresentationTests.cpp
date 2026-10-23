@@ -528,6 +528,94 @@ void testFailedAftMotorReachesMotherComputerHudAndEmergencySight()
             "dead aft motor was represented as an orange live-capability bar");
 }
 
+
+void testInstalledAftMotorMissingSnapshotNeverLooksHealthy()
+{
+    using namespace game::ship;
+    auto d=descriptorFor(Model::AssistedI);
+    d.physicalControl.slotModuleIds=
+        presets::cobra::installedAssistedEngineModuleIds(Model::AssistedI);
+    for(const auto& id:d.physicalControl.slotModuleIds)
+    {
+        ModuleDescriptor m;
+        m.moduleId=id;
+        m.maxHealth=100.0f;
+        m.engine=game::equipment::engine::presets::
+            CobrettyCR1VectorMainDrive();
+        d.modules.push_back(std::move(m));
+    }
+    // Empty sparse graph: this is still a real installed construction, not
+    // a diagnostic synthetic set of healthy engines.
+    auto ship=shipFor(d);
+    const auto states=capability::buildPhysicalControlSlotState(
+        d,Model::AssistedI,ship.modules);
+    require(states.size()==4 && !states[0].operational &&
+            states[0].thrust01<=1.0e-6,
+            "missing installed equipment graph manufactured healthy CR-1");
+    const auto hud=game::presentation::buildEngineThrustHudPresentation(ship);
+    require(hud.visible && hud.warning && totalBars(hud)==4,
+            "installed motor with no equipment facts looks operable on HUD");
+}
+
+void testHalfDamagedAftMotorLightsCheckAndLimitsBar()
+{
+    using namespace game::ship;
+    auto d=descriptorFor(Model::AssistedI);
+    d.physicalControl.slotModuleIds=
+        presets::cobra::installedAssistedEngineModuleIds(Model::AssistedI);
+    for(const auto& id:d.physicalControl.slotModuleIds)
+    {
+        ModuleDescriptor m;
+        m.moduleId=id;
+        m.maxHealth=100.0f;
+        m.equipmentFailure.failureAtDamage01=0.95;
+        m.engine=game::equipment::engine::presets::
+            CobrettyCR1VectorMainDrive();
+        d.modules.push_back(std::move(m));
+    }
+    auto ship=shipFor(d);
+    ship.instanceId=97;
+    for(const auto& id:d.physicalControl.slotModuleIds)
+    {
+        game::simulation::ObjectModuleSnapshot m;
+        m.moduleId=id;
+        m.health=100.0f;
+        m.state=static_cast<std::uint8_t>(
+            world::modules::ObjectModuleRuntimeState::Attached);
+        m.hasEngineThermalState=true;
+        m.engineTemperatureK=450.0f;
+        m.emitterIntactArea01=1.0f;
+        if(id==d.physicalControl.slotModuleIds[0])
+            m.internalFailureDamage01=0.50f;
+        ship.modules.push_back(std::move(m));
+    }
+    ship.transform.motion.engineTelemetry.valid=true;
+    ship.transform.motion.engineTelemetry.count=4;
+    ship.transform.motion.engineTelemetry.available01[0]=1.0; // stale
+    ship.transform.motion.engineTelemetry.thrust01[0]=0.9;    // stale
+    ship.transform.motion.engineTelemetry.available01[1]=1.0;
+    const auto facts=game::ship::computer::collectReplicatedShipFacts(ship,85);
+    require(!facts.installedEquipmentBite.faults.empty(),
+        "50% installed fault never reached the BITE channel");
+    game::ship::computer::MotherComputerSnapshot mother;
+    mother.valid=true;
+    mother.input=facts;
+    const auto cockpit=game::ship::computer::collectCockpitView(ship,mother);
+    const auto hud=game::presentation::buildEngineThrustHudPresentation(
+        cockpit);
+    require(hud.warning,"50% main engine loss failed to light CHECK");
+    const auto id=std::string(plant::physicalControlSlots(Model::AssistedI)[0].id);
+    bool observed=false;
+    for(const auto& group:hud.groups)
+        for(const auto& bar:group.bars)
+            if(bar.slotId==id)
+                observed=bar.fault && bar.capability01>0.0f &&
+                    bar.capability01<0.75f &&
+                    bar.thrust01<=bar.capability01;
+    require(observed,
+        "50% disabled CR-1 portrayed full orange capability or red thrust");
+}
+
 } // namespace
 
 int main()
@@ -543,6 +631,8 @@ int main()
         testMotherComputerCockpitBarsPreserveLayoutAndBite();
         testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic();
         testFailedAftMotorReachesMotherComputerHudAndEmergencySight();
+        testInstalledAftMotorMissingSnapshotNeverLooksHealthy();
+        testHalfDamagedAftMotorLightsCheckAndLimitsBar();
 
         std::cout
             << "ENGINE THRUST HUD PRESENTATION: PASS\n"

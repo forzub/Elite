@@ -253,8 +253,10 @@ inline std::vector<plant::EngineSlotState> slotStates(
     const auto& binding =
         descriptor.physicalControl.slotModuleIds;
 
-    // Sparse/no graph at startup must not fabricate engine failure.
-    if (binding.empty() || modules.empty())
+    // Only a topology with NO installed equipment bindings is diagnostic.
+    // An installed ship with an empty/sparse network graph is UNKNOWN,
+    // never a collection of fictitiously healthy main drives.
+    if (binding.empty())
         return plant::healthySlotState(topology);
 
     if (binding.size() != topology.size())
@@ -596,7 +598,9 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     const auto& topology = plant::physicalControlSlots(model);
     const auto& binding = descriptor.physicalControl.slotModuleIds;
 
-    if (binding.empty() || modules.empty())
+    // Missing replicated engine modules must project zero authority, not a
+    // healthy diagnostic layout. slotFromSnapshot(nullptr) fails closed.
+    if (binding.empty())
         return plant::healthySlotState(topology);
 
     if (binding.size() != topology.size())

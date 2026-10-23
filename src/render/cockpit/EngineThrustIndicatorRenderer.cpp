@@ -253,9 +253,11 @@ void EngineThrustIndicatorRenderer::render(
                 char angle[20];
                 std::snprintf(angle,sizeof(angle),"%.0f deg",
                     bar->nozzleAngleDeg);
+                const int angleFont=std::max(11,
+                    static_cast<int>(std::lround(12.5f*scale)));
                 text.textDrawPx(angle,outwardRight?rx+8*scale:rx-31*scale,
-                    centerY+6*scale,
-                    std::max(10,static_cast<int>(11*scale)),style.label);
+                    centerY+6*scale+angleFont/3.0f,
+                    angleFont,style.label);
             }
             // A damaged motor does not move its physical radiator pad.
             const float padX=outwardRight?rx+segment:rx-segment;
@@ -328,8 +330,11 @@ void EngineThrustIndicatorRenderer::render(
                     "G %.0f  P %.0f  S %+.0f MW",
                     drive.generatedHeatMW,drive.padHeatMW,
                     drive.storedHeatMW);
-                text.textDrawPx(heat,x+27*scale,cy+14*scale,
-                    std::max(9,static_cast<int>(10*scale)),
+                const int powerFont=std::max(10,
+                    static_cast<int>(std::lround(11.5f*scale)));
+                text.textDrawPx(heat,x+27*scale,
+                    cy+14*scale+powerFont/3.0f,
+                    powerFont,
                     drive.storedHeatMW>0.1f?hot:style.label);
                 // Remaining headroom to the safe core temperature, in K.
                 char margin[32];

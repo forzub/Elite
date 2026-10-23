@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 
 #include "src/render/HUD/TextRenderer.h"
 #include "src/render/ShaderUtils.h"
@@ -350,7 +351,7 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     const double offset = std::atan2(
         std::hypot(axis.x,axis.y), -axis.z
     );
-    if (offset < 0.01 || axis.z >= -1.0e-4)
+    if (!std::isfinite(offset) || offset < 0.01)
         return;
 
     if (!m_program)
@@ -368,38 +369,75 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     );
     const double focal =
         std::min(viewport.width,viewport.height)*0.48;
-    const glm::vec2 projected = center + glm::vec2(
-        static_cast<float>(focal*axis.x/(-axis.z)),
-        static_cast<float>(-focal*axis.y/(-axis.z))
+    // Perspective projection can go outside the screen for large gimbal
+    // angles, and even behind the camera. Preserve the actual projected
+    // direction with a ray-to-viewport edge intersection, not two
+    // independent X/Y clamps (which incorrectly point into a corner).
+    const double depth=std::max(0.035,-axis.z);
+    glm::vec2 deviation(
+        static_cast<float>(focal*axis.x/depth),
+        static_cast<float>(-focal*axis.y/depth)
     );
-    const float margin=28.0f;
-    const glm::vec2 marker(
-        std::clamp(projected.x,margin,
-                   static_cast<float>(viewport.width)-margin),
-        std::clamp(projected.y,margin,
-                   static_cast<float>(viewport.height)-margin)
-    );
+    if(glm::length(deviation)<1.0f && axis.z>0.0)
+        deviation={0.0f,-static_cast<float>(focal)*3.0f};
+    const float margin=31.0f;
+    const float xMax=std::max(1.0f,center.x-margin);
+    const float yMax=std::max(1.0f,center.y-margin);
+    const float absX=std::abs(deviation.x);
+    const float absY=std::abs(deviation.y);
+    const float edgeScale=std::min({
+        1.0f, absX>1.0e-5f?xMax/absX:1.0f,
+        absY>1.0e-5f?yMax/absY:1.0f
+    });
+    const bool offscreen=edgeScale<1.0f;
+    const glm::vec2 marker=center+deviation*edgeScale;
     const glm::vec4 amber(1.0f,0.72f,0.28f,0.96f);
     beginBatch();
-    emitCircle(marker,11.0f,1.7f,amber,32);
-    emitLine(marker+glm::vec2(-21.0f,0.0f),
-             marker+glm::vec2(-13.0f,0.0f),2.0f,amber);
-    emitLine(marker+glm::vec2(13.0f,0.0f),
-             marker+glm::vec2(21.0f,0.0f),2.0f,amber);
-    emitLine(marker+glm::vec2(0.0f,-21.0f),
-             marker+glm::vec2(0.0f,-13.0f),2.0f,amber);
-    emitLine(marker+glm::vec2(0.0f,13.0f),
-             marker+glm::vec2(0.0f,21.0f),2.0f,amber);
+    if(offscreen)
+    {
+        // Chevron points towards the missing physical sight, like a
+        // ship-target edge pointer, without suggesting it is onscreen.
+        const float length=glm::length(deviation);
+        const glm::vec2 direction=length>1.0e-6f
+            ? deviation/length : glm::vec2(0.0f,-1.0f);
+        const glm::vec2 normal(-direction.y,direction.x);
+        const glm::vec2 base=marker-direction*18.0f;
+        emitLine(marker,base+normal*9.0f,2.2f,amber);
+        emitLine(marker,base-normal*9.0f,2.2f,amber);
+        emitLine(base+normal*9.0f,base-normal*9.0f,1.3f,amber);
+        emitCircle(base,5.0f,1.2f,amber,18);
+    }
+    else
+    {
+        emitCircle(marker,11.0f,1.7f,amber,32);
+        emitLine(marker+glm::vec2(-21.0f,0.0f),
+                 marker+glm::vec2(-13.0f,0.0f),2.0f,amber);
+        emitLine(marker+glm::vec2(13.0f,0.0f),
+                 marker+glm::vec2(21.0f,0.0f),2.0f,amber);
+        emitLine(marker+glm::vec2(0.0f,-21.0f),
+                 marker+glm::vec2(0.0f,-13.0f),2.0f,amber);
+        emitLine(marker+glm::vec2(0.0f,13.0f),
+                 marker+glm::vec2(0.0f,21.0f),2.0f,amber);
+    }
     // Center gap leaves the apparent course unobscured.
     flushBatch();
 
     ensureFonts("assets/fonts/Roboto-Light.ttf",14,13);
     if (m_secondaryFont && !localizedLabel.empty())
     {
+        char degrees[24];
+        std::snprintf(degrees,sizeof(degrees)," %.0f deg",
+            offset*180.0/3.14159265358979323846);
+        const std::string label=localizedLabel+degrees;
+        const float labelX=std::clamp(marker.x,
+            std::min(90.0f,center.x),std::max(center.x,
+            static_cast<float>(viewport.width)-90.0f));
+        const float labelY=marker.y+31.0f>=viewport.height-12.0f
+            ? marker.y-29.0f : marker.y+31.0f;
         drawCenteredText(
-            *m_secondaryFont,localizedLabel,marker.x,
-            std::min(static_cast<float>(viewport.height)-5.0f,
-                     marker.y+31.0f),
+            *m_secondaryFont,label,labelX,
+            std::clamp(labelY,12.0f,
+                static_cast<float>(viewport.height)-12.0f),
             glm::vec3(1.0f,0.72f,0.28f)
         );
     }

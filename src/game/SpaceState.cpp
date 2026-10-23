@@ -2570,6 +2570,11 @@ void SpaceState::updateDockingAdvisory()
             safeInput.forwardMap = agent.forwardMap;
             safeInput.rightMap = agent.rightMap;
             safeInput.upMap = agent.upMap;
+            // The safety-course controller uses the SAME physical working
+            // direction as the installed Assisted flight doctrine. The
+            // nose is merely the healthy equipment's default axis.
+            safeInput.workingThrustAxisBody =
+                effectivePhysics.assistedWorkingThrustAxisBody;
             safeInput.pitchRateRadPerSec =
                 agent.pitchRateRadPerSec;
             safeInput.yawRateRadPerSec =

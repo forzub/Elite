@@ -40,6 +40,9 @@ public:
         glm::dvec3 forwardMap {0.0, 0.0, -1.0};
         glm::dvec3 rightMap {1.0, 0.0, 0.0};
         glm::dvec3 upMap {0.0, 1.0, 0.0};
+        // The installed drive's physical working axis in ship BODY space.
+        // Healthy Assisted is the ordinary {-Z} nose-axis special case.
+        glm::dvec3 workingThrustAxisBody {0.0,0.0,-1.0};
 
         double pitchRateRadPerSec = 0.0;
         double yawRateRadPerSec = 0.0;
@@ -90,16 +93,26 @@ public:
             std::clamp(glm::dot(current, target), -1.0, 1.0);
         out.courseErrorRad = std::acos(cosine);
 
-        const glm::dvec3 forward =
-            normalizedOr(in.forwardMap, current);
+        const glm::dvec3 nose =
+            normalizedOr(in.forwardMap,current);
+        const glm::dvec3 right =
+            normalizedOr(in.rightMap,{1.0,0.0,0.0});
+        const glm::dvec3 up =
+            normalizedOr(in.upMap,{0.0,1.0,0.0});
+        const glm::dvec3 bodyAxis =
+            normalizedOr(in.workingThrustAxisBody,{0.0,0.0,-1.0});
+        const glm::dvec3 workingForward=normalizedOr(
+            right*bodyAxis.x+up*bodyAxis.y-nose*bodyAxis.z,nose);
+        // For normal Assisted this is exactly the hull/velocity error;
+        // after damage it reports the TRUE thrust-axis/velocity error.
         out.hullToVelocityErrorRad = std::acos(
-            std::clamp(glm::dot(forward, current), -1.0, 1.0)
+            std::clamp(glm::dot(workingForward,current),-1.0,1.0)
         );
 
-        // Acquisition means BOTH physical Assisted invariants have converged:
-        // the velocity vector is on the selected safe course AND the hull is
-        // again aligned with that velocity.  Never hand a visibly slipping
-        // Assisted craft to the planning coast.
+        // Both requirements are physical, not visual: velocity follows the
+        // selected safe course, and the REAL attainable propulsion direction
+        // (nose only for an intact craft) follows the velocity. Never demand
+        // that an engine-out hull nose point along the offset thrust ray.
         constexpr double AcquireErrorRad =
             2.0 * 3.14159265358979323846 / 180.0;
         constexpr double AcquireAngularRateRadPerSec = 0.01;
@@ -156,24 +169,26 @@ public:
                     (1.0 - std::cos(step));
         }
 
-        autopilot::HullPoseGuidance::Request poseRequest;
-        poseRequest.currentForward = in.forwardMap;
-        poseRequest.currentRight = in.rightMap;
-        poseRequest.currentUp = in.upMap;
-        poseRequest.targetForward = glm::normalize(intermediate);
-        // Safe-course owns no roll geometry. Preserve current up and merely
-        // damp any existing roll rate.
-        poseRequest.targetUp = in.upMap;
-
-        const auto pose =
-            autopilot::HullPoseGuidance::evaluate(poseRequest);
-        if (!pose.valid)
-            return {};
+        // ONE steering reference for every Assisted configuration:
+        // the installed working thrust direction. In normal condition it
+        // is identical to the hull nose. Project the world-space error onto
+        // the HULL controls (not an auxiliary axis-aligned coordinate frame).
+        const glm::dvec3 targetForward=glm::normalize(intermediate);
+        const glm::dvec3 crossAxis=
+            glm::cross(workingForward,targetForward);
+        const double sine=glm::length(crossAxis);
+        const double angle=std::atan2(sine,
+            std::clamp(glm::dot(workingForward,targetForward),-1.0,1.0));
+        glm::dvec3 correction(0.0);
+        if(sine>1.0e-10)
+            correction=crossAxis*(angle/sine);
+        else if(angle>3.14159265358979323846-1.0e-8)
+            correction=up*angle;
 
         autopilot::HullAttitudeControl::Request attitudeRequest;
         attitudeRequest.pitchYawErrorRad = {
-            pose.pitchYawErrorLocalRad.x,
-            pose.pitchYawErrorLocalRad.y
+            glm::dot(correction,right),
+            glm::dot(correction,up)
         };
         attitudeRequest.rollErrorRad = 0.0;
         attitudeRequest.pitchYawRateRadPerSec = {

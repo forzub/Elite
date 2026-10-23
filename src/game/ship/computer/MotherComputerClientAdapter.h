@@ -361,7 +361,8 @@ namespace game::ship::computer
                 game::ship::plant::effectiveSlotThrust01(states[i])
             );
         slot.available01 = static_cast<float>(live.available01);
-        slot.delivered01 = static_cast<float>(live.thrust01);
+        slot.delivered01 = static_cast<float>(
+            std::min(live.thrust01,live.available01));
         const auto& motorTelemetry=ship.transform.motion.engineTelemetry;
         if(motorTelemetry.valid && i<motorTelemetry.count &&
            std::isfinite(motorTelemetry.nozzleYawRad[i]) &&
@@ -373,11 +374,16 @@ namespace game::ship::computer
             slot.nozzleAngleDeg=static_cast<float>(
                 std::hypot(yaw,pitch)*57.29577951308232);
         }
+        // CHECK must also follow genuinely unavailable installed thrust,
+        // even while the server's BITE module graph arrives separately.
+        // This is a loss-of-authority signal, not a fabricated damage source.
+        const double cautionAuthority01 =
+            1.0-game::bite::Thresholds{}.cautionLoss01;
         slot.fault = !diagnostic &&
-            i < bindings.size() && !bindings[i].empty() &&
-            game::presentation::biteHudAttentionForEquipment(
-                out.bite, bindings[i]
-            );
+            ((i < bindings.size() && !bindings[i].empty() &&
+              game::presentation::biteHudAttentionForEquipment(
+                  out.bite, bindings[i])) ||
+             live.available01 <= cautionAuthority01+1.0e-6);
         if (!diagnostic && i < bindings.size() &&
             !bindings[i].empty())
         {

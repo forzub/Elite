@@ -278,6 +278,44 @@ void testSafeCourseExecutorConvergesWithoutPlanner()
     );
 }
 
+
+void testEngineOutCourseAcquisitionUsesWorkingThrustAxis()
+{
+    constexpr double offset=49.50776982*Pi/180.0;
+    Executor::Input in;
+    in.actualVelocityMapMps={0.0,0.0,-150.0};
+    in.selectedCourseMap={0.0,0.0,-1.0};
+    in.forwardMap={0.0,0.0,-1.0};
+    in.rightMap={1.0,0.0,0.0};
+    in.upMap={0.0,1.0,0.0};
+    in.workingThrustAxisBody={
+        -std::sin(offset),0.0,-std::cos(offset)};
+    in.maxPitchRateRadPerSec=2.0;
+    in.maxYawRateRadPerSec=2.0;
+    in.maxRollRateRadPerSec=2.0;
+    in.angularAccelerationAuthorityRadPerSec2=1.0;
+    in.deltaSeconds=0.02;
+
+    const auto wrong=Executor::evaluate(in);
+    require(wrong.valid && !wrong.acquired &&
+            wrong.hullToVelocityErrorRad>0.8 &&
+            std::abs(wrong.control.yawInput)>0.01f,
+            "engine-out safe-course accepted nose-aligned wrong thrust axis");
+
+    // 49.5 degree hull yaw cancels the -49.5 degree physical motor axis.
+    // The nose now disagrees with course, but actual THRUST is course-aligned.
+    in.forwardMap={std::sin(offset),0.0,-std::cos(offset)};
+    in.rightMap={std::cos(offset),0.0,std::sin(offset)};
+    const auto right=Executor::evaluate(in);
+    require(right.valid && right.acquired &&
+            right.hullToVelocityErrorRad<1.0e-6,
+            "engine-out safe-course cannot acquire displaced-nose attitude");
+    in.workingThrustAxisBody={0.0,0.0,-1.0};
+    const auto healthy=Executor::evaluate(in);
+    require(healthy.valid && !healthy.acquired,
+            "nominal intact ship stopped treating its nose as working axis");
+}
+
 } // namespace
 
 int main()
@@ -285,6 +323,7 @@ int main()
     try
     {
         testSafeCourseExecutorConvergesWithoutPlanner();
+        testEngineOutCourseAcquisitionUsesWorkingThrustAxis();
         std::cout
             << "ASSISTED SAFE COURSE EXECUTOR ISOLATION: PASS\n"
             << " - no obstacle checker in execution loop\n"

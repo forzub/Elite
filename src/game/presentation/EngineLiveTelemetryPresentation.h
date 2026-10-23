@@ -42,6 +42,9 @@ struct EngineMotorLiveView
         // HUD. The physical damage projection is a hard availability ceiling.
         out.available01=std::min(out.available01,
             std::clamp(t.available01[index],0.0,1.0));
+        // A stale executed-thrust sample cannot extend beyond current
+        // installed hardware capability (including a latched failure).
+        out.thrust01=std::min(out.thrust01,out.available01);
         out.nozzleYawRad=t.nozzleYawRad[index];
         out.nozzlePitchRad=t.nozzlePitchRad[index];
         out.forceBodyNewtons=t.forceBodyNewtons[index];

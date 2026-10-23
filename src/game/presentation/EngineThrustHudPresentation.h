@@ -243,7 +243,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         bar.capability01 = static_cast<float>(live.available01);
         // RED = actual executed thrust / THIS engine's healthy nominal.
         // Never scale or reconstruct it from net ship acceleration.
-        bar.thrust01 = static_cast<float>(live.thrust01);
+        bar.thrust01 = static_cast<float>(
+            std::min(live.thrust01,live.available01));
         const auto& binding =
             descriptor.physicalControl.slotModuleIds;
         const std::string equipmentId =
@@ -256,11 +257,10 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         // Do not attach an unrelated Cobra module's BITE alarm to them.
         bar.fault =
             model == descriptor.physicalControlModel &&
-            !equipmentId.empty() &&
-            biteHudAttentionForEquipment(
-                biteState,
-                equipmentId
-            );
+            ((!equipmentId.empty() &&
+              biteHudAttentionForEquipment(biteState,equipmentId)) ||
+             live.available01 <=
+                 1.0-game::bite::Thresholds{}.cautionLoss01+1.0e-6);
         if (!equipmentId.empty() &&
             model == descriptor.physicalControlModel)
         {

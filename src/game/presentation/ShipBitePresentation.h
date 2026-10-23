@@ -28,6 +28,14 @@ inline game::bite::State buildShipBiteState(
     {
         if (!definition.engine)
             continue;
+        // Only report motors belonging to the selected construction.
+        // Inactive Y/X spare profiles still retain real damage state but
+        // cannot light the active ship's CHECK lamp.
+        const auto& installed=descriptor.physicalControl.slotModuleIds;
+        if(!installed.empty() &&
+           std::find(installed.begin(),installed.end(),
+                     definition.moduleId)==installed.end())
+            continue;
 
         const auto it = std::find_if(
             modules.begin(),

@@ -228,7 +228,9 @@ inline std::vector<plant::EngineSlotState> slotStates(
     {
         if (moduleId.empty())
         {
-            out.push_back(healthySlot());
+            // A partially bound installed bank is INCOMPLETE, never
+            // permission to create an imaginary healthy motor.
+            out.push_back({false, 0.0, 0.0});
             continue;
         }
 
@@ -269,7 +271,9 @@ inline std::vector<plant::EngineSlotState> slotStates(
     {
         if (moduleId.empty())
         {
-            out.push_back(healthySlot());
+            // A partially bound installed bank is INCOMPLETE, never
+            // permission to create an imaginary healthy motor.
+            out.push_back({false, 0.0, 0.0});
             continue;
         }
 
@@ -577,7 +581,7 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     for (const auto& moduleId : binding)
     {
         if (moduleId.empty())
-            out.push_back(detail::healthySlot());
+            out.push_back({false, 0.0, 0.0});
         else
             out.push_back(
                 detail::slotFromModule(
@@ -612,7 +616,7 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     {
         if (moduleId.empty())
         {
-            out.push_back(detail::healthySlot());
+            out.push_back({false, 0.0, 0.0});
             continue;
         }
 

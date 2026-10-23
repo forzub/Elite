@@ -234,30 +234,32 @@ public:
 
             if (params.assistedWorkingThrustAxisEmergency)
             {
-                // Separate the velocity-course correction from alignment
-                // of the damaged drive's ACTUAL propulsion axis. Otherwise
-                // velocity may be on route with the nose ~49.5 deg wrong
-                // for the next engine-out burn. Only this physically
-                // degraded mode adds the working-axis attitude error;
-                // healthy Assisted remains velocity-course primary.
+                // This installation has an offset physical thrust axis.
+                // Do NOT add a nose-to-course error to its axis-to-course
+                // error: those are TWO incompatible orientation targets.
+                // At the correct emergency attitude (thrust on the desired
+                // velocity lead, nose displaced ~49.5 deg) the nose error
+                // is deliberately nonzero. Adding it drove the craft away
+                // from its attainable working-axis alignment.
+                //
+                // Keep the exact healthy Assisted path above unchanged.
+                // Here only the working thrust ray owns pitch/yaw targeting;
+                // the outer loop still chooses the same velocity-course lead.
                 const glm::dvec3 axisError =
-                    glm::cross(workingForward, desiredCourse);
-                const double axisSin = glm::length(axisError);
-                const double axisAngle = std::atan2(
+                    glm::cross(workingForward,desiredHullForward);
+                const double axisSin=glm::length(axisError);
+                const double axisAngle=std::atan2(
                     axisSin,
-                    std::clamp(
-                        glm::dot(workingForward,desiredCourse),-1.0,1.0
-                    )
+                    std::clamp(glm::dot(workingForward,desiredHullForward),
+                               -1.0,1.0)
                 );
-                if (axisSin > 1.0e-9)
-                {
-                    const glm::dvec3 correction =
-                        axisError * (axisAngle/axisSin);
-                    pitchYawError += glm::dvec2(
-                        glm::dot(correction,right),
-                        glm::dot(correction,up)
-                    );
-                }
+                const glm::dvec3 correction=axisSin>1.0e-9
+                    ? axisError*(axisAngle/axisSin)
+                    : glm::dvec3(0.0);
+                pitchYawError={
+                    glm::dot(correction,right),
+                    glm::dot(correction,up)
+                };
             }
         }
 

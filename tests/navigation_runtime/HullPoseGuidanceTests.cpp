@@ -1,4 +1,5 @@
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
+#include "src/game/navigation/autopilot/AssistedAutopilot.h"
 
 #include <cmath>
 #include <iostream>
@@ -112,6 +113,62 @@ void testCombinedErrorsRemainIndependent()
         "combined pose leaked roll into pitch/yaw vector");
 }
 
+
+void testEmergencyPilotTargetsWorkingAxisNotNose()
+{
+    using namespace game::navigation::autopilot;
+    constexpr double offAxis=49.50776982*Pi/180.0;
+    ShipParams physics {};
+    physics.maxYawRate=2.5f;
+    physics.maxPitchRate=2.5f;
+    physics.maxRollRate=2.5f;
+    physics.angularAccel=2.0f;
+    physics.maxGs=5.0f;
+    physics.turnRadius=20.0f;
+    physics.maxCombatSpeed=500.0f;
+    physics.maxCruiseSpeed=500.0f;
+    physics.throttleAccel=5.0f;
+    physics.forwardMainEngineAvailable=true;
+    physics.forwardMainEngineAccelerationMps2=25.0f;
+    physics.reverseMainEngineAvailable=true;
+    physics.reverseMainEngineAccelerationMps2=25.0f;
+    physics.assistedWorkingThrustAxisEmergency=true;
+    physics.assistedWorkingThrustAxisBody={
+        -std::sin(offAxis),0.0,-std::cos(offAxis)};
+    physics.assistedWorkingThrustMotorIndex=1;
+
+    AutopilotControlRequest req;
+    req.deltaSeconds=0.02;
+    req.actualVelocityMapMps={0.0,0.0,-100.0};
+    req.desiredVelocityMapMps=req.actualVelocityMapMps;
+    req.desiredForwardMap={0.0,0.0,-1.0};
+
+    AssistedAutopilot pilot;
+    const auto start=pilot.update(req,physics);
+    require(std::abs(start.yawInput)>0.01f,
+        "engine-out pilot did not seek offset working-thrust alignment");
+
+    // Hull yawed away from the route by the required compensation angle:
+    // nose is NOT on course, but the real thrust vector IS on course.
+    // Demanding nose alignment here is precisely the diagnosed bug.
+    req.forwardMap={std::sin(offAxis),0.0,-std::cos(offAxis)};
+    req.rightMap={std::cos(offAxis),0.0,std::sin(offAxis)};
+    AssistedAutopilot aligned;
+    const auto settled=aligned.update(req,physics);
+    require(std::abs(settled.yawInput)<0.01f &&
+            std::abs(settled.pitchInput)<0.01f,
+        "engine-out pilot fought physically correct displaced-nose pose");
+
+    // Healthy Assisted must still align the NOSE with the velocity course.
+    physics.assistedWorkingThrustAxisEmergency=false;
+    physics.assistedWorkingThrustAxisBody={0.0,0.0,-1.0};
+    physics.assistedWorkingThrustMotorIndex=-1;
+    AssistedAutopilot healthy;
+    const auto nominal=healthy.update(req,physics);
+    require(std::abs(nominal.yawInput)>0.01f,
+        "healthy Assisted nose-on-course behavior unexpectedly changed");
+}
+
 }
 
 int main()
@@ -122,6 +179,7 @@ int main()
         testYawPitchNeverCreatesRoll();
         testRollNeverCreatesPitchYaw();
         testCombinedErrorsRemainIndependent();
+        testEmergencyPilotTargetsWorkingAxisNotNose();
 
         std::cout
             << "HULL POSE GUIDANCE TESTS: PASS\n"

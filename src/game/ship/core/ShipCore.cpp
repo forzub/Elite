@@ -105,8 +105,6 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
             }
             desc.mainPropulsion.aftEngineModuleIds.clear();
             desc.mainPropulsion.foreEngineModuleIds.clear();
-            const auto& topology=
-                game::ship::presets::cobra::propulsionSlots(model);
             for(std::size_t i=0;i<topology.size();++i)
             {
                 const auto role=topology[i].role;

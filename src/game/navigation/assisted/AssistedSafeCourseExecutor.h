@@ -216,6 +216,12 @@ public:
             std::max(1.0e-9, in.angularAccelerationAuthorityRadPerSec2);
         attitudeRequest.deltaSeconds =
             std::max(1.0e-4, in.deltaSeconds);
+        // The ordinary Assisted pilot uses the damped 0.5 s attitude servo.
+        // Leaving this field zero selects the legacy dt^-1 bang-bang law:
+        // it saturates yaw to +/-1 when a damaged drive delivers less
+        // angular acceleration than the nominal ship envelope promises.
+        // This is the SAME Assisted control law, not a second controller.
+        attitudeRequest.pitchYawResponseSeconds = 0.50;
 
         const auto attitude =
             autopilot::HullAttitudeControl::evaluate(attitudeRequest);

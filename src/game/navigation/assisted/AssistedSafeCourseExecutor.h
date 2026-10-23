@@ -99,10 +99,16 @@ public:
             normalizedOr(in.rightMap,{1.0,0.0,0.0});
         const glm::dvec3 up =
             normalizedOr(in.upMap,{0.0,1.0,0.0});
-        const glm::dvec3 bodyAxis =
-            normalizedOr(in.workingThrustAxisBody,{0.0,0.0,-1.0});
-        const glm::dvec3 workingForward=normalizedOr(
-            right*bodyAxis.x+up*bodyAxis.y-nose*bodyAxis.z,nose);
+        const double bodyLength=glm::length(in.workingThrustAxisBody);
+        if(!std::isfinite(bodyLength) || bodyLength<=1.0e-9)
+            return {}; // Missing physical axis cannot become healthy nose.
+        const glm::dvec3 bodyAxis=in.workingThrustAxisBody/bodyLength;
+        const glm::dvec3 workingRay=
+            right*bodyAxis.x+up*bodyAxis.y-nose*bodyAxis.z;
+        const double workingLength=glm::length(workingRay);
+        if(!std::isfinite(workingLength) || workingLength<=1.0e-9)
+            return {};
+        const glm::dvec3 workingForward=workingRay/workingLength;
         // For normal Assisted this is exactly the hull/velocity error;
         // after damage it reports the TRUE thrust-axis/velocity error.
         out.hullToVelocityErrorRad = std::acos(

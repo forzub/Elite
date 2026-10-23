@@ -786,6 +786,16 @@ void testAssistedVelocityAlignmentUsesWorkingAxis()
         "damaged Assisted HOME rejected correct offset-thrust alignment"
     );
 
+    // The vector is the flight reference even when a delayed equipment
+    // status flag reports a nominal mode.
+    physics.assistedWorkingThrustAxisEmergency=false;
+    auto flagLagged=makeTransform(Model::AssistedI,300.0);
+    command(flagLagged,physics);
+    require(std::abs(flagLagged.yawInput)>0.001f &&
+            flagLagged.motion.velocityAlignmentMode ==
+                VelocityAlignmentMode::ForwardToVelocity,
+        "Assisted HOME used nose because emergency flag was false");
+
     // Healthy Assisted is unchanged: nose-on-velocity still completes HOME.
     auto healthy=makeTransform(Model::AssistedI,300.0);
     command(healthy,nominalPhysics());

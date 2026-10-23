@@ -57,6 +57,8 @@ body axes with course axes. Source results:
   healthy basis provides a working-forward component; missing pure -Z
   with a valid working ray preserves control authority even when status
   boolean lags; nonzero -Z with zero actual working authority grants none.
+  `c0f1d38a` and `08c5ab6d` align physics field comments with this
+  established separation (working-forward vector vs body -Z).
   SOURCE commits only; tests not compiled in this environment.
 - A **remaining deliberate boundary**: direction-tagged sample
   `forwardMap` in `AcceptedManeuverProgramBuilder`, follower and

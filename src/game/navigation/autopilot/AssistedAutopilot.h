@@ -113,12 +113,16 @@ public:
         // symmetric installation it naturally equals the hull's -Z nose.
         // The emergency flag describes equipment state; it must not select
         // a different steering reference than the authoritative vector.
-        const glm::dvec3 workingForward=normalizedOr(
-            right*params.assistedWorkingThrustAxisBody.x +
-            up*params.assistedWorkingThrustAxisBody.y -
-            forward*params.assistedWorkingThrustAxisBody.z,
-            forward
-        );
+        const auto& bodyAxis=params.assistedWorkingThrustAxisBody;
+        const double bodyAxisLength=glm::length(bodyAxis);
+        if(!std::isfinite(bodyAxisLength) || bodyAxisLength<=1.0e-9)
+            return {}; // Invalid physical evidence is not a healthy nose.
+        const glm::dvec3 workingRay=
+            right*bodyAxis.x + up*bodyAxis.y - forward*bodyAxis.z;
+        const double workingLength=glm::length(workingRay);
+        if(!std::isfinite(workingLength) || workingLength<=1.0e-9)
+            return {};
+        const glm::dvec3 workingForward=workingRay/workingLength;
         updateIdentification(
             request, params, workingForward, dt, state
         );

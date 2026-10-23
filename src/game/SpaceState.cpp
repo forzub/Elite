@@ -6102,6 +6102,10 @@ void SpaceState::update(float dt)
             obs.motherboardEnvelopeValid=facts.physicalEnvelopeValid;
             obs.motherboardMotorAuthorityValid=
                 facts.installedMotorAuthority.valid;
+            obs.motherboardModelMatches=
+                facts.installedMotorAuthority.valid &&
+                static_cast<int>(facts.installedMotorAuthority.model)==
+                    facts.physicalControlModel;
             obs.motherboardDoctrineValid=motherGate.flightProfile.valid;
             obs.motherboardDoctrine=
                 static_cast<int>(motherGate.flightProfile.doctrine);
@@ -6110,6 +6114,18 @@ void SpaceState::update(float dt)
             obs.motherboardClientAxisEmergency=
                 facts.physicalEnvelopeValid &&
                 facts.physicalEnvelope.assistedWorkingThrustAxisEmergency;
+            if(facts.physicalEnvelopeValid)
+            {
+                const auto& server=facts.workingThrustAxisBody;
+                const auto& client=
+                    facts.physicalEnvelope.assistedWorkingThrustAxisBody;
+                const double sn=glm::length(server);
+                const double cn=glm::length(client);
+                if(std::isfinite(sn) && std::isfinite(cn) &&
+                   sn>1.0e-9 && cn>1.0e-9)
+                    obs.motherboardAxisAgreement=
+                        glm::dot(server/sn,client/cn);
+            }
             const auto& motors=facts.installedMotorAuthority;
             obs.motherboardHullForwardMps2=motors.negative[2];
             obs.motherboardWorkingForwardMps2=
@@ -6129,6 +6145,8 @@ void SpaceState::update(float dt)
                     obs.authorityStatus="missing installed physics envelope";
                 else if(!obs.motherboardMotorAuthorityValid)
                     obs.authorityStatus="missing installed motor basis";
+                else if(!obs.motherboardModelMatches)
+                    obs.authorityStatus="installed motor basis model mismatch";
                 else if(!obs.motherboardDoctrineValid)
                     obs.authorityStatus="rejected physical flight doctrine";
                 else if(obs.authorityStatus.empty())

@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace
 {
 
@@ -736,6 +738,66 @@ void runDamageBehaviorOracle(Model model)
 }
 
 
+void testAssistedVelocityAlignmentUsesWorkingAxis()
+{
+    using game::navigation::VelocityAlignmentMode;
+
+    auto physics=nominalPhysics();
+    physics.assistedWorkingThrustAxisEmergency=true;
+    physics.assistedWorkingThrustAxisBody={
+        -0.76049403, 0.0, -0.64934492
+    };
+    physics.assistedWorkingThrustMotorIndex=1;
+
+    // Even with the nose ALREADY on -Z velocity, the surviving right-aft
+    // engine points 49.5 degrees away. HOME/return-from-free-rotation must
+    // request a corrective yaw rather than declare the hull aligned.
+    const auto command=[](ShipTransform& ship, const ShipParams& p)
+    {
+        ship.motion.velocityAlignmentMode =
+            VelocityAlignmentMode::ForwardToVelocity;
+        game::ship::control::ShipControlExecutionGateway::
+            evaluateAttitudeControl(
+                ship,p,ShipControlState{},WorldParams{},
+                static_cast<float>(kDt)
+            );
+    };
+
+    auto misaligned=makeTransform(Model::AssistedI,300.0);
+    command(misaligned,physics);
+    require(
+        std::abs(misaligned.yawInput)>0.001f &&
+        misaligned.motion.velocityAlignmentMode ==
+            VelocityAlignmentMode::ForwardToVelocity,
+        "damaged Assisted HOME incorrectly aligned the hull nose, not thrust"
+    );
+
+    auto aligned=makeTransform(Model::AssistedI,300.0);
+    constexpr float offAxisRad =
+        -49.50776982f * 3.14159265358979323846f / 180.0f;
+    aligned.orientation=glm::rotate(
+        glm::mat4(1.0f),offAxisRad,glm::vec3(0.0f,1.0f,0.0f)
+    );
+    command(aligned,physics);
+    require(
+        std::abs(aligned.yawInput)<0.001f &&
+        aligned.motion.velocityAlignmentMode ==
+            VelocityAlignmentMode::None,
+        "damaged Assisted HOME rejected correct offset-thrust alignment"
+    );
+
+    // Healthy Assisted is unchanged: nose-on-velocity still completes HOME.
+    auto healthy=makeTransform(Model::AssistedI,300.0);
+    command(healthy,nominalPhysics());
+    require(
+        std::abs(healthy.yawInput)<0.001f &&
+        healthy.motion.velocityAlignmentMode ==
+            VelocityAlignmentMode::None,
+        "nominal Assisted HOME was altered by damage-axis steering"
+    );
+}
+
+
 } // namespace
 
 int main()
@@ -756,6 +818,7 @@ int main()
             runHealthyBehaviorOracle(model);
             runDamageBehaviorOracle(model);
         }
+        testAssistedVelocityAlignmentUsesWorkingAxis();
 
         std::cout
             << "SHIP CONTROL BEHAVIOR ORACLE: PASS\n"

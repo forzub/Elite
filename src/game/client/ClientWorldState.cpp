@@ -1236,11 +1236,12 @@ void ClientWorldState::update(
                                 // this presentation path.
                                 const auto deadReckoning =
                                     game::client::
-                                        deadReckonRemoteShipPresentation(
+                                        interpolateRemoteShipPresentation(
                                             *itOld,
                                             older->metadata.serverTimeSeconds,
-                                            renderTime,
-                                            0.75
+                                            *itNew,
+                                            newer->metadata.serverTimeSeconds,
+                                            renderTime
                                         );
                                 ship.renderTransform = itOld->transform;
                                 ship.renderTransform.orientation =
@@ -1269,15 +1270,13 @@ void ClientWorldState::update(
                                         .localPositionMeters = localPosition;
                                     ship.renderReferenceFrame
                                         .localVelocityMetersPerSecond =
-                                            itOld->referenceFrame
-                                                .localVelocityMetersPerSecond;
+                                            deadReckoning.localVelocityMetersPerSecond;
 
                                     ship.renderTransform.motion
                                         .localPositionMeters = localPosition;
                                     ship.renderTransform.motion
                                         .localVelocityMps =
-                                            itOld->referenceFrame
-                                                .localVelocityMetersPerSecond;
+                                            deadReckoning.localVelocityMetersPerSecond;
                                     ship.renderTransform.setWorldPositionMeters(
                                         ship.renderReferenceFrame
                                             .localToWorldPosition(localPosition)

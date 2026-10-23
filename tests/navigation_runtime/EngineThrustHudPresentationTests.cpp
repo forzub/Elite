@@ -511,6 +511,15 @@ void testFailedAftMotorReachesMotherComputerHudAndEmergencySight()
     require(cockpit.valid && cockpit.emergencyWorkingThrustAxis &&
             cockpit.workingThrustAxisBody.x<-0.7,
             "HUD emergency marker depends on stale rendered motion");
+    auto observed=motherboard;
+    observed.input.physicalEnvelopeValid=false;
+    observed.input.emergencyWorkingThrustAxis=true;
+    observed.input.workingThrustAxisBody={-0.76049403,0.0,-0.64934492};
+    const auto serverSight=game::ship::computer::collectCockpitView(
+        ship,observed);
+    require(serverSight.valid && serverSight.emergencyWorkingThrustAxis &&
+            serverSight.workingThrustAxisBody.x<-0.7,
+            "HUD hid server-proven emergency thrust ray during sparse graph");
     const auto hud=game::presentation::buildEngineThrustHudPresentation(
         cockpit);
     require(hud.warning,

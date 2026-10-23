@@ -171,15 +171,26 @@ namespace game::ship::computer
     // computed installed-motor evidence instead of reading a renderTransform
     // flag that can be stale or absent while the HUD interpolates poses.
     const auto& axisSource = motherboard.input.physicalEnvelope;
-    if (motherboard.input.physicalEnvelopeValid &&
+    const bool projectedEmergency =
+        motherboard.input.physicalEnvelopeValid &&
         axisSource.assistedWorkingThrustAxisEmergency &&
-        axisSource.assistedWorkingThrustMotorIndex >= 0 &&
-        std::isfinite(glm::length(axisSource.assistedWorkingThrustAxisBody)) &&
-        glm::length(axisSource.assistedWorkingThrustAxisBody)>1.0e-9)
+        axisSource.assistedWorkingThrustMotorIndex>=0;
+    // The server reports its executed working axis directly in the
+    // same authoritative ship/tick snapshot. Keep that sight visible even
+    // when the separately replicated equipment graph is momentarily sparse:
+    // the client must not hide a REAL engine-out thrust direction just
+    // because its read-only capability reconstruction has not caught up.
+    const bool observedEmergency =
+        motherboard.input.emergencyWorkingThrustAxis;
+    const glm::dvec3 candidate = observedEmergency
+        ? motherboard.input.workingThrustAxisBody
+        : axisSource.assistedWorkingThrustAxisBody;
+    const double candidateLength=glm::length(candidate);
+    if((observedEmergency || projectedEmergency) &&
+       std::isfinite(candidateLength) && candidateLength>1.0e-9)
     {
-        out.emergencyWorkingThrustAxis = true;
-        out.workingThrustAxisBody =
-            glm::normalize(axisSource.assistedWorkingThrustAxisBody);
+        out.emergencyWorkingThrustAxis=true;
+        out.workingThrustAxisBody=candidate/candidateLength;
     }
     out.bite = motherboard.input.installedEquipmentBite;
     out.systems = motherboard.input.biteAndSystems;

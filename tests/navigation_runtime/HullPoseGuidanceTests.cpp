@@ -174,8 +174,8 @@ void testEmergencyPilotTargetsWorkingAxisNotNose()
     physics.assistedWorkingThrustMotorIndex=-1;
     AssistedAutopilot healthy;
     const auto nominal=healthy.update(req,physics);
-    require(std::abs(nominal.yawInput)>0.01f,
-        "healthy Assisted nose-on-course behavior unexpectedly changed");
+    require(std::abs(nominal.yawInput)<0.01f,
+        "healthy Assisted kept turning after nose and course aligned");
 }
 
 }

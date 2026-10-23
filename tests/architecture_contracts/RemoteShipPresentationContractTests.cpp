@@ -74,6 +74,43 @@ void testPresentationPredictionDoesNotMutateTruth()
     );
 }
 
+void testSharedSnapshotInterpolationHasNoBoundaryJump()
+{
+    ShipSnapshot older;
+    ShipSnapshot newer;
+    older.transform.setWorldPositionMeters({0.0,0.0,0.0});
+    newer.transform.setWorldPositionMeters({10.0,0.0,0.0});
+    older.transform.motion.localPositionMeters={0.0,0.0,0.0};
+    newer.transform.motion.localPositionMeters={10.0,0.0,0.0};
+    older.transform.motion.worldVelocityMps={0.0,0.0,0.0};
+    newer.transform.motion.worldVelocityMps={0.0,0.0,0.0};
+    older.transform.motion.localVelocityMps={0.0,0.0,0.0};
+    newer.transform.motion.localVelocityMps={0.0,0.0,0.0};
+
+    const auto middle=game::client::interpolateRemoteShipPresentation(
+        older,10.0,newer,11.0,10.5);
+    const auto atBoundary=game::client::interpolateRemoteShipPresentation(
+        older,10.0,newer,11.0,11.0);
+    require(near(middle.localPositionMeters.x,5.0),
+            "remote ship skipped interpolated midpoint");
+    require(near(middle.localVelocityMetersPerSecond.x,15.0),
+            "remote Hermite tangent was not computed from server samples");
+    require(near(world::coordinates::fullMeters(
+                 atBoundary.worldPosition).x,10.0),
+            "remote ship jumped at authoritative snapshot boundary");
+    require(near(atBoundary.localVelocityMetersPerSecond.x,0.0),
+            "remote snapshot boundary did not preserve newer angular-independent velocity");
+
+    ShipSnapshot next=newer;
+    next.transform.setWorldPositionMeters({10.0,0.0,0.0});
+    next.transform.motion.localPositionMeters={10.0,0.0,0.0};
+    const auto afterBoundary=game::client::interpolateRemoteShipPresentation(
+        newer,11.0,next,12.0,11.0);
+    require(near(atBoundary.localPositionMeters.x,
+                 afterBoundary.localPositionMeters.x),
+            "advancing remote snapshot pair introduced a position jump");
+}
+
 void testPredictionWindowIsBounded()
 {
     ShipSnapshot authoritative;
@@ -138,6 +175,7 @@ int main()
 {
     testPresentationPredictionDoesNotMutateTruth();
     testPredictionWindowIsBounded();
+    testSharedSnapshotInterpolationHasNoBoundaryJump();
     testFutureOrInvalidTimeCannotRunBackward();
 
     std::cout

@@ -182,7 +182,8 @@ bool applyVelocityAlignmentAttitude(
     float maxYawRate,
     float safeAngularRate,
     bool forwardMainEngineAvailable,
-    bool reverseMainEngineAvailable
+    bool reverseMainEngineAvailable,
+    const ShipParams& params
 )
 {
     using game::navigation::VelocityAlignmentMode;
@@ -261,15 +262,44 @@ bool applyVelocityAlignmentAttitude(
     const glm::vec3 right = ship.right();
     const glm::vec3 up = ship.up();
 
+    // HOME/INSERT and return from Assisted free-rotation must not undo the
+    // emergency doctrine by trying to put the HULL NOSE on the velocity.
+    // END flip-and-burn likewise needs the actual attainable thrust ray
+    // anti-parallel to velocity, not the damaged hull's central axis.
+    // Compute only a read-only world reference; physical pitch/yaw torque
+    // still comes from the installed engine allocator.
+    glm::vec3 currentAlignmentForward = currentForward;
+    if (ship.motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted &&
+        params.assistedWorkingThrustAxisEmergency)
+    {
+        const auto& body = params.assistedWorkingThrustAxisBody;
+        const glm::dvec3 ray =
+            glm::dvec3(right)*body.x +
+            glm::dvec3(up)*body.y -
+            glm::dvec3(currentForward)*body.z;
+        const double length=glm::length(ray);
+        if (!std::isfinite(length) || length<=1.0e-9)
+        {
+            // Broken equipment evidence is not permission to substitute
+            // the nominal nose axis and command the wrong alignment.
+            ship.pitchInput=0.0f;
+            ship.yawInput=0.0f;
+            ship.rollInput=0.0f;
+            return true;
+        }
+        currentAlignmentForward=glm::vec3(ray/length);
+    }
+
     const float cosAngle = std::clamp(
-        glm::dot(currentForward, desiredForward),
+        glm::dot(currentAlignmentForward, desiredForward),
         -1.0f,
         1.0f
     );
     const float angle = std::acos(cosAngle);
 
     glm::vec3 correctionAxis =
-        glm::cross(currentForward, desiredForward);
+        glm::cross(currentAlignmentForward, desiredForward);
     float axisLength = glm::length(correctionAxis);
 
     // cross(a, -a) is undefined as a turn direction.  Pick the current up
@@ -489,7 +519,8 @@ void ShipController::updateControlRates(
         maxYawRate,
         safeAngularRate,
         params.forwardMainEngineAvailable,
-        params.reverseMainEngineAvailable
+        params.reverseMainEngineAvailable,
+        params
     );
 
     glm::vec3 angularInput(

@@ -170,10 +170,10 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.logicalDimensionsValue.enabled = true;
 
 
-        // Авторский базис меша Cobra (Blender / OBJ):
-        // -X = forward
-        // +Z = up
-        // +Y = right
+        // Авторский базис именно ЭТОГО OBJ, не универсальные оси Blender:
+        // -X = forward, +Y = up, -Z = right (forward x up).
+        // IObjectDescriptor::meshToLogicalBasis4() maps it once into
+        // the ship's fixed logical +X right, +Y up, -Z forward basis.
         desc.meshForwardAxisValue = glm::vec3(-1.0f, 0.0f, 0.0f);
         desc.meshUpAxisValue      = glm::vec3( 0.0f, 1.0f, 0.0f);
 

@@ -109,15 +109,16 @@ public:
         // passes through the center of mass at an offset angle. Keep the
         // physical body axes for controls, but track the REAL working axis
         // when estimating course response and selecting hull attitude.
-        const glm::dvec3 workingForward =
-            params.assistedWorkingThrustAxisEmergency
-                ? normalizedOr(
-                    right*params.assistedWorkingThrustAxisBody.x +
-                    up*params.assistedWorkingThrustAxisBody.y -
-                    forward*params.assistedWorkingThrustAxisBody.z,
-                    forward
-                  )
-                : forward;
+        // Always use the physical working thrust direction. On a healthy
+        // symmetric installation it naturally equals the hull's -Z nose.
+        // The emergency flag describes equipment state; it must not select
+        // a different steering reference than the authoritative vector.
+        const glm::dvec3 workingForward=normalizedOr(
+            right*params.assistedWorkingThrustAxisBody.x +
+            up*params.assistedWorkingThrustAxisBody.y -
+            forward*params.assistedWorkingThrustAxisBody.z,
+            forward
+        );
         updateIdentification(
             request, params, workingForward, dt, state
         );
@@ -232,7 +233,7 @@ public:
                 coursePose.pitchYawErrorLocalRad.y
             };
 
-            if (params.assistedWorkingThrustAxisEmergency)
+            if (glm::dot(workingForward,forward)<1.0-1.0e-9)
             {
                 // This installation has an offset physical thrust axis.
                 // Do NOT add a nose-to-course error to its axis-to-course

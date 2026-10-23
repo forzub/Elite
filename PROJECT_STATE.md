@@ -30,6 +30,10 @@
 
 ## 2026-10-23 — Requested two-run Assisted-I aft-engine damage acceptance
 
+**2026-10-23 PowerShell parser fix:** First user attempt from MSYS2 successfully reached the batch script but PowerShell rejected two warning strings containing the bare interpolation `$preset:` (line 81/93). Fixed in `main` commit `911c19e` by using `${preset}:` in both lines, keeping all scenario settings unchanged. No game flight executed in that attempt; after `git pull --ff-only origin main` from `/d/__elite/work`, rerun the existing batch with a Windows path from `cygpath -w` (or `D:/tmp` forward slashes in the ReportDirectory argument). The fix changes only the script; do not rebuild binaries for this parse correction.
+
+
+
 **Request:** Exactly two identically configured game-level navigation stress runs on Assisted-I: first `aft-50` (50% FUNCTIONAL damage of left aft installed CR-1), then `aft-failed` (100% INTERNAL functional failure of the same physical motor). Both use the existing simple-stress diagnostic scene with hot-start 300 m/s, nose offset 0°, unchanged autopilot and path. Do not run six I/Y/X combinations or use the isolated ideal flight-matrix test as proof of live damage handling.
 
 **Runner update:** `scripts/run-assisted-engine-damage-flights.ps1` now accepts optional `-AssistedIOnly` switch, narrowing the existing six-case matrix to the two named I cases without changing the default six-case behavior. Correctly sets `ELITE_SHIP_PHYSICAL_TEST_TOTAL=2`; checks newly appended `D:/tmp/elite_engine_damage_preset.log` receipts for the exact requested preset, `status=APPLIED`, `module=ship_engine_L`; preserves the original navigation stress report plus **separate** copied `D:/tmp/elite_attitude_jitter.csv` per flight before the next run overwrites it. Writes per-flight receipts and combined `assisted_damage_flights_summary.csv`. No fresh receipt or no fresh flight trace cannot receive a successful status, even if runner reports COMPLETE. Restores original process environment after the batch.

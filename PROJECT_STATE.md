@@ -66,9 +66,15 @@ state source. Existing `SAMPLE/EVENT` lines now contain
 `mother_doctrine`, `mother_server_axis`,
 `mother_client_axis`, `mother_hull_forward`,
 `mother_working_forward`, `mother_steering`,
-`mother_lateral`, `mother_reverse`. This makes a
-pending/idle/failed=0 admission wait identifiable; the worker result is
-logged by the existing `job_result` only after it has actually run.
+`mother_lateral`, `mother_reverse`.
+`5c4d360b` and `28c5326c` additionally expose
+`mother_model_match` and `mother_axis_dot` (server vs client
+unit-vector dot product, -2 means unavailable); this distinguishes an
+authority-model mismatch from an otherwise valid signed motor basis
+whose selected doctrine is rejected by mismatched physical axes.
+This makes a pending/idle/failed=0 admission wait identifiable;
+the worker result is logged by the existing `job_result` only
+after it has actually run.
 **No C++ build or game test after these source edits is available yet.**
 
 **Immediate next action:** Windows pull/build BOTH game/server, then run

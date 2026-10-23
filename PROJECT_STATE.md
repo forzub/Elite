@@ -38,6 +38,9 @@ motors but was not a sufficient assembly-invariant check.
   universal vector rule to manual HOME/INSERT/END alignment in
   `ShipController`. The already corrected safe-course executor used the
   physical working-axis body vector unconditionally.
+  `cca73c68` and `540175a5` also prevent invalid/zero/NaN
+  Assisted working-axis vectors from silently becoming the healthy
+  hull-nose direction in normal autopilot or safe-course entry.
 - Existing `EngineThrustHudPresentationTests`, `HullPoseGuidanceTests`
   and `ShipControlBehaviorOracleTests` now directly exercise only these
   failure modes (invalid binding, off-axis vector even with lagging emergency

@@ -35,9 +35,11 @@ struct ShipParams
 
     // Installed ordinary longitudinal main propulsion.
     //
-    // "Forward" authority is produced by aft/rear engines and accelerates
-    // along the ship's +travel/forward axis. "Reverse" authority is produced
-    // by fore/nose engines and accelerates opposite the ship forward axis.
+    // "Forward" is the physically available aft-main working-thrust ray.
+    // Healthy symmetric Assisted and the Newtonian aft-main convention
+    // happen to coincide with body -Z; damaged Assisted may be off-nose.
+    // "Reverse" denotes the available fore-main braking bank, not a promise
+    // of unrestricted reverse movement along every damaged working axis.
     // Availability is the current effective hardware state; descriptor/runtime
     // adapters may clear it after damage. Acceleration values are installed
     // actuator ratings before the shared crew/structure load envelope is

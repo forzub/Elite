@@ -8056,6 +8056,22 @@ m_systemMapRenderer.render(
                     game::presentation::DockPlannerTerminalTelemetry::failure(
                         terminalText, m_dockingGuidanceFailureReason);
             }
+            else if(terminal.error.empty() && m_dockAdviceJob &&
+                    m_dockAdviceJob->ready.load(
+                        std::memory_order_acquire) &&
+                    !m_dockAdviceJob->plan.valid())
+            {
+                // A worker DID run and declined the physical route:
+                // show the existing localized reason category, while
+                // full planner diagnostics remain in job_result/log.
+                const auto& p=m_dockAdviceJob->plan;
+                terminal.error=
+                    game::presentation::DockPlannerTerminalTelemetry::failure(
+                        terminalText,
+                        p.failure.empty()
+                            ? std::string("planner route rejected")
+                            : p.failure);
+            }
             else if (terminal.error.empty() &&
                      !m_dockingStatusWarning.empty())
             {

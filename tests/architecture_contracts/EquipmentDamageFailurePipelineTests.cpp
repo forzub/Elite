@@ -217,7 +217,13 @@ void testThrustFailurePreservesInstalledModule()
 
 void testInstalledEngineWearAndThermalAffectRealModuleProjection()
 {
-    const auto d = descriptor();
+    auto d = descriptor();
+    // This first accelerated 7200-s step tests accumulated OPERATING HOURS,
+    // not the engine's thermal integration. A full-power 2-hour *single*
+    // thermal tick with the fixture's 20% waste heat would overheat the
+    // engine to ~4950 K and saturate thermal damage at 100% before the
+    // second part of this test even begins. Isolate lifetime wear here.
+    d.modules.front().engine->nominalEfficiency01 = 1.0;
     world::modules::ObjectModuleRuntime runtime;
     runtime.init(d.modules);
 
@@ -248,9 +254,15 @@ void testInstalledEngineWearAndThermalAffectRealModuleProjection()
             near(slots[1].thrust01, 1.0),
             "operating wear did not propagate into physical engine slots");
 
+    // Test the thermal-damage path separately with an engine that is
+    // ALREADY overheated. Hot coolant alone no longer heats an idle motor:
+    // the canonical engine model cools through its own radiating pad.
+    // One real-duration tick at 1400 K produces 0.05/3600 ~= 1.39e-5
+    // damage, just above the module's 1e-5 commitment quantum.
+    runtime.findModule("aft_left")->engineOperating.temperatureK = 1400.0;
     require(runtime.advanceEngineOperatingLife(
-                "aft_left", engine, 0.0, 3600.0, 1500.0),
-            "overheated engine did not accumulate thermal damage while idle");
+                "aft_left", engine, 0.0, 1.0, 1500.0),
+            "preheated engine did not accumulate thermal damage while idle");
     active = runtime.findModule("aft_left");
     require(active->equipmentDamage.accumulated.thermal01 > 0.0 &&
             active->engineOperating.temperatureK > 1300.0,

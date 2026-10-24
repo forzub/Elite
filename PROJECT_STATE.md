@@ -486,6 +486,48 @@ adopted. Conclusions:
   acceptance from module tests; user-observed tunnel direction remains
   pending. No navigation/flight-law source was changed by this test fix.
 
+## 2026-10-25 focused client autopilot CTest: next curved-tangent assertion (native gate pending)
+
+- User reran `client_route_autopilot` on Windows after
+  `4f214ea4`. The earlier off-corridor capture case now passed; the
+  test next FAILED on
+  `on-center curved route did not actuate strongly enough to rotate
+  velocity into the bend`.
+- Inspected `testVelocityCourseTracksAuthoredTunnelTangent`: the
+  accepted quarter-circle test route has radius 1000 m and cruise
+  speed 60 m/s; probe is exactly on the curve at 22.5 degrees while
+  its 60 m/s velocity and hull still point +X. Velocity course must
+  turn +X toward +Z (body yaw about -Y) with required angular rate
+  v/R = 0.06 rad/s. The code ALREADY detected a substantial genuine
+  velocity-course error >0.20 rad; the old next assertion merely
+  demanded a normalized hull pitch/yaw command >0.5, inconsistent
+  with the current accepted max 10-degree Assisted hull lead and
+  critically damped 0.50-second attitude servo. This does NOT prove
+  the current physical turn is too weak; a single command-magnitude
+  threshold does not express physical v/R.
+- `9d34c555` updates ONLY the existing test's old threshold:
+  require CORRECT signed yaw (-Y) and that the angular velocity
+  change implied by real configured angular authority over the
+  already accepted 0.50 s hull response horizon exceeds 0.06 rad/s
+  for the specified route. Also reject direct-navigation-demand
+  shortcuts. On failure a new numeric
+  `[ARC_ACTUATOR_INSUFFICIENT]` diagnostic prints commanded yaw,
+  available projected yaw-rate, required v/R, course error, speed,
+  radius to make further diagnosis finite and actionable.
+- **NOT Windows-built/tested after `9d34c555`**. Rebuild/rerun
+  `client_route_autopilot` ONLY; if green, all five selected checks
+  from the previous 4/5 gate are green on same planner implementation.
+  Then build client/server and physically verify obstruction escape
+  and correct start tangent at rest AND at ~100m/s. Do not confuse
+  passing controller CTest with gameplay acceptance.
+- The obstacle-route START mismatch source fix is still
+  `1bc9742f`; no changes to route optimizer, installed motor laws,
+  Assisted controller, or Newtonian in this corrective test step.
+- Avoid further generic input-magnitude tests for physically damped
+  controllers. Validate error direction, signed physical authority
+  and bounded dynamics instead. Retain `PROJECT_STATE.md` as the
+  only state artifact and work on main only.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -522,7 +564,7 @@ adopted. Conclusions:
 
 ## Immediate next validation — blocked route entry, THEN general regression and gameplay
 
-**Priority now**: rebuild `client_route_autopilot_tests` then repeat the five targeted
+**Priority now**: rebuild and run `client_route_autopilot_tests` alone; the other four selected checks already passed in the last Windows run. Once green,
 `preplanning_safety_course|route_planner_api|route_entry_binder|
 assisted_safe_course_executor_isolation|client_route_autopilot` CTests.
 The previous 3/5 is not full success. Native game blocked-start

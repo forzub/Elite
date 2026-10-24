@@ -142,8 +142,9 @@ struct DynamicMotionState
     // Newtonian never applies this demand.
     glm::dvec3 assistedStabilizationAccelerationMps2 {0.0};
 
-    // Actual combined propulsion acceleration after gas availability and the
-    // active control-law speed envelope have been applied.
+    // Applied combined propulsion acceleration. Installed main-engine forces
+    // are request-limited BEFORE physical execution, never post-clipped here;
+    // the legacy non-plant path retains its historical speed-envelope rule.
     glm::dvec3 engineAccelerationMps2 {0.0};
 
     // Rigid-body reaction of the currently firing physical main slots. These

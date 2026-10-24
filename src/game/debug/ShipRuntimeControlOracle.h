@@ -66,7 +66,7 @@ public:
 
     bool enabled() const noexcept { return m_enabled; }
     bool complete() const noexcept { return m_complete; }
-    bool failed() const noexcept { return false; }
+    bool failed() const noexcept { return m_failed; }
     const std::string& reportPath() const noexcept { return m_reportPath; }
 
     ShipControlState control() const noexcept
@@ -199,6 +199,20 @@ public:
 
         if (!expectationSatisfied(o))
         {
+            // This probe should establish lateral actuation almost at once.
+            // Never hold full strafe until the ship reaches the 500 m/s
+            // gameplay speed ceiling because an oracle channel is stale.
+            if (m_step == 13 && o.speedMps >= 100.0)
+            {
+                logRunawayFailure(o);
+                m_failed = true;
+                m_complete = true; // stop emitting flight commands
+                std::error_code ec;
+                std::filesystem::remove(
+                    "D:/tmp/elite/ship_control_oracle.enable", ec
+                );
+                return;
+            }
             heartbeat(o, "WAIT");
             return;
         }
@@ -333,7 +347,7 @@ private:
                 return desiredLaw() ==
                         game::navigation::LocalFlightControlLaw::Newtonian
                     ? "Newtonian main+gimbal-right produces nonzero yaw gimbal and rightward main-thrust component"
-                    : "Assisted strafe produces rightward motion through assisted vectoring";
+                    : "Assisted strafe increases body-right speed using executed main-engine vectoring";
             default:
                 return "complete";
         }
@@ -402,7 +416,12 @@ private:
                 return
                     o.rightVelocityMps >=
                         m_stepStart.rightVelocityMps + 1.0 &&
-                    std::abs(o.assistedRightAccelerationMps2) >= 0.10;
+                    // The installed Assisted executor writes delivered
+                    // vectoring to mainEngineAccelerationMps2 and clears
+                    // the pre-execution assistedStabilization channel.
+                    // Observe the executed main-right force, not a retired
+                    // intermediate request channel.
+                    o.mainRightAccelerationMps2 >= 0.10;
 
             default:
                 return true;
@@ -429,6 +448,7 @@ private:
                 << "# Elite in-game six-model ship control oracle\n"
                 << "# manual-launch mode; no command-duration pass/fail timer\n"
                 << "# command remains active until EXPECTED becomes true\n"
+                << "# step 13 safety: stop on unresolved probe at 100 m/s\n"
                 << "# format: MODEL / COMMAND / EXPECTED / ACTUAL / RESULT\n";
             m_stream.flush();
         }
@@ -519,6 +539,22 @@ private:
         m_stream.flush();
     }
 
+    void logRunawayFailure(const Observation& o)
+    {
+        if (!m_stream.is_open())
+            return;
+        m_stream << "ACTUAL step=" << m_step
+                 << " name=" << commandName(m_step);
+        writeActual(o);
+        m_stream << "\nRESULT step=" << m_step
+                 << " name=" << commandName(m_step)
+                 << " status=FAIL reason=unresolved_probe_runaway_speed"
+                 << " limit_mps=100\n"
+                 << "SUMMARY status=FAILED model=" << o.physicalModelLabel
+                 << " step=" << m_step << "\n";
+        m_stream.flush();
+    }
+
     void logModelComplete(const Observation& o)
     {
         if (!m_stream.is_open())
@@ -551,6 +587,7 @@ private:
 private:
     bool m_enabled = false;
     bool m_complete = false;
+    bool m_failed = false;
     bool m_waitingForModel = true;
     bool m_modelRequestPending = true;
     bool m_modelStarted = false;

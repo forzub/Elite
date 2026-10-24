@@ -536,8 +536,13 @@ void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
         &mounted,nullptr,&unrestrictedReactor);
     const glm::dvec3 deliveredAtLimit =
         nearLimit.motion.mainEngineAccelerationMps2;
-    require(glm::length(deliveredAtLimit)>1.0,
-            "speed-boundary impulse test did not execute substantial main thrust");
+    require(glm::length(deliveredAtLimit)>0.01,
+            "speed-boundary request limiter suppressed all usable main thrust");
+    require(nearLimit.motion.installedMainPlantExecuted,
+            "installed propulsion was not marked as physical execution");
+    require(glm::length(deliveredAtLimit)<
+                glm::length(nearLimit.motion.requestedMainEngineAccelerationMps2),
+            "speed envelope failed to constrain main request before physical allocation");
     const glm::dvec3 initialNearLimit =
         nearLimit.motion.localVelocityMps;
     require(Gateway::propagateHubTacticalTranslation(
@@ -559,6 +564,11 @@ void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
     require(impulseMismatchMps<1.0e-5,
             "post-execution speed limiter discarded executed motor impulse; "
             "limit request BEFORE allocating actual engines");
+    require(glm::length(nearLimit.motion.localVelocityMps) <=
+                static_cast<double>(physics.maxCombatSpeed) + 0.25,
+            "pre-execution speed request limit did not preserve ordinary speed envelope");
+    require(!nearLimit.motion.installedMainPlantExecuted,
+            "executed-plant provenance leaked past its physical integration tick");
 }
 
 void testNeutralManualPath()

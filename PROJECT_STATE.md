@@ -140,6 +140,26 @@ adopted. Conclusions:
     installed Assisted allocator and one geometry-based ray computation
     active for production.
 
+## 2026-10-24 source changes AFTER the last green Windows gate
+
+- **Power-budget fail-closed, source-only pending native verification:**
+  `a8a57790` makes installed/native `ShipCore` pass its explicit
+  `powerGroups` pointer even when the list is empty; diagnostic-only
+  callers retain the optional/null budget path.
+  `b5f293e2` makes the installed physical execution gateway reject an
+  explicitly present but EMPTY power-group vector instead of interpreting
+  it as unlimited electricity; demand does not become executed force.
+  Existing per-motor missing-source zero-MW groups remain in place.
+- `33371d85` extends the EXISTING
+  `ship_control_execution_gateway` test with a real mounted Newtonian-I
+  main-engine fixture: diagnostic null budget can execute, but an
+  explicitly empty installed power budget MUST deliver zero force/torque
+  while retaining the request. No new test target or architecture layer.
+- **Not yet native-built/tested.** Previous Windows PASS applies only
+  to the prior source revision. Do not treat these patches as green until
+  user runs the focused MSYS2 build/CTest. No gameplay validation of this
+  new revision has occurred.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -174,10 +194,16 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation: IN-GAME ACCEPTANCE
+## Immediate next validation: NEW Windows focused gate, then gameplay
 
-The 2026-10-24 user Windows build and three focused tests are GREEN.
-Next run gameplay on the built client/server: healthy Assisted-I ordinary
+After the post-green source safety changes above, the NEXT user action is
+pulling current `main`, building the native game and existing targeted
+`ship_control_execution_gateway_tests`, and reporting the CTest result.
+Only after it is green proceed to gameplay.
+
+The 2026-10-24 user Windows build and three focused tests were GREEN
+for the PREVIOUS revision only.
+Next run gameplay on the newly built client/server: healthy Assisted-I ordinary
 flight and yaw/pitch/roll (no regression); simulated single aft engine
 fault with Ctrl+Alt+Shift+F, working-thrust ray, reversal and route capture;
 reactors off/restart with Ctrl+Alt+Shift+I (no free acceleration when power
@@ -199,6 +225,8 @@ ctest --test-dir build/tests/architecture_contracts -R '^equipment_damage_failur
 ctest --test-dir build/tests/navigation_runtime -R '^(ship_control_execution_gateway|hull_attitude_control)$' --output-on-failure
 ```
 
-The commands above are repeatability instructions, not outstanding
-actions for the current green revision. Only in-game behavior remains
-unverified at this point.
+The commands above are the new native verification gate for source
+changes after the previous green run. If they pass, report that explicitly;
+then proceed to the focused in-game scenarios. Keep any failure logs in
+`D:/tmp`; do not begin broad Command/Request/Executed, fore-only or signed
+capability migrations until the current source gate is green.

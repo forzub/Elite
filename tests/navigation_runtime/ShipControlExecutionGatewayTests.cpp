@@ -353,6 +353,17 @@ void testRejectedAllocatorCannotMoveShipOnRequestedAcceleration()
     require(glm::length(
                 transform.motion.mainPropulsionTorqueBodyNm)<1.0e-10,
             "invalid motor allocator invented rigid-body torque");
+    // Requests remain observable for diagnostics, but may not enter
+    // the actual fixed-step displacement after allocator rejection.
+    require(glm::length(
+                transform.motion.requestedMainEngineAccelerationMps2)>1.0e-6,
+            "invalid motor allocator test lacked a real input request");
+    require(Gateway::propagateHubTacticalTranslation(
+                transform,physics,0.02),
+            "rejected allocator could not propagate HubTactical state");
+    require(glm::length(transform.motion.localVelocityMps)<1.0e-9 &&
+            glm::length(transform.motion.localPositionMeters)<1.0e-9,
+            "unexecuted motor request leaked into physical velocity/position");
 }
 
 void testExplicitEmptyPowerBudgetCannotRunInstalledMain()

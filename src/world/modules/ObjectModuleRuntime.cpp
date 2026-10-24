@@ -435,6 +435,23 @@ bool ObjectModuleRuntime::injectEquipmentFailure(
         targetDamage01-existing);
 }
 
+bool ObjectModuleRuntime::debugRestoreInternalFailure(
+    const std::string& moduleId, double previousInternalFailure01)
+{
+    if(!std::isfinite(previousInternalFailure01) ||
+       previousInternalFailure01<0.0 ||
+       previousInternalFailure01>1.0)
+        return false;
+    const int index=findModuleIndex(moduleId);
+    if(index<0) return false;
+    auto& stored=m_modules[index].equipmentDamage.accumulated.internalFailure01;
+    const double restored=std::min(stored,previousInternalFailure01);
+    if(stored==restored) return false;
+    stored=restored;
+    ++m_revision;
+    return true;
+}
+
 bool ObjectModuleRuntime::addEngineImpactShock(
     const std::string& moduleId, double hitDamage01,
     std::uint64_t incidentKey

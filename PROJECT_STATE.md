@@ -221,6 +221,52 @@ adopted. Conclusions:
   to engine control or physics in this UI fix. After confirming the
   sign, proceed to ordinary damaged-flight/gameplay acceptance.
 
+## 2026-10-24 next focused PHYSICAL execution regression gate
+
+- User authorized all necessary tests to investigate Command -> Request ->
+  Executed rather than repeating the already-green 84/84 six-model
+  scripted oracle. Added assertions inside the EXISTING
+  `tests/navigation_runtime/ShipControlExecutionGatewayTests.cpp`
+  (no new framework/target):
+  - `dda54318`: empty installed power groups produce no `delta-v`
+    after propagation; installed 0 MW reactor yields zero delivered
+    electrical demand/force/velocity while a request remains visible;
+    full installed reactor produces real motion; 50%-rated reactor
+    scales actual force, electrical consumption, and motion together.
+  - `dda54318`: near the 400m/s control envelope, integrated
+    `delta-v` MUST match physical motor-delivered acceleration times dt.
+    The current source still has the confirmed
+    `DynamicMotionSystem::updateLocalFrameMotion` POST-execution speed
+    envelope, so this last assertion is expected to expose a REAL
+    design violation. This is an intentionally strict diagnostic gate;
+    do not relabel an observed red result as flaky or alter expected
+    results to pass. Limit COMMAND/REQUEST **before** allocating actual
+    motors; never silently edit EXECUTED impulse after allocation.
+  - `948b2724`: invalid allocator request must not move velocity OR
+    position during physical propagation (previous test checked only
+    acceleration/torque fields).
+- **These NEW tests have NOT been compiled/run on Windows.** Earlier
+  84/84 in-game PASS is from prior code and only proves the basic
+  healthy six-model control matrix.
+- Test reuse (do not duplicate): existing
+  `ship_control_behavior_oracle`,
+  `ship_physical_actuator_plant`,
+  `newtonian_rcs_physical`,
+  `working_thrust_axis_analysis`,
+  `hull_attitude_control`,
+  `assisted_authority_contract`,
+  `navigation_execution_replan_policy`,
+  `client_route_autopilot`,
+  `engine_thrust_hud_presentation`,
+  and `equipment_damage_failure_pipeline` cover control, damage,
+  independent RCS, replanning, and presentation.
+- Immediate action: pull main and run focused
+  `ship_control_execution_gateway` native CTest first. If it reports
+  the expected post-execution speed limiter impulse mismatch, fix the
+  control/integrator seam without changing accepted healthy assisted
+  control law. Then run the existing broader focused suite. Normal
+  damaged-flight gameplay remains unverified.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

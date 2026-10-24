@@ -550,10 +550,26 @@ ShipCore::controlAuthorityTelemetry() const
 
 ShipParams ShipCore::effectivePhysics() const
 {
-    const auto capability = capabilities();
-    return capability.valid
-        ? capability.effectivePhysics
-        : ShipParams {};
+    const auto capability=capabilities();
+    if(capability.valid)
+        return capability.effectivePhysics;
+
+    // ShipParams{} is NOT a safe "disabled" preset: its legacy default
+    // forwardMainEngineAvailable=true combines with the zero-as-load-limit
+    // adapter and can manufacture thrust from a failed capability.
+    // Invalid means no capability to accelerate or turn.
+    ShipParams disabled {};
+    disabled.forwardMainEngineAvailable=false;
+    disabled.reverseMainEngineAvailable=false;
+    disabled.forwardMainEngineAccelerationMps2=0.0f;
+    disabled.reverseMainEngineAccelerationMps2=0.0f;
+    disabled.manoeuvreThrusterAuthorityExplicit=true;
+    disabled.manoeuvreThrusterAccel=0.0f;
+    disabled.strafeAccel=0.0f;
+    disabled.angularAccel=0.0f;
+    disabled.maxGs=0.0f;
+    disabled.maxLinearGs=0.0f;
+    return disabled;
 }
 
 void ShipCore::updatePhysics(float dt, const WorldParams& world)

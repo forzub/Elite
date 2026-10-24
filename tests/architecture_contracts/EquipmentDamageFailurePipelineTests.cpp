@@ -261,7 +261,7 @@ void testInstalledEngineWearAndThermalAffectRealModuleProjection()
     // damage, just above the module's 1e-5 commitment quantum.
     runtime.findModule("aft_left")->engineOperating.temperatureK = 1400.0;
     require(runtime.advanceEngineOperatingLife(
-                "aft_left", engine, 0.0, 1.0, 1500.0),
+                "aft_left", engine, 0.0, 1.0, 1050.0),
             "preheated engine did not accumulate thermal damage while idle");
     active = runtime.findModule("aft_left");
     require(active->equipmentDamage.accumulated.thermal01 > 0.0 &&

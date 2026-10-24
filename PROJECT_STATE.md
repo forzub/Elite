@@ -72,15 +72,19 @@ Updated: 2026-10-24, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   blue corridor entered and exited, no stress emergency stop; transient
   early cross-track ~205m then converged to ~8.94m at scenario end.
   This is test-scenario completion, NOT confirmed docking.
-- User Windows `EliteGame.exe`, `EliteServer.exe` builds and
-  architecture contract test target compiled. Earlier equipment
-  `equipment_damage_failure_pipeline` CTest FAILED successively on
-  obsolete one-tick 7200s thermal fixture and then mismatched hot emitter
-  thrust-governor law. Source fixes `fa688f92`, `4607184e`,
-  `e7651828`, `6645d47a` align fixture with proper thermal timescales
-  and use canonical propulsion-pad law. **No reported native green yet.**
-- Current Claude cleanup commits are **SOURCE ONLY** until Windows rebuild
-  and focused tests report green. Never call them validated flight results.
+- 2026-10-24 user's Windows MSYS2 MinGW64 gate: **PASSED**.
+  `EliteGame.exe` and `EliteServer.exe` linked successfully.
+  Focused CTest: `equipment_damage_failure_pipeline` 1/1,
+  `hull_attitude_control` 1/1,
+  `ship_control_execution_gateway` 1/1 — all PASS.
+  This is THREE selected tests, not evidence that the entire test suite
+  passed. Compiler warnings remain (winsock header order, unused
+  coolant/overflow variables) but did not block builds.
+- Prior `equipment_damage_failure_pipeline` failures were fixture/law
+  mismatches resolved in sources `fa688f92`, `4607184e`,
+  `e7651828`, `6645d47a`. The Claude cleanup has now cleared
+  the focused native build/test gate, but **post-cleanup GAMEPLAY is
+  not yet verified**. Do not promote source-only claims to flight PASS.
 
 ## Claude 2026-10-24 review — source check and accepted corrections
 
@@ -170,9 +174,18 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation
+## Immediate next validation: IN-GAME ACCEPTANCE
 
-Windows MSYS2 MinGW64, after pulling `main`:
+The 2026-10-24 user Windows build and three focused tests are GREEN.
+Next run gameplay on the built client/server: healthy Assisted-I ordinary
+flight and yaw/pitch/roll (no regression); simulated single aft engine
+fault with Ctrl+Alt+Shift+F, working-thrust ray, reversal and route capture;
+reactors off/restart with Ctrl+Alt+Shift+I (no free acceleration when power
+unavailable); no acceleration on missing motor/invalid plant. If a failure
+occurs, collect targeted D:/tmp logs and compare actual vs requested.
+Do not begin fore-only or broad capability migration before this gate.
+
+Commands for repeating the targeted Windows gate after a later code change:
 
 ```bash
 cd /d/__elite/work
@@ -186,9 +199,6 @@ ctest --test-dir build/tests/architecture_contracts -R '^equipment_damage_failur
 ctest --test-dir build/tests/navigation_runtime -R '^(ship_control_execution_gateway|hull_attitude_control)$' --output-on-failure
 ```
 
-Then gameplay: healthy Assisted-I usual flight (no new roll/pitch/yaw
-oscillation), single aft engine fault Ctrl+Alt+Shift+F and reversal,
-reactor I off/restart power gate, actual thrust=0 for missing/unpowered
-hardware, no free acceleration on failed plant. Capture specific
-`D:/tmp` logs if any mismatch; only then advance fore-only or broad
-capability migration.
+The commands above are repeatability instructions, not outstanding
+actions for the current green revision. Only in-game behavior remains
+unverified at this point.

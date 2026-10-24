@@ -345,6 +345,13 @@ public:
         // one 20-ms tick caused near-continuous full-power reversals.
         // Fixed half-second time constant, not tied to frame / network rate.
         attitudeRequest.pitchYawResponseSeconds = 0.50;
+        // Roll was still using the old 1/dt predictive rate loop while
+        // pitch/yaw used this damped Assisted law. The tunnel controller
+        // already supplies signed roll angle + desired phase rate; pursuing
+        // that rate within ONE 20 ms tick made even the HEALTHY ship swing
+        // at full +/- roll torque indefinitely. Track it on the same
+        // physical half-second response horizon instead.
+        attitudeRequest.rollResponseSeconds = 0.50;
 
         const auto attitude =
             HullAttitudeControl::evaluate(attitudeRequest);

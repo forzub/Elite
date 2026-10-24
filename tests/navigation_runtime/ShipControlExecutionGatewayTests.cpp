@@ -424,6 +424,113 @@ void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
             glm::length(installed.motion.engineAccelerationMps2)<1.0e-10 &&
             glm::length(installed.motion.mainPropulsionTorqueBodyNm)<1.0e-10,
             "empty installed power budget produced free main thrust");
+
+    // Verify physical PROPAGATION, not merely the allocator's return values.
+    // A nonzero request with no installed reactor is not a source of delta-v.
+    require(Gateway::propagateHubTacticalTranslation(
+                installed, physics, 0.1),
+            "no-reactor test could not propagate HubTactical motion");
+    require(glm::length(installed.motion.localVelocityMps)<1.0e-8,
+            "unexecuted no-reactor request accelerated the physical ship");
+
+    std::size_t aftIndex=topology.size();
+    for(std::size_t i=0;i<topology.size();++i)
+        if(topology[i].role==EngineSlotRole::AftMain)
+            aftIndex=i;
+    require(aftIndex<topology.size(),"Newtonian-I aft motor is missing");
+
+    const std::vector<MainEnginePowerGroup> zeroReactor {
+        {{aftIndex},0.0}
+    };
+    auto switchedOff=makeTransform();
+    (void)Gateway::evaluateTranslationControl(
+        switchedOff,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&zeroReactor);
+    require(glm::length(
+                switchedOff.motion.requestedMainEngineAccelerationMps2)>1.0e-8,
+            "zero-MW reactor test did not request propulsion");
+    require(glm::length(
+                switchedOff.motion.mainEngineAccelerationMps2)<1.0e-8,
+            "installed zero-MW reactor delivered main thrust");
+    require(switchedOff.motion.engineTelemetry.valid &&
+            std::abs(switchedOff.motion.engineTelemetry.electricalMW[aftIndex])<
+                1.0e-8,
+            "zero-MW reactor retained actual electrical consumption");
+    require(Gateway::propagateHubTacticalTranslation(
+                switchedOff,physics,0.1),
+            "zero-MW reactor test could not propagate");
+    require(glm::length(switchedOff.motion.localVelocityMps)<1.0e-8,
+            "switched-off reactor moved ship from rest");
+
+    const std::vector<MainEnginePowerGroup> unrestrictedReactor {
+        {{aftIndex},1.0e9}
+    };
+    auto full=makeTransform();
+    (void)Gateway::evaluateTranslationControl(
+        full,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&unrestrictedReactor);
+    require(full.motion.engineTelemetry.valid &&
+            glm::length(full.motion.mainEngineAccelerationMps2)>1.0e-3,
+            "powered installed main delivered no acceleration");
+    const glm::dvec3 fullAcceleration =
+        full.motion.mainEngineAccelerationMps2;
+    const double fullElectricalMW =
+        full.motion.engineTelemetry.electricalMW[aftIndex];
+    require(fullElectricalMW>1.0e-6,
+            "powered main reported zero delivered electrical demand");
+
+    const std::vector<MainEnginePowerGroup> halfReactor {
+        {{aftIndex},fullElectricalMW*0.5}
+    };
+    auto half=makeTransform();
+    (void)Gateway::evaluateTranslationControl(
+        half,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&halfReactor);
+    require(half.motion.engineTelemetry.valid,
+            "partially powered main lost delivered-motor telemetry");
+    require(glm::length(half.motion.mainEngineAccelerationMps2-
+                        fullAcceleration*0.5)<1.0e-4,
+            "half-power reactor did not halve physically delivered main force");
+    require(std::abs(half.motion.engineTelemetry.electricalMW[aftIndex]-
+                     fullElectricalMW*0.5)<1.0e-4,
+            "half-power reactor meter disagreed with applied throttle");
+    for(ShipTransform* observed:{&full,&half})
+    {
+        const glm::dvec3 reported =
+            observed->motion.mainEngineAccelerationMps2;
+        const glm::dvec3 before =
+            observed->motion.localVelocityMps;
+        require(Gateway::propagateHubTacticalTranslation(
+                    *observed,physics,0.1),
+                "powered thrust impulse test could not propagate");
+        require(glm::length(observed->motion.localVelocityMps-before-
+                            reported*0.1)<1.0e-5,
+                "delivered motor acceleration differs from physical delta-v");
+    }
+
+    // Regression detector for the remaining Command/Request/Executed seam:
+    // no post-allocator limit may silently erase delivered physical impulse.
+    // THIS CONTRACT CURRENTLY EXPOSES THE LEGACY SPEED-ENVELOPE PATH.
+    auto nearLimit=makeTransform();
+    nearLimit.motion.localVelocityMps=
+        glm::dvec3(nearLimit.forward())*399.9;
+    (void)Gateway::evaluateTranslationControl(
+        nearLimit,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&unrestrictedReactor);
+    const glm::dvec3 deliveredAtLimit =
+        nearLimit.motion.mainEngineAccelerationMps2;
+    require(glm::length(deliveredAtLimit)>1.0,
+            "speed-boundary impulse test did not execute substantial main thrust");
+    const glm::dvec3 initialNearLimit =
+        nearLimit.motion.localVelocityMps;
+    require(Gateway::propagateHubTacticalTranslation(
+                nearLimit,physics,0.1),
+            "near-speed-limit main impulse could not propagate");
+    require(glm::length(
+                nearLimit.motion.localVelocityMps-initialNearLimit-
+                deliveredAtLimit*0.1)<1.0e-5,
+            "post-execution speed limiter discarded executed motor impulse; "
+            "limit request BEFORE allocating actual engines");
 }
 
 void testNeutralManualPath()
@@ -462,6 +569,7 @@ int main()
         std::cout << " - callers no longer need to interpret ShipControlState\n";
         std::cout << " - axial Newtonian-I main is centered radially, while aft-mounted TVC creates real yaw/pitch reaction\n";
         std::cout << " - damaged-main feedback physically reduces avoidable bias without synthetic cancellation\n";
+        std::cout << " - installed reactor off/half/full and executed impulse are checked through physical propagation\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

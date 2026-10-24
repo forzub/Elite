@@ -9,6 +9,80 @@ Updated: 2026-10-24, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 2026-10-24 — Emergency manual thrust aiming, diagnostic F-key and keypad semantics (SOURCE, WINDOWS GATE OPEN)
+
+**User screenshot:** `image(20261024-073337).png` shows off-center
+amber emergency working-thrust marker near right-side tunnel at ~46–50°,
+fixed cyan nose sight in center. User cannot reasonably fly a narrow
+manual corridor using ONE static displaced sight, reports
+`Ctrl+Alt+Shift+F` disables engines but never restores them, and keypad
+translation remains referenced to hull nose.
+
+**Verified actual architecture and semantics:**
+- Working thrust ray comes from server-installed `ObjectModuleRuntime` /
+  `WorkingThrustAxisAnalysis`, passes through CoM for selected
+  survivable motor, appears in MotherComputer and `ShipPresetEngineManeuvers`.
+  Engine-out preset executes this exact selected motor and torque-neutral
+  vector first, then residual 6-axis control. The offset is a physical
+  **acceleration reference**, NOT the inertial flight path.
+- `FlightVectorIndicatorRenderer::renderEmergencyThrustAxis` originally
+  assumed `focal=0.48*min(viewport widths/heights)` and zero camera
+  attachment orientation; actual `PlayerShipView` cockpit uses vertical
+  70° FOV and attachment/world transform. Amber marker was therefore
+  not an accurate line-of-sight projection; steering by it can miss.
+- Keypad `KP8/KP2` longitudinal, `KP6/KP4` lateral,
+  `KP9/KP3` vertical are **body-axis pilot controls**. This is
+  correct independent of damaged main-thrust axis: the damaged engine
+  does NOT redefine "up/right/forward" directions of the cockpit.
+  Assisted executes these through installed main-engine vectoring;
+  actual attainable acceleration may be reduced/asymmetric.
+- `Ctrl+Alt+Shift+F` was NOT power off: it was irreversible in-session
+  `InjectEquipmentFailure`, and consecutive presses broke successive
+  healthy main motors. `Ctrl+Alt+Shift+I` independently toggles the
+  propulsion-reactor lifecycle (including 10-s restart startup).
+
+**Source changes on main, NOT Windows compiled/gameplay verified:**
+- `6bbb502d`/`da92e447`: ObjectModuleRuntime now has
+  `debugRestoreInternalFailure(moduleId, previousInternalFailure01)`,
+  restoring ONLY its internal-failure field and revising module capability.
+  Other cause channels (impact/laser/thermal/radiation/wear), emitter
+  history and structural damage remain untouched.
+- `8a629122`/`ceb1ea62`/`3c3dda7d`: GameServer tracks which
+  installed motor F explicitly faulted for each player ship. Next F
+  *restores that same test fault* instead of destroying the next drive;
+  authoritative status is logged in
+  `D:/tmp/elite_equipment_failures.log` as
+  `APPLIED` or `RESTORED`. Existing network message/type unchanged,
+  and the state-of-truth is still ObjectModuleRuntime.
+  `dab77264` extends existing equipment-damage pipeline test to ensure
+  test fault can restore with impact/wear preserved and correct thrust.
+- `357eb8cd`/`4c98f772`/`30187ba1`: amber working axis sight
+  now uses **actual cockpit camera view matrix**, actual
+  ship presentation orientation, viewport dimensions and camera vertical
+  FOV. Body-space ray remains the installed authoritative module fact.
+  Offscreen edge pointer remains for rays outside optical field.
+- `4e783b0b`/`651ce683`/`01fa4c83`: emergency mode now also draws
+  a distinctive GREEN `V` flight-path marker projected from live
+  hub-local measured velocity through current ship reference frame and
+  exactly the same camera. Amber = physical thrust/acceleration axis;
+  green V = actual velocity vector; center cyan = optical hull nose.
+  It is not physically correct to draw the off-axis ray at center
+  without rotating the actual view. A fully thrust-centered
+  *electronic view* would require a separate deliberate camera mode,
+  not a misleading relocation of the marker.
+
+**Next verification:** native build and existing equipment-damage
+pipeline CTest; gameplay undamaged -> press F -> one engine fails,
+press F again -> SAME engine recovers and original physical damage
+(if any) remains; press I twice -> normal reactor restart with 10-s
+delay. Compare F labels/telemetry & module state against
+`D:/tmp/elite_equipment_failures.log`.
+Test manual emergency with amber thrust sight and green V flight path;
+confirm both projections follow the rendered cockpit camera when
+pitch/yaw/roll changes. Confirm keypad relative body semantics and
+actual attainable acceleration in 3 axes. Do not change healthy
+Assisted roll law, already user-accepted.
+
 ## 2026-10-24 — Windows/gameplay roll acceptance, follow-up telemetry audit (LOG-VERIFIED)
 
 **User observation:** normal Assisted-I now flies smoothly; only slight corrections

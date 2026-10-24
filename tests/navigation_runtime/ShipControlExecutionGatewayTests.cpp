@@ -310,6 +310,50 @@ void testAssistedSingleMainLossUsesTrimBeforeHullRotation()
     );
 }
 
+void testRejectedAllocatorCannotMoveShipOnRequestedAcceleration()
+{
+    using namespace game::ship::plant;
+    ShipParams physics {};
+    physics.forwardMainEngineAvailable=true;
+    physics.forwardMainEngineAccelerationMps2=30.0f;
+    physics.maxCombatSpeed=400.0f;
+    physics.maxGs=12.0f;
+    physics.maxLinearGs=12.0f;
+    physics.throttleAccel=5.0f;
+    physics.strafeAccel=15.0f;
+    physics.manoeuvreThrusterAuthorityExplicit=true;
+    physics.manoeuvreThrusterAccel=0.0f;
+
+    ShipTransform transform {};
+    transform.motion.mode=game::navigation::MotionMode::HubTactical;
+    transform.motion.systemId=1;
+    transform.motion.localControlLaw=
+        game::navigation::LocalFlightControlLaw::Assisted;
+    transform.motion.travelFrame.systemId=1;
+    transform.motion.travelFrame.frameId="invalid-plant";
+    transform.motion.travelFrame.localToWorldBasis=glm::dmat3(1.0);
+    transform.motion.travelFrame.valid=true;
+
+    ShipControlState control;
+    control.targetSpeedRate=1.0f;
+    control.forwardInput=1.0f;
+    // The real Assisted-I topology has four slots. Deliberately give
+    // a nonexistent slot matrix: its physical solver cannot execute.
+    const std::vector<EngineSlotState> missing {};
+    (void)Gateway::evaluateTranslationControl(
+        transform,physics,control,PhysicalControlModelId::AssistedI,
+        missing,0.02f);
+    require(glm::length(transform.motion.mainEngineAccelerationMps2)<
+                1.0e-10 &&
+            glm::length(transform.motion.assistedStabilizationAccelerationMps2)<
+                1.0e-10 &&
+            glm::length(transform.motion.engineAccelerationMps2)<1.0e-10,
+            "invalid motor allocator leaked unexecuted Assisted acceleration");
+    require(glm::length(
+                transform.motion.mainPropulsionTorqueBodyNm)<1.0e-10,
+            "invalid motor allocator invented rigid-body torque");
+}
+
 void testNeutralManualPath()
 {
     ShipControlState control;
@@ -337,6 +381,7 @@ int main()
         testPhysicalOverloadAppliesMainReactionTorque();
         testAssistedSingleMainLossUsesTrimBeforeHullRotation();
         testNeutralManualPath();
+        testRejectedAllocatorCannotMoveShipOnRequestedAcceleration();
 
         std::cout << "SHIP CONTROL EXECUTION GATEWAY TESTS: PASS\n";
         std::cout << " - manual/TVC input retains ordinary physical-path priority\n";

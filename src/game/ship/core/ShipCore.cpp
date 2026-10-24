@@ -456,6 +456,14 @@ ShipCore::controlAuthorityTelemetry() const
             PhysicalControlFamily::Assisted)
         return {};
 
+    // The signed actuator basis is NOT usable flight authority while
+    // propulsion reactors are switched off or completing their real 10 s
+    // restart. Do not advertise a mechanically healthy but unpowered ship
+    // to MotherComputer as physically flyable.
+    if (!m_propulsionReactorsOn ||
+        m_propulsionReactorsStartupRemainingSeconds>0.0)
+        return {};
+
     const auto model = m_state.construction.physicalControlModel;
     const std::uint64_t revision = m_state.actuators.revision;
     const ShipParams physics = effectivePhysics();

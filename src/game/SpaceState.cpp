@@ -7660,9 +7660,24 @@ m_systemMapRenderer.render(
             // for this exact snapshot, not a smoothed rendering transform.
             if (cockpit.valid && cockpit.emergencyWorkingThrustAxis)
             {
+                // Reproject the physical body-space working ray through
+                // the EXACT camera rendering this viewport. The old HUD
+                // pretended a hard-coded focal length and zero camera
+                // attachment rotation; neither is the real view.
+                const auto& sightCamera =
+                    m_playerView->camera(m_activeCameraMode);
+                const glm::dvec4 bodyRay(
+                    cockpit.workingThrustAxisBody,0.0);
+                const glm::dvec3 cameraRay = glm::dvec3(
+                    glm::dmat4(sightCamera.viewMatrix()) *
+                    glm::dmat4(playerShip.renderTransform.orientation) *
+                    bodyRay
+                );
                 m_flightVectorIndicatorRenderer.renderEmergencyThrustAxis(
                     vp,
                     cockpit.workingThrustAxisBody,
+                    cameraRay,
+                    sightCamera.fov(),
                     localizedUiText(
                         context().app,
                         "cockpit.emergency.thrust_axis",

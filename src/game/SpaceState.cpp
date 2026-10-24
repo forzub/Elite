@@ -3376,6 +3376,15 @@ void SpaceState::updateDockingAdvisory()
 
                     planningWhileSecuringCourse = true;
 
+                    // The route must begin along the escape course that the
+                    // real craft is now acquiring, NOT the unsafe velocity
+                    // or hull ray captured before obstacle avoidance.
+                    // Keep the measured initial speed as a magnitude; the
+                    // existing late-entry connector will bind the finished
+                    // backbone to the eventual live position/velocity.
+                    request.initialForward =
+                        m_dockAssistedSafeRecovery.direction;
+
                     std::cerr
                         << "[AssistedSafeCourse]"
                         << " request=" << pending.serial
@@ -3387,6 +3396,11 @@ void SpaceState::updateDockingAdvisory()
                         << ","
                         << m_dockAssistedSafeRecovery.direction.z
                         << ")"
+                        << " route_initial_course=("
+                        << request.initialForward.x << ","
+                        << request.initialForward.y << ","
+                        << request.initialForward.z << ")"
+                        << " initial_speed_mps=" << request.initialSpeedMps
                         << std::endl;
 
                     // Start the expensive planner from the snapshot we already

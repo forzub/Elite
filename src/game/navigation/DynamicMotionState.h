@@ -98,6 +98,17 @@ struct DynamicMotionState
     // ship forward; reverse main acceleration requires a physically installed
     // fore/reverse source. Assisted/Newtonian may command the hardware
     // differently, but neither law may invent an actuator.
+    // Command / Request / Executed boundary (migration seam).
+    // The flight law requests force in these three channels. The actuator
+    // executor records them here BEFORE replacing the legacy motion fields
+    // with physically delivered acceleration. Consumers of actual motion
+    // must never use these request values to advance position.
+    glm::dvec3 requestedMainEngineAccelerationMps2 {0.0};
+    glm::dvec3 requestedManoeuvreAccelerationMps2 {0.0};
+    glm::dvec3 requestedAssistedStabilizationAccelerationMps2 {0.0};
+
+    // Legacy integrated motion channels: after the physical gateway these
+    // contain EXECUTED force/mass, never requested force/mass.
     glm::dvec3 mainEngineAccelerationMps2 {0.0};
     glm::dvec3 manoeuvreAccelerationMps2 {0.0};
 

@@ -959,7 +959,8 @@ void ShipCore::updateTranslationControl(float dt)
                 dt,
                 physicalEngines,
                 &m_assistedManeuvers,
-                powerGroups.empty() ? nullptr : &powerGroups
+                productionInstalled ? &powerGroups :
+                    (powerGroups.empty() ? nullptr : &powerGroups)
             );
     }
     // Replace the legacy free Newtonian manoeuvre force with the real

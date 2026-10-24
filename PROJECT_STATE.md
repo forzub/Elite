@@ -9,6 +9,74 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
 
+## 2026-10-24 — Healthy Assisted route roll limit cycle (SERVER LOG VERIFIED, SOURCE CORRECTED, WINDOWS GATE OPEN)
+
+**Request:** New user videos
+`20261024-0656-24.2369226.mp4`,
+`20261024-0701-04.7465595.mp4` and associated failed-engine
+flight receipts/logs (scenario exit code 0) show pronounced hull rocking
+even in NOMINAL/healthy Assisted mode. This is unacceptable in healthy mode.
+Read server actuator CSV `elite_attitude_jitter(7).csv` and damaged
+`01_Assisted_I_aft_failed_attitude(2).csv`, plus planner report and
+scenario log. This does not concern remote interpolation.
+
+**Root cause (CONFIRMED BY SOURCE + USER'S SERVER CSV):**
+- The healthy trace has `axis_emergency=0`, `model=Assisted-I`,
+  `engine_count=4`. After ~10.68 s, `manual_roll` repeatedly jumps
+  to `+1/-1` with a ~0.35-0.40 s half-cycle; e.g. at 25.02, 25.26,
+  25.62 s, commands reverse sign. At 38-39 s, the same healthy roll
+  limit cycle continues. `request_roll_acc=+/-2.451663 rad/s²`
+  and `actual_roll_acc` often reaches identical extreme magnitudes,
+  with roll rate excursions ~0.5 rad/s. This is a *REAL server-executed
+  pilot/autopilot torque*, not a camera interpolation issue.
+- The same damaged scenario includes `manual_roll=+/-1` later in
+  flight (from ~40 s onward), but focus of the fix is making HEALTHY
+  undamaged flight quiet, not suppressing realistic failure mechanics.
+- `DedicatedClientRouteAutopilot` correctly uses ONE
+  `HullTunnelRollGuidance` source for live tunnel roll phase and
+  `desiredRollRateRadPerSec`: the latter ALREADY includes the
+  signed two-point pose error divided by actuator response time plus
+  tunnel phase rate. `AssistedAutopilot` previously set
+  `HullAttitudeControl::pitchYawResponseSeconds=0.50` but did NOT
+  set any roll response. So `HullAttitudeControl::predictiveAxisInput`
+  converted desired angular rate into acceleration using
+  `(desiredRate-currentRate)/(authority*dt)` at dt=0.02,
+  saturating even small changes to full +/- roll thrust every tick.
+  This is an independent single-axis implementation oversight; no
+  need to modify tunnel geometry, hardware, pitch/yaw gains, or netcode.
+
+**Targeted source fixes on main (not Windows-tested):**
+- `eeb42643` adds an OPTIONAL `rollResponseSeconds` to
+  `HullAttitudeControl::Request`. For callers that set it,
+  `dampedRollInput` follows the already-computed desired roll rate on
+  a finite physical response horizon (bounded `(targetRate-rate)/(T*authority)`),
+  rather than on one dt. Only when no external desired rate is supplied
+  does it derive one from the pose error. Preserves legacy behavior if
+  `rollResponseSeconds=0`, and preserves separate roll vs pitch/yaw
+  authority channels.
+- `f2aa6da2` sets `rollResponseSeconds=0.50` ONLY in
+  `AssistedAutopilot`, consistent with existing accepted pitch/yaw
+  0.5-s response. Zero changes to engine matrix, server physics,
+  `HullTunnelRollGuidance`, route geometry or Newtonian pilot.
+- `561f7812` and `f5b9e1e7` extend existing
+  `HullAttitudeControlTests` to ensure mild roll does not saturate;
+  the roll rate is arrested after acquisition; a bounded rigid-body
+  integration converges to both STATIC and steadily ROTATING tunnel
+  roll phase/rate without new +/- full-torque oscillations.
+  No native C++ tests/gameplay were executed in tool environment.
+
+**Required next Windows gate:** update main, build with
+`bash build_mingw64.sh`, run navigation runtime CTest
+`hull_attitude_control` and relevant Assistant/navigation tests.
+Play intact Assisted-I using ordinary route; capture new
+`D:/tmp/elite_attitude_jitter.csv`. Check especially
+`axis_emergency=0`, `manual_roll`, `request_roll_acc`,
+`actual_roll_acc` and `angular_after_roll` from seconds
+10-50: no repeating +/-1 roll commands, angular rate must settle
+around moving tunnel phase rate. Repeat damaged test only AFTER
+healthy pass, compare allowed degraded response. Avoid disguising
+remaining real actuator limits by visual smoothing.
+
 ## 2026-10-23 21:00+ — Client/server dataflow and clock regression audit (SOURCE, WINDOWS GATE OPEN)
 
 **User request:** examine all command/physics/replication/render stages after

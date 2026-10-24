@@ -614,12 +614,31 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
         output.forwardErrorRad > 0.05,
         "parallel-offset capture did not alter the commanded hull direction"
     );
+    // The route lies on +X and the ship is displaced +Z: a positive
+    // yaw about +Y rotates its +X working axis toward -Z, i.e. back
+    // toward the corridor. The accepted 0.5 s critically damped Assisted
+    // hull servo deliberately does NOT saturate for this course error.
+    // Check correct physical steering direction and bounded authority,
+    // not the obsolete >0.5 normalized-torque expectation.
+    require(
+        output.courseCaptureActive,
+        "material parallel-offset error did not engage course recovery"
+    );
+    require(
+        output.control.yawInput > 1.0e-3,
+        "parallel-offset Assisted yaw did not steer back toward corridor center"
+    );
     require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) > 0.5,
-        "parallel-offset state did not strongly rotate back toward center"
+        ) < 0.5,
+        "parallel-offset Assisted hull controller saturated instead of damping"
+    );
+    require(
+        !output.control.navigationAccelerationDemandValid &&
+        !output.control.navigationVelocityTargetValid,
+        "parallel-offset correction bypassed the physical flight-law actuators"
     );
 }
 

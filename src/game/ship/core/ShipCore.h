@@ -360,8 +360,6 @@ private:
     // Allow the read-only authority query to refresh this exact executor cache
     // from current installed motors without commanding any engine.
     mutable game::ship::plant::AssistedManeuverPrograms m_assistedManeuvers;
-    mutable std::uint64_t m_preparedManeuverActuatorRevision =
-        ~std::uint64_t{0};
 
     // Resolved response profile cache. Descriptor/topology/damage may be rich,
     // but motion consumes one compact coefficient set until one of those

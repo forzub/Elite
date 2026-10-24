@@ -2631,6 +2631,12 @@ void testAssistedAutopilotCapturesTurnsWithoutOvershoot()
                 request.upMap = up;
                 request.desiredForwardMap = desiredForward;
                 request.desiredUpMap = up;
+                // This fixture tests a stationary hull-pose turn, not
+                // velocity-course steering: no translational velocity is
+                // supplied. Terminal attitude hold is the flight-law mode
+                // that owns full-angle pose capture at zero speed; the
+                // moving-course servo intentionally limits hull lead to 10°.
+                request.terminalAttitudeHold = true;
                 request.yawRateRadPerSec = yawRate;
                 request.deltaSeconds = Dt;
 

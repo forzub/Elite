@@ -282,10 +282,10 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
         engine.thermalEmitter.surfaceTemperatureK = 2500.0;
         engine.thermalEmitter.viewFactor01 = 0.90;
         engine.thermalEmitter.materialId = "elite.material.engine.hfc-c.v1";
-        engine.thermalConductanceMWperK =
-            (70.325 -
-             game::equipment::engine::ratedThermalEmitterPowerMW(engine)) /
-            150.0;
+        // No parallel coolant heat sink. The hot thrust governor and
+        // engine thermal integrator must both use the canonical 6 MW/m2
+        // installed pad, degraded by its actual intact area.
+        engine.thermalConductanceMWperK = 0.0;
     }
     world::modules::ObjectModuleRuntime runtime;
     runtime.init(d.modules);
@@ -323,6 +323,25 @@ void testIndependentEmitterDamageReachesInstalledEngineSlot()
     // Allow the physical engine to heat before thermal governor engages.
     auto* warmingEngine = runtime.findModule("aft_left");
     warmingEngine->engineOperating.temperatureK = 1300.0;
+
+    // At the design temperature a damaged emitter has at most
+    // (intact area * 6 MW/m2)/rated waste heat of safe sustained thrust.
+    // The hot test must not be accidentally satisfied by an obsolete
+    // coolant or radiative-power formula.
+    const double exposedArea=
+        game::physics::thermal::annulusAreaM2(
+            d.modules[0].engine->thermalEmitter.outerDiameterM,
+            d.modules[0].engine->thermalEmitter.apertureDiameterM
+        ) * game::equipment::engine::effectiveEmitterArea01(
+            warmingEngine->engineOperating);
+    const double padCapacityMW=
+        exposedArea*game::physics::thermal::PropulsionPadCoolingMWPerM2;
+    const double ratedWasteMW=
+        d.modules[0].engine->nominalElectricalPowerMW *
+        (1.0-d.modules[0].engine->nominalEfficiency01);
+    require(padCapacityMW>0.0 && ratedWasteMW>0.0 &&
+            padCapacityMW/ratedWasteMW<0.85,
+            "fixture did not put a damaged emitter below its heat budget");
 
     const auto slots = game::ship::capability::buildPhysicalControlSlotState(
         d, d.physicalControlModel, runtime
@@ -384,10 +403,7 @@ void testLiveAndReplicatedEngineCapabilityRemainIdentical()
         motor.thermalEmitter.viewFactor01 = 0.90;
         motor.thermalEmitter.materialId =
             "elite.material.engine.hfc-c.v1";
-        motor.thermalConductanceMWperK =
-            (70.325 -
-             game::equipment::engine::ratedThermalEmitterPowerMW(motor)) /
-            150.0;
+        motor.thermalConductanceMWperK = 0.0;
     }
 
     world::modules::ObjectModuleRuntime runtime;

@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "src/game/navigation/PreplanningSafetyCourse.h"
+#include "src/game/navigation/DockingRouteEntryPolicy.h"
 
 namespace
 {
@@ -84,6 +85,18 @@ int main()
                 result.speedMps <= 0.5,
                 "stationary safety probe invented translational speed"
             );
+            const glm::dvec3 stoppedEntry =
+                game::navigation::DockingRouteEntryPolicy::initialCourse(
+                    request.velocityMps, request.hullForward
+                );
+            require(
+                glm::dot(stoppedEntry, result.currentCourse) > 0.999999,
+                "stopped route entry did not start on the actual hull ray"
+            );
+            require(
+                glm::dot(stoppedEntry, result.safeCourse) < 0.999,
+                "stopped safety escape did not require a new route tangent"
+            );
         }
 
         {
@@ -150,6 +163,25 @@ int main()
             require(
                 result.turnRadiusMeters > 0.0,
                 "escape course omitted physical turn radius"
+            );
+            // At speed, velocity is the physical initial tangent even when
+            // the nose points elsewhere. The planner must use the SELECTED
+            // escape tangent after avoidance, not keep this old velocity ray.
+            const glm::dvec3 velocityEntry =
+                game::navigation::DockingRouteEntryPolicy::initialCourse(
+                    request.velocityMps, glm::dvec3(0.0, 0.0, -1.0)
+                );
+            require(
+                glm::dot(velocityEntry, result.currentCourse) > 0.999999,
+                "moving route entry followed hull nose instead of velocity"
+            );
+            require(
+                glm::dot(velocityEntry, result.safeCourse) < 0.999,
+                "moving escape tangent matched the unsafe original velocity"
+            );
+            require(
+                std::abs(result.speedMps - 100.0) < 1.0e-9,
+                "moving safety-course selection changed initial speed"
             );
         }
 

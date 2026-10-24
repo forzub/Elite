@@ -585,6 +585,51 @@ void testInjectedInternalEquipmentFault()
 }
 
 
+void testDiagnosticFaultCanToggleWithoutRepairingRealDamage()
+{
+    const auto d=descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    require(runtime.addEquipmentDamage(
+                "aft_left",EquipmentDamageKind::Impact,0.12),
+            "test setup could not apply genuine impact damage");
+    require(runtime.addEquipmentDamage(
+                "aft_left",EquipmentDamageKind::Wear,0.07),
+            "test setup could not apply genuine wear damage");
+    const auto* before=runtime.findModule("aft_left");
+    const double previousInternal=
+        before->equipmentDamage.accumulated.internalFailure01;
+    const auto revision=runtime.revision();
+
+    require(runtime.injectEquipmentFailure("aft_left",1.0),
+            "temporary diagnostic main engine failure did not apply");
+    auto failed=game::ship::capability::buildPhysicalControlSlotState(
+        d,d.physicalControlModel,runtime);
+    require(failed.size()==4 && near(failed[0].thrust01,0.0),
+            "test fault did not disable installed motor");
+
+    require(runtime.debugRestoreInternalFailure(
+                "aft_left",previousInternal),
+            "second F-style operation could not release test fault");
+    const auto* recovered=runtime.findModule("aft_left");
+    require(recovered &&
+            near(recovered->equipmentDamage.accumulated.impact01,0.12) &&
+            near(recovered->equipmentDamage.accumulated.wear01,0.07) &&
+            near(recovered->equipmentDamage.accumulated.internalFailure01,
+                 previousInternal) &&
+            near(recovered->health,100.0) &&
+            runtime.revision()>revision,
+            "diagnostic restoration erased real damage or lacked revision");
+    auto restored=game::ship::capability::buildPhysicalControlSlotState(
+        d,d.physicalControlModel,runtime);
+    require(restored.size()==4 && near(restored[0].thrust01,0.81) &&
+            near(restored[1].thrust01,1.0),
+            "diagnostic fault removal did not restore precisely the live authority");
+    require(!runtime.debugRestoreInternalFailure(
+                "aft_left",previousInternal),
+            "identical second restore unexpectedly changed revision");
+}
+
 void testEngineOutWorkingAxisIsTorqueNeutral()
 {
     auto d=descriptor();
@@ -634,6 +679,7 @@ int main()
     {
         testFiveCauseDamageFlowsIntoLiveSlotAndCapability();
         testInjectedInternalEquipmentFault();
+        testDiagnosticFaultCanToggleWithoutRepairingRealDamage();
         testEngineOutWorkingAxisIsTorqueNeutral();
         testCinematicEngineImpactShockAndRecovery();
         testTvcFailurePreservesPartialAxialThrust();

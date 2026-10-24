@@ -31,6 +31,8 @@ public:
     void renderEmergencyThrustAxis(
         const Viewport& viewport,
         const glm::dvec3& workingAxisBody,
+        const glm::dvec3& workingAxisCamera,
+        float verticalFovDegrees,
         const std::string& localizedLabel
     );
 

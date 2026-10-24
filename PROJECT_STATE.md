@@ -418,6 +418,43 @@ adopted. Conclusions:
   rebound by projected connector. Diagnose actual binder logs before
   modifying that established mechanism.
 
+## 2026-10-24 route-start targeted Windows CTest: 3/5 PASS; two test-contract corrections
+
+- User ran 5 selected navigation runtime CTests successfully after compiling
+  updated `SpaceState.cpp` and `PreplanningSafetyCourseTests.cpp`.
+  PASSED: `route_entry_binder`, `assisted_safe_course_executor_isolation`,
+  `preplanning_safety_course` (including blocked-at-rest and 100m/s
+  safe-direction first-tangent assertions).
+- `route_planner_api` FAILED on diagnostic text assertion
+  `"continuous-assisted ready"` although the continuous plan had
+  already passed `optimized.valid()`. Current production text is
+  `"continuous-assisted preset=STANDARD ready curves=..."` with
+  `execution_gates=` and `evals=` fields. Commit `c3ef02a3` updates
+  ONLY the existing test to check that actual diagnostic schema;
+  no route planning geometry changed.
+- `client_route_autopilot` FAILED on pre-existing test
+  `testAlignedVelocityIgnoresMisalignedNose`: it demanded pitch/yaw
+  ZERO even though the deliberately 30-degree-off-nose healthy Assisted
+  craft must realign its PHYSICAL thrust axis to the already correct
+  VREL course. `Autopilot::Output.courseErrorRad` correctly stayed
+  zero (velocity is navigation truth); `AssistedAutopilotKernel::make`
+  explicitly computes independent desired hull pose from actual course.
+  Commit `a097940f` corrects the EXISTING test: navigation course
+  must remain zero-error; hull actuator error must be present; ordinary
+  pitch/yaw rotates the actual physical working axis without inventing
+  lateral-translation or direct navigation acceleration channels.
+  This matches current healthy Assisted doctrine; no control law modified.
+- These TWO test changes are source-only until a new Windows CTest run.
+  **Do not report the previous 3/5 as 5/5 green**. Rebuild these two test
+  targets and rerun the 5-test selector. If green, proceed to normal game
+  build and visually inspect safe-route first leg both stationary and moving;
+  selected safe vector and tunnel-first-vector must match, and physical
+  late-entry binder must join the actual post-turn ship state.
+- User's initial observed unsafe tunnel starts were addressed by
+  `1bc9742f`: that gameplay patch has NOT yet been user-validated
+  in an actual blocked-flight run; unit-level selector/binder PASS alone
+  is not the final evidence.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -453,6 +490,14 @@ adopted. Conclusions:
   would be useful but should not be a parallel simulation or new owner.
 
 ## Immediate next validation — blocked route entry, THEN general regression and gameplay
+
+**Priority now**: rebuild `route_planner_api_tests` and
+`client_route_autopilot_tests` then repeat the five targeted
+`preplanning_safety_course|route_planner_api|route_entry_binder|
+assisted_safe_course_executor_isolation|client_route_autopilot` CTests.
+The previous 3/5 is not full success. Native game blocked-start
+acceptance (0 and 100 m/s) is next, before broad test gate.
+
 
 - The current Windows native `ship_control_execution_gateway` CTest is
   **PASS (user-reported)**. The old six-model in-game oracle was previously

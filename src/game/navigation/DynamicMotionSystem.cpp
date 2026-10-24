@@ -142,7 +142,9 @@ inline glm::dvec3 updateNewtonianMainGimbal(
             : forward;
 }
 
-inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
+} // namespace
+
+glm::dvec3 DynamicMotionSystem::limitRequestedPropulsionToControlledSpeed(
     const glm::dvec3& currentVelocity,
     const glm::dvec3& requestedAcceleration,
     double controlledSpeedLimit,
@@ -179,7 +181,6 @@ inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
     const double fraction = std::clamp(root, 0.0, 1.0);
 
     return requestedAcceleration * fraction;
-}
 }
 
 void DynamicMotionSystem::applySystemAccelerationDemand(
@@ -475,11 +476,12 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     if (dt <= 0.0)
         return;
 
-    // The main propulsion request and the RCS request are deliberately kept
-    // separate until this fixed kinematic step. The ordinary controlled-speed
-    // envelope still applies to the main engine in both laws. In Newtonian,
-    // manual RCS is a real small force and may accumulate delta-v beyond that
-    // envelope; Assisted applies the envelope to the combined controlled motion.
+    // The main/Assisted and RCS channels contain executed acceleration after
+    // the physical allocator. Its requests were limited BEFORE the motors
+    // calculated their actual forces: never discard real motor delta-v here.
+    // Legacy diagnostic motion without a physical plant retains its original
+    // speed-envelope behavior. Newtonian RCS remains independent of the
+    // main-engine speed envelope in both execution paths.
     const glm::dvec3 requestedMainLocalAcceleration =
         frame.worldToLocalVector(motion.mainEngineAccelerationMps2);
 
@@ -595,25 +597,34 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         );
 
     glm::dvec3 localAcceleration(0.0);
-    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
+    if (motion.installedMainPlantExecuted)
+    {
+        // This is actual ΣF/m, including any asymmetry, gimbal reaction and
+        // reactor throttling. Applying the speed envelope here again would
+        // create an unreported impulse different from delivered motor force.
+        localAcceleration =
+            requestedMainLocalAcceleration +
+            actualManoeuvreLocalAcceleration +
+            actualAssistedStabilizationLocalAcceleration;
+    }
+    else if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
         const glm::dvec3 controlledMainAcceleration =
-            limitPropulsionAccelerationToControlledSpeed(
+            limitRequestedPropulsionToControlledSpeed(
                 motion.localVelocityMps,
                 requestedMainLocalAcceleration,
                 game::ship::controlledSpeedLimitMps(params),
                 dt
             );
 
-        // Deliberate exception: RCS is not a second main engine, but neither is
-        // it a velocity setpoint. With enough time and replenished gas it can
-        // continue adding tiny Newtonian delta-v past maxCombatSpeed.
+        // Diagnostic/legacy path only. RCS is not a second main engine and
+        // can still add small physical delta-v beyond maxCombatSpeed.
         localAcceleration =
             controlledMainAcceleration + actualManoeuvreLocalAcceleration;
     }
     else
     {
-        localAcceleration = limitPropulsionAccelerationToControlledSpeed(
+        localAcceleration = limitRequestedPropulsionToControlledSpeed(
             motion.localVelocityMps,
             requestedMainLocalAcceleration +
                 actualManoeuvreLocalAcceleration +
@@ -627,6 +638,8 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         frame.localToWorldVector(localAcceleration);
 
     motion.localVelocityMps += localAcceleration * dt;
+    // One tick's installed-plant execution never authorizes the next tick.
+    motion.installedMainPlantExecuted = false;
 
     if (motion.velocityAlignmentMode ==
             VelocityAlignmentMode::BrakeToStop &&

@@ -228,6 +228,26 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         return path;
     }
 
+    // Preserve the command-to-plant boundary. DynamicMotionSystem above
+    // supplied a REQUEST; integration below may consume ONLY the force
+    // that a valid physical execution actually delivered. No allocator
+    // failure may leave the unexecuted request in a motion field.
+    const auto rejectUnexecutedPropulsion = [&]()
+    {
+        motion.mainEngineAccelerationMps2={};
+        motion.assistedStabilizationAccelerationMps2={};
+        if (game::ship::plant::familyOf(model) ==
+            game::ship::plant::PhysicalControlFamily::Assisted)
+            motion.manoeuvreAccelerationMps2={};
+        motion.engineAccelerationMps2=motion.manoeuvreAccelerationMps2;
+        motion.mainPropulsionTorqueBodyNm={};
+        motion.mainPropulsionAngularAccelerationBodyRadPerSec2={};
+        motion.mainEngineDeliveredThrust01.fill(0.0);
+        motion.mainEngineReportedSlotCount=0;
+        motion.mainTrimLoad01=0.0;
+        motion.mainTrimUsableScale01=0.0;
+    };
+
     const glm::dvec3 requestedMainWorld =
         motion.mainEngineAccelerationMps2;
 
@@ -322,7 +342,10 @@ ShipControlExecutionGateway::evaluateTranslationControl(
                   );
         motion.engineTelemetry.reset(control.controlTick);
         if (!actual.valid)
+        {
+            rejectUnexecutedPropulsion();
             return path;
+        }
 
         // Scale already-resolved physical nozzle forces by the electrical
         // budget of their INSTALLED reactor, then recompute the real rigid
@@ -466,7 +489,10 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         );
 
     if (!trim.valid || !trim.reaction.valid)
+    {
+        rejectUnexecutedPropulsion();
         return path;
+    }
 
     // The allocator can only remove/redirect real main-engine force. Rebuild
     // the world vector from its body-space result and keep all independent

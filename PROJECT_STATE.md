@@ -364,6 +364,60 @@ adopted. Conclusions:
   No additional main-propulsion code change is required without new
   evidence.
 
+## 2026-10-24 route-start direction after obstacle avoidance (source fix, native gate pending)
+
+- User observed the craft turning away from an obstacle while the
+  planner's first tunnel leg pointed back along the obstacle-facing
+  direction, including concern about nonzero-speed planning.
+- Source-confirmed mismatch in `src/game/SpaceState.cpp`:
+  initial automatic `RoutePlanRequest.initialForward` is assigned by
+  `DockingRouteEntryPolicy::initialCourse(startVelocity, hullForward)`
+  BEFORE `PreplanningSafetyCourse::evaluate`. This policy is
+  CORRECT for the initial *hazard probe*: >0.5m/s uses real velocity,
+  at rest uses hull nose. But when Assisted selects an alternative
+  safe course and begins physical acquisition in parallel with planning,
+  the request's initialForward was NOT updated. The expensive planner
+  therefore retained the rejected unsafe tangent, and
+  `compileAgent` in `planningWhileSecuringCourse` also predicted the
+  wrong course. Newtonian branch already propagated its safeCourse
+  explicitly, revealing the Assisted-only omission.
+- `1bc9742f` fixes exactly that in the Assisted selected+planning path:
+  the *same selected collision-free inertial direction* drives physical
+  safe-course acquisition AND `request.initialForward` before any
+  workers, route curves, or compiled autopilot are created. Retains
+  measured `initialSpeedMps`; does not point the route at the hull
+  when moving, invent endpoint/time/position, or restart expensive
+  planning. Physical acquisition still completes before route
+  adoption. Existing one-shot projected late entry binder obtains
+  position and velocity from live ship after turning.
+  Logs `[AssistedSafeCourse] phase=selected+planning` now show
+  `course`, `route_initial_course`, and `initial_speed_mps`.
+- `898f05d2` and `fea6d17e` extend existing
+  `preplanning_safety_course` CTest (no new test target):
+  blocked START FROM REST must probe hull nose and select a different
+  safe tangent; at 100m/s and a nonaligned hull, probe must use actual
+  velocity, preserve speed, select new safe tangent. Both selected
+  tangents feed actual `RoutePlanner::plan`, and the first route curve
+  must point along selected safe direction, not rejected original.
+  The planner test route is deliberately obstacle-free after
+  selection to isolate tangent handoff from collision/terminal geometry.
+- **SOURCE ONLY.** No new Windows compilation, CTest, or in-game
+  visual/manual acceptance since this fix. Next targeted gate:
+  `preplanning_safety_course`, `route_planner_api`,
+  `route_entry_binder`, `assisted_safe_course_executor_isolation`,
+  and `client_route_autopilot` in existing navigation runtime tests,
+  then build and fly a blocked entry both at rest and moving.
+  Compare safe-course selected direction, first route segment,
+  live ship velocity, and projected connector; physically verified
+  blocking/collision avoidance remains required. Do not repeat
+  the 84/84 general control oracle to test this planner seam.
+- No changes to Newtonian safe course, physics, engine solvers,
+  physical speed limiter, or route optimizer. Potential further
+  issue if user still observes trouble: old snapshot origin is used
+  for async backbone, but live velocity/position are explicitly
+  rebound by projected connector. Diagnose actual binder logs before
+  modifying that established mechanism.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -398,12 +452,18 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation — targeted regression suite, THEN real gameplay
+## Immediate next validation — blocked route entry, THEN general regression and gameplay
 
 - The current Windows native `ship_control_execution_gateway` CTest is
   **PASS (user-reported)**. The old six-model in-game oracle was previously
   **84/84 PASS** on its separate older gate. Neither proves the entire
   damage/autopilot/reactor gameplay.
+- PRIORITY BEFORE broad regression: the Assisted obstacle-avoidance
+  route-start patch above must pass its targeted Windows navigation
+  tests and in-game route-entry acceptance at both zero and nonzero speed.
+  The course requested by planner must match the one physically selected
+  by PreplanningSafetyCourse; a stale connector must be rebound rather
+  than turning back into the obstacle.
 - NEXT: build and run existing focused regression targets in the
   `tests/navigation_runtime` suite (without inventing new tests):
   `ship_control_behavior_oracle`,

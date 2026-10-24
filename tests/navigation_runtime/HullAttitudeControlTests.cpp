@@ -1,5 +1,6 @@
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -139,6 +140,64 @@ void testDesiredRollRateTracksFrameWithoutWaitingForAngleKick()
     );
 }
 
+void testAssistedRollFollowsTunnelRateWithoutBangBang()
+{
+    auto r=base();
+    r.rollResponseSeconds=0.50;
+    r.rollErrorRad=0.08;
+    // HullTunnelRollGuidance already turns pose error into a desired
+    // angular rate using its finite ~1.2 s physical roll response.
+    r.desiredRollRateRadPerSec=0.08/1.2;
+
+    const auto initial=Control::evaluate(r);
+    require(initial.valid &&
+            initial.rollInput>0.001 &&
+            initial.rollInput<0.25,
+            "healthy Assisted used full roll torque for a tiny tunnel correction");
+
+    r.rollRateRadPerSec=r.desiredRollRateRadPerSec;
+    const auto matched=Control::evaluate(r);
+    require(matched.valid && std::abs(matched.rollInput)<1.0e-8,
+            "Assisted kept accelerating after reaching requested roll rate");
+
+    r.rollErrorRad=0.0;
+    r.desiredRollRateRadPerSec=0.0;
+    const auto arrested=Control::evaluate(r);
+    require(arrested.valid && arrested.rollInput<-0.01 &&
+            arrested.rollInput>-0.25,
+            "Assisted could not gently arrest the existing roll rate");
+}
+
+void testAssistedRollConvergesWithoutLimitCycle()
+{
+    auto r=base();
+    r.rollResponseSeconds=0.50;
+    r.rollAngularAccelerationAuthorityRadPerSec2=2.451663;
+    r.pitchYawErrorRad={0.0,0.0};
+    double rollError=0.16;
+    double rollRate=0.0;
+    double peakCommand=0.0;
+    for(int i=0;i<500;++i)
+    {
+        r.rollErrorRad=rollError;
+        r.rollRateRadPerSec=rollRate;
+        r.desiredRollRateRadPerSec=rollError/1.22;
+        const auto output=Control::evaluate(r);
+        require(output.valid,"damped roll simulation produced invalid controls");
+        require(glm::length(output.pitchYawInput)<1.0e-12,
+                "roll stabilization demanded pitch/yaw");
+        peakCommand=std::max(peakCommand,std::abs(output.rollInput));
+        const double acceleration=output.rollInput*
+            r.rollAngularAccelerationAuthorityRadPerSec2;
+        rollRate+=acceleration*r.deltaSeconds;
+        rollError-=rollRate*r.deltaSeconds;
+    }
+    require(peakCommand<0.5,
+            "healthy small-angle Assisted roll saturated the torque command");
+    require(std::abs(rollError)<0.002 && std::abs(rollRate)<0.002,
+            "healthy Assisted roll did not settle on a constant tunnel phase");
+}
+
 void testResidualYawRateDoesNotCreateRoll()
 {
     auto r = base();
@@ -168,6 +227,8 @@ int main()
         testResidualYawRateDoesNotCreateRoll();
         testMovingCourseRateIsTrackedWithoutWaitingForAngleError();
         testDesiredRollRateTracksFrameWithoutWaitingForAngleKick();
+        testAssistedRollFollowsTunnelRateWithoutBangBang();
+        testAssistedRollConvergesWithoutLimitCycle();
 
         std::cout
             << "HULL ATTITUDE CONTROL TESTS: PASS\n"

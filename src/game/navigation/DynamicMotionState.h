@@ -107,6 +107,13 @@ struct DynamicMotionState
     glm::dvec3 requestedManoeuvreAccelerationMps2 {0.0};
     glm::dvec3 requestedAssistedStabilizationAccelerationMps2 {0.0};
 
+    // Execution provenance for the CURRENT fixed step only. When true the
+    // installed main-engine plant has supplied actual force/mass, and the
+    // motion integrator must not post-clamp that physical impulse. Cleared
+    // after propagation; no prediction or controller may treat it as
+    // a permanent capability. Legacy diagnostics use false.
+    bool installedMainPlantExecuted = false;
+
     // Legacy integrated motion channels: after the physical gateway these
     // contain EXECUTED force/mass, never requested force/mass.
     glm::dvec3 mainEngineAccelerationMps2 {0.0};

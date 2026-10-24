@@ -1,6 +1,7 @@
 #include "src/game/ship/control/ShipControlExecutionGateway.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
+#include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/world/WorldParams.h"
 
 #include <cmath>
@@ -354,6 +355,77 @@ void testRejectedAllocatorCannotMoveShipOnRequestedAcceleration()
             "invalid motor allocator invented rigid-body torque");
 }
 
+void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
+{
+    using namespace game::ship::plant;
+    using namespace game::equipment::engine;
+    using game::ship::control::MainEnginePowerGroup;
+
+    const auto model=PhysicalControlModelId::NewtonianI;
+    const auto& topology=physicalControlSlots(model);
+    const auto slots=healthySlotState(topology);
+    const auto passport=presets::CobrettyCR1VectorMainDrive();
+    game::equipment::EquipmentDamageLayer damage {};
+    EngineOperatingState operating {};
+    operating.temperatureK=passport.nominalOperatingTemperatureK;
+    std::vector<MountedEngine> mounted(topology.size());
+    for(std::size_t i=0;i<topology.size();++i)
+        if(topology[i].role==EngineSlotRole::AftMain)
+            mounted[i]={&passport,&damage,&operating,topology[i].id,true};
+
+    ShipParams physics {};
+    physics.massKg=260000.0;
+    physics.forwardMainEngineAvailable=true;
+    physics.forwardMainEngineAccelerationMps2=40.0f;
+    physics.maxCombatSpeed=400.0f;
+    physics.maxCruiseSpeed=800.0f;
+    physics.maxGs=12.0f;
+    physics.maxLinearGs=12.0f;
+    physics.throttleAccel=5.0f;
+
+    ShipControlState control {};
+    control.forwardInput=1.0f;
+    control.targetSpeedRate=1.0f;
+
+    auto makeTransform=[]() {
+        ShipTransform t {};
+        t.motion.mode=game::navigation::MotionMode::HubTactical;
+        t.motion.systemId=1;
+        t.motion.localControlLaw=
+            game::navigation::LocalFlightControlLaw::Newtonian;
+        t.motion.travelFrame.systemId=1;
+        t.motion.travelFrame.frameId="reactor-budget";
+        t.motion.travelFrame.localToWorldBasis=glm::dmat3(1.0);
+        t.motion.travelFrame.valid=true;
+        return t;
+    };
+
+    // A legacy diagnostic caller without any electrical budget retains
+    // its independent source. This also proves the physical engine can fire.
+    auto diagnostic=makeTransform();
+    (void)Gateway::evaluateTranslationControl(
+        diagnostic,physics,control,model,slots,0.1f,
+        &mounted,nullptr,nullptr);
+    require(glm::length(
+                diagnostic.motion.mainEngineAccelerationMps2)>1.0e-8,
+            "test motor did not deliver thrust without electrical budget");
+
+    // A real installed ship explicitly supplying an empty reactor map must
+    // instead have ZERO executed thrust; its control demand remains visible.
+    auto installed=makeTransform();
+    const std::vector<MainEnginePowerGroup> noReactors {};
+    (void)Gateway::evaluateTranslationControl(
+        installed,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&noReactors);
+    require(glm::length(
+                installed.motion.requestedMainEngineAccelerationMps2)>1.0e-8,
+            "no-power test did not generate a propulsion request");
+    require(glm::length(installed.motion.mainEngineAccelerationMps2)<1.0e-10 &&
+            glm::length(installed.motion.engineAccelerationMps2)<1.0e-10 &&
+            glm::length(installed.motion.mainPropulsionTorqueBodyNm)<1.0e-10,
+            "empty installed power budget produced free main thrust");
+}
+
 void testNeutralManualPath()
 {
     ShipControlState control;
@@ -382,6 +454,7 @@ int main()
         testAssistedSingleMainLossUsesTrimBeforeHullRotation();
         testNeutralManualPath();
         testRejectedAllocatorCannotMoveShipOnRequestedAcceleration();
+        testExplicitEmptyPowerBudgetCannotRunInstalledMain();
 
         std::cout << "SHIP CONTROL EXECUTION GATEWAY TESTS: PASS\n";
         std::cout << " - manual/TVC input retains ordinary physical-path priority\n";

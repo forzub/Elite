@@ -357,7 +357,15 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         // budget of their INSTALLED reactor, then recompute the real rigid
         // body wrench. This is an execution constraint, not HUD bookkeeping.
         // Both the Assisted cached programs and Newtonian matrix use it.
-        if (powerGroups && !powerGroups->empty())
+        if (powerGroups && powerGroups->empty())
+        {
+            // An explicit installed electrical budget with no reactor
+            // groups is unavailable power, NOT unlimited power. A nullptr
+            // is reserved for isolated diagnostic/legacy callers.
+            rejectUnexecutedPropulsion();
+            return path;
+        }
+        if (powerGroups)
         {
             // Assisted wrench programs balance forces and torques ACROSS
             // generator groups. Scaling each group independently breaks that

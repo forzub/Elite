@@ -562,63 +562,53 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## 2026-10-25 STOP TEST-CHURN: client autopilot legacy 8-second turn fixture
+## 2026-10-25 Assisted stationary hull-turn fixture: MODE ERROR FOUND, source-only repair
 
-- User reran `client_route_autopilot_tests` after `9d34c555`.
-  The previous velocity-arc input criterion passed, but
-  `testAssistedAutopilotCapturesTurnsWithoutOvershoot` failed
+- User's most recent native `client_route_autopilot` CTest was RED on
   `Assisted autopilot failed to settle on commanded turn angle`.
-  4 other route-entry CTests from the previous five-test run were PASS:
-  `route_planner_api`, `preplanning_safety_course`,
-  `assisted_safe_course_executor_isolation`, `route_entry_binder`.
-  Full `client_route_autopilot` is still RED. Do not call 5/5 green.
-- ROOT SOURCE HISTORY: `src/game/navigation/autopilot/AssistedAutopilot.h`
-  has NOT been changed in the current obstacle-route-fix sequence.
-  Its physically damped 0.50s inner hull attitude law entered
-  `main` Oct 22 (`7afe8dc8`); latest change to the module Oct 24
-  (`f2aa6da2`) concerns roll. The turn-settlement test fixture dates
-  to earlier work. The main source change for this current navigation
-  task remains one Assisted safety-course handoff in `SpaceState.cpp`
-  `1bc9742f`: assign `request.initialForward` to the selected
-  collision-free safety course.
-- The separate `testAssistedAutopilotCapturesTurnsWithoutOvershoot`
-  runs 400 steps * 0.02s = 8s for each of
-  +/-5, +/-15, +/-45, +/-90 degree hull turns, with **zero actual
-  velocity** in `AutopilotControlRequest`, an input-hold ramp and
-  additional discrete actuator damping. The current flight-law limits
-  heading lead to 10 degrees and changes pitch/yaw through a 0.50s
-  critically damped controller. A 90-degree slew cannot be assumed
-  to settle to 0.25 degrees in that arbitrary 8s horizon.
-  Independent numerical reconstruction of the 1D described controller
-  suggests ~77.1 degrees after 8s, ~89.8 after 12s for a 90-degree
-  demand; this is illustrative, NOT native acceptance evidence.
-  Preserve the failed fixture as a separately visible pre-existing
-  coverage mismatch/possible angular response requirement; do not
-  keep modifying thresholds merely to make the total suite green.
-- User explicitly asked why everything appeared broken; conclusion:
-  source code was NOT repeatedly broken with each red. Consecutive
-  FAIL results occurred because native CTest stops at each next
-  assertion of an old, previously unrerun scenario after accepted
-  Oct 22 Assisted damping changes. We exacerbated the confusion by
-  tweaking tests one assertion at a time without native full-suite
-  baselining; do NOT repeat that workflow.
-- NEXT: prioritize the user's actual requested blockage: build
-  game client/server and visually/logistically verify selected safe
-  course vs authored initial tunnel tangent at rest and nonzero speed,
-  and inspect the late-binding of route to live post-turn position/
-  velocity. The 4 directly relevant tests were green. Do NOT
-  pronounce full autopilot regression green; do not make more
-  test-only changes until a distinct physical flight problem or a
-  justified explicit test specification emerges. Main only; update
-  this same PROJECT_STATE.md after observed flight.
+  This is `testAssistedAutopilotCapturesTurnsWithoutOvershoot`, which
+  simulates 5/15/45/90/-45/-90 degree hull turns at ZERO velocity, each
+  over 400*0.02 = 8s, with a keyboard actuator ramp, angular inertia,
+  and real normalized pitch/yaw inputs. The failure did NOT originate in
+  the new `SpaceState.cpp` safe-course direction patch.
+- ROOT CAUSE verified by reading control code and independently reproducing
+  the discrete 1D yaw physics: the test omitted
+  `AutopilotControlRequest.terminalAttitudeHold`, so a PURE STATIONARY
+  HULL POSE manoeuvre was routed through moving velocity-course steering,
+  whose max 10-degree hull lead intentionally limits turning rate.
+  At 90 degrees, the reconstruction ended ~77.10 degrees after 8s;
+  with terminal attitude HOLD (full desired hull pose at zero velocity)
+  it ended ~89.98 degrees after 8s, overshoot <0.25 degrees. This
+  reproduces input-hold ramp, angular damping, the 0.5s attitude servo,
+  and online angular-authority estimation. It is a calculated local
+  result; NOT a Windows CTest result.
+- Commit `90833c16` changes ONLY
+  `tests/navigation_runtime/ClientRouteAutopilotTests.cpp`:
+  adds `request.terminalAttitudeHold = true;` in this stationary-hull
+  turn fixture, retaining 8s and the original stringent 0.25-degree
+  settlement AND overshoot requirements. This is a semantic test
+  correction, NOT an accommodation by weakening timing or thresholds.
+  The distinct ordinary MOVING velocity-course tests remain unchanged.
+  The real `AssistedAutopilot.h` and physical controller remain untouched.
+- This repair is **SOURCE ONLY / Windows test pending**.
+  NEXT run only `client_route_autopilot_tests` with build-gated CTest.
+  If it passes, the other four focused planner tests were already green
+  in the prior Windows 4/5 run. If another failure emerges, diagnose
+  that specific contract and avoid blind threshold chasing.
+  The real priority remains an in-game blocked-entry tunnel check at
+  rest and ~100m/s, comparing escape vector, first tunnel tangent and
+  live late-bind entry. Native gameplay not yet accepted.
+- Source history: Assisted damped inner-loop entered main on Oct 22,
+  and the current safe-course-to-planner fix `1bc9742f` changes ONLY
+  the initial tangent. Earlier sequential assertions were legacy;
+  do not infer a new physics regression from each now-reached test.
 
 ## Immediate next validation — blocked route entry, THEN general regression and gameplay
 
-**Priority now**: stop chasing sequential legacy CTest assertions. The existing safety-course, first-tangent, and late-entry binder tests passed. The larger `client_route_autopilot` fixture remains RED on an old 8-second 90-degree hull-settling expectation; retain that as an open item. First verify obstacle-escape tunnel geometry in the actual game, stationary and in motion. Then
-`preplanning_safety_course|route_planner_api|route_entry_binder|
-assisted_safe_course_executor_isolation|client_route_autopilot` CTests.
-The previous 3/5 is not full success. Native game blocked-start
-acceptance (0 and 100 m/s) is next, before broad test gate.
+**Priority now:** rebuild `client_route_autopilot_tests` and run its
+single native CTest after `90833c16`. If green, proceed to actual
+game obstacle escape and safe initial-tunnel course, stopped and at
+~100 m/s. Do not claim runtime acceptance based solely on CTests.
 
 
 - The current Windows native `ship_control_execution_gateway` CTest is

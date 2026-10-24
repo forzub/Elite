@@ -7684,6 +7684,30 @@ m_systemMapRenderer.render(
                         "THRUST AXIS"
                     )
                 );
+
+                // A working-axis sight alone cannot tell a human pilot where
+                // the inertial velocity is already going. During an emergency
+                // the HUD must show BOTH rays in the same real camera basis:
+                // amber = achievable zero-torque thrust, green V = actual
+                // hull-relative flight path in the matched local frame.
+                if(playerShip.renderReferenceFrame.valid)
+                {
+                    const glm::dvec3 localVelocity =
+                        playerShip.renderTransform.motion.localVelocityMps;
+                    if(std::isfinite(glm::length(localVelocity)) &&
+                       glm::length(localVelocity)>0.5)
+                    {
+                        const glm::dvec3 velocityWorld =
+                            playerShip.renderReferenceFrame.localToWorldVector(
+                                localVelocity);
+                        const glm::dvec3 velocityCamera=glm::dvec3(
+                            glm::dmat4(sightCamera.viewMatrix())*
+                            glm::dvec4(velocityWorld,0.0));
+                        m_flightVectorIndicatorRenderer.
+                            renderEmergencyVelocityVector(
+                                vp,velocityCamera,sightCamera.fov());
+                    }
+                }
             }
 
             game::presentation::FlightInstrumentTextProfile textProfile;

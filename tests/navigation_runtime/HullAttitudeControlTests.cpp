@@ -198,6 +198,38 @@ void testAssistedRollConvergesWithoutLimitCycle()
             "healthy Assisted roll did not settle on a constant tunnel phase");
 }
 
+void testAssistedRollTracksMovingTunnelWithoutRocking()
+{
+    auto r=base();
+    r.rollResponseSeconds=0.50;
+    r.rollAngularAccelerationAuthorityRadPerSec2=2.451663;
+    constexpr double tunnelRollRate=0.08;
+    double signedError=0.16;
+    double hullRollRate=0.0;
+    double peakCommand=0.0;
+
+    // A station/tunnel can rotate continuously. The outer two-point
+    // guidance returns tunnel phase rate PLUS pose-error correction.
+    // A healthy craft must catch that frame without +/- full roll pulses.
+    for(int tick=0;tick<500;++tick)
+    {
+        r.rollErrorRad=signedError;
+        r.rollRateRadPerSec=hullRollRate;
+        r.desiredRollRateRadPerSec=tunnelRollRate+signedError/1.22;
+        const auto output=Control::evaluate(r);
+        require(output.valid,"moving-tunnel roll command invalid");
+        peakCommand=std::max(peakCommand,std::abs(output.rollInput));
+        hullRollRate+=r.rollAngularAccelerationAuthorityRadPerSec2*
+            output.rollInput*r.deltaSeconds;
+        signedError+=(tunnelRollRate-hullRollRate)*r.deltaSeconds;
+    }
+    require(peakCommand<0.5,
+            "healthy Assisted moving-tunnel roll demanded full power");
+    require(std::abs(signedError)<0.002 &&
+            std::abs(hullRollRate-tunnelRollRate)<0.002,
+            "healthy Assisted did not match moving tunnel roll phase/rate");
+}
+
 void testResidualYawRateDoesNotCreateRoll()
 {
     auto r = base();
@@ -229,6 +261,7 @@ int main()
         testDesiredRollRateTracksFrameWithoutWaitingForAngleKick();
         testAssistedRollFollowsTunnelRateWithoutBangBang();
         testAssistedRollConvergesWithoutLimitCycle();
+        testAssistedRollTracksMovingTunnelWithoutRocking();
 
         std::cout
             << "HULL ATTITUDE CONTROL TESTS: PASS\n"

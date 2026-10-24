@@ -455,6 +455,37 @@ adopted. Conclusions:
   in an actual blocked-flight run; unit-level selector/binder PASS alone
   is not the final evidence.
 
+## 2026-10-25 Windows targeted planner gate: 4/5, remaining off-corridor capture test
+
+- User rebuilt/reran five tests after `c3ef02a3` and `a097940f`.
+  PASS: `preplanning_safety_course`,
+  `assisted_safe_course_executor_isolation`, `route_entry_binder`,
+  `route_planner_api`. FAIL: `client_route_autopilot` on
+  `parallel-offset state did not strongly rotate back toward center`.
+  The earlier misaligned-nose test now PASSED; the failure happened later.
+- Checked actual source: that off-corridor scenario puts the craft at
+  (+100,0,+80) m on a +X route with velocity and hull forward +X.
+  It already successfully requires large cross-track error, nonzero
+  signed capture-angle and desired capture angular rate, and navigation
+  course error >0.05. Old assertion additionally demanded normalized
+  pitch/yaw input magnitude >0.5, contradicting the accepted
+  `AssistedAutopilot` 10-degree MAX steering lead and 0.50-second
+  `HullAttitudeControl::dampedPlanarInput`. This does not prove failure
+  to steer; an instantaneous high-torque threshold isn't valid evidence.
+- `4f214ea4` changes only `ClientRouteAutopilotTests.cpp`:
+  require active emergency course recovery; require POSITIVE yaw
+  (body +Y turns +X forward toward -Z/route center from +Z offset);
+  require physically damped, nonsaturated pitch/yaw magnitude <0.5;
+  require no bypass via direct navigation acceleration/velocity.
+  This checks steering *direction*, *control-law bound*, and authority
+  provenance instead of merely weakening a numeric threshold.
+- **SOURCE ONLY until next Windows run.** First rebuild and run
+  `client_route_autopilot_tests` on current `main`; if PASS, repeat
+  the same five targeted checks before real-game Assisted blocked-route
+  visual validation at rest and 100m/s. Do not claim full route/game
+  acceptance from module tests; user-observed tunnel direction remains
+  pending. No navigation/flight-law source was changed by this test fix.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -491,8 +522,7 @@ adopted. Conclusions:
 
 ## Immediate next validation — blocked route entry, THEN general regression and gameplay
 
-**Priority now**: rebuild `route_planner_api_tests` and
-`client_route_autopilot_tests` then repeat the five targeted
+**Priority now**: rebuild `client_route_autopilot_tests` then repeat the five targeted
 `preplanning_safety_course|route_planner_api|route_entry_binder|
 assisted_safe_course_executor_isolation|client_route_autopilot` CTests.
 The previous 3/5 is not full success. Native game blocked-start

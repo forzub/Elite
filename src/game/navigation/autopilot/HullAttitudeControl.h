@@ -40,9 +40,10 @@ public:
         double rollAngularAccelerationAuthorityRadPerSec2 = 0.0;
         double deltaSeconds = 0.0;
 
-        // Optional Assisted-only inner attitude servo. Zero preserves the
-        // existing predictive controller for all other callers / Newtonian.
+        // Optional Assisted-only inner attitude servos. Zero preserves the
+        // previous predictive controller for other callers / Newtonian.
         double pitchYawResponseSeconds = 0.0;
+        double rollResponseSeconds = 0.0;
     };
 
     struct Result
@@ -86,14 +87,23 @@ public:
                   request.deltaSeconds
               );
 
-        out.rollInput = predictiveAxisInput(
-            request.rollErrorRad,
-            request.rollRateRadPerSec,
-            request.desiredRollRateRadPerSec,
-            request.maxRollRateRadPerSec,
-            request.rollAngularAccelerationAuthorityRadPerSec2,
-            request.deltaSeconds
-        );
+        out.rollInput = request.rollResponseSeconds > 0.0
+            ? dampedRollInput(
+                  request.rollErrorRad,
+                  request.rollRateRadPerSec,
+                  request.desiredRollRateRadPerSec,
+                  request.maxRollRateRadPerSec,
+                  request.rollAngularAccelerationAuthorityRadPerSec2,
+                  request.rollResponseSeconds
+              )
+            : predictiveAxisInput(
+                  request.rollErrorRad,
+                  request.rollRateRadPerSec,
+                  request.desiredRollRateRadPerSec,
+                  request.maxRollRateRadPerSec,
+                  request.rollAngularAccelerationAuthorityRadPerSec2,
+                  request.deltaSeconds
+              );
 
         out.valid =
             finiteVec(out.pitchYawInput) &&
@@ -260,6 +270,40 @@ private:
         if (magnitude > 1.0)
             requested /= magnitude;
         return requested;
+    }
+
+    [[nodiscard]] static double dampedRollInput(
+        double error,
+        double rate,
+        double desiredRate,
+        double maxRate,
+        double authority,
+        double responseSeconds
+    ) noexcept
+    {
+        if (!std::isfinite(error) || !std::isfinite(rate) ||
+            !std::isfinite(desiredRate) || !std::isfinite(maxRate) ||
+            !std::isfinite(authority) || authority <= 1.0e-9 ||
+            !std::isfinite(responseSeconds) ||
+            responseSeconds <= 1.0e-6)
+            return 0.0;
+
+        // HullTunnelRollGuidance ALREADY includes the signed roll-angle
+        // error and the moving tunnel phase in desiredRate. Do not turn that
+        // rate into a one-tick velocity change (1/dt bang-bang), and do not
+        // add its angular error a second time.
+        //
+        // For callers supplying only a pose target, derive a bounded rate.
+        const double rateLimit=std::max(0.0,maxRate);
+        const double targetRate=std::clamp(
+            std::abs(desiredRate)>1.0e-9
+                ? desiredRate
+                : error/responseSeconds,
+            -rateLimit,rateLimit);
+        const double requestedAcceleration=
+            (targetRate-rate)/responseSeconds;
+        return std::clamp(
+            requestedAcceleration/authority,-1.0,1.0);
     }
 
     [[nodiscard]] static double predictiveAxisInput(

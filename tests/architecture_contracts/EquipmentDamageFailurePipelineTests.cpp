@@ -1,6 +1,7 @@
 #include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/equipment/engine/EngineUnit.h"
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/simulation/ObjectModuleSnapshotBuilder.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
@@ -658,6 +659,28 @@ void testDiagnosticFaultCanToggleWithoutRepairingRealDamage()
             "identical second restore unexpectedly changed revision");
 }
 
+void testDeadForeBankDoesNotCreateLegacyReverseThrust()
+{
+    auto d=descriptor();
+    world::modules::ObjectModuleRuntime runtime;
+    runtime.init(d.modules);
+    require(runtime.injectEquipmentFailure("fore_left",1.0) &&
+            runtime.injectEquipmentFailure("fore_right",1.0),
+            "could not fail the real two-motor fore bank");
+    const auto capability=game::ship::capability::buildShipCapability(
+        d,runtime);
+    require(capability.valid,
+            "fore engine failure incorrectly invalidated entire ship");
+    const auto& physics=capability.effectivePhysics;
+    require(!physics.reverseMainEngineAvailable &&
+            near(physics.reverseMainEngineAccelerationMps2,0.0) &&
+            near(game::ship::reverseMainAccelerationLimitMps2(physics),0.0),
+            "dead installed fore bank acquired free full reverse thrust");
+    require(physics.forwardMainEngineAvailable &&
+            game::ship::forwardMainAccelerationLimitMps2(physics)>0.0,
+            "fore-only damage disabled healthy aft propulsion");
+}
+
 void testEngineOutWorkingAxisIsTorqueNeutral()
 {
     auto d=descriptor();
@@ -709,6 +732,7 @@ int main()
         testInjectedInternalEquipmentFault();
         testDiagnosticFaultCanToggleWithoutRepairingRealDamage();
         testEngineOutWorkingAxisIsTorqueNeutral();
+        testDeadForeBankDoesNotCreateLegacyReverseThrust();
         testCinematicEngineImpactShockAndRecovery();
         testTvcFailurePreservesPartialAxialThrust();
         testThrustFailurePreservesInstalledModule();

@@ -475,7 +475,7 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
     );
 }
 
-void testAlignedVelocityIgnoresMisalignedNose()
+void testAlignedVelocityKeepsCourseIndependentWhileAligningActuator()
 {
     const auto route = plan();
     const auto vehicle = params();
@@ -515,10 +515,11 @@ void testAlignedVelocityIgnoresMisalignedNose()
             glm::cross(noseWrong.forwardMap, noseWrong.upMap)
         );
 
-    // Velocity is already exactly on the authored tangent. A navigation
-    // controller that still uses hull forward as its reference will try to
-    // "correct" this deliberately wrong nose. Velocity-course guidance must
-    // leave pitch/yaw alone.
+    // The flight-path COURSE is already aligned and must stay independent
+    // of the nose. But healthy Assisted thrust follows the hull: its inner
+    // attitude controller must align the PHYSICAL working axis to the
+    // existing velocity ray, otherwise subsequent thrust bends the ship off
+    // course. This hull correction is not a navigation course error.
     const auto output = Autopilot::update(
         state,
         noseWrong,
@@ -534,11 +535,25 @@ void testAlignedVelocityIgnoresMisalignedNose()
         "aligned velocity acquired a false navigation course error from hull nose"
     );
     require(
+        output.hullForwardErrorRad > 0.3,
+        "misaligned hull was incorrectly treated as an aligned actuator"
+    );
+    require(
         std::hypot(
             output.control.pitchInput,
             output.control.yawInput
-        ) < 1.0e-3,
-        "navigation tried to align hull nose although velocity was already on course"
+        ) > 1.0e-3,
+        "Assisted failed to realign its physical thrust axis to a correct velocity course"
+    );
+    require(
+        !output.control.navigationAccelerationDemandValid &&
+        !output.control.navigationVelocityTargetValid,
+        "hull actuator alignment escaped the installed-physics control path"
+    );
+    require(
+        std::abs(output.control.strafeInput) < 1.0e-6 &&
+        std::abs(output.control.liftInput) < 1.0e-6,
+        "hull alignment invented lateral translation instead of rotating"
     );
 }
 
@@ -2785,7 +2800,7 @@ int main()
         testSpatialTurnUsesVelocityCourseRate();
         testInCorridorCrossTrackDoesNotReplaceAuthoredCourse();
         testAssistedVelocityDriftDoesNotBendAuthoredTangent();
-        testAlignedVelocityIgnoresMisalignedNose();
+        testAlignedVelocityKeepsCourseIndependentWhileAligningActuator();
         testParallelOffsetActivelyCapturesCorridorCenter();
         testCruiseRollAlignsToDockBottomReference();
         testVelocityCourseTracksAuthoredTunnelTangent();
@@ -2830,7 +2845,7 @@ int main()
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
             << " - in-corridor cross-track does not replace authored tangent\n"
             << " - Assisted velocity drift corrects velocity back to unchanged authored tangent\n"
-            << " - aligned velocity ignores a deliberately misaligned hull nose\n"
+            << " - aligned velocity stays the navigation course while the physical hull corrects attitude\n"
             << " - final guidance frame is a stopped alignment HOLD\n"
             << " - accepted route executes as one continuous program across storage pages\n"
             << " - planner turn-speed constraints survive into accepted trajectory\n"

@@ -165,6 +165,35 @@ adopted. Conclusions:
   and attitude tests passed on the previous revision, not re-run here.
   **In-game acceptance is still outstanding.**
 
+## 2026-10-24 in-game ship-control oracle runaway (new source fix)
+
+- User supplied `ship_control_oracle_matrix(4).log`,
+  `elite_attitude_jitter(10).csv` and
+  `elite_equipment_failures.log`. In the first Assisted-I model,
+  steps 0..12 passed (forward, coast, strafe/release, lift/release,
+  pitch/yaw/roll and release); step 13 `family_vectoring_probe`
+  held `strafeInput=1` indefinitely. Body-right speed reached
+  ~500 m/s; no step-13 PASS or transition to another model.
+- Confirmed oracle bug: its Assisted step 13 expected the obsolete
+  intermediate `assistedRightAccelerationMps2` to be nonzero, while
+  the installed physical executor delivers the lateral demand through
+  `mainEngineAccelerationMps2` and zeroes the intermediate assisted
+  channel. Logged executed right acceleration was positive.
+- `c3937c04` (SOURCE ONLY): step 13 checks EXECUTED
+  `mainRightAccelerationMps2>=0.10` and a +1m/s body-right
+  velocity increment. If step 13 is still unresolved at 100m/s,
+  log FAIL and stop commands instead of unlimited acceleration.
+  No physical law/engine allocator/production control changed.
+- The attitude CSV columns labeled `linear_body_ax/ay/az` contain
+  WORLD vector `motion.mainEngineAccelerationMps2`, a misleading
+  diagnostic header, not proof of swapped body axes. The separate
+  `elite_equipment_failures.log` shows toggles/restores only.
+- NEW Windows gate needed: pull main, run `bash build_mingw64.sh`,
+  launch `./build/EliteGame.exe --diagnostic-scenario ship-control`
+  and inspect new oracle log. This result is NOT yet Windows-built
+  or gameplay validated. Previous power-budget CTest success remains
+  limited to its earlier revision.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -199,7 +228,17 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation: gameplay acceptance on latest green build
+## Immediate next validation: oracle fix Windows gate, THEN normal game
+
+The reactor budget patch already passed its focused Windows CTest.
+NEW oracle fix `c3937c04` is source-only and requires Windows
+rebuild and re-run. On the six-model ship-control oracle, Assisted-I
+step 13 should now pass promptly and advance to the next model.
+If its predicate still cannot pass, it must log FAIL and stop issuing
+commands at 100m/s. This diagnostic result is distinct from actual
+normal-flight acceptance.
+
+## Normal gameplay plan (still unverified)
 
 The post-change native Windows build and focused
 `ship_control_execution_gateway` CTest are GREEN.

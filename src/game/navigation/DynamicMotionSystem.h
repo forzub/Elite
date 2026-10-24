@@ -75,6 +75,17 @@ public:
         const glm::dvec3& targetVelocitySystemMps
     );
 
+    // Requested-only speed-envelope projection. The INSTALLED actuator
+    // gateway uses this before motor allocation; the legacy non-plant
+    // motion path continues to use the same rule during integration.
+    // Both vectors must be expressed in the same travel-frame basis.
+    static glm::dvec3 limitRequestedPropulsionToControlledSpeed(
+        const glm::dvec3& currentVelocity,
+        const glm::dvec3& requestedAcceleration,
+        double controlledSpeedLimit,
+        double dt
+    );
+
     static void updateLocalFrameMotion(
         DynamicMotionState& motion,
         world::coordinates::WorldPosition& worldPosition,

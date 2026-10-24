@@ -355,8 +355,14 @@ void testRejectedAllocatorCannotMoveShipOnRequestedAcceleration()
             "invalid motor allocator invented rigid-body torque");
     // Requests remain observable for diagnostics, but may not enter
     // the actual fixed-step displacement after allocator rejection.
+    // In Assisted manual forward-input mode the keyed translation goes to
+    // the common vectoring demand (requestedAssistedStabilization), while
+    // the longitudinal speed servo yields that axis and can request zero.
+    // The rejected solver must clear BOTH executed channels regardless of
+    // which channel held the original control request.
     require(glm::length(
-                transform.motion.requestedMainEngineAccelerationMps2)>1.0e-6,
+                transform.motion.requestedMainEngineAccelerationMps2+
+                transform.motion.requestedAssistedStabilizationAccelerationMps2)>1.0e-6,
             "invalid motor allocator test lacked a real input request");
     require(Gateway::propagateHubTacticalTranslation(
                 transform,physics,0.02),

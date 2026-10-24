@@ -351,86 +351,18 @@ adopted. Conclusions:
   failure: `ctest` ran the **previous binary**, so its old
   `[PHYSICAL_IMPULSE_MISMATCH] 3.57749 m/s` is STALE output,
   not evidence that the new source implementation fails.
-- Next native check must stop on failed compilation, e.g.
-  `cmake --build ... --target ship_control_execution_gateway_tests -j 8 && ctest ... -R '^ship_control_execution_gateway
-
-- Fore-only propulsion (`aft` completely dead, `fore` alive) is
-  inconsistent: manual `DynamicMotionSystem::applyLocalFrameInput` chooses
-  -nose as travel forward, while `FlightControlProfile`/MotherComputer
-  demand safe AFT working-forward thrust, currently reject this doctrine.
-  Needs coherent signed forward/backward banks AND flip-and-burn control;
-  an isolated sign flip or changing axis label is unsafe.
-- Full typed Command → Request → Executed separation. No motion integration
-  of unexecuted demand under ANY invalid allocator. Existing speed-envelope
-  post-processing still alters physically delivered main acceleration;
-  must decide whether to enforce speed BEFORE motor execution, without
-  regressing controlled-speed gameplay or Newtonian RCS behavior.
-- `ShipCapabilitySnapshot` already has signed axes, but legacy adapters
-  collapse some axes to scalar `strafeAccel/angularAccel`, losing available
-  channels under asymmetric failure. Do not scrap accepted healthy
-  Assisted controls; introduce signed per-axis controllers incrementally.
-- `ShipCore::capabilities()` caches construction/actuator/mass revisions
-  but live engine power and temperature can affect actual execution at
-  higher frequency. `controlAuthorityTelemetry()` currently derives
-  signed Assisted motor programs; reactor on/off gate exists, partial
-  per-reactor MW/brownout/slew envelope needs grounded design, not a
-  second power model.
-- Conservative motor program cache `matches()` uses 0.5%-point motor
-  capacity and 0.005rad cone tolerances; need measure planner-vs-delivered
-  accuracy before replacing with per-tick heavy inversion.
-- Do not move per-reactor source-of-truth into a second owner, or delete
-  builders/SharedShipPhysics on the assumption that all are duplicates.
-  Source-executable tests and preserved local flight experience outrank
-  architectural rebranding.
-- UI/HUD telemetry `ShipCoreStatus`, `EngineLiveTelemetry` and current
-  motor capability are distinct scopes; one same-tick factual provenance
-  would be useful but should not be a parallel simulation or new owner.
-
-## Immediate next validation: visual completion signal, THEN normal game
-
-The reactor budget patch passed focused Windows CTest; the
-corrected oracle also passed all 84 steps across all six models in
-the user's native game. NEW result-dialog patch `17339f8c` is
-source-only and awaits Windows rebuild to verify the one-time
-foreground PASSED/FAILED window. Do not reclassify the 84-step
-oracle as damaged-flight, full autopilot or reactor-off acceptance.
-
-## Normal gameplay plan (still unverified)
-
-The post-change native Windows build and focused
-`ship_control_execution_gateway` CTest are GREEN.
-The three-test gate remains recorded separately for the prior revision.
-Next run gameplay on the newly built client/server: healthy Assisted-I ordinary
-flight and yaw/pitch/roll (no regression); simulated single aft engine
-fault with Ctrl+Alt+Shift+F, working-thrust ray, reversal and route capture;
-reactors off/restart with Ctrl+Alt+Shift+I (no free acceleration when power
-unavailable); no acceleration on missing motor/invalid plant. If a failure
-occurs, collect targeted D:/tmp logs and compare actual vs requested.
-Do not begin fore-only or broad capability migration before this gate.
-
-Commands for repeating the targeted Windows gate after a later code change:
-
-```bash
-cd /d/__elite/work
-git pull --ff-only origin main
-bash build_mingw64.sh
-cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
-cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
-cmake --build build/tests/architecture_contracts --target equipment_damage_failure_pipeline_tests -j 8
-cmake --build build/tests/navigation_runtime --target ship_control_execution_gateway_tests hull_attitude_control_tests -j 8
-ctest --test-dir build/tests/architecture_contracts -R '^equipment_damage_failure_pipeline$' --output-on-failure
-ctest --test-dir build/tests/navigation_runtime -R '^(ship_control_execution_gateway|hull_attitude_control)$' --output-on-failure
-```
-
-The commands above are repeatability instructions for later source
-changes; the current focused power-budget safety gate already PASSED.
-Keep any gameplay mismatch logs in `D:/tmp`. Do not label the gameplay
-checks as passed until the user reports their results; then proceed
-incrementally to Command/Request/Executed and fore-only/signed-capability
-work without regressing healthy flight.
- --output-on-failure`.
-  The unrelated `unused coolant`/`unused wasteMW` warnings remain
-  unchanged; do not change engine thermodynamics just to mute them.
+- **Windows native gateway gate GREEN (user-reported, 2026-10-24):**
+  after include correction `b9c87705`, the user rebuilt and reports
+  all checks green. `ship_control_execution_gateway` is now PASS,
+  including reactor-off, half-power, rejected allocator and the
+  near-speed-limit actual impulse equality regression. No full user log
+  was provided in this message, so record this as user-confirmed
+  targeted gate rather than a full suite or gameplay PASS.
+- The previous `[PHYSICAL_IMPULSE_MISMATCH]` was before source correction;
+  the later duplicate output was from the old binary after failed build.
+  The latest confirmed native test resolves that specific regression.
+  No additional main-propulsion code change is required without new
+  evidence.
 
 ## Important remaining architecture work (do not rush)
 
@@ -440,11 +372,11 @@ work without regressing healthy flight.
   demand safe AFT working-forward thrust, currently reject this doctrine.
   Needs coherent signed forward/backward banks AND flip-and-burn control;
   an isolated sign flip or changing axis label is unsafe.
-- Full typed Command → Request → Executed separation. No motion integration
-  of unexecuted demand under ANY invalid allocator. Existing speed-envelope
-  post-processing still alters physically delivered main acceleration;
-  must decide whether to enforce speed BEFORE motor execution, without
-  regressing controlled-speed gameplay or Newtonian RCS behavior.
+- Command → Request → Executed still needs end-to-end inspection in
+  damaged/reverse and ordinary gameplay paths. The installed MAIN-engine
+  post-execution speed clamp was fixed and passed its targeted Windows
+  regression; legacy/non-installed motion and low-speed BrakeToStop/RCS
+  channels still require separate physical audit.
 - `ShipCapabilitySnapshot` already has signed axes, but legacy adapters
   collapse some axes to scalar `strafeAccel/angularAccel`, losing available
   channels under asymmetric failure. Do not scrap accepted healthy
@@ -466,45 +398,35 @@ work without regressing healthy flight.
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation: visual completion signal, THEN normal game
+## Immediate next validation — targeted regression suite, THEN real gameplay
 
-The reactor budget patch passed focused Windows CTest; the
-corrected oracle also passed all 84 steps across all six models in
-the user's native game. NEW result-dialog patch `17339f8c` is
-source-only and awaits Windows rebuild to verify the one-time
-foreground PASSED/FAILED window. Do not reclassify the 84-step
-oracle as damaged-flight, full autopilot or reactor-off acceptance.
-
-## Normal gameplay plan (still unverified)
-
-The post-change native Windows build and focused
-`ship_control_execution_gateway` CTest are GREEN.
-The three-test gate remains recorded separately for the prior revision.
-Next run gameplay on the newly built client/server: healthy Assisted-I ordinary
-flight and yaw/pitch/roll (no regression); simulated single aft engine
-fault with Ctrl+Alt+Shift+F, working-thrust ray, reversal and route capture;
-reactors off/restart with Ctrl+Alt+Shift+I (no free acceleration when power
-unavailable); no acceleration on missing motor/invalid plant. If a failure
-occurs, collect targeted D:/tmp logs and compare actual vs requested.
-Do not begin fore-only or broad capability migration before this gate.
-
-Commands for repeating the targeted Windows gate after a later code change:
-
-```bash
-cd /d/__elite/work
-git pull --ff-only origin main
-bash build_mingw64.sh
-cmake -S tests/architecture_contracts -B build/tests/architecture_contracts -G Ninja
-cmake -S tests/navigation_runtime -B build/tests/navigation_runtime -G Ninja
-cmake --build build/tests/architecture_contracts --target equipment_damage_failure_pipeline_tests -j 8
-cmake --build build/tests/navigation_runtime --target ship_control_execution_gateway_tests hull_attitude_control_tests -j 8
-ctest --test-dir build/tests/architecture_contracts -R '^equipment_damage_failure_pipeline$' --output-on-failure
-ctest --test-dir build/tests/navigation_runtime -R '^(ship_control_execution_gateway|hull_attitude_control)$' --output-on-failure
-```
-
-The commands above are repeatability instructions for later source
-changes; the current focused power-budget safety gate already PASSED.
-Keep any gameplay mismatch logs in `D:/tmp`. Do not label the gameplay
-checks as passed until the user reports their results; then proceed
-incrementally to Command/Request/Executed and fore-only/signed-capability
-work without regressing healthy flight.
+- The current Windows native `ship_control_execution_gateway` CTest is
+  **PASS (user-reported)**. The old six-model in-game oracle was previously
+  **84/84 PASS** on its separate older gate. Neither proves the entire
+  damage/autopilot/reactor gameplay.
+- NEXT: build and run existing focused regression targets in the
+  `tests/navigation_runtime` suite (without inventing new tests):
+  `ship_control_behavior_oracle`,
+  `ship_physical_actuator_plant`,
+  `ship_propulsion_state`,
+  `newtonian_rcs_physical`,
+  `working_thrust_axis_analysis`,
+  `ship_mobility_assessment`,
+  `assisted_authority_contract`,
+  `hull_attitude_control`,
+  `navigation_execution_replan_policy`,
+  `client_route_autopilot`,
+  `engine_thrust_hud_presentation`,
+  `assisted_layout_flight_matrix`,
+  `ship_physical_corridor_matrix`.
+  Run the existing `equipment_damage_failure_pipeline` architecture
+  contract test as the hardware/damage companion.
+- Then native build `EliteGame.exe` and `EliteServer.exe`, and actually
+  fly: healthy Assisted-I response; single-aft-engine outage with
+  Ctrl+Alt+Shift+F and safe working-thrust ray; restart/off reactor
+  Ctrl+Alt+Shift+I and no phantom acceleration; RCS and route-following
+  while degraded. Collect `D:/tmp` logs if anything fails. Do not
+  assert gameplay PASS until the user observes it.
+- Do not spend user time verifying the optional PASSED/FAILED dialog.
+  Do not begin unrelated fore-only or large capability migration before
+  this flight gate. Avoid tests-for-tests and parallel state files.

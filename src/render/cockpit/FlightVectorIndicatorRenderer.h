@@ -36,6 +36,15 @@ public:
         const std::string& localizedLabel
     );
 
+    // Flight-path marker: measured translational course, NOT the motor axis.
+    // Essential when an engine-out pilot must distinguish "where I push"
+    // from "where I am already moving".
+    void renderEmergencyVelocityVector(
+        const Viewport& viewport,
+        const glm::dvec3& velocityCamera,
+        float verticalFovDegrees
+    );
+
     void render(
         const game::presentation::FlightVectorIndicatorPresentation& presentation,
         const Viewport& viewport

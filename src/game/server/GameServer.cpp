@@ -765,8 +765,9 @@ void GameServer::update(double dt)
                     }
                     if(slot<0)
                     {
-                        // Repeat the chord to fail successive installed main
-                        // engines. All IDs are server-resolved, not client IDs.
+                        // First F selects one healthy installed main engine.
+                        // The next F restores THAT same test fault before a
+                        // different engine may be tested. No client-side ID.
                         for(std::size_t i=0;i<ids.size() &&
                             i<slots.size();++i)
                         {

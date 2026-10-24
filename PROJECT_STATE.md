@@ -245,6 +245,10 @@ adopted. Conclusions:
   - `948b2724`: invalid allocator request must not move velocity OR
     position during physical propagation (previous test checked only
     acceleration/torque fields).
+- `46c9a93b`: if the speed-boundary invariant is violated, the
+  focused test prints `[PHYSICAL_IMPULSE_MISMATCH]` with measured
+  initial/final speed, executed/applied delta-v, and numeric error;
+  this is diagnostic output only, not a physical fix.
 - **These NEW tests have NOT been compiled/run on Windows.** Earlier
   84/84 in-game PASS is from prior code and only proves the basic
   healthy six-model control matrix.

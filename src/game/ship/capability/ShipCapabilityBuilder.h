@@ -537,6 +537,11 @@ inline void applyMountedEngineAxialAuthority(
     if (foundFore)
         capability.effectivePhysics.reverseMainEngineAccelerationMps2 =
             static_cast<float>(foreThrustNewtons / massKg);
+    // A dead installed fore bank is NOT an absent legacy descriptor.
+    // Otherwise ShipDynamics maps configured acceleration 0 to the entire
+    // crew-load envelope while reverseMainEngineAvailable stays true.
+    if (foundFore && foreThrustNewtons<=1.0e-9)
+        capability.effectivePhysics.reverseMainEngineAvailable=false;
     // Newtonian reverse RCS remains independent; never fabricate a fore main.
     capability.longitudinalAccelerationMps2 = {
         game::ship::forwardMainAccelerationLimitMps2(

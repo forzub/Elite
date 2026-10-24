@@ -454,11 +454,11 @@ applyEngineEmitterExposure(
         (1.0 - finiteClamp01(operating.emitter.damage.wear01));
 }
 
-// Quasi-steady thermal protection using the current coolant boundary.
-// A damaged annulus cannot be replaced by an imaginary cooling system.
-// This is independent from mechanical thrust and gimbal damage. For real
-// transient thermal abuse (emergency override), the existing temperature
-// integrator continues to calculate accumulated thermal damage.
+// Quasi-steady thrust ceiling using the EXACT propulsion-pad heat sink
+// that the temperature integrator uses. A damaged annulus loses physical
+// pad area; there is no secondary coolant or Stefan-Boltzmann channel.
+// This is independent from mechanical thrust and gimbal damage.
+// The thermal integrator separately records any transient overheating.
 [[nodiscard]] inline double safeEmitterThrustFraction01(
     const EngineUnitDescriptor& descriptor,
     const EngineUnitEffectiveState& effective,
@@ -481,23 +481,23 @@ applyEngineEmitterExposure(
     if (wastePerHealthyThrustMW <= 0.0)
         return availability;
 
-    const double directRadiationMW = ratedThermalEmitterPowerMW(
-        descriptor, effectiveEmitterArea01(operating)
+    // Evaluate rated pad capacity at the SAME design temperature as
+    // advanceEngineOperatingState(). The protection-band interpolation
+    // below controls the transition toward this ceiling. Do not ramp pad
+    // capacity a second time using currentTemperatureK.
+    const double area=game::physics::thermal::annulusAreaM2(
+        descriptor.thermalEmitter.outerDiameterM,
+        descriptor.thermalEmitter.apertureDiameterM
     );
-    const double coolantK =
-        std::isfinite(operating.coolantTemperatureK) &&
-        operating.coolantTemperatureK > 0.0
-            ? operating.coolantTemperatureK
-            : descriptor.nominalCoolantTemperatureK;
-    const double safeBulkMW = std::max(
-        0.0, descriptor.thermalConductanceMWperK *
-            (descriptor.safeOperatingTemperatureK - coolantK)
+    const double safePadMW=game::physics::thermal::propulsionPadCoolingMW(
+        area,effectiveEmitterArea01(operating),
+        descriptor.safeOperatingTemperatureK,
+        descriptor.nominalOperatingTemperatureK,
+        descriptor.safeOperatingTemperatureK
     );
-    const double steadySafe = std::min(
+    const double steadySafe=std::min(
         availability,
-        finiteClamp01(
-            (directRadiationMW + safeBulkMW) / wastePerHealthyThrustMW
-        )
+        finiteClamp01(safePadMW/wastePerHealthyThrustMW)
     );
 
     // Gameplay drama without heavy simulation: the damaged engine still

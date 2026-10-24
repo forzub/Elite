@@ -226,11 +226,18 @@ int main()
                 optimized.valid(),
                 "continuous Assisted production bridge did not produce a route"
             );
+            // The optimizer reports the selected preset before its READY
+            // marker. Assert the actual public diagnostics contract, not the
+            // obsolete adjacent words "continuous-assisted ready".
             require(
                 optimized.diagnosticSummary.find(
-                    "continuous-assisted ready"
-                ) != std::string::npos,
-                "continuous Assisted route did not expose optimizer diagnostics"
+                    "continuous-assisted preset=STANDARD ready curves="
+                ) != std::string::npos &&
+                optimized.diagnosticSummary.find(" execution_gates=") !=
+                    std::string::npos &&
+                optimized.diagnosticSummary.find(" evals=") !=
+                    std::string::npos,
+                "continuous Assisted route did not expose current optimizer diagnostics"
             );
 
             bool sawBezier = false;

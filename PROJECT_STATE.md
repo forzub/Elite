@@ -1,5 +1,5 @@
 # ELITE — LIVE PROJECT STATE
-Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
+Updated: 2026-10-24, Europe/Kyiv. Canonical branch: `main`.
 
 > This is the ONE authoritative, living continuation document for `forzub/Elite`.
 > Update it after every material finding, code correction or Windows/gameplay gate.
@@ -8,6 +8,67 @@ Updated: 2026-10-23, Europe/Kyiv. Canonical branch: `main`.
 > not competing current state files. Work on `main` only (no side branches).
 > Record real verification level: SOURCE, LOCAL TEST, WINDOWS TEST, GAMEPLAY.
 > User diagnostic outputs go under `D:/tmp`. No tests merely to add tests.
+
+## 2026-10-24 — Windows/gameplay roll acceptance, follow-up telemetry audit (LOG-VERIFIED)
+
+**User observation:** normal Assisted-I now flies smoothly; only slight corrections
+in authored turns. New user logs after `9cfcda52@main/clean`:
+`elite_attitude_jitter(8).csv` (HEALTHY 90.02 s, 4501 ticks),
+`elite_attitude_jitter(9).csv` and
+`01_Assisted_I_aft_failed_attitude(3).csv` (same emergency run, 90.02 s),
+`01_Assisted_I_aft_failed(3).log` (~120 s scenario),
+`elite_docking_planner(20261024-072609).log`,
+`elite_equipment_state_aft-failed(2).csv`,
+`assisted_damage_flights_summary(6).csv` (exit code 0).
+This confirms actual gameplay physics behavior, NOT a native CTest result.
+
+**Healthy vs prior healthy, quantitative:**
+- Healthy `axis_emergency=0`, installed 4 Assisted-I motors,
+  `program_valid=1`, `engine_sample_valid=1`,
+  `reactor_on=1` on all 4501 ticks.
+- Before (`elite_attitude_jitter(7).csv`, 50 s): roll pilot `|manual_roll|>0.95`
+  on 67.85% frames, max `|roll_rate|=0.5275 rad/s`,
+  p95 `|roll_rate|=0.4050 rad/s`, peak roll torque=37.24 MN·m.
+- Now: **0% full-scale roll**, max `|manual_roll|=0.0153`;
+  p95 `|roll_rate|=0.03537 rad/s` (11.4x lower),
+  max `|roll_rate|=0.03679 rad/s`,
+  peak roll torque=1.376 MN·m. Requested and actual roll accelerations
+  nearly identical (corr=0.9999), p99 absolute discrepancy ~0.0012 rad/s².
+  Roll remains low through 20–90 s: no recurring limit cycle.
+- Healthy yaw/pitch physical tracking remains sound: correlation requested
+  vs actual angular accelerations yaw=0.9711, pitch=0.9824, and
+  no opposite-sign requested/executed rate-acceleration demand above
+  0.02 rad/s². Initial acquisition has transient
+  `|manual_yaw|max=0.936` around t=10.54s,
+  `|yaw_rate|max=0.2837 rad/s` around t=10.68s; no yaw full saturation
+  and for t=20-40s p95 `|yaw_rate|≈0.007 rad/s`.
+  Route turns still command small finite corrections, which is expected.
+- Normal-speed overshoot still observed: peak 405.635 m/s around
+  t=20.30s vs ~400 m/s plateau (1.4%). Not a blocker, but don't call
+  speed regulation mathematically perfect.
+- This healthy file has attitude/motor telemetry, NOT pose-vs-route
+  cross-track/collision metrics; it cannot establish exact lateral path
+  error or final docking precision.
+
+**Emergency separate:** axis=49.50777°, one aft engine fails
+`internal_failure=1`, `live_available=0`, other equipment intact.
+Peak `|roll_rate|=0.5744 rad/s` and brief `manual_roll=+/-1`
+  near t~41s while adopting the route, but t=60-90s
+  p95 `|roll_rate|≈0.073 rad/s`, p95 `|manual_roll|≈0.019`.
+  This is transient emergency behavior, not evidence of remaining
+  healthy roll instability.
+  Stress report confirmed single safe-course correction, valid route
+  adopted at ~40.8 s after FOUR late-entry connector retries;
+  blue mandatory corridor both entered/exited, `failures=0`,
+  `emergency_stops=0`, `blue_entered=blue_exited=1`,
+  `status=COMPLETE` for the **scenario**, not proof of physical dock.
+  Early post-rebind cross-track peak 204.657m, max course error
+  33.483° near t=45s, later settles to cross-track 8.94m
+  and course error 0.373° on scenario termination, under blue corridor.
+  Planner valid continuous route (12 curves rebind); reactor remained on.
+  No source changes needed from this audit; preserve accepted normal flight.
+  If future changes needed: isolate initial damaged-route handoff
+  transient (cross-track ~205m) without retuning healthy controllers.
 
 ## 2026-10-24 — Healthy Assisted route roll limit cycle (SERVER LOG VERIFIED, SOURCE CORRECTED, WINDOWS GATE OPEN)
 

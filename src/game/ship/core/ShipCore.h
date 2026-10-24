@@ -340,7 +340,6 @@ private:
     // ───────────────
     ShipTransform                               m_transform;
     game::ship::state::ShipState                m_state;
-    ShipParams                                  m_params;
     // Authoritative Newtonian RCS demands and actual nozzle usage for the
     // next systems tick. The old control law expresses intent only; installed
     // nozzle forces/moments are applied by the 24-unit physical allocator.

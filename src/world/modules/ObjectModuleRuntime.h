@@ -43,6 +43,11 @@ public:
     bool injectEquipmentFailure(const std::string& moduleId,
                                 double targetDamage01);
 
+    // Revert only a temporary diagnostic internal fault. Never repair real
+    // impact, thermal, radiation, laser, wear or structural damage.
+    bool debugRestoreInternalFailure(
+        const std::string& moduleId, double previousInternalFailure01);
+
     // Collision/explosion on an ENGINE: persistent 1/3 of hit, reversible
     // field shock 2/3. The outcome is deterministic per module/hit and
     // settles after 1..3 sec; this does not repair mechanical structure.

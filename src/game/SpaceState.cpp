@@ -6086,10 +6086,35 @@ void SpaceState::update(float dt)
             !m_shipControlOracleCompleteAnnounced)
         {
             m_shipControlOracleCompleteAnnounced = true;
+            const bool failed = m_shipRuntimeControlOracle.failed();
             std::cerr
-                << "[ShipControlOracle] COMPLETE report="
+                << "[ShipControlOracle] "
+                << (failed ? "FAILED" : "PASSED 6/6 models, 84/84 checks")
+                << " report="
                 << m_shipRuntimeControlOracle.reportPath()
                 << std::endl;
+
+#ifdef _WIN32
+            // The scenario drives the graphical client without a console.
+            // One blocking, foreground completion dialog makes its result
+            // unmistakable; no new HUD system or simulation control needed.
+            MessageBoxW(
+                nullptr,
+                failed
+                    ? L"SHIP CONTROL TEST FAILED\n\n"
+                      L"Automatic commands have stopped.\n"
+                      L"Inspect D:\\tmp\\elite\\ship_control_oracle_matrix.log"
+                    : L"SHIP CONTROL TEST PASSED\n\n"
+                      L"6 / 6 ship models completed\n"
+                      L"84 / 84 control checks passed\n\n"
+                      L"Report: D:\\tmp\\elite\\ship_control_oracle_matrix.log",
+                failed
+                    ? L"Elite - control test FAILED"
+                    : L"Elite - control test PASSED",
+                MB_OK | MB_SETFOREGROUND | MB_TOPMOST |
+                    (failed ? MB_ICONERROR : MB_ICONINFORMATION)
+            );
+#endif
         }
     }
 

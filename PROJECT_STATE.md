@@ -194,6 +194,33 @@ adopted. Conclusions:
   or gameplay validated. Previous power-budget CTest success remains
   limited to its earlier revision.
 
+## 2026-10-24 six-model ship-control oracle PASSED (user Windows runtime)
+
+- User supplied `ship_control_oracle_matrix(5).log` and
+  `elite_attitude_jitter(20261024-174554).csv` after rebuilding oracle
+  fix `c3937c04`. **Real in-game six-model diagnostic COMPLETE: 6/6
+  models, 84/84 steps PASS, 0 FAIL.** Assisted I/Y/X and Newtonian I/Y/X
+  each completed all 14 steps, including their final vectoring probe.
+  Last log: `SUMMARY status=COMPLETE models=6`. Previous endless lateral
+  acceleration was an oracle predicate bug; this run did not reproduce it.
+- Telemetry CSV: 4501 records across 90s; max observed speed ~23.65m/s
+  (no 500m/s runaway). Higher yaw rate under Newtonian setup/spin during
+  the scripted probe does NOT validate or invalidate ordinary autopilot.
+  This proves the scripted basic control oracle, NOT damage handling,
+  reactor-off/restart acceptance or route-following under failures.
+- UX omission: completion previously only printed one stderr line while
+  the graphical client offered no visible end-of-test signal.
+  `17339f8c` adds one-shot topmost Win32 result dialog, announcing
+  PASSED (6 models/84 checks) or FAILED with report location, plus
+  explicit stderr PASSED/FAILED. This source change is **NOT yet
+  Windows-built/tested**. Existing log is from before dialog change.
+- Next user action if verifying dialog: pull main, build only required
+  native target(s) through `bash build_mingw64.sh`, launch
+  `./build/EliteGame.exe --diagnostic-scenario ship-control`.
+  At completion a modal Windows notification should appear. No changes
+  to engine control or physics in this UI fix. After confirming the
+  sign, proceed to ordinary damaged-flight/gameplay acceptance.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is
@@ -228,15 +255,14 @@ adopted. Conclusions:
   motor capability are distinct scopes; one same-tick factual provenance
   would be useful but should not be a parallel simulation or new owner.
 
-## Immediate next validation: oracle fix Windows gate, THEN normal game
+## Immediate next validation: visual completion signal, THEN normal game
 
-The reactor budget patch already passed its focused Windows CTest.
-NEW oracle fix `c3937c04` is source-only and requires Windows
-rebuild and re-run. On the six-model ship-control oracle, Assisted-I
-step 13 should now pass promptly and advance to the next model.
-If its predicate still cannot pass, it must log FAIL and stop issuing
-commands at 100m/s. This diagnostic result is distinct from actual
-normal-flight acceptance.
+The reactor budget patch passed focused Windows CTest; the
+corrected oracle also passed all 84 steps across all six models in
+the user's native game. NEW result-dialog patch `17339f8c` is
+source-only and awaits Windows rebuild to verify the one-time
+foreground PASSED/FAILED window. Do not reclassify the 84-step
+oracle as damaged-flight, full autopilot or reactor-off acceptance.
 
 ## Normal gameplay plan (still unverified)
 

@@ -923,6 +923,12 @@ void ShipCore::updateTranslationControl(float dt)
         // Fail closed without short-circuiting the separate Newtonian RCS
         // executor below. The control law's requests are NOT executed.
         auto& motion=m_transform.motion;
+        motion.requestedMainEngineAccelerationMps2=
+            motion.mainEngineAccelerationMps2;
+        motion.requestedManoeuvreAccelerationMps2=
+            motion.manoeuvreAccelerationMps2;
+        motion.requestedAssistedStabilizationAccelerationMps2=
+            motion.assistedStabilizationAccelerationMps2;
         motion.mainEngineAccelerationMps2={};
         motion.assistedStabilizationAccelerationMps2={};
         if (game::ship::plant::familyOf(

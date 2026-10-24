@@ -456,6 +456,79 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     }
 }
 
+void FlightVectorIndicatorRenderer::renderEmergencyVelocityVector(
+    const Viewport& viewport,
+    const glm::dvec3& velocityCamera,
+    float verticalFovDegrees
+)
+{
+    if(viewport.width<=0 || viewport.height<=0 ||
+       !std::isfinite(verticalFovDegrees) ||
+       verticalFovDegrees<=1.0f || verticalFovDegrees>=179.0f)
+        return;
+    const double length=glm::length(velocityCamera);
+    if(!std::isfinite(length) || length<=1.0e-9) return;
+    const glm::dvec3 axis=velocityCamera/length;
+    if(!m_program) init();
+    m_screenW=viewport.width;
+    m_screenH=viewport.height;
+
+    const glm::vec2 center(
+        viewport.width*0.5f,viewport.height*0.5f);
+    const double focal=
+        (static_cast<double>(viewport.height)*0.5)/
+        std::tan(static_cast<double>(verticalFovDegrees)*
+            (3.14159265358979323846/360.0));
+    const double depth=std::max(0.035,-axis.z);
+    glm::vec2 deviation(
+        static_cast<float>(focal*axis.x/depth),
+        static_cast<float>(-focal*axis.y/depth));
+    if(glm::length(deviation)<1.0f && axis.z>0.0)
+        deviation={0.0f,-static_cast<float>(focal)*3.0f};
+    const float margin=31.0f;
+    const float xMax=std::max(1.0f,center.x-margin);
+    const float yMax=std::max(1.0f,center.y-margin);
+    const float absX=std::abs(deviation.x);
+    const float absY=std::abs(deviation.y);
+    const float scale=std::min({
+        1.0f,absX>1.0e-5f?xMax/absX:1.0f,
+        absY>1.0e-5f?yMax/absY:1.0f
+    });
+    const glm::vec2 marker=center+deviation*scale;
+    const glm::vec4 green(0.24f,1.0f,0.54f,0.92f);
+    beginBatch();
+    if(scale<1.0f || axis.z>=0.0)
+    {
+        const float dl=glm::length(deviation);
+        const glm::vec2 dir=dl>1.0e-6f
+            ? deviation/dl : glm::vec2(0.0f,-1.0f);
+        const glm::vec2 transverse(-dir.y,dir.x);
+        emitLine(marker,marker-dir*16.0f+transverse*8.0f,2.0f,green);
+        emitLine(marker,marker-dir*16.0f-transverse*8.0f,2.0f,green);
+    }
+    else
+    {
+        // Distinct flight-path symbol. Amber thrust shows acceleration
+        // direction; green V shows where the ship is already traveling.
+        emitCircle(marker,7.0f,1.5f,green,28);
+        emitLine(marker+glm::vec2(-20.0f,0.0f),
+                 marker+glm::vec2(-9.0f,0.0f),1.8f,green);
+        emitLine(marker+glm::vec2(9.0f,0.0f),
+                 marker+glm::vec2(20.0f,0.0f),1.8f,green);
+        emitLine(marker+glm::vec2(0.0f,8.0f),
+                 marker+glm::vec2(0.0f,16.0f),1.8f,green);
+    }
+    flushBatch();
+    ensureFonts("assets/fonts/Roboto-Light.ttf",14,13);
+    if(m_secondaryFont)
+        drawCenteredText(*m_secondaryFont,"V",
+            std::clamp(marker.x+17.0f,12.0f,
+                       static_cast<float>(viewport.width)-12.0f),
+            std::clamp(marker.y-12.0f,12.0f,
+                       static_cast<float>(viewport.height)-12.0f),
+            glm::vec3(green));
+}
+
 void FlightVectorIndicatorRenderer::render(
     const game::presentation::FlightVectorIndicatorPresentation& presentation,
     const Viewport& viewport

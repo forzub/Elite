@@ -271,6 +271,26 @@ adopted. Conclusions:
   control law. Then run the existing broader focused suite. Normal
   damaged-flight gameplay remains unverified.
 
+## 2026-10-24 Windows gate feedback: first red was TEST FIXTURE
+
+- User's Windows build of `ship_control_execution_gateway_tests` succeeded,
+  but CTest failed at `invalid motor allocator test lacked a real input
+  request`; the speed-envelope assertion was NOT reached.
+- Root cause checked against `DynamicMotionSystem::applyLocalFrameInput`:
+  Assisted manual `forwardInput=1` is expressed through
+  `requestedAssistedStabilizationAccelerationMps2`, since the
+  longitudinal servo yields its main-forward axis on a held manual
+  input. The new test incorrectly required only
+  `requestedMainEngineAccelerationMps2` to be nonzero.
+- `fc260a7b` corrects the TEST assertion to consider the combined
+  requested main + assisted vectoring channels. The physical gameplay
+  control law, reactor handling and integrator remain unchanged.
+  **Not Windows-verified after this fix.**
+- Re-run just `ship_control_execution_gateway` before broader suite.
+  Expect any next red to report its real assertion; if
+  `[PHYSICAL_IMPULSE_MISMATCH]` appears, it is separate from this
+  fixture error and concerns the post-executor controlled-speed cap.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

@@ -537,9 +537,20 @@ void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
     require(Gateway::propagateHubTacticalTranslation(
                 nearLimit,physics,0.1),
             "near-speed-limit main impulse could not propagate");
-    require(glm::length(
-                nearLimit.motion.localVelocityMps-initialNearLimit-
-                deliveredAtLimit*0.1)<1.0e-5,
+    const glm::dvec3 appliedDeltaV =
+        nearLimit.motion.localVelocityMps-initialNearLimit;
+    const glm::dvec3 executedDeltaV = deliveredAtLimit*0.1;
+    const double impulseMismatchMps =
+        glm::length(appliedDeltaV-executedDeltaV);
+    if(impulseMismatchMps>=1.0e-5)
+        std::cerr << "[PHYSICAL_IMPULSE_MISMATCH]"
+                  << " speed_before_mps=" << glm::length(initialNearLimit)
+                  << " speed_after_mps="
+                  << glm::length(nearLimit.motion.localVelocityMps)
+                  << " executed_dv_mps=" << glm::length(executedDeltaV)
+                  << " applied_dv_mps=" << glm::length(appliedDeltaV)
+                  << " error_mps=" << impulseMismatchMps << "\n";
+    require(impulseMismatchMps<1.0e-5,
             "post-execution speed limiter discarded executed motor impulse; "
             "limit request BEFORE allocating actual engines");
 }

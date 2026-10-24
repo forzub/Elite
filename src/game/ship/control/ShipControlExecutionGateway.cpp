@@ -213,6 +213,9 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         );
 
     auto& motion = transform.motion;
+    // A previous fixed-step execution must not authorize a future tick,
+    // even if this command exits early or the plant rejects the request.
+    motion.installedMainPlantExecuted = false;
     motion.requestedMainEngineAccelerationMps2 =
         motion.mainEngineAccelerationMps2;
     motion.requestedManoeuvreAccelerationMps2 =
@@ -323,11 +326,29 @@ ShipControlExecutionGateway::evaluateTranslationControl(
             requestedMainWorld +
             (assisted ? motion.assistedStabilizationAccelerationMps2 :
                         glm::dvec3(0.0));
+
+        // The ordinary combat-speed envelope constrains the REQUEST, not
+        // the wrench after the mounted engine(s) execute it. Use exactly
+        // the same envelope as the legacy motion path, in travel-frame
+        // coordinates (velocity and acceleration must share that frame).
+        // Newtonian RCS is independent and is never clipped here.
+        const auto& frame = motion.travelFrame;
+        const glm::dvec3 boundedRequestLocal =
+            game::navigation::DynamicMotionSystem::
+                limitRequestedPropulsionToControlledSpeed(
+                    motion.localVelocityMps,
+                    frame.worldToLocalVector(requestedAllWorld),
+                    game::ship::controlledSpeedLimitMps(capabilities),
+                    static_cast<double>(dt)
+                );
+        const glm::dvec3 boundedRequestWorld =
+            frame.localToWorldVector(boundedRequestLocal);
+
         game::ship::plant::EngineMatrixDemand demand;
         demand.accelerationBodyMps2 = {
-            glm::dot(requestedAllWorld,right),
-            glm::dot(requestedAllWorld,up),
-            -glm::dot(requestedAllWorld,forward)
+            glm::dot(boundedRequestWorld,right),
+            glm::dot(boundedRequestWorld,up),
+            -glm::dot(boundedRequestWorld,forward)
         };
         demand.angularAccelerationBodyRadPerSec2 = assisted
             ? motion.requestedMainAngularAccelerationBodyRadPerSec2
@@ -474,6 +495,9 @@ ShipControlExecutionGateway::evaluateTranslationControl(
             actual.angularAccelerationBodyRadPerSec2;
         motion.mainTrimLoad01=0.0;
         motion.mainTrimUsableScale01=1.0;
+        // Only installed motors (not slot approximations) can certify the
+        // actual force/mass consumed by the fixed-step integrator.
+        motion.installedMainPlantExecuted = true;
         transform.pitchRate += static_cast<float>(
             actual.angularAccelerationBodyRadPerSec2.x * dt
         );

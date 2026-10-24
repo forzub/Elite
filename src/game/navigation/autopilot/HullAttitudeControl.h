@@ -56,59 +56,65 @@ public:
     [[nodiscard]] static Result evaluate(const Request& request) noexcept
     {
         Result out;
-
-        if (!(std::isfinite(request.deltaSeconds) &&
-              request.deltaSeconds > 0.0) ||
-            !(std::isfinite(
-                request.pitchYawAngularAccelerationAuthorityRadPerSec2) &&
-              request.pitchYawAngularAccelerationAuthorityRadPerSec2 > 0.0) ||
-            !(std::isfinite(
-                request.rollAngularAccelerationAuthorityRadPerSec2) &&
-              request.rollAngularAccelerationAuthorityRadPerSec2 > 0.0))
-        {
+        const double planarAuthority =
+            request.pitchYawAngularAccelerationAuthorityRadPerSec2;
+        const double rollAuthority =
+            request.rollAngularAccelerationAuthorityRadPerSec2;
+        if (!std::isfinite(request.deltaSeconds) ||
+            request.deltaSeconds<=0.0 ||
+            !std::isfinite(planarAuthority) ||
+            !std::isfinite(rollAuthority))
             return out;
-        }
 
-        out.pitchYawInput = request.pitchYawResponseSeconds > 0.0
-            ? dampedPlanarInput(
-                  request.pitchYawErrorRad,
-                  request.pitchYawRateRadPerSec,
-                  request.desiredPitchYawRateRadPerSec,
-                  request.maxPitchYawRateRadPerSec,
-                  request.pitchYawAngularAccelerationAuthorityRadPerSec2,
-                  request.pitchYawResponseSeconds
-              )
-            : predictivePlanarInput(
-                  request.pitchYawErrorRad,
-                  request.pitchYawRateRadPerSec,
-                  request.desiredPitchYawRateRadPerSec,
-                  request.maxPitchYawRateRadPerSec,
-                  request.pitchYawAngularAccelerationAuthorityRadPerSec2,
-                  request.deltaSeconds
-              );
+        // Damage can eliminate roll without eliminating pitch/yaw, or vice
+        // versa. A single unavailable channel must not disable all other
+        // installed attitude actuators. All-positive healthy flight is
+        // deliberately identical to the previously accepted controller.
+        const bool planarAvailable=planarAuthority>0.0;
+        const bool rollAvailable=rollAuthority>0.0;
+        if (!planarAvailable && !rollAvailable)
+            return out;
 
-        out.rollInput = request.rollResponseSeconds > 0.0
-            ? dampedRollInput(
-                  request.rollErrorRad,
-                  request.rollRateRadPerSec,
-                  request.desiredRollRateRadPerSec,
-                  request.maxRollRateRadPerSec,
-                  request.rollAngularAccelerationAuthorityRadPerSec2,
-                  request.rollResponseSeconds
-              )
-            : predictiveAxisInput(
-                  request.rollErrorRad,
-                  request.rollRateRadPerSec,
-                  request.desiredRollRateRadPerSec,
-                  request.maxRollRateRadPerSec,
-                  request.rollAngularAccelerationAuthorityRadPerSec2,
-                  request.deltaSeconds
-              );
+        if (planarAvailable)
+            out.pitchYawInput = request.pitchYawResponseSeconds > 0.0
+                ? dampedPlanarInput(
+                      request.pitchYawErrorRad,
+                      request.pitchYawRateRadPerSec,
+                      request.desiredPitchYawRateRadPerSec,
+                      request.maxPitchYawRateRadPerSec,
+                      planarAuthority,
+                      request.pitchYawResponseSeconds
+                  )
+                : predictivePlanarInput(
+                      request.pitchYawErrorRad,
+                      request.pitchYawRateRadPerSec,
+                      request.desiredPitchYawRateRadPerSec,
+                      request.maxPitchYawRateRadPerSec,
+                      planarAuthority,
+                      request.deltaSeconds
+                  );
 
-        out.valid =
-            finiteVec(out.pitchYawInput) &&
-            std::isfinite(out.rollInput);
+        if (rollAvailable)
+            out.rollInput = request.rollResponseSeconds > 0.0
+                ? dampedRollInput(
+                      request.rollErrorRad,
+                      request.rollRateRadPerSec,
+                      request.desiredRollRateRadPerSec,
+                      request.maxRollRateRadPerSec,
+                      rollAuthority,
+                      request.rollResponseSeconds
+                  )
+                : predictiveAxisInput(
+                      request.rollErrorRad,
+                      request.rollRateRadPerSec,
+                      request.desiredRollRateRadPerSec,
+                      request.maxRollRateRadPerSec,
+                      rollAuthority,
+                      request.deltaSeconds
+                  );
 
+        out.valid=finiteVec(out.pitchYawInput) &&
+                  std::isfinite(out.rollInput);
         return out;
     }
 

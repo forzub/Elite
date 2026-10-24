@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/plant/ShipPhysicalActuatorPlant.h"
 #include "src/game/ship/plant/ShipEngineControlMatrix.h"

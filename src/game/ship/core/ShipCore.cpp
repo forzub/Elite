@@ -868,18 +868,73 @@ void ShipCore::updateTranslationControl(float dt)
         }
     }
 
-    (void)game::ship::control::ShipControlExecutionGateway::
-        evaluateTranslationControl(
-            m_transform,
-            physics,
-            m_state.control,
-            m_state.construction.physicalControlModel,
-            m_state.actuators.propulsionSlots,
-            dt,
-            physicalEngines,
-            &m_assistedManeuvers,
-            powerGroups.empty() ? nullptr : &powerGroups
-        );
+    const bool productionInstalled =
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime &&
+        m_state.construction.valid() &&
+        m_state.construction.physicalControlModel ==
+            m_state.construction.definition->physicalControlModel;
+
+    // A genuine installed craft must NEVER silently change to a slot-only
+    // diagnostic model if an engine module binding is missing. Nor may
+    // an unassigned engine draw electricity from a nonexistent generator.
+    // Leave the deliberately synthetic Ctrl+F9 layouts independent.
+    if (productionInstalled && physicalEngines)
+    {
+        const auto& topology=game::ship::plant::physicalControlSlots(
+            m_state.construction.physicalControlModel);
+        for (std::size_t i=0;i<topology.size();++i)
+        {
+            if (topology[i].role ==
+                game::ship::plant::EngineSlotRole::ManoeuvreCluster)
+                continue;
+            bool assigned=false;
+            for (const auto& group:powerGroups)
+                assigned |= std::find(group.engineIndices.begin(),
+                    group.engineIndices.end(),i)!=group.engineIndices.end();
+            if (!assigned)
+            {
+                // Factual lack of a power feed: zero available MW.
+                game::ship::control::MainEnginePowerGroup missing;
+                missing.engineIndices.push_back(i);
+                powerGroups.push_back(std::move(missing));
+            }
+        }
+    }
+
+    if (productionInstalled && !physicalEngines)
+    {
+        // Fail closed without short-circuiting the separate Newtonian RCS
+        // executor below. The control law's requests are NOT executed.
+        auto& motion=m_transform.motion;
+        motion.mainEngineAccelerationMps2={};
+        motion.assistedStabilizationAccelerationMps2={};
+        if (game::ship::plant::familyOf(
+                m_state.construction.physicalControlModel) ==
+            game::ship::plant::PhysicalControlFamily::Assisted)
+            motion.manoeuvreAccelerationMps2={};
+        motion.engineAccelerationMps2=motion.manoeuvreAccelerationMps2;
+        motion.mainPropulsionTorqueBodyNm={};
+        motion.mainPropulsionAngularAccelerationBodyRadPerSec2={};
+        motion.mainEngineDeliveredThrust01.fill(0.0);
+        motion.mainEngineReportedSlotCount=0;
+        motion.engineTelemetry.reset(m_state.control.controlTick);
+    }
+    else
+    {
+        (void)game::ship::control::ShipControlExecutionGateway::
+            evaluateTranslationControl(
+                m_transform,
+                physics,
+                m_state.control,
+                m_state.construction.physicalControlModel,
+                m_state.actuators.propulsionSlots,
+                dt,
+                physicalEngines,
+                &m_assistedManeuvers,
+                powerGroups.empty() ? nullptr : &powerGroups
+            );
+    }
     // Replace the legacy free Newtonian manoeuvre force with the real
     // fixed-direction RCS bank. Main thrust/torque remains separate.
     m_newtonianRcsDelivered01.fill(0.0);

@@ -156,7 +156,6 @@ void ShipCore::init(
     m_serviceThrottleSaved = 0.0;
     m_propulsionSwitchRevision = 0;
     m_propulsionReactorsStartupRemainingSeconds = 0.0;
-    m_preparedManeuverActuatorRevision = ~std::uint64_t{0};
     m_role = inRole;
     m_initialPhysicalModel=descriptor.physicalControlModel;
     m_assistedHardwareProfiles=nullptr;
@@ -351,7 +350,6 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
             model,game::ship::state::ShipActuatorStateSource::ModuleRuntime);
         ++m_state.revision;
         m_assistedManeuvers={};
-        m_preparedManeuverActuatorRevision=~std::uint64_t{0};
         m_lastModuleProjectionRevision=~std::uint64_t{0};
         m_transform.motion.localControlLaw=
             m_state.construction.nativeFlightControlLaw;
@@ -542,7 +540,6 @@ ShipCore::controlAuthorityTelemetry() const
         m_assistedManeuvers.build(model, installed, physics);
     if (!m_assistedManeuvers.valid)
         return {};
-    m_preparedManeuverActuatorRevision = revision;
     return game::ship::telemetry::readAssistedControlAuthority(
         m_assistedManeuvers,revision
     );
@@ -1054,7 +1051,6 @@ void ShipCore::updateTranslationControl(float dt)
             motion.manoeuvreAccelerationMps2={};
         }
     }
-    m_preparedManeuverActuatorRevision=m_state.actuators.revision;
 
     // Bounded player-only server instrumentation. Does NOT change flight
     // dynamics, actuator commands, allocator state or timing of control.

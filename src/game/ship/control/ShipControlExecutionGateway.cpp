@@ -213,6 +213,12 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         );
 
     auto& motion = transform.motion;
+    motion.requestedMainEngineAccelerationMps2 =
+        motion.mainEngineAccelerationMps2;
+    motion.requestedManoeuvreAccelerationMps2 =
+        motion.manoeuvreAccelerationMps2;
+    motion.requestedAssistedStabilizationAccelerationMps2 =
+        motion.assistedStabilizationAccelerationMps2;
     motion.assistedWorkingThrustAxisEmergency =
         capabilities.assistedWorkingThrustAxisEmergency;
     motion.assistedWorkingThrustAxisBody =

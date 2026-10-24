@@ -691,6 +691,10 @@ void ShipCore::propagateMotionOrientation(float dt)
 
 void ShipCore::updateTranslationControl(float dt)
 {
+    // Production may bypass the gateway when its installed main-module
+    // bindings are missing. Never reuse a previous tick's "executed main"
+    // provenance on that fail-closed path.
+    m_transform.motion.installedMainPlantExecuted = false;
     const ShipParams physics = effectivePhysics();
     using game::equipment::engine::MountedEngine;
     std::vector<MountedEngine> installedEngines;

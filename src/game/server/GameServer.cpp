@@ -735,6 +735,34 @@ void GameServer::update(double dt)
                     const auto& runtime=static_cast<const
                         world::modules::ObjectModuleRuntime&>(
                             core.moduleRuntime());
+
+                    // F is an on/off test fault, never a second permanent
+                    // equipment failure. Revert precisely the internal fault
+                    // this server previously injected on THIS ship. Genuine
+                    // impact, wear, heat, emitter and structural damage stay.
+                    const auto injected=m_injectedMainEngineFaults.find(id.value);
+                    if(injected!=m_injectedMainEngineFaults.end())
+                    {
+                        const std::string restoreId=injected->second.moduleId;
+                        const double previous=injected->second.previousInternalFailure01;
+                        const bool restored=
+                            core.moduleRuntime().debugRestoreInternalFailure(
+                                restoreId,previous);
+                        if(restored) core.refreshRuntimeState();
+                        m_injectedMainEngineFaults.erase(injected);
+                        const std::string report=
+                            "[EquipmentFailure] module="+restoreId+
+                            " status="+(restored?"RESTORED":"RESTORE_SKIPPED");
+                        std::cerr<<report<<'\n';
+#ifdef _WIN32
+                        std::error_code error;
+                        std::filesystem::create_directories("D:/tmp",error);
+                        std::ofstream log("D:/tmp/elite_equipment_failures.log",
+                            std::ios::app);
+                        if(log) log<<report<<'\n';
+#endif
+                        break;
+                    }
                     if(slot<0)
                     {
                         // Repeat the chord to fail successive installed main
@@ -782,10 +810,17 @@ void GameServer::update(double dt)
                                world::modules::ObjectModuleRuntimeState::Attached &&
                            mod->health>0.0f)
                         {
+                            const double previousInternal=
+                                mod->equipmentDamage.accumulated.internalFailure01;
                             applied=core.moduleRuntime().injectEquipmentFailure(
                                 moduleId,shipCmd.amount);
                             if(applied)
+                            {
+                                m_injectedMainEngineFaults[id.value]={
+                                    moduleId,previousInternal
+                                };
                                 core.refreshRuntimeState();
+                            }
                         }
                     }
                     const std::string report=

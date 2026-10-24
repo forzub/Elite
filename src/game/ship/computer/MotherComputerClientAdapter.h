@@ -81,28 +81,19 @@ namespace game::ship::computer
         // CoM-projected emergency working axis and installed drive rating.
         // Future general multi-actuator certificate replaces this narrow
         // condition; it must not change normal flight accidentally.
-        if (!diagnosticLayout && capability.valid)
+        if (!diagnosticLayout && capability.valid &&
+            game::ship::plant::familyOf(ship.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Assisted)
         {
-            const auto& topology =
-                game::ship::plant::physicalControlSlots(
-                    ship.physicalControlModel
-                );
-            std::size_t survivingAft = 0;
-            for (std::size_t i=0;
-                 i<topology.size() && i<slotState.size(); ++i)
-                if (topology[i].role ==
-                        game::ship::plant::EngineSlotRole::AftMain &&
-                    game::ship::plant::effectiveSlotThrust01(
-                        slotState[i])>1.0e-9)
-                    ++survivingAft;
-            if (game::ship::plant::familyOf(ship.physicalControlModel) ==
-                    game::ship::plant::PhysicalControlFamily::Assisted)
-                game::ship::capability::applyMountedEngineAxialAuthority(
-                    selected,
-                    ship.physicalControlModel,
-                    slotState,
-                    capability
-                );
+            // The same mounted geometry projection as ShipCore::capabilities.
+            // The removed survivingAft count was dead client-side analysis:
+            // no flight/axis decision ever consumed it.
+            game::ship::capability::applyMountedEngineAxialAuthority(
+                selected,
+                ship.physicalControlModel,
+                slotState,
+                capability
+            );
         }
         out.physicalEnvelopeValid = capability.valid;
         if (capability.valid)

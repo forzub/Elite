@@ -291,6 +291,53 @@ adopted. Conclusions:
   `[PHYSICAL_IMPULSE_MISMATCH]` appears, it is separate from this
   fixture error and concerns the post-executor controlled-speed cap.
 
+## 2026-10-24 physical-impulse RED CONFIRMED and source-side correction (native gate pending)
+
+- User reran `ship_control_execution_gateway` natively on Windows after
+  test-fixture correction `fc260a7b`. The test progressed to the actual
+  speed-limit boundary and **FAILED**:
+  `[PHYSICAL_IMPULSE_MISMATCH]` speed before 399.9 m/s, after 400;
+  installed engines delivered 3.67749 m/s delta-v but integrated ship
+  gained only 0.1 m/s; 3.57749 m/s physically executed delta-v was
+  silently dropped. This definitively confirms the old post-allocation
+  `DynamicMotionSystem::updateLocalFrameMotion` speed projection breaks
+  Command->Request->Executed. All preceding tests in that executable
+  reached/passed their checks in this run. This is NOT a failed engine
+  geometry test.
+- Minimal targeted implementation on `main` (not yet rebuilt on Windows):
+  - `f8778dea`, `1307f690`: expose and reuse the exact pre-existing
+    controlled-speed request projection via
+    `DynamicMotionSystem::limitRequestedPropulsionToControlledSpeed`;
+    for **installed main motors** integrate the actual executed
+    acceleration unmodified rather than silently clipping its delta-v
+    a second time. Keep legacy/no-mounted diagnostic behavior unchanged.
+  - `e1e0015e`, `26484e91`: one-fixed-step provenance flag
+    `installedMainPlantExecuted` on `DynamicMotionState`, reset after
+    propagation; record truthful applied-acceleration semantics.
+  - `90cd51c2`: installed physical gateway now bounds its combined
+    manual/Assisted main translation demand in the travel frame BEFORE
+    sending it to the physical motor matrix. Original raw
+    `requested*` intent remains diagnostically visible. Newtonian
+    independent RCS input is excluded from the main speed envelope.
+    Actual motor force, torque, electricity and heat remain solely
+    allocator-/reactor-executed values.
+  - `aa2ed4ac`: clear one-tick installed-main provenance even if
+    `ShipCore` takes the fail-closed missing-motor path.
+  - `3630d396`: strengthen the existing gateway regression to prove
+    request is bounded before installed allocation, delta-v equals
+    delivered acceleration*dt even at 400 m/s, cap is approximately
+    preserved, and provenance clears after propagation.
+- **NO native build/CTest result yet on the correction.** Request
+  rerun of `ship_control_execution_gateway` first, then the already
+  registered control, damaged-motor, reactor/RCS, planner/follower/HUD
+  focused gates. Do not repeat 84-step in-game oracle just to check
+  its result window. Warnings `unused coolant/wasteMW` are unrelated
+  to the confirmed failed assertion.
+- Remaining independent scope: low-speed `BrakeToStop` epsilon snap and
+  legacy manoeuvre gas integration are not yet comprehensively audited
+  against the installed physical RCS. Do NOT conflate this specifically
+  confirmed main-engine speed-boundary bug with full game acceptance.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

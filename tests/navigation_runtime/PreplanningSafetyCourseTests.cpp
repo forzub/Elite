@@ -5,6 +5,7 @@
 
 #include "src/game/navigation/PreplanningSafetyCourse.h"
 #include "src/game/navigation/DockingRouteEntryPolicy.h"
+#include "src/game/navigation/planner/RoutePlannerApi.h"
 
 namespace
 {
@@ -27,6 +28,43 @@ world::navigation::NavigationObstacle sphere(
     out.centerMeters = center;
     out.radiusMeters = radius;
     return out;
+}
+
+// The safety selector owns the acquired FIRST TANGENT. Verify the ordinary
+// route backend consumes that direction at rest and at nonzero speed, rather
+// than reconstructing a path from the discarded, obstacle-facing ray.
+void requireSelectedEscapeIsRouteStart(
+    const glm::dvec3& selectedCourse,
+    double initialSpeedMps
+)
+{
+    using namespace game::navigation::planner;
+    RoutePlanRequest route;
+    route.startMeters = {0.0, 0.0, 0.0};
+    route.goalMeters = selectedCourse * 10000.0;
+    route.terminalOutward = -selectedCourse;
+    route.agentRadiusMeters = 10.0;
+    route.maxSpeedMps = 150.0;
+    route.acceleratingMps2 = 25.0;
+    route.brakingMps2 = 25.0;
+    route.lateralMps2 = 25.0;
+    route.roundTurns = false;
+    route.hasInitialForward = true;
+    route.initialForward = selectedCourse;
+    route.initialSpeedMps = initialSpeedMps;
+    route.initialForwardLeadMeters = 1500.0;
+
+    const auto plan = RoutePlanner::plan(route);
+    require(plan.valid(), "escape-direction route was not constructed");
+    require(!plan.routeCurves.empty(),
+            "escape-direction route has no first segment");
+    require(
+        glm::dot(
+            glm::normalize(plan.routeCurves.front().startForward),
+            selectedCourse
+        ) > 0.999,
+        "first route tangent returned to the unsafe pre-escape course"
+    );
 }
 }
 
@@ -96,6 +134,9 @@ int main()
             require(
                 glm::dot(stoppedEntry, result.safeCourse) < 0.999,
                 "stopped safety escape did not require a new route tangent"
+            );
+            requireSelectedEscapeIsRouteStart(
+                result.safeCourse, result.speedMps
             );
         }
 
@@ -182,6 +223,9 @@ int main()
             require(
                 std::abs(result.speedMps - 100.0) < 1.0e-9,
                 "moving safety-course selection changed initial speed"
+            );
+            requireSelectedEscapeIsRouteStart(
+                result.safeCourse, result.speedMps
             );
         }
 

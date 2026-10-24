@@ -77,7 +77,12 @@ struct AssistedManeuverPrograms final
             return almost(a.x,b.x) && almost(a.y,b.y) &&
                    almost(a.z,b.z);
         };
-        if (!checkVector(shape.centerOfMassLocalMeters,
+        // The motor index and emergency flag do not define the physical
+        // direction by themselves: a CoM shift may move the ray while
+        // both stay unchanged. Never execute with a stale cached wrench.
+        if (!checkVector(shape.assistedWorkingThrustAxisBody,
+                         ship.assistedWorkingThrustAxisBody) ||
+            !checkVector(shape.centerOfMassLocalMeters,
                          ship.centerOfMassLocalMeters) ||
             !checkVector(shape.physicalActuatorHalfExtentsMeters,
                          ship.physicalActuatorHalfExtentsMeters))

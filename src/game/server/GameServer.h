@@ -290,6 +290,17 @@ private:
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
+
+    // Diagnostic F-key remembers which installed engine it temporarily
+    // failed; the authoritative damage remains in ObjectModuleRuntime.
+    // This does not participate in normal equipment repair or simulation.
+    struct InjectedMainEngineFault
+    {
+        std::string moduleId;
+        double previousInternalFailure01 = 0.0;
+    };
+    std::unordered_map<uint32_t, InjectedMainEngineFault>
+        m_injectedMainEngineFaults;
     std::deque<PendingSessionMapRequest> m_pendingMapRequests;
     std::deque<CompletedSessionMapResponse> m_completedMapResponses;
     std::uint64_t m_serverTick = 0;

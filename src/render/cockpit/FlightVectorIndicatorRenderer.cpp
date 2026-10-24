@@ -339,15 +339,22 @@ void FlightVectorIndicatorRenderer::renderBoresight(
 void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     const Viewport& viewport,
     const glm::dvec3& workingAxisBody,
+    const glm::dvec3& workingAxisCamera,
+    float verticalFovDegrees,
     const std::string& localizedLabel
 )
 {
     if (viewport.width <= 0 || viewport.height <= 0)
         return;
     const double norm = glm::length(workingAxisBody);
-    if (!std::isfinite(norm) || norm < 1.0e-9)
+    const double viewNorm = glm::length(workingAxisCamera);
+    if (!std::isfinite(norm) || norm < 1.0e-9 ||
+        !std::isfinite(viewNorm) || viewNorm < 1.0e-9 ||
+        !std::isfinite(verticalFovDegrees) ||
+        verticalFovDegrees <= 1.0f || verticalFovDegrees >= 179.0f)
         return;
     const glm::dvec3 axis = workingAxisBody / norm;
+    const glm::dvec3 viewAxis = workingAxisCamera / viewNorm;
     const double offset = std::atan2(
         std::hypot(axis.x,axis.y), -axis.z
     );
@@ -367,18 +374,24 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
         static_cast<float>(viewport.width)*0.5f,
         static_cast<float>(viewport.height)*0.5f
     );
-    const double focal =
-        std::min(viewport.width,viewport.height)*0.48;
+    // Exact perspective camera projection. An arbitrary 0.48*height
+    // focal length displaced the pilot's amber sight by dozens of pixels,
+    // so it did NOT actually indicate the physical thrust ray.
+    const double fovRad=static_cast<double>(verticalFovDegrees)*
+        (3.14159265358979323846/180.0);
+    const double focal=
+        (static_cast<double>(viewport.height)*0.5)/
+        std::tan(fovRad*0.5);
     // Perspective projection can go outside the screen for large gimbal
     // angles, and even behind the camera. Preserve the actual projected
     // direction with a ray-to-viewport edge intersection, not two
     // independent X/Y clamps (which incorrectly point into a corner).
-    const double depth=std::max(0.035,-axis.z);
+    const double depth=std::max(0.035,-viewAxis.z);
     glm::vec2 deviation(
-        static_cast<float>(focal*axis.x/depth),
-        static_cast<float>(-focal*axis.y/depth)
+        static_cast<float>(focal*viewAxis.x/depth),
+        static_cast<float>(-focal*viewAxis.y/depth)
     );
-    if(glm::length(deviation)<1.0f && axis.z>0.0)
+    if(glm::length(deviation)<1.0f && viewAxis.z>0.0)
         deviation={0.0f,-static_cast<float>(focal)*3.0f};
     const float margin=31.0f;
     const float xMax=std::max(1.0f,center.x-margin);

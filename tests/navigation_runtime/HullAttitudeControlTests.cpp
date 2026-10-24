@@ -79,6 +79,31 @@ void testYawPitchDoesNotReduceRollAuthority()
     );
 }
 
+void testDamagedIndependentAttitudeChannels()
+{
+    auto r=base();
+    r.pitchYawErrorRad={0.0,0.3};
+    r.rollErrorRad=0.5;
+    r.rollAngularAccelerationAuthorityRadPerSec2=0.0;
+    const auto noRoll=Control::evaluate(r);
+    require(noRoll.valid &&
+            noRoll.pitchYawInput.y>0.01 &&
+            std::abs(noRoll.rollInput)<1.0e-12,
+            "lost roll authority incorrectly disabled live yaw steering");
+
+    r.rollAngularAccelerationAuthorityRadPerSec2=3.0;
+    r.pitchYawAngularAccelerationAuthorityRadPerSec2=0.0;
+    const auto noPlanar=Control::evaluate(r);
+    require(noPlanar.valid &&
+            std::abs(noPlanar.rollInput)>0.01 &&
+            glm::length(noPlanar.pitchYawInput)<1.0e-12,
+            "lost pitch/yaw authority incorrectly disabled live roll");
+
+    r.rollAngularAccelerationAuthorityRadPerSec2=0.0;
+    require(!Control::evaluate(r).valid,
+            "attitude control invented authority with no available axes");
+}
+
 void testResidualRollRateDoesNotCreatePitchYaw()
 {
     auto r = base();
@@ -255,6 +280,7 @@ int main()
     {
         testRollDoesNotReduceYawPitchAuthority();
         testYawPitchDoesNotReduceRollAuthority();
+        testDamagedIndependentAttitudeChannels();
         testResidualRollRateDoesNotCreatePitchYaw();
         testResidualYawRateDoesNotCreateRoll();
         testMovingCourseRateIsTrackedWithoutWaitingForAngleError();

@@ -882,12 +882,40 @@ void testVelocityCourseTracksAuthoredTunnelTangent()
         output.forwardErrorRad > 0.20,
         "on-center curved route did not detect velocity-course error against authored bend"
     );
+    // The physical bend is +X -> +Z, so the installed hull must start
+    // yawing around -Y. The Assisted inner-loop intentionally limits the
+    // hull lead to 10 degrees and uses a damped 0.5 s response: demanding
+    // >0.5 normalized torque was a leftover predictive-servo assumption.
+    // Instead, ensure signed actuator authority over that response horizon
+    // can acquire at least the turn rate v / R of this exact authored arc.
+    constexpr double AssistedAttitudeResponseSeconds = 0.50;
+    const double requiredTurnRateRadPerSecond =
+        SpeedMps / RadiusMeters;
+    const double executableTurnRateWithinResponse =
+        -static_cast<double>(output.control.yawInput) *
+        game::ship::angularAccelerationLimitRadPerSec2(params()) *
+        AssistedAttitudeResponseSeconds;
+    if (output.control.yawInput >= 0.0f ||
+        executableTurnRateWithinResponse <= requiredTurnRateRadPerSecond)
+    {
+        std::cerr
+            << "[ARC_ACTUATOR_INSUFFICIENT]"
+            << " yaw_input=" << output.control.yawInput
+            << " available_rate_radps=" << executableTurnRateWithinResponse
+            << " required_rate_radps=" << requiredTurnRateRadPerSecond
+            << " course_error_rad=" << output.courseErrorRad
+            << " radius_m=" << RadiusMeters
+            << " speed_mps=" << SpeedMps << "\n";
+    }
     require(
-        std::hypot(
-            output.control.pitchInput,
-            output.control.yawInput
-        ) > 0.5,
-        "on-center curved route did not actuate strongly enough to rotate velocity into the bend"
+        output.control.yawInput < 0.0f &&
+        executableTurnRateWithinResponse > requiredTurnRateRadPerSecond,
+        "on-center curved route did not command enough correctly signed physical yaw for v/R"
+    );
+    require(
+        !output.control.navigationAccelerationDemandValid &&
+        !output.control.navigationVelocityTargetValid,
+        "curved-route turn bypassed ordinary installed actuator controls"
     );
 }
 

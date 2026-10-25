@@ -33,152 +33,77 @@ void PowerBus::setAuxiliaryDemandMW(double demandMW)
 
 
 
-// void PowerBus::update()
-// {
-    
-//     // 1. Собираем запросы
-//     double totalRequested = 0.0;
-//     for (auto* c : m_consumers) {
-//         double req = c->getRequestedPower();
-//         totalRequested += req;
-//     }
-
-//     bool emergencyMode = m_reactor->isEmergencyMode();
-//     double maxOutput = m_reactor->getMaxOutput();
-
-//     double available = m_reactor->getCurrentOutput();
-
-
-//     // 3. Устанавливаем throttle реактора
-//     double throttle = totalRequested / maxOutput * 1.025;
-//     if (throttle > 1.0)
-//         throttle = 1.0;
-//     m_reactor->setThrottle(throttle);
-    
-   
-
-
-// if (emergencyMode)
-//     {
-//         // АВАРИЙНЫЙ РЕЖИМ - питаем только критически важные системы
-//         // std::cout << "[PowerBus] EMERGENCY MODE: Powering only critical systems\n";
-        
-//         double emergencyPowerUsed = 0.0;
-        
-//         // Сначала распределяем энергию критическим потребителям
-//         for (auto* c : m_consumers)
-//         {
-//             if (c->getPriority() == game::equipment::PowerPriority::Critical)
-//             {
-//                 double requested = c->getRequestedPower();
-//                 double allocated = std::min(requested, available - emergencyPowerUsed);
-//                 c->setAvailablePower(allocated);
-//                 emergencyPowerUsed += allocated;
-                
-//             }
-//             else
-//             {
-                
-//                 c->setAvailablePower(0.0);
-//             }
-//         }
-        
-//         m_overloaded = (emergencyPowerUsed < totalRequested);
-//     }
-//     else
-//     {
-//         // НОРМАЛЬНЫЙ РЕЖИМ - обычное распределение
-//         if (totalRequested <= available) {
-//             for (auto* c : m_consumers)
-//                 c->setAvailablePower(c->getRequestedPower());
-//             m_overloaded = false;
-//         } else {
-//             double ratio = available / totalRequested;
-//             for (auto* c : m_consumers)
-//                 c->setAvailablePower(c->getRequestedPower() * ratio);
-//             m_overloaded = true;
-//         }
-//     }
-
-    
-// }
-void PowerBus::update()
+// void PowerBus::update(bool reactorOnline)
 {
-    static bool wasEmergencyMode = false;  // Запоминаем предыдущее состояние
-    
-    // 1. Собираем запросы
-    double totalRequested = m_auxiliaryDemandMW;
-    for (auto* c : m_consumers) {
-        double req = c->getRequestedPower();
-        totalRequested += req;
+    // A stopped reactor must not be silently restarted by demand from
+    // cooling, avionics or last tick's actual Newtonian RCS draw.
+    if (!m_reactor || !reactorOnline)
+    {
+        if (m_reactor)
+            m_reactor->setThrottle(0.0);
+        for (auto* consumer : m_consumers)
+            if (consumer)
+                consumer->setAvailablePower(0.0);
+        m_overloaded = false;
+        return;
     }
 
-    // 2. Получаем мощность реактора и проверяем аварийный режим
-    double available = m_reactor->getCurrentOutput();
-    bool emergencyMode = m_reactor->isEmergencyMode();
-    
-    // 3. Устанавливаем throttle реактора
-    double maxOutput = m_reactor->getMaxOutput();
-    double throttle = totalRequested / maxOutput * 1.025;
-    if (throttle > 1.0)
-        throttle = 1.0;
+    // Consumers receive first claim on generated power. The auxiliary
+    // physical RCS demand was ALREADY executed last control tick and
+    // informs the service reactor's current load; it must not subtract
+    // from allocations to critical cooling/life-support systems.
+    double consumerRequestedMW = 0.0;
+    for (const auto* consumer : m_consumers)
+        if (consumer)
+            consumerRequestedMW +=
+                std::max(0.0,consumer->getRequestedPower());
+    const double requestedMW =
+        consumerRequestedMW + std::max(0.0,m_auxiliaryDemandMW);
+
+    const double maximumMW = std::max(0.0,m_reactor->getMaxOutput());
+    // Resolve desired production FIRST. Sampling output before this step
+    // allocates last frame's power (including 0 MW on reactor startup).
+    const double throttle = maximumMW > 1.0e-9
+        ? std::clamp(requestedMW / maximumMW * 1.025,0.0,1.0)
+        : 0.0;
     m_reactor->setThrottle(throttle);
-    
+    const double availableMW =
+        std::max(0.0,m_reactor->getCurrentOutput());
 
-    
-    // 4. Распределяем энергию
-    if (emergencyMode)
+    if (m_reactor->isEmergencyMode())
     {
-        // АВАРИЙНЫЙ РЕЖИМ - питаем только критически важные систем
-        
-        double emergencyPowerUsed = 0.0;
-        
-        // Сначала распределяем энергию критическим потребителям
-        for (auto* c : m_consumers)
+        double criticalUsedMW = 0.0;
+        for (auto* consumer : m_consumers)
         {
-            if (c->getPriority() == game::equipment::PowerPriority::Critical)
+            if (!consumer) continue;
+            double grantedMW = 0.0;
+            if (consumer->getPriority()==
+                    game::equipment::PowerPriority::Critical)
             {
-                double requested = c->getRequestedPower();
-                double allocated = std::min(requested, available - emergencyPowerUsed);
-                c->setAvailablePower(allocated);
-                emergencyPowerUsed += allocated;
+                grantedMW = std::min(
+                    std::max(0.0,consumer->getRequestedPower()),
+                    std::max(0.0,availableMW-criticalUsedMW));
+                criticalUsedMW += grantedMW;
             }
-            else
-            {
-                // Некритичные потребители отключаются полностью
-                c->setAvailablePower(0.0);
-            }
+            consumer->setAvailablePower(grantedMW);
         }
-        
-        m_overloaded = (emergencyPowerUsed < totalRequested);
+        m_overloaded =
+            requestedMW > criticalUsedMW + 1.0e-9;
+        return;
     }
-    else 
-    {
-        // НОРМАЛЬНЫЙ РЕЖИМ - обычное распределение
-        
-        // Если только что вышли из аварийного режима - выводим сообщение
-        
-        if (totalRequested <= available) {
-            // Энергии достаточно - всем даем сколько запросили
-            for (auto* c : m_consumers)
-                c->setAvailablePower(c->getRequestedPower());
-            m_overloaded = false;
-        } else {
-            // Энергии недостаточно - пропорциональное урезание
-            double ratio = available / totalRequested;
-            for (auto* c : m_consumers)
-                c->setAvailablePower(c->getRequestedPower() * ratio);
-            m_overloaded = true;
-        }
-    }
-    
-    // Запоминаем состояние для следующего кадра
-    wasEmergencyMode = emergencyMode;
+
+    // Share shortages between ordinary consumers; the auxiliary
+    // engine load is constrained separately by the 24-nozzle executor.
+    const double ratio = consumerRequestedMW > availableMW &&
+                         consumerRequestedMW > 1.0e-9
+        ? std::clamp(availableMW/consumerRequestedMW,0.0,1.0)
+        : 1.0;
+    for (auto* consumer : m_consumers)
+        if (consumer)
+            consumer->setAvailablePower(
+                std::max(0.0,consumer->getRequestedPower())*ratio);
+    m_overloaded = requestedMW > availableMW + 1.0e-9;
 }
-
-
-
-
 
 double PowerBus::availablePower() const
 {

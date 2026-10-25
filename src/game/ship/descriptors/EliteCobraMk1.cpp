@@ -1283,8 +1283,8 @@ if (const char* rawModel =
 // Newtonian Cobra has the same 24 individually installed RCS nozzle
 // equipment units for I/Y/X. Create these before the module runtime is
 // initialized so hits, wear and BITE refer to real module identities.
-// This does NOT enable the unfinished 24-nozzle executor: the old
-// omnidirectional cluster flight path remains unchanged for now.
+// Native Newtonian flight uses this installed 24-nozzle physical executor;
+// no virtual omni-cluster propulsion is allowed in the production model.
 {
     // These 24 stable ObjectModuleRuntime nozzle IDs must exist even while
     // an Assisted construction is selected, so Ctrl+F10 can select a native

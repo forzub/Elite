@@ -59,43 +59,46 @@ static const std::vector<EngineSlotDefinition> AssistedX = {
 };
 
 
-static const std::vector<EngineSlotDefinition> NewtonianI = {
-    {"main_center", EngineSlotRole::AftMain, {0.0, 0.0, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-
-    {"rcs_fore_left",  EngineSlotRole::ManoeuvreCluster, {-1.0, 0.0, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_right", EngineSlotRole::ManoeuvreCluster, { 1.0, 0.0, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_left",   EngineSlotRole::ManoeuvreCluster, {-1.0, 0.0,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_right",  EngineSlotRole::ManoeuvreCluster, { 1.0, 0.0,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
+// All THREE Newtonian layouts have eight IDENTICAL physical RCS mount
+// nodes; each owns three fixed, independently damageable nozzle modules.
+// This conservative capability aggregate must never invent a fourth force
+// axis in any module. Native execution uses the 24 nozzle geometry directly.
+static const std::vector<EngineSlotDefinition> NewtonianRcsNodes = {
+        {"rcs_fore_upper_left",EngineSlotRole::ManoeuvreCluster,{-1.0,1.0,-1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_fore_upper_right",EngineSlotRole::ManoeuvreCluster,{1.0,1.0,-1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_fore_lower_left",EngineSlotRole::ManoeuvreCluster,{-1.0,-1.0,-1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_fore_lower_right",EngineSlotRole::ManoeuvreCluster,{1.0,-1.0,-1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_aft_upper_left",EngineSlotRole::ManoeuvreCluster,{-1.0,1.0,1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_aft_upper_right",EngineSlotRole::ManoeuvreCluster,{1.0,1.0,1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_aft_lower_left",EngineSlotRole::ManoeuvreCluster,{-1.0,-1.0,1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
+        {"rcs_aft_lower_right",EngineSlotRole::ManoeuvreCluster,{1.0,-1.0,1.0},{0.0,0.0,0.0},EngineSlotFreedom::OmnidirectionalCluster},
 };
-
-static const std::vector<EngineSlotDefinition> NewtonianY = {
-    {"main_top",         EngineSlotRole::AftMain, {0.0,          NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-Sqrt3Over2 * NewtonMainRadialScale, -0.5 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_right", EngineSlotRole::AftMain, { Sqrt3Over2 * NewtonMainRadialScale, -0.5 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-
-    {"rcs_fore_top",         EngineSlotRole::ManoeuvreCluster, {0.0,          1.0, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_lower_left",  EngineSlotRole::ManoeuvreCluster, {-Sqrt3Over2, -0.5, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_lower_right", EngineSlotRole::ManoeuvreCluster, { Sqrt3Over2, -0.5, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_top",          EngineSlotRole::ManoeuvreCluster, {0.0,          1.0,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_lower_left",   EngineSlotRole::ManoeuvreCluster, {-Sqrt3Over2, -0.5,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_lower_right",  EngineSlotRole::ManoeuvreCluster, { Sqrt3Over2, -0.5,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-};
-
-static const std::vector<EngineSlotDefinition> NewtonianX = {
-    {"main_upper_left",  EngineSlotRole::AftMain, {-InvSqrt2 * NewtonMainRadialScale,  InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_upper_right", EngineSlotRole::AftMain, { InvSqrt2 * NewtonMainRadialScale,  InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_left",  EngineSlotRole::AftMain, {-InvSqrt2 * NewtonMainRadialScale, -InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-    {"main_lower_right", EngineSlotRole::AftMain, { InvSqrt2 * NewtonMainRadialScale, -InvSqrt2 * NewtonMainRadialScale, 1.0}, {0.0, 0.0, -1.0}, EngineSlotFreedom::VectoringMain},
-
-    {"rcs_fore_upper_left",  EngineSlotRole::ManoeuvreCluster, {-InvSqrt2,  InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_upper_right", EngineSlotRole::ManoeuvreCluster, { InvSqrt2,  InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_lower_left",  EngineSlotRole::ManoeuvreCluster, {-InvSqrt2, -InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_fore_lower_right", EngineSlotRole::ManoeuvreCluster, { InvSqrt2, -InvSqrt2, -1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_upper_left",   EngineSlotRole::ManoeuvreCluster, {-InvSqrt2,  InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_upper_right",  EngineSlotRole::ManoeuvreCluster, { InvSqrt2,  InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_lower_left",   EngineSlotRole::ManoeuvreCluster, {-InvSqrt2, -InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-    {"rcs_aft_lower_right",  EngineSlotRole::ManoeuvreCluster, { InvSqrt2, -InvSqrt2,  1.0}, {0.0, 0.0, 0.0}, EngineSlotFreedom::OmnidirectionalCluster},
-};
+static const std::vector<EngineSlotDefinition> NewtonianI = [] {
+    std::vector<EngineSlotDefinition> slots {
+        {"main_center",EngineSlotRole::AftMain,{0.0,0.0,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain}
+    };
+    slots.insert(slots.end(),NewtonianRcsNodes.begin(),NewtonianRcsNodes.end());
+    return slots;
+}();
+static const std::vector<EngineSlotDefinition> NewtonianY = [] {
+    std::vector<EngineSlotDefinition> slots {
+        {"main_top",EngineSlotRole::AftMain,{0.0,NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain},
+        {"main_lower_left",EngineSlotRole::AftMain,{-Sqrt3Over2*NewtonMainRadialScale,-0.5*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain},
+        {"main_lower_right",EngineSlotRole::AftMain,{Sqrt3Over2*NewtonMainRadialScale,-0.5*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain}
+    };
+    slots.insert(slots.end(),NewtonianRcsNodes.begin(),NewtonianRcsNodes.end());
+    return slots;
+}();
+static const std::vector<EngineSlotDefinition> NewtonianX = [] {
+    std::vector<EngineSlotDefinition> slots {
+        {"main_upper_left",EngineSlotRole::AftMain,{-InvSqrt2*NewtonMainRadialScale,InvSqrt2*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain},
+        {"main_upper_right",EngineSlotRole::AftMain,{InvSqrt2*NewtonMainRadialScale,InvSqrt2*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain},
+        {"main_lower_left",EngineSlotRole::AftMain,{-InvSqrt2*NewtonMainRadialScale,-InvSqrt2*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain},
+        {"main_lower_right",EngineSlotRole::AftMain,{InvSqrt2*NewtonMainRadialScale,-InvSqrt2*NewtonMainRadialScale,1.0},{0.0,0.0,-1.0},EngineSlotFreedom::VectoringMain}
+    };
+    slots.insert(slots.end(),NewtonianRcsNodes.begin(),NewtonianRcsNodes.end());
+    return slots;
+}();
 
     switch (model)
     {
@@ -228,7 +231,9 @@ static const std::vector<EngineSlotDefinition> NewtonianX = {
          if(slot.role==EngineSlotRole::AftMain)
              ids.push_back(std::string(prefix)+slot.id);
          else
-             ids.push_back({}); // Legacy virtual-cluster slot, not an engine.
+             // Cluster capability is the minimum of its x/y/z physical
+             // nozzles; this binding is the stable leading ID.
+             ids.push_back(std::string(slot.id)+"_x");
      return ids;
  }
 

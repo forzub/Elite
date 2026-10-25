@@ -2689,3 +2689,39 @@ target_include_directories(newtonian_rcs_physical_tests PRIVATE
 )
 target_compile_features(newtonian_rcs_physical_tests PRIVATE cxx_std_17)
 add_test(NAME newtonian_rcs_physical COMMAND newtonian_rcs_physical_tests)
+
+# Deterministic I/Y/X installed MAIN + 24-nozzle RCS diagnostics.
+# The executable itself writes CSV and a summary under D:/tmp on Windows.
+# The separate production ShipCore flight trace provides actual runtime data.
+add_executable(
+    newtonian_physics_diagnostics_tests
+    NewtonianPhysicalDiagnosticsTests.cpp
+)
+target_include_directories(newtonian_physics_diagnostics_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(
+    newtonian_physics_diagnostics_tests PRIVATE cxx_std_17
+)
+target_link_libraries(
+    newtonian_physics_diagnostics_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+if(MSVC)
+    target_compile_options(
+        newtonian_physics_diagnostics_tests PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        newtonian_physics_diagnostics_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+add_test(
+    NAME newtonian_physics_diagnostics
+    COMMAND newtonian_physics_diagnostics_tests
+)
+set_tests_properties(newtonian_physics_diagnostics PROPERTIES
+    WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

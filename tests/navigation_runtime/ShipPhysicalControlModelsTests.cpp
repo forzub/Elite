@@ -97,8 +97,8 @@ void testSixFixedTopologies()
     expectCounts(PhysicalControlModelId::AssistedY, 3, 3, 0);
     expectCounts(PhysicalControlModelId::AssistedX, 4, 4, 0);
 
-    expectCounts(PhysicalControlModelId::NewtonianI, 1, 0, 4);
-    expectCounts(PhysicalControlModelId::NewtonianY, 3, 0, 6);
+    expectCounts(PhysicalControlModelId::NewtonianI, 1, 0, 8);
+    expectCounts(PhysicalControlModelId::NewtonianY, 3, 0, 8);
     expectCounts(PhysicalControlModelId::NewtonianX, 4, 0, 8);
 
     CHECK(

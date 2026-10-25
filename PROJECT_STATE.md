@@ -734,7 +734,7 @@ adopted. Conclusions:
 - Canonical main-only `PROJECT_STATE.md` remains the sole project
   context; keep this as pending runtime visual acceptance.
 
-## 2026-10-25 SIX-MODEL END-TO-END SOURCE AUDIT — GAPS FOUND, NO PHYSICS PATCH
+## 2026-10-25 SIX-MODEL END-TO-END SOURCE AUDIT — ORIGINAL FINDINGS (superseded by native Newtonian work below)
 
 User requested careful review of input -> flight law -> physical installed
 force/moment -> motion -> replicated MotherComputer -> HUD across Assisted
@@ -906,6 +906,120 @@ E. One actual installed-equipment six-model acceptance matrix: NumPad
 User asked for careful REVIEW, not authorization to broadly rewrite
 the architecture. No production changes in this audit. Preserve
 main-only and ONE canonical PROJECT_STATE.md.
+
+## 2026-10-25 NEWTONIAN I/Y/X native hardware and physical RCS repair — SOURCE CHANGES, WINDOWS GATE PENDING
+
+**User intent:** Newtonian I/Y/X must use REAL main engines and EIGHT
+physical RCS mount nodes, EACH with three independently damageable,
+fixed-direction electric nozzles; current main is the only active branch.
+Preserve the gameplay replenished manoeuvre gas (limit marathon RCS use)
+and its 0.20/s consumption, 0.08/s recharge, 0.20 restart fraction.
+The gas is a control/resource budget, not a requirement to simulate
+propellant mass. The healthy Assisted I/Y/X behavior, engine efficiency,
+heat and damage were deliberately NOT retuned here.
+
+### Source patches actually committed to main
+
+- `2edb1e18`: `NewtonianRcsAllocator.h` uses live
+  `centerOfMassLocalMeters` to calculate both solver and executed
+  Σ(r-COM)×F. New `availableElectricalMW` gate samples physical
+  `Engine::execute` to size total power BEFORE final accepted nozzle
+  force/torque; scales all 24 duty values uniformly.
+- `fa5580f8`, `b273a32f`: `installedRcsPlantExecuted` is separate
+  current-step provenance. `DynamicMotionSystem::updateLocalFrameMotion`
+  NO LONGER revokes actual Δv after real RCS execution by running old
+  gas-pressure cutoff. Legacy slot-only diagnostics retain their gas path.
+- `a2de8787`, `c54813f5`, `f9f5edf3`: standalone deterministic
+  `advanceNewtonianRcsGas` updates a shared renewable 0..1 budget
+  BEFORE 24-nozzle allocation. Pilot translation PLUS commanded
+  pitch/yaw/roll stabilization draw from the same reservoir; after
+  exhaustion, nozzles are gated until recovered to the restart threshold.
+  Completely unpowered or destroyed installations recharge instead of
+  charging the player for unattainable commands. The old requested
+  manoeuvre acceleration is replaced with executed force/mass, retaining
+  actual main thrust. Longitudinal −Z hull orientation, correct +Z
+  physics sign on roll demand and delivered roll Δω, and CoM are
+  consistent in the new server seam.
+- `13900ba3`: native installed Newtonian NEVER substitutes virtual
+  attitude or RCS if one of the 24 modules is missing. Missing RCS
+  modules are zero-force `MountedEngine` columns. RCS thermal lifecycle,
+  damage and executed nozzle throttle stay in `ObjectModuleRuntime`.
+- `1a362b18`, `c061fa09`, `ad627e8a`:
+  all Newtonian I/Y/X share the SAME 8 mount-node slots aligned with
+  the fixed 24-nozzle catalog (not obsolete 4/6/8 virtual layouts).
+  Persistent Newtonian main and reactor IDs are defined for each
+  layout. Current capability module/snapshot projection conservatively
+  combines each physical node's 3 nozzle states; a missing nozzle cannot
+  silently resurrect authority from the other two.
+- `67d59ab9`, `71fb55fc`, `7b8f3b7a`:
+  Cobra module graph now PREINSTALLS all six REAL main-drive
+  construction variants, their dedicated ER-5 reactor groups and the
+  24 independent RCS nozzles. `ShipCore` selects a persistent
+  `std::array<ShipDescriptor,6>` view on Ctrl+F9/F10, binds installed
+  `ModuleRuntime`, PRESERVES damage/temperature, and no longer invokes
+  fake generic motors for a Cobra Newtonian switch. A direct native
+  `ELITE_SHIP_PHYSICAL_TEST_MODEL=Newtonian-I/Y/X` launch has nonempty
+  engine/module bindings and reactor groups.
+- `92a789ae`: replicated cockpit descriptor reconstructs the selected
+  installed Newtonian I/Y/X main+reactor passport binding from the
+  server's per-instance physical model, instead of treating switched
+  Newtonian as synthetic healthy diagnostic equipment. Existing HUD
+  8 RCS indicators read the actual 24 nozzle installed/usage data.
+- `6fed232f`, `2d6db724`, `a8882ad4`,
+  `6111c582`: physically executed 24-nozzle MW is now an auxiliary
+  ship-services PowerBus demand; it contributes to reactor output
+  request/load shedding and replicated requested-MW telemetry.
+  Execution itself is capped to power available AFTER priority
+  service consumers; RCS cannot borrow independent ER-5 motor power.
+  RCS heat/wear remains sourced from actual throttle/EngineUnit.
+- `defa6623`, `0abc9281`: existing topology tests now assert
+  8 nodes for all three Newtonian constructions and recalculate loss
+  of one out of eight (instead of one out of four).
+  `cfdabb2c` adds direct tests of nozzle failure, live COM torque,
+  zero-electrical-power thrust/heat, and gas depletion/recharge.
+  `9a42a0b9` aligns physical-control contract documentation.
+
+### Known limits / explicit OPEN issues — do not pretend completion
+
+- SOURCE commits above have NOT YET been built or run in user's native
+  Windows MSYS2 environment. First gate is compilation of
+  `ship_physical_control_models_tests` and
+  `newtonian_rcs_physical_tests`; run their two CTests, then
+  `ship_control_behavior_oracle`,
+  `ship_control_execution_gateway`, `engine_thrust_hud_presentation`
+  and `newtonian_execution_authority`. Only then build client+server
+  with `bash build_mingw64.sh`. No test reports from new patches yet.
+- **P1 genuine 6D signed capability/accuracy remains approximate:** the
+  capability model conservatively projects three nozzles per node but
+  still uses aggregate 8-node scalar `manoeuvreThrusterAccel` and
+  `angularAccel`. The installed 24-nozzle optimizer knows EXACT
+  actuator directions and CoM, but MotherComputer planner still lacks
+  a runtime solved 6D feasible force/torque polytope under arbitrary
+  asymmetric nozzle damage and electrical limits. Do not claim
+  every independent XYZ/pitch/yaw/roll demand is achievable just because
+  the corresponding input key works. After native gates, validate
+  physical reachability or replace the scalar adapter using bounded
+  concrete 24-nozzle authority sampling.
+- RCS power is now part of PowerBus via last executed-tick measured
+  demand, while the per-step RCS allocator takes current free output.
+  Reactor dynamics and heat transport in this one-tick-lag feedback
+  need end-to-end gameplay observations, particularly ignition off/on,
+  large service-system loads, nozzle overheating and damaged reactor.
+- Graphic nose/gimbal animation, HUD temperature gradient on engine
+  emitter/pads, exact system coolant allocation, degradation of engine
+  efficiency across failures and engine impact aftershock STILL require
+  final cross-layout gameplay/thermal validation. Do NOT silently
+  change Assisted behavior merely to make Newtonian tests pass.
+- The full six-model acceptance criterion is PHYSICAL Causality:
+  same-tick installed module availability and power -> requested
+  forces/moments -> per-engine EXECUTED thrust, heat/MW -> exact ΣF/m
+  and Σ(r-COM)×F/I -> integrated Δv/Δω -> replicated Motor/RCS HUD.
+  Test each I/Y/X with healthy equipment, single nozzle/main outage,
+  severe damage/heat, depleted gas and gas restart, generator shutdown/
+  ignition, and arbitrary body-axis keys.
+- No new side branches, alternative project-state documents or attempts
+  to conceal pending test failures. Focus on native build and actual
+  physical regression evidence before further architectural expansion.
 
 ## Important remaining architecture work (do not rush)
 

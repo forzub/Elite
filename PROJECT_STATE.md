@@ -1650,6 +1650,61 @@ game obstacle escape and safe initial-tunnel course, stopped and at
   new diagnostic scenarios pass. Afterwards inspect physical CSV
   residuals and the real `elite_newtonian_runtime.csv` from game.
 
+## 2026-10-25 Newtonian logged seven-test PASS; CSV audit found under-stressed limits — repaired diagnostic
+
+- User sent actual MSYS2 MinGW64 `elite_newtonian_build.log`,
+  `elite_newtonian_ctest.log`, `elite_newtonian_summary.txt`,
+  `elite_newtonian_matrix.csv`, `elite_newtonian_nozzles.csv`.
+  The earlier GLM C++17 compile fix WORKED. **7/7 CTests PASS on Windows**,
+  including `newtonian_physics_diagnostics`; only preexisting
+  `unused coolant` and `unused wasteMW` compiler warnings.
+- Source dataset was parsed: 252 scenario/time rows (84 each for
+  Newtonian I/Y/X); 1296 nozzle rows (432 each). Main-engine
+  4 m/s^2 demand produced −1,040,000 N forward and zero moment
+  for all three healthy installed layouts, with 1/3/4 actual
+  main slots respectively. This is a REQUESTED acceleration, NOT
+  evidence that I/Y/X have the same full-throttle capacity.
+  Eight physical RCS nodes and 24 individual fixed-direction
+  12,000-N motors = 288,000 N summed unidirectional magnitudes,
+  NOT 288 kN achievable along any chosen body axis.
+- Every healthy signed 12-kN XYZ and 30-kNm pitch/yaw/roll
+  request produced matching actual wrench with negligible
+  residual and low electrical draw. One missing/damaged nozzle
+  reported zero own force, power and heat; other nozzles
+  redistributed demand. Zero-power case produced zero wrench,
+  power and waste heat. CoM-shift case used actual CoM lever arms.
+  Replenishable gameplay gas exhausted, latched off and restarted,
+  including repeated cycle while input was held. This is
+  isolated allocator evidence only, NOT server physics/HUD gameplay.
+- **Test coverage hole found by numerical CSV audit:**
+  `power_limited` requested 0.30 MW but actual nozzles consumed
+  only ~0.231 MW. The test DID NOT actually exercise electrical
+  current limiting, even though it passed. Also ordinary 12-kN
+  requests never exercised saturating actuator authority.
+- **TEST FIX `013f3f94` on main, WINDOWS RECHECK PENDING:**
+  lower the physical RCS `power_limited` budget to 0.05 MW,
+  require strictly positive delivered thrust and electricity
+  but real force less than half the unrestricted request, and
+  enforce draw <= budget. Add `force_saturation` scenario
+  requesting 450,000 N in +X, more than the entire 288-kN
+  installed sum, require residual >10 kN and output no higher
+  than available nozzle sum. Both write requested vs actual
+  measurements into existing `D:/tmp/elite_newtonian_matrix.csv`
+  and per-nozzle measurements into `elite_newtonian_nozzles.csv`.
+  Neither game physics nor solver tolerances were changed.
+- Next short gate:
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash scripts/run_newtonian_physics_diagnostics.sh`.
+  If green, proceed to canonical native client+server
+  `bash build_mingw64.sh`, then run REAL Newtonian I/Y/X ship
+  manoeuvres and provide `D:/tmp/elite_newtonian_runtime.csv`.
+  That server trace must be checked for per-tick actuator duty,
+  MW, temperatures, gas, applied force/CoM torque, orientation
+  and damage, including reactor start/stop. No actual in-game
+  trace was uploaded yet; do NOT claim runtime six-model
+  flight acceptance. Retain only main and this canonical
+  `PROJECT_STATE.md`.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

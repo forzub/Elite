@@ -67,11 +67,91 @@ void checkInstalledNozzleLoss()
             "damaged wrench produced nonfinite values");
 }
 }
+void checkCentreOfMassAndElectricalBudget()
+{
+    using namespace game::equipment;
+    using namespace game::equipment::engine;
+    std::array<EngineUnitDescriptor,24> passports;
+    std::array<EquipmentDamageLayer,24> damage;
+    std::array<EngineOperatingState,24> operating;
+    std::array<MountedEngine,24> mounted {};
+    for(std::size_t i=0;i<24;++i)
+    {
+        passports[i]=cobraManoeuvreNozzlePreset();
+        operating[i].temperatureK=passports[i].nominalOperatingTemperatureK;
+        mounted[i]={&passports[i],&damage[i],&operating[i],
+            game::ship::presets::cobra::newtonianRcsNozzles()[i].nozzleId,
+            i==0}; // All missing nozzles MUST contribute zero.
+    }
+    game::ship::plant::NewtonianRcsDemand command;
+    command.forceBodyN={-8000.0,0.0,0.0};
+    command.mountHalfExtentsM={12.0,2.0,10.0};
+    command.centerOfMassLocalMeters={0.0,1.5,0.0};
+    command.tick=11;
+    const auto physical=game::ship::plant::allocateNewtonianRcs(mounted,command);
+    require(physical.valid &&
+            glm::length(physical.deliveredForceN)>1.0e-5,
+            "remaining physical RCS nozzle did not fire");
+    const auto& mount=game::ship::presets::cobra::newtonianRcsNozzles()[0];
+    const glm::dvec3 arm=mount.positionBody*command.mountHalfExtentsM-
+        command.centerOfMassLocalMeters;
+    const glm::dvec3 expectedMoment=glm::cross(arm,physical.deliveredForceN);
+    require(glm::length(physical.deliveredMomentNm-expectedMoment)<1.0e-7,
+            "RCS torque was not computed about the CURRENT centre of mass");
+    command.availableElectricalMW=0.0;
+    const auto unpowered=game::ship::plant::allocateNewtonianRcs(mounted,command);
+    require(unpowered.valid &&
+            glm::length(unpowered.deliveredForceN)<1.0e-9 &&
+            glm::length(unpowered.deliveredMomentNm)<1.0e-9 &&
+            unpowered.throttle01[0]==0.0 &&
+            unpowered.electricalMW[0]==0.0 &&
+            unpowered.wasteHeatMW[0]==0.0,
+            "unpowered installed RCS invented physical thrust or heat");
+    require(unpowered.availabilityN[0]>0.0 &&
+            unpowered.availabilityN[1]==0.0,
+            "missing RCS nozzle was incorrectly treated as installed");
+}
+void checkReplenishingGameGasBeforeFire()
+{
+    double reservoir=1.0;
+    bool depleted=false;
+    double totalBurn=0.0;
+    for(int i=0;i<700;++i)
+    {
+        const double authority=game::ship::plant::advanceNewtonianRcsGas(
+            reservoir,depleted,0.02,1.0,0.20,0.08,0.20);
+        totalBurn+=authority;
+    }
+    require(depleted && reservoir>=0.0 && reservoir<0.20 &&
+            totalBurn>0.0,
+            "sustained RCS burn did not exhaust the shared game gas");
+    bool rearmed=false;
+    for(int i=0;i<200;++i)
+    {
+        const double authority=game::ship::plant::advanceNewtonianRcsGas(
+            reservoir,depleted,0.02,0.0,0.20,0.08,0.20);
+        if(!depleted)
+        {
+            rearmed=true;
+            require(authority==0.0,
+                    "RCS fired during the latched recharge tick");
+            break;
+        }
+        require(authority==0.0,
+                "depleted gas allowed a physical nozzle demand");
+    }
+    require(rearmed,"replenishing RCS reservoir never restarted");
+    const double resumed=game::ship::plant::advanceNewtonianRcsGas(
+        reservoir,depleted,0.02,1.0,0.20,0.08,0.20);
+    require(resumed>0.0,"RCS did not resume after reservoir recovery");
+}
 int main()
 {
     try
     {
         checkInstalledNozzleLoss();
+        checkCentreOfMassAndElectricalBudget();
+        checkReplenishingGameGasBeforeFire();
         std::cout<<"NEWTONIAN RCS PHYSICAL: PASS\n";
         return 0;
     }

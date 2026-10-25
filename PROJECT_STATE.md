@@ -1374,6 +1374,183 @@ game obstacle escape and safe initial-tunnel course, stopped and at
 - This is an HUD presentation defect, NOT evidence of a new defect in
   installed Newtonian forces, actual nozzle heat, CoM or gas pressure.
 
+## 2026-10-25 HUD test progresses to old acceleration-based expectation; corrected telemetry fixture (Windows rerun pending)
+
+- User ran the HUD-only Windows test after fixes `43860e90` and
+  `294f1336`. It BUILT and LINKED cleanly; the previous invalid
+  installed-binding hidden-widget failure is now PASSED.
+  The next failing assertion was `forward Assisted thrust mapped to
+  wrong engine bars` in
+  `EngineThrustHudPresentationTests::testAssistedForwardThrustUsesAftBars`.
+  Four compiler warnings (unused coolant, unused reactor parameter,
+  MeshData signedness and unused wasteMW) were nonfatal.
+- Root cause SOURCE-PROVEN: this historic test populated ONLY
+  `ship.transform.motion.engineAccelerationMps2 = forward*36.775`
+  (and `right*36.775` in the next test) and then expected red
+  per-engine HUD bar thrust=0.5. The accepted installed-equipment
+  telemetry contract says red bars are exactly ACTUAL
+  `motion.engineTelemetry.thrust01[i]` clipped to current availability;
+  no per-motor thrust may be reconstructed from net ship acceleration.
+  `EngineLiveTelemetryPresentation.h` intentionally defaults to
+  zero red for no valid executed motor sample. Reenabling the old
+  inference would BREAK real damage causality.
+- **TEST FIX `fffdb213` (only test code):** the forward HUD fixture
+  first asserts fake net acceleration with NO executed motor telemetry
+  leaves all four red bars ZERO. It then publishes authoritative-
+  shaped four-slot actuator samples: indices 0/1 aft each 0.5,
+  indices 2/3 fore zero, all available=1.0. Verifies physical slot
+  order and aft-only bottom-up red bars while all yellow bars remain
+  1.0. The lateral vectoring HUD fixture now publishes all four
+  reported motor fractions 0.5 rather than presuming red from
+  `engineAccelerationMps2`; asserts four bars. This is a
+  PRESENTATION MAPPING fixture (not a claim to have executed a
+  physical wrench); actual physical allocation is separately
+  exercised by the existing installed matrix/gateway tests.
+  Corrected the final test printout to say red bars follow executed
+  actuator telemetry, NEVER net acceleration.
+- PRODUCTION `EngineThrustHudPresentation.h`, damage projection,
+  torque physics, `ObjectModuleRuntime`, gas and power paths UNCHANGED
+  in this turn. No test tolerances changed or fake green results.
+- Next Windows check:
+  `cd /d/__elite/work && git pull --ff-only origin main`
+  `cmake --build build/tests/navigation_runtime --target
+  engine_thrust_hud_presentation_tests -j 6 && ctest --test-dir
+  build/tests/navigation_runtime -R '^engine_thrust_hud_presentation
+
+- Fore-only propulsion (`aft` completely dead, `fore` alive) is
+  inconsistent: manual `DynamicMotionSystem::applyLocalFrameInput` chooses
+  -nose as travel forward, while `FlightControlProfile`/MotherComputer
+  demand safe AFT working-forward thrust, currently reject this doctrine.
+  Needs coherent signed forward/backward banks AND flip-and-burn control;
+  an isolated sign flip or changing axis label is unsafe.
+- Command → Request → Executed still needs end-to-end inspection in
+  damaged/reverse and ordinary gameplay paths. The installed MAIN-engine
+  post-execution speed clamp was fixed and passed its targeted Windows
+  regression; legacy/non-installed motion and low-speed BrakeToStop/RCS
+  channels still require separate physical audit.
+- `ShipCapabilitySnapshot` already has signed axes, but legacy adapters
+  collapse some axes to scalar `strafeAccel/angularAccel`, losing available
+  channels under asymmetric failure. Do not scrap accepted healthy
+  Assisted controls; introduce signed per-axis controllers incrementally.
+- `ShipCore::capabilities()` caches construction/actuator/mass revisions
+  but live engine power and temperature can affect actual execution at
+  higher frequency. `controlAuthorityTelemetry()` currently derives
+  signed Assisted motor programs; reactor on/off gate exists, partial
+  per-reactor MW/brownout/slew envelope needs grounded design, not a
+  second power model.
+- Conservative motor program cache `matches()` uses 0.5%-point motor
+  capacity and 0.005rad cone tolerances; need measure planner-vs-delivered
+  accuracy before replacing with per-tick heavy inversion.
+- Do not move per-reactor source-of-truth into a second owner, or delete
+  builders/SharedShipPhysics on the assumption that all are duplicates.
+  Source-executable tests and preserved local flight experience outrank
+  architectural rebranding.
+- UI/HUD telemetry `ShipCoreStatus`, `EngineLiveTelemetry` and current
+  motor capability are distinct scopes; one same-tick factual provenance
+  would be useful but should not be a parallel simulation or new owner.
+
+## 2026-10-25 Assisted stationary hull-turn fixture: MODE ERROR FOUND, source-only repair
+
+- **2026-10-25 user feedback after `90833c16`:** Windows build
+  **succeeded**. User wrote "сборка - прошла" without separate CTest
+  `100% tests passed` summary; do not assert native
+  `client_route_autopilot` PASS until test output is confirmed.
+  Proceed to requested in-game stationary and ~100m/s obstacle-escape
+  tunnel verification, checking selected course versus first tunnel
+  tangent and projected live route entry.
+
+
+- User's most recent native `client_route_autopilot` CTest was RED on
+  `Assisted autopilot failed to settle on commanded turn angle`.
+  This is `testAssistedAutopilotCapturesTurnsWithoutOvershoot`, which
+  simulates 5/15/45/90/-45/-90 degree hull turns at ZERO velocity, each
+  over 400*0.02 = 8s, with a keyboard actuator ramp, angular inertia,
+  and real normalized pitch/yaw inputs. The failure did NOT originate in
+  the new `SpaceState.cpp` safe-course direction patch.
+- ROOT CAUSE verified by reading control code and independently reproducing
+  the discrete 1D yaw physics: the test omitted
+  `AutopilotControlRequest.terminalAttitudeHold`, so a PURE STATIONARY
+  HULL POSE manoeuvre was routed through moving velocity-course steering,
+  whose max 10-degree hull lead intentionally limits turning rate.
+  At 90 degrees, the reconstruction ended ~77.10 degrees after 8s;
+  with terminal attitude HOLD (full desired hull pose at zero velocity)
+  it ended ~89.98 degrees after 8s, overshoot <0.25 degrees. This
+  reproduces input-hold ramp, angular damping, the 0.5s attitude servo,
+  and online angular-authority estimation. It is a calculated local
+  result; NOT a Windows CTest result.
+- Commit `90833c16` changes ONLY
+  `tests/navigation_runtime/ClientRouteAutopilotTests.cpp`:
+  adds `request.terminalAttitudeHold = true;` in this stationary-hull
+  turn fixture, retaining 8s and the original stringent 0.25-degree
+  settlement AND overshoot requirements. This is a semantic test
+  correction, NOT an accommodation by weakening timing or thresholds.
+  The distinct ordinary MOVING velocity-course tests remain unchanged.
+  The real `AssistedAutopilot.h` and physical controller remain untouched.
+- This repair is **SOURCE ONLY / Windows test pending**.
+  NEXT run only `client_route_autopilot_tests` with build-gated CTest.
+  If it passes, the other four focused planner tests were already green
+  in the prior Windows 4/5 run. If another failure emerges, diagnose
+  that specific contract and avoid blind threshold chasing.
+  The real priority remains an in-game blocked-entry tunnel check at
+  rest and ~100m/s, comparing escape vector, first tunnel tangent and
+  live late-bind entry. Native gameplay not yet accepted.
+- Source history: Assisted damped inner-loop entered main on Oct 22,
+  and the current safe-course-to-planner fix `1bc9742f` changes ONLY
+  the initial tangent. Earlier sequential assertions were legacy;
+  do not infer a new physics regression from each now-reached test.
+
+## Immediate next validation — blocked route entry, THEN general regression and gameplay
+
+**Priority now:** rebuild `client_route_autopilot_tests` and run its
+single native CTest after `90833c16`. If green, proceed to actual
+game obstacle escape and safe initial-tunnel course, stopped and at
+~100 m/s. Do not claim runtime acceptance based solely on CTests.
+
+
+- The current Windows native `ship_control_execution_gateway` CTest is
+  **PASS (user-reported)**. The old six-model in-game oracle was previously
+  **84/84 PASS** on its separate older gate. Neither proves the entire
+  damage/autopilot/reactor gameplay.
+- PRIORITY BEFORE broad regression: the Assisted obstacle-avoidance
+  route-start patch above must pass its targeted Windows navigation
+  tests and in-game route-entry acceptance at both zero and nonzero speed.
+  The course requested by planner must match the one physically selected
+  by PreplanningSafetyCourse; a stale connector must be rebound rather
+  than turning back into the obstacle.
+- NEXT: build and run existing focused regression targets in the
+  `tests/navigation_runtime` suite (without inventing new tests):
+  `ship_control_behavior_oracle`,
+  `ship_physical_actuator_plant`,
+  `ship_propulsion_state`,
+  `newtonian_rcs_physical`,
+  `working_thrust_axis_analysis`,
+  `ship_mobility_assessment`,
+  `assisted_authority_contract`,
+  `hull_attitude_control`,
+  `navigation_execution_replan_policy`,
+  `client_route_autopilot`,
+  `engine_thrust_hud_presentation`,
+  `assisted_layout_flight_matrix`,
+  `ship_physical_corridor_matrix`.
+  Run the existing `equipment_damage_failure_pipeline` architecture
+  contract test as the hardware/damage companion.
+- Then native build `EliteGame.exe` and `EliteServer.exe`, and actually
+  fly: healthy Assisted-I response; single-aft-engine outage with
+  Ctrl+Alt+Shift+F and safe working-thrust ray; restart/off reactor
+  Ctrl+Alt+Shift+I and no phantom acceleration; RCS and route-following
+  while degraded. Collect `D:/tmp` logs if anything fails. Do not
+  assert gameplay PASS until the user observes it.
+- Do not spend user time verifying the optional PASSED/FAILED dialog.
+  Do not begin unrelated fore-only or large capability migration before
+  this flight gate. Avoid tests-for-tests and parallel state files.
+
+  --output-on-failure`.
+  Earlier five Newtonian/Assisted targeted CTests were reported green;
+  sixth remains PENDING. If green, check native client+server
+  `bash build_mingw64.sh` and then visual physical flight in
+  all Newtonian I/Y/X. Do not conflate targeted test pass with full
+  in-game acceptance.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

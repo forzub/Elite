@@ -153,8 +153,8 @@ void recordRcs(
     Recorders& logs,Model model,const std::string& name,
     NozzleFixture& f,NewtonianRcsDemand command,
     std::size_t mainCount,
-    const glm::dvec3& mainForce={0.0},
-    const glm::dvec3& mainMoment={0.0},
+    const glm::dvec3& mainForce=glm::dvec3(0.0),
+    const glm::dvec3& mainMoment=glm::dvec3(0.0),
     double gas=1.0,bool depleted=false,double gasScale=1.0,
     bool includeNozzles=true
 )
@@ -256,8 +256,8 @@ void recordRcs(
     ++logs.rows;
     ++logs.physicalAssertions;
     if(name=="power_off")
-        require(near(out.deliveredForceN,{0.0}) &&
-                near(out.deliveredMomentNm,{0.0}) &&
+        require(near(out.deliveredForceN,glm::dvec3(0.0)) &&
+                near(out.deliveredMomentNm,glm::dvec3(0.0)) &&
                 electricity==0.0 && heat==0.0,
             "Unpowered RCS delivered force, moment or heat");
     if(name=="missing_nozzle")
@@ -379,7 +379,7 @@ void runModel(Recorders& logs,Model model,std::size_t expectedMain)
             command.availableElectricalMW=5.0;
             command.tick=400+tick;
             recordRcs(logs,model,burning?"gas_burn":"gas_recharge",
-                f,command,main.mainCount,{0.0},{0.0},
+                f,command,main.mainCount,glm::dvec3(0.0),glm::dvec3(0.0),
                 gas,depleted,scale,false);
         }
     }

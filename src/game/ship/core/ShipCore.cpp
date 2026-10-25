@@ -1446,10 +1446,10 @@ void ShipCore::updateSystems(float dt)
     if(m_propulsionReactorsOn && m_propulsionReactorsStartupRemainingSeconds>0.0)
         m_propulsionReactorsStartupRemainingSeconds=std::max(0.0,
             m_propulsionReactorsStartupRemainingSeconds-static_cast<double>(dt));
-    // Reapply the saved service-reactor setting only at the instant
-    // startup completes; PowerBus owns continuous demand-based throttle.
-    // Reapplying a stale saved value on EVERY frame would erase its output.
-    // During shutdown/startup the explicit bus gate keeps output at zero.
+    // PowerBus owns service-reactor throttle while online. Never restore
+    // the saved pre-shutdown value on every tick: that would erase the
+    // just-calculated demand and starve the consumer allocations.
+    // The explicit bus gate enforces zero output during startup/shutdown.
 
     // Internal service simulation is deliberately separated from motion.
     // Activation may decimate this lane for non-player ships while world

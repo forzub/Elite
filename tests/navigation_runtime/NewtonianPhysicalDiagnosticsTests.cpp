@@ -200,6 +200,31 @@ void recordRcs(
         "Total RCS force violates sum of real nozzles");
     require(near(out.deliveredMomentNm,reconstructedMoment),
         "Total RCS torque violates sum of CoM-relative nozzle moments");
+    // A healthy bank with the specified 8x3 geometry must provide SOME
+    // signed authority for each isolated translation and rotation axis.
+    // Do not require an arbitrary tracking percentage or assume perfect
+    // axis decoupling; the CSV reports the full residual and cross-coupling.
+    const bool pureAxis =
+        name=="right" || name=="left" || name=="up" ||
+        name=="down" || name=="forward" || name=="reverse" ||
+        name=="pitch_pos" || name=="pitch_neg" ||
+        name=="yaw_pos" || name=="yaw_neg" ||
+        name=="roll_pos" || name=="roll_neg";
+    if(pureAxis)
+    {
+        const double requestedForce2=
+            glm::dot(command.forceBodyN,command.forceBodyN);
+        const double requestedMoment2=
+            glm::dot(command.momentBodyNm,command.momentBodyNm);
+        if(requestedForce2>1.e-9)
+            require(glm::dot(out.deliveredForceN,command.forceBodyN)>
+                    0.01*requestedForce2,
+                "Healthy RCS cannot generate a requested signed XYZ force");
+        else if(requestedMoment2>1.e-9)
+            require(glm::dot(out.deliveredMomentNm,command.momentBodyNm)>
+                    0.01*requestedMoment2,
+                "Healthy RCS cannot generate a requested signed body torque");
+    }
     require(std::abs(electricity-
         [&](){double e=0;for(double v:out.electricalMW)e+=v;return e;}())<1.e-8,
         "Power meter inconsistent with individual nozzle power");

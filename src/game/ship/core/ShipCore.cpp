@@ -42,11 +42,12 @@ namespace
 // Cobra publishes one immutable descriptor per *installed* Assisted layout.
 // Module definitions (including dormant layouts) are identical across these
 // profiles; only the active engine/reactor bindings and model differ.
-const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
+const std::array<ShipDescriptor,6>& cobraInstalledProfiles(
     const ShipDescriptor& original)
 {
-    static const std::array<ShipDescriptor,3> profiles = [&] {
-        std::array<ShipDescriptor,3> installed {original,original,original};
+    static const std::array<ShipDescriptor,6> profiles = [&] {
+        std::array<ShipDescriptor,6> installed {
+            original,original,original,original,original,original};
         for(std::size_t k=0;k<installed.size();++k)
         {
             const auto model=static_cast<
@@ -55,10 +56,14 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
             desc.physicalControlModel=model;
             desc.localFlightControlLaw=
                 game::ship::plant::nativeFlightLaw(model);
-            desc.physicalControl.slotModuleIds=
-                game::ship::presets::cobra::installedAssistedEngineModuleIds(model);
-            desc.powerThermalInstallation.engineReactorModuleIds=
-                game::ship::presets::cobra::installedAssistedReactorModuleIds(model);
+            const bool assisted=game::ship::plant::familyOf(model)==
+                game::ship::plant::PhysicalControlFamily::Assisted;
+            desc.physicalControl.slotModuleIds=assisted
+                ? game::ship::presets::cobra::installedAssistedEngineModuleIds(model)
+                : game::ship::presets::cobra::installedNewtonianEngineModuleIds(model);
+            desc.powerThermalInstallation.engineReactorModuleIds=assisted
+                ? game::ship::presets::cobra::installedAssistedReactorModuleIds(model)
+                : game::ship::presets::cobra::installedNewtonianReactorModuleIds(model);
             // Construction is a mandatory installed equipment mapping, not
             // optional damage telemetry. Detect missing/duplicate IDs and
             // absent hardware passports before this profile can fly.
@@ -72,12 +77,12 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
             if(installedIds.size()!=topology.size() ||
                reactorIds.size()!=groups.size())
                 throw std::logic_error(
-                    "Invalid Cobra Assisted installation: slot count");
+                    "Invalid Cobra installed installation: slot count");
             const auto requirePassport=[&](const std::string& id,
                                             bool engine) {
                 if(id.empty())
                     throw std::logic_error(
-                        "Invalid Cobra Assisted installation: empty module ID");
+                        "Invalid Cobra installed installation: empty module ID");
                 const auto it=std::find_if(desc.modules.begin(),desc.modules.end(),
                     [&](const ModuleDescriptor& module) {
                         return module.moduleId==id;
@@ -85,14 +90,14 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
                 if(it==desc.modules.end() ||
                    (engine ? !it->engine : !it->engineReactor))
                     throw std::logic_error(
-                        "Invalid Cobra Assisted installation: missing passport "+id);
+                        "Invalid Cobra installed installation: missing passport "+id);
             };
             for(std::size_t i=0;i<installedIds.size();++i)
             {
                 if(std::find(installedIds.begin(),installedIds.begin()+i,
                              installedIds[i])!=installedIds.begin()+i)
                     throw std::logic_error(
-                        "Invalid Cobra Assisted installation: duplicate engine ID");
+                        "Invalid Cobra installed installation: duplicate engine ID");
                 requirePassport(installedIds[i],true);
             }
             for(std::size_t i=0;i<reactorIds.size();++i)
@@ -100,7 +105,7 @@ const std::array<ShipDescriptor,3>& assistedCobraInstalledProfiles(
                 if(std::find(reactorIds.begin(),reactorIds.begin()+i,
                              reactorIds[i])!=reactorIds.begin()+i)
                     throw std::logic_error(
-                        "Invalid Cobra Assisted installation: duplicate reactor ID");
+                        "Invalid Cobra installed installation: duplicate reactor ID");
                 requirePassport(reactorIds[i],false);
             }
             desc.mainPropulsion.aftEngineModuleIds.clear();
@@ -158,16 +163,14 @@ void ShipCore::init(
     m_propulsionReactorsStartupRemainingSeconds = 0.0;
     m_role = inRole;
     m_initialPhysicalModel=descriptor.physicalControlModel;
-    m_assistedHardwareProfiles=nullptr;
+    m_cobraHardwareProfiles=nullptr;
     m_nativeDescriptor=&descriptor;
     m_desc=&descriptor;
-    if(descriptor.typeId==ObjectType::CobraMk1 &&
-       game::ship::plant::familyOf(descriptor.physicalControlModel)==
-           game::ship::plant::PhysicalControlFamily::Assisted)
+    if(descriptor.typeId==ObjectType::CobraMk1)
     {
-        m_assistedHardwareProfiles=&assistedCobraInstalledProfiles(descriptor);
+        m_cobraHardwareProfiles=&cobraInstalledProfiles(descriptor);
         const auto idx=static_cast<std::size_t>(descriptor.physicalControlModel);
-        m_desc=&(*m_assistedHardwareProfiles)[idx];
+        m_desc=&(*m_cobraHardwareProfiles)[idx];
     }
     m_state.initialize(*m_desc);
     m_transform.setWorldPositionMeters(glm::dvec3(position));
@@ -337,14 +340,12 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
     // Ctrl+F9 on a Cobra selects real already-installed equipment. The
     // construction binding changes, but module damage/temperatures and ship
     // position, linear/angular velocity are deliberately untouched.
-    if(m_assistedHardwareProfiles &&
-       game::ship::plant::familyOf(model)==
-           game::ship::plant::PhysicalControlFamily::Assisted)
+    if(m_cobraHardwareProfiles)
     {
         const auto idx=static_cast<std::size_t>(model);
-        if(idx>=m_assistedHardwareProfiles->size())
+        if(idx>=m_cobraHardwareProfiles->size())
             return false;
-        m_desc=&(*m_assistedHardwareProfiles)[idx];
+        m_desc=&(*m_cobraHardwareProfiles)[idx];
         m_state.construction.bind(*m_desc);
         m_state.actuators.resetHealthy(
             model,game::ship::state::ShipActuatorStateSource::ModuleRuntime);
@@ -371,9 +372,7 @@ bool ShipCore::selectPhysicalConstructionForDiagnostic(
 
 void ShipCore::clearPhysicalConstructionDiagnosticOverride()
 {
-    if(m_assistedHardwareProfiles &&
-       game::ship::plant::familyOf(m_initialPhysicalModel)==
-           game::ship::plant::PhysicalControlFamily::Assisted)
+    if(m_cobraHardwareProfiles)
     {
         (void)selectPhysicalConstructionForDiagnostic(m_initialPhysicalModel);
         return;

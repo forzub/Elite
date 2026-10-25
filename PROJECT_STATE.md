@@ -1551,6 +1551,71 @@ game obstacle escape and safe initial-tunnel course, stopped and at
   all Newtonian I/Y/X. Do not conflate targeted test pass with full
   in-game acceptance.
 
+## 2026-10-25 automated Newtonian physical log suite — code committed, native gate PENDING
+
+- User reported all SIX prior focused tests GREEN on their Windows
+  MSYS2 host after HUD test `fffdb213`. This confirms those targeted
+  CTests, NOT the full client/server runtime under all damage conditions.
+  Asked to automate diagnostic tests and write all outputs under
+  `D:/tmp` so next discrepancies can be analyzed from logs rather
+  than requiring video on every iteration.
+- Added **isolated executable** `tests/navigation_runtime/
+  NewtonianPhysicalDiagnosticsTests.cpp` (`8d64a6d7`) registered as
+  CTest `newtonian_physics_diagnostics` (`9f220ab8`). It runs
+  actual production `executeEngineControlMatrix` for Newtonian
+  I/Y/X (1/3/4 aft engines) and `allocateNewtonianRcs` with
+  24 real Engine passports and fixed nozzle geometry, reporting
+  all 12 signed force/moment axes plus combined demand, missing
+  nozzle, damaged nozzle, zero-available-power, restricted power,
+  shifted CoM, and a sustained replenish/deplete/restart gas cycle.
+  It checks that delivered output equals independent ΣF, Σ(r-COM)×F,
+  sampled nozzle MW, and never exceeds the input bus budget.
+  **This is a deterministic isolated solver check**, NOT a
+  `ShipCore` full-game simulation or claim of six-model acceptance.
+  Files:
+  `D:/tmp/elite_newtonian_matrix.csv` (requested vs delivered
+  forces/moments, impulses, MW, gas, main and RCS),
+  `D:/tmp/elite_newtonian_nozzles.csv` (module IDs, all 24 nozzle
+  thrust/availability/power/heat),
+  `D:/tmp/elite_newtonian_summary.txt` (PASS and model coverage);
+  on failure `elite_newtonian_diagnostics_failure.txt`.
+- Added **actual native server trace** in
+  `ShipCore::updateTranslationControl` (`4ae60c2e`,
+  `75788e7e`). Triggers only for player-controlled
+  `ModuleRuntime` Newtonian in HubTactical; creates
+  `D:/tmp/elite_newtonian_runtime.csv` on first real tick, collects
+  up to 240 seconds, flushes every 30 control ticks. It is read-only,
+  does NOT alter control demand or physics. For each tick it records
+  current I/Y/X model, manual ±XYZ/attitude, reactor startup and
+  power headroom, state of gas accumulator, before-gas and
+  gas-limited demand, actual ΣF/ΣM, estimated actual RCS Δv/Δω,
+  main-engine acceleration and torque, current body angular rates,
+  real per-engine thrust/availability/electrical/heat (up to 4 mains),
+  all 24 nozzles' availability/actual duty/electricity/heat, and
+  current CoM. The velocity field is explicitly PRE-INTEGRATOR:
+  do not misinterpret it as post-propagation state. Runtime trace
+  stays distinct from isolated physical scenario CSV.
+- Added `scripts/run_newtonian_physics_diagnostics.sh`
+  (`8764db5c`) to build and run seven targeted CTests once,
+  **without touching game state or branches**, with all compilation
+  output in `D:/tmp/elite_newtonian_build.log` and CTest console in
+  `D:/tmp/elite_newtonian_ctest.log`.
+- **REQUIRED WINDOWS GATE (new code is not compiled here):**
+  In MSYS2 MinGW64:
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash scripts/run_newtonian_physics_diagnostics.sh`.
+  If green, `bash build_mingw64.sh` for real client+server,
+  launch ship with Newtonian I/Y/X, try NumPad translation and
+  pitch/yaw/roll, a damaged nozzle and engine/generator off/on;
+  send three isolated diagnostics files, build/CTest logs, and
+  `elite_newtonian_runtime.csv`. Do not treat the isolated
+  matrix test as proof that all mounted modules, thermal inertia,
+  reactor bus or network HUD are healthy in actual gameplay.
+- All script/log code is diagnostic/test-only, except passive
+  instrumentation inside production `ShipCore.cpp`.
+  Assisted control physics unchanged; Newtonian gameplay gas
+  remains a replenishing **gameplay** limit.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

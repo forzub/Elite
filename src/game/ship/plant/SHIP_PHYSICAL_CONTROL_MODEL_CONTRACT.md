@@ -21,9 +21,9 @@ Exactly six ordinary-flight physical models exist:
 | Assisted-I | 2 aft + 2 fore vectoring main | 0 |
 | Assisted-Y | 3 aft + 3 fore vectoring main | 0 |
 | Assisted-X | 4 aft + 4 fore vectoring main | 0 |
-| Newtonian-I | 1 aft vectoring main | 4 functional RCS clusters |
-| Newtonian-Y | 3 aft vectoring main | 6 functional RCS clusters |
-| Newtonian-X | 4 aft vectoring main | 8 functional RCS clusters |
+| Newtonian-I | 1 aft vectoring main | 8 physical RCS nodes, each with 3 fixed nozzles |
+| Newtonian-Y | 3 aft vectoring mains | 8 physical RCS nodes, each with 3 fixed nozzles |
+| Newtonian-X | 4 aft vectoring mains | 8 physical RCS nodes, each with 3 fixed nozzles |
 
 A descriptor selects one `PhysicalControlModelId`. It may tune nominal
 acceleration, rate/load envelopes and later component ratings. It may not add,

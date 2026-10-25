@@ -21,6 +21,7 @@ echo "[NEWTONIAN] Build focused real-plant tests..."
 cmake --build build/tests/navigation_runtime \
     --target \
         newtonian_physics_diagnostics_tests \
+        ship_power_bus_execution_tests \
         newtonian_rcs_physical_tests \
         ship_physical_control_models_tests \
         newtonian_execution_authority_tests \
@@ -31,7 +32,7 @@ cmake --build build/tests/navigation_runtime \
 
 echo "[NEWTONIAN] Run reproducible physical and presentation checks..."
 ctest --test-dir build/tests/navigation_runtime \
-    -R '^(newtonian_physics_diagnostics|newtonian_rcs_physical|ship_physical_control_models|newtonian_execution_authority|ship_control_execution_gateway|engine_thrust_hud_presentation|ship_control_behavior_oracle)$' \
+    -R '^(ship_power_bus_execution|newtonian_physics_diagnostics|newtonian_rcs_physical|ship_physical_control_models|newtonian_execution_authority|ship_control_execution_gateway|engine_thrust_hud_presentation|ship_control_behavior_oracle)$' \
     --output-on-failure 2>&1 | tee "$LOGDIR/elite_newtonian_ctest.log"
 
 echo "[NEWTONIAN] PASS. Review:"

@@ -954,13 +954,24 @@ void ShipCore::updateTranslationControl(float dt)
                     (powerGroups.empty() ? nullptr : &powerGroups)
             );
     }
-    // Replace the legacy free Newtonian manoeuvre force with the real
-    // fixed-direction RCS bank. Main thrust/torque remains separate.
+    // Every genuine Newtonian control tick must account for REAL fixed-nozzle
+    // force/torque. Missing modules are null MountedEngine columns (zero force),
+    // NEVER permission to fall back to the old omnidirectional RCS model.
     m_newtonianRcsDelivered01.fill(0.0);
-    if (m_newtonianRcsPhysical && dt > 0.0f &&
-        m_transform.motion.mode ==
-            game::navigation::MotionMode::HubTactical)
+    auto& rcsMotion=m_transform.motion;
+    rcsMotion.installedRcsPlantExecuted=false;
+    const bool installedNewtonian =
+        m_state.construction.valid() &&
+        game::ship::plant::familyOf(
+            m_state.construction.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Newtonian &&
+        m_state.actuators.source ==
+            game::ship::state::ShipActuatorStateSource::ModuleRuntime;
+    if (installedNewtonian && dt>0.0f &&
+        rcsMotion.mode==game::navigation::MotionMode::HubTactical)
     {
+        m_newtonianRcsPhysical=true;
+        rcsMotion.installedRcsPlantExecuted=true;
         using game::equipment::engine::MountedEngine;
         std::array<MountedEngine,24> installed {};
         const auto& desc=*m_state.construction.definition;
@@ -969,7 +980,6 @@ void ShipCore::updateTranslationControl(float dt)
                 m_moduleRuntime);
         const auto& mounts =
             game::ship::presets::cobra::newtonianRcsNozzles();
-        bool complete=true;
         for(std::size_t i=0;i<mounts.size();++i)
         {
             const std::string id(mounts[i].nozzleId);
@@ -978,10 +988,7 @@ void ShipCore::updateTranslationControl(float dt)
                 [&](const auto& module){return module.moduleId==id;});
             const auto* state=runtime.findModule(id);
             if(def==desc.modules.end() || !def->engine || !state)
-            {
-                complete=false;
-                break;
-            }
+                continue; // Missing equipment is a ZERO-thrust column.
             installed[i]={
                 &*def->engine,&state->equipmentDamage,
                 &state->engineOperating,mounts[i].nozzleId,
@@ -992,63 +999,85 @@ void ShipCore::updateTranslationControl(float dt)
                 m_propulsionReactorsStartupRemainingSeconds<=0.0
             };
         }
-        if (complete)
+
+        const glm::dvec3 oldRcsWorld=rcsMotion.manoeuvreAccelerationMps2;
+        const glm::dvec3 right(m_transform.right());
+        const glm::dvec3 up(m_transform.up());
+        const glm::dvec3 forward(m_transform.forward());
+        const double mass=std::max(1.0,physics.massKg);
+        const glm::dvec3 inertia {
+            std::max(1.0,physics.pitchInertiaKgM2),
+            std::max(1.0,physics.yawInertiaKgM2),
+            std::max(1.0,physics.rollInertiaKgM2)
+        };
+        game::ship::plant::NewtonianRcsDemand demand {
+            glm::dvec3 {
+                glm::dot(oldRcsWorld,right),
+                glm::dot(oldRcsWorld,up),
+                -glm::dot(oldRcsWorld,forward)
+            }*mass,
+            // ShipTransform rolls around hull FORWARD (-Z), so the physical
+            // torque about BODY +Z must have the OPPOSITE sign.
+            m_newtonianRcsAngularDemandRadPerSec2*
+                glm::dvec3{inertia.x,inertia.y,-inertia.z},
+            physics.physicalActuatorHalfExtentsMeters,
+            m_state.control.controlTick
+        };
+        demand.centerOfMassLocalMeters=physics.centerOfMassLocalMeters;
+
+        // RCS electricity belongs to the ship-services reactor, not the
+        // independent ER-5 main-drive power groups. Essential loads have
+        // priority. No spare generated MW means no nozzle thrust.
+        double committedServicesMW=0.0;
+        for(const auto* consumer:m_powerBus.getConsumers())
+            if(consumer)
+                committedServicesMW+=std::max(
+                    0.0,consumer->getAvailablePower());
+        demand.availableElectricalMW=std::max(
+            0.0,m_reactor.getCurrentOutput()-committedServicesMW);
+        if(!m_propulsionReactorsOn ||
+           m_propulsionReactorsStartupRemainingSeconds>0.0)
+            demand.availableElectricalMW=0.0;
+
+        // Replenished gas is a gameplay duty budget. BOTH manual translation
+        // and angular damping consume it; nozzles are throttled BEFORE firing.
+        // This cannot remove executed Δv or Δω during later integration.
+        const double lateralAuthority=std::max(
+            1.0e-9,game::ship::manoeuvreAccelerationLimitMps2(physics));
+        const double angularAuthority=std::max(
+            1.0e-9,game::ship::angularAccelerationLimitRadPerSec2(physics));
+        const double intensity=std::clamp(std::max(
+            glm::length(oldRcsWorld)/lateralAuthority,
+            glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
+                angularAuthority),0.0,1.0);
+        const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
+            rcsMotion.manoeuvreGasPressure01,
+            rcsMotion.manoeuvreGasDepleted,
+            static_cast<double>(dt),intensity,
+            physics.manoeuvreGasUsePerSecond,
+            physics.manoeuvreGasRechargePerSecond,
+            physics.manoeuvreGasRestartFraction);
+        demand.forceBodyN*=gasScale;
+        demand.momentBodyNm*=gasScale;
+
+        const auto executed=
+            game::ship::plant::allocateNewtonianRcs(installed,demand);
+        // The gateway may already have delivered main-engine thrust.
+        // Replace ONLY its old RCS request, retaining the real main impulse.
+        rcsMotion.manoeuvreAccelerationMps2={};
+        rcsMotion.engineAccelerationMps2-=oldRcsWorld;
+        if(executed.valid)
         {
-            auto& motion=m_transform.motion;
-            const glm::dvec3 oldRcsWorld=
-                motion.manoeuvreAccelerationMps2;
-            const glm::dvec3 right(m_transform.right());
-            const glm::dvec3 up(m_transform.up());
-            const glm::dvec3 forward(m_transform.forward());
-            const double mass=std::max(1.0,physics.massKg);
-            const game::ship::plant::NewtonianRcsDemand demand {
-                glm::dvec3 {
-                    glm::dot(oldRcsWorld,right),
-                    glm::dot(oldRcsWorld,up),
-                    -glm::dot(oldRcsWorld,forward)
-                }*mass,
-                m_newtonianRcsAngularDemandRadPerSec2*
-                    glm::dvec3{
-                        physics.pitchInertiaKgM2,
-                        physics.yawInertiaKgM2,
-                        physics.rollInertiaKgM2},
-                physics.physicalActuatorHalfExtentsMeters,
-                m_state.control.controlTick
-            };
-            const auto executed=
-                game::ship::plant::allocateNewtonianRcs(
-                    installed,demand);
-            if(executed.valid)
-            {
-                const glm::dvec3 a=executed.deliveredForceN/mass;
-                const glm::dvec3 actualWorld=
-                    right*a.x+up*a.y-forward*a.z;
-                motion.manoeuvreAccelerationMps2=actualWorld;
-                motion.engineAccelerationMps2+=
-                    actualWorld-oldRcsWorld;
-                const glm::dvec3 inertias {
-                    std::max(1.0,physics.pitchInertiaKgM2),
-                    std::max(1.0,physics.yawInertiaKgM2),
-                    std::max(1.0,physics.rollInertiaKgM2)
-                };
-                const auto angular=executed.deliveredMomentNm/inertias;
-                m_transform.pitchRate+=
-                    static_cast<float>(angular.x*dt);
-                m_transform.yawRate+=
-                    static_cast<float>(angular.y*dt);
-                m_transform.rollRate+=
-                    static_cast<float>(angular.z*dt);
-                m_newtonianRcsDelivered01=executed.throttle01;
-            }
-        }
-        // No fallback to fictitious thrusters if the installed plant is
-        // inconsistent. A missing/destroyed nozzle simply delivers zero.
-        else
-        {
-            auto& motion=m_transform.motion;
-            motion.engineAccelerationMps2-=
-                motion.manoeuvreAccelerationMps2;
-            motion.manoeuvreAccelerationMps2={};
+            const glm::dvec3 a=executed.deliveredForceN/mass;
+            const glm::dvec3 actualWorld=
+                right*a.x+up*a.y-forward*a.z;
+            rcsMotion.manoeuvreAccelerationMps2=actualWorld;
+            rcsMotion.engineAccelerationMps2+=actualWorld;
+            const auto angular=executed.deliveredMomentNm/inertia;
+            m_transform.pitchRate+=static_cast<float>(angular.x*dt);
+            m_transform.yawRate+=static_cast<float>(angular.y*dt);
+            m_transform.rollRate-=static_cast<float>(angular.z*dt);
+            m_newtonianRcsDelivered01=executed.throttle01;
         }
     }
 

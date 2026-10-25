@@ -1092,6 +1092,157 @@ void ShipCore::updateTranslationControl(float dt)
             m_newtonianRcsDelivered01=executed.throttle01;
             for(const double drawMW:executed.electricalMW)
                 m_newtonianRcsElectricalDemandMW+=std::max(0.0,drawMW);
+
+            // Passive native gameplay diagnostic: log ACTUAL installed main
+            // engine and 24-nozzle execution. Unlike isolated CTest fixtures,
+            // this observes a real player ShipCore with its true equipment
+            // damage, centre of mass, control inputs, power and gas state.
+            // Nothing is injected into the flight controller by this tracer.
+            if(m_role==ShipRole::Player)
+            {
+                static std::ofstream newtonTrace;
+                static bool traceAttempted=false;
+                static bool traceFinished=false;
+                static double traceSeconds=0.0;
+                static std::uint64_t traceRows=0;
+                if(!traceAttempted)
+                {
+                    traceAttempted=true;
+                    std::error_code error;
+                    std::filesystem::create_directories("D:/tmp",error);
+                    newtonTrace.open("D:/tmp/elite_newtonian_runtime.csv",
+                        std::ios::trunc);
+                    if(newtonTrace)
+                    {
+                        newtonTrace<<std::fixed<<std::setprecision(8);
+                        newtonTrace
+                            <<"time_s,model,source,tick,dt,manual_forward,"
+                              "manual_strafe,manual_lift,manual_pitch,manual_yaw,"
+                              "manual_roll,reactors_on,reactor_startup_s,"
+                              "service_reactor_MW,service_free_budget_MW,"
+                              "gas01,gas_depleted,gas_scale,active_rcs_modules,"
+                              "body_com_x_m,body_com_y_m,body_com_z_m,"
+                              "request_rcs_force_x_N,request_rcs_force_y_N,"
+                              "request_rcs_force_z_N,request_rcs_moment_x_Nm,"
+                              "request_rcs_moment_y_Nm,request_rcs_moment_z_Nm,"
+                              "actual_rcs_force_x_N,actual_rcs_force_y_N,"
+                              "actual_rcs_force_z_N,actual_rcs_moment_x_Nm,"
+                              "actual_rcs_moment_y_Nm,actual_rcs_moment_z_Nm,"
+                              "actual_rcs_power_MW,actual_rcs_heat_MW,"
+                              "main_accel_world_x_mps2,main_accel_world_y_mps2,"
+                              "main_accel_world_z_mps2,main_torque_body_x_Nm,"
+                              "main_torque_body_y_Nm,main_torque_body_z_Nm,"
+                              "rcs_delta_v_x_mps,rcs_delta_v_y_mps,"
+                              "rcs_delta_v_z_mps,rcs_delta_pitch_radps,"
+                              "rcs_delta_yaw_radps,rcs_delta_roll_radps,"
+                              "pitch_rate_radps,yaw_rate_radps,roll_rate_radps,"
+                              "velocity_preintegrator_mps";
+                        for(std::size_t i=0;i<4;++i)
+                            newtonTrace<<",main"<<i<<"_thrust01"
+                                       <<",main"<<i<<"_available01"
+                                       <<",main"<<i<<"_electric_MW"
+                                       <<",main"<<i<<"_heat_MW";
+                        for(std::size_t i=0;i<24;++i)
+                            newtonTrace<<",rcs"<<i<<"_throttle01"
+                                       <<",rcs"<<i<<"_available_N"
+                                       <<",rcs"<<i<<"_electric_MW"
+                                       <<",rcs"<<i<<"_heat_MW";
+                        newtonTrace<<'\n';
+                        std::cerr<<"[NewtonianTrace] BEGIN "
+                                    "D:/tmp/elite_newtonian_runtime.csv"
+                                 <<std::endl;
+                    }
+                    else
+                    {
+                        traceFinished=true;
+                        std::cerr<<"[NewtonianTrace] ERROR cannot write "
+                                    "D:/tmp/elite_newtonian_runtime.csv"
+                                 <<std::endl;
+                    }
+                }
+                if(newtonTrace.is_open() && !traceFinished)
+                {
+                    traceSeconds+=static_cast<double>(dt);
+                    ++traceRows;
+                    unsigned connectedNozzles=0;
+                    double totalWasteHeatMW=0.0;
+                    for(std::size_t i=0;i<24;++i)
+                    {
+                        if(executed.availabilityN[i]>1.0e-9)
+                            ++connectedNozzles;
+                        totalWasteHeatMW+=executed.wasteHeatMW[i];
+                    }
+                    const auto& ctrl=m_state.control;
+                    const auto& motors=rcsMotion.engineTelemetry;
+                    const glm::dvec3 rcsDeltaVelocity=
+                        executed.deliveredForceN*(dt/mass);
+                    const glm::dvec3 rcsDeltaOmega={
+                        executed.deliveredMomentNm.x*dt/inertia.x,
+                        executed.deliveredMomentNm.y*dt/inertia.y,
+                        -executed.deliveredMomentNm.z*dt/inertia.z
+                    };
+                    newtonTrace
+                        <<traceSeconds<<','
+                        <<static_cast<int>(
+                            m_state.construction.physicalControlModel)<<','
+                        <<static_cast<int>(m_state.actuators.source)<<','
+                        <<ctrl.controlTick<<','<<dt<<','
+                        <<ctrl.forwardInput<<','<<ctrl.strafeInput<<','
+                        <<ctrl.liftInput<<','<<ctrl.pitchInput<<','
+                        <<ctrl.yawInput<<','<<ctrl.rollInput<<','
+                        <<(m_propulsionReactorsOn?1:0)<<','
+                        <<m_propulsionReactorsStartupRemainingSeconds<<','
+                        <<m_reactor.getCurrentOutput()<<','
+                        <<demand.availableElectricalMW<<','
+                        <<rcsMotion.manoeuvreGasPressure01<<','
+                        <<(rcsMotion.manoeuvreGasDepleted?1:0)<<','
+                        <<gasScale<<','<<connectedNozzles;
+                    const auto add3=[&](const glm::dvec3& value) {
+                        newtonTrace<<','<<value.x<<','<<value.y
+                                   <<','<<value.z;
+                    };
+                    add3(physics.centerOfMassLocalMeters);
+                    add3(demand.forceBodyN);
+                    add3(demand.momentBodyNm);
+                    add3(executed.deliveredForceN);
+                    add3(executed.deliveredMomentNm);
+                    newtonTrace<<','<<m_newtonianRcsElectricalDemandMW
+                               <<','<<totalWasteHeatMW;
+                    add3(rcsMotion.mainEngineAccelerationMps2);
+                    add3(rcsMotion.mainPropulsionTorqueBodyNm);
+                    add3(rcsDeltaVelocity);
+                    add3(rcsDeltaOmega);
+                    newtonTrace<<','<<m_transform.pitchRate
+                               <<','<<m_transform.yawRate
+                               <<','<<m_transform.rollRate
+                               <<','<<glm::length(rcsMotion.localVelocityMps);
+                    for(std::size_t i=0;i<4;++i)
+                        if(motors.valid && i<motors.count)
+                            newtonTrace<<','<<motors.thrust01[i]
+                                       <<','<<motors.available01[i]
+                                       <<','<<motors.electricalMW[i]
+                                       <<','<<motors.wasteHeatMW[i];
+                        else
+                            newtonTrace<<",0,0,0,0";
+                    for(std::size_t i=0;i<24;++i)
+                        newtonTrace<<','<<executed.throttle01[i]
+                                   <<','<<executed.availabilityN[i]
+                                   <<','<<executed.electricalMW[i]
+                                   <<','<<executed.wasteHeatMW[i];
+                    newtonTrace<<'\n';
+                    if(traceRows%30==0) newtonTrace.flush();
+                    if(traceSeconds>=240.0)
+                    {
+                        newtonTrace.flush();
+                        newtonTrace.close();
+                        traceFinished=true;
+                        std::cerr<<"[NewtonianTrace] COMPLETE rows="
+                                 <<traceRows
+                                 <<" D:/tmp/elite_newtonian_runtime.csv"
+                                 <<std::endl;
+                    }
+                }
+            }
         }
     }
 

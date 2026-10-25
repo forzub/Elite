@@ -1088,6 +1088,38 @@ if (game::ship::plant::familyOf(desc.physicalControlModel) ==
     }
 }
 
+// Native Newtonian I/Y/X use REAL installed aft drive modules as well.
+// The same equipment graph contains all alternatives; switching the selected
+// construction does not manufacture engines or erase their prior damage.
+{
+    const auto prototype=std::find_if(desc.modules.begin(),desc.modules.end(),
+        [](const ModuleDescriptor& m){return m.moduleId=="ship_engine_L";});
+    if(prototype==desc.modules.end() || !prototype->engine)
+        throw std::logic_error("Missing Cobra Newtonian main prototype");
+    const ModuleDescriptor mainPrototype=*prototype;
+    for(const auto model:{
+        game::ship::plant::PhysicalControlModelId::NewtonianI,
+        game::ship::plant::PhysicalControlModelId::NewtonianY,
+        game::ship::plant::PhysicalControlModelId::NewtonianX})
+    {
+        const auto& slots=game::ship::presets::cobra::propulsionSlots(model);
+        const auto ids=
+            game::ship::presets::cobra::installedNewtonianEngineModuleIds(model);
+        if(ids.size()!=slots.size())
+            throw std::logic_error("Invalid Newtonian main bindings");
+        for(std::size_t i=0;i<slots.size();++i)
+        {
+            if(slots[i].role!=game::ship::plant::EngineSlotRole::AftMain)
+                continue;
+            ModuleDescriptor module=mainPrototype;
+            module.moduleId=ids[i];
+            module.meshPartIds.clear();
+            module.supportLinks.clear();
+            desc.modules.push_back(std::move(module));
+        }
+    }
+}
+
 desc.mainPropulsion.aftEngineModuleIds = {
     "ship_engine_L",
     "ship_engine_R"
@@ -1155,9 +1187,17 @@ if (const char* rawModel =
         }
         else
         {
-            // Newtonian diagnostic work has its own independent physical
-            // stack; do not bind its RCS slots to CR-1 motor modules.
-            desc.physicalControl.slotModuleIds.clear();
+            desc.physicalControl.slotModuleIds =
+                game::ship::presets::cobra::installedNewtonianEngineModuleIds(
+                    desc.physicalControlModel);
+            desc.mainPropulsion.aftEngineModuleIds.clear();
+            desc.mainPropulsion.foreEngineModuleIds.clear();
+            const auto& slots=game::ship::plant::physicalControlSlots(
+                desc.physicalControlModel);
+            for(std::size_t i=0;i<slots.size();++i)
+                if(slots[i].role==game::ship::plant::EngineSlotRole::AftMain)
+                    desc.mainPropulsion.aftEngineModuleIds.push_back(
+                        desc.physicalControl.slotModuleIds[i]);
         }
     }
 }
@@ -1168,9 +1208,8 @@ if (const char* rawModel =
 // their own reactor identities across Ctrl+F9 selections.
 {
     using Model=game::ship::plant::PhysicalControlModelId;
-    const bool installedAssisted =
-        game::ship::plant::familyOf(desc.physicalControlModel)==
-            game::ship::plant::PhysicalControlFamily::Assisted;
+    // Every one of the six hardware layouts is physically installed.
+    // Only the selected reactor groups are active at any instant.
     const auto er5 =
         game::equipment::reactor::presets::
             CobraCobrettyER5PropulsionReactor();
@@ -1179,15 +1218,17 @@ if (const char* rawModel =
     {
         const auto& installation =
             game::ship::presets::cobra::installationSlots(model);
-        const auto realIds=installedAssisted
+        const bool assisted=game::ship::plant::familyOf(model)==
+            game::ship::plant::PhysicalControlFamily::Assisted;
+        const auto realIds=assisted
             ? game::ship::presets::cobra::installedAssistedReactorModuleIds(model)
-            : std::vector<std::string> {};
+            : game::ship::presets::cobra::installedNewtonianReactorModuleIds(model);
+        if(realIds.size()!=installation.engineReactors.size())
+            throw std::logic_error("Invalid Cobra drive reactor bindings");
         for(std::size_t i=0;i<installation.engineReactors.size();++i)
         {
             const auto& slot=installation.engineReactors[i];
-            const std::string reactorId=installedAssisted
-                ? realIds[i]
-                : std::string("ship_")+slot.slotId+"_reactor";
+            const std::string reactorId=realIds[i];
             ModuleDescriptor m;
             m.moduleId = reactorId;
         m.parentModuleId = "ship_frame_CB";
@@ -1210,11 +1251,10 @@ if (const char* rawModel =
             desc.modules.push_back(std::move(m));
         }
     };
-    if(installedAssisted)
-        for(const auto model: {Model::AssistedI,Model::AssistedY,Model::AssistedX})
-            addReactorSet(model);
-    else
-        addReactorSet(desc.physicalControlModel);
+    for(const auto model:{
+        Model::AssistedI,Model::AssistedY,Model::AssistedX,
+        Model::NewtonianI,Model::NewtonianY,Model::NewtonianX})
+        addReactorSet(model);
     // Ordinary ship services remain separately powered and cooled.
     desc.powerThermalInstallation.shipReactorModuleId =
         "ship_service_reactor";
@@ -1245,9 +1285,10 @@ if (const char* rawModel =
 // initialized so hits, wear and BITE refer to real module identities.
 // This does NOT enable the unfinished 24-nozzle executor: the old
 // omnidirectional cluster flight path remains unchanged for now.
-if (game::ship::plant::familyOf(desc.physicalControlModel) ==
-        game::ship::plant::PhysicalControlFamily::Newtonian)
 {
+    // These 24 stable ObjectModuleRuntime nozzle IDs must exist even while
+    // an Assisted construction is selected, so Ctrl+F10 can select a native
+    // Newtonian build without creating or repairing any equipment.
     if (!game::ship::presets::cobra::addNewtonianRcsEquipmentModules(
             desc.modules))
     {

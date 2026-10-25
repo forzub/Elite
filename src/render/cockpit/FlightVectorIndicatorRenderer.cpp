@@ -6,6 +6,7 @@
 #include <cstdio>
 
 #include "src/render/HUD/TextRenderer.h"
+#include "src/ui/hud/HudEdgeMapper.h"
 #include "src/render/ShaderUtils.h"
 
 namespace render::cockpit
@@ -17,6 +18,93 @@ constexpr float Pi = 3.14159265358979323846f;
 float clampRadius(float height)
 {
     return std::clamp(height * 0.082f, 68.0f, 112.0f);
+}
+
+// The same ShipHudProfile polygon used by ordinary navigation/world markers.
+// Test the WHOLE glyph rather than its center; placing a 21-pixel reticle
+// right on the polygon boundary still paints across the cockpit frame.
+bool glyphFitsHud(
+    const HudEdgeMapper& hudBoundary,
+    const glm::vec2& position,
+    float radius
+)
+{
+    if (!hudBoundary.isInsideBoundary(position))
+        return false;
+    constexpr int Samples = 16;
+    for (int i = 0; i < Samples; ++i)
+    {
+        const float radians =
+            2.0f * Pi * static_cast<float>(i) /
+            static_cast<float>(Samples);
+        const glm::vec2 sample = position + radius *
+            glm::vec2(std::cos(radians),std::sin(radians));
+        if (!hudBoundary.isInsideBoundary(sample))
+            return false;
+    }
+    return true;
+}
+
+bool projectEmergencyHudSight(
+    const HudEdgeMapper& hudBoundary,
+    const glm::vec2& center,
+    const glm::vec2& projectedDeviation,
+    float glyphRadius,
+    glm::vec2& marker,
+    bool& atEdge
+)
+{
+    if (hudBoundary.boundaryPx().size() < 3 ||
+        !glyphFitsHud(hudBoundary,center,glyphRadius) ||
+        !std::isfinite(projectedDeviation.x) ||
+        !std::isfinite(projectedDeviation.y))
+        return false;
+
+    const float distance = glm::length(projectedDeviation);
+    const glm::vec2 direction = distance > 1.0e-5f
+        ? projectedDeviation / distance
+        : glm::vec2(0.0f,-1.0f);
+    glm::vec2 edge;
+    if (!hudBoundary.projectDirection(center,direction,edge))
+        return false;
+
+    // A radial inset alone fails near slanted/corner sections of the
+    // nonrectangular HUD. Find the last point where the complete glyph
+    // footprint fits inside the real boundary.
+    float inside = 0.0f;
+    float outside = glm::length(edge-center);
+    for (int step = 0; step < 14; ++step)
+    {
+        const float middle = (inside+outside)*0.5f;
+        if (glyphFitsHud(hudBoundary,center+direction*middle,glyphRadius))
+            inside = middle;
+        else
+            outside = middle;
+    }
+    const float safeDistance = std::max(0.0f,inside-1.0f);
+    marker = center + direction*std::min(distance,safeDistance);
+    atEdge = distance > safeDistance;
+    return true;
+}
+
+bool labelFitsHud(
+    const HudEdgeMapper& hudBoundary,
+    const glm::vec2& center,
+    float textWidth
+)
+{
+    const float halfWidth = textWidth*0.5f+5.0f;
+    // The text rasterizer is baseline-based. Pad both sides of the
+    // baseline to cover ascenders, descenders and glyph anti-aliasing.
+    constexpr float HalfHeight = 17.0f;
+    for (const glm::vec2& corner : {
+        glm::vec2(-halfWidth,-HalfHeight),
+        glm::vec2( halfWidth,-HalfHeight),
+        glm::vec2( halfWidth, HalfHeight),
+        glm::vec2(-halfWidth, HalfHeight)})
+        if (!hudBoundary.isInsideBoundary(center+corner))
+            return false;
+    return true;
 }
 }
 
@@ -341,7 +429,8 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     const glm::dvec3& workingAxisBody,
     const glm::dvec3& workingAxisCamera,
     float verticalFovDegrees,
-    const std::string& localizedLabel
+    const std::string& localizedLabel,
+    const HudEdgeMapper& hudBoundary
 )
 {
     if (viewport.width <= 0 || viewport.height <= 0)
@@ -369,7 +458,7 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     // The optical center always identifies the physical hull nose. This
     // additional sight identifies the actual propulsion reference. Project
     // its body-space deviation to the HUD plane and retain an edge pointer
-    // if the new thrust direction falls outside the visible viewport.
+    // if it falls outside the real, nonrectangular cockpit HUD boundary.
     const glm::vec2 center(
         static_cast<float>(viewport.width)*0.5f,
         static_cast<float>(viewport.height)*0.5f
@@ -382,10 +471,9 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     const double focal=
         (static_cast<double>(viewport.height)*0.5)/
         std::tan(fovRad*0.5);
-    // Perspective projection can go outside the screen for large gimbal
-    // angles, and even behind the camera. Preserve the actual projected
-    // direction with a ray-to-viewport edge intersection, not two
-    // independent X/Y clamps (which incorrectly point into a corner).
+    // Perspective projection can go outside the HUD for large gimbal
+    // angles, and even behind the camera. Preserve the exact camera ray
+    // before restricting only its visual position to the HUD polygon.
     const double depth=std::max(0.035,-viewAxis.z);
     glm::vec2 deviation(
         static_cast<float>(focal*viewAxis.x/depth),
@@ -393,17 +481,11 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
     );
     if(glm::length(deviation)<1.0f && viewAxis.z>0.0)
         deviation={0.0f,-static_cast<float>(focal)*3.0f};
-    const float margin=31.0f;
-    const float xMax=std::max(1.0f,center.x-margin);
-    const float yMax=std::max(1.0f,center.y-margin);
-    const float absX=std::abs(deviation.x);
-    const float absY=std::abs(deviation.y);
-    const float edgeScale=std::min({
-        1.0f, absX>1.0e-5f?xMax/absX:1.0f,
-        absY>1.0e-5f?yMax/absY:1.0f
-    });
-    const bool offscreen=edgeScale<1.0f;
-    const glm::vec2 marker=center+deviation*edgeScale;
+    glm::vec2 marker;
+    bool offscreen = false;
+    if (!projectEmergencyHudSight(
+            hudBoundary,center,deviation,24.0f,marker,offscreen))
+        return;
     const glm::vec4 amber(1.0f,0.72f,0.28f,0.96f);
     beginBatch();
     if(offscreen)
@@ -442,24 +524,30 @@ void FlightVectorIndicatorRenderer::renderEmergencyThrustAxis(
         std::snprintf(degrees,sizeof(degrees)," %.0f deg",
             offset*180.0/3.14159265358979323846);
         const std::string label=localizedLabel+degrees;
-        const float labelX=std::clamp(marker.x,
-            std::min(90.0f,center.x),std::max(center.x,
-            static_cast<float>(viewport.width)-90.0f));
-        const float labelY=marker.y+31.0f>=viewport.height-12.0f
-            ? marker.y-29.0f : marker.y+31.0f;
-        drawCenteredText(
-            *m_secondaryFont,label,labelX,
-            std::clamp(labelY,12.0f,
-                static_cast<float>(viewport.height)-12.0f),
-            glm::vec3(1.0f,0.72f,0.28f)
-        );
+        const float width = m_secondaryFont->measureText(label);
+        const glm::vec2 positions[] {
+            marker+glm::vec2(0.0f,34.0f),
+            marker+glm::vec2(0.0f,-34.0f),
+            marker+glm::vec2(-width*0.5f-29.0f,0.0f),
+            marker+glm::vec2( width*0.5f+29.0f,0.0f)
+        };
+        for (const auto& position : positions)
+            if (labelFitsHud(hudBoundary,position,width))
+            {
+                drawCenteredText(
+                    *m_secondaryFont,label,position.x,position.y,
+                    glm::vec3(1.0f,0.72f,0.28f)
+                );
+                break;
+            }
     }
 }
 
 void FlightVectorIndicatorRenderer::renderEmergencyVelocityVector(
     const Viewport& viewport,
     const glm::dvec3& velocityCamera,
-    float verticalFovDegrees
+    float verticalFovDegrees,
+    const HudEdgeMapper& hudBoundary
 )
 {
     if(viewport.width<=0 || viewport.height<=0 ||
@@ -485,19 +573,14 @@ void FlightVectorIndicatorRenderer::renderEmergencyVelocityVector(
         static_cast<float>(-focal*axis.y/depth));
     if(glm::length(deviation)<1.0f && axis.z>0.0)
         deviation={0.0f,-static_cast<float>(focal)*3.0f};
-    const float margin=31.0f;
-    const float xMax=std::max(1.0f,center.x-margin);
-    const float yMax=std::max(1.0f,center.y-margin);
-    const float absX=std::abs(deviation.x);
-    const float absY=std::abs(deviation.y);
-    const float scale=std::min({
-        1.0f,absX>1.0e-5f?xMax/absX:1.0f,
-        absY>1.0e-5f?yMax/absY:1.0f
-    });
-    const glm::vec2 marker=center+deviation*scale;
+    glm::vec2 marker;
+    bool atEdge = false;
+    if (!projectEmergencyHudSight(
+            hudBoundary,center,deviation,23.0f,marker,atEdge))
+        return;
     const glm::vec4 green(0.24f,1.0f,0.54f,0.92f);
     beginBatch();
-    if(scale<1.0f || axis.z>=0.0)
+    if(atEdge || axis.z>=0.0)
     {
         const float dl=glm::length(deviation);
         const glm::vec2 dir=dl>1.0e-6f
@@ -520,13 +603,25 @@ void FlightVectorIndicatorRenderer::renderEmergencyVelocityVector(
     }
     flushBatch();
     ensureFonts("assets/fonts/Roboto-Light.ttf",14,13);
-    if(m_secondaryFont)
-        drawCenteredText(*m_secondaryFont,"V",
-            std::clamp(marker.x+17.0f,12.0f,
-                       static_cast<float>(viewport.width)-12.0f),
-            std::clamp(marker.y-12.0f,12.0f,
-                       static_cast<float>(viewport.height)-12.0f),
-            glm::vec3(green));
+    if (m_secondaryFont)
+    {
+        const float width = m_secondaryFont->measureText("V");
+        const glm::vec2 positions[] {
+            marker+glm::vec2(18.0f,-16.0f),
+            marker+glm::vec2(-18.0f,-16.0f),
+            marker+glm::vec2(18.0f,16.0f),
+            marker+glm::vec2(-18.0f,16.0f)
+        };
+        for (const auto& position : positions)
+            if (labelFitsHud(hudBoundary,position,width))
+            {
+                drawCenteredText(
+                    *m_secondaryFont,"V",position.x,position.y,
+                    glm::vec3(green)
+                );
+                break;
+            }
+    }
 }
 
 void FlightVectorIndicatorRenderer::render(

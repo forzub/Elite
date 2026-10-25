@@ -345,6 +345,7 @@ private:
     // nozzle forces/moments are applied by the 24-unit physical allocator.
     glm::dvec3 m_newtonianRcsAngularDemandRadPerSec2 {0.0};
     std::array<double,24> m_newtonianRcsDelivered01 {};
+    double m_newtonianRcsElectricalDemandMW = 0.0;
     // Server-only trace: angular rates before the nonphysical demand calculation.
     glm::dvec3 m_attitudeRatesAtTickStart {0.0};
     bool m_newtonianRcsPhysical = false;

@@ -299,7 +299,7 @@ void testNewtonianDegradation()
     CHECK(full.valid);
     CHECK(full.regime == RuntimeFlightRegime::FullNewtonian);
     CHECK(full.mainSlots == 1);
-    CHECK(full.manoeuvreSlots == 4);
+    CHECK(full.manoeuvreSlots == 8);
     CHECK(!full.effectivePhysics.reverseMainEngineAvailable);
     CHECK(near(
         full.effectivePhysics.reverseMainEngineAccelerationMps2,
@@ -376,8 +376,8 @@ void testNewtonianDegradation()
 
     CHECK(rcsLost.valid);
     CHECK(rcsLost.regime == RuntimeFlightRegime::DegradedNewtonian);
-    CHECK(near(rcsLost.authority.strafe.positive, 0.75));
-    CHECK(near(rcsLost.effectivePhysics.manoeuvreThrusterAccel, 3.0));
+    CHECK(near(rcsLost.authority.strafe.positive, 0.875));
+    CHECK(near(rcsLost.effectivePhysics.manoeuvreThrusterAccel, 3.5));
 
     state[0].operational = false;
     auto mainLost = evaluatePhysicalControlModel(

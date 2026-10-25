@@ -627,33 +627,20 @@ void ShipCore::updateMotionControl(float dt, const WorldParams& world)
         m_state.actuators.source ==
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
     {
-        const auto& runtime =
-            static_cast<const world::modules::ObjectModuleRuntime&>(
-                m_moduleRuntime);
+        // The physical 24-column actuator path is mandatory for a native
+        // Newtonian craft. A missing/destroyed module provides ZERO thrust,
+        // but must never select the old virtual RCS / attitude path.
         m_newtonianRcsPhysical = true;
-        for (const auto& mount :
-                game::ship::presets::cobra::newtonianRcsNozzles())
-        {
-            if (!runtime.findModule(std::string(mount.nozzleId)))
-            {
-                m_newtonianRcsPhysical = false;
-                break;
-            }
-        }
-        if (m_newtonianRcsPhysical)
-        {
-            const glm::dvec3 after {
-                m_transform.pitchRate, m_transform.yawRate,
-                m_transform.rollRate
-            };
-            m_newtonianRcsAngularDemandRadPerSec2 =
-                (after-angularBefore)/static_cast<double>(dt);
-            // These rates were calculated from a command law, not produced by
-            // any hardware. Restore physical rates until nozzle torque acts.
-            m_transform.pitchRate=static_cast<float>(angularBefore.x);
-            m_transform.yawRate=static_cast<float>(angularBefore.y);
-            m_transform.rollRate=static_cast<float>(angularBefore.z);
-        }
+        const glm::dvec3 after {
+            m_transform.pitchRate, m_transform.yawRate,
+            m_transform.rollRate
+        };
+        m_newtonianRcsAngularDemandRadPerSec2 =
+            (after-angularBefore)/static_cast<double>(dt);
+        // Requested angular rates are not physical until RCS torque acts.
+        m_transform.pitchRate=static_cast<float>(angularBefore.x);
+        m_transform.yawRate=static_cast<float>(angularBefore.y);
+        m_transform.rollRate=static_cast<float>(angularBefore.z);
     }
     motion.requestedMainAngularAccelerationBodyRadPerSec2 = {};
     // The accepted Assisted attitude law still computes the desired angular

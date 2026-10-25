@@ -205,6 +205,36 @@ inline plant::EngineSlotState slotFromSnapshot(
     };
 }
 
+// Legacy 8-node capability slots summarize the THREE independently installed
+// fixed-direction nozzles at each node. Be conservative: one dead nozzle
+// makes the aggregate node incomplete. The native force allocator still uses
+// healthy remaining individual nozzles, never this simplification.
+template<typename Reader>
+inline plant::EngineSlotState conservativeRcsNode(
+    const std::string& leadingX,
+    const Reader& readNozzle
+) noexcept
+{
+    plant::EngineSlotState result {true,1.0,1.0};
+    if(leadingX.size()<2 || leadingX.back()!='x' ||
+       leadingX[leadingX.size()-2]!='_')
+        return {false,0.0,0.0};
+    for(const char axis: {'x','y','z'})
+    {
+        std::string id=leadingX;
+        id.back()=axis;
+        const auto sample=readNozzle(id);
+        result.operational &= sample.operational;
+        result.thrust01=std::min(result.thrust01,sample.thrust01);
+        result.vectoring01=std::min(result.vectoring01,sample.vectoring01);
+        result.thrustIrregularity01=std::max(
+            result.thrustIrregularity01,sample.thrustIrregularity01);
+    }
+    if(!result.operational)
+        result.thrust01=result.vectoring01=0.0;
+    return result;
+}
+
 inline std::vector<plant::EngineSlotState> slotStates(
     const ShipDescriptor& descriptor,
     const world::modules::ObjectModuleRuntime& runtime
@@ -224,17 +254,19 @@ inline std::vector<plant::EngineSlotState> slotStates(
     std::vector<plant::EngineSlotState> out;
     out.reserve(topology.size());
 
-    for (const auto& moduleId : binding)
+    for (std::size_t i=0;i<binding.size();++i)
     {
-        if (moduleId.empty())
-            return {}; // Invalid installation, not a damaged engine.
-
+        const auto& moduleId=binding[i];
+        if(moduleId.empty()) return {};
+        const auto read=[&](const std::string& id) {
+            return slotFromModule(
+                findModuleDescriptor(descriptor,id),
+                runtime.findModule(id));
+        };
         out.push_back(
-            slotFromModule(
-                findModuleDescriptor(descriptor, moduleId),
-                runtime.findModule(moduleId)
-            )
-        );
+            topology[i].role==plant::EngineSlotRole::ManoeuvreCluster
+                ? conservativeRcsNode(moduleId,read)
+                : read(moduleId));
     }
 
     return out;
@@ -262,26 +294,20 @@ inline std::vector<plant::EngineSlotState> slotStates(
     std::vector<plant::EngineSlotState> out;
     out.reserve(topology.size());
 
-    for (const auto& moduleId : binding)
+    for(std::size_t i=0;i<binding.size();++i)
     {
-        if (moduleId.empty())
-            return {}; // Invalid installation, not a damaged engine.
-
-        const auto it = std::find_if(
-            modules.begin(),
-            modules.end(),
-            [&](const auto& module)
-            {
-                return module.moduleId == moduleId;
-            }
-        );
-
+        const auto& moduleId=binding[i];
+        if(moduleId.empty()) return {};
+        const auto read=[&](const std::string& id) {
+            const auto it=std::find_if(modules.begin(),modules.end(),
+                [&](const auto& m){return m.moduleId==id;});
+            return slotFromSnapshot(descriptor,
+                it==modules.end()?nullptr:&*it);
+        };
         out.push_back(
-            slotFromSnapshot(
-                descriptor,
-                it == modules.end() ? nullptr : &*it
-            )
-        );
+            topology[i].role==plant::EngineSlotRole::ManoeuvreCluster
+                ? conservativeRcsNode(moduleId,read)
+                : read(moduleId));
     }
 
     return out;

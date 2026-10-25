@@ -566,6 +566,71 @@ adopted. Conclusions:
   conflate thrust-axis fallback with reorienting cockpit/manual body
   controls or claim six-axis authority survives intact after failure.
 
+## 2026-10-25 source audit: physical keypad manoeuvres after Assisted motor failure
+
+- User specifically clarified: not whether NumPad axes follow the emergency
+  working-thrust ray, but whether **physical** force and moment are actually
+  applied when a damaged Assisted craft executes body-axis NumPad controls.
+- Confirmed end-to-end real installed free-rotation chain:
+  `PlayerInputMapper.cpp`: Num 8/2 -> `forwardInput`, 6/4 ->
+  `strafeInput`, 9/3 -> `liftInput`.
+  `DynamicMotionSystem::applyLocalFrameInput` with
+  `motion.assistedFreeRotation`: projects inputs on the CURRENT HULL
+  `f/r/u`, writes a requested `mainEngineAccelerationMps2`,
+  EXPLICITLY zeros `manoeuvreAccelerationMps2` and
+  `assistedStabilizationAccelerationMps2`.
+  `ShipCore::updateTranslationControl` binds actual installed
+  `MountedEngine` instances through `ObjectModuleRuntime` damage,
+  health, operating state, electrical reactor budget.
+  `ShipControlExecutionGateway::evaluateTranslationControl` converts
+  body request into `EngineMatrixDemand`,
+  `AssistedManeuverPrograms::execute` allocates six-axis wrench
+  using current damaged motor/passport/CoM/cone, physically executes
+  each `Engine`, calculates ΣF/m and Σ((r-COM)×F)/inertia.
+  `DynamicMotionSystem::updateLocalFrameMotion` integrates EXECUTED
+  acceleration when `installedMainPlantExecuted`, not the originally
+  desired command. This is not a synthetic RCS path.
+- A single failed motor DOES NOT prove that every independent body-axis
+  pure translation remains feasible. Available 3D translations and
+  rotations depend on remaining motor geometry, power, cones, and coupled
+  torque. The preset builder searches a smaller feasible force or leaves
+  its achievable value zero. A specific NumPad experiment/physical
+  allocator report is needed to establish authority in all directions.
+  User's earlier equipment log confirms Assisted-I left-engine failure,
+  not individual NumPad motion outcomes.
+- **Distinct confirmed SOURCE BUG in NORMAL (non-free-rotation) Assisted:
+  lingering fictitious manoeuvre acceleration.**
+  `src/game/navigation/DynamicMotionSystem.cpp` near the end of
+  `applyLocalFrameInput`: computes
+  `unservedLongitudinalAcceleration` after limiting commanded main
+  acceleration, then sets `motion.manoeuvreAccelerationMps2` to a
+  nonzero fraction of that unmet demand. But Assisted has NO ordinary
+  separate RCS. `ShipControlExecutionGateway.cpp` installed-motor
+  execution path sends only requestedMainWorld plus AssistedStabilization
+  through real motor matrix, then sets
+  `motion.engineAccelerationMps2 = actualMain + manoeuvre`.
+  `DynamicMotionSystem::updateLocalFrameMotion` even when
+  `motion.installedMainPlantExecuted` then applies actual main PLUS
+  `actualManoeuvreLocalAcceleration` (and zeroed stabilization).
+  Thus if unserved residual is nonzero, unsupported additional dv
+  bypasses installed Engine ΣF/m. A real physics inconsistency!
+  The FREE-ROTATION Assisted branch zeros this channel; defect is
+  ordinary Assisted longitudinal control under unmet acceleration,
+  especially when damaged, not the keypad path under examination.
+- This finding is grounded in source traversal; NO live numerical
+  reproduction, Windows/native test, or engine-source modification
+  was performed in this audit. Proposed minimal future fix:
+  after computing normal Assisted primary/stabilization desired requests,
+  never credit `manoeuvreAccelerationMps2` on installed-plant Assisted;
+  retain Newtonian physical RCS only; validate physical longitudinal
+  unmet-demand cannot create dv, and that free-rotation body-axis
+  manoeuvres remain force/torque honest on damaged installation.
+  Prefer fixing the origin of the phantom Assisted residual in
+  `DynamicMotionSystem` rather than masking acceleration in HUD.
+- Continue on main with only canonical `PROJECT_STATE.md`; do not
+  conflate a feasible commanded displacement in body frame with
+  direction of emergency working-thrust axis.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

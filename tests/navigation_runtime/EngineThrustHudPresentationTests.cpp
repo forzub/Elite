@@ -278,15 +278,38 @@ void testAssistedForwardThrustUsesAftBars()
     const auto descriptor = descriptorFor(Model::AssistedI);
     auto ship = shipFor(descriptor);
 
+    // A net motion vector is NOT evidence of per-motor thrust: gravity,
+    // inertia and asymmetric installed engines make such inference invalid.
     const glm::dvec3 forward =
         glm::normalize(glm::dvec3(ship.transform.forward()));
-
     ship.transform.motion.engineAccelerationMps2 =
         forward * (73.549875 * 0.5);
+
+    const auto withoutActuatorSample =
+        game::presentation::buildEngineThrustHudPresentation(ship);
+    require(totalBars(withoutActuatorSample)==4,
+            "missing live telemetry hid healthy Assisted-I layout");
+    for(const auto& group:withoutActuatorSample.groups)
+        for(const auto& bar:group.bars)
+            requireNear(bar.thrust01,0.0,1.0e-6,
+                "HUD reconstructed fictitious motor thrust from acceleration");
+
+    // Simulate an authoritative, already-executed actuator telemetry sample.
+    // This is a presentation test; no flight command or force is synthesized.
+    auto& telemetry=ship.transform.motion.engineTelemetry;
+    telemetry.valid=true;
+    telemetry.count=4;
+    for(std::size_t i=0;i<4;++i)
+    {
+        telemetry.available01[i]=1.0;
+        telemetry.thrust01[i]=i<2 ? 0.5 : 0.0;
+    }
 
     const auto p =
         game::presentation::buildEngineThrustHudPresentation(ship);
 
+    require(totalBars(p)==4,
+            "executed aft-bank sample changed engine bar count");
     for (const auto& group : p.groups)
     {
         for (const auto& bar : group.bars)
@@ -307,7 +330,7 @@ void testAssistedForwardThrustUsesAftBars()
                 bar.thrust01,
                 expected,
                 1.0e-5,
-                "forward Assisted thrust mapped to wrong engine bars"
+                "forward Assisted executed thrust mapped to wrong engine bars"
             );
         }
     }
@@ -320,13 +343,25 @@ void testAssistedLateralVectoringUsesBothBanks()
 
     const glm::dvec3 right =
         glm::normalize(glm::dvec3(ship.transform.right()));
-
     ship.transform.motion.engineAccelerationMps2 =
         right * (73.549875 * 0.5);
+
+    // A net side acceleration does not tell the HUD which motor contributed.
+    // Present only per-engine values explicitly reported by the executor.
+    auto& telemetry=ship.transform.motion.engineTelemetry;
+    telemetry.valid=true;
+    telemetry.count=4;
+    for(std::size_t i=0;i<4;++i)
+    {
+        telemetry.available01[i]=1.0;
+        telemetry.thrust01[i]=0.5;
+    }
 
     const auto p =
         game::presentation::buildEngineThrustHudPresentation(ship);
 
+    require(totalBars(p)==4,
+            "vectoring sample changed Assisted-I physical bar count");
     for (const auto& group : p.groups)
     {
         for (const auto& bar : group.bars)
@@ -335,7 +370,7 @@ void testAssistedLateralVectoringUsesBothBanks()
                 bar.thrust01,
                 0.5,
                 1.0e-5,
-                "lateral Assisted vectoring must load both main banks"
+                "Assisted vectoring HUD ignored executed thrust from both banks"
             );
         }
     }
@@ -673,7 +708,7 @@ int main()
             << " - widget style follows ShipHudProfile\n"
             << " - damaged/unavailable slots raise per-bar + group warning\n"
             << " - yellow bars are per-slot capability\n"
-            << " - red bars follow axial and vectoring main thrust\n";
+            << " - red bars follow actual per-motor actuator telemetry, never net acceleration\n";
         return EXIT_SUCCESS;
     }
     catch (const std::exception& error)

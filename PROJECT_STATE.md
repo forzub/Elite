@@ -1010,6 +1010,22 @@ heat and damage were deliberately NOT retuned here.
   efficiency across failures and engine impact aftershock STILL require
   final cross-layout gameplay/thermal validation. Do NOT silently
   change Assisted behavior merely to make Newtonian tests pass.
+- Hit-geometry / damage coverage remains UNFINISHED for non-native
+  layout meshes: Newtonian I/Y/X installed main modules were cloned with
+  meshPartIds/supportLinks cleared (as with dormant Assisted Y/X).
+  `CobraRcsEquipmentAssembly.h` explicitly does NOT create fabricated
+  physical hit volumes for nozzle equipment. Stable module-ID debug
+  damage and state replication exist, but real collisions striking the
+  visible hull do not yet prove per-nozzle/newton-main damage routing.
+  User asked about damage: do not claim this layer visually or physically
+  complete until hit ownership is authored.
+- The new selected 8-node capability projection is a conservative
+  summary (minimum availability among node x/y/z motors), not an
+  independent 6D feasible wrench certificate. Its scalar healthy
+  acceleration may still exceed real 24-nozzle motor force per mass.
+  Physical execution refuses impossible accelerations, but autopilot
+  speed/turn planning must be calibrated against measured actual
+  authority after the native physical gate.
 - The full six-model acceptance criterion is PHYSICAL Causality:
   same-tick installed module availability and power -> requested
   forces/moments -> per-engine EXECUTED thrust, heat/MW -> exact ΣF/m

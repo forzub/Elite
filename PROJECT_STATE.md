@@ -528,6 +528,44 @@ adopted. Conclusions:
   and bounded dynamics instead. Retain `PROJECT_STATE.md` as the
   only state artifact and work on main only.
 
+## 2026-10-25 gameplay visual acceptance and damaged Assisted keypad axis (code/log audited)
+
+- User flew the revised obstacle-entry/route tunnel and reports the
+  geometry is **visually excellent**. This is user-observed visual PASS
+  for the originally reported unsafe first-tangent mismatch, not a
+  full physical docking/damaged-autopilot acceptance.
+- User then asked which axes gray numpad manoeuvre commands use after an
+  engine fails. Source-audited `PlayerInputMapper.cpp` and
+  `DynamicMotionSystem::applyLocalFrameInput`: Numpad 8/2 request
+  forward/back along current HULL nose, 6/4 right/left, 9/3 up/down.
+  In Assisted free-rotation mode these requests are transformed through
+  current ship `forward/right/up` basis; they are NOT rotated into the
+  damaged working-thrust direction. This is a 3-D TRANSLATION request;
+  separate pitch/yaw/roll requests remain body-fixed rotations.
+- Assisted has NO separate ordinary RCS units: its keypad linear demands
+  and hull torque are physically allocated to the surviving installed
+  vectoring main motors in `ShipPresetEngineManeuvers` via the execution
+  gateway. Torque is computed about the real current center of mass by
+  `r cross F`. Damaged installations may have reduced or zero feasible
+  translation in particular body directions; no fake side force/spin
+  is permitted. Newtonian is different: its 8 physical RCS clusters
+  handle body-axis manoeuvre translation separately from main engine.
+- User-provided `elite_equipment_failures(1).log` reports
+  `Assisted-I slot=0 ship_engine_L target=1.0 status=APPLIED`.
+  The supplied `elite_attitude_jitter(20261025-065531).csv`
+  has 4501 samples; all show damaged-axis emergency active,
+  `axis_body=(-0.76049403,0,-0.64934492)`,
+  `axis_offset_deg=49.50776982`,
+  `axis_motor_index=1`, motor0 thrust always 0.
+  That working thrust ray is 49.51 degrees toward hull -X from
+  nose -Z, through CoM. It serves main propulsion, not the numpad
+  reference frame. The CSV lacks numpad command channels and DOES NOT
+  prove that individual keypad commands were physically executed
+  in all directions. Test with deliberate single-key inputs if needed.
+- No source-code changes were required for this question. Do not
+  conflate thrust-axis fallback with reorienting cockpit/manual body
+  controls or claim six-axis authority survives intact after failure.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

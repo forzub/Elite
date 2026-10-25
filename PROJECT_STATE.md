@@ -564,6 +564,15 @@ adopted. Conclusions:
 
 ## 2026-10-25 Assisted stationary hull-turn fixture: MODE ERROR FOUND, source-only repair
 
+- **2026-10-25 user feedback after `90833c16`:** Windows build
+  **succeeded**. User wrote "сборка - прошла" without separate CTest
+  `100% tests passed` summary; do not assert native
+  `client_route_autopilot` PASS until test output is confirmed.
+  Proceed to requested in-game stationary and ~100m/s obstacle-escape
+  tunnel verification, checking selected course versus first tunnel
+  tangent and projected live route entry.
+
+
 - User's most recent native `client_route_autopilot` CTest was RED on
   `Assisted autopilot failed to settle on commanded turn angle`.
   This is `testAssistedAutopilotCapturesTurnsWithoutOvershoot`, which

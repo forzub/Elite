@@ -157,7 +157,7 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
     // native construction there is no descriptor module binding for those
     // synthetic slots, so mirror the same healthy diagnostic state on the
     // client. For the native construction, keep real replicated module damage.
-    const auto slotState =
+    auto slotState =
         model != descriptor.physicalControlModel
             ? plant::healthySlotState(definitions)
             : capability::buildPhysicalControlSlotState(
@@ -166,10 +166,19 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
                   ship.modules
               );
 
-    if (definitions.empty() ||
-        slotState.size() != definitions.size())
-    {
+    if (definitions.empty())
         return out;
+
+    if (slotState.size() != definitions.size())
+    {
+        // An incomplete installed module-ID map is INVALID for flight
+        // capability and MUST stay rejected by ShipCapabilityBuilder.
+        // The cockpit, however, still needs to show the failed installation
+        // instead of hiding the entire engine instrument. Treat every slot
+        // as UNKNOWN/UNAVAILABLE here, never as an invented healthy motor.
+        slotState.assign(definitions.size(), plant::EngineSlotState {
+            false, 0.0, 0.0
+        });
     }
 
     // BITE supplies faults only; live per-engine output is authoritative.

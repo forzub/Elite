@@ -500,6 +500,10 @@ void DynamicMotionSystem::updateLocalFrameMotion(
             actualAssistedStabilizationWorldAcceleration,
             assistedStabilizationAuthority
         );
+    // Real Newtonian nozzle output is already gas-constrained BEFORE firing.
+    // The following compatibility block belongs only to legacy RCS demand.
+    if (!motion.installedRcsPlantExecuted)
+    {
     const double gasUsePerSecond = std::max(
         0.0,
         static_cast<double>(params.manoeuvreGasUsePerSecond)
@@ -556,6 +560,8 @@ void DynamicMotionSystem::updateLocalFrameMotion(
             motion.manoeuvreGasDepleted = true;
             actualManoeuvreWorldAcceleration = glm::dvec3(0.0);
         }
+    }
+
     }
 
     const glm::dvec3 actualManoeuvreLocalAcceleration =
@@ -640,6 +646,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     motion.localVelocityMps += localAcceleration * dt;
     // One tick's installed-plant execution never authorizes the next tick.
     motion.installedMainPlantExecuted = false;
+    motion.installedRcsPlantExecuted = false;
 
     if (motion.velocityAlignmentMode ==
             VelocityAlignmentMode::BrakeToStop &&

@@ -617,19 +617,49 @@ adopted. Conclusions:
   The FREE-ROTATION Assisted branch zeros this channel; defect is
   ordinary Assisted longitudinal control under unmet acceleration,
   especially when damaged, not the keypad path under examination.
-- This finding is grounded in source traversal; NO live numerical
-  reproduction, Windows/native test, or engine-source modification
-  was performed in this audit. Proposed minimal future fix:
-  after computing normal Assisted primary/stabilization desired requests,
-  never credit `manoeuvreAccelerationMps2` on installed-plant Assisted;
-  retain Newtonian physical RCS only; validate physical longitudinal
-  unmet-demand cannot create dv, and that free-rotation body-axis
-  manoeuvres remain force/torque honest on damaged installation.
-  Prefer fixing the origin of the phantom Assisted residual in
-  `DynamicMotionSystem` rather than masking acceleration in HUD.
+- This was an audited pre-fix source finding; corrected in the
+  2026-10-25 patch below. The earlier historical behavior describes the
+  bug, NOT current main. Newtonian independent RCS and Assisted free-
+  rotation keypad execution were not modified.
 - Continue on main with only canonical `PROJECT_STATE.md`; do not
   conflate a feasible commanded displacement in body frame with
   direction of emergency working-thrust axis.
+
+## 2026-10-25 FIXED on main: eliminate phantom Assisted braking/longitudinal RCS
+
+- **SOURCE FIX `381943f3`:** in
+  `src/game/navigation/DynamicMotionSystem.cpp`,
+  `applyLocalFrameInput` ordinary Assisted removes the old
+  `unservedLongitudinalAcceleration` -> `manoeuvreAccelerationMps2`
+  fallback. Explicitly zeros `motion.manoeuvreAccelerationMps2`.
+  `motion.engineAccelerationMps2` now combines only the main request
+  and the existing vectoring-main-assisted stabilization request.
+  Both are sent to installed `MountedEngine` units through the same
+  six-axis engine matrix. Inadequate reverse/forward authority MUST
+  leave the unserved acceleration unexecuted, not generate fake Δv.
+- **TARGETED REGRESSION `a3d94518`:** extends the existing
+  `ShipControlExecutionGatewayTests.cpp` with one real-plant case:
+  Assisted-I with both fore motors physically disabled, aft surviving,
+  ship drifting 20 m/s along its nose, zero-speed setpoint, no pilot
+  input, and explicit nonzero legacy manoeuvre limit. It demands
+  ZERO synthetic manoeuvre channel; requires the installed engine
+  matrix to execute; checks no impossible reverse thrust, and checks
+  actual integrated delta-v stays zero. This case would detect the
+  old fake RCS fallback, rather than checking a mere source string.
+- The FREE-ROTATION Assisted NumPad path is unchanged: its body-axis
+  input still requests a physically allocated main-engine six-axis
+  wrench. Newtonian RCS, main engines, reactor power, disabled-motor
+  state, route geometry and autopilot course law are unchanged.
+- **Windows/native verification PENDING.** Run only the existing
+  `ship_control_execution_gateway` CTest first, then optionally
+  `ship_control_behavior_oracle`, `ship_physical_actuator_plant`,
+  `assisted_authority_contract` if first gate passes. Do not claim
+  acceptance before the user's build/CTest or real-flight observation.
+- This fixes the ordinary manual Assisted residual. Legacy diagnostic
+  `applySystemAccelerationDemand` and precision RCS/navigation seams
+  remain separate, outside the scope of this patch; investigate only
+  with a reproducing production source path. Main-only; no extra
+  state/status files.
 
 ## Important remaining architecture work (do not rush)
 

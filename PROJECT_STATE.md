@@ -1705,6 +1705,155 @@ game obstacle escape and safe initial-tunnel course, stopped and at
   flight acceptance. Retain only main and this canonical
   `PROJECT_STATE.md`.
 
+## 2026-10-25 Claude analysis + Newtonian saturation test audit — ANALYSIS ONLY
+
+**User scope**: review an external Claude code audit and uploaded seven-test/CSV
+data against CURRENT `main`; DO NOT alter universe constants, physical
+ratings, efficiencies, temperatures, thermal laws or flight code. This is a
+source review and numerical log interpretation. No physics changes authorized.
+Reviewed uploaded 300-line Claude report `Вставленный текст(20261025-205538).txt`,
+`elite_newtonian_summary(1).txt`, `elite_newtonian_build(1).log`,
+`elite_newtonian_ctest(1).log`, `elite_newtonian_matrix(1).csv`,
+`elite_newtonian_nozzles(1).csv`.
+
+### New empirical gate (Windows native)
+
+- **7/7 selected CTests PASS** after genuine 0.05-MW power-limited and
+  impossible 450-kN authority tests; compile shows ONLY two existing
+  unused-variable warnings in EngineUnit/CobrettyCR1 preset.
+- 255 scenario/time rows (85 Newtonian-I, 85 Y, 85 X);
+  1368 nozzle rows (456 per model), 24 unique physical nozzle IDs per
+  layout. 1/3/4 installed main motors respectively.
+  An isolated 4 m/s² forward command produced −1,040,000 N total,
+  zero residual body torque for all three layouts; this is a fixed
+  **requested** acceleration and does NOT show their distinct full
+  throttle peak capabilities.
+- Unrestricted ±X/Y/Z force demands 12,000 N and ±pitch/yaw/roll
+  moment demands 30,000 N*m were satisfied within CSV precision.
+  On the `power_limited` scenario 0.05 MW was ACTUALLY consumed,
+  only ~2.71 kN of ~12.53 kN requested force was delivered; force
+  residual ~9.819 kN. On `force_saturation`, +450 kN demand delivered
+  +48 kN, leaving 402 kN residual. Zero-power gave 0 output.
+  Missing/damaged single nozzle was not resurrected. Gas depletion,
+  latch, recharge and rearm appeared for all three. Shared identical
+  RCS behavior is expected because same 24 geometry is used. These
+  fixtures do not certify actual server flight, cooling, hit geometry,
+  control intent translation, autopilot, networking or HUD.
+- No real `D:/tmp/elite_newtonian_runtime.csv` from gameplay was sent
+  in this turn. That remains the main next empirical acceptance artifact.
+
+### Claude report: VERIFIED source defects / useful observations
+
+1. **High priority service-power ordering defect**:
+   `ShipCore::init` sets `m_serviceThrottleSaved=0.0`, then explicitly
+   `m_reactor.setThrottle(0.8)`. Normally `updateSystems` resets
+   throttle to `m_serviceThrottleSaved` (zero) BEFORE
+   `m_powerBus.update()`. PowerBus samples
+   `available=m_reactor->getCurrentOutput()` BEFORE setting the
+   newly requested throttle; ordinary consumer allocation therefore
+   sees zero despite nonzero power demand, even if reactor output is
+   reset to a positive value afterwards. `getCurrentOutput()` reads
+   current throttle directly. This is stronger source evidence than
+   the external report's tentative INFERENCE. Live telemetry should
+   verify effects on pump/RCS, not infer other unexamined game paths.
+2. **High priority ER-5 thermal damage persistence**:
+   `ShipCore::updateSystems` writes
+   `engineReactorOperating.damage=equipmentDamage.accumulated`,
+   calls `advanceEngineReactor` which adds Thermal to only that
+   operating copy, without committing increment into module
+   `equipmentDamage`. The next systems tick overwrites it again.
+   ER-5 thermal damage accumulation is not authoritative/lasting.
+   Fix in a future code pass through module-runtime damage accumulator
+   (with revision quantum), NEVER update physical constants here.
+3. **High priority capability power blindness**:
+   `ShipCapabilityBuilder::applyMountedEngineAxialAuthority` uses
+   rated thrust * damage/temperature projection but does not use
+   available ER-5 power groups; those budgets apply at the executor
+   later. Separate client replication also lacks matching real
+   power/startup facts. This permits planning claims above
+   actual execution in low-power cases.
+4. **Autopilot provenance / revision**: Both
+   `ClientRouteAutopilot.h` (~2713) and
+   `DedicatedClientRouteAutopilot.h` (~2838) assign
+   `build.capabilityRevision=requestSerial` instead of revision of
+   physical state. The identifier is not sufficient evidence
+   that geometry is rebuilt when installed equipment weakens;
+   full invalidation not independently established.
+5. **Learned bounds**: `AssistedAutopilot.h` allows learned authority
+   up to 1.5*configured, and the measurement estimator up to 2*.
+   It should never be mistaken for newly granted physical authority.
+6. **PowerBus numerical issues**: `PowerBus::update` computes
+   `totalRequested/maxOutput` without zero-capacity guard,
+   and its function-static `wasEmergencyMode` is set but never used.
+   Any fix is future scope.
+7. **Runtime module integration/hit geometry**: `CoolingSystem` owns
+   separate radiator/pump states; it does not directly project
+   `ship_common_cooling`/service-reactor damage from
+   `ObjectModuleRuntime`. `CobraRcsEquipmentAssembly` expressly
+   leaves module hit-volumes unassigned. These remain genuine
+   implementation gaps, not physical-constant problems.
+8. **Request vs executed**: `DynamicMotionState` still reuses fields
+   for pre-execution demand and executed acceleration, with correct
+   interpretation depending on phase/flags. This is a robustness
+   hazard; future explicit execution DTO preferable.
+9. **Directionality and Newtonian fallback**: Source
+   `DynamicMotionSystem::applySystemAccelerationDemand` places
+   leftover requested acceleration into manoeuvre channels and
+   uses hull forward rather than emergency working axis. This
+   is bounded later by the physical executor; reachability in every
+   Newtonian autopilot path has NOT been established. The dedicated
+   signed `ShipControlAuthorityTelemetry` exists but its reduced
+   ShipParams adapter still loses sign information.
+
+### Claude report: architectural CHOICES and unverified PROPOSALS
+
+- Engine `advanceEngineOperatingState` sets `coolantHeatMW=0`,
+  removes excess via dedicated pad and thermal mass; ER-5
+  `advanceEngineReactor` similarly uses ITS OWN pad with
+  `overflowToSharedCoolantMW=0`. This is directly confirmed code,
+  BUT also matches the currently explicitly authored dedicated-pad
+  architecture. The common SERVICE reactor's `ReactorSystem::update`
+  DOES pump heat into `ThermalSystem` and radiators; it is
+  misleading to say no reactor→coolant loop exists anywhere.
+  Some `ShipCore` comments nonetheless falsely imply common
+  coolant/failed pumps affect every motor; reconcile documentation
+  with agreed design before any thermal migration.
+- Do NOT adopt Claude's proposed Stefan-Boltzmann law, design T,
+  emitter fractions `phi`, reactor coolant fraction `psi`,
+  changed conductivity, heat fractions, failure exponent,
+  damage multipliers, efficiency formula or Newtonian controller
+  formula on the strength of this audit. They are new UNTESTED
+  **gameplay physics proposals**, not bugfixes or confirmed
+  requirements. They change current rules and user explicitly
+  prohibited physical value changes now.
+- `ShipDynamics.h::mainAccelerationLimitMps2` and
+  `installedDirectionalMainAccelerationMps2` already enforce
+  `maxLinearGs` for requested limits, so raw 3* / 4* 9.56MN
+  over-G arithmetic in the external report is not itself proof
+  of a production over-acceleration. Actual execution under all
+  profiles still needs runtime acceptance.
+- Claude did not inspect all files and supplied no compiled patches;
+  claims outside its reviewed source should retain NOT ENOUGH
+  EVIDENCE labels. No assumption that flat healthy-pad temperatures,
+  coolant starvation or capability planner failure appear in real
+  gameplay was inferred solely from green fixture tests.
+
+### Next step after ANALYSIS, no changes applied here
+
+1. Build/launch current native client+server (if not yet done),
+   reproduce Newtonian I/Y/X with service loads, reactor ignition
+   off/on, partial RCS/main loss and heat. Obtain
+   `D:/tmp/elite_newtonian_runtime.csv` plus existing system/reactor
+   telemetry, particularly throttle before/after PowerBus,
+   requested/granted per-consumer MW and thermal state.
+2. Address **proven data-flow bugs** before considering any re-tuning:
+   service throttle state, persistent ER-5 thermal damage,
+   power-aware capability and revision provenance,
+   missing cooling module-to-runtime linkage. Preserve accepted
+   universe constants and don't change Assisted motion behavior.
+3. Use ONE permanent `PROJECT_STATE.md` on `main`;
+   this entry is documentation only, not a production patch.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

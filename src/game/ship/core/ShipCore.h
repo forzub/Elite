@@ -331,7 +331,7 @@ private:
     const ShipDescriptor*                       m_nativeDescriptor = nullptr;
     // Shared immutable full-installed Assisted Cobra descriptors. Each ship
     // owns its OWN ObjectModuleRuntime; switching profile never resets it.
-    const std::array<ShipDescriptor,3>*           m_assistedHardwareProfiles = nullptr;
+    const std::array<ShipDescriptor,6>*           m_cobraHardwareProfiles = nullptr;
     game::ship::plant::PhysicalControlModelId    m_initialPhysicalModel =
         game::ship::plant::PhysicalControlModelId::AssistedI;
 

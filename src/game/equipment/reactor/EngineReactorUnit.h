@@ -44,6 +44,9 @@ struct EngineReactorState
     double lastCoolantHeatMW = 0.0;
     double lastStoredHeatMW = 0.0;
     game::equipment::EquipmentDamageState damage {};
+    // Retain sub-quantum thermal damage until the canonical module damage
+    // accumulator can commit it without invalidating snapshots each tick.
+    double pendingThermalDamage01 = 0.0;
 };
 
 struct EngineReactorTick

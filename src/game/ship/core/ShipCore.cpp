@@ -1597,6 +1597,7 @@ void ShipCore::updateSystems(float dt)
                 m_state.construction.physicalControlModel);
         const auto& engineIds=m_desc->physicalControl.slotModuleIds;
         const auto& motors=m_transform.motion.engineTelemetry;
+        bool reactorDamageChanged=false;
         for(std::size_t g=0;g<generators.size() &&
             g<reactorIds.size();++g)
         {
@@ -1623,6 +1624,7 @@ void ShipCore::updateSystems(float dt)
                 def->engineReactor->padSideM;
             auto& state=module->engineReactorOperating;
             state.damage=module->equipmentDamage.accumulated;
+            const double thermalBefore=state.damage.thermal01;
             const bool installed=module->state ==
                 world::modules::ObjectModuleRuntimeState::Attached &&
                 module->health>0.0f;
@@ -1633,7 +1635,30 @@ void ShipCore::updateSystems(float dt)
                     ? electricalMW:0.0,
                 padHeadroomMW,0.0,static_cast<double>(dt));
             (void)tick;
+
+            // advanceEngineReactor() increases damage in the operating copy.
+            // Commit it to the SAME ObjectModuleRuntime equipment channel
+            // that all other failures use. Keep fractional increments between
+            // systems ticks to avoid per-frame capability revision storms.
+            state.pendingThermalDamage01+=std::max(
+                0.0,state.damage.thermal01-thermalBefore);
+            constexpr double damageQuantum01=1.0e-5;
+            const double quanta=std::floor(
+                (state.pendingThermalDamage01+1.0e-14)/damageQuantum01);
+            if(quanta>=1.0)
+            {
+                const double increment=quanta*damageQuantum01;
+                state.pendingThermalDamage01=std::max(
+                    0.0,state.pendingThermalDamage01-increment);
+                reactorDamageChanged |= m_moduleRuntime.addEquipmentDamage(
+                    reactorIds[g],
+                    game::equipment::EquipmentDamageKind::Thermal,
+                    increment);
+            }
+            state.damage=module->equipmentDamage.accumulated;
         }
+        if(reactorDamageChanged)
+            refreshRuntimeState();
     }
     // Newtonian's 24 real RCS units have independent operating clocks and
     // thermal state. The duty values come from the executed physical wrench,

@@ -39,7 +39,7 @@ namespace game::ship::core
 {
 namespace
 {
-// Cobra publishes one immutable descriptor per *installed* Assisted layout.
+// Cobra publishes one immutable descriptor for each of SIX installed layouts.
 // Module definitions (including dormant layouts) are identical across these
 // profiles; only the active engine/reactor bindings and model differ.
 const std::array<ShipDescriptor,6>& cobraInstalledProfiles(

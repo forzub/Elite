@@ -113,6 +113,10 @@ struct DynamicMotionState
     // after propagation; no prediction or controller may treat it as
     // a permanent capability. Legacy diagnostics use false.
     bool installedMainPlantExecuted = false;
+    // Real Newtonian 24-nozzle executor owns the gas accumulator and has
+    // already produced actual force/mass. Never apply legacy RCS gas cutoff
+    // to those delivered forces a second time during integration.
+    bool installedRcsPlantExecuted = false;
 
     // Legacy integrated motion channels: after the physical gateway these
     // contain EXECUTED force/mass, never requested force/mass.

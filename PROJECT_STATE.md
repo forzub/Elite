@@ -1854,6 +1854,125 @@ Reviewed uploaded 300-line Claude report `Вставленный текст(2026
 3. Use ONE permanent `PROJECT_STATE.md` on `main`;
    this entry is documentation only, not a production patch.
 
+## 2026-10-25 Claude audit follow-up — source repairs on main, native gate pending
+
+User explicitly authorized fixing confirmed Claude audit findings without
+changing ANY accepted universe physical constants, ratings, heat formulas,
+efficiency curves, or three independent hardware stacks. Only `main`, one
+canonical `PROJECT_STATE.md`. **All below are SOURCE changes; none has
+been built/CTest'ed in Windows during this pass.** Previous 7/7
+Newtonian diagnostics are the baseline BEFORE the following changes.
+
+### Applied — deterministic state / power errors
+
+1. `0898ed67`, `f3d66f87`: PowerBus gets
+   `update(bool reactorOnline=true)` (legacy calls unchanged). It
+   calculates current aggregate consumer+measured Newtonian RCS demand,
+   sets service-reactor throttle FIRST, then samples current actual output
+   and distributes it to consumers. An explicit disabled/startup gate
+   forces throttle AND consumer allocations to zero, never silently
+   restarts a reactor. Handles zero-rated/structurally destroyed reactor
+   without divide by zero; clamps emergency critical allocations to
+   finite nonnegative remaining MW; removes function-static
+   `wasEmergencyMode`. Aux physical RCS demand increases actual reactor
+   demand but does NOT preempt critical cooling/life-support; RCS execution
+   independently uses free MW after those allocations. Existing
+   universe values and priorities are untouched.
+2. `246d2ef1`, `d64edc6c`: `ShipCore::init` synchronizes initial
+   saved service throttle with actual configured startup throttle
+   (previously saved=0.0 but live reactor=0.8); `updateSystems`
+   no longer restores stale saved throttle on EVERY frame and explicitly
+   gates PowerBus on `m_propulsionReactorsOn && startupSeconds<=0`.
+   The 10-second startup duration is unchanged. Firing all reactors OFF
+   now genuinely leaves consumers unpowered through PowerBus, not only
+   cosmetically setThrottle(0).
+3. `af040a70`, `af0519a5`: independent installed ER-5
+   `EngineReactorState` gains a `pendingThermalDamage01` accumulator.
+   `ShipCore::updateSystems` measures `advanceEngineReactor()`'s
+   produced thermal damage, retains sub-`1e-5` increments, and commits
+   only completed quanta via `ObjectModuleRuntime::addEquipmentDamage`
+   to the canonical equipment Thermal channel. After commit it syncs
+   reactor operating damage to canonical module state; only actual
+   revisions call `refreshRuntimeState()`. Fixes the previously
+   discarded local-only ER-5 thermal damage without altering failure
+   thresholds, heat, material, thermal capacity or efficiency.
+4. `7508f9e3`: Assisted attitude identification still LEARNS measured
+   response, but `learnedAuthority` is now upper-clamped to
+   `configured` instead of `1.5*configured`, preventing an estimator
+   from granting more angular authority than the physically reported
+   bound. No dynamics law or controller time constant changed.
+5. `e8fa4897`, `39d3b2ac`, `47870f76`: real
+   `ship_power_bus_execution_tests` links production
+   `PowerBus.cpp`, `ReactorSystem.cpp`, `ThermalSystem.cpp`, tests
+   demand after initial zero throttle, OFF/startup/ON, shortage
+   allocation, zero-capacity finite behavior and emergency critical
+   priority. Registered in standalone CMake and added to existing
+   `scripts/run_newtonian_physics_diagnostics.sh`. Eight focused
+   CTests now expected. NEW tests are NOT yet confirmed green.
+6. `a69fe13f`, `2ad65cc0`: passive player-only server
+   `D:/tmp/elite_power_thermal_audit.csv` logs up to 240 seconds
+   with throttle/output before and after PowerBus, active reactor,
+   startup seconds, requested/granted services, critical consumers,
+   cooling power, RCS actual MW, service/coolant temperature,
+   radiator MW, and selected ER-5 temperature, actual
+   canonical Thermal damage, output/heat/pad MW. Flush every
+   30 systems ticks; no effect on physics. Use WITH existing
+   `D:/tmp/elite_newtonian_runtime.csv` when validating gameplay.
+7. All source edits are restricted to above power/state/diagnostic
+   concerns; Assisted and Newtonian physical ratings, pad/coolant
+   routing, RCS gas law, route geometry and equipment constants
+   remain unchanged.
+
+### Remain OPEN; do not accept speculative Claude patches blindly
+
+- Full **power-aware, six-axis signed** capability for planner and
+  client snapshot. The current scalar `ShipCapabilityBuilder`
+  projection still uses installed motor state and may overpromise ER-5
+  power (or service-RCS headroom) while executor honors group MW.
+  Do not fake an available power percentage or blanket-set all
+  surviving motors to zero just because one generator is damaged.
+  Need a canonical per-group entitlement/feasibility seam sourced
+  from actual ER-5 state and shared by server/client.
+- `capabilityRevision=requestSerial` in TWO client route autopilots
+  is still not actual equipment capability provenance. Needs
+  server-snapshot revision threading and precise replanning semantics.
+  Do not change a serial to a different arbitrary counter.
+- Engine, ER-5 and service reactor/cooling channels still retain
+  their intentionally independent thermal sinks. Claude-proposed
+  fractions/pump coupling/Stefan-Boltzmann calibration are new
+  unapproved universe law changes, not part of this repair.
+- Cooling/radiator/service generator collisions remain incompletely
+  connected to actual module damage; RCS geometry uses stable IDs but
+  lacks per-nozzle real hull hit volume. Fix physical hit ownership
+  separately, without inventing arbitrary geometry.
+- ER-5 `maintenance.wearPerOperatingHour` read/use and signed
+  capability after irregularity, reactor pressure/gas and tested
+  client reconstruction need separate source-level analysis.
+- RCS service-reactor generation is demand-driven using last
+  actual RCS MW as auxiliary bus request and free output for this
+  tick; at step transitions it is possible to experience one-tick
+  shortfall. New runtime trace should resolve whether additional
+  zero-lag scheduling is necessary without violating priority.
+
+### Immediate native verification and logs — before more edits
+
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+bash scripts/run_newtonian_physics_diagnostics.sh
+# Expect 8 focused tests, including ship_power_bus_execution
+bash build_mingw64.sh 2>&1 | tee /d/tmp/elite_full_build.log
+```
+
+Use `set -o pipefail` before the piped build if running manually so
+failures propagate. Check `D:/tmp/elite_newtonian_build.log`,
+`D:/tmp/elite_newtonian_ctest.log` and `D:/tmp/elite_full_build.log`.
+Once native client and server build, run Newtonian I/Y/X and switch ALL
+reactors off, restart >10s, burn RCS, then generate/damage ER-5.
+Provide `elite_power_thermal_audit.csv` plus
+`elite_newtonian_runtime.csv` to validate actual power/thermal coupling.
+Never declare gameplay success without these results.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

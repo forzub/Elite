@@ -1069,6 +1069,8 @@ void ShipCore::updateTranslationControl(float dt)
             physics.manoeuvreGasUsePerSecond,
             physics.manoeuvreGasRechargePerSecond,
             physics.manoeuvreGasRestartFraction);
+        const glm::dvec3 requestedRcsForceBeforeGasN=demand.forceBodyN;
+        const glm::dvec3 requestedRcsMomentBeforeGasNm=demand.momentBodyNm;
         demand.forceBodyN*=gasScale;
         demand.momentBodyNm*=gasScale;
 
@@ -1122,6 +1124,9 @@ void ShipCore::updateTranslationControl(float dt)
                               "service_reactor_MW,service_free_budget_MW,"
                               "gas01,gas_depleted,gas_scale,active_rcs_modules,"
                               "body_com_x_m,body_com_y_m,body_com_z_m,"
+                              "raw_rcs_force_x_N,raw_rcs_force_y_N,"
+                              "raw_rcs_force_z_N,raw_rcs_moment_x_Nm,"
+                              "raw_rcs_moment_y_Nm,raw_rcs_moment_z_Nm,"
                               "request_rcs_force_x_N,request_rcs_force_y_N,"
                               "request_rcs_force_z_N,request_rcs_moment_x_Nm,"
                               "request_rcs_moment_y_Nm,request_rcs_moment_z_Nm,"
@@ -1202,6 +1207,8 @@ void ShipCore::updateTranslationControl(float dt)
                                    <<','<<value.z;
                     };
                     add3(physics.centerOfMassLocalMeters);
+                    add3(requestedRcsForceBeforeGasN);
+                    add3(requestedRcsMomentBeforeGasNm);
                     add3(demand.forceBodyN);
                     add3(demand.momentBodyNm);
                     add3(executed.deliveredForceN);

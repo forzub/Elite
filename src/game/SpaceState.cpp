@@ -7721,7 +7721,8 @@ m_systemMapRenderer.render(
                         context().app,
                         "cockpit.emergency.thrust_axis",
                         "THRUST AXIS"
-                    )
+                    ),
+                    m_playerView->hudEdgeMapper
                 );
 
                 // A working-axis sight alone cannot tell a human pilot where
@@ -7744,7 +7745,8 @@ m_systemMapRenderer.render(
                             glm::dvec4(velocityWorld,0.0));
                         m_flightVectorIndicatorRenderer.
                             renderEmergencyVelocityVector(
-                                vp,velocityCamera,sightCamera.fov());
+                                vp,velocityCamera,sightCamera.fov(),
+                                m_playerView->hudEdgeMapper);
                     }
                 }
             }

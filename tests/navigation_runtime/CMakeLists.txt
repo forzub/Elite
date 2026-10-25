@@ -23,6 +23,20 @@ get_filename_component(
     ABSOLUTE
 )
 
+# Match the production EliteBite binary boundary when this navigation
+# harness is configured as its own CMake root. A cockpit presentation test
+# uses BiteApi through a header and therefore needs its compiled library.
+if(NOT TARGET EliteBite)
+    add_library(EliteBite STATIC
+        "${ELITE_SOURCE_ROOT}/src/game/bite/BiteApi.cpp"
+    )
+    target_include_directories(EliteBite PUBLIC
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+    )
+    target_compile_features(EliteBite PUBLIC cxx_std_17)
+endif()
+
 include("${ELITE_SOURCE_ROOT}/cmake/EliteRuckigNavigation.cmake")
 elite_add_ruckig_navigation(
     EliteNavigationRuckig
@@ -1758,7 +1772,7 @@ target_compile_features(
 
 target_link_libraries(
     engine_thrust_hud_presentation_tests
-    PRIVATE EliteNavigationRuntimeControl
+    PRIVATE EliteNavigationRuntimeControl EliteBite
 )
 
 if(MSVC)

@@ -212,6 +212,43 @@ static const std::vector<EngineSlotDefinition> NewtonianX = {
      return ids;
  }
 
+ [[nodiscard]] inline std::vector<std::string> installedNewtonianEngineModuleIds(
+     PhysicalControlModelId model)
+ {
+     const char* prefix=nullptr;
+     switch(model)
+     {
+         case PhysicalControlModelId::NewtonianI: prefix="ship_newtonian_i_"; break;
+         case PhysicalControlModelId::NewtonianY: prefix="ship_newtonian_y_"; break;
+         case PhysicalControlModelId::NewtonianX: prefix="ship_newtonian_x_"; break;
+         default: return {};
+     }
+     std::vector<std::string> ids;
+     for(const auto& slot:propulsionSlots(model))
+         if(slot.role==EngineSlotRole::AftMain)
+             ids.push_back(std::string(prefix)+slot.id);
+         else
+             ids.push_back({}); // Legacy virtual-cluster slot, not an engine.
+     return ids;
+ }
+
+ [[nodiscard]] inline std::vector<std::string> installedNewtonianReactorModuleIds(
+     PhysicalControlModelId model)
+ {
+     const char* prefix=nullptr;
+     switch(model)
+     {
+         case PhysicalControlModelId::NewtonianI: prefix="ship_newtonian_i_"; break;
+         case PhysicalControlModelId::NewtonianY: prefix="ship_newtonian_y_"; break;
+         case PhysicalControlModelId::NewtonianX: prefix="ship_newtonian_x_"; break;
+         default: return {};
+     }
+     std::vector<std::string> ids;
+     for(const auto& group:installationSlots(model).engineReactors)
+         ids.push_back(std::string(prefix)+group.slotId+"_reactor");
+     return ids;
+ }
+
  [[nodiscard]] inline std::vector<std::string> installedAssistedReactorModuleIds(
      PhysicalControlModelId model)
  {

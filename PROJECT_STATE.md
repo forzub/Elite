@@ -1570,6 +1570,10 @@ game obstacle escape and safe initial-tunnel course, stopped and at
   shifted CoM, and a sustained replenish/deplete/restart gas cycle.
   It checks that delivered output equals independent ΣF, Σ(r-COM)×F,
   sampled nozzle MW, and never exceeds the input bus budget.
+  `f6e8845b` also requires genuine nonzero correctly signed delivered
+  force/torque for EACH healthy ±X/±Y/±Z and pitch/yaw/roll axis.
+  It deliberately does NOT force unrealistically perfect multi-axis
+  cancellation; CSV residuals show actual unmet demand and cross-torque.
   **This is a deterministic isolated solver check**, NOT a
   `ShipCore` full-game simulation or claim of six-model acceptance.
   Files:

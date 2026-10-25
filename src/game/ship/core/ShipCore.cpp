@@ -1045,10 +1045,21 @@ void ShipCore::updateTranslationControl(float dt)
             1.0e-9,game::ship::manoeuvreAccelerationLimitMps2(physics));
         const double angularAuthority=std::max(
             1.0e-9,game::ship::angularAccelerationLimitRadPerSec2(physics));
-        const double intensity=std::clamp(std::max(
-            glm::length(oldRcsWorld)/lateralAuthority,
-            glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
-                angularAuthority),0.0,1.0);
+        bool nozzleCanActuallyFire=false;
+        if(demand.availableElectricalMW>1.0e-9)
+            for(std::size_t i=0;i<installed.size();++i)
+                if(game::equipment::engine::Engine(installed[i]).
+                    instantaneousAvailableThrustNewtons(demand.tick)>1.0e-9)
+                {
+                    nozzleCanActuallyFire=true;
+                    break;
+                }
+        const double intensity=nozzleCanActuallyFire
+            ? std::clamp(std::max(
+                glm::length(oldRcsWorld)/lateralAuthority,
+                glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
+                    angularAuthority),0.0,1.0)
+            : 0.0;
         const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
             rcsMotion.manoeuvreGasPressure01,
             rcsMotion.manoeuvreGasDepleted,

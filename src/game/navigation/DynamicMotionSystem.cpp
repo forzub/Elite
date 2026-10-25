@@ -1090,31 +1090,15 @@ void DynamicMotionSystem::applyLocalFrameInput(
             totalLinearEnvelope
         );
 
-    const double actualMainLongitudinalAcceleration =
-        glm::dot(motion.mainEngineAccelerationMps2, assistedTravelForward);
-    const glm::dvec3 unservedLongitudinalAcceleration =
-        assistedTravelForward * (
-            requestedLongitudinalAcceleration -
-            actualMainLongitudinalAcceleration
-        );
-
-    // If installed longitudinal main authority cannot serve the requested
-    // acceleration, only the real manoeuvre/RCS budget may cover the residue.
-    // The final combined command still fits the shared linear-load envelope.
-    motion.manoeuvreAccelerationMps2 =
-        clampSecondaryToTotalAccelerationEnvelope(
-            motion.assistedStabilizationAccelerationMps2 +
-                motion.mainEngineAccelerationMps2,
-            clampMagnitude(
-                unservedLongitudinalAcceleration,
-                manoeuvreAccel
-            ),
-            totalLinearEnvelope
-        );
-
+    // Assisted has no independent manoeuvre/RCS thrusters. If the installed
+    // fore/aft engines cannot supply a longitudinal correction, that part
+    // of the request remains unserved; it must not turn into a second,
+    // physically unallocated acceleration in the motion integrator.
+    // Keypad translation and velocity stabilization already share the
+    // real vectoring-main engine allocation above.
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
     motion.engineAccelerationMps2 =
         motion.mainEngineAccelerationMps2 +
-        motion.manoeuvreAccelerationMps2 +
         motion.assistedStabilizationAccelerationMps2;
 
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&

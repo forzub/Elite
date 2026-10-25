@@ -2,6 +2,8 @@
 #include "ReactorSystem.h"
 #include "src/game/equipment/capabilities/IPowerConsumer.h"
 #include <iostream>
+#include <algorithm>
+#include <cmath>
 
 namespace game::ship::core
 {
@@ -18,6 +20,12 @@ void PowerBus::registerConsumer(game::equipment::IPowerConsumer* consumer)
 {
     std::cout << "[PowerBus] consumer registered\n";
     m_consumers.push_back(consumer);
+}
+
+void PowerBus::setAuxiliaryDemandMW(double demandMW)
+{
+    m_auxiliaryDemandMW = std::isfinite(demandMW)
+        ? std::max(0.0,demandMW) : 0.0;
 }
 
 
@@ -99,7 +107,7 @@ void PowerBus::update()
     static bool wasEmergencyMode = false;  // Запоминаем предыдущее состояние
     
     // 1. Собираем запросы
-    double totalRequested = 0.0;
+    double totalRequested = m_auxiliaryDemandMW;
     for (auto* c : m_consumers) {
         double req = c->getRequestedPower();
         totalRequested += req;

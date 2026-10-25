@@ -4,9 +4,9 @@
 // 8 independent mount nodes x 3 FIXED outward-facing nozzle motors.
 // Values are normalized geometry until hull-scale physical mount dimensions
 // are authored; do not treat them as metres or certification of authority.
-// These nozzle IDs must become separate ObjectModuleRuntime equipment IDs;
-// displaying this catalog does not mean the old omnidirectional RCS executor
-// has been replaced.
+// Every nozzle ID is an installed, separately damageable ObjectModuleRuntime
+// module. Native Newtonian flight executes this exact fixed-direction bank;
+// the eight aggregate capability nodes are NOT separate omnidirectional motors.
 #include <array>
 #include <string_view>
 #include <glm/glm.hpp>

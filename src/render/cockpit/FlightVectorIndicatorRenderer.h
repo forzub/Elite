@@ -11,6 +11,8 @@
 #include "src/render/Font.h"
 #include "src/render/types/Viewport.h"
 
+class HudEdgeMapper;
+
 namespace render::cockpit
 {
 
@@ -33,7 +35,8 @@ public:
         const glm::dvec3& workingAxisBody,
         const glm::dvec3& workingAxisCamera,
         float verticalFovDegrees,
-        const std::string& localizedLabel
+        const std::string& localizedLabel,
+        const HudEdgeMapper& hudBoundary
     );
 
     // Flight-path marker: measured translational course, NOT the motor axis.
@@ -42,7 +45,8 @@ public:
     void renderEmergencyVelocityVector(
         const Viewport& viewport,
         const glm::dvec3& velocityCamera,
-        float verticalFovDegrees
+        float verticalFovDegrees,
+        const HudEdgeMapper& hudBoundary
     );
 
     void render(

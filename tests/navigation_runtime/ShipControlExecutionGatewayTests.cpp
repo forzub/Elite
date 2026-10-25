@@ -372,6 +372,92 @@ void testRejectedAllocatorCannotMoveShipOnRequestedAcceleration()
             "unexecuted motor request leaked into physical velocity/position");
 }
 
+void testDamagedAssistedCannotBrakeWithNonexistentRcs()
+{
+    using namespace game::ship::plant;
+    using namespace game::equipment::engine;
+
+    // Both fore engines are disabled: the surviving aft bank cannot apply
+    // reverse longitudinal force. In ordinary Assisted flight a zero-speed
+    // target must NOT invoke any separate, nonexistent manoeuvre thruster.
+    const auto model = PhysicalControlModelId::AssistedI;
+    const auto& topology = physicalControlSlots(model);
+    const auto slots = healthySlotState(topology);
+    const auto passport = presets::CobrettyCR1VectorMainDrive();
+    game::equipment::EquipmentDamageLayer damage {};
+    EngineOperatingState operating {};
+    operating.temperatureK = passport.nominalOperatingTemperatureK;
+    std::vector<MountedEngine> mounted(topology.size());
+    for (std::size_t i = 0; i < topology.size(); ++i)
+    {
+        mounted[i] = {
+            &passport, &damage, &operating, topology[i].id,
+            topology[i].role == EngineSlotRole::AftMain
+        };
+    }
+
+    ShipParams physics {};
+    physics.massKg = 260000.0;
+    physics.maxCombatSpeed = 400.0f;
+    physics.maxGs = 12.0f;
+    physics.maxLinearGs = 12.0f;
+    physics.throttleAccel = 5.0f;
+    physics.strafeAccel = 10.0f;
+    physics.strafeDamping = 5.0f;
+    physics.angularAccel = 3.0f;
+    physics.forwardMainEngineAvailable = true;
+    physics.forwardMainEngineAccelerationMps2 = 40.0f;
+    physics.reverseMainEngineAvailable = false;
+    physics.reverseMainEngineAccelerationMps2 = 0.0f;
+    // Deliberately expose the legacy compatibility RCS fallback. Assisted
+    // must NEVER use it when the installed main engines cannot brake.
+    physics.manoeuvreThrusterAuthorityExplicit = true;
+    physics.manoeuvreThrusterAccel = 3.0f;
+
+    ShipTransform ship {};
+    ship.motion.mode = game::navigation::MotionMode::HubTactical;
+    ship.motion.systemId = 1;
+    ship.motion.localControlLaw =
+        game::navigation::LocalFlightControlLaw::Assisted;
+    ship.motion.travelFrame.systemId = 1;
+    ship.motion.travelFrame.frameId = "assisted-no-ghost-rcs";
+    ship.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
+    ship.motion.travelFrame.valid = true;
+    ship.motion.localVelocityMps = glm::dvec3(ship.forward()) * 20.0;
+    ship.motion.targetForwardSpeedMps = 0.0;
+    const glm::dvec3 initialVelocity = ship.motion.localVelocityMps;
+
+    ShipControlState neutral {};
+    AssistedManeuverPrograms programs;
+    (void)Gateway::evaluateTranslationControl(
+        ship, physics, neutral, model, slots, 0.02f,
+        &mounted, &programs, nullptr
+    );
+    require(
+        glm::length(ship.motion.requestedManoeuvreAccelerationMps2) <
+            1.0e-10,
+        "damaged Assisted invented a separate RCS request to brake"
+    );
+    require(
+        ship.motion.installedMainPlantExecuted,
+        "damaged Assisted physical engine matrix was not executed"
+    );
+    require(
+        glm::length(ship.motion.mainEngineAccelerationMps2) < 1.0e-9 &&
+        glm::length(ship.motion.manoeuvreAccelerationMps2) < 1.0e-9,
+        "aft-only Assisted produced reverse acceleration without hardware"
+    );
+    require(
+        Gateway::propagateHubTacticalTranslation(ship, physics, 0.02),
+        "damaged Assisted failed to integrate the executed engine forces"
+    );
+    require(
+        glm::length(ship.motion.localVelocityMps - initialVelocity) <
+            1.0e-8,
+        "damaged Assisted obtained a braking impulse from nonexistent RCS"
+    );
+}
+
 void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
 {
     using namespace game::ship::plant;
@@ -599,6 +685,7 @@ int main()
         testAssistedSingleMainLossUsesTrimBeforeHullRotation();
         testNeutralManualPath();
         testRejectedAllocatorCannotMoveShipOnRequestedAcceleration();
+        testDamagedAssistedCannotBrakeWithNonexistentRcs();
         testExplicitEmptyPowerBudgetCannotRunInstalledMain();
 
         std::cout << "SHIP CONTROL EXECUTION GATEWAY TESTS: PASS\n";
@@ -607,6 +694,7 @@ int main()
         std::cout << " - callers no longer need to interpret ShipControlState\n";
         std::cout << " - axial Newtonian-I main is centered radially, while aft-mounted TVC creates real yaw/pitch reaction\n";
         std::cout << " - damaged-main feedback physically reduces avoidable bias without synthetic cancellation\n";
+        std::cout << " - installed Assisted cannot invent RCS braking after fore-bank failure\n";
         std::cout << " - installed reactor off/half/full and executed impulse are checked through physical propagation\n";
         return EXIT_SUCCESS;
     }

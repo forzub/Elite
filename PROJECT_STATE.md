@@ -689,6 +689,51 @@ adopted. Conclusions:
   induced body moment. The safe first-route tunnel was visually
   accepted earlier.
 
+## 2026-10-25 emergency HUD vector markers constrained to ship HUD frame (source-only)
+
+- User confirmed post-physics-fix gameplay appears correct and reported
+  a VISUAL issue: the new direction-vector indicators leave the HUD
+  frame even though older navigation markers stay inside.
+- Root cause in current main: `PlayerShipView` already renders normal
+  markers using `hudEdgeMapper.isInsideBoundary/projectDirection`
+  against `ShipHudProfile.edgeBoundary.contour`, but
+  `FlightVectorIndicatorRenderer::renderEmergencyThrustAxis`
+  (amber working-thrust vector) and
+  `renderEmergencyVelocityVector` (green true VREL direction)
+  independently clipped projected positions to the full viewport
+  rectangle using `xMax/yMax = halfScreen - 31`. The viewport
+  rectangle is NOT the nonrectangular ship HUD contour.
+- **SOURCE PATCH on main, pending native build and visual acceptance:**
+  `d2b713d5` adds the canonical `HudEdgeMapper` parameter to
+  both emergency sights;
+  `4f5eedbc` introduces a shared pure projected-marker placement
+  helper using the SAME HUD polygon and ray intersection as the
+  existing markers. It finds a valid center INSET by checking a
+  16-point perimeter over the full marker radius (24px amber, 23px
+  green) along the projected camera ray, so the glyph is not half
+  outside the contour at corners. Screen-space marker projection,
+  actual camera FOV, emergency working-axis physics and true
+  velocity vector are unchanged. Labels use measured Font text width
+  and are only drawn in a position whose bounding corners fit inside
+  that polygon, never forced outside the frame.
+  `b7fb8e36` passes `m_playerView->hudEdgeMapper` from the two
+  `SpaceState.cpp` call sites. The invariant is visual containment,
+  not a new HUD contour or a new direction.
+- Existing healthy boresight/flight instrument and ordinary world
+  labels are unchanged. No autopilot, motor, damage or physics code
+  was edited.
+- Source readback verified exactly two updated call sites matching
+  new renderer signatures and HUD mapper included in the SAME
+  `EliteGame` CMake compilation unit list; Windows compilation is
+  NOT verified here. NEXT: user pulls main, runs
+  `bash build_mingw64.sh` in MSYS2 MinGW64, checks amber and green
+  emergency sights near all four/slope HUD edges at various
+  orientations/camera FOVs; labels must not cross the frame. If
+  cockpit profile boundary is absent, the two marks now fail closed
+  instead of inventing a full-viewport frame.
+- Canonical main-only `PROJECT_STATE.md` remains the sole project
+  context; keep this as pending runtime visual acceptance.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

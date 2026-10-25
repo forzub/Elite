@@ -196,6 +196,7 @@ void ShipCore::init(
     // ===============================================
     m_reactor = ReactorSystem(descriptor.reactor);
     m_reactor.setThrottle(0.8);
+    m_serviceThrottleSaved=m_reactor.getThrottle();
 
     m_thermal = ThermalSystem(descriptor.thermal);
 
@@ -1445,9 +1446,10 @@ void ShipCore::updateSystems(float dt)
     if(m_propulsionReactorsOn && m_propulsionReactorsStartupRemainingSeconds>0.0)
         m_propulsionReactorsStartupRemainingSeconds=std::max(0.0,
             m_propulsionReactorsStartupRemainingSeconds-static_cast<double>(dt));
-    if(m_propulsionReactorsOn &&
-       m_propulsionReactorsStartupRemainingSeconds<=0.0)
-        m_reactor.setThrottle(m_serviceThrottleSaved);
+    // Reapply the saved service-reactor setting only at the instant
+    // startup completes; PowerBus owns continuous demand-based throttle.
+    // Reapplying a stale saved value on EVERY frame would erase its output.
+    // During shutdown/startup the explicit bus gate keeps output at zero.
 
     // Internal service simulation is deliberately separated from motion.
     // Activation may decimate this lane for non-player ships while world
@@ -1468,7 +1470,9 @@ void ShipCore::updateSystems(float dt)
 
     m_powerBus.setAuxiliaryDemandMW(
         m_newtonianRcsPhysical ? m_newtonianRcsElectricalDemandMW : 0.0);
-    m_powerBus.update();
+    m_powerBus.update(
+        m_propulsionReactorsOn &&
+        m_propulsionReactorsStartupRemainingSeconds<=0.0);
     // Do not feed the reactor last frame's circulation capacity.
     m_cooling.prepareTransport();
     m_reactor.update(dt, m_thermal, m_cooling.getPumpCapacity());

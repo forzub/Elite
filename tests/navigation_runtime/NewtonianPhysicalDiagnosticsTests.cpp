@@ -264,6 +264,29 @@ void recordRcs(
         require(out.throttle01[0]==0.0 && out.availabilityN[0]==0.0 &&
                 out.electricalMW[0]==0.0,
             "A missing physical nozzle generated real force");
+    if(name=="power_limited")
+    {
+        // This MUST exercise actual current limiting, not merely an
+        // available MW value higher than the unrestricted motor draw.
+        require(electricity>0.0 &&
+                electricity<=command.availableElectricalMW+1.e-8,
+            "Restricted ship bus delivered RCS power above its budget");
+        require(glm::length(out.deliveredForceN)>1.e-6 &&
+                glm::length(out.deliveredForceN)<
+                    0.5*glm::length(command.forceBodyN),
+            "Low RCS power budget did not materially reduce thrust");
+    }
+    if(name=="force_saturation")
+    {
+        double totalInstalledCapacityN=0.0;
+        for(double capacity:out.availabilityN)
+            totalInstalledCapacityN+=capacity;
+        require(glm::length(out.deliveredForceN)<
+                    totalInstalledCapacityN+1.e-6 &&
+                glm::length(out.deliveredForceN-command.forceBodyN)>
+                    1.e+4,
+            "Impossible RCS demand was represented as achievable force");
+    }
 }
 
 void runModel(Recorders& logs,Model model,std::size_t expectedMain)
@@ -348,11 +371,21 @@ void runModel(Recorders& logs,Model model,std::size_t expectedMain)
     f.damage[0].accumulated.impact01=0.0;
     affected.availableElectricalMW=0.0;
     recordRcs(logs,model,"power_off",f,affected,main.mainCount);
-    affected.availableElectricalMW=0.30;
+    // Full-power draw for this scenario is about 0.23 MW; 0.05 MW
+    // ACTUALLY saturates the bus and proves thrust scales down.
+    affected.availableElectricalMW=0.05;
     recordRcs(logs,model,"power_limited",f,affected,main.mainCount);
     affected.availableElectricalMW=5.0;
     affected.centerOfMassLocalMeters={1.1,-0.7,0.8};
     recordRcs(logs,model,"cargo_com_shift",f,affected,main.mainCount);
+    // The 24 physical nozzles have finite thrust. Deliberately request
+    // more than their entire installed sum and record the actual miss.
+    NewtonianRcsDemand impossible {};
+    impossible.forceBodyN={450000.0,0.0,0.0};
+    impossible.mountHalfExtentsM=HalfExtents;
+    impossible.availableElectricalMW=10.0;
+    impossible.tick=301;
+    recordRcs(logs,model,"force_saturation",f,impossible,main.mainCount);
 
     double gas=1.0;
     bool depleted=false;

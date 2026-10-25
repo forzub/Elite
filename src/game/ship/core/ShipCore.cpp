@@ -1706,7 +1706,7 @@ void ShipCore::updateSystems(float dt)
     // Read-only reconciliation trace for the user's D:/tmp acceptance.
     // Source of truth remains the server's installed equipment; this log
     // cannot enable or repair a damaged module or change reactor throttle.
-    if(m_role==ShipRole::Player)
+    if(m_role==ShipRole::Player && m_desc)
     {
         static std::ofstream powerTrace;
         static bool attempted=false;

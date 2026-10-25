@@ -44,6 +44,38 @@ struct NewtonianRcsResult
     std::array<double, 24> wasteHeatMW {};
 };
 
+// Resource gameplay policy for the actual installed 24-nozzle plant.
+// The gas is a replenished manoeuvre budget, NOT the fuel/propellant physics.
+// It constrains commands BEFORE they become actual physical force/torque;
+// never revoke a delivered impulse after a nozzle has fired.
+[[nodiscard]] inline double advanceNewtonianRcsGas(
+    double& pressure01, bool& depleted, double dt,
+    double requestedIntensity01, double usePerSecond,
+    double rechargePerSecond, double restartFraction
+) noexcept
+{
+    if (!std::isfinite(dt) || dt<=0.0) return 0.0;
+    pressure01=std::clamp(
+        std::isfinite(pressure01)?pressure01:0.0,0.0,1.0);
+    const double charge=std::max(0.0,rechargePerSecond)*dt;
+    const double available=std::min(1.0,pressure01+charge);
+    const double restart=std::clamp(restartFraction,0.0,1.0);
+    if(depleted)
+    {
+        pressure01=available;
+        if(pressure01>=restart) depleted=false;
+        return 0.0; // Restart next tick; this tick's nozzles stay off.
+    }
+    const double requested=std::clamp(requestedIntensity01,0.0,1.0);
+    const double cost=std::max(0.0,usePerSecond)*requested*dt;
+    const double factor=cost>1.0e-12
+        ? std::clamp(available/cost,0.0,1.0):1.0;
+    pressure01=std::max(0.0,available-factor*cost);
+    if(cost>1.0e-12 && pressure01<=1.0e-12)
+        depleted=true;
+    return factor;
+}
+
 // A bounded deterministic coordinate-descent least-squares solution.
 // Force and torque are normalized by independently estimated full-bank
 // capacities so neither physical unit dominates due only to scale.

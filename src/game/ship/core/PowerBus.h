@@ -20,6 +20,11 @@ class PowerBus
 
         void registerConsumer(game::equipment::IPowerConsumer* consumer);
 
+        // Additional measured physical draw not owned by a persistent
+        // IPowerConsumer (currently the executed 24-nozzle RCS bank).
+        void setAuxiliaryDemandMW(double demandMW);
+        double auxiliaryDemandMW() const { return m_auxiliaryDemandMW; }
+
         void update();
 
         double availablePower() const;
@@ -30,6 +35,7 @@ class PowerBus
         ReactorSystem*                                  m_reactor = nullptr;
         std::vector<game::equipment::IPowerConsumer*>   m_consumers;
         bool                                            m_overloaded = false;
+        double                                          m_auxiliaryDemandMW = 0.0;
     
     };
 

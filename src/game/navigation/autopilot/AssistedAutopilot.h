@@ -543,10 +543,13 @@ private:
             return 0.0;
         if (!(learned > 1.0e-9))
             return configured;
+        // Observed transient angular response is diagnostic feedback,
+        // NEVER authorization to command more than the live installed
+        // physical acceleration envelope provided by ShipParams.
         return std::clamp(
             learned,
             configured * 0.25,
-            configured * 1.50
+            configured
         );
     }
 

@@ -255,12 +255,18 @@ void testFaultFlagComesFromPhysicalSlotAvailability()
     require(p.visible, "damaged engine HUD unexpectedly hidden");
     require(p.warning,
             "unavailable physical engine slot did not raise widget warning");
+    require(totalBars(p)==4,
+            "broken installed binding hid physical engine bars");
 
     bool sawFault = false;
     for (const auto& group : p.groups)
     {
         for (const auto& bar : group.bars)
+        {
             sawFault = sawFault || bar.fault;
+            require(bar.capability01==0.0f && bar.thrust01==0.0f,
+                "invalid installation invented healthy engine capability");
+        }
     }
 
     require(sawFault,

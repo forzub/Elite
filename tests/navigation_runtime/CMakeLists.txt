@@ -2725,3 +2725,29 @@ add_test(
 set_tests_properties(newtonian_physics_diagnostics PROPERTIES
     WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+# Test the REAL service reactor + PowerBus implementation. It intentionally
+# starts with a zero throttle to detect pre-throttle stale allocation.
+add_executable(ship_power_bus_execution_tests
+    PowerBusExecutionTests.cpp
+)
+target_sources(ship_power_bus_execution_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}/src/game/ship/core/PowerBus.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/core/ReactorSystem.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/core/ThermalSystem.cpp"
+)
+target_include_directories(ship_power_bus_execution_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(ship_power_bus_execution_tests PRIVATE cxx_std_17)
+if(MSVC)
+    target_compile_options(ship_power_bus_execution_tests
+        PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(ship_power_bus_execution_tests
+        PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_test(NAME ship_power_bus_execution COMMAND ship_power_bus_execution_tests)
+set_tests_properties(ship_power_bus_execution PROPERTIES
+    WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}")

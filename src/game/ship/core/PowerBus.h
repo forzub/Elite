@@ -25,7 +25,9 @@ class PowerBus
         void setAuxiliaryDemandMW(double demandMW);
         double auxiliaryDemandMW() const { return m_auxiliaryDemandMW; }
 
-        void update();
+        // False while ALL reactors are switched off or cold-starting.
+        // The bus must not autonomously restart an explicitly stopped reactor.
+        void update(bool reactorOnline = true);
 
         double availablePower() const;
         bool overloaded() const;

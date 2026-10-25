@@ -1620,6 +1620,36 @@ game obstacle escape and safe initial-tunnel course, stopped and at
   Assisted control physics unchanged; Newtonian gameplay gas
   remains a replenishing **gameplay** limit.
 
+## 2026-10-25 first Newtonian D:/tmp diagnostic compile gate: explicit GLM vector fix
+
+- User ran `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash scripts/run_newtonian_physics_diagnostics.sh` in MSYS2 MinGW64.
+  The standalone CMake configuration completed, but the NEW
+  `newtonian_physics_diagnostics_tests` source FAILED COMPILATION;
+  CTest never started. The compiler identified implicit conversion
+  from a one-element braced initializer `{0.0}` into
+  `const glm::dvec3&`, where installed GLM 1.0.x marks
+  `glm::vec3(double)` explicit. Primary errors at diagnostic test
+  lines 156/157 (default function parameters), 259/260 (near())
+  and 382 (two explicit arguments). EngineUnit unused coolant/wasteMW
+  warnings were nonblocking.
+- **SOURCE FIX `a658ea94` on main:** change ONLY the new
+  `tests/navigation_runtime/NewtonianPhysicalDiagnosticsTests.cpp`
+  to use `glm::dvec3(0.0)` for default reference argument
+  temporaries and explicit zero-vector calls; keep deliberate direct
+  local `glm::dvec3 value {0.0}` initialization unchanged because
+  it is legal direct-list initialization. Verified no remaining
+  single-value implicit argument braces in this file. No physics,
+  mass, damage, power, gas, solver coefficients or acceptance
+  thresholds changed.
+- NEXT NATIVE GATE:
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash scripts/run_newtonian_physics_diagnostics.sh`.
+  Logs still belong under `D:/tmp`. Compile and seven-test results
+  after this correction are PENDING; do not yet claim any of the
+  new diagnostic scenarios pass. Afterwards inspect physical CSV
+  residuals and the real `elite_newtonian_runtime.csv` from game.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

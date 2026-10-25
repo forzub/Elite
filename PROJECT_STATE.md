@@ -734,6 +734,179 @@ adopted. Conclusions:
 - Canonical main-only `PROJECT_STATE.md` remains the sole project
   context; keep this as pending runtime visual acceptance.
 
+## 2026-10-25 SIX-MODEL END-TO-END SOURCE AUDIT — GAPS FOUND, NO PHYSICS PATCH
+
+User requested careful review of input -> flight law -> physical installed
+force/moment -> motion -> replicated MotherComputer -> HUD across Assisted
+I/Y/X and Newtonian I/Y/X. This is a SOURCE AUDIT of main (not six native
+runtime acceptances). DO NOT claim all six are physically verified or
+fix these by weakening any green synthetic-oracle tests.
+
+### What is structurally correct
+
+- Shared pilot `PlayerInputMapper` drives body-axis Num 8/2 forward,
+  6/4 strafe, 9/3 lift and W/S Q/E A/D attitude; laws are independent.
+- Assisted fixed installed topologies: I 2 aft+2 fore, Y 3+3,
+  X 4+4; actual installed CR-1 engines and installed ER-5 reactors
+  are in the persistent Cobra module graph for all three Assisted
+  layouts, switched through `ShipCore::assistedCobraInstalledProfiles`.
+  `ShipCore::updateTranslationControl` binds `MountedEngine` from
+  `ObjectModuleRuntime`; `AssistedManeuverPrograms` physically resolves
+  ΣF/m and Σ(r-COM)×F/I with installed damage/thermal availability and
+  real reactor group power. `DynamicMotionSystem` integrates actual
+  motor impulse, not requested impulse, on the installed path. The
+  former ordinary Assisted ghost `manoeuvreAccelerationMps2` was
+  removed in `381943f3`, user reported target Windows CTest green.
+- Newtonian actual `newtonianRcsNozzles()` enumerates 8 position nodes
+  x 3 distinct fixed-direction engines = 24 nozzle modules.
+  `allocateNewtonianRcs` executes actual damaged `MountedEngine`
+  samples, computes ΣF and moment, and returns actual nozzle duties.
+  Runtime `ShipCore` conditionally uses it for a native installed
+  Newtonian construction; it does NOT execute for DiagnosticOverride.
+- HUD primary path `SpaceState::render` ->
+  `MotherComputerClientAdapter::build...Cockpit` ->
+  `buildEngineThrustHudPresentation(cockpit)` ->
+  `EngineThrustIndicatorRenderer`. Motor bars use actual
+  `engineTelemetry` thrust/angles/availability, ER-5 group
+  electricity/temperature status and module BITE; 8 Newtonian RCS
+  indicator dots are aggregated from groups of 3 physically reported
+  duties when available. The prior emergency thrust/velocity HUD-frame
+  constraint is SOURCE FIXED but user visual acceptance is still pending.
+
+### Blocking P0/P1 issues, exact source evidence
+
+1. **P0 actual-versus-diagnostic Newtonian path / missing MAIN bindings.**
+   `EliteCobraMk1.cpp` default construction is Assisted-I; its
+   `ELITE_SHIP_PHYSICAL_TEST_MODEL=Newtonian-*` branch explicitly
+   clears `physicalControl.slotModuleIds` (around line 1160) but
+   adds 24 RCS equipment modules (around 1243-1255).
+   `ShipState::initialize` sets `ShipActuatorStateSource::ModuleRuntime`;
+   `ShipCore::updateTranslationControl` can bind installed MAIN motors
+   only when IDs match the selected topology (around 705-755); its
+   native `productionInstalled && !physicalEngines` branch (around
+   931-948) rejects main propulsion. Conversely, switching to Newtonian
+   from the ordinary Assisted Cobra in `selectPhysicalConstructionForDiagnostic`
+   selects `DiagnosticOverride`, mounting synthetic main engines and
+   skipping real Newtonian RCS. Thus neither route is full native
+   engine+RCS end-to-end as a production Newtonian ship. This can make
+   HUD projected availability appear healthy while physical thrust is 0.
+   DO NOT claim six native equipped ships ready.
+2. **P0 unphysical Newtonian fallback on missing 24-nozzle binding.**
+   `ShipCore::updateMotionControl` sets `m_newtonianRcsPhysical=false`
+   whenever any real nozzle module is absent (around 617-645). When
+   that flag is false, angular `ShipController` output is NOT restored
+   before physical RCS torque. `ShipCore::updateTranslationControl`
+   only substitutes physical RCS force inside
+   `if(m_newtonianRcsPhysical)` (around 972), leaving the original
+   `DynamicMotionSystem::applyLocalFrameInput` virtual
+   `motion.manoeuvreAccelerationMps2` intact otherwise. Installed
+   Newtonian missing a nozzle can therefore receive synthetic
+   six-axis authority rather than failing closed. The per-nozzle
+   "complete=false" branch fails closed, but is unreachable when the
+   earlier all-24 check has already disabled the physical path.
+3. **P1 physical moment about WRONG origin in native RCS.**
+   `NewtonianRcsAllocator.h` uses
+   `r=mount.positionBody * demand.mountHalfExtentsM` in BOTH solver
+   columns and applied `r×F`; `NewtonianRcsDemand` and
+   `ShipCore` supply no `centerOfMassLocalMeters`. The main engine
+   plant explicitly subtracts the live CoM. Cargo/fuel CoM shifts
+   therefore change the true RCS moment but not this model's output.
+4. **P1 Newtonian physical RCS roll sign inconsistency.**
+   `ShipController::propagateOrientation` rotates `rollRate` around
+   hull FORWARD (-Z); `ShipEngineControlMatrix.h` correctly maps
+   physical +Z torque to `-torque.z/rollInertia`. By contrast
+   `ShipCore.cpp` ~1020,1048 builds the RCS requested moment.z
+   with +roll rate × inertia and applies
+   `rollRate += executed.deliveredMomentNm.z / rollInertia * dt`
+   without sign flip. The RCS wrench uses +Z aft and so its roll
+   angle convention is opposite to actual body torque compared with
+   the main engine path. Need a fixed-input/sign-of-torque native test
+   before patch, NOT arbitrary pitch/yaw changes.
+5. **P1 Newtonian 24 RCS versus legacy 4/6/8 ability estimator.**
+   `CobraPropulsionPresets.h` defines Newtonian I/Y/X as 1/3/4 aft
+   main slots PLUS 4/6/8 omnidirectional ManoeuvreClusters.
+   `NewtonianPhysicalControlModel::evaluate` and
+   `ShipCapabilityBuilder::makeCapability` derive scalar RCS acceleration
+   and angular authority from that OLD matrix; they do NOT project
+   24 individual installed `rcs_fore_*_* / rcs_aft_*_*` engine module
+   health, orientation and delivered wrench. MotherComputer/planner
+   may advertise ability after actual nozzle damage. In contrast,
+   `MotherComputerClientAdapter` and 8 HUD lights consume the 24
+   per-nozzle truth. Contradictory authority sources for one craft.
+   Legacy `ShipPhysicalControlModelsTests.cpp` assert 4/6/8; these
+   tests are not physical RCS acceptance.
+6. **P1 Newtonian executed Δv can be discarded AFTER motor firing.**
+   `DynamicMotionSystem::updateLocalFrameMotion` manages legacy
+   `manoeuvreGasPressure01/manoeuvreGasDepleted` and changes
+   `actualManoeuvreWorldAcceleration=0` after the RCS allocator has
+   executed real engines; the native Newtonian Cobra nominal profile
+   in `EliteCobraMk1.cpp` sets gas use=0.20 and recharge=0.08 per sec.
+   `ShipCore` nozzle execution is NOT conditioned on this pressure.
+   At depletion, electricity/heat and physical RCS angular torque can
+   be registered while translational impulse is artificially removed.
+   Move that resource limit BEFORE physical nozzle execution; then
+   integrate unmodified actual engine wrench.
+7. **P2 electrical budget for RCS lacks per-tick enforcement.**
+   `allocateNewtonianRcs` returns per-nozzle electricalMW/heat,
+   but `ShipCore::updateTranslationControl` does not route its draw
+   through the reactor-power group budget; it only sets each nozzle's
+   enabled flag from `m_propulsionReactorsOn` and startup state.
+   Main engines ARE scaled to installed ER-5 budgets. The RCS model
+   therefore does not yet constrain duty to independently available
+   electrical MW. Confirm intended RCS supply (ship-services bus)
+   before changing power topology.
+8. **P2 HUD distinction for diagnostic Newtonian.**
+   Actual primary HUD groups engines by `MotherComputerCockpitView`;
+   it renders 8 RCS dots using real 24-nozzle snapshot + executed
+   samples when present. For the `DiagnosticOverride` Newtonian law,
+   the main engine is synthesized; RCS physics remains the old virtual
+   4/6/8 cluster path while the HUD expects 24 installed nozzles.
+   Thus HUD dots may be UNKNOWN despite simulated motion. Do not
+   portray this mode as a physically installed Newtonian ship.
+
+### Current test coverage LIMITATIONS
+
+- `ShipPhysicalControlModelsTests` confirms six static topologies
+  but explicitly asserts legacy Newtonian 4/6/8 clusters.
+- `ShipControlBehaviorOracleTests::execute` and
+  `AssistedLayoutFlightMatrixTests` call
+  `ShipControlExecutionGateway::evaluateTranslationControl` WITHOUT
+  `mountedEngines`, so passing their six-mode motion fixtures does
+  NOT exercise genuine `ShipCore` ObjectModuleRuntime/power/24 RCS.
+- `NewtonianRcsPhysicalTests.cpp` only tests the isolated 24-nozzle
+  allocator, one combined wrench, and removal of a nozzle; it does
+  NOT test ShipCore installation binding, reversion to virtual path,
+  mass-shift CoM, signed roll, gas depletion or power budget.
+- `ShipControlExecutionGatewayTests` contains a real mounted-engine
+  Assisted regression for no ghost braking; user reported this gate
+  green on Windows. No new Windows native or 6-layout in-game tests
+  were run during THIS AUDIT.
+
+### Recommended targeted repair sequence, NOT executed
+
+A. Decide the six production hardware contracts once (Assisted I/Y/X
+   genuine installed; Newtonian I/Y/X true installed main(s)+24 real
+   nozzle modules) and remove the conflicting 4/6/8 RCS fiction from
+   production capability/HUD; retain legacy only explicitly in labs.
+B. Bind physical Newtonian main module IDs and measured nozzle damage;
+   make physically missing RCS FAIL CLOSED, with no model/source fall
+   through to synthetic translation or angular velocity.
+C. Make RCS 6D wrench CoM-relative and fix the physical roll sign
+   consistently at demand and actual response. Gate with real
+   sign/CoM Newtonian-I first, then Y/X.
+D. Resolve 24-nozzle achievable signed abilities and gas/electrical
+   supply constraints BEFORE execution. Never erase delivered motor
+   impulse after allocation. Only then align MotherComputer caps/HUD
+   with execution and check damage/repair.
+E. One actual installed-equipment six-model acceptance matrix: NumPad
+   ±XYZ, pitch/yaw/roll, full and partial damage, generator off/restart,
+   powered-vs-unpowered RCS, actual ΣF/m and Σ(r-COM)×F/I versus Δv/
+   Δω and replicated per-motor/24-nozzle HUD across all six.
+
+User asked for careful REVIEW, not authorization to broadly rewrite
+the architecture. No production changes in this audit. Preserve
+main-only and ONE canonical PROJECT_STATE.md.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

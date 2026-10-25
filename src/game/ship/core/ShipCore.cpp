@@ -156,6 +156,7 @@ void ShipCore::init(
     m_assistedManeuvers = {};
     m_newtonianRcsAngularDemandRadPerSec2 = {};
     m_newtonianRcsDelivered01.fill(0.0);
+    m_newtonianRcsElectricalDemandMW=0.0;
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
     m_serviceThrottleSaved = 0.0;
@@ -957,6 +958,7 @@ void ShipCore::updateTranslationControl(float dt)
     // force/torque. Missing modules are null MountedEngine columns (zero force),
     // NEVER permission to fall back to the old omnidirectional RCS model.
     m_newtonianRcsDelivered01.fill(0.0);
+    m_newtonianRcsElectricalDemandMW=0.0;
     auto& rcsMotion=m_transform.motion;
     rcsMotion.installedRcsPlantExecuted=false;
     const bool installedNewtonian =
@@ -1088,6 +1090,8 @@ void ShipCore::updateTranslationControl(float dt)
             m_transform.yawRate+=static_cast<float>(angular.y*dt);
             m_transform.rollRate-=static_cast<float>(angular.z*dt);
             m_newtonianRcsDelivered01=executed.throttle01;
+            for(const double drawMW:executed.electricalMW)
+                m_newtonianRcsElectricalDemandMW+=std::max(0.0,drawMW);
         }
     }
 
@@ -1304,6 +1308,8 @@ void ShipCore::updateSystems(float dt)
     );
     m_cooling.calcRequestedPower();
 
+    m_powerBus.setAuxiliaryDemandMW(
+        m_newtonianRcsPhysical ? m_newtonianRcsElectricalDemandMW : 0.0);
     m_powerBus.update();
     // Do not feed the reactor last frame's circulation capacity.
     m_cooling.prepareTransport();
@@ -2002,7 +2008,8 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.powerBus.overloaded = m_powerBus.overloaded();
     
     // Считаем totalRequested сами
-    status.powerBus.totalRequestedMW = 0.0;
+    status.powerBus.totalRequestedMW =
+        m_powerBus.auxiliaryDemandMW();
     for (auto* c : m_powerBus.getConsumers()) {
         game::PowerConsumerStatus cs;
         cs.name = c->getLabel();

@@ -661,6 +661,34 @@ adopted. Conclusions:
   with a reproducing production source path. Main-only; no extra
   state/status files.
 
+## 2026-10-25 user Windows green gate and canonical runtime build
+
+- User reported **all green** after the `381943f3`
+  Assisted phantom manoeuvre/RCS fix and `a3d94518`
+  regression in `ship_control_execution_gateway`. Treat this as
+  user-reported native test success; no pasted per-CTest list or full
+  project gate was provided. Do not claim broader gameplay acceptance.
+- User requested building the game next. Verified against CURRENT
+  `build_mingw64.sh` and `tests/helpers/build_layout.sh`
+  that the canonical INCREMENTAL client+server build command is
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash build_mingw64.sh` in MSYS2 MinGW64. It requires no running
+  `EliteServer`, checks the toolchain, removes obsolete duplicate
+  runtime binary layouts without deleting canonical build trees,
+  configures/builds EliteGame then EliteServer and verifies
+  `build/EliteGame.exe` and
+  `build/headless_server/EliteServer.exe`.
+  Do NOT substitute `rebuild_all_mingw64.sh` unless clean rebuild
+  is specifically warranted: it deletes the entire build tree.
+- The user must run this command on their Windows machine; we have
+  not executed or verified the full runtime build here.
+- Next in-game validation after successful runtime build: repeat
+  ordinary Assisted damage braking (no phantom deceleration), and
+  independently check NumPad translation in free-rotation with one
+  failed aft engine, correlating actual engine thrust, net force, and
+  induced body moment. The safe first-route tunnel was visually
+  accepted earlier.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

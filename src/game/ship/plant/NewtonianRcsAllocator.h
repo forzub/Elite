@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <glm/glm.hpp>
 
 #include "src/game/equipment/engine/Engine.h"
@@ -25,6 +26,11 @@ struct NewtonianRcsDemand
     // Physical half-extents from reactor/fuel CoM in metres, NOT normalized.
     glm::dvec3 mountHalfExtentsM {1.0};
     std::uint64_t tick = 0;
+    // Installed nozzles produce torque around the live cargo/fuel centre of mass.
+    glm::dvec3 centerOfMassLocalMeters {0.0};
+    // Electrical MW remaining on the dedicated ship-services bus this tick.
+    // Infinity is reserved for isolated unit tests that do not model a bus.
+    double availableElectricalMW = std::numeric_limits<double>::infinity();
 };
 
 struct NewtonianRcsResult
@@ -65,7 +71,7 @@ struct NewtonianRcsResult
         out.availabilityN[i]=cap[i];
         const auto& mount=mounts[i];
         const glm::dvec3 r=mount.positionBody *
-            demand.mountHalfExtentsM;
+            demand.mountHalfExtentsM - demand.centerOfMassLocalMeters;
         forces[i]=mount.forceDirectionBody*cap[i];
         moments[i]=glm::cross(r,forces[i]);
         forceScale+=cap[i];
@@ -102,16 +108,33 @@ struct NewtonianRcsResult
             haveM+=(after-before)*m[i];
         }
     }
+    // Enforce available bus power BEFORE committing forces. Engine::execute
+    // is a deterministic sample of an immutable module, not a state update.
+    // A common duty scale preserves the allocator's force/torque balance.
+    double requestedMW=0.0;
     for(std::size_t i=0;i<24;++i)
     {
-        game::equipment::engine::Engine actuator(installed[i]);
+        const game::equipment::engine::Engine actuator(installed[i]);
+        const game::equipment::engine::EngineCommand command {
+            out.throttle01[i],mounts[i].forceDirectionBody,demand.tick
+        };
+        requestedMW+=std::max(0.0,actuator.execute(command).consumedElectricalMW);
+    }
+    double electricalScale=1.0;
+    if(std::isfinite(demand.availableElectricalMW) && requestedMW>1.0e-12)
+        electricalScale=std::clamp(
+            std::max(0.0,demand.availableElectricalMW)/requestedMW,0.0,1.0);
+    for(std::size_t i=0;i<24;++i)
+    {
+        out.throttle01[i]*=electricalScale;
+        const game::equipment::engine::Engine actuator(installed[i]);
         const game::equipment::engine::EngineCommand command {
             out.throttle01[i],mounts[i].forceDirectionBody,demand.tick
         };
         const auto sample=actuator.execute(command);
         out.deliveredForceN+=sample.forceBodyNewtons;
         const glm::dvec3 r=mounts[i].positionBody *
-            demand.mountHalfExtentsM;
+            demand.mountHalfExtentsM - demand.centerOfMassLocalMeters;
         out.deliveredMomentNm+=glm::cross(r,sample.forceBodyNewtons);
         out.electricalMW[i]=sample.consumedElectricalMW;
         out.wasteHeatMW[i]=sample.generatedWasteHeatMW;

@@ -582,6 +582,27 @@ void testExplicitEmptyPowerBudgetCannotRunInstalledMain()
     require(fullElectricalMW>1.0e-6,
             "powered main reported zero delivered electrical demand");
 
+    // CR-1 needs 4,850 MW at its rated 9.56 MN.
+    // One healthy Newtonian-I ER-5 is rated 5,000 MW, just like the
+    // generator in a healthy Assisted pair. Full pilot main command
+    // must therefore achieve full single-engine rated thrust. The
+    // 14.32% observed in gameplay cannot be a built-in Newtonian law.
+    const std::vector<MainEnginePowerGroup> er5Nominal {
+        {{aftIndex},5000.0}
+    };
+    auto nominalER5=makeTransform();
+    (void)Gateway::evaluateTranslationControl(
+        nominalER5,physics,control,model,slots,0.1f,
+        &mounted,nullptr,&er5Nominal);
+    require(nominalER5.motion.engineTelemetry.valid,
+        "rated Newtonian-I ER-5 did not report actual main output");
+    require(std::abs(
+        nominalER5.motion.engineTelemetry.thrust01[aftIndex]-1.0)<1.0e-5,
+        "healthy 5 GW ER-5 unexpectedly throttled full Newtonian-I CR-1");
+    require(std::abs(
+        nominalER5.motion.engineTelemetry.electricalMW[aftIndex]-4850.0)<1.0e-3,
+        "healthy 5 GW ER-5 could not supply rated main-drive power");
+
     const std::vector<MainEnginePowerGroup> halfReactor {
         {{aftIndex},fullElectricalMW*0.5}
     };

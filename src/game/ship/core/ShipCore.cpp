@@ -2465,6 +2465,8 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
                 : 0.0f;
         status.newtonianRcsArgonInventoryKg=static_cast<float>(
             game::ship::plant::rcsWorkingFluid::ArgonInventoryKg);
+        status.newtonianRcsNetFlow01PerSec=static_cast<float>(
+            m_newtonianRcsNetFlow01PerSecond);
     }
 
     // ----- Реактор (все методы есть) -----

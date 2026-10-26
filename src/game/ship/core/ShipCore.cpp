@@ -2436,9 +2436,29 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     
     status.newtonianRcsSampleValid=m_newtonianRcsPhysical;
     if(status.newtonianRcsSampleValid)
+    {
         for(std::size_t i=0;i<status.newtonianRcsExecuted01.size();++i)
             status.newtonianRcsExecuted01[i]=static_cast<float>(
                 std::clamp(m_newtonianRcsDelivered01[i],0.0,1.0));
+        status.newtonianRcsFluidKnown=true;
+        status.newtonianRcsManifold01=static_cast<float>(
+            std::clamp(m_transform.motion.manoeuvreGasPressure01,0.0,1.0));
+        status.newtonianRcsManifoldDepleted=
+            m_transform.motion.manoeuvreGasDepleted;
+        status.newtonianRcsCompressorMW=static_cast<float>(
+            m_newtonianRcsCompressorElectricalMW);
+        status.newtonianRcsFlowUse01PerSec=
+            m_desc ? m_desc->physics.manoeuvreGasUsePerSecond : 0.0f;
+        status.newtonianRcsFlowRecovery01PerSec=
+            m_desc
+                ? static_cast<float>(
+                    m_desc->physics.manoeuvreGasRechargePerSecond *
+                    (m_newtonianRcsCompressorElectricalMW /
+                     game::ship::plant::rcsWorkingFluid::CompressorRatedElectricalMW))
+                : 0.0f;
+        status.newtonianRcsArgonInventoryKg=static_cast<float>(
+            game::ship::plant::rcsWorkingFluid::ArgonInventoryKg);
+    }
 
     // ----- Реактор (все методы есть) -----
     status.reactor.temperature = m_reactor.getTemperature();

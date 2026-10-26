@@ -101,6 +101,7 @@ struct EngineThrustHudPresentation
     float rcsCompressorMW = 0.0f;
     float rcsUse01PerSecond = 0.0f;
     float rcsRecovery01PerSecond = 0.0f;
+    float rcsNetFlow01PerSecond = 0.0f;
     float rcsArgonInventoryKg = 0.0f;
 };
 
@@ -462,6 +463,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         cockpit.systems.newtonianRcsFlowRecovery01PerSec;
     out.rcsArgonInventoryKg=
         cockpit.systems.newtonianRcsArgonInventoryKg;
+    out.rcsNetFlow01PerSecond=
+        cockpit.systems.newtonianRcsNetFlow01PerSec;
     out.visible = !out.groups.empty();
     return out;
 }

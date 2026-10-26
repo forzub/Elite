@@ -123,7 +123,14 @@ struct EngineReactorTick
         out.thermalPowerMW+
         std::max(0.0,(state.temperatureK-idle)*
             type.thermalCapacityMJPerK/std::max(1.0e-6,dt)));
-    out.overflowToSharedCoolantMW=0.0;
+    // An emergency exchanger may divert only thermal surplus that remains
+    // after the dedicated pad. The caller owns valve, pump, destination
+    // headroom and temperature-gradient limits; ZERO capacity keeps the
+    // propulsion and ship cooling groups completely isolated.
+    // Do not borrow the same pad capacity twice or create free cooling.
+    out.overflowToSharedCoolantMW=std::min(
+        std::max(0.0,maxOverflowTransferMW),
+        std::max(0.0,out.thermalPowerMW-out.depositedToEnginePadsMW));
     // Startup thermal conditioning: 99% of idle temperature in the
     // specified startup time, independent of propulsion electrical output.
     const double cold=game::physics::thermal::DeepSpaceTemperatureK;
@@ -136,7 +143,8 @@ struct EngineReactorTick
             ? (warmTarget-base)*(1.0-std::exp(-dt/tau)):0.0;
         state.temperatureK=std::max(cold,
             base+warm+(out.thermalPowerMW-
-                out.depositedToEnginePadsMW)*dt/
+                out.depositedToEnginePadsMW-
+                out.overflowToSharedCoolantMW)*dt/
                 std::max(1.0,type.thermalCapacityMJPerK));
         state.equivalentOperatingHours+=dt/3600.0*
             (out.electricalOutputMW/std::max(1.0,type.ratedElectricalMW));
@@ -151,9 +159,9 @@ struct EngineReactorTick
     state.lastElectricalOutputMW=out.electricalOutputMW;
     state.lastGeneratedHeatMW=out.thermalPowerMW;
     state.lastPadHeatMW=out.depositedToEnginePadsMW;
-    state.lastCoolantHeatMW=0.0;
+    state.lastCoolantHeatMW=out.overflowToSharedCoolantMW;
     state.lastStoredHeatMW=out.thermalPowerMW-
-        out.depositedToEnginePadsMW;
+        out.depositedToEnginePadsMW-out.overflowToSharedCoolantMW;
     return out;
 }
 } // namespace game::equipment::reactor

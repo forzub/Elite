@@ -2507,3 +2507,12 @@ game obstacle escape and safe initial-tunnel course, stopped and at
 - Do not spend user time verifying the optional PASSED/FAILED dialog.
   Do not begin unrelated fore-only or large capability migration before
   this flight gate. Avoid tests-for-tests and parallel state files.
+
+
+## 2026-10-26 explicit RCS power-source audit (user request: service reactor -> engine ER-5)
+
+- User requested to disconnect Newtonian manoeuvring nozzles from the ship/service reactor and feed them from the engine reactor. Inspection of **current main source** shows this is ALREADY implemented; do not create duplicate connections or another power owner.
+- In `src/game/ship/core/ShipCore.cpp` Newtonian installed 24-nozzle executor computes each ER-5 group's spare supply after the executed main-engine MW demand; the argon compressor reserves up to 2MW from those groups, then the physical RCS allocator is constrained by remaining ER-5 MW. Executed per-nozzle electrical draw is assigned to `m_newtonianRcsEr5DrawMW` per reactor group; generator operation/heat/aging uses the corresponding draw in the ER-5 update.
+- The ship/service `PowerBus` explicitly sets auxiliary RCS electrical demand to **0 MW** before update (`m_powerBus.setAuxiliaryDemandMW(0.0)`), so RCS does NOT draw from the 70-MW ship reactor. If engine reactors are off, starting up, or have no available watts, nozzle mounting / available electrical power gates their output; argon compressor recovery likewise requires ER-5 watts.
+- This is a **source audit of main**, not a new C++ code change or new Windows build/test pass. No C++ modifications are necessary to carry out this already-satisfied wiring request. No physical ratings, thermal rules, main-thrust priorities or Assisted flight logic were altered.
+- OPEN: in real Newtonian-I flight, prior 14.32% main duty and poor attitude response remain unresolved by this audit. Existing trace fields `main_ER5_group_available_MW`, main requested versus executed thrust, `rcs_actual_electrical_MW`, and compressor MW can distinguish generator derating from RCS activity. Run targeted native build/flight before claiming behavior repaired. Keep commits on `main` and this sole ongoing context file.

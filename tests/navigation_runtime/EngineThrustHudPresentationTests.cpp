@@ -406,6 +406,40 @@ void testMotherComputerCockpitBarsPreserveLayoutAndBite()
 }
 
 
+void testNewtonianArgonManifoldReachesEngineHud()
+{
+    using game::ship::computer::MotherComputerCockpitView;
+    using game::ship::computer::MotherComputerEngineHudSlot;
+    MotherComputerCockpitView cockpit;
+    cockpit.valid=true;
+    cockpit.physicalModelLabel="NEWTONIAN-X";
+    cockpit.engineHudStyleId="human_amber";
+    for(const auto& id : {"main_UL","main_UR","main_LL","main_LR"})
+    {
+        MotherComputerEngineHudSlot slot {};
+        slot.id=id;
+        slot.available01=1.0f;
+        cockpit.engineSlots.push_back(slot);
+    }
+    cockpit.systems.newtonianRcsFluidKnown=true;
+    cockpit.systems.newtonianRcsManifold01=0.42f;
+    cockpit.systems.newtonianRcsManifoldDepleted=false;
+    cockpit.systems.newtonianRcsCompressorMW=2.0f;
+    cockpit.systems.newtonianRcsFlowUse01PerSec=0.018f;
+    cockpit.systems.newtonianRcsFlowRecovery01PerSec=0.065f;
+    cockpit.systems.newtonianRcsArgonInventoryKg=500.0f;
+    const auto view=
+        game::presentation::buildEngineThrustHudPresentation(cockpit);
+    require(view.visible && view.groups.size()==1 &&
+            totalBars(view)==4,
+        "Newtonian-X HUD lost installed main motors");
+    require(view.rcsManifoldKnown &&
+            std::abs(view.rcsManifold01-0.42f)<1.e-6f &&
+            std::abs(view.rcsCompressorMW-2.0f)<1.e-6f &&
+            view.rcsArgonInventoryKg==500.0f,
+        "Engine widget did not display authoritative argon pressure/recovery");
+}
+
 void testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic()
 {
     using namespace game::ship;
@@ -695,6 +729,7 @@ int main()
         testAssistedForwardThrustUsesAftBars();
         testAssistedLateralVectoringUsesBothBanks();
         testMotherComputerCockpitBarsPreserveLayoutAndBite();
+        testNewtonianArgonManifoldReachesEngineHud();
         testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic();
         testFailedAftMotorReachesMotherComputerHudAndEmergencySight();
         testInstalledAftMotorMissingSnapshotNeverLooksHealthy();

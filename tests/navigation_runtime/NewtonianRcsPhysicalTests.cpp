@@ -111,6 +111,35 @@ void checkCentreOfMassAndElectricalBudget()
             unpowered.availabilityN[1]==0.0,
             "missing RCS nozzle was incorrectly treated as installed");
 }
+void checkCombatNozzlePowerAndThermalPlateau()
+{
+    using namespace game::equipment;
+    using namespace game::equipment::engine;
+    const auto passport=cobraManoeuvreNozzlePreset();
+    EquipmentDamageLayer damage {};
+    damage.failure.failureAtDamage01=0.95;
+    EngineOperatingState operating {};
+    operating.temperatureK=passport.nominalOperatingTemperatureK;
+    const MountedEngine mounted {
+        &passport,&damage,&operating,"rcs_test",true
+    };
+    const auto output=Engine(mounted).execute(
+        EngineCommand {1.0,{1.0,0.0,0.0},1});
+    require(std::abs(output.deliveredThrustNewtons-500000.0)<1.0 &&
+            std::abs(output.consumedElectricalMW-20.0)<1.e-5,
+        "healthy new 500kN RCS did not execute its real 20MW passport");
+    for(int tick=0;tick<300;++tick)
+    {
+        const auto effective=evaluateEngineUnit(passport,damage,operating);
+        const auto step=advanceEngineOperatingState(
+            passport,effective,operating,1.0,0.2,310.0);
+        operating=step.next;
+    }
+    require(std::isfinite(operating.temperatureK) &&
+            operating.temperatureK<passport.safeOperatingTemperatureK,
+        "RCS physical radiator cannot cool 60 seconds at rated combat duty");
+}
+
 void checkReplenishingGameGasBeforeFire()
 {
     double reservoir=1.0;
@@ -228,6 +257,7 @@ int main()
     try
     {
         checkInstalledNozzleLoss();
+        checkCombatNozzlePowerAndThermalPlateau();
         checkCentreOfMassAndElectricalBudget();
         checkReplenishingGameGasBeforeFire();
         checkSignedPhysicalAuthorityProjection();

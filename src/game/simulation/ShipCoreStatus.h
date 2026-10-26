@@ -108,6 +108,15 @@ struct ShipCoreStatus {
     std::uint32_t propulsionSwitchRevision = 0;
     std::array<float,24> newtonianRcsExecuted01 {};
     bool newtonianRcsSampleValid = false;
+    // Actual server pressure-manifold fraction, not remaining propellant
+    // mass. 500kg of argon is conserved in the closed working-fluid loop.
+    bool newtonianRcsFluidKnown = false;
+    float newtonianRcsManifold01 = 0.0f;
+    bool newtonianRcsManifoldDepleted = false;
+    float newtonianRcsCompressorMW = 0.0f;
+    float newtonianRcsFlowUse01PerSec = 0.0f;
+    float newtonianRcsFlowRecovery01PerSec = 0.0f;
+    float newtonianRcsArgonInventoryKg = 0.0f;
     ThermalStatus thermal;
     CoolingStatus cooling;
     PowerBusStatus powerBus;

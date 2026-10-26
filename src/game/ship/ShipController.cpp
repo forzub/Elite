@@ -527,16 +527,25 @@ void ShipController::updateControlRates(
         ship.yawInput,
         ship.rollInput
     );
-    // Ramp manual torque while a key is held. A one-frame tap should only
-    // nudge the ship; sustained input reaches the full physical authority.
-    // This never scales the separate navigation angular-demand path.
+    // Assisted needs a gentle short-tap response from its powerful vector
+    // mains. Newtonian's fixed RCS bank is orders of magnitude weaker;
+    // ramping a short pilot keypress to just 18% of EVEN THAT capability
+    // makes a combat craft feel unresponsive. Apply a Newtonian request
+    // immediately; the 24 installed nozzles still enforce REAL physical
+    // force, torque, power, wear and gas limits downstream.
+    const bool newtonianManualRcs =
+        ship.motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Newtonian;
     constexpr float tapAuthority = 0.18f;
     constexpr float fullAuthorityAfterSeconds = 0.25f;
     for (int axis = 0; axis < 3; ++axis)
     {
-        if (alignmentOwnsAttitude || std::abs(angularInput[axis]) < 0.001f)
+        if (newtonianManualRcs || alignmentOwnsAttitude ||
+            std::abs(angularInput[axis]) < 0.001f)
+        {
             ship.manualAngularHoldSeconds[axis] = 0.0f;
-        else if (!alignmentOwnsAttitude)
+        }
+        else
         {
             const float held = ship.manualAngularHoldSeconds[axis];
             angularInput[axis] *= tapAuthority +

@@ -2275,6 +2275,110 @@ Stay on main; maintain this single PROJECT_STATE.md.
   universe physical values were changed as part of this pass.**
   Stay on main and update this only canonical `PROJECT_STATE.md`.
 
+## 2026-10-26 REAL Newtonian-I/Y/X follow-up: + requests 36.775 m/s2, delivered 14.32%, dual-axis input absent
+
+- User observed Newtonian control STILL unresponsive and claimed it
+  cannot yaw/roll/pitch simultaneously; one installed main is still
+  capped around 14% while same CR-1/ER-5 passport works at full
+  rating in Assisted. Uploaded:
+  `elite_power_thermal_audit(1).csv`,
+  `elite_newtonian_runtime(1).csv`,
+  `elite_attitude_jitter(20261026-060551).csv`.
+  The analysis below uses ACTUAL CSV numbers, not isolated test PASS.
+- New `elite_newtonian_runtime` has **4316 physical ticks /
+  86.32 sec**. Samples by actual selected hardware:
+  Newtonian I/model3=3004; Y/model4=109; X/model5=1203.
+  P audit contains 5438 systems rows, including an initial
+  Assisted-I/model0 1122 rows. Attitude trace 4501 rows.
+- **Main driver:** model3 sees `main_target_speed_rate=+1`
+  for **458 ticks**, and
+  `requested_main_accel_norm_mps2=36.77493668` throughout
+  (exact healthy single-CR1 rated 9.561 MN / 260t).
+  Physically DELIVERED magnitude is only **5.2672333m/s2**
+  = `main0_thrust01=0.14322888`, consuming
+  `main0_electric_MW=694.66008`. Motor
+  `main0_available01=1.0` on all model3 ticks;
+  engine is NOT commanded to 14% by the pilot/input.
+  This is stable through all + held ticks at ship speed 0-48m/s,
+  nowhere near 500m/s speed cap. Difference is downstream,
+  likely generator-group MW derating:
+  694.66/4850 = 0.1432289, implying a ~694.66MW
+  ENTITLEMENT if the unscaled CR-1 draw is 4850MW.
+  But existing logger did not record *pre-scaling* group.availableMW
+  nor all reactor equipment-damage causes. **Do not claim a
+  damaged generator as proven**.
+- **Equal passport:** `CobrettyCR1VectorMainDrive` rated
+  9,561,483.75N and 4,850MW; installed ER5 rated
+  5,000MW. Intact rated ER-5 can power full healthy CR1,
+  independently of Assisted/Newtonian doctrine.
+  Audit `ER0_temp_K` on model3 stays around
+  900.0-901.36K, thermal-damage=0; this is NOT sufficient
+  to certify other equipment causes (impact/laser/wear/internal).
+  PowerBus service free MW=8.7-8.97 and full nozzle electricity
+  <1.45MW: not the primary hard torque-force shortage.
+- **Manual concurrency:** among 4316 Newtonian physical frames,
+  NOT ONE has two simultaneously NONZERO
+  `manual_pitch`, `manual_yaw`, `manual_roll`
+  input values. User's stated simultaneous button presses were
+  not actually recorded by pilot state in this sample, so
+  cannot conclude whether keyboard/input/network lost combos
+  vs user sequence. BUT real output often contains 2 nonzero
+  torque components from cross-coupling/damping; the underlying
+  vector allocator does not require serial actions. A regression
+  test for SIMULTANEOUS requested yaw+roll/pitch+roll/pitch+yaw
+  was newly added; native outcome still PENDING.
+- **Sluggishness quantified:** installed 24 nozzle motors
+  12kN each. One-axis feasible translation ~48kN
+  -> 0.184615 m/s2 for 260t. Yaw max actual torque
+  ~1.1568MNm -> 0.045678rad/s2 for 25.3Mkgm2.
+  Model3 with pitch held 630 ticks had gas-depleted
+  on ~64% of them; model5 roll held 396 ticks,
+  gas depleted ~63%. On those depleted ticks no
+  physical RCS command can be delivered. Current
+  model/gas physical constants were NOT changed.
+- **Committed diagnosis and contract tests on main**:
+  `8a7fa2de` appended to read-only
+  `D:/tmp/elite_newtonian_runtime.csv` per-tick
+  (1) actual motor temperature/total module damage,
+  (2) pre-execution ER5 *group.availableMW*,
+  (3) ER5 temperature/total damage/function.authority01,
+  (4) rated motor input MW and thrust N. This is the first
+  instrumentation able to locate 14.32% scaling origin
+  instead of inferring it from POST-scaling heat/telemetry.
+  `4d9f4555` added an integration test to existing
+  `ship_control_execution_gateway` verifying a healthy
+  REAL CR-1 passport plus 5GW ER5 supply yields full
+  nominal thrust, 4850MW, on `+` in Newtonian-I.
+  `d0a46fcc` added 24-nozzle simultaneous two-axis
+  positive moment checks (pitch+roll, yaw+roll, pitch+yaw)
+  in `newtonian_rcs_physical`, without newtonian physical
+  force/duty/passport changes. Compiler/test results PENDING.
+- No Assisted source changed; NO passport values, thermal
+  formulas, gas rates or actual output scalers modified.
+  Explicit request from user to make ship maneuverable
+  will require separately agreeing the RCS physical thrust,
+  the 70MW service power budget and 0.20/sec gameplay gas
+  if ~0.18m/s2 translation / ~0.046rad/s2 yaw remain
+  unacceptable after root cause is known.
+- **Next short native gate**:
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  bash scripts/run_newtonian_physics_diagnostics.sh`
+  followed by
+  `set -o pipefail; bash build_mingw64.sh 2>&1 |
+  tee /d/tmp/elite_full_build.log`.
+  Native 8/8 last PASS is BEFORE these new tests.
+  If green, run Newtonian-I + for ~3 sec and
+  physically HOLD two manual attitude keys at the SAME TIME
+  (e.g. Q+D and W+A). Send
+  `D:/tmp/elite_newtonian_runtime.csv` and
+  `D:/tmp/elite_power_thermal_audit.csv` afterward.
+  Compare `main_ER5_group_available_MW` with nominal
+  rated 5000MW and `main_ER5_total_damage01` before
+  any claim of damaged generator or other root cause.
+  A 5GW budget + undamaged engine with 14% executed
+  thrust would implicate solver/execution scaling, not ER5.
+  Keep main only and this single PROJECT_STATE.md.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

@@ -95,6 +95,13 @@ struct EngineThrustHudPresentation
     std::vector<EngineThrustGroupPresentation> groups;
     std::vector<EngineDriveHudPresentation> drives;
     std::vector<EngineRcsHudPresentation> rcsSlots;
+    bool rcsManifoldKnown = false;
+    float rcsManifold01 = 0.0f;
+    bool rcsManifoldDepleted = false;
+    float rcsCompressorMW = 0.0f;
+    float rcsUse01PerSecond = 0.0f;
+    float rcsRecovery01PerSecond = 0.0f;
+    float rcsArgonInventoryKg = 0.0f;
 };
 
 namespace detail
@@ -442,6 +449,19 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
     for(const auto& rcs : cockpit.rcsSlots)
         out.rcsSlots.push_back({rcs.id,rcs.known,rcs.integrity01,
             rcs.firingKnown,rcs.firing01});
+    // Engine-widget resource strip reads the SAME server-confirmed
+    // MotherComputer cockpit snapshot as main thrust and RCS lamps.
+    out.rcsManifoldKnown=cockpit.systems.newtonianRcsFluidKnown;
+    out.rcsManifold01=std::clamp(
+        cockpit.systems.newtonianRcsManifold01,0.0f,1.0f);
+    out.rcsManifoldDepleted=
+        cockpit.systems.newtonianRcsManifoldDepleted;
+    out.rcsCompressorMW=cockpit.systems.newtonianRcsCompressorMW;
+    out.rcsUse01PerSecond=cockpit.systems.newtonianRcsFlowUse01PerSec;
+    out.rcsRecovery01PerSecond=
+        cockpit.systems.newtonianRcsFlowRecovery01PerSec;
+    out.rcsArgonInventoryKg=
+        cockpit.systems.newtonianRcsArgonInventoryKg;
     out.visible = !out.groups.empty();
     return out;
 }

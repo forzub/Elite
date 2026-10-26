@@ -497,8 +497,10 @@ ShipCore::capabilities() const
                     positiveAlpha.x,negativeAlpha.x};
                 out.yawAccelerationRadPerSec2={
                     positiveAlpha.y,negativeAlpha.y};
+                // Hull positive roll rotates about body -Z, while the
+                // physical wrench uses +Z; swap signed roll capacity.
                 out.rollAccelerationRadPerSec2={
-                    positiveAlpha.z,negativeAlpha.z};
+                    negativeAlpha.z,positiveAlpha.z};
                 // Single scalar legacy controller accepts only a
                 // conservative all-directions budget. Signed per-axis
                 // capability remains available in the full snapshot.

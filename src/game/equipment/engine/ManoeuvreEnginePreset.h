@@ -5,8 +5,8 @@
 // own ModuleDescriptor and EquipmentDamageLayer / EngineOperatingState.
 // ObjectModuleRuntime is the sole source of accumulated hit and wear damage.
 //
-// These are authored GAME-UNIVERSE ratings, not a real gas rocket.
-// not measurements of a real thruster. Ship tuning may override the passport.
+// Authored GAME-UNIVERSE ratings for field-coupled nozzles, not a
+// chemical rocket whose propellant is thrown into vacuum.
 #include "src/game/equipment/engine/EngineUnit.h"
 
 namespace game::equipment::engine
@@ -28,8 +28,17 @@ namespace game::equipment::engine
     out.nominalCoolantTemperatureK = 310.0;
     out.nominalOperatingTemperatureK = 390.0;
     out.safeOperatingTemperatureK = 450.0;
-    out.thermalCapacityMJperK = 0.20;
-    out.thermalConductanceMWperK = 0.002;
+    // 0.8m emitter: 3.02MW at 450K under the universe's common
+    // 6MW/m2 pad law, exceeding the healthy nozzle's 1.2MW waste.
+    // Nozzle cooling remains autonomous, with physical emitter damage.
+    out.thermalEmitter.outerDiameterM = 0.80;
+    out.thermalEmitter.apertureDiameterM = 0.0;
+    out.thermalEmitter.surfaceTemperatureK = 1200.0;
+    out.thermalEmitter.emissivity01 = 0.90;
+    out.thermalEmitter.viewFactor01 = 0.90;
+    out.thermalEmitter.materialId = "elite.material.engine.hfc-c.v1";
+    out.thermalCapacityMJperK = 2.0;
+    out.thermalConductanceMWperK = 0.002; // deprecated; pad-only thermal sink
     out.overheatReferenceExcessK = 40.0;
     out.thermalDamagePerHourAtReferenceExcess01 = 0.08;
     out.overhaulEquivalentHours = 4000.0;

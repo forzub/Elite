@@ -2018,6 +2018,64 @@ Never declare gameplay success without these results.
   these subsystems are fully accepted yet. Keep `main` only,
   one canonical `PROJECT_STATE.md`.
 
+## 2026-10-26 native PowerBus plus Newtonian eight-test gate PASS — full build / game pending
+
+- User uploaded `elite_newtonian_build(3).log`,
+  `elite_newtonian_ctest(2).log`,
+  `elite_newtonian_matrix(2).csv`,
+  `elite_newtonian_nozzles(2).csv` and
+  `elite_newtonian_summary(2).txt` after fixes
+  `4c0032af` and `c6b99e58` on `main`.
+- **NATIVE MSYS2 MinGW64 COMPILE/LINK SUCCEEDED**, including the
+  production-source `ship_power_bus_execution_tests.exe`.
+  CTest reports **8/8 PASS (0.42s)** for
+  `ship_control_execution_gateway`,
+  `ship_physical_control_models`,
+  `newtonian_execution_authority`,
+  `engine_thrust_hud_presentation`,
+  `ship_control_behavior_oracle`,
+  `newtonian_rcs_physical`,
+  `newtonian_physics_diagnostics`,
+  `ship_power_bus_execution`.
+  Nonfatal warnings include unused coolant, unused ER-5 overflow arg,
+  unused ThermalSystem update dt, signedness, and member init order.
+  None was a test failure.
+- **NUMERIC CROSS-CHECK OF UPLOADED CSV**, not merely PASS assertion:
+  matrix has 255 samples (85 per Newtonian I/Y/X); nozzle CSV has
+  1368 samples (456 each) across 24 IDs/model. For all 57 detailed
+  scenario/model pairs, independent sum of individual nozzle force,
+  torque (about CoM), electricity and heat matches matrix totals
+  within about 4e-9 of CSV rounding. No row used power above its
+  stated budget. `power_limited` uses exactly 0.050 MW and creates
+  ~2.71 kN against ~12.53 kN requested; `force_saturation`
+  requests +450 kN and physically delivers only +48 kN with +402 kN
+  residual. Missing nozzle zero availability and electricity;
+  gas exhaust/recharge/rearm observed on all three models.
+  Common nozzle law explains identical RCS scenarios I/Y/X.
+  Main-engine fixture generates -1,040,000 N for the SAME
+  requested 4 m/s^2 acceleration on 1/3/4-engine layouts,
+  NOT evidence their maximum rated acceleration is equal.
+- **What this proves**: the isolated production engine matrix,
+  installed-nozzle allocator and service-reactor PowerBus tests
+  meet their focused requirements after the Claude-guided repairs.
+  **What it does NOT prove**: new ShipCore.cpp server diagnostics
+  compile with full client/server; heat/damage persistence in real
+  gameplay; reactor startup/shutdown with actual ship consumers;
+  autopilot replanning or replicated HUD after reactor/engine damage.
+- NEXT NATIVE GATE: from MSYS2 MinGW64,
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+  set -o pipefail && bash build_mingw64.sh 2>&1 |
+  tee /d/tmp/elite_full_build.log`.
+  Only after the complete client/server build passes, run Newtonian
+  I/Y/X and test reactor off/on (10s cold start), positive/negative
+  translation, body pitch/yaw/roll, ER-5 damage/overheat, gas
+  exhaustion, and HUD; collect
+  `D:/tmp/elite_power_thermal_audit.csv` and
+  `D:/tmp/elite_newtonian_runtime.csv`.
+  The first is read-only service/ER-5 state, the second includes
+  server actuator wrench. Keep any next changes on `main`;
+  maintain this SINGLE `PROJECT_STATE.md`.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

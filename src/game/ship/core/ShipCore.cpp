@@ -1153,6 +1153,18 @@ void ShipCore::updateTranslationControl(float dt)
                                        <<",rcs"<<i<<"_available_N"
                                        <<",rcs"<<i<<"_electric_MW"
                                        <<",rcs"<<i<<"_heat_MW";
+                        // Requested MAIN throttle is distinct from the
+                        // Num8/Num2 RCS forward axis. Compare both to actual
+                        // engine output to isolate any 14% throttle ceiling.
+                        newtonTrace
+                            <<",main_target_speed_rate"
+                              ",requested_main_accel_world_x_mps2"
+                              ",requested_main_accel_world_y_mps2"
+                              ",requested_main_accel_world_z_mps2"
+                              ",requested_main_accel_norm_mps2"
+                              ",main_forward_capability_mps2"
+                              ",rcs_translation_capability_mps2"
+                              ",rcs_angular_capability_radps2";
                         newtonTrace<<'\n';
                         std::cerr<<"[NewtonianTrace] BEGIN "
                                     "D:/tmp/elite_newtonian_runtime.csv"
@@ -1237,6 +1249,15 @@ void ShipCore::updateTranslationControl(float dt)
                                    <<','<<executed.availabilityN[i]
                                    <<','<<executed.electricalMW[i]
                                    <<','<<executed.wasteHeatMW[i];
+                    const glm::dvec3& mainRequest=
+                        rcsMotion.requestedMainEngineAccelerationMps2;
+                    newtonTrace<<','<<ctrl.targetSpeedRate;
+                    add3(mainRequest);
+                    newtonTrace
+                        <<','<<glm::length(mainRequest)
+                        <<','<<game::ship::forwardMainAccelerationLimitMps2(physics)
+                        <<','<<game::ship::manoeuvreAccelerationLimitMps2(physics)
+                        <<','<<game::ship::angularAccelerationLimitRadPerSec2(physics);
                     newtonTrace<<'\n';
                     if(traceRows%30==0) newtonTrace.flush();
                     if(traceSeconds>=240.0)

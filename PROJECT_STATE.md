@@ -2224,6 +2224,57 @@ electrical load and gas mechanics under the existing universe
 laws. Current 48kN/260t≈0.185m/s² is fundamentally limited.
 Stay on main; maintain this single PROJECT_STATE.md.
 
+## 2026-10-26 native Newtonian authority-patch acceptance: 8 PASS and full client/server build
+
+- User uploaded `elite_newtonian_ctest(3).log`,
+  `elite_full_build(1).log`, `elite_newtonian_summary(3).txt`,
+  `elite_newtonian_matrix(3).csv`, `elite_newtonian_nozzles(3).csv`
+  following source fixes `ee7fa057`, `fa2b3618`, `d7a2765b`,
+  `e5689c77`, `66549670`, `530994e2` on **main**.
+- **NATIVE WINDOWS COMPILE/LINK PASS**: `build/EliteGame.exe` and
+  `build/headless_server/EliteServer.exe` both linked (client/server
+  changed `ShipController.cpp` and `ShipCore.cpp` compiled).
+  Only upstream CMake warnings; no compile or link failure.
+- **NATIVE FOCUSED CTEST PASS: 8/8, 0 failed, 0.38s.**
+  Includes the new `newtonian_rcs_physical` checks for signed
+  actual-nozzle envelope and zero authority after complete RCS loss,
+  alongside `ship_power_bus_execution` and all earlier physical
+  solver/HUD/controller checks. This confirms test contracts only,
+  NOT Newtonian response in running server gameplay.
+- Independent user CSV numerical verification (not merely CTest PASS):
+  255 scenario/time rows (85 each I/Y/X), 1368 nozzle rows,
+  sums of per-nozzle F, M, electricity and heat match corresponding
+  matrix totals within about `4e-9` in CSV rounding. There are
+  zero MW-budget overshoots. `force_saturation` requests +450kN
+  but physically delivers +48kN along X; `power_limited`
+  consumes exactly 0.050 MW and cannot deliver requested combined
+  wrench. Full gas burn/recharge/rearm scripts pass on all three
+  layouts. All three matrices sample the SAME installed RCS geometry.
+- **Current unverified gameplay concerns** from previous real
+  Newtonian-I flight: sluggish maneuvers and body turning,
+  gas starvation under sustained RCS, and approx 14.32%-peak
+  indicated main-engine duty. This new upload contains NO post-patch
+  `elite_newtonian_runtime.csv`, `elite_power_thermal_audit.csv`
+  or `elite_attitude_jitter.csv`, so neither agility improvement
+  nor main-thrust root cause is yet established.
+- Next required targeted MANUAL game flight: Newtonian-I, cold
+  engine-off/on if useful, hold **+ (or NumPad +)** independently
+  for 3-4s for MAIN (not `Num8`), release, then separately
+  `Num8/Num2` longitudinal RCS, `Num4/Num6` lateral,
+  `Num9/Num3` vertical, `W/S`, `Q/E`, `A/D`
+  attitude, with enough time for gas reset. The new runtime
+  trace includes `main_target_speed_rate`,
+  `requested_main_accel_norm_mps2`,
+  `main_forward_capability_mps2`, actual `main0_thrust01`,
+  24 physical RCS nozzles and gas state; pair with
+  `elite_power_thermal_audit.csv` to isolate power throttling.
+  Test I first; expand to Y/X only after I behaves as intended.
+- If the pilot still finds 0.185m/s² max translation and
+  0.046rad/s² yaw too sluggish, re-rate actual RCS, service MW
+  and game-gas jointly only after explicit approval. **No
+  universe physical values were changed as part of this pass.**
+  Stay on main and update this only canonical `PROJECT_STATE.md`.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

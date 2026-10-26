@@ -2076,6 +2076,150 @@ Never declare gameplay success without these results.
   server actuator wrench. Keep any next changes on `main`;
   maintain this SINGLE `PROJECT_STATE.md`.
 
+## 2026-10-26 REAL NEWTONIAN-I PLAYER FLIGHT: RCS authority gap and 14% main, production repair pending native gate
+
+**User complaint**: Newtonian control feels like heavy truck, little RCS
+angular/lateral reaction, main thrust HUD tops out around 10%;
+Assisted still responsive. User uploaded ALL
+`elite_full_build.log`, `elite_newtonian_runtime.csv`,
+`elite_power_thermal_audit.csv`,
+`elite_attitude_jitter(20261026-041845).csv`.
+User earlier prohibited retuning fixed universe physics values without
+separate authorization. All changes below preserve installed equipment
+force, torque, thermal and power ratings.
+
+### REAL EVIDENCE (not isolated scenario PASS)
+
+- `elite_full_build.log`: canonical **EliteGame.exe and EliteServer.exe
+  linked successfully**; no code compile/link failure.
+- `elite_newtonian_runtime.csv`: **7395 physical server ticks /
+  147.9 s, ALL Newtonian-I (model 3), ModuleRuntime (source 0)**.
+  This user trace does NOT certify Newtonian-Y/X gameplay yet.
+  24 RCS modules healthy/available after reactor startup.
+  One installed aft main reports 100% availability.
+- `manual_forward` was nonzero for **637 ticks** and
+  `main0_thrust01` ZERO during ALL 637. **IMPORTANT: this is
+  NOT proof of a misrouted main engine**: source
+  `PlayerInputMapper.cpp` assigns `Num8/Num2` to
+  `control.forwardInput` (RCS), whereas `+`/Numpad Plus
+  controls `targetSpeedRate` (primary main thrust); `-`
+  deliberately does NOT reverse Newtonian main engine.
+  The existing runtime CSV unfortunately omitted targetSpeedRate,
+  so it could not show what the pilot did with +.
+- Physical RCS input demanded **520,000 N** along an axis from
+  legacy 2.0 m/s² times 260,000 kg. The 24 installed fixed
+  12,000-N nozzles achieve at most about **48,000 N per
+  signed translational axis**, **0.1846 m/s²**, NOT 2.0 m/s².
+  User requested 520kN while 48kN possible; under continuous
+  inputs gas latches OFF and periodically recharges. In all
+  7395 samples `gas_depleted` was ~29%, and during
+  nonzero `manual_forward` ~65% of ticks were depleted.
+- Angular body controller nominal `3.0 rad/s²` asks for
+  tens of millions of N·m from fixed nozzles: actual isolated
+  yaw moment peaks ~**1.1568 MN·m**, implying at most
+  ~**0.0457 rad/s²** around 25.3M kg·m² body yaw inertia,
+  i.e. about **2.62 degrees/s²**, far less than the old
+  declared 3rad/s² command budget. This REAL hardware limit,
+  not merely HUD latency, explains slow large-angle turn.
+- Main aft motor physical measured max was
+  **0.143229 = 14.32%** actual duty with
+  **694.66 MW** electrical load, **100% availability**,
+  and **5.2672 m/s²** actual acceleration magnitude (the
+  world-z component alone was ~3.458m/s² during oriented flight).
+  Motor burn occupied ~1203 ticks, mostly with zero Num8/Num2
+  input, entirely consistent with distinct main + input.
+  ER-5 generator was rated/available ~5000MW and thus did
+  not throttle this 694.66 MW burn. Unclear whether 14.3% is
+  limited by command, gimbal/planner, actual ShipParams or
+  other path: old telemetry did not capture
+  `control.targetSpeedRate` and
+  `requestedMainEngineAccelerationMps2`; DO NOT guess.
+- `elite_power_thermal_audit.csv` ~9222 systems rows:
+  70MW service reactor running near 69.73 MW,
+  about **8.7–8.97 MW free for physical RCS**, actual
+  RCS power max ~1.44MW for installed 12kN passport;
+  coolant and ER-5 logs received. The underpowered RCS
+  is **primarily limited by 12kN hardware thrust**, not
+  the currently available ~8.7MW bus headroom.
+  Future RCS thrust-rating increase must be accompanied by
+  electric budget evaluation: 70MW service bus already
+  carries ~61MW other consumers. Do not silently raise
+  hardware ratings or service-reactor output.
+
+### Production changes made to main (Windows retest PENDING)
+
+1. `ee7fa057`: ShipController no longer artificially derates
+   **Newtonian** manual pitch/yaw/roll input to 18% initially,
+   ramping up for 0.25s. Newtonian instantly commands available
+   authority; 24-nozzle allocator still physically enforces
+   max force, moment, gas and electrical budget. Assisted retains
+   its ACCEPTED old ramp and control law unchanged.
+2. `fa2b3618`: New `sampleNewtonianRcsSignedAuthority`
+   uses **actual production 24-nozzle allocator** to sample
+   positive and negative X/Y/Z forces and roll/yaw/pitch
+   body moments about current CoM, based on installed
+   damageable nozzle Engine descriptors. It uses a no-gas,
+   no-electrical-limitation PROJECTION, not fictitious
+   `3 rad/s²`/2m/s². Actual per-tick gas and power
+   enforcement remains unchanged.
+3. `d7a2765b`: On native Newtonian
+   `ShipCore::capabilities()` cache recomputation, bounded
+   signed instantaneous 24-nozzle authority overwrites
+   `ShipCapabilitySnapshot` signed strafe/lift and
+   pitch/yaw/roll values, and CONSERVATIVELY clamps
+   the legacy control-scalar `ShipParams.manoeuvreThrusterAccel`
+   and `angularAccel` to minimum feasible bidirectional
+   physical values. This prevents continuous commands
+   requesting impossible 520kN/60MN*m.
+   Shape/damage/mass invalidate the snapshot. No 12kN or
+   260t gameplay physical constant changed. Neither
+   an arbitrary global multiplier nor thrust scaling was used.
+   NOTE: client replication of detailed six-axis + signed
+   under-damage/power capability still requires follow-up;
+   the server's physical executor remains authoritative.
+4. `e5689c77`: direct physical regression test probes all
+   twelve healthy signed RCS force/moment directions and
+   demands that whole-bank destruction makes all projected
+   authority ZERO. The test is added to the existing
+   `newtonian_rcs_physical` target. Windows compile + CTest
+   after the patch is PENDING.
+5. `66549670`: Append main
+   `targetSpeedRate`, requested main acceleration XYZ/magnitude,
+   physical forward main capability, RCS translation/attitude
+   capability to new `D:/tmp/elite_newtonian_runtime.csv`.
+   This will settle why main thrust sits at 14.32% during
+   the player's + input; DO NOT assume max capability was
+   physically reached.
+
+### Next validation
+
+```bash
+cd /d/__elite/work
+git pull --ff-only origin main
+bash scripts/run_newtonian_physics_diagnostics.sh
+set -o pipefail
+bash build_mingw64.sh 2>&1 | tee /d/tmp/elite_full_build.log
+```
+
+Need all 8 focused tests green before running current game. Then NEW
+Newtonian-I gameplay: explicitly hold keyboard **+** for 3–4s,
+release; separately Num8/Num2 (RCS), and S/W/Q/E/D/A
+angular keys. Test gas discharge/recovery. Upload new
+`D:/tmp/elite_newtonian_runtime.csv` plus
+`elite_power_thermal_audit.csv`, focusing
+`main_target_speed_rate`, `requested_main_accel_norm_mps2`,
+`main_forward_capability_mps2`,
+`main0_thrust01`, actual RCS/torque.
+
+Expected outcome of fixes: properly bounded
+requested accelerations, immediate Newtonian short-tap torque and
+no planner/servo claim beyond real installed nozzles.
+**NOT promised**: all desired fighter agility. That would require
+user-approved physical re-rating of the 12kN ×24 RCS nozzles,
+electrical load and gas mechanics under the existing universe
+laws. Current 48kN/260t≈0.185m/s² is fundamentally limited.
+Stay on main; maintain this single PROJECT_STATE.md.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

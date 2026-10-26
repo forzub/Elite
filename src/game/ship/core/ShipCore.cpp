@@ -435,6 +435,91 @@ ShipCore::capabilities() const
                 m_state.actuators.propulsionSlots,
                 out
             );
+
+            // The old nominal 2m/s2 and 3rad/s2 RCS demands were not
+            // hardware facts. On the healthy 260t Cobra they requested
+            // 520kN of translation and tens of MNm of turn torque while
+            // the installed 24 nozzles delivered a fraction of either.
+            // Project the actual actuator authority ONCE per physical
+            // equipment/mass revision; DO NOT fake extra maneuver power.
+            if(game::ship::plant::familyOf(
+                m_state.construction.physicalControlModel)==
+                    game::ship::plant::PhysicalControlFamily::Newtonian)
+            {
+                using game::equipment::engine::MountedEngine;
+                std::array<MountedEngine,24> mounted {};
+                const auto& definition=*m_state.construction.definition;
+                const auto& catalog=
+                    game::ship::presets::cobra::newtonianRcsNozzles();
+                const auto& runtime=
+                    static_cast<const world::modules::ObjectModuleRuntime&>(
+                        m_moduleRuntime);
+                for(std::size_t i=0;i<catalog.size();++i)
+                {
+                    const std::string id(catalog[i].nozzleId);
+                    const auto item=std::find_if(
+                        definition.modules.begin(),definition.modules.end(),
+                        [&](const auto& m){return m.moduleId==id;});
+                    const auto* state=runtime.findModule(id);
+                    if(item==definition.modules.end() ||
+                        !item->engine || !state)
+                        continue;
+                    mounted[i]={
+                        &*item->engine,
+                        &state->equipmentDamage,
+                        &state->engineOperating,
+                        catalog[i].nozzleId,
+                        state->state ==
+                            world::modules::ObjectModuleRuntimeState::Attached &&
+                        state->health>0.0f
+                    };
+                }
+                auto& p=out.effectivePhysics;
+                const auto limits=
+                    game::ship::plant::sampleNewtonianRcsSignedAuthority(
+                        mounted,p.physicalActuatorHalfExtentsMeters,
+                        p.centerOfMassLocalMeters);
+                const double mass=std::max(1.0,p.massKg);
+                const glm::dvec3 angularInertia {
+                    std::max(1.0,p.pitchInertiaKgM2),
+                    std::max(1.0,p.yawInertiaKgM2),
+                    std::max(1.0,p.rollInertiaKgM2)
+                };
+                const glm::dvec3 positiveA=limits.positiveForceN/mass;
+                const glm::dvec3 negativeA=limits.negativeForceN/mass;
+                const glm::dvec3 positiveAlpha=
+                    limits.positiveMomentNm/angularInertia;
+                const glm::dvec3 negativeAlpha=
+                    limits.negativeMomentNm/angularInertia;
+                out.strafeAccelerationMps2={positiveA.x,negativeA.x};
+                out.liftAccelerationMps2={positiveA.y,negativeA.y};
+                out.pitchAccelerationRadPerSec2={
+                    positiveAlpha.x,negativeAlpha.x};
+                out.yawAccelerationRadPerSec2={
+                    positiveAlpha.y,negativeAlpha.y};
+                out.rollAccelerationRadPerSec2={
+                    positiveAlpha.z,negativeAlpha.z};
+                // Single scalar legacy controller accepts only a
+                // conservative all-directions budget. Signed per-axis
+                // capability remains available in the full snapshot.
+                const double linearMin=std::min({
+                    positiveA.x,positiveA.y,positiveA.z,
+                    negativeA.x,negativeA.y,negativeA.z
+                });
+                const double angularMin=std::min({
+                    positiveAlpha.x,positiveAlpha.y,positiveAlpha.z,
+                    negativeAlpha.x,negativeAlpha.y,negativeAlpha.z
+                });
+                p.manoeuvreThrusterAuthorityExplicit=true;
+                p.manoeuvreThrusterAccel=static_cast<float>(
+                    std::min(std::max(0.0,
+                        static_cast<double>(p.manoeuvreThrusterAccel)),
+                        linearMin));
+                p.angularAccel=static_cast<float>(
+                    std::min(std::max(0.0,
+                        static_cast<double>(p.angularAccel)),
+                        angularMin));
+            }
         }
     }
 

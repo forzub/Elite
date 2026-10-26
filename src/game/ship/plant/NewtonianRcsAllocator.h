@@ -174,4 +174,76 @@ struct NewtonianRcsResult
     out.valid=true;
     return out;
 }
+// Feasible independent signed wrench limits of the SAME 24 installed
+// damageable nozzles. This is a CONTROL/PLANNING projection, not extra
+// thrust: every bound is sampled through the actual physical allocator.
+// Neutral zero moment/force is requested on the other five axes. Resource
+// pressure/power are applied separately before each actual execution.
+struct NewtonianRcsSignedAuthority
+{
+    glm::dvec3 positiveForceN {0.0};
+    glm::dvec3 negativeForceN {0.0};
+    glm::dvec3 positiveMomentNm {0.0};
+    glm::dvec3 negativeMomentNm {0.0};
+};
+
+[[nodiscard]] inline NewtonianRcsSignedAuthority
+sampleNewtonianRcsSignedAuthority(
+    const std::array<game::equipment::engine::MountedEngine,24>& installed,
+    const glm::dvec3& halfExtentsMeters,
+    const glm::dvec3& centerOfMassLocalMeters
+) noexcept
+{
+    NewtonianRcsSignedAuthority authority;
+    const auto& mounts=game::ship::presets::cobra::newtonianRcsNozzles();
+    double totalForceN=0.0,totalMomentNm=0.0;
+    for(std::size_t i=0;i<installed.size();++i)
+    {
+        const game::equipment::engine::Engine engine(installed[i]);
+        const double capacity=std::max(
+            0.0,engine.instantaneousAvailableThrustNewtons(0));
+        totalForceN+=capacity;
+        const glm::dvec3 lever=
+            mounts[i].positionBody*halfExtentsMeters-
+            centerOfMassLocalMeters;
+        totalMomentNm+=glm::length(glm::cross(
+            lever,mounts[i].forceDirectionBody*capacity));
+    }
+    if(totalForceN<=1.0e-9)return authority;
+
+    for(int axis=0;axis<6;++axis)
+        for(int sign=-1;sign<=1;sign+=2)
+        {
+            NewtonianRcsDemand probe;
+            probe.mountHalfExtentsM=halfExtentsMeters;
+            probe.centerOfMassLocalMeters=centerOfMassLocalMeters;
+            probe.tick=0;
+            // 24 nozzles cannot generate a force/moment greater than
+            // their entire individual force/moment magnitude sums.
+            // Request that mathematical ceiling, without inventing 2m/s2
+            // or 3rad/s2 when the real Cobra cannot actually achieve it.
+            if(axis<3)
+                probe.forceBodyN[axis]=sign*totalForceN;
+            else
+                probe.momentBodyNm[axis-3]=sign*totalMomentNm;
+            const auto sample=allocateNewtonianRcs(installed,probe);
+            if(!sample.valid)continue;
+            if(axis<3)
+            {
+                const double delivered=std::max(
+                    0.0,sign*sample.deliveredForceN[axis]);
+                (sign>0 ? authority.positiveForceN :
+                    authority.negativeForceN)[axis]=delivered;
+            }
+            else
+            {
+                const double delivered=std::max(
+                    0.0,sign*sample.deliveredMomentNm[axis-3]);
+                (sign>0 ? authority.positiveMomentNm :
+                    authority.negativeMomentNm)[axis-3]=delivered;
+            }
+        }
+    return authority;
+}
+
 } // namespace game::ship::plant

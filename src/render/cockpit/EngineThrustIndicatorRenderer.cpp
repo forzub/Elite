@@ -408,8 +408,10 @@ void EngineThrustIndicatorRenderer::render(
                 1*scale,style.panelBorder,style.track);
             if(presentation.rcsManifoldKnown)
             {
-                const bool refilling=presentation.rcsCompressorMW>0.01f &&
-                    pressure<0.999f;
+                const bool refilling=
+                    presentation.rcsNetFlow01PerSecond>1.0e-5f;
+                const bool draining=
+                    presentation.rcsNetFlow01PerSecond < -1.0e-5f;
                 const glm::vec4 fillColor=
                     presentation.rcsManifoldDepleted?hot:
                     refilling?green:yellow;
@@ -418,7 +420,8 @@ void EngineThrustIndicatorRenderer::render(
                 if(fillW>0.0f)
                     text.solidRectPx(barX+scale,barY+scale,fillW,
                         std::max(1.0f,barH-2*scale),fillColor);
-                text.textDrawPx(refilling?"AR+":"AR",x+10*scale,
+                text.textDrawPx(refilling?"AR+":draining?"AR-":"AR",
+                    x+10*scale,
                     y+h-7*scale,
                     std::max(9,static_cast<int>(10*scale)),style.label);
                 char percent[16];

@@ -36,9 +36,9 @@ struct Consumer final: game::equipment::IPowerConsumer
         return priority;
     }
 };
-game::ship::ReactorDescriptor reactorDescriptor(double peakMW)
+ReactorDescriptor reactorDescriptor(double peakMW)
 {
-    game::ship::ReactorDescriptor d {};
+    ReactorDescriptor d {};
     d.nominalPowerMW=peakMW;
     d.peakPowerMW=peakMW;
     d.optimalTempK=1400.0;

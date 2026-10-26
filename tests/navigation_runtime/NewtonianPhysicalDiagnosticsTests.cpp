@@ -371,17 +371,17 @@ void runModel(Recorders& logs,Model model,std::size_t expectedMain)
     f.damage[0].accumulated.impact01=0.0;
     affected.availableElectricalMW=0.0;
     recordRcs(logs,model,"power_off",f,affected,main.mainCount);
-    // Full-power draw for this scenario is about 0.23 MW; 0.05 MW
-    // ACTUALLY saturates the bus and proves thrust scales down.
+    // A 0.05-MW budget is far below the 20-MW/nozzle rating;
+    // it must reduce the real physical wrench, not only a HUD meter.
     affected.availableElectricalMW=0.05;
     recordRcs(logs,model,"power_limited",f,affected,main.mainCount);
     affected.availableElectricalMW=5.0;
     affected.centerOfMassLocalMeters={1.1,-0.7,0.8};
     recordRcs(logs,model,"cargo_com_shift",f,affected,main.mainCount);
-    // The 24 physical nozzles have finite thrust. Deliberately request
-    // more than their entire installed sum and record the actual miss.
+    // The 24 physical nozzles have finite thrust: 24*500kN = 12MN.
+    // Ask for 20MN, impossible even with infinite electrical power.
     NewtonianRcsDemand impossible {};
-    impossible.forceBodyN={450000.0,0.0,0.0};
+    impossible.forceBodyN={20000000.0,0.0,0.0};
     impossible.mountHalfExtentsM=HalfExtents;
     impossible.availableElectricalMW=10.0;
     impossible.tick=301;

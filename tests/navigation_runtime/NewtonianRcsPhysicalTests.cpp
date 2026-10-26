@@ -145,6 +145,57 @@ void checkReplenishingGameGasBeforeFire()
         reservoir,depleted,0.02,1.0,0.20,0.08,0.20);
     require(resumed>0.0,"RCS did not resume after reservoir recovery");
 }
+void checkSignedPhysicalAuthorityProjection()
+{
+    using namespace game::equipment;
+    using namespace game::equipment::engine;
+    std::array<EngineUnitDescriptor,24> passports {};
+    std::array<EquipmentDamageLayer,24> damage {};
+    std::array<EngineOperatingState,24> operating {};
+    std::array<MountedEngine,24> installed {};
+    const auto& catalog=game::ship::presets::cobra::newtonianRcsNozzles();
+    for(std::size_t i=0;i<installed.size();++i)
+    {
+        passports[i]=cobraManoeuvreNozzlePreset();
+        damage[i].failure.failureAtDamage01=0.95;
+        operating[i].temperatureK=
+            passports[i].nominalOperatingTemperatureK;
+        installed[i]={
+            &passports[i],&damage[i],&operating[i],
+            catalog[i].nozzleId,true
+        };
+    }
+    const glm::dvec3 halfExtents={12.0,2.5,10.0};
+    const auto healthy=
+        game::ship::plant::sampleNewtonianRcsSignedAuthority(
+            installed,halfExtents,{0.0,0.0,0.0});
+    for(int axis=0;axis<3;++axis)
+    {
+        require(healthy.positiveForceN[axis]>0.0 &&
+                healthy.negativeForceN[axis]>0.0,
+            "healthy Newtonian has no physical bidirectional RCS translation");
+        require(healthy.positiveMomentNm[axis]>0.0 &&
+                healthy.negativeMomentNm[axis]>0.0,
+            "healthy Newtonian has no physical bidirectional RCS torque");
+        require(healthy.positiveForceN[axis]<=288000.0+1.e-3 &&
+                healthy.negativeForceN[axis]<=288000.0+1.e-3,
+            "RCS authority advertises more than all installed nozzle force");
+    }
+    // A wholly destroyed RCS bank cannot advertise ANY free controller
+    // authority: 2m/s2/3rad/s2 descriptor intent is not physical evidence.
+    for(auto& d:damage)d.accumulated.impact01=1.0;
+    const auto destroyed=
+        game::ship::plant::sampleNewtonianRcsSignedAuthority(
+            installed,halfExtents,{0.0,0.0,0.0});
+    for(int axis=0;axis<3;++axis)
+    {
+        require(destroyed.positiveForceN[axis]==0.0 &&
+                destroyed.negativeForceN[axis]==0.0 &&
+                destroyed.positiveMomentNm[axis]==0.0 &&
+                destroyed.negativeMomentNm[axis]==0.0,
+            "destroyed installed RCS resurrected nominal free authority");
+    }
+}
 int main()
 {
     try
@@ -152,6 +203,7 @@ int main()
         checkInstalledNozzleLoss();
         checkCentreOfMassAndElectricalBudget();
         checkReplenishingGameGasBeforeFire();
+        checkSignedPhysicalAuthorityProjection();
         std::cout<<"NEWTONIAN RCS PHYSICAL: PASS\n";
         return 0;
     }

@@ -346,6 +346,10 @@ private:
     glm::dvec3 m_newtonianRcsAngularDemandRadPerSec2 {0.0};
     std::array<double,24> m_newtonianRcsDelivered01 {};
     double m_newtonianRcsElectricalDemandMW = 0.0;
+    // Actual RCS electricity sourced from installed ER-5 groups AFTER
+    // main-drive consumption. Indexed exactly like installation.engineReactors.
+    // The same samples feed generator heat/age; no second invented reactor.
+    std::vector<double> m_newtonianRcsEr5DrawMW {};
     // Server-only trace: angular rates before the nonphysical demand calculation.
     glm::dvec3 m_attitudeRatesAtTickStart {0.0};
     bool m_newtonianRcsPhysical = false;

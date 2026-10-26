@@ -116,6 +116,7 @@ struct ShipCoreStatus {
     float newtonianRcsCompressorMW = 0.0f;
     float newtonianRcsFlowUse01PerSec = 0.0f;
     float newtonianRcsFlowRecovery01PerSec = 0.0f;
+    float newtonianRcsNetFlow01PerSec = 0.0f;
     float newtonianRcsArgonInventoryKg = 0.0f;
     ThermalStatus thermal;
     CoolingStatus cooling;

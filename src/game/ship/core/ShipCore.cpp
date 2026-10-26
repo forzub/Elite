@@ -16,6 +16,7 @@
 #include "src/game/ship/ShipPropulsionState.h"
 #include "src/game/ship/capability/ShipCapabilityBuilder.h"
 #include "src/game/ship/plant/NewtonianRcsAllocator.h"
+#include "src/game/ship/plant/NewtonianRcsWorkingFluid.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/data/radars.h"
 
@@ -158,6 +159,7 @@ void ShipCore::init(
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsElectricalDemandMW=0.0;
     m_newtonianRcsEr5DrawMW.clear();
+    m_newtonianRcsCompressorElectricalMW=0.0;
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
     m_serviceThrottleSaved = 0.0;
@@ -1049,6 +1051,7 @@ void ShipCore::updateTranslationControl(float dt)
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsElectricalDemandMW=0.0;
     m_newtonianRcsEr5DrawMW.assign(powerGroups.size(),0.0);
+    m_newtonianRcsCompressorElectricalMW=0.0;
     auto& rcsMotion=m_transform.motion;
     rcsMotion.installedRcsPlantExecuted=false;
     const bool installedNewtonian =
@@ -1143,10 +1146,12 @@ void ShipCore::updateTranslationControl(float dt)
         // Argon recirculation compressor is a REAL ER-5 consumer. Reserve
         // its 2 MW first, then RCS takes the remaining watts. The buffer
         // can only recover if a generator actually powers this compressor.
-        constexpr double ArgonCompressorRatedMW=2.0;
+        constexpr double ArgonCompressorRatedMW=
+            game::ship::plant::rcsWorkingFluid::CompressorRatedElectricalMW;
         const double compressorMW=
             rcsMotion.manoeuvreGasPressure01<0.999
                 ? std::min(ArgonCompressorRatedMW,actualEr5SpareMW):0.0;
+        m_newtonianRcsCompressorElectricalMW=compressorMW;
         double compressorRemainingMW=compressorMW;
         for(std::size_t i=0;i<er5SpareMW.size();++i)
         {

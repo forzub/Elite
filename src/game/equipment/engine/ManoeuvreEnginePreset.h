@@ -5,7 +5,7 @@
 // own ModuleDescriptor and EquipmentDamageLayer / EngineOperatingState.
 // ObjectModuleRuntime is the sole source of accumulated hit and wear damage.
 //
-// All numbers below are gameplay starting ratings for a single small nozzle,
+// These are authored GAME-UNIVERSE ratings, not a real gas rocket.
 // not measurements of a real thruster. Ship tuning may override the passport.
 #include "src/game/equipment/engine/EngineUnit.h"
 
@@ -18,8 +18,8 @@ namespace game::equipment::engine
     out.engineDisplayName = "Cobra electric manoeuvre nozzle";
     out.manufacturerName = "Cobra";
     out.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
-    out.nominalThrustNewtons = 12000.0;
-    out.nominalElectricalPowerMW = 0.12;
+    out.nominalThrustNewtons = 500000.0; // field-coupled RCS: 0.50 MN per nozzle
+    out.nominalElectricalPowerMW = 20.0; // 24/nozzles <= 480 MW total, supplied by ER-5 spare power
     out.nominalEfficiency01 = 0.94;
     out.maxRelativeEfficiencyLossAtFullDamage01 = 0.10;
     out.nominalGimbalRangeRad = 0.0;

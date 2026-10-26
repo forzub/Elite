@@ -2177,13 +2177,17 @@ force, torque, thermal and power ratings.
    NOTE: client replication of detailed six-axis + signed
    under-damage/power capability still requires follow-up;
    the server's physical executor remains authoritative.
-4. `e5689c77`: direct physical regression test probes all
+4. `530994e2`: signed roll projection obeys canonical body
+   convention: +roll rotates about body -Z, so positive roll
+   authority comes from negative physical Mz, and vice versa.
+   Keep axis sign correct under asymmetric RCS damage.
+5. `e5689c77`: direct physical regression test probes all
    twelve healthy signed RCS force/moment directions and
    demands that whole-bank destruction makes all projected
    authority ZERO. The test is added to the existing
    `newtonian_rcs_physical` target. Windows compile + CTest
    after the patch is PENDING.
-5. `66549670`: Append main
+6. `66549670`: Append main
    `targetSpeedRate`, requested main acceleration XYZ/magnitude,
    physical forward main capability, RCS translation/attitude
    capability to new `D:/tmp/elite_newtonian_runtime.csv`.

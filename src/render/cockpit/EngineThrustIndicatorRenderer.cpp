@@ -344,10 +344,26 @@ void EngineThrustIndicatorRenderer::render(
                 char margin[32];
                 std::snprintf(margin,sizeof(margin),"%.0f K left",
                     drive.safeCoreTemperatureK-drive.coreTemperatureK);
-                text.textDrawPx(margin,x+176*scale,cy-18*scale,
-                    std::max(9,static_cast<int>(9*scale)),
-                    drive.safeCoreTemperatureK<=drive.coreTemperatureK
-                        ?hot:style.label);
+                if(!newtonian || presentation.drives.size()<=2)
+                    text.textDrawPx(margin,newtonian
+                        ?x+12*scale:x+176*scale,cy-18*scale,
+                        std::max(9,static_cast<int>(9*scale)),
+                        drive.safeCoreTemperatureK<=drive.coreTemperatureK
+                            ?hot:style.label);
+            }
+            // Tight Y/X columns: keep the factual G/P/S readings, but
+            // use one compact label on the LEFT of each main bar instead
+            // of a 32px-tall secondary line that hit the next generator.
+            if(newtonian && presentation.drives.size()>2 &&
+                drive.hasCoreTemperature)
+            {
+                char heat[80];
+                std::snprintf(heat,sizeof(heat),"G%.0f/P%.0f/S%+.0f",
+                    drive.generatedHeatMW,drive.padHeatMW,
+                    drive.storedHeatMW);
+                text.textDrawPx(heat,x+12*scale,cy+3*scale,
+                    std::max(8,static_cast<int>(9*scale)),
+                    drive.storedHeatMW>0.1f?hot:style.label);
             }
             if(newtonian)
             {

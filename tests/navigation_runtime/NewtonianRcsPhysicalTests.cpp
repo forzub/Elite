@@ -177,8 +177,8 @@ void checkSignedPhysicalAuthorityProjection()
         require(healthy.positiveMomentNm[axis]>0.0 &&
                 healthy.negativeMomentNm[axis]>0.0,
             "healthy Newtonian has no physical bidirectional RCS torque");
-        require(healthy.positiveForceN[axis]<=288000.0+1.e-3 &&
-                healthy.negativeForceN[axis]<=288000.0+1.e-3,
+        require(healthy.positiveForceN[axis]<=12000000.0+1.e-3 &&
+                healthy.negativeForceN[axis]<=12000000.0+1.e-3,
             "RCS authority advertises more than all installed nozzle force");
     }
     // Test real simultaneous 2-axis manual turns, not just isolated

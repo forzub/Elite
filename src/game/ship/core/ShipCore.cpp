@@ -1982,7 +1982,10 @@ void ShipCore::updateSystems(float dt)
                       "rcs_actual_electrical_MW,"
                       "service_reactor_T_K,coolant_T_K,"
                       "radiators_radiated_MW,reactor_pump_MW,"
-                      "propulsion_reactor_count";
+                      "propulsion_reactor_count,"
+                      "propulsion_coolant_T_K,propulsion_stored_MJ,"
+                      "ship_coolant_stored_MJ,ship_radiator_potential_MW,"
+                      "emergency_transfer_MW";
                 for(std::size_t i=0;i<8;++i)
                     powerTrace<<",ER"<<i<<"_temp_K"
                               <<",ER"<<i<<"_thermal_damage01"
@@ -2041,7 +2044,12 @@ void ShipCore::updateSystems(float dt)
                 <<','<<m_thermal.getTemperature()
                 <<','<<m_cooling.getLastRadiatedPower()
                 <<','<<m_cooling.getAllocatedPower()
-                <<','<<ids.size();
+                <<','<<ids.size()
+                <<','<<m_propulsionThermal.getTemperature()
+                <<','<<m_propulsionThermal.getStoredHeat()
+                <<','<<m_thermal.getStoredHeat()
+                <<','<<m_cooling.getRadiatorPotentialMW()
+                <<",0"; // No installed emergency exchanger yet.
             const auto& runtime=
                 static_cast<const world::modules::ObjectModuleRuntime&>(
                     m_moduleRuntime);

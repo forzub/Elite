@@ -409,7 +409,8 @@ private:
     // CoreSystem
     // ───────────────
     ReactorSystem                               m_reactor;  // временный пустой дескриптор
-    ThermalSystem                               m_thermal;        // значения по умолчанию
+    ThermalSystem                               m_thermal;        // ship service coolant
+    ThermalSystem                               m_propulsionThermal; // independent propulsion coolant
     CoolingSystem                               m_cooling;                        // будет инициализирован позже
     PowerBus                                    m_powerBus;                       // будет инициализирован позже
 

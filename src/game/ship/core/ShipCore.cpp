@@ -160,6 +160,7 @@ void ShipCore::init(
     m_newtonianRcsElectricalDemandMW=0.0;
     m_newtonianRcsEr5DrawMW.clear();
     m_newtonianRcsCompressorElectricalMW=0.0;
+    m_newtonianRcsNetFlow01PerSecond=0.0;
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
     m_serviceThrottleSaved = 0.0;
@@ -1052,6 +1053,7 @@ void ShipCore::updateTranslationControl(float dt)
     m_newtonianRcsElectricalDemandMW=0.0;
     m_newtonianRcsEr5DrawMW.assign(powerGroups.size(),0.0);
     m_newtonianRcsCompressorElectricalMW=0.0;
+    m_newtonianRcsNetFlow01PerSecond=0.0;
     auto& rcsMotion=m_transform.motion;
     rcsMotion.installedRcsPlantExecuted=false;
     const bool installedNewtonian =
@@ -1188,6 +1190,8 @@ void ShipCore::updateTranslationControl(float dt)
             : 0.0;
         const double compressorRecovery01=
             compressorMW/ArgonCompressorRatedMW;
+        const double argonManifoldBefore01=
+            rcsMotion.manoeuvreGasPressure01;
         const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
             rcsMotion.manoeuvreGasPressure01,
             rcsMotion.manoeuvreGasDepleted,
@@ -1195,6 +1199,9 @@ void ShipCore::updateTranslationControl(float dt)
             physics.manoeuvreGasUsePerSecond,
             physics.manoeuvreGasRechargePerSecond*compressorRecovery01,
             physics.manoeuvreGasRestartFraction);
+        m_newtonianRcsNetFlow01PerSecond=(
+            rcsMotion.manoeuvreGasPressure01-argonManifoldBefore01)/
+            static_cast<double>(dt);
         const glm::dvec3 requestedRcsForceBeforeGasN=demand.forceBodyN;
         const glm::dvec3 requestedRcsMomentBeforeGasNm=demand.momentBodyNm;
         demand.forceBodyN*=gasScale;

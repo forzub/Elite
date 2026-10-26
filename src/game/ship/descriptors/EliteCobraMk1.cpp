@@ -91,8 +91,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.strafeDamping          = 6.0f;     // Assisted velocity-direction response
         desc.physics.maxStrafeSpeed         = 80.0f;    // Legacy assisted translation envelope
         desc.physics.manoeuvreThrusterAccel = 2.0f;     // Small physical RCS acceleration
-        desc.physics.manoeuvreGasUsePerSecond = 0.20f;  // Full one-axis manual burn
-        desc.physics.manoeuvreGasRechargePerSecond = 0.08f;
+        desc.physics.manoeuvreGasUsePerSecond = 0.018f;  // 55 s full RCS buffer draw; recirculating argon
+        desc.physics.manoeuvreGasRechargePerSecond = 0.065f; // 15.4 s unpowered-flow recovery
         desc.physics.manoeuvreGasRestartFraction = 0.20f;
 
         desc.physics.maxGs                  = 5.0f;     // Макс. перегрузка (для пилота)

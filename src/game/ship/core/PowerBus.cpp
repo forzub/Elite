@@ -33,7 +33,7 @@ void PowerBus::setAuxiliaryDemandMW(double demandMW)
 
 
 
-// void PowerBus::update(bool reactorOnline)
+void PowerBus::update(bool reactorOnline)
 {
     // A stopped reactor must not be silently restarted by demand from
     // cooling, avionics or last tick's actual Newtonian RCS draw.

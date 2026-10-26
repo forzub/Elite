@@ -199,7 +199,10 @@ void EngineThrustIndicatorRenderer::render(
         const bool newtonian=presentation.modelLabel.find("NEWTONIAN")
             !=std::string::npos;
         const float top=y+30*scale;
-        const float rowStep=(newtonian?111.0f:128.0f)*scale/
+        // Reserve a separate bottom lane for 8 RCS indicators and the
+        // argon-pressure strip. In Newtonian-Y/X, packing four generator
+        // rows plus every multi-line heat caption caused overlap.
+        const float rowStep=(newtonian?88.0f:128.0f)*scale/
             static_cast<float>(std::max<std::size_t>(
                 1,presentation.drives.size()));
         const float sq=12.0f*scale;
@@ -323,7 +326,8 @@ void EngineThrustIndicatorRenderer::render(
             // Actual measured heat balance, not an inferred temperature trend.
             // G = generator waste; P = heat sent to pads; S = stored thermal
             // power (positive => current overheating risk, even at fixed K).
-            if(drive.hasCoreTemperature)
+            if(drive.hasCoreTemperature &&
+               (!newtonian || presentation.drives.size()<=2))
             {
                 char heat[96];
                 std::snprintf(heat,sizeof(heat),
@@ -368,7 +372,7 @@ void EngineThrustIndicatorRenderer::render(
         }
         if(newtonian)
         {
-            const float dotY=y+h-13*scale;
+            const float dotY=y+h-30*scale;
             // Eight physical display positions are reserved on all Newtonian
             // layouts. Uninstalled positions remain dark; no fake healthy
             // thrusters are added to Newtonian-I's four-cluster topology.
@@ -388,6 +392,46 @@ void EngineThrustIndicatorRenderer::render(
                 roundedOutlinePx(text,cx-4*scale,dotY-4*scale,
                     8*scale,8*scale,4*scale,1*scale,
                     style.panelBorder,color);
+            }
+
+            // Gas is a CLOSED argon loop. This strip is ACTIVE manifold
+            // pressure (available flow), not disappearing propellant mass.
+            // Charge rises only when the ER-5-driven return compressor runs;
+            // damage and no-power come from the same server cockpit sample.
+            const float barY=y+h-12.0f*scale;
+            const float barX=x+42.0f*scale;
+            const float barW=w-88.0f*scale;
+            const float barH=6.0f*scale;
+            const float pressure=std::clamp(
+                presentation.rcsManifold01,0.0f,1.0f);
+            roundedOutlinePx(text,barX,barY,barW,barH,2*scale,
+                1*scale,style.panelBorder,style.track);
+            if(presentation.rcsManifoldKnown)
+            {
+                const bool refilling=presentation.rcsCompressorMW>0.01f &&
+                    pressure<0.999f;
+                const glm::vec4 fillColor=
+                    presentation.rcsManifoldDepleted?hot:
+                    refilling?green:yellow;
+                const float fillW=std::max(
+                    0.0f,(barW-2*scale)*pressure);
+                if(fillW>0.0f)
+                    text.solidRectPx(barX+scale,barY+scale,fillW,
+                        std::max(1.0f,barH-2*scale),fillColor);
+                text.textDrawPx(refilling?"AR+":"AR",x+10*scale,
+                    y+h-7*scale,
+                    std::max(9,static_cast<int>(10*scale)),style.label);
+                char percent[16];
+                std::snprintf(percent,sizeof(percent),"%.0f%%",
+                    pressure*100.0f);
+                text.textDrawPx(percent,x+w-41*scale,y+h-7*scale,
+                    std::max(9,static_cast<int>(10*scale)),
+                    presentation.rcsManifoldDepleted?hot:style.label);
+            }
+            else
+            {
+                text.textDrawPx("AR --",x+10*scale,y+h-7*scale,
+                    std::max(9,static_cast<int>(10*scale)),style.track);
             }
         }
         return;

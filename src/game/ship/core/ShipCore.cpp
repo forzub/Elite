@@ -1140,7 +1140,24 @@ void ShipCore::updateTranslationControl(float dt)
                 er5SpareMW[groupIndex]=spare;
                 actualEr5SpareMW+=spare;
             }
-        demand.availableElectricalMW=actualEr5SpareMW;
+        // Argon recirculation compressor is a REAL ER-5 consumer. Reserve
+        // its 2 MW first, then RCS takes the remaining watts. The buffer
+        // can only recover if a generator actually powers this compressor.
+        constexpr double ArgonCompressorRatedMW=2.0;
+        const double compressorMW=
+            rcsMotion.manoeuvreGasPressure01<0.999
+                ? std::min(ArgonCompressorRatedMW,actualEr5SpareMW):0.0;
+        double compressorRemainingMW=compressorMW;
+        for(std::size_t i=0;i<er5SpareMW.size();++i)
+        {
+            const double draw=std::min(
+                compressorRemainingMW,er5SpareMW[i]);
+            m_newtonianRcsEr5DrawMW[i]+=draw;
+            er5SpareMW[i]-=draw;
+            compressorRemainingMW-=draw;
+        }
+        demand.availableElectricalMW=std::max(
+            0.0,actualEr5SpareMW-compressorMW);
 
         // Replenished gas is a gameplay duty budget. BOTH manual translation
         // and angular damping consume it; nozzles are throttled BEFORE firing.
@@ -1164,15 +1181,14 @@ void ShipCore::updateTranslationControl(float dt)
                 glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
                     angularAuthority),0.0,1.0)
             : 0.0;
-        const bool er5Powered=m_propulsionReactorsOn &&
-            m_propulsionReactorsStartupRemainingSeconds<=0.0 &&
-            actualEr5SpareMW>1.0e-9;
+        const double compressorRecovery01=
+            compressorMW/ArgonCompressorRatedMW;
         const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
             rcsMotion.manoeuvreGasPressure01,
             rcsMotion.manoeuvreGasDepleted,
             static_cast<double>(dt),intensity,
             physics.manoeuvreGasUsePerSecond,
-            er5Powered ? physics.manoeuvreGasRechargePerSecond : 0.0f,
+            physics.manoeuvreGasRechargePerSecond*compressorRecovery01,
             physics.manoeuvreGasRestartFraction);
         const glm::dvec3 requestedRcsForceBeforeGasN=demand.forceBodyN;
         const glm::dvec3 requestedRcsMomentBeforeGasNm=demand.momentBodyNm;
@@ -1207,7 +1223,7 @@ void ShipCore::updateTranslationControl(float dt)
             {
                 const double draw=std::min(
                     remainingRcsMW,er5SpareMW[i]);
-                m_newtonianRcsEr5DrawMW[i]=draw;
+                m_newtonianRcsEr5DrawMW[i]+=draw;
                 remainingRcsMW-=draw;
             }
 

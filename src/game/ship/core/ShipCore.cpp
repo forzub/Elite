@@ -203,6 +203,9 @@ void ShipCore::init(
     m_serviceThrottleSaved=m_reactor.getThrottle();
 
     m_thermal = ThermalSystem(descriptor.thermal);
+    // Independent finite thermal store for the propulsion cooling loop.
+    // A temporary equal-mass reservoir until its installed pump/passport is defined.
+    m_propulsionThermal = ThermalSystem(descriptor.thermal);
 
     m_cooling.init(
         descriptor.cooling.radiatorArea,    // 1600 м²
@@ -1752,8 +1755,8 @@ void ShipCore::updateSystems(float dt)
     // Engine life belongs to the real installed module, never to a pilot
     // command, diagnostic slot, or ship-wide time counter. The actual
     // physical allocator reports the delivered fraction of healthy thrust.
-    // Use the actual common coolant temperature: damaged pumps/radiator
-    // panels now heat every engine through its real finite thermal inertia.
+    // Main engines conduct residual heat into the PROPULSION loop, never
+    // directly into the separate service reactor coolant.
     if (m_desc &&
         m_state.actuators.source ==
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
@@ -1773,10 +1776,9 @@ void ShipCore::updateSystems(float dt)
                 motion.mode == game::navigation::MotionMode::HubTactical &&
                 motion.mainEngineReportedSlotCount == bindings.size();
             bool changed = false;
-            // One shared coolant snapshot for this systems tick. Each engine
-            // deposits only its CONDUCTED part, never the nozzle's radiated
-            // heat. Engine internal heat storage remains on its own module.
-            const double coolantK=m_thermal.getTemperature();
+            // Engine pad radiation leaves directly to space; only conducted
+            // heat enters the independent propulsion coolant reservoir.
+            const double coolantK=m_propulsionThermal.getTemperature();
             for (std::size_t i = 0; i < bindings.size(); ++i)
             {
                 if (bindings[i].empty() ||
@@ -1812,9 +1814,9 @@ void ShipCore::updateSystems(float dt)
                 {
                     const double energyMJ=transferredMW*dt;
                     if(energyMJ>=0.0)
-                        m_thermal.addHeat(energyMJ);
+                        m_propulsionThermal.addHeat(energyMJ);
                     else
-                        m_thermal.removeHeat(-energyMJ);
+                        m_propulsionThermal.removeHeat(-energyMJ);
                 }
             }
 
@@ -1917,7 +1919,7 @@ void ShipCore::updateSystems(float dt)
     {
         const auto& nozzles=
             game::ship::presets::cobra::newtonianRcsNozzles();
-        const double coolantK=m_thermal.getTemperature();
+        const double coolantK=m_propulsionThermal.getTemperature();
         bool changed=false;
         for(std::size_t i=0;i<nozzles.size();++i)
         {
@@ -1939,13 +1941,15 @@ void ShipCore::updateSystems(float dt)
             {
                 const double energyMJ=transferredMW*dt;
                 if(energyMJ>=0.0)
-                    m_thermal.addHeat(energyMJ);
+                    m_propulsionThermal.addHeat(energyMJ);
                 else
-                    m_thermal.removeHeat(-energyMJ);
+                    m_propulsionThermal.removeHeat(-energyMJ);
             }
         }
         if(changed) refreshRuntimeState();
     }
+    // No cross-circuit emergency valve is installed in this first migration.
+    // Preserve heat in propulsion modules/loop instead of silently deleting it.
     m_cooling.update(dt, m_thermal);
 
     // Read-only reconciliation trace for the user's D:/tmp acceptance.

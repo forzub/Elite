@@ -351,6 +351,7 @@ private:
     // The same samples feed generator heat/age; no second invented reactor.
     std::vector<double> m_newtonianRcsEr5DrawMW {};
     double m_newtonianRcsCompressorElectricalMW = 0.0;
+    double m_newtonianRcsNetFlow01PerSecond = 0.0;
     // Server-only trace: angular rates before the nonphysical demand calculation.
     glm::dvec3 m_attitudeRatesAtTickStart {0.0};
     bool m_newtonianRcsPhysical = false;

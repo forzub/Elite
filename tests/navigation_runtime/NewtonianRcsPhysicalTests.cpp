@@ -181,6 +181,33 @@ void checkSignedPhysicalAuthorityProjection()
                 healthy.negativeForceN[axis]<=288000.0+1.e-3,
             "RCS authority advertises more than all installed nozzle force");
     }
+    // Test real simultaneous 2-axis manual turns, not just isolated
+    // pitch/yaw/roll. A manoeuvrable spacecraft must not serialize a
+    // modest pitch+roll, yaw+roll, or pitch+yaw into separate burns.
+    // Stay well within single-axis attainable moments so the assertion
+    // does not demand impossible sum of full independent maxima.
+    for(const auto pair: {
+        std::array<int,2>{0,2},
+        std::array<int,2>{1,2},
+        std::array<int,2>{0,1}
+    })
+    {
+        game::ship::plant::NewtonianRcsDemand combined;
+        combined.mountHalfExtentsM=halfExtents;
+        combined.availableElectricalMW=10.0;
+        combined.tick=4;
+        for(const int axis:pair)
+            combined.momentBodyNm[axis]=
+                0.15*healthy.positiveMomentNm[axis];
+        const auto actual=game::ship::plant::allocateNewtonianRcs(
+            installed,combined);
+        require(actual.valid,
+            "simultaneous Newtonian angular wrench was rejected");
+        for(const int axis:pair)
+            require(actual.deliveredMomentNm[axis]>
+                    0.10*combined.momentBodyNm[axis],
+                "two-axis RCS request lost one requested rotation");
+    }
     // A wholly destroyed RCS bank cannot advertise ANY free controller
     // authority: 2m/s2/3rad/s2 descriptor intent is not physical evidence.
     for(auto& d:damage)d.accumulated.impact01=1.0;

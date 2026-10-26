@@ -157,6 +157,7 @@ void ShipCore::init(
     m_newtonianRcsAngularDemandRadPerSec2 = {};
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsElectricalDemandMW=0.0;
+    m_newtonianRcsEr5DrawMW.clear();
     m_newtonianRcsPhysical = false;
     m_propulsionReactorsOn = true;
     m_serviceThrottleSaved = 0.0;
@@ -1047,6 +1048,7 @@ void ShipCore::updateTranslationControl(float dt)
     // NEVER permission to fall back to the old omnidirectional RCS model.
     m_newtonianRcsDelivered01.fill(0.0);
     m_newtonianRcsElectricalDemandMW=0.0;
+    m_newtonianRcsEr5DrawMW.assign(powerGroups.size(),0.0);
     auto& rcsMotion=m_transform.motion;
     rcsMotion.installedRcsPlantExecuted=false;
     const bool installedNewtonian =
@@ -1114,19 +1116,31 @@ void ShipCore::updateTranslationControl(float dt)
         };
         demand.centerOfMassLocalMeters=physics.centerOfMassLocalMeters;
 
-        // RCS electricity belongs to the ship-services reactor, not the
-        // independent ER-5 main-drive power groups. Essential loads have
-        // priority. No spare generated MW means no nozzle thrust.
-        double committedServicesMW=0.0;
-        for(const auto* consumer:m_powerBus.getConsumers())
-            if(consumer)
-                committedServicesMW+=std::max(
-                    0.0,consumer->getAvailablePower());
-        demand.availableElectricalMW=std::max(
-            0.0,m_reactor.getCurrentOutput()-committedServicesMW);
-        if(!m_propulsionReactorsOn ||
-           m_propulsionReactorsStartupRemainingSeconds>0.0)
-            demand.availableElectricalMW=0.0;
+        // Installed ER-5 already powers the main engine. Its unused output
+        // can ALSO supply RCS. Main engine has first claim, so each MW is
+        // used at most once. Newtonian I has ONE 5-GW ER-5, enough for
+        // 24 * 20 MW = 480 MW RCS with idle main; Y/X retain their already
+        // installed groups. No new reactor, no raid on 70-MW service bus.
+        std::vector<double> er5SpareMW(powerGroups.size(),0.0);
+        const auto& mainMotors=rcsMotion.engineTelemetry;
+        double actualEr5SpareMW=0.0;
+        if(m_propulsionReactorsOn &&
+           m_propulsionReactorsStartupRemainingSeconds<=0.0)
+            for(std::size_t groupIndex=0;
+                groupIndex<powerGroups.size();++groupIndex)
+            {
+                const auto& group=powerGroups[groupIndex];
+                double mainDrawMW=0.0;
+                for(const auto slot:group.engineIndices)
+                    if(mainMotors.valid && slot<mainMotors.count)
+                        mainDrawMW+=std::max(
+                            0.0,mainMotors.electricalMW[slot]);
+                const double spare=std::max(
+                    0.0,group.availableMW-mainDrawMW);
+                er5SpareMW[groupIndex]=spare;
+                actualEr5SpareMW+=spare;
+            }
+        demand.availableElectricalMW=actualEr5SpareMW;
 
         // Replenished gas is a gameplay duty budget. BOTH manual translation
         // and angular damping consume it; nozzles are throttled BEFORE firing.
@@ -1150,12 +1164,15 @@ void ShipCore::updateTranslationControl(float dt)
                 glm::length(m_newtonianRcsAngularDemandRadPerSec2)/
                     angularAuthority),0.0,1.0)
             : 0.0;
+        const bool er5Powered=m_propulsionReactorsOn &&
+            m_propulsionReactorsStartupRemainingSeconds<=0.0 &&
+            actualEr5SpareMW>1.0e-9;
         const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
             rcsMotion.manoeuvreGasPressure01,
             rcsMotion.manoeuvreGasDepleted,
             static_cast<double>(dt),intensity,
             physics.manoeuvreGasUsePerSecond,
-            physics.manoeuvreGasRechargePerSecond,
+            er5Powered ? physics.manoeuvreGasRechargePerSecond : 0.0f,
             physics.manoeuvreGasRestartFraction);
         const glm::dvec3 requestedRcsForceBeforeGasN=demand.forceBodyN;
         const glm::dvec3 requestedRcsMomentBeforeGasNm=demand.momentBodyNm;
@@ -1182,6 +1199,17 @@ void ShipCore::updateTranslationControl(float dt)
             m_newtonianRcsDelivered01=executed.throttle01;
             for(const double drawMW:executed.electricalMW)
                 m_newtonianRcsElectricalDemandMW+=std::max(0.0,drawMW);
+
+            // Account for the REAL RCS watts in their owning ER-5s, so
+            // their temperature/aging and main thrust share the same budget.
+            double remainingRcsMW=m_newtonianRcsElectricalDemandMW;
+            for(std::size_t i=0;i<er5SpareMW.size();++i)
+            {
+                const double draw=std::min(
+                    remainingRcsMW,er5SpareMW[i]);
+                m_newtonianRcsEr5DrawMW[i]=draw;
+                remainingRcsMW-=draw;
+            }
 
             // Passive native gameplay diagnostic: log ACTUAL installed main
             // engine and 24-nozzle execution. Unlike isolated CTest fixtures,
@@ -1655,8 +1683,9 @@ void ShipCore::updateSystems(float dt)
 
     const double serviceThrottleBeforeBus=m_reactor.getThrottle();
     const double serviceOutputBeforeBusMW=m_reactor.getCurrentOutput();
-    m_powerBus.setAuxiliaryDemandMW(
-        m_newtonianRcsPhysical ? m_newtonianRcsElectricalDemandMW : 0.0);
+    // RCS is powered by the installed ER-5 group, not the independent
+    // 70-MW service reactor. Do not double-charge RCS to both buses.
+    m_powerBus.setAuxiliaryDemandMW(0.0);
     m_powerBus.update(
         m_propulsionReactorsOn &&
         m_propulsionReactorsStartupRemainingSeconds<=0.0);
@@ -1803,6 +1832,9 @@ void ShipCore::updateSystems(float dt)
                        motors.valid && i<motors.count &&
                        std::isfinite(motors.electricalMW[i]))
                         electricalMW+=std::max(0.0,motors.electricalMW[i]);
+            if(g<m_newtonianRcsEr5DrawMW.size())
+                electricalMW+=std::max(
+                    0.0,m_newtonianRcsEr5DrawMW[g]);
             // ER-5 has its OWN square heat pad, never borrows a main motor
             // emitter. One universe cooling density applies to ALL pads.
             const double padHeadroomMW=

@@ -1251,7 +1251,15 @@ void ShipCore::updateTranslationControl(float dt)
                               ",requested_main_accel_norm_mps2"
                               ",main_forward_capability_mps2"
                               ",rcs_translation_capability_mps2"
-                              ",rcs_angular_capability_radps2";
+                              ",rcs_angular_capability_radps2"
+                              ",main_engine_runtime_temp_K"
+                              ",main_engine_total_damage01"
+                              ",main_ER5_group_available_MW"
+                              ",main_ER5_module_temp_K"
+                              ",main_ER5_total_damage01"
+                              ",main_ER5_function_authority01"
+                              ",main_engine_nominal_MW"
+                              ",main_engine_nominal_thrust_N";
                         newtonTrace<<'\n';
                         std::cerr<<"[NewtonianTrace] BEGIN "
                                     "D:/tmp/elite_newtonian_runtime.csv"
@@ -1345,6 +1353,75 @@ void ShipCore::updateTranslationControl(float dt)
                         <<','<<game::ship::forwardMainAccelerationLimitMps2(physics)
                         <<','<<game::ship::manoeuvreAccelerationLimitMps2(physics)
                         <<','<<game::ship::angularAccelerationLimitRadPerSec2(physics);
+                    // The 14.32% main-drive result is impossible to
+                    // attribute without BOTH pre-scaling ER-5 entitlement
+                    // and the motor passport/runtime state. Do not infer
+                    // group budget from the already scaled output MW.
+                    const auto& slots=
+                        game::ship::plant::physicalControlSlots(
+                            m_state.construction.physicalControlModel);
+                    const auto& engineIds=desc.physicalControl.slotModuleIds;
+                    const auto& reactorIds=
+                        desc.powerThermalInstallation.engineReactorModuleIds;
+                    double motorTempK=0.0,motorDamage01=0.0;
+                    double motorRatedMW=0.0,motorRatedN=0.0;
+                    for(std::size_t i=0;i<slots.size() &&
+                        i<engineIds.size();++i)
+                        if(slots[i].role ==
+                            game::ship::plant::EngineSlotRole::AftMain)
+                        {
+                            const auto* module=
+                                runtime.findModule(engineIds[i]);
+                            if(module)
+                            {
+                                motorTempK=module->engineOperating.temperatureK;
+                                motorDamage01=
+                                    game::equipment::totalAccumulatedDamage01(
+                                        module->equipmentDamage.accumulated);
+                            }
+                            const auto it=std::find_if(
+                                desc.modules.begin(),desc.modules.end(),
+                                [&](const auto& m) {
+                                    return m.moduleId==engineIds[i];});
+                            if(it!=desc.modules.end() && it->engine)
+                            {
+                                motorRatedMW=it->engine->nominalElectricalPowerMW;
+                                motorRatedN=it->engine->nominalThrustNewtons;
+                            }
+                            break;
+                        }
+                    double generatorBudgetMW=0.0,generatorTempK=0.0;
+                    double generatorDamage01=0.0;
+                    double generatorAuthority01=0.0;
+                    if(!reactorIds.empty())
+                    {
+                        const auto* generator=
+                            runtime.findModule(reactorIds.front());
+                        if(generator)
+                        {
+                            generatorTempK=
+                                generator->engineReactorOperating.temperatureK;
+                            generatorDamage01=
+                                game::equipment::totalAccumulatedDamage01(
+                                    generator->equipmentDamage.accumulated);
+                            const auto it=std::find_if(
+                                desc.modules.begin(),desc.modules.end(),
+                                [&](const auto& m) {
+                                    return m.moduleId==reactorIds.front();});
+                            if(it!=desc.modules.end() && it->engineReactor)
+                                generatorAuthority01=
+                                    game::equipment::
+                                    evaluateEquipmentFunctionAtDamage01(
+                                        generatorDamage01,
+                                        it->engineReactor->failure).authority01;
+                        }
+                    }
+                    if(!powerGroups.empty())
+                        generatorBudgetMW=powerGroups.front().availableMW;
+                    newtonTrace<<','<<motorTempK<<','<<motorDamage01
+                        <<','<<generatorBudgetMW<<','<<generatorTempK
+                        <<','<<generatorDamage01<<','<<generatorAuthority01
+                        <<','<<motorRatedMW<<','<<motorRatedN;
                     newtonTrace<<'\n';
                     if(traceRows%30==0) newtonTrace.flush();
                     if(traceSeconds>=240.0)

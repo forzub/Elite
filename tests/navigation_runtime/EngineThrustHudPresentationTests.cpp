@@ -428,6 +428,7 @@ void testNewtonianArgonManifoldReachesEngineHud()
     cockpit.systems.newtonianRcsFlowUse01PerSec=0.018f;
     cockpit.systems.newtonianRcsFlowRecovery01PerSec=0.065f;
     cockpit.systems.newtonianRcsArgonInventoryKg=500.0f;
+    cockpit.systems.newtonianRcsNetFlow01PerSec=-0.018f;
     const auto view=
         game::presentation::buildEngineThrustHudPresentation(cockpit);
     require(view.visible && view.groups.size()==1 &&
@@ -436,7 +437,8 @@ void testNewtonianArgonManifoldReachesEngineHud()
     require(view.rcsManifoldKnown &&
             std::abs(view.rcsManifold01-0.42f)<1.e-6f &&
             std::abs(view.rcsCompressorMW-2.0f)<1.e-6f &&
-            view.rcsArgonInventoryKg==500.0f,
+            view.rcsArgonInventoryKg==500.0f &&
+            view.rcsNetFlow01PerSecond<0.0f,
         "Engine widget did not display authoritative argon pressure/recovery");
 }
 

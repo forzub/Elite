@@ -1973,6 +1973,51 @@ Provide `elite_power_thermal_audit.csv` plus
 `elite_newtonian_runtime.csv` to validate actual power/thermal coupling.
 Never declare gameplay success without these results.
 
+## 2026-10-26 native 8-test gate: PowerBus build syntax blockers fixed, Windows retest pending
+
+- User provided `Вставленный текст(20261026-040120).txt` and
+  `elite_newtonian_build(2).log` from MSYS2 MinGW64 after pulling
+  `main` through `3535eacc`. The original 7-test prior pass is
+  shown at the top of pasted output, but the NEW 8-test script stopped
+  at C++ compilation; NO new test result can be claimed.
+- Two *independent* errors in newly authored files:
+  (1) `src/game/ship/core/PowerBus.cpp:37` had a commented-out
+  `// void PowerBus::update(bool reactorOnline)` followed by a live
+  function body `{`, triggering GCC
+  `expected unqualified-id before '{' token`.
+  (2) `tests/navigation_runtime/PowerBusExecutionTests.cpp:39` used
+  `game::ship::ReactorDescriptor` although
+  `src/game/ship/ShipDescriptor.h` defines `ReactorDescriptor`
+  in the **global namespace**; subsequent test calls could not see
+  `reactorDescriptor(...)`. The compiler warnings about unused
+  coolant/maxOverflowTransferMW/dt, sign-compare, field initialization
+  order and unused wasteMW were non-fatal.
+- **FIXES on main:** `4c0032af` restores the live out-of-line
+  `void PowerBus::update(bool reactorOnline)` definition;
+  `c6b99e58` corrects the two test-only type references to
+  global `ReactorDescriptor`. Read-only source comparison
+  confirms the expected declarations and the only two erroneous
+  type references. No universe physics, watts, thermal coefficients,
+  cooldown parameters, damage fractions, game control or HUD
+  were changed.
+- **Next exact native check:**
+  `cd /d/__elite/work && git pull --ff-only origin main &&
+   bash scripts/run_newtonian_physics_diagnostics.sh`.
+  It now includes EIGHT targeted tests; output remains
+  `D:/tmp/elite_newtonian_build.log` and
+  `D:/tmp/elite_newtonian_ctest.log`.
+  If the new power-bus fixture exposes a *behavioral* mismatch,
+  analyze production versus expectation rather than adjusting
+  tolerances or altering accepted physical constants.
+  Once eight pass, validate full client/server by
+  `set -o pipefail; bash build_mingw64.sh 2>&1 |
+  tee /d/tmp/elite_full_build.log`.
+- The core repair from Claude's analysis still awaits actual
+  native verification and gameplay `D:/tmp/elite_power_thermal_audit.csv`
+  and `D:/tmp/elite_newtonian_runtime.csv`; DO NOT claim
+  these subsystems are fully accepted yet. Keep `main` only,
+  one canonical `PROJECT_STATE.md`.
+
 ## Important remaining architecture work (do not rush)
 
 - Fore-only propulsion (`aft` completely dead, `fore` alive) is

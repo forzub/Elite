@@ -1885,7 +1885,19 @@ void ShipCore::updateSystems(float dt)
                     m_propulsionReactorsStartupRemainingSeconds<=0.0
                     ? electricalMW:0.0,
                 padHeadroomMW,0.0,static_cast<double>(dt));
-            (void)tick;
+            if(tick.catastrophic)
+            {
+                std::cerr<<"[ER5_CATASTROPHE] module="<<reactorIds[g]
+                    <<" T_K="<<state.temperatureK
+                    <<" damage01="
+                    <<game::equipment::totalAccumulatedDamage01(state.damage)
+                    <<" pad01="<<state.padIntegrity01<<std::endl;
+                // Physical module is lost permanently; invalidate the real
+                // installed topology rather than drawing a fake HUD failure.
+                m_moduleRuntime.markModuleDestroyed(reactorIds[g],0.0f);
+                reactorDamageChanged=true;
+                continue;
+            }
 
             // advanceEngineReactor() increases damage in the operating copy.
             // Commit it to the SAME ObjectModuleRuntime equipment channel

@@ -95,6 +95,7 @@ struct EngineReactorStatus {
     double generatedHeatMW = 0.0;
     double electricalOutputMW = 0.0;
     double padHeatMW = 0.0;
+    double padIntegrity01 = 1.0;
     double coolantHeatMW = 0.0;
     double storedHeatMW = 0.0;
 };

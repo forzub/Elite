@@ -33,6 +33,11 @@ struct ShipRcsNozzleMountDefinition
 
 struct ShipLoadoutDefinition
 {
+    // Catalog ship passport (game::catalog) of the real ship model this
+    // loadout realizes. Empty for historical validation configurations
+    // (e.g. Cobra Y/X), which are not ship models.
+    std::string shipPassportId;
+
     std::string id;
     // Temporary legacy loadout index: wire, CSV and diagnostics still carry
     // PhysicalControlModelId. It selects a loadout; it is not topology.

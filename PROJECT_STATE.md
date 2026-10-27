@@ -2740,3 +2740,38 @@ USER PROPOSAL: Model exactly two top-level ship groups:
   - The movement STRATEGY is wrong: frequent hull rotation, stop-turn-go at broken corners, one overshoot swing after turns, ~1 input reversal/s.
   - Cause (audited, see the next plan): polyline route through portal and centreline centres; Newtonian corner speed ~0; the Newtonian controller corrects only with the main engine (translational RCS unused in flight, TVC only as a residual). Planned as the Newtonian-only N1-N4 work.
 - Power/gas are not yet in the published capability. Docking/damage/emergency are NOT verified.
+
+
+## 2026-10-27 product passport/catalog layer + Cobrett-I N1/A3 identities (VERIFIED natively)
+
+- World model change: Assisted/Newtonian I/Y/X are historical VALIDATION configurations, not six variants of one ship. Real ships are separate serial products. The first two canonical models are from Kobersberg-Braunauer Raumfahrzeugwerke GmbH:
+  - `Cobrett-I FRN-U N1`: older Newtonian generation; realized by the Newtonian-I loadout.
+  - `Cobrett-I FRN-U/INT-A A3`: modern Assisted generation; realized by the Assisted-I loadout.
+  - They temporarily share the legacy Cobra hull geometry; their data identities are distinct. Y/X have no ship passport.
+- Codes:
+  - `Cobrett` = family; `I` = axial main propulsion layout (not a generation, not a flight law).
+  - `FRN-U` = Frontier Utility; `INT-A` = Inter-system Armed Transport. `/` lists operational classes; it is not a mode.
+  - `N1` = Newtonian Generation 1; `A3` = Assisted Generation 3.
+- New `src/game/catalog/`, split by category:
+  - `CatalogTypes.h`: `ProductPassport`, `ProductCategory`, `PassportStatus`, `CompatibilityRelation` (InstalledOn / CompatibleWith / Replaces / ReplacementFor / OptionalFor), `CodeDescription`, `InstallationPosition`.
+  - `codes/OperationalClassCodes.h`, `codes/FlightArchitectureCodes.h`.
+  - `propulsion/KobraMainDrivePassports.h` (`KB-N1-AX`, `CR-1`), `power/KobraReactorPassports.h` (ER-5), `rcs/KobraRcsPassports.h`, `ships/CobrettPassports.h`.
+  - `CatalogRegistry.h`: lookup plus installation validation.
+- Identities:
+  - product identity (`stableId`, stock number, part number) = WHAT; installation code = WHERE inside a model; serial number = WHICH physical unit (future per-instance data, never in a passport).
+  - Stock scheme (in-game, NOT real NSN): `KB-<SHP|ENG|RCT|RCS>-<family/gen>-<NNNN>`, e.g. ships `KB-SHP-CBI-N1-0001` / `KB-SHP-CBI-A3-0001`, engines `KB-ENG-N1-0001` / `KB-ENG-A3-0001`, reactor `KB-RCT-ER5-0001`, RCS `KB-RCS-N1-0001`.
+  - Installation-code trees (roots provisional): N1 `36` (36A1 axial propulsion group: A1 ER-5, A2 KB-N1-AX; 36A2 RCS group: 8 nodes x 3 nozzles; 36A3 service reactor; 36A4 cooling); A3 `37` (37A1/37A2 right/left propulsion groups: A1 ER-5, A2 aft CR-1, A3 fore CR-1; 37A3; 37A4).
+  - The descriptor build validates every passport position against the real installed module and its technical type (throws on mismatch).
+- Technical data stays in equipment presets, linked by `technicalTypeId`. New `KobraN1AxialMainDrive` preset (narrow-vector N1 unit) on the Newtonian main modules; CR-1 remains the A3 wide-vector unit (75 deg).
+- **Vectoring is a passport property:**
+  - removed the flight-law clamp in `ShipEngineControlMatrix` and the 7 deg / 8 deg/s `ShipParams` values from the hull descriptor;
+  - `applyMountedEngineAxialAuthority` (server and client) projects `mainGimbal*` from the installed main drive passports, reduced by vectoring damage.
+- **PROVISIONAL:**
+  - N1 main gimbal retains the legacy +/-7 deg as provisional only;
+  - N1 thrust/power/thermal/wear are copies of CR-1;
+  - all stock/part numbers and installation roots are provisional;
+  - CR-1/ER-5/RCS manufacturer names are legacy preset values;
+  - ER-5 and RCS are shared by N1/A3.
+  - `ELITE_DEV_N1_GIMBAL_DEG` is a TEMP dev override for the gimbal selection sweep.
+- Gimbal sweep at this point (0/1/2/3/5/7 deg, Newtonian-I tunnel, 150 s each): NO effect. The production autopilot never deflected the nozzle (max 0.00 deg) and never used translational RCS, so every correction became hull rotation. The angle cannot be selected until actuator cooperation (nozzle + RCS translation + RCS counter-torque) exists.
+- Gates: `build_mingw64.sh` + `EliteAssetEditor` exit 0; focused 8/8; real start passes passport validation; Assisted-I flights unchanged (checkpoint 52); six-model oracle 84/84.

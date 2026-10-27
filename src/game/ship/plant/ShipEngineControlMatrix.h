@@ -156,20 +156,8 @@ inline void projectThrustCone(
         // Mechanical slew is intentionally ignored for this fictional
         // near-instant vectoring engine. One tick directly applies the
         // requested nozzle direction; no last-frame state is integrated.
-        if (familyOf(model) == PhysicalControlFamily::Newtonian)
-        {
-            // Newtonian preserves its modest 7-10 degree gimbal doctrine:
-            // the existing Newtonian main-gimbal controller already limits
-            // direction/rate at the INPUT layer. Do not give it Assisted's
-            // huge Cobretty field-steering cone by accident.
-            const double newtonianLimit = std::max(
-                0.0, std::min(
-                    static_cast<double>(ship.mainGimbalYawLimitRad),
-                    static_cast<double>(ship.mainGimbalPitchLimitRad)
-                )
-            );
-            m[i].limit = std::min(m[i].limit, newtonianLimit);
-        }
+        // The installed engine passport (and its vectoring damage) owns the
+        // nozzle envelope; the flight law never narrows or widens it.
         // The installation topology, not a hard-coded engine kind,
         // supplies the neutral nozzle orientation. All present I/Y/X main
         // mounts are axial (+Z fore / -Z aft).

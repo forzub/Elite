@@ -568,6 +568,42 @@ inline void applyMountedEngineAxialAuthority(
     // crew-load envelope while reverseMainEngineAvailable stays true.
     if (foundFore && foreThrustNewtons<=1.0e-9)
         capability.effectivePhysics.reverseMainEngineAvailable=false;
+    // Main thrust-vector envelope is a property of the INSTALLED main drive
+    // units (their passports, reduced by vectoring damage), never of the
+    // flight law. The weakest surviving main bounds the shared envelope.
+    {
+        double rangeRad = std::numeric_limits<double>::infinity();
+        double rateRadPerSec = std::numeric_limits<double>::infinity();
+        bool anyMain = false;
+        for (std::size_t i = 0; i < topology.size(); ++i)
+        {
+            const auto role = topology[i].role;
+            if (role != plant::EngineSlotRole::AftMain &&
+                role != plant::EngineSlotRole::ForeMain)
+                continue;
+            if (plant::effectiveSlotThrust01(projected[i]) <= 1.0e-12)
+                continue;
+            const auto* installed =
+                detail::findModuleDescriptor(descriptor, bindings[i]);
+            if (!installed || !installed->engine)
+                continue;
+            const double vectoring01 =
+                plant::effectiveSlotVectoring01(projected[i]);
+            rangeRad = std::min(rangeRad, std::max(0.0,
+                installed->engine->nominalGimbalRangeRad * vectoring01));
+            rateRadPerSec = std::min(rateRadPerSec, std::max(0.0,
+                installed->engine->nominalGimbalRateRadPerSec *
+                    vectoring01));
+            anyMain = true;
+        }
+        auto& p = capability.effectivePhysics;
+        p.mainGimbalPitchLimitRad =
+            static_cast<float>(anyMain ? rangeRad : 0.0);
+        p.mainGimbalYawLimitRad =
+            static_cast<float>(anyMain ? rangeRad : 0.0);
+        p.mainGimbalRateRadPerSec =
+            static_cast<float>(anyMain ? rateRadPerSec : 0.0);
+    }
     // Newtonian reverse RCS remains independent; never fabricate a fore main.
     capability.longitudinalAccelerationMps2 = {
         game::ship::forwardMainAccelerationLimitMps2(

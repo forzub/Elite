@@ -1,8 +1,10 @@
 
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
+#include "src/game/equipment/engine/presets/KobraN1AxialMainDrive.h"
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
 #include "src/game/ship/presets/cobra/CobraLoadouts.h"
+#include "src/game/catalog/CatalogRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h"
 #include <stdexcept>
@@ -79,12 +81,9 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.forwardMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
         desc.physics.reverseMainEngineAccelerationMps2 = 73.549875f; // 7.5 g
 
-        // Main-nozzle TVC hardware used by the Newtonian proving variants.
-        // 7 deg travel with 8 deg/s slew is intentionally modest; Assisted
-        // currently ignores this explicit gimbal channel.
-        desc.physics.mainGimbalPitchLimitRad = 0.122173048f; // 7 deg
-        desc.physics.mainGimbalYawLimitRad = 0.122173048f;   // 7 deg
-        desc.physics.mainGimbalRateRadPerSec = 0.139626340f; // 8 deg/s
+        // Main-nozzle thrust-vector envelope is NOT a hull/flight-law value:
+        // capability takes it from the installed main drive passports
+        // (A3 CR-1 wide-vector, N1 narrow-vector axial drive).
         
         desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
         
@@ -1097,7 +1096,11 @@ if (game::ship::plant::familyOf(desc.physicalControlModel) ==
         [](const ModuleDescriptor& m){return m.moduleId=="ship_engine_L";});
     if(prototype==desc.modules.end() || !prototype->engine)
         throw std::logic_error("Missing Cobra Newtonian main prototype");
-    const ModuleDescriptor mainPrototype=*prototype;
+    ModuleDescriptor mainPrototype=*prototype;
+    // The Newtonian (N1) installation mounts its own narrow-vector axial
+    // main drive, not the Assisted (A3) wide-vector CR-1.
+    mainPrototype.engine=
+        game::equipment::engine::presets::KobraN1AxialMainDrive();
     for(const auto model:{
         game::ship::plant::PhysicalControlModelId::NewtonianI,
         game::ship::plant::PhysicalControlModelId::NewtonianY,
@@ -1302,6 +1305,38 @@ if (const char* rawModel =
 // The hull owns its six installable loadouts (topology, installed module
 // IDs, generator wiring, RCS mounts). Runtime binds one of them.
 desc.loadouts = game::ship::presets::cobra::cobraLoadouts();
+
+// Catalog ship passports must describe modules actually installed here,
+// with the same technical equipment types.
+for (const auto& loadout : desc.loadouts)
+{
+    if (loadout.shipPassportId.empty())
+        continue;
+    const auto* ship =
+        game::catalog::findShipPassport(loadout.shipPassportId);
+    if (!ship)
+        throw std::logic_error(
+            "Unknown ship passport " + loadout.shipPassportId);
+    const auto problem = game::catalog::validateShipPassportInstallation(
+        *ship,
+        [&](const std::string& moduleId) -> std::optional<std::string_view>
+        {
+            for (const auto& module : desc.modules)
+            {
+                if (module.moduleId != moduleId)
+                    continue;
+                if (module.engine)
+                    return module.engine->engineTypeId;
+                if (module.engineReactor)
+                    return std::string_view(module.engineReactor->typeId);
+                return std::string_view {};
+            }
+            return std::nullopt;
+        });
+    if (!problem.empty())
+        throw std::logic_error(
+            "Ship passport " + loadout.shipPassportId + ": " + problem);
+}
 
 
 for (auto& m : desc.modules)

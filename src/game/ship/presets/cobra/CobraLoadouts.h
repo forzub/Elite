@@ -66,6 +66,13 @@ namespace game::ship::presets::cobra
             }
         }
 
+        // Two canonical ship models share the I layout but are DIFFERENT
+        // products/generations (game::catalog::ships::CobrettPassports.h).
+        if (model == Model::NewtonianI)
+            loadout.shipPassportId = "kb.ship.cobrett-i.frnu.n1";
+        else if (model == Model::AssistedI)
+            loadout.shipPassportId = "kb.ship.cobrett-i.frnu-inta.a3";
+
         loadouts.push_back(std::move(loadout));
     }
     return loadouts;

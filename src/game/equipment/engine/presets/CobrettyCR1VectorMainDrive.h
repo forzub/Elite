@@ -14,13 +14,14 @@ namespace game::equipment::engine::presets
     e.engineTypeId = "elite.engine.cobretty.cr1-vector.v1";
     e.engineDisplayName = "Cobretty Cobra CR-1 Vector Main Drive";
     e.manufacturerName = "Cobretty Corporation";
+    // Product identity (A3 wide-vector unit): src/game/catalog/propulsion.
     e.propulsionPrinciple = PropulsionPrinciple::FieldCoupling;
     e.structureMaterialId = "elite.material.engine.tial-ht.v1";
     e.nominalThrustNewtons = 9561483.75;           // 9.56 MN per engine
     // Game-universe TVC: field steering is effectively instantaneous.
     // A deliberately generous angle lets the EXISTING Assisted law retain
     // its 7.5 g lateral response without fabricating a separate side force.
-    // Newtonian installs continue using their smaller ShipParams TVC policy.
+    // Newtonian installs mount a different, narrow-vector unit (N1).
     e.nominalGimbalRangeRad = 1.3089969389957472; // 75 degrees
     e.nominalGimbalRateRadPerSec = 1000.0; // not simulated as servo motion
 

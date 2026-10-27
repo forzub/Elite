@@ -1993,7 +1993,8 @@ void ShipCore::updateSystems(float dt)
                               <<",ER"<<i<<"_thermal_damage01"
                               <<",ER"<<i<<"_electrical_MW"
                               <<",ER"<<i<<"_heat_MW"
-                              <<",ER"<<i<<"_pad_MW";
+                              <<",ER"<<i<<"_pad_MW"
+                              <<",ER"<<i<<"_pad_integrity01";
                 powerTrace<<'\n';
                 std::cerr<<"[PowerThermalTrace] BEGIN "
                     "D:/tmp/elite_power_thermal_audit.csv"<<std::endl;
@@ -2066,10 +2067,11 @@ void ShipCore::updateSystems(float dt)
                         <<','<<module->equipmentDamage.accumulated.thermal01
                         <<','<<er.lastElectricalOutputMW
                         <<','<<er.lastGeneratedHeatMW
-                        <<','<<er.lastPadHeatMW;
+                        <<','<<er.lastPadHeatMW
+                        <<','<<er.padIntegrity01;
                 }
                 else
-                    powerTrace<<",0,0,0,0,0";
+                    powerTrace<<",0,0,0,0,0,0";
             }
             powerTrace<<'\n';
             if(rows%30==0)powerTrace.flush();

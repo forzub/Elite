@@ -83,29 +83,29 @@ std::string readText(const std::string& path)
 void testRouteLayerCannotSeeConcretePilots()
 {
     const std::string route =
-        readText("src/game/navigation/autopilot/ClientRouteAutopilot.h");
+        readText("src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h");
 
     require(
         route.find("AssistedAutopilot") == std::string::npos,
-        "ClientRouteAutopilot leaked concrete Assisted pilot dependency"
+        "DedicatedClientRouteAutopilot leaked concrete Assisted pilot dependency"
     );
     require(
         route.find("NewtonianOptimalController") == std::string::npos,
-        "ClientRouteAutopilot leaked concrete Newtonian controller dependency"
+        "DedicatedClientRouteAutopilot leaked concrete Newtonian controller dependency"
     );
     require(
         route.find("PredictivePilot") == std::string::npos,
-        "ClientRouteAutopilot still depends on retired mixed-law pilot"
+        "DedicatedClientRouteAutopilot still depends on retired mixed-law pilot"
     );
     require(
         route.find("assistedCourseResponseSeconds") == std::string::npos &&
         route.find("assistedBrakingResponseMps2") == std::string::npos,
-        "ClientRouteAutopilot reads concrete Assisted controller state"
+        "DedicatedClientRouteAutopilot reads concrete Assisted controller state"
     );
 
     require(
         route.find("mainGimbal") == std::string::npos,
-        "ClientRouteAutopilot leaked Newtonian TVC actuator details"
+        "DedicatedClientRouteAutopilot leaked Newtonian TVC actuator details"
     );
 
     const std::string assistedPilot =

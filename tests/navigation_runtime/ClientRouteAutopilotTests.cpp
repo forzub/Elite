@@ -1,4 +1,4 @@
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
 
 #include <cmath>
 #include <iostream>
@@ -8,8 +8,11 @@
 namespace
 {
 
+// The SAME per-law route autopilots that production SpaceState flies.
 using Autopilot =
-    game::navigation::autopilot::ClientRouteAutopilot;
+    game::navigation::autopilot::AssistedClientRouteAutopilot;
+using NewtonianAutopilot =
+    game::navigation::autopilot::NewtonianClientRouteAutopilot;
 using Agent =
     game::navigation::autopilot::AutopilotAgentState;
 
@@ -78,7 +81,6 @@ void testClientAutopilotEmitsOrdinaryControls()
                 {0.0, 1.0, 0.0},
                 0.0, 0.0, 0.0
             },
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             7,
@@ -105,7 +107,6 @@ void testClientAutopilotEmitsOrdinaryControls()
     const auto output = Autopilot::update(
         state,
         agent,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -148,7 +149,6 @@ void testStoppedSpatialOriginLaunches()
                 {0.0, 1.0, 0.0},
                 0.0, 0.0, 0.0
             },
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             8,
@@ -167,7 +167,6 @@ void testStoppedSpatialOriginLaunches()
     const auto output = Autopilot::update(
         state,
         agent,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -264,7 +263,6 @@ void testSpatialTurnUsesVelocityCourseRate()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             9,
@@ -284,7 +282,6 @@ void testSpatialTurnUsesVelocityCourseRate()
     const auto output = Autopilot::update(
         state,
         nearTurn,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -303,7 +300,7 @@ void testSpatialTurnUsesVelocityCourseRate()
     );
 }
 
-void testInCorridorCrossTrackDoesNotReplaceAuthoredCourse()
+void testInCorridorCrossTrackCentersGentlyWithoutCapture()
 {
     auto route = plan();
     for (auto& gate : route.executionGates)
@@ -326,7 +323,6 @@ void testInCorridorCrossTrackDoesNotReplaceAuthoredCourse()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             14,
@@ -335,13 +331,64 @@ void testInCorridorCrossTrackDoesNotReplaceAuthoredCourse()
         "client autopilot rejected cross-track route"
     );
 
+    // Production Assisted contract (e16627d7): inside 10% of the 25 m
+    // tracking tolerance the authored tangent is exact; beyond that band a
+    // bounded gentle centering correction removes the parallel offset. Both
+    // stay inside the corridor without emergency capture or RCS translation.
+    constexpr double TrackingToleranceMeters = 25.0;
+    constexpr double CenteringDeadbandMeters =
+        0.10 * TrackingToleranceMeters;
+
+    Autopilot::State deadbandState;
+    require(
+        Autopilot::start(
+            deadbandState,
+            route,
+            initial,
+            vehicle,
+            1000.0,
+            14,
+            TrackingToleranceMeters
+        ),
+        "client autopilot rejected deadband cross-track route"
+    );
+
+    Agent nearCenter = initial;
+    nearCenter.positionMapMeters = {50.0, 0.0, 2.0};
+
+    const auto nearOutput = Autopilot::update(
+        deadbandState,
+        nearCenter,
+        vehicle,
+        1000.0,
+        0.02
+    );
+
+    require(nearOutput.valid, "deadband cross-track emitted invalid output");
+    require(
+        nearOutput.crossTrackErrorMeters > 1.5 &&
+        nearOutput.crossTrackErrorMeters < CenteringDeadbandMeters,
+        "deadband probe did not measure its cross-track displacement"
+    );
+    require(
+        !nearOutput.courseCaptureActive &&
+        nearOutput.crossTrackCaptureSpeedMps == 0.0,
+        "offset inside the centering deadband replaced the authored tangent"
+    );
+    require(
+        std::hypot(
+            nearOutput.control.pitchInput,
+            nearOutput.control.yawInput
+        ) < 1.0e-3,
+        "offset inside the centering deadband caused a course correction"
+    );
+
     Agent offset = initial;
     offset.positionMapMeters = {50.0, 0.0, 10.0};
 
     const auto output = Autopilot::update(
         state,
         offset,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -356,12 +403,17 @@ void testInCorridorCrossTrackDoesNotReplaceAuthoredCourse()
         !output.courseCaptureActive,
         "in-corridor cross-track error incorrectly replaced authored tangent with capture geometry"
     );
+    // +Z offset on a +X route: positive yaw turns the nose toward centre.
     require(
-        std::hypot(
-            output.control.pitchInput,
-            output.control.yawInput
-        ) < 1.0e-3,
-        "in-corridor parallel offset caused a sharp course correction"
+        output.control.yawInput > 1.0e-3f &&
+        std::abs(output.control.pitchInput) < 1.0e-3f,
+        "in-corridor offset was not gently steered toward the centreline"
+    );
+    require(
+        output.crossTrackCaptureSpeedMps > 0.0 &&
+        output.crossTrackCaptureSpeedMps <=
+            output.crossTrackErrorMeters - CenteringDeadbandMeters + 1.0e-9,
+        "in-corridor centering closing speed exceeded its bounded recapture"
     );
     require(
         std::abs(output.control.strafeInput) < 1.0e-6 &&
@@ -388,7 +440,6 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
             quietState,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             19,
@@ -403,7 +454,6 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
     const auto quiet = Autopilot::update(
         quietState,
         centimetreError,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -427,7 +477,6 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
             driftingState,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             20,
@@ -442,7 +491,6 @@ void testAssistedVelocityDriftDoesNotBendAuthoredTangent()
     const auto correcting = Autopilot::update(
         driftingState,
         futureMiss,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -493,7 +541,6 @@ void testAlignedVelocityKeepsCourseIndependentWhileAligningActuator()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             33,
@@ -523,7 +570,6 @@ void testAlignedVelocityKeepsCourseIndependentWhileAligningActuator()
     const auto output = Autopilot::update(
         state,
         noseWrong,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -575,7 +621,6 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             28,
@@ -591,7 +636,6 @@ void testParallelOffsetActivelyCapturesCorridorCenter()
     const auto output = Autopilot::update(
         state,
         offset,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -662,7 +706,6 @@ void testCruiseRollAlignsToDockBottomReference()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             29,
@@ -676,7 +719,6 @@ void testCruiseRollAlignsToDockBottomReference()
     const auto output = Autopilot::update(
         state,
         initial,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -717,7 +759,6 @@ void testTerminalFrameHoldsStoppedAndAligned()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             21,
@@ -749,7 +790,6 @@ void testTerminalFrameHoldsStoppedAndAligned()
     const auto output = Autopilot::update(
         state,
         atHold,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -845,7 +885,6 @@ void testVelocityCourseTracksAuthoredTunnelTangent()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             31,
@@ -871,7 +910,6 @@ void testVelocityCourseTracksAuthoredTunnelTangent()
     const auto output = Autopilot::update(
         state,
         probe,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -990,7 +1028,6 @@ void testCenteredArcUsesExactLocalTangent()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             23,
@@ -1014,7 +1051,6 @@ void testCenteredArcUsesExactLocalTangent()
     const auto output = Autopilot::update(
         state,
         onCurve,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -1074,7 +1110,6 @@ void testCenteredArcUsesExactLocalTangent()
             overspeedState,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             34,
@@ -1090,7 +1125,6 @@ void testCenteredArcUsesExactLocalTangent()
     const auto overspeedOutput = Autopilot::update(
         overspeedState,
         overspeed,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -1116,13 +1150,12 @@ void testCenteredArcUsesExactLocalTangent()
     newtonVehicle.mainGimbalRateRadPerSec =
         static_cast<float>(8.0 * 3.14159265358979323846 / 180.0);
 
-    Autopilot::State newtonState;
+    NewtonianAutopilot::State newtonState;
     require(
-        Autopilot::start(
+        NewtonianAutopilot::start(
             newtonState,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Newtonian,
             newtonVehicle,
             1000.0,
             35,
@@ -1131,10 +1164,9 @@ void testCenteredArcUsesExactLocalTangent()
         "centered Newtonian arc route rejected"
     );
 
-    const auto newtonOutput = Autopilot::update(
+    const auto newtonOutput = NewtonianAutopilot::update(
         newtonState,
         onCurve,
-        game::navigation::LocalFlightControlLaw::Newtonian,
         newtonVehicle,
         1000.0,
         0.02
@@ -1215,7 +1247,6 @@ void testApproachBrakesBeforeDynamicTurnLimit()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             27,
@@ -1245,7 +1276,6 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     const auto output = Autopilot::update(
         state,
         approaching,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1271,7 +1301,6 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     );
     const double effectiveSetpointRate =
         state.pilotController.telemetry(
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle
         ).targetSpeedChangeRateMps2;
     const double expectedSlewSeconds =
@@ -1297,7 +1326,6 @@ void testApproachBrakesBeforeDynamicTurnLimit()
     const auto preTurnOutput = Autopilot::update(
         state,
         preTurn,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1391,7 +1419,6 @@ void testTurnPreviewCrossesIntermediateStraight()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             31,
@@ -1406,7 +1433,6 @@ void testTurnPreviewCrossesIntermediateStraight()
     const auto output = Autopilot::update(
         state,
         approaching,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1495,7 +1521,6 @@ void testBezierInteriorCurvatureParticipatesInPreview()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             32,
@@ -1510,7 +1535,6 @@ void testBezierInteriorCurvatureParticipatesInPreview()
     const auto output = Autopilot::update(
         state,
         approaching,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1589,7 +1613,6 @@ void testExactCurveBoundaryActivatesAtAuthoredEntry()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             24,
@@ -1605,7 +1628,6 @@ void testExactCurveBoundaryActivatesAtAuthoredEntry()
     const auto output = Autopilot::update(
         state,
         atArcEntry,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -1678,14 +1700,13 @@ void testNewtonianBrokenTangentStopsBeforeNextStraight()
     initial.rightMap = {0.0, 0.0, 1.0};
     initial.upMap = {0.0, 1.0, 0.0};
 
-    Autopilot::State state;
+    NewtonianAutopilot::State state;
     std::string failure;
     require(
-        Autopilot::start(
+        NewtonianAutopilot::start(
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Newtonian,
             vehicle,
             1000.0,
             40,
@@ -1771,7 +1792,6 @@ void testTerminalBrakingIncludesControllerResponseMargin()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             25,
@@ -1788,7 +1808,6 @@ void testTerminalBrakingIncludesControllerResponseMargin()
     const auto output = Autopilot::update(
         state,
         nearStop,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1852,7 +1871,6 @@ void testTerminalHoldKeepsStrongAttitudeCaptureForLargeError()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             26,
@@ -1883,7 +1901,6 @@ void testTerminalHoldKeepsStrongAttitudeCaptureForLargeError()
     const auto output = Autopilot::update(
         state,
         stoppedWrong,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -1971,7 +1988,6 @@ void testContinuousProgramCrossesStoragePages()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             13,
@@ -2028,7 +2044,6 @@ void testContinuousProgramCrossesStoragePages()
     const auto output = Autopilot::update(
         state,
         beyondBoundary,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -2083,7 +2098,6 @@ void testClientTrajectoryPreservesPlannerTurnSpeedConstraint()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             12,
@@ -2152,7 +2166,6 @@ void testInitialOverspeedBrakesWithoutRejectingRoute()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             18,
@@ -2164,7 +2177,6 @@ void testInitialOverspeedBrakesWithoutRejectingRoute()
     const auto output = Autopilot::update(
         state,
         initial,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -2217,7 +2229,6 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             15,
@@ -2250,7 +2261,6 @@ void testCheckpointReanchorsFutureSpeedFromMeasuredState()
     const auto output = Autopilot::update(
         state,
         slowAtCheckpoint,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -2382,7 +2392,6 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             16,
@@ -2398,7 +2407,6 @@ void testCheckpointReanchorPreservesFutureBrakingConstraint()
     const auto output = Autopilot::update(
         state,
         fastAtCheckpoint,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -2468,7 +2476,6 @@ void testMissedGateAdvancesToFutureRouteWithoutReturn()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params(),
             1000.0,
             17,
@@ -2483,7 +2490,6 @@ void testMissedGateAdvancesToFutureRouteWithoutReturn()
     const auto first = Autopilot::update(
         state,
         pastTwoGates,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -2506,7 +2512,6 @@ void testMissedGateAdvancesToFutureRouteWithoutReturn()
     const auto second = Autopilot::update(
         state,
         slightlyBack,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         1000.0,
         0.02
@@ -2725,7 +2730,6 @@ void testClientAutopilotUsesDockUpReferenceForRoll()
             state,
             route,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             vehicle,
             1000.0,
             11,
@@ -2758,7 +2762,6 @@ void testClientAutopilotUsesDockUpReferenceForRoll()
     const auto output = Autopilot::update(
         state,
         mid,
-        game::navigation::LocalFlightControlLaw::Assisted,
         vehicle,
         1000.0,
         0.02
@@ -2830,7 +2833,7 @@ void testClientStabilizerUsesOrdinaryControls()
     Autopilot::State routeState;
     (void)routeState;
 
-    game::navigation::autopilot::AutopilotLawController pilotController;
+    game::navigation::autopilot::AssistedAutopilot pilotController;
     Agent agent;
     agent.velocityMapMetersPerSecond = {12.0, 0.0, 0.0};
     agent.forwardMap = {1.0, 0.0, 0.0};
@@ -2839,7 +2842,6 @@ void testClientStabilizerUsesOrdinaryControls()
 
     const auto control = Autopilot::stabilize(
         agent,
-        game::navigation::LocalFlightControlLaw::Assisted,
         params(),
         pilotController,
         0.02
@@ -2866,7 +2868,7 @@ int main()
         testClientAutopilotEmitsOrdinaryControls();
         testStoppedSpatialOriginLaunches();
         testSpatialTurnUsesVelocityCourseRate();
-        testInCorridorCrossTrackDoesNotReplaceAuthoredCourse();
+        testInCorridorCrossTrackCentersGentlyWithoutCapture();
         testAssistedVelocityDriftDoesNotBendAuthoredTangent();
         testAlignedVelocityKeepsCourseIndependentWhileAligningActuator();
         testParallelOffsetActivelyCapturesCorridorCenter();
@@ -2911,7 +2913,7 @@ int main()
             << " - Newtonian broken tangents compile as stop/turn/go boundaries\n"
             << " - terminal braking includes controller response distance\n"
             << " - terminal HOLD keeps strong attitude capture for large errors\n"
-            << " - in-corridor cross-track does not replace authored tangent\n"
+            << " - in-corridor offset: exact tangent in deadband, gentle centering beyond\n"
             << " - Assisted velocity drift corrects velocity back to unchanged authored tangent\n"
             << " - aligned velocity stays the navigation course while the physical hull corrects attitude\n"
             << " - final guidance frame is a stopped alignment HOLD\n"

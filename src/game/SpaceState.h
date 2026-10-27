@@ -62,7 +62,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/autopilot/AssistedAutopilot.h"
 #include "src/game/navigation/autopilot/NewtonianOptimalController.h"
-#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
 #include "src/game/navigation/DockingAdvisoryCorridor.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"

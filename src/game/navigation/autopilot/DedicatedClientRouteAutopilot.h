@@ -23,8 +23,7 @@
 #include "src/game/navigation/autopilot/InCorridorCenteringGuidance.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
-#include "src/game/navigation/autopilot/AssistedAutopilot.h"
-#include "src/game/navigation/autopilot/NewtonianOptimalController.h"
+#include "src/game/navigation/autopilot/AutopilotControlApi.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -2949,15 +2948,5 @@ private:
         );
     }
 };
-
-using AssistedClientRouteAutopilot = DedicatedClientRouteAutopilot<
-    LocalFlightControlLaw::Assisted,
-    AssistedAutopilot
->;
-
-using NewtonianClientRouteAutopilot = DedicatedClientRouteAutopilot<
-    LocalFlightControlLaw::Newtonian,
-    NewtonianOptimalController
->;
 
 } // namespace game::navigation::autopilot

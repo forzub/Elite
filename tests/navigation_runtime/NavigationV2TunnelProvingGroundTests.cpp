@@ -1,5 +1,5 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
@@ -15,7 +15,7 @@ namespace
 {
 
 using Autopilot =
-    game::navigation::autopilot::ClientRouteAutopilot;
+    game::navigation::autopilot::AssistedClientRouteAutopilot;
 using Agent =
     game::navigation::autopilot::AutopilotAgentState;
 
@@ -260,7 +260,6 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
             autopilot,
             plan,
             initial,
-            game::navigation::LocalFlightControlLaw::Assisted,
             params,
             0.0,
             2001,
@@ -291,7 +290,6 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
             Autopilot::update(
                 autopilot,
                 agent,
-                game::navigation::LocalFlightControlLaw::Assisted,
                 params,
                 static_cast<double>(tick) * kDt,
                 kDt
@@ -437,7 +435,6 @@ void testCurrentAutopilotStaysInsideAcceptedTunnel()
     );
     const auto publicPilotTelemetry =
         autopilot.pilotController.telemetry(
-            game::navigation::LocalFlightControlLaw::Assisted,
             params
         );
     require(

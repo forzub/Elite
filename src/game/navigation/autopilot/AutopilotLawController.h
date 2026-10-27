@@ -10,9 +10,9 @@
 namespace game::navigation::autopilot
 {
 
-// Single selection seam between route guidance and a concrete flight-law
-// virtual pilot.  ClientRouteAutopilot knows this type only; it never sees
-// concrete Assisted/Newtonian controller state.
+// Single runtime selection seam between server NPC guidance and a concrete
+// flight-law virtual pilot. Player route autopilots instead fix the law at
+// compile time through DedicatedClientRouteAutopilotLaws.h.
 class AutopilotLawController final
 {
 public:

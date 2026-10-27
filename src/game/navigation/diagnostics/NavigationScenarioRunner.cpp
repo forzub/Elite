@@ -2,7 +2,7 @@
 
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/navigation/KinematicFrame.h"
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/world/WorldParams.h"
@@ -13,14 +13,13 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 namespace game::navigation::diagnostics
 {
 namespace
 {
 
-using Autopilot =
-    game::navigation::autopilot::ClientRouteAutopilot;
 using Agent =
     game::navigation::autopilot::AutopilotAgentState;
 
@@ -117,62 +116,14 @@ const char* curveKindName(
     return "unknown";
 }
 
-} // namespace
-
-NavigationScenarioRunner::Result
-NavigationScenarioRunner::run(const Request& source)
+template <typename Autopilot>
+NavigationScenarioRunner::Result flyAcceptedPlan(
+    const NavigationScenarioRunner::Request& request,
+    const Agent& executionInitial,
+    NavigationScenarioRunner::Result result
+)
 {
-    Result result;
-
-    if (!(source.deltaSeconds > 0.0) ||
-        !std::isfinite(source.deltaSeconds) ||
-        !(source.maximumRunSeconds > 0.0) ||
-        !std::isfinite(source.maximumRunSeconds) ||
-        source.planningLeadSeconds < 0.0 ||
-        !std::isfinite(source.planningLeadSeconds))
-    {
-        result.failure = "invalid scenario timing";
-        return result;
-    }
-
-    Request request = source;
-
-    // Initial kinematics are authoritative measured state. Scenario callers
-    // cannot accidentally author a planner start that contradicts the craft
-    // they later hand to the follower.
-    Agent executionInitial = request.initialAgent;
-    executionInitial.positionMapMeters +=
-        executionInitial.velocityMapMetersPerSecond *
-        request.planningLeadSeconds;
-
-    request.route.startMeters =
-        executionInitial.positionMapMeters;
-    request.route.initialSpeedMps =
-        glm::length(executionInitial.velocityMapMetersPerSecond);
-    request.route.hasInitialForward = true;
-    request.route.initialForward =
-        normalizedOr(
-            executionInitial.forwardMap,
-            {1.0, 0.0, 0.0}
-        );
-
-    result.plan =
-        game::navigation::planner::RoutePlanner::plan(
-            request.route
-        );
-    result.plannerAccepted = result.plan.valid();
-    if (!result.plannerAccepted)
-    {
-        result.failure =
-            !result.plan.userMessage.empty()
-                ? result.plan.userMessage
-                : result.plan.failure;
-        if (result.failure.empty())
-            result.failure = "planner rejected scenario";
-        return result;
-    }
-
-    Autopilot::State autopilot;
+    typename Autopilot::State autopilot;
     const glm::dvec3 routeUp =
         request.hasRouteUpReference
             ? request.routeUpReference
@@ -183,7 +134,6 @@ NavigationScenarioRunner::run(const Request& source)
             autopilot,
             result.plan,
             executionInitial,
-            request.controlLaw,
             request.ship,
             request.startUniverseTimeSeconds +
                 request.planningLeadSeconds,
@@ -262,7 +212,6 @@ NavigationScenarioRunner::run(const Request& source)
             Autopilot::update(
                 autopilot,
                 agent,
-                request.controlLaw,
                 request.ship,
                 universeTime,
                 request.deltaSeconds
@@ -275,7 +224,7 @@ NavigationScenarioRunner::run(const Request& source)
             return result;
         }
 
-        Frame trace;
+        NavigationScenarioRunner::Frame trace;
         trace.timeSeconds = elapsed;
         trace.positionMapMeters = agent.positionMapMeters;
         trace.velocityMapMps =
@@ -350,6 +299,75 @@ NavigationScenarioRunner::run(const Request& source)
     result.failure =
         "scenario reached maximum runtime before completion";
     return result;
+}
+
+} // namespace
+
+NavigationScenarioRunner::Result
+NavigationScenarioRunner::run(const Request& source)
+{
+    Result result;
+
+    if (!(source.deltaSeconds > 0.0) ||
+        !std::isfinite(source.deltaSeconds) ||
+        !(source.maximumRunSeconds > 0.0) ||
+        !std::isfinite(source.maximumRunSeconds) ||
+        source.planningLeadSeconds < 0.0 ||
+        !std::isfinite(source.planningLeadSeconds))
+    {
+        result.failure = "invalid scenario timing";
+        return result;
+    }
+
+    Request request = source;
+
+    // Initial kinematics are authoritative measured state. Scenario callers
+    // cannot accidentally author a planner start that contradicts the craft
+    // they later hand to the follower.
+    Agent executionInitial = request.initialAgent;
+    executionInitial.positionMapMeters +=
+        executionInitial.velocityMapMetersPerSecond *
+        request.planningLeadSeconds;
+
+    request.route.startMeters =
+        executionInitial.positionMapMeters;
+    request.route.initialSpeedMps =
+        glm::length(executionInitial.velocityMapMetersPerSecond);
+    request.route.hasInitialForward = true;
+    request.route.initialForward =
+        normalizedOr(
+            executionInitial.forwardMap,
+            {1.0, 0.0, 0.0}
+        );
+
+    result.plan =
+        game::navigation::planner::RoutePlanner::plan(
+            request.route
+        );
+    result.plannerAccepted = result.plan.valid();
+    if (!result.plannerAccepted)
+    {
+        result.failure =
+            !result.plan.userMessage.empty()
+                ? result.plan.userMessage
+                : result.plan.failure;
+        if (result.failure.empty())
+            result.failure = "planner rejected scenario";
+        return result;
+    }
+
+    // Fly the SAME per-law route autopilot type that production SpaceState
+    // selects for this control law.
+    if (request.controlLaw ==
+        game::navigation::LocalFlightControlLaw::Newtonian)
+    {
+        return flyAcceptedPlan<
+            game::navigation::autopilot::NewtonianClientRouteAutopilot
+        >(request, executionInitial, std::move(result));
+    }
+    return flyAcceptedPlan<
+        game::navigation::autopilot::AssistedClientRouteAutopilot
+    >(request, executionInitial, std::move(result));
 }
 
 std::string NavigationScenarioRunner::Result::reportText() const

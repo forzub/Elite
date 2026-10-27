@@ -67,7 +67,7 @@ timeline_h = read("src/game/navigation/ManeuverProgramTimeline.h")
 tracker_h = read("src/game/navigation/ManeuverTrackingController.h")
 follower_h = read("src/game/navigation/TrajectoryFollower.h")
 route_planner_api = read("src/game/navigation/planner/RoutePlannerApi.h")
-client_route_autopilot = read("src/game/navigation/autopilot/ClientRouteAutopilot.h")
+client_route_autopilot = read("src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h")
 bridge_h = read("src/game/navigation/NavigationRuntimeControlBridge.h")
 phase_gate_h = read("src/game/navigation/ManeuverPhaseGate.h")
 phase_gate_cpp = read("src/game/navigation/ManeuverPhaseGate.cpp")
@@ -259,7 +259,7 @@ for forbidden in (
 
 for token in (
     "struct AutopilotAgentState",
-    "class ClientRouteAutopilot final",
+    "class DedicatedClientRouteAutopilot final",
     "struct State",
     "struct Output",
     "ShipControlState control",
@@ -267,7 +267,7 @@ for token in (
     "static Output update(",
 ):
     require(token in client_route_autopilot,
-            f"ClientRouteAutopilot public API missing explicit boundary token {token!r}")
+            f"DedicatedClientRouteAutopilot public API missing explicit boundary token {token!r}")
 
 for forbidden in (
     "RouteFollowerApi.h",
@@ -278,7 +278,7 @@ for forbidden in (
     "WireProtocol",
 ):
     require(forbidden not in client_route_autopilot,
-            f"ClientRouteAutopilot public API leaks retired/server boundary {forbidden!r}")
+            f"DedicatedClientRouteAutopilot public API leaks retired/server boundary {forbidden!r}")
 
 for token in (
     "const AcceptedManeuverProgram& program",

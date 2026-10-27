@@ -1,4 +1,4 @@
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilotLaws.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/ShipDescriptor.h"
@@ -21,8 +21,6 @@
 namespace
 {
 
-using Autopilot =
-    game::navigation::autopilot::ClientRouteAutopilot;
 using Agent =
     game::navigation::autopilot::AutopilotAgentState;
 using Model =
@@ -209,7 +207,8 @@ double distanceToAuthoredArc(const glm::dvec3& position)
     );
 }
 
-void runModel(Model model)
+template <typename Autopilot>
+void runModelWith(Model model)
 {
     ShipDescriptor descriptor;
     descriptor.physicalControlModel = model;
@@ -270,7 +269,7 @@ void runModel(Model model)
         basisForForward(plan.executionGates.front().forward)
     );
 
-    Autopilot::State autopilot;
+    typename Autopilot::State autopilot;
     std::string failureReason;
 
     const bool autopilotStarted =
@@ -278,7 +277,6 @@ void runModel(Model model)
             autopilot,
             plan,
             makeAgent(transform),
-            law,
             params,
             0.0,
             static_cast<std::uint64_t>(3000) +
@@ -308,7 +306,6 @@ void runModel(Model model)
             Autopilot::update(
                 autopilot,
                 makeAgent(transform),
-                law,
                 params,
                 static_cast<double>(tick) * kDt,
                 kDt
@@ -440,6 +437,25 @@ void runModel(Model model)
             << maxMainTorqueNm << ','
             << maxAngularSpeedRadPerSec << ','
             << completionTimeSeconds << '\n';
+    }
+}
+
+void runModel(Model model)
+{
+    // Fly the SAME per-law route autopilot type that production SpaceState
+    // selects for this construction's native flight law.
+    if (game::ship::plant::nativeFlightLaw(model) ==
+        game::navigation::LocalFlightControlLaw::Assisted)
+    {
+        runModelWith<
+            game::navigation::autopilot::AssistedClientRouteAutopilot
+        >(model);
+    }
+    else
+    {
+        runModelWith<
+            game::navigation::autopilot::NewtonianClientRouteAutopilot
+        >(model);
     }
 }
 

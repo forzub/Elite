@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/LocalFlightControlLaw.h"
-#include "src/game/navigation/autopilot/ClientRouteAutopilot.h"
+#include "src/game/navigation/autopilot/DedicatedClientRouteAutopilot.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipParams.h"
 
@@ -18,8 +18,9 @@ namespace game::navigation::diagnostics
 // Headless production-navigation harness.
 //
 // The scenario owns no private planner/follower implementation. It drives the
-// same RoutePlanner -> ClientRouteAutopilot -> ordinary ShipControlState ->
-// SharedShipPhysics/DynamicMotionSystem chain used by the game.
+// same RoutePlanner -> per-law DedicatedClientRouteAutopilot -> ordinary
+// ShipControlState -> SharedShipPhysics/DynamicMotionSystem chain used by the
+// game.
 //
 // Tests should describe geometry/state here and inspect the resulting trace;
 // they must not manufacture RoutePlan internals when testing the integrated

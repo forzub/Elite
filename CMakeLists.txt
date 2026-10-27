@@ -277,6 +277,11 @@ if(ELITE_BUILD_ASSET_EDITOR)
         src/game/geometry/ObjectAssemblyRegistry.cpp
         src/world/descriptors/ObjectDescriptorRegistry.cpp
         src/game/ship/descriptors/EliteCobraMk1.cpp
+        # Descriptor calls physicalControlSlots; editor must link the
+        # physical model implementation even without the full game target.
+        src/game/ship/plant/AssistedPhysicalControlModel.cpp
+        src/game/ship/plant/NewtonianPhysicalControlModel.cpp
+        src/game/ship/plant/ShipPhysicalControlModels.cpp
         src/game/equipment/data/receivers.cpp
         src/game/equipment/data/transmitters.cpp
         src/game/equipment/data/radars.cpp

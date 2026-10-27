@@ -443,6 +443,11 @@ void Application::configureRemoteServer(
     m_remoteServerPort = port;
 }
 
+void Application::configureDevDirectLocalFlight(std::string playerName)
+{
+    m_devDirectLocalFlightPlayer = std::move(playerName);
+}
+
 bool Application::hasConfiguredRemoteServer() const
 {
     return !m_remoteServerHost.empty() && m_remoteServerPort != 0;
@@ -830,10 +835,22 @@ void Application::init()
             << "\n";
 #endif
 
+    // DEV-ONLY --dev-direct-flight: exactly the NEW LOCAL GAME path with a
+    // fixed player name, so local development can enter flight unattended.
+    std::string devDirectPlayer = m_devDirectLocalFlightPlayer;
+    if (!hasConfiguredRemoteServer() &&
+        !devDirectPlayer.empty() &&
+        normalizeLocalPlayerDisplayName(devDirectPlayer))
+    {
+        std::cout << "[App] --dev-direct-flight: NEW LOCAL GAME player="
+                  << devDirectPlayer << "\n";
+        m_localPlayerDisplayName = std::move(devDirectPlayer);
+        requestSessionStart(GameSessionLaunchKind::LocalNewGame);
+    }
     // --connect is a lifecycle shortcut into multiplayer. It must never
     // masquerade as NEW GAME: the remote authoritative universe already
     // exists and this client only authenticates and attaches to it.
-    if (hasConfiguredRemoteServer())
+    else if (hasConfiguredRemoteServer())
     {
         if (m_clientIdentityHello.authToken.valid())
         {

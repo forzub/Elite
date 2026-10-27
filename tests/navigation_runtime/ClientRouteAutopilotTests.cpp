@@ -2804,8 +2804,23 @@ void testHullAttitudeControlIsNotSlowedByCourseLag()
     const auto control =
         pilot.update(request, vehicle);
 
+    // The same small hull error with pure terminal attitude HOLD isolates
+    // the damped 0.50 s attitude servo from any route-course response.
+    // A fixed command-magnitude threshold is not valid evidence for that
+    // damped law; equality with the attitude-only command is.
+    Pilot attitudeOnlyPilot;
+    auto attitudeOnlyRequest = request;
+    attitudeOnlyRequest.terminalAttitudeHold = true;
+    const auto attitudeOnly =
+        attitudeOnlyPilot.update(attitudeOnlyRequest, vehicle);
+
     require(
-        std::abs(control.yawInput) > 0.5f,
+        control.yawInput > 1.0e-3f &&
+        attitudeOnly.yawInput > 1.0e-3f,
+        "Assisted hull attitude control did not yaw toward the desired nose"
+    );
+    require(
+        std::abs(control.yawInput - attitudeOnly.yawInput) <= 1.0e-6f,
         "Assisted course-response lag incorrectly throttled hull attitude control"
     );
 }

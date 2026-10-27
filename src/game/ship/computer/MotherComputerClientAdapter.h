@@ -294,6 +294,9 @@ namespace game::ship::computer
                         sample->safeTemperatureK);
                     drive.generatedHeatMW=static_cast<float>(sample->generatedHeatMW);
                     drive.padHeatMW=static_cast<float>(sample->padHeatMW);
+                    drive.hasPadIntegrity=true;
+                    drive.padIntegrity01=static_cast<float>(
+                        std::clamp(sample->padIntegrity01,0.0,1.0));
                     drive.coolantHeatMW=static_cast<float>(sample->coolantHeatMW);
                     drive.storedHeatMW=static_cast<float>(sample->storedHeatMW);
                 }

@@ -506,7 +506,8 @@ ELITE_WIRE_SCHEMA(
     v.electricalOutputMW,
     v.padHeatMW,
     v.coolantHeatMW,
-    v.storedHeatMW
+    v.storedHeatMW,
+    v.padIntegrity01
 );
 
 ELITE_WIRE_SCHEMA(

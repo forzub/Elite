@@ -50,7 +50,7 @@ int main() {
             module.health=100.0f;
             module.engineReactorOperating.padIntegrity01=scenario.pad01;
             module.engineReactorOperating.temperatureK=passport.idleTemperatureK;
-            module.equipmentDamage.accumulated.internal01=scenario.internalDamage01;
+            module.equipmentDamage.accumulated.internalFailure01=scenario.internalDamage01;
             const double dt=1.0;
             double finalT=0,finalPower=0,finalPad=0;
             for(int t=0;t<=1800;++t) {

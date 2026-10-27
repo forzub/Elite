@@ -2609,3 +2609,10 @@ USER PROPOSAL: Model exactly two top-level ship groups:
 - CRITICAL: no MSYS2 Windows compilation, complete game run or screenshot was possible through remote GitHub actions here. Must run build, targeted HUD presentation and thermal tests, plus an actual damaged ER-5 flight and compare HUD to CSV to confirm acceptance. Repair failures before claiming PASS.
 
 - Additional test commit `f486f90a`: existing `EngineThrustHudPresentationTests.cpp` now asserts a 42% ER-5 radiator integrity in MotherComputer cockpit sample survives conversion into actual engine HUD presentation, rather than being discarded. This test is source-only and has not been compiled/executed here.
+
+
+## 2026-10-27 Windows full-build failure: standalone Asset Editor unresolved symbol
+
+- User provided actual MSYS2 MinGW64 Ninja build transcript (Debug), configure succeeded and build reached 435/439. `EliteGame.exe` link step completed and runtime was staged; overall Ninja build FAILED because standalone `EliteAssetEditor.exe` linking reported `undefined reference to game::ship::plant::physicalControlSlots(PhysicalControlModelId)` from `EliteCobraMk1.cpp:1195`. Large Embree/Eigen and Windows-header messages are warnings, not the blocker.
+- Root cause in root `CMakeLists.txt`: editor directly compiles `EliteCobraMk1.cpp` but does NOT include physical-control-model translation units which implement `physicalControlSlots`; main game already includes them. Commit `e9e78f01` adds `AssistedPhysicalControlModel.cpp`, `NewtonianPhysicalControlModel.cpp`, and `ShipPhysicalControlModels.cpp` to *editor* sources only. No game physics, render, HUD or network changes.
+- STATUS: CMake fix source committed to main; Windows relink/full Ninja PASS still PENDING user rerun. Run `git pull --ff-only origin main && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && set -o pipefail && cmake --build build -j 4 2>&1 | tee /d/tmp/elite_build_retry.log`; if succeeds, proceed with ER-5 damaged-pad gameplay/HUD/CSV acceptance. Single canonical PROJECT_STATE.md maintained.

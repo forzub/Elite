@@ -31,7 +31,7 @@ int main() {
         const std::string path="D:/tmp/elite_er5_failure_matrix.csv";
         std::ofstream file(path,std::ios::trunc);
         require(file.good(),"cannot open D:/tmp/elite_er5_failure_matrix.csv");
-        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,thermal_damage01,total_damage01,requested_MW,actual_MW,efficiency01,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,heat_balance_error_MW\n";
+        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,thermal_damage01,total_damage01,requested_MW,actual_MW,efficiency01,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,catastrophic,heat_balance_error_MW\n";
         file<<std::fixed<<std::setprecision(6);
         const auto passport=CobraCobrettyER5PropulsionReactor();
         const Case cases[]={
@@ -130,7 +130,7 @@ int main() {
                         <<state.lastPadHeatMW<<','
                         <<state.lastCoolantHeatMW<<','
                         <<state.lastStoredHeatMW<<','
-                        <<(tick.failed?1:0)<<','<<residual<<'\n';
+                        <<(tick.failed?1:0)<<','<<(tick.catastrophic?1:0)<<','<<residual<<'\n';
                 }
                 finalT=state.temperatureK;
                 finalPower=tick.electricalOutputMW;

@@ -66,6 +66,22 @@ int main() {
             require(coldTick.effectiveEfficiency01<atSafe.effectiveEfficiency01,
                 "cold reactor must lose conversion efficiency");
         }
+        // Catastrophe is not a synonym for mere overheating or equipment
+        // failure: BOTH authored thresholds must be exceeded.
+        {
+            auto probe=[&](double t,double damage){
+                game::equipment::reactor::EngineReactorState st;
+                st.temperatureK=t;
+                st.damage.thermal01=damage;
+                return advanceEngineReactor(passport,st,0.0,0.0,0.0,1.0).catastrophic;
+            };
+            require(!probe(passport.catastrophicTemperatureK+50.0,0.0),
+                "temperature alone caused catastrophic reactor failure");
+            require(!probe(passport.safeTemperatureK,0.90),
+                "damage alone caused catastrophic reactor failure");
+            require(probe(passport.catastrophicTemperatureK+50.0,0.50),
+                "hot and damaged ER-5 did not catastrophically fail");
+        }
         for(const auto& scenario:cases) {
             // Same storage used by the installed runtime module, not a HUD fake.
             // The test does NOT simulate collision geometry or network traffic.

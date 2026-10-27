@@ -33,6 +33,10 @@ struct EngineReactorDescriptor
     // Zero at nominal operating temperature; heat rises before derating.
     double maxColdEfficiencyLoss01 = 0.12;
     double maxHotEfficiencyLoss01 = 0.18;
+    // Catastrophic containment loss requires BOTH excessive heat and
+    // accumulated physical equipment damage. Independent of 95% failure.
+    double catastrophicTemperatureK = 2500.0;
+    double catastrophicDamage01 = 0.35;
     // One equipment object, one common cause-of-damage representation.
     game::equipment::EquipmentFailureProfile failure {0.95};
     game::equipment::EquipmentMaintenanceProfile maintenance {};
@@ -54,6 +58,7 @@ struct EngineReactorState
     // Retain sub-quantum thermal damage until the canonical module damage
     // accumulator can commit it without invalidating snapshots each tick.
     double pendingThermalDamage01 = 0.0;
+    bool catastrophic = false;
 };
 
 struct EngineReactorTick
@@ -66,6 +71,7 @@ struct EngineReactorTick
     double effectiveEfficiency01 = 0.0;
     double availableElectricalMW = 0.0;
     bool failed = false;
+    bool catastrophic = false;
 };
 
 // Hot standby is continuous and imposes a passive thermal load even when
@@ -84,6 +90,18 @@ struct EngineReactorTick
 {
     EngineReactorTick out;
     const double dt = std::max(0.0,dtSeconds);
+    if(state.catastrophic)
+    {
+        out.failed=true;
+        out.catastrophic=true;
+        out.temperatureK=state.temperatureK;
+        state.lastElectricalOutputMW=0.0;
+        state.lastGeneratedHeatMW=0.0;
+        state.lastPadHeatMW=0.0;
+        state.lastCoolantHeatMW=0.0;
+        state.lastStoredHeatMW=0.0;
+        return out;
+    }
     const double damage = game::equipment::totalAccumulatedDamage01(state.damage);
     const auto function = game::equipment::evaluateEquipmentFunctionAtDamage01(
         damage,type.failure);
@@ -181,6 +199,14 @@ struct EngineReactorTick
             type.overheatDamagePerHourAt100K*dt/3600.0*
                 (thermalExcess/100.0));
     }
+    // Apply catastrophe AFTER accumulating this step's thermal damage.
+    // Both thresholds are required; emergency shutdown of a merely hot
+    // reactor must not masquerade as explosive containment failure.
+    if(state.temperatureK >= type.catastrophicTemperatureK &&
+       game::equipment::totalAccumulatedDamage01(state.damage) >=
+           type.catastrophicDamage01)
+        state.catastrophic=true;
+    out.catastrophic=state.catastrophic;
     out.temperatureK=state.temperatureK;
     state.lastElectricalOutputMW=out.electricalOutputMW;
     state.lastGeneratedHeatMW=out.thermalPowerMW;

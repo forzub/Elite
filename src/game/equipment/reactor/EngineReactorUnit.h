@@ -36,6 +36,9 @@ struct EngineReactorDescriptor
 
 struct EngineReactorState
 {
+    // Installed ER-5 pad effective area; damaged by the same hit that reaches
+    // its owning reactor module (until the pad has dedicated hit geometry).
+    double padIntegrity01 = 1.0;
     double temperatureK = game::physics::thermal::DeepSpaceTemperatureK;
     double equivalentOperatingHours = 0.0;
     double lastElectricalOutputMW = 0.0;

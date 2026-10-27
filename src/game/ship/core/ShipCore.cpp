@@ -1870,7 +1870,9 @@ void ShipCore::updateSystems(float dt)
             const double padHeadroomMW=
                 game::physics::thermal::PropulsionPadCoolingMWPerM2*
                 def->engineReactor->padSideM*
-                def->engineReactor->padSideM;
+                def->engineReactor->padSideM*
+                std::clamp(module->engineReactorOperating.padIntegrity01,
+                           0.0,1.0);
             auto& state=module->engineReactorOperating;
             state.damage=module->equipmentDamage.accumulated;
             const double thermalBefore=state.damage.thermal01;
@@ -2537,6 +2539,7 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
                     sample.electricalOutputMW=
                         state.lastElectricalOutputMW;
                     sample.padHeatMW=state.lastPadHeatMW;
+                    sample.padIntegrity01=std::clamp(state.padIntegrity01,0.0,1.0);
                     sample.coolantHeatMW=state.lastCoolantHeatMW;
                     sample.storedHeatMW=state.lastStoredHeatMW;
                 }
@@ -2783,6 +2786,22 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
 
         if (hasEquipmentCause && lost01 > 0.0)
         {
+            // The reactor pad is part of the installed ER-5 module. Until
+            // separate pad hit volumes exist, actual damage to this reactor
+            // also removes the same fraction of its surviving emitting area.
+            if(m_desc)
+                for(const auto& def:m_desc->modules)
+                    if(def.moduleId==damagedModuleId && def.engineReactor)
+                    {
+                        auto* er=m_moduleRuntime.findModule(damagedModuleId);
+                        if(er)
+                            er->engineReactorOperating.padIntegrity01 =
+                                std::clamp(
+                                    er->engineReactorOperating.padIntegrity01-
+                                    lost01,0.0,1.0);
+                        break;
+                    }
+
             bool isInstalledEngine=false;
             if (m_desc)
                 for (const auto& module : m_desc->modules)

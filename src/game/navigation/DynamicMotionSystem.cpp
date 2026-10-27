@@ -567,7 +567,12 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     const glm::dvec3 actualManoeuvreLocalAcceleration =
         frame.worldToLocalVector(actualManoeuvreWorldAcceleration);
 
-    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
+    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian &&
+        motion.newtonianRcsKeepsDeltaV)
+    {
+        motion.newtonianManualManoeuvreDeltaVelocityMps = glm::dvec3(0.0);
+    }
+    else if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
         motion.newtonianManualManoeuvreDeltaVelocityMps +=
             actualManoeuvreLocalAcceleration * dt;
@@ -765,6 +770,9 @@ void DynamicMotionSystem::applyLocalFrameInput(
 
         motion.newtonianManualManoeuvreInputActive =
             manualManoeuvreInput;
+        if (motion.newtonianRcsKeepsDeltaV)
+            motion.newtonianManualManoeuvreDeltaVelocityMps =
+                glm::dvec3(0.0);
 
         if (manualManoeuvreInput)
         {

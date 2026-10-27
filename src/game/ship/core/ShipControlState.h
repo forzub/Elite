@@ -39,6 +39,12 @@ struct ShipControlState
     float mainGimbalRightInput = 0.0f;
     float mainGimbalUpInput = 0.0f;
 
+    // Newtonian manual RCS cancels its own accumulated delta-v when the
+    // keypad is released. A virtual pilot that trims its trajectory with RCS
+    // OWNS that delta-v: true disables the release cancellation, so a trim is
+    // never undone (and no hidden RCS force fires during a pure rotation).
+    bool rcsKeepsTranslationDeltaV = false;
+
     // Ctrl+F10 sends an explicit requested mode instead of a non-idempotent
     // toggle. That keeps server replay and fractional presentation prediction
     // deterministic even when the same input sample is evaluated twice.

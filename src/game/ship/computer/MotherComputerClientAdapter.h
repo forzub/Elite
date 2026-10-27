@@ -77,14 +77,12 @@ namespace game::ship::computer
             selected, ship.physicalControlModel, slotState
         );
 
-        // Keep the accepted healthy/partially damaged flight envelope
-        // untouched. An engine-out main-drive candidate needs the existing
-        // CoM-projected emergency working axis and installed drive rating.
-        // Future general multi-actuator certificate replaces this narrow
-        // condition; it must not change normal flight accidentally.
-        if (!diagnosticLayout && capability.valid &&
-            game::ship::plant::familyOf(ship.physicalControlModel) ==
-                game::ship::plant::PhysicalControlFamily::Assisted)
+        // Project the INSTALLED main drives (rating, availability, working
+        // axis, thrust-vector envelope from their passports) for every
+        // flight law, exactly as ShipCore::capabilities does on the server.
+        // Newtonian previously kept descriptor nominals here (73.5 m/s2 and
+        // a hull-level gimbal) while the server executed the installed N1.
+        if (!diagnosticLayout && capability.valid)
         {
             // The same mounted geometry projection as ShipCore::capabilities.
             // The removed survivingAft count was dead client-side analysis:

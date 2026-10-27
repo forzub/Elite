@@ -131,6 +131,9 @@ struct DynamicMotionState
     // included and therefore are not cancelled by manual-RCS stabilization.
     glm::dvec3 newtonianManualManoeuvreDeltaVelocityMps {0.0};
     bool newtonianManualManoeuvreInputActive = false;
+    // Current command owns its RCS delta-v (ShipControlState::
+    // rcsKeepsTranslationDeltaV): the ledger stays empty, nothing is released.
+    bool newtonianRcsKeepsDeltaV = false;
 
     // Newtonian main-nozzle TVC. Commands are normalized pilot inputs;
     // actual angles are rate-limited physical actuator state. Assisted ignores

@@ -2775,3 +2775,48 @@ USER PROPOSAL: Model exactly two top-level ship groups:
   - `ELITE_DEV_N1_GIMBAL_DEG` is a TEMP dev override for the gimbal selection sweep.
 - Gimbal sweep at this point (0/1/2/3/5/7 deg, Newtonian-I tunnel, 150 s each): NO effect. The production autopilot never deflected the nozzle (max 0.00 deg) and never used translational RCS, so every correction became hull rotation. The angle cannot be selected until actuator cooperation (nozzle + RCS translation + RCS counter-torque) exists.
 - Gates: `build_mingw64.sh` + `EliteAssetEditor` exit 0; focused 8/8; real start passes passport validation; Assisted-I flights unchanged (checkpoint 52); six-model oracle 84/84.
+
+
+## 2026-10-27 Newtonian ballistic execution slice: findings, failed gates, new doctrine (PARTIALLY COMMITTED)
+
+Baseline for comparison: working tree on top of `4f67103c` with the uncommitted actuator-cooperation work, gimbal 7 deg, real `EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple`, 150 s Newtonian-I tunnel, logs `D:/tmp/elite_bp_base_I*`. Metrics: `python D:/tmp/elite_bp_metrics.py TAG [--timeline]` (client trace `ELITE_NEWTONIAN_POLICY_TRACE`, profile trace `ELITE_NEWTONIAN_PROFILE_TRACE`, both DEV-only, uncommitted).
+
+### Root cause found and COMMITTED: hidden RCS force during pure rotation
+- The "160 kN avg / 520 kN max parasitic RCS force during rotation" was NOT the allocator: with a true pure-torque request `allocateNewtonianRcs` delivers 0.1 kN.
+- The source was the manual Newtonian RCS release doctrine in `DynamicMotionSystem::applyLocalFrameInput`: when translation inputs return to 0, the server fires RCS to cancel the whole ledger of RCS delta-v, so every autopilot RCS trim was undone later, often during flips.
+- Fix: `ShipControlState::rcsKeepsTranslationDeltaV` (wire protocol 16 -> 17), copied by the gateway into `DynamicMotionState::newtonianRcsKeepsDeltaV`; when set the ledger stays empty and nothing is released. Default false: manual flight and Assisted unchanged. The flag is set by the (uncommitted) new Newtonian pilot.
+- Evidence with the new pilot: client rotation-only ticks, net RCS force 221.2 kN mean / 520 kN max (baseline) -> 0.0 / 0.3 kN.
+
+### Also COMMITTED: `MotherComputerClientAdapter.h`
+- Regression introduced by the passport commit: the client Newtonian envelope used descriptor nominals (gimbal 0, main 73.5 m/s2) while the server executed the installed N1 (36.8 m/s2, passport cone). Installed main drives are now projected for every flight law, as on the server.
+
+### Gates for the commit
+- Subset syntax-checked alone in a worktree at `4f67103c` (DynamicMotionSystem, gateway, ShipCore, WireProtocol, adapter).
+- Focused Newtonian CTest 8/8 PASS on the full working tree.
+- `local_flight_control_contracts` is RED ("surviving fore main was not promoted to primary propulsion") and equally RED with the HEAD versions of the touched files: PRE-EXISTING, Assisted fore-main logic, not caused by this change.
+- No full `build_mingw64.sh` of the exact commit subset; the full working tree (superset) builds with exit 0.
+
+### UNCOMMITTED experimental Newtonian pilot (NOT ACCEPTED)
+- Explicit COAST/FLIP/ALIGN/BURN phases, predictive safe tube (35% tolerance, 4 s), burn gate on the achievable thrust error, latched burn attitude, calm flip (50% rate / 50% angular acceleration), coast-before-brake runtime profile, pure profile feed-forward for Newtonian (tracker position feedback was a centreline rail).
+- Best Newtonian-I runs (bp6/bp8) vs baseline: progress 21.7 km / checkpoint 47 (same); hull rotation 22.9 vs 55.6 rad; big turns 10 vs 37; reversals 24 vs 187; max omega 0.85 vs 1.57; strong main (>50%) at >15 deg thrust error 0 vs 2553 ticks; cross-track max ~40 vs 42 m.
+- FAILED gates: Y/X up to 0.5-1 km cross-track (bp7/bp8); bp9-bp12 all three models stalled at the first broken corner (988 m) for 2+ minutes. Root causes found during the iterations: stale route projection at an overshot vertex, catch-up rule stalling a position-based profile, preview retro-only planning at low speed, anticipation vs burn alternating the hull target by ~160 deg. Each local fix exposed the next; ~13 build+flight iterations. Stopped by the user.
+
+### Diagnosed architectural causes (user-confirmed)
+- `PreplanningSafetyCourse` picks the MINIMAL course change (score = angle*10 + goal angle, 15 deg rings) even at rest -> artificial 15 deg start bend plus a protected lead straight (~2 km) before the real turn.
+- Newtonian planner: `roundTurns=false`, polyline through portal/centreline centres, every vertex a near-stop -> stop-turn-go even on almost straight runs.
+- The controller re-invents strategy every tick from preview; a nearly finished turn can be cancelled by a secondary correction.
+
+### NEW DOCTRINE (user decision 2026-10-27)
+- The main task (good safe natural route honouring special zones and speed limits with the real ship volume; an autopilot that executes it) is above internal contracts. `roundTurns=false`, stop-turn-go, mandatory vertices/centreline points, tangent contracts, sustained-RCS/drift prohibitions, old speed-profile assumptions and old tests are working hypotheses and may be changed or removed. Tests follow the accepted doctrine.
+- Hard constraints only: collision geometry, obstacles, hit volumes, ship size, narrow corridors, special-zone speed limits and rules, real actuator capability, power/gas/damage, physically impossible manoeuvres.
+- Narrow zones: no full hull rotation inside; slow down and orient before entry; traverse with coast, translational RCS, small vectoring. Orientation must fit the ship envelope into the cross-section (conservative approximation, never plan a point and rotate the hull through a wall).
+- Near-zero speed ends a manoeuvre: reset transient commands, orient to the next segment, settle, then accelerate. The current manoeuvre outranks secondary corrections; safety outranks everything.
+- Newtonian planner may emit a manoeuvre program (ALIGN, BURN, COAST, FLIP, ALIGN, BRAKE, SETTLE); the autopilot executes it with local corrections.
+- Arcs/drift allowed for Newtonian when the real lateral budget (vectoring + RCS, time, corridor width) permits. Near-collinear points merged; a gate is a window, not a centre point.
+- Experiment rule: 2-3 consecutive real flights without substantial improvement of the same problem -> STOP and report.
+
+### Next steps (accepted order)
+1. Newtonian planner geometry: no artificial start bend at rest, merge near-collinear vertices, broad curves/drift, gates as windows, corridor width, keep special-zone constraints. A short design proposal goes to the user BEFORE implementation.
+2. Explicit manoeuvre program / autopilot sequencing with priority and transient reset.
+3. Narrow-zone safety (envelope, safe orientation, limited-rotation regions, conservative speed).
+4. N1 gimbal sweep only once the new strategy really uses vectoring.

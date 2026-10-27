@@ -303,6 +303,17 @@ void EngineThrustIndicatorRenderer::render(
             }
             roundedOutlinePx(text,rx,cy-sq*0.5f,sq,sq,1*scale,
                 1*scale,style.panelBorder,style.track);
+            // Separate ER-5 radiator-pad status. A broken reactor core and
+            // its damaged radiator are different physical faults.
+            if(drive.hasPadIntegrity)
+            {
+                const float intact=std::clamp(drive.padIntegrity01,0.0f,1.0f);
+                const glm::vec4 padColor=intact<=0.0f?dead:
+                    intact<0.30f?hot:intact<0.70f?yellow:green;
+                roundedOutlinePx(text,rx+sq+4*scale,cy-sq*0.5f,
+                    7*scale,7*scale,1*scale,1*scale,
+                    style.panelBorder,padColor);
+            }
             // Ignition lamp: verified reactor state from server snapshot.
             // Green = energized, amber = 10 s restart, dark = switched off.
             const glm::vec4 ignitionColor=drive.ignitionStarting

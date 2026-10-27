@@ -1751,3 +1751,10 @@ target_include_directories(emergency_thermal_bridge_tests PRIVATE
     "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 target_compile_features(emergency_thermal_bridge_tests PRIVATE cxx_std_17)
 add_test(NAME emergency_thermal_bridge COMMAND emergency_thermal_bridge_tests)
+
+# Isolated, deterministic ER-5 failure matrix. Writes a diagnostic CSV to D:/tmp.
+add_executable(er5_failure_matrix_scenario Er5FailureMatrixScenario.cpp)
+target_include_directories(er5_failure_matrix_scenario PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(er5_failure_matrix_scenario PRIVATE cxx_std_17)
+add_test(NAME er5_failure_matrix COMMAND er5_failure_matrix_scenario)

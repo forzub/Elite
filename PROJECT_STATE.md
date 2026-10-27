@@ -2595,3 +2595,15 @@ USER PROPOSAL: Model exactly two top-level ship groups:
 - Commit `df54060b` adds `EngineReactorStatus.padIntegrity01` populated by `ShipCore::getStatus()` from real reactor operating state; `e3695410` appends per-reactor `ER{i}_pad_integrity01` fields to `D:/tmp/elite_power_thermal_audit.csv` while preserving prior columns.
 - OPEN BLOCKER: client HUD drive presentation is built via other cockpit/replication snapshots; the new ShipCoreStatus field is NOT YET proven to reach client presentation or draw a reactor-pad damage marker. No claim of visual HUD PASS. Verify `EngineThrustHudPresentation.h`, cockpit drive snapshot and `WireDataSchema.h` and implement end-to-end replication before acceptance.
 - SOURCE EDITS ONLY; no native build/CTest/in-game acceptance executed. Run Windows full build and damaged ER-5 test; look for pad integrity decline, reduced pad MW, temperature rise and thermal throttling (while holding electrical draw constant). Keep main only and this one PROJECT_STATE.md.
+
+
+## 2026-10-27 ER-5 pad replication and HUD mapping repair (SOURCE ONLY, native PASS pending)
+
+- Follow-up to ER-5 pad hit-area proxy and reactor status telemetry: audit found `EngineReactorStatus.padIntegrity01` was NOT in `WireDataSchema.h`, not in `MotherComputerDriveHudGroup`, and absent from engine HUD presentation. Therefore server pad damage could not appear on client. Fixed data path in main:
+  - `99f6ba62` wire schema now encodes reactor pad integrity with status.
+  - `354f6447` MotherComputer cockpit drive state has explicit hasPadIntegrity and padIntegrity01.
+  - `721758f1` MotherComputerClientAdapter copies true server status integrity when corresponding installed ER-5's status is valid.
+  - `2358f957` EngineThrustHudPresentation retains those fields end-to-end.
+  - `7cae4177` draws a discrete ER-5 radiator status marker next to reactor HUD square, green >=70% intact, amber 30-70%, hot/red below 30%, dead at 0. No unverified healthy color when status missing.
+- Existing physical cooling derating in ShipCore multiplies ER-5 pad power by runtime padIntegrity01, and CSV logs ER{i}_pad_integrity01. Distinguish a hit to whole ER-5 module from true pad-only hit: per-pad collision topology remains an open requirement. No changes to autopilot or thrust laws.
+- CRITICAL: no MSYS2 Windows compilation, complete game run or screenshot was possible through remote GitHub actions here. Must run build, targeted HUD presentation and thermal tests, plus an actual damaged ER-5 flight and compare HUD to CSV to confirm acceptance. Repair failures before claiming PASS.

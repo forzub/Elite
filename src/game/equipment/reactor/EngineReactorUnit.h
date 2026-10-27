@@ -29,6 +29,10 @@ struct EngineReactorDescriptor
     double endOfLifeEquivalentHours = 50000.0;
     double overheatDamagePerHourAt100K = 0.05;
     double maxEfficiencyLossAtFailure01 = 0.025;
+    // Additional conversion loss at cold start and at thermal shutdown.
+    // Zero at nominal operating temperature; heat rises before derating.
+    double maxColdEfficiencyLoss01 = 0.12;
+    double maxHotEfficiencyLoss01 = 0.18;
     // One equipment object, one common cause-of-damage representation.
     game::equipment::EquipmentFailureProfile failure {0.95};
     game::equipment::EquipmentMaintenanceProfile maintenance {};
@@ -101,9 +105,23 @@ struct EngineReactorTick
         thermalAuthority*ready;
     out.electricalOutputMW=std::clamp(
         requestedElectricalMW,0.0,out.availableElectricalMW);
+    // Efficiency and power authority are separate: poor conversion adds
+    // waste heat at the SAME actual electrical load, while safety derating
+    // may subsequently reduce output. Use operating (not safe) temperature
+    // as the ideal efficiency point; thermal penalty is continuous.
+    const double cold01=std::clamp(
+        (type.operatingTemperatureK-state.temperatureK)/
+        std::max(1.0,type.operatingTemperatureK-
+            game::physics::thermal::DeepSpaceTemperatureK),0.0,1.0);
+    const double hot01=std::clamp(
+        (state.temperatureK-type.operatingTemperatureK)/
+        std::max(1.0,type.criticalTemperatureK-
+            type.operatingTemperatureK),0.0,1.0);
     const double efficiencyLoss=std::clamp(
         type.maxEfficiencyLossAtFailure01*damage+
-        0.005*ageRatio,0.0,0.20);
+        0.005*ageRatio+
+        type.maxColdEfficiencyLoss01*cold01*cold01+
+        type.maxHotEfficiencyLoss01*hot01*hot01,0.0,0.85);
     out.effectiveEfficiency01=std::clamp(
         type.nominalEfficiency01-efficiencyLoss,0.05,1.0);
     // Zero electrical output at idle. Heat generation includes only a

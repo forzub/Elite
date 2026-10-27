@@ -271,7 +271,11 @@ void EngineThrustIndicatorRenderer::render(
                     bar->emitterIntegrity01,0.0f,1.0f);
                 // The pad thermal-balance status is not yet replicated;
                 // integrity is shown, while heat-condition color is unknown.
-                padColor=integrity<=0.0f?dead:style.label;
+                // Match the equipment-damage presentation thresholds:
+                // intact/usable = normal, damaged = amber, critical = red.
+                padColor=integrity<=0.0f?dead:
+                    integrity<0.30f?hot:
+                    integrity<0.70f?yellow:green;
                 char pct[16];
                 std::snprintf(pct,sizeof(pct),"%.0f%%",integrity*100.0f);
                 text.textDrawPx(pct,padX-12*scale,

@@ -156,6 +156,8 @@ struct MotherComputerDriveHudGroup
     float safeCoreTemperatureK = 0.0f;
     float generatedHeatMW = 0.0f;
     float padHeatMW = 0.0f;
+    bool hasPadIntegrity = false;
+    float padIntegrity01 = 0.0f;
     float coolantHeatMW = 0.0f;
     float storedHeatMW = 0.0f;
 };

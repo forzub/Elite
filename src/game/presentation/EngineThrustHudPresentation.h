@@ -73,6 +73,8 @@ struct EngineDriveHudPresentation
     float safeCoreTemperatureK = 0.0f;
     float generatedHeatMW = 0.0f;
     float padHeatMW = 0.0f;
+    bool hasPadIntegrity = false;
+    float padIntegrity01 = 0.0f;
     float coolantHeatMW = 0.0f;
     float storedHeatMW = 0.0f;
 };
@@ -443,6 +445,8 @@ inline EngineThrustHudPresentation buildEngineThrustHudPresentation(
         entry.ignitionStarting=drive.ignitionStarting;
         entry.generatedHeatMW=drive.generatedHeatMW;
         entry.padHeatMW=drive.padHeatMW;
+        entry.hasPadIntegrity=drive.hasPadIntegrity;
+        entry.padIntegrity01=drive.padIntegrity01;
         entry.coolantHeatMW=drive.coolantHeatMW;
         entry.storedHeatMW=drive.storedHeatMW;
         out.drives.push_back(std::move(entry));

@@ -32,6 +32,7 @@
 #include "src/world/descriptors/LogicalDimensions.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/ship/plant/ShipPhysicalControlModel.h"
+#include "src/game/ship/ShipLoadout.h"
 
 
 struct ShipIdentity
@@ -261,6 +262,21 @@ public:
     ShipMainPropulsionBinding mainPropulsion;
     ShipPhysicalControlBinding physicalControl;
     ShipPowerThermalInstallationBinding powerThermalInstallation;
+
+    // Installable hardware configurations of this hull, one per legacy
+    // PhysicalControlModelId. Empty only for legacy/test descriptors that
+    // still rely on the fixed physicalControlSlots() tables.
+    std::vector<ShipLoadoutDefinition> loadouts;
+
+    [[nodiscard]] const ShipLoadoutDefinition* findLoadout(
+        game::ship::plant::PhysicalControlModelId model
+    ) const noexcept
+    {
+        for (const auto& loadout : loadouts)
+            if (loadout.legacyModelId == model)
+                return &loadout;
+        return nullptr;
+    }
 
     ReactorDescriptor               reactor;
     CoolingDescriptor               cooling;

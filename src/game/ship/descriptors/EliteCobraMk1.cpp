@@ -2,6 +2,7 @@
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/presets/cobra/CobraLoadouts.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/presets/cobra/CobraRcsEquipmentAssembly.h"
 #include <stdexcept>
@@ -1297,6 +1298,10 @@ if (const char* rawModel =
         );
     }
 }
+
+// The hull owns its six installable loadouts (topology, installed module
+// IDs, generator wiring, RCS mounts). Runtime binds one of them.
+desc.loadouts = game::ship::presets::cobra::cobraLoadouts();
 
 
 for (auto& m : desc.modules)

@@ -2684,3 +2684,35 @@ USER PROPOSAL: Model exactly two top-level ship groups:
   - Unregistered Python contract scripts already FAILING at `6d4c4d56`, unchanged by this work: `check_automatic_docking`, `check_docking_module_boundaries`, `check_local_flight_control`, `check_manual_docking_advisory`, `check_navigation_live_runtime_control`, `check_navigation_route_boundaries`, `check_assisted_follower_centering_contract`, `check_assisted_docking_entry_contract`.
   - `NavigationScenarioRunner` integrates via `SharedShipPhysics`, not the production `ShipCore`/gateway path.
 - NEXT: await user instruction for the next cleanup item.
+
+
+## 2026-10-27 universal-ship migration slice 1: loadout topology owned by ShipDescriptor (VERIFIED natively; Newtonian AP blocked by a PRE-EXISTING defect)
+
+- Migration start point: `4ffb7942` (tag `claude-autopilot-cleanup-ok`). Recovery tag `claude-start-2026-10-27` = `6d4c4d56`. Agreed direction: installed equipment defines which hardware exists; flight law only defines how it is controlled. `PhysicalControlModelId` is kept on the wire, in CSV and in diagnostics as a TEMPORARY legacy loadout index.
+- Source change (no constant, coordinate, module ID, slot order, thrust, power, thermal, gas, damping or allocator change):
+  - new `ShipLoadout.h` (`ShipLoadoutDefinition`: id, legacy model, flight law, propulsion slots, module IDs, ER-5 groups with powered engine slots, RCS nozzle mounts);
+  - `ShipDescriptor::loadouts` + `findLoadout()`;
+  - `CobraLoadouts.h` builds the six Cobra loadouts 1:1 from the existing `presets::cobra` tables;
+  - `ShipLoadoutTopology.h`: `propulsionTopology()` / `engineReactorGroups()` (explicit legacy fallback only for descriptors without loadouts) and `requireLoadoutMatchesLegacyTopology()`, which throws if a loadout diverges from the tables still used by pure plant code.
+- **Production consumers moved to the loadout:** `ShipCore` installed-profile builder, ER-5 power groups, ER-5 thermal/aging loop and all 8 construction topology lookups; client `replicatedInstalledCobraDescriptor`; `MotherComputerClientAdapter` (ER-5 drive groups + 2 topology lookups).
+- **Still on Cobra/global tables (later slices):**
+  - RCS nozzle catalog in `NewtonianRcsAllocator`, `ShipCore` (3 sites), `MotherComputerClientAdapter` (slice 3);
+  - pure `physicalControlSlots(model)` in capability builder, actuator plant, preset maneuvers, gateway, `ShipState`, `SpaceState`, `GameSimulation`, `GameServer`, HUD;
+  - `typeId==CobraMk1` gate (slice 2); env model block in the descriptor (slice 7).
+- Test fixture: `EngineThrustHudPresentationTests` Cobra-like descriptor now carries `cobraLoadouts()` like the production hull; assertions unchanged.
+- **Native gates (this host, `D:/tmp/elite_slice1_*`):** `bash build_mingw64.sh` exit 0 (EliteGame, EliteServer), `EliteAssetEditor` exit 0; focused 8/8 PASS; `mother_computer`, `ship_physical_actuator_plant`, `working_thrust_axis_analysis`, `assisted_layout_flight_matrix`, `ship_physical_corridor_matrix` PASS.
+- **Pre-existing reds, unchanged by slice 1:**
+  - `ship_state` is RED at HEAD: it expects the retired 4-RCS-cluster Newtonian-I topology.
+  - `assisted_authority_contract` does NOT COMPILE at HEAD (missing includes in `ReplicatedInstalledAssistedDescriptor.h` / `ReplicatedAssistedControlAuthority.h`). With slice 1 it compiles and fails `testEmergencySingleAftCoMThrustHasNoYaw` ("outward nozzle did not acquire the required CoM angle"), on code this slice does not touch.
+- In-game oracle `EliteGame.exe --diagnostic-scenario ship-control`:
+  - slice 1: 2 of 3 runs PASS 6/6, 84/84; HEAD 1/1 PASS.
+  - The one FAIL (Assisted-Y step 13, `unresolved_probe_runaway_speed`) is an ORACLE OBSERVATION DEFECT, present at HEAD too: `SpaceState.cpp:6005-6046` projects the WORLD-frame `motion.mainEngineAccelerationMps2` onto HUB-LOCAL body axes, so step 13 depends on the hub's real-time orientation (the failed log shows `v_forward` constant while "forward" main acceleration is 48 m/s^2). Not fixed.
+- **Real flight (unattended, `--dev-direct-flight --diagnostic-scenario nav-stress:simple` + `ELITE_SHIP_PHYSICAL_TEST_MODEL`):** slice 1 Assisted-I/Y/X build the route, enter Executing, reach the 400 m/s envelope and pass to checkpoint 49 while braking.
+- **User manual check: manual flight OK; autopilot did not move.** Root cause (NOT slice 1; identical on HEAD `4ffb7942`, Newtonian-I, 100 s and 180 s runs):
+  - the Newtonian planner finishes (`job_ready=1`), but automatic handover `Planning -> Executing` requires |omega| < 0.01 rad/s for 0.2 s (`SpaceState.cpp:~4450-4520`), with zero translation commanded meanwhile;
+  - the client stabilizer (`NewtonianOptimalController`, `terminalAttitudeHold`, correct when tested offline at any hull orientation) acts on replicated, delayed rates with near bang-bang commands, while the installed RCS now delivers 1.90 rad/s^2 after `8aa9aae0` (12 kN -> 500 kN nozzles);
+  - result: a limit cycle with |omega| ~0.18 rad/s, torque ~90 degrees out of phase (~150-200 ms loop lag), so handover never happens.
+  - Server hardware is ready (ER-5 5000 MW, main 100% available, forward capability 36.8 m/s^2); the server simply receives zero translation. Assisted settles and flies.
+- DEV tool committed separately (`03e08a94`): `EliteGame.exe --dev-direct-flight` = the NEW LOCAL GAME path with player "DEV PILOT", explicit flag only; ordinary flow unchanged.
+- Status: SOURCE COMPLETE, BUILD PASS, AUTOMATED CHECK PASS, GAME START PASS. GAMEPLAY: Assisted autopilot verified by real unattended runs; Newtonian autopilot blocked by the pre-existing limit cycle above.
+- User decision: commit slice 1; fix the Newtonian stabilizer as a SEPARATE slice. The fix must account for real RCS authority and replication latency, and the control change needs user approval. NEXT: await instruction (slice 2 or the Newtonian stabilizer).

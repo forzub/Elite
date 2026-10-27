@@ -16,7 +16,7 @@
 #include "src/game/ship/computer/MotherComputer.h"
 #include "src/game/presentation/EngineLiveTelemetryPresentation.h"
 #include "src/game/presentation/ShipBitePresentation.h"
-#include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/ShipLoadoutTopology.h"
 #include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/equipment/EquipmentDamage.h"
 
@@ -66,7 +66,8 @@ namespace game::ship::computer
         const auto slotState =
             diagnosticLayout
                 ? game::ship::plant::healthySlotState(
-                    game::ship::plant::physicalControlSlots(
+                    game::ship::propulsionTopology(
+                        *ship.descriptor,
                         ship.physicalControlModel
                     ))
                 : game::ship::capability::buildPhysicalControlSlotState(
@@ -217,7 +218,8 @@ namespace game::ship::computer
             ch = static_cast<char>(ch - 'a' + 'A');
 
     const auto& slots =
-        game::ship::plant::physicalControlSlots(
+        game::ship::propulsionTopology(
+            *ship.descriptor,
             ship.physicalControlModel
         );
     const auto installed =
@@ -237,12 +239,12 @@ namespace game::ship::computer
 
     // One physical drive group for each installed ER-5, using canonical
     // installation bindings (not inferred from visual proximity).
-    const auto& installation =
-        game::ship::presets::cobra::installationSlots(
-            ship.physicalControlModel);
+    const auto& groups =
+        game::ship::engineReactorGroups(
+            *ship.descriptor, ship.physicalControlModel);
     const auto& reactorIds =
         selected.powerThermalInstallation.engineReactorModuleIds;
-    for (std::size_t n=0;n<installation.engineReactors.size();++n)
+    for (std::size_t n=0;n<groups.size();++n)
     {
         MotherComputerDriveHudGroup drive;
         drive.simulatedPower=diagnostic;
@@ -250,8 +252,8 @@ namespace game::ship::computer
             out.systems.propulsionStartupSeconds<=0.0;
         drive.ignitionStarting=out.systems.propulsionReactorsOn &&
             out.systems.propulsionStartupSeconds>0.0;
-        drive.id = installation.engineReactors[n].slotId;
-        for (const auto* id : installation.engineReactors[n].poweredEngineSlots)
+        drive.id = groups[n].slotId;
+        for (const auto& id : groups[n].poweredEngineSlotIds)
             drive.poweredEngineSlots.emplace_back(id);
         if (!diagnostic && n<reactorIds.size())
         {

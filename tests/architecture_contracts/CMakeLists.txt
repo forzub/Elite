@@ -1744,3 +1744,10 @@ set_tests_properties(
     client_observation_interest_contracts
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+# Pure thermal-bridge and ER-5 energy-balance regression.
+add_executable(emergency_thermal_bridge_tests EmergencyThermalBridgeTests.cpp)
+target_include_directories(emergency_thermal_bridge_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
+target_compile_features(emergency_thermal_bridge_tests PRIVATE cxx_std_17)
+add_test(NAME emergency_thermal_bridge COMMAND emergency_thermal_bridge_tests)

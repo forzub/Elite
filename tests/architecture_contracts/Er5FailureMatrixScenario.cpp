@@ -31,7 +31,7 @@ int main() {
         const std::string path="D:/tmp/elite_er5_failure_matrix.csv";
         std::ofstream file(path,std::ios::trunc);
         require(file.good(),"cannot open D:/tmp/elite_er5_failure_matrix.csv");
-        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,requested_MW,actual_MW,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,heat_balance_error_MW\n";
+        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,requested_MW,actual_MW,efficiency01,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,heat_balance_error_MW\n";
         file<<std::fixed<<std::setprecision(6);
         const auto passport=CobraCobrettyER5PropulsionReactor();
         const Case cases[]={
@@ -42,6 +42,30 @@ int main() {
             {"pad_destroyed",0.0,0.0,4200.0,true},
             {"reactor_internal_failed",1.0,1.0,4200.0,true}
         };
+        // Probe efficiency feedback at identical electrical output before
+        // thermal output derating. Increased hot waste is a causal assertion.
+        {
+            game::equipment::reactor::EngineReactorState nominal;
+            nominal.temperatureK=passport.safeTemperatureK;
+            auto hot=nominal;
+            hot.temperatureK=passport.safeTemperatureK+100.0;
+            const auto atSafe=advanceEngineReactor(passport,nominal,1000.0,
+                0.0,0.0,1.0);
+            const auto overheated=advanceEngineReactor(passport,hot,1000.0,
+                0.0,0.0,1.0);
+            require(overheated.electricalOutputMW==atSafe.electricalOutputMW,
+                "temperature test changed electrical load");
+            require(overheated.effectiveEfficiency01<atSafe.effectiveEfficiency01,
+                "overheating must reduce ER-5 efficiency");
+            require(overheated.thermalPowerMW>atSafe.thermalPowerMW,
+                "overheating must increase waste heat at fixed load");
+            auto cold=nominal;
+            cold.temperatureK=passport.operatingTemperatureK-100.0;
+            const auto coldTick=advanceEngineReactor(passport,cold,1000.0,
+                0.0,0.0,1.0);
+            require(coldTick.effectiveEfficiency01<atSafe.effectiveEfficiency01,
+                "cold reactor must lose conversion efficiency");
+        }
         for(const auto& scenario:cases) {
             // Same storage used by the installed runtime module, not a HUD fake.
             // The test does NOT simulate collision geometry or network traffic.
@@ -77,6 +101,7 @@ int main() {
                         <<",1,"<<module.health<<','<<state.padIntegrity01
                         <<','<<scenario.internalDamage01<<','
                         <<scenario.demandMW<<','<<tick.electricalOutputMW
+                        <<','<<tick.effectiveEfficiency01
                         <<','<<state.temperatureK<<','
                         <<state.lastGeneratedHeatMW<<','
                         <<state.lastPadHeatMW<<','

@@ -2607,3 +2607,5 @@ USER PROPOSAL: Model exactly two top-level ship groups:
   - `7cae4177` draws a discrete ER-5 radiator status marker next to reactor HUD square, green >=70% intact, amber 30-70%, hot/red below 30%, dead at 0. No unverified healthy color when status missing.
 - Existing physical cooling derating in ShipCore multiplies ER-5 pad power by runtime padIntegrity01, and CSV logs ER{i}_pad_integrity01. Distinguish a hit to whole ER-5 module from true pad-only hit: per-pad collision topology remains an open requirement. No changes to autopilot or thrust laws.
 - CRITICAL: no MSYS2 Windows compilation, complete game run or screenshot was possible through remote GitHub actions here. Must run build, targeted HUD presentation and thermal tests, plus an actual damaged ER-5 flight and compare HUD to CSV to confirm acceptance. Repair failures before claiming PASS.
+
+- Additional test commit `f486f90a`: existing `EngineThrustHudPresentationTests.cpp` now asserts a 42% ER-5 radiator integrity in MotherComputer cockpit sample survives conversion into actual engine HUD presentation, rather than being discarded. This test is source-only and has not been compiled/executed here.

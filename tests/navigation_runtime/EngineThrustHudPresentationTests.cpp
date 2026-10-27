@@ -390,8 +390,17 @@ void testMotherComputerCockpitBarsPreserveLayoutAndBite()
         MotherComputerEngineHudSlot{"fore-left",-1.0,0.0,true,1.0f,0.2f,false},
         MotherComputerEngineHudSlot{"fore-right",1.0,0.0,true,1.0f,0.2f,false}
     };
+    game::ship::computer::MotherComputerDriveHudGroup damagedReactor;
+    damagedReactor.id="er-5-diagnostic";
+    damagedReactor.installed=true;
+    damagedReactor.hasPadIntegrity=true;
+    damagedReactor.padIntegrity01=0.42f;
+    cockpit.drives.push_back(damagedReactor);
     const auto view =
         game::presentation::buildEngineThrustHudPresentation(cockpit);
+    require(view.drives.size()==1 && view.drives[0].hasPadIntegrity &&
+            std::abs(view.drives[0].padIntegrity01-0.42f)<1e-6f,
+            "ER-5 radiator integrity lost on MotherComputer-to-HUD path");
     require(view.visible && view.warning &&
             view.groups.size()==2 && totalBars(view)==4,
             "MotherComputer cockpit did not preserve Assisted-I group layout");

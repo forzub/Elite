@@ -634,6 +634,7 @@ int main(int argc, char** argv)
     std::string clientProfileName;
     bool clientProfileExplicit = false;
     std::string diagnosticScenario;
+    bool devDirectFlight = false;
 
     try
     {
@@ -658,6 +659,12 @@ int main(int argc, char** argv)
                 continue;
             }
 
+            if (arg == "--dev-direct-flight")
+            {
+                // DEV-ONLY: skip the menu into a local game.
+                devDirectFlight = true;
+                continue;
+            }
             if (arg == "--diagnostic-scenario-file")
             {
                 if (i + 1 >= argc)
@@ -907,6 +914,8 @@ int main(int argc, char** argv)
             app.configureClientIdentityProfileHint({});
         }
 
+        if (devDirectFlight)
+            app.configureDevDirectLocalFlight("DEV PILOT");
         if (useRemoteServer)
         {
             app.configureRemoteServer(

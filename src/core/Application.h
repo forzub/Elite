@@ -89,6 +89,9 @@ public:
     );
     void configureClientIdentityProfileHint(std::string profileName);
     void configureRemoteServer(std::string host, std::uint16_t port);
+    // DEV-ONLY (--dev-direct-flight): start a local game as if NEW LOCAL GAME
+    // had been chosen with this player name. Never set by an ordinary launch.
+    void configureDevDirectLocalFlight(std::string playerName);
     bool hasConfiguredRemoteServer() const;
     void startLocalGameSession();
     void startRemoteGameSession();
@@ -158,6 +161,7 @@ private:
     std::string m_clientIdentityProfileName;
     game::network::SessionHello m_clientIdentityHello {};
     std::string m_localPlayerDisplayName;
+    std::string m_devDirectLocalFlightPlayer;
     std::string m_authenticatedRemoteAccountHandle;
     std::string m_authenticatedRemoteEndpoint;
     ui::platform::UiNavigationState m_uiNavigationState;

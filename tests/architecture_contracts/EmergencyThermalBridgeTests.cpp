@@ -60,8 +60,8 @@ int main() {
           er.thermalCapacityMJPerK -
           on.overflowToSharedCoolantMW*dt)<1e-6,
           "ER5 transfer energy not conserved");
-    check(std::abs(on.lastGeneratedHeatMW-on.lastPadHeatMW-
-          on.lastCoolantHeatMW-on.lastStoredHeatMW)<1e-6,
+    check(std::abs(stateOn.lastGeneratedHeatMW-stateOn.lastPadHeatMW-
+          stateOn.lastCoolantHeatMW-stateOn.lastStoredHeatMW)<1e-6,
           "ER5 per-tick heat channels do not balance");
     EngineReactorState atIdle;
     atIdle.temperatureK=er.idleTemperatureK;

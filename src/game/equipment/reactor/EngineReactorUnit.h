@@ -108,15 +108,16 @@ struct EngineReactorTick
     // Efficiency and power authority are separate: poor conversion adds
     // waste heat at the SAME actual electrical load, while safety derating
     // may subsequently reduce output. Use operating (not safe) temperature
-    // as the ideal efficiency point; thermal penalty is continuous.
+    // as the cold-end efficiency point. Hot loss starts at safeTemperatureK,
+    // to preserve nominal efficiency throughout the rated thermal envelope.
     const double cold01=std::clamp(
         (type.operatingTemperatureK-state.temperatureK)/
         std::max(1.0,type.operatingTemperatureK-
             game::physics::thermal::DeepSpaceTemperatureK),0.0,1.0);
     const double hot01=std::clamp(
-        (state.temperatureK-type.operatingTemperatureK)/
+        (state.temperatureK-type.safeTemperatureK)/
         std::max(1.0,type.criticalTemperatureK-
-            type.operatingTemperatureK),0.0,1.0);
+            type.safeTemperatureK),0.0,1.0);
     const double efficiencyLoss=std::clamp(
         type.maxEfficiencyLossAtFailure01*damage+
         0.005*ageRatio+

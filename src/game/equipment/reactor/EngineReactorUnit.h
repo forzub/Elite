@@ -123,14 +123,18 @@ struct EngineReactorTick
         out.thermalPowerMW+
         std::max(0.0,(state.temperatureK-idle)*
             type.thermalCapacityMJPerK/std::max(1.0e-6,dt)));
-    // An emergency exchanger may divert only thermal surplus that remains
-    // after the dedicated pad. The caller owns valve, pump, destination
-    // headroom and temperature-gradient limits; ZERO capacity keeps the
-    // propulsion and ship cooling groups completely isolated.
-    // Do not borrow the same pad capacity twice or create free cooling.
+    // An installed emergency exchanger may remove both current surplus
+    // and stored heat ABOVE the reactor's idle temperature. Its caller
+    // must cap the request by pump power, sink headroom, damage and dT,
+    // and add exactly this heat to the receiving coolant.
+    // At zero granted transfer the previous reactor model is unchanged.
+    const double extractableMW=dt>0.0
+        ? std::max(0.0,out.thermalPowerMW-out.depositedToEnginePadsMW+
+            std::max(0.0,state.temperatureK-idle)*
+                type.thermalCapacityMJPerK/dt)
+        : 0.0;
     out.overflowToSharedCoolantMW=std::min(
-        std::max(0.0,maxOverflowTransferMW),
-        std::max(0.0,out.thermalPowerMW-out.depositedToEnginePadsMW));
+        std::max(0.0,maxOverflowTransferMW),extractableMW);
     // Startup thermal conditioning: 99% of idle temperature in the
     // specified startup time, independent of propulsion electrical output.
     const double cold=game::physics::thermal::DeepSpaceTemperatureK;

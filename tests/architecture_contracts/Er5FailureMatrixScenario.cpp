@@ -31,7 +31,7 @@ int main() {
         const std::string path="D:/tmp/elite_er5_failure_matrix.csv";
         std::ofstream file(path,std::ios::trunc);
         require(file.good(),"cannot open D:/tmp/elite_er5_failure_matrix.csv");
-        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,requested_MW,actual_MW,efficiency01,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,heat_balance_error_MW\n";
+        file<<"case,seconds,ignition,attached,module_health,pad_integrity01,internal_damage01,thermal_damage01,total_damage01,requested_MW,actual_MW,efficiency01,reactor_T_K,generated_MW,pad_radiated_MW,emergency_MW,stored_MW,failed,heat_balance_error_MW\n";
         file<<std::fixed<<std::setprecision(6);
         const auto passport=CobraCobrettyER5PropulsionReactor();
         const Case cases[]={
@@ -77,7 +77,7 @@ int main() {
             module.equipmentDamage.accumulated.internalFailure01=scenario.internalDamage01;
             const double dt=1.0;
             double finalT=0,finalPower=0,finalPad=0;
-            for(int t=0;t<=1800;++t) {
+            for(int t=0;t<=7200;++t) {
                 auto& state=module.engineReactorOperating;
                 state.damage=module.equipmentDamage.accumulated;
                 const double ratedPad=
@@ -87,6 +87,10 @@ int main() {
                 const auto tick=advanceEngineReactor(passport,state,
                     scenario.ignition?scenario.demandMW:0.0,
                     ratedPad,0.0,dt);
+                // Mirror ShipCore's canonical equipment damage commit after
+                // physics. Without this, the next tick would erase every
+                // thermal fault and the long-run test would be invalid.
+                module.equipmentDamage.accumulated=state.damage;
                 const double residual=state.lastGeneratedHeatMW-
                     state.lastPadHeatMW-state.lastCoolantHeatMW-
                     state.lastStoredHeatMW;
@@ -96,10 +100,12 @@ int main() {
                     "pad integrity mutated without a hit");
                 require(tick.overflowToSharedCoolantMW==0.0,
                     "phantom emergency bridge");
-                if(t%10==0||t==1800) {
+                if(t%10==0||t==7200) {
                     file<<scenario.name<<','<<t<<','<<(scenario.ignition?1:0)
                         <<",1,"<<module.health<<','<<state.padIntegrity01
                         <<','<<scenario.internalDamage01<<','
+                        <<state.damage.thermal01<<','
+                        <<game::equipment::totalAccumulatedDamage01(state.damage)<<','
                         <<scenario.demandMW<<','<<tick.electricalOutputMW
                         <<','<<tick.effectiveEfficiency01
                         <<','<<state.temperatureK<<','
@@ -118,6 +124,12 @@ int main() {
                 require(finalPower==0.0,"off or failed ER-5 produced electricity");
             if(std::string(scenario.name)=="pad_destroyed")
                 require(finalPad==0.0,"destroyed pad radiated heat");
+            if(std::string(scenario.name)=="pad_destroyed")
+                require(module.equipmentDamage.accumulated.thermal01>0.0,
+                    "destroyed pad must accumulate irreversible thermal damage");
+            if(std::string(scenario.name)=="healthy_nominal")
+                require(module.equipmentDamage.accumulated.thermal01==0.0,
+                    "healthy pad unexpectedly accumulated thermal damage");
             std::cout<<scenario.name<<" T="<<finalT<<" K P="<<finalPower
                 <<" MW pad="<<finalPad<<" MW\n";
         }

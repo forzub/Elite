@@ -77,6 +77,7 @@ int main() {
             module.equipmentDamage.accumulated.internalFailure01=scenario.internalDamage01;
             const double dt=1.0;
             double finalT=0,finalPower=0,finalPad=0;
+            double finalDamage=0.0;
             for(int t=0;t<=7200;++t) {
                 auto& state=module.engineReactorOperating;
                 state.damage=module.equipmentDamage.accumulated;
@@ -118,6 +119,7 @@ int main() {
                 finalT=state.temperatureK;
                 finalPower=tick.electricalOutputMW;
                 finalPad=state.lastPadHeatMW;
+                finalDamage=state.damage.thermal01;
             }
             if(std::string(scenario.name)=="power_off_intact" ||
                std::string(scenario.name)=="reactor_internal_failed")
@@ -131,7 +133,7 @@ int main() {
                 require(module.equipmentDamage.accumulated.thermal01==0.0,
                     "healthy pad unexpectedly accumulated thermal damage");
             std::cout<<scenario.name<<" T="<<finalT<<" K P="<<finalPower
-                <<" MW pad="<<finalPad<<" MW\n";
+                <<" MW pad="<<finalPad<<" MW thermal_damage="<<finalDamage<<"\n";
         }
         file.flush();
         require(file.good(),"CSV write failed");

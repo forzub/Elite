@@ -1,5 +1,6 @@
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/ship/presets/cobra/CobraPropulsionPresets.h"
+#include "src/game/ship/ShipLoadoutTopology.h"
 #include "ShipCore.h"
 #include <iostream>
 #include <algorithm>
@@ -42,7 +43,8 @@ namespace
 {
 // Cobra publishes one immutable descriptor for each of SIX installed layouts.
 // Module definitions (including dormant layouts) are identical across these
-// profiles; only the active engine/reactor bindings and model differ.
+// profiles; only the active engine/reactor bindings and model differ. Each
+// profile's bindings come from the hull's own loadout definition.
 const std::array<ShipDescriptor,6>& cobraInstalledProfiles(
     const ShipDescriptor& original)
 {
@@ -54,27 +56,26 @@ const std::array<ShipDescriptor,6>& cobraInstalledProfiles(
             const auto model=static_cast<
                 game::ship::plant::PhysicalControlModelId>(k);
             auto& desc=installed[k];
+            const auto* loadout=original.findLoadout(model);
+            if(!loadout)
+                throw std::logic_error(
+                    "Invalid Cobra installed installation: missing loadout");
+            game::ship::requireLoadoutMatchesLegacyTopology(*loadout);
             desc.physicalControlModel=model;
-            desc.localFlightControlLaw=
-                game::ship::plant::nativeFlightLaw(model);
-            const bool assisted=game::ship::plant::familyOf(model)==
-                game::ship::plant::PhysicalControlFamily::Assisted;
-            desc.physicalControl.slotModuleIds=assisted
-                ? game::ship::presets::cobra::installedAssistedEngineModuleIds(model)
-                : game::ship::presets::cobra::installedNewtonianEngineModuleIds(model);
-            desc.powerThermalInstallation.engineReactorModuleIds=assisted
-                ? game::ship::presets::cobra::installedAssistedReactorModuleIds(model)
-                : game::ship::presets::cobra::installedNewtonianReactorModuleIds(model);
+            desc.localFlightControlLaw=loadout->flightLaw;
+            desc.physicalControl.slotModuleIds=loadout->propulsionModuleIds;
+            desc.powerThermalInstallation.engineReactorModuleIds.clear();
+            for(const auto& group:loadout->engineReactorGroups)
+                desc.powerThermalInstallation.engineReactorModuleIds.push_back(
+                    group.reactorModuleId);
             // Construction is a mandatory installed equipment mapping, not
             // optional damage telemetry. Detect missing/duplicate IDs and
             // absent hardware passports before this profile can fly.
             const auto& installedIds=desc.physicalControl.slotModuleIds;
             const auto& reactorIds=
                 desc.powerThermalInstallation.engineReactorModuleIds;
-            const auto& topology=
-                game::ship::presets::cobra::propulsionSlots(model);
-            const auto& groups=
-                game::ship::presets::cobra::installationSlots(model).engineReactors;
+            const auto& topology=loadout->propulsionSlots;
+            const auto& groups=loadout->engineReactorGroups;
             if(installedIds.size()!=topology.size() ||
                reactorIds.size()!=groups.size())
                 throw std::logic_error(
@@ -562,7 +563,8 @@ ShipCore::controlAuthorityTelemetry() const
     const auto model = m_state.construction.physicalControlModel;
     const std::uint64_t revision = m_state.actuators.revision;
     const ShipParams physics = effectivePhysics();
-    const auto& topology = physicalControlSlots(model);
+    const auto& topology = game::ship::propulsionTopology(
+        *m_state.construction.definition, model);
 
     // System/thermal updates may run AFTER the engine control tick, changing
     // actuator revision before GameSimulation publishes its snapshot. Refresh
@@ -792,9 +794,9 @@ void ShipCore::updateTranslationControl(float dt)
         m_state.construction.valid())
     {
         const auto& ship = *m_state.construction.definition;
-        const auto& topology = game::ship::plant::physicalControlSlots(
-            m_state.construction.physicalControlModel
-        );
+        const auto& topology = game::ship::propulsionTopology(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel);
         const auto& ids = ship.physicalControl.slotModuleIds;
         if (ids.size() == topology.size())
         {
@@ -854,9 +856,9 @@ void ShipCore::updateTranslationControl(float dt)
          m_state.construction.physicalControlModel !=
             m_state.construction.definition->physicalControlModel))
     {
-        const auto& topology = game::ship::plant::physicalControlSlots(
-            m_state.construction.physicalControlModel
-        );
+        const auto& topology = game::ship::propulsionTopology(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel);
         if (topology.size() <= diagnosticPassports.size())
         {
             installedEngines.assign(topology.size(), MountedEngine {});
@@ -889,24 +891,25 @@ void ShipCore::updateTranslationControl(float dt)
     std::vector<game::ship::control::MainEnginePowerGroup> powerGroups;
     if (physicalEngines && m_desc)
     {
-        const auto& installation =
-            game::ship::presets::cobra::installationSlots(
-                m_state.construction.physicalControlModel);
+        const auto& groups =
+            game::ship::engineReactorGroups(
+                *m_desc, m_state.construction.physicalControlModel);
         const auto& reactorIds =
             m_desc->powerThermalInstallation.engineReactorModuleIds;
         const auto& engineTopology =
-            game::ship::plant::physicalControlSlots(
+            game::ship::propulsionTopology(
+                *m_state.construction.definition,
                 m_state.construction.physicalControlModel);
         const auto& runtime =
             static_cast<const world::modules::ObjectModuleRuntime&>(
                 m_moduleRuntime);
         {
-            powerGroups.reserve(installation.engineReactors.size());
-            for (std::size_t n=0; n<installation.engineReactors.size(); ++n)
+            powerGroups.reserve(groups.size());
+            for (std::size_t n=0; n<groups.size(); ++n)
             {
                 game::ship::control::MainEnginePowerGroup group;
-                for (const auto* engineId :
-                     installation.engineReactors[n].poweredEngineSlots)
+                for (const auto& engineId :
+                     groups[n].poweredEngineSlotIds)
                     for (std::size_t i=0; i<engineTopology.size(); ++i)
                         if (std::string_view(engineTopology[i].id) == engineId)
                             group.engineIndices.push_back(i);
@@ -988,8 +991,9 @@ void ShipCore::updateTranslationControl(float dt)
     // Leave the deliberately synthetic Ctrl+F9 layouts independent.
     if (productionInstalled && physicalEngines)
     {
-        const auto& topology=game::ship::plant::physicalControlSlots(
-            m_state.construction.physicalControlModel);
+        const auto& topology=game::ship::propulsionTopology(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel);
         for (std::size_t i=0;i<topology.size();++i)
         {
             if (topology[i].role ==
@@ -1417,8 +1421,9 @@ void ShipCore::updateTranslationControl(float dt)
                     // and the motor passport/runtime state. Do not infer
                     // group budget from the already scaled output MW.
                     const auto& slots=
-                        game::ship::plant::physicalControlSlots(
-                            m_state.construction.physicalControlModel);
+                        game::ship::propulsionTopology(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel);
                     const auto& engineIds=desc.physicalControl.slotModuleIds;
                     const auto& reactorIds=
                         desc.powerThermalInstallation.engineReactorModuleIds;
@@ -1762,9 +1767,9 @@ void ShipCore::updateSystems(float dt)
             game::ship::state::ShipActuatorStateSource::ModuleRuntime)
     {
         const auto& topology =
-            game::ship::plant::physicalControlSlots(
-                m_state.construction.physicalControlModel
-            );
+            game::ship::propulsionTopology(
+                *m_state.construction.definition,
+                m_state.construction.physicalControlModel);
         const auto& bindings =
             m_desc->physicalControl.slotModuleIds;
         const auto& motion = m_transform.motion;
@@ -1834,12 +1839,13 @@ void ShipCore::updateSystems(float dt)
            game::ship::state::ShipActuatorStateSource::ModuleRuntime)
     {
         const auto& generators=
-            game::ship::presets::cobra::installationSlots(
-                m_state.construction.physicalControlModel).engineReactors;
+            game::ship::engineReactorGroups(
+                *m_desc,m_state.construction.physicalControlModel);
         const auto& reactorIds=
             m_desc->powerThermalInstallation.engineReactorModuleIds;
         const auto& engineSlots=
-            game::ship::plant::physicalControlSlots(
+            game::ship::propulsionTopology(
+                *m_state.construction.definition,
                 m_state.construction.physicalControlModel);
         const auto& engineIds=m_desc->physicalControl.slotModuleIds;
         const auto& motors=m_transform.motion.engineTelemetry;
@@ -1855,7 +1861,7 @@ void ShipCore::updateSystems(float dt)
             if(!module || def==m_desc->modules.end() ||
                 !def->engineReactor) continue;
             double electricalMW=0.0;
-            for(const char* slotId:generators[g].poweredEngineSlots)
+            for(const auto& slotId:generators[g].poweredEngineSlotIds)
                 for(std::size_t i=0;i<engineSlots.size() &&
                     i<engineIds.size();++i)
                     if(std::string_view(engineSlots[i].id)==slotId &&

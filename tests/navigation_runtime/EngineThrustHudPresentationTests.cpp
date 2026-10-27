@@ -1,3 +1,4 @@
+#include "src/game/ship/presets/cobra/CobraLoadouts.h"
 #include "src/game/presentation/EngineThrustHudPresentation.h"
 #include "src/game/equipment/engine/presets/CobrettyCR1VectorMainDrive.h"
 #include "src/game/equipment/reactor/presets/CobraCobrettyER5PropulsionReactor.h"
@@ -482,6 +483,9 @@ void testInstalledYXSnapshotEngineOutNotMaskedAsDiagnostic()
     }
     descriptor.physicalControl.slotModuleIds =
         presets::cobra::installedAssistedEngineModuleIds(Model::AssistedI);
+    // Like the production Cobra hull, the catalog descriptor owns its
+    // installable loadouts; replicated Y/X are views of those loadouts.
+    descriptor.loadouts=presets::cobra::cobraLoadouts();
     auto ship=shipFor(descriptor);
     for(const auto& def:descriptor.modules)
     {

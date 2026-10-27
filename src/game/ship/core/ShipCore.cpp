@@ -418,6 +418,7 @@ ShipCore::capabilities() const
         return m_cachedCapability;
     }
 
+    m_cachedNewtonianRcsAuthorityValid = false;
     auto out =
         game::ship::capability::buildShipCapability(
             *m_state.construction.definition,
@@ -509,26 +510,20 @@ ShipCore::capabilities() const
                 // physical wrench uses +Z; swap signed roll capacity.
                 out.rollAccelerationRadPerSec2={
                     negativeAlpha.z,positiveAlpha.z};
+                m_cachedNewtonianRcsPositive={
+                    positiveA.x,positiveA.y,positiveA.z,
+                    positiveAlpha.x,positiveAlpha.y,negativeAlpha.z};
+                m_cachedNewtonianRcsNegative={
+                    negativeA.x,negativeA.y,negativeA.z,
+                    negativeAlpha.x,negativeAlpha.y,positiveAlpha.z};
+                m_cachedNewtonianRcsAuthorityValid=true;
                 // Single scalar legacy controller accepts only a
                 // conservative all-directions budget. Signed per-axis
                 // capability remains available in the full snapshot.
-                const double linearMin=std::min({
-                    positiveA.x,positiveA.y,positiveA.z,
-                    negativeA.x,negativeA.y,negativeA.z
-                });
-                const double angularMin=std::min({
-                    positiveAlpha.x,positiveAlpha.y,positiveAlpha.z,
-                    negativeAlpha.x,negativeAlpha.y,negativeAlpha.z
-                });
-                p.manoeuvreThrusterAuthorityExplicit=true;
-                p.manoeuvreThrusterAccel=static_cast<float>(
-                    std::min(std::max(0.0,
-                        static_cast<double>(p.manoeuvreThrusterAccel)),
-                        linearMin));
-                p.angularAccel=static_cast<float>(
-                    std::min(std::max(0.0,
-                        static_cast<double>(p.angularAccel)),
-                        angularMin));
+                // Clients apply the SAME bound from replicated telemetry.
+                game::ship::telemetry::applyNewtonianRcsScalarBounds(
+                    p,m_cachedNewtonianRcsPositive,
+                    m_cachedNewtonianRcsNegative);
             }
         }
     }
@@ -547,8 +542,34 @@ ShipCore::controlAuthorityTelemetry() const
     using namespace game::ship::plant;
     using game::equipment::engine::MountedEngine;
 
-    if (!m_state.construction.valid() ||
-        familyOf(m_state.construction.physicalControlModel) !=
+    if (!m_state.construction.valid())
+        return {};
+
+    // Newtonian publishes the signed installed RCS authority already
+    // sampled by capabilities(), so planner/autopilot use the same
+    // limits as the server execution path instead of descriptor nominals.
+    if (familyOf(m_state.construction.physicalControlModel) ==
+            PhysicalControlFamily::Newtonian)
+    {
+        if (!m_propulsionReactorsOn ||
+            m_propulsionReactorsStartupRemainingSeconds>0.0)
+            return {};
+        const auto capability = capabilities();
+        if (!capability.valid || !m_cachedNewtonianRcsAuthorityValid)
+            return {};
+        game::ship::telemetry::ShipControlAuthorityTelemetry out;
+        out.valid = true;
+        out.model = m_state.construction.physicalControlModel;
+        out.sourceActuatorRevision = m_state.actuators.revision;
+        out.positive = m_cachedNewtonianRcsPositive;
+        out.negative = m_cachedNewtonianRcsNegative;
+        out.workingForwardAccelerationMps2 = std::max(0.0,
+            static_cast<double>(capability.effectivePhysics.
+                forwardMainEngineAccelerationMps2));
+        return out;
+    }
+
+    if (familyOf(m_state.construction.physicalControlModel) !=
             PhysicalControlFamily::Assisted)
         return {};
 

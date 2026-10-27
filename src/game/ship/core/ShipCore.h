@@ -378,6 +378,12 @@ private:
         ~std::uint64_t{0};
     mutable std::uint64_t m_cachedMassRevision =
         ~std::uint64_t{0};
+    // Signed installed RCS authority sampled with the cached capability:
+    // indices strafe, lift, body +Z, pitch, yaw, roll (hull roll sign).
+    // Published to clients through ShipControlAuthorityTelemetry.
+    mutable bool m_cachedNewtonianRcsAuthorityValid = false;
+    mutable std::array<double,6> m_cachedNewtonianRcsPositive {};
+    mutable std::array<double,6> m_cachedNewtonianRcsNegative {};
     // ShipController                              m_controller;
 
     // ───────────────

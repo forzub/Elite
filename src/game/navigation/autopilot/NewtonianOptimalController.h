@@ -1150,6 +1150,11 @@ private:
         attitudeRequest.rollAngularAccelerationAuthorityRadPerSec2 =
             angularAuthority;
         attitudeRequest.deltaSeconds = dt;
+        // Same critically damped hull servo as Assisted. The old one-tick
+        // predictive law demanded the target rate within 20 ms; with strong
+        // installed RCS and replicated (delayed) rates it limit-cycled.
+        attitudeRequest.pitchYawResponseSeconds = 0.50;
+        attitudeRequest.rollResponseSeconds = 0.50;
 
         const auto attitude =
             HullAttitudeControl::evaluate(attitudeRequest);

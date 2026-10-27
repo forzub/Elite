@@ -2716,3 +2716,27 @@ USER PROPOSAL: Model exactly two top-level ship groups:
 - DEV tool committed separately (`03e08a94`): `EliteGame.exe --dev-direct-flight` = the NEW LOCAL GAME path with player "DEV PILOT", explicit flag only; ordinary flow unchanged.
 - Status: SOURCE COMPLETE, BUILD PASS, AUTOMATED CHECK PASS, GAME START PASS. GAMEPLAY: Assisted autopilot verified by real unattended runs; Newtonian autopilot blocked by the pre-existing limit cycle above.
 - User decision: commit slice 1; fix the Newtonian stabilizer as a SEPARATE slice. The fix must account for real RCS authority and replication latency, and the control change needs user approval. NEXT: await instruction (slice 2 or the Newtonian stabilizer).
+
+
+## 2026-10-27 healthy Newtonian I/Y/X autopilot unblocked (VERIFIED by unattended real flights)
+
+- Root causes found on real `EliteGame.exe` (`--dev-direct-flight --diagnostic-scenario nav-stress:simple`, `ELITE_SHIP_PHYSICAL_TEST_MODEL`), all present at `27dd6cb6`:
+  1. **Planning stabilization limit cycle.** The client rate-hold ran the one-tick predictive law on replicated, delayed rates against 1.90 rad/s^2 of RCS authority (after `8aa9aae0`); |omega| stayed ~0.18 rad/s and `Planning -> Executing` never happened.
+  2. **No turn onto the safe course at rest.** `legacyNewtonianSafeCourseControl` at rest requested no velocity change, so the hull never turned onto the safe course (HEAD only "acquired" it by spinning through it).
+  3. **Main drive at ~14%: the long-standing "14.32%".** `executeEngineControlMatrix` handles a purely axial demand exactly, but ANY small lateral component sends it to FISTA, whose global step is dominated by the gimbal torque columns. After 96 passes the axial thrust reached only ~14% (reproduced offline for I/Y/X).
+  4. **Two capability sources.** The client Newtonian controller normalized against the descriptor nominal 3.0 rad/s^2, while the server executes the installed-nozzle bound 1.903.
+- Fixes (Newtonian only, Assisted behaviour unchanged):
+  - `SpaceState` zero-rate planning hold sends neutral rotation, so the server's existing neutral angular damping removes rotation from fresh authoritative rates.
+  - The safe-course turn uses a pose hold onto the selected course when no velocity change is required.
+  - `NewtonianOptimalController` uses the same 0.50 s critically damped `HullAttitudeControl` servo as Assisted.
+  - `ShipCore` caches the signed 24-nozzle authority and publishes it through the existing `ShipControlAuthorityTelemetry` (no wire change). `MotherComputer::physicalFlightEnvelope` applies it with the SAME `applyNewtonianRcsScalarBounds` the server uses; Newtonian planning waits for it like Assisted.
+  - The matrix FISTA is warm-started from the exact equal-bank axial maneuver (only Newtonian main uses this solver).
+- Native gates: `bash build_mingw64.sh` exit 0; focused 8/8; in-game six-model oracle PASSED 6/6, 84/84 (now unattended via `--dev-direct-flight`).
+- Real flights, 150 s each:
+  - Newtonian I/Y/X: safe course acquired, Executing, up to the 400 m/s envelope, checkpoint 41; main executed/requested 0.993-0.994 (was 0.142); RCS torque 1.000; no gas depletion.
+  - Assisted-I regression: unchanged, checkpoint 52.
+  - Logs: `D:/tmp/elite_h_*`.
+- Open, observed in the real tunnel flight and confirmed by the user's review:
+  - The movement STRATEGY is wrong: frequent hull rotation, stop-turn-go at broken corners, one overshoot swing after turns, ~1 input reversal/s.
+  - Cause (audited, see the next plan): polyline route through portal and centreline centres; Newtonian corner speed ~0; the Newtonian controller corrects only with the main engine (translational RCS unused in flight, TVC only as a residual). Planned as the Newtonian-only N1-N4 work.
+- Power/gas are not yet in the published capability. Docking/damage/emergency are NOT verified.

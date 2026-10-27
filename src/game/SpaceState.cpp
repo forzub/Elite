@@ -2187,6 +2187,44 @@ void SpaceState::updateDockingAdvisory()
 
     const auto controlLaw =
         motion.localControlLaw;
+    if (pending.valid() &&
+        controlLaw == game::navigation::LocalFlightControlLaw::Newtonian)
+    {
+        // Newtonian plans and flies against the server-published installed
+        // RCS authority, never the descriptor nominal. Wait for it exactly
+        // like Assisted waits for its motor matrix.
+        game::ship::telemetry::ShipControlAuthorityTelemetry rcsAuthority;
+        if (!m_motherComputer.installedControlAuthority(
+                static_cast<std::uint64_t>(player.instanceId),
+                m_client->lastSimulationMetadata().serverTick,
+                rcsAuthority))
+        {
+            if (m_clientDockingPhase == ClientDockingPhase::Executing)
+            {
+                fail("authoritative RCS telemetry lost during docking");
+                return;
+            }
+            const std::string reason =
+                "awaiting authoritative RCS telemetry";
+            if (m_dockingStatusWarning != reason)
+            {
+                std::cerr << "[DockAuthority] request=" << pending.serial
+                    << " phase=preplanner-blocked reason=\"" << reason
+                    << "\"" << std::endl;
+                m_dockingStatusWarning = reason;
+            }
+            return;
+        }
+        if (!m_dockingStatusWarning.empty())
+        {
+            m_dockingStatusWarning.clear();
+            std::cerr << "[DockAuthority] request=" << pending.serial
+                << " phase=capability-ready law=newtonian"
+                << " angular_radps2=" << effectivePhysics.angularAccel
+                << " rcs_mps2=" << effectivePhysics.manoeuvreThrusterAccel
+                << std::endl;
+        }
+    }
 
     game::ship::telemetry::ShipControlAuthorityTelemetry
         liveAssistedAuthority;
@@ -2419,16 +2457,21 @@ void SpaceState::updateDockingAdvisory()
             m_client->serverFixedStepSeconds()
         );
 
-        return controlLaw ==
-                game::navigation::LocalFlightControlLaw::Assisted
-            ? m_clientDockingAssistedStabilizePilotController.update(
-                  hold,
-                  effectivePhysics
-              )
-            : m_clientDockingNewtonianStabilizePilotController.update(
-                  hold,
-                  effectivePhysics
-              );
+        if (controlLaw !=
+                game::navigation::LocalFlightControlLaw::Assisted)
+        {
+            // Zero-rate hold with target pose == current pose: release the
+            // rotational controls. The server's neutral angular damping then
+            // removes rotation from its fresh authoritative rate with the
+            // real installed authority; a client loop on replicated, delayed
+            // rates limit-cycles at high RCS authority.
+            (void)hold;
+            return coastForPlanningControl();
+        }
+        return m_clientDockingAssistedStabilizePilotController.update(
+            hold,
+            effectivePhysics
+        );
     };
 
     const auto manualStopControl = [&]()
@@ -2519,7 +2562,11 @@ void SpaceState::updateDockingAdvisory()
             turn.yawRateRadPerSec = agent.yawRateRadPerSec;
             turn.rollRateRadPerSec = agent.rollRateRadPerSec;
             turn.stopRequested = false;
-            turn.terminalAttitudeHold = false;
+            // With no velocity change to make (e.g. starting at rest), the
+            // safe-course task is pure orientation: hold the selected course
+            // as the hull pose. Thrust-vector attitude only applies while a
+            // real translational demand exists.
+            turn.terminalAttitudeHold = deltaSpeed <= 0.5;
             turn.deltaSeconds = std::max(
                 1.0e-4,
                 m_client->serverFixedStepSeconds()

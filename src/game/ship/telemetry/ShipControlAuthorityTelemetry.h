@@ -76,12 +76,48 @@ readAssistedControlAuthority(
     return out;
 }
 
+// Newtonian scalar control budget from signed installed RCS authority.
+// Server capability and client telemetry consumers both use THIS bound, so
+// the controller normalizes against what the server actually executes.
+inline void applyNewtonianRcsScalarBounds(
+    ShipParams& p,
+    const std::array<double,6>& positive,
+    const std::array<double,6>& negative
+) noexcept
+{
+    const double linearMin=std::min({
+        positive[0],positive[1],positive[2],
+        negative[0],negative[1],negative[2]
+    });
+    const double angularMin=std::min({
+        positive[3],positive[4],positive[5],
+        negative[3],negative[4],negative[5]
+    });
+    p.manoeuvreThrusterAuthorityExplicit=true;
+    p.manoeuvreThrusterAccel=static_cast<float>(
+        std::min(std::max(0.0,
+            static_cast<double>(p.manoeuvreThrusterAccel)),
+            std::max(0.0,linearMin)));
+    p.angularAccel=static_cast<float>(
+        std::min(std::max(0.0,
+            static_cast<double>(p.angularAccel)),
+            std::max(0.0,angularMin)));
+}
+
 [[nodiscard]] inline ShipParams applyAuthorityToControlParams(
     ShipParams p, const ShipControlAuthorityTelemetry& telemetry
 ) noexcept
 {
-    if(!telemetry.valid ||
-       game::ship::plant::familyOf(telemetry.model)!=
+    if(!telemetry.valid)
+        return p;
+    if(game::ship::plant::familyOf(telemetry.model)==
+           game::ship::plant::PhysicalControlFamily::Newtonian)
+    {
+        applyNewtonianRcsScalarBounds(
+            p,telemetry.positive,telemetry.negative);
+        return p;
+    }
+    if(game::ship::plant::familyOf(telemetry.model)!=
            game::ship::plant::PhysicalControlFamily::Assisted)
         return p;
     // Conservative plan/controller limits: NO value may exceed physical

@@ -322,7 +322,37 @@ public:
             !m_latest.input.physicalEnvelopeValid)
             return false;
         out = m_latest.input.physicalEnvelope;
+        // Newtonian control limits come from the server-sampled installed
+        // RCS authority, bounded exactly as the server executes them.
+        const auto& authority = m_latest.input.installedMotorAuthority;
+        const auto model =
+            static_cast<game::ship::plant::PhysicalControlModelId>(
+                m_latest.input.physicalControlModel);
+        if (authority.valid && authority.model == model &&
+            game::ship::plant::familyOf(model) ==
+                game::ship::plant::PhysicalControlFamily::Newtonian)
+            out = game::ship::telemetry::applyAuthorityToControlParams(
+                out, authority);
         return true;
+    }
+
+    // Server-published installed control authority for this ship/tick.
+    [[nodiscard]] bool installedControlAuthority(
+        std::uint64_t shipId,
+        std::uint64_t serverTick,
+        game::ship::telemetry::ShipControlAuthorityTelemetry& out
+    ) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_latest.valid ||
+            m_latest.input.shipInstanceId != shipId ||
+            m_latest.input.serverTick != serverTick)
+            return false;
+        out = m_latest.input.installedMotorAuthority;
+        return out.valid &&
+            out.model ==
+                static_cast<game::ship::plant::PhysicalControlModelId>(
+                    m_latest.input.physicalControlModel);
     }
 
     // Assisted additionally requires measured INSTALLED motor authority;

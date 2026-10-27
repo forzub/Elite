@@ -348,6 +348,34 @@ inline void projectThrustCone(
             for (std::size_t k=0;k<6;++k)
                 lipschitz += weights[k]*m[i].columns[j][k]*
                              m[i].columns[j][k];
+    // Warm start from the exact equal-bank axial maneuver used above for
+    // pure main-axis demand. One global FISTA step is dominated by the large
+    // gimbal-torque columns, so starting from zero left the axial component
+    // at ~14% after the fixed pass budget whenever any small lateral demand
+    // was present. The solver now only refines lateral/torque terms.
+    {
+        const double axial = demand.accelerationBodyMps2.z;
+        const auto bank = axial < 0.0
+            ? EngineSlotRole::AftMain : EngineSlotRole::ForeMain;
+        std::size_t surviving = 0;
+        for (std::size_t i=0;i<mounted.size();++i)
+            if (topology[i].role == bank && m[i].rated > 0.0 &&
+                m[i].cap > 0.0)
+                ++surviving;
+        for (std::size_t i=0;i<mounted.size() && surviving>0;++i)
+        {
+            if (topology[i].role != bank || m[i].rated <= 0.0 ||
+                m[i].cap <= 0.0)
+                continue;
+            const double fraction = std::min(
+                m[i].cap,
+                std::abs(axial)*mass/
+                    (static_cast<double>(surviving)*m[i].rated)
+            );
+            m[i].q = {fraction, 0.0, 0.0};
+            velocity[i] = m[i].q;
+        }
+    }
     double momentum=1.0;
     // 96 rounds suffice for the nominal Cobra 6-DOF envelope without
     // simulating nozzle kinematics; avoids expensive 240-pass NPC loops.

@@ -3,6 +3,7 @@
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
 #include "src/game/navigation/diagnostics/AutopilotCaseFile.h"
+#include "src/game/navigation/traffic/TrafficWindowCrossing.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 #include "src/game/presentation/DockTerminalBitePresentation.h"
 #include "src/audio/AudioEngine.h"
@@ -3745,6 +3746,39 @@ void SpaceState::updateDockingAdvisory()
                     compiledTrafficRoute.failure
                 );
                 return;
+            }
+
+            // Step 1b (Newtonian): a portal is a window, not a point. Choose
+            // the crossing inside each straight mandatory volume that needs
+            // the least turning of the free legs around it; every consumer
+            // below sees the shifted portals/straights. Assisted keeps the
+            // centred crossing.
+            if (!assisted)
+            {
+                const auto crossings =
+                    game::navigation::traffic::chooseWindowCrossings(
+                        compiledTrafficRoute,
+                        request.startMeters,
+                        request.goalMeters,
+                        request.agentRadiusMeters
+                    );
+                for (const auto& crossing : crossings)
+                {
+                    std::cout
+                        << "[TrafficWindowCrossing]"
+                        << " request=" << pending.serial
+                        << " stage=" << crossing.stageIndex
+                        << " offset_m=" << glm::length(
+                               crossing.offsetWorldMeters)
+                        << " admissible_m=" << crossing.admissibleRadiusMeters
+                        << " centred_turn_deg="
+                        << crossing.centredTurnRad * 57.29577951308232
+                        << " turn_before_deg="
+                        << crossing.turnBeforeRad * 57.29577951308232
+                        << " turn_after_deg="
+                        << crossing.turnAfterRad * 57.29577951308232
+                        << std::endl;
+                }
             }
 
             std::cout

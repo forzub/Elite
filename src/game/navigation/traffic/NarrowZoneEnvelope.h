@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <utility>
 
 #include <glm/glm.hpp>
 
@@ -49,7 +50,80 @@ struct VolumeFit
     double insetUpMeters = 0.0;
     double marginRightMeters = 0.0;
     double marginUpMeters = 0.0;
+    // Room from the axis to the walls minus the required clearance, to the
+    // section's right / up (for the chosen roll).
+    double roomRightMeters = 0.0;
+    double roomUpMeters = 0.0;
 };
+
+// Constrained rotation in a narrow volume (Step F): which hull rotations the
+// walls admit. The hull is aligned (nose along the axis, up along the zone
+// up) at the zone centre line. A rotation about the zone's UP axis (yaw)
+// sweeps the hull in the axis-right plane (radius sqrt(L^2 + W^2)), keeping
+// its height; about the zone's RIGHT axis (pitch) it sweeps the axis-up plane
+// (radius sqrt(L^2 + H^2)), keeping its width; a roll about the axis sweeps
+// the cross-section (radius sqrt(W^2 + H^2)). The attitude tolerance widens
+// the non-swept extent; the lateral position tolerance the executor holds
+// (`positionToleranceMeters`) is taken off the room in the swept plane. A 180 degree flip uses
+// the safe axis with the larger margin; with none the craft must not flip
+// inside the volume (brake earlier, enter oriented, fly it on RCS).
+struct RotationFit
+{
+    bool yawFlipSafe = false;
+    bool pitchFlipSafe = false;
+    bool rollSafe = false;
+    double yawMarginMeters = 0.0;
+    double pitchMarginMeters = 0.0;
+    double rollMarginMeters = 0.0;
+    // Zero when no flip is safe.
+    glm::dvec3 flipAxisWorld {0.0};
+    double flipMarginMeters = 0.0;
+};
+
+[[nodiscard]] inline RotationFit analyseRotationFit(
+    const VolumeFit& fit,
+    const ShipHullBox& hull,
+    double attitudeToleranceRad,
+    double positionToleranceMeters = 0.0
+) noexcept
+{
+    RotationFit out;
+    if (!hull.valid())
+        return out;
+    const double widen =
+        hull.halfLengthMeters * std::sin(std::max(0.0, attitudeToleranceRad));
+    // Zone right / up already follow the chosen roll (VolumeFit), so the
+    // hull's width lies along the zone right and its height along the up.
+    const double hw = hull.halfWidthMeters;
+    const double hh = hull.halfHeightMeters;
+    const double hl = hull.halfLengthMeters;
+    // The position tolerance counts in the swept plane; across it the
+    // aligned containment (with that same tolerance as its margin) holds.
+    const double pos = std::max(0.0, positionToleranceMeters);
+    const double roomR = fit.roomRightMeters;
+    const double roomU = fit.roomUpMeters;
+    out.yawMarginMeters =
+        std::min(roomR - pos - std::hypot(hl, hw), roomU - (hh + widen));
+    out.pitchMarginMeters =
+        std::min(roomU - pos - std::hypot(hl, hh), roomR - (hw + widen));
+    out.rollMarginMeters = std::min(roomR, roomU) - pos - std::hypot(hw, hh);
+    out.yawFlipSafe = out.yawMarginMeters >= 0.0;
+    out.pitchFlipSafe = out.pitchMarginMeters >= 0.0;
+    out.rollSafe = out.rollMarginMeters >= 0.0;
+    const glm::dvec3 right = glm::normalize(glm::cross(fit.axisWorld, fit.upWorld));
+    if (out.yawFlipSafe &&
+        (!out.pitchFlipSafe || out.yawMarginMeters >= out.pitchMarginMeters))
+    {
+        out.flipAxisWorld = fit.upWorld;
+        out.flipMarginMeters = out.yawMarginMeters;
+    }
+    else if (out.pitchFlipSafe)
+    {
+        out.flipAxisWorld = right;
+        out.flipMarginMeters = out.pitchMarginMeters;
+    }
+    return out;
+}
 
 // Straight volumes only (one axis); `sphereRadiusMeters` is the planner's
 // bounding-sphere agent radius.
@@ -92,6 +166,8 @@ struct VolumeFit
         halfW = halfH = radius;
     const double roomW = halfW - clearance;
     const double roomH = halfH - clearance;
+    out.roomRightMeters = roomW;
+    out.roomUpMeters = roomH;
     const double sphere = std::max(0.0, sphereRadiusMeters);
     out.sphereFits = circle ? sphere <= roomW : sphere <= std::min(roomW, roomH);
     if (out.sphereFits || !hull.valid())
@@ -127,7 +203,10 @@ struct VolumeFit
     out.marginRightMeters = roomW - extentRight;
     out.marginUpMeters = roomH - extentUp;
     if (out.rolled90)
+    {
         out.upWorld = glm::normalize(glm::cross(out.upWorld, out.axisWorld));
+        std::swap(out.roomRightMeters, out.roomUpMeters);
+    }
     return out;
 }
 

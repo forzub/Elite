@@ -743,6 +743,13 @@ planner::RoutePlan SegmentedRouteComposer::plan(
                 zone.lateralToleranceRightMeters = fit.marginRightMeters;
                 zone.lateralToleranceUpMeters = fit.marginUpMeters;
                 zone.maxSpeedMps = handoffSpeed;
+                const RotationFit rotation = analyseRotationFit(
+                    fit, hull,
+                    terminalRequest.narrowZoneAttitudeToleranceRad,
+                    std::min(fit.marginRightMeters, fit.marginUpMeters));
+                zone.safeFlipAxisWorld = rotation.flipAxisWorld;
+                zone.flipMarginMeters = rotation.flipMarginMeters;
+                zone.rollSafe = rotation.rollSafe;
                 out.narrowZones.push_back(zone);
             }
 

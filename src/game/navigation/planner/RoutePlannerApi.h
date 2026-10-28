@@ -540,6 +540,12 @@ struct RouteNarrowZone
     double lateralToleranceRightMeters = 0.0;
     double lateralToleranceUpMeters = 0.0;
     double maxSpeedMps = 0.0;
+    // Constrained rotation (Step F): the axis a 180 degree hull flip may
+    // use inside the zone without the swept hull leaving it (zero: no flip
+    // is safe inside), its margin, and whether a roll is safe.
+    glm::dvec3 safeFlipAxisWorld {0.0};
+    double flipMarginMeters = 0.0;
+    bool rollSafe = false;
 };
 
 struct RoutePlan

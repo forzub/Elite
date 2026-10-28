@@ -2769,3 +2769,21 @@ endif()
 add_test(NAME ship_power_bus_execution COMMAND ship_power_bus_execution_tests)
 set_tests_properties(ship_power_bus_execution PROPERTIES
     WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}")
+
+add_executable(
+    narrow_rotation_fit_tests
+    NarrowRotationFitTests.cpp
+)
+target_include_directories(narrow_rotation_fit_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(narrow_rotation_fit_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    narrow_rotation_fit_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+add_test(
+    NAME narrow_rotation_fit
+    COMMAND narrow_rotation_fit_tests
+)

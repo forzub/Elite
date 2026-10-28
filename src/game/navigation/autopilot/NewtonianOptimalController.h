@@ -275,6 +275,8 @@ private:
     // (in units of the angular-rate tolerance).
     static constexpr double TerminalHoldSeconds = 60.0;
     static constexpr double TerminalSettleEntryShare = 4.0;
+    // DONE only after the still/aligned/slow state held this long.
+    static constexpr double TerminalDoneDwellSeconds = 1.0;
     // A braking feed-forward fades out below twice this along-track speed
     // once the craft is no faster than its profile.
     static constexpr double BrakeFadeMps = 3.0;
@@ -319,6 +321,9 @@ private:
         TerminalStep step = TerminalStep::PositionHold;
         glm::dvec3 holdForwardMap {0.0, 0.0, -1.0};
         glm::dvec3 holdUpMap {0.0, 1.0, 0.0};
+        // How long the craft has been continuously still, slow-turning and
+        // aligned (the commands already sent are still being executed).
+        double settledSeconds = 0.0;
     };
 
     struct State
@@ -582,6 +587,9 @@ private:
             attitudeError <= tolAttitude && rollError <= tolRoll;
         const bool lostAlign =
             attitudeError > h * tolAttitude || rollError > h * tolRoll;
+        term.settledSeconds =
+            still && aligned && rate <= tolRate ? term.settledSeconds + dt
+                                                : 0.0;
         switch (term.step)
         {
             case TerminalStep::PositionHold:
@@ -599,7 +607,7 @@ private:
                     term.step = TerminalStep::PositionHold;
                 else if (lostAlign)
                     term.step = TerminalStep::AttitudeAlign;
-                else if (rate <= tolRate && still)
+                else if (term.settledSeconds >= TerminalDoneDwellSeconds)
                     term.step = TerminalStep::Done;
                 break;
             case TerminalStep::Done:
@@ -622,13 +630,18 @@ private:
         }
 
         // Attitude: calm preferred rate; nothing once DONE.
+        // RATE_SETTLE is already inside the attitude tolerance: it only
+        // damps the turn rate and corrects no angle.
         if (term.step != TerminalStep::Done)
         {
             const bool toTarget = term.step != TerminalStep::PositionHold;
             applyCalmPose(
                 out, request, params,
                 toTarget ? targetForward : term.holdForwardMap,
-                toTarget ? targetUp : term.holdUpMap);
+                toTarget ? targetUp : term.holdUpMap,
+                term.step == TerminalStep::RateSettle
+                    ? std::numeric_limits<double>::infinity()
+                    : TerminalDeadbandShare * tolAttitude);
         }
 
         // Translation: main inhibited; RCS trims the position calmly inside
@@ -667,7 +680,6 @@ private:
                 finiteClamp(glm::dot(trim, up) / rcsAuthority);
         }
         out.targetSpeedRate = 0.0f;
-        (void)dt;
 
         decision_.terminalStep = static_cast<int>(term.step);
         decision_.terminalDistance = distance;
@@ -689,7 +701,8 @@ private:
         const AutopilotControlRequest& request,
         const ShipParams& params,
         const glm::dvec3& targetForward,
-        const glm::dvec3& targetUp
+        const glm::dvec3& targetUp,
+        double angleDeadbandRad
     ) noexcept
     {
         HullPoseGuidance::Request poseRequest;
@@ -711,10 +724,17 @@ private:
         const double acceleration =
             preferredTurnAccelerationRadPerSec2(params);
         constexpr double RateResponseSeconds = 0.5;
-        // Rate wanted to close `angle` and stop there at the calm deceleration.
+        // Rate wanted to close `angle` and stop there at the calm
+        // deceleration; linear near zero (finite gain, no limit cycle) and
+        // nothing inside the deadband.
+        constexpr double FinalApproachSeconds = 1.0;
         const auto wantedRate = [&](double angle)
         {
-            return std::min(rateLimit, std::sqrt(2.0 * acceleration * angle));
+            if (angle <= angleDeadbandRad)
+                return 0.0;
+            return std::min(
+                {rateLimit, std::sqrt(2.0 * acceleration * angle),
+                 angle / FinalApproachSeconds});
         };
 
         const glm::dvec2 error {

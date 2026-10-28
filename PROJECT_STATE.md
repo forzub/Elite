@@ -2946,3 +2946,8 @@ Changes:
 
 ### Pre-registered terminal flight (1 real flight, Newtonian-I, 270 s)
 PASS: corridor criteria of series 2; terminal steps in order without oscillation; main throttle 0 after the terminal sequence starts; max angular rate in the terminal <= 1.2 rad/s (preferred rate); DONE reached; after DONE no main, no RCS, no rotation command and no PROGRAM recompilation.
+
+### Terminal flight 1 (commit `f8c09e3e`, I, 270 s) — near PASS, one criterion missed
+Corridor 0 violations (26 m). Terminal: POSITION_HOLD 15 m -> 3 m on RCS (main 0) -> ATTITUDE_ALIGN (180 deg + 154 deg roll, max omega 1.10 rad/s) -> RATE_SETTLE -> DONE at 243.6 s; no PROGRAM recompilation after the terminal start; final 0.4 m, 0.04 m/s, attitude 0.7 deg, roll 1.5 deg. MISSED: 0.1 s after DONE the rate rose 0.014 -> 0.117 rad/s (commands still executing through the control delay) and the sequence went DONE -> RATE_SETTLE (rotation command <= 0.2 for 0.4 s) -> DONE.
+Fixes (offline): DONE needs the still/aligned/slow state continuously for 1 s; with that, RATE_SETTLE exposed a limit cycle (omega 0.05-0.07 rad/s, inputs +-0.1 alternating) — the calm pose law (sqrt(2 a theta), infinite gain near zero) kept correcting a 0.4 deg error inside the 5 deg tolerance through the delay. Now RATE_SETTLE only damps the rate (no angle correction), ALIGN has an angle deadband of 0.5 x tolerance and a linear final approach (theta / 1 s). Offline I d1/d3/d6, Y, X: steps exactly once, RATE_SETTLE 1.6-3.0 s, after DONE throttle/RCS/rotation all 0, final attitude 1.9-4.4 deg, roll <= 3.8 deg, 0.5-2.1 m. Unit 12/12 PASS.
+Terminal flight 2 (same pre-registered criteria) is the last flight of this hypothesis.

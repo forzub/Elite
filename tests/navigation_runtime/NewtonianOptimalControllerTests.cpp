@@ -457,7 +457,7 @@ void testTerminalDoneCorrectsNothing()
         route(500.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
     const std::size_t stations = controller.program().stations.size();
     auto request = terminalRequest();
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 80; ++i)
         (void)controller.update(request, params());
     // Inside 2x the tolerances: 4 m off, 0.08 m/s drift, 8 deg yaw.
     request.actualPositionMapMeters = {0.0, 0.0, 4.0};

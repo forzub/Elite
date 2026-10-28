@@ -238,6 +238,9 @@ private:
     static constexpr double WallMarginFraction = 0.85;
     static constexpr double DefaultCorridorToleranceMeters = 50.0;
     static constexpr double SettleSpeedMps = 2.0;
+    // A braking feed-forward fades out below twice this along-track speed
+    // once the craft is no faster than its profile.
+    static constexpr double BrakeFadeMps = 3.0;
     static constexpr double SettleResponseSeconds = 2.5;
     // In a burn phase the main works once the demand exceeds this share of
     // the RCS budget (the planner's own threshold); outside burn phases only
@@ -516,9 +519,17 @@ private:
         // acceleration at the actual speed.
         const double speedError = plan.speedMps - alongSpeed;
 
+        // A brake is done once the craft is no faster than its profile:
+        // braking further would only reverse the motion (near-zero speed
+        // ends the manoeuvre).
+        const double feedForward =
+            plan.longitudinalAccelerationMps2 < 0.0 && speedError > 0.0
+                ? plan.longitudinalAccelerationMps2 *
+                      std::clamp(
+                          alongSpeed / (2.0 * BrakeFadeMps), 0.0, 1.0)
+                : plan.longitudinalAccelerationMps2;
         double longitudinal =
-            plan.longitudinalAccelerationMps2 +
-            speedError / LongitudinalResponseSeconds;
+            feedForward + speedError / LongitudinalResponseSeconds;
         const double speedDeadband = 0.5 + 0.005 * std::abs(alongSpeed);
         if (std::abs(speedError) < speedDeadband &&
             std::abs(plan.longitudinalAccelerationMps2) <= 1.0e-3)
@@ -581,8 +592,11 @@ private:
         // Terminal settle: the route stops here, so the whole velocity and
         // position error (not only its along-track part) is trimmed out
         // until the precision stop takes over.
-        if (request.stopRequested && plan.speedMps <= SettleSpeedMps &&
-            request.positionReferenceValid)
+        const bool settling =
+            request.stopRequested && request.positionReferenceValid &&
+            (plan.speedMps <= SettleSpeedMps ||
+             finiteLength(velocity) <= SettleSpeedMps);
+        if (settling)
             demand =
                 -offset / (SettleResponseSeconds * SettleResponseSeconds) -
                 velocity * (2.0 / SettleResponseSeconds);
@@ -593,7 +607,8 @@ private:
         // deficit (e.g. arriving faster than planned) or a wall emergency.
         const bool mainWanted =
             mainAuthority > 1.0e-9 &&
-            ((mainPhase && demandMagnitude > MainShareOfRcs * rcsBudget) ||
+            ((mainPhase && !settling &&
+              demandMagnitude > MainShareOfRcs * rcsBudget) ||
              lateralEmergency ||
              demandMagnitude > OffPhaseMainShareOfRcs * rcsBudget);
 

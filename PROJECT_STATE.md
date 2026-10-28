@@ -2892,3 +2892,16 @@ Architecture (pre-approved Step 2): route geometry + runtime speed profile (navi
 ### Pre-registered real-flight series (max 3 flights: Newtonian-I, then Y and X sanity; 240 s each, Step 1a route)
 Hypothesis: the program pilot executes the Step 1a route safely and calmly. Baseline: old pilot `s2base` (I): 5 violations, max 100 m, lateral 139 m/s, 207 jumps, 0 strong misaligned main.
 PASS per flight: 0 corridor violations (cross-track <= 64 m), no strong main at >15 deg achievable error, lateral velocity <= 30 m/s, hull-target jumps (>25 deg/tick) <= 20, stable progress to the terminal hold. FAIL: any lateral runaway / corridor exit > 10 %, or stalled progress.
+
+### Real-flight series 1 (Step 2 program pilot, commit `dcf89376`, 240 s each) — corridor PASS, terminal FAIL
+| model | corridor violations | max cross-track | max lateral v | hull jumps >25 deg/tick | strong misaligned main | route end reached |
+|---|---|---|---|---|---|---|
+| I | 0 | 25.0 m | 11.1 m/s | 4 | 0 | 226.8 s |
+| Y | 0 | 22.8 m | 17.0 m/s | 8 | 0 | 194.9 s |
+| X | 0 | 30.2 m | 19.1 m/s | 10 | 0 | 187.2 s |
+Baseline old pilot (I, `s2base`): 5 violations, 100 m, 139 m/s, 207 jumps.
+FAIL at the terminal: in the game the route projection stalls ~2 m short of the last station (I at 32863.9 of 32866 m) while the plan still reads a BRAKE station (9 m/s, -22.5 m/s2). The brake feed-forward kept burning after the craft stopped; equilibrium = plan speed - 2 s * 22.5 = -36 m/s: the craft accelerated BACKWARD to 36 m/s (Y/X 77 m/s) instead of holding. The offline harness did not reproduce the stall (its projection reaches 32865.8 m).
+Fix (offline + unit verified, flight pending): a braking feed-forward fades out once the craft is no faster than its profile and slower than 6 m/s along the track (near-zero speed ends the brake); the terminal settle (RCS only, main disabled) also starts when the actual speed is <= 2 m/s with a stop requested. Unit test `testBrakeNeverReversesTheMotion` added (9/9 PASS); offline I/Y/X matrix unchanged (0 violations, all settle).
+
+### Pre-registered real-flight series 2 (terminal hypothesis; max 3 flights I/Y/X, 270 s)
+Hypothesis: with the brake fade and speed-triggered settle the craft holds at the route end. PASS per flight: series-1 corridor criteria still met AND after the route end is reached the speed drops <= 0.5 m/s and stays there (no backward runaway). FAIL: speed at the end > 2 m/s for > 30 s or growing.

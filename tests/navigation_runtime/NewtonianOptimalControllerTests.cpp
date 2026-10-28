@@ -356,6 +356,42 @@ void testFinishedPhaseIsNotRevived()
         "a step back in progress revived the finished BURN");
 }
 
+// The route progress can stall a few metres short of the last station
+// (the projection clamps at the route end) while the plan still reads a
+// braking station. The brake must end at near-zero speed: no retro burn
+// that would reverse the motion, and the terminal settle takes over.
+void testBrakeNeverReversesTheMotion()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double s)
+    {
+        return std::sqrt(std::max(0.0, 2.0 * 30.0 * (500.0 - s)));
+    };
+    auto accel = [](double) { return -30.0; };
+    controller.setManoeuvreRoute(
+        route(500.0, 0.0, 0.0, speed, accel), params(), {-1.0, 0.0, 0.0});
+    auto request = baseRequest();
+    // Hull retro, aligned with the braking axis.
+    request.forwardMap = {-1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, -1.0};
+    request.programProgressValid = true;
+    request.programProgressMeters = 498.0;
+    request.desiredPositionMapMeters = {498.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {498.0, 0.0, 0.0};
+    request.actualVelocityMapMps = {-1.0, 0.0, 0.0};
+    auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f,
+        "a finished brake kept burning against a craft already reversing");
+
+    request.stopRequested = true;
+    request.actualVelocityMapMps = {1.5, 0.0, 0.0};
+    out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f,
+        "terminal settle fired the main engine");
+    require(out.forwardInput > 0.0f,
+        "terminal settle did not trim the residual motion with RCS");
+}
+
 void testPrecisionStopRcsRemainsIsolated()
 {
     NewtonianOptimalController controller;
@@ -382,6 +418,7 @@ int main()
         testCurveKeepsItsAxisAgainstSpeedCatchUp();
         testBurnGateHoldsMainUntilAligned();
         testFinishedPhaseIsNotRevived();
+        testBrakeNeverReversesTheMotion();
         testPrecisionStopRcsRemainsIsolated();
 
         std::cout

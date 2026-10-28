@@ -277,6 +277,10 @@ bool RouteVolumeContainmentValidator::pointInsideErodedVolume(
         return false;
     }
 
+    // PROVISIONAL conservative envelope: a bounding sphere (agent radius)
+    // plus the authored volume clearance (22 m for cylinder B), independent
+    // of hull orientation. Not the final ship-envelope / hit-volume model;
+    // orientation-aware tunnel safety replaces it later.
     const double inset =
         agentRadiusMeters +
         stage.volumeRequiredClearanceMeters +

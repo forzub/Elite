@@ -3209,13 +3209,10 @@ void SpaceState::updateDockingAdvisory()
                  linearReserve) * 0.90
             );
 
-        // Route TOPOLOGY and route EXECUTION need different Newtonian
-        // authority semantics. The global obstacle/portal solver must not turn
-        // a small TVC side component into a 20-50 km geometric detour. For
-        // Newtonian it chooses compact straight-first geometry with the normal
-        // main-engine maneuver scale; the accepted trajectory below still
-        // uses the real TVC budget to cap speed on any finite curvature and
-        // forces v=0 at tangent discontinuities.
+        // Newtonian curves (route fillets and the accepted trajectory) use
+        // ONE capability: the preferred routine lateral acceleration. The
+        // planner only asks whether the ship can provide it; the pilot
+        // chooses the actuator.
         request.lateralMps2 =
             assisted
                 ? std::max(
@@ -3225,7 +3222,13 @@ void SpaceState::updateDockingAdvisory()
                               executionCurveLateralMps2
                           )
                   )
-                : request.acceleratingMps2;
+                : std::max(
+                      0.1,
+                      game::navigation::
+                          newtonianPreferredLateralAccelerationMps2(
+                              request.acceleratingMps2
+                          )
+                  );
         request.maxAngularVelocityRadPerSecond =
             shipProfile.maxAngularVelocityRadPerSecond;
         request.maxAngularAccelerationRadPerSecond2 =
@@ -3466,7 +3469,7 @@ void SpaceState::updateDockingAdvisory()
                     );
                 }
             }
-            else
+            else if (request.initialSpeedMps > 0.5)
             {
                 // Newtonian intentionally remains on the old selector/executor
                 // until its separate rotate/settle/burn recovery contract is
@@ -3606,6 +3609,24 @@ void SpaceState::updateDockingAdvisory()
                         )
                     );
                 }
+            }
+            else
+            {
+                // A Newtonian ship at rest has no ballistic course to secure
+                // and may turn freely: the planned route chooses the first
+                // direction (no launch heading, no protected lead), its own
+                // collision proof covers the departure, and the pilot turns
+                // the hull onto the first segment before the first burn.
+                request.hasInitialForward = false;
+                request.initialForwardLeadMeters = 0.0;
+                std::cerr
+                    << "[DockSafetyCourse]"
+                    << " request=" << pending.serial
+                    << " phase=skipped-at-rest"
+                    << std::endl;
+                submitAutopilotControl(
+                    coastForPlanningControl()
+                );
             }
         }
 

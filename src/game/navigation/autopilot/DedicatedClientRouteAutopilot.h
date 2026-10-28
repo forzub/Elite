@@ -2704,13 +2704,16 @@ private:
             executionGateProgressMeters.size() ==
                 plan.executionGates.size())
         {
-            // A true tangent discontinuity has unbounded curvature. No finite
-            // TVC authority can fly through it continuously, so the Newtonian
-            // speed profile must arrive stopped. This is geometry, not an
-            // angle heuristic: numerically identical tangents remain a
-            // fly-through join; any authored directional discontinuity is a
-            // stop/turn/go boundary.
-            constexpr double TangentEqualityEpsilon2 = 1.0e-12;
+            // The planner rounds Newtonian corners where a fillet fits; a
+            // corner it could not round stays a real tangent discontinuity,
+            // which no finite lateral capability flies through, so the
+            // profile arrives stopped there. Joins whose direction differs
+            // by less than half a degree (numerical arc/line seams, merged
+            // near-collinear points) are flown through.
+            constexpr double FlyThroughJoinRad =
+                0.5 * 3.14159265358979323846 / 180.0;
+            const double TangentEqualityEpsilon2 =
+                2.0 - 2.0 * std::cos(FlyThroughJoinRad);
 
             for (std::size_t curveIndex = 0;
                  curveIndex + 1 < plan.routeCurves.size();

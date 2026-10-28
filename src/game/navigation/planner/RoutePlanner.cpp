@@ -860,6 +860,7 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
         input.maxAngularAccelerationRadPerSecond2;
     legacy.initialSpeedMps = input.initialSpeedMps;
     legacy.roundTurns = input.roundTurns;
+    legacy.mergeNearCollinearVertices = input.mergeNearCollinearVertices;
     legacy.hasInitialForward = input.hasInitialForward;
     legacy.initialForward = input.initialForward;
     legacy.initialForwardLeadMeters = input.initialForwardLeadMeters;

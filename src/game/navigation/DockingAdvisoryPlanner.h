@@ -32,6 +32,10 @@ struct DockingAdvisoryRequest
     // for piecewise-straight geometry so their later maneuver compiler can
     // coast, rotate and burn instead of pretending to be an aircraft.
     bool roundTurns = true;
+    // Drop interior route vertices whose direction change is negligible when
+    // the straight shortcut is collision-free. Off by default (Assisted and
+    // compatibility callers unchanged); Newtonian enables it.
+    bool mergeNearCollinearVertices = false;
 
     double gateSpacingMeters = 500.0;
 

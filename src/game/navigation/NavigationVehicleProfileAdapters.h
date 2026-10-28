@@ -50,9 +50,9 @@ makeNavigationVehicleProfile(
     else
     {
         // Newtonian straights and flip-and-burn use the full aft main.
-        // Continuous curvature without a wholesale hull reorientation is
-        // limited by the main-nozzle TVC side component. Broken tangents are
-        // handled separately as stop/turn/go boundaries.
+        // This is the physical side component WITHOUT turning the hull (TVC);
+        // route curves are planned with the preferred lateral capability
+        // (ManeuverCapabilityAdapters), which the pilot may serve otherwise.
         const double primaryMain =
             forwardMain > 0.0 ? forwardMain : reverseMain;
         profile.maxForwardAccelerationMps2 = primaryMain;

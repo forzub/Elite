@@ -855,6 +855,28 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
         {
             vertices.push_back(finalPoint);
         }
+        if (r.mergeNearCollinearVertices)
+        {
+            // A few degrees of course change is not a corner worth a fillet
+            // (or, for a ship without rounding, a stop). Fly the straight
+            // shortcut whenever it is itself collision-free.
+            constexpr double MergeAngleRad = 3.0 * 3.14159265358979323846 / 180.0;
+            for (std::size_t i = 1; i + 1 < vertices.size();)
+            {
+                const glm::dvec3 a = vertices[i] - vertices[i - 1];
+                const glm::dvec3 b = vertices[i + 1] - vertices[i];
+                const double la = glm::length(a), lb = glm::length(b);
+                const double cosine =
+                    la > 1e-9 && lb > 1e-9
+                        ? glm::dot(a, b) / (la * lb)
+                        : 1.0;
+                if (cosine >= std::cos(MergeAngleRad) &&
+                    clear(vertices[i - 1], vertices[i + 1]))
+                    vertices.erase(vertices.begin() + static_cast<std::ptrdiff_t>(i));
+                else
+                    ++i;
+            }
+        }
         candidate.samples = {vertices.front()};
 
         if (!r.roundTurns)

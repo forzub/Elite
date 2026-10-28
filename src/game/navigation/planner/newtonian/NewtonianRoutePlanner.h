@@ -13,7 +13,11 @@ public:
     [[nodiscard]] static RoutePlan plan(const RoutePlanRequest& input)
     {
         RoutePlanRequest request = input;
-        request.roundTurns = false;
+        // Corners are rounded where a fillet fits the ship's preferred
+        // lateral capability; the arc is the COM path, the pilot decides
+        // which actuator produces the lateral acceleration.
+        request.roundTurns = true;
+        request.mergeNearCollinearVertices = true;
         request.useContinuousAssistedOptimizer = false;
         return RoutePlanner::plan(request);
     }

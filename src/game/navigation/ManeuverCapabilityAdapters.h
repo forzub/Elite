@@ -13,6 +13,20 @@
 namespace game::navigation
 {
 
+// Path-normal acceleration a Newtonian ship provides in routine flight, from
+// its vector main authority. How (RCS, nozzle vectoring, main with the hull
+// turned) is decided by the pilot. Only a share is planned for curves so a
+// curve always leaves authority for braking and corrections.
+inline constexpr double NewtonianPreferredLateralShare = 0.5;
+
+[[nodiscard]] inline double newtonianPreferredLateralAccelerationMps2(
+    double vectorMainAccelerationMps2
+) noexcept
+{
+    return NewtonianPreferredLateralShare *
+        std::max(0.0, vectorMainAccelerationMps2);
+}
+
 struct ManeuverExecutionAuthority
 {
     double forwardAccelerationMps2 = 0.0;
@@ -44,31 +58,17 @@ makeManeuverExecutionAuthority(
             newtonian.feedbackReserveMps2;
 
         // Full aft-main remains available on straights and for
-        // flip-and-burn. Smooth path-normal acceleration is bounded by TVC,
-        // otherwise trajectory generation would treat the whole main as a
-        // fictitious lateral thruster.
+        // flip-and-burn. Path-normal acceleration is the ship's preferred
+        // routine lateral capability; which actuator delivers it is the
+        // pilot's choice, not the trajectory's.
         out.forwardAccelerationMps2 =
             newtonian.plannedVectorAccelerationMps2;
         out.brakingAccelerationMps2 =
             newtonian.plannedVectorAccelerationMps2;
-        const double installedMain =
-            game::ship::forwardMainAccelerationLimitMps2(params);
-        const double installedTvcLateral =
-            game::ship::
-                newtonianMainVectoringLateralAccelerationLimitMps2(
-                    params
-                );
-        const double tvcFraction =
-            installedMain > 1.0e-9
-                ? std::clamp(
-                      installedTvcLateral / installedMain,
-                      0.0,
-                      1.0
-                  )
-                : 0.0;
         out.lateralAccelerationMps2 =
-            newtonian.plannedVectorAccelerationMps2 *
-            tvcFraction;
+            newtonianPreferredLateralAccelerationMps2(
+                newtonian.plannedVectorAccelerationMps2
+            );
         return out;
     }
 

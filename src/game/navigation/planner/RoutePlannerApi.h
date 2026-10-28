@@ -107,6 +107,8 @@ struct RoutePlanRequest
     double terminalSpeedMps = 0.0;
 
     bool roundTurns = true;
+    // See DockingAdvisoryRequest::mergeNearCollinearVertices.
+    bool mergeNearCollinearVertices = false;
 
     // Explicit production A/B gate for the continuous Assisted optimizer.
     // False keeps the established planner backend. Live Assisted flight may

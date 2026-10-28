@@ -17,6 +17,7 @@
 #include "src/game/navigation/autopilot/NewtonianFlightPolicy.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
 #include "src/game/navigation/autopilot/NewtonianTurnModel.h"
+#include "src/game/navigation/autopilot/NewtonianExecutionSafetyMonitor.h"
 #include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
@@ -335,6 +336,9 @@ private:
         glm::dvec3 previousVelocityMapMps {0.0};
         Phase phase = Phase::Coast;
         bool lateralCorrection = false;
+        // Execution safety monitor memory (narrow-zone attitude error).
+        bool monitorAttitudeValid = false;
+        double monitorAttitudeErrorRad = 0.0;
         std::size_t phaseIndex = 0;
         std::uint64_t programRevision = 0;
         double traceSeconds = 0.0;
@@ -369,6 +373,9 @@ private:
         bool lateralCorrection = false;
         bool emergency = false;
         bool safetyOverride = false;
+        // Execution safety monitor: 0 safe, 1 warn, 2 unrecoverable,
+        // +4 rotation stopped in a narrow zone.
+        int monitor = 0;
         bool narrow = false;
         int terminalStep = 0;
         double terminalDistance = 0.0;
@@ -1197,9 +1204,79 @@ private:
 
         // RCS takes everything the main does not deliver, within its
         // trajectory budget per body direction.
-        applyRcsTranslation(
+        glm::dvec3 rcsCommanded = applyRcsTranslation(
             out, demand - delivered, forward, right, up, params,
             RcsTrajectoryShare);
+
+        // Independent execution safety monitor (it plans nothing; it only
+        // vetoes or overrides a command that makes the corridor unsafe).
+        {
+            ExecutionSafetyInput monitor;
+            monitor.crossTrack = crossTrack;
+            monitor.lateralVelocity = lateralVelocity;
+            monitor.tangent = tangent;
+            monitor.commandedAcceleration = delivered + rcsCommanded;
+            monitor.mainDelivered = delivered;
+            monitor.referenceLateralAcceleration = curveAcceleration;
+            monitor.toleranceMeters =
+                request.positionReferenceValid ? tolerance : 0.0;
+            monitor.lateralAuthorityMps2 =
+                rcsAuthority +
+                (narrow ? 0.0 : mainAuthority * std::sin(gimbalLimit));
+            monitor.horizonSeconds = LateralPredictionSeconds;
+            monitor.narrow = narrow;
+            if (narrow && zone)
+            {
+                const double error =
+                    angleBetween(forward, zone->narrowForwardMap);
+                monitor.attitudeErrorRad = error;
+                monitor.attitudeToleranceRad = NarrowAttitudeToleranceRad;
+                monitor.attitudeErrorRateRadPerSec =
+                    state_.monitorAttitudeValid
+                        ? (error - state_.monitorAttitudeErrorRad) / dt
+                        : 0.0;
+                state_.monitorAttitudeErrorRad = error;
+                state_.monitorAttitudeValid = true;
+            }
+            else
+                state_.monitorAttitudeValid = false;
+            // DEV experiment switch only (A/B of the monitor offline).
+            static const bool monitorOff = []
+            {
+                const char* v = std::getenv("ELITE_NEWTONIAN_MONITOR_OFF");
+                return v && *v;
+            }();
+            const auto verdict = monitorOff
+                ? ExecutionSafetyResult {}
+                : evaluateExecutionSafety(monitor);
+            decision_.monitor = static_cast<int>(verdict.verdict) +
+                (verdict.stopRotation ? 4 : 0);
+            if (verdict.inhibitMain && throttle > 0.0)
+            {
+                throttle = 0.0;
+                out.targetSpeedRate = 0.0f;
+                out.mainGimbalRightInput = 0.0f;
+                out.mainGimbalUpInput = 0.0f;
+                delivered = glm::dvec3(0.0);
+                rcsCommanded = applyRcsTranslation(
+                    out, demand, forward, right, up, params,
+                    RcsTrajectoryShare);
+            }
+            if (verdict.forceInwardRcs)
+                (void)applyRcsTranslation(
+                    out, verdict.inward * (4.0 * rcsAuthority + 1.0),
+                    forward, right, up, params, 1.0);
+            if (verdict.stopRotation)
+            {
+                constexpr double DampRateRadPerSec = 0.2;
+                out.pitchInput = finiteClamp(
+                    -finiteOrZero(request.pitchRateRadPerSec) / DampRateRadPerSec);
+                out.yawInput = finiteClamp(
+                    -finiteOrZero(request.yawRateRadPerSec) / DampRateRadPerSec);
+                out.rollInput = finiteClamp(
+                    -finiteOrZero(request.rollRateRadPerSec) / DampRateRadPerSec);
+            }
+        }
 
         // Executed coarse state for the trace.
         state_.phase =
@@ -1624,7 +1701,7 @@ private:
             "gate_reason\ttube\temergency\tbraking\ttarget_changed\t"
             "target_delta_deg\tthrust_delta_deg\tstop\ttol_m\tterm_step\t"
             "term_dist_m\tterm_att_deg\tterm_roll_deg\tnarrow\tup_x\tup_y\t"
-            "up_z\n");
+            "up_z\tmonitor\n");
         static std::FILE* events = openTrace(
             "ELITE_NEWTONIAN_EVENT_TRACE", "t\ts_m\tevent\tdetail\n");
         state_.traceSeconds += dt;
@@ -1721,6 +1798,12 @@ private:
                     "hull_target_delta=%.1f phase=%d", targetDelta, phase);
                 event("TARGET_SWITCH");
             }
+            if (d.monitor != m.monitor)
+            {
+                std::snprintf(detail, sizeof(detail), "verdict=%d xtrack=%.1f",
+                    d.monitor, crossDistance);
+                event("MONITOR");
+            }
             if (d.safetyOverride != m.safetyOverride)
             {
                 std::snprintf(detail, sizeof(detail), "xtrack=%.1f",
@@ -1813,7 +1896,7 @@ private:
                 "%.4f\t%.2f\t%.2f\t%.2f\t%.3f\t%.3f\t%.2f\t%.3f\t%.3f\t"
                 "%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t"
                 "%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\t%d\t%.2f\t%.2f\t%.2f\t%d\t"
-                "%.4f\t%.4f\t%.4f\n",
+                "%.4f\t%.4f\t%.4f\t%d\n",
                 t, request.traceCurveIndex, s, ref.x, ref.y, ref.z,
                 tangent.x, tangent.y, tangent.z,
                 curving ? 1.0 / request.traceCurvaturePerMeter : 0.0,
@@ -1842,7 +1925,7 @@ private:
                 request.stopRequested ? 1 : 0, tol, d.terminalStep,
                 d.terminalDistance, d.terminalAttitudeErrorRad * Deg,
                 d.terminalRollErrorRad * Deg, d.narrow ? 1 : 0,
-                request.upMap.x, request.upMap.y, request.upMap.z);
+                request.upMap.x, request.upMap.y, request.upMap.z, d.monitor);
         }
         if (file)
             std::fflush(file);
@@ -1856,6 +1939,7 @@ private:
         m.phaseIndex = d.phaseIndex;
         m.programRevision = state_.programRevision;
         m.safetyOverride = d.safetyOverride;
+        m.monitor = d.monitor;
         m.gate = d.gate;
         m.curving = curving;
         m.corridorViolation = violation;
@@ -1887,6 +1971,7 @@ private:
         int phaseIndex = -1;
         std::uint64_t programRevision = 0;
         bool safetyOverride = false;
+        int monitor = 0;
         int gate = 0;
         bool curving = false;
         bool corridorViolation = false;

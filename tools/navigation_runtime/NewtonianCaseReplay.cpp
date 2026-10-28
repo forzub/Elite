@@ -184,9 +184,22 @@ int main(int argc, char** argv)
         if (*path && (stateTrace = std::fopen(path, "w")))
             std::fputs("t\tpx\tpy\tpz\tvx\tvy\tvz\tfx\tfy\tfz\tux\tuy\tuz\t"
                 "wp\twy\twr\tmain\trcs_f\trcs_s\trcs_l\n", stateTrace);
+    // ELITE_REPLAY_KICK="T VX VY VZ": an external velocity change (m/s, map
+    // frame) at T seconds - a disturbance for the safety monitor checks.
+    double kickAt = -1.0;
+    glm::dvec3 kick {0.0};
+    if (const char* k = std::getenv("ELITE_REPLAY_KICK"))
+        if (std::sscanf(k, "%lf %lf %lf %lf", &kickAt, &kick.x, &kick.y, &kick.z) != 4)
+            kickAt = -1.0;
     for (int tick = 0; tick < ticks; ++tick)
     {
         const double time = replayCase.acceptedAtUniverseTimeSeconds + tick * Dt;
+        if (kickAt >= 0.0 && tick * Dt >= kickAt)
+        {
+            tr.motion.localVelocityMps += kick;
+            tr.motion.worldVelocityMps += kick;
+            kickAt = -1.0;
+        }
         if (stateTrace)
         {
             const auto a = agentOf(tr);

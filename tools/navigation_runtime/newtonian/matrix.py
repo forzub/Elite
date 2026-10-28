@@ -23,7 +23,7 @@ DIAG = os.environ.get("ELITE_DIAG_DIR", "D:/tmp")
 PROG = {0: "COAST", 1: "ORIENT", 2: "FLIP", 3: "BURN", 4: "BRAKE", 5: "CURVE", 6: "SETTLE"}
 COLUMNS = ["tag", "plan", "viol", "keep_m", "obst_m", "done_s", "finite", "main_narrow",
            "term_main", "jumps", "microbrake", "recompiles", "deficit_deg", "narrow_omega",
-           "xtrack_m", "reholds"]
+           "xtrack_m", "reholds", "monitor"]
 
 
 def read_geom(path):
@@ -152,6 +152,7 @@ def run(tag, geom_path):
                 microbrake += 1
             episode = None
     recompiles = sum(1 for e in events if e["event"] == "PROGRAM")
+    monitor = sum(1 for e in events if e["event"] == "MONITOR" and not e["detail"].startswith("verdict=0"))
     deficits = [float(m.group(1)) for e in events if e["event"] == "PROGRAM"
                 for m in [re.search(r"deficit_deg=([0-9.]+)", e["detail"])] if m]
     out.update(viol=viol, keep_m=f"{keep:.2f}" if keep < math.inf else "-",
@@ -160,7 +161,7 @@ def run(tag, geom_path):
                main_narrow=main_narrow, term_main=term_main, jumps=jumps, microbrake=microbrake,
                recompiles=recompiles, deficit_deg=f"{max(deficits):.1f}" if deficits else "0",
                narrow_omega=f"{narrow_omega:.3f}" if any(v["narrow"] for v in g["volumes"]) else "-",
-               xtrack_m=f"{max(r['xtrack_m'] for r in rows):.1f}" if rows else "-", reholds=reholds)
+               xtrack_m=f"{max(r['xtrack_m'] for r in rows):.1f}" if rows else "-", reholds=reholds, monitor=monitor)
     return out
 
 

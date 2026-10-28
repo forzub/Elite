@@ -1,5 +1,6 @@
 #include "src/game/navigation/NavigationVolumeCatalog.h"
 
+#include <cstdlib>
 #include <fstream>
 #include <utility>
 
@@ -58,7 +59,15 @@ bool NavigationVolumeCatalog::load(const std::string& path)
     m_byId.clear();
     m_failure.clear();
 
-    std::ifstream in(path);
+    // DEV diagnostic only: ELITE_NAVIGATION_VOLUMES_OVERRIDE=<json> replaces
+    // the hub volume catalog (e.g. a narrow-zone test fixture). The game
+    // world's own catalog is untouched when unset.
+    const char* overridePath = std::getenv("ELITE_NAVIGATION_VOLUMES_OVERRIDE");
+    std::ifstream in(
+        overridePath && *overridePath &&
+                path == "assets/data/navigation/hub_navigation_volumes.json"
+            ? std::string(overridePath)
+            : path);
     if (!in.is_open() &&
         path == "assets/data/navigation/hub_navigation_volumes.json")
     {

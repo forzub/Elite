@@ -92,6 +92,14 @@ struct RoutePlanRequest
     // sizing moving-start leads and terminal braking approaches.
     double vehicleLengthMeters = 0.0;
 
+    // Hull box (body X width, Y height) for orientation-aware narrow-zone
+    // checks; 0 = unknown (the bounding sphere agentRadiusMeters is used).
+    double vehicleWidthMeters = 0.0;
+    double vehicleHeightMeters = 0.0;
+    // Attitude error the executor holds inside a narrow zone; widens the
+    // hull's cross-section in the fit check.
+    double narrowZoneAttitudeToleranceRad = 0.0872664626; // 5 deg
+
     double maxSpeedMps = 100.0;
     double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;
@@ -512,6 +520,23 @@ struct RouteFrameAnchor
     double dynamicRollPhaseWeight = 0.0;
 };
 
+// A stretch of the route through a volume the ship fits ONLY in one
+// attitude (its bounding sphere does not fit): the hull must cross it with
+// its nose along `axisWorld` and its up along `upWorld` (roll matters for a
+// rectangular section), without turning, within the lateral tolerances.
+struct RouteNarrowZone
+{
+    double startProgressMeters = 0.0;
+    double endProgressMeters = 0.0;
+    glm::dvec3 axisWorld {0.0, 0.0, 1.0};
+    glm::dvec3 upWorld {0.0, 1.0, 0.0};
+    // Remaining room between the hull box (with attitude tolerance and the
+    // volume's required clearance) and the volume, to the right / up.
+    double lateralToleranceRightMeters = 0.0;
+    double lateralToleranceUpMeters = 0.0;
+    double maxSpeedMps = 0.0;
+};
+
 struct RoutePlan
 {
     RoutePlanDisposition disposition = RoutePlanDisposition::NeedsRefinement;
@@ -530,6 +555,9 @@ struct RoutePlan
 
     // Ordered semantic pieces of this one continuous route.
     std::vector<RouteStageSpan> stages;
+
+    // Stretches the hull must cross in one fixed attitude (Step 3).
+    std::vector<RouteNarrowZone> narrowZones;
 
     // Internal frame interpolation support. Consumers should prefer stages
     // for ownership/refresh decisions; anchors are a derived implementation

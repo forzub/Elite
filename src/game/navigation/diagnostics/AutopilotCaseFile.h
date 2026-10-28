@@ -114,6 +114,15 @@ inline bool writeAutopilotCase(const char* path, const AutopilotCase& c)
         put(f, a.dynamicRollPhaseWeight);
         std::fputc('\n', f);
     }
+    std::fprintf(f, "narrow %zu\n", c.plan.narrowZones.size());
+    for (const auto& z : c.plan.narrowZones)
+    {
+        put(f, z.startProgressMeters); put(f, z.endProgressMeters);
+        put(f, z.axisWorld); put(f, z.upWorld);
+        put(f, z.lateralToleranceRightMeters);
+        put(f, z.lateralToleranceUpMeters); put(f, z.maxSpeedMps);
+        std::fputc('\n', f);
+    }
     std::fprintf(f, "agent");
     put(f, c.agent.positionMapMeters); put(f, c.agent.velocityMapMetersPerSecond);
     put(f, c.agent.forwardMap); put(f, c.agent.rightMap); put(f, c.agent.upMap);
@@ -189,8 +198,26 @@ inline bool readAutopilotCase(const char* path, AutopilotCase& c)
             anchorsOk = anchorsOk && get(f, a.progressMeters) &&
                 get(f, a.upReference) && get(f, a.dynamicRollPhaseWeight);
         char word[32] = {};
-        if (!anchorsOk || std::fscanf(f, " %31s", word) != 1 ||
-            std::strcmp(word, "agent") != 0)
+        if (!anchorsOk || std::fscanf(f, " %31s", word) != 1)
+            break;
+        if (std::strcmp(word, "narrow") == 0)
+        {
+            unsigned long long zones = 0;
+            if (std::fscanf(f, " %llu", &zones) != 1)
+                break;
+            c.plan.narrowZones.resize(static_cast<std::size_t>(zones));
+            bool zonesOk = true;
+            for (auto& z : c.plan.narrowZones)
+                zonesOk = zonesOk && get(f, z.startProgressMeters) &&
+                    get(f, z.endProgressMeters) && get(f, z.axisWorld) &&
+                    get(f, z.upWorld) &&
+                    get(f, z.lateralToleranceRightMeters) &&
+                    get(f, z.lateralToleranceUpMeters) &&
+                    get(f, z.maxSpeedMps);
+            if (!zonesOk || std::fscanf(f, " %31s", word) != 1)
+                break;
+        }
+        if (std::strcmp(word, "agent") != 0)
             break;
         auto& g = c.agent;
         if (!get(f, g.positionMapMeters) ||

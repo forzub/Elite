@@ -75,6 +75,13 @@ struct ManoeuvreRouteSample
     double curvaturePerMeter = 0.0;
     double speedMps = 0.0;
     double longitudinalAccelerationMps2 = 0.0;
+    // Narrow zone (Step 3): the hull must cross this station with its nose
+    // along +/-narrowAxisMap and its up along +/-narrowUpMap, without
+    // turning, within narrowToleranceMeters laterally.
+    bool narrow = false;
+    glm::dvec3 narrowAxisMap {0.0, 0.0, -1.0};
+    glm::dvec3 narrowUpMap {0.0, 1.0, 0.0};
+    double narrowToleranceMeters = 0.0;
 };
 
 struct ManoeuvreCapability
@@ -105,6 +112,11 @@ struct ManoeuvreStation
     bool mainBurn = false;
     // Planned thrust axis = planned hull forward (rate limited).
     glm::dvec3 hullForwardMap {0.0, 0.0, -1.0};
+    // Narrow zone: fixed attitude (signs chosen for the arriving hull).
+    bool narrow = false;
+    glm::dvec3 narrowForwardMap {0.0, 0.0, -1.0};
+    glm::dvec3 narrowUpMap {0.0, 1.0, 0.0};
+    double narrowToleranceMeters = 0.0;
     std::size_t phaseIndex = 0;
 };
 
@@ -252,6 +264,10 @@ namespace manoeuvre_detail
         out.tangentMap = unitOr(in.tangentMap, glm::dvec3(0.0, 0.0, -1.0));
         out.normalMap = out.curvaturePerMeter > 1.0e-12
             ? unitOr(in.normalMap, glm::dvec3(0.0)) : glm::dvec3(0.0);
+        out.narrow = in.narrow;
+        out.narrowForwardMap = unitOr(in.narrowAxisMap, out.tangentMap);
+        out.narrowUpMap = unitOr(in.narrowUpMap, glm::dvec3(0.0, 1.0, 0.0));
+        out.narrowToleranceMeters = std::max(0.0, in.narrowToleranceMeters);
     }
 
     // Time, required acceleration and the main/RCS split from the station
@@ -278,12 +294,108 @@ namespace manoeuvre_detail
             // Near zero speed a manoeuvre ends: the last metres of a stop
             // (and any crawl) are RCS work, never a main burn.
             out.mainBurn =
-                out.speedMps > LowSpeedRcsOnlyMps &&
+                !out.narrow && out.speedMps > LowSpeedRcsOnlyMps &&
                 glm::length(out.requiredAccelerationMap) >
                     MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
         }
     };
     derive();
+
+    // Narrow zones (Step 3): inside, RCS only — at a speed the RCS can stop
+    // within the zone, changing speed only at the RCS rate. Before the zone
+    // the main brakes to that speed (planned braking authority); after it
+    // the main may accelerate again. Speeds are only lowered.
+    {
+        const double rcsRate =
+            MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
+        std::vector<char> touched(st.size(), 0);
+        for (std::size_t a = 0; a < st.size(); ++a)
+        {
+            if (!st[a].narrow || (a > 0 && st[a - 1].narrow))
+                continue;
+            std::size_t b = a;
+            while (b + 1 < st.size() && st[b + 1].narrow)
+                ++b;
+            const double length =
+                st[b].progressMeters - st[a].progressMeters;
+            const double cap = std::sqrt(std::max(0.0, rcsRate * length));
+            for (std::size_t i = a; i <= b; ++i)
+                if (st[i].speedMps > cap)
+                {
+                    st[i].speedMps = cap;
+                    touched[i] = 1;
+                }
+            for (std::size_t i = a + 1; i <= b; ++i)
+            {
+                const double ds =
+                    st[i].progressMeters - st[i - 1].progressMeters;
+                const double limit = std::sqrt(
+                    st[i - 1].speedMps * st[i - 1].speedMps +
+                    2.0 * rcsRate * ds);
+                if (st[i].speedMps > limit)
+                {
+                    st[i].speedMps = limit;
+                    touched[i] = 1;
+                }
+            }
+            for (std::size_t i = b; i-- > a;)
+            {
+                const double ds =
+                    st[i + 1].progressMeters - st[i].progressMeters;
+                const double limit = std::sqrt(
+                    st[i + 1].speedMps * st[i + 1].speedMps +
+                    2.0 * rcsRate * ds);
+                if (st[i].speedMps > limit)
+                {
+                    st[i].speedMps = limit;
+                    touched[i] = 1;
+                }
+            }
+            for (std::size_t i = a; i-- > 0;)
+            {
+                const double ds =
+                    st[i + 1].progressMeters - st[i].progressMeters;
+                const double limit = std::sqrt(
+                    st[i + 1].speedMps * st[i + 1].speedMps +
+                    2.0 * profileBraking * ds);
+                if (st[i].speedMps <= limit)
+                    break;
+                st[i].speedMps = limit;
+                touched[i] = 1;
+            }
+            for (std::size_t i = b + 1; i < st.size(); ++i)
+            {
+                const double ds =
+                    st[i].progressMeters - st[i - 1].progressMeters;
+                const double limit = std::sqrt(
+                    st[i - 1].speedMps * st[i - 1].speedMps +
+                    2.0 * profileForward * ds);
+                if (st[i].speedMps <= limit)
+                    break;
+                st[i].speedMps = limit;
+                touched[i] = 1;
+            }
+        }
+        for (std::size_t i = 0; i < st.size(); ++i)
+        {
+            const bool near =
+                touched[i] || (i + 1 < st.size() && touched[i + 1]) ||
+                (i > 0 && touched[i - 1]);
+            if (!near)
+                continue;
+            const std::size_t lo = i + 1 < st.size() ? i : i - 1;
+            const double ds =
+                st[lo + 1].progressMeters - st[lo].progressMeters;
+            st[i].longitudinalAccelerationMps2 = ds > 1.0e-9
+                ? (st[lo + 1].speedMps * st[lo + 1].speedMps -
+                   st[lo].speedMps * st[lo].speedMps) / (2.0 * ds)
+                : 0.0;
+            if (st[i].narrow)
+                st[i].longitudinalAccelerationMps2 = std::clamp(
+                    st[i].longitudinalAccelerationMps2, -rcsRate, rcsRate);
+        }
+        derive();
+    }
 
     // A curve flown on the main engine keeps its thrust on the curve axis:
     // a speed-up there may use only what the nozzle cone gives beside the
@@ -328,6 +440,28 @@ namespace manoeuvre_detail
         derive();
     }
 
+    // A narrow zone is crossed nose-first or, when the craft arrives from a
+    // brake with its hull retro, stern-first (the hull box is symmetric):
+    // no 180 degree turn just for the entry.
+    for (std::size_t a = 0; a < st.size(); ++a)
+    {
+        if (!st[a].narrow || (a > 0 && st[a - 1].narrow))
+            continue;
+        bool fromBrake = false;
+        for (std::size_t k = a; k-- > 0;)
+            if (st[k].mainBurn)
+            {
+                fromBrake = st[k].longitudinalAccelerationMps2 < 0.0;
+                break;
+            }
+        const glm::dvec3 desired =
+            fromBrake ? -st[a].tangentMap : st[a].tangentMap;
+        const double sign =
+            glm::dot(st[a].narrowForwardMap, desired) >= 0.0 ? 1.0 : -1.0;
+        for (std::size_t i = a; i < st.size() && st[i].narrow; ++i)
+            st[i].narrowForwardMap = sign * st[i].narrowForwardMap;
+    }
+
     // Turn windows. Two burns back to back whose thrust axes differ beyond
     // the nozzle cone leave the hull no time to turn. Where one side is a
     // longitudinal burn (its timing is free, unlike a curve's), the speed
@@ -339,6 +473,8 @@ namespace manoeuvre_detail
         std::max(1.0e-3, capability.plannedTurnRateRadPerSec);
     const auto burnAxis = [&](std::size_t i)
     {
+        if (st[i].narrow)
+            return st[i].narrowForwardMap;
         return unitOr(
             st[i].requiredAccelerationMap,
             st[i].longitudinalAccelerationMps2 < 0.0
@@ -346,6 +482,8 @@ namespace manoeuvre_detail
     };
     const auto longitudinal = [&](std::size_t i)
     {
+        if (st[i].narrow)
+            return false;
         const glm::dvec3 a = st[i].requiredAccelerationMap;
         const double along = glm::dot(a, st[i].tangentMap);
         return glm::length(a - st[i].tangentMap * along) <=
@@ -383,7 +521,8 @@ namespace manoeuvre_detail
             // The next burn station: the same run continuing, or the start
             // of the next burn after a coast that may be too short to turn.
             std::size_t j = k + 1;
-            while (j < st.size() && !st[j].mainBurn)
+            while (j < st.size() && !st[j].mainBurn &&
+                   !(st[j].narrow && !st[j - 1].narrow))
                 ++j;
             if (j >= st.size())
                 break;
@@ -744,7 +883,11 @@ namespace manoeuvre_detail
         // continuing with a turning axis (an arc) is led the same way.
         for (std::size_t k = st.size(); k-- > 0;)
         {
-            if (st[k].mainBurn)
+            if (st[k].narrow)
+            {
+                next = st[k].narrowForwardMap;
+            }
+            else if (st[k].mainBurn)
             {
                 const bool burnContinues =
                     k + 1 < st.size() && st[k + 1].mainBurn;

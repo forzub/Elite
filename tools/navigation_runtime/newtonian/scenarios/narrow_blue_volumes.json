@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "description": "DEV narrow-zone fixture (Step 3): the cylinder B transit volume as a 40 x 24 m rectangle with 3 m clearance. The bounding sphere of a Cobra (17.4 m) does not fit; the aligned hull box (13 x 2.5 m half extents) does, level roll only.",
+  "volumes": [
+    {
+      "id": "cylinder_b.transit_volume",
+      "reference_frame_id": "guidance_dock_cylinder_b",
+      "kind": "swept_corridor",
+      "required_clearance_m": 3,
+      "sections": [
+        {
+          "center_local_m": [
+            0,
+            0,
+            -600
+          ],
+          "forward_local": [
+            0,
+            0,
+            1
+          ],
+          "up_local": [
+            0,
+            1,
+            0
+          ],
+          "cross_section": "rectangle",
+          "half_width_m": 20,
+          "half_height_m": 12
+        },
+        {
+          "center_local_m": [
+            0,
+            0,
+            600
+          ],
+          "forward_local": [
+            0,
+            0,
+            1
+          ],
+          "up_local": [
+            0,
+            1,
+            0
+          ],
+          "cross_section": "rectangle",
+          "half_width_m": 20,
+          "half_height_m": 12
+        }
+      ]
+    }
+  ]
+}

@@ -259,6 +259,11 @@ private:
     static constexpr double WallMarginFraction = 0.85;
     static constexpr double DefaultCorridorToleranceMeters = 50.0;
     static constexpr double SettleSpeedMps = 2.0;
+    // A narrow zone's attitude (incl. roll) is taken this long before the
+    // entry; the attitude error it holds inside matches the planner's
+    // narrowZoneAttitudeToleranceRad.
+    static constexpr double NarrowAttitudeLeadSeconds = 12.0;
+    static constexpr double NarrowAttitudeToleranceRad = 5.0 * DegToRadValue;
     // Smallest translational RCS acceleration worth commanding.
     static constexpr double RcsDribbleMps2 = 0.01;
     // Terminal sequence: entry speed, calm approach speed toward the end
@@ -378,6 +383,7 @@ private:
         bool lateralCorrection = false;
         bool emergency = false;
         bool safetyOverride = false;
+        bool narrow = false;
         int terminalStep = 0;
         double terminalDistance = 0.0;
         double terminalAttitudeErrorRad = 0.0;
@@ -864,6 +870,10 @@ private:
         glm::dvec3 normalMap {0.0};
         glm::dvec3 hullForwardMap {0.0, 0.0, -1.0};
         std::size_t phaseIndex = 0;
+        bool narrow = false;
+        glm::dvec3 narrowForwardMap {0.0, 0.0, -1.0};
+        glm::dvec3 narrowUpMap {0.0, 1.0, 0.0};
+        double narrowToleranceMeters = 0.0;
     };
 
     [[nodiscard]] PlannedPoint plannedAt(double progress) const noexcept
@@ -894,6 +904,10 @@ private:
             a.hullForwardMap * (1.0 - u) + b.hullForwardMap * u,
             a.hullForwardMap);
         out.phaseIndex = a.phaseIndex;
+        out.narrow = a.narrow;
+        out.narrowForwardMap = a.narrowForwardMap;
+        out.narrowUpMap = a.narrowUpMap;
+        out.narrowToleranceMeters = a.narrowToleranceMeters;
         return out;
     }
 
@@ -918,7 +932,7 @@ private:
                 game::ship::mainGimbalPitchLimitRad(params),
                 game::ship::mainGimbalYawLimitRad(params)
             );
-        const double tolerance =
+        const double corridorTolerance =
             request.corridorToleranceMeters > 0.0
                 ? request.corridorToleranceMeters
                 : DefaultCorridorToleranceMeters;
@@ -936,7 +950,15 @@ private:
         const double progress =
             std::max(request.programProgressMeters, phase.startProgressMeters);
         const PlannedPoint plan = plannedAt(progress);
-        const bool mainPhase = manoeuvrePhaseUsesMain(phase.kind);
+        // Narrow zone (Step 3): the hull crosses it in one fixed attitude on
+        // RCS. Its tube is the zone's real lateral room; no main, no turn.
+        const bool narrow = plan.narrow;
+        const double tolerance =
+            narrow && plan.narrowToleranceMeters > 0.0
+                ? std::min(corridorTolerance, plan.narrowToleranceMeters)
+                : corridorTolerance;
+        const bool mainPhase =
+            !narrow && manoeuvrePhaseUsesMain(phase.kind);
 
         const glm::dvec3 velocity =
             finiteVecOrZero(request.actualVelocityMapMps);
@@ -1035,7 +1057,7 @@ private:
         // only helps through the gate without moving the hull: a clear
         // deficit (e.g. arriving faster than planned) or a wall emergency.
         const bool mainWanted =
-            mainAuthority > 1.0e-9 &&
+            mainAuthority > 1.0e-9 && !narrow &&
             ((mainPhase && !settling &&
               demandMagnitude > MainShareOfRcs * rcsBudget) ||
              lateralEmergency ||
@@ -1055,7 +1077,7 @@ private:
             progress + std::max(0.0, alongSpeed) * HullLeadSeconds;
         glm::dvec3 hullTarget = plannedAt(leadProgress).hullForwardMap;
         const bool safetyOverride =
-            lateralEmergency &&
+            !narrow && lateralEmergency &&
             angleBetween(forward, burnDirection) - gimbalLimit >
                 BurnGateLimitedRad;
         if (safetyOverride)
@@ -1138,7 +1160,25 @@ private:
             }
         }
 
-        if (calmTurn(angleBetween(forward, hullTarget)))
+        // A narrow zone ahead (within the attitude lead) or here fixes the
+        // whole pose: nose on the zone axis as planned, up on the zone's up
+        // (either sign, whichever is closer), set calmly before the entry.
+        const PlannedPoint ahead = plannedAt(
+            progress + std::max(0.0, alongSpeed) * NarrowAttitudeLeadSeconds);
+        const PlannedPoint* zone =
+            narrow ? &plan : (ahead.narrow ? &ahead : nullptr);
+        if (zone)
+        {
+            const glm::dvec3 zoneUp =
+                glm::dot(up, zone->narrowUpMap) >= 0.0
+                    ? zone->narrowUpMap : -zone->narrowUpMap;
+            if (narrow)
+                hullTarget = zone->narrowForwardMap;
+            applyCalmPose(
+                out, request, params, hullTarget, zoneUp,
+                0.5 * NarrowAttitudeToleranceRad);
+        }
+        else if (calmTurn(angleBetween(forward, hullTarget)))
             applyFlipRate(out, request, params, hullTarget, up, dt);
         else
             applyAttitude(out, request, params, hullTarget, up, dt);
@@ -1179,6 +1219,7 @@ private:
         decision_.lateralCorrection = state_.lateralCorrection;
         decision_.emergency = lateralEmergency;
         decision_.safetyOverride = safetyOverride;
+        decision_.narrow = narrow;
         decision_.radiusMeters =
             plan.curvaturePerMeter > 1.0e-9 ? 1.0 / plan.curvaturePerMeter : 0.0;
         return out;
@@ -1591,7 +1632,8 @@ private:
             "yaw\troll\tphase\tmain_phase\tmain_wanted\toverride\tgate\t"
             "gate_reason\ttube\temergency\tbraking\ttarget_changed\t"
             "target_delta_deg\tthrust_delta_deg\tstop\ttol_m\tterm_step\t"
-            "term_dist_m\tterm_att_deg\tterm_roll_deg\n");
+            "term_dist_m\tterm_att_deg\tterm_roll_deg\tnarrow\tup_x\tup_y\t"
+            "up_z\n");
         static std::FILE* events = openTrace(
             "ELITE_NEWTONIAN_EVENT_TRACE", "t\ts_m\tevent\tdetail\n");
         state_.traceSeconds += dt;
@@ -1779,7 +1821,8 @@ private:
                 "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t"
                 "%.4f\t%.2f\t%.2f\t%.2f\t%.3f\t%.3f\t%.2f\t%.3f\t%.3f\t"
                 "%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t"
-                "%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\t%d\t%.2f\t%.2f\t%.2f\n",
+                "%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\t%d\t%.2f\t%.2f\t%.2f\t%d\t"
+                "%.4f\t%.4f\t%.4f\n",
                 t, request.traceCurveIndex, s, ref.x, ref.y, ref.z,
                 tangent.x, tangent.y, tangent.z,
                 curving ? 1.0 / request.traceCurvaturePerMeter : 0.0,
@@ -1807,7 +1850,8 @@ private:
                 targetDelta, thrustDelta,
                 request.stopRequested ? 1 : 0, tol, d.terminalStep,
                 d.terminalDistance, d.terminalAttitudeErrorRad * Deg,
-                d.terminalRollErrorRad * Deg);
+                d.terminalRollErrorRad * Deg, d.narrow ? 1 : 0,
+                request.upMap.x, request.upMap.y, request.upMap.z);
         }
         if (file)
             std::fflush(file);

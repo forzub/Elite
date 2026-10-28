@@ -11,6 +11,7 @@
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/navigation/OrdinaryRoutePolicy.h"
 #include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
+#include "src/game/navigation/traffic/NarrowZoneEnvelope.h"
 
 namespace game::navigation::traffic
 {
@@ -685,15 +686,65 @@ planner::RoutePlan SegmentedRouteComposer::plan(
         if (stage.volumeConstraint.policy ==
             world::navigation::NavigationVolumePolicy::KeepInside)
         {
+            // Step 3: the hull, not its centre of mass, must stay inside.
+            // A volume only the aligned hull box fits in is a narrow zone:
+            // validated with the box's own insets and handed to execution
+            // as a fixed-attitude stretch.
+            ShipHullBox hull;
+            hull.halfWidthMeters = 0.5 * terminalRequest.vehicleWidthMeters;
+            hull.halfHeightMeters = 0.5 * terminalRequest.vehicleHeightMeters;
+            hull.halfLengthMeters = 0.5 * terminalRequest.vehicleLengthMeters;
+            const VolumeFit fit = analyseVolumeFit(
+                stage, hull, terminalRequest.agentRadiusMeters,
+                terminalRequest.narrowZoneAttitudeToleranceRad);
+            const bool narrow = !fit.sphereFits && fit.alignedFits;
+            if (!fit.sphereFits && !fit.alignedFits)
+            {
+                planner::RoutePlan invalid = out;
+                invalid.disposition =
+                    planner::RoutePlanDisposition::InvalidWorldData;
+                invalid.failureCode =
+                    planner::RoutePlanFailureCode::InvalidWorldGeometry;
+                invalid.failure =
+                    "the ship does not fit the mandatory volume in any "
+                    "attitude";
+                invalid.userMessage = invalid.failure;
+                return invalid;
+            }
             const auto containment =
-                RouteVolumeContainmentValidator::
-                    validateKeepInsideRouteInterval(
-                        stage,
-                        out.routeCurves,
-                        stage.fromWorldMeters,
-                        stage.toWorldMeters,
-                        terminalRequest.agentRadiusMeters
-                    );
+                narrow
+                    ? RouteVolumeContainmentValidator::
+                          validateKeepInsideRouteIntervalInsets(
+                              stage,
+                              out.routeCurves,
+                              stage.fromWorldMeters,
+                              stage.toWorldMeters,
+                              fit.insetRightMeters,
+                              fit.insetUpMeters)
+                    : RouteVolumeContainmentValidator::
+                          validateKeepInsideRouteInterval(
+                              stage,
+                              out.routeCurves,
+                              stage.fromWorldMeters,
+                              stage.toWorldMeters,
+                              terminalRequest.agentRadiusMeters
+                          );
+            if (narrow && containment.valid)
+            {
+                planner::RouteNarrowZone zone;
+                RouteVolumeContainmentValidator::progressOnRoute(
+                    out.routeCurves, stage.fromWorldMeters,
+                    zone.startProgressMeters);
+                RouteVolumeContainmentValidator::progressOnRoute(
+                    out.routeCurves, stage.toWorldMeters,
+                    zone.endProgressMeters);
+                zone.axisWorld = fit.axisWorld;
+                zone.upWorld = fit.upWorld;
+                zone.lateralToleranceRightMeters = fit.marginRightMeters;
+                zone.lateralToleranceUpMeters = fit.marginUpMeters;
+                zone.maxSpeedMps = handoffSpeed;
+                out.narrowZones.push_back(zone);
+            }
 
             if (!containment.valid)
             {

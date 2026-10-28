@@ -51,9 +51,11 @@ bool pointInsideSpan(
     const CompiledNavigationVolumeSection& a,
     const CompiledNavigationVolumeSection& b,
     const glm::dvec3& point,
-    double insetMeters
+    double insetRightMeters,
+    double insetUpMeters
 ) noexcept
 {
+    const double insetMeters = std::max(insetRightMeters, insetUpMeters);
     const glm::dvec3 axis = b.centerWorldMeters - a.centerWorldMeters;
     const double length2 = glm::dot(axis, axis);
     if (length2 <= 1.0e-12)
@@ -91,10 +93,10 @@ bool pointInsideSpan(
 
     const double halfWidth =
         a.halfWidthMeters * (1.0 - t) + b.halfWidthMeters * t -
-        insetMeters;
+        insetRightMeters;
     const double halfHeight =
         a.halfHeightMeters * (1.0 - t) + b.halfHeightMeters * t -
-        insetMeters;
+        insetUpMeters;
     if (!finitePositive(halfWidth) || !finitePositive(halfHeight))
         return false;
 
@@ -292,6 +294,7 @@ bool RouteVolumeContainmentValidator::pointInsideErodedVolume(
                 stage.volumeSections[i - 1],
                 stage.volumeSections[i],
                 pointWorldMeters,
+                inset,
                 inset))
         {
             return true;
@@ -299,6 +302,92 @@ bool RouteVolumeContainmentValidator::pointInsideErodedVolume(
     }
 
     return false;
+}
+
+bool RouteVolumeContainmentValidator::pointInsideErodedVolumeInsets(
+    const CompiledTrafficStage& stage,
+    const glm::dvec3& pointWorldMeters,
+    double insetRightMeters,
+    double insetUpMeters
+) noexcept
+{
+    if (!finite3(pointWorldMeters) || stage.volumeSections.size() < 2 ||
+        !(insetRightMeters >= 0.0) || !(insetUpMeters >= 0.0))
+        return false;
+    for (std::size_t i = 1; i < stage.volumeSections.size(); ++i)
+        if (pointInsideSpan(
+                stage.volumeSections[i - 1],
+                stage.volumeSections[i],
+                pointWorldMeters,
+                insetRightMeters + kNumericalInsetMeters,
+                insetUpMeters + kNumericalInsetMeters))
+            return true;
+    return false;
+}
+
+bool RouteVolumeContainmentValidator::progressOnRoute(
+    const std::vector<planner::RouteCurveSegment>& curves,
+    const glm::dvec3& pointWorldMeters,
+    double& progressMeters
+)
+{
+    return progressAtPoint(curves, pointWorldMeters, progressMeters);
+}
+
+RouteVolumeContainmentResult
+RouteVolumeContainmentValidator::validateKeepInsideRouteIntervalInsets(
+    const CompiledTrafficStage& stage,
+    const std::vector<planner::RouteCurveSegment>& curves,
+    const glm::dvec3& entryWorldMeters,
+    const glm::dvec3& exitWorldMeters,
+    double insetRightMeters,
+    double insetUpMeters
+)
+{
+    RouteVolumeContainmentResult out;
+    double entryProgress = 0.0;
+    double exitProgress = 0.0;
+    if (curves.empty() ||
+        !progressAtPoint(curves, entryWorldMeters, entryProgress) ||
+        !progressAtPoint(curves, exitWorldMeters, exitProgress) ||
+        exitProgress <= entryProgress + 1.0e-6)
+    {
+        out.failure = "narrow volume interval is not on the route";
+        return out;
+    }
+    out.requiredInsetMeters = std::max(insetRightMeters, insetUpMeters);
+    const double length = exitProgress - entryProgress;
+    const std::size_t sampleCount = std::clamp<std::size_t>(
+        static_cast<std::size_t>(std::ceil(length / kMaxSampleSpacingMeters)) +
+            1,
+        2,
+        kMaxSamplesPerCurve);
+    for (std::size_t i = 0; i < sampleCount; ++i)
+    {
+        const double progress =
+            entryProgress +
+            length * static_cast<double>(i) /
+                static_cast<double>(sampleCount - 1);
+        const auto* curve = curveAtProgress(curves, progress);
+        if (!curve)
+        {
+            out.failure = "narrow interval has a gap in canonical route curves";
+            return out;
+        }
+        const double t = curve->parameterAtProgress(progress);
+        const glm::dvec3 point = curve->positionAtParameter(t);
+        if (!pointInsideErodedVolumeInsets(
+                stage, point, insetRightMeters, insetUpMeters))
+        {
+            out.failure =
+                "canonical route leaves the aligned-hull KeepInside volume";
+            out.parameter01 = t;
+            out.offendingPointMeters = point;
+            return out;
+        }
+    }
+    out.valid = true;
+    return out;
 }
 
 RouteVolumeContainmentResult

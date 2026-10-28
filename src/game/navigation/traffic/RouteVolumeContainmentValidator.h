@@ -50,6 +50,31 @@ public:
         double agentRadiusMeters,
         double additionalInsetMeters = 0.0
     ) noexcept;
+
+    // Orientation-aware variant (Step 3): explicit insets to the section's
+    // right / up (aligned hull box extent + required clearance).
+    static RouteVolumeContainmentResult validateKeepInsideRouteIntervalInsets(
+        const CompiledTrafficStage& stage,
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const glm::dvec3& entryWorldMeters,
+        const glm::dvec3& exitWorldMeters,
+        double insetRightMeters,
+        double insetUpMeters
+    );
+
+    static bool pointInsideErodedVolumeInsets(
+        const CompiledTrafficStage& stage,
+        const glm::dvec3& pointWorldMeters,
+        double insetRightMeters,
+        double insetUpMeters
+    ) noexcept;
+
+    // Route progress of a point that lies on the route curves.
+    static bool progressOnRoute(
+        const std::vector<planner::RouteCurveSegment>& curves,
+        const glm::dvec3& pointWorldMeters,
+        double& progressMeters
+    );
 };
 
 } // namespace game::navigation::traffic

@@ -104,6 +104,8 @@ public:
         // must align to this field, never to an independently reconstructed
         // "up" convention.
         std::vector<RouteFrameField::Sample> routeFrameField;
+        // Fixed-attitude stretches (Step 3), route progress.
+        std::vector<planner::RouteNarrowZone> narrowZones;
         double liveTunnelRollPhaseRad = 0.0;
         double previousLiveTunnelRollPhaseRad = 0.0;
         double liveTunnelRollRateRadPerSec = 0.0;
@@ -250,6 +252,7 @@ public:
         state.trackingPositionToleranceMeters =
             std::max(0.0, trackingPositionToleranceMeters);
         state.routeUpReference = routeUpReference;
+        state.narrowZones = plan.narrowZones;
         state.routeCurves = plan.routeCurves;
         if (state.routeCurves.empty())
             state.routeCurves = buildFallbackRouteCurves(plan.executionGates);
@@ -2723,6 +2726,18 @@ private:
                     lastCurve = curve.curveIndex;
 
                 ManoeuvreRouteSample sample;
+                for (const auto& zone : state.narrowZones)
+                    if (routeProgress >= zone.startProgressMeters &&
+                        routeProgress <= zone.endProgressMeters)
+                    {
+                        sample.narrow = true;
+                        sample.narrowAxisMap = zone.axisWorld;
+                        sample.narrowUpMap = zone.upWorld;
+                        sample.narrowToleranceMeters = std::max(
+                            0.0,
+                            std::min(zone.lateralToleranceRightMeters,
+                                     zone.lateralToleranceUpMeters));
+                    }
                 sample.progressMeters = progress[i];
                 sample.positionMapMeters =
                     state.continuousSamples[i].positionMapMeters;

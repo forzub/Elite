@@ -3172,6 +3172,8 @@ void SpaceState::updateDockingAdvisory()
         request.agentRadiusMeters =
             envelope.conservativeSafetyRadiusMeters();
         request.vehicleLengthMeters = hull.lengthMeters;
+        request.vehicleWidthMeters = hull.widthMeters;
+        request.vehicleHeightMeters = hull.heightMeters;
 
         // Keep execution reserve on the client exactly where the virtual pilot
         // lives. Planner never assumes all installed authority is available.
@@ -3760,7 +3762,12 @@ void SpaceState::updateDockingAdvisory()
                         compiledTrafficRoute,
                         request.startMeters,
                         request.goalMeters,
-                        request.agentRadiusMeters
+                        request.agentRadiusMeters,
+                        game::navigation::traffic::ShipHullBox {
+                            0.5 * request.vehicleWidthMeters,
+                            0.5 * request.vehicleHeightMeters,
+                            0.5 * request.vehicleLengthMeters},
+                        request.narrowZoneAttitudeToleranceRad
                     );
                 // The planner's own file log (stdout is not attached in the
                 // native client).

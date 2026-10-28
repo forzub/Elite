@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/traffic/NarrowZoneEnvelope.h"
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
 
 namespace game::navigation::traffic
@@ -62,7 +63,9 @@ inline std::vector<WindowCrossingChoice> chooseWindowCrossings(
     CompiledTrafficRoute& route,
     const glm::dvec3& startMeters,
     const glm::dvec3& goalMeters,
-    double agentRadiusMeters
+    double agentRadiusMeters,
+    const ShipHullBox& hull = {},
+    double attitudeToleranceRad = 0.0
 )
 {
     using namespace window_crossing_detail;
@@ -152,6 +155,12 @@ inline std::vector<WindowCrossingChoice> chooseWindowCrossings(
                 break;
             }
         }
+        // A narrow volume (only the aligned hull box fits) offers the box's
+        // own remaining lateral room, not the sphere's.
+        const VolumeFit fit = analyseVolumeFit(
+            stage, hull, agentRadiusMeters, attitudeToleranceRad);
+        if (!fit.sphereFits && fit.alignedFits)
+            admissible = std::min(fit.marginRightMeters, fit.marginUpMeters);
         if (!straight || !(admissible > 1.0e-3))
         {
             previous = blockEnd;

@@ -264,6 +264,7 @@ private:
     // narrowZoneAttitudeToleranceRad.
     static constexpr double NarrowAttitudeLeadSeconds = 12.0;
     static constexpr double NarrowAttitudeToleranceRad = 5.0 * DegToRadValue;
+    static constexpr double NarrowApproachSpeedShare = 1.1;
     // Smallest translational RCS acceleration worth commanding.
     static constexpr double RcsDribbleMps2 = 0.01;
     // Terminal sequence: entry speed, calm approach speed toward the end
@@ -960,8 +961,14 @@ private:
                           plan.tangentMap));
         const PlannedPoint ahead = plannedAt(
             progress + approachSpeed * NarrowAttitudeLeadSeconds);
+        // Only on the approach plateau (the plan already at the zone speed,
+        // no manoeuvre left before the entry): preparing the zone pose
+        // during an earlier brake or curve would spoil that manoeuvre.
+        const bool onApproach =
+            ahead.narrow &&
+            plan.speedMps <= NarrowApproachSpeedShare * ahead.speedMps + 1.0;
         const PlannedPoint* zone =
-            narrow ? &plan : (ahead.narrow ? &ahead : nullptr);
+            narrow ? &plan : (onApproach ? &ahead : nullptr);
         const double tolerance =
             zone && zone->narrowToleranceMeters > 0.0
                 ? std::min(corridorTolerance, zone->narrowToleranceMeters)

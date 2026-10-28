@@ -699,9 +699,13 @@ private:
                     term.step = TerminalStep::RateSettle;
                 break;
             case TerminalStep::RateSettle:
+                // RATE_SETTLE corrects no angle: a turn that came to rest
+                // just outside the attitude tolerance (inside the
+                // hysteresis band) goes back to the calm alignment instead
+                // of waiting forever.
                 if (lostPlace)
                     term.step = TerminalStep::PositionHold;
-                else if (lostAlign)
+                else if (lostAlign || (!aligned && rate <= tolRate))
                     term.step = TerminalStep::AttitudeAlign;
                 else if (term.settledSeconds >= TerminalDoneDwellSeconds)
                     term.step = TerminalStep::Done;

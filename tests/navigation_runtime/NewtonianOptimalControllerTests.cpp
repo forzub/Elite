@@ -529,6 +529,29 @@ void testTerminalSurvivesStopRequestFlicker()
         "a one-tick stop-request flicker ended the terminal sequence");
 }
 
+// A turn that comes to rest just outside the attitude tolerance (inside the
+// hysteresis band) is aligned again, not left in RATE_SETTLE forever.
+void testTerminalRestOutsideToleranceRealigns()
+{
+    NewtonianOptimalController controller;
+    auto request = terminalRequest();
+    const auto yawed = [&](double degrees)
+    {
+        const double a = degrees * Pi / 180.0;
+        request.forwardMap = {std::cos(a), 0.0, std::sin(a)};
+        request.rightMap = {-std::sin(a), 0.0, std::cos(a)};
+    };
+    yawed(3.0);
+    for (int i = 0; i < 5; ++i) // placed, aligned, still: -> RATE_SETTLE
+        (void)controller.update(request, params());
+    yawed(5.6); // at rest, outside 5 deg, inside the 10 deg hysteresis
+    game::navigation::autopilot::AutopilotControlCommand out {};
+    for (int i = 0; i < 3; ++i)
+        out = controller.update(request, params());
+    require(rotationInput(out) > 0.0,
+        "a hull at rest just outside the attitude tolerance was never aligned again");
+}
+
 // With the signed per-axis RCS authority published, translation inputs are
 // normalized per body direction (a strong axis is used fully, a lost
 // direction is never commanded) and flagged as per-axis.
@@ -594,6 +617,7 @@ int main()
         testTerminalAlignIsCalm();
         testTerminalDoneCorrectsNothing();
         testTerminalSurvivesStopRequestFlicker();
+        testTerminalRestOutsideToleranceRealigns();
         testRcsUsesSignedPerAxisAuthority();
         testPrecisionStopRcsRemainsIsolated();
 
@@ -612,6 +636,7 @@ int main()
             << " - the terminal turn is calm\n"
             << " - DONE corrects nothing and recompiles nothing\n"
             << " - a stop-request flicker does not end the terminal sequence\n"
+            << " - a hull at rest just outside the tolerance is aligned again\n"
             << " - RCS uses the signed per-axis authority\n"
             << " - precision-stop RCS remains isolated\n";
         return 0;

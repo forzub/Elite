@@ -580,6 +580,13 @@ inline void shapeNewtonianMotionProfile(
                 // the gap between them at the higher of: the speed at which
                 // both curves are RCS work (no main, no hull swing at all),
                 // and the speed at which the gap lasts the turn window.
+                // Two different curves: a straight lies between them (a
+                // burn gap inside one curve is no curve-to-curve junction).
+                bool straightBetween = false;
+                for (std::size_t i = k + 1; i < j && !straightBetween; ++i)
+                    straightBetween = st[i].curvaturePerMeter <= 1.0e-12;
+                if (!straightBetween)
+                    continue;
                 std::size_t runStart = k;
                 while (runStart > 0 &&
                        st[runStart - 1].curvaturePerMeter > 1.0e-12)
@@ -617,6 +624,11 @@ inline void shapeNewtonianMotionProfile(
                     std::max(0.0, speedNow * speedNow - cap * cap) /
                         (2.0 * profileBraking);
                 if (room < needed)
+                    continue;
+                bool lowers = false;
+                for (std::size_t i = runStart; i <= runEnd && !lowers; ++i)
+                    lowers = st[i].speedMps > cap;
+                if (!lowers)
                     continue;
                 applyCap(runStart, runEnd, cap, reshaped);
                 if (decidedCaps)

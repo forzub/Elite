@@ -3214,3 +3214,13 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 - Real flights `tk` (build of `138da7a3`): I 0 violations, DONE 231.2 s, gas min 0.72; X 0 violations, DONE 206.3 s, gas min 0.68 (refilled to 0.72 after DONE); Assisted-I failed=0, xtrack 14.6 m.
 - Harness incident (recorded): a header edit landed during a game build (mixed objects); the flights were stopped, the edit reverted and the game rebuilt before flying.
 - Not done: nozzle heating as a second limit (user: "maybe"); the gas level is not shown as a reason in the HUD docking status beyond the log line.
+
+### Step I follow-up: RCS loss reprofiles in place (`84...` see git log; OFFLINE PASS)
+- A partial RCS loss no longer hands the route back because a narrow zone lies ahead: the zones ahead (and their aligned approach, NarrowApproachSeconds at the zone speed) fly at sqrt(new/old RCS) of their nominal speed (stopping room ~ v^2/a); a loss inside a zone is deferred until it is left. Only a dead translational direction hands back.
+- Damaged matrix B (126; one RCS nozzle 60 % at 40 s): before 21 hand-backs + 105 DONE; now 126 DONE, 0 violations, 34 reprofiles. Healthy matrix bit-identical.
+
+### Step J: speed - two hypotheses REJECTED (offline matrix on production code, vs healthy baseline); STOPPED by the experiment rule
+- Measured (real flights `h`): pilot phase share I COAST 32 % / FLIP 3 % / ALIGN 1 % / BURN 52 % / HOLD 12 %; program phases ORIENT 13-17 %, FLIP 7-10 %, BRAKE 10-18 %, CURVE 15-19 %. Planned main = (1 - 0.20 feedback reserve) x 0.90 execution share x 0.85 planning share = 61 % of the main (braking throttle 0.611 in the traces).
+- J1: drop the 0.90 execution share (Newtonian only; one explicit reserve) -> time -2.2 %, max-xtrack sum +6 %, and an OBSTACLE clearance failure (obstacles-both-sides-I d1). The share is real margin, not a duplicate. Reverted.
+- J2: calm turn rate share 0.50 -> 0.65 -> time -1.2 %, a KeepInside failure (+ target jump) in narrow scenarios. Reverted.
+- Conclusion: cheap coefficients give 1-2 % and spend real safety margin; route time is set by the structure (coasts, orient/flip phases, approach plateaus). A real speed-up needs a structural design (e.g. overlapping turns with coasts, flip inside long zones via the rotation-fit safe axis, curve->straight acceleration timing) - proposal to the user, not done.

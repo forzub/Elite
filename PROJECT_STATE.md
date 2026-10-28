@@ -1,5 +1,5 @@
 # ELITE — PROJECT STATE (single canonical continuation document)
-Updated: 2026-10-24, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
+Updated: 2026-10-29, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONLY**.
 
 ## Hard rules
 
@@ -14,6 +14,88 @@ Updated: 2026-10-24, Europe/Kyiv. Repository: `forzub/Elite`. Branch: **main ONL
   `44bbbcf829763bc1c86e41ab3cbf46cf17896308` is an EMPTY commit on
   main pointing to the exact pre-Claude-cleanup tree of `590eb24a`.
   To compare/rollback use this SHA; never rewrite the branch or erase it.
+
+## CURRENT STATE (2026-10-29) — read this first
+
+Everything below the line "HISTORICAL CHRONOLOGY" is the verbatim dated
+history (2026-10-24 .. 2026-10-29). It is kept as evidence, failed gates
+included; where it conflicts with this block, THIS block is current. The old
+contracts about "exactly six production physical models" (Assisted I/Y/X +
+Newtonian I/Y/X as the production matrix) are a HISTORICAL / SUPERSEDED
+migration contract: production work now targets the Cobrett-I N1 (Newtonian)
+and A3 (Assisted) ship passports; Y/X stay validation configurations.
+
+### Current architecture (navigation / Newtonian stack)
+- Server authoritative physics; client autopilot sends the same
+  `ShipControlState` as a pilot (unchanged, see history "Architecture").
+- Capability: ONE factual `NavigationControlCapability` (main, signed RCS
+  per direction, signed angular, gimbal, limits; zero is zero) read by route
+  request, profile, compiler and pilot; published by the server
+  (`ShipControlAuthorityTelemetry`), including the RCS gas pressure share.
+- Newtonian route execution: route autopilot (`DedicatedClientRouteAutopilot`)
+  -> runtime speed profile (speed tolerance corridor `NewtonianSpeedTolerancePolicy`)
+  -> ONE motion-profile owner (`NewtonianMotionProfile`) -> manoeuvre compiler
+  (`NewtonianManoeuvreProgram`) -> pilot (`NewtonianOptimalController`)
+  -> independent execution safety monitor (`NewtonianExecutionSafetyMonitor`).
+  Doctrine constants in `NewtonianFlightPolicy`; one turn model
+  (`NewtonianTurnModel`) for pilot and planner; narrow-zone swept-hull
+  rotation fit (`NarrowZoneEnvelope::analyseRotationFit`).
+- Capability change during a route (`NewtonianCapabilityWatch`, 10 % / 0.5 s):
+  in-place reprofile (curve speeds to the new path-normal authority, narrow
+  zones to sqrt(RCS share)) + recompile; deferred inside narrow zones; hand
+  back for a replan (Stabilizing -> safety course -> replan) only when a
+  speed ahead is physically unreachable, an RCS direction is dead or no
+  authority is left. Reactors off while executing: neutral coast, wait for
+  the authority, replan.
+- RCS gas: installed tank equipment Cobra AT-500 (passport
+  `kb.rcs.argon-tank.at500`, KB-TNK-N1-0001, installation 36A2B1, module
+  `rcs_gas_tank`). Refill only while the nozzles draw nothing; damage shrinks
+  usable capacity; below the 20 % regulator knee the nozzles (and the
+  published authority) weaken; routes start from rest only at >= 75 % fill.
+- DEV tools (repo): `tools/navigation_runtime/newtonian/` (scenario matrix
+  21 scenarios x I/X x delay 1/3/6, replay with `ELITE_REPLAY_DAMAGE`,
+  `_KICK`, `_GAS01`, `_LIVE`; game `ELITE_SHIP_DAMAGE_AT`,
+  `ELITE_SHIP_DAMAGE_PRESET`, narrow fixture `ELITE_NAVIGATION_VOLUMES_OVERRIDE`
+  with an ABSOLUTE path). Baseline matrix: `baselines/matrix_stepD.tsv`
+  (pre-E) and the step-G result (healthy reference, bit-identical through
+  every later step).
+
+### Current verification (real Windows flights, nav-stress:simple)
+- Healthy regression H (`e0064e2d` build): Newtonian I/Y/X, narrow I/X,
+  Assisted-I - all PASS, 0 corridor violations.
+- Damaged I (`9441ae9a`): main 50 %, 3 of 4 X mains, RCS nozzle 60 %,
+  reactors off/on - all PASS; mid-route hand-back + replan (main 80 % in a
+  curve) - PASS (0 violations, flying the new plan).
+- RCS gas tank (`138da7a3`): I/X DONE, gas min 0.72 / 0.68; Assisted-I PASS.
+- Offline healthy matrix (126 runs): 0 violations, bit-identical since step G.
+  Damaged matrices: main (I 50 %, X 3/4 mains) 2 violations (known limit
+  below), RCS nozzle 60 %: 126/126 DONE, 0 violations.
+- Status: WIP commits on main; steps A-I flight-verified on ONE scenario
+  (nav-stress:simple) + the DEV narrow fixture; NOT accepted for docking,
+  other stations or real combat damage geometry.
+
+### Open debt (criticality assessed 2026-10-29)
+- Medium: speed (step J) - two cheap hypotheses rejected (they spend real
+  margin for 1-2 %); a structural speed design is needed (proposal).
+- Low: two-narrow-zones offline, delay 6 ticks, main lost inside zone 1: R16
+  curve entered too fast (runtime profile above the lowered nominal; root
+  cause not isolated). Cause visible to the player (damage), monitor logs it.
+- Low: exact 180 deg vertex rejected by the docking planner ("degenerate
+  docking turn"); collinear vertices are fine.
+- Low: dead translational RCS direction -> replan refuses (weakest-direction
+  scalar); capability recovery (repair) does not speed a route up; short
+  main pulses ("micro-brakes") after a reprofile; game ~15 % slower than the
+  replay of the same start; one unexplained pilot-dt x1.64 flight (not
+  reproduced in 9 later flights).
+- Not done: RCS nozzle heating as a second limit; HUD docking status text for
+  "awaiting RCS gas pressure" (log only); docking architecture
+  (DockFrameKinematics etc.) - future stage.
+
+### Next step
+- User decision on a structural speed-up design (J) and on nozzle heating;
+  then the docking architecture stage.
+
+## HISTORICAL CHRONOLOGY (verbatim, dated; superseded where the block above says so)
 
 ## Architecture — current and accepted
 
@@ -194,7 +276,7 @@ adopted. Conclusions:
   or gameplay validated. Previous power-budget CTest success remains
   limited to its earlier revision.
 
-## 2026-10-24 six-model ship-control oracle PASSED (user Windows runtime)
+## 2026-10-24 six-model ship-control oracle PASSED (user Windows runtime) [HISTORICAL: superseded six-model migration contract]
 
 - User supplied `ship_control_oracle_matrix(5).log` and
   `elite_attitude_jitter(20261024-174554).csv` after rebuilding oracle
@@ -734,7 +816,7 @@ adopted. Conclusions:
 - Canonical main-only `PROJECT_STATE.md` remains the sole project
   context; keep this as pending runtime visual acceptance.
 
-## 2026-10-25 SIX-MODEL END-TO-END SOURCE AUDIT — ORIGINAL FINDINGS (superseded by native Newtonian work below)
+## 2026-10-25 SIX-MODEL END-TO-END SOURCE AUDIT — ORIGINAL FINDINGS (superseded by native Newtonian work below) [HISTORICAL: superseded six-model migration contract]
 
 User requested careful review of input -> flight law -> physical installed
 force/moment -> motion -> replicated MotherComputer -> HUD across Assisted
@@ -3215,7 +3297,7 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 - Harness incident (recorded): a header edit landed during a game build (mixed objects); the flights were stopped, the edit reverted and the game rebuilt before flying.
 - Not done: nozzle heating as a second limit (user: "maybe"); the gas level is not shown as a reason in the HUD docking status beyond the log line.
 
-### Step I follow-up: RCS loss reprofiles in place (`84...` see git log; OFFLINE PASS)
+### Step I follow-up: RCS loss reprofiles in place (`b41ad937`; OFFLINE PASS)
 - A partial RCS loss no longer hands the route back because a narrow zone lies ahead: the zones ahead (and their aligned approach, NarrowApproachSeconds at the zone speed) fly at sqrt(new/old RCS) of their nominal speed (stopping room ~ v^2/a); a loss inside a zone is deferred until it is left. Only a dead translational direction hands back.
 - Damaged matrix B (126; one RCS nozzle 60 % at 40 s): before 21 hand-backs + 105 DONE; now 126 DONE, 0 violations, 34 reprofiles. Healthy matrix bit-identical.
 
@@ -3224,3 +3306,8 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 - J1: drop the 0.90 execution share (Newtonian only; one explicit reserve) -> time -2.2 %, max-xtrack sum +6 %, and an OBSTACLE clearance failure (obstacles-both-sides-I d1). The share is real margin, not a duplicate. Reverted.
 - J2: calm turn rate share 0.50 -> 0.65 -> time -1.2 %, a KeepInside failure (+ target jump) in narrow scenarios. Reverted.
 - Conclusion: cheap coefficients give 1-2 % and spend real safety margin; route time is set by the structure (coasts, orient/flip phases, approach plateaus). A real speed-up needs a structural design (e.g. overlapping turns with coasts, flip inside long zones via the rotation-fit safe axis, curve->straight acceleration timing) - proposal to the user, not done.
+
+### Real flight `hb_I` (mid-route hand-back, build after `d0683e4f`) - PASS
+- Newtonian-I, main_center 80 % at 60 s (inside a curve at 38.6 m/s): `[CapabilityChange] kind=1 main 36.77->7.35 action=capability-changed: cannot brake to the speeds ahead` -> `execution-replan reason=follower-invalid detail=...` -> `[DockSafetyCourse] phase=check current_safe=1` -> new plan from the moving state -> executing; 0 corridor violations, max xtrack 21.8 m, at 214 m/s on the new route (38.5 of a 65.7 km route; the weak main makes the planner choose a much longer route) when the 420 s window ended. Pre-registered criterion (DONE or an explicit reason, never a silent failure; 0 violations) met.
+
+## 2026-10-29 stage end (A-J): PROJECT_STATE compressed - current-state block added at the top, chronology kept verbatim below it, six-model contracts marked historical; D:/tmp transient elite_* files of the stage removed.

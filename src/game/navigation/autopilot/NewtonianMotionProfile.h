@@ -76,8 +76,10 @@ inline void shapeNewtonianMotionProfile(
     constexpr double TurnSettleSeconds = Policy::TurnSettleSeconds;
 
     // Reshaping uses the authority the profile itself was planned with
-    // (its largest acceleration and deceleration); the capability values
-    // are only a fallback for a profile without any.
+    // (its largest acceleration and deceleration), never more than the
+    // live capability: after a main loss the stretch already flown still
+    // carries the healthy ramps. The capability values are also the
+    // fallback for a profile without any.
     double profileForward = 0.0;
     double profileBraking = 0.0;
     for (const auto& station : st)
@@ -91,6 +93,12 @@ inline void shapeNewtonianMotionProfile(
         profileForward = capability.plannedForwardAccelerationMps2;
     if (!(profileBraking > 1.0e-6))
         profileBraking = capability.plannedBrakingAccelerationMps2;
+    if (capability.plannedForwardAccelerationMps2 > 1.0e-6)
+        profileForward =
+            std::min(profileForward, capability.plannedForwardAccelerationMps2);
+    if (capability.plannedBrakingAccelerationMps2 > 1.0e-6)
+        profileBraking =
+            std::min(profileBraking, capability.plannedBrakingAccelerationMps2);
 
     const auto derive = [&]() { deriveStationKinematics(st, capability); };
     derive();

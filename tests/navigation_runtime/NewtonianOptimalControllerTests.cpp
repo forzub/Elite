@@ -1,4 +1,5 @@
 #include "src/game/navigation/autopilot/NewtonianOptimalController.h"
+#include "src/game/navigation/autopilot/NewtonianCapabilityWatch.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -598,6 +599,49 @@ void testPrecisionStopRcsRemainsIsolated()
         "precision stop did not trim the residual velocity with RCS");
 }
 
+// Capability change during a route: small jitter is ignored, a real loss
+// counts only after it persisted, and the kind of loss is told apart.
+void testCapabilityWatchThresholdAndHysteresis()
+{
+    using game::navigation::autopilot::CapabilityChange;
+    using game::navigation::autopilot::NewtonianCapabilityWatch;
+    const auto healthy = game::navigation::makeNavigationControlCapability(
+        params(), game::navigation::LocalFlightControlLaw::Newtonian);
+    require(healthy.canManoeuvre(), "test ship cannot manoeuvre");
+    NewtonianCapabilityWatch watch;
+    watch.accept(healthy);
+
+    auto jitter = healthy;
+    jitter.mainForwardMps2 *= 0.95;
+    require(watch.evaluate(jitter, 0.0) == CapabilityChange::None &&
+            watch.evaluate(jitter, 2.0) == CapabilityChange::None,
+        "5 % main jitter counted as a capability change");
+
+    auto mainLoss = healthy;
+    mainLoss.mainForwardMps2 *= 0.5;
+    require(watch.evaluate(mainLoss, 10.0) == CapabilityChange::None &&
+            watch.evaluate(mainLoss, 10.3) == CapabilityChange::None,
+        "a main loss counted before it persisted");
+    require(watch.evaluate(mainLoss, 10.6) == CapabilityChange::MainDegraded,
+        "a persisting main loss was not reported");
+    require(watch.evaluate(healthy, 10.7) == CapabilityChange::None &&
+            watch.evaluate(mainLoss, 10.8) == CapabilityChange::None,
+        "a loss that went away did not restart the hysteresis");
+
+    auto rcsLoss = healthy;
+    rcsLoss.rcsNegativeMps2.x = 0.0;
+    rcsLoss.rcsScalarMps2 = 0.0;
+    require(NewtonianCapabilityWatch::classify(healthy, rcsLoss) ==
+            CapabilityChange::LateralDegraded,
+        "a lost RCS direction is not a lateral loss");
+
+    auto none = healthy;
+    none.angularScalarRadPerSec2 = 0.0;
+    require(NewtonianCapabilityWatch::classify(healthy, none) ==
+            CapabilityChange::Unavailable,
+        "no attitude authority is not 'unavailable'");
+}
+
 } // namespace
 
 int main()
@@ -620,6 +664,7 @@ int main()
         testTerminalRestOutsideToleranceRealigns();
         testRcsUsesSignedPerAxisAuthority();
         testPrecisionStopRcsRemainsIsolated();
+        testCapabilityWatchThresholdAndHysteresis();
 
         std::cout
             << "NEWTONIAN MANOEUVRE PROGRAM PILOT: PASS\n"
@@ -638,7 +683,8 @@ int main()
             << " - a stop-request flicker does not end the terminal sequence\n"
             << " - a hull at rest just outside the tolerance is aligned again\n"
             << " - RCS uses the signed per-axis authority\n"
-            << " - precision-stop RCS remains isolated\n";
+            << " - precision-stop RCS remains isolated\n"
+            << " - capability watch: jitter ignored, losses persist, kinds told apart\n";
         return 0;
     }
     catch (const std::exception& error)

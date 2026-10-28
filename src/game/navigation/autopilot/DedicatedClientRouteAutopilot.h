@@ -36,6 +36,7 @@
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
+#include "src/game/navigation/autopilot/NewtonianCapabilityWatch.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
 #include "src/world/navigation/NavigationVehicleProfile.h"
 
@@ -119,6 +120,8 @@ public:
         AutopilotTrackingPolicy followerPolicy {};
         PilotController pilotController {};
         std::vector<AcceptedManeuverProgram> programs;
+        // Newtonian: the capability the active program was accepted with.
+        NewtonianCapabilityWatch capabilityWatch {};
     };
 
     struct Output
@@ -176,6 +179,9 @@ public:
         std::size_t checkpointIndex = 0;
         std::uint64_t speedProfileRevision = 0;
         bool terminalHold = false;
+        // Why the output is invalid when the follower itself hands the route
+        // back (static text; null otherwise).
+        const char* invalidReason = nullptr;
     };
 
     static void stop(State& state) noexcept
@@ -362,6 +368,9 @@ public:
         if constexpr (Law == LocalFlightControlLaw::Newtonian)
             dumpAcceptedRoute(state, plan);
         handOverManoeuvreRoute(state, params, initialAgent.forwardMap);
+        if constexpr (Law == LocalFlightControlLaw::Newtonian)
+            state.capabilityWatch.accept(
+                makeNavigationControlCapability(params, law));
 
         state.nextCheckpointIndex =
             state.checkpointProgressMeters.size() > 1 ? 1 : 0;
@@ -440,6 +449,108 @@ public:
             planningAuthorityFraction;
         const double hardBrakingAuthority =
             executionAuthority.brakingAccelerationMps2;
+
+        // Capability change during the route (damaged stage). A real,
+        // persisting loss reprofiles the speed ahead with the live authority
+        // (curve speeds included) and recompiles the program - unless the
+        // craft can no longer reach the speeds ahead, the RCS itself is the
+        // plan, or no authority is left: then the route is handed back for
+        // a replan from the actual state. Assisted: unchanged.
+        if constexpr (Law == LocalFlightControlLaw::Newtonian)
+        {
+            const auto live = makeNavigationControlCapability(params, law);
+            const auto change =
+                state.capabilityWatch.evaluate(live, universeTimeSeconds);
+            // Inside a narrow zone or on its aligned approach the crossing is
+            // flown on the RCS with a fixed pose; a recompiled program there
+            // would restart its phases and turn the hull between the walls.
+            // A main loss is handled once the zone is left (the watch keeps
+            // the change pending); an RCS loss there is the replan case.
+            bool inNarrowStretch = false;
+            {
+                const double speed =
+                    glm::length(agent.velocityMapMetersPerSecond);
+                const double approach =
+                    speed * NewtonianFlightPolicy::NarrowApproachSeconds;
+                for (const auto& zone : state.narrowZones)
+                    inNarrowStretch = inNarrowStretch ||
+                        (continuous.spatialProgressMeters >=
+                             zone.startProgressMeters - approach &&
+                         continuous.spatialProgressMeters <=
+                             zone.endProgressMeters);
+            }
+            if (change == CapabilityChange::MainDegraded && inNarrowStretch)
+            {
+                // deferred
+            }
+            else if (change != CapabilityChange::None)
+            {
+                const double speed =
+                    glm::length(agent.velocityMapMetersPerSecond);
+                const double lead = state.pilotController.telemetry(params).
+                    thrustReversalLeadSeconds;
+                const char* reason = nullptr;
+                // A lost RCS/attitude direction: the route's curves are
+                // planned on the main (path-normal share of the vector
+                // authority), turn times come from the live pilot, so the
+                // same reprofile holds - except where the RCS itself is the
+                // plan: a narrow zone ahead (RCS-only crossing speed) or a
+                // dead translational direction (no terminal trim).
+                bool narrowAhead = false;
+                for (const auto& zone : state.narrowZones)
+                    narrowAhead = narrowAhead ||
+                        zone.endProgressMeters > continuous.spatialProgressMeters;
+                const bool rcsIsThePlan =
+                    change == CapabilityChange::LateralDegraded &&
+                    (narrowAhead || !(live.rcsScalarMps2 > 0.0));
+                if (change == CapabilityChange::Unavailable)
+                    reason = "capability-unavailable";
+                else if (rcsIsThePlan)
+                    reason = "capability-changed: RCS lost where the route relies on it";
+                else
+                {
+                    // The curves are flown on the main as well: their
+                    // speeds follow the new path-normal authority.
+                    limitCurveSpeedsToLateral(state,
+                        executionAuthority.lateralAccelerationMps2 *
+                            planningAuthorityFraction);
+                    recomputeRuntimeSpeedSuffix(
+                        state.nominalSpeedProfileMps,
+                        state.continuousProgressMeters,
+                        state.currentContinuousSegment,
+                        speed,
+                        forwardAuthority,
+                        brakingAuthority,
+                        state.runtimeSpeedProfileMps,
+                        state.runtimeLongitudinalAccelerationMps2,
+                        lead,
+                        toleratedPlateauEnd(state,
+                            state.currentContinuousSegment, speed));
+                    ++state.speedProfileRevision;
+                    // A hull already turned against the motion brakes
+                    // without the flip first.
+                    const bool retrograde = speed > 1.0e-3 &&
+                        glm::dot(agent.forwardMap,
+                            agent.velocityMapMetersPerSecond) < 0.0;
+                    if (canBrakeToSpeedsAhead(state,
+                            continuous.spatialProgressMeters, speed,
+                            hardBrakingAuthority, retrograde ? 0.0 : lead,
+                            live.mainForwardMps2 + live.rcsScalarMps2))
+                        handOverManoeuvreRoute(state, params, agent.forwardMap);
+                    else
+                        reason = "capability-changed: cannot brake to the speeds ahead";
+                }
+                traceCapabilityChange(state, universeTimeSeconds,
+                    static_cast<int>(change), speed, live,
+                    reason ? reason : "reprofiled");
+                state.capabilityWatch.accept(live);
+                if (reason)
+                {
+                    out.invalidReason = reason;
+                    return out;
+                }
+            }
+        }
 
         while (state.nextCheckpointIndex <
                    state.checkpointProgressMeters.size() &&
@@ -2103,6 +2214,83 @@ private:
         return end;
     }
 
+    // The reference's own path-normal acceleration (v^2 * curvature) at a
+    // sample, and its speed.
+    [[nodiscard]] static double referenceNormalAccelerationMps2(
+        const AcceptedManeuverProgram::ReferenceSample& sample,
+        double& speedMps) noexcept
+    {
+        speedMps = glm::length(sample.velocityMapMetersPerSecond);
+        if (!(speedMps > 1.0e-3))
+            return 0.0;
+        const glm::dvec3 t = sample.velocityMapMetersPerSecond / speedMps;
+        const glm::dvec3 a = sample.linearAccelerationFeedForwardMapMps2;
+        return glm::length(a - t * glm::dot(a, t));
+    }
+
+    // Lower the nominal speed ahead wherever the reference's path-normal
+    // acceleration exceeds the planned lateral authority:
+    // v_new = v * sqrt(a_lateral / a_normal).
+    static void limitCurveSpeedsToLateral(State& state, double lateralMps2) noexcept
+    {
+        if (!(lateralMps2 > 1.0e-9))
+            return;
+        for (std::size_t i = state.currentContinuousSegment;
+             i < state.nominalSpeedProfileMps.size() &&
+             i < state.continuousSamples.size(); ++i)
+        {
+            double v = 0.0;
+            const double normal =
+                referenceNormalAccelerationMps2(state.continuousSamples[i], v);
+            if (normal > lateralMps2)
+                state.nominalSpeedProfileMps[i] = std::min(
+                    state.nominalSpeedProfileMps[i],
+                    v * std::sqrt(lateralMps2 / normal));
+        }
+    }
+
+    // Every speed restriction ahead is still physically reachable from the
+    // actual speed: braking with the full authority after the hull turned
+    // its thrust axis (lead) to the nominal speeds (zones, the route end),
+    // and on curves at most the speed the FULL lateral authority holds on
+    // the curve (the planned curve speed is a reserve, not the limit).
+    [[nodiscard]] static bool canBrakeToSpeedsAhead(
+        const State& state,
+        double progressMeters,
+        double speedMps,
+        double brakingMps2,
+        double leadSeconds,
+        double fullLateralMps2
+    ) noexcept
+    {
+        if (!(brakingMps2 > 1.0e-9))
+            return false;
+        const double lost = speedMps * std::max(0.0, leadSeconds);
+        for (std::size_t i = state.currentContinuousSegment + 1;
+             i < state.nominalSpeedProfileMps.size() &&
+             i < state.continuousSamples.size(); ++i)
+        {
+            double limit = state.nominalSpeedProfileMps[i];
+            double v = 0.0;
+            const double normal =
+                referenceNormalAccelerationMps2(state.continuousSamples[i], v);
+            if (normal > 1.0e-6)
+                limit = std::max(limit,
+                    v * std::sqrt(std::max(0.0, fullLateralMps2) / normal));
+            // Inside the speed tolerance band the craft is on its profile.
+            limit += NewtonianSpeedTolerancePolicy::softBandMps(limit);
+            if (speedMps <= limit)
+                continue;
+            const double room =
+                state.continuousProgressMeters[i] - progressMeters - lost;
+            if (room <= 0.0 ||
+                speedMps * speedMps - 2.0 * brakingMps2 * room >
+                    limit * limit + 1.0)
+                return false;
+        }
+        return true;
+    }
+
     static void recomputeRuntimeSpeedSuffix(
         const std::vector<double>& nominalSpeeds,
         const std::vector<double>& progress,
@@ -2203,7 +2391,6 @@ private:
                 thrustReversalCoastSeconds,
                 runtimeSpeeds
             );
-
         // The measured checkpoint speed is authoritative. If it is above
         // the speed from which a future route limit is reachable, do not
         // invalidate the route: propagate the fastest physically possible
@@ -2322,6 +2509,28 @@ private:
                 nextS = state.continuousProgressMeters[i] + 50.0;
             }
         std::fflush(file);
+    }
+
+    // A capability change is rare: always reported (stderr, the game log).
+    static void traceCapabilityChange(
+        const State& state,
+        double universeTimeSeconds,
+        int kind,
+        double actualSpeedMps,
+        const NavigationControlCapability& live,
+        const char* action
+    ) noexcept
+    {
+        const auto& before = state.capabilityWatch.accepted;
+        std::fprintf(stderr,
+            "[CapabilityChange] t=%.2f kind=%d speed=%.1f main=%.2f->%.2f "
+            "reverse=%.2f->%.2f rcs=%.3f->%.3f angular=%.4f->%.4f action=%s\n",
+            universeTimeSeconds, kind, actualSpeedMps,
+            before.mainForwardMps2, live.mainForwardMps2,
+            before.mainReverseMps2, live.mainReverseMps2,
+            before.rcsScalarMps2, live.rcsScalarMps2,
+            before.angularScalarRadPerSec2, live.angularScalarRadPerSec2,
+            action);
     }
 
     static void traceProfile(

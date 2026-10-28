@@ -14,12 +14,21 @@
 // ELITE_REPLAY_STATE_TRACE=<tsv path> writes the authoritative ship state
 // and the applied control every tick (hull/volume checks of matrix.py).
 //
+// ELITE_REPLAY_DAMAGE="T MODULE TARGET01[;T MODULE TARGET01...]" injects a
+// real equipment failure (ObjectModuleRuntime::injectEquipmentFailure, the
+// server DEV fault path) into the authoritative ship at T seconds. From the
+// first injection on, the autopilot receives the LIVE control params (server
+// capability + published signed authority, as the game client does);
+// before it, the dumped case physics (healthy runs stay bit-identical).
+//
 // Not modelled: replanning, other ships, gravity context, network jitter.
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
+#include <sstream>
+#include <vector>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -30,6 +39,7 @@
 #include "src/game/ship/core/ShipCore.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
+#include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 #include "src/world/WorldParams.h"
 
 namespace
@@ -191,9 +201,43 @@ int main(int argc, char** argv)
     if (const char* k = std::getenv("ELITE_REPLAY_KICK"))
         if (std::sscanf(k, "%lf %lf %lf %lf", &kickAt, &kick.x, &kick.y, &kick.z) != 4)
             kickAt = -1.0;
+    struct DamageEvent { double at; std::string module; double target01; };
+    std::vector<DamageEvent> damage;
+    if (const char* d = std::getenv("ELITE_REPLAY_DAMAGE"))
+    {
+        std::stringstream all(d);
+        std::string item;
+        while (std::getline(all, item, ';'))
+        {
+            std::stringstream one(item);
+            DamageEvent e {};
+            if (one >> e.at >> e.module >> e.target01)
+                damage.push_back(e);
+        }
+    }
+    // ELITE_REPLAY_LIVE (non-empty): live params from the first tick (check
+    // that the live path matches the dumped case on a healthy ship).
+    const char* liveEnv = std::getenv("ELITE_REPLAY_LIVE");
+    bool liveParams = liveEnv && *liveEnv;
+    ShipParams params = replayCase.physics;
     for (int tick = 0; tick < ticks; ++tick)
     {
         const double time = replayCase.acceptedAtUniverseTimeSeconds + tick * Dt;
+        for (auto& e : damage)
+            if (e.at >= 0.0 && tick * Dt >= e.at)
+            {
+                const bool applied =
+                    core.moduleRuntime().injectEquipmentFailure(e.module, e.target01);
+                core.refreshRuntimeState();
+                std::fprintf(stderr, "[REPLAY] damage t=%.2f module=%s target=%.2f %s\n",
+                    tick * Dt, e.module.c_str(), e.target01,
+                    applied ? "applied" : "NOT applied");
+                e.at = -1.0;
+                liveParams = true;
+            }
+        if (liveParams)
+            params = game::ship::telemetry::applyAuthorityToControlParams(
+                core.effectivePhysics(), core.controlAuthorityTelemetry());
         if (kickAt >= 0.0 && tick * Dt >= kickAt)
         {
             tr.motion.localVelocityMps += kick;
@@ -216,11 +260,12 @@ int main(int argc, char** argv)
                 c.strafeInput, c.liftInput);
         }
         const auto output = NewtonianClientRouteAutopilot::update(
-            autopilot, agentOf(tr), replayCase.physics, time, Dt);
+            autopilot, agentOf(tr), params, time, Dt);
         if (!output.valid)
         {
-            std::fprintf(stderr, "autopilot output invalid at t=%.2f\n",
-                tick * Dt);
+            std::fprintf(stderr, "autopilot output invalid at t=%.2f (%s)\n",
+                tick * Dt,
+                output.invalidReason ? output.invalidReason : "follower");
             break;
         }
         maxCrossTrack = std::max(maxCrossTrack, output.crossTrackErrorMeters);

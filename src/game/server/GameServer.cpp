@@ -23,6 +23,9 @@
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/debug/DamagedEnginePreset.h"
 #include <cstdlib>
+#include <sstream>
+#include <string>
+#include <vector>
 #include <filesystem>
 #include <fstream>
 #include "src/world/coordinates/WorldPosition.h"
@@ -595,8 +598,80 @@ void GameServer::applyCelestialOrbitParentParameters(int systemId)
 
 
 
+namespace
+{
+
+// EXPLICIT DIAGNOSTIC (damaged stage): ELITE_SHIP_DAMAGE_AT=
+// "T MODULE TARGET01[;T MODULE TARGET01...]" injects a real installed
+// equipment fault (the same injectEquipmentFailure path as the server DEV
+// command) into the player ship T seconds after it first moved faster than
+// 1 m/s - a capability change DURING a route. MODULE "reactors-toggle"
+// switches the propulsion reactors instead. Unset: nothing happens.
+struct TimedDamageDiagnostic
+{
+    struct Event { double at; std::string module; double target01; bool done; };
+    bool parsed = false;
+    std::vector<Event> events;
+    double movingSeconds = -1.0;
+};
+
+void advanceTimedDamageDiagnostic(TimedDamageDiagnostic& d, Ship* ship, double dt)
+{
+    if (!d.parsed)
+    {
+        d.parsed = true;
+        if (const char* raw = std::getenv("ELITE_SHIP_DAMAGE_AT"))
+        {
+            std::stringstream all(raw);
+            std::string item;
+            while (std::getline(all, item, ';'))
+            {
+                std::stringstream one(item);
+                TimedDamageDiagnostic::Event e {};
+                if (one >> e.at >> e.module >> e.target01)
+                    d.events.push_back(e);
+            }
+        }
+    }
+    if (d.events.empty() || !ship)
+        return;
+    auto& core = ship->core();
+    if (d.movingSeconds < 0.0)
+    {
+        if (glm::length(core.transform().motion.localVelocityMps) <= 1.0)
+            return;
+        d.movingSeconds = 0.0;
+    }
+    d.movingSeconds += std::max(0.0, dt);
+    for (auto& e : d.events)
+        if (!e.done && d.movingSeconds >= e.at)
+        {
+            e.done = true;
+            // MODULE "reactors-toggle": the propulsion reactors switch
+            // (off, or on again with the real restart time).
+            if (e.module == "reactors-toggle")
+            {
+                core.togglePropulsionReactors();
+                std::cerr << "[ShipDamageAt] t_moving=" << d.movingSeconds
+                          << " propulsion reactors toggled\n";
+                continue;
+            }
+            const bool applied =
+                core.moduleRuntime().injectEquipmentFailure(e.module, e.target01);
+            core.refreshRuntimeState();
+            std::cerr << "[ShipDamageAt] t_moving=" << d.movingSeconds
+                      << " module=" << e.module << " target=" << e.target01
+                      << " status=" << (applied ? "APPLIED" : "FAILED") << '\n';
+        }
+}
+
+} // namespace
+
 void GameServer::update(double dt)
 {
+    static TimedDamageDiagnostic timedDamage;
+    advanceTimedDamageDiagnostic(
+        timedDamage, m_simulation.getShip(m_simulation.playerId()), dt);
     // Capture the passive-trajectory seed before the accelerated clock is
     // advanced. At this point celestial bodies, hubs, reference frames and
     // ships all belong to the same last completed authoritative epoch.

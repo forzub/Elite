@@ -2204,7 +2204,21 @@ void SpaceState::updateDockingAdvisory()
         {
             if (m_clientDockingPhase == ClientDockingPhase::Executing)
             {
-                fail("authoritative RCS telemetry lost during docking");
+                // Propulsion unavailable during the route (reactors off or
+                // restarting): no authority means no executable program.
+                // Release the route, command a neutral ballistic coast (no
+                // stale command may resume when the reactors return), wait
+                // for the authority and replan from the actual state.
+                std::cerr << "[DockClient] request=" << pending.serial
+                    << " phase=execution-replan reason=authority-lost"
+                    << " detail=\"authoritative RCS telemetry lost; coasting\""
+                    << std::endl;
+                releaseClientAutopilot();
+                m_clientAutopilotControl = ShipControlState {};
+                m_clientAutopilotControlActive = true;
+                m_client->submitInput(m_clientAutopilotControl);
+                m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+                m_clientDockingSettledSinceServerSeconds = -1.0;
                 return;
             }
             const std::string reason =
@@ -5254,6 +5268,9 @@ void SpaceState::updateDockingAdvisory()
                     << "[DockClient] request=" << pending.serial
                     << " phase=execution-replan"
                     << " reason=follower-invalid"
+                    << " detail=\""
+                    << (output.invalidReason ? output.invalidReason : "")
+                    << "\""
                     << std::endl;
                 releaseClientAutopilot();
                 m_clientDockingPhase =

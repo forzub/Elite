@@ -1346,7 +1346,8 @@ void ShipCore::updateTranslationControl(float dt)
                               ",main_ER5_total_damage01"
                               ",main_ER5_function_authority01"
                               ",main_engine_nominal_MW"
-                              ",main_engine_nominal_thrust_N";
+                              ",main_engine_nominal_thrust_N"
+                              ",rcs_gas_intensity01";
                         newtonTrace<<'\n';
                         std::cerr<<"[NewtonianTrace] BEGIN "
                                     "D:/tmp/elite_newtonian_runtime.csv"
@@ -1509,7 +1510,8 @@ void ShipCore::updateTranslationControl(float dt)
                     newtonTrace<<','<<motorTempK<<','<<motorDamage01
                         <<','<<generatorBudgetMW<<','<<generatorTempK
                         <<','<<generatorDamage01<<','<<generatorAuthority01
-                        <<','<<motorRatedMW<<','<<motorRatedN;
+                        <<','<<motorRatedMW<<','<<motorRatedN
+                        <<','<<intensity;
                     newtonTrace<<'\n';
                     if(traceRows%30==0) newtonTrace.flush();
                     if(traceSeconds>=240.0)

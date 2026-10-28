@@ -3041,3 +3041,26 @@ Pre-registered narrow flights 2 (I and X, 330 s): same criteria as flight 1.
 - X: FAIL before the zone — entered the R 104 arc (2 km before the zone, cap 48 m/s) at 253-261 m/s, corridor exit 3.9 km. Reproduced offline (delay 1). The plan was right (retro brake, then a turn window to the arc); the executor's narrow-zone lead (12 s x the CURRENT speed = 4 km at 334 m/s) already saw the zone during that brake and switched the attitude to the calm full-pose law with the zone roll; the large roll correction swung the nose 50-90 deg off the brake axis, so the brake hardly worked.
 - Fix: the zone pose and tube start only on the approach plateau (plan speed <= 1.1 x the zone speed + 1 m/s), never across an earlier brake or curve. Offline narrow cases I and X (`cases/newtonian-{I,X}-narrow.case`) at delay 1/3/6: all PASS (zone cross-track <= 0.96 m, attitude <= 2.3 deg, roll <= 2.7 deg, omega 0, no corridor violation before the zone, DONE).
 Narrow flights 3 (I, X) are the last flights of this hypothesis.
+
+### Step 3 narrow flights 3 (`s3n3_I`, `s3n3_X`, commit `88f4a093`) — PASS: Step 3 HEALTHY FLIGHT VERIFIED on the DEV narrow fixture
+| model | corridor violations outside | zone cross-track (room 3.0 m) | attitude | roll | omega | throttle in zone | terminal |
+|---|---|---|---|---|---|---|---|
+| I | 0 | 0.96 m | 2.5 deg | 2.9 deg | 0.015 rad/s | 0 | DONE |
+| X | 0 | 0.84 m | 1.7 deg | 2.3 deg | 0 | 0 | DONE |
+Both crossed the zone stern-first on RCS at 33-35 m/s after a braked, aligned 15 s approach plateau. Limits of the verification: one DEV fixture (straight rectangular volume, level roll), healthy ships; bent narrow tunnels, rolled-90 fits and damaged RCS are not exercised.
+
+## 2026-10-28 Step 4: N1 main-nozzle travel selected = +/-7 deg (offline sweep on production code; 7 deg flight-verified)
+Tool: `tools/navigation_runtime/newtonian/gimbal_sweep.sh TAG [build] [deg...]` (server N1 passport via `ELITE_DEV_N1_GIMBAL_DEG`, the replay applies the same travel to the client physics; summary `sweep_summary.py`). Cases: healthy I/Y/X + narrow I/X, control delay 3, 330 s.
+| travel | corridor violations | max cross-track Y/X | max lateral v Y/X | note |
+|---|---|---|---|---|
+| 0 deg | Y 5, X 6, X-narrow 6 | 417-535 m | 72-92 m/s | no vectoring: Y/X fail |
+| 2 deg | 0 | 52-57 m (tol 64) | 21 m/s | no margin |
+| 4 deg | 0 | 23-26 m | 13-14 m/s | sufficient |
+| 5 deg | 0 | 25-29 m | 10-12 m/s | |
+| 6 deg | 0 | 23 m | 9 m/s | |
+| 7 deg | 0 | 19.5 m | 8-10 m/s | accuracy plateau (I floor 19-20 m = safe tube) |
+| 10 deg | 0 | 17-19 m | 3-4 m/s | calmer laterally, no accuracy gain |
+| 15 / 20 deg | X-narrow 1 | 112 / 69 m | 57 / 39 m/s | wide cone degrades (to investigate for wide-cone engines, e.g. CR-1 75 deg) |
+Newtonian-I is insensitive across the range; time to DONE and hull rotation vary < 3 %.
+Decision: the smallest travel at which every case reaches the accuracy plateau is 6-7 deg; +/-7 deg is kept (already verified by ~25 real flights this session). `KobraN1AxialMainDrive` / passport note updated (passport status stays Provisional for its CR-1-copied thrust/thermal data).
+Known: the 15-20 deg degradation on X-narrow is not understood yet (likely nozzle side-push vs counter-torque budget or the limited-burn gate at wide cones) — relevant before any wide-cone Newtonian engine flies.

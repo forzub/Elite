@@ -98,6 +98,17 @@ int main(int argc, char** argv)
         return 2;
     }
 
+    // DEV gimbal sweep: the server-side N1 passport reads
+    // ELITE_DEV_N1_GIMBAL_DEG itself; apply the same travel to the client
+    // physics the autopilot was compiled with.
+    if (const char* deg = std::getenv("ELITE_DEV_N1_GIMBAL_DEG"))
+    {
+        const float rad =
+            static_cast<float>(std::atof(deg) * 3.14159265358979323846 / 180.0);
+        replayCase.physics.mainGimbalPitchLimitRad = rad;
+        replayCase.physics.mainGimbalYawLimitRad = rad;
+    }
+
     // The production descriptor reads the model label at first use.
     static std::string modelEnv = "ELITE_SHIP_PHYSICAL_TEST_MODEL=" + label;
     putenv(modelEnv.data());

@@ -23,11 +23,13 @@ namespace game::equipment::engine::presets
     e.manufacturerName = "Kobersberg-Braunauer Raumfahrzeugwerke GmbH";
     // Product identity: src/game/catalog/propulsion/KobraMainDrivePassports.h
 
-    // Narrow mechanical nozzle travel and slew. PROVISIONAL: retains the
-    // legacy +/-7 deg until it is selected from real flights.
+    // Narrow mechanical nozzle travel and slew. +/-7 deg selected by the
+    // 2026-10-28 sweep: the smallest travel at which every route (healthy
+    // I/Y/X, narrow-zone fixture) reaches the safe-tube accuracy plateau;
+    // below 4 deg Y/X lose their margin, at 0 deg they leave the corridor.
     e.nominalGimbalRangeRad = 0.122173048;   // 7 deg
     e.nominalGimbalRateRadPerSec = 0.139626340; // 8 deg/s
-    // TEMP-DEV gimbal selection experiment; removed once the value is fixed.
+    // DEV sweep hook (tools/navigation_runtime/newtonian/gimbal_sweep.sh).
     if (const char* deg = std::getenv("ELITE_DEV_N1_GIMBAL_DEG"))
         e.nominalGimbalRangeRad =
             std::atof(deg) * 3.14159265358979323846 / 180.0;

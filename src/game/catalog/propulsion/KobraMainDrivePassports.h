@@ -15,7 +15,8 @@ inline constexpr std::string_view CR1VectorMainDriveId =
 // narrow nozzle deflection for gentle thrust-vector correction, simple and
 // serviceable. RCS does lateral trims; large direction changes rotate the
 // hull. Thrust/power/thermal figures are provisional copies of CR-1; the
-// +/-7 deg nozzle travel is a provisional legacy value.
+// +/-7 deg nozzle travel was selected by the 2026-10-28 offline sweep
+// (0-20 deg, healthy I/Y/X routes and the narrow-zone fixture).
 [[nodiscard]] inline const ProductPassport& kobraN1AxialMainDrive()
 {
     static const ProductPassport passport {
@@ -34,7 +35,7 @@ inline constexpr std::string_view CR1VectorMainDriveId =
         "elite.engine.kobra.n1-axial.v1",
         0.0, 0.0, 0.0, 0.0,
         "Provisional: thrust, power, thermal and wear copied from CR-1; "
-        "nozzle travel +/-7 deg is a legacy value pending flight selection.",
+        "nozzle travel +/-7 deg selected from the 2026-10-28 flight sweep.",
         {
             {CompatibilityKind::InstalledOn, "kb.ship.cobrett-i.frnu.n1",
              {"36A1A2"}}

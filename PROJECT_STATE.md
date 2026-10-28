@@ -3161,3 +3161,14 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 - Newtonian I/Y/X (nav-stress:simple, 270 s): 0 corridor violations, DONE, max cross-track <= 30 m, no UNRECOVERABLE monitor verdict.
 - Narrow I/X (DEV fixture `narrow_blue_volumes.json`, 270 s): 0 violations outside the zone, zone cross-track < room 3.0 m, main throttle 0 in the zone, DONE.
 - Assisted-I (150 s): no failure, max cross-track <= 20 m.
+
+### Step H real flights (build of `e0064e2d` sources; nav-stress:simple) - PASS: healthy regression of steps A-G VERIFIED
+| flight | violations | max xtrack | DONE (pilot s) | monitor | note |
+|---|---|---|---|---|---|
+| Newtonian-I `h` | 0 | 20.6 m | 232.4 | none | |
+| Newtonian-Y `h` | 0 | 19.6 m | 198.7 | 5 WARN, 0 UNRECOVERABLE | |
+| Newtonian-X `h` | 0 | 18.1 m | 216.9 | 5 WARN, 0 UNRECOVERABLE | |
+| narrow I `hn2` | 0 | 18.9 m; zone 0.92 m (room 3.0) | 291.5 | - | zone: throttle 0, att 2.5 deg, roll 2.9 deg |
+| narrow X `hn` | 0 | 17.8 m; zone 0.91 m (room 3.0) | 260.9 | - | zone: throttle 0, att 1.9 deg, roll 2.7 deg |
+| Assisted-I `h` | failed=0 | 14.7 m | - (150 s window) | - | unchanged |
+- Harness failures (not product): the first narrow pair used a RELATIVE fixture path - the game did not find it ("navigation volume catalog unavailable"); rerun with the absolute path. Narrow I at 270 s ran out of the window (pilot clock 224.7 s at 32209 of 32866 m; game clock again slower than wall time); rerun 340 s -> DONE.

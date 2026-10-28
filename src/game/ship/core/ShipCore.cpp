@@ -536,6 +536,41 @@ ShipCore::capabilities() const
     return m_cachedCapability;
 }
 
+const game::equipment::rcs::RcsGasTankDescriptor*
+ShipCore::newtonianRcsGasTank(double& capacity01) const
+{
+    capacity01 = 1.0;
+    if (!m_state.construction.valid())
+        return nullptr;
+    const auto& desc = *m_state.construction.definition;
+    const auto def = std::find_if(desc.modules.begin(), desc.modules.end(),
+        [](const auto& module) { return module.gasTank.has_value(); });
+    if (def == desc.modules.end())
+        return nullptr;
+    const auto* state = static_cast<const world::modules::ObjectModuleRuntime&>(
+        m_moduleRuntime).findModule(def->moduleId);
+    capacity01 = state
+        ? game::equipment::rcs::rcsGasTankCapacity01(*def->gasTank,
+            state->equipmentDamage.accumulated,
+            state->state == world::modules::ObjectModuleRuntimeState::Attached &&
+                state->health > 0.0f)
+        : 0.0;
+    return &*def->gasTank;
+}
+
+double ShipCore::newtonianRcsGasThrustShare01() const
+{
+    double capacity01 = 1.0;
+    const auto* tank = newtonianRcsGasTank(capacity01);
+    if (!tank)
+        return 1.0;
+    if (!(capacity01 > 1.0e-9))
+        return 0.0;
+    return game::equipment::rcs::rcsGasThrustShare01(*tank,
+        m_transform.motion.manoeuvreGasPressure01,
+        m_transform.motion.manoeuvreGasDepleted);
+}
+
 game::ship::telemetry::ShipControlAuthorityTelemetry
 ShipCore::controlAuthorityTelemetry() const
 {
@@ -563,6 +598,13 @@ ShipCore::controlAuthorityTelemetry() const
         out.sourceActuatorRevision = m_state.actuators.revision;
         out.positive = m_cachedNewtonianRcsPositive;
         out.negative = m_cachedNewtonianRcsNegative;
+        // The tank pressure is part of what the nozzles can deliver now:
+        // planner and autopilot see weak RCS when the gas runs low.
+        const double gasShare = newtonianRcsGasThrustShare01();
+        for (auto& value : out.positive)
+            value *= gasShare;
+        for (auto& value : out.negative)
+            value *= gasShare;
         out.workingForwardAccelerationMps2 = std::max(0.0,
             static_cast<double>(capability.effectivePhysics.
                 forwardMainEngineAccelerationMps2));
@@ -1179,7 +1221,7 @@ void ShipCore::updateTranslationControl(float dt)
         // Argon recirculation compressor is a REAL ER-5 consumer. Reserve
         // its 2 MW first, then RCS takes the remaining watts. The buffer
         // can only recover if a generator actually powers this compressor.
-        constexpr double ArgonCompressorRatedMW=
+        const double ArgonCompressorRatedMW=
             game::ship::plant::rcsWorkingFluid::CompressorRatedElectricalMW;
         // It refills only while the nozzles draw nothing (the manifold
         // feeds them otherwise); last tick's net flow tells whether they did.
@@ -1226,13 +1268,28 @@ void ShipCore::updateTranslationControl(float dt)
             compressorMW/ArgonCompressorRatedMW;
         const double argonManifoldBefore01=
             rcsMotion.manoeuvreGasPressure01;
-        const double gasScale=game::ship::plant::advanceNewtonianRcsGas(
-            rcsMotion.manoeuvreGasPressure01,
-            rcsMotion.manoeuvreGasDepleted,
-            static_cast<double>(dt),intensity,
-            physics.manoeuvreGasUsePerSecond,
-            physics.manoeuvreGasRechargePerSecond*compressorRecovery01,
-            physics.manoeuvreGasRestartFraction);
+        // Installed tank (36A2B1): a damaged vessel holds less usable gas,
+        // so the same flow empties and refills its fill share faster; a
+        // failed one leaves the nozzles without gas. Below the regulator
+        // pressure the nozzles weaken (and draw) in proportion to the fill.
+        double tankCapacity01=1.0;
+        const auto* gasTank=newtonianRcsGasTank(tankCapacity01);
+        const double gasThrustShare=newtonianRcsGasThrustShare01();
+        double gasScale=0.0;
+        if(gasTank && !(tankCapacity01>1.0e-9))
+        {
+            rcsMotion.manoeuvreGasPressure01=0.0;
+            rcsMotion.manoeuvreGasDepleted=true;
+        }
+        else
+            gasScale=gasThrustShare*game::ship::plant::advanceNewtonianRcsGas(
+                rcsMotion.manoeuvreGasPressure01,
+                rcsMotion.manoeuvreGasDepleted,
+                static_cast<double>(dt),intensity*gasThrustShare,
+                physics.manoeuvreGasUsePerSecond/tankCapacity01,
+                physics.manoeuvreGasRechargePerSecond*compressorRecovery01/
+                    tankCapacity01,
+                physics.manoeuvreGasRestartFraction);
         m_newtonianRcsNetFlow01PerSecond=(
             rcsMotion.manoeuvreGasPressure01-argonManifoldBefore01)/
             static_cast<double>(dt);

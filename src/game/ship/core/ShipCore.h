@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include "src/world/modules/ObjectModuleRuntime.h"
+#include "src/game/equipment/rcs/RcsGasTankUnit.h"
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/ShipVisualIdentity.h"
@@ -258,6 +259,11 @@ public:
     ShipParams                                   effectivePhysics() const;
     game::ship::telemetry::ShipControlAuthorityTelemetry
         controlAuthorityTelemetry() const;
+    // Installed RCS gas tank (null without one) and its usable capacity
+    // share (damage, health); the nozzle thrust share its fill allows.
+    const game::equipment::rcs::RcsGasTankDescriptor*
+        newtonianRcsGasTank(double& capacity01) const;
+    double newtonianRcsGasThrustShare01() const;
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 
     const ReactorSystem&                        reactor() const               { return m_reactor; }  

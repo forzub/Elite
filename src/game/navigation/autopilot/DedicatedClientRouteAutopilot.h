@@ -479,10 +479,18 @@ public:
                          continuous.spatialProgressMeters <=
                              zone.endProgressMeters);
             }
+            // Near rest (the terminal approach) the RCS stops the craft
+            // whatever was lost: no hand-back for a lost reserve there.
+            const bool nearRest =
+                glm::length(agent.velocityMapMetersPerSecond) <=
+                    2.0 * NewtonianFlightPolicy::TerminalEntrySpeedMps;
             if (change == CapabilityChange::MainDegraded && inNarrowStretch)
             {
                 // deferred
             }
+            else if (change != CapabilityChange::None &&
+                     change != CapabilityChange::Unavailable && nearRest)
+                state.capabilityWatch.accept(live);
             else if (change != CapabilityChange::None)
             {
                 const double speed =

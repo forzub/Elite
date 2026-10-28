@@ -1,3 +1,4 @@
+#include "src/game/equipment/rcs/presets/CobraArgonRcsTank.h"
 #include "src/game/ship/plant/NewtonianRcsAllocator.h"
 #include "src/game/equipment/engine/ManoeuvreEnginePreset.h"
 
@@ -159,6 +160,32 @@ void checkGasRecoversOnlyWithoutConsumption()
             "the manifold did not recover once the consumption stopped");
 }
 
+// The installed tank: damage shrinks the usable capacity, a failed or
+// destroyed vessel holds no gas, the regulator weakens the nozzles only
+// below its knee and an emptied tank gives no thrust.
+void checkRcsGasTankPassportLaw()
+{
+    using namespace game::equipment::rcs;
+    const auto& tank = cobraArgonRcsTank();
+    game::equipment::EquipmentDamageState healthy {};
+    require(rcsGasTankCapacity01(tank, healthy, true) == 1.0,
+            "a healthy tank does not hold its rated gas");
+    game::equipment::EquipmentDamageState hit {};
+    hit.impact01 = 0.5;
+    const double damaged = rcsGasTankCapacity01(tank, hit, true);
+    require(damaged < 1.0 && damaged > 0.0,
+            "a damaged tank kept its full capacity or lost all of it");
+    hit.impact01 = 1.0;
+    require(rcsGasTankCapacity01(tank, hit, true) == 0.0 &&
+            rcsGasTankCapacity01(tank, healthy, false) == 0.0,
+            "a failed or destroyed tank still feeds the RCS");
+    require(rcsGasThrustShare01(tank, 0.9, false) == 1.0 &&
+            rcsGasThrustShare01(tank, 0.5 * tank.regulatorFullThrustFraction,
+                false) < 0.51 &&
+            rcsGasThrustShare01(tank, 0.9, true) == 0.0,
+            "the regulator law does not follow the tank pressure");
+}
+
 void checkReplenishingGameGasBeforeFire()
 {
     double reservoir=1.0;
@@ -280,6 +307,7 @@ int main()
         checkCentreOfMassAndElectricalBudget();
         checkReplenishingGameGasBeforeFire();
         checkGasRecoversOnlyWithoutConsumption();
+        checkRcsGasTankPassportLaw();
         checkSignedPhysicalAuthorityProjection();
         std::cout<<"NEWTONIAN RCS PHYSICAL: PASS\n";
         return 0;

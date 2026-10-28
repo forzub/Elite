@@ -68,6 +68,9 @@ inline void appendRcsGroup(
             std::string(nozzle.nozzleId),
             std::string(rcs::FieldCoupledRcsNozzleId)});
     }
+    // B-branch of the group: its gas supply (feeds every nozzle node).
+    out.push_back({groupCode + "B1", "RCS working-gas tank (argon)",
+        "rcs_gas_tank", std::string(rcs::ArgonRcsTankId)});
 }
 } // namespace detail
 

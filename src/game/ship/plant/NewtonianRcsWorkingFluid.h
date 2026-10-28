@@ -1,5 +1,7 @@
 #pragma once
 
+#include "src/game/equipment/rcs/presets/CobraArgonRcsTank.h"
+
 // Cobra's FIELD-COUPLED fixed RCS nozzles recirculate argon in a closed
 // high-pressure distribution loop. This is a GAME-UNIVERSE working medium,
 // NOT an open-cycle chemical rocket expelling 500 kg per engagement.
@@ -8,12 +10,15 @@
 // the cooler/return buffer. Repressurization consumes genuine ER-5 power.
 // Ambient interplanetary space is NOT an automatic refuelling source.
 // Future station or atmospheric collection must explicitly add mass.
+// The numbers belong to the installed tank's passport (Cobra AT-500).
 namespace game::ship::plant::rcsWorkingFluid
 {
-inline constexpr double ArgonInventoryKg = 500.0;
-// Approximate liquid argon density near its normal boiling point (87K).
-inline constexpr double ArgonLiquidDensityKgPerM3 = 1396.0;
-inline constexpr double CompressorRatedElectricalMW = 2.0;
-inline constexpr double LiquidTankVolumeM3 =
+inline const double ArgonInventoryKg =
+    game::equipment::rcs::cobraArgonRcsTank().inventoryKg;
+inline const double ArgonLiquidDensityKgPerM3 =
+    game::equipment::rcs::cobraArgonRcsTank().liquidDensityKgPerM3;
+inline const double CompressorRatedElectricalMW =
+    game::equipment::rcs::cobraArgonRcsTank().compressorRatedElectricalMW;
+inline const double LiquidTankVolumeM3 =
     ArgonInventoryKg / ArgonLiquidDensityKgPerM3;
 }

@@ -2232,6 +2232,33 @@ void SpaceState::updateDockingAdvisory()
             }
             return;
         }
+        // RCS gas: a route is not started from rest on a low tank; the
+        // craft waits (no command, no draw) while the compressor refills.
+        if (m_clientDockingPhase != ClientDockingPhase::Executing)
+        {
+            const auto systems = m_motherComputer.cockpitSnapshot(
+                static_cast<std::uint64_t>(player.instanceId),
+                m_client->lastSimulationMetadata().serverTick);
+            const double speed =
+                glm::length(motion.localVelocityMps);
+            if (systems.valid && systems.systems.newtonianRcsFluidKnown &&
+                speed < 1.0 &&
+                systems.systems.newtonianRcsManifold01 <
+                    game::navigation::autopilot::NewtonianFlightPolicy::
+                        RouteStartRcsGasFill)
+            {
+                const std::string reason = "awaiting RCS gas pressure";
+                if (m_dockingStatusWarning != reason)
+                {
+                    std::cerr << "[DockAuthority] request=" << pending.serial
+                        << " phase=preplanner-blocked reason=\"" << reason
+                        << "\" fill=" << systems.systems.newtonianRcsManifold01
+                        << std::endl;
+                    m_dockingStatusWarning = reason;
+                }
+                return;
+            }
+        }
         if (!m_dockingStatusWarning.empty())
         {
             m_dockingStatusWarning.clear();

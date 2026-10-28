@@ -110,6 +110,12 @@ struct NewtonianFlightPolicy
     // plus margin.
     static constexpr double NarrowApproachSeconds = NarrowAttitudeLeadSeconds + 3.0;
 
+    // ----- RCS gas
+    // A route is started from rest only with the RCS tank at least this full
+    // (a route's turns and trims take ~20-35 % of a Cobra AT-500); below it
+    // the craft waits at rest while the compressor refills the tank.
+    static constexpr double RouteStartRcsGasFill = 0.75;
+
     // ----- Terminal sequence: entry speed, calm approach speed toward the
     // end point, and fallbacks when the route gives no tolerance.
     static constexpr double TerminalEntrySpeedMps = 2.0;

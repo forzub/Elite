@@ -157,6 +157,10 @@ int main(int argc, char** argv)
     tr.pitchRate = static_cast<float>(replayCase.agent.pitchRateRadPerSec);
     tr.yawRate = static_cast<float>(replayCase.agent.yawRateRadPerSec);
     tr.rollRate = static_cast<float>(replayCase.agent.rollRateRadPerSec);
+    // ELITE_REPLAY_GAS01=<fill>: the RCS gas tank's fill at the start.
+    if (const char* gas = std::getenv("ELITE_REPLAY_GAS01"))
+        if (*gas)
+            tr.motion.manoeuvreGasPressure01 = std::atof(gas);
     core.refreshRuntimeState();
 
     NewtonianClientRouteAutopilot::State autopilot;

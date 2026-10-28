@@ -8,6 +8,7 @@
 #include "src/game/equipment/EquipmentDamage.h"
 #include "src/game/equipment/engine/EngineUnit.h"
 #include "src/game/equipment/reactor/EngineReactorUnit.h"
+#include "src/game/equipment/rcs/RcsGasTankUnit.h"
 
 enum class ModuleDetachPolicy
 {
@@ -134,6 +135,10 @@ struct ModuleDescriptor
     // Dedicated propulsion generator; normal equipment damage is retained
     // by this installed module, not by a shared global reactor instance.
     std::optional<game::equipment::reactor::EngineReactorDescriptor> engineReactor;
+
+    // RCS working-gas tank (its fill is runtime motion state; damage to this
+    // module reduces the usable capacity).
+    std::optional<game::equipment::rcs::RcsGasTankDescriptor> gasTank;
 
     bool destroysParentIfCatastrophic = false;
     bool destroysWholeObjectIfCatastrophic = false;

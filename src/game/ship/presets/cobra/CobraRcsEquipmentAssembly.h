@@ -11,6 +11,7 @@
 
 #include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/equipment/engine/ManoeuvreEnginePreset.h"
+#include "src/game/equipment/rcs/presets/CobraArgonRcsTank.h"
 #include "src/world/descriptors/ModuleDescriptor.h"
 
 namespace game::ship::presets::cobra
@@ -58,6 +59,41 @@ inline bool addNewtonianRcsEquipmentModules(
         unit.maintenance.maintenanceWearThreshold01 = 0.20;
         installedModules.push_back(std::move(unit));
     }
+    return true;
+}
+
+// The RCS group's working-gas tank: one internal, damageable module that
+// feeds all 24 nozzles (installation 36A2B1 in the ship passport).
+inline constexpr const char* NewtonianRcsGasTankModuleId = "rcs_gas_tank";
+
+inline bool addNewtonianRcsGasTankModule(
+    std::vector<ModuleDescriptor>& installedModules
+)
+{
+    if (std::any_of(installedModules.begin(), installedModules.end(),
+            [](const ModuleDescriptor& module)
+            { return module.moduleId == NewtonianRcsGasTankModuleId; }))
+        return false;
+    const auto& tank = game::equipment::rcs::cobraArgonRcsTank();
+    ModuleDescriptor unit;
+    unit.moduleId = NewtonianRcsGasTankModuleId;
+    unit.parentModuleId = "ship_frame_CB";
+    unit.supportModuleIds = {"ship_frame_CB"};
+    unit.subsystemId = "propulsion.rcs";
+    unit.moduleClass = "rcs_gas_tank";
+    unit.structuralKind = ModuleStructuralKind::Equipment;
+    unit.attachmentType = ModuleAttachmentType::Internal;
+    unit.enabled = true;
+    unit.destructible = true;
+    unit.repairable = true;
+    unit.salvageable = true;
+    unit.detachPolicy = ModuleDetachPolicy::Never;
+    unit.destroyPolicy = ModuleDestroyPolicy::DisableOnly;
+    unit.maxHealth = 100.0f;
+    unit.equipmentFailure = tank.failure;
+    unit.maintenance = tank.maintenance;
+    unit.gasTank = tank;
+    installedModules.push_back(std::move(unit));
     return true;
 }
 } // namespace game::ship::presets::cobra

@@ -20,7 +20,7 @@
 // Stock numbers are an in-game catalog scheme, NOT real NATO Stock Numbers:
 //   KB-<category>-<family/generation>-<serial product number>
 // e.g. KB-ENG-N1-0001. Category codes: SHP ship, ENG main drive, RCT reactor,
-// RCS manoeuvre nozzle. stableId is permanent even if the scheme changes.
+// RCS manoeuvre nozzle, TNK fluid storage tank. stableId is permanent even if the scheme changes.
 
 namespace game::catalog
 {
@@ -31,6 +31,7 @@ enum class ProductCategory
     MainPropulsion,
     Reactor,
     ManoeuvreThruster,
+    FluidStorage,
     Cooling,
     Weapon,
     Sensor,

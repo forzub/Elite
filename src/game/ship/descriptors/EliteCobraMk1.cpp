@@ -91,9 +91,16 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.strafeDamping          = 6.0f;     // Assisted velocity-direction response
         desc.physics.maxStrafeSpeed         = 80.0f;    // Legacy assisted translation envelope
         desc.physics.manoeuvreThrusterAccel = 2.0f;     // Small physical RCS acceleration
-        desc.physics.manoeuvreGasUsePerSecond = 0.018f;  // 55 s full RCS buffer draw; recirculating argon
-        desc.physics.manoeuvreGasRechargePerSecond = 0.065f; // 15.4 s unpowered-flow recovery
-        desc.physics.manoeuvreGasRestartFraction = 0.20f;
+        // RCS gas: the ratings of the installed AT-500 tank (its passport).
+        {
+            const auto& tank = game::equipment::rcs::cobraArgonRcsTank();
+            desc.physics.manoeuvreGasUsePerSecond =
+                static_cast<float>(1.0 / tank.fullDrawSeconds);
+            desc.physics.manoeuvreGasRechargePerSecond =
+                static_cast<float>(1.0 / tank.fullRecoverySeconds);
+            desc.physics.manoeuvreGasRestartFraction =
+                static_cast<float>(tank.restartFraction);
+        }
 
         desc.physics.maxGs                  = 5.0f;     // Макс. перегрузка (для пилота)
         desc.physics.maxLinearGs            = 7.5f;     // +/- local dv/dt envelope: 1.5x previous response
@@ -1300,6 +1307,13 @@ if (const char* rawModel =
             "Cobra Newtonian RCS module IDs are not unique"
         );
     }
+    if (!game::ship::presets::cobra::addNewtonianRcsGasTankModule(
+            desc.modules))
+    {
+        throw std::logic_error(
+            "Cobra RCS gas tank module ID is not unique"
+        );
+    }
 }
 
 // The hull owns its six installable loadouts (topology, installed module
@@ -1329,6 +1343,8 @@ for (const auto& loadout : desc.loadouts)
                     return module.engine->engineTypeId;
                 if (module.engineReactor)
                     return std::string_view(module.engineReactor->typeId);
+                if (module.gasTank)
+                    return std::string_view(module.gasTank->typeId);
                 return std::string_view {};
             }
             return std::nullopt;

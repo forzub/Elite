@@ -16,11 +16,12 @@ namespace game::catalog
 
 [[nodiscard]] inline const ProductPassport* findProduct(std::string_view id)
 {
-    static const std::array<const ProductPassport*, 6> products {
+    static const std::array<const ProductPassport*, 7> products {
         &propulsion::kobraN1AxialMainDrive(),
         &propulsion::cr1VectorMainDrive(),
         &power::er5PropulsionReactor(),
         &rcs::fieldCoupledRcsNozzle(),
+        &rcs::argonRcsTank(),
         &ships::cobrettIN1().product,
         &ships::cobrettIA3().product
     };

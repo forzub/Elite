@@ -464,8 +464,8 @@ public:
             // Inside a narrow zone or on its aligned approach the crossing is
             // flown on the RCS with a fixed pose; a recompiled program there
             // would restart its phases and turn the hull between the walls.
-            // A main loss is handled once the zone is left (the watch keeps
-            // the change pending); an RCS loss there is the replan case.
+            // A loss is handled once the zone is left (the watch keeps the
+            // change pending).
             bool inNarrowStretch = false;
             {
                 const double speed =
@@ -484,9 +484,15 @@ public:
             const bool nearRest =
                 glm::length(agent.velocityMapMetersPerSecond) <=
                     2.0 * NewtonianFlightPolicy::TerminalEntrySpeedMps;
-            if (change == CapabilityChange::MainDegraded && inNarrowStretch)
+            // A weaker but alive RCS still crosses the zone (its speed was
+            // sized with the RCS margin); only a dead direction there is a
+            // reason to give the route back.
+            const bool rcsAlive = live.rcsScalarMps2 > 0.0;
+            if (inNarrowStretch &&
+                (change == CapabilityChange::MainDegraded ||
+                 (change == CapabilityChange::LateralDegraded && rcsAlive)))
             {
-                // deferred
+                // deferred until the zone is left
             }
             else if (change != CapabilityChange::None &&
                      change != CapabilityChange::Unavailable && nearRest)
@@ -501,16 +507,22 @@ public:
                 // A lost RCS/attitude direction: the route's curves are
                 // planned on the main (path-normal share of the vector
                 // authority), turn times come from the live pilot, so the
-                // same reprofile holds - except where the RCS itself is the
-                // plan: a narrow zone ahead (RCS-only crossing speed) or a
-                // dead translational direction (no terminal trim).
-                bool narrowAhead = false;
-                for (const auto& zone : state.narrowZones)
-                    narrowAhead = narrowAhead ||
-                        zone.endProgressMeters > continuous.spatialProgressMeters;
+                // same reprofile holds. Narrow zones ahead are crossed on the
+                // RCS alone: their speed (stopping room ~ v^2 / a) follows
+                // sqrt(new / old) RCS. A dead translational direction (no
+                // trim, no zone crossing) gives the route back.
                 const bool rcsIsThePlan =
                     change == CapabilityChange::LateralDegraded &&
-                    (narrowAhead || !(live.rcsScalarMps2 > 0.0));
+                    !(live.rcsScalarMps2 > 0.0);
+                if (change == CapabilityChange::LateralDegraded &&
+                    !rcsIsThePlan &&
+                    state.capabilityWatch.accepted.rcsScalarMps2 > 1.0e-9 &&
+                    live.rcsScalarMps2 <
+                        state.capabilityWatch.accepted.rcsScalarMps2)
+                    limitNarrowSpeedsToRcs(state,
+                        continuous.spatialProgressMeters,
+                        std::sqrt(live.rcsScalarMps2 /
+                            state.capabilityWatch.accepted.rcsScalarMps2));
                 if (change == CapabilityChange::Unavailable)
                     reason = "capability-unavailable";
                 else if (rcsIsThePlan)
@@ -2234,6 +2246,38 @@ private:
         const glm::dvec3 t = sample.velocityMapMetersPerSecond / speedMps;
         const glm::dvec3 a = sample.linearAccelerationFeedForwardMapMps2;
         return glm::length(a - t * glm::dot(a, t));
+    }
+
+    // Narrow zones ahead (and their aligned approach) at `share` of their
+    // nominal speed.
+    static void limitNarrowSpeedsToRcs(
+        State& state, double progressMeters, double share) noexcept
+    {
+        share = std::clamp(share, 0.0, 1.0);
+        for (const auto& zone : state.narrowZones)
+        {
+            if (zone.endProgressMeters <= progressMeters)
+                continue;
+            // The approach plateau lasts NarrowApproachSeconds at the zone
+            // speed (the speed at the zone entry).
+            double zoneSpeed = 0.0;
+            for (std::size_t i = 0; i < state.nominalSpeedProfileMps.size(); ++i)
+                if (state.continuousProgressMeters[i] >= zone.startProgressMeters)
+                {
+                    zoneSpeed = state.nominalSpeedProfileMps[i];
+                    break;
+                }
+            const double approach =
+                zoneSpeed * NewtonianFlightPolicy::NarrowApproachSeconds;
+            for (std::size_t i = state.currentContinuousSegment;
+                 i < state.nominalSpeedProfileMps.size(); ++i)
+            {
+                const double s = state.continuousProgressMeters[i];
+                if (s >= zone.startProgressMeters - approach &&
+                    s <= zone.endProgressMeters)
+                    state.nominalSpeedProfileMps[i] *= share;
+            }
+        }
     }
 
     // Lower the nominal speed ahead wherever the reference's path-normal

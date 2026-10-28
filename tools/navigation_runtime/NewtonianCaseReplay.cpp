@@ -11,6 +11,8 @@
 // samples a snapshot, the server consumes the command on a later tick).
 // The pilot's DEV traces (ELITE_NEWTONIAN_POLICY_TRACE / _EVENT_TRACE)
 // work unchanged, so the same analysis scripts apply.
+// ELITE_REPLAY_STATE_TRACE=<tsv path> writes the authoritative ship state
+// and the applied control every tick (hull/volume checks of matrix.py).
 //
 // Not modelled: replanning, other ships, gravity context, network jitter.
 
@@ -174,9 +176,32 @@ int main(int argc, char** argv)
     double settledAt = -1.0;
     const int ticks = static_cast<int>(seconds / Dt);
     std::uint64_t controlTick = 0;
+    const char* stopStill = std::getenv("ELITE_REPLAY_STOP_STILL_S");
+    const double stopStillSeconds = stopStill ? std::atof(stopStill) : 0.0;
+    double stillSince = -1.0;
+    std::FILE* stateTrace = nullptr;
+    if (const char* path = std::getenv("ELITE_REPLAY_STATE_TRACE"))
+        if (*path && (stateTrace = std::fopen(path, "w")))
+            std::fputs("t\tpx\tpy\tpz\tvx\tvy\tvz\tfx\tfy\tfz\tux\tuy\tuz\t"
+                "wp\twy\twr\tmain\trcs_f\trcs_s\trcs_l\n", stateTrace);
     for (int tick = 0; tick < ticks; ++tick)
     {
         const double time = replayCase.acceptedAtUniverseTimeSeconds + tick * Dt;
+        if (stateTrace)
+        {
+            const auto a = agentOf(tr);
+            const auto& c = core.control();
+            std::fprintf(stateTrace,
+                "%.2f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.6f\t%.6f\t%.6f\t"
+                "%.6f\t%.6f\t%.6f\t%.5f\t%.5f\t%.5f\t%.4f\t%.4f\t%.4f\t%.4f\n",
+                tick * Dt, a.positionMapMeters.x, a.positionMapMeters.y,
+                a.positionMapMeters.z, a.velocityMapMetersPerSecond.x,
+                a.velocityMapMetersPerSecond.y, a.velocityMapMetersPerSecond.z,
+                a.forwardMap.x, a.forwardMap.y, a.forwardMap.z, a.upMap.x,
+                a.upMap.y, a.upMap.z, a.pitchRateRadPerSec, a.yawRateRadPerSec,
+                a.rollRateRadPerSec, c.targetSpeedRate, c.forwardInput,
+                c.strafeInput, c.liftInput);
+        }
         const auto output = NewtonianClientRouteAutopilot::update(
             autopilot, agentOf(tr), replayCase.physics, time, Dt);
         if (!output.valid)
@@ -193,6 +218,21 @@ int main(int argc, char** argv)
         if (settledAt < 0.0 && output.terminalHold &&
             glm::length(tr.motion.localVelocityMps) <= 0.5)
             settledAt = tick * Dt;
+        // ELITE_REPLAY_STOP_STILL_S=N ends the replay after N seconds of a
+        // still terminal hold (matrix runs; DONE needs 1 s of it).
+        if (stopStillSeconds > 0.0)
+        {
+            const bool still = output.terminalHold &&
+                glm::length(tr.motion.localVelocityMps) <= 0.05 &&
+                std::abs(tr.pitchRate) + std::abs(tr.yawRate) +
+                        std::abs(tr.rollRate) <= 0.01;
+            stillSince = still ? (stillSince < 0.0 ? tick * Dt : stillSince) : -1.0;
+            if (stillSince >= 0.0 && tick * Dt - stillSince >= stopStillSeconds)
+            {
+                completedAt = tick * Dt;
+                break;
+            }
+        }
         if (output.complete)
         {
             completedAt = tick * Dt;
@@ -219,6 +259,8 @@ int main(int argc, char** argv)
         (void)core.propagateHubTacticalTranslation(Dt);
     }
 
+    if (stateTrace)
+        std::fclose(stateTrace);
     std::printf(
         "[REPLAY] model=%s delay_ticks=%d flown_s=%.1f complete=%s "
         "remaining_m=%.0f settled_s=%.1f final_speed_mps=%.2f "

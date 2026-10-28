@@ -850,6 +850,29 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteNewtonianReplay PRIVATE ws2_32 mswsock)
     endif()
+
+    # DEV offline regression scenarios: plans synthetic routes with the
+    # production Newtonian planning pipeline and writes replay cases.
+    add_executable(EliteNewtonianScenarios
+        tools/navigation_runtime/NewtonianScenarioCases.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteNewtonianScenarios PRIVATE src)
+    target_link_libraries(EliteNewtonianScenarios PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteNewtonianScenarios PRIVATE ws2_32 mswsock)
+    endif()
 endif()
 
 

@@ -18,6 +18,7 @@
 #include "src/game/navigation/AcceptedManeuverProgram.h"
 #include "src/game/navigation/AcceptedManeuverProgramBuilder.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/NavigationControlCapability.h"
 #include "src/game/navigation/ManeuverTrackingController.h"
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/RouteFrameField.h"
@@ -93,10 +94,6 @@ public:
         // Newtonian: a speed deviation beyond the tolerance band is being
         // corrected (NewtonianSpeedTolerancePolicy hysteresis).
         bool speedCorrectionActive = false;
-        // The last checkpoint anchored on a profile speed plateau, and the
-        // plateau speed the current manoeuvre program was compiled with.
-        bool anchorOnPlateau = false;
-        double programPlateauSpeedMps = -1.0;
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
 
@@ -451,6 +448,17 @@ public:
                        state.nextCheckpointIndex
                    ])
         {
+            // The craft is ON its runtime profile at this checkpoint (the
+            // profile it is flying, within the refresh step): the
+            // recomputed profile is the same plan, and the program compiled
+            // from it stays valid.
+            const double plannedHere = state.runtimeSpeedProfileMps[
+                std::min(state.currentContinuousSegment,
+                         state.runtimeSpeedProfileMps.size() - 1)];
+            const bool onProfile =
+                std::abs(glm::length(agent.velocityMapMetersPerSecond) -
+                         plannedHere) <=
+                NewtonianSpeedTolerancePolicy::programRefreshMps(plannedHere);
             recomputeRuntimeSpeedSuffix(
                     state.nominalSpeedProfileMps,
                     state.continuousProgressMeters,
@@ -467,24 +475,12 @@ public:
                 );
             ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;
-            // A checkpoint on a speed plateau is not a reason for a new
-            // manoeuvre program: there it is recompiled only when the
-            // plateau speed moved (re-levelled beyond the refresh step) from
-            // the one the program was compiled with. On a ramp the recompile
-            // from the measured state is the ramp's tracking loop and stays.
-            const double plateauSpeed = state.runtimeSpeedProfileMps[
-                std::min(state.currentContinuousSegment,
-                         state.runtimeSpeedProfileMps.size() - 1)];
-            if (law != LocalFlightControlLaw::Newtonian ||
-                !state.anchorOnPlateau ||
-                std::abs(plateauSpeed - state.programPlateauSpeedMps) >
-                    NewtonianSpeedTolerancePolicy::programRefreshMps(
-                        plateauSpeed))
-            {
+            // A checkpoint is not a reason for a new manoeuvre program: it
+            // is recompiled only when the craft has left the profile it was
+            // flying (a re-levelled plateau, a ramp being tracked, a real
+            // deviation). Assisted: unchanged.
+            if (law != LocalFlightControlLaw::Newtonian || !onProfile)
                 handOverManoeuvreRoute(state, params, agent.forwardMap);
-                state.programPlateauSpeedMps =
-                    state.anchorOnPlateau ? plateauSpeed : -1.0;
-            }
             if constexpr (Law == LocalFlightControlLaw::Newtonian)
                 traceProfile(state, universeTimeSeconds,
                     glm::length(agent.velocityMapMetersPerSecond));
@@ -2073,7 +2069,6 @@ private:
         double actualSpeedMps
     ) noexcept
     {
-        state.anchorOnPlateau = false;
         if constexpr (Law != LocalFlightControlLaw::Newtonian)
             return 0;
         const auto& profile = state.runtimeSpeedProfileMps;
@@ -2104,7 +2099,6 @@ private:
             ++end;
         if (state.speedCorrectionActive || end == anchorIndex)
             return 0;
-        state.anchorOnPlateau = true;
         return end;
     }
 
@@ -3130,14 +3124,19 @@ private:
         const double feedbackReserve =
             executionAuthority.feedbackReserveMps2;
 
+        // Factual capability, zero is zero: no invented minimum speed or
+        // angular authority; without them there is no executable program.
+        const auto capability =
+            makeNavigationControlCapability(params, law);
+        if (!(capability.controlledSpeedLimitMps > 0.0) ||
+            !(capability.angularScalarRadPerSec2 > 0.0) ||
+            !(capability.maxAngularSpeedRadPerSec > 0.0))
+            return failPrograms("capability-unavailable: no speed or attitude authority");
+
         world::navigation::NavigationVehicleProfile vehicle;
         vehicle.collisionRadiusMeters = 0.0;
         vehicle.preferredClearanceMeters = 0.0;
-        vehicle.maxSpeedMps =
-            std::max(
-                0.5,
-                game::ship::controlledSpeedLimitMps(params)
-            );
+        vehicle.maxSpeedMps = capability.controlledSpeedLimitMps;
         vehicle.maxForwardAccelerationMps2 =
             executionAuthority.forwardAccelerationMps2;
         vehicle.maxBrakingAccelerationMps2 =
@@ -3145,13 +3144,9 @@ private:
         vehicle.maxLateralAccelerationMps2 =
             executionAuthority.lateralAccelerationMps2;
         vehicle.maxAngularVelocityRadPerSecond =
-            game::ship::maximumAngularSpeedRadPerSec(params);
+            capability.maxAngularSpeedRadPerSec;
         vehicle.maxAngularAccelerationRadPerSecond2 =
-            std::max(
-                0.1,
-                game::ship::angularAccelerationLimitRadPerSec2(params) *
-                    0.90
-            );
+            capability.angularScalarRadPerSec2 * 0.90;
 
         world::navigation::TrajectoryGenerationRequest trajectoryRequest;
         trajectoryRequest.systemId = 0;

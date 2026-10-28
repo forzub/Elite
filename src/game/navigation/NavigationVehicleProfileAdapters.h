@@ -4,6 +4,7 @@
 
 #include "src/game/navigation/VehicleGuidanceEnvelope.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
+#include "src/game/navigation/NavigationControlCapability.h"
 #include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/navigation/NavigationAgentProfile.h"
@@ -20,18 +21,19 @@ makeNavigationVehicleProfile(
     LocalFlightControlLaw controlLaw
 )
 {
+    // The factual navigation capability is the only reader of ShipParams.
+    const auto capability =
+        makeNavigationControlCapability(params, controlLaw);
+
     world::navigation::NavigationVehicleProfile profile;
     profile.collisionRadiusMeters =
         std::max(0.0, collisionRadiusMeters);
     profile.preferredClearanceMeters =
         std::max(0.0, preferredClearanceMeters);
-    profile.maxSpeedMps =
-        game::ship::controlledSpeedLimitMps(params);
+    profile.maxSpeedMps = capability.controlledSpeedLimitMps;
 
-    const double forwardMain =
-        game::ship::forwardMainAccelerationLimitMps2(params);
-    const double reverseMain =
-        game::ship::reverseMainAccelerationLimitMps2(params);
+    const double forwardMain = capability.mainForwardMps2;
+    const double reverseMain = capability.mainReverseMps2;
 
     if (controlLaw == LocalFlightControlLaw::Assisted)
     {
@@ -58,16 +60,13 @@ makeNavigationVehicleProfile(
         profile.maxForwardAccelerationMps2 = primaryMain;
         profile.maxBrakingAccelerationMps2 = primaryMain;
         profile.maxLateralAccelerationMps2 =
-            game::ship::
-                newtonianMainVectoringLateralAccelerationLimitMps2(
-                    params
-                );
+            capability.mainVectoringLateralMps2;
     }
 
     profile.maxAngularVelocityRadPerSecond =
-        game::ship::maximumAngularSpeedRadPerSec(params);
+        capability.maxAngularSpeedRadPerSec;
     profile.maxAngularAccelerationRadPerSecond2 =
-        game::ship::angularAccelerationLimitRadPerSec2(params);
+        capability.angularScalarRadPerSec2;
     return profile;
 }
 

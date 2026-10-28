@@ -12,8 +12,8 @@
 // production Cobra descriptor. A scenario the planner rejects writes only
 // the .geom file with "plan rejected <reason>".
 //
-// The route request's capability numbers mirror SpaceState's Newtonian
-// branch (DEV copy; they move to one shared capability snapshot later).
+// The route request's capability numbers come from the same
+// applyRouteRequestCapability as the game.
 
 #include <cmath>
 #include <cstdio>
@@ -29,6 +29,7 @@
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
 #include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/OrdinaryRoutePolicy.h"
+#include "src/game/navigation/RouteRequestCapability.h"
 #include "src/game/navigation/VehicleGuidanceEnvelope.h"
 #include "src/game/navigation/diagnostics/AutopilotCaseFile.h"
 #include "src/game/navigation/planner/newtonian/NewtonianPlanningPipeline.h"
@@ -275,7 +276,7 @@ bool build(const Scenario& s, const char* model, const ShipParams& physics,
     const auto law = LocalFlightControlLaw::Newtonian;
     const auto ship = makeNavigationVehicleProfile(physics, envelope, law);
 
-    // Mirror of SpaceState's Newtonian route request.
+    // SpaceState's Newtonian route request.
     planner::RoutePlanRequest request;
     request.startMeters = s.start;
     request.hasInitialForward = true;
@@ -289,19 +290,13 @@ bool build(const Scenario& s, const char* model, const ShipParams& physics,
     request.vehicleLengthMeters = dim.length;
     request.vehicleWidthMeters = dim.width;
     request.vehicleHeightMeters = dim.height;
-    const double reserve = DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(
-        ship.maxForwardAccelerationMps2, ship.maxBrakingAccelerationMps2,
-        ship.maxLateralAccelerationMps2);
-    request.maxSpeedMps = ship.maxSpeedMps;
-    request.acceleratingMps2 =
-        std::max(0.1, (ship.maxForwardAccelerationMps2 - reserve) * 0.90);
-    request.brakingMps2 =
-        std::max(0.1, (ship.maxBrakingAccelerationMps2 - reserve) * 0.90);
-    request.lateralMps2 = std::max(
-        0.1, newtonianPreferredLateralAccelerationMps2(request.acceleratingMps2));
-    request.maxAngularVelocityRadPerSecond = ship.maxAngularVelocityRadPerSecond;
-    request.maxAngularAccelerationRadPerSecond2 =
-        ship.maxAngularAccelerationRadPerSecond2 * 0.90;
+    const auto capability = applyRouteRequestCapability(request, ship, law);
+    if (!capability.ok)
+    {
+        std::printf("%-26s %s REFUSED %s\n", s.name.c_str(), model,
+            capability.reason.c_str());
+        return true;
+    }
     request.initialSpeedMps = glm::length(s.velocity);
     request.initialForwardLeadMeters = OrdinaryRoutePolicy::requiredStartLeadMeters(
         request.initialSpeedMps, request.maxSpeedMps, request.brakingMps2,

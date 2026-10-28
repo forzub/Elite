@@ -122,12 +122,11 @@ makeManeuverCapabilitySnapshot(
     AcceptedManeuverProgram::CapabilitySnapshot out;
     out.revision = revision;
 
-    const double forwardMain =
-        game::ship::forwardMainAccelerationLimitMps2(params);
-    const double reverseMain =
-        game::ship::reverseMainAccelerationLimitMps2(params);
-    const double manoeuvre =
-        game::ship::manoeuvreAccelerationLimitMps2(params);
+    const auto facts = makeNavigationControlCapability(
+        params, defaultLocalFlightControlLaw(), revision);
+    const double forwardMain = facts.mainForwardMps2;
+    const double reverseMain = facts.mainReverseMps2;
+    const double manoeuvre = facts.rcsScalarMps2;
 
     // These are instantaneous, attitude-preserving axis capabilities.
     // Flip-and-burn is not encoded as "reverse acceleration" because it
@@ -142,10 +141,8 @@ makeManeuverCapabilitySnapshot(
         manoeuvre;
     out.maxVerticalAccelerationMetersPerSec2 =
         manoeuvre;
-    out.maxAngularAccelerationRadPerSec2 =
-        game::ship::angularAccelerationLimitRadPerSec2(params);
-    out.maxAngularSpeedRadPerSec =
-        game::ship::maximumAngularSpeedRadPerSec(params);
+    out.maxAngularAccelerationRadPerSec2 = facts.angularScalarRadPerSec2;
+    out.maxAngularSpeedRadPerSec = facts.maxAngularSpeedRadPerSec;
     return out;
 }
 

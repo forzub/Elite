@@ -13,6 +13,7 @@
 #include "src/game/navigation/autopilot/AutopilotControlApi.h"
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
+#include "src/game/navigation/NavigationControlCapability.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
 #include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -133,9 +134,13 @@ public:
         decision_.phaseIndex = -1;
 
         // The route's terminal stop: once the craft is slow near the end,
-        // the terminal sequence owns the ship until a new route.
+        // the terminal sequence owns the ship until a new route. A stop
+        // request that flickers at the very end of the route (progress
+        // projection jitter of centimetres) does not end it; only the loss
+        // of the terminal target (a new route / cancellation) does.
         const bool terminalRequested =
-            request.terminalTargetValid && request.stopRequested;
+            request.terminalTargetValid &&
+            (request.stopRequested || state_.terminal.active);
         if (!terminalRequested)
             state_.terminal = {};
         if (terminalRequested &&
@@ -202,16 +207,16 @@ public:
         out.previousVelocityMapMps = state_.previousVelocityMapMps;
 
         const double angularAuthority =
-            game::ship::angularAccelerationLimitRadPerSec2(params);
+            factsOf(params).angularScalarRadPerSec2;
         const double angularRate =
-            game::ship::maximumAngularSpeedRadPerSec(params);
+            factsOf(params).maxAngularSpeedRadPerSec;
         out.courseResponseSeconds =
             angularAuthority > 1.0e-9 && angularRate > 1.0e-9
                 ? angularRate / angularAuthority
                 : 2.0;
 
         const double main =
-            game::ship::forwardMainAccelerationLimitMps2(params);
+            factsOf(params).mainForwardMps2;
         out.targetSpeedChangeRateMps2 = main;
         out.brakingResponseMps2 = main;
         out.commandResponsePerSecond =
@@ -399,20 +404,29 @@ private:
         glm::dvec3 commandedDirectionMap {0.0, 0.0, -1.0};
     };
 
+    // The pilot's one reader of the ship's capability facts.
+    [[nodiscard]] static NavigationControlCapability factsOf(
+        const ShipParams& params
+    ) noexcept
+    {
+        return makeNavigationControlCapability(
+            params, LocalFlightControlLaw::Newtonian);
+    }
+
     [[nodiscard]] static ManoeuvreCapability capabilityOf(
         const ShipParams& params
     ) noexcept
     {
         ManoeuvreCapability out;
         out.mainAccelerationMps2 =
-            std::max(0.0, game::ship::forwardMainAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).mainForwardMps2);
         out.rcsTrajectoryAccelerationMps2 =
             RcsTrajectoryShare *
-            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).rcsScalarMps2);
         out.gimbalLimitRad =
             std::max(
-                game::ship::mainGimbalPitchLimitRad(params),
-                game::ship::mainGimbalYawLimitRad(params)
+                factsOf(params).gimbalPitchRad,
+                factsOf(params).gimbalYawRad
             );
         out.plannedTurnRateRadPerSec =
             PlannedRateMargin * preferredTurnRateRadPerSec(params);
@@ -441,9 +455,9 @@ private:
     {
         AutopilotControlCommand out;
         const double mainAuthority =
-            std::max(0.0, game::ship::forwardMainAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).mainForwardMps2);
         const double rcsAuthority =
-            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).rcsScalarMps2);
         const double rcsBudget = RcsTrajectoryShare * rcsAuthority;
         const glm::dvec3 demand =
             finiteVecOrZero(request.desiredLinearAccelerationMapMps2) +
@@ -462,8 +476,8 @@ private:
                 solveGimbalDemand(direction, forward, right, up, params);
             const double gimbalLimit =
                 std::max(
-                    game::ship::mainGimbalPitchLimitRad(params),
-                    game::ship::mainGimbalYawLimitRad(params)
+                    factsOf(params).gimbalPitchRad,
+                    factsOf(params).gimbalYawRad
                 );
             const double thrustError =
                 std::max(0.0, angleBetween(forward, direction) - gimbalLimit);
@@ -516,7 +530,7 @@ private:
         double share
     ) noexcept
     {
-        const bool perAxis = game::ship::newtonianRcsPerAxisKnown(params);
+        const bool perAxis = factsOf(params).rcsPerAxisKnown;
         const glm::dvec3 axes[3] = {forward, right, up};
         // ShipDynamics axis ids: 0 right, 1 up, 2 forward.
         const int ids[3] = {2, 0, 1};
@@ -528,9 +542,8 @@ private:
             component[a] = finiteOrZero(glm::dot(demandMap, axes[a]));
             limit[a] = std::max(0.0,
                 perAxis
-                    ? game::ship::newtonianRcsDirectionAccelerationMps2(
-                          params, ids[a], component[a])
-                    : game::ship::manoeuvreAccelerationLimitMps2(params));
+                    ? factsOf(params).rcsDirectionMps2(ids[a], component[a])
+                    : factsOf(params).rcsScalarMps2);
             if (std::abs(component[a]) > 1.0e-12 && limit[a] > 1.0e-9)
                 scale = std::min(
                     scale, share * limit[a] / std::abs(component[a]));
@@ -751,7 +764,7 @@ private:
         // Translation: main inhibited; RCS trims the position calmly inside
         // the tolerance and then stops (no chase of a mathematical zero).
         const double rcsAuthority =
-            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).rcsScalarMps2);
         const double rcsBudget = RcsTrajectoryShare * rcsAuthority;
         const bool trimDeadband =
             distance <= TerminalDeadbandShare * tolPosition &&
@@ -815,7 +828,7 @@ private:
         poseRequest.targetUp = normalizedOr(targetUp, poseRequest.currentUp);
         const auto pose = HullPoseGuidance::evaluate(poseRequest);
         const double authority =
-            game::ship::angularAccelerationLimitRadPerSec2(params);
+            factsOf(params).angularScalarRadPerSec2;
         if (!pose.valid || !(authority > 1.0e-9))
             return;
         const double rateLimit = preferredTurnRateRadPerSec(params);
@@ -925,14 +938,14 @@ private:
         AutopilotControlCommand out;
 
         const double mainAuthority =
-            std::max(0.0, game::ship::forwardMainAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).mainForwardMps2);
         const double rcsAuthority =
-            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+            std::max(0.0, factsOf(params).rcsScalarMps2);
         const double rcsBudget = RcsTrajectoryShare * rcsAuthority;
         const double gimbalLimit =
             std::max(
-                game::ship::mainGimbalPitchLimitRad(params),
-                game::ship::mainGimbalYawLimitRad(params)
+                factsOf(params).gimbalPitchRad,
+                factsOf(params).gimbalYawRad
             );
         const double corridorTolerance =
             request.corridorToleranceMeters > 0.0
@@ -1246,8 +1259,8 @@ private:
         // Physical limits, including the hull-load rate bound.
         const double installed =
             std::min(
-                game::ship::pitchRateLimitRadPerSec(params),
-                game::ship::yawRateLimitRadPerSec(params)
+                factsOf(params).maxAngularRateRadPerSec.x,
+                factsOf(params).maxAngularRateRadPerSec.y
             );
         return std::isfinite(installed)
             ? PreferredRateShare * std::max(0.0, installed)
@@ -1261,7 +1274,7 @@ private:
         return PreferredAccelerationShare *
             std::max(
                 0.0,
-                game::ship::angularAccelerationLimitRadPerSec2(params)
+                factsOf(params).angularScalarRadPerSec2
             );
     }
 
@@ -1310,7 +1323,7 @@ private:
         poseRequest.targetUp = poseRequest.currentUp;
         const auto pose = HullPoseGuidance::evaluate(poseRequest);
         const double authority =
-            game::ship::angularAccelerationLimitRadPerSec2(params);
+            factsOf(params).angularScalarRadPerSec2;
         if (!pose.valid || !(authority > 1.0e-9))
             return;
 
@@ -1394,7 +1407,7 @@ private:
         const double angularAuthority =
             std::max(
                 1.0e-9,
-                game::ship::angularAccelerationLimitRadPerSec2(params)
+                factsOf(params).angularScalarRadPerSec2
             );
         attitudeRequest.pitchYawAngularAccelerationAuthorityRadPerSec2 =
             angularAuthority;
@@ -1445,7 +1458,7 @@ private:
         );
 
         const double rcsAuthority =
-            game::ship::manoeuvreAccelerationLimitMps2(params);
+            factsOf(params).rcsScalarMps2;
         if (rcsAuthority > 1.0e-12)
         {
             // Residual velocity is trimmed over a second, and a residual
@@ -1477,9 +1490,9 @@ private:
         GimbalDemandResult out;
 
         const double yawLimit =
-            game::ship::mainGimbalYawLimitRad(params);
+            factsOf(params).gimbalYawRad;
         const double pitchLimit =
-            game::ship::mainGimbalPitchLimitRad(params);
+            factsOf(params).gimbalPitchRad;
 
         const glm::dvec3 desired =
             normalizedOr(desiredDirection, forward);

@@ -873,6 +873,29 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteNewtonianScenarios PRIVATE ws2_32 mswsock)
     endif()
+
+    # DEV check: factual navigation capability, no invented authority,
+    # reactor off/restart on the production ShipCore.
+    add_executable(EliteNavigationCapabilityCheck
+        tools/navigation_runtime/NavigationCapabilityCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteNavigationCapabilityCheck PRIVATE src)
+    target_link_libraries(EliteNavigationCapabilityCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteNavigationCapabilityCheck PRIVATE ws2_32 mswsock)
+    endif()
 endif()
 
 

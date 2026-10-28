@@ -142,6 +142,12 @@ struct ShipParams
     // manoeuvreThrusterAccel. Appended for aggregate/dump compatibility.
     glm::dvec3 newtonianRcsPositiveMps2 {0.0};
     glm::dvec3 newtonianRcsNegativeMps2 {0.0};
+
+    // Signed Newtonian angular authority (rad/s^2) from the same telemetry,
+    // x = pitch, y = yaw, z = roll. All zero = unknown: callers use the
+    // symmetric scalar angularAccel. Appended for aggregate/dump compatibility.
+    glm::dvec3 newtonianAngularPositiveRadPerSec2 {0.0};
+    glm::dvec3 newtonianAngularNegativeRadPerSec2 {0.0};
 };
 
 struct ShipPhysicsProfile

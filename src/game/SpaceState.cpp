@@ -90,6 +90,7 @@
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
 #include "src/game/navigation/traffic/TrafficRoutePlanAdapter.h"
 #include "src/game/navigation/traffic/SegmentedRouteComposer.h"
+#include "src/game/navigation/RouteRequestCapability.h"
 #include "src/game/navigation/LocalFlightControlStateMachine.h"
 #include "src/game/navigation/DockingAdvisoryPortPrediction.h"
 #include "src/game/navigation/RouteFrameField.h"
@@ -3175,68 +3176,23 @@ void SpaceState::updateDockingAdvisory()
         request.vehicleWidthMeters = hull.widthMeters;
         request.vehicleHeightMeters = hull.heightMeters;
 
-        // Keep execution reserve on the client exactly where the virtual pilot
-        // lives. Planner never assumes all installed authority is available.
-        const double linearReserve =
-            game::navigation::DockingAutomaticRecoveryPolicy::
-                linearFeedbackReserveMps2(
-                    shipProfile.maxForwardAccelerationMps2,
-                    shipProfile.maxBrakingAccelerationMps2,
-                    shipProfile.maxLateralAccelerationMps2
-                );
-        // Speed is not an execution authority reserve. Publish the real
-        // physical maximum to the route layer; cruise policy applies its
-        // single explicit 0.8 factor later. Curvature/braking/terminal limits
-        // are local and must not be hidden behind stacked global margins.
-        request.maxSpeedMps =
-            shipProfile.maxSpeedMps;
-        request.acceleratingMps2 =
-            std::max(
-                0.1,
-                (shipProfile.maxForwardAccelerationMps2 -
-                 linearReserve) * 0.90
+        // Capability numbers of the request: one implementation shared with
+        // the offline tools (execution reserve, planning shares, laws). A
+        // missing authority is zero, never a small invented value: without
+        // it the route is physically impossible and is not planned.
+        const auto requestCapability =
+            game::navigation::applyRouteRequestCapability(
+                request,
+                shipProfile,
+                controlLaw
             );
-        request.brakingMps2 =
-            std::max(
-                0.1,
-                (shipProfile.maxBrakingAccelerationMps2 -
-                 linearReserve) * 0.90 *
-                    (assisted
-                        ? game::navigation::assisted_budget::
-                              ConcurrentTurnAxisFraction
-                        : 1.0)
-            );
+        if (!requestCapability.ok)
+        {
+            fail("PhysicallyImpossible: " + requestCapability.reason);
+            return;
+        }
         const double executionCurveLateralMps2 =
-            std::max(
-                0.0,
-                (shipProfile.maxLateralAccelerationMps2 -
-                 linearReserve) * 0.90
-            );
-
-        // Newtonian curves (route fillets and the accepted trajectory) use
-        // ONE capability: the preferred routine lateral acceleration. The
-        // planner only asks whether the ship can provide it; the pilot
-        // chooses the actuator.
-        request.lateralMps2 =
-            assisted
-                ? std::max(
-                      0.1,
-                      game::navigation::assisted_budget::
-                          reservedCurveLateralAccelerationMps2(
-                              executionCurveLateralMps2
-                          )
-                  )
-                : std::max(
-                      0.1,
-                      game::navigation::
-                          newtonianPreferredLateralAccelerationMps2(
-                              request.acceleratingMps2
-                          )
-                  );
-        request.maxAngularVelocityRadPerSecond =
-            shipProfile.maxAngularVelocityRadPerSecond;
-        request.maxAngularAccelerationRadPerSecond2 =
-            shipProfile.maxAngularAccelerationRadPerSecond2 * 0.90;
+            requestCapability.executionCurveLateralMps2;
         request.initialSpeedMps = glm::length(startVelocityMps);
 
         request.assistedCompactStartLead = assisted;

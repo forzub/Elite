@@ -103,6 +103,12 @@ inline void applyNewtonianRcsScalarBounds(
     p.newtonianRcsNegativeMps2={
         std::max(0.0,negative[0]),std::max(0.0,negative[1]),
         std::max(0.0,negative[2])};
+    p.newtonianAngularPositiveRadPerSec2={
+        std::max(0.0,positive[3]),std::max(0.0,positive[4]),
+        std::max(0.0,positive[5])};
+    p.newtonianAngularNegativeRadPerSec2={
+        std::max(0.0,negative[3]),std::max(0.0,negative[4]),
+        std::max(0.0,negative[5])};
     p.manoeuvreThrusterAccel=static_cast<float>(
         std::min(std::max(0.0,
             static_cast<double>(p.manoeuvreThrusterAccel)),

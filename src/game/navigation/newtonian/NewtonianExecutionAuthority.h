@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "src/game/navigation/NavigationControlCapability.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/game/ship/core/ShipParams.h"
 
@@ -31,10 +32,8 @@ struct ExecutionAuthority
 ) noexcept
 {
     const double main =
-        std::max(
-            0.0,
-            game::ship::forwardMainAccelerationLimitMps2(params)
-        );
+        makeNavigationControlCapability(
+            params, LocalFlightControlLaw::Newtonian).mainForwardMps2;
     const double reserveFraction =
         std::clamp(feedbackReserveFraction, 0.0, 1.0);
     const double reserve = main * reserveFraction;

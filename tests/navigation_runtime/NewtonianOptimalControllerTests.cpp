@@ -504,6 +504,31 @@ void testTerminalDoneCorrectsNothing()
         "a profile refresh recompiled the program after the terminal stop");
 }
 
+// A stop request that flickers off for a tick at the route end does not end
+// the terminal sequence (it would restart POSITION_HOLD and accept a route
+// refresh as a new program).
+void testTerminalSurvivesStopRequestFlicker()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double) { return 50.0; };
+    auto accel = [](double) { return 0.0; };
+    controller.setManoeuvreRoute(
+        route(500.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    const std::size_t stations = controller.program().stations.size();
+    auto request = terminalRequest();
+    request.actualVelocityMapMps = {0.8, 0.0, 0.0};
+    for (int i = 0; i < 5; ++i)
+        (void)controller.update(request, params());
+    request.stopRequested = false;
+    (void)controller.update(request, params());
+    request.stopRequested = true;
+    (void)controller.update(request, params());
+    controller.setManoeuvreRoute(
+        route(900.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    require(controller.program().stations.size() == stations,
+        "a one-tick stop-request flicker ended the terminal sequence");
+}
+
 // With the signed per-axis RCS authority published, translation inputs are
 // normalized per body direction (a strong axis is used fully, a lost
 // direction is never commanded) and flagged as per-axis.
@@ -568,6 +593,7 @@ int main()
         testTerminalLastMetresAreRcsTrim();
         testTerminalAlignIsCalm();
         testTerminalDoneCorrectsNothing();
+        testTerminalSurvivesStopRequestFlicker();
         testRcsUsesSignedPerAxisAuthority();
         testPrecisionStopRcsRemainsIsolated();
 
@@ -585,6 +611,7 @@ int main()
             << " - the last terminal metres are RCS trim, main inhibited\n"
             << " - the terminal turn is calm\n"
             << " - DONE corrects nothing and recompiles nothing\n"
+            << " - a stop-request flicker does not end the terminal sequence\n"
             << " - RCS uses the signed per-axis authority\n"
             << " - precision-stop RCS remains isolated\n";
         return 0;

@@ -37,9 +37,9 @@ struct NewtonianSpeedTolerancePolicy
         return FloorMps + SpeedShare * v;
     }
 
-    // A plateau re-levelled by more than this since the manoeuvre program
-    // was compiled (which also shifts the next braking ramp) needs the
-    // program refreshed; an unchanged plateau does not.
+    // A craft off the profile it is flying by more than this at a route
+    // checkpoint (a re-levelled plateau, a tracked ramp, a real deviation)
+    // gets its manoeuvre program refreshed; a craft on it does not.
     static constexpr double ProgramRefreshShare = 0.1;
     [[nodiscard]] static double programRefreshMps(double speedMps) noexcept
     {

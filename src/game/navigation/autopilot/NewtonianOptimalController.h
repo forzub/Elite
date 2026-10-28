@@ -259,6 +259,8 @@ private:
     static constexpr double WallMarginFraction = 0.85;
     static constexpr double DefaultCorridorToleranceMeters = 50.0;
     static constexpr double SettleSpeedMps = 2.0;
+    // Smallest translational RCS acceleration worth commanding.
+    static constexpr double RcsDribbleMps2 = 0.01;
     // Terminal sequence: entry speed, calm approach speed toward the end
     // point, and fallbacks when the route gives no tolerance.
     static constexpr double TerminalEntrySpeedMps = 2.0;
@@ -513,7 +515,6 @@ private:
         double component[3];
         double limit[3];
         double scale = 1.0;
-        double strongest = 0.0;
         for (int a = 0; a < 3; ++a)
         {
             component[a] = finiteOrZero(glm::dot(demandMap, axes[a]));
@@ -522,7 +523,6 @@ private:
                     ? game::ship::newtonianRcsDirectionAccelerationMps2(
                           params, ids[a], component[a])
                     : game::ship::manoeuvreAccelerationLimitMps2(params));
-            strongest = std::max(strongest, limit[a]);
             if (std::abs(component[a]) > 1.0e-12 && limit[a] > 1.0e-9)
                 scale = std::min(
                     scale, share * limit[a] / std::abs(component[a]));
@@ -530,16 +530,14 @@ private:
         glm::dvec3 commanded {0.0};
         float* inputs[3] = {&out.forwardInput, &out.strafeInput,
                             &out.liftInput};
-        double magnitude = 0.0;
-        for (int a = 0; a < 3; ++a)
-            if (limit[a] > 1.0e-9)
-                magnitude += component[a] * component[a] * scale * scale;
-        // Dribbles below 1% of the authority are dropped.
-        const bool dribble = std::sqrt(magnitude) < 0.01 * strongest;
         for (int a = 0; a < 3; ++a)
         {
-            const double c =
-                dribble || !(limit[a] > 1.0e-9) ? 0.0 : component[a] * scale;
+            // A dribble is dropped: below 1 % of its own direction's
+            // authority AND below an absolute floor, so a fine trim on a
+            // strong RCS axis still reaches the thrusters.
+            double c = limit[a] > 1.0e-9 ? component[a] * scale : 0.0;
+            if (std::abs(c) < std::min(0.01 * limit[a], RcsDribbleMps2))
+                c = 0.0;
             *inputs[a] = finiteClamp(limit[a] > 1.0e-9 ? c / limit[a] : 0.0);
             commanded += axes[a] * c;
         }

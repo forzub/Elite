@@ -73,7 +73,8 @@ struct AutopilotControlRequest
 
     // Terminal pose of a route that ends in a stop, with the route's finite
     // acceptance tolerances. "Inside the tolerance" is the goal, never a
-    // mathematical zero.
+    // mathematical zero. This is a navigation terminal state (staging,
+    // waiting, rendezvous point), not a docking/capture state.
     bool terminalTargetValid = false;
     glm::dvec3 terminalPositionMapMeters {0.0};
     glm::dvec3 terminalForwardMap {0.0, 0.0, -1.0};

@@ -2961,3 +2961,20 @@ Evidence kept: `D:/tmp/elite_s2term2I_*` (this flight), `D:/tmp/elite_s2fly2*` (
 User decision: the agent alone keeps D:/tmp clean; files needed for work live in the repository and are committed.
 - `tools/navigation_runtime/newtonian/` (see its README): `unit.sh`, `replay_matrix.sh`, `replay.sh`, `fly.sh`, `series.sh`, `decision.py`, `window.py`, `terminal.py`, and the replay cases `cases/newtonian-{I,Y,X}.case` (the accepted Step 1a routes). Verified: `unit.sh` 12/12 PASS, `replay_matrix.sh` reproduces the offline results above exactly.
 - D:/tmp (`$ELITE_DIAG_DIR`) holds only transient `elite_*` outputs of the current run and is emptied after each stage. The `D:/tmp/elite_*` script and trace paths named in earlier sections of this file no longer exist; their results are recorded here as text and can be regenerated with the tools above (old-pilot baseline: `fly.sh` on commit `1f136356`).
+
+## 2026-10-28 checkpoint before the external integration audit
+
+Architecture boundary (user decision): the Newtonian route autopilot is a NAVIGATION system — current state -> safe route -> fly it -> reach a navigation terminal state -> stop and stabilise (`POSITION_HOLD -> ATTITUDE_ALIGN -> RATE_SETTLE -> DONE`). DONE = "navigation terminal state reached" (staging / waiting / rendezvous / plain end point), NOT "docked". Automatic docking (rotating dock, moving platforms, relative motion, capture envelope) is a separate future layer taking over from DONE (`ROUTE_AUTOPILOT DONE -> DOCKING_AUTOPILOT ACQUIRE`); formation flight likewise (not implemented). Code comments on the terminal target/sequence state this explicitly. The nav-stress target `dock_gate_front` is a staging point in front of the dock.
+
+Status of the Newtonian commits on main (WIP = merged but not accepted as a whole on their own):
+- `c1c99fcc` RCS delta-v ownership + installed main projection: VERIFIED (flights).
+- `5e621ebd` nozzle/RCS counter-torque cooperation: WIP by meaning (flown in every healthy flight since, no dedicated acceptance; damaged-ship behaviour not checked).
+- `571fc01e` Step 1a route geometry: flight-verified only together with the Step 2 pilot (series 2); Y/X routes' 700/150 m tunnel straights remain inherited design values; BLUE KeepInside +22 m erosion PROVISIONAL.
+- `1f136356` old experimental ballistic pilot: superseded (baseline only), its code was replaced by `dcf89376`.
+- `fe8bfde6` offline replay harness: DEV tool, working.
+- `dcf89376`, `4c703cc7`, `f8c09e3e`, `ae0ba2d1` Step 2 program pilot + terminal sequence: HEALTHY FLIGHT VERIFIED on nav-stress:simple (I/Y/X corridor + terminal; terminal sequence flight-verified on I, offline on Y/X); healthy ship only; gimbal 7 deg PROVISIONAL until Step 4.
+- `df6c3773` diagnostics tooling in the repo.
+Known red test: `local_flight_control_contracts` (pre-existing, Assisted fore-main logic).
+Not verified: damaged ships, other scenarios than nav-stress:simple, narrow zones (Step 3), portal-as-window (Step 1b).
+
+Next (pre-approved order): Step 1b portal as window -> signed per-axis RCS capability + no impossible manoeuvre phases in the compiler -> Step 3 narrow-zone safety (orientation-aware envelope) -> Step 4 N1 gimbal sweep. Damaged-ship navigation is a separate later stage.

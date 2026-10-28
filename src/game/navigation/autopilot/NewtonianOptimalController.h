@@ -307,6 +307,9 @@ private:
     // Terminal sequence: BRAKE (program) -> POSITION_HOLD -> ATTITUDE_ALIGN
     // -> RATE_SETTLE -> DONE. Every step ends inside a finite tolerance;
     // DONE is left only beyond twice that tolerance (hysteresis).
+    // DONE means "the navigation terminal state is reached" (a staging,
+    // waiting or rendezvous point), never "docked": a future docking or
+    // formation controller takes over from DONE.
     enum class TerminalStep : int
     {
         PositionHold = 1,

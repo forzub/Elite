@@ -1405,8 +1405,9 @@ public:
         request.deltaSeconds = deltaSeconds;
         if (state.holdAtTerminal && terminalStopAuthored)
         {
-            // The route's own terminal acceptance envelope; roll uses the
-            // attitude tolerance until a dock frame defines its own.
+            // The route's own terminal acceptance envelope (a navigation
+            // terminal state: staging/waiting/rendezvous point, NOT a
+            // docked state); roll uses the attitude tolerance.
             const auto& finalPose = state.continuousSamples.back();
             const auto& tolerance = state.programs.back().terminalTolerance;
             request.terminalTargetValid = true;

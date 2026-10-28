@@ -2,6 +2,7 @@
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
 #include "src/game/navigation/debug/DockPlannerFileLog.h"
+#include "src/game/navigation/diagnostics/AutopilotCaseFile.h"
 #include "src/game/presentation/DockPlannerTerminalTelemetry.h"
 #include "src/game/presentation/DockTerminalBitePresentation.h"
 #include "src/audio/AudioEngine.h"
@@ -4452,6 +4453,30 @@ void SpaceState::updateDockingAdvisory()
                             }
                             else
                             {
+                                // DEV diagnostic only: the first accepted
+                                // Newtonian start, replayable offline.
+                                static bool caseDumped = false;
+                                const char* casePath =
+                                    std::getenv("ELITE_AUTOPILOT_CASE_DUMP");
+                                if (!caseDumped && casePath && *casePath)
+                                {
+                                    game::navigation::diagnostics::
+                                        AutopilotCase dump;
+                                    dump.plan = job->plan;
+                                    dump.agent = compileAgent;
+                                    dump.physics = compilePhysics;
+                                    dump.acceptedAtUniverseTimeSeconds =
+                                        compileExecutionUniverseTimeSeconds;
+                                    dump.requestSerial = compileRequestSerial;
+                                    dump.trackingToleranceMeters =
+                                        compileTolerance;
+                                    dump.routeUpReference =
+                                        job->context.routeUpReference;
+                                    dump.holdAtTerminal = true;
+                                    caseDumped =
+                                        game::navigation::diagnostics::
+                                            writeAutopilotCase(casePath, dump);
+                                }
                                 job->autopilotCompiled =
                                     game::navigation::autopilot::
                                         NewtonianClientRouteAutopilot::start(

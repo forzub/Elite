@@ -698,8 +698,9 @@ if(TARGET EliteGame AND WIN32)
 endif()
 
 if(ELITE_BUILD_SERVER)
-    add_executable(EliteServer
-        src/server_main.cpp
+    # Authoritative simulation sources shared by the headless server and the
+    # offline Newtonian replay harness (same production ship physics).
+    set(ELITE_SERVER_SIMULATION_SOURCES
         src/platform/RuntimeRoot.cpp
         src/platform/ProcessSingleInstanceGuard.cpp
 
@@ -797,6 +798,11 @@ if(ELITE_BUILD_SERVER)
         src/debug/DebugSettings.cpp
     )
 
+    add_executable(EliteServer
+        src/server_main.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+
     target_include_directories(EliteServer PRIVATE
         src
     )
@@ -819,6 +825,30 @@ if(ELITE_BUILD_SERVER)
             ws2_32
             mswsock
         )
+    endif()
+
+    # DEV offline harness: replays a dumped Newtonian autopilot start
+    # (ELITE_AUTOPILOT_CASE_DUMP) through the production route autopilot and
+    # the production ShipCore server step. Not part of the shipped runtime.
+    add_executable(EliteNewtonianReplay
+        tools/navigation_runtime/NewtonianCaseReplay.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteNewtonianReplay PRIVATE src)
+    target_link_libraries(EliteNewtonianReplay PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteNewtonianReplay PRIVATE ws2_32 mswsock)
     endif()
 endif()
 

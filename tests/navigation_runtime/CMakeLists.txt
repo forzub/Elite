@@ -1620,6 +1620,24 @@ add_test(
     COMMAND newtonian_optimal_controller_tests
 )
 
+add_executable(
+    traffic_window_crossing_tests
+    TrafficWindowCrossingTests.cpp
+)
+target_include_directories(traffic_window_crossing_tests PRIVATE
+    "${ELITE_SOURCE_ROOT}"
+    "${ELITE_SOURCE_ROOT}/src"
+)
+target_compile_features(traffic_window_crossing_tests PRIVATE cxx_std_17)
+target_link_libraries(
+    traffic_window_crossing_tests
+    PRIVATE EliteNavigationRuntimeControl
+)
+add_test(
+    NAME traffic_window_crossing
+    COMMAND traffic_window_crossing_tests
+)
+
 set_tests_properties(
     newtonian_optimal_controller
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"

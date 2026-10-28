@@ -77,8 +77,10 @@ inline std::vector<WindowCrossingChoice> chooseWindowCrossings(
     // Candidate offsets: rings at these fractions of the admissible radius.
     constexpr int Rings = 4;
     constexpr int Spokes = 16;
-    // A tiny preference for the centre breaks ties (no needless offset).
-    constexpr double CentrePreferenceRad = 1.0e-3;
+    // Clearance is worth keeping: moving to the window's edge must buy at
+    // least this much less turning (quadratic in the used share), so a
+    // negligible gain on long legs leaves the crossing centred.
+    constexpr double EdgeCostRad = 2.0 * 3.14159265358979323846 / 180.0;
 
     const auto boundaryFor =
         [&](const std::string& portalId, bool inbound)
@@ -181,9 +183,9 @@ inline std::vector<WindowCrossingChoice> chooseWindowCrossings(
                     2.0 * 3.14159265358979323846 * spoke / Spokes;
                 const glm::dvec3 offset =
                     (right * std::cos(a) + up * std::sin(a)) * radius;
+                const double share = radius / admissible;
                 const double cost =
-                    turnCost(offset) +
-                    CentrePreferenceRad * radius / admissible;
+                    turnCost(offset) + EdgeCostRad * share * share;
                 if (cost < bestCost)
                 {
                     bestCost = cost;

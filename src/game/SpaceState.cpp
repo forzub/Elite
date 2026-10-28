@@ -3762,8 +3762,28 @@ void SpaceState::updateDockingAdvisory()
                         request.goalMeters,
                         request.agentRadiusMeters
                     );
+                // The planner's own file log (stdout is not attached in the
+                // native client).
+                std::ofstream crossingLog(
+                    "D:/tmp/elite_docking_planner.log",
+                    std::ios::out | std::ios::app);
                 for (const auto& crossing : crossings)
                 {
+                    if (crossingLog)
+                        crossingLog
+                            << "[TrafficWindowCrossing]"
+                            << " request=" << pending.serial
+                            << " stage=" << crossing.stageIndex
+                            << " offset_m="
+                            << glm::length(crossing.offsetWorldMeters)
+                            << " admissible_m="
+                            << crossing.admissibleRadiusMeters
+                            << " centred_turn_deg="
+                            << crossing.centredTurnRad * 57.29577951308232
+                            << " chosen_turn_deg="
+                            << (crossing.turnBeforeRad +
+                                crossing.turnAfterRad) * 57.29577951308232
+                            << std::endl;
                     std::cout
                         << "[TrafficWindowCrossing]"
                         << " request=" << pending.serial

@@ -3152,3 +3152,12 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 ### Real flights `g` (commit `ad2e822c`) - pre-registered: 0 violations, DONE, xtrack <= 30 m, no UNRECOVERABLE monitor verdict in healthy flight
 - Newtonian-I: 0 violations, xtrack 19.9 m, DONE reached, no monitor intervention - PASS. Newtonian-X: 0 violations, xtrack 19.2 m, DONE 197.1 s, 2 WARN vetoes, no UNRECOVERABLE - PASS.
 - ANOMALY (open): in the I flight the pilot's accumulated dt reached 443 s within the 270 s wall-clock flight (x1.64; X in the same build and all earlier flights ~1.0). Scaled back, DONE ~245 s as in earlier I flights; safety unaffected. Not caused by the monitor (it does not touch dt); to investigate with the game-vs-replay time gap.
+
+## 2026-10-28 user decisions after steps E-G
+- DONE time vs the planner's ideal and the recompile count are NOT acceptance criteria (the executor cannot always fly the planner's wish exactly). The X time misses in `e`/`e2` and the recompile miss in `bc2` are accepted as non-defects; from step H on they are recorded metrics only.
+- RCS gas must be a real constraint (user design intent: the player must not fly on the manoeuvre thrusters). Today `advanceNewtonianRcsGas` adds the compressor recharge (0.065/s) every tick, also while firing (use 0.018/s at full intensity) - the net flow is positive whenever the compressor has power, so the gas never limits healthy flight. Required: the gas is consumed while firing and regenerates only when consumption stops; the sustainable RCS acceleration follows from the gas; the capability (and planner) must see it. Option to evaluate: RCS nozzle heating as a second limit. Scheduled as damaged/resource case I-E (gas and heat), after H.
+
+### Step H pre-registration (healthy regression, real flights, last build = `e0064e2d` sources)
+- Newtonian I/Y/X (nav-stress:simple, 270 s): 0 corridor violations, DONE, max cross-track <= 30 m, no UNRECOVERABLE monitor verdict.
+- Narrow I/X (DEV fixture `narrow_blue_volumes.json`, 270 s): 0 violations outside the zone, zone cross-track < room 3.0 m, main throttle 0 in the zone, DONE.
+- Assisted-I (150 s): no failure, max cross-track <= 20 m.

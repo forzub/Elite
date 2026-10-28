@@ -1403,6 +1403,24 @@ public:
             (atFinalContinuousSegment || terminalBrakeActive);
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
+        if (state.holdAtTerminal && terminalStopAuthored)
+        {
+            // The route's own terminal acceptance envelope; roll uses the
+            // attitude tolerance until a dock frame defines its own.
+            const auto& finalPose = state.continuousSamples.back();
+            const auto& tolerance = state.programs.back().terminalTolerance;
+            request.terminalTargetValid = true;
+            request.terminalPositionMapMeters = finalPose.positionMapMeters;
+            request.terminalForwardMap =
+                normalizedOr(finalPose.forwardMap, referenceTangent);
+            request.terminalUpMap = normalizedOr(finalPose.upMap, desiredUp);
+            request.terminalPositionToleranceMeters = tolerance.positionMeters;
+            request.terminalSpeedToleranceMps = tolerance.linearVelocityMps;
+            request.terminalAttitudeToleranceRad = tolerance.forwardAngleRad;
+            request.terminalRollToleranceRad = tolerance.forwardAngleRad;
+            request.terminalAngularRateToleranceRadPerSec =
+                tolerance.angularVelocityRadPerSec;
+        }
         request.programProgressMeters = continuous.spatialProgressMeters;
         request.programProgressValid =
             PilotTakesManoeuvreRoute<PilotController>::value;

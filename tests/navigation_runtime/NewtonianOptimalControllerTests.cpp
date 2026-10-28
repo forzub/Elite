@@ -392,6 +392,91 @@ void testBrakeNeverReversesTheMotion()
         "terminal settle did not trim the residual motion with RCS");
 }
 
+AutopilotControlRequest terminalRequest()
+{
+    auto request = baseRequest();
+    request.stopRequested = true;
+    request.terminalTargetValid = true;
+    request.terminalPositionMapMeters = {0.0, 0.0, 0.0};
+    request.terminalForwardMap = {1.0, 0.0, 0.0};
+    request.terminalUpMap = {0.0, 1.0, 0.0};
+    request.terminalPositionToleranceMeters = 3.0;
+    request.terminalSpeedToleranceMps = 0.75;
+    request.terminalAttitudeToleranceRad = 5.0 * Pi / 180.0;
+    request.terminalRollToleranceRad = 5.0 * Pi / 180.0;
+    request.terminalAngularRateToleranceRadPerSec = 0.05;
+    request.desiredPositionMapMeters = {0.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {0.0, 0.0, 0.0};
+    return request;
+}
+
+// The last metres are RCS work: main inhibited, the hull keeps the
+// attitude it arrived with while it is being placed.
+void testTerminalLastMetresAreRcsTrim()
+{
+    NewtonianOptimalController controller;
+    auto request = terminalRequest();
+    request.actualPositionMapMeters = {0.0, 0.0, 5.0};
+    request.actualVelocityMapMps = {0.0, 0.0, 0.0};
+    // Hull retro after braking.
+    request.forwardMap = {-1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, -1.0};
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f, "terminal placement fired main");
+    require(rotationInput(out) < 0.05,
+        "terminal placement turned the hull before the craft was placed");
+    require(translationInput(out) > 0.01,
+        "terminal placement did not use translational RCS");
+}
+
+// The terminal turn is calm: at most the preferred share of the angular
+// authority, even for a 180 degree turn.
+void testTerminalAlignIsCalm()
+{
+    NewtonianOptimalController controller;
+    auto request = terminalRequest();
+    request.forwardMap = {-1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, -1.0};
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f, "terminal align fired main");
+    require(rotationInput(out) > 0.05, "terminal align did not turn");
+    require(std::abs(out.pitchInput) <= 0.51f &&
+            std::abs(out.yawInput) <= 0.51f &&
+            std::abs(out.rollInput) <= 0.51f,
+        "terminal align used more than the calm share of the authority");
+}
+
+// DONE is final: tiny residual errors inside the hysteresis band change
+// nothing, and a profile refresh does not recompile the program.
+void testTerminalDoneCorrectsNothing()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double) { return 50.0; };
+    auto accel = [](double) { return 0.0; };
+    controller.setManoeuvreRoute(
+        route(500.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    const std::size_t stations = controller.program().stations.size();
+    auto request = terminalRequest();
+    for (int i = 0; i < 4; ++i)
+        (void)controller.update(request, params());
+    // Inside 2x the tolerances: 4 m off, 0.08 m/s drift, 8 deg yaw.
+    request.actualPositionMapMeters = {0.0, 0.0, 4.0};
+    request.actualVelocityMapMps = {0.0, 0.0, 0.08};
+    const double a = 8.0 * Pi / 180.0;
+    request.forwardMap = {std::cos(a), 0.0, std::sin(a)};
+    request.rightMap = {-std::sin(a), 0.0, std::cos(a)};
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f, "DONE fired main");
+    require(rotationInput(out) == 0.0 && std::abs(out.rollInput) == 0.0f,
+        "DONE corrected an attitude inside the hysteresis band");
+    require(translationInput(out) == 0.0,
+        "DONE trimmed a position inside the hysteresis band");
+    controller.setManoeuvreRoute(
+        route(900.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    require(controller.program().stations.size() == stations,
+        "a profile refresh recompiled the program after the terminal stop");
+}
+
 void testPrecisionStopRcsRemainsIsolated()
 {
     NewtonianOptimalController controller;
@@ -419,6 +504,9 @@ int main()
         testBurnGateHoldsMainUntilAligned();
         testFinishedPhaseIsNotRevived();
         testBrakeNeverReversesTheMotion();
+        testTerminalLastMetresAreRcsTrim();
+        testTerminalAlignIsCalm();
+        testTerminalDoneCorrectsNothing();
         testPrecisionStopRcsRemainsIsolated();
 
         std::cout
@@ -430,6 +518,10 @@ int main()
             << " - a curve keeps its thrust axis against a speed catch-up\n"
             << " - the burn gate holds main until aligned\n"
             << " - a finished phase is not revived\n"
+            << " - a finished brake never reverses the motion\n"
+            << " - the last terminal metres are RCS trim, main inhibited\n"
+            << " - the terminal turn is calm\n"
+            << " - DONE corrects nothing and recompiles nothing\n"
             << " - precision-stop RCS remains isolated\n";
         return 0;
     }

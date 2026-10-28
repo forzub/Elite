@@ -71,6 +71,19 @@ struct AutopilotControlRequest
     bool terminalAttitudeHold = false;
     double deltaSeconds = 0.0;
 
+    // Terminal pose of a route that ends in a stop, with the route's finite
+    // acceptance tolerances. "Inside the tolerance" is the goal, never a
+    // mathematical zero.
+    bool terminalTargetValid = false;
+    glm::dvec3 terminalPositionMapMeters {0.0};
+    glm::dvec3 terminalForwardMap {0.0, 0.0, -1.0};
+    glm::dvec3 terminalUpMap {0.0, 1.0, 0.0};
+    double terminalPositionToleranceMeters = 0.0;
+    double terminalSpeedToleranceMps = 0.0;
+    double terminalAttitudeToleranceRad = 0.0;
+    double terminalRollToleranceRad = 0.0;
+    double terminalAngularRateToleranceRadPerSec = 0.0;
+
     // Progress of the position reference along the route stations handed to
     // a pilot that compiles its own manoeuvre program (see the route hook in
     // DedicatedClientRouteAutopilot). Other pilots ignore it.

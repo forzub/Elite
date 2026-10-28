@@ -64,6 +64,10 @@ public:
         const glm::dvec3& hullForwardMap
     )
     {
+        // The route is finished once the terminal sequence runs: a profile
+        // refresh at the last checkpoint is no new manoeuvre.
+        if (state_.terminal.active)
+            return;
         program_ =
             compileNewtonianManoeuvreProgram(
                 samples,
@@ -123,7 +127,20 @@ public:
         decision_.hullTarget = forward;
         decision_.programPhase = -1;
         decision_.phaseIndex = -1;
-        if (precisionStop)
+
+        // The route's terminal stop: once the craft is slow near the end,
+        // the terminal sequence owns the ship until a new route.
+        const bool terminalRequested =
+            request.terminalTargetValid && request.stopRequested;
+        if (!terminalRequested)
+            state_.terminal = {};
+        if (terminalRequested &&
+            (state_.terminal.active || actualSpeed <= TerminalEntrySpeedMps))
+        {
+            out = terminalControl(request, params, forward, right, up, dt);
+            state_.phase = Phase::Hold;
+        }
+        else if (precisionStop)
         {
             out = precisionStopControl(
                 request,
@@ -224,6 +241,7 @@ public:
     }
 
 private:
+    static constexpr double DegToRadValue = 3.14159265358979323846 / 180.0;
     // A share of installed RCS stays reserved for attitude and nozzle
     // counter-torque; the rest may trim the trajectory.
     static constexpr double RcsTrajectoryShare = 0.60;
@@ -238,6 +256,25 @@ private:
     static constexpr double WallMarginFraction = 0.85;
     static constexpr double DefaultCorridorToleranceMeters = 50.0;
     static constexpr double SettleSpeedMps = 2.0;
+    // Terminal sequence: entry speed, calm approach speed toward the end
+    // point, and fallbacks when the route gives no tolerance.
+    static constexpr double TerminalEntrySpeedMps = 2.0;
+    static constexpr double TerminalApproachSpeedMps = 0.6;
+    static constexpr double TerminalApproachResponseSeconds = 4.0;
+    static constexpr double TerminalVelocityResponseSeconds = 2.0;
+    static constexpr double TerminalDefaultPositionMeters = 3.0;
+    static constexpr double TerminalDefaultSpeedMps = 0.75;
+    static constexpr double TerminalDefaultAttitudeRad = 5.0 * DegToRadValue;
+    static constexpr double TerminalDefaultRateRadPerSec = 0.05;
+    // Leaving DONE (or a finished step) needs twice the tolerance.
+    static constexpr double TerminalHysteresis = 2.0;
+    // Inside this share of the tolerance the RCS trim does nothing.
+    static constexpr double TerminalDeadbandShare = 0.5;
+    // DONE: inside the position tolerance for at least this long at the
+    // residual drift; RATE_SETTLE starts once the turn is this slow
+    // (in units of the angular-rate tolerance).
+    static constexpr double TerminalHoldSeconds = 60.0;
+    static constexpr double TerminalSettleEntryShare = 4.0;
     // A braking feed-forward fades out below twice this along-track speed
     // once the craft is no faster than its profile.
     static constexpr double BrakeFadeMps = 3.0;
@@ -257,7 +294,7 @@ private:
     static constexpr double PlannedRateMargin = 0.80;
     static constexpr double AlignSettleSeconds = 1.0;
     static constexpr double FlipLeadMarginSeconds = 1.5;
-    static constexpr double DegToRad = 3.14159265358979323846 / 180.0;
+    static constexpr double DegToRad = DegToRadValue;
     static constexpr double FlipEntryRad = 25.0 * DegToRad;
     static constexpr double FlipExitRad = 12.0 * DegToRad;
     // Burn gate on the ACHIEVABLE thrust error (hull error beyond the cone).
@@ -265,9 +302,32 @@ private:
     static constexpr double BurnGateLimitedRad = 10.0 * DegToRad;
     static constexpr double BurnRateGateRadPerSec = 0.12;
 
+    // Terminal sequence: BRAKE (program) -> POSITION_HOLD -> ATTITUDE_ALIGN
+    // -> RATE_SETTLE -> DONE. Every step ends inside a finite tolerance;
+    // DONE is left only beyond twice that tolerance (hysteresis).
+    enum class TerminalStep : int
+    {
+        PositionHold = 1,
+        AttitudeAlign = 2,
+        RateSettle = 3,
+        Done = 4,
+    };
+
+    struct TerminalState
+    {
+        bool active = false;
+        TerminalStep step = TerminalStep::PositionHold;
+        glm::dvec3 holdForwardMap {0.0, 0.0, -1.0};
+        glm::dvec3 holdUpMap {0.0, 1.0, 0.0};
+    };
+
     struct State
     {
         bool initialized = false;
+        TerminalState terminal {};
+        // Large turns use the calm rate profile; the switch back to the
+        // pose servo has hysteresis (enter > FlipEntryRad, leave < FlipExitRad).
+        bool calmTurn = false;
         glm::dvec3 previousVelocityMapMps {0.0};
         Phase phase = Phase::Coast;
         bool lateralCorrection = false;
@@ -305,6 +365,10 @@ private:
         bool lateralCorrection = false;
         bool emergency = false;
         bool safetyOverride = false;
+        int terminalStep = 0;
+        double terminalDistance = 0.0;
+        double terminalAttitudeErrorRad = 0.0;
+        double terminalRollErrorRad = 0.0;
     };
 
     struct GimbalDemandResult
@@ -397,7 +461,7 @@ private:
                     gimbal.commandedDirectionMap * (mainAuthority * throttle);
             }
         }
-        if (angleBetween(forward, hullTarget) > FlipEntryRad)
+        if (calmTurn(angleBetween(forward, hullTarget)))
             applyFlipRate(out, request, params, hullTarget, up, dt);
         else
             applyAttitude(out, request, params, hullTarget, up, dt);
@@ -422,6 +486,261 @@ private:
         decision_.hullTarget = hullTarget;
         decision_.thrustDirection = normalizedOr(demand, forward);
         return out;
+    }
+
+    [[nodiscard]] bool calmTurn(double errorRad) noexcept
+    {
+        state_.calmTurn =
+            state_.calmTurn ? errorRad > FlipExitRad : errorRad > FlipEntryRad;
+        return state_.calmTurn;
+    }
+
+    // ----- Terminal sequence ------------------------------------------------
+
+    [[nodiscard]] static double toleranceOr(double value, double fallback)
+    {
+        return std::isfinite(value) && value > 1.0e-9 ? value : fallback;
+    }
+
+    [[nodiscard]] AutopilotControlCommand terminalControl(
+        const AutopilotControlRequest& request,
+        const ShipParams& params,
+        const glm::dvec3& forward,
+        const glm::dvec3& right,
+        const glm::dvec3& up,
+        double dt
+    ) noexcept
+    {
+        AutopilotControlCommand out;
+        TerminalState& term = state_.terminal;
+        if (!term.active)
+        {
+            term = {};
+            term.active = true;
+            term.holdForwardMap = forward;
+            term.holdUpMap = up;
+        }
+
+        const double tolPosition = toleranceOr(
+            request.terminalPositionToleranceMeters,
+            TerminalDefaultPositionMeters);
+        const double tolSpeed = toleranceOr(
+            request.terminalSpeedToleranceMps, TerminalDefaultSpeedMps);
+        const double tolAttitude = toleranceOr(
+            request.terminalAttitudeToleranceRad, TerminalDefaultAttitudeRad);
+        const double tolRoll = toleranceOr(
+            request.terminalRollToleranceRad, TerminalDefaultAttitudeRad);
+        const double tolRate = toleranceOr(
+            request.terminalAngularRateToleranceRadPerSec,
+            TerminalDefaultRateRadPerSec);
+
+        const glm::dvec3 targetForward =
+            normalizedOr(request.terminalForwardMap, forward);
+        const glm::dvec3 targetUp =
+            normalizedOr(request.terminalUpMap, up);
+        const glm::dvec3 error =
+            finiteVecOrZero(request.terminalPositionMapMeters) -
+            finiteVecOrZero(request.actualPositionMapMeters);
+        const glm::dvec3 velocity =
+            finiteVecOrZero(request.actualVelocityMapMps);
+        const double distance = finiteLength(error);
+        const double speed = finiteLength(velocity);
+        const double rate = std::sqrt(
+            finiteOrZero(request.pitchRateRadPerSec) *
+                finiteOrZero(request.pitchRateRadPerSec) +
+            finiteOrZero(request.yawRateRadPerSec) *
+                finiteOrZero(request.yawRateRadPerSec) +
+            finiteOrZero(request.rollRateRadPerSec) *
+                finiteOrZero(request.rollRateRadPerSec));
+        const double attitudeError = angleBetween(forward, targetForward);
+        HullPoseGuidance::Request poseRequest;
+        poseRequest.currentForward = forward;
+        poseRequest.currentRight = right;
+        poseRequest.currentUp = up;
+        poseRequest.targetForward = targetForward;
+        poseRequest.targetUp = targetUp;
+        const auto pose = HullPoseGuidance::evaluate(poseRequest);
+        const double rollError =
+            pose.valid ? std::abs(pose.rollErrorRad) : 0.0;
+
+        // Step transitions: forward inside 1x the tolerance, back only
+        // beyond TerminalHysteresis x the tolerance.
+        // "Stopped" means the craft stays inside its position tolerance for
+        // TerminalHoldSeconds; the route's speed tolerance only admits the
+        // craft into the terminal sequence.
+        const double h = TerminalHysteresis;
+        const double holdSpeed =
+            std::min(tolSpeed, tolPosition / TerminalHoldSeconds);
+        const bool placed = distance <= tolPosition && speed <= tolSpeed;
+        const bool lostPlace =
+            distance > h * tolPosition || speed > h * tolSpeed;
+        const bool still =
+            distance <= tolPosition && speed <= holdSpeed;
+        const bool lostStill =
+            distance > h * tolPosition || speed > h * holdSpeed;
+        const bool aligned =
+            attitudeError <= tolAttitude && rollError <= tolRoll;
+        const bool lostAlign =
+            attitudeError > h * tolAttitude || rollError > h * tolRoll;
+        switch (term.step)
+        {
+            case TerminalStep::PositionHold:
+                if (placed)
+                    term.step = TerminalStep::AttitudeAlign;
+                break;
+            case TerminalStep::AttitudeAlign:
+                if (lostPlace)
+                    term.step = TerminalStep::PositionHold;
+                else if (aligned && rate <= TerminalSettleEntryShare * tolRate)
+                    term.step = TerminalStep::RateSettle;
+                break;
+            case TerminalStep::RateSettle:
+                if (lostPlace)
+                    term.step = TerminalStep::PositionHold;
+                else if (lostAlign)
+                    term.step = TerminalStep::AttitudeAlign;
+                else if (rate <= tolRate && still)
+                    term.step = TerminalStep::Done;
+                break;
+            case TerminalStep::Done:
+                if (lostPlace)
+                    term.step = TerminalStep::PositionHold;
+                else if (lostStill)
+                    term.step = TerminalStep::RateSettle;
+                else if (lostAlign)
+                    term.step = TerminalStep::AttitudeAlign;
+                else if (rate > h * tolRate)
+                    term.step = TerminalStep::RateSettle;
+                break;
+        }
+        // While the craft is being placed it keeps the attitude it arrived
+        // with; the calm turn to the terminal pose follows.
+        if (term.step == TerminalStep::PositionHold)
+        {
+            term.holdForwardMap = forward;
+            term.holdUpMap = up;
+        }
+
+        // Attitude: calm preferred rate; nothing once DONE.
+        if (term.step != TerminalStep::Done)
+        {
+            const bool toTarget = term.step != TerminalStep::PositionHold;
+            applyCalmPose(
+                out, request, params,
+                toTarget ? targetForward : term.holdForwardMap,
+                toTarget ? targetUp : term.holdUpMap);
+        }
+
+        // Translation: main inhibited; RCS trims the position calmly inside
+        // the tolerance and then stops (no chase of a mathematical zero).
+        const double rcsAuthority =
+            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+        const double rcsBudget = RcsTrajectoryShare * rcsAuthority;
+        const bool trimDeadband =
+            distance <= TerminalDeadbandShare * tolPosition &&
+            speed <= TerminalDeadbandShare * holdSpeed;
+        glm::dvec3 trim {0.0};
+        if (term.step != TerminalStep::Done && !trimDeadband &&
+            rcsAuthority > 1.0e-12)
+        {
+            const double approach =
+                distance > TerminalDeadbandShare * tolPosition
+                    ? std::min(
+                          TerminalApproachSpeedMps,
+                          distance / TerminalApproachResponseSeconds)
+                    : 0.0;
+            const glm::dvec3 wantedVelocity =
+                distance > 1.0e-9 ? error * (approach / distance)
+                                  : glm::dvec3(0.0);
+            trim = (wantedVelocity - velocity) /
+                TerminalVelocityResponseSeconds;
+            const double magnitude = finiteLength(trim);
+            if (magnitude > rcsBudget && magnitude > 1.0e-12)
+                trim *= rcsBudget / magnitude;
+            if (finiteLength(trim) < 0.01 * rcsAuthority)
+                trim = glm::dvec3(0.0);
+            out.forwardInput =
+                finiteClamp(glm::dot(trim, forward) / rcsAuthority);
+            out.strafeInput =
+                finiteClamp(glm::dot(trim, right) / rcsAuthority);
+            out.liftInput =
+                finiteClamp(glm::dot(trim, up) / rcsAuthority);
+        }
+        out.targetSpeedRate = 0.0f;
+        (void)dt;
+
+        decision_.terminalStep = static_cast<int>(term.step);
+        decision_.terminalDistance = distance;
+        decision_.terminalAttitudeErrorRad = attitudeError;
+        decision_.terminalRollErrorRad = rollError;
+        decision_.hullTarget =
+            term.step == TerminalStep::PositionHold
+                ? term.holdForwardMap : targetForward;
+        decision_.demand = trim;
+        decision_.thrustDirection = forward;
+        return out;
+    }
+
+    // Calm full-pose turn: pitch/yaw and roll each follow a rate profile at
+    // the preferred (calm) rate and acceleration, never the installed
+    // maximum.
+    static void applyCalmPose(
+        AutopilotControlCommand& out,
+        const AutopilotControlRequest& request,
+        const ShipParams& params,
+        const glm::dvec3& targetForward,
+        const glm::dvec3& targetUp
+    ) noexcept
+    {
+        HullPoseGuidance::Request poseRequest;
+        poseRequest.currentForward =
+            normalizedOr(request.forwardMap, {0.0, 0.0, -1.0});
+        poseRequest.currentRight =
+            normalizedOr(request.rightMap, {1.0, 0.0, 0.0});
+        poseRequest.currentUp =
+            normalizedOr(request.upMap, {0.0, 1.0, 0.0});
+        poseRequest.targetForward =
+            normalizedOr(targetForward, poseRequest.currentForward);
+        poseRequest.targetUp = normalizedOr(targetUp, poseRequest.currentUp);
+        const auto pose = HullPoseGuidance::evaluate(poseRequest);
+        const double authority =
+            game::ship::angularAccelerationLimitRadPerSec2(params);
+        if (!pose.valid || !(authority > 1.0e-9))
+            return;
+        const double rateLimit = preferredTurnRateRadPerSec(params);
+        const double acceleration =
+            preferredTurnAccelerationRadPerSec2(params);
+        constexpr double RateResponseSeconds = 0.5;
+        // Rate wanted to close `angle` and stop there at the calm deceleration.
+        const auto wantedRate = [&](double angle)
+        {
+            return std::min(rateLimit, std::sqrt(2.0 * acceleration * angle));
+        };
+
+        const glm::dvec2 error {
+            pose.pitchYawErrorLocalRad.x, pose.pitchYawErrorLocalRad.y};
+        const double angle = glm::length(error);
+        const glm::dvec2 rate {
+            finiteOrZero(request.pitchRateRadPerSec),
+            finiteOrZero(request.yawRateRadPerSec)};
+        const glm::dvec2 desired =
+            angle > 1.0e-9 ? error / angle * wantedRate(angle)
+                           : glm::dvec2(0.0);
+        glm::dvec2 planar = (desired - rate) / RateResponseSeconds;
+        const double planarMagnitude = glm::length(planar);
+        if (planarMagnitude > acceleration && planarMagnitude > 1.0e-12)
+            planar *= acceleration / planarMagnitude;
+        out.pitchInput = finiteClamp(planar.x / authority);
+        out.yawInput = finiteClamp(planar.y / authority);
+
+        const double rollAngle = pose.rollErrorRad;
+        const double rollRate = finiteOrZero(request.rollRateRadPerSec);
+        const double rollDesired =
+            (rollAngle >= 0.0 ? 1.0 : -1.0) * wantedRate(std::abs(rollAngle));
+        const double roll = std::clamp(
+            (rollDesired - rollRate) / RateResponseSeconds,
+            -acceleration, acceleration);
+        out.rollInput = finiteClamp(roll / authority);
     }
 
     // ----- Program execution ------------------------------------------------
@@ -709,7 +1028,7 @@ private:
             }
         }
 
-        if (angleBetween(forward, hullTarget) > FlipEntryRad)
+        if (calmTurn(angleBetween(forward, hullTarget)))
             applyFlipRate(out, request, params, hullTarget, up, dt);
         else
             applyAttitude(out, request, params, hullTarget, up, dt);
@@ -976,9 +1295,16 @@ private:
             game::ship::manoeuvreAccelerationLimitMps2(params);
         if (rcsAuthority > 1.0e-12)
         {
+            // Residual velocity is trimmed over a second, and a residual
+            // inside the deadband is left alone (no chase of a zero).
+            constexpr double PrecisionResponseSeconds = 1.0;
+            constexpr double PrecisionDeadbandMps = 0.05;
+            const glm::dvec3 residual =
+                request.desiredVelocityMapMps - request.actualVelocityMapMps;
             glm::dvec3 wantedAcceleration =
-                (request.desiredVelocityMapMps -
-                 request.actualVelocityMapMps) / dt;
+                finiteLength(residual) <= PrecisionDeadbandMps
+                    ? glm::dvec3(0.0)
+                    : residual / PrecisionResponseSeconds;
 
             const double wantedMagnitude =
                 finiteLength(wantedAcceleration);
@@ -1182,7 +1508,8 @@ private:
             "gimbal_u\tgimbal_lim_deg\tthrottle\trcs_f\trcs_s\trcs_l\tpitch\t"
             "yaw\troll\tphase\tmain_phase\tmain_wanted\toverride\tgate\t"
             "gate_reason\ttube\temergency\tbraking\ttarget_changed\t"
-            "target_delta_deg\tthrust_delta_deg\tstop\ttol_m\n");
+            "target_delta_deg\tthrust_delta_deg\tstop\ttol_m\tterm_step\t"
+            "term_dist_m\tterm_att_deg\tterm_roll_deg\n");
         static std::FILE* events = openTrace(
             "ELITE_NEWTONIAN_EVENT_TRACE", "t\ts_m\tevent\tdetail\n");
         state_.traceSeconds += dt;
@@ -1318,6 +1645,26 @@ private:
                     m.pitchInput, pitch, m.yawInput, yaw);
                 event("COMMAND_REVERSAL");
             }
+            if (d.terminalStep != m.terminalStep)
+            {
+                static const char* const Steps[] = {
+                    "NONE", "POSITION_HOLD", "ATTITUDE_ALIGN", "RATE_SETTLE",
+                    "DONE"};
+                std::snprintf(detail, sizeof(detail),
+                    "%s dist=%.2f speed=%.2f att=%.1f roll=%.1f omega=%.3f",
+                    Steps[std::clamp(d.terminalStep, 0, 4)],
+                    d.terminalDistance,
+                    finiteLength(request.actualVelocityMapMps),
+                    d.terminalAttitudeErrorRad * Deg,
+                    d.terminalRollErrorRad * Deg,
+                    std::sqrt(
+                        request.pitchRateRadPerSec *
+                            request.pitchRateRadPerSec +
+                        request.yawRateRadPerSec * request.yawRateRadPerSec +
+                        request.rollRateRadPerSec *
+                            request.rollRateRadPerSec));
+                event("TERMINAL_STEP");
+            }
             if (violation != m.corridorViolation)
             {
                 std::snprintf(detail, sizeof(detail), "xtrack=%.1f tol=%.1f",
@@ -1350,7 +1697,7 @@ private:
                 "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t"
                 "%.4f\t%.2f\t%.2f\t%.2f\t%.3f\t%.3f\t%.2f\t%.3f\t%.3f\t"
                 "%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t"
-                "%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\n",
+                "%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\t%d\t%.2f\t%.2f\t%.2f\n",
                 t, request.traceCurveIndex, s, ref.x, ref.y, ref.z,
                 tangent.x, tangent.y, tangent.z,
                 curving ? 1.0 / request.traceCurvaturePerMeter : 0.0,
@@ -1376,7 +1723,9 @@ private:
                 d.lateralCorrection ? 1 : 0, d.emergency ? 1 : 0,
                 d.braking ? 1 : 0, targetDelta > 1.0 ? 1 : 0,
                 targetDelta, thrustDelta,
-                request.stopRequested ? 1 : 0, tol);
+                request.stopRequested ? 1 : 0, tol, d.terminalStep,
+                d.terminalDistance, d.terminalAttitudeErrorRad * Deg,
+                d.terminalRollErrorRad * Deg);
         }
         if (file)
             std::fflush(file);
@@ -1393,6 +1742,7 @@ private:
         m.gate = d.gate;
         m.curving = curving;
         m.corridorViolation = violation;
+        m.terminalStep = d.terminalStep;
         m.pitchInput = out.pitchInput;
         m.yawInput = out.yawInput;
         ++m.tick;
@@ -1420,6 +1770,7 @@ private:
         int gate = 0;
         bool curving = false;
         bool corridorViolation = false;
+        int terminalStep = 0;
         double pitchInput = 0.0;
         double yawInput = 0.0;
         int tick = 0;

@@ -2922,3 +2922,27 @@ Known issues / next:
 - Pre-existing red `local_flight_control_contracts` unchanged.
 - Remaining plan: Step 1b (portal as a window), Step 3 (narrow-zone safety: envelope, orientation in the cross-section, limited rotation), Step 4 (gimbal sweep).
 - D:/tmp cleaned (542 obsolete `elite_` files of this stage: bp*, s1*, replay r0-r17, temp scripts). The old `elite_bp_metrics.py` / `elite_bp_base_I*` referenced in the 2026-10-27 sections no longer exist; current tools: `elite_s2_*`. Kept: `elite_s2base_*` (old-pilot baseline), `elite_s2cap*_case.txt` (replay cases), `elite_s2fly*`/`elite_s2fly2*` (flight evidence), `elite_r18*` (last offline matrix).
+
+## 2026-10-28 Step 2 tail: terminal sequence, tolerances, hysteresis, RCS path (WIP until the terminal flight)
+
+User rules (2026-10-28): no fight for a mathematical zero anywhere — physical tolerances, deadbands and hysteresis in every layer; the last metres are RCS work (main inhibited, no hull turn for a few metres); RCS trim also has deadbands; velocity / thrust direction / hull attitude / roll are separate objectives depending on the phase (open transit: thrust vector, roll free; docking: full pose incl. roll vs the dock frame; narrow corridor: orientation-aware envelope = Step 3); docking precision comes from the capture geometry, not from double precision.
+
+Diagnosis of the series-2 terminal (I, t 213-240 s):
+1. The 2.2 rad/s turn: once speed <= 0.5 m/s the route layer sets `terminalAttitudeHold` with the final route pose (forward + up); the pilot executed it with the full-authority pose servo (pitch/yaw/roll inputs saturated at +-1) from the retro braking attitude. No tolerance, no calm rate.
+2. `precisionStopControl` commanded (v_des - v)/dt: a 0.2 m/s residual became 10 m/s2, RCS saturated with alternating sign every tick and the speed stayed at 0.21 m/s ("fight for zero").
+3. The speed-triggered settle pulled an 18 m lateral offset in with tau 2.5 s, saturating RCS and reaching 2.7 m/s sideways, toggling in/out.
+4. A route checkpoint refresh at the route end recompiled the manoeuvre program after the stop (revision 77).
+5. The calm-turn / pose-servo switch at 25 deg had no hysteresis (COAST t 205-209 s: switch every ~0.5 s, pitch command reversals +-0.45).
+Gray keyboard: the keypad (`PlayerInputMapper.cpp:80-93`) writes `forwardInput/strafeInput/liftInput`; the autopilot writes the SAME fields; both go `ShipControlExecutionGateway` -> `DynamicMotionSystem::applyLocalFrameInput` (input x `manoeuvreAccelerationLimitMps2` per body axis) -> `ShipCore::updateTranslationControl` -> `allocateNewtonianRcs` (24 nozzles, power/gas bounded). Only differences: the manual release-cancel ledger is off for the autopilot (`rcsKeepsTranslationDeltaV`), and the autopilot uses 60 % of the scalar limit (the rest stays for attitude/counter-torque). The scalar limit is the weakest signed axis of the real allocator probe (infinite power, no moment): it understates strong axes and overstates availability while main burns/rotation competes. Signed per-axis authority is already published (`ShipControlAuthorityTelemetry.positive/negative`) — candidate refinement, not needed for the terminal.
+
+Changes:
+- Route layer hands the pilot an explicit terminal target (`AutopilotControlRequest::terminal*`): final position, forward, up and the route's acceptance tolerances (position 3 m, speed 0.75 m/s, attitude 5 deg, roll 5 deg until a dock frame defines its own, angular rate 0.05 rad/s).
+- Pilot terminal sequence (stop requested + terminal target, entered at <= 2 m/s): BRAKE (program) -> POSITION_HOLD (main inhibited, hull keeps the arrival attitude, RCS trim toward the end point at <= 0.6 m/s) -> ATTITUDE_ALIGN (calm full-pose turn at the preferred rate/acceleration = 0.5 x installed, RCS keeps the position) -> RATE_SETTLE (entered when aligned and slower than 4 x the rate tolerance) -> DONE (no command at all). "Stopped" = drift <= position tolerance / 60 s. Forward transitions at 1 x tolerance, leaving any reached step only beyond 2 x; RCS trim deadband inside 0.5 x. No manoeuvre-program recompilation once the terminal sequence runs.
+- `precisionStopControl` (non-route stops): residual trimmed over 1 s, deadband 0.05 m/s.
+- Calm-turn switch hysteresis: enter > 25 deg, leave < 12 deg.
+- DEV trace: `term_step`, `term_dist_m`, `term_att_deg`, `term_roll_deg` columns and `TERMINAL_STEP` events; report `python D:/tmp/elite_s2_terminal.py TAG`.
+- Unit 12/12 PASS (new: last metres are RCS trim, calm terminal turn, DONE corrects/recompiles nothing).
+- Offline (replay I d1/d3/d6, Y, X): corridor unchanged (0 violations); terminal POSITION_HOLD -> ALIGN -> RATE_SETTLE -> DONE exactly once, max omega 1.05-1.09 rad/s (was 2.2), throttle 0 throughout, after DONE throttle/RCS/rotation all 0, final drift 0.04 m/s, attitude <= 1.2 deg, roll <= 1.1 deg, no recompilation.
+
+### Pre-registered terminal flight (1 real flight, Newtonian-I, 270 s)
+PASS: corridor criteria of series 2; terminal steps in order without oscillation; main throttle 0 after the terminal sequence starts; max angular rate in the terminal <= 1.2 rad/s (preferred rate); DONE reached; after DONE no main, no RCS, no rotation command and no PROGRAM recompilation.

@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <string>
 #include <iterator>
@@ -294,6 +296,31 @@ public:
             state = {};
             return false;
         }
+        // A pilot that must turn its thrust axis before braking gets its
+        // coast interval from the very first sample, not only after the
+        // first checkpoint replans the suffix.
+        const double reversalLeadSeconds =
+            state.pilotController.telemetry(params).
+                thrustReversalLeadSeconds;
+        if (reversalLeadSeconds > 0.0)
+        {
+            const auto authority =
+                makeManeuverExecutionAuthority(params, law);
+            const double fraction =
+                world::navigation::TrajectoryGenerationPolicy::
+                    DefaultPlanningAuthorityFraction;
+            recomputeRuntimeSpeedSuffix(
+                state.nominalSpeedProfileMps,
+                state.continuousProgressMeters,
+                0,
+                glm::length(initialAgent.velocityMapMetersPerSecond),
+                authority.forwardAccelerationMps2 * fraction,
+                authority.brakingAccelerationMps2 * fraction,
+                state.runtimeSpeedProfileMps,
+                state.runtimeLongitudinalAccelerationMps2,
+                reversalLeadSeconds
+            );
+        }
         if (!buildCheckpointProgress(
                 plan.gates,
                 state.continuousSamples,
@@ -319,6 +346,8 @@ public:
             state = {};
             return false;
         }
+        if constexpr (Law == LocalFlightControlLaw::Newtonian)
+            dumpAcceptedRoute(state, plan);
 
         state.nextCheckpointIndex =
             state.checkpointProgressMeters.size() > 1 ? 1 : 0;
@@ -358,7 +387,6 @@ public:
     ) noexcept
     {
         constexpr LocalFlightControlLaw law = Law;
-        (void)universeTimeSeconds;
 
         Output out;
         if (!state.active ||
@@ -414,10 +442,15 @@ public:
                     forwardAuthority,
                     brakingAuthority,
                     state.runtimeSpeedProfileMps,
-                    state.runtimeLongitudinalAccelerationMps2
+                    state.runtimeLongitudinalAccelerationMps2,
+                    state.pilotController.telemetry(params).
+                        thrustReversalLeadSeconds
                 );
             ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;
+            if constexpr (Law == LocalFlightControlLaw::Newtonian)
+                traceProfile(state, universeTimeSeconds,
+                    glm::length(agent.velocityMapMetersPerSecond));
         }
 
         applyRuntimeProfile(
@@ -1240,12 +1273,29 @@ public:
             (atFinalContinuousSegment || terminalBrakeActive) &&
             !terminalAttitudeHold;
 
+        if constexpr (Law == LocalFlightControlLaw::Newtonian)
+            if (std::FILE* file = profileTraceFile())
+                std::fprintf(file, "U t=%.3f s=%.1f seg=%zu profile=%.2f "
+                    "target=%.2f actual=%.2f\n", universeTimeSeconds,
+                    continuous.spatialProgressMeters,
+                    continuous.lowerSampleIndex,
+                    glm::length(
+                        continuous.reference.velocityMapMetersPerSecond),
+                    targetSpeed, actualSpeed);
+
         AutopilotControlRequest request;
         request.desiredPositionMapMeters = referencePosition;
         request.actualPositionMapMeters = agent.positionMapMeters;
         request.positionReferenceValid = true;
+        request.corridorToleranceMeters =
+            state.trackingPositionToleranceMeters;
         request.desiredVelocityMapMps = desiredVelocity;
+        // Newtonian receives the pure profile feed-forward: its pilot owns
+        // corridor-relative correction (safe tube), so the tracker's
+        // position/velocity feedback toward the centreline must not be
+        // folded in as a rail.
         request.desiredLinearAccelerationMapMps2 =
+            law != LocalFlightControlLaw::Newtonian &&
             tracking.status !=
                     ManeuverTrackingController::Status::InvalidInput
                 ? tracking.intent.idealLinearAccelerationLocalMps2
@@ -1348,13 +1398,24 @@ public:
             (atFinalContinuousSegment || terminalBrakeActive);
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
+        request.traceRouteProgressMeters = routeProgressMeters;
+        request.traceCurveIndex = curveNow.valid ? curveNow.curveIndex : 0;
+        request.traceCurvaturePerMeter =
+            curveNow.valid ? curveNow.curvaturePerMeter : 0.0;
+        request.traceProfileSpeedMps = targetSpeed;
 
         if (law == LocalFlightControlLaw::Newtonian &&
             !state.continuousSamples.empty() &&
             state.continuousProgressMeters.size() ==
                 state.continuousSamples.size())
         {
-            constexpr double HorizonSeconds = 6.0;
+            // The preview must reach past the time the pilot needs to turn
+            // its thrust axis before a braking burn.
+            const double HorizonSeconds =
+                std::max(
+                    6.0,
+                    pilotTelemetry.thrustReversalLeadSeconds + 4.0
+                );
             const double previewSpeed =
                 std::max(
                     20.0,
@@ -1942,7 +2003,8 @@ private:
         double acceleratingMps2,
         double brakingMps2,
         std::vector<double>& runtimeSpeeds,
-        std::vector<double>& runtimeAccelerations
+        std::vector<double>& runtimeAccelerations,
+        double thrustReversalCoastSeconds = 0.0
     ) noexcept
     {
         if (nominalSpeeds.size() < 2 ||
@@ -2015,6 +2077,17 @@ private:
             }
         }
 
+        if (thrustReversalCoastSeconds > 0.0)
+            insertThrustReversalCoast(
+                progress,
+                anchorIndex,
+                std::isfinite(actualSpeedMps)
+                    ? std::max(0.0, actualSpeedMps) : 0.0,
+                acceleratingMps2,
+                thrustReversalCoastSeconds,
+                runtimeSpeeds
+            );
+
         // The measured checkpoint speed is authoritative. If it is above
         // the speed from which a future route limit is reachable, do not
         // invalidate the route: propagate the fastest physically possible
@@ -2077,6 +2150,212 @@ private:
             }
         }
 
+    }
+
+    // DEV diagnostic only: ELITE_NEWTONIAN_PROFILE_TRACE=<path>.
+    [[nodiscard]] static std::FILE* profileTraceFile() noexcept
+    {
+        static std::FILE* file =
+            []() -> std::FILE*
+            {
+                const char* path =
+                    std::getenv("ELITE_NEWTONIAN_PROFILE_TRACE");
+                return path && *path ? std::fopen(path, "w") : nullptr;
+            }();
+        return file;
+    }
+
+    // DEV diagnostic only: ELITE_ROUTE_DUMP=<path> appends every accepted
+    // route: curves, then the runtime speed profile every ~50 m.
+    static void dumpAcceptedRoute(
+        const State& state,
+        const planner::RoutePlan& plan
+    ) noexcept
+    {
+        static std::FILE* file =
+            []() -> std::FILE*
+            {
+                const char* path = std::getenv("ELITE_ROUTE_DUMP");
+                return path && *path ? std::fopen(path, "w") : nullptr;
+            }();
+        if (!file)
+            return;
+        std::fprintf(file, "ROUTE curves=%zu exec_gates=%zu samples=%zu\n",
+            plan.routeCurves.size(), plan.executionGates.size(),
+            state.continuousSamples.size());
+        for (const auto& c : plan.routeCurves)
+            std::fprintf(file, "C kind=%d s0=%.1f len=%.1f radius=%.1f "
+                "vmax=%.2f\n", static_cast<int>(c.kind),
+                c.startProgressMeters,
+                c.endProgressMeters - c.startProgressMeters,
+                c.arcRadiusMeters, c.maxSpeedMps);
+        const auto& speeds = state.runtimeSpeedProfileMps;
+        for (std::size_t i = 1; i + 1 < speeds.size(); ++i)
+            if (speeds[i] <= 0.5 && speeds[i] <= speeds[i - 1] &&
+                speeds[i] < speeds[i + 1])
+                std::fprintf(file, "STOP s=%.1f v=%.2f\n",
+                    state.continuousProgressMeters[i], speeds[i]);
+        double nextS = 0.0;
+        for (std::size_t i = 0; i < state.runtimeSpeedProfileMps.size(); ++i)
+            if (state.continuousProgressMeters[i] >= nextS ||
+                i + 1 == state.runtimeSpeedProfileMps.size())
+            {
+                std::fprintf(file, "V %.1f %.2f\n",
+                    state.continuousProgressMeters[i],
+                    state.runtimeSpeedProfileMps[i]);
+                nextS = state.continuousProgressMeters[i] + 50.0;
+            }
+        std::fflush(file);
+    }
+
+    static void traceProfile(
+        const State& state,
+        double universeTimeSeconds,
+        double actualSpeedMps
+    ) noexcept
+    {
+        std::FILE* file = profileTraceFile();
+        if (!file)
+            return;
+        std::fprintf(file, "R t=%.3f rev=%llu anchor=%zu actual=%.2f\n",
+            universeTimeSeconds,
+            static_cast<unsigned long long>(state.speedProfileRevision),
+            state.currentContinuousSegment, actualSpeedMps);
+        for (std::size_t i = state.currentContinuousSegment;
+             i < state.runtimeSpeedProfileMps.size(); ++i)
+            std::fprintf(file, "P %zu %.1f %.2f %.2f\n", i,
+                state.continuousProgressMeters[i],
+                state.nominalSpeedProfileMps[i],
+                state.runtimeSpeedProfileMps[i]);
+        std::fflush(file);
+    }
+
+    // Acceleration -> coast -> braking. A pilot that must turn its thrust
+    // axis before braking needs to reach every braking curve already
+    // coasting for coastSeconds. At each sample find the highest speed from
+    // which a coast of v*coastSeconds still ends on the braking-feasible
+    // profile, then stop ACCELERATING once that speed is reached; the speed
+    // is held (coast) until the unchanged braking curve takes over.
+    static void insertThrustReversalCoast(
+        const std::vector<double>& progress,
+        std::size_t anchorIndex,
+        double anchorSpeedMps,
+        double acceleratingMps2,
+        double coastSeconds,
+        std::vector<double>& speeds
+    ) noexcept
+    {
+        const std::size_t count = speeds.size();
+        if (count < 2 || progress.size() != count ||
+            anchorIndex + 1 >= count ||
+            !(std::isfinite(coastSeconds) && coastSeconds > 0.0))
+        {
+            return;
+        }
+
+        const std::vector<double> braking = speeds;
+        const auto brakingSpeedAt =
+            [&](double s) noexcept
+            {
+                if (s >= progress.back())
+                    return braking.back();
+                const auto upper = std::upper_bound(
+                    progress.begin(), progress.end(), s);
+                const std::size_t i = static_cast<std::size_t>(
+                    std::max<std::ptrdiff_t>(
+                        1, upper - progress.begin()));
+                const double span = progress[i] - progress[i - 1];
+                const double u = span > 1.0e-9
+                    ? std::clamp((s - progress[i - 1]) / span, 0.0, 1.0)
+                    : 1.0;
+                // v^2 is linear in s under constant acceleration.
+                return std::sqrt(std::max(0.0,
+                    braking[i - 1] * braking[i - 1] * (1.0 - u) +
+                    braking[i] * braking[i] * u));
+            };
+
+        // The coast must stay under the braking profile over its WHOLE
+        // length, not only at its end (a coast must never jump over a low
+        // point such as a corner). Sparse-table range minimum of samples.
+        std::vector<std::vector<double>> minimumTable {braking};
+        for (std::size_t width = 1; 2 * width <= count; width *= 2)
+        {
+            const auto& previous = minimumTable.back();
+            std::vector<double> level(count - 2 * width + 1);
+            for (std::size_t i = 0; i < level.size(); ++i)
+                level[i] = std::min(previous[i], previous[i + width]);
+            minimumTable.push_back(std::move(level));
+        }
+        const auto sampleMinimum =
+            [&](std::size_t first, std::size_t last) noexcept
+            {
+                std::size_t level = 0;
+                while ((std::size_t(2) << level) <= last - first + 1)
+                    ++level;
+                return std::min(
+                    minimumTable[level][first],
+                    minimumTable[level][last + 1 - (std::size_t(1) << level)]
+                );
+            };
+        const auto brakingMinimumOver =
+            [&](std::size_t from, double toProgress) noexcept
+            {
+                double minimum = brakingSpeedAt(toProgress);
+                const auto end = std::upper_bound(
+                    progress.begin(), progress.end(), toProgress);
+                const std::size_t last = static_cast<std::size_t>(
+                    end - progress.begin());
+                if (last > from)
+                    minimum = std::min(minimum, sampleMinimum(from, last - 1));
+                return minimum;
+            };
+
+        std::vector<double> coastReady(count, 0.0);
+        for (std::size_t i = anchorIndex; i < count; ++i)
+        {
+            double low = 0.0;
+            double high = braking[i];
+            if (high <=
+                brakingMinimumOver(i, progress[i] + high * coastSeconds))
+            {
+                coastReady[i] = high;
+                continue;
+            }
+            for (int iteration = 0; iteration < 24; ++iteration)
+            {
+                const double mid = 0.5 * (low + high);
+                if (mid <=
+                    brakingMinimumOver(i, progress[i] + mid * coastSeconds))
+                    low = mid;
+                else
+                    high = mid;
+            }
+            coastReady[i] = low;
+        }
+
+        // Start from the measured speed: the anchor sample still holds the
+        // nominal value until the physical-floor pass below replaces it.
+        double speed = std::min(speeds[anchorIndex], anchorSpeedMps);
+        for (std::size_t i = anchorIndex + 1; i < count; ++i)
+        {
+            const double ds = progress[i] - progress[i - 1];
+            if (!(std::isfinite(ds) && ds >= 0.0))
+                return;
+            // Accelerate only up to the speed from which this sample can
+            // still start its coast; at or above it, hold the speed.
+            double next = speed;
+            if (speed < coastReady[i])
+            {
+                const double accelerated =
+                    acceleratingMps2 > 1.0e-9
+                        ? std::sqrt(speed * speed +
+                              2.0 * acceleratingMps2 * ds)
+                        : braking[i];
+                next = std::min(accelerated, coastReady[i]);
+            }
+            speed = std::min(braking[i], next);
+            speeds[i] = speed;
+        }
     }
 
     static void applyRuntimeProfile(

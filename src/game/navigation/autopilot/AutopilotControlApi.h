@@ -34,6 +34,10 @@ struct AutopilotControlRequest
     glm::dvec3 desiredLinearAccelerationMapMps2 {0.0};
     glm::dvec3 actualPositionMapMeters {0.0};
     bool positionReferenceValid = false;
+    // Authored corridor tracking tolerance around the position reference
+    // (0 = unknown). A pilot may treat the reference as the corridor centre
+    // rather than a rail.
+    double corridorToleranceMeters = 0.0;
 
     // Law-neutral future reference preview. Assisted is free to ignore it.
     // Newtonian optimal control uses it to price future braking/turning before
@@ -66,6 +70,12 @@ struct AutopilotControlRequest
     bool stopRequested = false;
     bool terminalAttitudeHold = false;
     double deltaSeconds = 0.0;
+
+    // DEV diagnostic context for decision traces only; never a control input.
+    double traceRouteProgressMeters = 0.0;
+    std::size_t traceCurveIndex = 0;
+    double traceCurvaturePerMeter = 0.0;
+    double traceProfileSpeedMps = 0.0;
 };
 
 // Read-only, law-neutral feedback used by route-speed preview and diagnostics.
@@ -81,6 +91,9 @@ struct AutopilotControlTelemetry
     double targetSpeedChangeRateMps2 = 0.0;
     double brakingResponseMps2 = 0.0;
     double commandResponsePerSecond = 0.0;
+    // Coast time the pilot needs BEFORE a braking burn whose thrust axis is
+    // opposite the current one (hull flip + settle + margin). 0 = none.
+    double thrustReversalLeadSeconds = 0.0;
 };
 
 using AutopilotControlCommand = ShipControlState;

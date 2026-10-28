@@ -1,9 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 
 #include <glm/glm.hpp>
@@ -12,23 +13,42 @@
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/ship/core/ShipDynamics.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
 
 namespace game::navigation::autopilot
 {
 
-// Receding-horizon Newtonian controller.
+// Ballistic Newtonian pilot.
 //
-// Navigation owns desired velocity/reference acceleration. This controller
-// searches a short physically-constrained future and chooses the first
-// thrust-vector action that minimizes velocity-reference error, overspeed,
-// unnecessary thrust and unnecessary reorientation.
+// Navigation owns desired velocity, the profile feed-forward and the corridor
+// reference. This pilot flies the Newtonian doctrine with explicit phases:
 //
-// The hull is NOT commanded to follow the route tangent. Hull + TVC exist only
-// to realize the selected main-thrust vector. Translational RCS is reserved for
-// the final precision-stop residue.
+//   COAST  velocity vector formed, main off; only the trims needed to stay
+//          inside the safe tube (translational RCS).
+//   FLIP   planned hull rotation at a calm preferred rate, main = 0; the
+//          craft keeps its velocity while the hull turns around it.
+//   ALIGN  rotation arrested and the ACHIEVABLE thrust vector (hull + nozzle
+//          cone) brought onto the burn direction; main stays gated.
+//   BURN   main thrust through the burn gate; the burn direction is latched,
+//          small errors go to nozzle vectoring and RCS, not to the hull.
+//
+// The corridor centreline is a reference, not a rail: lateral correction is
+// triggered by the PREDICTED cross-track (position + lateral velocity over a
+// few seconds) leaving a safe tube, never by a small present offset.
+// Correction means: nothing -> RCS -> nozzle while burning -> hull rotation
+// only when the wall cannot be avoided otherwise.
 class NewtonianOptimalController final
 {
 public:
+    enum class Phase : int
+    {
+        Coast = 0,
+        Flip = 1,
+        Align = 2,
+        Burn = 3,
+        Hold = 4,
+    };
+
     [[nodiscard]] AutopilotControlCommand update(
         const AutopilotControlRequest& request,
         const ShipParams& params
@@ -57,9 +77,24 @@ public:
             request.stopRequested &&
             actualSpeed <= PrecisionStopEntrySpeedMps;
 
+        // At true rest with no translational objective, orchestration may
+        // still require a launch/safety attitude before route handoff.
+        const bool restAttitude =
+            actualSpeed <= 0.5 &&
+            finiteLength(request.desiredVelocityMapMps) <= 0.5 &&
+            finiteLength(request.desiredLinearAccelerationMapMps2) <=
+                1.0e-6 &&
+            request.previewCount == 0 &&
+            !request.stopRequested;
+
+        AutopilotControlCommand out;
+        glm::dvec3 traceTarget = forward;
+        decision_ = {};
+        decision_.thrustDirection = forward;
+        decision_.hullTarget = forward;
         if (precisionStop)
         {
-            auto out = precisionStopControl(
+            out = precisionStopControl(
                 request,
                 params,
                 forward,
@@ -67,67 +102,46 @@ public:
                 up,
                 dt
             );
-            remember(request);
-            return out;
+            state_.phase = Phase::Hold;
         }
-
-        state_.secondsUntilOptimize -= dt;
-        bool forceOptimize =
-            !state_.initialized ||
-            request.stopRequested != state_.lastStopRequested ||
-            request.terminalAttitudeHold;
-
-        // An orient-only optimum is deliberately allowed to start a flip
-        // before braking is due. As soon as that orientation has been reached,
-        // re-solve immediately instead of idling until the 100 ms MPC period
-        // expires.
-        if (state_.action.valid &&
-            state_.action.throttle01 <= 1.0e-6 &&
-            finiteLength(request.desiredLinearAccelerationMapMps2) >
-                1.0e-6)
+        else if (request.terminalAttitudeHold || restAttitude)
         {
-            const double alignment =
-                glm::dot(
-                    forward,
-                    normalizedOr(
-                        state_.action.targetThrustDirectionMap,
-                        forward
-                    )
-                );
-            if (alignment > 0.995)
-                forceOptimize = true;
-        }
-
-        if (forceOptimize || state_.secondsUntilOptimize <= 0.0)
-        {
-            state_.action = optimize(request, params);
-            state_.secondsUntilOptimize = OptimizationPeriodSeconds;
-        }
-
-        // At true rest with no translational objective, orchestration may still
-        // require a launch/safety attitude before route handoff.
-        if (actualSpeed <= 0.5 &&
-            finiteLength(request.desiredVelocityMapMps) <= 0.5 &&
-            finiteLength(request.desiredLinearAccelerationMapMps2) <= 1.0e-6 &&
-            request.previewCount == 0 &&
-            !request.stopRequested)
-        {
-            state_.action.targetThrustDirectionMap =
+            traceTarget =
                 normalizedOr(request.desiredForwardMap, forward);
-            state_.action.throttle01 = 0.0;
-            state_.action.valid = true;
+            applyAttitude(
+                out,
+                request,
+                params,
+                traceTarget,
+                request.terminalAttitudeHold
+                    ? normalizedOr(request.desiredUpMap, up)
+                    : up,
+                dt
+            );
+            state_.phase = Phase::Hold;
+        }
+        else
+        {
+            out = ballisticControl(
+                request,
+                params,
+                forward,
+                right,
+                up,
+                dt,
+                traceTarget
+            );
         }
 
-        auto out = realizeAction(
-            request,
-            params,
-            state_.action,
-            forward,
-            right,
-            up,
-            dt
-        );
+        // Every RCS translation this pilot commands is deliberate trajectory
+        // delta-v; the manual keypad release-cancellation must not undo it.
+        out.rcsKeepsTranslationDeltaV = true;
+        out.navigationAccelerationDemandValid = false;
+        out.navigationVelocityTargetValid = false;
+        out.navigationPrecisionTranslationOnly = false;
 
+        (void)traceTarget;
+        traceTick(request, out, dt);
         remember(request);
         return out;
     }
@@ -162,6 +176,7 @@ public:
                         params.fallbackThrottleResponsePerSecond
                       )
             );
+        out.thrustReversalLeadSeconds = plannedFlipLeadSeconds(params);
         return out;
     }
 
@@ -170,928 +185,722 @@ public:
         state_ = {};
     }
 
+    // Coast time needed ahead of a braking burn opposite the current thrust
+    // axis: a calm 180 degree flip, the align/settle time and a margin.
+    [[nodiscard]] static double plannedFlipLeadSeconds(
+        const ShipParams& params
+    ) noexcept
+    {
+        constexpr double Pi = 3.14159265358979323846;
+        const double turn = plannedTurnSeconds(Pi, params);
+        return std::isfinite(turn) ? turn + FlipLeadMarginSeconds : 0.0;
+    }
+
 private:
-    static constexpr double OptimizationPeriodSeconds = 0.10;
-    static constexpr std::size_t BeamWidth = 24;
-    static constexpr std::size_t CandidateCount = 8;
-    static constexpr std::size_t MaximumDepth =
-        AutopilotPreviewCapacity + 1;
-
-    struct Action
-    {
-        glm::dvec3 targetThrustDirectionMap {0.0, 0.0, -1.0};
-        double throttle01 = 0.0;
-        bool valid = false;
-    };
-
-    struct SearchNode
-    {
-        glm::dvec3 positionMapMeters {0.0};
-        glm::dvec3 velocityMapMps {0.0};
-        glm::dvec3 hullDirectionMap {0.0, 0.0, -1.0};
-        glm::dvec3 thrustDirectionMap {0.0, 0.0, -1.0};
-        double hullSlewRateRadPerSec = 0.0;
-        double elapsedSeconds = 0.0;
-        double cost = 0.0;
-        Action firstAction {};
-    };
-
-    struct GimbalDemand
-    {
-        float rightInput = 0.0f;
-        float upInput = 0.0f;
-        double servedAngleRad = 0.0;
-        glm::dvec3 commandedDirectionMap {0.0, 0.0, -1.0};
-    };
+    // Half of installed RCS stays reserved for attitude and nozzle
+    // counter-torque; the rest may trim the trajectory.
+    static constexpr double RcsTrajectoryShare = 0.60;
+    // A velocity error the RCS budget clears within this time is RCS work;
+    // turning the whole hull for it is not allowed.
+    static constexpr double RcsDeltaVHorizonSeconds = 5.0;
+    static constexpr double LongitudinalResponseSeconds = 2.0;
+    // Station keeping when the reference itself is (nearly) at rest.
+    static constexpr double HoldSpeedMps = 2.0;
+    static constexpr double HoldResponseSeconds = 4.0;
+    // Safe tube: correction starts when the PREDICTED cross-track leaves it
+    // and stops once the prediction is back well inside.
+    static constexpr double LateralPredictionSeconds = 4.0;
+    static constexpr double LateralResponseSeconds = 2.0;
+    static constexpr double SafeTubeFraction = 0.35;
+    static constexpr double TubeReleaseFraction = 0.20;
+    static constexpr double TubeAimFraction = 0.10;
+    static constexpr double WallMarginFraction = 0.85;
+    static constexpr double OvershootSlackFraction = 0.30;
+    static constexpr double RetroOnlySpeedMps = 20.0;
+    static constexpr double DefaultCorridorToleranceMeters = 50.0;
+    // Planned turns use a calm share of the installed capability.
+    static constexpr double PreferredRateShare = 0.50;
+    static constexpr double PreferredAccelerationShare = 0.50;
+    static constexpr double AlignSettleSeconds = 1.0;
+    static constexpr double FlipLeadMarginSeconds = 1.5;
+    static constexpr double DegToRad = 3.14159265358979323846 / 180.0;
+    static constexpr double FlipEntryRad = 25.0 * DegToRad;
+    static constexpr double FlipExitRad = 12.0 * DegToRad;
+    // Burn gate on the ACHIEVABLE thrust error (hull error beyond the cone).
+    static constexpr double BurnGateFullRad = 2.0 * DegToRad;
+    static constexpr double BurnGateLimitedRad = 10.0 * DegToRad;
+    static constexpr double BurnRateGateRadPerSec = 0.12;
+    // The latched burn attitude changes only when the planned braking/burn
+    // vector itself changes substantially.
+    static constexpr double BurnRelatchRad = 10.0 * DegToRad;
+    static constexpr double MinTurnTargetDwellSeconds = 2.0;
 
     struct State
     {
         bool initialized = false;
-        bool lastStopRequested = false;
         glm::dvec3 previousVelocityMapMps {0.0};
-        double secondsUntilOptimize = 0.0;
-        Action action {};
+        Phase phase = Phase::Coast;
+        bool lateralCorrection = false;
+        bool mainRequested = false;
+        bool anticipating = false;
+        bool burnLatched = false;
+        glm::dvec3 burnDirectionMap {0.0, 0.0, -1.0};
+        glm::dvec3 burnHullTargetMap {0.0, 0.0, -1.0};
+        bool turnTargetValid = false;
+        glm::dvec3 turnTargetMap {0.0, 0.0, -1.0};
+        double turnTargetAgeSeconds = 0.0;
+        double traceSeconds = 0.0;
+        int traceFlags = 0;
     };
 
-    [[nodiscard]] static AutopilotReferencePreviewSample currentReference(
-        const AutopilotControlRequest& request
-    ) noexcept
+    // DEV decision-trace record of the last tick; never read by control.
+    struct Decision
     {
-        AutopilotReferencePreviewSample out;
-        out.timeOffsetSeconds = 0.0;
-        out.desiredPositionMapMeters =
-            finiteVecOrZero(request.desiredPositionMapMeters);
-        out.desiredVelocityMapMps =
-            finiteVecOrZero(request.desiredVelocityMapMps);
-        out.desiredLinearAccelerationMapMps2 =
-            finiteVecOrZero(
-                request.desiredLinearAccelerationMapMps2
-            );
-        return out;
-    }
+        int chosenPreview = -1;
+        int chosenReason = 0; // 0 none, 1 curve, 2 delta-v burn
+        double chosenStartSeconds = 0.0;
+        glm::dvec3 crossTrack {0.0};
+        glm::dvec3 lateralVelocity {0.0};
+        double speedError = 0.0;
+        double feedForwardAlong = 0.0;
+        double feedForwardLateral = 0.0;
+        glm::dvec3 correction {0.0};
+        glm::dvec3 demand {0.0};
+        glm::dvec3 thrustDirection {0.0, 0.0, -1.0};
+        glm::dvec3 hullTarget {0.0, 0.0, -1.0};
+        double hullErrorRad = 0.0;
+        double thrustErrorRad = 0.0;
+        double gimbalLimitRad = 0.0;
+        int gate = 0;       // 0 n/a, 1 full, 2 limited, 3 closed
+        int gateReason = 0; // 1 thrust error, 2 hull rate, 3 wall side
+        bool urgent = false;
+        bool anticipate = false;
+        bool curveAnticipation = false;
+        bool latched = false;
+        bool mainNeeded = false;
+        bool braking = false;
+        bool lateralCorrection = false;
+        bool emergency = false;
+        bool stationKeeping = false;
+        bool profileGap = false;
+    };
 
-    [[nodiscard]] static AutopilotReferencePreviewSample referenceAt(
-        const AutopilotControlRequest& request,
-        std::size_t depth
-    ) noexcept
+    struct GimbalDemandResult
     {
-        const std::size_t count =
-            std::min(
-                request.previewCount,
-                AutopilotPreviewCapacity
-            );
-        if (count == 0 || depth == 0)
-            return currentReference(request);
+        float rightInput = 0.0f;
+        float upInput = 0.0f;
+        glm::dvec3 commandedDirectionMap {0.0, 0.0, -1.0};
+    };
 
-        const std::size_t index =
-            std::min(depth - 1, count - 1);
-        auto out = request.preview[index];
-        out.desiredPositionMapMeters =
-            finiteVecOrZero(out.desiredPositionMapMeters);
-        out.desiredVelocityMapMps =
-            finiteVecOrZero(out.desiredVelocityMapMps);
-        out.desiredLinearAccelerationMapMps2 =
-            finiteVecOrZero(
-                out.desiredLinearAccelerationMapMps2
-            );
-        return out;
-    }
-
-    [[nodiscard]] static AutopilotReferencePreviewSample finalReference(
-        const AutopilotControlRequest& request
-    ) noexcept
-    {
-        const std::size_t count =
-            std::min(
-                request.previewCount,
-                AutopilotPreviewCapacity
-            );
-        if (count == 0)
-            return currentReference(request);
-
-        auto out = request.preview[count - 1];
-        out.desiredPositionMapMeters =
-            finiteVecOrZero(out.desiredPositionMapMeters);
-        out.desiredVelocityMapMps =
-            finiteVecOrZero(out.desiredVelocityMapMps);
-        out.desiredLinearAccelerationMapMps2 =
-            finiteVecOrZero(
-                out.desiredLinearAccelerationMapMps2
-            );
-        return out;
-    }
-
-    [[nodiscard]] static AutopilotReferencePreviewSample referenceAtTime(
-        const AutopilotControlRequest& request,
-        double timeOffsetSeconds
-    ) noexcept
-    {
-        const double t =
-            std::max(0.0, finiteOrZero(timeOffsetSeconds));
-        const std::size_t count =
-            std::min(
-                request.previewCount,
-                AutopilotPreviewCapacity
-            );
-
-        const auto current = currentReference(request);
-        if (count == 0 || t <= 1.0e-12)
-            return current;
-
-        auto sanitizedPreview =
-            [&](std::size_t index)
-            {
-                auto out = request.preview[index];
-                out.desiredPositionMapMeters =
-                    finiteVecOrZero(out.desiredPositionMapMeters);
-                out.desiredVelocityMapMps =
-                    finiteVecOrZero(out.desiredVelocityMapMps);
-                out.desiredLinearAccelerationMapMps2 =
-                    finiteVecOrZero(
-                        out.desiredLinearAccelerationMapMps2
-                    );
-                return out;
-            };
-
-        auto upper = sanitizedPreview(0);
-        if (t <= upper.timeOffsetSeconds)
-        {
-            const double dt =
-                std::max(1.0e-9, upper.timeOffsetSeconds);
-            const double u =
-                std::clamp(t / dt, 0.0, 1.0);
-
-            AutopilotReferencePreviewSample out;
-            out.timeOffsetSeconds = t;
-            out.desiredPositionMapMeters =
-                glm::mix(
-                    current.desiredPositionMapMeters,
-                    upper.desiredPositionMapMeters,
-                    u
-                );
-            out.desiredVelocityMapMps =
-                glm::mix(
-                    current.desiredVelocityMapMps,
-                    upper.desiredVelocityMapMps,
-                    u
-                );
-            out.desiredLinearAccelerationMapMps2 =
-                glm::mix(
-                    current.desiredLinearAccelerationMapMps2,
-                    upper.desiredLinearAccelerationMapMps2,
-                    u
-                );
-            return out;
-        }
-
-        for (std::size_t i = 1; i < count; ++i)
-        {
-            const auto lower = sanitizedPreview(i - 1);
-            upper = sanitizedPreview(i);
-
-            if (t <= upper.timeOffsetSeconds)
-            {
-                const double dt =
-                    std::max(
-                        1.0e-9,
-                        upper.timeOffsetSeconds -
-                            lower.timeOffsetSeconds
-                    );
-                const double u =
-                    std::clamp(
-                        (t - lower.timeOffsetSeconds) / dt,
-                        0.0,
-                        1.0
-                    );
-
-                AutopilotReferencePreviewSample out;
-                out.timeOffsetSeconds = t;
-                out.desiredPositionMapMeters =
-                    glm::mix(
-                        lower.desiredPositionMapMeters,
-                        upper.desiredPositionMapMeters,
-                        u
-                    );
-                out.desiredVelocityMapMps =
-                    glm::mix(
-                        lower.desiredVelocityMapMps,
-                        upper.desiredVelocityMapMps,
-                        u
-                    );
-                out.desiredLinearAccelerationMapMps2 =
-                    glm::mix(
-                        lower.desiredLinearAccelerationMapMps2,
-                        upper.desiredLinearAccelerationMapMps2,
-                        u
-                    );
-                return out;
-            }
-        }
-
-        return sanitizedPreview(count - 1);
-    }
-
-    [[nodiscard]] static double stepSeconds(
-        const AutopilotControlRequest& request,
-        std::size_t depth
-    ) noexcept
-    {
-        const std::size_t count =
-            std::min(
-                request.previewCount,
-                AutopilotPreviewCapacity
-            );
-        if (count == 0)
-            return 0.50;
-
-        const double firstPreviewTime =
-            std::max(
-                0.10,
-                request.preview[0].timeOffsetSeconds
-            );
-        const double firstControlStep =
-            std::clamp(
-                std::min(0.25, firstPreviewTime),
-                0.10,
-                0.25
-            );
-
-        if (depth == 0)
-            return firstControlStep;
-
-        if (depth == 1)
-        {
-            return std::clamp(
-                firstPreviewTime - firstControlStep,
-                0.10,
-                1.25
-            );
-        }
-
-        const std::size_t previousIndex =
-            std::min(depth - 2, count - 1);
-        const std::size_t nextIndex =
-            std::min(depth - 1, count - 1);
-
-        return std::clamp(
-            request.preview[nextIndex].timeOffsetSeconds -
-                request.preview[previousIndex].timeOffsetSeconds,
-            0.10,
-            1.25
-        );
-    }
-
-    [[nodiscard]] static Action optimize(
-        const AutopilotControlRequest& request,
-        const ShipParams& params
-    ) noexcept
-    {
-        const double mainAuthority =
-            game::ship::forwardMainAccelerationLimitMps2(params);
-        if (!(mainAuthority > 1.0e-9))
-            return {};
-
-        const glm::dvec3 initialThrustDirection =
-            normalizedOr(request.forwardMap, {0.0, 0.0, -1.0});
-        const double initialHullRate =
-            std::sqrt(
-                finiteOrZero(request.pitchRateRadPerSec) *
-                    finiteOrZero(request.pitchRateRadPerSec) +
-                finiteOrZero(request.yawRateRadPerSec) *
-                    finiteOrZero(request.yawRateRadPerSec)
-            );
-
-        std::array<SearchNode, BeamWidth> beam {};
-        std::size_t beamCount = 1;
-        beam[0].positionMapMeters =
-            finiteVecOrZero(request.actualPositionMapMeters);
-        beam[0].velocityMapMps =
-            finiteVecOrZero(request.actualVelocityMapMps);
-        beam[0].hullDirectionMap = initialThrustDirection;
-        beam[0].thrustDirectionMap = initialThrustDirection;
-        beam[0].hullSlewRateRadPerSec = initialHullRate;
-
-        const std::size_t previewCount =
-            std::min(
-                request.previewCount,
-                AutopilotPreviewCapacity
-            );
-        const std::size_t depthCount =
-            previewCount > 0
-                ? std::min(previewCount + 1, MaximumDepth)
-                : std::size_t(4);
-
-        double horizonTimeSeconds = 0.0;
-        for (std::size_t depth = 0; depth < depthCount; ++depth)
-        {
-            const double step = stepSeconds(request, depth);
-            const auto reference =
-                referenceAtTime(
-                    request,
-                    horizonTimeSeconds
-                );
-            const auto evaluationReference =
-                referenceAtTime(
-                    request,
-                    horizonTimeSeconds + step
-                );
-            const auto future = finalReference(request);
-
-            std::array<
-                SearchNode,
-                BeamWidth * CandidateCount
-            > expanded {};
-            std::size_t expandedCount = 0;
-
-            for (std::size_t nodeIndex = 0;
-                 nodeIndex < beamCount;
-                 ++nodeIndex)
-            {
-                const auto& node = beam[nodeIndex];
-                const auto candidates = candidateActions(
-                    node,
-                    reference,
-                    future,
-                    request,
-                    params,
-                    mainAuthority
-                );
-
-                for (const auto& action : candidates)
-                {
-                    SearchNode next =
-                        simulate(
-                            node,
-                            action,
-                            evaluationReference,
-                            request,
-                            params,
-                            mainAuthority,
-                            step
-                        );
-
-                    if (depth == 0)
-                        next.firstAction = action;
-                    else
-                        next.firstAction = node.firstAction;
-
-                    if (expandedCount < expanded.size())
-                        expanded[expandedCount++] = next;
-                }
-            }
-
-            if (depth + 1 == depthCount)
-            {
-                const auto terminalReference =
-                    finalReference(request);
-
-                for (std::size_t i = 0; i < expandedCount; ++i)
-                {
-                    auto& node = expanded[i];
-
-                    const glm::dvec3 velocityError =
-                        node.velocityMapMps -
-                        terminalReference.desiredVelocityMapMps;
-                    node.cost +=
-                        4.0 *
-                        glm::dot(velocityError, velocityError);
-
-                    if (request.positionReferenceValid)
-                    {
-                        const glm::dvec3 tangent =
-                            normalizedOr(
-                                terminalReference.desiredVelocityMapMps,
-                                node.velocityMapMps
-                            );
-                        const glm::dvec3 positionError =
-                            node.positionMapMeters -
-                            terminalReference.desiredPositionMapMeters;
-                        const glm::dvec3 crossTrack =
-                            positionError -
-                            tangent *
-                                glm::dot(positionError, tangent);
-
-                        node.cost +=
-                            8.0 *
-                            glm::dot(crossTrack, crossTrack);
-                    }
-                }
-            }
-
-            std::sort(
-                expanded.begin(),
-                expanded.begin() +
-                    static_cast<std::ptrdiff_t>(expandedCount),
-                [](const SearchNode& a, const SearchNode& b)
-                {
-                    return a.cost < b.cost;
-                }
-            );
-
-            beamCount =
-                std::min(BeamWidth, expandedCount);
-            for (std::size_t i = 0; i < beamCount; ++i)
-                beam[i] = expanded[i];
-
-            horizonTimeSeconds += step;
-        }
-
-        if (beamCount == 0 || !beam[0].firstAction.valid)
-            return {};
-
-        return beam[0].firstAction;
-    }
-
-    [[nodiscard]] static std::array<Action, CandidateCount>
-    candidateActions(
-        const SearchNode& node,
-        const AutopilotReferencePreviewSample& reference,
-        const AutopilotReferencePreviewSample& future,
-        const AutopilotControlRequest& request,
-        const ShipParams&,
-        double mainAuthority
-    ) noexcept
-    {
-        std::array<Action, CandidateCount> actions {};
-
-        const glm::dvec3 velocityError =
-            reference.desiredVelocityMapMps -
-            node.velocityMapMps;
-        const glm::dvec3 trackingAcceleration =
-            reference.desiredLinearAccelerationMapMps2 +
-            velocityError / 1.25;
-        const double trackingMagnitude =
-            finiteLength(trackingAcceleration);
-        const glm::dvec3 trackingDirection =
-            normalizedOr(
-                trackingAcceleration,
-                node.thrustDirectionMap
-            );
-        const double trackingThrottle =
-            std::clamp(
-                trackingMagnitude /
-                    std::max(mainAuthority, 1.0e-9),
-                0.0,
-                1.0
-            );
-
-        // Position capture is a first-class Newtonian objective. It must be
-        // present in the action set, not merely in the scalar cost, otherwise
-        // beam search can "understand" that it is off-route while having no
-        // candidate capable of deliberately returning to centerline.
-        glm::dvec3 captureAcceleration =
-            trackingAcceleration;
-        if (request.positionReferenceValid)
-        {
-            const glm::dvec3 tangent =
-                normalizedOr(
-                    reference.desiredVelocityMapMps,
-                    node.velocityMapMps
-                );
-            const glm::dvec3 positionError =
-                node.positionMapMeters -
-                reference.desiredPositionMapMeters;
-            const glm::dvec3 crossTrack =
-                positionError -
-                tangent * glm::dot(positionError, tangent);
-
-            constexpr double CaptureTimeSeconds = 2.0;
-            captureAcceleration -=
-                crossTrack /
-                (CaptureTimeSeconds * CaptureTimeSeconds);
-        }
-
-        const double captureMagnitude =
-            finiteLength(captureAcceleration);
-        const glm::dvec3 captureDirection =
-            normalizedOr(
-                captureAcceleration,
-                trackingDirection
-            );
-        const double captureThrottle =
-            std::clamp(
-                captureMagnitude /
-                    std::max(mainAuthority, 1.0e-9),
-                0.0,
-                1.0
-            );
-
-        glm::dvec3 futureDelta =
-            future.desiredVelocityMapMps -
-            node.velocityMapMps;
-        if (request.stopRequested)
-            futureDelta = -node.velocityMapMps;
-        const glm::dvec3 futureDirection =
-            normalizedOr(
-                futureDelta,
-                captureDirection
-            );
-
-        // 0: hold attitude and coast.
-        actions[0] = {
-            node.thrustDirectionMap,
-            0.0,
-            true
-        };
-
-        // 1: pre-orient toward the current velocity/feed-forward correction.
-        actions[1] = {
-            trackingDirection,
-            0.0,
-            true
-        };
-
-        // 2: physically-sized current tracking burn.
-        actions[2] = {
-            trackingDirection,
-            trackingThrottle,
-            true
-        };
-
-        // 3: pre-orient toward explicit centerline capture.
-        actions[3] = {
-            captureDirection,
-            0.0,
-            true
-        };
-
-        // 4: physically-sized centerline capture burn.
-        actions[4] = {
-            captureDirection,
-            captureThrottle,
-            true
-        };
-
-        // 5: full-authority capture/main-vector burn. This is available for
-        // large errors; the functional still decides whether it is worth it.
-        actions[5] = {
-            captureDirection,
-            1.0,
-            true
-        };
-
-        // 6: pre-orient for future slow-down/turn before it becomes current.
-        actions[6] = {
-            futureDirection,
-            0.0,
-            true
-        };
-
-        // 7: full burn along the future delta-v direction.
-        actions[7] = {
-            futureDirection,
-            1.0,
-            true
-        };
-
-        return actions;
-    }
-
-    [[nodiscard]] static SearchNode simulate(
-        const SearchNode& node,
-        const Action& action,
-        const AutopilotReferencePreviewSample& reference,
+    [[nodiscard]] AutopilotControlCommand ballisticControl(
         const AutopilotControlRequest& request,
         const ShipParams& params,
-        double mainAuthority,
-        double dt
+        const glm::dvec3& forward,
+        const glm::dvec3& right,
+        const glm::dvec3& up,
+        double dt,
+        glm::dvec3& traceTarget
     ) noexcept
     {
-        SearchNode next = node;
+        AutopilotControlCommand out;
 
-        const glm::dvec3 targetDirection =
-            normalizedOr(
-                action.targetThrustDirectionMap,
-                node.thrustDirectionMap
-            );
-
+        const double mainAuthority =
+            std::max(0.0, game::ship::forwardMainAccelerationLimitMps2(params));
+        const double rcsAuthority =
+            std::max(0.0, game::ship::manoeuvreAccelerationLimitMps2(params));
+        const double rcsBudget = RcsTrajectoryShare * rcsAuthority;
         const double gimbalLimit =
             std::max(
                 game::ship::mainGimbalPitchLimitRad(params),
                 game::ship::mainGimbalYawLimitRad(params)
             );
-        const glm::dvec3 desiredHullDirection =
-            hullAxisForResidualGimbal(
-                targetDirection,
-                node.hullDirectionMap,
-                gimbalLimit
+
+        const glm::dvec3 velocity =
+            finiteVecOrZero(request.actualVelocityMapMps);
+        const glm::dvec3 desiredVelocity =
+            finiteVecOrZero(request.desiredVelocityMapMps);
+        const glm::dvec3 feedForward =
+            finiteVecOrZero(request.desiredLinearAccelerationMapMps2);
+        const glm::dvec3 tangent =
+            normalizedOr(
+                desiredVelocity,
+                normalizedOr(request.desiredForwardMap, forward)
+            );
+        const double tolerance =
+            request.corridorToleranceMeters > 0.0
+                ? request.corridorToleranceMeters
+                : DefaultCorridorToleranceMeters;
+
+        // The reference point left behind (an outward overshoot of a broken
+        // corner clamps the route projection at its vertex): that along-track
+        // error is corrected like a cross-track one, and the profile speed
+        // of the stale reference is not chased.
+        glm::dvec3 offset {0.0};
+        double overshoot = 0.0;
+        if (request.positionReferenceValid)
+        {
+            offset =
+                finiteVecOrZero(request.actualPositionMapMeters) -
+                finiteVecOrZero(request.desiredPositionMapMeters);
+            overshoot =
+                std::max(
+                    0.0,
+                    glm::dot(offset, tangent) -
+                        OvershootSlackFraction * tolerance
+                );
+        }
+
+        // ----- Longitudinal: follow the speed profile, deadband in coast.
+        const double speedError =
+            glm::dot(desiredVelocity - velocity, tangent);
+        const double feedForwardAlong = glm::dot(feedForward, tangent);
+        const glm::dvec3 feedForwardLateral =
+            feedForward - tangent * feedForwardAlong;
+        double longitudinal =
+            feedForwardAlong + speedError / LongitudinalResponseSeconds;
+        const double speedDeadband =
+            0.5 + 0.005 * finiteLength(velocity);
+        if (std::abs(speedError) < speedDeadband &&
+            std::abs(feedForwardAlong) <= 1.0e-3)
+            longitudinal = 0.0;
+        // Speed error and profile acceleration of opposite sign (under-speed
+        // while the profile decelerates, over-speed while it accelerates):
+        // stop the profile burn, never reverse it (that would need the hull
+        // turned around). The profile is a function of POSITION and only
+        // "comes down" while the craft keeps moving, so the gap is closed
+        // with RCS instead of stalling short of the next stop.
+        const bool profileGapOnRcs =
+            speedError * feedForwardAlong < 0.0 &&
+            std::abs(speedError) > speedDeadband;
+        if (profileGapOnRcs)
+            longitudinal =
+                std::clamp(
+                    speedError / LongitudinalResponseSeconds,
+                    -rcsBudget,
+                    rcsBudget
+                );
+        if (overshoot > 0.0)
+            longitudinal = 0.0;
+
+        // ----- Lateral: predictive safe tube around the corridor reference.
+        const glm::dvec3 relativeVelocity = velocity - desiredVelocity;
+        glm::dvec3 lateralVelocity =
+            relativeVelocity -
+            tangent * glm::dot(relativeVelocity, tangent);
+        glm::dvec3 lateral = feedForwardLateral;
+        bool lateralEmergency = false;
+        glm::dvec3 crossTrack {0.0};
+        if (request.positionReferenceValid)
+        {
+            crossTrack = offset - tangent * glm::dot(offset, tangent);
+            if (overshoot > 0.0)
+            {
+                crossTrack += tangent * overshoot;
+                lateralVelocity += tangent * glm::dot(velocity, tangent);
+            }
+            const glm::dvec3 predicted =
+                crossTrack + lateralVelocity * LateralPredictionSeconds;
+            const double predictedDistance = finiteLength(predicted);
+
+            if (!state_.lateralCorrection &&
+                predictedDistance > SafeTubeFraction * tolerance)
+                state_.lateralCorrection = true;
+            else if (state_.lateralCorrection &&
+                     predictedDistance <= TubeReleaseFraction * tolerance)
+                state_.lateralCorrection = false;
+
+            if (state_.lateralCorrection)
+            {
+                const double aimRadius = TubeAimFraction * tolerance;
+                const glm::dvec3 aim =
+                    predictedDistance > aimRadius
+                        ? predicted * (aimRadius / predictedDistance)
+                        : predicted;
+                lateral +=
+                    (aim - predicted) /
+                    (LateralPredictionSeconds * LateralResponseSeconds);
+            }
+
+            // Escalate to the main engine only when RCS can no longer stop
+            // the outward drift before the corridor wall.
+            const double crossDistance = finiteLength(crossTrack);
+            const double outward =
+                crossDistance > 1.0e-6
+                    ? std::max(
+                        0.0,
+                        glm::dot(lateralVelocity, crossTrack / crossDistance)
+                      )
+                    : 0.0;
+            const double margin =
+                std::max(0.0, WallMarginFraction * tolerance - crossDistance);
+            lateralEmergency =
+                outward > 1.0e-6 &&
+                (rcsBudget <= 1.0e-9 ||
+                 outward * outward / (2.0 * rcsBudget) > margin);
+        }
+        else
+        {
+            lateral -= lateralVelocity / LongitudinalResponseSeconds;
+        }
+
+        glm::dvec3 demand = tangent * longitudinal + lateral;
+
+        // Station keeping: the reference is (nearly) at rest and stays so
+        // over the preview. Its tangent is ambiguous there, so the full
+        // position error is trimmed out with RCS alone. A stop the route
+        // flies through (a broken corner) is NOT held: the craft must pass
+        // its vertex for the reference to move on.
+        bool referenceMovesAhead = false;
+        for (std::size_t k = 0;
+             k < std::min(request.previewCount, AutopilotPreviewCapacity);
+             ++k)
+            referenceMovesAhead =
+                referenceMovesAhead ||
+                finiteLength(request.preview[k].desiredVelocityMapMps) >=
+                    HoldSpeedMps;
+        const bool stationKeeping =
+            !referenceMovesAhead &&
+            request.positionReferenceValid &&
+            rcsBudget > 1.0e-9 &&
+            finiteLength(desiredVelocity) < HoldSpeedMps &&
+            std::abs(feedForwardAlong) <= rcsBudget &&
+            finiteLength(velocity) <= rcsBudget * RcsDeltaVHorizonSeconds;
+        if (stationKeeping)
+            demand =
+                -offset / (HoldResponseSeconds * HoldResponseSeconds) -
+                velocity * (2.0 / HoldResponseSeconds);
+
+        // ----- Anticipate the next main burn from the ACTUAL velocity: the
+        // delta-v each preview sample requires and the latest time that burn
+        // may start. Turn the hull early enough to reach it aligned; if that
+        // time has already passed, the burn is current.
+        decision_ = {};
+        bool anticipate = false;
+        bool urgent = false;
+        glm::dvec3 upcomingDirection = forward;
+        glm::dvec3 urgentDemand {0.0};
+        const double plannedBraking =
+            world::navigation::TrajectoryGenerationPolicy::
+                DefaultPlanningAuthorityFraction * mainAuthority;
+        const bool moving = finiteLength(velocity) > 1.0;
+        const glm::dvec3 motionDirection = normalizedOr(velocity, tangent);
+        const std::size_t previewCount =
+            std::min(request.previewCount, AutopilotPreviewCapacity);
+        double earliestStart = std::numeric_limits<double>::infinity();
+        for (std::size_t k = 0;
+             k < previewCount && plannedBraking > 1.0e-9;
+             ++k)
+        {
+            const auto& sample = request.preview[k];
+            // A curve ahead whose path-normal acceleration RCS cannot carry
+            // is a main burn from the moment the curve begins: the thrust
+            // vector must already point there when the curve starts.
+            const glm::dvec3 sampleFeedForward =
+                finiteVecOrZero(sample.desiredLinearAccelerationMapMps2);
+            const glm::dvec3 sampleTangent =
+                normalizedOr(sample.desiredVelocityMapMps, motionDirection);
+            const glm::dvec3 sampleCurveAcceleration =
+                sampleFeedForward -
+                sampleTangent * glm::dot(sampleFeedForward, sampleTangent);
+            if (moving && finiteLength(sampleCurveAcceleration) > rcsBudget)
+            {
+                const double curveStart =
+                    k == 0
+                        ? 0.0
+                        : std::max(
+                              0.0, request.preview[k - 1].timeOffsetSeconds);
+                if (curveStart < earliestStart)
+                {
+                    decision_.chosenPreview = static_cast<int>(k);
+                    decision_.chosenReason = 1;
+                    earliestStart = curveStart;
+                    upcomingDirection =
+                        normalizedOr(sampleFeedForward, forward);
+                    urgentDemand = sampleFeedForward;
+                }
+            }
+            glm::dvec3 deltaV =
+                finiteVecOrZero(sample.desiredVelocityMapMps) - velocity;
+            // At speed only the speed REDUCTION is planned here: the retro
+            // burn along the present motion; a course change after a corner
+            // is flown once slow. When already slow the full delta-v (the
+            // new segment direction) is the burn to prepare.
+            if (finiteLength(velocity) > RetroOnlySpeedMps)
+                deltaV =
+                    -motionDirection *
+                    std::max(0.0, -glm::dot(deltaV, motionDirection));
+            // Delta-v the RCS alone delivers before that sample needs no
+            // main burn and no hull turn.
+            const double required = finiteLength(deltaV);
+            if (required <=
+                rcsBudget *
+                    std::max(RcsDeltaVHorizonSeconds,
+                             sample.timeOffsetSeconds))
+                continue;
+            const double latestStart =
+                std::max(0.0, sample.timeOffsetSeconds) -
+                required / plannedBraking;
+            if (latestStart >= earliestStart)
+                continue;
+            decision_.chosenPreview = static_cast<int>(k);
+            decision_.chosenReason = 2;
+            earliestStart = latestStart;
+            upcomingDirection = deltaV / required;
+            urgentDemand =
+                deltaV / std::max(0.5, sample.timeOffsetSeconds);
+        }
+        if (std::isfinite(earliestStart))
+        {
+            const double angle = angleBetween(forward, upcomingDirection);
+            const double lead =
+                plannedTurnSeconds(angle, params) + FlipLeadMarginSeconds +
+                (state_.anticipating ? 1.0 : 0.0);
+            urgent = moving && earliestStart <= 0.0;
+            // Stays true once the hull is aligned, so a conflicting burn
+            // cannot turn the hull away again before the planned one starts.
+            anticipate = !urgent && earliestStart <= lead;
+        }
+        state_.anticipating = anticipate;
+        if (urgent && !stationKeeping &&
+            finiteLength(urgentDemand) > finiteLength(demand))
+            demand = urgentDemand + lateral;
+
+        // ----- Is this main-engine work? (hysteresis while already burning)
+        const double hold = state_.mainRequested ? 0.5 : 1.0;
+        if (stationKeeping)
+        {
+            urgent = false;
+            anticipate = false;
+        }
+        bool mainNeeded =
+            !stationKeeping &&
+            mainAuthority > 1.0e-9 &&
+            (urgent ||
+             (longitudinal != 0.0 && !profileGapOnRcs &&
+              (std::abs(feedForwardAlong) > hold * rcsBudget ||
+               std::abs(speedError) >
+                   hold * rcsBudget * RcsDeltaVHorizonSeconds)) ||
+             finiteLength(feedForwardLateral) > hold * rcsBudget ||
+             lateralEmergency ||
+             (rcsBudget <= 1.0e-9 && finiteLength(demand) > 0.05));
+        const glm::dvec3 burnDirection = normalizedOr(demand, tangent);
+        // A planned flip for braking wins over continuing to ACCELERATE along
+        // the motion. A braking burn is finished first, and a wall-avoidance
+        // burn is never dropped.
+        if (anticipate && mainNeeded && !lateralEmergency &&
+            glm::dot(burnDirection, velocity) > 0.0 &&
+            angleBetween(burnDirection, upcomingDirection) > FlipEntryRad)
+            mainNeeded = false;
+        state_.mainRequested = mainNeeded;
+
+        const double hullRate =
+            std::hypot(
+                finiteOrZero(request.pitchRateRadPerSec),
+                finiteOrZero(request.yawRateRadPerSec)
             );
 
-        const double hullRateLimit =
-            std::max(
-                0.0,
-                game::ship::maximumAngularSpeedRadPerSec(params)
+        Phase phase = Phase::Coast;
+        glm::dvec3 attitudeTarget = forward;
+        double throttle = 0.0;
+        glm::dvec3 delivered {0.0};
+        if (mainNeeded)
+        {
+            if (!state_.burnLatched ||
+                angleBetween(burnDirection, state_.burnDirectionMap) >
+                    BurnRelatchRad)
+            {
+                // A burn the nozzle cone already serves keeps the hull where
+                // it is; otherwise the hull is brought onto the burn vector.
+                state_.burnDirectionMap = burnDirection;
+                state_.burnHullTargetMap =
+                    angleBetween(forward, burnDirection) <= 0.5 * gimbalLimit
+                        ? forward
+                        : burnDirection;
+                state_.burnLatched = true;
+            }
+            // On a curve the required thrust vector itself turns with the
+            // path: the hull follows it continuously instead of holding a
+            // latched braking attitude, and its rate is not a gate.
+            const bool curving =
+                finiteLength(feedForwardLateral) > rcsBudget;
+            attitudeTarget =
+                curving ? burnDirection : state_.burnHullTargetMap;
+            traceTarget = burnDirection;
+
+            const double hullError = angleBetween(forward, burnDirection);
+            const double thrustError =
+                std::max(0.0, hullError - gimbalLimit);
+            const double wanted =
+                std::clamp(finiteLength(demand) / mainAuthority, 0.0, 1.0);
+            const auto gimbal =
+                solveGimbalDemand(burnDirection, forward, right, up, params);
+
+            decision_.hullErrorRad = hullError;
+            decision_.thrustErrorRad = thrustError;
+            decision_.gateReason =
+                thrustError > BurnGateFullRad ? 1
+                : (!curving && hullRate > BurnRateGateRadPerSec) ? 2 : 0;
+            decision_.gate = 3;
+            if (thrustError <= BurnGateFullRad &&
+                (curving || hullRate <= BurnRateGateRadPerSec))
+            {
+                throttle = wanted;
+                decision_.gate = 1;
+            }
+            else if (thrustError <= BurnGateLimitedRad)
+            {
+                decision_.gate = 2;
+                // Limited burn: its side push must stay within what RCS can
+                // cancel, and never push toward a near corridor wall.
+                const double sidePush =
+                    mainAuthority * std::sin(thrustError);
+                throttle =
+                    sidePush > 1.0e-9
+                        ? std::min(wanted, 0.8 * rcsBudget / sidePush)
+                        : wanted;
+                const glm::dvec3 side =
+                    gimbal.commandedDirectionMap -
+                    burnDirection *
+                        glm::dot(gimbal.commandedDirectionMap, burnDirection);
+                if (request.positionReferenceValid &&
+                    finiteLength(crossTrack) > 0.6 * tolerance &&
+                    glm::dot(side, crossTrack) > 0.0)
+                {
+                    throttle = 0.0;
+                    decision_.gate = 3;
+                    decision_.gateReason = 3;
+                }
+            }
+
+            if (throttle > 1.0e-6)
+            {
+                phase = Phase::Burn;
+                out.mainGimbalRightInput = gimbal.rightInput;
+                out.mainGimbalUpInput = gimbal.upInput;
+                delivered =
+                    gimbal.commandedDirectionMap * (mainAuthority * throttle);
+            }
+            else
+            {
+                throttle = 0.0;
+                phase = turnPhase(hullError);
+            }
+        }
+        else
+        {
+            state_.burnLatched = false;
+            if (anticipate)
+            {
+                attitudeTarget = upcomingDirection;
+                traceTarget = upcomingDirection;
+                phase = turnPhase(angleBetween(forward, upcomingDirection));
+            }
+        }
+        // A started turn is not re-aimed elsewhere before it had time to
+        // matter: alternating targets would keep the hull turning forever
+        // and never open the burn gate.
+        if (phase == Phase::Flip || phase == Phase::Align)
+        {
+            if (state_.turnTargetValid &&
+                angleBetween(attitudeTarget, state_.turnTargetMap) >
+                    FlipEntryRad &&
+                state_.turnTargetAgeSeconds < MinTurnTargetDwellSeconds)
+            {
+                attitudeTarget = state_.turnTargetMap;
+                phase = turnPhase(angleBetween(forward, attitudeTarget));
+            }
+            else
+            {
+                if (!state_.turnTargetValid ||
+                    angleBetween(attitudeTarget, state_.turnTargetMap) >
+                        FlipEntryRad)
+                    state_.turnTargetAgeSeconds = 0.0;
+                state_.turnTargetMap = attitudeTarget;
+            }
+            state_.turnTargetValid = true;
+            state_.turnTargetAgeSeconds += dt;
+        }
+        else
+        {
+            state_.turnTargetValid = false;
+        }
+        state_.phase = phase;
+        decision_.crossTrack = crossTrack;
+        decision_.lateralVelocity = lateralVelocity;
+        decision_.speedError = speedError;
+        decision_.feedForwardAlong = feedForwardAlong;
+        decision_.feedForwardLateral = finiteLength(feedForwardLateral);
+        decision_.correction = lateral - feedForwardLateral;
+        decision_.demand = demand;
+        decision_.thrustDirection = mainNeeded ? burnDirection
+            : anticipate ? upcomingDirection : forward;
+        decision_.hullTarget = attitudeTarget;
+        if (!mainNeeded)
+            decision_.hullErrorRad = angleBetween(forward, attitudeTarget);
+        decision_.gimbalLimitRad = gimbalLimit;
+        decision_.urgent = urgent;
+        decision_.anticipate = anticipate;
+        decision_.curveAnticipation =
+            (urgent || anticipate) && decision_.chosenReason == 1;
+        decision_.chosenStartSeconds =
+            std::isfinite(earliestStart) ? earliestStart : -1.0;
+        decision_.latched = state_.burnLatched;
+        decision_.mainNeeded = mainNeeded;
+        decision_.braking =
+            mainNeeded && glm::dot(burnDirection, velocity) < 0.0;
+        decision_.lateralCorrection = state_.lateralCorrection;
+        decision_.emergency = lateralEmergency;
+        decision_.stationKeeping = stationKeeping;
+        decision_.profileGap = profileGapOnRcs;
+        state_.traceFlags =
+            (overshoot > 0.0 ? 1 : 0) | (mainNeeded ? 2 : 0) |
+            (anticipate ? 4 : 0) | (urgent ? 8 : 0) |
+            (stationKeeping ? 16 : 0) |
+            (state_.lateralCorrection ? 32 : 0) |
+            (lateralEmergency ? 64 : 0);
+
+        // While moving, roll around the thrust axis has no navigation
+        // meaning: keep the current up and only damp roll rate.
+        if (phase == Phase::Flip)
+            applyFlipRate(out, request, params, attitudeTarget, up, dt);
+        else
+            applyAttitude(out, request, params, attitudeTarget, up, dt);
+
+        out.targetSpeedRate = finiteClamp(throttle);
+
+        // RCS takes everything the main burn does not deliver, within its
+        // trajectory budget. Dribbles below 1% of authority are dropped.
+        if (rcsAuthority > 1.0e-12)
+        {
+            glm::dvec3 remainder = demand - delivered;
+            const double magnitude = finiteLength(remainder);
+            if (magnitude > rcsBudget && magnitude > 1.0e-12)
+                remainder *= rcsBudget / magnitude;
+            if (finiteLength(remainder) < 0.01 * rcsAuthority)
+                remainder = glm::dvec3(0.0);
+            out.forwardInput =
+                finiteClamp(glm::dot(remainder, forward) / rcsAuthority);
+            out.strafeInput =
+                finiteClamp(glm::dot(remainder, right) / rcsAuthority);
+            out.liftInput =
+                finiteClamp(glm::dot(remainder, up) / rcsAuthority);
+        }
+        return out;
+    }
+
+    [[nodiscard]] Phase turnPhase(double hullErrorRad) const noexcept
+    {
+        const bool flipping = state_.phase == Phase::Flip;
+        return hullErrorRad > FlipEntryRad ||
+                   (flipping && hullErrorRad > FlipExitRad)
+            ? Phase::Flip
+            : Phase::Align;
+    }
+
+    [[nodiscard]] static double preferredTurnRateRadPerSec(
+        const ShipParams& params
+    ) noexcept
+    {
+        // Physical limits, including the hull-load rate bound.
+        const double installed =
+            std::min(
+                game::ship::pitchRateLimitRadPerSec(params),
+                game::ship::yawRateLimitRadPerSec(params)
             );
-        const double angularAuthority =
+        return std::isfinite(installed)
+            ? PreferredRateShare * std::max(0.0, installed)
+            : 0.0;
+    }
+
+    [[nodiscard]] static double preferredTurnAccelerationRadPerSec2(
+        const ShipParams& params
+    ) noexcept
+    {
+        return PreferredAccelerationShare *
             std::max(
                 0.0,
                 game::ship::angularAccelerationLimitRadPerSec2(params)
             );
-        const double gimbalRate =
-            game::ship::mainGimbalRateRadPerSec(params);
-
-        const double separation =
-            angleBetween(
-                node.hullDirectionMap,
-                desiredHullDirection
-            );
-
-        const double desiredHullRate =
-            separation > 1.0e-9
-                ? hullRateLimit
-                : 0.0;
-        const double maximumRateDelta =
-            angularAuthority * dt;
-        double hullRate =
-            node.hullSlewRateRadPerSec;
-        if (hullRate < desiredHullRate)
-            hullRate =
-                std::min(
-                    desiredHullRate,
-                    hullRate + maximumRateDelta
-                );
-        else
-            hullRate =
-                std::max(
-                    desiredHullRate,
-                    hullRate - maximumRateDelta
-                );
-
-        const double hullReachableAngle =
-            std::max(
-                0.0,
-                0.5 *
-                    (node.hullSlewRateRadPerSec + hullRate) *
-                    dt
-            );
-
-        next.hullDirectionMap =
-            slewDirection(
-                node.hullDirectionMap,
-                desiredHullDirection,
-                hullReachableAngle
-            );
-        next.hullSlewRateRadPerSec = hullRate;
-
-        const glm::dvec3 commandedThrustDirection =
-            slewDirection(
-                next.hullDirectionMap,
-                targetDirection,
-                gimbalLimit
-            );
-        const double hullMotion =
-            angleBetween(
-                node.hullDirectionMap,
-                next.hullDirectionMap
-            );
-        next.thrustDirectionMap =
-            slewDirection(
-                node.thrustDirectionMap,
-                commandedThrustDirection,
-                hullMotion + gimbalRate * dt
-            );
-
-        const double throttle =
-            std::clamp(action.throttle01, 0.0, 1.0);
-        const glm::dvec3 acceleration =
-            next.thrustDirectionMap *
-            (mainAuthority * throttle);
-        next.velocityMapMps =
-            node.velocityMapMps + acceleration * dt;
-        next.positionMapMeters =
-            node.positionMapMeters +
-            0.5 * (node.velocityMapMps + next.velocityMapMps) * dt;
-        next.elapsedSeconds =
-            node.elapsedSeconds + dt;
-
-        const glm::dvec3 velocityError =
-            next.velocityMapMps -
-            reference.desiredVelocityMapMps;
-        const double velocityError2 =
-            glm::dot(velocityError, velocityError);
-
-        const double actualSpeed =
-            finiteLength(next.velocityMapMps);
-        const double desiredSpeed =
-            finiteLength(reference.desiredVelocityMapMps);
-        const double overspeed =
-            std::max(0.0, actualSpeed - desiredSpeed);
-
-        const glm::dvec3 accelerationError =
-            acceleration -
-            reference.desiredLinearAccelerationMapMps2;
-        const double accelerationError2 =
-            glm::dot(accelerationError, accelerationError);
-
-        const double reorientation =
-            angleBetween(
-                node.thrustDirectionMap,
-                next.thrustDirectionMap
-            );
-
-        double crossTrackError2 = 0.0;
-        if (request.positionReferenceValid)
-        {
-            const glm::dvec3 positionError =
-                next.positionMapMeters -
-                reference.desiredPositionMapMeters;
-            const glm::dvec3 tangent =
-                normalizedOr(
-                    reference.desiredVelocityMapMps,
-                    node.velocityMapMps
-                );
-            const glm::dvec3 crossTrack =
-                positionError -
-                tangent * glm::dot(positionError, tangent);
-            crossTrackError2 =
-                glm::dot(crossTrack, crossTrack);
-        }
-
-        double stageCost =
-            1.0 * velocityError2 +
-            2.0 * crossTrackError2 +
-            4.0 * overspeed * overspeed +
-            0.08 * accelerationError2 +
-            2.0 * throttle * throttle +
-            40.0 * reorientation * reorientation +
-            1.0 * hullRate * hullRate;
-
-        if (request.stopRequested)
-            stageCost += 6.0 * actualSpeed * actualSpeed;
-
-        // Preserve branches that start a necessary flip BEFORE the future
-        // speed/reference change becomes the current sample.  This is a
-        // physical reachability lower bound, not a tuned "brake early" rule:
-        //
-        //   required future delta-v
-        //       <= mainAuthority * max(0, timeRemaining - minTurnTime)
-        //
-        // If the inequality is already violated, the deficit is accumulated
-        // immediately so beam pruning cannot discard the only branch that is
-        // paying the hull-rotation cost early enough.
-        const auto future =
-            finalReference(request);
-        const double deadline =
-            std::max(
-                0.0,
-                future.timeOffsetSeconds -
-                    next.elapsedSeconds
-            );
-        const glm::dvec3 futureDeltaVelocity =
-            future.desiredVelocityMapMps -
-            next.velocityMapMps;
-        const double requiredFutureDeltaV =
-            finiteLength(futureDeltaVelocity);
-
-        if (requiredFutureDeltaV > 1.0e-9 &&
-            deadline > 1.0e-9)
-        {
-            const glm::dvec3 futureThrustDirection =
-                futureDeltaVelocity /
-                requiredFutureDeltaV;
-
-            const double gimbalLimit =
-                std::max(
-                    game::ship::mainGimbalPitchLimitRad(params),
-                    game::ship::mainGimbalYawLimitRad(params)
-                );
-            const double hullAngle =
-                std::max(
-                    0.0,
-                    angleBetween(
-                        next.hullDirectionMap,
-                        futureThrustDirection
-                    ) - gimbalLimit
-                );
-
-            const double minTurnTime =
-                minimumTurnTimeSeconds(
-                    hullAngle,
-                    next.hullSlewRateRadPerSec,
-                    params
-                );
-            const double availableBurnTime =
-                std::max(
-                    0.0,
-                    deadline - minTurnTime
-                );
-            const double reachableDeltaV =
-                mainAuthority * availableBurnTime;
-            const double unreachableDeltaV =
-                std::max(
-                    0.0,
-                    requiredFutureDeltaV -
-                        reachableDeltaV
-                );
-
-            stageCost +=
-                12.0 *
-                unreachableDeltaV *
-                unreachableDeltaV;
-        }
-
-        next.cost += stageCost * dt;
-        return next;
     }
 
-    [[nodiscard]] static AutopilotControlCommand realizeAction(
+    // Calm rest-to-rest turn time at the preferred rate/acceleration,
+    // plus the align/settle time before a burn may start.
+    [[nodiscard]] static double plannedTurnSeconds(
+        double angleRad,
+        const ShipParams& params
+    ) noexcept
+    {
+        const double angle = std::max(0.0, angleRad);
+        const double rate = preferredTurnRateRadPerSec(params);
+        const double acceleration =
+            preferredTurnAccelerationRadPerSec2(params);
+        if (!(rate > 1.0e-9 && acceleration > 1.0e-9))
+            return std::numeric_limits<double>::infinity();
+        const double turn =
+            angle <= rate * rate / acceleration
+                ? 2.0 * std::sqrt(angle / acceleration)
+                : angle / rate + rate / acceleration;
+        return turn + AlignSettleSeconds;
+    }
+
+    // Planned flip: track a calm trapezoidal rate profile toward the target
+    // instead of the pose servo's full-authority bang. Roll is unchanged.
+    static void applyFlipRate(
+        AutopilotControlCommand& out,
         const AutopilotControlRequest& request,
         const ShipParams& params,
-        const Action& action,
-        const glm::dvec3& forward,
-        const glm::dvec3& right,
-        const glm::dvec3& up,
+        const glm::dvec3& targetForward,
+        const glm::dvec3& targetUp,
         double dt
     ) noexcept
     {
-        AutopilotControlCommand out;
+        applyAttitude(out, request, params, targetForward, targetUp, dt);
 
-        if (request.terminalAttitudeHold)
-        {
-            applyAttitude(
-                out,
-                request,
-                params,
-                normalizedOr(request.desiredForwardMap, forward),
-                normalizedOr(request.desiredUpMap, up),
-                dt
-            );
-            return out;
-        }
+        HullPoseGuidance::Request poseRequest;
+        poseRequest.currentForward =
+            normalizedOr(request.forwardMap, {0.0, 0.0, -1.0});
+        poseRequest.currentRight =
+            normalizedOr(request.rightMap, {1.0, 0.0, 0.0});
+        poseRequest.currentUp =
+            normalizedOr(request.upMap, {0.0, 1.0, 0.0});
+        poseRequest.targetForward =
+            normalizedOr(targetForward, poseRequest.currentForward);
+        poseRequest.targetUp = poseRequest.currentUp;
+        const auto pose = HullPoseGuidance::evaluate(poseRequest);
+        const double authority =
+            game::ship::angularAccelerationLimitRadPerSec2(params);
+        if (!pose.valid || !(authority > 1.0e-9))
+            return;
 
-        if (!action.valid)
-        {
-            applyAttitude(
-                out,
-                request,
-                params,
-                forward,
-                up,
-                dt
-            );
-            return out;
-        }
+        const glm::dvec2 error {
+            pose.pitchYawErrorLocalRad.x,
+            pose.pitchYawErrorLocalRad.y
+        };
+        const double angle = glm::length(error);
+        if (!(angle > 1.0e-9))
+            return;
+        const glm::dvec2 axis = error / angle;
 
-        const glm::dvec3 targetThrustDirection =
-            normalizedOr(
-                action.targetThrustDirectionMap,
-                forward
-            );
+        const double rateLimit = preferredTurnRateRadPerSec(params);
+        const double acceleration =
+            preferredTurnAccelerationRadPerSec2(params);
+        const double remaining =
+            std::max(0.0, angle - 0.5 * FlipExitRad);
+        const double desiredRate =
+            std::min(rateLimit, std::sqrt(2.0 * acceleration * remaining));
 
-        const auto gimbal =
-            solveGimbalDemand(
-                targetThrustDirection,
-                forward,
-                right,
-                up,
-                params
-            );
-
-        out.mainGimbalRightInput = gimbal.rightInput;
-        out.mainGimbalUpInput = gimbal.upInput;
-
-        const glm::dvec3 targetHullForward =
-            hullAxisForResidualGimbal(
-                targetThrustDirection,
-                forward,
-                gimbal.servedAngleRad
-            );
-
-        // While moving, roll around the thrust axis has no navigation meaning.
-        // Preserve the current up direction and damp angular velocity instead
-        // of making the hull chase route/tunnel roll.
-        applyAttitude(
-            out,
-            request,
-            params,
-            targetHullForward,
-            up,
-            dt
-        );
-
-        const double alignment =
-            std::max(
-                0.0,
-                glm::dot(
-                    gimbal.commandedDirectionMap,
-                    targetThrustDirection
-                )
-            );
-
-        out.targetSpeedRate =
-            finiteClamp(
-                std::clamp(action.throttle01, 0.0, 1.0) *
-                alignment
-            );
-
-        out.forwardInput = 0.0f;
-        out.strafeInput = 0.0f;
-        out.liftInput = 0.0f;
-
-        out.navigationAccelerationDemandValid = false;
-        out.navigationVelocityTargetValid = false;
-        out.navigationPrecisionTranslationOnly = false;
-        return out;
+        const glm::dvec2 rate {
+            finiteOrZero(request.pitchRateRadPerSec),
+            finiteOrZero(request.yawRateRadPerSec)
+        };
+        constexpr double RateResponseSeconds = 0.5;
+        glm::dvec2 wanted =
+            (axis * desiredRate - rate) * (2.0 / RateResponseSeconds);
+        const double magnitude = glm::length(wanted);
+        if (magnitude > acceleration && magnitude > 1.0e-12)
+            wanted *= acceleration / magnitude;
+        out.pitchInput = finiteClamp(wanted.x / authority);
+        out.yawInput = finiteClamp(wanted.y / authority);
     }
 
     static void applyAttitude(
@@ -1224,7 +1033,7 @@ private:
         return out;
     }
 
-    [[nodiscard]] static GimbalDemand solveGimbalDemand(
+    [[nodiscard]] static GimbalDemandResult solveGimbalDemand(
         const glm::dvec3& desiredDirection,
         const glm::dvec3& forward,
         const glm::dvec3& right,
@@ -1232,7 +1041,7 @@ private:
         const ShipParams& params
     ) noexcept
     {
-        GimbalDemand out;
+        GimbalDemandResult out;
 
         const double yawLimit =
             game::ship::mainGimbalYawLimitRad(params);
@@ -1298,155 +1107,7 @@ private:
                     up * std::tan(commandedPitch),
                 forward
             );
-
-        out.servedAngleRad =
-            angleBetween(forward, out.commandedDirectionMap);
         return out;
-    }
-
-    [[nodiscard]] static glm::dvec3 hullAxisForResidualGimbal(
-        const glm::dvec3& desiredDirection,
-        const glm::dvec3& currentForward,
-        double servedAngleRad
-    ) noexcept
-    {
-        const glm::dvec3 desired =
-            normalizedOr(desiredDirection, currentForward);
-        const glm::dvec3 current =
-            normalizedOr(currentForward, {0.0, 0.0, -1.0});
-
-        const double cosine =
-            std::clamp(glm::dot(desired, current), -1.0, 1.0);
-        const double separation = std::acos(cosine);
-
-        if (separation <= 1.0e-9)
-            return current;
-        if (servedAngleRad >= separation - 1.0e-9)
-            return current;
-        if (cosine <= -0.999999)
-            return desired;
-
-        const double moveFromDesired =
-            std::clamp(servedAngleRad, 0.0, separation);
-        const glm::dvec3 tangent =
-            normalizedOr(
-                current - desired * cosine,
-                current
-            );
-
-        return normalizedOr(
-            desired * std::cos(moveFromDesired) +
-                tangent * std::sin(moveFromDesired),
-            desired
-        );
-    }
-
-    [[nodiscard]] static double minimumTurnTimeSeconds(
-        double angleRad,
-        double currentRateRadPerSec,
-        const ShipParams& params
-    ) noexcept
-    {
-        const double angle =
-            std::max(0.0, angleRad);
-        if (angle <= 1.0e-12)
-            return 0.0;
-
-        const double acceleration =
-            std::max(
-                0.0,
-                game::ship::angularAccelerationLimitRadPerSec2(params)
-            );
-        const double maxRate =
-            std::max(
-                0.0,
-                game::ship::maximumAngularSpeedRadPerSec(params)
-            );
-
-        if (maxRate <= 1.0e-12)
-            return std::numeric_limits<double>::infinity();
-
-        const double initialRate =
-            std::clamp(
-                std::max(0.0, currentRateRadPerSec),
-                0.0,
-                maxRate
-            );
-
-        if (acceleration <= 1.0e-12)
-            return angle / std::max(initialRate, 1.0e-12);
-
-        const double accelerationTime =
-            std::max(
-                0.0,
-                (maxRate - initialRate) /
-                    acceleration
-            );
-        const double accelerationAngle =
-            initialRate * accelerationTime +
-            0.5 * acceleration *
-                accelerationTime * accelerationTime;
-
-        if (angle <= accelerationAngle)
-        {
-            // angle = v0*t + 0.5*a*t^2
-            const double discriminant =
-                initialRate * initialRate +
-                2.0 * acceleration * angle;
-            return
-                (-initialRate +
-                 std::sqrt(std::max(0.0, discriminant))) /
-                acceleration;
-        }
-
-        return
-            accelerationTime +
-            (angle - accelerationAngle) / maxRate;
-    }
-
-    [[nodiscard]] static glm::dvec3 slewDirection(
-        const glm::dvec3& from,
-        const glm::dvec3& to,
-        double maxAngleRad
-    ) noexcept
-    {
-        const glm::dvec3 a =
-            normalizedOr(from, {0.0, 0.0, -1.0});
-        const glm::dvec3 b =
-            normalizedOr(to, a);
-        const double cosine =
-            std::clamp(glm::dot(a, b), -1.0, 1.0);
-        const double angle = std::acos(cosine);
-
-        if (angle <= 1.0e-12 || maxAngleRad >= angle)
-            return b;
-        if (maxAngleRad <= 0.0)
-            return a;
-
-        if (cosine <= -0.999999)
-        {
-            glm::dvec3 axis =
-                glm::cross(a, glm::dvec3(0.0, 1.0, 0.0));
-            if (finiteLength(axis) <= 1.0e-9)
-                axis = glm::cross(a, glm::dvec3(1.0, 0.0, 0.0));
-            axis = normalizedOr(axis, {0.0, 0.0, 1.0});
-            return normalizedOr(
-                a * std::cos(maxAngleRad) +
-                    glm::cross(axis, a) * std::sin(maxAngleRad),
-                a
-            );
-        }
-
-        const glm::dvec3 tangent =
-            normalizedOr(
-                b - a * cosine,
-                b
-            );
-        return normalizedOr(
-            a * std::cos(maxAngleRad) +
-                tangent * std::sin(maxAngleRad),
-            a
-        );
     }
 
     [[nodiscard]] static double angleBetween(
@@ -1518,15 +1179,239 @@ private:
         );
     }
 
+    // DEV diagnostic only. ELITE_NEWTONIAN_POLICY_TRACE=<tsv path> writes a
+    // decision row at 10 Hz (and on every event tick);
+    // ELITE_NEWTONIAN_EVENT_TRACE=<tsv path> writes discrete decision events.
+    // No effect on control when unset.
+    static std::FILE* openTrace(const char* variable, const char* header)
+    {
+        const char* path = std::getenv(variable);
+        if (!path || !*path)
+            return nullptr;
+        std::FILE* f = std::fopen(path, "w");
+        if (f)
+            std::fputs(header, f);
+        return f;
+    }
+
+    void traceTick(
+        const AutopilotControlRequest& request,
+        const AutopilotControlCommand& out,
+        double dt
+    ) noexcept
+    {
+        static std::FILE* file = openTrace(
+            "ELITE_NEWTONIAN_POLICY_TRACE",
+            "t\tcurve\ts_m\tref_x\tref_y\tref_z\ttan_x\ttan_y\ttan_z\t"
+            "radius_m\tprofile_mps\tref_mps\tspeed_mps\tpreview_k\t"
+            "preview_reason\tpreview_start_s\txtrack_m\tpred1_m\tpred2_m\t"
+            "pred3_m\tpred4_m\tlat_v_mps\tlong_err_mps\tff_along\tff_lat\t"
+            "corr_acc\tdemand_acc\tfwd_x\tfwd_y\tfwd_z\tomega\t"
+            "thrust_x\tthrust_y\tthrust_z\thull_x\thull_y\thull_z\t"
+            "hull_err_deg\tthrust_err_deg\tgimbal_r\tgimbal_u\t"
+            "gimbal_lim_deg\tthrottle\trcs_f\trcs_s\trcs_l\tpitch\tyaw\t"
+            "roll\tphase\turgent\tanticipate\tcurve_ant\tlatch\tgate\t"
+            "gate_reason\ttube\temergency\tcoast\tflip\tbraking\t"
+            "station\tprofile_gap\ttarget_changed\ttarget_delta_deg\t"
+            "thrust_delta_deg\tstop\ttol_m\n");
+        static std::FILE* events = openTrace(
+            "ELITE_NEWTONIAN_EVENT_TRACE", "t\ts_m\tevent\tdetail\n");
+        state_.traceSeconds += dt;
+        if (!file && !events)
+            return;
+
+        constexpr double Deg = 57.2957795130823208768;
+        const double t = state_.traceSeconds;
+        const double s = request.traceRouteProgressMeters;
+        const Decision& d = decision_;
+        TraceMemory& m = traceMemory_;
+        const int phase = static_cast<int>(state_.phase);
+        const bool curving = request.traceCurvaturePerMeter > 1.0e-6;
+        const double targetDelta =
+            m.valid ? angleBetween(m.hullTarget, d.hullTarget) * Deg : 0.0;
+        const double thrustDelta =
+            m.valid ? angleBetween(m.thrustDirection, d.thrustDirection) * Deg
+                    : 0.0;
+        const double crossDistance = finiteLength(d.crossTrack);
+        const double tol = request.corridorToleranceMeters;
+        const bool violation =
+            request.positionReferenceValid && tol > 0.0 && crossDistance > tol;
+
+        bool eventTick = false;
+        char detail[160];
+        auto event = [&](const char* name)
+        {
+            eventTick = true;
+            if (events)
+                std::fprintf(events, "%.3f\t%.1f\t%s\t%s\n", t, s, name, detail);
+        };
+        if (m.valid)
+        {
+            if (curving != m.curving)
+            {
+                std::snprintf(detail, sizeof(detail),
+                    "curve=%zu radius=%.0f speed=%.1f",
+                    request.traceCurveIndex,
+                    curving ? 1.0 / request.traceCurvaturePerMeter : 0.0,
+                    finiteLength(request.actualVelocityMapMps));
+                event(curving ? "ENTER_CURVE" : "LEAVE_CURVE");
+            }
+            if (targetDelta > 25.0)
+            {
+                std::snprintf(detail, sizeof(detail),
+                    "hull_target_delta=%.1f phase=%d", targetDelta, phase);
+                event("TARGET_SWITCH");
+            }
+            if (d.urgent != m.urgent)
+            {
+                std::snprintf(detail, sizeof(detail), "preview=%d reason=%d",
+                    d.chosenPreview, d.chosenReason);
+                event(d.urgent ? "URGENT_ON" : "URGENT_OFF");
+            }
+            const bool open = d.gate == 1 || d.gate == 2;
+            const bool wasOpen = m.gate == 1 || m.gate == 2;
+            if (open != wasOpen && (d.gate != 0 || m.gate != 0))
+            {
+                std::snprintf(detail, sizeof(detail),
+                    "gate=%d reason=%d thrust_err=%.1f hull_err=%.1f",
+                    d.gate, d.gateReason, d.thrustErrorRad * Deg,
+                    d.hullErrorRad * Deg);
+                event(open ? "BURN_GATE_OPEN" : "BURN_GATE_CLOSE");
+            }
+            if (d.latched != m.latched)
+            {
+                detail[0] = '\0';
+                event(d.latched ? "LATCH_SET" : "LATCH_CLEAR");
+            }
+            if (phase != m.phase)
+            {
+                std::snprintf(detail, sizeof(detail), "%d->%d", m.phase, phase);
+                event("PHASE_CHANGE");
+            }
+            if (thrustDelta > 90.0 && (d.mainNeeded || d.anticipate))
+            {
+                std::snprintf(detail, sizeof(detail), "thrust_delta=%.1f",
+                    thrustDelta);
+                event("COMMAND_REVERSAL");
+            }
+            const double pitch = out.pitchInput;
+            const double yaw = out.yawInput;
+            if ((pitch * m.pitchInput < -0.09 &&
+                 std::abs(pitch) > 0.3 && std::abs(m.pitchInput) > 0.3) ||
+                (yaw * m.yawInput < -0.09 &&
+                 std::abs(yaw) > 0.3 && std::abs(m.yawInput) > 0.3))
+            {
+                std::snprintf(detail, sizeof(detail),
+                    "rotation pitch %.2f->%.2f yaw %.2f->%.2f",
+                    m.pitchInput, pitch, m.yawInput, yaw);
+                event("COMMAND_REVERSAL");
+            }
+            if (violation != m.corridorViolation)
+            {
+                std::snprintf(detail, sizeof(detail), "xtrack=%.1f tol=%.1f",
+                    crossDistance, tol);
+                event(violation ? "CORRIDOR_VIOLATION" : "CORRIDOR_RECOVERED");
+            }
+        }
+
+        if (file && (eventTick || m.tick % 5 == 0))
+        {
+            const glm::dvec3 v = finiteVecOrZero(request.actualVelocityMapMps);
+            const glm::dvec3 vDes =
+                finiteVecOrZero(request.desiredVelocityMapMps);
+            const glm::dvec3 tangent =
+                normalizedOr(vDes, request.desiredForwardMap);
+            const glm::dvec3 ref = request.desiredPositionMapMeters;
+            const glm::dvec3 fwd = request.forwardMap;
+            const double omega = std::sqrt(
+                request.pitchRateRadPerSec * request.pitchRateRadPerSec +
+                request.yawRateRadPerSec * request.yawRateRadPerSec +
+                request.rollRateRadPerSec * request.rollRateRadPerSec);
+            auto pred = [&](double seconds)
+            {
+                return finiteLength(d.crossTrack + d.lateralVelocity * seconds);
+            };
+            const bool coast = state_.phase == Phase::Coast;
+            const bool flip = state_.phase == Phase::Flip;
+            std::fprintf(file,
+                "%.3f\t%zu\t%.1f\t%.1f\t%.1f\t%.1f\t%.4f\t%.4f\t%.4f\t"
+                "%.0f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\t"
+                "%.2f\t%.2f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t"
+                "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t"
+                "%.4f\t%.2f\t%.2f\t%.3f\t%.3f\t%.2f\t%.3f\t%.3f\t%.3f\t"
+                "%.3f\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t"
+                "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%.1f\t%.1f\t%d\t%.1f\n",
+                t, request.traceCurveIndex, s, ref.x, ref.y, ref.z,
+                tangent.x, tangent.y, tangent.z,
+                curving ? 1.0 / request.traceCurvaturePerMeter : 0.0,
+                request.traceProfileSpeedMps, finiteLength(vDes),
+                finiteLength(v), d.chosenPreview, d.chosenReason,
+                d.chosenStartSeconds,
+                request.positionReferenceValid ? crossDistance : 0.0,
+                pred(1.0), pred(2.0), pred(3.0), pred(4.0),
+                finiteLength(d.lateralVelocity), d.speedError,
+                d.feedForwardAlong, d.feedForwardLateral,
+                finiteLength(d.correction), finiteLength(d.demand),
+                fwd.x, fwd.y, fwd.z, omega,
+                d.thrustDirection.x, d.thrustDirection.y, d.thrustDirection.z,
+                d.hullTarget.x, d.hullTarget.y, d.hullTarget.z,
+                d.hullErrorRad * Deg, d.thrustErrorRad * Deg,
+                out.mainGimbalRightInput, out.mainGimbalUpInput,
+                d.gimbalLimitRad * Deg, out.targetSpeedRate,
+                out.forwardInput, out.strafeInput, out.liftInput,
+                out.pitchInput, out.yawInput, out.rollInput,
+                phase, d.urgent ? 1 : 0, d.anticipate ? 1 : 0,
+                d.curveAnticipation ? 1 : 0, d.latched ? 1 : 0, d.gate,
+                d.gateReason, d.lateralCorrection ? 1 : 0,
+                d.emergency ? 1 : 0, coast ? 1 : 0, flip ? 1 : 0,
+                d.braking ? 1 : 0, d.stationKeeping ? 1 : 0,
+                d.profileGap ? 1 : 0, targetDelta > 1.0 ? 1 : 0,
+                targetDelta, thrustDelta,
+                request.stopRequested ? 1 : 0, tol);
+        }
+        if (file)
+            std::fflush(file);
+        if (events)
+            std::fflush(events);
+
+        m.valid = true;
+        m.hullTarget = d.hullTarget;
+        m.thrustDirection = d.thrustDirection;
+        m.phase = phase;
+        m.urgent = d.urgent;
+        m.latched = d.latched;
+        m.gate = d.gate;
+        m.curving = curving;
+        m.corridorViolation = violation;
+        m.pitchInput = out.pitchInput;
+        m.yawInput = out.yawInput;
+        ++m.tick;
+    }
+
     void remember(const AutopilotControlRequest& request) noexcept
     {
         state_.initialized = true;
-        state_.lastStopRequested = request.stopRequested;
         state_.previousVelocityMapMps =
             finiteVecOrZero(request.actualVelocityMapMps);
     }
 
     State state_ {};
+    Decision decision_ {};
+    struct TraceMemory
+    {
+        bool valid = false;
+        glm::dvec3 hullTarget {0.0, 0.0, -1.0};
+        glm::dvec3 thrustDirection {0.0, 0.0, -1.0};
+        int phase = -1;
+        bool urgent = false;
+        bool latched = false;
+        int gate = 0;
+        bool curving = false;
+        bool corridorViolation = false;
+        double pitchInput = 0.0;
+        double yawInput = 0.0;
+        int tick = 0;
+    } traceMemory_ {};
 };
 
 } // namespace game::navigation::autopilot

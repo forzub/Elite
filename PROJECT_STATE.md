@@ -2820,3 +2820,60 @@ Baseline for comparison: working tree on top of `4f67103c` with the uncommitted 
 2. Explicit manoeuvre program / autopilot sequencing with priority and transient reset.
 3. Narrow-zone safety (envelope, safe orientation, limited-rotation regions, conservative speed).
 4. N1 gimbal sweep only once the new strategy really uses vectoring.
+
+
+## 2026-10-27 Step 1a Newtonian route geometry: offline PASS, flight NOT accepted (UNCOMMITTED, stopped for review)
+
+Source changes (working tree, not committed):
+- Newtonian pipeline: `roundTurns=true` (existing fillet arcs with collision proof), new `RoutePlanRequest/DockingAdvisoryRequest::mergeNearCollinearVertices` (drop interior vertex < 3 deg when the shortcut is clear; default off, Newtonian only).
+- One Newtonian curve capability: `newtonianPreferredLateralAccelerationMps2 = 0.5 * vector main authority` (`ManeuverCapabilityAdapters.h`), used by the planner request and by the accepted-trajectory execution authority; actuator choice stays with the pilot.
+- Start at rest (Newtonian, v <= 0.5 m/s): no `PreplanningSafetyCourse` minimal-turn search, no launch heading, no protected lead (`SpaceState.cpp`, log `phase=skipped-at-rest`).
+- Follower stop at tangent breaks only for joins > 0.5 deg (`DedicatedClientRouteAutopilot.h`).
+- BLUE KeepInside erosion (sphere radius + 22 m) marked PROVISIONAL in `RouteVolumeContainmentValidator.cpp`.
+- 700/150 m tunnel straights: inherited route-graph design values (`3c112f32` copied the dock ingress `max(700 m, 3*standoff)`; `e2dc2dc5` hand-shortened the exit to 150 m). Not a derived safety requirement; kept for 1a.
+- DEV dump `ELITE_ROUTE_DUMP`; comparison `python D:/tmp/elite_s1a_compare.py s1a_old s1a_new`.
+
+Offline comparison (first accepted route, same scene):
+- I: 12 lines / 7 mid-route stops / 33819 m / profile 231 s -> 10 lines + 5 arcs (R 134..9910 m) / 0 stops / 32866 m / 195 s.
+- Y/X: 12 lines / 7 stops / 27750 m / 161 s -> 11 lines + 6 arcs (R 104..4955 m) / 0 stops / 27143 m / 137 s.
+- Artificial 1000 m start lead and its bend are gone; BLUE vmax 220 respected; KeepInside validation passed (plan accepted).
+
+Real flights (2, current experimental pilot, 150 s): NOT an improvement in execution.
+- I: progress 18.9 km, cross-track max 198 m (outside the 64 m tolerance), lateral velocity up to 151 m/s; X: 16.5 km, 388 m.
+- Root cause (trace): at arc entry at ~333 m/s the required a_lat (v^2/R ~ 11 m/s^2) exceeds RCS/vectoring without turning the hull. The pilot only anticipates braking, so it starts a ~3 s hull turn AT the arc entry and drifts out meanwhile; the follow-up reference then jumps to the next tight arc (R 143 m, 48 m/s) while the craft is still at 330 m/s.
+- Conclusion: geometry goal reached offline; flight failure is execution (arc entry needs lateral preparation before the arc) = Step 2 territory, plus an open planner question (arc entry transition / speed when the needed a_lat requires a hull turn).
+
+### Step 1a follow-up: arc execution in the experimental pilot (3 flights, STOPPED by the experiment rule)
+- Chosen locally (user rule: decide obvious local choices): pilot-side arc anticipation instead of a planner "no-hull-turn lateral" cap. Reason: at constant speed without turning the hull only RCS (~1.2 m/s2) is lateral; vectoring comes with axial main thrust; such a cap would cut arc speeds to ~30-110 m/s. A preparation-straight rule does not bind on this route (km-long straights before arcs).
+- Flight 1 (no change, Step 1a routes): I cross-track max 198 m, lateral velocity max 151 m/s.
+- Flight 2 (+ preview anticipation of curves RCS cannot carry): 137 m, 25 m/s, mean 26 m. Remaining exit on the tight R~143 m arc: the latched-braking burn gate (rate <= 0.12 rad/s) never opened while the thrust vector rotated with the arc.
+- Flight 3 (+ hull follows the burn direction continuously on curves, no rate gate): 105 m, but lateral velocity back to 152 m/s, 400 command reversals. Cause: when the next preview sample is on a curve the curve candidate becomes "urgent" and replaces the braking demand with that sample's authored curve acceleration (scaled to NOMINAL, not actual speed): the required thrust jumps ~80 deg in one tick before the broad arc.
+- Conclusion: Step 1a geometry is right (offline); arc execution keeps failing on conflicts between the pilot's per-tick heuristics (anticipate / urgent / latch / gate). This is the Step 2 problem (explicit manoeuvre program with phase priority). Pilot changes stay uncommitted.
+
+## 2026-10-28 working rules before Step 2 (user decision) + WIP checkpoint of the experimental Newtonian stack
+
+Rules (user, 2026-10-28):
+- `main` only, no branches. WIP/checkpoint commits on main are allowed; a commit is NOT acceptance. Every slice records: SOURCE COMPLETE/WIP, BUILD, OFFLINE CHECK, GAME START, HEALTHY FLIGHT VERIFIED/NOT VERIFIED, known problems.
+- Before each experiment series: problem, metric, baseline, expected result, PASS/FAIL.
+- Newtonian acceptance priority: safety (corridor, KeepInside, zone speed limits, envelope vs wall, no strong main at bad misalignment) > route execution (completes or stable progress, cross-track <= corridor, no lateral runaway, no stop/restart or reversal loops) > control quality (no needless big rotations, no tens-of-degree target jumps between ticks without physical cause, finished phase not revived, local correction never cancels the main manoeuvre) > performance. `progress after 150 s` is no longer a quality criterion.
+- 2-3 real flights per hypothesis; offline/headless iterations unlimited but only on production physics/control code; stop on no directed improvement offline as well.
+- Step 2 pre-approved: route geometry + speed profile -> manoeuvre compiler -> explicit phases -> Newtonian execution -> low-level actuators. Planner stays a planner; Assisted unchanged. Carry over only low-level execution (safe tube, smooth attitude, burn gate as safety, coast, calm flip, RCS/nozzle cooperation, real capability/damage); delete old policy heuristics (competing urgent targets, preview urgency, latch where the phase covers it, stop-vertex hacks).
+- D:/tmp: my files only with `elite_` prefix, cleaned per stage; never touch other files.
+
+WIP checkpoint commits (all NOT ACCEPTED; status BUILD PASS, GAME START PASS, HEALTHY FLIGHT NOT VERIFIED):
+1. Newtonian nozzle/RCS counter-torque cooperation (`ShipEngineControlMatrix.h`, `ShipControlExecutionGateway.cpp`, `ShipCore.cpp`).
+2. Step 1a planner geometry (section above): offline PASS, flight NOT accepted (execution problem).
+3. Experimental ballistic pilot (COAST/FLIP/ALIGN/BURN heuristics) + DEV decision trace. Superseded by Step 2; kept only as the comparison baseline. Unit `NewtonianOptimalControllerTests` PASS. Pre-existing red: `local_flight_control_contracts` ("surviving fore main was not promoted"), also red with HEAD versions of the touched files.
+
+### Baseline decision trace of the old pilot (1 flight, Newtonian-I, Step 1a route, 150 s)
+DEV traces: `ELITE_NEWTONIAN_POLICY_TRACE=<tsv>` (10 Hz decision rows + every event tick), `ELITE_NEWTONIAN_EVENT_TRACE=<tsv>` (ENTER/LEAVE_CURVE, TARGET_SWITCH >25 deg/tick, URGENT_ON/OFF, BURN_GATE_OPEN/CLOSE, LATCH_SET/CLEAR, PHASE_CHANGE, COMMAND_REVERSAL, CORRIDOR_VIOLATION). Route context comes in `AutopilotControlRequest::trace*` (diagnostic only). Note: a second controller instance without a corridor (tol 0, not the route pilot) shares the files; the analyser keeps only rows/events of the route instance.
+Files kept as the Step 2 baseline: `D:/tmp/elite_s2base_decision.tsv`, `D:/tmp/elite_s2base_events.tsv`, `D:/tmp/elite_s2base_route.txt`; analysis `python D:/tmp/elite_s2_decision.py s2base`, window `python D:/tmp/elite_s2_window.py s2base T0 T1 [step]`.
+
+Result: 5 corridor violations (max cross-track 100.3 m, tol 64 m), lateral velocity up to 139 m/s, 207 hull-target jumps >25 deg/tick, 92 command reversals, 191 burn-gate openings, 78 latch set/clear pairs, 410 phase changes in 155 s. No strong main at >15 deg achievable thrust error (burn gate as safety works).
+Representative conflicts:
+1. t 31.2-34.9 s, s 8945-10192 m, arc R 9910 m entered at 337 m/s: the curve needs 11.25 m/s2 lateral (> RCS). The latched retro braking burn and the curve are separate competing targets; the hull ends ~80 deg off the needed vector, gate closed 3.2 s, lateral velocity 1 -> 34 m/s, cross-track 2 -> 64 m -> CORRIDOR_VIOLATION. The combined vector (retro 22.5 + lateral 11.25) is only ~27 deg from retro and could have been prepared in one pre-orientation.
+2. t 35.16-35.6 s, s 10257-10415 m, arc exit: reference target speed drops 330 -> 48 m/s at once (segment cap); `profileGapOnRcs` keys on the SIGN of a ~0 feed-forward, so the demand alternates 146/69 m/s2 every tick, hull target jumps 61 deg every tick, BURN<->FLIP each tick (~20 cycles).
+3. t 46.5-51.3 s, s 13275-13868 m: main burn on/off every tick (feed-forward flickers -22.5/0), 30 latch set/clear pairs in 0.5 s; the reference speed itself has one-tick dips 157 -> 48 m/s (long error -98 m/s).
+4. t 54.3-57.8 s, s 14114-14252 m, arc R 143 m at 36-40 m/s: curve anticipation turns 79 deg to the curve normal, braking takes the hull back 0.5 s later, at curve entry the hull is 71-81 deg off, gate closed > 1.5 s.
+5. t 72-75 s, s 14700-14840 m: 75-100 m outside the corridor while the profile accelerates (+22.4 m/s2); the limited burn is blocked by the wall-side rule while lateral emergency is active: local correction and the main manoeuvre stall each other.
+Conclusions for Step 2: (a) one thrust vector per phase planned from geometry+capability (braking and curve combined), prepared before the phase; (b) phase commitment, no per-tick re-selection; (c) reference inputs must be continuous (speed caps and feed-forward without one-tick jumps); (d) the safety correction modifies the phase vector, never replaces it.

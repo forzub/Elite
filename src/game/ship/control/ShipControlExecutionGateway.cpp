@@ -358,6 +358,12 @@ ShipControlExecutionGateway::evaluateTranslationControl(
         // TVC is an immediate field-vector command in this game universe.
         // Independent nozzles reach the requested cone angle this very tick.
         demand.tick = control.controlTick;
+        // Nozzle torque the installed attitude actuators will cancel this
+        // tick: half of the ship's real angular authority, the rest stays
+        // for attitude control. Zero when those actuators are lost.
+        demand.compensableAngularAccelerationRadPerSec2 =
+            0.5 * game::ship::angularAccelerationLimitRadPerSec2(
+                capabilities);
         // Assisted: cached signed maneuver patterns from the installed
         // geometry/capabilities. No per-tick 96-pass optimization.
         // Newtonian remains on its independent main/TVC + RCS doctrine.

@@ -1148,6 +1148,9 @@ void ShipCore::updateTranslationControl(float dt)
             m_state.control.controlTick
         };
         demand.centerOfMassLocalMeters=physics.centerOfMassLocalMeters;
+        // Cancel the parasitic torque of a deflected main nozzle executed
+        // this tick, so trajectory trims do not rotate the hull.
+        demand.momentBodyNm-=rcsMotion.mainPropulsionTorqueBodyNm;
 
         // Installed ER-5 already powers the main engine. Its unused output
         // can ALSO supply RCS. Main engine has first claim, so each MW is

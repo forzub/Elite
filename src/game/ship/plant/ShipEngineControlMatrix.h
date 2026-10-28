@@ -48,6 +48,10 @@ struct EngineMatrixDemand
     // No historical servo state or gimbal slew step: nozzle direction
     // is a direct gameplay actuator, solved afresh for each control tick.
     std::uint64_t tick = 0;
+    // Angular acceleration that OTHER installed actuators (e.g. RCS) will
+    // cancel this tick. Nozzle deflection may create parasitic torque up to
+    // this bound; 0 keeps the strict zero-torque allocation.
+    double compensableAngularAccelerationRadPerSec2 = 0.0;
 };
 
 namespace matrix_detail
@@ -278,6 +282,118 @@ inline void projectThrustCone(
             -out.torqueBodyNm.z/inertia.z
         };
         return out;
+    }
+
+    // Axial burn with a small cross-axis component and no angular demand:
+    // the requested bank fires with ONE common nozzle deflection toward the
+    // lateral demand. The resulting r x F torque is accepted up to what the
+    // other installed actuators compensate; the deflection never exceeds the
+    // installed passport cone (Engine::execute clamps it).
+    const glm::dvec2 lateralDemand {
+        demand.accelerationBodyMps2.x, demand.accelerationBodyMps2.y
+    };
+    const double lateralMagnitude = glm::length(lateralDemand);
+    if (demand.compensableAngularAccelerationRadPerSec2 > 1.0e-9 &&
+        std::abs(axialDemand) > 1.0e-9 &&
+        lateralMagnitude > negligibleCrossAxis &&
+        glm::length(demand.angularAccelerationBodyRadPerSec2) < 1.0e-9)
+    {
+        const auto bank = axialDemand < 0.0
+            ? EngineSlotRole::AftMain : EngineSlotRole::ForeMain;
+        std::size_t surviving = 0;
+        double minimumAvailableN = std::numeric_limits<double>::infinity();
+        double coneRad = std::numeric_limits<double>::infinity();
+        for (std::size_t i=0;i<mounted.size();++i)
+        {
+            if (topology[i].role != bank || m[i].cap <= 0.0)
+                continue;
+            ++surviving;
+            minimumAvailableN = std::min(
+                minimumAvailableN, m[i].rated*m[i].cap
+            );
+            coneRad = std::min(coneRad, m[i].limit);
+        }
+        if (surviving > 0 && coneRad > 1.0e-9)
+        {
+            const glm::dvec3 lateralDirection {
+                lateralDemand.x/lateralMagnitude,
+                lateralDemand.y/lateralMagnitude,
+                0.0
+            };
+            const double axialN = std::min(
+                std::abs(axialDemand)*mass/static_cast<double>(surviving),
+                minimumAvailableN
+            );
+            // Torque of the bank per unit sin(deflection).
+            glm::dvec3 unitTorque {0.0};
+            for (std::size_t i=0;i<mounted.size();++i)
+                if (topology[i].role == bank && m[i].cap > 0.0)
+                    unitTorque += glm::cross(
+                        m[i].arm, lateralDirection*axialN
+                    );
+            const double unitAngular = glm::length(glm::dvec3 {
+                unitTorque.x/inertia.x,
+                unitTorque.y/inertia.y,
+                unitTorque.z/inertia.z
+            });
+            double angle = std::min(
+                std::atan2(lateralMagnitude, std::abs(axialDemand)),
+                coneRad
+            );
+            if (unitAngular > 1.0e-12)
+            {
+                const double allowedSin = std::clamp(
+                    demand.compensableAngularAccelerationRadPerSec2/
+                        unitAngular,
+                    0.0, 1.0
+                );
+                angle = std::min(angle, std::asin(allowedSin));
+            }
+            out.valid = true;
+            out.count = mounted.size();
+            for (std::size_t i=0;i<mounted.size();++i)
+            {
+                auto& sample = out.engines[i];
+                const Engine engine(mounted[i]);
+                sample.availableThrust01 = m[i].rated > 0.0
+                    ? engine.availableThrustNewtons()/m[i].rated : 0.0;
+                if (topology[i].role != bank || m[i].cap <= 0.0)
+                    continue;
+                const glm::dvec3 nominal =
+                    topology[i].nominalForceDirectionBody;
+                const glm::dvec3 direction = glm::normalize(
+                    nominal*std::cos(angle) +
+                    lateralDirection*std::sin(angle)
+                );
+                const double instantaneousN = m[i].rated*m[i].cap;
+                const double forceN = std::min(
+                    instantaneousN, axialN/std::max(1.0e-6, std::cos(angle))
+                );
+                const auto applied = engine.execute(EngineCommand {
+                    forceN / instantaneousN,
+                    direction,
+                    demand.tick
+                });
+                sample.deliveredThrust01 = applied.deliveredNominalThrust01;
+                sample.forceBodyNewtons = applied.forceBodyNewtons;
+                sample.electricalMW = applied.consumedElectricalMW;
+                sample.heatMW = applied.generatedWasteHeatMW;
+                sample.nozzleYawRad = std::atan2(
+                    direction.x, std::max(1.0e-12, std::abs(direction.z)));
+                sample.nozzlePitchRad = std::atan2(
+                    direction.y, std::max(1.0e-12, std::abs(direction.z)));
+                out.forceBodyNewtons += applied.forceBodyNewtons;
+                out.torqueBodyNm +=
+                    glm::cross(m[i].arm, applied.forceBodyNewtons);
+            }
+            out.accelerationBodyMps2 = out.forceBodyNewtons/mass;
+            out.angularAccelerationBodyRadPerSec2 = {
+                out.torqueBodyNm.x/inertia.x,
+                out.torqueBodyNm.y/inertia.y,
+                -out.torqueBodyNm.z/inertia.z
+            };
+            return out;
+        }
     }
 
     // Ordinary purely longitudinal acceleration must never ignite the

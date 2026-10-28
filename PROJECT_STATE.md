@@ -2905,3 +2905,20 @@ Fix (offline + unit verified, flight pending): a braking feed-forward fades out 
 
 ### Pre-registered real-flight series 2 (terminal hypothesis; max 3 flights I/Y/X, 270 s)
 Hypothesis: with the brake fade and speed-triggered settle the craft holds at the route end. PASS per flight: series-1 corridor criteria still met AND after the route end is reached the speed drops <= 0.5 m/s and stays there (no backward runaway). FAIL: speed at the end > 2 m/s for > 30 s or growing.
+
+### Real-flight series 2 (terminal fix, commit `4c703cc7`, 270 s each) — PASS: Step 2 HEALTHY FLIGHT VERIFIED (nav-stress:simple, Newtonian I/Y/X)
+| model | corridor violations | max cross-track | max lateral v | hull jumps >25 deg/tick | strong misaligned main | route end | settled <= 0.5 m/s | final speed |
+|---|---|---|---|---|---|---|---|---|
+| I | 0 | 21.6 m | 7.7 m/s | 4 | 0 | 213.2 s | 229.5 s | 0.21 m/s |
+| Y | 0 | 26.0 m | 18.5 m/s | 8 | 0 | 189.7 s | 211.1 s | 0.21 m/s |
+| X | 0 | 28.1 m | 19.7 m/s | 9 | 0 | 187.7 s | 191.5 s (one 1.6 m/s blip) | 0.22 m/s |
+Server: parasitic RCS 0.0 kN; pitch/yaw command reversals 53-61 per full route (old pilot: 305 in 150 s); hull rotation 44-47 rad per FULL route incl. terminal (old pilot 26 rad over only 150 s / 24 km).
+Assisted-I sanity (same build, 150 s): trajectory identical to the accepted Assisted baseline `D:/tmp/elite_pass_Assisted-I.log` within +-1 checkpoint per sample (start offset), failed=0; the new log is longer (417 vs 308 samples) and ends at checkpoint 76.
+Unit `NewtonianOptimalControllerTests` 9/9 PASS (`bash D:/tmp/elite_s2_unit.sh` from MSYS2 MinGW64).
+
+Known issues / next:
+- Terminal attitude hold (route layer, after the stop) turns the hull with the full-authority servo: one 2.2 rad/s yaw/roll episode at rest (I t=220 s). Not a Step 2 regression; candidate: calm rate for large terminal turns.
+- The offline harness does not reproduce the in-game route-end projection stall (~2 m short); covered by a unit test.
+- Pre-existing red `local_flight_control_contracts` unchanged.
+- Remaining plan: Step 1b (portal as a window), Step 3 (narrow-zone safety: envelope, orientation in the cross-section, limited rotation), Step 4 (gimbal sweep).
+- D:/tmp cleaned (542 obsolete `elite_` files of this stage: bp*, s1*, replay r0-r17, temp scripts). The old `elite_bp_metrics.py` / `elite_bp_base_I*` referenced in the 2026-10-27 sections no longer exist; current tools: `elite_s2_*`. Kept: `elite_s2base_*` (old-pilot baseline), `elite_s2cap*_case.txt` (replay cases), `elite_s2fly*`/`elite_s2fly2*` (flight evidence), `elite_r18*` (last offline matrix).

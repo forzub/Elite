@@ -3188,3 +3188,14 @@ Order (user, binding): A regression matrix of `adfa5012` -> B speed tolerance co
 - `ia_X`: Newtonian-X, 3 of 4 mains failed at 60 s -> expect reprofiled, DONE.
 - `ib_I`: Newtonian-I, one RCS nozzle 60 % at 60 s -> expect reprofiled, DONE.
 - `id_I`: Newtonian-I, reactors off at 60 s and on at 75 s -> expect `authority-lost` coast, replan after the 10 s restart, no failure.
+
+### Step I real flights (build of `9441ae9a`) - PASS: all four pre-registered damaged flights
+| flight | damage (t after first motion) | log | violations | max xtrack | DONE (pilot s) |
+|---|---|---|---|---|---|
+| `ia_I` | I main_center 50 % at 60 s | `[CapabilityChange] kind=1 main 36.77->18.39 reprofiled` | 0 | 19.0 m | 262.5 (healthy `h` 232.4) |
+| `ia_X` | X 3 of 4 mains failed at 60 s | `kind=1 main 73.55->36.77 reprofiled` at 112.6 m/s | 0 | 18.6 m | 226.6 (healthy 216.9) |
+| `ib_I` | I one RCS nozzle 60 % at 60 s | `kind=2 rcs 2.00->1.85 angular 1.90->1.77 reprofiled` | 0 | 19.9 m | 273.7 |
+| `id_I` | I reactors off at 60 s, on at 75 s | `execution-replan reason=authority-lost` -> coast -> `capability-ready` after the restart -> new plan from the moving state -> executing | 0 | 21.0 m | 249.2 |
+- Case C (combined) offline on the real route: I main 50 % + RCS nozzle 60 % at 60 s -> reprofiled, DONE 291 s; I main 70 % + two RCS nozzles 70 % at 150 s -> DONE 280 s; X 3 mains + RCS nozzle -> DONE 222 s; all 0 violations (slower executable routes).
+- Refusal before planning (main 0, an RCS direction 0, an angular direction 0, reactors off/restarting) stays covered by `EliteNavigationCapabilityCheck` 10/10.
+- KNOWN LIMITATIONS of step I: (1) two-narrow-zones at delay 6 with the main lost inside zone 1 (offline only): R16 curve entered at 47 m/s, corridor exceeded; (2) a mid-route hand-back (cannot reach the speeds ahead / RCS relied on / dead direction) goes through the existing Stabilizing -> safety course -> replan path, flown in the game only for the reactor case; (3) a dead translational RCS direction makes the replan refuse (weakest-direction scalar; asymmetric planning not done); (4) RCS loss inside a narrow zone hands back from inside the zone; (5) capability RECOVERY (e.g. repaired engine) does not speed the route up (only losses are watched); (6) micro-brakes after a reprofile.

@@ -477,26 +477,74 @@ private:
         else
             applyAttitude(out, request, params, hullTarget, up, dt);
         out.targetSpeedRate = finiteClamp(throttle);
-        if (rcsAuthority > 1.0e-12)
-        {
-            glm::dvec3 remainder = demand - delivered;
-            const double rest = finiteLength(remainder);
-            if (rest > rcsBudget && rest > 1.0e-12)
-                remainder *= rcsBudget / rest;
-            if (finiteLength(remainder) < 0.01 * rcsAuthority)
-                remainder = glm::dvec3(0.0);
-            out.forwardInput =
-                finiteClamp(glm::dot(remainder, forward) / rcsAuthority);
-            out.strafeInput =
-                finiteClamp(glm::dot(remainder, right) / rcsAuthority);
-            out.liftInput =
-                finiteClamp(glm::dot(remainder, up) / rcsAuthority);
-        }
+        (void)rcsAuthority;
+        (void)rcsBudget;
+        applyRcsTranslation(
+            out, demand - delivered, forward, right, up, params,
+            RcsTrajectoryShare);
         state_.phase = throttle > 0.0 ? Phase::Burn : Phase::Coast;
         decision_.demand = demand;
         decision_.hullTarget = hullTarget;
         decision_.thrustDirection = normalizedOr(demand, forward);
         return out;
+    }
+
+    // Translational RCS through the same physical channel as the keypad:
+    // the demand (map frame) is split onto the body axes, each direction is
+    // bounded by `share` of its OWN signed authority from the authoritative
+    // control telemetry (a lost direction is simply 0), the vector is scaled
+    // uniformly to stay inside that box, and the inputs are normalized per
+    // direction (rcsTranslationPerAxisAuthority). Without per-axis data the
+    // scalar bound is used, as before. Returns the acceleration commanded.
+    static glm::dvec3 applyRcsTranslation(
+        AutopilotControlCommand& out,
+        const glm::dvec3& demandMap,
+        const glm::dvec3& forward,
+        const glm::dvec3& right,
+        const glm::dvec3& up,
+        const ShipParams& params,
+        double share
+    ) noexcept
+    {
+        const bool perAxis = game::ship::newtonianRcsPerAxisKnown(params);
+        const glm::dvec3 axes[3] = {forward, right, up};
+        // ShipDynamics axis ids: 0 right, 1 up, 2 forward.
+        const int ids[3] = {2, 0, 1};
+        double component[3];
+        double limit[3];
+        double scale = 1.0;
+        double strongest = 0.0;
+        for (int a = 0; a < 3; ++a)
+        {
+            component[a] = finiteOrZero(glm::dot(demandMap, axes[a]));
+            limit[a] = std::max(0.0,
+                perAxis
+                    ? game::ship::newtonianRcsDirectionAccelerationMps2(
+                          params, ids[a], component[a])
+                    : game::ship::manoeuvreAccelerationLimitMps2(params));
+            strongest = std::max(strongest, limit[a]);
+            if (std::abs(component[a]) > 1.0e-12 && limit[a] > 1.0e-9)
+                scale = std::min(
+                    scale, share * limit[a] / std::abs(component[a]));
+        }
+        glm::dvec3 commanded {0.0};
+        float* inputs[3] = {&out.forwardInput, &out.strafeInput,
+                            &out.liftInput};
+        double magnitude = 0.0;
+        for (int a = 0; a < 3; ++a)
+            if (limit[a] > 1.0e-9)
+                magnitude += component[a] * component[a] * scale * scale;
+        // Dribbles below 1% of the authority are dropped.
+        const bool dribble = std::sqrt(magnitude) < 0.01 * strongest;
+        for (int a = 0; a < 3; ++a)
+        {
+            const double c =
+                dribble || !(limit[a] > 1.0e-9) ? 0.0 : component[a] * scale;
+            *inputs[a] = finiteClamp(limit[a] > 1.0e-9 ? c / limit[a] : 0.0);
+            commanded += axes[a] * c;
+        }
+        out.rcsTranslationPerAxisAuthority = perAxis;
+        return commanded;
     }
 
     [[nodiscard]] bool calmTurn(double errorRad) noexcept
@@ -720,17 +768,8 @@ private:
                                   : glm::dvec3(0.0);
             trim = (wantedVelocity - velocity) /
                 TerminalVelocityResponseSeconds;
-            const double magnitude = finiteLength(trim);
-            if (magnitude > rcsBudget && magnitude > 1.0e-12)
-                trim *= rcsBudget / magnitude;
-            if (finiteLength(trim) < 0.01 * rcsAuthority)
-                trim = glm::dvec3(0.0);
-            out.forwardInput =
-                finiteClamp(glm::dot(trim, forward) / rcsAuthority);
-            out.strafeInput =
-                finiteClamp(glm::dot(trim, right) / rcsAuthority);
-            out.liftInput =
-                finiteClamp(glm::dot(trim, up) / rcsAuthority);
+            trim = applyRcsTranslation(
+                out, trim, forward, right, up, params, RcsTrajectoryShare);
         }
         out.targetSpeedRate = 0.0f;
 
@@ -1108,22 +1147,10 @@ private:
         out.targetSpeedRate = finiteClamp(throttle);
 
         // RCS takes everything the main does not deliver, within its
-        // trajectory budget. Dribbles below 1% of authority are dropped.
-        if (rcsAuthority > 1.0e-12)
-        {
-            glm::dvec3 remainder = demand - delivered;
-            const double magnitude = finiteLength(remainder);
-            if (magnitude > rcsBudget && magnitude > 1.0e-12)
-                remainder *= rcsBudget / magnitude;
-            if (finiteLength(remainder) < 0.01 * rcsAuthority)
-                remainder = glm::dvec3(0.0);
-            out.forwardInput =
-                finiteClamp(glm::dot(remainder, forward) / rcsAuthority);
-            out.strafeInput =
-                finiteClamp(glm::dot(remainder, right) / rcsAuthority);
-            out.liftInput =
-                finiteClamp(glm::dot(remainder, up) / rcsAuthority);
-        }
+        // trajectory budget per body direction.
+        applyRcsTranslation(
+            out, demand - delivered, forward, right, up, params,
+            RcsTrajectoryShare);
 
         // Executed coarse state for the trace.
         state_.phase =
@@ -1379,24 +1406,8 @@ private:
                     ? glm::dvec3(0.0)
                     : residual / PrecisionResponseSeconds;
 
-            const double wantedMagnitude =
-                finiteLength(wantedAcceleration);
-            if (wantedMagnitude > rcsAuthority)
-                wantedAcceleration *=
-                    rcsAuthority / wantedMagnitude;
-
-            out.forwardInput = finiteClamp(
-                glm::dot(wantedAcceleration, forward) /
-                rcsAuthority
-            );
-            out.strafeInput = finiteClamp(
-                glm::dot(wantedAcceleration, right) /
-                rcsAuthority
-            );
-            out.liftInput = finiteClamp(
-                glm::dot(wantedAcceleration, up) /
-                rcsAuthority
-            );
+            applyRcsTranslation(
+                out, wantedAcceleration, forward, right, up, params, 1.0);
         }
 
         return out;

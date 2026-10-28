@@ -45,6 +45,12 @@ struct ShipControlState
     // never undone (and no hidden RCS force fires during a pure rotation).
     bool rcsKeepsTranslationDeltaV = false;
 
+    // forward/strafe/liftInput are normalized by the signed RCS authority of
+    // EACH body direction (input 1 = that direction's full authority)
+    // instead of the scalar weakest-direction bound. Same physical RCS path;
+    // only the autopilot sets it, the keypad keeps the scalar meaning.
+    bool rcsTranslationPerAxisAuthority = false;
+
     // Ctrl+F10 sends an explicit requested mode instead of a non-idempotent
     // toggle. That keeps server replay and fractional presentation prediction
     // deterministic even when the same input sample is evaluated twice.

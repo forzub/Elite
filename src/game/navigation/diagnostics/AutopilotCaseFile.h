@@ -211,7 +211,9 @@ inline bool readAutopilotCase(const char* path, AutopilotCase& c)
         c.requestSerial = serial;
         c.holdAtTerminal = hold != 0;
         std::size_t size = 0;
-        if (!getCount(f, "physics", size) || size != sizeof(ShipParams))
+        // A case dumped before fields were appended to ShipParams: the
+        // prefix is read, the new fields keep their defaults.
+        if (!getCount(f, "physics", size) || size > sizeof(ShipParams))
             break;
         auto* bytes = reinterpret_cast<unsigned char*>(&c.physics);
         bool bytesOk = true;

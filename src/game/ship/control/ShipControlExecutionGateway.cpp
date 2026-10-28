@@ -133,6 +133,8 @@ ShipControlExecutionGateway::evaluateTranslationControl(
     }
 
     motion.newtonianRcsKeepsDeltaV = control.rcsKeepsTranslationDeltaV;
+    motion.newtonianRcsPerAxisAuthority =
+        control.rcsTranslationPerAxisAuthority;
     switch (path)
     {
         case TranslationPath::NavigationPrecision:

@@ -135,8 +135,13 @@ struct ShipParams
     // Exact installed aft actuator chosen for a validated emergency ray.
     // -1 means ordinary balanced bank operation (no forced single motor).
     int assistedWorkingThrustMotorIndex = -1;
-    
-    
+
+    // Signed per-axis Newtonian RCS translation authority (m/s^2) from the
+    // authoritative six-axis control telemetry, body X right, Y up, Z aft
+    // (the nose is -Z). All zero = unknown: callers fall back to the scalar
+    // manoeuvreThrusterAccel. Appended for aggregate/dump compatibility.
+    glm::dvec3 newtonianRcsPositiveMps2 {0.0};
+    glm::dvec3 newtonianRcsNegativeMps2 {0.0};
 };
 
 struct ShipPhysicsProfile

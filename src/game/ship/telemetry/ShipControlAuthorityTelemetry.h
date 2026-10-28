@@ -94,6 +94,15 @@ inline void applyNewtonianRcsScalarBounds(
         negative[3],negative[4],negative[5]
     });
     p.manoeuvreThrusterAuthorityExplicit=true;
+    // The signed per-axis values travel alongside the scalar so a consumer
+    // that normalizes per axis (ShipControlState::
+    // rcsTranslationPerAxisAuthority) can use the strong directions.
+    p.newtonianRcsPositiveMps2={
+        std::max(0.0,positive[0]),std::max(0.0,positive[1]),
+        std::max(0.0,positive[2])};
+    p.newtonianRcsNegativeMps2={
+        std::max(0.0,negative[0]),std::max(0.0,negative[1]),
+        std::max(0.0,negative[2])};
     p.manoeuvreThrusterAccel=static_cast<float>(
         std::min(std::max(0.0,
             static_cast<double>(p.manoeuvreThrusterAccel)),

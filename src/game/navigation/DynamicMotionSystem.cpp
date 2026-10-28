@@ -774,7 +774,22 @@ void DynamicMotionSystem::applyLocalFrameInput(
             motion.newtonianManualManoeuvreDeltaVelocityMps =
                 glm::dvec3(0.0);
 
-        if (manualManoeuvreInput)
+        if (manualManoeuvreInput && motion.newtonianRcsPerAxisAuthority)
+        {
+            // Per-direction normalized inputs (autopilot): input 1 is the
+            // full signed authority of that body direction.
+            const double fi = static_cast<double>(forwardInput);
+            const double si = static_cast<double>(strafeInput);
+            const double li = static_cast<double>(liftInput);
+            motion.manoeuvreAccelerationMps2 =
+                f * (fi * game::ship::newtonianRcsDirectionAccelerationMps2(
+                              params, 2, fi)) +
+                r * (si * game::ship::newtonianRcsDirectionAccelerationMps2(
+                              params, 0, si)) +
+                u * (li * game::ship::newtonianRcsDirectionAccelerationMps2(
+                              params, 1, li));
+        }
+        else if (manualManoeuvreInput)
         {
             motion.manoeuvreAccelerationMps2 =
                 f * (static_cast<double>(forwardInput) * manoeuvreAccel) +

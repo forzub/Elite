@@ -504,6 +504,39 @@ void testTerminalDoneCorrectsNothing()
         "a profile refresh recompiled the program after the terminal stop");
 }
 
+// With the signed per-axis RCS authority published, translation inputs are
+// normalized per body direction (a strong axis is used fully, a lost
+// direction is never commanded) and flagged as per-axis.
+void testRcsUsesSignedPerAxisAuthority()
+{
+    ShipParams p = params();
+    // Scalar bound = weakest direction 1.0; strafe right is strong (4.0),
+    // strafe left is lost (0.0).
+    p.manoeuvreThrusterAccel = 1.0f;
+    p.newtonianRcsPositiveMps2 = {4.0, 2.0, 2.0};
+    p.newtonianRcsNegativeMps2 = {0.0, 2.0, 2.0};
+    NewtonianOptimalController controller;
+    auto request = terminalRequest();
+    // 10 m to the right of the terminal point: the trim pulls LEFT, which
+    // is the lost direction.
+    request.actualPositionMapMeters = {0.0, 0.0, 10.0};
+    auto out = controller.update(request, p);
+    require(out.rcsTranslationPerAxisAuthority,
+        "per-axis authority was published but not used");
+    require(out.strafeInput >= 0.0f,
+        "the pilot commanded a lost RCS direction");
+
+    NewtonianOptimalController other;
+    request = terminalRequest();
+    request.actualPositionMapMeters = {0.0, 0.0, -10.0};
+    request.actualVelocityMapMps = {0.0, 0.0, -1.5};
+    out = other.update(request, p);
+    // Wanted right push exceeds the 1.0 scalar bound but is well within the
+    // 4.0 right authority: normalized by 4.0, not saturated at the scalar.
+    require(out.strafeInput > 0.0f && out.strafeInput < 0.61f,
+        "the strong RCS direction was normalized by the scalar bound");
+}
+
 void testPrecisionStopRcsRemainsIsolated()
 {
     NewtonianOptimalController controller;
@@ -535,6 +568,7 @@ int main()
         testTerminalLastMetresAreRcsTrim();
         testTerminalAlignIsCalm();
         testTerminalDoneCorrectsNothing();
+        testRcsUsesSignedPerAxisAuthority();
         testPrecisionStopRcsRemainsIsolated();
 
         std::cout
@@ -551,6 +585,7 @@ int main()
             << " - the last terminal metres are RCS trim, main inhibited\n"
             << " - the terminal turn is calm\n"
             << " - DONE corrects nothing and recompiles nothing\n"
+            << " - RCS uses the signed per-axis authority\n"
             << " - precision-stop RCS remains isolated\n";
         return 0;
     }

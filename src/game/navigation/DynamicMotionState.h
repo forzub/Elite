@@ -134,6 +134,9 @@ struct DynamicMotionState
     // Current command owns its RCS delta-v (ShipControlState::
     // rcsKeepsTranslationDeltaV): the ledger stays empty, nothing is released.
     bool newtonianRcsKeepsDeltaV = false;
+    // Translation inputs are per-direction normalized
+    // (ShipControlState::rcsTranslationPerAxisAuthority).
+    bool newtonianRcsPerAxisAuthority = false;
 
     // Newtonian main-nozzle TVC. Commands are normalized pilot inputs;
     // actual angles are rate-limited physical actuator state. Assisted ignores

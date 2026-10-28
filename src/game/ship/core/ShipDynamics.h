@@ -213,6 +213,39 @@ newtonianMainVectoringLateralAccelerationLimitMps2(
     return std::max(0.0, static_cast<double>(params.strafeAccel));
 }
 
+// Whether the signed per-axis RCS authority is known (published by the
+// authoritative control telemetry).
+[[nodiscard]] inline bool newtonianRcsPerAxisKnown(
+    const ShipParams& params
+) noexcept
+{
+    const auto& p = params.newtonianRcsPositiveMps2;
+    const auto& n = params.newtonianRcsNegativeMps2;
+    return p.x + p.y + p.z + n.x + n.y + n.z > 1.0e-9;
+}
+
+// RCS translation authority in one body direction: axis 0 = right,
+// 1 = up, 2 = forward (nose, body -Z); `component` gives the sign. A
+// direction can be genuinely zero (lost clusters). Unknown per-axis data
+// falls back to the scalar all-directions bound.
+[[nodiscard]] inline double newtonianRcsDirectionAccelerationMps2(
+    const ShipParams& params,
+    int axis,
+    double component
+) noexcept
+{
+    if (!newtonianRcsPerAxisKnown(params))
+        return manoeuvreAccelerationLimitMps2(params);
+    const auto& p = params.newtonianRcsPositiveMps2;
+    const auto& n = params.newtonianRcsNegativeMps2;
+    switch (axis)
+    {
+        case 0: return component >= 0.0 ? p.x : n.x;
+        case 1: return component >= 0.0 ? p.y : n.y;
+        default: return component >= 0.0 ? n.z : p.z;
+    }
+}
+
 [[nodiscard]] inline double assistedLateralStabilizationAccelerationLimitMps2(
     const ShipParams& params
 ) noexcept

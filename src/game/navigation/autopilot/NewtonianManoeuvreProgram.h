@@ -7,6 +7,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/autopilot/NewtonianFlightPolicy.h"
+
 namespace game::navigation::autopilot
 {
 
@@ -215,26 +217,19 @@ namespace manoeuvre_detail
     if (samples.size() < 2 || !(capability.mainAccelerationMps2 > 1.0e-9))
         return program;
 
-    // A burn is planned where the requirement exceeds this share of the RCS
-    // trajectory budget; the rest of that budget is the executor's margin.
-    constexpr double MainShareOfRcs = 0.80;
-    // Gaps between burns shorter than this are flown as one burn.
-    constexpr double MinCoastSeconds = 1.0;
-    // Burns shorter than this are RCS work.
-    constexpr double MinBurnSeconds = 0.4;
-    constexpr double SettleSpeedMps = 0.5;
-    constexpr double LowSpeedRcsOnlyMps = 2.0;
-    constexpr double RcsDeltaVSeconds = 2.0;
-    // Plateau before a narrow zone: the executor's attitude lead (12 s)
-    // plus margin.
-    constexpr double NarrowApproachSeconds = 15.0;
-    constexpr double CurveNormalShare = 0.30;
-    constexpr double OrientRateRadPerSec = 0.01;
-    // A burn is flyable when the planned hull is within the nozzle cone plus
-    // the limited-burn gate for at least half of it.
-    constexpr double UnreachableSlackRad = 10.0 * 3.14159265358979323846 / 180.0;
-    // Arrest/settle time added to a planned turn window.
-    constexpr double TurnSettleSeconds = 0.5;
+    // Doctrine values: NewtonianFlightPolicy (shared with the pilot).
+    using Policy = NewtonianFlightPolicy;
+    constexpr double MainShareOfRcs = Policy::MainShareOfRcs;
+    constexpr double MinCoastSeconds = Policy::MinCoastSeconds;
+    constexpr double MinBurnSeconds = Policy::MinBurnSeconds;
+    constexpr double SettleSpeedMps = Policy::ProgramSettleSpeedMps;
+    constexpr double LowSpeedRcsOnlyMps = Policy::LowSpeedRcsOnlyMps;
+    constexpr double RcsDeltaVSeconds = Policy::RcsDeltaVSeconds;
+    constexpr double NarrowApproachSeconds = Policy::NarrowApproachSeconds;
+    constexpr double CurveNormalShare = Policy::CurveNormalShare;
+    constexpr double OrientRateRadPerSec = Policy::OrientRateRadPerSec;
+    constexpr double UnreachableSlackRad = Policy::UnreachableSlackRad;
+    constexpr double TurnSettleSeconds = Policy::TurnSettleSeconds;
 
     // Reshaping uses the authority the profile itself was planned with
     // (its largest acceleration and deceleration); the capability values

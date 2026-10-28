@@ -2089,7 +2089,8 @@ private:
         else
             state.speedCorrectionActive =
                 Tolerance::beyondBand(actualSpeedMps, nominal);
-        constexpr double PlateauAccelerationMps2 = 1.0e-3;
+        constexpr double PlateauAccelerationMps2 =
+            Tolerance::PlateauAccelerationMps2;
         const double level = profile[anchorIndex];
         std::size_t end = anchorIndex;
         while (end + 1 < profile.size() &&

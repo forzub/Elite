@@ -46,6 +46,10 @@ struct NewtonianSpeedTolerancePolicy
         return ProgramRefreshShare * softBandMps(speedMps);
     }
 
+    // A profile segment whose longitudinal acceleration stays within this is
+    // a speed plateau (cruise, curve or narrow-zone speed).
+    static constexpr double PlateauAccelerationMps2 = 1.0e-3;
+
     // Real deviation (correction entered) / correction finished.
     [[nodiscard]] static bool beyondBand(
         double actualSpeedMps, double nominalSpeedMps) noexcept

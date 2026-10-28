@@ -14,6 +14,7 @@
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/NavigationControlCapability.h"
+#include "src/game/navigation/autopilot/NewtonianFlightPolicy.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
 #include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
@@ -111,7 +112,8 @@ public:
         const double actualSpeed =
             finiteLength(request.actualVelocityMapMps);
 
-        constexpr double PrecisionStopEntrySpeedMps = 0.50;
+        constexpr double PrecisionStopEntrySpeedMps =
+            Policy::PrecisionStopEntrySpeedMps;
         const bool precisionStop =
             request.stopRequested &&
             actualSpeed <= PrecisionStopEntrySpeedMps;
@@ -250,76 +252,53 @@ public:
     }
 
 private:
-    static constexpr double DegToRadValue = 3.14159265358979323846 / 180.0;
-    // A share of installed RCS stays reserved for attitude and nozzle
-    // counter-torque; the rest may trim the trajectory.
-    static constexpr double RcsTrajectoryShare = 0.60;
-    static constexpr double LongitudinalResponseSeconds = 2.0;
-    // Safe tube: correction starts when the PREDICTED cross-track leaves it
-    // and stops once the prediction is back well inside.
-    static constexpr double LateralPredictionSeconds = 4.0;
-    static constexpr double LateralResponseSeconds = 2.0;
-    static constexpr double SafeTubeFraction = 0.35;
-    static constexpr double TubeReleaseFraction = 0.20;
-    static constexpr double TubeAimFraction = 0.10;
-    static constexpr double WallMarginFraction = 0.85;
-    static constexpr double DefaultCorridorToleranceMeters = 50.0;
-    static constexpr double SettleSpeedMps = 2.0;
-    // A narrow zone's attitude (incl. roll) is taken this long before the
-    // entry; the attitude error it holds inside matches the planner's
-    // narrowZoneAttitudeToleranceRad.
-    static constexpr double NarrowAttitudeLeadSeconds = 12.0;
-    static constexpr double NarrowAttitudeToleranceRad = 5.0 * DegToRadValue;
-    static constexpr double NarrowApproachSpeedShare = 1.1;
-    // Smallest translational RCS acceleration worth commanding.
-    static constexpr double RcsDribbleMps2 = 0.01;
-    // Terminal sequence: entry speed, calm approach speed toward the end
-    // point, and fallbacks when the route gives no tolerance.
-    static constexpr double TerminalEntrySpeedMps = 2.0;
-    static constexpr double TerminalApproachSpeedMps = 2.0;
-    static constexpr double TerminalApproachResponseSeconds = 4.0;
-    static constexpr double TerminalVelocityResponseSeconds = 2.0;
-    static constexpr double TerminalDefaultPositionMeters = 3.0;
-    static constexpr double TerminalDefaultSpeedMps = 0.75;
-    static constexpr double TerminalDefaultAttitudeRad = 5.0 * DegToRadValue;
-    static constexpr double TerminalDefaultRateRadPerSec = 0.05;
-    // Leaving DONE (or a finished step) needs twice the tolerance.
-    static constexpr double TerminalHysteresis = 2.0;
-    // Inside this share of the tolerance the RCS trim does nothing.
-    static constexpr double TerminalDeadbandShare = 0.5;
-    // DONE: inside the position tolerance for at least this long at the
-    // residual drift; RATE_SETTLE starts once the turn is this slow
-    // (in units of the angular-rate tolerance).
-    static constexpr double TerminalHoldSeconds = 60.0;
-    static constexpr double TerminalSettleEntryShare = 4.0;
-    // DONE only after the still/aligned/slow state held this long.
-    static constexpr double TerminalDoneDwellSeconds = 1.0;
-    // A braking feed-forward fades out below twice this along-track speed
-    // once the craft is no faster than its profile.
-    static constexpr double BrakeFadeMps = 3.0;
-    static constexpr double SettleResponseSeconds = 2.5;
-    // In a burn phase the main works once the demand exceeds this share of
-    // the RCS budget (the planner's own threshold); outside burn phases only
-    // a clear deficit beyond this share uses it, through the gate.
-    static constexpr double MainShareOfRcs = 0.80;
-    static constexpr double OffPhaseMainShareOfRcs = 2.0;
-    // The hull target is taken this far ahead along the plan to cover the
-    // attitude servo lag.
-    static constexpr double HullLeadSeconds = 0.5;
-    // Planned turns use a calm share of the installed capability; the
-    // program plans hull motion at a further margin below it.
-    static constexpr double PreferredRateShare = 0.50;
-    static constexpr double PreferredAccelerationShare = 0.50;
-    static constexpr double PlannedRateMargin = 0.80;
-    static constexpr double AlignSettleSeconds = 1.0;
-    static constexpr double FlipLeadMarginSeconds = 1.5;
-    static constexpr double DegToRad = DegToRadValue;
-    static constexpr double FlipEntryRad = 25.0 * DegToRad;
-    static constexpr double FlipExitRad = 12.0 * DegToRad;
-    // Burn gate on the ACHIEVABLE thrust error (hull error beyond the cone).
-    static constexpr double BurnGateFullRad = 2.0 * DegToRad;
-    static constexpr double BurnGateLimitedRad = 10.0 * DegToRad;
-    static constexpr double BurnRateGateRadPerSec = 0.12;
+    // Doctrine values live in NewtonianFlightPolicy (one place for the
+    // compiler and this pilot); these are the pilot's names for them.
+    using Policy = NewtonianFlightPolicy;
+    static constexpr double DegToRadValue = Policy::DegToRad;
+    static constexpr double RcsTrajectoryShare = Policy::RcsTrajectoryShare;
+    static constexpr double LongitudinalResponseSeconds = Policy::LongitudinalResponseSeconds;
+    static constexpr double LateralPredictionSeconds = Policy::LateralPredictionSeconds;
+    static constexpr double LateralResponseSeconds = Policy::LateralResponseSeconds;
+    static constexpr double SafeTubeFraction = Policy::SafeTubeFraction;
+    static constexpr double TubeReleaseFraction = Policy::TubeReleaseFraction;
+    static constexpr double TubeAimFraction = Policy::TubeAimFraction;
+    static constexpr double WallMarginFraction = Policy::WallMarginFraction;
+    static constexpr double DefaultCorridorToleranceMeters = Policy::DefaultCorridorToleranceMeters;
+    static constexpr double SettleSpeedMps = Policy::PilotSettleSpeedMps;
+    static constexpr double NarrowAttitudeLeadSeconds = Policy::NarrowAttitudeLeadSeconds;
+    static constexpr double NarrowAttitudeToleranceRad = Policy::NarrowAttitudeToleranceRad;
+    static constexpr double NarrowApproachSpeedShare = Policy::NarrowApproachSpeedShare;
+    static constexpr double RcsDribbleMps2 = Policy::RcsDribbleMps2;
+    static constexpr double TerminalEntrySpeedMps = Policy::TerminalEntrySpeedMps;
+    static constexpr double TerminalApproachSpeedMps = Policy::TerminalApproachSpeedMps;
+    static constexpr double TerminalApproachResponseSeconds = Policy::TerminalApproachResponseSeconds;
+    static constexpr double TerminalVelocityResponseSeconds = Policy::TerminalVelocityResponseSeconds;
+    static constexpr double TerminalDefaultPositionMeters = Policy::TerminalDefaultPositionMeters;
+    static constexpr double TerminalDefaultSpeedMps = Policy::TerminalDefaultSpeedMps;
+    static constexpr double TerminalDefaultAttitudeRad = Policy::TerminalDefaultAttitudeRad;
+    static constexpr double TerminalDefaultRateRadPerSec = Policy::TerminalDefaultRateRadPerSec;
+    static constexpr double TerminalHysteresis = Policy::TerminalHysteresis;
+    static constexpr double TerminalDeadbandShare = Policy::TerminalDeadbandShare;
+    static constexpr double TerminalHoldSeconds = Policy::TerminalHoldSeconds;
+    static constexpr double TerminalSettleEntryShare = Policy::TerminalSettleEntryShare;
+    static constexpr double TerminalDoneDwellSeconds = Policy::TerminalDoneDwellSeconds;
+    static constexpr double BrakeFadeMps = Policy::BrakeFadeMps;
+    static constexpr double SettleResponseSeconds = Policy::SettleResponseSeconds;
+    static constexpr double MainShareOfRcs = Policy::MainShareOfRcs;
+    static constexpr double OffPhaseMainShareOfRcs = Policy::OffPhaseMainShareOfRcs;
+    static constexpr double HullLeadSeconds = Policy::HullLeadSeconds;
+    static constexpr double PreferredRateShare = Policy::PreferredRateShare;
+    static constexpr double PreferredAccelerationShare = Policy::PreferredAccelerationShare;
+    static constexpr double PlannedRateMargin = Policy::PlannedRateMargin;
+    static constexpr double AlignSettleSeconds = Policy::AlignSettleSeconds;
+    static constexpr double FlipLeadMarginSeconds = Policy::FlipLeadMarginSeconds;
+    static constexpr double DegToRad = Policy::DegToRad;
+    static constexpr double FlipEntryRad = Policy::FlipEntryRad;
+    static constexpr double FlipExitRad = Policy::FlipExitRad;
+    static constexpr double BurnGateFullRad = Policy::BurnGateFullRad;
+    static constexpr double BurnGateLimitedRad = Policy::BurnGateLimitedRad;
+    static constexpr double BurnRateGateRadPerSec = Policy::BurnRateGateRadPerSec;
 
     // Terminal sequence: BRAKE (program) -> POSITION_HOLD -> ATTITUDE_ALIGN
     // -> RATE_SETTLE -> DONE. Every step ends inside a finite tolerance;
@@ -834,11 +813,12 @@ private:
         const double rateLimit = preferredTurnRateRadPerSec(params);
         const double acceleration =
             preferredTurnAccelerationRadPerSec2(params);
-        constexpr double RateResponseSeconds = 0.5;
+        constexpr double RateResponseSeconds = Policy::RateResponseSeconds;
         // Rate wanted to close `angle` and stop there at the calm
         // deceleration; linear near zero (finite gain, no limit cycle) and
         // nothing inside the deadband.
-        constexpr double FinalApproachSeconds = 1.0;
+        constexpr double FinalApproachSeconds =
+            Policy::PoseFinalApproachSeconds;
         const auto wantedRate = [&](double angle)
         {
             if (angle <= angleDeadbandRad)
@@ -1348,7 +1328,7 @@ private:
             finiteOrZero(request.pitchRateRadPerSec),
             finiteOrZero(request.yawRateRadPerSec)
         };
-        constexpr double RateResponseSeconds = 0.5;
+        constexpr double RateResponseSeconds = Policy::RateResponseSeconds;
         glm::dvec2 wanted =
             (axis * desiredRate - rate) * (2.0 / RateResponseSeconds);
         const double magnitude = glm::length(wanted);
@@ -1463,8 +1443,10 @@ private:
         {
             // Residual velocity is trimmed over a second, and a residual
             // inside the deadband is left alone (no chase of a zero).
-            constexpr double PrecisionResponseSeconds = 1.0;
-            constexpr double PrecisionDeadbandMps = 0.05;
+            constexpr double PrecisionResponseSeconds =
+                Policy::PrecisionResponseSeconds;
+            constexpr double PrecisionDeadbandMps =
+                Policy::PrecisionDeadbandMps;
             const glm::dvec3 residual =
                 request.desiredVelocityMapMps - request.actualVelocityMapMps;
             glm::dvec3 wantedAcceleration =

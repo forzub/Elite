@@ -140,6 +140,25 @@ void checkCombatNozzlePowerAndThermalPlateau()
         "RCS physical radiator cannot cool 60 seconds at rated combat duty");
 }
 
+// The manifold refills only while the nozzles draw nothing: even a small
+// continuous draw consumes the stored gas, recovery starts when it stops.
+void checkGasRecoversOnlyWithoutConsumption()
+{
+    double reservoir=0.5;
+    bool depleted=false;
+    for(int i=0;i<100;++i)
+        (void)game::ship::plant::advanceNewtonianRcsGas(
+            reservoir,depleted,0.02,0.05,0.20,0.08,0.20);
+    require(reservoir<0.5,
+            "a small continuous RCS draw was refilled by the compressor");
+    const double afterDraw=reservoir;
+    for(int i=0;i<100;++i)
+        (void)game::ship::plant::advanceNewtonianRcsGas(
+            reservoir,depleted,0.02,0.0,0.20,0.08,0.20);
+    require(reservoir>afterDraw+0.15,
+            "the manifold did not recover once the consumption stopped");
+}
+
 void checkReplenishingGameGasBeforeFire()
 {
     double reservoir=1.0;
@@ -260,6 +279,7 @@ int main()
         checkCombatNozzlePowerAndThermalPlateau();
         checkCentreOfMassAndElectricalBudget();
         checkReplenishingGameGasBeforeFire();
+        checkGasRecoversOnlyWithoutConsumption();
         checkSignedPhysicalAuthorityProjection();
         std::cout<<"NEWTONIAN RCS PHYSICAL: PASS\n";
         return 0;

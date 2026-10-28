@@ -58,15 +58,20 @@ struct NewtonianRcsResult
     pressure01=std::clamp(
         std::isfinite(pressure01)?pressure01:0.0,0.0,1.0);
     const double charge=std::max(0.0,rechargePerSecond)*dt;
-    const double available=std::min(1.0,pressure01+charge);
     const double restart=std::clamp(restartFraction,0.0,1.0);
     if(depleted)
     {
-        pressure01=available;
+        // Nozzles are shut: the compressor refills the manifold.
+        pressure01=std::min(1.0,pressure01+charge);
         if(pressure01>=restart) depleted=false;
         return 0.0; // Restart next tick; this tick's nozzles stay off.
     }
     const double requested=std::clamp(requestedIntensity01,0.0,1.0);
+    // The manifold only refills while the nozzles draw nothing: a firing
+    // RCS consumes its stored gas, recovery starts when consumption stops
+    // (the gas, not the recharge rate, bounds what the RCS can deliver).
+    const double available=requested>0.0
+        ? pressure01 : std::min(1.0,pressure01+charge);
     const double cost=std::max(0.0,usePerSecond)*requested*dt;
     const double factor=cost>1.0e-12
         ? std::clamp(available/cost,0.0,1.0):1.0;

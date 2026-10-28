@@ -1181,8 +1181,11 @@ void ShipCore::updateTranslationControl(float dt)
         // can only recover if a generator actually powers this compressor.
         constexpr double ArgonCompressorRatedMW=
             game::ship::plant::rcsWorkingFluid::CompressorRatedElectricalMW;
+        // It refills only while the nozzles draw nothing (the manifold
+        // feeds them otherwise); last tick's net flow tells whether they did.
+        const bool nozzlesDrewGas=m_newtonianRcsNetFlow01PerSecond<0.0;
         const double compressorMW=
-            rcsMotion.manoeuvreGasPressure01<0.999
+            rcsMotion.manoeuvreGasPressure01<0.999 && !nozzlesDrewGas
                 ? std::min(ArgonCompressorRatedMW,actualEr5SpareMW):0.0;
         m_newtonianRcsCompressorElectricalMW=compressorMW;
         double compressorRemainingMW=compressorMW;

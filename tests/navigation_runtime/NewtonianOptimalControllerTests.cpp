@@ -5,12 +5,18 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace
 {
 
 using game::navigation::autopilot::AutopilotControlRequest;
+using game::navigation::autopilot::ManoeuvrePhaseKind;
+using game::navigation::autopilot::ManoeuvreRouteSample;
+using game::navigation::autopilot::NewtonianManoeuvreProgram;
 using game::navigation::autopilot::NewtonianOptimalController;
+
+constexpr double Pi = 3.14159265358979323846;
 
 void require(bool condition, const std::string& message)
 {
@@ -56,34 +62,9 @@ AutopilotControlRequest baseRequest()
     r.desiredForwardMap = r.forwardMap;
     r.desiredUpMap = r.upMap;
     r.deltaSeconds = 0.02;
+    r.positionReferenceValid = true;
+    r.corridorToleranceMeters = 64.0;
     return r;
-}
-
-void fillStraightPreview(
-    AutopilotControlRequest& request,
-    double speedMps
-)
-{
-    request.previewCount = 4;
-    for (std::size_t i = 0; i < request.previewCount; ++i)
-    {
-        auto& s = request.preview[i];
-        s.timeOffsetSeconds = 0.75 * static_cast<double>(i + 1);
-        s.desiredVelocityMapMps = {speedMps, 0.0, 0.0};
-        s.desiredLinearAccelerationMapMps2 = {0.0, 0.0, 0.0};
-    }
-}
-
-// Corridor reference on the +X axis with a 64 m tracking tolerance.
-void onCorridor(
-    AutopilotControlRequest& request,
-    const glm::dvec3& offsetMeters
-)
-{
-    request.positionReferenceValid = true;
-    request.corridorToleranceMeters = 64.0;
-    request.desiredPositionMapMeters = {0.0, 0.0, 0.0};
-    request.actualPositionMapMeters = offsetMeters;
 }
 
 double rotationInput(const ShipControlState& control)
@@ -98,239 +79,294 @@ double translationInput(const ShipControlState& control)
         std::abs(control.liftInput);
 }
 
-void testZeroSpeedAccelerationReferenceLaunchesMain()
+// Route along +X: a straight, then (optionally) an arc turning toward +Z.
+// `speed(s)` and `accel(s)` give the profile.
+template <typename Speed, typename Accel>
+std::vector<ManoeuvreRouteSample> route(
+    double straightMeters,
+    double arcRadiusMeters,
+    double arcSweepRad,
+    Speed speed,
+    Accel accel,
+    double spacingMeters = 5.0
+)
 {
-    NewtonianOptimalController controller;
-    auto request = baseRequest();
-    onCorridor(request, {0.0, 0.0, 0.0});
-
-    request.actualVelocityMapMps = {0.0, 0.0, 0.0};
-    request.desiredVelocityMapMps = {0.0, 0.0, 0.0};
-    request.desiredLinearAccelerationMapMps2 = {45.0, 0.0, 0.0};
-
-    request.previewCount = 4;
-    for (std::size_t i = 0; i < request.previewCount; ++i)
+    std::vector<ManoeuvreRouteSample> out;
+    const double arcLength = arcRadiusMeters * arcSweepRad;
+    const double total = straightMeters + arcLength;
+    for (double s = 0.0; s <= total + 1.0e-9; s += spacingMeters)
     {
-        const double t = 0.75 * static_cast<double>(i + 1);
-        auto& s = request.preview[i];
-        s.timeOffsetSeconds = t;
-        s.desiredPositionMapMeters = {0.5 * 45.0 * t * t, 0.0, 0.0};
-        s.desiredVelocityMapMps = {45.0 * t, 0.0, 0.0};
-        s.desiredLinearAccelerationMapMps2 = {45.0, 0.0, 0.0};
-    }
-
-    const auto control = controller.update(request, params());
-
-    require(
-        control.targetSpeedRate > 0.10f,
-        "zero-speed Newtonian launch stalled despite positive acceleration reference"
-    );
-    require(
-        translationInput(control) < 1.0e-6,
-        "aligned launch burn leaked into translation RCS"
-    );
-    require(
-        control.rcsKeepsTranslationDeltaV,
-        "autopilot RCS delta-v is not marked as owned by the trajectory"
-    );
-}
-
-void testSteadyCruiseCoasts()
-{
-    NewtonianOptimalController controller;
-    auto request = baseRequest();
-    onCorridor(request, {0.0, 0.0, 0.0});
-    request.actualVelocityMapMps = {80.0, 0.0, 0.0};
-    request.desiredVelocityMapMps = request.actualVelocityMapMps;
-    fillStraightPreview(request, 80.0);
-
-    const auto control = controller.update(request, params());
-
-    require(
-        std::abs(control.targetSpeedRate) < 1.0e-5f,
-        "steady Newtonian cruise invented a main-engine burn"
-    );
-    require(
-        rotationInput(control) + std::abs(control.rollInput) < 1.0e-4,
-        "steady Newtonian cruise chased an unnecessary hull pose"
-    );
-    require(
-        translationInput(control) < 1.0e-6,
-        "steady Newtonian cruise leaked into translation RCS"
-    );
-}
-
-void testSmallOffsetOnSafeVelocityStaysBallistic()
-{
-    // Centreline is a reference, not a rail: 10 m off-centre on a velocity
-    // that keeps the craft inside the tube needs no correction at all.
-    NewtonianOptimalController controller;
-    auto request = baseRequest();
-    onCorridor(request, {0.0, 10.0, 0.0});
-    request.actualVelocityMapMps = {200.0, 0.0, 0.0};
-    request.desiredVelocityMapMps = request.actualVelocityMapMps;
-    fillStraightPreview(request, 200.0);
-
-    const auto control = controller.update(request, params());
-
-    require(
-        translationInput(control) < 1.0e-6 &&
-        std::abs(control.targetSpeedRate) < 1.0e-5f &&
-        rotationInput(control) < 1.0e-4,
-        "a small offset on a safe velocity triggered a correction"
-    );
-}
-
-void testPredictedWallExitIsTrimmedWithRcs()
-{
-    // On centre now, but 6 m/s lateral drift leaves the safe tube within the
-    // prediction horizon: correct at once, with RCS and without the hull.
-    NewtonianOptimalController controller;
-    auto request = baseRequest();
-    onCorridor(request, {0.0, 2.0, 0.0});
-    request.actualVelocityMapMps = {200.0, 6.0, 0.0};
-    request.desiredVelocityMapMps = {200.0, 0.0, 0.0};
-    fillStraightPreview(request, 200.0);
-
-    const auto control = controller.update(request, params());
-
-    require(
-        control.liftInput < -1.0e-3f,
-        "predicted corridor exit was not trimmed with RCS toward the centre"
-    );
-    require(
-        std::abs(control.targetSpeedRate) < 1.0e-5f &&
-        rotationInput(control) < 1.0e-4,
-        "a few m/s of lateral drift turned the hull or fired main"
-    );
-}
-
-void testFutureSlowdownStartsCalmFlipBeforeBrakeStation()
-{
-    NewtonianOptimalController controller;
-    auto request = baseRequest();
-    onCorridor(request, {0.0, 0.0, 0.0});
-
-    request.actualVelocityMapMps = {200.0, 0.0, 0.0};
-    request.desiredVelocityMapMps = {200.0, 0.0, 0.0};
-    request.desiredLinearAccelerationMapMps2 = {0.0, 0.0, 0.0};
-
-    request.previewCount = 4;
-    request.preview[0].timeOffsetSeconds = 2.0;
-    request.preview[0].desiredVelocityMapMps = {200.0, 0.0, 0.0};
-    request.preview[1].timeOffsetSeconds = 4.0;
-    request.preview[1].desiredVelocityMapMps = {200.0, 0.0, 0.0};
-    request.preview[2].timeOffsetSeconds = 6.0;
-    request.preview[2].desiredVelocityMapMps = {60.0, 0.0, 0.0};
-    request.preview[3].timeOffsetSeconds = 8.0;
-    request.preview[3].desiredVelocityMapMps = {40.0, 0.0, 0.0};
-
-    const auto control = controller.update(request, params());
-
-    require(
-        std::abs(control.targetSpeedRate) < 1.0e-5f,
-        "planned flip fired the main engine before the hull was turned"
-    );
-    require(
-        rotationInput(control) > 1.0e-3,
-        "braking ahead did not start the flip before the brake station"
-    );
-    require(
-        glm::length(glm::dvec2(control.pitchInput, control.yawInput)) <= 0.51,
-        "planned flip used more than the calm preferred angular share"
-    );
-    require(
-        translationInput(control) < 1.0e-6,
-        "planned flip spent translation RCS while coasting"
-    );
-}
-
-void testBurnGateHoldsMainUntilThrustIsAligned()
-{
-    auto vehicle = params();
-    constexpr double Deg = 3.1415926535897932384626433832795 / 180.0;
-    const auto brakingAt =
-        [&](double hullErrorDeg)
+        ManoeuvreRouteSample sample;
+        sample.progressMeters = s;
+        if (s <= straightMeters || arcRadiusMeters <= 0.0)
         {
-            // Braking is due now (-X); the hull points hullErrorDeg away
-            // from the retro direction.
-            auto request = baseRequest();
-            onCorridor(request, {0.0, 0.0, 0.0});
-            const double a = (180.0 - hullErrorDeg) * Deg;
-            request.forwardMap = {std::cos(a), 0.0, std::sin(a)};
-            request.rightMap = {-std::sin(a), 0.0, std::cos(a)};
-            request.actualVelocityMapMps = {150.0, 0.0, 0.0};
-            request.desiredVelocityMapMps = {150.0, 0.0, 0.0};
-            request.desiredLinearAccelerationMapMps2 = {-40.0, 0.0, 0.0};
-            NewtonianOptimalController controller;
-            return controller.update(request, vehicle);
-        };
-
-    require(
-        brakingAt(60.0).targetSpeedRate < 1.0e-5f &&
-        brakingAt(20.0).targetSpeedRate < 1.0e-5f,
-        "strong main fired while the thrust vector was still turned away"
-    );
-    require(
-        brakingAt(60.0).pitchInput != 0.0f ||
-        brakingAt(60.0).yawInput != 0.0f,
-        "gated burn did not keep turning the hull"
-    );
-    require(
-        brakingAt(8.0).targetSpeedRate > 0.5f,
-        "braking burn did not start once the nozzle cone covered the error"
-    );
-    require(
-        std::abs(brakingAt(8.0).mainGimbalRightInput) > 0.5f,
-        "aligned burn did not use nozzle vectoring for the residual error"
-    );
+            sample.positionMapMeters = {s, 0.0, 0.0};
+            sample.tangentMap = {1.0, 0.0, 0.0};
+        }
+        else
+        {
+            const double a = (s - straightMeters) / arcRadiusMeters;
+            sample.positionMapMeters = {
+                straightMeters + arcRadiusMeters * std::sin(a), 0.0,
+                arcRadiusMeters * (1.0 - std::cos(a))};
+            sample.tangentMap = {std::cos(a), 0.0, std::sin(a)};
+            sample.normalMap = {-std::sin(a), 0.0, std::cos(a)};
+            sample.curvaturePerMeter = 1.0 / arcRadiusMeters;
+        }
+        sample.speedMps = speed(s);
+        sample.longitudinalAccelerationMps2 = accel(s);
+        out.push_back(sample);
+    }
+    return out;
 }
 
-void testPreviewChangesShortStraightDecision()
+const game::navigation::autopilot::ManoeuvrePhase* phaseAt(
+    const NewtonianManoeuvreProgram& program,
+    double progress
+)
 {
-    auto vehicle = params();
-
-    auto baselineRequest = baseRequest();
-    baselineRequest.actualVelocityMapMps = {80.0, 0.0, 0.0};
-    baselineRequest.desiredVelocityMapMps = {160.0, 0.0, 0.0};
-    baselineRequest.desiredLinearAccelerationMapMps2 = {40.0, 0.0, 0.0};
-    fillStraightPreview(baselineRequest, 160.0);
-
-    NewtonianOptimalController baseline;
-    const auto baselineControl =
-        baseline.update(baselineRequest, vehicle);
-
-    auto shortRequest = baselineRequest;
-    shortRequest.preview[1].desiredVelocityMapMps = {70.0, 0.0, 0.0};
-    shortRequest.preview[2].desiredVelocityMapMps = {50.0, 0.0, 0.0};
-    shortRequest.preview[3].desiredVelocityMapMps = {50.0, 0.0, 0.0};
-
-    NewtonianOptimalController shortController;
-    const auto shortControl =
-        shortController.update(shortRequest, vehicle);
-
-    require(
-        shortControl.targetSpeedRate + 1.0e-4 <
-                baselineControl.targetSpeedRate ||
-            rotationInput(shortControl) > 1.0e-4,
-        "future slowdown did not change the short-straight decision"
-    );
+    for (const auto& phase : program.phases)
+        if (progress >= phase.startProgressMeters &&
+            progress < phase.endProgressMeters)
+            return &phase;
+    return nullptr;
 }
 
-void testPrecisionStopStillUsesRcs()
+// Braking straight into a curve that needs the main engine: the program
+// brakes, then coasts long enough to turn the hull onto the curve axis
+// before the curve begins (the profile is reshaped, not the geometry).
+void testBrakeIntoCurveGetsTurnWindow()
+{
+    NewtonianOptimalController controller;
+    // 40 m/s on R 100 m needs 16 m/s2 of path-normal acceleration.
+    const double brakeStart = 1000.0;
+    const double straight = 1500.0;
+    const double decel = 30.0;
+    const double vCurve = 40.0;
+    const double vStart = std::sqrt(vCurve * vCurve + 2.0 * decel * 500.0);
+    auto speed = [&](double s)
+    {
+        if (s < brakeStart)
+            return vStart;
+        if (s < straight)
+            return std::sqrt(vCurve * vCurve +
+                             2.0 * decel * (straight - s));
+        return vCurve;
+    };
+    auto accel = [&](double s)
+    {
+        return s >= brakeStart && s < straight ? -decel : 0.0;
+    };
+    controller.setManoeuvreRoute(
+        route(straight, 100.0, 0.5 * Pi, speed, accel), params(),
+        {-1.0, 0.0, 0.0});
+    const auto& program = controller.program();
+    require(program.valid, "program did not compile");
+
+    const auto* brake = phaseAt(program, 1100.0);
+    require(brake && brake->kind == ManoeuvrePhaseKind::Brake,
+        "the braking straight is not a BRAKE phase");
+    const auto* curve = phaseAt(program, straight + 50.0);
+    require(curve && curve->kind == ManoeuvrePhaseKind::Curve,
+        "the arc is not a CURVE phase");
+    require(brake->endTimeSeconds + 1.0 < curve->startTimeSeconds,
+        "no turn window between the brake and the curve");
+    const auto* between = phaseAt(program, straight - 10.0);
+    require(between &&
+            !game::navigation::autopilot::manoeuvrePhaseUsesMain(
+                between->kind),
+        "the stretch before the curve still burns");
+    require(program.worstThrustDeficitRad < 0.2,
+        "the planned hull does not reach the curve axis in time");
+}
+
+// A curve flown into an acceleration: the speed-up starts one turn
+// window after the curve, and the curve keeps its own axis meanwhile.
+void testCurveIntoAccelerationGetsTurnWindow()
+{
+    NewtonianOptimalController controller;
+    const double straight = 200.0;
+    const double radius = 100.0;
+    const double arcEnd = straight + radius * 0.5 * Pi;
+    auto speed = [&](double s)
+    {
+        return s <= arcEnd ? 40.0
+                           : std::sqrt(1600.0 + 2.0 * 30.0 * (s - arcEnd));
+    };
+    auto accel = [&](double s) { return s <= arcEnd ? 0.0 : 30.0; };
+    // Route continues straight along +Z after the arc.
+    auto samples = route(straight, radius, 0.5 * Pi, speed, accel);
+    const glm::dvec3 exit = samples.back().positionMapMeters;
+    for (double d = 5.0; d <= 1000.0; d += 5.0)
+    {
+        ManoeuvreRouteSample sample;
+        sample.progressMeters = arcEnd + d;
+        sample.positionMapMeters = exit + glm::dvec3(0.0, 0.0, d);
+        sample.tangentMap = {0.0, 0.0, 1.0};
+        sample.speedMps = speed(arcEnd + d);
+        sample.longitudinalAccelerationMps2 = accel(arcEnd + d);
+        samples.push_back(sample);
+    }
+    controller.setManoeuvreRoute(samples, params(), {0.0, 0.0, 1.0});
+    const auto& program = controller.program();
+    require(program.valid, "program did not compile");
+    const auto* curve = phaseAt(program, straight + 20.0);
+    require(curve && curve->kind == ManoeuvrePhaseKind::Curve,
+        "the arc is not a CURVE phase");
+    const auto* burn = phaseAt(program, arcEnd + 900.0);
+    require(burn && burn->kind == ManoeuvrePhaseKind::Burn,
+        "the acceleration after the arc is not a BURN phase");
+    require(curve->endTimeSeconds + 1.0 < burn->startTimeSeconds,
+        "no turn window between the curve and the acceleration");
+}
+
+// A braking burn the hull cannot reach in time stays in the plan (the
+// route ahead needs it); only an optional speed-up may be dropped.
+void testBrakingIsNeverDroppedAsUnreachable()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double s)
+    {
+        return s < 100.0 ? 60.0 : std::sqrt(std::max(0.0,
+            3600.0 - 2.0 * 30.0 * (s - 100.0)));
+    };
+    auto accel = [](double s) { return s >= 100.0 ? -30.0 : 0.0; };
+    // Hull points along the motion: the retro burn starts 1.7 s ahead,
+    // less than a calm flip needs.
+    controller.setManoeuvreRoute(
+        route(160.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    const auto* brake = phaseAt(controller.program(), 140.0);
+    require(brake && brake->kind == ManoeuvrePhaseKind::Brake,
+        "an unreachable braking burn was dropped from the plan");
+}
+
+// In a coast phase a small offset on a safe velocity stays ballistic: no
+// main, no hull chase, no RCS dribble.
+void testCoastStaysBallistic()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double) { return 100.0; };
+    auto accel = [](double) { return 0.0; };
+    controller.setManoeuvreRoute(
+        route(5000.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    auto request = baseRequest();
+    request.programProgressValid = true;
+    request.programProgressMeters = 1000.0;
+    request.desiredPositionMapMeters = {1000.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {1000.0, 0.0, 6.0};
+    request.actualVelocityMapMps = {100.0, 0.0, 0.0};
+    request.desiredVelocityMapMps = {100.0, 0.0, 0.0};
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f, "coast fired the main engine");
+    require(rotationInput(out) < 0.05, "coast turned the hull");
+    require(translationInput(out) < 0.05, "coast dribbled RCS");
+}
+
+// On a curve the main stays on the curve axis: an under-speed catch-up
+// may not swing the burn off it.
+void testCurveKeepsItsAxisAgainstSpeedCatchUp()
+{
+    NewtonianOptimalController controller;
+    const double radius = 100.0;
+    auto speed = [](double) { return 40.0; };
+    auto accel = [](double) { return 0.0; };
+    controller.setManoeuvreRoute(
+        route(100.0, radius, 0.5 * Pi, speed, accel), params(),
+        {0.0, 0.0, 1.0});
+    // Station on the arc 0.3 rad in; hull on the planned (normal) axis.
+    const double a = 0.3;
+    auto request = baseRequest();
+    request.programProgressValid = true;
+    request.programProgressMeters = 100.0 + radius * a;
+    const glm::dvec3 position {
+        100.0 + radius * std::sin(a), 0.0, radius * (1.0 - std::cos(a))};
+    const glm::dvec3 tangent {std::cos(a), 0.0, std::sin(a)};
+    const glm::dvec3 normal {-std::sin(a), 0.0, std::cos(a)};
+    request.desiredPositionMapMeters = position;
+    request.actualPositionMapMeters = position;
+    request.forwardMap = normal;
+    request.rightMap = glm::normalize(glm::cross(normal, glm::dvec3(0, 1, 0)));
+    request.upMap = {0.0, 1.0, 0.0};
+    // 15 m/s slower than planned.
+    request.actualVelocityMapMps = tangent * 25.0;
+    request.desiredVelocityMapMps = tangent * 40.0;
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate > 0.05f,
+        "the curve burn did not fire with the hull on the curve axis");
+    require(rotationInput(out) < 0.5,
+        "the speed catch-up turned the hull off the curve axis");
+}
+
+// The burn gate: no main until the achievable thrust axis is aligned.
+void testBurnGateHoldsMainUntilAligned()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double s) { return std::sqrt(2.0 * 30.0 * s + 1.0); };
+    auto accel = [](double) { return 30.0; };
+    controller.setManoeuvreRoute(
+        route(2000.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    auto request = baseRequest();
+    request.programProgressValid = true;
+    request.programProgressMeters = 10.0;
+    request.desiredPositionMapMeters = {10.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {10.0, 0.0, 0.0};
+    request.actualVelocityMapMps = {24.0, 0.0, 0.0};
+    // Hull 40 degrees off the burn axis.
+    const double t = 40.0 * Pi / 180.0;
+    request.forwardMap = {std::cos(t), 0.0, std::sin(t)};
+    request.rightMap = {-std::sin(t), 0.0, std::cos(t)};
+    auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f,
+        "main fired 40 degrees off the burn axis");
+    require(rotationInput(out) > 0.05, "the hull is not turned to the burn");
+
+    NewtonianOptimalController aligned;
+    aligned.setManoeuvreRoute(
+        route(2000.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    request.forwardMap = {1.0, 0.0, 0.0};
+    request.rightMap = {0.0, 0.0, 1.0};
+    out = aligned.update(request, params());
+    require(out.targetSpeedRate > 0.3f, "aligned burn did not fire");
+}
+
+// A finished phase is never revived by a small step back in progress.
+void testFinishedPhaseIsNotRevived()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double s)
+    {
+        return s < 1000.0 ? std::sqrt(2.0 * 30.0 * s + 1.0)
+                          : std::sqrt(2.0 * 30.0 * 1000.0 + 1.0);
+    };
+    auto accel = [](double s) { return s < 1000.0 ? 30.0 : 0.0; };
+    controller.setManoeuvreRoute(
+        route(3000.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    auto request = baseRequest();
+    request.programProgressValid = true;
+    request.actualVelocityMapMps = {speed(1000.0), 0.0, 0.0};
+    request.desiredPositionMapMeters = {1010.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {1010.0, 0.0, 0.0};
+    request.programProgressMeters = 1010.0;
+    (void)controller.update(request, params());
+    request.programProgressMeters = 995.0;
+    request.desiredPositionMapMeters = {995.0, 0.0, 0.0};
+    request.actualPositionMapMeters = {995.0, 0.0, 0.0};
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f,
+        "a step back in progress revived the finished BURN");
+}
+
+void testPrecisionStopRcsRemainsIsolated()
 {
     NewtonianOptimalController controller;
     auto request = baseRequest();
+    request.stopRequested = true;
     request.actualVelocityMapMps = {0.10, 0.0, 0.0};
     request.desiredVelocityMapMps = {0.0, 0.0, 0.0};
-    request.stopRequested = true;
-
-    const auto control = controller.update(request, params());
-
-    require(
-        translationInput(control) > 1.0e-6,
-        "Newtonian precision stop lost its RCS trim"
-    );
+    const auto out = controller.update(request, params());
+    require(out.targetSpeedRate == 0.0f, "precision stop fired the main");
+    require(out.forwardInput < 0.0f,
+        "precision stop did not trim the residual velocity with RCS");
 }
 
 } // namespace
@@ -339,32 +375,32 @@ int main()
 {
     try
     {
-        testZeroSpeedAccelerationReferenceLaunchesMain();
-        testSteadyCruiseCoasts();
-        testSmallOffsetOnSafeVelocityStaysBallistic();
-        testPredictedWallExitIsTrimmedWithRcs();
-        testFutureSlowdownStartsCalmFlipBeforeBrakeStation();
-        testBurnGateHoldsMainUntilThrustIsAligned();
-        testPreviewChangesShortStraightDecision();
-        testPrecisionStopStillUsesRcs();
+        testBrakeIntoCurveGetsTurnWindow();
+        testCurveIntoAccelerationGetsTurnWindow();
+        testBrakingIsNeverDroppedAsUnreachable();
+        testCoastStaysBallistic();
+        testCurveKeepsItsAxisAgainstSpeedCatchUp();
+        testBurnGateHoldsMainUntilAligned();
+        testFinishedPhaseIsNotRevived();
+        testPrecisionStopRcsRemainsIsolated();
 
         std::cout
-            << "NEWTONIAN BALLISTIC CONTROLLER: PASS\n"
-            << " - zero-speed positive-acceleration reference launches main\n"
-            << " - steady cruise coasts without hull chasing\n"
-            << " - a small offset on a safe velocity stays ballistic\n"
-            << " - a predicted corridor exit is trimmed with RCS, not the hull\n"
-            << " - braking ahead starts a calm flip before the brake station\n"
-            << " - the burn gate holds main until the thrust is aligned\n"
-            << " - short-straight decisions depend on future constraints\n"
+            << "NEWTONIAN MANOEUVRE PROGRAM PILOT: PASS\n"
+            << " - braking into a curve leaves a turn window before it\n"
+            << " - a curve into an acceleration leaves a turn window after it\n"
+            << " - a needed braking burn is never dropped as unreachable\n"
+            << " - a coast phase stays ballistic\n"
+            << " - a curve keeps its thrust axis against a speed catch-up\n"
+            << " - the burn gate holds main until aligned\n"
+            << " - a finished phase is not revived\n"
             << " - precision-stop RCS remains isolated\n";
-        return EXIT_SUCCESS;
+        return 0;
     }
     catch (const std::exception& error)
     {
         std::cerr
-            << "NEWTONIAN BALLISTIC CONTROLLER: FAIL: "
+            << "NEWTONIAN MANOEUVRE PROGRAM PILOT: FAIL: "
             << error.what() << "\n";
-        return EXIT_FAILURE;
+        return 1;
     }
 }

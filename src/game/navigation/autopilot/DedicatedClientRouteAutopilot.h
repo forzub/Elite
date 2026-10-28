@@ -9,6 +9,8 @@
 #include <limits>
 #include <string>
 #include <iterator>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -26,6 +28,7 @@
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AutopilotControlApi.h"
+#include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -348,6 +351,7 @@ public:
         }
         if constexpr (Law == LocalFlightControlLaw::Newtonian)
             dumpAcceptedRoute(state, plan);
+        handOverManoeuvreRoute(state, params, initialAgent.forwardMap);
 
         state.nextCheckpointIndex =
             state.checkpointProgressMeters.size() > 1 ? 1 : 0;
@@ -448,6 +452,7 @@ public:
                 );
             ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;
+            handOverManoeuvreRoute(state, params, agent.forwardMap);
             if constexpr (Law == LocalFlightControlLaw::Newtonian)
                 traceProfile(state, universeTimeSeconds,
                     glm::length(agent.velocityMapMetersPerSecond));
@@ -1398,6 +1403,9 @@ public:
             (atFinalContinuousSegment || terminalBrakeActive);
         request.terminalAttitudeHold = terminalAttitudeHold;
         request.deltaSeconds = deltaSeconds;
+        request.programProgressMeters = continuous.spatialProgressMeters;
+        request.programProgressValid =
+            PilotTakesManoeuvreRoute<PilotController>::value;
         request.traceRouteProgressMeters = routeProgressMeters;
         request.traceCurveIndex = curveNow.valid ? curveNow.curveIndex : 0;
         request.traceCurvaturePerMeter =
@@ -2621,6 +2629,113 @@ private:
             progress += length;
         }
         return curves;
+    }
+
+    // A pilot that compiles its own manoeuvre program from the route takes
+    // the route stations through setManoeuvreRoute(); others never see them.
+    template <typename P, typename = void>
+    struct PilotTakesManoeuvreRoute : std::false_type
+    {
+    };
+    template <typename P>
+    struct PilotTakesManoeuvreRoute<
+        P,
+        std::void_t<decltype(std::declval<P&>().setManoeuvreRoute(
+            std::declval<const std::vector<ManoeuvreRouteSample>&>(),
+            std::declval<const ShipParams&>(),
+            std::declval<const glm::dvec3&>()))>
+    > : std::true_type
+    {
+    };
+
+    // Route stations on the execution progress axis (continuous sample
+    // progress): geometry from the authoritative curves, speed and
+    // longitudinal acceleration from the current runtime profile.
+    static void handOverManoeuvreRoute(
+        State& state,
+        const ShipParams& params,
+        const glm::dvec3& hullForwardMap
+    )
+    {
+        if constexpr (PilotTakesManoeuvreRoute<PilotController>::value)
+        {
+            const auto& progress = state.continuousProgressMeters;
+            const auto& speeds = state.runtimeSpeedProfileMps;
+            const auto& accelerations =
+                state.runtimeLongitudinalAccelerationMps2;
+            if (progress.size() < 2 ||
+                progress.size() != state.continuousSamples.size() ||
+                speeds.size() != progress.size() ||
+                accelerations.size() != progress.size())
+                return;
+
+            // About one station per 50 ms of flight, never sparser than
+            // 25 m, and every curve boundary.
+            constexpr double StationSeconds = 0.05;
+            constexpr double MaxStationMeters = 25.0;
+            std::vector<ManoeuvreRouteSample> samples;
+            samples.reserve(progress.size() / 2 + 2);
+            double lastKept = -std::numeric_limits<double>::infinity();
+            std::size_t lastCurve = static_cast<std::size_t>(-1);
+            for (std::size_t i = 0; i < progress.size(); ++i)
+            {
+                const double routeProgress =
+                    mapSampleProgressToRouteProgress(
+                        state.routeCurves,
+                        state.curveSampleStartProgressMeters,
+                        state.curveSampleEndProgressMeters,
+                        progress[i]
+                    );
+                const auto curve =
+                    sampleRouteCurveAtProgress(
+                        state.routeCurves, routeProgress);
+                const double spacing =
+                    std::clamp(
+                        speeds[i] * StationSeconds, 1.0, MaxStationMeters);
+                const bool boundary =
+                    curve.valid && curve.curveIndex != lastCurve;
+                if (!(i == 0 || i + 1 == progress.size() || boundary ||
+                      progress[i] - lastKept >= spacing))
+                    continue;
+                lastKept = progress[i];
+                if (curve.valid)
+                    lastCurve = curve.curveIndex;
+
+                ManoeuvreRouteSample sample;
+                sample.progressMeters = progress[i];
+                sample.positionMapMeters =
+                    state.continuousSamples[i].positionMapMeters;
+                sample.speedMps = speeds[i];
+                sample.longitudinalAccelerationMps2 = accelerations[i];
+                sample.tangentMap =
+                    curve.valid
+                        ? curve.tangentMap
+                        : normalizedOr(
+                              state.continuousSamples[i].forwardMap,
+                              glm::dvec3(0.0, 0.0, -1.0));
+                if (curve.valid && curve.curvaturePerMeter > 1.0e-12)
+                {
+                    // turnNormalMap is the turn AXIS; the in-plane normal
+                    // toward the centre of curvature is axis x tangent.
+                    const glm::dvec3 inward =
+                        glm::cross(curve.turnNormalMap, curve.tangentMap);
+                    if (glm::length(inward) > 1.0e-9)
+                    {
+                        sample.normalMap = glm::normalize(inward);
+                        sample.curvaturePerMeter = curve.curvaturePerMeter;
+                    }
+                }
+                samples.push_back(sample);
+            }
+            state.pilotController.setManoeuvreRoute(
+                samples, params, hullForwardMap);
+        }
+        else
+        {
+            (void)state;
+            (void)params;
+            (void)hullForwardMap;
+        }
     }
 
     [[nodiscard]] static RouteCurveDiagnostic sampleRouteCurveAtProgress(

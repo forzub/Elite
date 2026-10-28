@@ -71,6 +71,12 @@ struct AutopilotControlRequest
     bool terminalAttitudeHold = false;
     double deltaSeconds = 0.0;
 
+    // Progress of the position reference along the route stations handed to
+    // a pilot that compiles its own manoeuvre program (see the route hook in
+    // DedicatedClientRouteAutopilot). Other pilots ignore it.
+    double programProgressMeters = 0.0;
+    bool programProgressValid = false;
+
     // DEV diagnostic context for decision traces only; never a control input.
     double traceRouteProgressMeters = 0.0;
     std::size_t traceCurveIndex = 0;

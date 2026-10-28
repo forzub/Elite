@@ -290,7 +290,8 @@ bool build(const Scenario& s, const char* model, const ShipParams& physics,
     request.vehicleLengthMeters = dim.length;
     request.vehicleWidthMeters = dim.width;
     request.vehicleHeightMeters = dim.height;
-    const auto capability = applyRouteRequestCapability(request, ship, law);
+    const auto facts = makeNavigationControlCapability(physics, law);
+    const auto capability = applyRouteRequestCapability(request, ship, law, &facts);
     if (!capability.ok)
     {
         std::printf("%-26s %s REFUSED %s\n", s.name.c_str(), model,

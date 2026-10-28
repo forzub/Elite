@@ -16,6 +16,7 @@
 #include "src/game/navigation/NavigationControlCapability.h"
 #include "src/game/navigation/autopilot/NewtonianFlightPolicy.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
+#include "src/game/navigation/autopilot/NewtonianTurnModel.h"
 #include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
@@ -77,7 +78,8 @@ public:
                 samples,
                 capabilityOf(params),
                 hullForwardMap,
-                currentProgressMeters
+                currentProgressMeters,
+                &speedCaps_
             );
         state_.phaseIndex = 0;
         ++state_.programRevision;
@@ -246,9 +248,7 @@ public:
         const ShipParams& params
     ) noexcept
     {
-        constexpr double Pi = 3.14159265358979323846;
-        const double turn = plannedTurnSeconds(Pi, params);
-        return std::isfinite(turn) ? turn + FlipLeadMarginSeconds : 0.0;
+        return newtonianFlipLeadSeconds(factsOf(params));
     }
 
 private:
@@ -1236,26 +1236,14 @@ private:
         const ShipParams& params
     ) noexcept
     {
-        // Physical limits, including the hull-load rate bound.
-        const double installed =
-            std::min(
-                factsOf(params).maxAngularRateRadPerSec.x,
-                factsOf(params).maxAngularRateRadPerSec.y
-            );
-        return std::isfinite(installed)
-            ? PreferredRateShare * std::max(0.0, installed)
-            : 0.0;
+        return newtonianPreferredTurnRateRadPerSec(factsOf(params));
     }
 
     [[nodiscard]] static double preferredTurnAccelerationRadPerSec2(
         const ShipParams& params
     ) noexcept
     {
-        return PreferredAccelerationShare *
-            std::max(
-                0.0,
-                factsOf(params).angularScalarRadPerSec2
-            );
+        return newtonianPreferredTurnAccelerationRadPerSec2(factsOf(params));
     }
 
     // Calm rest-to-rest turn time at the preferred rate/acceleration,
@@ -1265,17 +1253,7 @@ private:
         const ShipParams& params
     ) noexcept
     {
-        const double angle = std::max(0.0, angleRad);
-        const double rate = preferredTurnRateRadPerSec(params);
-        const double acceleration =
-            preferredTurnAccelerationRadPerSec2(params);
-        if (!(rate > 1.0e-9 && acceleration > 1.0e-9))
-            return std::numeric_limits<double>::infinity();
-        const double turn =
-            angle <= rate * rate / acceleration
-                ? 2.0 * std::sqrt(angle / acceleration)
-                : angle / rate + rate / acceleration;
-        return turn + AlignSettleSeconds;
+        return newtonianPlannedTurnSeconds(angleRad, factsOf(params));
     }
 
     // Planned flip: track a calm trapezoidal rate profile toward the target
@@ -1892,6 +1870,9 @@ private:
 
     State state_ {};
     NewtonianManoeuvreProgram program_ {};
+    // Speed limits the motion profile decided on this route (one pilot per
+    // route): kept for every later recompile.
+    std::vector<ManoeuvreSpeedCap> speedCaps_;
     Decision decision_ {};
     struct TraceMemory
     {

@@ -7,6 +7,8 @@
 #include "src/game/navigation/DockingAutomaticRecoveryPolicy.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 #include "src/game/navigation/ManeuverCapabilityAdapters.h"
+#include "src/game/navigation/NavigationControlCapability.h"
+#include "src/game/navigation/autopilot/NewtonianTurnModel.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/world/navigation/NavigationVehicleProfile.h"
 
@@ -41,9 +43,15 @@ struct RouteRequestCapabilityResult
 [[nodiscard]] inline RouteRequestCapabilityResult applyRouteRequestCapability(
     planner::RoutePlanRequest& request,
     const world::navigation::NavigationVehicleProfile& ship,
-    LocalFlightControlLaw law
+    LocalFlightControlLaw law,
+    const NavigationControlCapability* facts = nullptr
 )
 {
+    // Newtonian: the pilot's own turn model, so the route leaves the room
+    // the pilot really needs for a flip.
+    request.newtonianFlipSeconds =
+        law == LocalFlightControlLaw::Newtonian && facts
+            ? autopilot::newtonianFlipLeadSeconds(*facts) : 0.0;
     const bool assisted = law == LocalFlightControlLaw::Assisted;
     const double linearReserve =
         DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(

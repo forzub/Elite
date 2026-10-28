@@ -3180,11 +3180,15 @@ void SpaceState::updateDockingAdvisory()
         // the offline tools (execution reserve, planning shares, laws). A
         // missing authority is zero, never a small invented value: without
         // it the route is physically impossible and is not planned.
+        const auto requestFacts =
+            game::navigation::makeNavigationControlCapability(
+                effectivePhysics, controlLaw);
         const auto requestCapability =
             game::navigation::applyRouteRequestCapability(
                 request,
                 shipProfile,
-                controlLaw
+                controlLaw,
+                &requestFacts
             );
         if (!requestCapability.ok)
         {

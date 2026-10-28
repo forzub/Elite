@@ -22,7 +22,8 @@ namespace game::navigation::autopilot
     const std::vector<ManoeuvreRouteSample>& samples,
     const ManoeuvreCapability& capability,
     const glm::dvec3& initialHullForwardMap,
-    double startProgressMeters = 0.0
+    double startProgressMeters = 0.0,
+    std::vector<ManoeuvreSpeedCap>* decidedSpeedCaps = nullptr
 )
 {
     using namespace manoeuvre_detail;
@@ -62,7 +63,8 @@ namespace game::navigation::autopilot
     }
 
     // The executable speed profile (one owner).
-    shapeNewtonianMotionProfile(st, capability);
+    shapeNewtonianMotionProfile(
+        st, capability, startProgressMeters, decidedSpeedCaps);
     const auto longitudinal = [&](std::size_t i)
     {
         return isLongitudinalStation(st[i]);

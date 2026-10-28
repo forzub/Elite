@@ -57,10 +57,15 @@ inline void deriveStationKinematics(
 // the nozzle cone, and turn windows (the hull's planned turn time) between
 // burns whose thrust axes differ. Speeds are only lowered. The manoeuvre
 // compiler then only labels phases and plans the hull on this profile; it
-// is not a second speed planner.
+// is not a second speed planner. `startProgressMeters` is where the craft is:
+// a manoeuvre it has already entered is not re-planned. `decidedCaps` (owned
+// by the caller for the whole route) holds the speed limits decided by
+// earlier calls; they are applied first and new ones are appended.
 inline void shapeNewtonianMotionProfile(
     std::vector<ManoeuvreStation>& st,
-    const ManoeuvreCapability& capability
+    const ManoeuvreCapability& capability,
+    double startProgressMeters = 0.0,
+    std::vector<ManoeuvreSpeedCap>* decidedCaps = nullptr
 )
 {
     using namespace manoeuvre_detail;
@@ -292,6 +297,80 @@ inline void shapeNewtonianMotionProfile(
     {
         return isLongitudinalStation(st[i]);
     };
+    // A speed cap over [lo, hi]: the stretch at the cap, braking into it
+    // and accelerating out of it within the profile's authority.
+    const auto applyCap = [&](std::size_t lo, std::size_t hi, double cap,
+                              std::vector<char>& changed)
+    {
+        for (std::size_t i = lo; i <= hi; ++i)
+            if (st[i].speedMps > cap)
+            {
+                st[i].speedMps = cap;
+                changed[i] = 1;
+            }
+        for (std::size_t i = lo; i-- > 0;)
+        {
+            const double ds = st[i + 1].progressMeters - st[i].progressMeters;
+            const double limit = std::sqrt(
+                st[i + 1].speedMps * st[i + 1].speedMps +
+                2.0 * profileBraking * ds);
+            if (st[i].speedMps <= limit)
+                break;
+            st[i].speedMps = limit;
+            changed[i] = 1;
+        }
+        for (std::size_t i = hi + 1; i < st.size(); ++i)
+        {
+            const double ds = st[i].progressMeters - st[i - 1].progressMeters;
+            const double limit = std::sqrt(
+                st[i - 1].speedMps * st[i - 1].speedMps +
+                2.0 * profileForward * ds);
+            if (st[i].speedMps <= limit)
+                break;
+            st[i].speedMps = limit;
+            changed[i] = 1;
+        }
+    };
+    // Accelerations of changed stretches from the new speeds (v dv/ds).
+    const auto reaccelerate = [&](const std::vector<char>& changed)
+    {
+        for (std::size_t i = 0; i < st.size(); ++i)
+        {
+            const bool touched =
+                changed[i] || (i + 1 < st.size() && changed[i + 1]) ||
+                (i > 0 && changed[i - 1]);
+            if (!touched)
+                continue;
+            const std::size_t lo = i + 1 < st.size() ? i : i - 1;
+            const double ds =
+                st[lo + 1].progressMeters - st[lo].progressMeters;
+            st[i].longitudinalAccelerationMps2 = ds > 1.0e-9
+                ? (st[lo + 1].speedMps * st[lo + 1].speedMps -
+                   st[lo].speedMps * st[lo].speedMps) / (2.0 * ds)
+                : 0.0;
+        }
+    };
+    if (decidedCaps && profileBraking > 1.0e-9 && profileForward > 1.0e-9)
+    {
+        std::vector<char> changed(st.size(), 0);
+        for (const auto& cap : *decidedCaps)
+        {
+            std::size_t lo = st.size();
+            std::size_t hi = 0;
+            for (std::size_t i = 0; i < st.size(); ++i)
+                if (st[i].progressMeters >= cap.fromProgressMeters &&
+                    st[i].progressMeters <= cap.toProgressMeters)
+                {
+                    lo = std::min(lo, i);
+                    hi = std::max(hi, i);
+                }
+            if (lo <= hi)
+                applyCap(lo, hi, cap.speedMps, changed);
+        }
+        reaccelerate(changed);
+        derive();
+    }
+
     // One reshape can create the next junction (slowing a curve makes the
     // brake before it run up to the curve), hence a few passes.
     constexpr int TurnWindowPasses = 6;
@@ -490,6 +569,59 @@ inline void shapeNewtonianMotionProfile(
                     }
                 }
                 brakeBackwardFrom(i);
+            }
+            else if (!longitudinal(k) && !longitudinal(j) &&
+                     st[k].curvaturePerMeter > 1.0e-12 &&
+                     st[j].curvaturePerMeter > 1.0e-12)
+            {
+                // Curve into a curve whose thrust axis is beyond the cone
+                // (e.g. an S between two portals): the curves' timing is
+                // fixed by geometry, so speed decides. Fly both curves and
+                // the gap between them at the higher of: the speed at which
+                // both curves are RCS work (no main, no hull swing at all),
+                // and the speed at which the gap lasts the turn window.
+                std::size_t runStart = k;
+                while (runStart > 0 &&
+                       st[runStart - 1].curvaturePerMeter > 1.0e-12)
+                    --runStart;
+                std::size_t runEnd = j;
+                while (runEnd + 1 < st.size() &&
+                       st[runEnd + 1].curvaturePerMeter > 1.0e-12)
+                    ++runEnd;
+                double curvature = 0.0;
+                for (std::size_t i = runStart; i <= runEnd; ++i)
+                    curvature = std::max(curvature, st[i].curvaturePerMeter);
+                const double rcsRate =
+                    MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
+                // A margin below the burn threshold so the curve stays RCS
+                // work.
+                constexpr double RcsCurveMargin = 0.95;
+                const double rcsCurveSpeed = std::sqrt(
+                    std::max(0.0, RcsCurveMargin * rcsRate / curvature));
+                const double gap =
+                    st[j].progressMeters - st[k].progressMeters;
+                const double gapSpeed = gap / windowSeconds;
+                const double cap = std::max(rcsCurveSpeed, gapSpeed);
+                // Only ahead of the craft with room to turn and brake to
+                // the new speed before the first curve: a manoeuvre already
+                // entered is not re-planned.
+                std::size_t now = 0;
+                while (now + 1 < st.size() &&
+                       st[now + 1].progressMeters <= startProgressMeters)
+                    ++now;
+                const double speedNow = st[now].speedMps;
+                const double room =
+                    st[runStart].progressMeters - startProgressMeters;
+                const double needed =
+                    speedNow * windowSeconds +
+                    std::max(0.0, speedNow * speedNow - cap * cap) /
+                        (2.0 * profileBraking);
+                if (room < needed)
+                    continue;
+                applyCap(runStart, runEnd, cap, reshaped);
+                if (decidedCaps)
+                    decidedCaps->push_back({st[runStart].progressMeters,
+                        st[runEnd].progressMeters, cap});
             }
             else if (!longitudinal(k) && longitudinal(j))
             {

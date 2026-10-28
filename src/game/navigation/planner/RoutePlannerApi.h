@@ -108,6 +108,11 @@ struct RoutePlanRequest
     double maxAngularAccelerationRadPerSecond2 = 0.0;
     double initialSpeedMps = 0.0;
 
+    // Newtonian: planned time of a 180 degree hull flip (the pilot's turn
+    // model). A moving start that may have to brake first keeps a straight
+    // long enough for the flip and the brake. 0 = not applicable.
+    double newtonianFlipSeconds = 0.0;
+
     // Required/expected speed state at the route endpoint. Zero is the normal
     // terminal/docking default. Segmented traffic legs must publish their real
     // handoff speed here so geometry is optimized for the speed that will

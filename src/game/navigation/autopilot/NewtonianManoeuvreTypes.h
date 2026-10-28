@@ -123,6 +123,17 @@ struct ManoeuvreStation
     std::size_t phaseIndex = 0;
 };
 
+// A speed limit the motion profile decided for a stretch of the route (e.g.
+// an S of two curves flown without a hull swing). It holds for the rest of
+// the route: later recompiles start from it instead of re-deciding from a
+// profile that no longer has room for it.
+struct ManoeuvreSpeedCap
+{
+    double fromProgressMeters = 0.0;
+    double toProgressMeters = 0.0;
+    double speedMps = 0.0;
+};
+
 struct ManoeuvrePhase
 {
     ManoeuvrePhaseKind kind = ManoeuvrePhaseKind::Coast;

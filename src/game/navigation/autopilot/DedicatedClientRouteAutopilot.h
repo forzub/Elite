@@ -2662,7 +2662,8 @@ private:
         std::void_t<decltype(std::declval<P&>().setManoeuvreRoute(
             std::declval<const std::vector<ManoeuvreRouteSample>&>(),
             std::declval<const ShipParams&>(),
-            std::declval<const glm::dvec3&>()))>
+            std::declval<const glm::dvec3&>(),
+            std::declval<double>()))>
     > : std::true_type
     {
     };
@@ -2696,7 +2697,8 @@ private:
             samples.reserve(progress.size() / 2 + 2);
             double lastKept = -std::numeric_limits<double>::infinity();
             std::size_t lastCurve = static_cast<std::size_t>(-1);
-            for (std::size_t i = 0; i < progress.size(); ++i)
+            const std::size_t first = 0;
+            for (std::size_t i = first; i < progress.size(); ++i)
             {
                 const double routeProgress =
                     mapSampleProgressToRouteProgress(
@@ -2713,7 +2715,7 @@ private:
                         speeds[i] * StationSeconds, 1.0, MaxStationMeters);
                 const bool boundary =
                     curve.valid && curve.curveIndex != lastCurve;
-                if (!(i == 0 || i + 1 == progress.size() || boundary ||
+                if (!(i == first || i + 1 == progress.size() || boundary ||
                       progress[i] - lastKept >= spacing))
                     continue;
                 lastKept = progress[i];
@@ -2746,8 +2748,13 @@ private:
                 }
                 samples.push_back(sample);
             }
+            // The planned hull starts where the craft is: the route behind
+            // it is history (the profile itself stays whole).
+            const double currentProgress =
+                progress[std::min(
+                    state.currentContinuousSegment, progress.size() - 1)];
             state.pilotController.setManoeuvreRoute(
-                samples, params, hullForwardMap);
+                samples, params, hullForwardMap, currentProgress);
         }
         else
         {

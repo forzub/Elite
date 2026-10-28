@@ -61,7 +61,8 @@ public:
     void setManoeuvreRoute(
         const std::vector<ManoeuvreRouteSample>& samples,
         const ShipParams& params,
-        const glm::dvec3& hullForwardMap
+        const glm::dvec3& hullForwardMap,
+        double currentProgressMeters = 0.0
     )
     {
         // The route is finished once the terminal sequence runs: a profile
@@ -72,10 +73,12 @@ public:
             compileNewtonianManoeuvreProgram(
                 samples,
                 capabilityOf(params),
-                hullForwardMap
+                hullForwardMap,
+                currentProgressMeters
             );
         state_.phaseIndex = 0;
         ++state_.programRevision;
+        dumpProgram(samples);
     }
 
     [[nodiscard]] const NewtonianManoeuvreProgram& program() const noexcept
@@ -259,7 +262,7 @@ private:
     // Terminal sequence: entry speed, calm approach speed toward the end
     // point, and fallbacks when the route gives no tolerance.
     static constexpr double TerminalEntrySpeedMps = 2.0;
-    static constexpr double TerminalApproachSpeedMps = 0.6;
+    static constexpr double TerminalApproachSpeedMps = 2.0;
     static constexpr double TerminalApproachResponseSeconds = 4.0;
     static constexpr double TerminalVelocityResponseSeconds = 2.0;
     static constexpr double TerminalDefaultPositionMeters = 3.0;
@@ -503,6 +506,50 @@ private:
         return state_.calmTurn;
     }
 
+    // DEV diagnostic only: ELITE_NEWTONIAN_PROGRAM_DUMP=<tsv path> writes the
+    // first compiled program station by station (input profile speed,
+    // planned speed/acceleration, main, phase, hull vs tangent/axis).
+    void dumpProgram(const std::vector<ManoeuvreRouteSample>& samples) const
+    {
+        // ELITE_NEWTONIAN_PROGRAM_DUMP_REVISION=<n> selects a later compile.
+        static bool done = false;
+        const char* path = std::getenv("ELITE_NEWTONIAN_PROGRAM_DUMP");
+        const char* revision =
+            std::getenv("ELITE_NEWTONIAN_PROGRAM_DUMP_REVISION");
+        if (revision && *revision &&
+            std::strtoull(revision, nullptr, 10) != state_.programRevision)
+            return;
+        if (done || !path || !*path || !program_.valid ||
+            samples.size() != program_.stations.size())
+            return;
+        done = true;
+        std::FILE* f = std::fopen(path, "w");
+        if (!f)
+            return;
+        constexpr double Deg = 57.2957795130823208768;
+        std::fputs("s_m\tin_speed\tin_accel\tspeed\taccel\tradius_m\tmain\t"
+                   "phase\tkind\thull_t_deg\thull_axis_deg\n", f);
+        for (std::size_t i = 0; i < program_.stations.size(); ++i)
+        {
+            const auto& st = program_.stations[i];
+            const auto& ph = program_.phases[st.phaseIndex];
+            std::fprintf(f, "%.1f\t%.2f\t%.2f\t%.2f\t%.2f\t%.0f\t%d\t%zu\t%s\t"
+                "%.1f\t%.1f\n",
+                st.progressMeters, samples[i].speedMps,
+                samples[i].longitudinalAccelerationMps2, st.speedMps,
+                st.longitudinalAccelerationMps2,
+                st.curvaturePerMeter > 1.0e-9 ? 1.0 / st.curvaturePerMeter : 0.0,
+                st.mainBurn ? 1 : 0, st.phaseIndex,
+                manoeuvrePhaseName(ph.kind),
+                angleBetween(st.hullForwardMap, st.tangentMap) * Deg,
+                st.mainBurn
+                    ? angleBetween(st.hullForwardMap,
+                                   st.requiredAccelerationMap) * Deg
+                    : -1.0);
+        }
+        std::fclose(f);
+    }
+
     // ----- Terminal sequence ------------------------------------------------
 
     [[nodiscard]] static double toleranceOr(double value, double fallback)
@@ -659,11 +706,14 @@ private:
         if (term.step != TerminalStep::Done && !trimDeadband &&
             rcsAuthority > 1.0e-12)
         {
+            // Glide in at up to the entry speed, never faster than half the
+            // RCS budget can stop over the remaining distance.
             const double approach =
                 distance > TerminalDeadbandShare * tolPosition
-                    ? std::min(
+                    ? std::min({
                           TerminalApproachSpeedMps,
-                          distance / TerminalApproachResponseSeconds)
+                          std::sqrt(rcsBudget * distance),
+                          distance / TerminalApproachResponseSeconds})
                     : 0.0;
             const glm::dvec3 wantedVelocity =
                 distance > 1.0e-9 ? error * (approach / distance)

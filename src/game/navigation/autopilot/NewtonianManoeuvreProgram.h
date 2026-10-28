@@ -194,7 +194,8 @@ namespace manoeuvre_detail
 [[nodiscard]] inline NewtonianManoeuvreProgram compileNewtonianManoeuvreProgram(
     const std::vector<ManoeuvreRouteSample>& samples,
     const ManoeuvreCapability& capability,
-    const glm::dvec3& initialHullForwardMap
+    const glm::dvec3& initialHullForwardMap,
+    double startProgressMeters = 0.0
 )
 {
     using namespace manoeuvre_detail;
@@ -210,6 +211,8 @@ namespace manoeuvre_detail
     // Burns shorter than this are RCS work.
     constexpr double MinBurnSeconds = 0.4;
     constexpr double SettleSpeedMps = 0.5;
+    constexpr double LowSpeedRcsOnlyMps = 2.0;
+    constexpr double RcsDeltaVSeconds = 2.0;
     constexpr double CurveNormalShare = 0.30;
     constexpr double OrientRateRadPerSec = 0.01;
     // A burn is flyable when the planned hull is within the nozzle cone plus
@@ -217,6 +220,23 @@ namespace manoeuvre_detail
     constexpr double UnreachableSlackRad = 10.0 * 3.14159265358979323846 / 180.0;
     // Arrest/settle time added to a planned turn window.
     constexpr double TurnSettleSeconds = 0.5;
+
+    // Reshaping uses the authority the profile itself was planned with
+    // (its largest acceleration and deceleration); the capability values
+    // are only a fallback for a profile without any.
+    double profileForward = 0.0;
+    double profileBraking = 0.0;
+    for (const auto& sample : samples)
+    {
+        profileForward =
+            std::max(profileForward, sample.longitudinalAccelerationMps2);
+        profileBraking =
+            std::max(profileBraking, -sample.longitudinalAccelerationMps2);
+    }
+    if (!(profileForward > 1.0e-6))
+        profileForward = capability.plannedForwardAccelerationMps2;
+    if (!(profileBraking > 1.0e-6))
+        profileBraking = capability.plannedBrakingAccelerationMps2;
 
     auto& st = program.stations;
     st.resize(samples.size());
@@ -255,9 +275,12 @@ namespace manoeuvre_detail
                 out.tangentMap * out.longitudinalAccelerationMps2 +
                 out.normalMap * (out.speedMps * out.speedMps *
                                  out.curvaturePerMeter);
+            // Near zero speed a manoeuvre ends: the last metres of a stop
+            // (and any crawl) are RCS work, never a main burn.
             out.mainBurn =
+                out.speedMps > LowSpeedRcsOnlyMps &&
                 glm::length(out.requiredAccelerationMap) >
-                MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
+                    MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
         }
     };
     derive();
@@ -330,11 +353,10 @@ namespace manoeuvre_detail
     };
     // One reshape can create the next junction (slowing a curve makes the
     // brake before it run up to the curve), hence a few passes.
-    constexpr int TurnWindowPasses = 3;
+    constexpr int TurnWindowPasses = 6;
     for (int pass = 0;
          pass < TurnWindowPasses &&
-         capability.plannedBrakingAccelerationMps2 > 1.0e-9 &&
-         capability.plannedForwardAccelerationMps2 > 1.0e-9;
+         profileBraking > 1.0e-9 && profileForward > 1.0e-9;
          ++pass)
     {
         std::vector<char> reshaped(st.size(), 0);
@@ -347,7 +369,7 @@ namespace manoeuvre_detail
                     st[i + 1].progressMeters - st[i].progressMeters;
                 const double limit = std::sqrt(
                     st[i + 1].speedMps * st[i + 1].speedMps +
-                    2.0 * capability.plannedBrakingAccelerationMps2 * ds);
+                    2.0 * profileBraking * ds);
                 if (st[i].speedMps <= limit)
                     break;
                 st[i].speedMps = limit;
@@ -371,7 +393,108 @@ namespace manoeuvre_detail
             const double windowSeconds = turn / turnRate + TurnSettleSeconds;
             if (st[j].timeSeconds - st[k].timeSeconds >= windowSeconds)
                 continue;
-            if (longitudinal(k) && !longitudinal(j))
+            if (longitudinal(k) && longitudinal(j) &&
+                st[k].longitudinalAccelerationMps2 *
+                        st[j].longitudinalAccelerationMps2 < 0.0)
+            {
+                if (st[k].longitudinalAccelerationMps2 > 0.0)
+                {
+                    // Accelerating straight into braking (a speed peak):
+                    // lower the peak until a plateau of the turn time
+                    // separates the two burns.
+                    // The plateau stays inside this peak: from the start of
+                    // its speed-up to the end of its brake. If no plateau
+                    // fits there, the profile is left as it is.
+                    std::size_t runStart = k;
+                    while (runStart > 0 && st[runStart - 1].mainBurn &&
+                           longitudinal(runStart - 1) &&
+                           st[runStart - 1].longitudinalAccelerationMps2 > 0.0)
+                        --runStart;
+                    std::size_t runEnd = j;
+                    while (runEnd + 1 < st.size() && st[runEnd + 1].mainBurn &&
+                           longitudinal(runEnd + 1) &&
+                           st[runEnd + 1].longitudinalAccelerationMps2 < 0.0)
+                        ++runEnd;
+                    const double floor = std::max(
+                        st[runStart].speedMps, st[runEnd].speedMps);
+                    double cap = st[j].speedMps;
+                    std::size_t lo = k;
+                    std::size_t hi = j;
+                    bool fits = false;
+                    for (int step = 0; step < 80 && cap > floor; ++step)
+                    {
+                        lo = k;
+                        hi = j;
+                        while (lo > runStart && st[lo - 1].speedMps >= cap)
+                            --lo;
+                        while (hi < runEnd && st[hi + 1].speedMps >= cap)
+                            ++hi;
+                        if (st[hi].progressMeters - st[lo].progressMeters >=
+                            cap * windowSeconds)
+                        {
+                            fits = true;
+                            break;
+                        }
+                        cap *= 0.97;
+                    }
+                    // No plateau fits inside this peak: the speed-up is
+                    // pointless right before the brake; drop it (cap at
+                    // the speed the peak starts from).
+                    if (!fits)
+                    {
+                        cap = floor;
+                        lo = runStart;
+                        hi = runEnd;
+                    }
+                    for (std::size_t i = lo; i <= hi; ++i)
+                        if (st[i].speedMps > cap)
+                        {
+                            st[i].speedMps = cap;
+                            reshaped[i] = 1;
+                        }
+                }
+                else
+                {
+                    // Braking straight into accelerating (a speed valley,
+                    // e.g. into a zone limit): a plateau at the valley speed
+                    // of the turn time; the brake ends earlier and the
+                    // speed-up starts later.
+                    const double cap =
+                        std::min(st[k].speedMps, st[j].speedMps);
+                    const double half = 0.5 * cap * windowSeconds;
+                    const double from = st[j].progressMeters - half;
+                    const double to = st[j].progressMeters + half;
+                    std::size_t first = j;
+                    for (std::size_t i = 0; i < st.size(); ++i)
+                        if (st[i].progressMeters >= from &&
+                            st[i].progressMeters <= to)
+                        {
+                            first = std::min(first, i);
+                            if (st[i].speedMps > cap)
+                            {
+                                st[i].speedMps = cap;
+                                reshaped[i] = 1;
+                            }
+                        }
+                    brakeBackwardFrom(first);
+                    for (std::size_t i = 1; i < st.size(); ++i)
+                    {
+                        if (st[i].progressMeters <= to)
+                            continue;
+                        const double ds =
+                            st[i].progressMeters - st[i - 1].progressMeters;
+                        const double limit = std::sqrt(
+                            st[i - 1].speedMps * st[i - 1].speedMps +
+                            2.0 * profileForward *
+                                ds);
+                        if (st[i].speedMps <= limit)
+                            break;
+                        st[i].speedMps = limit;
+                        reshaped[i] = 1;
+                    }
+                }
+            }
+            else if (longitudinal(k) && !longitudinal(j))
             {
                 // Finish braking before the curve.
                 const double cap = st[j].speedMps;
@@ -385,7 +508,7 @@ namespace manoeuvre_detail
                         ? cap
                         : std::sqrt(
                               st[i + 1].speedMps * st[i + 1].speedMps +
-                              2.0 * capability.plannedBrakingAccelerationMps2 *
+                              2.0 * profileBraking *
                                   ds);
                     if (st[i].speedMps <= limit)
                     {
@@ -440,7 +563,7 @@ namespace manoeuvre_detail
                         ? cap
                         : std::sqrt(
                               st[i - 1].speedMps * st[i - 1].speedMps +
-                              2.0 * capability.plannedForwardAccelerationMps2 *
+                              2.0 * profileForward *
                                   ds);
                     if (st[i].speedMps <= limit)
                     {
@@ -489,6 +612,85 @@ namespace manoeuvre_detail
             i = j + 1;
         }
     };
+    // First drop burns that are RCS work: too short, or a velocity change
+    // the RCS budget clears within RcsDeltaVSeconds (e.g. a sub-m/s trim of
+    // a profile re-anchored on the actual speed). Their accelerations are
+    // bounded to what RCS gives. Only then close short coast gaps, so a
+    // trim cannot glue itself to a real burn.
+    const double rcsShare =
+        MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
+    const auto dropRcsWork = [&](std::size_t a, std::size_t b)
+    {
+        const double end = b + 1 < st.size()
+            ? st[b + 1].timeSeconds : st[b].timeSeconds;
+        double deltaV = 0.0;
+        for (std::size_t k = a; k <= b; ++k)
+        {
+            const double dt = k + 1 < st.size()
+                ? st[k + 1].timeSeconds - st[k].timeSeconds : 0.0;
+            deltaV += glm::length(st[k].requiredAccelerationMap) * dt;
+        }
+        if (end - st[a].timeSeconds < MinBurnSeconds &&
+            deltaV > RcsDeltaVSeconds * rcsShare)
+        {
+            // Too short for the main but not small: keep it (the turn
+            // windows and the executor's gate deal with it).
+            return;
+        }
+        if (deltaV > RcsDeltaVSeconds * rcsShare)
+            return;
+        // A small longitudinal trim on a straight: RCS flies it over this
+        // run and the coast after it. The speeds follow the RCS rate; the
+        // trim must be complete before the next burn begins, so the craft
+        // is never faster than the profile where the next manoeuvre starts.
+        for (std::size_t k = a; k <= b; ++k)
+            if (st[k].curvaturePerMeter > 1.0e-12)
+                return;
+        std::size_t next = b + 1;
+        while (next < st.size() && !st[next].mainBurn)
+            ++next;
+        std::vector<double> speeds(st.size());
+        for (std::size_t k = 0; k < st.size(); ++k)
+            speeds[k] = st[k].speedMps;
+        for (std::size_t k = a + 1; k < std::min(next + 1, st.size()); ++k)
+        {
+            const double dt = st[k].timeSeconds - st[k - 1].timeSeconds;
+            const double step = rcsShare * std::max(0.0, dt);
+            speeds[k] = std::clamp(
+                st[k].speedMps, speeds[k - 1] - step, speeds[k - 1] + step);
+        }
+        const std::size_t check = std::min(next, st.size() - 1);
+        if (std::abs(speeds[check] - st[check].speedMps) > 0.05)
+            return;
+        for (std::size_t k = a; k < std::min(next, st.size()); ++k)
+        {
+            st[k].mainBurn = false;
+            st[k].speedMps = speeds[k];
+            const std::size_t lo = k + 1 < st.size() ? k : k - 1;
+            const double ds =
+                st[lo + 1].progressMeters - st[lo].progressMeters;
+            st[k].longitudinalAccelerationMps2 = ds > 1.0e-9
+                ? std::clamp(
+                      (speeds[lo + 1] * speeds[lo + 1] -
+                       speeds[lo] * speeds[lo]) / (2.0 * ds),
+                      -rcsShare, rcsShare)
+                : 0.0;
+        }
+    };
+    runs(true, [&](std::size_t a, std::size_t b)
+    {
+        // A speed-up and the brake right after it are separate manoeuvres:
+        // split the run where the along-track requirement changes sign.
+        std::size_t from = a;
+        for (std::size_t k = a + 1; k <= b + 1; ++k)
+            if (k > b ||
+                (st[k].longitudinalAccelerationMps2 >= 0.0) !=
+                    (st[k - 1].longitudinalAccelerationMps2 >= 0.0))
+            {
+                dropRcsWork(from, k - 1);
+                from = k;
+            }
+    });
     runs(false, [&](std::size_t a, std::size_t b)
     {
         if (a > 0 && b + 1 < st.size() &&
@@ -496,26 +698,33 @@ namespace manoeuvre_detail
             for (std::size_t k = a; k <= b; ++k)
                 st[k].mainBurn = true;
     });
-    runs(true, [&](std::size_t a, std::size_t b)
-    {
-        const double end = b + 1 < st.size()
-            ? st[b + 1].timeSeconds : st[b].timeSeconds;
-        if (end - st[a].timeSeconds < MinBurnSeconds)
-            for (std::size_t k = a; k <= b; ++k)
-                st[k].mainBurn = false;
-    });
 
     // Planned thrust axis where the main burns; elsewhere none.
     std::vector<glm::dvec3> axis(st.size(), glm::dvec3(0.0));
+    // A burn station whose own requirement is negligible (a short coast
+    // merged into a burn) holds the axis of the burn around it instead of a
+    // default direction.
+    const double negligible =
+        0.25 * MainShareOfRcs * capability.rcsTrajectoryAccelerationMps2;
     const auto computeAxes = [&]()
     {
         for (std::size_t i = 0; i < st.size(); ++i)
-            axis[i] = st[i].mainBurn
-                ? unitOr(
-                      st[i].requiredAccelerationMap,
-                      st[i].longitudinalAccelerationMps2 < 0.0
-                          ? -st[i].tangentMap : st[i].tangentMap)
-                : glm::dvec3(0.0);
+        {
+            axis[i] = glm::dvec3(0.0);
+            if (!st[i].mainBurn)
+                continue;
+            if (glm::length(st[i].requiredAccelerationMap) > negligible)
+                axis[i] = glm::normalize(st[i].requiredAccelerationMap);
+            else if (i > 0 && st[i - 1].mainBurn)
+                axis[i] = axis[i - 1];
+        }
+        // Leading negligible stations of a run take the run's next axis.
+        for (std::size_t i = st.size(); i-- > 0;)
+            if (st[i].mainBurn && glm::length(axis[i]) < 0.5)
+                axis[i] = i + 1 < st.size() && st[i + 1].mainBurn
+                    ? axis[i + 1]
+                    : (st[i].longitudinalAccelerationMps2 < 0.0
+                           ? -st[i].tangentMap : st[i].tangentMap);
     };
 
     const double rate = std::max(1.0e-3, capability.plannedTurnRateRadPerSec);
@@ -547,13 +756,19 @@ namespace manoeuvre_detail
             }
             ahead[k] = next;
         }
-        // Forward pass: never turn faster than the planned rate.
+        // Forward pass: never turn faster than the planned rate. It starts
+        // at the craft's present station with its present hull; stations
+        // behind it are history and keep that hull.
         glm::dvec3 hull = unitOr(initialHullForwardMap, ahead.front());
         for (std::size_t k = 0; k < st.size(); ++k)
         {
-            const double dt = k > 0
+            const bool behind = k + 1 < st.size() &&
+                st[k + 1].progressMeters <= startProgressMeters;
+            const double dt = k > 0 && !behind
                 ? st[k].timeSeconds - st[k - 1].timeSeconds : 0.0;
-            hull = stepToward(hull, ahead[k], rate * dt, st[k].tangentMap);
+            if (!behind)
+                hull = stepToward(
+                    hull, ahead[k], rate * dt, st[k].tangentMap);
             st[k].hullForwardMap = hull;
         }
     };
@@ -569,11 +784,20 @@ namespace manoeuvre_detail
         bool dropped = false;
         runs(true, [&](std::size_t a, std::size_t b)
         {
+            // Judged ahead of the craft only (behind it is history).
+            if (st[b].progressMeters < startProgressMeters)
+                return;
             std::size_t reachable = 0;
+            std::size_t counted = 0;
             for (std::size_t k = a; k <= b; ++k)
+            {
+                if (st[k].progressMeters < startProgressMeters)
+                    continue;
+                ++counted;
                 if (angleBetween(st[k].hullForwardMap, axis[k]) <=
                         capability.gimbalLimitRad + UnreachableSlackRad)
                     ++reachable;
+            }
             // Only an optional speed-up may be dropped; a braking or curve
             // burn is required by the route ahead and stays in the plan.
             bool optional = true;
@@ -581,7 +805,7 @@ namespace manoeuvre_detail
                 optional =
                     st[k].longitudinalAccelerationMps2 > 0.0 &&
                     longitudinal(k);
-            if (optional && 2 * reachable < b - a + 1)
+            if (optional && 2 * reachable < counted)
             {
                 for (std::size_t k = a; k <= b; ++k)
                     st[k].mainBurn = false;
@@ -595,7 +819,7 @@ namespace manoeuvre_detail
     planHull();
     for (std::size_t k = 0; k < st.size(); ++k)
     {
-        if (!st[k].mainBurn)
+        if (!st[k].mainBurn || st[k].progressMeters < startProgressMeters)
             continue;
         const double deficit = std::max(
             0.0,
@@ -614,7 +838,8 @@ namespace manoeuvre_detail
     {
         if (st[k].mainBurn)
         {
-            const glm::dvec3 a = st[k].requiredAccelerationMap;
+            // Labelled by its (possibly inherited) planned axis.
+            const glm::dvec3 a = axis[k];
             const double along = glm::dot(a, st[k].tangentMap);
             const double normal = glm::length(a - st[k].tangentMap * along);
             kind[k] = normal > CurveNormalShare * glm::length(a)

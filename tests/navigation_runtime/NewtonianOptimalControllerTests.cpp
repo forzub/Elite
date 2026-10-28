@@ -240,6 +240,33 @@ void testBrakingIsNeverDroppedAsUnreachable()
         "an unreachable braking burn was dropped from the plan");
 }
 
+// A sub-m/s speed trim right after an acceleration (a profile re-anchored
+// on a slightly faster actual speed) is RCS work: no BRAKE phase the hull
+// could never be prepared for.
+void testMicroTrimIsNotAMainBurn()
+{
+    NewtonianOptimalController controller;
+    auto speed = [](double s)
+    {
+        if (s < 800.0)
+            return std::sqrt(1.0 + 2.0 * 30.0 * s);
+        if (s < 805.0)
+            return std::sqrt(1.0 + 2.0 * 30.0 * 800.0) + 0.9;
+        return std::sqrt(1.0 + 2.0 * 30.0 * 800.0);
+    };
+    auto accel = [](double s)
+    {
+        return s < 800.0 ? 30.0 : (s >= 805.0 && s < 810.0 ? -30.0 : 0.0);
+    };
+    controller.setManoeuvreRoute(
+        route(3000.0, 0.0, 0.0, speed, accel), params(), {1.0, 0.0, 0.0});
+    for (const auto& phase : controller.program().phases)
+        require(phase.kind != ManoeuvrePhaseKind::Brake,
+            "a sub-m/s trim became a main BRAKE phase");
+    require(controller.program().worstThrustDeficitRad < 0.2,
+        "the program contains a burn the hull cannot be prepared for");
+}
+
 // In a coast phase a small offset on a safe velocity stays ballistic: no
 // main, no hull chase, no RCS dribble.
 void testCoastStaysBallistic()
@@ -499,6 +526,7 @@ int main()
         testBrakeIntoCurveGetsTurnWindow();
         testCurveIntoAccelerationGetsTurnWindow();
         testBrakingIsNeverDroppedAsUnreachable();
+        testMicroTrimIsNotAMainBurn();
         testCoastStaysBallistic();
         testCurveKeepsItsAxisAgainstSpeedCatchUp();
         testBurnGateHoldsMainUntilAligned();
@@ -514,6 +542,7 @@ int main()
             << " - braking into a curve leaves a turn window before it\n"
             << " - a curve into an acceleration leaves a turn window after it\n"
             << " - a needed braking burn is never dropped as unreachable\n"
+            << " - a sub-m/s trim is RCS work, not a main burn\n"
             << " - a coast phase stays ballistic\n"
             << " - a curve keeps its thrust axis against a speed catch-up\n"
             << " - the burn gate holds main until aligned\n"

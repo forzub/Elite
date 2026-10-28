@@ -83,3 +83,10 @@ for c in sorted(clusters, key=score, reverse=True)[:8]:
     k = Counter(e["event"] for e in c)
     print(f"  t={c[0]['t']:.1f}-{c[-1]['t']:.1f}s s={c[0]['s_m']:.0f}-{c[-1]['s_m']:.0f} m score={score(c)}: " +
           ", ".join(f"{a}x{b}" for a, b in k.most_common()))
+progs = [e for e in events if e["event"] == "PROGRAM"]
+if progs:
+    import re
+    defs = Counter(re.search(r"deficit_deg=([0-9.]+) at=([0-9]+)", e["detail"]).groups() for e in progs
+                   if re.search(r"deficit_deg=", e["detail"]))
+    print("PROGRAM thrust deficits (deg at s, count): " +
+          ", ".join(f"{d}@{s}x{c}" for (d, s), c in defs.most_common(4)))

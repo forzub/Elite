@@ -14,6 +14,7 @@
 #include "src/game/navigation/autopilot/HullAttitudeControl.h"
 #include "src/game/navigation/autopilot/HullPoseGuidance.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
+#include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/ship/core/ShipDynamics.h"
 #include "src/world/navigation/TrajectoryGenerator.h"
 
@@ -997,7 +998,8 @@ private:
                 : plan.longitudinalAccelerationMps2;
         double longitudinal =
             feedForward + speedError / LongitudinalResponseSeconds;
-        const double speedDeadband = 0.5 + 0.005 * std::abs(alongSpeed);
+        const double speedDeadband =
+            NewtonianSpeedTolerancePolicy::softBandMps(alongSpeed);
         if (std::abs(speedError) < speedDeadband &&
             std::abs(plan.longitudinalAccelerationMps2) <= 1.0e-3)
             longitudinal = 0.0;

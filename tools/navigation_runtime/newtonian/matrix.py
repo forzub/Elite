@@ -13,7 +13,7 @@ Hard criteria (FAIL): corridor violations, hull outside a KeepInside volume
 (real hull box corners, exact clearance), hull into an obstacle sphere, no
 terminal DONE, non-finite state, main engine inside a narrow zone, main in the
 terminal sequence, hull-target jumps not explained by a phase/program/terminal
-change, micro-braking while the profile asks for cruise. Recorded metrics:
+change, a main-engine micro-brake (< 3 m/s, not the terminal stop). Recorded metrics:
 program recompiles, worst program thrust deficit, max angular rate inside
 narrow zones, DONE time, max cross-track, re-holds after DONE.
 """
@@ -134,18 +134,21 @@ def run(tag, geom_path):
     jumps = sum(1 for e in events if e["event"] == "TARGET_SWITCH" and
                 not any(abs(e["t"] - t) <= 0.1 for t in explain))
     cruise = max(r["profile_mps"] for r in rows) if rows else 0.0
-    # A micro-brake: a BRAKE phase episode that sheds less than 3 m/s and is
-    # not the start of the terminal stop (the speed returns above it).
+    # A micro-brake: a main-engine BRAKE episode (throttle > 5 %) shedding
+    # less than 3 m/s that is not the terminal stop. A phase label without
+    # main, or a small trim flown on RCS, is no manoeuvre.
     microbrake = 0
     episode = None
     for r in rows + [None]:
         braking = r is not None and int(r["prog_phase"]) == 4 and r["term_step"] == 0
         if braking:
             if episode is None:
-                episode = [r["speed_mps"], r["speed_mps"], r["t"]]
+                episode = [r["speed_mps"], r["speed_mps"], 0.0]
             episode[1] = min(episode[1], r["speed_mps"])
+            episode[2] = max(episode[2], r["throttle"])
         elif episode is not None:
-            if episode[0] - episode[1] < 3.0 and r is not None and r["term_step"] == 0 and                     episode[1] > 5.0:
+            if (episode[0] - episode[1] < 3.0 and episode[2] > 0.05 and r is not None
+                    and r["term_step"] == 0 and episode[1] > 5.0):
                 microbrake += 1
             episode = None
     recompiles = sum(1 for e in events if e["event"] == "PROGRAM")

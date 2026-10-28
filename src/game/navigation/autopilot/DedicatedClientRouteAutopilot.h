@@ -29,6 +29,7 @@
 #include "src/game/navigation/autopilot/HullTunnelRollGuidance.h"
 #include "src/game/navigation/autopilot/AutopilotControlApi.h"
 #include "src/game/navigation/autopilot/NewtonianManoeuvreProgram.h"
+#include "src/game/navigation/autopilot/NewtonianSpeedTolerancePolicy.h"
 #include "src/game/navigation/autopilot/RouteSpeedGuidance.h"
 #include "src/game/navigation/planner/RoutePlannerApi.h"
 #include "src/game/ship/core/ShipControlState.h"
@@ -89,6 +90,13 @@ public:
         std::size_t currentContinuousSegment = 0;
         std::size_t nextCheckpointIndex = 1;
         std::uint64_t speedProfileRevision = 0;
+        // Newtonian: a speed deviation beyond the tolerance band is being
+        // corrected (NewtonianSpeedTolerancePolicy hysteresis).
+        bool speedCorrectionActive = false;
+        // The last checkpoint anchored on a profile speed plateau, and the
+        // plateau speed the current manoeuvre program was compiled with.
+        bool anchorOnPlateau = false;
+        double programPlateauSpeedMps = -1.0;
         bool holdAtTerminal = false;
         double trackingPositionToleranceMeters = 0.0;
 
@@ -324,7 +332,9 @@ public:
                 authority.brakingAccelerationMps2 * fraction,
                 state.runtimeSpeedProfileMps,
                 state.runtimeLongitudinalAccelerationMps2,
-                reversalLeadSeconds
+                reversalLeadSeconds,
+                toleratedPlateauEnd(state, 0,
+                    glm::length(initialAgent.velocityMapMetersPerSecond))
             );
         }
         if (!buildCheckpointProgress(
@@ -451,11 +461,30 @@ public:
                     state.runtimeSpeedProfileMps,
                     state.runtimeLongitudinalAccelerationMps2,
                     state.pilotController.telemetry(params).
-                        thrustReversalLeadSeconds
+                        thrustReversalLeadSeconds,
+                    toleratedPlateauEnd(state, state.currentContinuousSegment,
+                        glm::length(agent.velocityMapMetersPerSecond))
                 );
             ++state.speedProfileRevision;
             ++state.nextCheckpointIndex;
-            handOverManoeuvreRoute(state, params, agent.forwardMap);
+            // A checkpoint on a speed plateau is not a reason for a new
+            // manoeuvre program: there it is recompiled only when the
+            // plateau speed moved (re-levelled beyond the refresh step) from
+            // the one the program was compiled with. On a ramp the recompile
+            // from the measured state is the ramp's tracking loop and stays.
+            const double plateauSpeed = state.runtimeSpeedProfileMps[
+                std::min(state.currentContinuousSegment,
+                         state.runtimeSpeedProfileMps.size() - 1)];
+            if (law != LocalFlightControlLaw::Newtonian ||
+                !state.anchorOnPlateau ||
+                std::abs(plateauSpeed - state.programPlateauSpeedMps) >
+                    NewtonianSpeedTolerancePolicy::programRefreshMps(
+                        plateauSpeed))
+            {
+                handOverManoeuvreRoute(state, params, agent.forwardMap);
+                state.programPlateauSpeedMps =
+                    state.anchorOnPlateau ? plateauSpeed : -1.0;
+            }
             if constexpr (Law == LocalFlightControlLaw::Newtonian)
                 traceProfile(state, universeTimeSeconds,
                     glm::length(agent.velocityMapMetersPerSecond));
@@ -2025,6 +2054,60 @@ private:
         return !checkpoints.empty();
     }
 
+    // Newtonian speed tolerance corridor at a checkpoint. On a speed
+    // PLATEAU of the profile the craft is flying (cruise, curve, narrow-zone
+    // speed: the current runtime profile there neither accelerates nor
+    // brakes), a measured speed inside the tolerance band IS the plateau
+    // speed: the plateau is re-levelled at the measured speed instead of
+    // planning a micro brake/burn segment back to the old value, and the
+    // next braking ramp (the backward pass) starts where it is feasible
+    // from that speed. Beyond the band it is a real deviation: the plateau
+    // is not re-levelled and the profile corrects it, until the craft is
+    // back within half the band (hysteresis). On an acceleration or braking
+    // ramp nothing changes: the measured speed anchors the ramp as before.
+    // Returns the end (exclusive) of the plateau to re-level; 0 = none.
+    // Assisted: never.
+    [[nodiscard]] static std::size_t toleratedPlateauEnd(
+        State& state,
+        std::size_t anchorIndex,
+        double actualSpeedMps
+    ) noexcept
+    {
+        state.anchorOnPlateau = false;
+        if constexpr (Law != LocalFlightControlLaw::Newtonian)
+            return 0;
+        const auto& profile = state.runtimeSpeedProfileMps;
+        const auto& acceleration = state.runtimeLongitudinalAccelerationMps2;
+        if (profile.empty() || !std::isfinite(actualSpeedMps) ||
+            acceleration.size() != profile.size())
+            return 0;
+        if (state.nominalSpeedProfileMps.size() != profile.size())
+            return 0;
+        anchorIndex = std::min(anchorIndex, profile.size() - 1);
+        // The band is around the NOMINAL plateau speed, so re-levelling
+        // never walks away from it checkpoint by checkpoint.
+        const double nominal = state.nominalSpeedProfileMps[anchorIndex];
+        using Tolerance = NewtonianSpeedTolerancePolicy;
+        if (state.speedCorrectionActive)
+            state.speedCorrectionActive =
+                !Tolerance::backInsideRelease(actualSpeedMps, nominal);
+        else
+            state.speedCorrectionActive =
+                Tolerance::beyondBand(actualSpeedMps, nominal);
+        constexpr double PlateauAccelerationMps2 = 1.0e-3;
+        const double level = profile[anchorIndex];
+        std::size_t end = anchorIndex;
+        while (end + 1 < profile.size() &&
+               std::abs(acceleration[end]) <= PlateauAccelerationMps2 &&
+               std::abs(profile[end] - level) <= 1.0e-6 &&
+               std::abs(state.nominalSpeedProfileMps[end] - nominal) <= 1.0e-6)
+            ++end;
+        if (state.speedCorrectionActive || end == anchorIndex)
+            return 0;
+        state.anchorOnPlateau = true;
+        return end;
+    }
+
     static void recomputeRuntimeSpeedSuffix(
         const std::vector<double>& nominalSpeeds,
         const std::vector<double>& progress,
@@ -2034,7 +2117,8 @@ private:
         double brakingMps2,
         std::vector<double>& runtimeSpeeds,
         std::vector<double>& runtimeAccelerations,
-        double thrustReversalCoastSeconds = 0.0
+        double thrustReversalCoastSeconds = 0.0,
+        std::size_t toleratedPlateauEndIndex = 0
     ) noexcept
     {
         if (nominalSpeeds.size() < 2 ||
@@ -2053,6 +2137,13 @@ private:
         {
             runtimeSpeeds[i] = nominalSpeeds[i];
         }
+        // Speed tolerance corridor: the plateau ahead is re-levelled at the
+        // measured speed (inside the band; see toleratedPlateauEnd).
+        if (std::isfinite(actualSpeedMps))
+            for (std::size_t i = anchorIndex;
+                 i < std::min(toleratedPlateauEndIndex, nominalSpeeds.size());
+                 ++i)
+                runtimeSpeeds[i] = std::max(0.0, actualSpeedMps);
 
         // Forward reachability from the measured checkpoint speed. If the
         // craft arrived slower than nominal, later targets are lowered until
@@ -3221,6 +3312,25 @@ private:
                 trajectoryRequest.pointSpeedConstraints.
                     push_back(stop);
             }
+        }
+
+        // Newtonian speed tolerance corridor: an initial speed inside the
+        // tolerance band of the route's speed limit at the start IS that
+        // controlled speed for the strategic profile (400.5 m/s on a 400 m/s
+        // route is not a braking manoeuvre). Beyond the band the measured
+        // speed stays authoritative and the generator brakes it.
+        if (law == LocalFlightControlLaw::Newtonian &&
+            !trajectoryRequest.pointSpeedConstraints.empty())
+        {
+            const double startLimit =
+                trajectoryRequest.pointSpeedConstraints.front().maxSpeedMps;
+            const double initialSpeed =
+                glm::length(trajectoryRequest.initialVelocityMps);
+            if (initialSpeed > startLimit && startLimit > 1.0e-6 &&
+                !NewtonianSpeedTolerancePolicy::beyondBand(
+                    initialSpeed, startLimit))
+                trajectoryRequest.initialVelocityMps *=
+                    startLimit / initialSpeed;
         }
 
         constexpr int MaximumRefinementAttempts = 6;

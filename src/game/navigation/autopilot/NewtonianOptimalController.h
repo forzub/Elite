@@ -953,9 +953,18 @@ private:
         // Narrow zone (Step 3): the hull crosses it in one fixed attitude on
         // RCS. Its tube is the zone's real lateral room; no main, no turn.
         const bool narrow = plan.narrow;
+        // The zone's room also governs the approach (the same lead as the
+        // attitude): the craft must ENTER inside it, not correct inside.
+        const double approachSpeed = std::max(
+            0.0, glm::dot(finiteVecOrZero(request.actualVelocityMapMps),
+                          plan.tangentMap));
+        const PlannedPoint ahead = plannedAt(
+            progress + approachSpeed * NarrowAttitudeLeadSeconds);
+        const PlannedPoint* zone =
+            narrow ? &plan : (ahead.narrow ? &ahead : nullptr);
         const double tolerance =
-            narrow && plan.narrowToleranceMeters > 0.0
-                ? std::min(corridorTolerance, plan.narrowToleranceMeters)
+            zone && zone->narrowToleranceMeters > 0.0
+                ? std::min(corridorTolerance, zone->narrowToleranceMeters)
                 : corridorTolerance;
         const bool mainPhase =
             !narrow && manoeuvrePhaseUsesMain(phase.kind);
@@ -1163,10 +1172,6 @@ private:
         // A narrow zone ahead (within the attitude lead) or here fixes the
         // whole pose: nose on the zone axis as planned, up on the zone's up
         // (either sign, whichever is closer), set calmly before the entry.
-        const PlannedPoint ahead = plannedAt(
-            progress + std::max(0.0, alongSpeed) * NarrowAttitudeLeadSeconds);
-        const PlannedPoint* zone =
-            narrow ? &plan : (ahead.narrow ? &ahead : nullptr);
         if (zone)
         {
             const glm::dvec3 zoneUp =

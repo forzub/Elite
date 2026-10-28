@@ -4311,16 +4311,20 @@ void SpaceState::updateDockingAdvisory()
                                 continue;
                             }
 
+                            // Same ship fit as the composer (Step 3): the
+                            // aligned hull box in a narrow volume.
                             const auto containment =
                                 game::navigation::traffic::
-                                    RouteVolumeContainmentValidator::
-                                        validateKeepInsideRouteInterval(
-                                            stage,
-                                            job->plan.routeCurves,
-                                            stage.fromWorldMeters,
-                                            stage.toWorldMeters,
-                                            request.agentRadiusMeters
-                                        );
+                                    validateKeepInsideForShip(
+                                        stage,
+                                        job->plan.routeCurves,
+                                        game::navigation::traffic::ShipHullBox {
+                                            0.5 * request.vehicleWidthMeters,
+                                            0.5 * request.vehicleHeightMeters,
+                                            0.5 * request.vehicleLengthMeters},
+                                        request.agentRadiusMeters,
+                                        request.narrowZoneAttitudeToleranceRad
+                                    );
 
                             if (!containment.valid)
                             {

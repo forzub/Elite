@@ -50,7 +50,7 @@ namespace window_crossing_detail
     return std::acos(std::clamp(glm::dot(a / la, b / lb), -1.0, 1.0));
 }
 
-[[nodiscard]] inline bool near(
+[[nodiscard]] inline bool samePoint(
     const glm::dvec3& a, const glm::dvec3& b) noexcept
 {
     return glm::length(a - b) <= 1.0e-6;
@@ -223,7 +223,7 @@ inline std::vector<WindowCrossingChoice> chooseWindowCrossings(
             const auto shift = [&](glm::dvec3& point)
             {
                 for (const auto& m : moved)
-                    if (near(point, m))
+                    if (samePoint(point, m))
                     {
                         point += best;
                         return;

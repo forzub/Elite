@@ -225,6 +225,9 @@ namespace manoeuvre_detail
     constexpr double SettleSpeedMps = 0.5;
     constexpr double LowSpeedRcsOnlyMps = 2.0;
     constexpr double RcsDeltaVSeconds = 2.0;
+    // Plateau before a narrow zone: the executor's attitude lead (12 s)
+    // plus margin.
+    constexpr double NarrowApproachSeconds = 15.0;
     constexpr double CurveNormalShare = 0.30;
     constexpr double OrientRateRadPerSec = 0.01;
     // A burn is flyable when the planned hull is within the nozzle cone plus
@@ -351,7 +354,26 @@ namespace manoeuvre_detail
                     touched[i] = 1;
                 }
             }
+            // The approach is a plateau at the zone speed, long enough to
+            // settle the zone attitude (incl. roll) and the lateral position
+            // before the entry: no speed-up toward the zone, the brake ends
+            // before this plateau.
+            const double entrySpeed = st[a].speedMps;
+            const double approachStart =
+                st[a].progressMeters - entrySpeed * NarrowApproachSeconds;
+            std::size_t first = a;
             for (std::size_t i = a; i-- > 0;)
+            {
+                if (st[i].progressMeters < approachStart)
+                    break;
+                first = i;
+                if (st[i].speedMps > entrySpeed)
+                {
+                    st[i].speedMps = entrySpeed;
+                    touched[i] = 1;
+                }
+            }
+            for (std::size_t i = first; i-- > 0;)
             {
                 const double ds =
                     st[i + 1].progressMeters - st[i].progressMeters;
@@ -378,10 +400,10 @@ namespace manoeuvre_detail
         }
         for (std::size_t i = 0; i < st.size(); ++i)
         {
-            const bool near =
+            const bool nextToTouched =
                 touched[i] || (i + 1 < st.size() && touched[i + 1]) ||
                 (i > 0 && touched[i - 1]);
-            if (!near)
+            if (!nextToTouched)
                 continue;
             const std::size_t lo = i + 1 < st.size() ? i : i - 1;
             const double ds =

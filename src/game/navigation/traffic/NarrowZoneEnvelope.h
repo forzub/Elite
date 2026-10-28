@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/traffic/RouteStageCompiler.h"
+#include "src/game/navigation/traffic/RouteVolumeContainmentValidator.h"
 
 namespace game::navigation::traffic
 {
@@ -128,6 +129,37 @@ struct VolumeFit
     if (out.rolled90)
         out.upWorld = glm::normalize(glm::cross(out.upWorld, out.axisWorld));
     return out;
+}
+
+// The one KeepInside check for a ship (composer and orchestration use the
+// same): the bounding sphere where it fits, the aligned hull box in a
+// narrow volume, a failure when neither fits.
+[[nodiscard]] inline RouteVolumeContainmentResult validateKeepInsideForShip(
+    const CompiledTrafficStage& stage,
+    const std::vector<planner::RouteCurveSegment>& curves,
+    const ShipHullBox& hull,
+    double sphereRadiusMeters,
+    double attitudeToleranceRad,
+    VolumeFit* fitOut = nullptr
+)
+{
+    const VolumeFit fit = analyseVolumeFit(
+        stage, hull, sphereRadiusMeters, attitudeToleranceRad);
+    if (fitOut)
+        *fitOut = fit;
+    if (!fit.sphereFits && !fit.alignedFits)
+    {
+        RouteVolumeContainmentResult out;
+        out.failure = "the ship does not fit the mandatory volume in any attitude";
+        return out;
+    }
+    return fit.sphereFits
+        ? RouteVolumeContainmentValidator::validateKeepInsideRouteInterval(
+              stage, curves, stage.fromWorldMeters, stage.toWorldMeters,
+              sphereRadiusMeters)
+        : RouteVolumeContainmentValidator::validateKeepInsideRouteIntervalInsets(
+              stage, curves, stage.fromWorldMeters, stage.toWorldMeters,
+              fit.insetRightMeters, fit.insetUpMeters);
 }
 
 } // namespace game::navigation::traffic

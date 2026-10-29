@@ -125,8 +125,10 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
     0.25 ly in GalaxyStarfieldRenderer). Real positions resolved by catalogue
     identifier (`resolve_stellar_positions.py`); catalog distance errors:
     HD 102365 (30 ly, not 42), GJ 3293 (66 not 51), HD 10360 (25.5 not 113).
-    HD 102194 in reality is a K2III giant at 630 ly (legacy: fictional G8V at
-    99 ly). DECISION PENDING (user): move stars to real ICRS positions.
+    Legacy "HD 102194" was a typo of HD 102195 (see identity audit below).
+    USER DECISION 2026-10-29: real ICRS positions ACCEPTED ("do not change
+    coordinates" = never move a correctly identified real star procedurally,
+    not "keep wrong legacy coordinates").
   - Legacy "confirmed" planets are largely fictional (e.g. Barnard b-e at
     233-1450 d vs real 2.3-6.7 d); observational anchors come only from the
     pinned archive snapshot, never from legacy JSON.
@@ -197,39 +199,74 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
     (`require`); tools/check_map_architecture.py misses a deleted .inl.
   - NOT verified: visual Galaxy / System Map in a windowed game session
     (needs the user's eyes).
+- Stage 2 (user review of the Galaxy Map 2026-10-29: physical catalog kept,
+  no rollback; 30-point task). Done so far, each a WIP commit on main:
+  - Identity audit (`56d54eb0`, `tools/universe_generator/identity_audit.py`,
+    full HYG v4.1 sha256-pinned + archive): every system checked on
+    designation + aliases + legacy distance + spectral class + planet lore
+    together, adjacent catalogue numbers listed. Result: system 19 is
+    HD 102195 (K0V, 95.7 ly, HD 102195 b P = 4.11 d; legacy "HD 102194" typo,
+    the real HD 102194 is a K2III giant at 630 ly) - corrected via
+    `resolve_stellar_positions.CORRECTIONS`, directory `019_hd_102195`,
+    regenerated deterministically (only system 19 + alias lists changed).
+    Wrong legacy catalogue aliases removed (GJ 876 "HD 217107", sigma2 UMa and
+    83 Leo "HD 102194 A/B", 17 Cyg "HD 186808", theta Dra "HD 175775").
+    Reviewed residuals (identity right, legacy value invented): gamma Dor
+    spectral (HYG F4III old; F1V), HD 102365 / GJ 3293 / HD 10360 distances.
+    Report: `D:/tmp/elite_identity_audit.md`.
+  - Root-cell audit: `D:/tmp/elite_galaxy_root_cells.txt` (legacy rule: 5
+    configured + 18 catalog-added cells = 23, 3 face-connected components,
+    6 blocked cells between inhabited ones, Kepler-62 isolated at
+    (4,-17,17); local catalog within 96.7 ly).
+  - Navigation domain policy (`4734bd67`, `world/coordinates/GalacticGrids.h`):
+    navigation domain != content. Connected domain = fixed 140-ly local
+    envelope around Sol + sparse remote envelope (20 ly) and face-connected
+    corridor for every position outside it (distant systems, the player),
+    grown on demand, never shrinks. Current: 313 root cells, 1 component,
+    Kepler-62 corridor 37 cells. The three grids (1-ly WorldPosition cell,
+    40.32-ly navigation root, 25-ly interstellar generation cell) share the
+    ICRS frame with explicit conversions; `generationCellsCovering` maps the
+    domain to generation cells (2003). `rootNavigation.allowedCells` removed.
+    Galaxy Map draws the focused root + its domain neighbours.
+    `EliteUniverseGenerator domain` reports it. VISUALLY UNVERIFIED.
+  - System Map Kepler orbits (`778c7553`): the inclined ellipse around the
+    parent / barycentre (planets, binary stars, moons) from the shared
+    contract (`keplerOrbitPathAu` / `relativeKeplerStateAu` over one
+    perifocal basis); circles only for belts / bodies without elements. Test:
+    each drawn body lies on its drawn ellipse. VISUALLY UNVERIFIED.
+  - Gravity atmosphere radius (`3e7e0f47`): GameServer passes the catalog
+    `atmosphereOuterRadiusKm`; Earth's field has its ~100 km atmosphere.
+  - `CelestialEphemerisService` (`e15fd0f0`): read-only state(bodyId, t)
+    through the one relative-state function (`relativeBodyStateAu`, also the
+    runtime's; its private circular copy removed); mu, radius, atmosphere
+    radius, Laplace SOI, Hill radius, central mu, hierarchy. Equal to the
+    runtime for all bodies of 61 systems at past/future times. Not yet used
+    by gameplay (next navigation stage: interplanetary planning).
+  - StarAtlas one schema (`ea4a8978`): legacy flat parser removed (-600 lines).
+  - world_runtime 14/14 PASS; system_map behaviour PASS; map / membership /
+    active-system / static-atlas / localization contracts PASS.
 - Known limits / open:
-  - DECISION PENDING (user): real ICRS positions are active (53 systems moved,
-    distances kept within catalogue accuracy). Revert = rerun
-    `build_stellar_inputs.py --positions legacy` from git history + materialize.
-    HD 102194 now = the real K2 III giant at 630 ly.
-  - System Map still draws orbits as circles of radius a (positions are
-    Keplerian); ellipse / inclination drawing pending.
-  - Interstellar layer DONE (`9d5ed180`): InterstellarGenerator per 25-ly
-    GalacticCell (rogue giants / terrestrials / binaries / moons, brown dwarfs
-    beyond the WISE-complete 20 ly, remnants, interstellar comets, debris
-    groups) + ISM regions (real Local Bubble, LIC, G, Blue, Leo cold cloud,
-    approximate geometry; rare warm cloudlets), 265 objects in
-    `objects_details/gen_*.json` (tool `interstellar`), loaded by StarAtlas,
-    covered by `determinism`. Galaxy Map: dim points + false-colour ellipsoid
-    outlines (GalaxyMapObject extent/colour on the wire) - VISUALLY UNVERIFIED.
-    Real flight after the change: session starts, 0 violations.
-  - Navigation ephemeris API (position/velocity(t), influence, prediction)
-    exists only as runtime snapshot + GravityFieldSystem; no prediction
-    service yet. Atmosphere radius stored per body (not yet used by gravity).
-  - Legacy-format parser code in StarAtlasDatabase.cpp is dead (data
-    removed) - delete in a later cleanup.
-  - Generator calibration point: median 10 bodies >= 0.05 Me per FGK system.
+  - Interstellar content is still the 120-ly sphere (`InterstellarSettings::
+    radiusLy`) with ellipsoid ISM regions - being replaced (next).
+  - Generator calibration point: median 10 bodies >= 0.05 Me per FGK system -
+    detectability analysis pending (do NOT tune by visual impression).
+  - NOT verified visually: Galaxy Map (domain cubes, interstellar layer),
+    System Map ellipses.
 
 ### Next step
-- Autopilot/planner piece closed (J/K). NEXT STAGE (user task 2026-10-29):
-  full regeneration of the planetary content of all existing star systems
-  (61: IDs 0-17, 19-60 local + distant 100062 Kepler-62) with one
-  deterministic production generator; stars, coordinates and system IDs are
-  preserved, planets/moons/rings/belts/reservoirs are regenerated. Catalog
-  audit done (79 stars, 208 planets, 138 moons; body IDs from names; runtime
-  orbits circular XZ; hard deps only in Sol: Earth hub/spawn, Mars in
-  InterplanetaryTransferLab, 545 localization keys). Generator code: none yet.
-  Docking architecture: later.
+- Stage 2 remaining, in the user's order: (3) ISM - materialisation per
+  25-ly generation cell over the navigation domain (no 120-ly sphere), a
+  background ISM field everywhere (no binary cloud / vacuum), irregular
+  density volumes (coarse lattice) instead of ellipsoids, translucent
+  false-colour volume rendering on the Galaxy Map below stars / route /
+  objects; (4) planet-count detectability report per host (N above mass
+  thresholds, max RV K vs survey limit, which planets should already be
+  detected); (5) NaturalResourceProfile + IndustrialSuitabilityProfile +
+  graded habitability + fuel potential, derived only from physical
+  descriptors, no prices; ISM extraction profile; 61-system resource audit;
+  (6) physical (StarAtlas) vs political (GalaxyDatabase) system-id audit;
+  System Map presentation levels (major / minor / dwarf / moon / reservoir).
+  Not in scope: economy / trade simulator, interplanetary route planner.
 
 ## HISTORICAL CHRONOLOGY (verbatim, dated; superseded where the block above says so)
 

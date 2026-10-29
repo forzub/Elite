@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "src/world/coordinates/GalacticGrids.h"
 #include "src/world/generation/AstroUnits.h"
 #include "src/world/generation/DescriptorJson.h"
 #include "src/world/generation/GenerationRandom.h"
@@ -60,6 +61,64 @@ std::string fullDump(const SystemDescriptor& sd)
     for (const auto& b : sd.bodies) s += dumpJson(bodyJson(b, sd));
     for (const auto& r : sd.reservoirs) s += dumpJson(reservoirJson(r, sd));
     return s;
+}
+
+std::vector<glm::dvec3> catalogPositions(const fs::path& root)
+{
+    std::vector<glm::dvec3> positions;
+    for (const auto& dir : systemDirectories(root))
+    {
+        SystemInput in;
+        std::string error;
+        if (readSystemInput(dir, in, error))
+            positions.push_back(in.positionLy);
+    }
+    return positions;
+}
+
+// The navigation domain of navigation_grid.json (the same policy as the
+// runtime GalaxyNavigationGrid) extended to every catalog system.
+world::coordinates::GalacticNavigationDomain navigationDomain(const fs::path& root)
+{
+    std::ifstream f(root.parent_path() / "navigation" / "navigation_grid.json");
+    const auto cfg = nlohmann::json::parse(f);
+    double edgeKm = cfg.at("terminalCellEdgeKm").get<double>();
+    for (int i = 0; i < cfg.at("maximumDepth").get<int>(); ++i)
+        edgeKm *= cfg.at("subdivisionPerAxis").get<double>();
+    const auto& rn = cfg.at("rootNavigation");
+    world::coordinates::GalacticNavigationDomain domain(
+        {edgeKm / 9.4607304725808e12},
+        {rn.at("localEnvelopeRadiusLy").get<double>(), rn.at("remoteEnvelopeRadiusLy").get<double>()});
+    for (const auto& p : catalogPositions(root))
+        domain.extendTo(p);
+    return domain;
+}
+
+int domainReport(const fs::path& root)
+{
+    using namespace world::coordinates;
+    const auto domain = navigationDomain(root);
+    const auto cells = domain.cells();
+    const auto comps = faceConnectedComponents(cells);
+    const auto gen = generationCellsCovering(domain, interstellarGenerationGrid());
+    std::map<GridCell3, int> systems;
+    for (const auto& p : catalogPositions(root))
+        ++systems[domain.grid().cellOf(p)];
+    int outsideBall = 0;
+    for (const auto& c : cells)
+        outsideBall += glm::length(domain.grid().centre(c)) > domain.settings().localEnvelopeRadiusLy + domain.grid().edgeLy;
+    std::cout << "navigation domain (connected envelope policy)\n"
+              << "  root edge ly: " << domain.grid().edgeLy << "\n"
+              << "  local envelope radius ly: " << domain.settings().localEnvelopeRadiusLy
+              << ", remote envelope radius ly: " << domain.settings().remoteEnvelopeRadiusLy << "\n"
+              << "  root cells: " << cells.size() << " (remote extension/corridor cells: " << outsideBall << ")\n"
+              << "  root cells holding catalog systems: " << systems.size() << "\n"
+              << "  face-connected components: " << comps.size() << "\n"
+              << "  interstellar generation cells (25 ly) covering the domain: " << gen.size() << "\n";
+    for (const auto& [c, n] : systems)
+        if (!domain.contains(c))
+            std::cout << "  ERROR: system root cell outside domain\n";
+    return comps.size() == 1 ? 0 : 1;
 }
 
 std::vector<InterstellarObject> interstellarContent(const fs::path& root)
@@ -366,6 +425,7 @@ int main(int argc, char** argv)
     if (cmd == "dry-run" && argc >= 4) return dryRun(argv[2], argv[3]);
     if (cmd == "determinism") return determinism(argv[2]);
     if (cmd == "interstellar") return interstellar(argv[2]);
+    if (cmd == "domain") return domainReport(argv[2]);
     if (cmd == "bulk" && argc >= 4)
     {
         const std::uint64_t seed = argc >= 5 ? std::stoull(argv[4], nullptr, 16) : DefaultUniverseSeed;

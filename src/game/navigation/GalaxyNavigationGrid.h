@@ -9,6 +9,7 @@
 
 #include "src/game/navigation/CubicNavigationGrid.h"
 #include "src/game/navigation/GalaxyNavigationConfig.h"
+#include "src/world/coordinates/GalacticGrids.h"
 
 namespace game::navigation
 {
@@ -28,7 +29,9 @@ class GalaxyNavigationDomainPolicy;
 
     The base owns hierarchy, anchor, hover and explicit selection. This class
     contributes only Galaxy-specific configuration, light-year naming, display
-    radius and the navigable root-domain whitelist.
+    radius and the navigation domain: the connected local envelope plus
+    sparse remote extensions (world::coordinates::GalacticNavigationDomain).
+    Root cells without catalog content are navigable empty space.
 */
 class GalaxyNavigationGrid final : public CubicNavigationGrid
 {
@@ -39,12 +42,14 @@ public:
 
     const GalaxyNavigationConfig& config() const;
 
-    void synchronizeCatalogPositions(
+    // Extend the domain on demand: remote catalog systems (distant quest
+    // targets) and the player's position. The domain only grows.
+    void extendDomainTo(
         const std::vector<glm::dvec3>& positionsLy
     );
 
     const std::vector<std::array<std::int64_t, 3>>&
-    allowedRootCells() const;
+    navigableRootCells() const;
 
     double cellSizeLy() const;
     double cellSizeLy(int level) const;
@@ -79,10 +84,6 @@ private:
     static CubicNavigationGridDefinition makeDefinition(
         const GalaxyNavigationConfig& config
     );
-
-    std::array<std::int64_t, 3> rootIndexForPositionLy(
-        const glm::dvec3& positionLy
-    ) const;
 
 private:
     GalaxyNavigationConfig m_config;

@@ -15,18 +15,7 @@ using json = nlohmann::json;
 
 GalaxyNavigationConfig defaults()
 {
-    GalaxyNavigationConfig result;
-
-    result.allowedRootCells =
-    {
-        {-1, 1,  0},
-        {-1, 2, -1},
-        {-1, 2,  0},
-        { 0, 0,  0},
-        { 0, 1,  0}
-    };
-
-    return result;
+    return GalaxyNavigationConfig {};
 }
 
 bool loadFile(
@@ -122,31 +111,23 @@ bool loadFile(
     const json rootNavigation =
         root.value("rootNavigation", json::object());
 
-    const json allowed =
-        rootNavigation.value(
-            "allowedCells",
-            json::array()
+    result.localEnvelopeRadiusLy =
+        std::max(
+            1.0,
+            rootNavigation.value(
+                "localEnvelopeRadiusLy",
+                result.localEnvelopeRadiusLy
+            )
         );
 
-    if (!allowed.empty())
-    {
-        std::vector<std::array<std::int64_t, 3>> parsed;
-
-        for (const json& item : allowed)
-        {
-            if (!item.is_array() || item.size() != 3)
-                continue;
-
-            parsed.push_back({
-                item[0].get<std::int64_t>(),
-                item[1].get<std::int64_t>(),
-                item[2].get<std::int64_t>()
-            });
-        }
-
-        if (!parsed.empty())
-            result.allowedRootCells = std::move(parsed);
-    }
+    result.remoteEnvelopeRadiusLy =
+        std::max(
+            0.0,
+            rootNavigation.value(
+                "remoteEnvelopeRadiusLy",
+                result.remoteEnvelopeRadiusLy
+            )
+        );
 
     result.initialLevel =
         std::clamp(
@@ -207,19 +188,6 @@ int GalaxyNavigationConfig::galaxyMaximumLevel() const
         minimumLevel,
         maximumDepth
     );
-}
-
-bool GalaxyNavigationConfig::isRootAllowed(
-    std::int64_t x,
-    std::int64_t y,
-    std::int64_t z
-) const
-{
-    return std::find(
-        allowedRootCells.begin(),
-        allowedRootCells.end(),
-        std::array<std::int64_t, 3>{x, y, z}
-    ) != allowedRootCells.end();
 }
 
 GalaxyNavigationConfig

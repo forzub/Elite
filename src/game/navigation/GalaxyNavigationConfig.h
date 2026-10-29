@@ -32,18 +32,15 @@ struct GalaxyNavigationConfig
     std::string defaultCoordinateFormat =
         "hierarchical";
 
-    std::vector<std::array<std::int64_t, 3>>
-        allowedRootCells;
+    // Navigation domain (world/coordinates/GalacticGrids.h): a connected
+    // local envelope around Sol plus sparse remote envelopes and corridors.
+    // Empty interstellar space is navigable; content is a separate notion.
+    double localEnvelopeRadiusLy = 140.0;
+    double remoteEnvelopeRadiusLy = 20.0;
 
     double rootEdgeLy() const;
     double cellEdgeLy(int level) const;
     int galaxyMaximumLevel() const;
-
-    bool isRootAllowed(
-        std::int64_t x,
-        std::int64_t y,
-        std::int64_t z
-    ) const;
 
     static GalaxyNavigationConfig loadFromRuntimeOrSource(
         const std::string& runtimePath,

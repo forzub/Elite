@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <exception>
@@ -19,6 +20,7 @@
 #include "src/world/celestial/CelestialSystemRuntime.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/game/navigation/GravityFieldSystem.h"
+#include "src/world/coordinates/GalacticGrids.h"
 
 #include <unordered_map>
 
@@ -239,6 +241,31 @@ void testGravityFieldUsesGeneratedBodies()
     const auto sample = game::navigation::GravityFieldSystem::sample(probe, bodies);
     REQUIRE(sample.primaryBodyId == "system_0.Sol.Земля");
     requireNear(sample.primaryAccelerationMps2, 3.986004e14 / (7.0e6 * 7.0e6), 0.05, "Earth gravity at 7000 km");
+}
+
+void testNavigationDomainIsConnectedAndSparse()
+{
+    using namespace world::coordinates;
+    const world::celestial::StarAtlasDatabase atlas = loadAtlas();
+    GalacticNavigationDomain domain({40.3214}, {140.0, 20.0});
+    const std::size_t envelope = domain.size();
+    std::vector<glm::dvec3> positions;
+    for (const auto& s : atlas.systems()) positions.push_back(s.positionLy);
+    for (const auto& s : atlas.distantSystems()) positions.push_back(s.positionLy);
+    for (const auto& p : positions) domain.extendTo(p);
+    for (const auto& p : positions) REQUIRE(domain.contains(domain.grid().cellOf(p)));
+    REQUIRE(faceConnectedComponents(domain.cells()).size() == 1);
+    // Kepler-62 (~980 ly) adds a corridor of tens of cells, not a block.
+    REQUIRE(domain.size() > envelope && domain.size() - envelope < 80);
+    // The domain only grows; an empty cell between two systems is navigable.
+    const auto before = domain.cells();
+    domain.extendTo(glm::dvec3(0.0, 0.0, 3000.0));
+    for (const auto& c : before) REQUIRE(domain.contains(c));
+    REQUIRE(faceConnectedComponents(domain.cells()).size() == 1);
+    REQUIRE(domain.contains(domain.grid().cellOf(glm::dvec3(0.0, 0.0, 1500.0))));
+    // Interstellar generation cells (25 ly, floored) cover every root cell.
+    const auto gen = generationCellsCovering(domain, interstellarGenerationGrid());
+    REQUIRE(std::binary_search(gen.begin(), gen.end(), interstellarGenerationGrid().cellOf({0.0, 0.0, 1500.0})));
 }
 
 void testClientUniverseTimelineUsesServerAnchor()
@@ -654,6 +681,10 @@ int main()
         {
             "gravity field uses generated bodies",
             testGravityFieldUsesGeneratedBodies
+        },
+        {
+            "navigation domain is connected and sparse",
+            testNavigationDomainIsConnectedAndSparse
         }
     };
 

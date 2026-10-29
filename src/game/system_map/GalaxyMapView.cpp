@@ -105,7 +105,7 @@ namespace game::system_map
         for (const auto& system : galaxy.systems)
             positionsLy.push_back(system.positionLy);
 
-        m_state.navigationGrid.synchronizeCatalogPositions(
+        m_state.navigationGrid.extendDomainTo(
             positionsLy
         );
     }
@@ -140,6 +140,9 @@ namespace game::system_map
             );
 
         m_state.entry.positionLy = playerLy;
+
+        // Wherever the player is, that space is navigable (on-demand extension).
+        m_state.navigationGrid.extendDomainTo({playerLy});
 
         const int terminalLevel =
             m_state.navigationGrid.maximumLevel();

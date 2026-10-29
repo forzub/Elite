@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <cctype>
 #include <cstdint>
 #include <iomanip>
@@ -1219,8 +1220,10 @@ void GalaxyMapRenderer::drawNavigationGrid(
         };
 
     /*
-        Root не является выбираемым уровнем карты, но пять разрешённых
-        архивкубов образуют видимую границу игрового пространства.
+        Root не является выбираемым уровнем карты. Навигационный домен -
+        связная оболочка из сотен Root-кубов (пустое пространство тоже
+        навигируемо), поэтому рисуются только Root в фокусе и его соседи
+        из домена, а не весь домен.
     */
     const double rootEdgeLy =
         viewState.state().navigationGrid.config().rootEdgeLy();
@@ -1254,7 +1257,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
         2. если луч не пересёк ни один Root — ближайший к camera.target.
     */
     for (const auto& rootIndex :
-         viewState.state().navigationGrid.allowedRootCells())
+         viewState.state().navigationGrid.navigableRootCells())
     {
         const glm::dvec3 rootCenterLy =
             frame.origin +
@@ -1313,7 +1316,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
     }
 
     for (const auto& rootIndex :
-         viewState.state().navigationGrid.allowedRootCells())
+         viewState.state().navigationGrid.navigableRootCells())
     {
         const glm::dvec3 rootCenterLy =
             frame.origin +
@@ -1323,6 +1326,14 @@ void GalaxyMapRenderer::drawNavigationGrid(
                 (static_cast<double>(rootIndex[1]) * rootEdgeLy) +
             frame.axisZ *
                 (static_cast<double>(rootIndex[2]) * rootEdgeLy);
+
+        if (hasFocusedRoot &&
+            (std::llabs(rootIndex[0] - focusedRootIndex[0]) > 1 ||
+             std::llabs(rootIndex[1] - focusedRootIndex[1]) > 1 ||
+             std::llabs(rootIndex[2] - focusedRootIndex[2]) > 1))
+        {
+            continue;
+        }
 
         const glm::vec3 rootCenter =
             viewState.positionLyToRender(rootCenterLy);

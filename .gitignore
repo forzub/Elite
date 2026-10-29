@@ -49,3 +49,5 @@ src/assets/generated/**/*.tga
 src/assets/generated/**/*.TGA
 /assets/
 /build/assets/generated/
+
+__pycache__/

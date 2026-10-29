@@ -4,6 +4,8 @@
 #include <cmath>
 #include <utility>
 
+#include "src/world/coordinates/GalacticGrids.h"
+
 namespace game::navigation
 {
 namespace
@@ -37,10 +39,11 @@ class GalaxyNavigationDomainPolicy final
 public:
     GalaxyNavigationDomainPolicy(
         int subdivision,
-        std::vector<std::array<std::int64_t, 3>> allowedRootCells
+        world::coordinates::GalacticNavigationDomain domain
     )
         : m_subdivision(subdivision),
-          m_allowedRootCells(std::move(allowedRootCells))
+          m_domain(std::move(domain)),
+          m_rootCells(m_domain.cells())
     {
     }
 
@@ -58,33 +61,27 @@ public:
             root = parentIndex(root, m_subdivision);
         }
 
-        return std::find(
-            m_allowedRootCells.begin(),
-            m_allowedRootCells.end(),
-            std::array<std::int64_t, 3>{
-                root.x,
-                root.y,
-                root.z
-            }
-        ) != m_allowedRootCells.end();
+        return m_domain.contains({root.x, root.y, root.z});
     }
 
-    void setAllowedRootCells(
-        std::vector<std::array<std::int64_t, 3>> cells
-    )
+    bool extendTo(const glm::dvec3& positionLy)
     {
-        m_allowedRootCells = std::move(cells);
+        if (!m_domain.extendTo(positionLy))
+            return false;
+        m_rootCells = m_domain.cells();
+        return true;
     }
 
     const std::vector<std::array<std::int64_t, 3>>&
-    allowedRootCells() const
+    rootCells() const
     {
-        return m_allowedRootCells;
+        return m_rootCells;
     }
 
 private:
     int m_subdivision = 3;
-    std::vector<std::array<std::int64_t, 3>> m_allowedRootCells;
+    world::coordinates::GalacticNavigationDomain m_domain;
+    std::vector<std::array<std::int64_t, 3>> m_rootCells;
 };
 
 GalaxyNavigationGrid::GalaxyNavigationGrid()
@@ -100,7 +97,11 @@ GalaxyNavigationGrid::GalaxyNavigationGrid(
       m_domainPolicy(
           std::make_shared<GalaxyNavigationDomainPolicy>(
               m_config.subdivisionPerAxis,
-              m_config.allowedRootCells
+              world::coordinates::GalacticNavigationDomain(
+                  {m_config.rootEdgeLy()},
+                  {m_config.localEnvelopeRadiusLy,
+                   m_config.remoteEnvelopeRadiusLy}
+              )
           )
       )
 {
@@ -149,32 +150,24 @@ const GalaxyNavigationConfig& GalaxyNavigationGrid::config() const
     return m_config;
 }
 
-void GalaxyNavigationGrid::synchronizeCatalogPositions(
+void GalaxyNavigationGrid::extendDomainTo(
     const std::vector<glm::dvec3>& positionsLy
 )
 {
-    std::vector<std::array<std::int64_t, 3>> allowed =
-        m_config.allowedRootCells;
+    bool changed = false;
 
     for (const glm::dvec3& positionLy : positionsLy)
-    {
-        const auto root = rootIndexForPositionLy(positionLy);
-
-        if (std::find(allowed.begin(), allowed.end(), root) == allowed.end())
-            allowed.push_back(root);
-    }
-
-    std::sort(allowed.begin(), allowed.end());
-    m_domainPolicy->setAllowedRootCells(std::move(allowed));
+        changed = m_domainPolicy->extendTo(positionLy) || changed;
 
     /* Revalidate transient/explicit state against the updated domain. */
-    setPolicy(m_domainPolicy);
+    if (changed)
+        setPolicy(m_domainPolicy);
 }
 
 const std::vector<std::array<std::int64_t, 3>>&
-GalaxyNavigationGrid::allowedRootCells() const
+GalaxyNavigationGrid::navigableRootCells() const
 {
-    return m_domainPolicy->allowedRootCells();
+    return m_domainPolicy->rootCells();
 }
 
 double GalaxyNavigationGrid::cellSizeLy() const
@@ -232,34 +225,6 @@ std::vector<GalaxyNavigationCell>
 GalaxyNavigationGrid::neighborhood() const
 {
     return CubicNavigationGrid::neighborhood(m_displayRadius);
-}
-
-std::array<std::int64_t, 3>
-GalaxyNavigationGrid::rootIndexForPositionLy(
-    const glm::dvec3& positionLy
-) const
-{
-    const double rootSizeLy = m_config.rootEdgeLy();
-    const CubicNavigationFrame& navigationFrame = frame();
-    const glm::dvec3 relative = positionLy - navigationFrame.origin;
-
-    return {
-        static_cast<std::int64_t>(
-            std::llround(
-                glm::dot(relative, navigationFrame.axisX) / rootSizeLy
-            )
-        ),
-        static_cast<std::int64_t>(
-            std::llround(
-                glm::dot(relative, navigationFrame.axisY) / rootSizeLy
-            )
-        ),
-        static_cast<std::int64_t>(
-            std::llround(
-                glm::dot(relative, navigationFrame.axisZ) / rootSizeLy
-            )
-        )
-    };
 }
 
 } // namespace game::navigation

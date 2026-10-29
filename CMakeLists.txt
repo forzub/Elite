@@ -998,9 +998,15 @@ function(elite_copy_asset_tree TARGET_NAME SOURCE_DIR DEST_DIR)
         )
     endforeach()
 
+    # Generated catalog trees: drop staged files whose source is gone.
     add_custom_target(
         ${TARGET_NAME}
+        COMMAND ${CMAKE_COMMAND}
+                -DSOURCE_DIR=${SOURCE_DIR}
+                -DDEST_DIR=${DEST_DIR}
+                -P "${CMAKE_SOURCE_DIR}/cmake/PruneStaleAssets.cmake"
         DEPENDS ${COPIED_ASSET_FILES}
+        VERBATIM
     )
 endfunction()
 

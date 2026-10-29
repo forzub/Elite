@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -59,13 +60,60 @@ inline glm::dvec3 circularOrbitPositionAu(
 }
 
 /*
-    Keplerian state relative to the parent, in the engine frame of the
-    orbit's reference plane (+Y north, prograde motion from +X toward -Z).
+    Keplerian orbit of a body relative to its parent, in the engine frame of
+    the orbit's reference plane (+Y north, prograde motion from +X toward -Z).
 
     The elements use the standard right-handed frame (x, y, z_north); the
     engine maps it as X = x, Y = z, Z = -y. Mean motion comes from the
     stored period (derived from mu of parent + body by the generator).
+
+    This is the one orbital contract: the runtime state, the System Map orbit
+    path and ephemeris queries all go through keplerPerifocalToEngine.
 */
+struct KeplerPerifocalBasis
+{
+    double a = 0.0;
+    double e = 0.0;
+    // Columns of R_z(O) R_x(i) R_z(w) (perifocal P and Q axes), standard frame.
+    double r11 = 1.0, r12 = 0.0, r21 = 0.0, r22 = 1.0, r31 = 0.0, r32 = 0.0;
+};
+
+inline KeplerPerifocalBasis keplerPerifocalBasis(const CelestialBodyDefinition& body)
+{
+    constexpr double degToRad = OrbitTwoPi / 360.0;
+    KeplerPerifocalBasis b;
+    b.a = body.distanceAu;
+    b.e = std::min(std::max(body.eccentricity, 0.0), 0.999);
+    const double O = body.longitudeAscendingNodeDeg * degToRad;
+    const double i = body.inclinationDeg * degToRad;
+    const double w = body.argumentOfPeriapsisDeg * degToRad;
+    const double cO = std::cos(O), sO = std::sin(O);
+    const double ci = std::cos(i), si = std::sin(i);
+    const double cw = std::cos(w), sw = std::sin(w);
+    b.r11 = cO * cw - sO * sw * ci;
+    b.r12 = -cO * sw - sO * cw * ci;
+    b.r21 = sO * cw + cO * sw * ci;
+    b.r22 = -sO * sw + cO * cw * ci;
+    b.r31 = sw * si;
+    b.r32 = cw * si;
+    return b;
+}
+
+inline glm::dvec3 keplerPerifocalToEngine(const KeplerPerifocalBasis& b, double xp, double yp)
+{
+    const double x = b.r11 * xp + b.r12 * yp;
+    const double y = b.r21 * xp + b.r22 * yp;
+    const double z = b.r31 * xp + b.r32 * yp;
+    return glm::dvec3(x, z, -y);
+}
+
+// Position on the orbit at eccentric anomaly E (perifocal ellipse).
+inline glm::dvec3 keplerPositionAtEccentricAnomalyAu(const KeplerPerifocalBasis& b, double E)
+{
+    return keplerPerifocalToEngine(
+        b, b.a * (std::cos(E) - b.e), b.a * std::sqrt(1.0 - b.e * b.e) * std::sin(E));
+}
+
 inline void keplerStateAu(
     const CelestialBodyDefinition& body,
     double simTimeSeconds,
@@ -79,8 +127,9 @@ inline void keplerStateAu(
         return;
 
     constexpr double degToRad = OrbitTwoPi / 360.0;
-    const double a = body.distanceAu;
-    const double e = std::min(std::max(body.eccentricity, 0.0), 0.999);
+    const KeplerPerifocalBasis basis = keplerPerifocalBasis(body);
+    const double a = basis.a;
+    const double e = basis.e;
     const double n = OrbitTwoPi / (body.orbitalPeriodDays * SecondsPerDay);
     double meanAnomaly = std::fmod(
         body.meanAnomalyAtEpochDeg * degToRad + n * (simTimeSeconds - body.orbitEpochSeconds),
@@ -100,26 +149,9 @@ inline void keplerStateAu(
     const double cosE = std::cos(E);
     const double sinE = std::sin(E);
     const double root = std::sqrt(1.0 - e * e);
-    const double xp = a * (cosE - e);
-    const double yp = a * root * sinE;
     const double rate = n / (1.0 - e * cosE);
-    const double vxp = -a * sinE * rate;
-    const double vyp = a * root * cosE * rate;
-
-    const double O = body.longitudeAscendingNodeDeg * degToRad;
-    const double i = body.inclinationDeg * degToRad;
-    const double w = body.argumentOfPeriapsisDeg * degToRad;
-    const double cO = std::cos(O), sO = std::sin(O);
-    const double ci = std::cos(i), si = std::sin(i);
-    const double cw = std::cos(w), sw = std::sin(w);
-    // Perifocal -> reference frame rotation R_z(O) R_x(i) R_z(w).
-    const double r11 = cO * cw - sO * sw * ci, r12 = -cO * sw - sO * cw * ci;
-    const double r21 = sO * cw + cO * sw * ci, r22 = -sO * sw + cO * cw * ci;
-    const double r31 = sw * si, r32 = cw * si;
-    const double x = r11 * xp + r12 * yp, y = r21 * xp + r22 * yp, z = r31 * xp + r32 * yp;
-    const double vx = r11 * vxp + r12 * vyp, vy = r21 * vxp + r22 * vyp, vz = r31 * vxp + r32 * vyp;
-    positionAu = glm::dvec3(x, z, -y);
-    velocityAuPerSecond = glm::dvec3(vx, vz, -vy);
+    positionAu = keplerPositionAtEccentricAnomalyAu(basis, E);
+    velocityAuPerSecond = keplerPerifocalToEngine(basis, -a * sinE * rate, a * root * cosE * rate);
 }
 
 // Rotates a vector from a parent-equatorial frame (+Y = spin axis) into the
@@ -144,6 +176,51 @@ inline glm::dvec3 rotateFromParentEquator(
     const double c = north.y;
     // Rodrigues rotation taking +Y onto the spin axis.
     return v * c + glm::cross(axis, v) * s + axis * glm::dot(axis, v) * (1.0 - c);
+}
+
+// Kepler state relative to the parent including the parent-equator frame of
+// moons (orbitInParentEquator): exactly what CelestialSystemRuntime uses.
+inline void relativeKeplerStateAu(
+    const CelestialBodyDefinition& body,
+    const CelestialBodyDefinition* parent,
+    double simTimeSeconds,
+    glm::dvec3& positionAu,
+    glm::dvec3& velocityAuPerSecond
+)
+{
+    keplerStateAu(body, simTimeSeconds, positionAu, velocityAuPerSecond);
+    if (body.orbitInParentEquator && parent)
+    {
+        positionAu = rotateFromParentEquator(positionAu, parent->axialTiltDeg, parent->axisNodeDeg);
+        velocityAuPerSecond =
+            rotateFromParentEquator(velocityAuPerSecond, parent->axialTiltDeg, parent->axisNodeDeg);
+    }
+}
+
+// The orbit ellipse relative to the parent (closed polyline, first point =
+// periapsis), in the same frame as relativeKeplerStateAu.
+inline std::vector<glm::dvec3> keplerOrbitPathAu(
+    const CelestialBodyDefinition& body,
+    const CelestialBodyDefinition* parent,
+    int samples
+)
+{
+    std::vector<glm::dvec3> out;
+    if (!body.keplerOrbit || body.distanceAu <= 0.0 || samples < 8)
+        return out;
+    const KeplerPerifocalBasis basis = keplerPerifocalBasis(body);
+    out.reserve(static_cast<std::size_t>(samples) + 1);
+    for (int k = 0; k <= samples; ++k)
+    {
+        // Uniform in eccentric anomaly: denser near apoapsis is acceptable,
+        // the ellipse shape is exact at every sample.
+        const double E = OrbitTwoPi * static_cast<double>(k) / static_cast<double>(samples);
+        glm::dvec3 p = keplerPositionAtEccentricAnomalyAu(basis, E);
+        if (body.orbitInParentEquator && parent)
+            p = rotateFromParentEquator(p, parent->axialTiltDeg, parent->axisNodeDeg);
+        out.push_back(p);
+    }
+    return out;
 }
 
 inline double bodyRotationPhaseRad(

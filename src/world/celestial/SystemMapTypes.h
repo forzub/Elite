@@ -187,6 +187,11 @@ namespace world::celestial
         double orbitRadiusAu = 0.0;
         bool drawOrbit = false;
 
+        // Kepler orbit ellipse relative to orbitCenterAu (closed polyline from
+        // the shared celestial orbit contract, keplerOrbitPathAu). Empty for
+        // bodies without a Kepler orbit: the renderer then draws radius a.
+        std::vector<glm::dvec3> orbitPathAu;
+
         double orbitalPeriodDays = 0.0;
         int orbitalDirection = 1;
         double orbitalPhaseOffsetRad = 0.0;

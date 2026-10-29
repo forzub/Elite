@@ -210,6 +210,19 @@ void testSystemMapBridgeHidesBarycentersAndCentresCircumbinaryOrbits()
                 requireVectorNear(item.orbitCenterAu, center->positionAu, 1.0e-12, "circumbinary orbit centre");
                 sawCircumbinary = true;
             }
+            // The drawn ellipse is the runtime orbit: the body lies on it.
+            if (!item.orbitPathAu.empty())
+            {
+                const glm::dvec3 rel = item.positionAu - item.orbitCenterAu;
+                double nearest = 1.0e300;
+                for (std::size_t k = 1; k < item.orbitPathAu.size(); ++k)
+                {
+                    const glm::dvec3 a = item.orbitPathAu[k - 1], d = item.orbitPathAu[k] - a;
+                    const double t = std::clamp(glm::dot(rel - a, d) / std::max(glm::dot(d, d), 1.0e-300), 0.0, 1.0);
+                    nearest = std::min(nearest, glm::length(rel - (a + d * t)));
+                }
+                REQUIRE(nearest < 2.0e-3 * item.orbitRadiusAu);
+            }
         }
     }
     REQUIRE(sawCircumbinary);

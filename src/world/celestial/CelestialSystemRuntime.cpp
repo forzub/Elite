@@ -81,18 +81,13 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         glm::dvec3 relativeVelocityAuPerSecond {0.0};
         if (body.keplerOrbit)
         {
-            keplerStateAu(body, simTimeSeconds, relativeAu, relativeVelocityAuPerSecond);
-            if (body.orbitInParentEquator)
-            {
-                const auto parentDef = definitionById.find(body.parentId);
-                if (parentDef != definitionById.end())
-                {
-                    const auto& p = *parentDef->second;
-                    relativeAu = rotateFromParentEquator(relativeAu, p.axialTiltDeg, p.axisNodeDeg);
-                    relativeVelocityAuPerSecond =
-                        rotateFromParentEquator(relativeVelocityAuPerSecond, p.axialTiltDeg, p.axisNodeDeg);
-                }
-            }
+            const auto parentDef = definitionById.find(body.parentId);
+            relativeKeplerStateAu(
+                body,
+                parentDef != definitionById.end() ? parentDef->second : nullptr,
+                simTimeSeconds,
+                relativeAu,
+                relativeVelocityAuPerSecond);
         }
         else
         {

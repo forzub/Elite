@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "src/world/celestial/CelestialOrbitKinematics.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/SystemMapConversion.h"
@@ -60,6 +61,11 @@ inline bool rebuildSystemMapCelestialLayer(
     runtimeById.reserve(celestial.bodies.size());
     for (const auto& state : celestial.bodies)
         runtimeById[state.id] = &state;
+
+    std::unordered_map<std::string, const CelestialBodyDefinition*> definitionById;
+    definitionById.reserve(definition.bodies.size());
+    for (const auto& body : definition.bodies)
+        definitionById[body.id] = &body;
 
     std::vector<SystemMapBody> rebuiltBodies;
     rebuiltBodies.reserve(definition.bodies.size());
@@ -124,6 +130,14 @@ inline bool rebuildSystemMapCelestialLayer(
 
         item.orbitRadiusAu = body.distanceAu;
         item.drawOrbit = body.distanceAu > 0.0;
+        if (body.keplerOrbit && item.drawOrbit)
+        {
+            const auto parentDef = definitionById.find(body.parentId);
+            item.orbitPathAu = keplerOrbitPathAu(
+                body,
+                parentDef != definitionById.end() ? parentDef->second : nullptr,
+                body.type == BodyType::Moon ? 96 : 192);
+        }
         item.ringPlaneInclinationOffsetDeg =
             body.ringPlaneInclinationOffsetDeg;
         item.ringVisual =

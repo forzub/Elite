@@ -185,6 +185,44 @@ void SystemMapSceneRenderer::render(
 
     context.flushLines(mvp);
 
+    /*
+        Kepler orbits: the real ellipse in its own plane, relative to the
+        parent or barycentre (binary components included), from the shared
+        orbital contract. Only bodies without Kepler elements use radius a.
+    */
+    const auto addOrbitPath =
+        [&](const world::celestial::SystemMapBody& body, const glm::vec4& color)
+        {
+            const glm::dvec3 center = auToMapUnits(body.orbitCenterAu);
+            for (std::size_t k = 1; k < body.orbitPathAu.size(); ++k)
+            {
+                context.addLine(
+                    toRenderPos(center + auToMapUnits(body.orbitPathAu[k - 1])),
+                    toRenderPos(center + auToMapUnits(body.orbitPathAu[k])),
+                    color);
+            }
+        };
+
+    context.beginLines();
+
+    for (const auto& body : bodies)
+    {
+        if ((body.type != BodyType::Planet && body.type != BodyType::Star) ||
+            !body.drawOrbit ||
+            body.orbitPathAu.empty())
+        {
+            continue;
+        }
+
+        addOrbitPath(
+            body,
+            body.type == BodyType::Star
+                ? viewState.visuals().scene.planetOrbitColor * glm::vec4(1.0f, 0.9f, 0.6f, 0.8f)
+                : viewState.visuals().scene.planetOrbitColor);
+    }
+
+    context.flushLines(mvp);
+
     context.beginGpuCircles();
 
     for (const auto& body : bodies)
@@ -196,7 +234,8 @@ void SystemMapSceneRenderer::render(
         }
 
         if (!body.drawOrbit ||
-            body.orbitRadiusAu <= 0.0)
+            body.orbitRadiusAu <= 0.0 ||
+            !body.orbitPathAu.empty())
         {
             continue;
         }
@@ -408,13 +447,28 @@ void SystemMapSceneRenderer::render(
         satellite hierarchy, while moon geometry is still drawn
         afterwards and remains visually dominant at its position.
     */
+    context.beginLines();
+
+    for (const auto& body : bodies)
+    {
+        if (body.type == BodyType::Moon &&
+            body.drawOrbit &&
+            !body.orbitPathAu.empty())
+        {
+            addOrbitPath(body, viewState.visuals().scene.moonOrbitColor);
+        }
+    }
+
+    context.flushLines(mvp);
+
     context.beginGpuCircles();
 
     for (const auto& body : bodies)
     {
         if (body.type != BodyType::Moon ||
             !body.drawOrbit ||
-            body.orbitRadiusAu <= 0.0)
+            body.orbitRadiusAu <= 0.0 ||
+            !body.orbitPathAu.empty())
         {
             continue;
         }

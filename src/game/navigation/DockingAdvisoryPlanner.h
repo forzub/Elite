@@ -15,6 +15,8 @@ struct DockingAdvisoryRequest
     glm::dvec3 outward {0.0, 0.0, 1.0};
     double standoffMeters = 300.0;
     double hullRadiusMeters = 0.0;
+    // Added to the hull radius for obstacle clearance only (not volumes).
+    double obstacleExecutionClearanceMeters = 0.0;
     double maxSpeedMps = 100.0;
     double acceleratingMps2 = 5.0;
     double brakingMps2 = 5.0;

@@ -430,6 +430,10 @@ private:
 
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
+    // Newtonian: failed planning/handoff attempts of the current request
+    // that were turned into a coast-and-replan instead of a final failure.
+    int m_newtonianRouteRecoveries = 0;
+    double m_newtonianLastRecoveryServerSeconds = -1.0e9;
     std::string m_dockingGuidanceFailureReason;
     // Presentation/diagnostic warning only. Never participates in control.
     std::string m_dockingStatusWarning;

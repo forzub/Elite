@@ -276,7 +276,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
 
     const auto clear = [&](const glm::dvec3& a,const glm::dvec3& b)
     { return world::navigation::segmentClearOfNavigationObstacles(
-        a,b,r.obstacles,r.hullRadiusMeters); };
+        a,b,r.obstacles,
+        r.hullRadiusMeters + std::max(0.0, r.obstacleExecutionClearanceMeters)); };
 
     const auto firstBlockingObstacle =
         [&](const glm::dvec3& a,
@@ -289,7 +290,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
                         a,
                         b,
                         obstacle,
-                        r.hullRadiusMeters))
+                        r.hullRadiusMeters +
+                            std::max(0.0, r.obstacleExecutionClearanceMeters)))
                 {
                     return &obstacle;
                 }
@@ -431,7 +433,8 @@ DockingAdvisoryPlan DockingAdvisoryPlanner::plan(const DockingAdvisoryRequest& r
     search.startMeters = routeSearchStart;
     search.goalMeters = align;
     search.obstacles = r.obstacles;
-    search.params.agentRadiusMeters = r.hullRadiusMeters;
+    search.params.agentRadiusMeters = r.hullRadiusMeters +
+        std::max(0.0, r.obstacleExecutionClearanceMeters);
     search.params.maxConsideredObstacles = 48;
 
     const auto exactStraightForLeg =

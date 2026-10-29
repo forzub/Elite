@@ -52,6 +52,10 @@ struct RouteRequestCapabilityResult
     request.newtonianFlipSeconds =
         law == LocalFlightControlLaw::Newtonian && facts
             ? autopilot::newtonianFlipLeadSeconds(*facts) : 0.0;
+    // Newtonian: obstacles are cleared by the pilot's ordinary maximum
+    // cross-track (healthy flights: 18-22 m), not only by the hull radius.
+    request.obstacleExecutionClearanceMeters =
+        law == LocalFlightControlLaw::Newtonian ? 20.0 : 0.0;
     const bool assisted = law == LocalFlightControlLaw::Assisted;
     const double linearReserve =
         DockingAutomaticRecoveryPolicy::linearFeedbackReserveMps2(

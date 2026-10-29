@@ -850,6 +850,8 @@ RoutePlan RoutePlanner::plan(const RoutePlanRequest& input)
             input.terminalReferenceDistanceMeters;
 
     legacy.hullRadiusMeters = input.agentRadiusMeters;
+    legacy.obstacleExecutionClearanceMeters =
+        std::max(0.0, input.obstacleExecutionClearanceMeters);
     legacy.maxSpeedMps = input.maxSpeedMps;
     legacy.acceleratingMps2 = input.acceleratingMps2;
     legacy.brakingMps2 = input.brakingMps2;

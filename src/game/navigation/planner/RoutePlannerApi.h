@@ -113,6 +113,12 @@ struct RoutePlanRequest
     // long enough for the flip and the brake. 0 = not applicable.
     double newtonianFlipSeconds = 0.0;
 
+    // Extra clearance kept from obstacles (spheres/boxes) beyond the hull
+    // radius: the executor's ordinary cross-track deviation, so a flown
+    // route does not graze what the planned one just cleared. Volumes and
+    // narrow zones keep their own exact hull fit. 0 = hull radius only.
+    double obstacleExecutionClearanceMeters = 0.0;
+
     // Required/expected speed state at the route endpoint. Zero is the normal
     // terminal/docking default. Segmented traffic legs must publish their real
     // handoff speed here so geometry is optimized for the speed that will

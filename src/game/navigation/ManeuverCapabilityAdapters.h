@@ -61,10 +61,16 @@ makeManeuverExecutionAuthority(
         // flip-and-burn. Path-normal acceleration is the ship's preferred
         // routine lateral capability; which actuator delivers it is the
         // pilot's choice, not the trajectory's.
-        out.forwardAccelerationMps2 =
-            newtonian.plannedVectorAccelerationMps2;
-        out.brakingAccelerationMps2 =
-            newtonian.plannedVectorAccelerationMps2;
+        // Straight-line ramps (step J): the 20 % feedback reserve stays the
+        // executor's catch-up headroom and the route profile applies its
+        // planning share; the execution share is NOT stacked on top of both
+        // for the longitudinal ramps (0.68 instead of 0.61 of the main).
+        // Path-normal (curve) authority keeps it: curves keep their margin.
+        const double longitudinal =
+            game::navigation::newtonian::makeExecutionAuthority(
+                params, 1.0).plannedVectorAccelerationMps2;
+        out.forwardAccelerationMps2 = longitudinal;
+        out.brakingAccelerationMps2 = longitudinal;
         out.lateralAccelerationMps2 =
             newtonianPreferredLateralAccelerationMps2(
                 newtonian.plannedVectorAccelerationMps2

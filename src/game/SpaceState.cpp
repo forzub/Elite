@@ -2190,6 +2190,48 @@ void SpaceState::updateDockingAdvisory()
 
     const auto controlLaw =
         motion.localControlLaw;
+
+    // Newtonian: a failed attempt is not the end of the request. The route
+    // is released, the craft coasts on a neutral command (no stale command
+    // keeps burning) and the request is planned again from the actual
+    // state; only after a bounded number of attempts is the failure final,
+    // with its reason. Assisted: unchanged (fails as before).
+    const auto recoverOrFail = [&](const std::string& reason)
+    {
+        constexpr int MaxNewtonianRouteRecoveries = 5;
+        if (controlLaw != game::navigation::LocalFlightControlLaw::Newtonian ||
+            !pending.valid() ||
+            m_newtonianRouteRecoveries >= MaxNewtonianRouteRecoveries)
+        {
+            fail(reason);
+            return;
+        }
+        // Attempts count at most every few seconds: a refusal that repeats
+        // every frame (reactors restarting, low gas) keeps the craft safe
+        // and searching instead of using the budget up at once.
+        constexpr double RecoveryIntervalSeconds = 5.0;
+        const double nowSeconds =
+            m_client->lastSimulationMetadata().serverTimeSeconds;
+        if (nowSeconds - m_newtonianLastRecoveryServerSeconds >=
+                RecoveryIntervalSeconds)
+        {
+            m_newtonianLastRecoveryServerSeconds = nowSeconds;
+            ++m_newtonianRouteRecoveries;
+            std::cerr << "[DockClient] request=" << pending.serial
+                << " phase=recover attempt=" << m_newtonianRouteRecoveries
+                << "/" << MaxNewtonianRouteRecoveries
+                << " reason=" << reason << std::endl;
+        }
+        releaseClientAutopilot();
+        m_clientAutopilotControl = ShipControlState {};
+        m_clientAutopilotControlActive = true;
+        m_client->submitInput(m_clientAutopilotControl);
+        m_dockAdviceJob.reset();
+        m_dockLateEntry = {};
+        m_dockSafeCourse = {};
+        m_clientDockingPhase = ClientDockingPhase::Stabilizing;
+        m_clientDockingSettledSinceServerSeconds = -1.0;
+    };
     if (pending.valid() &&
         controlLaw == game::navigation::LocalFlightControlLaw::Newtonian)
     {
@@ -2634,6 +2676,8 @@ void SpaceState::updateDockingAdvisory()
         releaseClientAutopilot();
 
         m_lastDockingPathRequestSerial = pending.serial;
+        m_newtonianRouteRecoveries = 0;
+        m_newtonianLastRecoveryServerSeconds = -1.0e9;
         m_lastDockingRequestTraceSerial = pending.serial;
         m_dockLateEntry = {};
         m_dockAssistedSafeRecovery = {};
@@ -3233,7 +3277,7 @@ void SpaceState::updateDockingAdvisory()
             );
         if (!requestCapability.ok)
         {
-            fail("PhysicallyImpossible: " + requestCapability.reason);
+            recoverOrFail("PhysicallyImpossible: " + requestCapability.reason);
             return;
         }
         const double executionCurveLateralMps2 =
@@ -4743,7 +4787,7 @@ void SpaceState::updateDockingAdvisory()
                 universeTimelineRevision !=
                 job->timelineRevision)
         {
-            fail("planning snapshot expired");
+            recoverOrFail("planning snapshot expired");
             return;
         }
 
@@ -4785,7 +4829,7 @@ void SpaceState::updateDockingAdvisory()
                 return;
             }
 
-            fail(reason);
+            recoverOrFail(reason);
             return;
         }
 
@@ -4902,7 +4946,7 @@ void SpaceState::updateDockingAdvisory()
                             << " along_m=" << prefix.alongMeters
                             << " cross_m=" << prefix.crossTrackMeters
                             << std::endl;
-                        fail("dock entry connector handoff did not converge");
+                        recoverOrFail("dock entry connector handoff did not converge");
                         return;
                     }
                     m_dockLateEntry.leadSeconds =
@@ -4950,7 +4994,7 @@ void SpaceState::updateDockingAdvisory()
 
                 if (!backbone.valid)
                 {
-                    fail(
+                    recoverOrFail(
                         "late-bound route entry unavailable: " +
                         backbone.failure
                     );
@@ -5145,7 +5189,7 @@ void SpaceState::updateDockingAdvisory()
                     << m_dockAdvice.plan.executionGates.front().forward.z << ")"
                     << std::endl;
 
-                fail(
+                recoverOrFail(
                     "client autopilot could not accept planner route: " +
                     (job->autopilotCompileFailure.empty()
                         ? std::string("unknown-start-failure")

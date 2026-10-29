@@ -324,6 +324,24 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
     audit. `elite_universe_regeneration_report.md` predates stage 2 (stale).
   - Sol trojan files keep ASCII names "trojans.json" / "trojans_2.json".
 
+### Frame hitch during route flights (2026-10-29, user report: short freezes every 1-3 s in tunnels)
+- Measured with the new `core/HitchProfiler.h` (ELITE_TRACE_RUNTIME=1, prints
+  phase marks of frames > 80 ms): 85-115 ms frames every ~1.5 s, 36 of 38 in
+  NewtonianClientAutopilot::update -> recomputeRuntimeSpeedSuffix ->
+  insertThrustReversalCoast (24-step bisection per remaining route sample at
+  every checkpoint, ~75 ms in the Debug build). Rendering is NOT the cause
+  (scene prepare ~4.5 ms, main ~2 ms, rear ~2.3 ms, HUD ~2.2 ms, ~73 draw calls).
+- Fix `b47d682b`, bit-identical: galloping window search + per-thread cache of
+  unchanged braking suffixes. Offline scenario matrix 126 runs identical to the
+  pre-change baseline (baseline 90/126 PASS, unchanged). In game: 0 frames
+  > 80 ms during flight (2 at session start). SpaceState.cpp needs
+  `-Wa,-mbig-obj` (COFF section limit).
+- Remaining cheapening candidates (not done): docking corridor presentation
+  rebuilt every frame for ~3300 gates x 2 routes (~6.5-8 ms/frame);
+  handOverManoeuvreRoute recompile ~16-18 ms on off-profile checkpoints
+  (main thread); scene prepare collects debug assemblies every frame; the
+  game runs a Debug -O0 build (RelWithDebInfo would cut most costs; user call).
+
 ### Next step
 - Stage 2 (user 30-point task) implemented; waiting for the user's visual
   review of the Galaxy Map (domain cubes, ISM volumes) and the System Map

@@ -1038,7 +1038,7 @@ bool enrichDescriptorFromPhysicalAtlas(
         return false;
 
     // This is a derived in-memory value.
-    // Source of truth remains galaxy_details/systems_details/*.json / details / diameter_km.
+    // Source of truth remains the physical catalog galaxy_details/systems/*/generated (radius_km).
     desc.referenceRadiusKm = body->radiusKm;
 
     std::cout
@@ -1048,7 +1048,7 @@ bool enrichDescriptorFromPhysicalAtlas(
         << desc.bodyFolderName
         << " radius_km="
         << body->radiusKm
-        << " source=galaxy_details/systems_details"
+        << " source=galaxy_details/systems"
         << "\n";
 
     return true;
@@ -3694,7 +3694,7 @@ json descriptorToJson(const CelestialBodyVisualDescriptor& d)
         { "source_path", kGalaxyDetailsRoot },
         { "source_field", "details.*.diameter_km" },
         { "derivation", "reference_radius_km = diameter_km * 0.5" },
-        { "authoritative_layer", "galaxy_details/systems_details" }
+        { "authoritative_layer", "galaxy_details/systems" }
     };
 
     j["notes"] = d.notes;

@@ -1,5 +1,5 @@
 {
-  "profile_count": 39,
+  "profile_count": 36,
   "systems": {
     "sol": {
       "count": 36,
@@ -40,14 +40,6 @@
         "umbriel",
         "uranus",
         "venus"
-      ]
-    },
-    "tau_ceti": {
-      "count": 3,
-      "bodies": [
-        "tau_ceti_e",
-        "tau_ceti_e_i",
-        "tau_ceti_f"
       ]
     }
   }

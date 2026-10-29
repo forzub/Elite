@@ -46,7 +46,7 @@ void applyCommonOverrides(
     
         // Physical radius is intentionally NOT loaded from body_visuals.
     // The only authoritative source for body size is:
-    // src/assets/data/galaxy_details/systems_details/*.json
+    // src/assets/data/galaxy_details/systems/*/generated (physical catalog)
     //
     // CelestialTextureBaker enriches descriptors from StarAtlasDatabase before baking.
     // Keeping radius out of body_visuals prevents duplicated physical data.

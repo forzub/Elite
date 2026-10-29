@@ -4,7 +4,7 @@ This directory contains runtime assets and source data copied into the build tre
 
 ## Galaxy data
 
-- `data/galaxy_details/systems_details/*.json` is the only physical star-system catalog. Each file owns both galactic summary data and internal celestial-body details.
+- `data/galaxy_details/systems/<NNN>_<slug>/` (and `distant_systems/`) is the only physical star-system catalog: one directory per system with authored inputs and the generator-owned `generated/` bodies (see `data/galaxy_details/README.md`).
 - `data/galaxy_details/objects_details/*.json` contains automatically discovered free interstellar objects.
 - `data/galaxy/systems.json` remains a separate political/navigation layer used by `GalaxyDatabase`; it is not a physical star-system catalog.
 - `data/galaxy/real_star_catalog.json` contains only the extended real-star background. Game systems are merged into it at runtime from `galaxy_details`.

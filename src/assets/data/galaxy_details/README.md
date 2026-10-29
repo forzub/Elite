@@ -1,40 +1,60 @@
-# Galaxy details catalog
+# Galaxy details catalog (physical universe)
 
-This directory is the authoritative physical catalog for star systems and free interstellar objects.
+This directory is the authoritative physical catalog of star systems. It is
+read identically by the client and the server (`StarAtlasDatabase`, catalog
+schema 2, content fingerprint) and feeds the Galaxy Map, System / Detail /
+Hub maps, the celestial runtime and the gravity field. There is one position
+and one set of bodies per system; maps and flight never see different worlds.
 
-- `systems_details/*.json`: 60 local star systems shown in the ordinary Galaxy Atlas and decorative starfield.
-- `distant_systems_details/*.json`: distant quest and long-range route destinations. They are loaded and searchable, but hidden from the ordinary atlas.
-- `objects_details/*.json`: free interstellar objects such as rogue planets, brown dwarfs, comets, nebulae, anomalies, derelicts and deep-space stations.
-- `migration_review/`: preserved legacy records that still cannot be matched safely to an active system.
+## Layout: one system = one directory
 
-A star-system file owns both its galactic summary and its internal celestial-body details. `id`, `name` and `position_ly` must not be duplicated elsewhere.
+```text
+systems/<NNN>_<slug>/            60 local systems (Galaxy Atlas)
+distant_systems/<id>_<slug>/     distant quest / route destinations (id >= 100000, hidden from the atlas)
+    system.json                  INPUT  identity, ICRS position, catalog flags, stellar hierarchy,
+                                        survey completeness, reserved designations
+    stars/<key>.json             INPUT  one stellar component each, {"value", "source"} per number
+    observed/<kind>_<slug>.json  INPUT  observational anchors (NASA Exoplanet Archive) / authored Sol bodies
+    generated/                   OUTPUT of src/world/generation, replaced as a whole
+        system.json              galactic context, present-day stars, barycenters, disks, stability report
+        bodies/<kind>_<slug>.json planets, dwarf planets, moons (physical, thermal, atmosphere, surface descriptor)
+        reservoirs/<slug>.json   asteroid / outer belts, debris disks, comet clouds, trojans (statistical)
+objects_details/*.json           free interstellar objects (schema kind "galaxy_object")
+```
 
-`position_ly` is the only source of truth for galactic distance. Do not add `distance_ly` to a system document: distance is derived as `length(position_ly)` by consumers. The loader rejects a stored `distance_ly` field so coordinates and displayed distance cannot diverge again.
+Inputs are owned by the catalog author; `generated/` is owned by the generator
+and never edited by hand. Regenerate with the DEV tool:
 
-The loader rejects malformed files, unsupported schema versions, duplicate system IDs, duplicate normalized system names, identical system coordinates, inconsistent `stars_count`, and duplicate galaxy-object IDs.
+```bash
+build/headless_server/EliteUniverseGenerator.exe materialize src/assets/data/galaxy_details
+build/headless_server/EliteUniverseGenerator.exe determinism src/assets/data/galaxy_details
+```
 
-## Observational data versus the 3026 game model
+The same UniverseSeed + generator versions + inputs always give the same files
+(`determinism` regenerates in forward and reverse order and compares bytes).
 
-For systems corrected from the NASA Exoplanet Archive, `observational_reference_2026` records the current observation status and source. Objects marked `procedural_future_gameplay` belong to the simulated year 3026 and must not be interpreted as NASA-confirmed planets in 2026.
+## Identity contract
 
-Radial-velocity detections often provide only minimum mass (`M sin i`) and no physical radius. In that case `diameter_km` remains `0.0`; the catalog does not invent a physical radius. A separate rendering policy can later provide a non-physical marker or display proxy without contaminating the scientific fields.
+- System ids are the physical StarAtlas ids (0-60 without 18, distant 100062).
+  The political `assets/data/galaxy/systems.json` ids are a separate namespace.
+- Runtime body ids: star `system_<id>.<Name>`, planet `<parent id>.<Designation>`,
+  moon `<planet id>.<Designation>` (spaces and `()/\` become `_`), barycenter
+  `system_<id>.barycenter[_<node>]`, reservoir `<parent id>.<kind>`.
+- Observed planets keep their catalogue designation; procedural planets take
+  the next free letters (catalogued designations, also refuted ones, stay
+  reserved). Sol keeps its legacy names, so `system_0.Sol.Земля` etc. are stable.
 
-## Corrected migration facts
+## Positions
 
-- `Alpha Centauri A+B` contains only the G2 V and K1 V components. Proxima Centauri is system 60 and has its own coordinates.
-- System 20 (`HD 93083`, alias `GJ 1137`) now contains the two planets listed as confirmed by NASA in 2026: `GJ 1137 c` and `HD 93083 b`.
-- System 60 (`Proxima Centauri`) now contains confirmed planets b and d plus candidate c, with separate ICRS-derived Cartesian coordinates.
-- System 39 is the canonical nearby `HD 114613`. NASA classifies the old `HD 114613 b` radial-velocity signal as a false positive; the retained 3026 bodies are explicitly marked as procedural gameplay data.
-- `Kepler-62` is loaded from `distant_systems_details/100062_kepler_62.json` as a hidden quest destination. It is available to route and quest code but is not emitted by the current local Galaxy Atlas snapshot.
+`position_ly` is ICRS (J2000) Cartesian light-years from Sol:
+x = d cos(dec) cos(ra), y = d cos(dec) sin(ra), z = d sin(dec). It is the only
+source of distance; a stored `distance_ly` is rejected. `position_source`
+names the catalogue identifier; `legacy_position_ly` keeps the pre-2026-10-29
+value for the migration record.
 
-## Unresolved legacy slot
+## History
 
-The duplicate physical record formerly loaded as system ID 18 has been moved to `migration_review/018_duplicate_hd_114613.json`. NASA data identify system ID 39 as the canonical nearby HD 114613. The intended astronomical identity of physical slot 18 cannot be recovered from the legacy files, so the active physical catalog currently contains 60 unique systems and intentionally leaves ID 18 unused.
-
-`assets/data/galaxy/systems.json` and `nodes.json` belong to the separate political `GalaxyDatabase` layer. Their `systemId` values are local to that dataset and are not StarAtlas physical IDs.
-
-## Distant-system visibility
-
-`StarAtlasDatabase::systems()` contains only the 60 local systems. The current Galaxy Map and starfield use this local collection, so distant quest destinations do not clutter the ordinary atlas.
-
-`StarAtlasDatabase::distantSystems()`, `findSystemSummary()` and `findSystem()` expose distant systems to quest logic, generation-ship routing and future long-range navigation layers.
+The legacy flat documents (`systems_details/`, `distant_systems_details/`,
+`migration_review/`) were replaced on 2026-10-29; they remain in git history.
+Their planets were not used as inputs (most were fictional); see
+`tools/universe_generator/` and PROJECT_STATE.md.

@@ -194,7 +194,7 @@ namespace world::celestial
         double textureLongitudeOffsetDeg = 0.0;
 
         // Пока цвет fallback-овый.
-        // Потом можно брать из galaxy_details/systems_details, если поле цвета есть.
+        // Потом можно брать из galaxy_details/systems/*/generated, если поле цвета есть.
         glm::vec4 color {0.6f, 0.8f, 1.0f, 1.0f};
 
         double ringPlaneInclinationOffsetDeg = 0.0;

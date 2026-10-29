@@ -368,11 +368,10 @@ namespace
         int systemId
     )
     {
+        // Authored per-body visuals exist only for the observed Solar System;
+        // generated bodies use their environment preset.
         if (systemId == 0)
             return "sol";
-
-        if (systemId == 8)
-            return "tau_ceti";
 
         return "";
     }

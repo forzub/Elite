@@ -956,6 +956,28 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteNavigationCapabilityCheck PRIVATE ws2_32 mswsock)
     endif()
+
+    # DEV check: emergency thermal coupling on the production ShipCore.
+    add_executable(EliteShipThermalCheck
+        tools/navigation_runtime/ShipThermalCheck.cpp
+        ${ELITE_SERVER_SIMULATION_SOURCES}
+    )
+    target_include_directories(EliteShipThermalCheck PRIVATE src)
+    target_link_libraries(EliteShipThermalCheck PRIVATE
+        EliteNavigationGeometry
+        EliteNavigationWorldRuntime
+        EliteDockingInfrastructure
+        EliteManeuverDecision
+        EliteNavigationRuckig
+        EliteAssemblyGeometry
+        EliteRuntimeModelAssets
+        EliteBite
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+    if(WIN32)
+        target_link_libraries(EliteShipThermalCheck PRIVATE ws2_32 mswsock)
+    endif()
 endif()
 
 

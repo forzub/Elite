@@ -1271,9 +1271,24 @@ if (const char* rawModel =
         "ship_service_reactor";
     desc.powerThermalInstallation.commonCoolingModuleId =
         "ship_common_cooling";
+    // Emergency PROPULSION -> SERVICES heat exchanger (equipment rating, not a
+    // universe law): 60 MW at most, 0.25 MW/K conductance, its pump moves
+    // 20 MW of heat per electrical MW (3 MW pump, service bus). Opens only
+    // when an ER-5 runs hot: above the midpoint between its operating
+    // (2500 K) and safe (2750 K) temperatures, closes again at 2550 K. The
+    // rating is ~8 % of one ER-5 pad (726 MW): survival, not rated thrust.
+    desc.powerThermalInstallation.emergencyHeatExchangerModuleId =
+        "propulsion_emergency_heat_exchanger";
+    desc.powerThermalInstallation.emergencyHeatExchanger.maxTransferMW = 60.0;
+    desc.powerThermalInstallation.emergencyHeatExchanger.conductanceMWperK = 0.25;
+    desc.powerThermalInstallation.emergencyHeatExchanger.pumpTransferMWPerElectricalMW = 20.0;
+    desc.powerThermalInstallation.emergencyHeatExchanger.maxPumpElectricalMW = 3.0;
+    desc.powerThermalInstallation.emergencyHeatExchanger.engageSourceK = 2625.0;
+    desc.powerThermalInstallation.emergencyHeatExchanger.releaseSourceK = 2550.0;
     for (const auto& service :
             {desc.powerThermalInstallation.shipReactorModuleId,
-             desc.powerThermalInstallation.commonCoolingModuleId})
+             desc.powerThermalInstallation.commonCoolingModuleId,
+             desc.powerThermalInstallation.emergencyHeatExchangerModuleId})
     {
         ModuleDescriptor m;
         m.moduleId = service;

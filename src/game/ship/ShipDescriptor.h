@@ -5,6 +5,7 @@
 
 
 #pragma once
+#include "src/game/equipment/reactor/EmergencyThermalBridge.h"
 #include <glm/glm.hpp>
 #include <string>
 #include <optional>
@@ -131,6 +132,17 @@ struct ShipPowerThermalInstallationBinding
     std::vector<std::string> engineReactorModuleIds;
     std::string shipReactorModuleId;
     std::string commonCoolingModuleId;
+
+    // Emergency thermal coupling PROPULSION -> SHIP SERVICES: a normally
+    // isolated heat exchanger with its own pump, installed as a real module
+    // (its damage is its authority). Heat only - never an electrical link.
+    // Empty id = not installed.
+    std::string emergencyHeatExchangerModuleId;
+    game::equipment::reactor::EmergencyThermalBridgeDescriptor emergencyHeatExchanger {};
+    // The service coolant accepts emergency heat only below these fractions
+    // of its critical temperature (open below, forced closed above).
+    double emergencySinkOpenBelowCritical01 = 0.90;
+    double emergencySinkCloseAboveCritical01 = 0.97;
 };
 
 struct CockpitData

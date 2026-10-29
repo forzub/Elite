@@ -289,6 +289,12 @@ public:
 
     const world::modules::ObjectModuleRuntime& moduleRuntime() const { return m_moduleRuntime; }
     world::modules::ObjectModuleRuntime& moduleRuntime() { return m_moduleRuntime; }
+    // Emergency PROPULSION -> SERVICES exchanger: heat moved last tick (MW).
+    double emergencyBridgeTransferMW() const { return m_emergencyBridgeTransferMW; }
+    double serviceCoolantTemperatureK() const { return m_thermal.getTemperature(); }
+    double serviceCoolantCriticalTemperatureK() const { return m_thermal.getCriticalTemp(); }
+    // DEV checks only (EliteShipThermalCheck).
+    void debugSetServiceCoolantTemperatureK(double k) { m_thermal.setTemperature(k); }
 
     void initModuleRuntime();
     void syncDestroyedModulesFromHitVolumes();
@@ -423,6 +429,10 @@ private:
     ReactorSystem                               m_reactor;  // временный пустой дескриптор
     ThermalSystem                               m_thermal;        // ship service coolant
     ThermalSystem                               m_propulsionThermal; // independent propulsion coolant
+    // Emergency PROPULSION -> SERVICES heat exchanger (installed module).
+    game::equipment::reactor::EmergencyThermalBridgeState m_emergencyBridge {};
+    double m_emergencyBridgePumpMW = 0.0;      // service-bus draw of its pump (last tick)
+    double m_emergencyBridgeTransferMW = 0.0;  // heat moved last tick
     CoolingSystem                               m_cooling;                        // будет инициализирован позже
     PowerBus                                    m_powerBus;                       // будет инициализирован позже
 

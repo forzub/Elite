@@ -40,8 +40,9 @@ void ShipCore::updateSystems(float dt)
     const double serviceThrottleBeforeBus=m_reactor.getThrottle();
     const double serviceOutputBeforeBusMW=m_reactor.getCurrentOutput();
     // RCS is powered by the installed ER-5 group, not the independent
-    // 70-MW service reactor. Do not double-charge RCS to both buses.
-    m_powerBus.setAuxiliaryDemandMW(0.0);
+    // 70-MW service reactor. Do not double-charge RCS to both buses. The only
+    // auxiliary service load is the emergency heat exchanger's pump.
+    m_powerBus.setAuxiliaryDemandMW(m_emergencyBridgePumpMW);
     m_powerBus.update(
         m_propulsionReactorsOn &&
         m_propulsionReactorsStartupRemainingSeconds<=0.0);
@@ -170,6 +171,65 @@ void ShipCore::updateSystems(float dt)
         const auto& engineIds=m_desc->physicalControl.slotModuleIds;
         const auto& motors=m_transform.motion.engineTelemetry;
         bool reactorDamageChanged=false;
+
+        /*
+            Emergency thermal coupling PROPULSION -> SHIP SERVICES. A normally
+            isolated exchanger (installed module, its damage = authority)
+            removes ER-5 heat that the ER-5's own pad cannot reject, into the
+            SERVICE coolant. The transfer is bounded at once by the exchanger
+            rating and temperature gradient, its pump (service-bus power), the
+            service radiators' headroom at the coolant's close temperature,
+            the coolant temperature interlock and the heat really extractable
+            from the reactors; whatever the sink cannot accept stays in the
+            ER-5 (derating, damage, shutdown). Each MJ leaves the ER-5 and
+            enters the coolant exactly once.
+        */
+        double bridgeBudgetMW=0.0;
+        {
+            const auto& install=m_desc->powerThermalInstallation;
+            const auto* exchanger=install.emergencyHeatExchangerModuleId.empty()
+                ? nullptr
+                : m_moduleRuntime.findModule(install.emergencyHeatExchangerModuleId);
+            double hottestK=0.0, extractableMW=0.0;
+            for(std::size_t g=0;g<generators.size() && g<reactorIds.size();++g)
+            {
+                const auto* module=m_moduleRuntime.findModule(reactorIds[g]);
+                const auto def=std::find_if(
+                    m_desc->modules.begin(),m_desc->modules.end(),
+                    [&](const auto& item){return item.moduleId==reactorIds[g];});
+                if(!module || def==m_desc->modules.end() || !def->engineReactor)
+                    continue;
+                const auto& st=module->engineReactorOperating;
+                hottestK=std::max(hottestK,st.temperatureK);
+                extractableMW+=std::max(0.0,st.temperatureK-def->engineReactor->idleTemperatureK)*
+                    def->engineReactor->thermalCapacityMJPerK/std::max(1.0e-6,static_cast<double>(dt));
+            }
+            game::equipment::reactor::EmergencyThermalBridgeInput in;
+            in.sourceK=hottestK;
+            in.sinkK=m_thermal.getTemperature();
+            in.authority01=0.0;
+            if(exchanger && exchanger->state==world::modules::ObjectModuleRuntimeState::Attached &&
+               exchanger->health>0.0f)
+                in.authority01=std::clamp(1.0-game::equipment::totalAccumulatedDamage01(
+                    exchanger->equipmentDamage.accumulated),0.0,1.0);
+            // The pump runs on spare service power (its own last draw included).
+            in.pumpPowerAvailableMW=std::max(0.0,
+                m_reactor.getMaxOutput()-m_reactor.getCurrentOutput()+m_emergencyBridgePumpMW);
+            const double critical=m_thermal.getCriticalTemp();
+            in.sinkOpenBelowK=critical*install.emergencySinkOpenBelowCritical01;
+            in.sinkCloseAboveK=critical*install.emergencySinkCloseAboveCritical01;
+            // Radiator headroom: what the service radiators can reject at the
+            // coolant close temperature minus the service heat of this tick.
+            in.sinkHeadroomMW=std::max(0.0,
+                m_cooling.calculateRadiatedPower(in.sinkCloseAboveK)-
+                m_thermal.getHeatVolume()/std::max(1.0e-6,static_cast<double>(dt)));
+            in.sourceExtractableMW=extractableMW;
+            const auto bridge=game::equipment::reactor::advanceEmergencyThermalBridge(
+                install.emergencyHeatExchanger,m_emergencyBridge,
+                game::equipment::reactor::EmergencyThermalBridgeMode::Auto,in);
+            bridgeBudgetMW=bridge.transferMW;
+        }
+        double bridgeMovedMW=0.0;
         for(std::size_t g=0;g<generators.size() &&
             g<reactorIds.size();++g)
         {
@@ -210,7 +270,13 @@ void ShipCore::updateSystems(float dt)
                 installed && m_propulsionReactorsOn &&
                     m_propulsionReactorsStartupRemainingSeconds<=0.0
                     ? electricalMW:0.0,
-                padHeadroomMW,0.0,static_cast<double>(dt));
+                padHeadroomMW,
+                std::max(0.0,bridgeBudgetMW-bridgeMovedMW),
+                static_cast<double>(dt));
+            // Exactly the heat the reactor gave up enters the service coolant.
+            bridgeMovedMW+=tick.overflowToSharedCoolantMW;
+            if(tick.overflowToSharedCoolantMW>0.0)
+                m_thermal.addHeat(tick.overflowToSharedCoolantMW*dt);
             if(tick.catastrophic)
             {
                 std::cerr<<"[ER5_CATASTROPHE] module="<<reactorIds[g]
@@ -248,6 +314,14 @@ void ShipCore::updateSystems(float dt)
         }
         if(reactorDamageChanged)
             refreshRuntimeState();
+        // Pump draw follows the heat actually moved; its electrical energy
+        // ends as heat in the service coolant.
+        const auto& rating=m_desc->powerThermalInstallation.emergencyHeatExchanger;
+        m_emergencyBridgeTransferMW=bridgeMovedMW;
+        m_emergencyBridgePumpMW=bridgeMovedMW>0.0
+            ? bridgeMovedMW/std::max(1.0e-6,rating.pumpTransferMWPerElectricalMW) : 0.0;
+        if(m_emergencyBridgePumpMW>0.0)
+            m_thermal.addHeat(m_emergencyBridgePumpMW*dt);
     }
     // Newtonian's 24 real RCS units have independent operating clocks and
     // thermal state. The duty values come from the executed physical wrench,
@@ -288,8 +362,7 @@ void ShipCore::updateSystems(float dt)
         }
         if(changed) refreshRuntimeState();
     }
-    // No cross-circuit emergency valve is installed in this first migration.
-    // Preserve heat in propulsion modules/loop instead of silently deleting it.
+    // Service radiators run after the emergency exchanger deposited its heat.
     m_cooling.update(dt, m_thermal);
 
     // Read-only reconciliation trace for the user's D:/tmp acceptance.
@@ -390,7 +463,7 @@ void ShipCore::updateSystems(float dt)
                 <<','<<m_propulsionThermal.getStoredHeat()
                 <<','<<m_thermal.getStoredHeat()
                 <<','<<m_cooling.getRadiatorPotentialMW()
-                <<",0"; // No installed emergency exchanger yet.
+                <<","<<m_emergencyBridgeTransferMW;
             const auto& runtime=
                 static_cast<const world::modules::ObjectModuleRuntime&>(
                     m_moduleRuntime);

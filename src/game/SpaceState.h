@@ -430,6 +430,8 @@ private:
         m_clientNewtonianRouteAutopilot {};
 
     std::string m_activeDockingGuidanceCorridorId;
+    // Universe time of the last route-pilot step (-1: none yet).
+    double m_lastPilotUniverseSeconds = -1.0;
     // Plan-level caches of the two published docking corridors (execution
     // gates, spatial advisory frames).
     game::navigation::DockingCorridorPresentation m_dockExecutionCorridorPresentation;

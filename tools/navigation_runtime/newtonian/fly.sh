@@ -15,7 +15,7 @@ ELITE_AUTOPILOT_CASE_DUMP="$O/elite_${T}_case.txt" \
   ELITE_NEWTONIAN_POLICY_TRACE="$O/elite_${T}_decision.tsv" \
   ELITE_NEWTONIAN_EVENT_TRACE="$O/elite_${T}_events.tsv" \
   ELITE_SHIP_PHYSICAL_TEST_MODEL=$M \
- ./build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple \
+  "${ELITE_GAME_EXE:-./build/EliteGame.exe}" --dev-direct-flight --diagnostic-scenario nav-stress:simple \
    > "$O/elite_$T.stdout" 2> "$O/elite_$T.stderr" &
 # Stop exactly the instance started here (never other EliteGame windows).
 # No EliteGame ran before the launch (checked above), so the one running

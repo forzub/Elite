@@ -73,6 +73,7 @@ void SpaceState::updateDockingAdvisory()
     const auto releaseClientAutopilot = [&]()
     {
         m_clientAutopilotControlActive = false;
+        m_lastPilotUniverseSeconds = -1.0;
         m_clientAutopilotControl = {};
         m_clientDockingSettledSinceServerSeconds = -1.0;
         m_clientDockingAssistedStabilizePilotController.reset();
@@ -3267,6 +3268,7 @@ void SpaceState::updateDockingAdvisory()
             m_clientDockingPhase =
                 ClientDockingPhase::RouteReady;
             m_clientAutopilotControlActive = false;
+            m_lastPilotUniverseSeconds = -1.0;
             m_clientAutopilotControl = {};
             std::cerr
                 << "[DockClient] request=" << pending.serial
@@ -3560,13 +3562,34 @@ void SpaceState::updateDockingAdvisory()
         const double tunnelRollPhase =
             currentTunnelRollPhase(universeTimeSeconds);
 
+        /*
+            The route pilot is a fixed-step controller: it steps once per
+            authoritative simulation time that actually elapsed, never once
+            per render frame. (Stepping every frame with the server step made
+            the pilot clock run x2-2.7 at 100+ FPS and lag in slow frames; the
+            latest control sample persists in GameClient between steps.)
+        */
+        const double pilotElapsed =
+            m_lastPilotUniverseSeconds >= 0.0
+                ? universeTimeSeconds - m_lastPilotUniverseSeconds
+                : fixedDt;
+        const bool pilotStepDue =
+            pilotElapsed < 0.0 || pilotElapsed >= 0.5 * fixedDt;
+        if (pilotStepDue)
+        {
+        const double pilotDt =
+            pilotElapsed > 0.0 && pilotElapsed < 1.0
+                ? std::clamp(pilotElapsed, fixedDt, 4.0 * fixedDt)
+                : fixedDt;
+        m_lastPilotUniverseSeconds = universeTimeSeconds;
+
         if (controlLaw ==
             game::navigation::LocalFlightControlLaw::Assisted)
         {
             AssistedClientAutopilot::setLiveTunnelRollPhase(
                 m_clientAssistedRouteAutopilot,
                 tunnelRollPhase,
-                fixedDt
+                pilotDt
             );
             const auto output =
                 AssistedClientAutopilot::update(
@@ -3574,7 +3597,7 @@ void SpaceState::updateDockingAdvisory()
                     makeAgent(),
                     effectivePhysics,
                     universeTimeSeconds,
-                    fixedDt
+                    pilotDt
                 );
             if (!handleOutput(output))
                 return;
@@ -3584,7 +3607,7 @@ void SpaceState::updateDockingAdvisory()
             NewtonianClientAutopilot::setLiveTunnelRollPhase(
                 m_clientNewtonianRouteAutopilot,
                 tunnelRollPhase,
-                fixedDt
+                pilotDt
             );
             core::hitch::mark("dock_pre_autopilot");
             const auto output =
@@ -3593,11 +3616,12 @@ void SpaceState::updateDockingAdvisory()
                     makeAgent(),
                     effectivePhysics,
                     universeTimeSeconds,
-                    fixedDt
+                    pilotDt
                 );
             core::hitch::mark("dock_newtonian_autopilot_update");
             if (!handleOutput(output))
                 return;
+        }
         }
     }
 

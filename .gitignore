@@ -1,5 +1,6 @@
 # build artifacts
 /build/
+/build-relwithdebinfo/
 /out/
 /bin/
 /third_party/*

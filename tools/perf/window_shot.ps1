@@ -1,4 +1,7 @@
-# DEV: screenshot of ONE process window (the game), never the whole desktop.
+# DEV: picture of ONE process window (the game) rendered by the window itself
+# (PrintWindow, PW_RENDERFULLCONTENT). It never reads screen pixels, so other
+# applications' windows can never end up in the file, even when they cover
+# the game.
 # usage: powershell -File window_shot.ps1 -ProcessId PID -Out C:\path\shot.png
 param([int]$ProcessId, [string]$Out)
 Add-Type -AssemblyName System.Drawing
@@ -7,18 +10,18 @@ using System; using System.Runtime.InteropServices;
 public static class EliteWin {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
   [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
-  [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
-  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+  [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
 }
 "@
 $h = (Get-Process -Id $ProcessId).MainWindowHandle
 if ($h -eq [IntPtr]::Zero) { Write-Error "no window"; exit 1 }
 $r = New-Object EliteWin+RECT
 [void][EliteWin]::GetClientRect($h, [ref]$r)
-$p = New-Object EliteWin+POINT
-[void][EliteWin]::ClientToScreen($h, [ref]$p)
-$w = $r.R - $r.L; $hgt = $r.B - $r.T
-$bmp = New-Object System.Drawing.Bitmap $w, $hgt
+$bmp = New-Object System.Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
 $g = [System.Drawing.Graphics]::FromImage($bmp)
-$g.CopyFromScreen($p.X, $p.Y, 0, 0, (New-Object System.Drawing.Size $w, $hgt))
+$hdc = $g.GetHdc()
+# 1 = PW_CLIENTONLY, 2 = PW_RENDERFULLCONTENT
+$ok = [EliteWin]::PrintWindow($h, $hdc, 3)
+$g.ReleaseHdc($hdc)
+if (-not $ok) { Write-Error "PrintWindow failed"; exit 1 }
 $bmp.Save($Out)

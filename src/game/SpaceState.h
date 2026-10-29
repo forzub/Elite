@@ -48,6 +48,7 @@
 #include "src/audio/TerminalAudioAdapter.h"
 #include "src/game/presentation/DockingStatusTerminal.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
+#include "src/game/navigation/DockingCorridorPresentation.h"
 #include "src/game/navigation/debug/NavigationStressHarness.h"
 #include "src/game/debug/ShipRuntimeControlOracle.h"
 #include "src/game/debug/RuntimeScenarioSelection.h"
@@ -429,6 +430,10 @@ private:
         m_clientNewtonianRouteAutopilot {};
 
     std::string m_activeDockingGuidanceCorridorId;
+    // Plan-level caches of the two published docking corridors (execution
+    // gates, spatial advisory frames).
+    game::navigation::DockingCorridorPresentation m_dockExecutionCorridorPresentation;
+    game::navigation::DockingCorridorPresentation m_dockFramesCorridorPresentation;
     bool m_noSafeDockingGuidanceSolution = false;
     // Newtonian: failed planning/handoff attempts of the current request
     // that were turned into a coast-and-replan instead of a final failure.

@@ -3631,7 +3631,8 @@ void SpaceState::updateDockingAdvisory()
         currentTunnelRollPhase(renderTime);
 
     const auto makeRoute =
-        [&](const std::vector<
+        [&](game::navigation::DockingCorridorPresentation& presentation,
+            const std::vector<
                 game::navigation::planner::RouteGate>& routeGates,
             const std::vector<glm::dvec3>& routeFrameUp,
             const std::vector<double>& dockPhaseWeights,
@@ -3651,145 +3652,31 @@ void SpaceState::updateDockingAdvisory()
                 renderTime;
             route.spatialAdvisoryGates = sparseFrames;
             route.hubLocalFrameId = active.hubId;
-            route.frames.reserve(routeGates.size());
-            route.hubLocalGatePositionsMeters.reserve(
-                routeGates.size()
+
+            game::navigation::DockingCorridorPresentation::RouteInput input;
+            input.gates = &routeGates;
+            input.frameUp = &routeFrameUp;
+            input.dockPhaseWeights = &dockPhaseWeights;
+            input.routeUpReference = active.routeUpReference;
+            input.lateralToleranceMeters = active.lateralToleranceMeters;
+            input.verticalToleranceMeters = active.verticalToleranceMeters;
+            input.shipWidthMeters = active.shipWidthMeters;
+            input.shipHeightMeters = active.shipHeightMeters;
+            presentation.present(
+                route,
+                input,
+                game::navigation::dockingCorridorPlanKey(active.serial, input),
+                renderFrame,
+                renderTime,
+                dockRollPhaseRad
             );
-
-            for (std::size_t index = 0;
-                 index < routeGates.size();
-                 ++index)
-            {
-                const auto& gate = routeGates[index];
-                route.hubLocalGatePositionsMeters.push_back(
-                    gate.positionMeters
-                );
-
-                GuidanceFrame frameView;
-                frameView.universeTimeSeconds = renderTime;
-                frameView.centerMeters =
-                    renderFrame.localToWorldPosition(
-                        gate.positionMeters
-                    );
-
-                glm::dvec3 forward =
-                    renderFrame.localToWorldVector(
-                        gate.forward
-                    );
-                if (glm::length(forward) <= 1.0e-9)
-                    forward =
-                        glm::dvec3(0.0, 0.0, -1.0);
-                forward = glm::normalize(forward);
-
-                glm::dvec3 localFrameUp =
-                    index < routeFrameUp.size()
-                        ? routeFrameUp[index]
-                        : active.routeUpReference;
-
-                glm::dvec3 localForward = gate.forward;
-                if (glm::length(localForward) <= 1.0e-9)
-                    localForward = glm::dvec3(0.0, 0.0, -1.0);
-                localForward = glm::normalize(localForward);
-
-                // Dynamic dock roll belongs only to the
-                // terminal-owned part of the route. Traffic-volume stages
-                // retain their own frame; transition spans blend ownership.
-                const double dockPhaseWeight =
-                    index < dockPhaseWeights.size()
-                        ? std::clamp(
-                            dockPhaseWeights[index],
-                            0.0,
-                            1.0
-                          )
-                        : 1.0;
-                localFrameUp =
-                    game::navigation::RouteFrameField::
-                        rotateUpAroundForward(
-                            localForward,
-                            localFrameUp,
-                            dockRollPhaseRad * dockPhaseWeight
-                        );
-
-                glm::dvec3 up =
-                    renderFrame.localToWorldVector(
-                        localFrameUp
-                    );
-                up -=
-                    forward * glm::dot(up, forward);
-                if (glm::length(up) <= 1.0e-9)
-                {
-                    const glm::dvec3 seed =
-                        std::abs(forward.y) < 0.90
-                            ? glm::dvec3(0.0, 1.0, 0.0)
-                            : glm::dvec3(1.0, 0.0, 0.0);
-                    up =
-                        seed -
-                        forward *
-                            glm::dot(seed, forward);
-                }
-                up = glm::normalize(up);
-                const glm::dvec3 right =
-                    glm::normalize(
-                        glm::cross(forward, up)
-                    );
-                up =
-                    glm::normalize(
-                        glm::cross(right, forward)
-                    );
-
-                frameView.orientation =
-                    glm::normalize(
-                        glm::quat_cast(
-                            glm::dmat3(
-                                right,
-                                up,
-                                -forward
-                            )
-                        )
-                    );
-
-                const double remainingMeters =
-                    glm::length(
-                        routeGates.back().positionMeters -
-                        gate.positionMeters
-                    );
-                const auto section =
-                    dockingAdvisoryCrossSection(
-                        remainingMeters,
-                        active.lateralToleranceMeters,
-                        active.verticalToleranceMeters
-                    );
-
-                frameView.widthMeters =
-                    dockingAdvisoryFrameExtentMeters(
-                        active.shipWidthMeters,
-                        section.lateralToleranceMeters
-                    );
-                frameView.heightMeters =
-                    dockingAdvisoryFrameExtentMeters(
-                        active.shipHeightMeters,
-                        section.verticalToleranceMeters
-                    );
-                frameView.lateralToleranceMeters =
-                    section.lateralToleranceMeters;
-                frameView.verticalToleranceMeters =
-                    section.verticalToleranceMeters;
-                frameView.recommendedSpeedMps =
-                    std::max(0.0, gate.speedMps);
-                frameView.requiredVehiclePose =
-                    index + 1 == routeGates.size();
-
-                route.frames.push_back(
-                    std::move(frameView)
-                );
-            }
-
             return route;
         };
 
     core::hitch::mark("dock_presentation_build");
     guidance.publish(
         makeRoute(
+            m_dockExecutionCorridorPresentation,
             active.plan.executionGates,
             active.visualExecutionGateUp,
             active.visualExecutionGateDockPhaseWeight,
@@ -3800,6 +3687,7 @@ void SpaceState::updateDockingAdvisory()
 
     guidance.publish(
         makeRoute(
+            m_dockFramesCorridorPresentation,
             active.plan.gates,
             active.visualGateUp,
             active.visualGateDockPhaseWeight,

@@ -420,6 +420,7 @@ add_executable(EliteGame
     src/game/SpaceState.cpp
     src/game/SpaceState-Init.cpp
     src/game/SpaceStateDocking.cpp
+    src/game/navigation/DockingCorridorPresentation.cpp
     src/game/SpaceStateMaps.cpp
     src/game/SpaceStateHud.cpp
     src/game/SpaceStateDevPanel.cpp

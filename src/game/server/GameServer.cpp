@@ -79,6 +79,17 @@ GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
 
         for (const auto& systemState : initialWorldState.systemStates)
         {
+            // World-state system ids are PHYSICAL StarAtlas ids. The legacy
+            // political GalaxyDatabase uses an unrelated id space and is
+            // never joined by int (see SpaceState / check_system_id_namespaces).
+            if (!m_starAtlas.findSystem(systemState.systemId))
+            {
+                throw std::runtime_error(
+                    "system_states references a physical system absent from StarAtlas: " +
+                    std::to_string(systemState.systemId)
+                );
+            }
+
             m_systemJurisdictions[systemState.systemId] =
                 systemState.jurisdiction;
         }

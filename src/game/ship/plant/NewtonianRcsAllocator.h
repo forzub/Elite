@@ -251,4 +251,54 @@ sampleNewtonianRcsSignedAuthority(
     return authority;
 }
 
+
+// Combined-demand feasibility of the SAME 24 nozzles: for every pair of
+// signed axes (force / moment) both are requested at once at their own
+// single-axis limits; the result is the smallest delivered fraction of a
+// requested component over all pairs (1 = the per-axis limits can be used
+// together, < 1 = the axes share nozzles and cannot both be at full).
+[[nodiscard]] inline double newtonianRcsPairFeasibility01(
+    const std::array<game::equipment::engine::MountedEngine,24>& installed,
+    const glm::dvec3& halfExtentsMeters,
+    const glm::dvec3& centerOfMassLocalMeters,
+    const NewtonianRcsSignedAuthority& limits) noexcept
+{
+    const auto limit=[&](int axis,int sign){
+        return axis<3
+            ? (sign>0 ? limits.positiveForceN : limits.negativeForceN)[axis]
+            : (sign>0 ? limits.positiveMomentNm : limits.negativeMomentNm)[axis-3];
+    };
+    double worst=1.0;
+    for(int a=0;a<6;++a)
+        for(int b=a+1;b<6;++b)
+            for(int sa=-1;sa<=1;sa+=2)
+                for(int sb=-1;sb<=1;sb+=2)
+                {
+                    const double la=limit(a,sa), lb=limit(b,sb);
+                    if(la<=1.0e-9 || lb<=1.0e-9)
+                        continue;
+                    NewtonianRcsDemand probe;
+                    probe.mountHalfExtentsM=halfExtentsMeters;
+                    probe.centerOfMassLocalMeters=centerOfMassLocalMeters;
+                    probe.tick=0;
+                    const auto set=[&](int axis,int sign,double value){
+                        if(axis<3) probe.forceBodyN[axis]=sign*value;
+                        else probe.momentBodyNm[axis-3]=sign*value;
+                    };
+                    set(a,sa,la);
+                    set(b,sb,lb);
+                    const auto sample=allocateNewtonianRcs(installed,probe);
+                    if(!sample.valid)
+                        return 0.0;
+                    const auto delivered=[&](int axis,int sign){
+                        return axis<3 ? sign*sample.deliveredForceN[axis]
+                                      : sign*sample.deliveredMomentNm[axis-3];
+                    };
+                    worst=std::min({worst,
+                        std::max(0.0,delivered(a,sa))/la,
+                        std::max(0.0,delivered(b,sb))/lb});
+                }
+    return std::clamp(worst,0.0,1.0);
+}
+
 } // namespace game::ship::plant

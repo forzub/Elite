@@ -10,6 +10,8 @@
 //
 //   EliteNavigationCapabilityCheck        -> prints PASS/FAIL lines, exit 0/1
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -22,6 +24,7 @@
 #include "src/game/ship/ShipInitData.h"
 #include "src/game/ship/core/ShipCore.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/game/ship/presets/cobra/CobraNewtonianRcsNozzles.h"
 #include "src/game/ship/plant/ShipPhysicalControlModels.h"
 #include "src/game/ship/telemetry/ShipControlAuthorityTelemetry.h"
 
@@ -141,6 +144,45 @@ int main()
                   f.angularScalarRadPerSec2 == 0.0 && !f.canManoeuvre() && !result.ok &&
                   r.maxAngularAccelerationRadPerSecond2 == 0.0,
             "yaw- = 0: signed angular kept, scalar 0, request refused (" + result.reason + ")");
+    }
+
+    // ER-5 power is part of the published capability (same law as the executor).
+    {
+        double mainShare = 0.0, rcsShare = 0.0;
+        core.newtonianPropulsionPowerShares(mainShare, rcsShare);
+        std::printf("     healthy power shares: main %.4f rcs %.4f (ER-5 available %.0f MW)\n", mainShare, rcsShare,
+                    core.engineReactorAvailableMW(0));
+        check(mainShare == 1.0 && rcsShare == 1.0, "healthy: ER-5 power does not limit the published capability");
+        const double healthyMain = core.controlAuthorityTelemetry().workingForwardAccelerationMps2;
+        auto* reactor = core.moduleRuntime().findModule(
+            EliteCobraMk1::EliteCobraMk1Descriptor().powerThermalInstallation.engineReactorModuleIds[0]);
+        const double savedK = reactor->engineReactorOperating.temperatureK;
+        // Overheated ER-5: halfway between its safe and critical temperatures
+        // (installed passport) -> half power.
+        const auto& desc = EliteCobraMk1::EliteCobraMk1Descriptor();
+        const auto type = std::find_if(desc.modules.begin(), desc.modules.end(), [&](const auto& m) {
+            return m.moduleId == desc.powerThermalInstallation.engineReactorModuleIds[0];
+        });
+        reactor->engineReactorOperating.temperatureK =
+            0.5 * (type->engineReactor->safeTemperatureK + type->engineReactor->criticalTemperatureK);
+        core.newtonianPropulsionPowerShares(mainShare, rcsShare);
+        const double hotMain = core.controlAuthorityTelemetry().workingForwardAccelerationMps2;
+        std::printf("     overheated ER-5 (%.0f K): available %.0f MW, main share %.4f, published main %.2f -> %.2f m/s2\n",
+                    reactor->engineReactorOperating.temperatureK, core.engineReactorAvailableMW(0), mainShare,
+                    healthyMain, hotMain);
+        check(mainShare > 0.0 && mainShare < 1.0 && hotMain < healthyMain && std::abs(hotMain - healthyMain * mainShare) < 1.0e-9,
+              "overheated ER-5: published main authority = installed x ER-5 power share");
+        reactor->engineReactorOperating.temperatureK = savedK;
+    }
+
+    // Combined two-axis RCS demand (measurement; per-axis limits are single-axis).
+    {
+        std::printf("     RCS pair feasibility, healthy: %.3f\n", core.newtonianRcsPairFeasibility01());
+        const auto& ids = game::ship::presets::cobra::newtonianRcsNozzles();
+        core.moduleRuntime().markModuleDestroyed(std::string(ids[0].nozzleId), 0.0f);
+        core.refreshRuntimeState();
+        std::printf("     RCS pair feasibility, nozzle %s destroyed: %.3f\n", ids[0].nozzleId,
+                    core.newtonianRcsPairFeasibility01());
     }
 
     // Production ShipCore: reactors off, restarting, back.

@@ -291,6 +291,14 @@ public:
     world::modules::ObjectModuleRuntime& moduleRuntime() { return m_moduleRuntime; }
     // Emergency PROPULSION -> SERVICES exchanger: heat moved last tick (MW).
     double emergencyBridgeTransferMW() const { return m_emergencyBridgeTransferMW; }
+    // Electrical power an installed ER-5 group can deliver now (one law for
+    // the executor and the published capability).
+    double engineReactorAvailableMW(std::size_t group) const;
+    // Newtonian: share of installed main / RCS authority the ER-5s can power.
+    void newtonianPropulsionPowerShares(double& mainShare01, double& rcsShare01) const;
+    // Newtonian: smallest delivered fraction when two signed RCS axes are
+    // demanded together at their single-axis limits (installed nozzles).
+    double newtonianRcsPairFeasibility01() const { (void)capabilities(); return m_cachedNewtonianRcsPairFeasibility01; }
     double serviceCoolantTemperatureK() const { return m_thermal.getTemperature(); }
     double serviceCoolantCriticalTemperatureK() const { return m_thermal.getCriticalTemp(); }
     // DEV checks only (EliteShipThermalCheck).
@@ -394,6 +402,7 @@ private:
     // indices strafe, lift, body +Z, pitch, yaw, roll (hull roll sign).
     // Published to clients through ShipControlAuthorityTelemetry.
     mutable bool m_cachedNewtonianRcsAuthorityValid = false;
+    mutable double m_cachedNewtonianRcsPairFeasibility01 = 1.0; // combined two-axis demand
     mutable std::array<double,6> m_cachedNewtonianRcsPositive {};
     mutable std::array<double,6> m_cachedNewtonianRcsNegative {};
     // ShipController                              m_controller;

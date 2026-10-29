@@ -242,65 +242,7 @@ void ShipCore::updateTranslationControl(float dt)
                         if (std::string_view(engineTopology[i].id) == engineId)
                             group.engineIndices.push_back(i);
 
-                const std::string reactorId =
-                    n < reactorIds.size() ? reactorIds[n] : std::string {};
-                const auto* reactor = reactorId.empty()
-                    ? nullptr : runtime.findModule(reactorId);
-                const auto definition = std::find_if(
-                    m_desc->modules.begin(),m_desc->modules.end(),
-                    [&](const auto& module) {
-                        return module.moduleId == reactorId;
-                    });
-                if (reactor && definition != m_desc->modules.end() &&
-                    definition->engineReactor &&
-                    reactor->state ==
-                        world::modules::ObjectModuleRuntimeState::Attached &&
-                    reactor->health > 0.0f)
-                {
-                    const auto function =
-                        game::equipment::evaluateEquipmentFunctionAtDamage01(
-                            game::equipment::totalAccumulatedDamage01(
-                                reactor->equipmentDamage.accumulated),
-                            definition->engineReactor->failure);
-                    const auto& reactorType=*definition->engineReactor;
-                    const double t=reactor->engineReactorOperating.temperatureK;
-                    const double ready=std::clamp(
-                        (t-game::physics::thermal::DeepSpaceTemperatureK)/
-                        std::max(1.0,reactorType.idleTemperatureK-
-                            game::physics::thermal::DeepSpaceTemperatureK),
-                        0.0,1.0);
-                    const double thermal= t<=reactorType.safeTemperatureK
-                        ? 1.0 : std::clamp(
-                            (reactorType.criticalTemperatureK-t)/
-                            std::max(1.0,reactorType.criticalTemperatureK-
-                                reactorType.safeTemperatureK),0.0,1.0);
-                    const double age=std::clamp(
-                        reactor->engineReactorOperating.equivalentOperatingHours/
-                        std::max(1.0,reactorType.endOfLifeEquivalentHours),
-                        0.0,1.0);
-                    group.availableMW =
-                        (m_propulsionReactorsOn &&
-                        m_propulsionReactorsStartupRemainingSeconds<=0.0 ? 1.0:0.0) *
-                        std::max(0.0,reactorType.ratedElectricalMW) *
-                        function.authority01 * ready * thermal *
-                        (1.0-0.20*age);
-                }
-                // I/Y/X diagnostic layouts already mount synthetic CR-1
-                // motors. They must also have matching synthetic ER-5
-                // electrical budgets, otherwise non-native layouts have
-                // zero thrust even though motors are visibly installed.
-                // Native construction NEVER receives this fallback.
-                const bool diagnosticLayout=
-                    m_state.actuators.source ==
-                        game::ship::state::ShipActuatorStateSource::DiagnosticOverride ||
-                    m_state.construction.physicalControlModel !=
-                        m_state.construction.definition->physicalControlModel;
-                if(diagnosticLayout && group.availableMW<=0.0 &&
-                   m_propulsionReactorsOn &&
-                   m_propulsionReactorsStartupRemainingSeconds<=0.0)
-                {
-                    group.availableMW=5000.0;
-                }
+                group.availableMW = engineReactorAvailableMW(n);
                 powerGroups.push_back(std::move(group));
             }
         }

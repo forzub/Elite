@@ -1,8 +1,9 @@
 // DEV check: emergency thermal coupling PROPULSION -> SHIP SERVICES on the
 // production ShipCore (Newtonian-I Cobra). Pre-registered expectations:
-//  1. ER-5 at its operating temperature, intact pad: the exchanger stays
+//  1. ER-5 well below its safe temperature (1500 K), intact pad: the exchanger stays
 //     closed (normal flight unchanged).
-//  2. ER-5 overheated (2700 K) with a damaged pad (30 %): the exchanger
+//  2. ER-5 overheated (2050 K: above the 1950 K engage point, below safe
+//     2100 K) with a damaged pad (30 %): the exchanger
 //     opens, transfers <= its 60 MW rating, the hot reactor cools faster than
 //     on a twin ship whose exchanger is destroyed, and the service coolant
 //     receives that heat (warmer than the twin's).
@@ -84,14 +85,14 @@ int main()
         check(reactorCount(*core) > 0 && core->moduleRuntime().findModule(exchangerId),
               "installed: ER-5 reactors and the emergency heat exchanger module exist");
         for (std::size_t g = 0; er5(*core, g); ++g)
-            er5(*core, g)->engineReactorOperating.temperatureK = 2500.0;
+            er5(*core, g)->engineReactorOperating.temperatureK = 1500.0;
         double peak = 0.0;
         for (int i = 0; i < 300; ++i)
         {
             core->updateSystems(dt);
             peak = std::max(peak, core->emergencyBridgeTransferMW());
         }
-        check(peak == 0.0, "normal (ER-5 2500 K, intact pad): exchanger closed, transfer 0");
+        check(peak == 0.0, "normal (ER-5 1500 K, intact pad): exchanger closed, transfer 0");
     }
 
     // 2-4. Overheat with a damaged pad: exchanger vs destroyed exchanger.
@@ -101,7 +102,7 @@ int main()
     for (auto* core : {withBridge.get(), without.get()})
         for (std::size_t g = 0; er5(*core, g); ++g)
         {
-            er5(*core, g)->engineReactorOperating.temperatureK = 2700.0;
+            er5(*core, g)->engineReactorOperating.temperatureK = 2050.0;
             er5(*core, g)->engineReactorOperating.padIntegrity01 = 0.3;
         }
     double peak = 0.0, peakWithout = 0.0, movedMJ = 0.0;
@@ -135,7 +136,7 @@ int main()
         auto core = newtonianShip();
         for (std::size_t g = 0; er5(*core, g); ++g)
         {
-            er5(*core, g)->engineReactorOperating.temperatureK = 2700.0;
+            er5(*core, g)->engineReactorOperating.temperatureK = 2050.0;
             er5(*core, g)->engineReactorOperating.padIntegrity01 = 0.3;
         }
         double peakSaturated = 0.0;

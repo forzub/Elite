@@ -633,18 +633,23 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
     if (binding.size() != topology.size())
         return {};
 
+    // An RCS node is bound to its x nozzle; its state is the conservative
+    // node over the x / y / z nozzles, so damage or heating of ANY of them
+    // changes the projection (and the actuator revision that refreshes the
+    // published capability).
     std::vector<plant::EngineSlotState> out;
     out.reserve(topology.size());
-    for (const auto& moduleId : binding)
+    for (std::size_t i = 0; i < binding.size(); ++i)
     {
+        const auto& moduleId = binding[i];
         if (moduleId.empty())
             return {}; // Invalid installation, not a damaged engine.
-        out.push_back(
-                detail::slotFromModule(
-                    detail::findModuleDescriptor(descriptor, moduleId),
-                    runtime.findModule(moduleId)
-                )
-            );
+        const auto read = [&](const std::string& id) {
+            return detail::slotFromModule(detail::findModuleDescriptor(descriptor, id), runtime.findModule(id));
+        };
+        out.push_back(topology[i].role == plant::EngineSlotRole::ManoeuvreCluster
+                          ? detail::conservativeRcsNode(moduleId, read)
+                          : read(moduleId));
     }
     return out;
 }
@@ -668,25 +673,19 @@ inline std::vector<plant::EngineSlotState> buildPhysicalControlSlotState(
 
     std::vector<plant::EngineSlotState> out;
     out.reserve(topology.size());
-    for (const auto& moduleId : binding)
+    for (std::size_t i = 0; i < binding.size(); ++i)
     {
+        const auto& moduleId = binding[i];
         if (moduleId.empty())
             return {}; // Invalid installation, not a damaged engine.
-
-        const auto it = std::find_if(
-            modules.begin(),
-            modules.end(),
-            [&](const auto& module)
-            {
-                return module.moduleId == moduleId;
-            }
-        );
-        out.push_back(
-            detail::slotFromSnapshot(
-                descriptor,
-                it == modules.end() ? nullptr : &*it
-            )
-        );
+        const auto read = [&](const std::string& id) {
+            const auto it = std::find_if(modules.begin(), modules.end(),
+                                         [&](const auto& module) { return module.moduleId == id; });
+            return detail::slotFromSnapshot(descriptor, it == modules.end() ? nullptr : &*it);
+        };
+        out.push_back(topology[i].role == plant::EngineSlotRole::ManoeuvreCluster
+                          ? detail::conservativeRcsNode(moduleId, read)
+                          : read(moduleId));
     }
     return out;
 }

@@ -124,6 +124,23 @@ target_include_directories(EliteNavigationGeometry PUBLIC
     "${CMAKE_SOURCE_DIR}/src"
 )
 
+# Universe generator (stellar systems, bodies, satellites, reservoirs). Shared by
+# the offline authoring tool and, later, by on-demand generation in the runtime.
+add_library(EliteUniverseGeneration STATIC
+    src/world/generation/StellarPhysics.cpp
+    src/world/generation/PlanetFormation.cpp
+    src/world/generation/BodyPhysics.cpp
+    src/world/generation/SatelliteSystems.cpp
+    src/world/generation/StellarSystemGenerator.cpp
+    src/world/generation/SystemValidation.cpp
+    src/world/generation/DescriptorJson.cpp
+)
+target_include_directories(EliteUniverseGeneration PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+target_link_libraries(EliteUniverseGeneration PUBLIC nlohmann_json::nlohmann_json)
+
 # Precision trajectory components are a shared deterministic navigation layer.
 # Stage 12 runtime composition links them through the same client/server target;
 # no executable owns a private moving-gap planner.
@@ -873,6 +890,14 @@ if(ELITE_BUILD_SERVER)
     if(WIN32)
         target_link_libraries(EliteNewtonianScenarios PRIVATE ws2_32 mswsock)
     endif()
+
+    # DEV authoring tool: materialises the physical universe catalog with the
+    # production generator (src/world/generation). Not part of the runtime.
+    add_executable(EliteUniverseGenerator
+        tools/universe_generator/UniverseGeneratorTool.cpp
+    )
+    target_include_directories(EliteUniverseGenerator PRIVATE src)
+    target_link_libraries(EliteUniverseGenerator PRIVATE EliteUniverseGeneration)
 
     # DEV check: factual navigation capability, no invented authority,
     # reactor off/restart on the production ShipCore.

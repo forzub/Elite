@@ -229,6 +229,33 @@ int main()
                   .canManoeuvre(),
         "reactors restarted (11 s): telemetry and capability back");
 
+    // Assisted A3: one aft main engine lost. The server must keep publishing
+    // its control authority and one working thrust axis.
+    {
+        game::ship::core::ShipCore assisted;
+        assisted.init(ShipRole::Player, EliteCobraMk1::EliteCobraMk1Descriptor(), glm::vec3(0.0f), ShipInitData {},
+                      glm::mat4(1.0f));
+        assisted.selectPhysicalConstructionForDiagnostic(game::ship::plant::PhysicalControlModelId::AssistedI);
+        assisted.refreshRuntimeState();
+        for (int i = 0; i < 50; ++i)
+            assisted.updateSystems(0.02f);
+        const auto healthyTelemetry = assisted.controlAuthorityTelemetry();
+        assisted.moduleRuntime().injectEquipmentFailure("ship_engine_L", 0.95);
+        assisted.refreshRuntimeState();
+        for (int i = 0; i < 50; ++i)
+            assisted.updateSystems(0.02f);
+        const auto telemetry = assisted.controlAuthorityTelemetry();
+        const auto caps = assisted.capabilities();
+        std::printf("     Assisted engine L lost: telemetry valid %d (healthy %d), working forward %.2f -> %.2f, "
+                    "axis (%.3f %.3f %.3f) emergency %d\n",
+                    telemetry.valid ? 1 : 0, healthyTelemetry.valid ? 1 : 0,
+                    healthyTelemetry.workingForwardAccelerationMps2, telemetry.workingForwardAccelerationMps2,
+                    caps.effectivePhysics.assistedWorkingThrustAxisBody.x, caps.effectivePhysics.assistedWorkingThrustAxisBody.y,
+                    caps.effectivePhysics.assistedWorkingThrustAxisBody.z, caps.effectivePhysics.assistedWorkingThrustAxisEmergency ? 1 : 0);
+        check(healthyTelemetry.valid && telemetry.valid && telemetry.workingForwardAccelerationMps2 > 0.0,
+              "Assisted engine L lost: authority telemetry stays published, forward authority > 0");
+    }
+
     std::printf("%s: %d failure(s)\n", failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }

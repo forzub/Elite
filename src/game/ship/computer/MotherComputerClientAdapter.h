@@ -97,6 +97,31 @@ namespace game::ship::computer
         out.physicalEnvelopeValid = capability.valid;
         if (capability.valid)
             out.physicalEnvelope = capability.effectivePhysics;
+        // ONE factual working thrust axis: the server's, computed from the
+        // live surviving plant and published in the same ship/tick snapshot.
+        // The client reconstruction above (replicated module health only)
+        // must never present a second, different axis to the doctrine,
+        // planner, autopilot or HUD.
+        const auto& published = ship.controlAuthorityTelemetry;
+        const glm::dvec3 publishedAxis(published.workingThrustAxisBody[0],
+                                       published.workingThrustAxisBody[1],
+                                       published.workingThrustAxisBody[2]);
+        const double publishedLength = glm::length(publishedAxis);
+        if (out.physicalEnvelopeValid && published.valid &&
+            published.model == ship.physicalControlModel &&
+            game::ship::plant::familyOf(ship.physicalControlModel) ==
+                game::ship::plant::PhysicalControlFamily::Assisted &&
+            std::isfinite(publishedLength) && publishedLength > 1.0e-9)
+        {
+            out.physicalEnvelope.assistedWorkingThrustAxisBody =
+                publishedAxis / publishedLength;
+            out.physicalEnvelope.assistedWorkingThrustAxisEmergency =
+                published.workingThrustAxisEmergency;
+            out.physicalEnvelope.assistedWorkingThrustMotorIndex =
+                published.workingThrustMotorIndex;
+            out.workingThrustAxisBody = publishedAxis / publishedLength;
+            out.emergencyWorkingThrustAxis = published.workingThrustAxisEmergency;
+        }
     }
 
     const auto& systems=ship.shipCoreStatus;

@@ -27,6 +27,13 @@ struct ShipControlAuthorityTelemetry
     // flight planning consumes. negative[2] separately measures pure
     // hull -Z motor-program authority and can correctly be zero.
     double workingForwardAccelerationMps2 = 0.0;
+    // Assisted: the server-selected working thrust ray (body frame), whether
+    // it is a damage-offset emergency axis and the surviving drive motor
+    // that carries it. The ONE factual axis for client doctrine, planner,
+    // autopilot and HUD (never re-derived from replicated module health).
+    std::array<double,3> workingThrustAxisBody {0.0,0.0,-1.0};
+    bool workingThrustAxisEmergency = false;
+    int workingThrustMotorIndex = -1;
     // Indices: body X (strafe), body Y (lift), body Z (reverse positive),
     // angular pitch, yaw, roll. Magnitudes always nonnegative.
 };
@@ -55,6 +62,14 @@ readAssistedControlAuthority(
     // For damage-offset operation the surviving CoM-aligned motor below
     // supplies the physical working acceleration instead. In BOTH cases
     // callers consume this one value, never select pure -Z by a mode flag.
+    out.workingThrustAxisEmergency=
+        motorPrograms.shape.assistedWorkingThrustAxisEmergency;
+    out.workingThrustMotorIndex=
+        motorPrograms.shape.assistedWorkingThrustMotorIndex;
+    out.workingThrustAxisBody={
+        motorPrograms.shape.assistedWorkingThrustAxisBody.x,
+        motorPrograms.shape.assistedWorkingThrustAxisBody.y,
+        motorPrograms.shape.assistedWorkingThrustAxisBody.z};
     if(!motorPrograms.shape.assistedWorkingThrustAxisEmergency)
         out.workingForwardAccelerationMps2=out.negative[2];
     else

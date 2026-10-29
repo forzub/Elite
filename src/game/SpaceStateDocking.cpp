@@ -237,9 +237,10 @@ void SpaceState::updateDockingAdvisory()
     // with its reason. Assisted: unchanged (fails as before).
     const auto recoverOrFail = [&](const std::string& reason)
     {
+        // Both laws: a capability loss or failed attempt stabilises the
+        // craft and plans again from its actual state and authority.
         constexpr int MaxNewtonianRouteRecoveries = 5;
-        if (controlLaw != game::navigation::LocalFlightControlLaw::Newtonian ||
-            !pending.valid() ||
+        if (!pending.valid() ||
             m_newtonianRouteRecoveries >= MaxNewtonianRouteRecoveries)
         {
             fail(reason);
@@ -3338,7 +3339,7 @@ void SpaceState::updateDockingAdvisory()
                 << " phase=accepted-trajectory-invalidated"
                 << " reason=installed-motor-capability-loss"
                 << std::endl;
-            fail("motors degraded; committed route needs new planning");
+            recoverOrFail("motors degraded; committed route needs new planning");
             return;
         }
         const auto handleOutput = [&](const auto& output) -> bool

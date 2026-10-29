@@ -673,7 +673,11 @@ ELITE_WIRE_SCHEMA(
     v.model,
     v.sourceActuatorRevision,
     v.positive,
-    v.negative
+    v.negative,
+    v.workingForwardAccelerationMps2,
+    v.workingThrustAxisBody,
+    v.workingThrustAxisEmergency,
+    v.workingThrustMotorIndex
 );
 
 ELITE_WIRE_SCHEMA(

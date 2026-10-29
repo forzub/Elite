@@ -1,7 +1,7 @@
 {
   "schema": "elite.generated_reservoir.v1",
   "id": "system_0.Sol.kuiper_belt",
-  "name": "Sol outer belt",
+  "name": "Пояс Койпера",
   "kind": "kuiper_belt",
   "parent_id": "system_0.Sol",
   "seed": "0xe133e27634c0c089",

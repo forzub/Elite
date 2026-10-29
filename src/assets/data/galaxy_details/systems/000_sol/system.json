@@ -28,18 +28,21 @@
   "observed_system_complete": true,
   "observed_reservoirs": {
     "asteroid_belt": {
+      "name": "Пояс астероидов",
       "inner_au": 2.06,
       "outer_au": 3.27,
       "total_mass_earth": 0.00045,
       "source": "Pitjeva & Pitjev 2018"
     },
     "kuiper_belt": {
+      "name": "Пояс Койпера",
       "inner_au": 30.0,
       "outer_au": 50.0,
       "total_mass_earth": 0.02,
       "source": "Pitjeva & Pitjev 2018 (classical + resonant belt)"
     },
     "comet_cloud": {
+      "name": "Облако Оорта",
       "inner_au": 2000.0,
       "outer_au": 100000.0,
       "total_mass_earth": 2.0,

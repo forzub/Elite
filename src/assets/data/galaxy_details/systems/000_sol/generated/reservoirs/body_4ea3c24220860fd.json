@@ -1,7 +1,7 @@
 {
   "schema": "elite.generated_reservoir.v1",
   "id": "system_0.Sol.comet_cloud",
-  "name": "Sol comet cloud",
+  "name": "Облако Оорта",
   "kind": "comet_cloud",
   "parent_id": "system_0.Sol",
   "seed": "0xd4b5c5774a99033c",

@@ -372,6 +372,8 @@ SystemDescriptor generateStellarSystem(
             o.argumentOfPeriapsisDeg = p.periDeg;
             o.meanAnomalyAtEpochDeg = p.meanAnomalyDeg;
             o.direction = (obs && obs->retrograde) || p.iDeg > 90.0 ? -1 : 1;
+            if (obs && obs->epochUniverseSeconds)
+                o.epochUniverseSeconds = *obs->epochUniverseSeconds;
             o.periodDays = periodDays(p.aAu, hostMassKg + p.massEarth * EarthMassKg);
 
             BodySeedProperties sp;
@@ -482,6 +484,8 @@ SystemDescriptor generateStellarSystem(
                 mo.argumentOfPeriapsisDeg = mobs && mobs->argumentOfPeriapsisDeg ? *mobs->argumentOfPeriapsisDeg : os.uniform(0.0, 360.0);
                 mo.meanAnomalyAtEpochDeg = mobs && mobs->meanAnomalyAtEpochDeg ? *mobs->meanAnomalyAtEpochDeg : os.uniform(0.0, 360.0);
                 mo.direction = mc.retrograde || mc.iDeg > 90.0 ? -1 : 1;
+                if (mobs && mobs->epochUniverseSeconds)
+                    mo.epochUniverseSeconds = *mobs->epochUniverseSeconds;
                 mo.periodDays = periodDays(mo.semiMajorAxisAu, planet.massKg + mc.massEarth * EarthMassKg);
                 m.provenance["orbit"] = mobs ? (in.observedSystemComplete ? Provenance::Authored : Provenance::Observed)
                                              : Provenance::Generated;
@@ -575,6 +579,7 @@ SystemDescriptor generateStellarSystem(
                 r.outerAu = o.value("outer_au", r.outerAu);
                 r.peakAu = 0.5 * (r.innerAu + r.outerAu);
                 r.totalMassEarth = o.value("total_mass_earth", r.totalMassEarth);
+                r.name = o.value("name", r.name);
                 r.provenance["population"] = Provenance::Authored;
             }
         }

@@ -125,6 +125,7 @@ struct ObservedBodyInput
     std::optional<double> longitudeAscendingNodeDeg;
     std::optional<double> argumentOfPeriapsisDeg;
     std::optional<double> meanAnomalyAtEpochDeg;
+    std::optional<double> epochUniverseSeconds; // epoch of the elements on the UniverseClock
     bool retrograde = false;
 
     std::optional<double> massEarth;

@@ -1,7 +1,7 @@
 {
   "schema": "elite.generated_reservoir.v1",
   "id": "system_0.Sol.asteroid_belt",
-  "name": "Sol asteroid belt",
+  "name": "Пояс астероидов",
   "kind": "asteroid_belt",
   "parent_id": "system_0.Sol",
   "seed": "0xaa968c1ab34744d4",

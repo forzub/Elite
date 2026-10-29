@@ -27,7 +27,7 @@
     "longitude_ascending_node_deg": 100.47390909,
     "argument_of_periapsis_deg": 274.25457073999996,
     "mean_anomaly_at_epoch_deg": 19.66796068,
-    "epoch_universe_seconds": 0.0,
+    "epoch_universe_seconds": 32529600.0,
     "period_days": 4332.692094105697,
     "direction": 1
   },

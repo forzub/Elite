@@ -525,8 +525,8 @@ def main():
                             doc[f] = value(extra[f][0], LIT + ": " + extra[f][1])
                 star_docs.append(doc)
             for doc in star_docs:
-                json.dump(doc, open(os.path.join(ddir, "stars", doc["key"] + ".json"), "w", encoding="utf-8"),
-                          ensure_ascii=False, indent=2)
+                json.dump(doc, open(os.path.join(ddir, "stars", doc["key"] + ".json"), "w", encoding="utf-8",
+                                    newline="\n"), ensure_ascii=False, indent=2)
 
             hier = HIERARCHY.get(sid)
             if hier is None:
@@ -560,11 +560,14 @@ def main():
             if sid == 0:
                 sysdoc["observed_system_complete"] = True
                 sysdoc["observed_reservoirs"] = {
-                    "asteroid_belt": {"inner_au": 2.06, "outer_au": 3.27, "total_mass_earth": 4.5e-4,
+                    "asteroid_belt": {"name": "Пояс астероидов", "inner_au": 2.06, "outer_au": 3.27,
+                                      "total_mass_earth": 4.5e-4,
                                       "source": "Pitjeva & Pitjev 2018"},
-                    "kuiper_belt": {"inner_au": 30.0, "outer_au": 50.0, "total_mass_earth": 0.02,
+                    "kuiper_belt": {"name": "Пояс Койпера", "inner_au": 30.0, "outer_au": 50.0,
+                                    "total_mass_earth": 0.02,
                                     "source": "Pitjeva & Pitjev 2018 (classical + resonant belt)"},
-                    "comet_cloud": {"inner_au": 2000.0, "outer_au": 100000.0, "total_mass_earth": 2.0,
+                    "comet_cloud": {"name": "Облако Оорта", "inner_au": 2000.0, "outer_au": 100000.0,
+                                    "total_mass_earth": 2.0,
                                     "source": "Oort cloud estimate, order of magnitude"},
                 }
             sv = survey(sid, star_docs)
@@ -598,7 +601,7 @@ def main():
                 sysdoc["observational_reference"] = legacy["observational_reference_2026"]
             if legacy.get("stability"):
                 sysdoc["lore"] = {"stellar_description": legacy["stability"]}
-            json.dump(sysdoc, open(os.path.join(ddir, "system.json"), "w", encoding="utf-8"),
+            json.dump(sysdoc, open(os.path.join(ddir, "system.json"), "w", encoding="utf-8", newline="\n"),
                       ensure_ascii=False, indent=2)
 
             observed = []
@@ -621,8 +624,8 @@ def main():
                     if fn in used:
                         raise SystemExit(f"system {sid}: duplicate observed file {fn}")
                     used.add(fn)
-                    json.dump(o, open(os.path.join(ddir, "observed", fn + ".json"), "w", encoding="utf-8"),
-                              ensure_ascii=False, indent=2)
+                    json.dump(o, open(os.path.join(ddir, "observed", fn + ".json"), "w", encoding="utf-8",
+                                      newline="\n"), ensure_ascii=False, indent=2)
             report.append((sid, name, len(star_docs), len(observed), sys_hosts, pos_src))
 
     for r in report:

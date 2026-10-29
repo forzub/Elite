@@ -275,6 +275,7 @@ bool readSystemInput(const fs::path& dir, SystemInput& out, std::string& error)
         o.longitudeAscendingNodeDeg = readValue(orbit, "longitude_ascending_node_deg");
         o.argumentOfPeriapsisDeg = readValue(orbit, "argument_of_periapsis_deg");
         o.meanAnomalyAtEpochDeg = readValue(orbit, "mean_anomaly_at_epoch_deg");
+        o.epochUniverseSeconds = readValue(orbit, "epoch_universe_seconds");
         o.retrograde = orbit.value("retrograde", false);
         const json phys = b.value("physical", json::object());
         o.massEarth = readValue(phys, "mass_earth");

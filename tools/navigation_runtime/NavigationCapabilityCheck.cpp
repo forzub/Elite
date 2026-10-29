@@ -175,6 +175,17 @@ int main()
         reactor->engineReactorOperating.temperatureK = savedK;
     }
 
+    {
+        // Damaged ER-5 (70 % equipment damage): what the generators can power.
+        const auto id = EliteCobraMk1::EliteCobraMk1Descriptor().powerThermalInstallation.engineReactorModuleIds[0];
+        core.moduleRuntime().injectEquipmentFailure(id, 0.7);
+        core.refreshRuntimeState();
+        double mainShare = 0.0, rcsShare = 0.0;
+        core.newtonianPropulsionPowerShares(mainShare, rcsShare);
+        std::printf("     ER-5 70%% damaged: available %.0f MW, main share %.4f, rcs share %.4f\n",
+                    core.engineReactorAvailableMW(0), mainShare, rcsShare);
+    }
+
     // Combined two-axis RCS demand (measurement; per-axis limits are single-axis).
     {
         std::printf("     RCS pair feasibility, healthy: %.3f\n", core.newtonianRcsPairFeasibility01());

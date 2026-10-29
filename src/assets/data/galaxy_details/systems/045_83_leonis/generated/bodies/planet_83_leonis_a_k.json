@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_45.83_Leonis_A.83_Leonis_A_k",
+  "designation": "83 Leonis A k",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_45.83_Leonis_A",
+  "host_star": "83_leonis_a",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x564a567347993b3c",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.8958735500325119,
+    "eccentricity": 0.04194644120996171,
+    "inclination_deg": 1.8111288051447232,
+    "longitude_ascending_node_deg": 110.60445443289376,
+    "argument_of_periapsis_deg": 39.42193096650575,
+    "mean_anomaly_at_epoch_deg": 9.08741899411722,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 298.02698993857456,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.0132787982912875e+25,
+    "mass_earth": 1.6966591847079593,
+    "radius_km": 7514.664506505512,
+    "density_kg_m3": 5700.48172492736,
+    "mu_m3s2": 676292668343554.0,
+    "surface_gravity_ms2": 11.97610201814068,
+    "escape_velocity_kms": 13.416138696511066,
+    "hill_radius_km": 1493211.2733979963,
+    "sphere_of_influence_km": 992411.6241419853,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.23736021343863214,
+    "silicate_mantle": 0.7602314804024846,
+    "water_ice": 0.0023083061588833765,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.0023083061588833765,
+    "formation_distance_au": 0.8958735500325119
+  },
+  "thermal": {
+    "instellation_earth": 2.307073169356402,
+    "bond_albedo": 0.75,
+    "equilibrium_temperature_k": 242.7903696774763,
+    "mean_surface_temperature_k": 716.5095498560096,
+    "min_surface_temperature_k": 715.289856430026,
+    "max_surface_temperature_k": 717.4477755683046,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 0.6688317116054814,
+    "radiogenic_heat_flux_wm2": 0.033158365464105354,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 6853171.204112107,
+    "composition": {
+      "CO2": 0.9648359778837597,
+      "N2": 0.034994051011328076,
+      "SO2": 0.00014997450433426316,
+      "H2O": 1.9996600577901758e-05
+    },
+    "mean_molecular_weight": 43.45272383694772,
+    "scale_height_km": 11.365145225434679,
+    "greenhouse_warming_k": 473.7191801785333,
+    "cloud_potential": 0.95,
+    "origin": "outgassed",
+    "retention_index": 2.4032563127485194,
+    "outer_radius_km": 7651.046249210728
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 1.0490212207493732,
+    "hydrosphere": "steam"
+  },
+  "spin": {
+    "rotation_period_hours": 20.255624347370187,
+    "obliquity_deg": 28.88523873461147,
+    "rotation_direction": 1,
+    "axis_node_deg": 286.21216474593587,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "volcanic_plains",
+    "relief_amplitude_km": 2.540850627102806,
+    "roughness": 0.1116160899750469,
+    "crater_density": 0.01380664982666119,
+    "resurfacing_rate": 0.2,
+    "erosion_potential": 0.850957449794279,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.18276132996533223,
+    "lava_tube_propensity": 0.16382625974862944,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

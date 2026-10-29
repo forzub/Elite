@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_37.HD_114783.asteroid_belt",
+  "name": "HD 114783 asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_37.HD_114783",
+  "seed": "0x5361e2fe75bbf11e",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.0,
+  "outer_au": 3.5999999999999996,
+  "peak_au": 2.8,
+  "total_mass_earth": 0.0024273666149144165,
+  "eccentricity_mean": 0.1582713796613633,
+  "inclination_mean_deg": 5.02901976693086,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1500.0,
+    "estimated_bodies_above_1km": 71545151.17325613
+  },
+  "clumpiness": 0.23996160832516028,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      2.353749283845681,
+      2.4537492838456805
+    ],
+    [
+      2.664417616594907,
+      2.7644176165949066
+    ],
+    [
+      2.7921837199259945,
+      2.892183719925994
+    ],
+    [
+      3.0998026247371833,
+      3.199802624737183
+    ]
+  ],
+  "resonance": "Kirkwood gaps of HD 114783 c",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

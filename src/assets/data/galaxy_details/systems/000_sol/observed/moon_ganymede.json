@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Ганимед",
+  "alternative_names": [
+    "Ganymede"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.007155262270721612,
+    "eccentricity": 0.0013,
+    "inclination_deg": 0.2,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.024813301630889788,
+    "radius_earth": 0.41299132970633884,
+    "water_mass_fraction": 0.45,
+    "mean_surface_temperature_k": 110.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

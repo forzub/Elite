@@ -1,0 +1,89 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 1,
+  "name": "Alpha Centauri A+B",
+  "slug": "alpha_centauri_a_b",
+  "alternative_names": [
+    "Rigil Kentaurus",
+    "Toliman",
+    "α Cen"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -1.6152,
+    "y": -1.3511,
+    "z": -3.7731
+  },
+  "position_source": "hyg gl=Gl 559A (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -1.634,
+    "y": -1.366,
+    "z": -3.816
+  },
+  "stellar_hierarchy": {
+    "id": "ab",
+    "children": [
+      {
+        "star": "alpha_centauri_a"
+      },
+      {
+        "star": "alpha_centauri_b"
+      }
+    ],
+    "orbit": {
+      "semi_major_axis_au": {
+        "value": 23.3,
+        "source": "Akeson et al. 2021 / Pourbaix 2016"
+      },
+      "eccentricity": {
+        "value": 0.5208,
+        "source": "Akeson et al. 2021 / Pourbaix 2016"
+      },
+      "period_years": {
+        "value": 79.91,
+        "source": "Akeson et al. 2021 / Pourbaix 2016"
+      },
+      "inclination_deg": {
+        "value": 79.24,
+        "source": "Akeson et al. 2021 / Pourbaix 2016"
+      },
+      "source": "Akeson et al. 2021 / Pourbaix 2016"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima",
+    "scope": "Alpha Centauri A and B only; Proxima Centauri is catalog system 60.",
+    "objects": [
+      {
+        "name": "Alpha Centauri A b",
+        "status": "candidate",
+        "semi_major_axis_au": 1.9,
+        "parameter_epoch": 2025
+      },
+      {
+        "name": "Alpha Centauri B b",
+        "status": "false_positive",
+        "orbital_period_days": 3.2357
+      }
+    ],
+    "gameplay_note": "Bodies in details are procedural future-gameplay bodies for year 3026 and are not claims about confirmed planets in 2026."
+  },
+  "lore": {
+    "stellar_description": "Стабильная (двойная система, компоненты A и B стабильны)"
+  }
+}

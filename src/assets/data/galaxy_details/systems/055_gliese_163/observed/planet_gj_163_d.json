@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "GJ 163 d",
+  "kind": "planet",
+  "host": "gliese_163",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2013",
+  "orbit": {
+    "period_days": {
+      "value": 603.95116,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 1.0304,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.373,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 29.4,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (m sin i)"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Деймос",
+  "alternative_names": [
+    "Deimos"
+  ],
+  "kind": "moon",
+  "host": "Марс",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.00015684046764978453,
+    "eccentricity": 0.00033,
+    "inclination_deg": 0.93,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 2.4717859415290844e-10,
+    "radius_earth": 0.0009720763236700584,
+    "water_mass_fraction": 0.0,
+    "mean_surface_temperature_k": 233.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

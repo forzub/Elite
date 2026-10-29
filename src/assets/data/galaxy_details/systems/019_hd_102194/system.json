@@ -1,0 +1,43 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 19,
+  "name": "HD 102194",
+  "slug": "hd_102194",
+  "alternative_names": [
+    "HD 102194 System",
+    "Аш Ди 102194",
+    "Система 102194",
+    "Горячий Нептун"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -332.7731,
+    "y": 20.522,
+    "z": 534.1296
+  },
+  "position_source": "hyg hd=102194 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -42.7,
+    "y": 85.8,
+    "z": -25.1
+  },
+  "stellar_hierarchy": {
+    "star": "hd_102194"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "lore": {
+    "stellar_description": "Стабильный желтый карлик, горячий нептун"
+  }
+}

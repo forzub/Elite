@@ -1,0 +1,53 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 21,
+  "name": "GJ 1214",
+  "slug": "gj_1214",
+  "alternative_names": [
+    "GJ 1214",
+    "GJ 1214 System",
+    "Мини-Нептун Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -9.2159,
+    "y": -46.6781,
+    "z": 4.1297
+  },
+  "position_source": "archive hostname=GJ 1214 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -19.25,
+    "y": 43.12,
+    "z": -8.52
+  },
+  "stellar_hierarchy": {
+    "star": "gj_1214"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry",
+    "transit_radius_limit_earth": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "transit_baseline_days": {
+      "value": 27.0,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    }
+  },
+  "reserved_designations": [
+    "GJ 1214 b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

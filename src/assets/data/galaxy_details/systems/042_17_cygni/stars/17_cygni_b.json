@@ -1,0 +1,31 @@
+{
+  "schema": "elite.star.v2",
+  "key": "17_cygni_b",
+  "name": "17 Cygni B",
+  "alternative_names": [
+    "17 Cyg B",
+    "HD 186808 B",
+    "Красный карлик"
+  ],
+  "spectral_type": "M0.4",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.52,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.038,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 3750,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 3.2,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M0.4 — Красный карлик"
+  }
+}

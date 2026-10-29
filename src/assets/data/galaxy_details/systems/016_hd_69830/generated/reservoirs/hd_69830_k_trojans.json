@@ -1,0 +1,39 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_16.HD_69830.HD_69830_k.trojans",
+  "name": "HD 69830 k trojans",
+  "kind": "trojans",
+  "parent_id": "system_16.HD_69830.HD_69830_k",
+  "seed": "0x6ad52b8b178df3c1",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 7.80515237432114,
+  "outer_au": 8.626747361091788,
+  "peak_au": 8.215949867706463,
+  "total_mass_earth": 1.4116058492996198e-05,
+  "eccentricity_mean": 0.07,
+  "inclination_mean_deg": 11.590137555243366,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 280.4429273525244,
+    "estimated_bodies_above_1km": 143580.03433190502
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "d_type_organics": 0.6,
+    "silicate": 0.25,
+    "water_ice": 0.15
+  },
+  "gaps_au": [],
+  "resonance": "1:1 L4/L5 with HD 69830 k",
+  "formation_origin": "captured_at_lagrange_points",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_45.83_Leonis_B.83_Leonis_B_i",
+  "designation": "83 Leonis B i",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_45.83_Leonis_B",
+  "host_star": "83_leonis_b",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x90c9092538aa19e5",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 1.0933862323005419,
+    "eccentricity": 0.03021116064116505,
+    "inclination_deg": 1.4352560905268874,
+    "longitude_ascending_node_deg": 33.97912353574214,
+    "argument_of_periapsis_deg": 31.509903900917983,
+    "mean_anomaly_at_epoch_deg": 198.76657143698182,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 452.94719810233875,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.3918015282383198e+25,
+    "mass_earth": 2.3304670443694446,
+    "radius_km": 8128.934290887888,
+    "density_kg_m3": 6185.685861632587,
+    "mu_m3s2": 928930093992101.6,
+    "surface_gravity_ms2": 14.057749709294932,
+    "escape_velocity_kms": 15.117838712237065,
+    "hill_radius_km": 2221024.0826153397,
+    "sphere_of_influence_km": 1513421.8586158175,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.30939200373930326,
+    "silicate_mantle": 0.672011596028236,
+    "water_ice": 0.018484118402982083,
+    "other_volatiles": 9.999877169422156e-05,
+    "hydrogen_helium_envelope": 1.2283057784395503e-05,
+    "water_mass_fraction": 0.018484118402982083,
+    "formation_distance_au": 1.2045489712569366
+  },
+  "thermal": {
+    "instellation_earth": 0.2804020039177444,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 196.35730300930194,
+    "mean_surface_temperature_k": 526.3096947375312,
+    "min_surface_temperature_k": 525.010490346167,
+    "max_surface_temperature_k": 527.3090827308883,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 1.8975641934741072,
+    "radiogenic_heat_flux_wm2": 0.0344052209773009,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 4719687.97316262,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 7.112897424045142,
+    "greenhouse_warming_k": 329.95239172822926,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 21.70596405572401,
+    "outer_radius_km": 8214.28905997643
+  },
+  "geophysics": {
+    "tectonic_regime": "mobile_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 1.0895744034057206,
+    "hydrosphere": "surface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 38.38386686059654,
+    "obliquity_deg": 13.243647816636352,
+    "rotation_direction": 1,
+    "axis_node_deg": 197.6505042133062,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "plate_tectonic_continents",
+    "relief_amplitude_km": 7.828595159853879,
+    "roughness": 0.20248978773456278,
+    "crater_density": 0.004979575469125543,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.6009959150938251,
+    "lava_tube_propensity": 0.13956714556546224,
+    "karst_propensity": 1.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 1.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.35,
+      "granite": 0.25,
+      "sediment": 0.25,
+      "carbonate": 0.15
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

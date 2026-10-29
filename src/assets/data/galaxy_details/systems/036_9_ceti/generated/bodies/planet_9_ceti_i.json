@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_36.9_Ceti.9_Ceti_i",
+  "designation": "9 Ceti i",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_36.9_Ceti",
+  "host_star": "9_ceti",
+  "origin": "generated",
+  "formation_origin": "photoevaporated_core",
+  "seed": "0x490aee205ada15f8",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.6225703145011735,
+    "eccentricity": 0.011600776531703898,
+    "inclination_deg": 1.963618238185579,
+    "longitude_ascending_node_deg": 74.02915024682191,
+    "argument_of_periapsis_deg": 14.012415674638579,
+    "mean_anomaly_at_epoch_deg": 346.56244119812106,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 175.93951781351043,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 9.266203098069459e+24,
+    "mass_earth": 1.5515560594202236,
+    "radius_km": 7217.410203946107,
+    "density_kg_m3": 5883.950869992126,
+    "mu_m3s2": 618454193374449.9,
+    "surface_gravity_ms2": 11.872570579007295,
+    "escape_velocity_kms": 13.09115824088897,
+    "hill_radius_km": 1052268.701854986,
+    "sphere_of_influence_km": 675552.0977129858,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.3134841894337947,
+    "silicate_mantle": 0.6848149519908399,
+    "water_ice": 0.0016008585753655119,
+    "other_volatiles": 0.00010000000000000002,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.0016008585753655119,
+    "formation_distance_au": 0.8292142349380018
+  },
+  "thermal": {
+    "instellation_earth": 2.7350059343733677,
+    "bond_albedo": 0.75,
+    "equilibrium_temperature_k": 253.34111784632603,
+    "mean_surface_temperature_k": 666.7812476900247,
+    "min_surface_temperature_k": 664.965905027866,
+    "max_surface_temperature_k": 668.1776651224544,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 0.6384151902388845,
+    "radiogenic_heat_flux_wm2": 0.1327062859040684,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 4277447.947759084,
+    "composition": {
+      "CO2": 0.9648359778837597,
+      "N2": 0.034994051011328076,
+      "SO2": 0.00014997450433426316,
+      "H2O": 1.9996600577901758e-05
+    },
+    "mean_molecular_weight": 43.45272383694772,
+    "scale_height_km": 10.668592097351416,
+    "greenhouse_warming_k": 413.4401298436986,
+    "cloud_potential": 0.95,
+    "origin": "outgassed",
+    "retention_index": 1.7090091866658774,
+    "outer_radius_km": 7345.4333091143235
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "high",
+    "magnetic_field_earth": 1.8666020069318388,
+    "hydrosphere": "steam"
+  },
+  "spin": {
+    "rotation_period_hours": 25.311982091851082,
+    "obliquity_deg": 4.259730349487985,
+    "rotation_direction": 1,
+    "axis_node_deg": 147.8165027940333,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "volcanic_plains",
+    "relief_amplitude_km": 2.0829706207136836,
+    "roughness": 0.12344476796757273,
+    "crater_density": 0.000685330821931479,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 0.7896596581446433,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.1801370661643863,
+    "lava_tube_propensity": 0.1652548609371206,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

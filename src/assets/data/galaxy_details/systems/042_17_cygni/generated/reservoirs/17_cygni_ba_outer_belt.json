@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_42.barycenter_ab.kuiper_belt",
+  "name": "17 Cygni (BA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_42.barycenter_ab",
+  "seed": "0x7371de67dc344418",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 13.450563331667562,
+  "outer_au": 25.90278099435414,
+  "peak_au": 16.494535928922595,
+  "total_mass_earth": 0.00013513513513513514,
+  "eccentricity_mean": 0.05119421003891665,
+  "inclination_mean_deg": 4.462991831583385,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 396.3634350772458,
+    "estimated_bodies_above_1km": 972206.7207263493
+  },
+  "clumpiness": 0.18781935812380957,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

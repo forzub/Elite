@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_4.Lalande_21185.kuiper_belt",
+  "name": "Lalande 21185 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_4.Lalande_21185",
+  "seed": "0x27333d52f1b0f013",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.701791334650387,
+  "outer_au": 7.041520829608703,
+  "peak_au": 4.091942398506509,
+  "total_mass_earth": 0.02006786065071889,
+  "eccentricity_mean": 0.1322558988066886,
+  "inclination_mean_deg": 9.96125194694868,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2098.961708031312,
+    "estimated_bodies_above_1km": 27263038.760962103
+  },
+  "clumpiness": 0.3985740425073139,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

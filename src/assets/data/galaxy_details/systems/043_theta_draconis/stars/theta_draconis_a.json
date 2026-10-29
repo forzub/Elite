@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "theta_draconis_a",
+  "name": "Theta Draconis A",
+  "alternative_names": [
+    "Theta Dra A",
+    "HD 175775 A"
+  ],
+  "spectral_type": "F9V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.15,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 2.2,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 6150,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 3.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "F9V — Жёлто-белый карлик"
+  }
+}

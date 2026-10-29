@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "GJ 581 b",
+  "kind": "planet",
+  "host": "gliese_581",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2005",
+  "orbit": {
+    "period_days": {
+      "value": 5.3686,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.0399,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.0342,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "mass_earth": {
+      "value": 20.5,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (Mass)"
+    }
+  }
+}

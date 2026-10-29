@@ -1,0 +1,154 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 37,
+  "name": "HD 114783",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x0c9c3d26ae016c19",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0070429476503355406,
+      -0.007377934832957353,
+      0.017782619881322927
+    ],
+    "galactocentric_radius_kpc": 8.17296038247308,
+    "height_above_plane_kpc": 0.03858261988132293,
+    "population_metallicity_mean_feh": -0.04957762294838485,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10019029129875315,
+    "formation_environment_density": 0.5284834552670661,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_114783",
+      "id": "system_37.HD_114783",
+      "name": "HD 114783",
+      "alternative_names": [
+        "HD 114783 A"
+      ],
+      "spectral_type": "K1 V",
+      "stage": "main_sequence",
+      "seed": "0x76e2dbd409b7a9b4",
+      "mass_solar": 0.9,
+      "initial_mass_solar": 0.9,
+      "radius_solar": 0.840622,
+      "teff_k": 5135.0,
+      "luminosity_solar": 0.4241309839104882,
+      "metallicity_feh": 0.21,
+      "age_gyr": 6.0,
+      "main_sequence_lifetime_gyr": 13.286771568032568,
+      "rotation_period_days": 34.616460745290055,
+      "mu_m3s2": 1.19441196e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 114783)"
+      },
+      "extra": {
+        "legacy_type_label": "K0V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_114783",
+      "gas_mass_solar": 0.01931901756813105,
+      "solid_mass_earth": 137.33993251990105,
+      "dust_to_gas": 0.021732255304609663,
+      "inner_edge_au": 0.023368464904653028,
+      "characteristic_radius_au": 37.375768022125925,
+      "outer_truncation_au": 343.8937720422537,
+      "lifetime_myr": 2.951179624680605,
+      "snow_line_au": 2.1870000000000003,
+      "turbulence_alpha": 0.0002531082515619482,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "hd_114783:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_114783",
+      "passed": true,
+      "detail": "planets=9 attempts=2 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_HD 114783 d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_HD 114783 b",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

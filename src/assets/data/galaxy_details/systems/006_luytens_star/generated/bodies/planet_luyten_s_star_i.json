@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_6.Luyten's_Star.Luyten's_Star_i",
+  "designation": "Luyten's Star i",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_6.Luyten's_Star",
+  "host_star": "luytens_star",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x4f0703e1051180ff",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.42573298125209,
+    "eccentricity": 0.016425434042812003,
+    "inclination_deg": 0.10949330524727775,
+    "longitude_ascending_node_deg": 136.16846853070825,
+    "argument_of_periapsis_deg": 266.95426266166106,
+    "mean_anomaly_at_epoch_deg": 206.7120802237322,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 164.59331300810345,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.3417999060991074e+24,
+    "mass_earth": 0.2246743086465804,
+    "radius_km": 5053.057631009556,
+    "density_kg_m3": 2482.769453400114,
+    "mu_m3s2": 89555751132772.72,
+    "surface_gravity_ms2": 3.5073974174282263,
+    "escape_velocity_kms": 5.953667992946684,
+    "hill_radius_km": 525971.642160431,
+    "sphere_of_influence_km": 319023.00984570914,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.1772145477763062,
+    "silicate_mantle": 0.51952012111292,
+    "water_ice": 0.3031653311107737,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.3031653311107737,
+    "formation_distance_au": 0.42573298125209
+  },
+  "thermal": {
+    "instellation_earth": 0.07725241001346081,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 120.29906440457904,
+    "mean_surface_temperature_k": 125.22098655707637,
+    "min_surface_temperature_k": 53.283206943891514,
+    "max_surface_temperature_k": 180.5577401056801,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 3.4670873042230568,
+    "radiogenic_heat_flux_wm2": 0.0021163260482415635,
+    "tidal_heat_flux_wm2": 7.337334644618465e-09
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 16206.240092373026,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 6.782864256018659,
+    "greenhouse_warming_k": 4.921922152497331,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 5.807674556726508,
+    "outer_radius_km": 5134.45200208178
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 3950.239512194483,
+    "obliquity_deg": 0.6704327208634464,
+    "rotation_direction": 1,
+    "axis_node_deg": 200.15004752216595,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "ice_shell_fractured",
+    "relief_amplitude_km": 9.676150542667065,
+    "roughness": 0.8223435755998958,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.1255214146670143,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.09323152214663212,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.24736188622268576,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

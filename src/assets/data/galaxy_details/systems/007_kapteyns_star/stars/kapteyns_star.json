@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "kapteyns_star",
+  "name": "Kapteyn's Star",
+  "alternative_names": [
+    "CD-45 1841",
+    "Звезда Каптейна"
+  ],
+  "spectral_type": "M2.0V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.281,
+    "source": "literature compilation 2026-10-29: Guinan et al. 2016"
+  },
+  "radius_solar": {
+    "value": 0.291,
+    "source": "literature compilation 2026-10-29: Segransan 2003"
+  },
+  "teff_k": {
+    "value": 3550,
+    "source": "literature compilation 2026-10-29: Guinan et al. 2016"
+  },
+  "luminosity_solar": {
+    "value": 0.012,
+    "source": "literature compilation 2026-10-29: Guinan et al. 2016"
+  },
+  "metallicity_feh": {
+    "value": -0.86,
+    "source": "literature compilation 2026-10-29: Woolf & Wallerstein 2005"
+  },
+  "age_gyr": {
+    "value": 11.5,
+    "source": "literature compilation 2026-10-29: Wylie-de Boer 2010 (halo)"
+  },
+  "extra": {
+    "legacy_type_label": "M1V — Красный карлик"
+  }
+}

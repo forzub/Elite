@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_625",
+  "name": "Gliese 625",
+  "alternative_names": [
+    "GJ 625 A"
+  ],
+  "spectral_type": "M2",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.3,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 625)"
+  },
+  "radius_solar": {
+    "value": 0.31,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 625)"
+  },
+  "teff_k": {
+    "value": 3499.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 625)"
+  },
+  "luminosity_solar": {
+    "value": 0.012764388088113442,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 625)"
+  },
+  "metallicity_feh": {
+    "value": -0.38,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 625)"
+  },
+  "age_gyr": {
+    "value": 6.6,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M2V — Красный карлик"
+  }
+}

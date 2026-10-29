@@ -1,0 +1,170 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 16,
+  "name": "HD 69830",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xf1380d11dfce1b13",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.007063242019253708,
+      -0.009925509043991278,
+      0.002773030436661408
+    ],
+    "galactocentric_radius_kpc": 8.187069258565765,
+    "height_above_plane_kpc": 0.023573030436661407,
+    "population_metallicity_mean_feh": -0.05042415551394595,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10435773461795317,
+    "formation_environment_density": 1.902487219353243,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_69830",
+      "id": "system_16.HD_69830",
+      "name": "HD 69830",
+      "alternative_names": [
+        "Аш Ди 69830",
+        "HD 69830 A"
+      ],
+      "spectral_type": "K0V",
+      "stage": "main_sequence",
+      "seed": "0xe8a6524b29c17ea0",
+      "mass_solar": 0.86,
+      "initial_mass_solar": 0.86,
+      "radius_solar": 0.886947,
+      "teff_k": 5385.0,
+      "luminosity_solar": 0.6025595860743578,
+      "metallicity_feh": -0.05,
+      "age_gyr": 7.0,
+      "main_sequence_lifetime_gyr": 14.506978006682157,
+      "rotation_period_days": 41.422694414398116,
+      "mu_m3s2": 1.141326984e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+      },
+      "extra": {
+        "legacy_type_label": "K0V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_69830",
+      "gas_mass_solar": 0.05889172711113844,
+      "solid_mass_earth": 246.64484204487027,
+      "dust_to_gas": 0.01194276257099219,
+      "inner_edge_au": 0.021337427954915278,
+      "characteristic_radius_au": 16.270676692691705,
+      "outer_truncation_au": 181.25046720335675,
+      "lifetime_myr": 2.304611507822718,
+      "snow_line_au": 1.99692,
+      "turbulence_alpha": 0.0018631196208411364,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "hd_69830:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_69830",
+      "passed": true,
+      "detail": "planets=11 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_HD 69830 e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_HD 69830 k",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "ejection_hd_69830",
+      "passed": true,
+      "detail": "ejected planet from hd_69830: 161.394 M_earth (rogue population)"
+    },
+    {
+      "check": "ejection_hd_69830",
+      "passed": true,
+      "detail": "ejected planet from hd_69830: 399.239 M_earth (rogue population)"
+    },
+    {
+      "check": "ejection_hd_69830",
+      "passed": true,
+      "detail": "ejected planet from hd_69830: 617.929 M_earth (rogue population)"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

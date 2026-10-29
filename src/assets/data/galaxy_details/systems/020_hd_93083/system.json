@@ -1,0 +1,55 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 20,
+  "name": "HD 93083",
+  "slug": "hd_93083",
+  "alternative_names": [
+    "GJ 1137"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -71.6059,
+    "y": 24.5341,
+    "z": -50.2461
+  },
+  "position_source": "hyg hd=93083 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -73.303541,
+    "y": 25.116471,
+    "z": -51.438789
+  },
+  "stellar_hierarchy": {
+    "star": "hd_93083"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "reserved_designations": [
+    "GJ 1137 c",
+    "HD 93083 b"
+  ],
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2093083",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "10h44m20.80s",
+    "dec_dms": "-33d34m39.65s",
+    "distance_pc": 28.5159,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "planet_radius_policy": "No physical radius is stored when NASA reports only radial-velocity minimum mass."
+  },
+  "lore": {
+    "stellar_description": "Стабильная старая K-звезда; параметры обновлены по NASA Exoplanet Archive"
+  }
+}

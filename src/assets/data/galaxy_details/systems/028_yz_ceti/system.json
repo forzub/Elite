@@ -1,0 +1,48 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 28,
+  "name": "YZ Ceti",
+  "slug": "yz_ceti",
+  "alternative_names": [
+    "YZ Ceti",
+    "ИП Цети",
+    "GJ 54.1",
+    "Три Суперземли"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 10.9378,
+    "y": 3.5808,
+    "z": -3.5184
+  },
+  "position_source": "hyg gl=Gl 54.1 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -2.68,
+    "y": 11.25,
+    "z": -3.58
+  },
+  "stellar_hierarchy": {
+    "star": "yz_ceti"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "YZ Cet b",
+    "YZ Cet c",
+    "YZ Cet d"
+  ],
+  "lore": {
+    "stellar_description": "Активный красный карлик"
+  }
+}

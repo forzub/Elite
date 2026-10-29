@@ -1,0 +1,132 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Венера",
+  "designation": "Венера",
+  "alternative_names": [
+    "Venus",
+    "Aphrodite"
+  ],
+  "kind": "planet",
+  "parent_id": "system_0.Sol",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x3429b917fc55637b",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 0.72333566,
+    "eccentricity": 0.00677672,
+    "inclination_deg": 3.39467605,
+    "longitude_ascending_node_deg": 76.67984255,
+    "argument_of_periapsis_deg": 54.92262462999999,
+    "mean_anomaly_at_epoch_deg": 50.37663232,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 224.70239919847288,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 4.867343e+24,
+    "mass_earth": 0.815,
+    "radius_km": 6051.8,
+    "density_kg_m3": 5242.635229514686,
+    "mu_m3s2": 324861073848999.94,
+    "surface_gravity_ms2": 8.870100521017047,
+    "escape_velocity_kms": 10.361474251581285,
+    "hill_radius_km": 1004308.4284205791,
+    "sphere_of_influence_km": 616282.3142297406,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.29997,
+    "silicate_mantle": 0.6999299999999999,
+    "water_ice": 0.0,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.0,
+    "formation_distance_au": 0.72333566
+  },
+  "thermal": {
+    "instellation_earth": 1.9113059876305127,
+    "bond_albedo": 0.76,
+    "equilibrium_temperature_k": 229.280160781486,
+    "mean_surface_temperature_k": 737.0,
+    "min_surface_temperature_k": 736.0647613882863,
+    "max_surface_temperature_k": 737.7194143167028,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 0.7606848361961793,
+    "radiogenic_heat_flux_wm2": 0.024546474051826025,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 9200000.0,
+    "composition": {
+      "CO2": 0.965,
+      "N2": 0.035
+    },
+    "mean_molecular_weight": 43.45014,
+    "scale_height_km": 15.784588516732802,
+    "greenhouse_warming_k": 507.71983921851404,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 2.478026865681998,
+    "outer_radius_km": 6241.215062200794
+  },
+  "geophysics": {
+    "tectonic_regime": "episodic",
+    "volcanism": "low",
+    "magnetic_field_earth": 0.07416506977287249,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 5832.5,
+    "obliquity_deg": 177.36,
+    "rotation_direction": 1,
+    "axis_node_deg": 100.54981153220471,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "volcanic_plains",
+    "relief_amplitude_km": 13.410486308746405,
+    "roughness": 0.1756736225295954,
+    "crater_density": 0.0049139784946236565,
+    "resurfacing_rate": 0.6,
+    "erosion_potential": 0.8892778890590547,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.4209827956989247,
+    "lava_tube_propensity": 0.22119253275103098,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "eccentricity": "observed",
+    "mass_earth": "observed",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "authored",
+    "semi_major_axis_au": "observed"
+  },
+  "extra": {
+    "environment_preset_id": "venusian_dense"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_12.Gliese_832.kuiper_belt",
+  "name": "Gliese 832 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_12.Gliese_832",
+  "seed": "0x31e4c41ddd66d607",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 5.439,
+  "outer_au": 10.221830071305329,
+  "peak_au": 5.805604039410231,
+  "total_mass_earth": 0.00955293056518887,
+  "eccentricity_mean": 0.0979594372947355,
+  "inclination_mean_deg": 12.171610908826278,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1638.889591936635,
+    "estimated_bodies_above_1km": 16621305.875164974
+  },
+  "clumpiness": 0.2646670345337141,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

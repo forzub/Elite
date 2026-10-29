@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Гималия",
+  "alternative_names": [
+    "Himalia"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.07661205300831865,
+    "eccentricity": 0.16,
+    "inclination_deg": 27.5,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 7.032584307290445e-07,
+    "radius_earth": 0.010943697966479045,
+    "water_mass_fraction": 0.1,
+    "mean_surface_temperature_k": 124.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_102365_a",
+  "name": "HD 102365 A",
+  "alternative_names": [
+    "HD 102365 A",
+    "Жёлтый карлик"
+  ],
+  "spectral_type": "G2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.02,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 1.05,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 5780,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 5.0,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "G2V — Жёлтый карлик"
+  }
+}

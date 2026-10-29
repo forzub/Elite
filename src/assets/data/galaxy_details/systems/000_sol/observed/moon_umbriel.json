@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Умбриэль",
+  "alternative_names": [
+    "Umbriel"
+  ],
+  "kind": "moon",
+  "host": "Уран",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0017781001745234065,
+    "eccentricity": 0.0039,
+    "inclination_deg": 0.128,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.0002134891664713171,
+    "radius_earth": 0.09167306878223923,
+    "water_mass_fraction": 0.4,
+    "mean_surface_temperature_k": 75.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

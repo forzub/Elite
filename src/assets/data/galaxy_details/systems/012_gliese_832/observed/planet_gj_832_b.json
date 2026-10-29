@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "GJ 832 b",
+  "kind": "planet",
+  "host": "gliese_832",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2008",
+  "orbit": {
+    "period_days": {
+      "value": 3853.0,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 3.7,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.05,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "mass_earth": {
+      "value": 314.65012293,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (Mass)"
+    }
+  }
+}

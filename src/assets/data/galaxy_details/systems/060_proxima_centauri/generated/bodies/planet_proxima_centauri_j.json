@@ -1,0 +1,125 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_60.Proxima_Centauri.Proxima_Centauri_j",
+  "designation": "Proxima Centauri j",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_60.Proxima_Centauri",
+  "host_star": "proxima_centauri",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x08768a19826f8152",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 1.0112123916403373,
+    "eccentricity": 0.032335065788027285,
+    "inclination_deg": 1.389262228803889,
+    "longitude_ascending_node_deg": 341.303094570827,
+    "argument_of_periapsis_deg": 281.02047788007957,
+    "mean_anomaly_at_epoch_deg": 102.88283165783474,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 1062.9181919861844,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 4.840402222216561e+24,
+    "mass_earth": 0.810488969260333,
+    "radius_km": 7026.08941150383,
+    "density_kg_m3": 3331.592117241103,
+    "mu_m3s2": 323062965517399.9,
+    "surface_gravity_ms2": 6.544249236072023,
+    "escape_velocity_kms": 9.589627757510472,
+    "hill_radius_km": 2752151.5140754962,
+    "sphere_of_influence_km": 1993571.1765306978,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.22388699818243735,
+    "silicate_mantle": 0.3768028551219248,
+    "water_ice": 0.31944490472832354,
+    "other_volatiles": 0.07986122618208089,
+    "hydrogen_helium_envelope": 4.015785233323183e-06,
+    "water_mass_fraction": 0.31944490472832354,
+    "formation_distance_au": 1.0112123916403373
+  },
+  "thermal": {
+    "instellation_earth": 0.0014774826600441376,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 44.736792035031684,
+    "mean_surface_temperature_k": 47.19627137162724,
+    "min_surface_temperature_k": 46.13435526576563,
+    "max_surface_temperature_k": 48.01312991459771,
+    "temperature_regime": "cryogenic",
+    "habitable_zone_position": 24.960760789551497,
+    "radiogenic_heat_flux_wm2": 0.00882166446016176,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 500000.0,
+    "composition": {
+      "N2": 0.95,
+      "CH4": 0.049,
+      "H2": 0.001
+    },
+    "mean_molecular_weight": 27.401276,
+    "scale_height_km": 2.172513931781721,
+    "greenhouse_warming_k": 2.4594793365955567,
+    "cloud_potential": 0.7,
+    "origin": "outgassed",
+    "retention_index": 509.92270667845713,
+    "outer_radius_km": 7052.15957868521
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 12.263076669020109,
+    "obliquity_deg": 173.2018299718473,
+    "rotation_direction": 1,
+    "axis_node_deg": 351.0553684111887,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "hydrocarbon_lakes",
+    "relief_amplitude_km": 5.611539017108427,
+    "roughness": 0.30533951748451904,
+    "crater_density": 0.19804166666666664,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.5122710528293809,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.21960833333333332,
+    "lava_tube_propensity": 0.04996753457945489,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.9630280704391745,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "nitrogen_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "methane_haze_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

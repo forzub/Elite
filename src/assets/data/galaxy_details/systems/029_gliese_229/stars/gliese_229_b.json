@@ -1,0 +1,31 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_229_b",
+  "name": "Gliese 229 B",
+  "alternative_names": [
+    "GJ 229 B",
+    "Коричневый карлик",
+    "T7"
+  ],
+  "spectral_type": "T7",
+  "stage_hint": "brown_dwarf",
+  "mass_solar": {
+    "value": 0.0692,
+    "source": "literature compilation 2026-10-29: Xuan et al. 2024 (Ba 38.1 + Bb 34.4 M_J, one component here)"
+  },
+  "teff_k": {
+    "value": 900,
+    "source": "literature compilation 2026-10-29: T7 spectral type"
+  },
+  "age_gyr": {
+    "value": 3.0,
+    "source": "literature compilation 2026-10-29: Brandt et al. 2021"
+  },
+  "luminosity_solar": {
+    "value": 6e-05,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "T7 — Коричневый карлик"
+  }
+}

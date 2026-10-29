@@ -1,0 +1,124 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_12.Gliese_832.GJ_832_b.GJ_832_b_II",
+  "designation": "GJ 832 b II",
+  "alternative_names": [],
+  "kind": "moon",
+  "parent_id": "system_12.Gliese_832.GJ_832_b",
+  "host_star": "gliese_832",
+  "origin": "generated",
+  "formation_origin": "regular",
+  "seed": "0xec9ae2ff4072b822",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.003957482708246006,
+    "eccentricity": 0.0031806415986919685,
+    "inclination_deg": 0.3848848069146028,
+    "longitude_ascending_node_deg": 2.931955399818036,
+    "argument_of_periapsis_deg": 308.69056132042067,
+    "mean_anomaly_at_epoch_deg": 146.91114269260402,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 2.9577170381182283,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 3.6499691172282114e+23,
+    "mass_earth": 0.06111598937122352,
+    "radius_km": 3439.0875634444537,
+    "density_kg_m3": 2142.253591684317,
+    "mu_m3s2": 24360988879116.25,
+    "surface_gravity_ms2": 2.0597212340419153,
+    "escape_velocity_kms": 3.7639239312600394,
+    "hill_radius_km": 23697.150688103593,
+    "sphere_of_influence_km": 19394.349353529025,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.2284595363917505,
+    "silicate_mantle": 0.42779046360824946,
+    "water_ice": 0.275,
+    "other_volatiles": 0.06875,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.275,
+    "formation_distance_au": 3.7
+  },
+  "thermal": {
+    "instellation_earth": 0.0018993226555861548,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 47.63585094852547,
+    "mean_surface_temperature_k": 51.32048759590026,
+    "min_surface_temperature_k": 49.11318967099181,
+    "max_surface_temperature_k": 53.01840907659908,
+    "temperature_regime": "cryogenic",
+    "habitable_zone_position": 22.14098903917454,
+    "radiogenic_heat_flux_wm2": 0.0009874707836014034,
+    "tidal_heat_flux_wm2": 0.04627130004104737
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 463607.6407941161,
+    "composition": {
+      "N2": 0.95,
+      "CH4": 0.049,
+      "H2": 0.001
+    },
+    "mean_molecular_weight": 27.401276,
+    "scale_height_km": 7.50580088575737,
+    "greenhouse_warming_k": 3.684636647374788,
+    "cloud_potential": 0.7,
+    "origin": "outgassed",
+    "retention_index": 36.58900345001711,
+    "outer_radius_km": 3529.157174073542
+  },
+  "geophysics": {
+    "tectonic_regime": "cryotectonic",
+    "volcanism": "cryovolcanic",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 70.98520891483747,
+    "obliquity_deg": 0.33399774711398933,
+    "rotation_direction": 1,
+    "axis_node_deg": 98.84609745969627,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "hydrocarbon_lakes",
+    "relief_amplitude_km": 30.0,
+    "roughness": 0.3390354427341785,
+    "crater_density": 0.1796462515258665,
+    "resurfacing_rate": 0.5,
+    "erosion_potential": 0.5026256100958488,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.3359292503051733,
+    "lava_tube_propensity": 0.9525560874807554,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.9501674801277984,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "nitrogen_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "methane_haze_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

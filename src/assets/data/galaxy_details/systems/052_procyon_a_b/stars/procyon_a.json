@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "procyon_a",
+  "name": "Procyon A",
+  "alternative_names": [
+    "Procyon A",
+    "α CMi A",
+    "Жёлто-белый субгигант"
+  ],
+  "spectral_type": "F5IV-V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.478,
+    "source": "literature compilation 2026-10-29: Bond et al. 2015"
+  },
+  "radius_solar": {
+    "value": 2.048,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2004"
+  },
+  "teff_k": {
+    "value": 6530,
+    "source": "literature compilation 2026-10-29: Fuhrmann 1997"
+  },
+  "luminosity_solar": {
+    "value": 6.93,
+    "source": "literature compilation 2026-10-29: Liebert et al. 2013"
+  },
+  "metallicity_feh": {
+    "value": -0.02,
+    "source": "literature compilation 2026-10-29: Allende Prieto 2002"
+  },
+  "age_gyr": {
+    "value": 1.87,
+    "source": "literature compilation 2026-10-29: Liebert et al. 2013"
+  },
+  "extra": {
+    "legacy_type_label": "F5IV-V — Жёлто-белый субгигант"
+  }
+}

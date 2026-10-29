@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "83_leonis_a",
+  "name": "83 Leonis A",
+  "alternative_names": [
+    "83 Leo A",
+    "HD 102194 A"
+  ],
+  "spectral_type": "K0IV",
+  "stage_hint": "subgiant",
+  "mass_solar": {
+    "value": 1.08,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 1.85,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 5150,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 4.8,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "K0IV — Оранжевый субгигант"
+  }
+}

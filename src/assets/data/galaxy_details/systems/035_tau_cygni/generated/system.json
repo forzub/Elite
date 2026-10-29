@@ -1,0 +1,278 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 35,
+  "name": "Tau Cygni",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xbcb1621841e12048",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.002509326781359215,
+      0.020014118166189036,
+      -0.0026312418988827468
+    ],
+    "galactocentric_radius_kpc": 8.177515165103873,
+    "height_above_plane_kpc": 0.018168758101117254,
+    "population_metallicity_mean_feh": -0.04985090990623242,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10648220021207076,
+    "formation_environment_density": 0.24532128326011915,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "tau_cygni_a",
+      "id": "system_35.Tau_Cygni_A",
+      "name": "Tau Cygni A",
+      "alternative_names": [
+        "τ Cyg A",
+        "Субгигант A"
+      ],
+      "spectral_type": "F2IV",
+      "stage": "subgiant",
+      "seed": "0xa98488d2e66ff2a6",
+      "mass_solar": 1.55,
+      "initial_mass_solar": 1.55,
+      "radius_solar": 1.9051876168907116,
+      "teff_k": 6850.0,
+      "luminosity_solar": 7.2,
+      "metallicity_feh": 0.11052042930896008,
+      "age_gyr": 2.5,
+      "main_sequence_lifetime_gyr": 3.3802145407219757,
+      "rotation_period_days": 2.9147158051920212,
+      "mu_m3s2": 2.0570428200000002e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 7.496551313859867,
+        "eccentricity": 0.4471897153845019,
+        "inclination_deg": 4.064258904341031,
+        "longitude_ascending_node_deg": 121.30116198045503,
+        "argument_of_periapsis_deg": 359.14345267453723,
+        "mean_anomaly_at_epoch_deg": 29.50766957178636,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18116.4,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.7509665656670266
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "F2IV — Жёлто-белый субгигант"
+      }
+    },
+    {
+      "key": "tau_cygni_b",
+      "id": "system_35.Tau_Cygni_B",
+      "name": "Tau Cygni B",
+      "alternative_names": [
+        "τ Cyg B",
+        "Жёлтый карлик B"
+      ],
+      "spectral_type": "G0V",
+      "stage": "main_sequence",
+      "seed": "0x7cfdc6834a17bab5",
+      "mass_solar": 1.05,
+      "initial_mass_solar": 1.05,
+      "radius_solar": 1.0263548567062903,
+      "teff_k": 5900.0,
+      "luminosity_solar": 1.15,
+      "metallicity_feh": 0.11052042930896008,
+      "age_gyr": 2.5,
+      "main_sequence_lifetime_gyr": 8.949530725179363,
+      "rotation_period_days": 13.81131827793003,
+      "mu_m3s2": 1.3934806200000002e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 11.066337653793138,
+        "eccentricity": 0.4471897153845019,
+        "inclination_deg": 4.064258904341031,
+        "longitude_ascending_node_deg": 121.30116198045503,
+        "argument_of_periapsis_deg": 179.1434526745372,
+        "mean_anomaly_at_epoch_deg": 29.50766957178636,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18116.4,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.1885731520447
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "G0V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_35.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "tau_cygni_a",
+        "tau_cygni_b"
+      ],
+      "mass_solar": 2.6,
+      "relative_orbit": {
+        "semi_major_axis_au": 18.562888967653006,
+        "eccentricity": 0.4471897153845019,
+        "inclination_deg": 4.064258904341031,
+        "longitude_ascending_node_deg": 121.30116198045503,
+        "argument_of_periapsis_deg": 179.1434526745372,
+        "mean_anomaly_at_epoch_deg": 29.50766957178636,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18116.4,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 67.74776041369486,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "derived"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "tau_cygni_a",
+      "gas_mass_solar": 0.011157169116757007,
+      "solid_mass_earth": 32.68025959510135,
+      "dust_to_gas": 0.01728324266429803,
+      "inner_edge_au": 0.06931202090546777,
+      "characteristic_radius_au": 54.54627372820028,
+      "outer_truncation_au": 2.7509665656670266,
+      "lifetime_myr": 5.687686093028652,
+      "snow_line_au": 6.486750000000001,
+      "turbulence_alpha": 0.0002229340602471514,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "tau_cygni_b",
+      "gas_mass_solar": 0.012312668525989737,
+      "solid_mass_earth": 33.169274251802534,
+      "dust_to_gas": 0.01728324266429803,
+      "inner_edge_au": 0.03180707723133328,
+      "characteristic_radius_au": 14.09579231063055,
+      "outer_truncation_au": 2.1885731520447,
+      "lifetime_myr": 2.3297189467521893,
+      "snow_line_au": 2.9767500000000005,
+      "turbulence_alpha": 0.0008646058981682899,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.002850259195412425,
+      "solid_mass_earth": 15.626010713935575,
+      "dust_to_gas": 0.01728324266429803,
+      "inner_edge_au": 67.74776041369486,
+      "characteristic_radius_au": 24.572632459174265,
+      "outer_truncation_au": 504.7454291592782,
+      "lifetime_myr": 3.358462414045663,
+      "snow_line_au": 7.137153923308647,
+      "turbulence_alpha": 0.001316481508568219,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "tau_cygni_a:binary_truncated; tau_cygni_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_tau_cygni_a",
+      "passed": true,
+      "detail": "planets=8 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "architecture_tau_cygni_b",
+      "passed": true,
+      "detail": "planets=8 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

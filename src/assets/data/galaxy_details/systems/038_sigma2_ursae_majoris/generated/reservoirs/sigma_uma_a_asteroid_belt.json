@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_38.Sigma²_UMa_A.asteroid_belt",
+  "name": "Sigma² UMa A asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_38.Sigma²_UMa_A",
+  "seed": "0x4433970cc5ee77bb",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.264596932237156,
+  "outer_au": 4.076274478026881,
+  "peak_au": 3.1704357051320184,
+  "total_mass_earth": 0.0015015953042473928,
+  "eccentricity_mean": 0.07196099862391636,
+  "inclination_mean_deg": 4.513017965984956,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1344.8978687034096,
+    "estimated_bodies_above_1km": 46743218.69443588
+  },
+  "clumpiness": 0.1345254661022129,
+  "composition": {
+    "silicate_s_type": 0.5,
+    "carbonaceous_c_type": 0.3,
+    "metallic_m_type": 0.15,
+    "water_ice": 0.05
+  },
+  "gaps_au": [
+    [
+      2.665146703726166,
+      2.7783765503380233
+    ],
+    [
+      3.0169159803697307,
+      3.1301458269815883
+    ],
+    [
+      3.1615853431934684,
+      3.274815189805326
+    ],
+    [
+      3.509901757260254,
+      3.6231316038721118
+    ]
+  ],
+  "resonance": "Kirkwood gaps of Sigma² UMa A h",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

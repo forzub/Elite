@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_47.HD_154345.asteroid_belt",
+  "name": "HD 154345 asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_47.HD_154345",
+  "seed": "0x4e240c37383dbde3",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.6632000000000002,
+  "outer_au": 2.99376,
+  "peak_au": 2.32848,
+  "total_mass_earth": 0.0007408687605016053,
+  "eccentricity_mean": 0.18344633224069717,
+  "inclination_mean_deg": 5.595995171415444,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1062.7197842393732,
+    "estimated_bodies_above_1km": 25947116.233265616
+  },
+  "clumpiness": 0.17903933983885795,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      1.9573779044460682,
+      2.0405379044460683
+    ],
+    [
+      2.2157296899603245,
+      2.298889689960325
+    ],
+    [
+      2.3219799814904567,
+      2.405139981490457
+    ],
+    [
+      2.5777958627314415,
+      2.660955862731442
+    ]
+  ],
+  "resonance": "Kirkwood gaps of HD 154345 b",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

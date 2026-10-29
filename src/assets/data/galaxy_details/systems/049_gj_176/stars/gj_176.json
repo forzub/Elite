@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gj_176",
+  "name": "GJ 176",
+  "alternative_names": [
+    "GJ 176 A"
+  ],
+  "spectral_type": "M2 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.5,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "radius_solar": {
+    "value": 0.478214,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "teff_k": {
+    "value": 3703.49,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "luminosity_solar": {
+    "value": 0.021978598727848252,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "metallicity_feh": {
+    "value": -0.1,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "age_gyr": {
+    "value": 3.62,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 285968)"
+  },
+  "extra": {
+    "legacy_type_label": "M2.5V — Красный карлик"
+  }
+}

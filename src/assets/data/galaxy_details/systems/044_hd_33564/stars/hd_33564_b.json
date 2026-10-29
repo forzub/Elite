@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_33564_b",
+  "name": "HD 33564 B",
+  "alternative_names": [
+    "HD 33564 B",
+    "Оранжевый карлик"
+  ],
+  "spectral_type": "K2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.76,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.26,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 4900,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.9,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "K2V — Оранжевый карлик"
+  }
+}

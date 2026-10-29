@@ -1,0 +1,38 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Венера",
+  "alternative_names": [
+    "Venus",
+    "Aphrodite"
+  ],
+  "kind": "planet",
+  "host": "sol",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 0.72333566,
+    "eccentricity": 0.00677672,
+    "inclination_deg": 3.39467605,
+    "longitude_ascending_node_deg": 76.67984255,
+    "argument_of_periapsis_deg": 54.92262462999999,
+    "mean_anomaly_at_epoch_deg": 50.37663232,
+    "epoch_universe_seconds": 32529600.0
+  },
+  "physical": {
+    "mass_earth": 0.815,
+    "radius_earth": 0.9488405638042677,
+    "rotation_period_hours": 5832.5,
+    "obliquity_deg": 177.36,
+    "bond_albedo": 0.76,
+    "surface_pressure_pa": 9200000.0,
+    "mean_surface_temperature_k": 737.0,
+    "water_mass_fraction": 0.0,
+    "iron_core_fraction": 0.3
+  },
+  "atmosphere_composition": {
+    "CO2": 0.965,
+    "N2": 0.035
+  },
+  "extra": {
+    "environment_preset_id": "venusian_dense"
+  }
+}

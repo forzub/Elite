@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sigma2_uma_a",
+  "name": "Sigma² UMa A",
+  "alternative_names": [
+    "Сигма² UMa A",
+    "HD 102194 A"
+  ],
+  "spectral_type": "F7IV",
+  "stage_hint": "subgiant",
+  "mass_solar": {
+    "value": 1.42,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 6.5,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 6450,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.8,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "F7IV — Жёлто-белый субгигант"
+  }
+}

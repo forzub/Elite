@@ -1,0 +1,128 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_11.Gliese_667_C.GJ_667_C_c",
+  "designation": "GJ 667 C c",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_11.Gliese_667_C",
+  "host_star": "gliese_667_c",
+  "origin": "observed_anchor",
+  "formation_origin": "observed",
+  "seed": "0x28457328779322b6",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2013",
+  "orbit": {
+    "semi_major_axis_au": 0.125,
+    "eccentricity": 0.02,
+    "inclination_deg": 0.7270382548626432,
+    "longitude_ascending_node_deg": 129.41844877694504,
+    "argument_of_periapsis_deg": 76.43848696938858,
+    "mean_anomaly_at_epoch_deg": 158.2453951970632,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 28.09952405060843,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 2.2702014854756438e+25,
+    "mass_earth": 3.8012817478913026,
+    "radius_km": 9403.551035040842,
+    "density_kg_m3": 6517.786591548157,
+    "mu_m3s2": 1.5152005774510087e+15,
+    "surface_gravity_ms2": 17.135088638938875,
+    "escape_velocity_kms": 17.951639507644437,
+    "hill_radius_km": 414033.93063910876,
+    "sphere_of_influence_km": 307222.6609286267,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.22356747252734177,
+    "silicate_mantle": 0.7673136150283872,
+    "water_ice": 0.009018912444271032,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.009018912444271032,
+    "formation_distance_au": 0.125
+  },
+  "thermal": {
+    "instellation_earth": 0.8775426680228342,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 261.1673248769841,
+    "mean_surface_temperature_k": 339.0775124960882,
+    "min_surface_temperature_k": 338.20355261728514,
+    "max_surface_temperature_k": 339.7497893259367,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 1.028728606487266,
+    "radiogenic_heat_flux_wm2": 0.13016239146745678,
+    "tidal_heat_flux_wm2": 0.00145022829615624
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 8049949.697894004,
+    "composition": {
+      "N2": 0.9806726217993808,
+      "H2O": 0.009910802775024779,
+      "Ar": 0.008919722497522299,
+      "CO2": 0.0004968529280721963
+    },
+    "mean_molecular_weight": 28.029315350220394,
+    "scale_height_km": 5.827545084217739,
+    "greenhouse_warming_k": 77.91018761910414,
+    "cloud_potential": 0.6,
+    "origin": "outgassed",
+    "retention_index": 3.867481918479069,
+    "outer_radius_km": 9473.481576051456
+  },
+  "geophysics": {
+    "tectonic_regime": "mobile_lid",
+    "volcanism": "high",
+    "magnetic_field_earth": 0.6814200830803263,
+    "hydrosphere": "surface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 674.3885772146025,
+    "obliquity_deg": 1.0484473210020708,
+    "rotation_direction": 1,
+    "axis_node_deg": 144.382142009433,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "plate_tectonic_continents",
+    "relief_amplitude_km": 5.044636623597637,
+    "roughness": 0.20061350071906486,
+    "crater_density": 0.001227001438129619,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.6002454002876259,
+    "lava_tube_propensity": 0.11450188798798655,
+    "karst_propensity": 0.5248426464036098,
+    "weather_potential": 1.0,
+    "ocean_coverage": 1.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.35,
+      "granite": 0.25,
+      "sediment": 0.25,
+      "carbonate": 0.15
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "ocean_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "eccentricity": "observed",
+    "mass_earth": "derived",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated",
+    "semi_major_axis_au": "observed"
+  }
+}

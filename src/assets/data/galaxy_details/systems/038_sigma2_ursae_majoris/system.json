@@ -1,0 +1,72 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 38,
+  "name": "Sigma² Ursae Majoris",
+  "slug": "sigma2_ursae_majoris",
+  "alternative_names": [
+    "Sigma² UMa",
+    "Сигма² Большой Медведицы",
+    "Тройная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -19.0721,
+    "y": 17.4164,
+    "z": 61.2445
+  },
+  "position_source": "hyg hd=78154 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -18.5,
+    "y": 58.2,
+    "z": 18.5
+  },
+  "stellar_hierarchy": {
+    "id": "system_barycenter",
+    "children": [
+      {
+        "star": "sigma2_uma_a"
+      },
+      {
+        "id": "bc",
+        "children": [
+          {
+            "star": "sigma2_uma_b"
+          },
+          {
+            "star": "sigma2_uma_c"
+          }
+        ],
+        "orbit": {
+          "projected_separation_au": {
+            "value": 1.5,
+            "source": "legacy, unverified"
+          },
+          "source": "legacy, unverified"
+        }
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 48.0,
+        "source": "legacy, unverified"
+      },
+      "source": "legacy, unverified"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "lore": {
+    "stellar_description": "Стабильная многокомпонентная система"
+  }
+}

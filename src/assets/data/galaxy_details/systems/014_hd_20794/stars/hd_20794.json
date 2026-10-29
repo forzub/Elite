@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_20794",
+  "name": "HD 20794",
+  "alternative_names": [
+    "82 G. Eridani",
+    "82 Эридана"
+  ],
+  "spectral_type": "G6 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.79,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "radius_solar": {
+    "value": 0.93,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "teff_k": {
+    "value": 5368.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "luminosity_solar": {
+    "value": 0.6868944383608483,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "metallicity_feh": {
+    "value": -0.42,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "age_gyr": {
+    "value": 5.76,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 20794)"
+  },
+  "extra": {
+    "legacy_type_label": "G8V — Жёлтый карлик"
+  }
+}

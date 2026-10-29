@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_53.Gliese_674.debris_disk",
+  "name": "Gliese 674 debris disk",
+  "kind": "debris_disk",
+  "parent_id": "system_53.Gliese_674",
+  "seed": "0xb6ae113f071616d6",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.145269073865718,
+  "outer_au": 6.016658350463665,
+  "peak_au": 3.3209624713357457,
+  "total_mass_earth": 0.07592956440999675,
+  "eccentricity_mean": 0.05579636314773092,
+  "inclination_mean_deg": 11.811574510525691,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 72171674.64821823
+  },
+  "clumpiness": 0.12024980067941635,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

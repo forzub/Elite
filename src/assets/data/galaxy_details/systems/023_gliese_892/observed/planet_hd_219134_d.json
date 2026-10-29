@@ -1,0 +1,31 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 219134 d",
+  "kind": "planet",
+  "host": "gliese_892",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2015",
+  "orbit": {
+    "period_days": {
+      "value": 46.859,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.237,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.138,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 16.3999458012,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (pl_msinie, m sin i)"
+    }
+  },
+  "extra": {
+    "mass_limit_earth": 16.17,
+    "mass_limit_flag": "-1"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_36.9_Ceti.comet_cloud",
+  "name": "9 Ceti comet cloud",
+  "kind": "comet_cloud",
+  "parent_id": "system_36.9_Ceti",
+  "seed": "0x63cc1e93089863c4",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2026.3188076403544,
+  "outer_au": 30000.0,
+  "peak_au": 7796.766267447719,
+  "total_mass_earth": 17.319951343854388,
+  "eccentricity_mean": 0.7,
+  "inclination_mean_deg": 90.0,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 100.0,
+    "estimated_bodies_above_1km": 494326027009.5128
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "water_ice": 0.5,
+    "co_co2_ices": 0.2,
+    "silicate_dust": 0.2,
+    "organics": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "giant_scattering",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 0,
+  "name": "Sol (Солнце)",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xd8278b651e8df65f",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0,
+      0.0,
+      0.0
+    ],
+    "galactocentric_radius_kpc": 8.18,
+    "height_above_plane_kpc": 0.0208,
+    "population_metallicity_mean_feh": -0.05,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10552739823278023,
+    "formation_environment_density": 2.705311824595644,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "sol",
+      "id": "system_0.Sol",
+      "name": "Sol",
+      "alternative_names": [
+        "Солнце",
+        "Sun"
+      ],
+      "spectral_type": "G2V",
+      "stage": "main_sequence",
+      "seed": "0xd5c94080e91768e2",
+      "mass_solar": 1.0,
+      "initial_mass_solar": 1.0,
+      "radius_solar": 1.0,
+      "teff_k": 5772.0,
+      "luminosity_solar": 1.0,
+      "metallicity_feh": 0.0,
+      "age_gyr": 4.57,
+      "main_sequence_lifetime_gyr": 10.0,
+      "rotation_period_days": 25.38,
+      "mu_m3s2": 1.3271244e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "literature",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Bouvier & Wadhwa 2010",
+        "luminosity_solar": "literature compilation 2026-10-29: IAU 2015 nominal",
+        "mass_solar": "literature compilation 2026-10-29: IAU 2015 nominal",
+        "metallicity_feh": "literature compilation 2026-10-29: definition",
+        "radius_solar": "literature compilation 2026-10-29: IAU 2015 nominal",
+        "rotation_period_days": "literature compilation 2026-10-29: Carrington",
+        "teff_k": "literature compilation 2026-10-29: IAU 2015 nominal"
+      },
+      "extra": {
+        "legacy_type_label": "G2V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "sol",
+      "gas_mass_solar": 0.0037214093171051145,
+      "solid_mass_earth": 15.439730310922679,
+      "dust_to_gas": 0.0134,
+      "inner_edge_au": 0.02884995667241114,
+      "characteristic_radius_au": 30.132030413487293,
+      "outer_truncation_au": 151.99571451636737,
+      "lifetime_myr": 3.6211288049788966,
+      "snow_line_au": 2.7,
+      "turbulence_alpha": 0.006935018492472577,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "sol:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "observed_pair_spacing",
+      "passed": true,
+      "detail": "observed pair at 5.20289 / 9.53668 AU: delta=7.8934 (observed pair; below 2*sqrt(3) only resonance-protected)"
+    },
+    {
+      "check": "architecture_sol",
+      "passed": true,
+      "detail": "planets=8 attempts=1 rv_limit=0m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_24496",
+  "name": "HD 24496",
+  "alternative_names": [
+    "HD 24496 A"
+  ],
+  "spectral_type": "G7V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.95,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.82,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 5650,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 5.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "G7V — Жёлтый карлик"
+  }
+}

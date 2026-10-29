@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_48.HD_102365_A.HD_102365_A_j",
+  "designation": "HD 102365 A j",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_48.HD_102365_A",
+  "host_star": "hd_102365_a",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0xd420febf1ad364a1",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.7442693385460092,
+    "eccentricity": 0.042732712002223325,
+    "inclination_deg": 0.9217778162725703,
+    "longitude_ascending_node_deg": 178.53889048774462,
+    "argument_of_periapsis_deg": 29.805155937804365,
+    "mean_anomaly_at_epoch_deg": 210.92088515773108,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 232.2165064980504,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 4.162509866309189e+24,
+    "mass_earth": 0.6969809896368488,
+    "radius_km": 5866.260943474011,
+    "density_kg_m3": 4922.463838816078,
+    "mu_m3s2": 277818396007074.16,
+    "surface_gravity_ms2": 8.073061200018055,
+    "escape_velocity_kms": 9.732284789497411,
+    "hill_radius_km": 939142.3054153115,
+    "sphere_of_influence_km": 590956.0966101746,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.27183742792231863,
+    "silicate_mantle": 0.7258560768267903,
+    "water_ice": 0.002206495250891002,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.002206495250891002,
+    "formation_distance_au": 0.7442693385460092
+  },
+  "thermal": {
+    "instellation_earth": 1.897256085059389,
+    "bond_albedo": 0.75,
+    "equilibrium_temperature_k": 231.20520284876912,
+    "mean_surface_temperature_k": 1013.6989503432076,
+    "min_surface_temperature_k": 1013.3493643059742,
+    "max_surface_temperature_k": 1013.9678626795409,
+    "temperature_regime": "scorched",
+    "habitable_zone_position": 0.7642039517127004,
+    "radiogenic_heat_flux_wm2": 0.01987007494478669,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 33906634.521434985,
+    "composition": {
+      "CO2": 0.9648359778837597,
+      "N2": 0.034994051011328076,
+      "SO2": 0.00014997450433426316,
+      "H2O": 1.9996600577901758e-05
+    },
+    "mean_molecular_weight": 43.45272383694772,
+    "scale_height_km": 23.852793329349137,
+    "greenhouse_warming_k": 782.4937474944385,
+    "cloud_potential": 0.95,
+    "origin": "outgassed",
+    "retention_index": 7.590703699583373,
+    "outer_radius_km": 6152.4944634262
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "supercritical"
+  },
+  "spin": {
+    "rotation_period_hours": 38.393351254932895,
+    "obliquity_deg": 12.364057369180289,
+    "rotation_direction": 1,
+    "axis_node_deg": 193.63962693990817,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "volcanic_plains",
+    "relief_amplitude_km": 3.3660814400028833,
+    "roughness": 0.06147030133100895,
+    "crater_density": 0.002940602662017855,
+    "resurfacing_rate": 0.2,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.18058812053240356,
+    "lava_tube_propensity": 0.24303048761671872,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

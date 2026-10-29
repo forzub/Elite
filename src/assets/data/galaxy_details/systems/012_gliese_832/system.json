@@ -1,0 +1,73 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 12,
+  "name": "Gliese 832",
+  "slug": "gliese_832",
+  "alternative_names": [
+    "Gliese 832",
+    "GJ 832",
+    "HD 204961"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 8.5073,
+    "y": -6.32,
+    "z": -12.1954
+  },
+  "position_source": "hyg gl=Gl 832 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": 8.524905,
+    "y": -6.333174,
+    "z": -12.222234
+  },
+  "stellar_hierarchy": {
+    "star": "gliese_832"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "GJ 832 b"
+  ],
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20832",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "21h33m33.90s",
+    "dec_dms": "-49d00m45.06s",
+    "distance_pc": 4.96435,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "stellar_mass_solar": 0.4491,
+    "stellar_radius_solar": 0.441557,
+    "stellar_temperature_k": 3657,
+    "stellar_age_gyr": 8.1,
+    "confirmed_planets": [
+      "GJ 832 b"
+    ],
+    "false_positive_signals": [
+      {
+        "name": "GJ 832 c",
+        "status": "false_positive",
+        "reason": "The radial-velocity signal was refuted by Gorrini et al. 2022",
+        "reported_period_days": 35.68,
+        "reported_semi_major_axis_au": 0.163,
+        "reported_minimum_mass_earth": 5.4
+      }
+    ],
+    "gameplay_note": "Planets c-e and their moons are a procedurally plausible year-3026 system model. They are not NASA-confirmed 2026 bodies."
+  },
+  "lore": {
+    "stellar_description": "Старый спокойный красный карлик; низкая светимость, длительная главная последовательность"
+  }
+}

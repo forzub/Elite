@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_60.Proxima_Centauri.kuiper_belt",
+  "name": "Proxima Centauri outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_60.Proxima_Centauri",
+  "seed": "0x197e9a8f662e23b3",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.4614740151895742,
+  "outer_au": 2.263760162749538,
+  "peak_au": 1.6919146603615216,
+  "total_mass_earth": 0.039485138910238894,
+  "eccentricity_mean": 0.14377726767265184,
+  "inclination_mean_deg": 7.44093764305411,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2630.159262565004,
+    "estimated_bodies_above_1km": 42808394.606657065
+  },
+  "clumpiness": 0.1604161011143668,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

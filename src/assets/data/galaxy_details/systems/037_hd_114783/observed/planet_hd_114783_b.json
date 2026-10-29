@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 114783 b",
+  "kind": "planet",
+  "host": "hd_114783",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2001",
+  "orbit": {
+    "period_days": {
+      "value": 493.7,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 1.16,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.144,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 349.6,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (m sin i)"
+    }
+  }
+}

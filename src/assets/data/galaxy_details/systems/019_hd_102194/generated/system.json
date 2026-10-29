@@ -1,0 +1,142 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 19,
+  "name": "HD 102194",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x70f06c31520eff23",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0791320319202662,
+      0.06911721589601089,
+      0.1619546631422724
+    ],
+    "galactocentric_radius_kpc": 8.259421233368874,
+    "height_above_plane_kpc": 0.1827546631422724,
+    "population_metallicity_mean_feh": -0.054765274002132464,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.06281055670151744,
+    "formation_environment_density": 0.7238627622215184,
+    "interstellar_density_per_cm3": 0.1478567171518396
+  },
+  "stars": [
+    {
+      "key": "hd_102194",
+      "id": "system_19.HD_102194",
+      "name": "HD 102194",
+      "alternative_names": [
+        "HD 102194 A"
+      ],
+      "spectral_type": "G8V",
+      "stage": "main_sequence",
+      "seed": "0x77aa5e76a2ec64a4",
+      "mass_solar": 1.3,
+      "initial_mass_solar": 1.3,
+      "radius_solar": 12.743926043902494,
+      "teff_k": 4500.0,
+      "luminosity_solar": 60.0,
+      "metallicity_feh": -0.20791875268508522,
+      "age_gyr": 4.0,
+      "main_sequence_lifetime_gyr": 5.081788984416285,
+      "rotation_period_days": 12.839642023190944,
+      "mu_m3s2": 1.7252617200000002e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: giant of ~1.3 M_sun",
+        "luminosity_solar": "literature compilation 2026-10-29: HYG absolute magnitude, K2 III",
+        "mass_solar": "literature compilation 2026-10-29: assumed for a K2 III giant (no measurement)",
+        "teff_k": "literature compilation 2026-10-29: K2 III spectral type"
+      },
+      "extra": {
+        "legacy_type_label": "G8V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_102194",
+      "gas_mass_solar": 0.0032884360732250762,
+      "solid_mass_earth": 8.563947998266414,
+      "dust_to_gas": 0.008302063401283005,
+      "inner_edge_au": 0.04875642677637483,
+      "characteristic_radius_au": 68.9903928391994,
+      "outer_truncation_au": 293.84065999602177,
+      "lifetime_myr": 2.0367945647115273,
+      "snow_line_au": 4.563000000000001,
+      "turbulence_alpha": 0.0006720429694505411,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "hd_102194:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_102194",
+      "passed": true,
+      "detail": "planets=3 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Титан",
+  "alternative_names": [
+    "Titan"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.008167696467086146,
+    "eccentricity": 0.0288,
+    "inclination_deg": 0.34854,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.022524362881350256,
+    "radius_earth": 0.40368291497467895,
+    "water_mass_fraction": 0.45,
+    "mean_surface_temperature_k": 94.0,
+    "surface_pressure_pa": 146700.0,
+    "tidally_locked": true
+  },
+  "atmosphere_composition": {
+    "N2": 0.984,
+    "CH4": 0.014,
+    "H2": 0.002
+  },
+  "extra": {
+    "environment_preset_id": "methane_haze_world"
+  }
+}

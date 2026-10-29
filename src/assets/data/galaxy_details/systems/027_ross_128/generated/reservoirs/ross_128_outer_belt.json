@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_27.Ross_128.kuiper_belt",
+  "name": "Ross 128 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_27.Ross_128",
+  "seed": "0x228755a7c9eede90",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.3768976428400659,
+  "outer_au": 2.103631218284272,
+  "peak_au": 1.7286684458367434,
+  "total_mass_earth": 0.01268193778335183,
+  "eccentricity_mean": 0.05320840516487049,
+  "inclination_mean_deg": 8.448060195002972,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1801.2169682410495,
+    "estimated_bodies_above_1km": 20076943.4382877
+  },
+  "clumpiness": 0.3506655112903492,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gj_433",
+  "name": "GJ 433",
+  "alternative_names": [
+    "GJ 433 A"
+  ],
+  "spectral_type": "M2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.48,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 433)"
+  },
+  "radius_solar": {
+    "value": 0.5,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 433)"
+  },
+  "teff_k": {
+    "value": 3461.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 433)"
+  },
+  "luminosity_solar": {
+    "value": 0.020000000199681043,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 433)"
+  },
+  "metallicity_feh": {
+    "value": -0.17,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 433)"
+  },
+  "age_gyr": {
+    "value": 5.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M1.5V — Красный карлик"
+  }
+}

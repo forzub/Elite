@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_876",
+  "name": "Gliese 876",
+  "alternative_names": [
+    "GJ 876",
+    "HD 217107"
+  ],
+  "spectral_type": "M2.5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.32,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "radius_solar": {
+    "value": 0.3,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "teff_k": {
+    "value": 3293.74,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "luminosity_solar": {
+    "value": 0.012399951885248272,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "metallicity_feh": {
+    "value": 0.2129,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "age_gyr": {
+    "value": 1.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+  },
+  "extra": {
+    "legacy_type_label": "M4V — Красный карлик"
+  }
+}

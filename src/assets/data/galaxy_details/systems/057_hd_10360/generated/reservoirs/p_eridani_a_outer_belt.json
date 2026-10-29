@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_57.barycenter_ab.kuiper_belt",
+  "name": "p Eridani (A) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_57.barycenter_ab",
+  "seed": "0x3ba15d88f7fee7ba",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 7.345017829467809,
+  "outer_au": 13.015248711208297,
+  "peak_au": 9.257594572126497,
+  "total_mass_earth": 0.0411203237051783,
+  "eccentricity_mean": 0.13913320378206645,
+  "inclination_mean_deg": 6.119848766859368,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2665.976591248502,
+    "estimated_bodies_above_1km": 43982254.834509924
+  },
+  "clumpiness": 0.33697159033206875,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

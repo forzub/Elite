@@ -1,0 +1,34 @@
+{
+  "schema": "elite.star.v2",
+  "key": "proxima_centauri",
+  "name": "Proxima Centauri",
+  "alternative_names": [
+    "Proxima Cen",
+    "Alpha Centauri C"
+  ],
+  "spectral_type": "M5.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.1221,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Proxima Cen)"
+  },
+  "radius_solar": {
+    "value": 0.141,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Proxima Cen)"
+  },
+  "teff_k": {
+    "value": 2900.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Proxima Cen)"
+  },
+  "luminosity_solar": {
+    "value": 0.0015100106140043385,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Proxima Cen)"
+  },
+  "age_gyr": {
+    "value": 4.85,
+    "source": "literature compilation 2026-10-29: coeval with alpha Cen AB"
+  },
+  "extra": {
+    "legacy_type_label": "M5.5 V — красный карлик, вспыхивающая звезда"
+  }
+}

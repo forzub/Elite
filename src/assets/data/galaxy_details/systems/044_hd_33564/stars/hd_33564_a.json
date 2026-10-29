@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_33564_a",
+  "name": "HD 33564 A",
+  "alternative_names": [
+    "HD 33564 A",
+    "Жёлто-белый карлик"
+  ],
+  "spectral_type": "F6 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.25,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "radius_solar": {
+    "value": 1.4367,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "teff_k": {
+    "value": 6250.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "luminosity_solar": {
+    "value": 3.4279935808017727,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "metallicity_feh": {
+    "value": -0.12,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "age_gyr": {
+    "value": 3.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 33564)"
+  },
+  "extra": {
+    "legacy_type_label": "F6V — Жёлто-белый карлик"
+  }
+}

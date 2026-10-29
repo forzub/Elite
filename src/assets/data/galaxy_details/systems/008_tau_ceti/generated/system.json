@@ -1,0 +1,156 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 8,
+  "name": "Tau Ceti",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x4c44b33efbeccac7",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thick_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0010328527935102557,
+      0.00012497759654567087,
+      -0.003498802134640423
+    ],
+    "galactocentric_radius_kpc": 8.181032853748121,
+    "height_above_plane_kpc": 0.017301197865359576,
+    "population_metallicity_mean_feh": -0.6,
+    "population_metallicity_sigma_dex": 0.3,
+    "alpha_enhancement": 0.25,
+    "local_stellar_density_per_pc3": 0.10662654782792756,
+    "formation_environment_density": 0.11695269741037598,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "tau_ceti",
+      "id": "system_8.Tau_Ceti",
+      "name": "Tau Ceti",
+      "alternative_names": [
+        "η Ceti",
+        "Тау Кита",
+        "HD 10700"
+      ],
+      "spectral_type": "G8.5V",
+      "stage": "main_sequence",
+      "seed": "0x46868b3e73ec2176",
+      "mass_solar": 0.783,
+      "initial_mass_solar": 0.783,
+      "radius_solar": 0.83,
+      "teff_k": 5310.0,
+      "luminosity_solar": 0.4950054721879247,
+      "metallicity_feh": -0.52,
+      "age_gyr": 12.12,
+      "main_sequence_lifetime_gyr": 17.47446676943935,
+      "rotation_period_days": 52.82774138322103,
+      "mu_m3s2": 1.0391384052000001e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+      },
+      "extra": {
+        "legacy_type_label": "G8.5V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "tau_ceti",
+      "gas_mass_solar": 0.002956510225865694,
+      "solid_mass_earth": 10.437583695158956,
+      "dust_to_gas": 0.0040467353053387015,
+      "inner_edge_au": 0.017687591086331875,
+      "characteristic_radius_au": 76.30932527284017,
+      "outer_truncation_au": 731.0294737088435,
+      "lifetime_myr": 3.7339031826593625,
+      "snow_line_au": 1.6553403000000002,
+      "turbulence_alpha": 0.005875571037560424,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "tau_ceti:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_tau_ceti",
+      "passed": true,
+      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Tau Ceti b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Tau Ceti c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

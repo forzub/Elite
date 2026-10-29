@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_100062.Kepler-62.Kepler-62_l",
+  "designation": "Kepler-62 l",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_100062.Kepler-62",
+  "host_star": "kepler_62",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x9ef75313fc67df9e",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.9197655712138332,
+    "eccentricity": 0.004149802896009694,
+    "inclination_deg": 1.1396271065203947,
+    "longitude_ascending_node_deg": 27.883941534046222,
+    "argument_of_periapsis_deg": 321.1411084414151,
+    "mean_anomaly_at_epoch_deg": 233.687826486756,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 387.8727149625147,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 2.3690426029318577e+24,
+    "mass_earth": 0.3966783769685974,
+    "radius_km": 4995.658322988091,
+    "density_kg_m3": 4536.345036471414,
+    "mu_m3s2": 158117010447480.97,
+    "surface_gravity_ms2": 6.335678628860293,
+    "escape_velocity_kms": 7.956241031296589,
+    "hill_radius_km": 1139800.3333976793,
+    "sphere_of_influence_km": 681537.424728707,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.37350663685138463,
+    "silicate_mantle": 0.5960352041514094,
+    "water_ice": 0.03035815899720592,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.03035815899720592,
+    "formation_distance_au": 0.9197655712138332
+  },
+  "thermal": {
+    "instellation_earth": 0.24811295521612517,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 190.44261688444948,
+    "mean_surface_temperature_k": 531.9109140642933,
+    "min_surface_temperature_k": 530.7998670115303,
+    "max_surface_temperature_k": 532.7655656433417,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 2.0164388924783796,
+    "radiogenic_heat_flux_wm2": 0.006268526276441528,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 5581344.856706206,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 15.950222440087439,
+    "greenhouse_warming_k": 341.4682971798438,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 12.20153645964735,
+    "outer_radius_km": 5187.06099226914
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "global_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 23.3481003864193,
+    "obliquity_deg": 8.296790951487134,
+    "rotation_direction": 1,
+    "axis_node_deg": 180.94261099503993,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "global_ocean_archipelago",
+    "relief_amplitude_km": 3.4974006564513376,
+    "roughness": 0.07232102640581178,
+    "crater_density": 0.024642052811623523,
+    "resurfacing_rate": 0.2,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.1849284105623247,
+    "lava_tube_propensity": 0.051612466344244344,
+    "karst_propensity": 1.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 1.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.35,
+      "granite": 0.25,
+      "sediment": 0.25,
+      "carbonate": 0.15
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "venusian_dense",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

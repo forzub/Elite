@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "epsilon_indi_a",
+  "name": "Epsilon Indi A",
+  "alternative_names": [
+    "ε Ind A",
+    "Оранжевый карлик"
+  ],
+  "spectral_type": "K5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.8,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "radius_solar": {
+    "value": 0.713,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "teff_k": {
+    "value": 4700.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "luminosity_solar": {
+    "value": 0.23900115514847262,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "metallicity_feh": {
+    "value": -0.17,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "age_gyr": {
+    "value": 3.48,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+  },
+  "extra": {
+    "legacy_type_label": "K5V — Оранжевый карлик"
+  }
+}

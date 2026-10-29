@@ -1,0 +1,46 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 41,
+  "name": "HD 104067",
+  "slug": "hd_104067",
+  "alternative_names": [
+    "HD 104067",
+    "Аш Ди 104067",
+    "Система 104067"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -64.4174,
+    "y": 0.2342,
+    "z": -23.8977
+  },
+  "position_source": "hyg hd=104067 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -33.8,
+    "y": 56.5,
+    "z": -6.2
+  },
+  "stellar_hierarchy": {
+    "star": "hd_104067"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "reserved_designations": [
+    "HD 104067 b",
+    "HD 104067 c"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный оранжевый карлик"
+  }
+}

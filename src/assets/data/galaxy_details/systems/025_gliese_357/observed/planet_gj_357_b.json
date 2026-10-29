@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "GJ 357 b",
+  "kind": "planet",
+  "host": "gliese_357",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Transit 2019",
+  "orbit": {
+    "period_days": {
+      "value": 3.9306,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.036,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "mass_earth": {
+      "value": 1.83,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (Mass)"
+    },
+    "radius_earth": {
+      "value": 1.2,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (transit radius)"
+    }
+  }
+}

@@ -1,0 +1,296 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 57,
+  "name": "HD 10360",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xd7231599f4318061",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.001325097440705891,
+      -0.003722182002575744,
+      -0.006751154979218964
+    ],
+    "galactocentric_radius_kpc": 8.178675749557023,
+    "height_above_plane_kpc": 0.014048845020781034,
+    "population_metallicity_mean_feh": -0.04992054497342139,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10779232722313013,
+    "formation_environment_density": 1.390653267811364,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_10360",
+      "id": "system_57.HD_10360",
+      "name": "HD 10360",
+      "alternative_names": [
+        "HD 10360 A"
+      ],
+      "spectral_type": "K2V",
+      "stage": "main_sequence",
+      "seed": "0xd08e2f39664be3c1",
+      "mass_solar": 0.78,
+      "initial_mass_solar": 0.78,
+      "radius_solar": 0.8209080358037081,
+      "teff_k": 4900.0,
+      "luminosity_solar": 0.35,
+      "metallicity_feh": -0.33639495711710976,
+      "age_gyr": 6.2,
+      "main_sequence_lifetime_gyr": 17.984677937377047,
+      "rotation_period_days": 36.7369846054893,
+      "mu_m3s2": 1.0351570320000002e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 30.589534663821098,
+        "eccentricity": 0.3959472413403905,
+        "inclination_deg": 63.55705999843188,
+        "longitude_ascending_node_deg": 185.26807171815747,
+        "argument_of_periapsis_deg": 161.00377581839132,
+        "mean_anomaly_at_epoch_deg": 160.0455566806482,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 133152.31892557442,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        8.7099665058078
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K2V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "p_eridani_a",
+      "id": "system_57.p_Eridani_A",
+      "name": "p Eridani A",
+      "alternative_names": [
+        "HD 10361",
+        "Gl 66 A"
+      ],
+      "spectral_type": "K2V",
+      "stage": "main_sequence",
+      "seed": "0x2233312cf13d93ad",
+      "mass_solar": 0.82,
+      "initial_mass_solar": 0.82,
+      "radius_solar": 0.7183766362072149,
+      "teff_k": 5040.0,
+      "luminosity_solar": 0.3,
+      "metallicity_feh": -0.33639495711710976,
+      "age_gyr": 6.2,
+      "main_sequence_lifetime_gyr": 15.87100910574272,
+      "rotation_period_days": 44.11144948071737,
+      "mu_m3s2": 1.088242008e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 29.097362241195682,
+        "eccentricity": 0.3959472413403905,
+        "inclination_deg": 63.55705999843188,
+        "longitude_ascending_node_deg": 185.26807171815747,
+        "argument_of_periapsis_deg": 341.0037758183913,
+        "mean_anomaly_at_epoch_deg": 160.0455566806482,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 133152.31892557442,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        8.977089560144769
+      ],
+      "provenance": {
+        "age_gyr": "derived",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "luminosity_solar": "literature compilation 2026-10-29: K2V",
+        "mass_solar": "literature compilation 2026-10-29: Mamajek 2013 K2V",
+        "teff_k": "literature compilation 2026-10-29: K2V"
+      },
+      "extra": {
+        "legacy_type_label": "K2V"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_57.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "hd_10360",
+        "p_eridani_a"
+      ],
+      "mass_solar": 1.6,
+      "relative_orbit": {
+        "semi_major_axis_au": 59.68689690501679,
+        "eccentricity": 0.3959472413403905,
+        "inclination_deg": 63.55705999843188,
+        "longitude_ascending_node_deg": 185.26807171815747,
+        "argument_of_periapsis_deg": 341.0037758183913,
+        "mean_anomaly_at_epoch_deg": 160.0455566806482,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 133152.31892557442,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 203.99007376588062,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_10360",
+      "gas_mass_solar": 0.0011434125513520316,
+      "solid_mass_earth": 2.68445769245825,
+      "dust_to_gas": 0.00617603631880456,
+      "inner_edge_au": 0.01755231363949494,
+      "characteristic_radius_au": 39.40316212664914,
+      "outer_truncation_au": 8.7099665058078,
+      "lifetime_myr": 1.7231904571505496,
+      "snow_line_au": 1.6426800000000004,
+      "turbulence_alpha": 0.00010054914635645348,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "p_eridani_a",
+      "gas_mass_solar": 0.01680688761766351,
+      "solid_mass_earth": 27.486680304616716,
+      "dust_to_gas": 0.00617603631880456,
+      "inner_edge_au": 0.019398710866529247,
+      "characteristic_radius_au": 63.00070547854348,
+      "outer_truncation_au": 8.977089560144769,
+      "lifetime_myr": 1.3797267008281884,
+      "snow_line_au": 1.8154799999999998,
+      "turbulence_alpha": 0.0028112966219435184,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.008175907882770781,
+      "solid_mass_earth": 18.33374458831297,
+      "dust_to_gas": 0.00617603631880456,
+      "inner_edge_au": 203.99007376588062,
+      "characteristic_radius_au": 60.195411864401684,
+      "outer_truncation_au": 211.99742133244968,
+      "lifetime_myr": 1.9101030754043815,
+      "snow_line_au": 2.4483392764892695,
+      "turbulence_alpha": 0.002469762167381943,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "hd_10360:binary_truncated; p_eridani_a:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_10360",
+      "passed": true,
+      "detail": "planets=6 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_HD 10360 b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_HD 10360 c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_p_eridani_a",
+      "passed": true,
+      "detail": "planets=14 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_p Eridani A b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_p Eridani A c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Европа",
+  "alternative_names": [
+    "Europa"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.004485585235004284,
+    "eccentricity": 0.009,
+    "inclination_deg": 0.47,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.008036977998057667,
+    "radius_earth": 0.2447123751587463,
+    "water_mass_fraction": 0.08,
+    "mean_surface_temperature_k": 102.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

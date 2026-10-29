@@ -1,0 +1,48 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 15,
+  "name": "HD 40307",
+  "slug": "hd_40307",
+  "alternative_names": [
+    "HD 40307",
+    "Аш Ди 40307"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 0.5478,
+    "y": 21.1707,
+    "z": -36.7157
+  },
+  "position_source": "hyg hd=40307 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -14.28,
+    "y": 37.85,
+    "z": -9.52
+  },
+  "stellar_hierarchy": {
+    "star": "hd_40307"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "HD 40307 b",
+    "HD 40307 c",
+    "HD 40307 d",
+    "HD 40307 f",
+    "HD 40307 g"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный оранжевый карлик"
+  }
+}

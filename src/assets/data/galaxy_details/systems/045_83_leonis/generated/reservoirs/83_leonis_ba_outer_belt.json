@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_45.barycenter_ab.kuiper_belt",
+  "name": "83 Leonis (BA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_45.barycenter_ab",
+  "seed": "0xb6ca4585f49e4d07",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 11.113528275399313,
+  "outer_au": 16.99591356343437,
+  "peak_au": 13.514414172682752,
+  "total_mass_earth": 0.0001,
+  "eccentricity_mean": 0.09171575146574898,
+  "inclination_mean_deg": 13.020414318296913,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 358.51237972457324,
+    "estimated_bodies_above_1km": 795390.3319088646
+  },
+  "clumpiness": 0.19649298282140915,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

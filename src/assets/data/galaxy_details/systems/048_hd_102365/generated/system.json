@@ -1,0 +1,288 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 48,
+  "name": "HD 102365",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x2332dcb0fc915142",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.002921611878965168,
+      -0.008115059144947758,
+      0.003260875051620442
+    ],
+    "galactocentric_radius_kpc": 8.177082414875187,
+    "height_above_plane_kpc": 0.02406087505162044,
+    "population_metallicity_mean_feh": -0.04982494489251124,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10458992034415922,
+    "formation_environment_density": 0.35230295139591167,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_102365_a",
+      "id": "system_48.HD_102365_A",
+      "name": "HD 102365 A",
+      "alternative_names": [
+        "HD 102365 A",
+        "Жёлтый карлик"
+      ],
+      "spectral_type": "G2V",
+      "stage": "main_sequence",
+      "seed": "0xa1872f17a1f60715",
+      "mass_solar": 1.02,
+      "initial_mass_solar": 1.02,
+      "radius_solar": 1.0218605134262573,
+      "teff_k": 5780.0,
+      "luminosity_solar": 1.05,
+      "metallicity_feh": 0.29706834607994426,
+      "age_gyr": 5.0,
+      "main_sequence_lifetime_gyr": 9.799708691593565,
+      "rotation_period_days": 24.914694443454774,
+      "mu_m3s2": 1.353666888e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 29.11267484549724,
+        "eccentricity": 0.8086033017026982,
+        "inclination_deg": 82.55888499179288,
+        "longitude_ascending_node_deg": 45.26974674978621,
+        "argument_of_periapsis_deg": 287.07762297303645,
+        "mean_anomaly_at_epoch_deg": 280.3095366209358,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 974062.824637208,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        9.528923007150652
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "G2V — Жёлтый карлик"
+      }
+    },
+    {
+      "key": "hd_102365_b",
+      "id": "system_48.HD_102365_B",
+      "name": "HD 102365 B",
+      "alternative_names": [
+        "HD 102365 B",
+        "Красный карлик"
+      ],
+      "spectral_type": "M4V",
+      "stage": "main_sequence",
+      "seed": "0x1d21858a274e0a72",
+      "mass_solar": 0.17,
+      "initial_mass_solar": 0.17,
+      "radius_solar": 0.20509887554263292,
+      "teff_k": 3100.0,
+      "luminosity_solar": 0.0035,
+      "metallicity_feh": 0.29706834607994426,
+      "age_gyr": 5.0,
+      "main_sequence_lifetime_gyr": 864.1542932035774,
+      "rotation_period_days": 86.99450816981725,
+      "mu_m3s2": 2.25611148e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 174.6760490729834,
+        "eccentricity": 0.8086033017026982,
+        "inclination_deg": 82.55888499179288,
+        "longitude_ascending_node_deg": 45.26974674978621,
+        "argument_of_periapsis_deg": 107.07762297303648,
+        "mean_anomaly_at_epoch_deg": 280.3095366209358,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 974062.824637208,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        4.344152636019797
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "M4V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_48.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "hd_102365_a",
+        "hd_102365_b"
+      ],
+      "mass_solar": 1.19,
+      "relative_orbit": {
+        "semi_major_axis_au": 203.78872391848063,
+        "eccentricity": 0.8086033017026982,
+        "inclination_deg": 82.55888499179288,
+        "longitude_ascending_node_deg": 45.26974674978621,
+        "argument_of_periapsis_deg": 107.07762297303648,
+        "mean_anomaly_at_epoch_deg": 280.3095366209358,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 974062.824637208,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 881.4501647775414,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_102365_a",
+      "gas_mass_solar": 0.004016604541831921,
+      "solid_mass_earth": 39.76199376710643,
+      "dust_to_gas": 0.02655664110633283,
+      "inner_edge_au": 0.03001549492197655,
+      "characteristic_radius_au": 48.692849793404065,
+      "outer_truncation_au": 9.528923007150652,
+      "lifetime_myr": 2.1098343767841268,
+      "snow_line_au": 2.8090800000000007,
+      "turbulence_alpha": 0.00010510547177866911,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "hd_102365_b",
+      "gas_mass_solar": 0.0008805427600326591,
+      "solid_mass_earth": 8.544877140039816,
+      "dust_to_gas": 0.02655664110633283,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 28.60042362313537,
+      "outer_truncation_au": 4.344152636019797,
+      "lifetime_myr": 4.211110611601084,
+      "snow_line_au": 0.12369316876852982,
+      "turbulence_alpha": 0.004145353465241052,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.021694236440566443,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.02655664110633283,
+      "inner_edge_au": 881.4501647775414,
+      "characteristic_radius_au": 46.039042319265576,
+      "outer_truncation_au": 421.19370128905695,
+      "lifetime_myr": 15.0,
+      "snow_line_au": 2.8101635410239028,
+      "turbulence_alpha": 0.000136448636004228,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "hd_102365_a:binary_truncated; hd_102365_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_102365_a",
+      "passed": true,
+      "detail": "planets=12 attempts=11 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_hd_102365_b",
+      "passed": true,
+      "detail": "planets=10 attempts=4 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_HD 102365 B b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_HD 102365 B c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

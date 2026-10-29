@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_22.Delta_Pavonis.Delta_Pavonis_j",
+  "designation": "Delta Pavonis j",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_22.Delta_Pavonis",
+  "host_star": "delta_pavonis",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x0e456ac5a45dae9f",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 3.1807235130326608,
+    "eccentricity": 0.023636908092230402,
+    "inclination_deg": 1.1257099531700536,
+    "longitude_ascending_node_deg": 152.23151413478877,
+    "argument_of_periapsis_deg": 262.2286631347505,
+    "mean_anomaly_at_epoch_deg": 332.114546913155,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 2082.4260297574565,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.1328557175721748e+24,
+    "mass_earth": 0.18968817480529365,
+    "radius_km": 4777.775989260075,
+    "density_kg_m3": 2479.754236521485,
+    "mu_m3s2": 75610189157919.66,
+    "surface_gravity_ms2": 3.312293081146575,
+    "escape_velocity_kms": 5.625903367903573,
+    "hill_radius_km": 2679374.57826165,
+    "sphere_of_influence_km": 1518674.601356795,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.22322667575348015,
+    "silicate_mantle": 0.4642077956438055,
+    "water_ice": 0.31246552860271437,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.31246552860271437,
+    "formation_distance_au": 3.1807235130326608
+  },
+  "thermal": {
+    "instellation_earth": 0.12062278370205687,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 134.47500751653388,
+    "mean_surface_temperature_k": 136.4577785071577,
+    "min_surface_temperature_k": 74.11076174620278,
+    "max_surface_temperature_k": 184.41702216943074,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 2.9983243057590667,
+    "radiogenic_heat_flux_wm2": 0.002944310819280125,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 5607.576616778799,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 7.826913278372755,
+    "greenhouse_warming_k": 1.982770990623834,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 7.838300617013561,
+    "outer_radius_km": 4871.698948600549
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 17.29535605410638,
+    "obliquity_deg": 45.52768567226389,
+    "rotation_direction": 1,
+    "axis_node_deg": 69.11116806963761,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "ice_shell_fractured",
+    "relief_amplitude_km": 6.580606012150132,
+    "roughness": 0.8425998072016252,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.05800064266124955,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.09872314797904493,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.15733419021499945,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

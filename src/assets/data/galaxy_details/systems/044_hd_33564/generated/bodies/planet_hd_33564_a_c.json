@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_44.HD_33564_A.HD_33564_A_c",
+  "designation": "HD 33564 A c",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_44.HD_33564_A",
+  "host_star": "hd_33564_a",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0xaf006608bf975229",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 4.879584788831118,
+    "eccentricity": 0.03846452279057685,
+    "inclination_deg": 2.9211425996438054,
+    "longitude_ascending_node_deg": 248.54467044730802,
+    "argument_of_periapsis_deg": 50.57898274150934,
+    "mean_anomaly_at_epoch_deg": 247.75221007688558,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 3521.4136394575025,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 7.801713480643865e+24,
+    "mass_earth": 1.3063382808083897,
+    "radius_km": 8613.145809198317,
+    "density_kg_m3": 2914.848515933772,
+    "mu_m3s2": 520709762838613.44,
+    "surface_gravity_ms2": 7.018949564679573,
+    "escape_velocity_kms": 10.995929794973613,
+    "hill_radius_km": 7125650.762226714,
+    "sphere_of_influence_km": 4592169.504384093,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.1291689874427974,
+    "silicate_mantle": 0.45773693822224626,
+    "water_ice": 0.4129940743349564,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.4129940743349564,
+    "formation_distance_au": 4.879584788831118
+  },
+  "thermal": {
+    "instellation_earth": 0.14410851256548426,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 140.59071817389278,
+    "mean_surface_temperature_k": 386.80297702904795,
+    "min_surface_temperature_k": 385.9441420732442,
+    "max_surface_temperature_k": 387.46361930274315,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 2.853022558416001,
+    "radiogenic_heat_flux_wm2": 0.02225405564287851,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 5249458.119581061,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 10.46980682487838,
+    "greenhouse_warming_k": 246.21225885515517,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 66.73575923807451,
+    "outer_radius_km": 8738.783491096858
+  },
+  "geophysics": {
+    "tectonic_regime": "cryotectonic",
+    "volcanism": "cryovolcanic",
+    "magnetic_field_earth": 1.6636568850562623,
+    "hydrosphere": "global_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 20.183596855321028,
+    "obliquity_deg": 25.425677719389014,
+    "rotation_direction": 1,
+    "axis_node_deg": 169.09160532963023,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "global_ocean_archipelago",
+    "relief_amplitude_km": 9.375351411213897,
+    "roughness": 0.10350502790766186,
+    "crater_density": 0.007010055815323737,
+    "resurfacing_rate": 0.5,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.30140201116306475,
+    "lava_tube_propensity": 0.27952900671534725,
+    "karst_propensity": 1.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 1.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "ocean_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

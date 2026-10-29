@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "alpha_centauri_b",
+  "name": "Alpha Centauri B",
+  "alternative_names": [
+    "α Cen B",
+    "HD 128621"
+  ],
+  "spectral_type": "K1V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.9092,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "radius_solar": {
+    "value": 0.8591,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "teff_k": {
+    "value": 5260,
+    "source": "literature compilation 2026-10-29: Morel 2018"
+  },
+  "luminosity_solar": {
+    "value": 0.4981,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "metallicity_feh": {
+    "value": 0.23,
+    "source": "literature compilation 2026-10-29: Morel 2018"
+  },
+  "age_gyr": {
+    "value": 5.3,
+    "source": "literature compilation 2026-10-29: Joyce & Chaboyer 2018"
+  },
+  "extra": {
+    "legacy_type_label": "K1V — Оранжевый карлик"
+  }
+}

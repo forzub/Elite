@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_163",
+  "name": "Gliese 163",
+  "alternative_names": [
+    "GJ 163 A"
+  ],
+  "spectral_type": "M",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.4,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "radius_solar": {
+    "value": 0.409738,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "teff_k": {
+    "value": 3500.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "luminosity_solar": {
+    "value": 0.0195884467350599,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "metallicity_feh": {
+    "value": 0.1,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "age_gyr": {
+    "value": 6.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 163)"
+  },
+  "extra": {
+    "legacy_type_label": "M3.5V — Красный карлик"
+  }
+}

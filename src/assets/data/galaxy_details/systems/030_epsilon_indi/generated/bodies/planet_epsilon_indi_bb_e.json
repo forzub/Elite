@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_30.Epsilon_Indi_Bb.Epsilon_Indi_Bb_e",
+  "designation": "Epsilon Indi Bb e",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_30.Epsilon_Indi_Bb",
+  "host_star": "epsilon_indi_bb",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0xab8a200f1c5154a2",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.036042142120817376,
+    "eccentricity": 0.002114644690902159,
+    "inclination_deg": 1.6993793817189542,
+    "longitude_ascending_node_deg": 328.7933595339811,
+    "argument_of_periapsis_deg": 158.2549297776066,
+    "mean_anomaly_at_epoch_deg": 277.62185471082535,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 11.088585019070994,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 2.9457000531115714e+24,
+    "mass_earth": 0.493235332559454,
+    "radius_km": 5316.744923671262,
+    "density_kg_m3": 4679.1011974189005,
+    "mu_m3s2": 196604858644825.6,
+    "surface_gravity_ms2": 6.955087467345784,
+    "escape_velocity_kms": 8.599816973133825,
+    "hill_radius_km": 114828.37115237975,
+    "sphere_of_influence_km": 82730.10334801086,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.30865656670817215,
+    "silicate_mantle": 0.6832906095976065,
+    "water_ice": 0.007952823694221416,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.007952823694221416,
+    "formation_distance_au": 0.036042142120817376
+  },
+  "thermal": {
+    "instellation_earth": 0.015404778035764533,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 95.06390308945006,
+    "mean_surface_temperature_k": 159.34378620244237,
+    "min_surface_temperature_k": 154.3391323543185,
+    "max_surface_temperature_k": 163.1935199317684,
+    "temperature_regime": "cold",
+    "habitable_zone_position": 7.698108520454543,
+    "radiogenic_heat_flux_wm2": 0.027534459125995756,
+    "tidal_heat_flux_wm2": 0.00030621883547846606
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 642253.7449324856,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 4.352647716572368,
+    "greenhouse_warming_k": 64.27988311299231,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 2.546928620047515,
+    "outer_radius_km": 5368.976696270131
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 0.42122346947490086,
+    "hydrosphere": "ice_shell"
+  },
+  "spin": {
+    "rotation_period_hours": 266.1260404577038,
+    "obliquity_deg": 0.32513579086645394,
+    "rotation_direction": 1,
+    "axis_node_deg": 51.869831599578916,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "dune_desert",
+    "relief_amplitude_km": 3.5041679276115305,
+    "roughness": 0.24385619365552041,
+    "crater_density": 0.09430737194376448,
+    "resurfacing_rate": 0.2,
+    "erosion_potential": 0.5443249743878728,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.1988614743887529,
+    "lava_tube_propensity": 0.28209566151563337,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.8057666325171637,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.1590564738844283,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "cold_co2_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

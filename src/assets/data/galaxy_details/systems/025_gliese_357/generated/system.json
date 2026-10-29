@@ -1,0 +1,164 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 25,
+  "name": "Gliese 357",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xe86dab8e6f910f94",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.00242802019662959,
+      -0.0084056743143197,
+      0.003549265948790472
+    ],
+    "galactocentric_radius_kpc": 8.182432337701279,
+    "height_above_plane_kpc": 0.02434926594879047,
+    "population_metallicity_mean_feh": -0.05014594026207675,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10428938834471982,
+    "formation_environment_density": 5.1721414870479885,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gliese_357",
+      "id": "system_25.Gliese_357",
+      "name": "Gliese 357",
+      "alternative_names": [
+        "GJ 357 A"
+      ],
+      "spectral_type": "M2.5 V",
+      "stage": "main_sequence",
+      "seed": "0xa502f676c8dda9c7",
+      "mass_solar": 0.342,
+      "initial_mass_solar": 0.342,
+      "radius_solar": 0.337,
+      "teff_k": 3505.0,
+      "luminosity_solar": 0.01590999341880535,
+      "metallicity_feh": -0.12,
+      "age_gyr": 5.8,
+      "main_sequence_lifetime_gyr": 144.44139676312543,
+      "rotation_period_days": 45.258756665945356,
+      "mu_m3s2": 4.538765448e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 357)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 357)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 357)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 357)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 357)"
+      },
+      "extra": {
+        "legacy_type_label": "M2.5V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gliese_357",
+      "gas_mass_solar": 0.004498221390725987,
+      "solid_mass_earth": 16.884749023030707,
+      "dust_to_gas": 0.010164939505391064,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 22.368722742321246,
+      "outer_truncation_au": 109.9271099594038,
+      "lifetime_myr": 2.464806970727737,
+      "snow_line_au": 0.31580280000000005,
+      "turbulence_alpha": 0.005551823539426326,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "gliese_357:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_gliese_357",
+      "passed": true,
+      "detail": "planets=13 attempts=3 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 357 e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 357 f",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 357 g",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 357 h",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

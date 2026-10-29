@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "tau_cygni_a",
+  "name": "Tau Cygni A",
+  "alternative_names": [
+    "τ Cyg A",
+    "Субгигант A"
+  ],
+  "spectral_type": "F2IV",
+  "stage_hint": "subgiant",
+  "mass_solar": {
+    "value": 1.55,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 7.2,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 6850,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "F2IV — Жёлто-белый субгигант"
+  }
+}

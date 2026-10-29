@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gamma_doradus",
+  "name": "Gamma Doradus",
+  "alternative_names": [
+    "γ Dor",
+    "Гамма Золотой Рыбы A"
+  ],
+  "spectral_type": "F0V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.45,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 5.8,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 7200,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 1.8,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "F0V — Жёлто-белый карлик"
+  }
+}

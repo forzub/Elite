@@ -1,0 +1,154 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 36,
+  "name": "9 Ceti",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x6305006044770db1",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.000752443915742614,
+      0.005826351328673917,
+      -0.020019642850489173
+    ],
+    "galactocentric_radius_kpc": 8.180754518686108,
+    "height_above_plane_kpc": 0.0007803571495108262,
+    "population_metallicity_mean_feh": -0.05004527112116648,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.11219823798841466,
+    "formation_environment_density": 0.9483125990982945,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "9_ceti",
+      "id": "system_36.9_Ceti",
+      "name": "9 Ceti",
+      "alternative_names": [
+        "9 Кита A",
+        "HD 11000"
+      ],
+      "spectral_type": "G3V",
+      "stage": "main_sequence",
+      "seed": "0x57acdf5a133734c6",
+      "mass_solar": 1.04,
+      "initial_mass_solar": 1.04,
+      "radius_solar": 1.0067605535059911,
+      "teff_k": 5837.0,
+      "luminosity_solar": 1.06,
+      "metallicity_feh": 0.21,
+      "age_gyr": 0.6,
+      "main_sequence_lifetime_gyr": 9.25640597152764,
+      "rotation_period_days": 5.787618731302474,
+      "mu_m3s2": 1.3802093760000002e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: BE Ceti, young solar analogue",
+        "luminosity_solar": "literature compilation 2026-10-29: Valenti & Fischer 2005",
+        "mass_solar": "literature compilation 2026-10-29: Valenti & Fischer 2005",
+        "metallicity_feh": "literature compilation 2026-10-29: Valenti & Fischer 2005",
+        "teff_k": "literature compilation 2026-10-29: Valenti & Fischer 2005"
+      },
+      "extra": {
+        "legacy_type_label": "G3V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "9_ceti",
+      "gas_mass_solar": 0.06810004816786612,
+      "solid_mass_earth": 386.40398932063533,
+      "dust_to_gas": 0.021732255304609663,
+      "inner_edge_au": 0.031204113136879895,
+      "characteristic_radius_au": 44.94656813963273,
+      "outer_truncation_au": 256.7226862446379,
+      "lifetime_myr": 2.420210711687623,
+      "snow_line_au": 2.9203200000000002,
+      "turbulence_alpha": 0.000299513139071695,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "9_ceti:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_9_ceti",
+      "passed": true,
+      "detail": "planets=11 attempts=2 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_9 Ceti l",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "ejection_9_ceti",
+      "passed": true,
+      "detail": "ejected planet from 9_ceti: 731.653 M_earth (rogue population)"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

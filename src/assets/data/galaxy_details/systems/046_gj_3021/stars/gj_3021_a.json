@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gj_3021_a",
+  "name": "GJ 3021 A",
+  "alternative_names": [
+    "GJ 3021 A",
+    "Жёлтый карлик"
+  ],
+  "spectral_type": "G6 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.9,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "radius_solar": {
+    "value": 0.9,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "teff_k": {
+    "value": 5540.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "luminosity_solar": {
+    "value": 0.660693448007596,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "metallicity_feh": {
+    "value": 0.1,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "age_gyr": {
+    "value": 0.37,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+  },
+  "extra": {
+    "legacy_type_label": "G6V — Жёлтый карлик"
+  }
+}

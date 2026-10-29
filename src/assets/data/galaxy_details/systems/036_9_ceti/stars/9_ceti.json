@@ -1,0 +1,34 @@
+{
+  "schema": "elite.star.v2",
+  "key": "9_ceti",
+  "name": "9 Ceti",
+  "alternative_names": [
+    "9 Кита A",
+    "HD 11000"
+  ],
+  "spectral_type": "G3V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.04,
+    "source": "literature compilation 2026-10-29: Valenti & Fischer 2005"
+  },
+  "teff_k": {
+    "value": 5837,
+    "source": "literature compilation 2026-10-29: Valenti & Fischer 2005"
+  },
+  "luminosity_solar": {
+    "value": 1.06,
+    "source": "literature compilation 2026-10-29: Valenti & Fischer 2005"
+  },
+  "metallicity_feh": {
+    "value": 0.21,
+    "source": "literature compilation 2026-10-29: Valenti & Fischer 2005"
+  },
+  "age_gyr": {
+    "value": 0.6,
+    "source": "literature compilation 2026-10-29: BE Ceti, young solar analogue"
+  },
+  "extra": {
+    "legacy_type_label": "G3V — Жёлтый карлик"
+  }
+}

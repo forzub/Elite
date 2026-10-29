@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_29.barycenter_ab.kuiper_belt",
+  "name": "Gliese 229 (BA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_29.barycenter_ab",
+  "seed": "0xe89627a0ff1d4ca0",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.0989145319783735,
+  "outer_au": 4.190585712377828,
+  "peak_au": 2.638142677655693,
+  "total_mass_earth": 0.00014285714285714287,
+  "eccentricity_mean": 0.05648477147430869,
+  "inclination_mean_deg": 4.234434493775766,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 403.7738077775938,
+    "estimated_bodies_above_1km": 1008898.8760559876
+  },
+  "clumpiness": 0.38152904195089726,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

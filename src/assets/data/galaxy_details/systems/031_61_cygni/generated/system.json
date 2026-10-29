@@ -1,0 +1,304 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 31,
+  "name": "61 Cygni",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x30c5aff4f84d4b8e",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0004636370560499699,
+      0.0034374365254496568,
+      -0.0003533330278312997
+    ],
+    "galactocentric_radius_kpc": 8.179537085232404,
+    "height_above_plane_kpc": 0.0204466669721687,
+    "population_metallicity_mean_feh": -0.049972225113944266,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10566017585397361,
+    "formation_environment_density": 0.24945200688863267,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "61_cygni_a",
+      "id": "system_31.61_Cygni_A",
+      "name": "61 Cygni A",
+      "alternative_names": [
+        "61 Cyg A",
+        "HD 201091",
+        "Оранжевый карлик A"
+      ],
+      "spectral_type": "K5V",
+      "stage": "main_sequence",
+      "seed": "0xb110e2df21a08637",
+      "mass_solar": 0.7,
+      "initial_mass_solar": 0.7,
+      "radius_solar": 0.665,
+      "teff_k": 4526.0,
+      "luminosity_solar": 0.153,
+      "metallicity_feh": -0.2,
+      "age_gyr": 6.1,
+      "main_sequence_lifetime_gyr": 23.90457218668788,
+      "rotation_period_days": 38.538642779727475,
+      "mu_m3s2": 9.2898708e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 40.547368421052624,
+        "eccentricity": 0.4,
+        "inclination_deg": 51.0,
+        "longitude_ascending_node_deg": 177.6593003897293,
+        "argument_of_periapsis_deg": 27.22520232286115,
+        "mean_anomaly_at_epoch_deg": 124.14794094998189,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 250827.44315819023,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        12.979122526315791
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "luminosity_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "mass_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "metallicity_feh": "literature compilation 2026-10-29: Luck 2017",
+        "radius_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "teff_k": "literature compilation 2026-10-29: Kervella et al. 2008"
+      },
+      "extra": {
+        "legacy_type_label": "K5V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "61_cygni_b",
+      "id": "system_31.61_Cygni_B",
+      "name": "61 Cygni B",
+      "alternative_names": [
+        "61 Cyg B",
+        "HD 201092",
+        "Оранжевый карлик B"
+      ],
+      "spectral_type": "K7V",
+      "stage": "main_sequence",
+      "seed": "0x010141baebee3de3",
+      "mass_solar": 0.63,
+      "initial_mass_solar": 0.63,
+      "radius_solar": 0.595,
+      "teff_k": 4077.0,
+      "luminosity_solar": 0.085,
+      "metallicity_feh": -0.27,
+      "age_gyr": 6.1,
+      "main_sequence_lifetime_gyr": 30.885985742670538,
+      "rotation_period_days": 27.051353397842675,
+      "mu_m3s2": 8.360883720000001e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 45.05263157894736,
+        "eccentricity": 0.4,
+        "inclination_deg": 51.0,
+        "longitude_ascending_node_deg": 177.6593003897293,
+        "argument_of_periapsis_deg": 207.22520232286115,
+        "mean_anomaly_at_epoch_deg": 124.14794094998189,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 250827.44315819023,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        12.180429473684208
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "luminosity_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "mass_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "metallicity_feh": "literature compilation 2026-10-29: Luck 2017",
+        "radius_solar": "literature compilation 2026-10-29: Kervella et al. 2008",
+        "teff_k": "literature compilation 2026-10-29: Kervella et al. 2008"
+      },
+      "extra": {
+        "legacy_type_label": "K7V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_31.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "61_cygni_a",
+        "61_cygni_b"
+      ],
+      "mass_solar": 1.33,
+      "relative_orbit": {
+        "semi_major_axis_au": 85.6,
+        "eccentricity": 0.4,
+        "inclination_deg": 51.0,
+        "longitude_ascending_node_deg": 177.6593003897293,
+        "argument_of_periapsis_deg": 207.22520232286115,
+        "mean_anomaly_at_epoch_deg": 124.14794094998189,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 250827.44315819023,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 295.3841170083102,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "literature",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "61_cygni_a",
+      "gas_mass_solar": 0.00070794131526064,
+      "solid_mass_earth": 2.860800684911266,
+      "dust_to_gas": 0.00845482841603459,
+      "inner_edge_au": 0.014136478769481457,
+      "characteristic_radius_au": 10.855328569035475,
+      "outer_truncation_au": 12.979122526315791,
+      "lifetime_myr": 2.7280412114366306,
+      "snow_line_au": 1.323,
+      "turbulence_alpha": 0.00019556699290619606,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "61_cygni_b",
+      "gas_mass_solar": 0.0008147023601517607,
+      "solid_mass_earth": 3.616419905267336,
+      "dust_to_gas": 0.0071962260713613856,
+      "inner_edge_au": 0.011450547803279983,
+      "characteristic_radius_au": 11.994797768833154,
+      "outer_truncation_au": 12.180429473684208,
+      "lifetime_myr": 5.226046283697675,
+      "snow_line_au": 1.07163,
+      "turbulence_alpha": 0.008215793954618071,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.01296425289056722,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.00845482841603459,
+      "inner_edge_au": 295.3841170083102,
+      "characteristic_radius_au": 49.59324718324453,
+      "outer_truncation_au": 500.548895649484,
+      "lifetime_myr": 3.2965787437136522,
+      "snow_line_au": 1.7025627321482166,
+      "turbulence_alpha": 0.0012331520912977076,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "61_cygni_a:binary_truncated; 61_cygni_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_61_cygni_a",
+      "passed": true,
+      "detail": "planets=5 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_61 Cygni A b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_61_cygni_b",
+      "passed": true,
+      "detail": "planets=10 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_61 Cygni B b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_61 Cygni B c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_61 Cygni B d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,142 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 39,
+  "name": "HD 114613",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x8cce01f4aec1a5ea",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.011393418334369224,
+      -0.014891357222277486,
+      0.008699080122244877
+    ],
+    "galactocentric_radius_kpc": 8.168620155114997,
+    "height_above_plane_kpc": 0.029499080122244878,
+    "population_metallicity_mean_feh": -0.04931720930689985,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10318425033471344,
+    "formation_environment_density": 0.768684836657637,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_114613",
+      "id": "system_39.HD_114613",
+      "name": "HD 114613",
+      "alternative_names": [
+        "HD 114613 A"
+      ],
+      "spectral_type": "G4 IV",
+      "stage": "subgiant",
+      "seed": "0xd19d063a90e1dd08",
+      "mass_solar": 1.24,
+      "initial_mass_solar": 1.24,
+      "radius_solar": 1.9519933448170503,
+      "teff_k": 5670.0,
+      "luminosity_solar": 3.548,
+      "metallicity_feh": -0.034229950113383936,
+      "age_gyr": 4.55,
+      "main_sequence_lifetime_gyr": 5.820451156800447,
+      "rotation_period_days": 21.82776347809317,
+      "mu_m3s2": 1.645634256e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "G4 IV — жёлтый субгигант"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_114613",
+      "gas_mass_solar": 0.0072468882011519214,
+      "solid_mass_earth": 33.81470139523995,
+      "dust_to_gas": 0.012384396507903236,
+      "inner_edge_au": 0.044359693379499375,
+      "characteristic_radius_au": 43.901667447694514,
+      "outer_truncation_au": 285.14505971881437,
+      "lifetime_myr": 3.4204564278357674,
+      "snow_line_au": 4.1515200000000005,
+      "turbulence_alpha": 0.002825837838356025,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "hd_114613:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_114613",
+      "passed": true,
+      "detail": "planets=15 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

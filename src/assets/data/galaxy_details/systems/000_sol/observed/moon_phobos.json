@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Фобос",
+  "alternative_names": [
+    "Phobos"
+  ],
+  "kind": "moon",
+  "host": "Марс",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 6.267468885838894e-05,
+    "eccentricity": 0.0151,
+    "inclination_deg": 1.093,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 1.784769431700211e-09,
+    "radius_earth": 0.0017669838980260578,
+    "water_mass_fraction": 0.0,
+    "mean_surface_temperature_k": 233.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

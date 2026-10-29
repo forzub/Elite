@@ -1,0 +1,287 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 1,
+  "name": "Alpha Centauri A+B",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xe7be9e7080223446",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0009487147780248204,
+      -0.0009245610841152133,
+      -1.5758402266153165e-05
+    ],
+    "galactocentric_radius_kpc": 8.179051337478231,
+    "height_above_plane_kpc": 0.020784241597733847,
+    "population_metallicity_mean_feh": -0.04994308024869391,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.1055698066743718,
+    "formation_environment_density": 0.8275683193183121,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "alpha_centauri_a",
+      "id": "system_1.Alpha_Centauri_A",
+      "name": "Alpha Centauri A",
+      "alternative_names": [
+        "α Cen A",
+        "HD 128620"
+      ],
+      "spectral_type": "G2V",
+      "stage": "main_sequence",
+      "seed": "0x6cb5c18a426497a6",
+      "mass_solar": 1.0788,
+      "initial_mass_solar": 1.0788,
+      "radius_solar": 1.2175,
+      "teff_k": 5790.0,
+      "luminosity_solar": 1.5059,
+      "metallicity_feh": 0.2,
+      "age_gyr": 5.3,
+      "main_sequence_lifetime_gyr": 8.438161385714402,
+      "rotation_period_days": 33.29014498784536,
+      "mu_m3s2": 1.4317018027200001e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 10.656116700201208,
+        "eccentricity": 0.5208,
+        "inclination_deg": 79.24,
+        "longitude_ascending_node_deg": 83.66213847521702,
+        "argument_of_periapsis_deg": 190.27294407625632,
+        "mean_anomaly_at_epoch_deg": 138.33385456102727,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 29135.059953887703,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.7327265994986614
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Joyce & Chaboyer 2018",
+        "luminosity_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "mass_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "metallicity_feh": "literature compilation 2026-10-29: Morel 2018",
+        "radius_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "teff_k": "literature compilation 2026-10-29: Morel 2018"
+      },
+      "extra": {
+        "legacy_type_label": "G2V — Жёлтый карлик"
+      }
+    },
+    {
+      "key": "alpha_centauri_b",
+      "id": "system_1.Alpha_Centauri_B",
+      "name": "Alpha Centauri B",
+      "alternative_names": [
+        "α Cen B",
+        "HD 128621"
+      ],
+      "spectral_type": "K1V",
+      "stage": "main_sequence",
+      "seed": "0xb9f2c4d12a942bc1",
+      "mass_solar": 0.9092,
+      "initial_mass_solar": 0.9092,
+      "radius_solar": 0.8591,
+      "teff_k": 5260.0,
+      "luminosity_solar": 0.4981,
+      "metallicity_feh": 0.23,
+      "age_gyr": 5.3,
+      "main_sequence_lifetime_gyr": 12.978576641883443,
+      "rotation_period_days": 23.202809531171575,
+      "mu_m3s2": 1.2066215044800001e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 12.643883299798793,
+        "eccentricity": 0.5208,
+        "inclination_deg": 79.24,
+        "longitude_ascending_node_deg": 83.66213847521702,
+        "argument_of_periapsis_deg": 10.27294407625632,
+        "mean_anomaly_at_epoch_deg": 138.33385456102727,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 29135.059953887703,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.477268252725337
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Joyce & Chaboyer 2018",
+        "luminosity_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "mass_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "metallicity_feh": "literature compilation 2026-10-29: Morel 2018",
+        "radius_solar": "literature compilation 2026-10-29: Akeson et al. 2021",
+        "teff_k": "literature compilation 2026-10-29: Morel 2018"
+      },
+      "extra": {
+        "legacy_type_label": "K1V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_1.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "alpha_centauri_a",
+        "alpha_centauri_b"
+      ],
+      "mass_solar": 1.988,
+      "relative_orbit": {
+        "semi_major_axis_au": 23.3,
+        "eccentricity": 0.5208,
+        "inclination_deg": 79.24,
+        "longitude_ascending_node_deg": 83.66213847521702,
+        "argument_of_periapsis_deg": 10.27294407625632,
+        "mean_anomaly_at_epoch_deg": 138.33385456102727,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 29135.059953887703,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 86.63042141297159,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "literature",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "alpha_centauri_a",
+      "gas_mass_solar": 0.0036980578903015337,
+      "solid_mass_earth": 13.035067400617052,
+      "dust_to_gas": 0.02123756877897892,
+      "inner_edge_au": 0.03357585191894307,
+      "characteristic_radius_au": 41.36342679714712,
+      "outer_truncation_au": 2.7327265994986614,
+      "lifetime_myr": 2.6541439171827794,
+      "snow_line_au": 3.142285488,
+      "turbulence_alpha": 0.00029432663940337636,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "alpha_centauri_b",
+      "gas_mass_solar": 0.003280131669882087,
+      "solid_mass_earth": 14.29798416569415,
+      "dust_to_gas": 0.022756464942987376,
+      "inner_edge_au": 0.023848662047480908,
+      "characteristic_radius_au": 40.14130818784648,
+      "outer_truncation_au": 2.477268252725337,
+      "lifetime_myr": 4.557792019813185,
+      "snow_line_au": 2.2319405280000004,
+      "turbulence_alpha": 0.00011519184437425445,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.004352923510349712,
+      "solid_mass_earth": 32.62456064371966,
+      "dust_to_gas": 0.02123756877897892,
+      "inner_edge_au": 86.63042141297159,
+      "characteristic_radius_au": 36.786963454377215,
+      "outer_truncation_au": 274.8135107445897,
+      "lifetime_myr": 2.685227947476539,
+      "snow_line_au": 3.8542854861341445,
+      "turbulence_alpha": 0.0008719341949269185,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "alpha_centauri_a:binary_truncated; alpha_centauri_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_alpha_centauri_a",
+      "passed": true,
+      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_alpha_centauri_b",
+      "passed": true,
+      "detail": "planets=10 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Alpha Centauri B b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

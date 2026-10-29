@@ -1,0 +1,42 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 40,
+  "name": "HD 24496",
+  "slug": "hd_24496",
+  "alternative_names": [
+    "HD 24496",
+    "Аш Ди 24496",
+    "Система 24496"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 33.2496,
+    "y": 54.5074,
+    "z": 19.0534
+  },
+  "position_source": "hyg hd=24496 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -46.5,
+    "y": 44.8,
+    "z": -8.5
+  },
+  "stellar_hierarchy": {
+    "star": "hd_24496"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "lore": {
+    "stellar_description": "Стабильный жёлтый карлик"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_674",
+  "name": "Gliese 674",
+  "alternative_names": [
+    "GJ 674 A"
+  ],
+  "spectral_type": "M2.5",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.35,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "radius_solar": {
+    "value": 0.36463,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "teff_k": {
+    "value": 3600.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "luminosity_solar": {
+    "value": 0.01599558028614669,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "metallicity_feh": {
+    "value": -0.28,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "age_gyr": {
+    "value": 0.55,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 674)"
+  },
+  "extra": {
+    "legacy_type_label": "M3V — Красный карлик"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "TRAPPIST-1 d",
+  "kind": "planet",
+  "host": "trappist_1",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Transit 2016",
+  "orbit": {
+    "period_days": {
+      "value": 4.049219,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.02227,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.00837,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "mass_earth": {
+      "value": 0.388,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (Mass)"
+    },
+    "radius_earth": {
+      "value": 0.788,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (transit radius)"
+    }
+  }
+}

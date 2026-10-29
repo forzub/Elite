@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 20794 b",
+  "kind": "planet",
+  "host": "hd_20794",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2011",
+  "orbit": {
+    "period_days": {
+      "value": 18.314,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.1257,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.064,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "mass_earth": {
+      "value": 2.7,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (Msin(i)/sin(i))"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Земля",
+  "alternative_names": [
+    "Earth",
+    "Terra",
+    "Gaia"
+  ],
+  "kind": "planet",
+  "host": "sol",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 1.00000261,
+    "eccentricity": 0.01671123,
+    "inclination_deg": 0.0,
+    "longitude_ascending_node_deg": 0.0,
+    "argument_of_periapsis_deg": 102.93768193,
+    "mean_anomaly_at_epoch_deg": 357.52688973,
+    "epoch_universe_seconds": 32529600.0
+  },
+  "physical": {
+    "mass_earth": 1.0,
+    "radius_earth": 0.998886815822894,
+    "rotation_period_hours": 23.9345,
+    "obliquity_deg": 23.44,
+    "bond_albedo": 0.306,
+    "surface_pressure_pa": 101325.0,
+    "mean_surface_temperature_k": 288.0,
+    "water_mass_fraction": 0.00023,
+    "iron_core_fraction": 0.325
+  },
+  "atmosphere_composition": {
+    "N2": 0.7808,
+    "O2": 0.2095,
+    "Ar": 0.0093,
+    "CO2": 0.0004
+  },
+  "extra": {
+    "environment_preset_id": "terrestrial_temperate",
+    "axis_node_deg": 0.0,
+    "rotation_offset_deg": 0.0,
+    "texture_longitude_offset_deg": 0.0
+  }
+}

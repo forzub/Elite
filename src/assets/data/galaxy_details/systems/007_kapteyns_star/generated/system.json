@@ -1,0 +1,160 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 7,
+  "name": "Kapteyn's Star",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x2c5680219df9a804",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thick_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0010545634339029482,
+      -0.002983210292878259,
+      -0.00229944275900983
+    ],
+    "galactocentric_radius_kpc": 8.181055107345648,
+    "height_above_plane_kpc": 0.01850055724099017,
+    "population_metallicity_mean_feh": -0.6,
+    "population_metallicity_sigma_dex": 0.3,
+    "alpha_enhancement": 0.25,
+    "local_stellar_density_per_pc3": 0.10623351410357651,
+    "formation_environment_density": 0.34756466829877614,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "kapteyns_star",
+      "id": "system_7.Kapteyn's_Star",
+      "name": "Kapteyn's Star",
+      "alternative_names": [
+        "CD-45 1841",
+        "Звезда Каптейна"
+      ],
+      "spectral_type": "M2.0V",
+      "stage": "main_sequence",
+      "seed": "0x7c283dd6c78f6f43",
+      "mass_solar": 0.281,
+      "initial_mass_solar": 0.281,
+      "radius_solar": 0.291,
+      "teff_k": 3550.0,
+      "luminosity_solar": 0.012,
+      "metallicity_feh": -0.86,
+      "age_gyr": 11.5,
+      "main_sequence_lifetime_gyr": 218.3636756135162,
+      "rotation_period_days": 122.55550736433801,
+      "mu_m3s2": 3.7292195640000004e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Wylie-de Boer 2010 (halo)",
+        "luminosity_solar": "literature compilation 2026-10-29: Guinan et al. 2016",
+        "mass_solar": "literature compilation 2026-10-29: Guinan et al. 2016",
+        "metallicity_feh": "literature compilation 2026-10-29: Woolf & Wallerstein 2005",
+        "radius_solar": "literature compilation 2026-10-29: Segransan 2003",
+        "teff_k": "literature compilation 2026-10-29: Guinan et al. 2016"
+      },
+      "extra": {
+        "legacy_type_label": "M1V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "kapteyns_star",
+      "gas_mass_solar": 0.001110049040855816,
+      "solid_mass_earth": 1.4634019559936289,
+      "dust_to_gas": 0.0018497149145678658,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 12.063350600248475,
+      "outer_truncation_au": 424.0550092423864,
+      "lifetime_myr": 8.27420295497492,
+      "snow_line_au": 0.21319470000000007,
+      "turbulence_alpha": 0.0012087375817906641,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "kapteyns_star:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_kapteyns_star",
+      "passed": true,
+      "detail": "planets=6 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Kapteyn's Star b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Kapteyn's Star d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Kapteyn's Star e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

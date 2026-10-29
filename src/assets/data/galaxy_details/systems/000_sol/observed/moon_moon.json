@@ -1,0 +1,28 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Луна",
+  "alternative_names": [
+    "Moon",
+    "Luna"
+  ],
+  "kind": "moon",
+  "host": "Земля",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.002569548605212868,
+    "eccentricity": 0.0549,
+    "inclination_deg": 5.145,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.012293627139077726,
+    "radius_earth": 0.27240087173296124,
+    "water_mass_fraction": 0.0,
+    "mean_surface_temperature_k": 250.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

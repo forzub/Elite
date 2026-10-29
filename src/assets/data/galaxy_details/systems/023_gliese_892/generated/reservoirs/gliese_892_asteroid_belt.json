@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_23.Gliese_892.asteroid_belt",
+  "name": "Gliese 892 asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_23.Gliese_892",
+  "seed": "0xa8667e5a0e5a1eca",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.244,
+  "outer_au": 2.2392,
+  "peak_au": 1.7416,
+  "total_mass_earth": 0.0006867909520618174,
+  "eccentricity_mean": 0.14952212194400552,
+  "inclination_mean_deg": 6.470836839179123,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1036.2070112817787,
+    "estimated_bodies_above_1km": 24359247.006249048
+  },
+  "clumpiness": 0.2975944459043727,
+  "composition": {
+    "silicate_s_type": 0.5,
+    "carbonaceous_c_type": 0.3,
+    "metallic_m_type": 0.15,
+    "water_ice": 0.05
+  },
+  "gaps_au": [
+    [
+      1.4640320545520134,
+      1.5262320545520132
+    ],
+    [
+      1.657267757522032,
+      1.7194677575220318
+    ],
+    [
+      1.7367382737939685,
+      1.7989382737939683
+    ],
+    [
+      1.9280772325865279,
+      1.9902772325865277
+    ]
+  ],
+  "resonance": "Kirkwood gaps of HD 219134 h",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

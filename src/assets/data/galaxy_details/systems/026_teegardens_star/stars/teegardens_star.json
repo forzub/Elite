@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "teegardens_star",
+  "name": "Teegarden's Star",
+  "alternative_names": [
+    "SO J025300.5+165253",
+    "Тигарден A"
+  ],
+  "spectral_type": "M7.0 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.097,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "radius_solar": {
+    "value": 0.12,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "teff_k": {
+    "value": 3034.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "luminosity_solar": {
+    "value": 0.0007220046589614493,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "metallicity_feh": {
+    "value": -0.11,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "age_gyr": {
+    "value": 8.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+  },
+  "extra": {
+    "legacy_type_label": "M7V — Красный карлик"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_667_a",
+  "name": "Gliese 667 A",
+  "alternative_names": [
+    "GJ 667 A",
+    "HR 6426 A"
+  ],
+  "spectral_type": "K3V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.73,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.24,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 4750,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.0,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "K3V — Оранжевый карлик"
+  }
+}

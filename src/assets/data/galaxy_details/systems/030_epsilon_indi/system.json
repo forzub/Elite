@@ -1,0 +1,84 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 30,
+  "name": "Epsilon Indi",
+  "slug": "epsilon_indi",
+  "alternative_names": [
+    "Epsilon Indi",
+    "ε Ind",
+    "Эпсилон Индейца",
+    "Тройная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 5.6511,
+    "y": -3.1541,
+    "z": -9.8845
+  },
+  "position_source": "hyg gl=Gl 845 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -6.82,
+    "y": 8.15,
+    "z": -5.28
+  },
+  "stellar_hierarchy": {
+    "id": "system_barycenter",
+    "children": [
+      {
+        "star": "epsilon_indi_a"
+      },
+      {
+        "id": "bab",
+        "children": [
+          {
+            "star": "epsilon_indi_ba"
+          },
+          {
+            "star": "epsilon_indi_bb"
+          }
+        ],
+        "orbit": {
+          "semi_major_axis_au": {
+            "value": 2.405,
+            "source": "Chen et al. 2022"
+          },
+          "eccentricity": {
+            "value": 0.54,
+            "source": "Chen et al. 2022"
+          },
+          "period_years": {
+            "value": 11.0,
+            "source": "Chen et al. 2022"
+          },
+          "source": "Chen et al. 2022"
+        }
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 1459.0,
+        "source": "402 arcsec x 3.63 pc"
+      },
+      "source": "402 arcsec x 3.63 pc"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "eps Ind A b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильная (оранжевый карлик + два коричневых карлика)"
+  }
+}

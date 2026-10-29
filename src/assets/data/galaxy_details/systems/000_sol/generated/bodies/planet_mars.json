@@ -1,0 +1,135 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Марс",
+  "designation": "Марс",
+  "alternative_names": [
+    "Mars",
+    "Ares"
+  ],
+  "kind": "planet",
+  "parent_id": "system_0.Sol",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x7fd7da12f48b5059",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 1.52371034,
+    "eccentricity": 0.0933941,
+    "inclination_deg": 1.84969142,
+    "longitude_ascending_node_deg": 49.55953891,
+    "argument_of_periapsis_deg": 286.4968315,
+    "mean_anomaly_at_epoch_deg": 19.390197539999974,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 686.9924737247864,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 6.390254e+23,
+    "mass_earth": 0.107,
+    "radius_km": 3389.4999999999995,
+    "density_kg_m3": 3917.622603921847,
+    "mu_m3s2": 42650472272199.99,
+    "surface_gravity_ms2": 3.7123812285369464,
+    "escape_velocity_kms": 5.0165956931221745,
+    "hill_radius_km": 981469.224966276,
+    "sphere_of_influence_km": 576278.8899562364,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.2399736,
+    "silicate_mantle": 0.7599164,
+    "water_ice": 1e-05,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 1e-05,
+    "formation_distance_au": 1.52371034
+  },
+  "thermal": {
+    "instellation_earth": 0.4326109790532106,
+    "bond_albedo": 0.25,
+    "equilibrium_temperature_k": 210.26685173762374,
+    "mean_surface_temperature_k": 210.0,
+    "min_surface_temperature_k": 90.78602620087337,
+    "max_surface_temperature_k": 301.70305676855895,
+    "temperature_regime": "cold",
+    "habitable_zone_position": 1.602386574433956,
+    "radiogenic_heat_flux_wm2": 0.011153838517480884,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 610.0,
+    "composition": {
+      "CO2": 0.9548231994390464,
+      "N2": 0.027045978162876887,
+      "Ar": 0.01602724631874186,
+      "O2": 0.001302213763397776,
+      "CO": 0.000801362315937093
+    },
+    "mean_molecular_weight": 43.4838379244716,
+    "scale_height_km": 10.738023672654712,
+    "greenhouse_warming_k": 0.0,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 0.6363988872616233,
+    "outer_radius_km": 3518.356284071856
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 24.6229,
+    "obliquity_deg": 25.19,
+    "rotation_direction": 1,
+    "axis_node_deg": 116.32490101808546,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "dune_desert",
+    "relief_amplitude_km": 6.778948071544372,
+    "roughness": 0.811914817317481,
+    "crater_density": 0.9084584037372032,
+    "resurfacing_rate": 0.2,
+    "erosion_potential": 0.0077146151704021925,
+    "glaciation_potential": 0.4,
+    "cave_tectonic_propensity": 0.3616916807474406,
+    "lava_tube_propensity": 0.528501756478611,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.010286153560536257,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "iron_oxide": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "cold_co2_world",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "eccentricity": "observed",
+    "mass_earth": "observed",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "authored",
+    "semi_major_axis_au": "observed"
+  },
+  "extra": {
+    "environment_preset_id": "cold_co2_world"
+  }
+}

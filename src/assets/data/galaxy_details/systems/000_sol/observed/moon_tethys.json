@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Тетис",
+  "alternative_names": [
+    "Tethys"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0019694063733756073,
+    "eccentricity": 0.0001,
+    "inclination_deg": 1.12,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.00010338719399886139,
+    "radius_earth": 0.08326931217760775,
+    "water_mass_fraction": 0.9,
+    "mean_surface_temperature_k": 86.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

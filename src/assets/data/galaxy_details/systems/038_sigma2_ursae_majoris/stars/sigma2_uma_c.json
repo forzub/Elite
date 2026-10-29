@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sigma2_uma_c",
+  "name": "Sigma² UMa C",
+  "alternative_names": [
+    "Сигма² UMa C",
+    "Красный карлик"
+  ],
+  "spectral_type": "M3V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.35,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.015,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 3450,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.8,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M3V — Красный карлик"
+  }
+}

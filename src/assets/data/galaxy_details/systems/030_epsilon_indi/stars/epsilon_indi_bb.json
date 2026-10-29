@@ -1,0 +1,31 @@
+{
+  "schema": "elite.star.v2",
+  "key": "epsilon_indi_bb",
+  "name": "Epsilon Indi Bb",
+  "alternative_names": [
+    "ε Ind Bb",
+    "Коричневый карлик 2",
+    "T6"
+  ],
+  "spectral_type": "T6",
+  "stage_hint": "brown_dwarf",
+  "mass_solar": {
+    "value": 0.0508,
+    "source": "literature compilation 2026-10-29: Chen et al. 2022 (53.2 M_J)"
+  },
+  "teff_k": {
+    "value": 900,
+    "source": "literature compilation 2026-10-29: T6"
+  },
+  "age_gyr": {
+    "value": 3.5,
+    "source": "literature compilation 2026-10-29: Chen et al. 2022"
+  },
+  "luminosity_solar": {
+    "value": 2e-05,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "T6 — Коричневый карлик"
+  }
+}

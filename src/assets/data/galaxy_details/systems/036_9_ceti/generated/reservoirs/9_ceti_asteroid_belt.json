@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_36.9_Ceti.asteroid_belt",
+  "name": "9 Ceti asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_36.9_Ceti",
+  "seed": "0xcea2e251bc239689",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.675805025288671,
+  "outer_au": 4.816449045519608,
+  "peak_au": 3.7461270354041396,
+  "total_mass_earth": 0.0007559435083887235,
+  "eccentricity_mean": 0.12261862484684495,
+  "inclination_mean_deg": 11.01866629837406,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1069.879301490026,
+    "estimated_bodies_above_1km": 26386253.683371983
+  },
+  "clumpiness": 0.2993660309961172,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      3.1490870809919413,
+      3.282877332256375
+    ],
+    [
+      3.564731023976158,
+      3.6985212752405916
+    ],
+    [
+      3.7356696146535953,
+      3.869459865918029
+    ],
+    [
+      4.147233720337384,
+      4.281023971601817
+    ]
+  ],
+  "resonance": "Kirkwood gaps of 9 Ceti l",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

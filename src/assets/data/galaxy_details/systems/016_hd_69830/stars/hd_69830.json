@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_69830",
+  "name": "HD 69830",
+  "alternative_names": [
+    "Аш Ди 69830",
+    "HD 69830 A"
+  ],
+  "spectral_type": "K0V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.86,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "radius_solar": {
+    "value": 0.886947,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "teff_k": {
+    "value": 5385.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "luminosity_solar": {
+    "value": 0.6025595860743578,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "metallicity_feh": {
+    "value": -0.05,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "age_gyr": {
+    "value": 7.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 69830)"
+  },
+  "extra": {
+    "legacy_type_label": "K0V — Оранжевый карлик"
+  }
+}

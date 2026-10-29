@@ -1,0 +1,434 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 38,
+  "name": "Sigma² Ursae Majoris",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x665779a702705637",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.013428457685818908,
+      0.008761907121675966,
+      0.012578302739759682
+    ],
+    "galactocentric_radius_kpc": 8.193433142598542,
+    "height_above_plane_kpc": 0.03337830273975968,
+    "population_metallicity_mean_feh": -0.050805988555912514,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.1010271992321552,
+    "formation_environment_density": 0.4534307448290469,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "sigma2_uma_a",
+      "id": "system_38.Sigma²_UMa_A",
+      "name": "Sigma² UMa A",
+      "alternative_names": [
+        "Сигма² UMa A",
+        "HD 102194 A"
+      ],
+      "spectral_type": "F7IV",
+      "stage": "subgiant",
+      "seed": "0x35e07ea222d3fe13",
+      "mass_solar": 1.42,
+      "initial_mass_solar": 1.42,
+      "radius_solar": 2.041690433634337,
+      "teff_k": 6450.0,
+      "luminosity_solar": 6.5,
+      "metallicity_feh": 0.33882987300462475,
+      "age_gyr": 2.8,
+      "main_sequence_lifetime_gyr": 4.3027937393505296,
+      "rotation_period_days": 1.6586304622074235,
+      "mu_m3s2": 1.8845166479999998e+20,
+      "parent_node": "system_barycenter",
+      "orbit": {
+        "semi_major_axis_au": 28.20220042823739,
+        "eccentricity": 0.5398028605922585,
+        "inclination_deg": 25.052571083194536,
+        "longitude_ascending_node_deg": 190.1443798165259,
+        "argument_of_periapsis_deg": 337.0223672160331,
+        "mean_anomaly_at_epoch_deg": 70.62549361453634,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 116128.07630855324,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        7.211214945161472
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "F7IV — Жёлто-белый субгигант"
+      }
+    },
+    {
+      "key": "sigma2_uma_b",
+      "id": "system_38.Sigma²_UMa_B",
+      "name": "Sigma² UMa B",
+      "alternative_names": [
+        "Сигма² UMa B",
+        "HD 102194 B"
+      ],
+      "spectral_type": "K2V",
+      "stage": "main_sequence",
+      "seed": "0xadd54af5f97e87ec",
+      "mass_solar": 0.78,
+      "initial_mass_solar": 0.78,
+      "radius_solar": 0.7194842024071578,
+      "teff_k": 4950.0,
+      "luminosity_solar": 0.28,
+      "metallicity_feh": 0.33882987300462475,
+      "age_gyr": 2.8,
+      "main_sequence_lifetime_gyr": 19.24132088285868,
+      "rotation_period_days": 23.524256835201403,
+      "mu_m3s2": 1.0351570320000002e+20,
+      "parent_node": "bc",
+      "orbit": {
+        "semi_major_axis_au": 0.5043870646138624,
+        "eccentricity": 0.8666505510233986,
+        "inclination_deg": 13.45999253055706,
+        "longitude_ascending_node_deg": 158.3588902742112,
+        "argument_of_periapsis_deg": 293.9585640764467,
+        "mean_anomaly_at_epoch_deg": 278.2155722835512,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 714.023510472138,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.0380174112280494
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K2V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "sigma2_uma_c",
+      "id": "system_38.Sigma²_UMa_C",
+      "name": "Sigma² UMa C",
+      "alternative_names": [
+        "Сигма² UMa C",
+        "Красный карлик"
+      ],
+      "spectral_type": "M3V",
+      "stage": "main_sequence",
+      "seed": "0xcb1854b17450cab5",
+      "mass_solar": 0.35,
+      "initial_mass_solar": 0.35,
+      "radius_solar": 0.3428152114208296,
+      "teff_k": 3450.0,
+      "luminosity_solar": 0.015,
+      "metallicity_feh": 0.33882987300462475,
+      "age_gyr": 2.8,
+      "main_sequence_lifetime_gyr": 142.65969071157795,
+      "rotation_period_days": 61.01687715838132,
+      "mu_m3s2": 4.6449354e+19,
+      "parent_node": "bc",
+      "orbit": {
+        "semi_major_axis_au": 1.1240626011394652,
+        "eccentricity": 0.8666505510233986,
+        "inclination_deg": 13.45999253055706,
+        "longitude_ascending_node_deg": 158.3588902742112,
+        "argument_of_periapsis_deg": 113.9585640764467,
+        "mean_anomaly_at_epoch_deg": 278.2155722835512,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 714.023510472138,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.02509268595961407
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "M3V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "system_barycenter",
+      "body_id": "system_38.barycenter",
+      "parent_node": "",
+      "children": [
+        "sigma2_uma_a",
+        "bc"
+      ],
+      "mass_solar": 2.55,
+      "relative_orbit": {
+        "semi_major_axis_au": 63.64213370973924,
+        "eccentricity": 0.5398028605922585,
+        "inclination_deg": 25.052571083194536,
+        "longitude_ascending_node_deg": 190.1443798165259,
+        "argument_of_periapsis_deg": 157.02236721603308,
+        "mean_anomaly_at_epoch_deg": 70.62549361453634,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 116128.07630855324,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 240.22900258970256,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    },
+    {
+      "id": "bc",
+      "body_id": "system_38.barycenter_bc",
+      "parent_node": "system_barycenter",
+      "children": [
+        "sigma2_uma_b",
+        "sigma2_uma_c"
+      ],
+      "mass_solar": 1.13,
+      "orbit": {
+        "semi_major_axis_au": 35.43993328150185,
+        "eccentricity": 0.5398028605922585,
+        "inclination_deg": 25.052571083194536,
+        "longitude_ascending_node_deg": 190.1443798165259,
+        "argument_of_periapsis_deg": 157.02236721603308,
+        "mean_anomaly_at_epoch_deg": 70.62549361453634,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 116128.07630855324,
+        "direction": 1
+      },
+      "relative_orbit": {
+        "semi_major_axis_au": 1.6284496657533274,
+        "eccentricity": 0.8666505510233986,
+        "inclination_deg": 13.45999253055706,
+        "longitude_ascending_node_deg": 158.3588902742112,
+        "argument_of_periapsis_deg": 113.9585640764467,
+        "mean_anomaly_at_epoch_deg": 278.2155722835512,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 714.023510472138,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 7.045130640036188,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "sigma2_uma_a",
+      "gas_mass_solar": 0.016290548592022298,
+      "solid_mass_earth": 107.76166571002946,
+      "dust_to_gas": 0.029237125460904307,
+      "inner_edge_au": 0.05817305263424982,
+      "characteristic_radius_au": 29.215757094379853,
+      "outer_truncation_au": 7.211214945161472,
+      "lifetime_myr": 7.590777960530241,
+      "snow_line_au": 5.44428,
+      "turbulence_alpha": 0.0002744667242738712,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "sigma2_uma_b",
+      "gas_mass_solar": 0.011617220498416252,
+      "solid_mass_earth": 48.8112139131189,
+      "dust_to_gas": 0.029237125460904307,
+      "inner_edge_au": 0.01755231363949494,
+      "characteristic_radius_au": 30.418290918737426,
+      "outer_truncation_au": 0.0380174112280494,
+      "lifetime_myr": 5.24008611083202,
+      "snow_line_au": 1.6426800000000004,
+      "turbulence_alpha": 0.00021004252827022874,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "sigma2_uma_c",
+      "gas_mass_solar": 0.0003501567550161094,
+      "solid_mass_earth": 3.1499273976330375,
+      "dust_to_gas": 0.029237125460904307,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 28.36759945745229,
+      "outer_truncation_au": 0.02509268595961407,
+      "lifetime_myr": 3.4620958099992927,
+      "snow_line_au": 0.33075,
+      "turbulence_alpha": 0.0013352175020975715,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "system_barycenter",
+      "gas_mass_solar": 0.16444093392319276,
+      "solid_mass_earth": 1303.910177158661,
+      "dust_to_gas": 0.029237125460904307,
+      "inner_edge_au": 240.22900258970256,
+      "characteristic_radius_au": 89.43251250609507,
+      "outer_truncation_au": 371.26544231538344,
+      "lifetime_myr": 6.178207503614698,
+      "snow_line_au": 5.69631265498129,
+      "turbulence_alpha": 0.00037023122737514394,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "sigma2_uma_a:binary_truncated; sigma2_uma_b:binary_truncated; sigma2_uma_c:binary_truncated; system_barycenter:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "mardling_aarseth_system_barycenter",
+      "passed": true,
+      "detail": "a_out/a_in=39.0814 critical=11.4689"
+    },
+    {
+      "check": "host_bc",
+      "passed": true,
+      "detail": "no stable circumbinary zone"
+    },
+    {
+      "check": "architecture_sigma2_uma_a",
+      "passed": true,
+      "detail": "planets=7 attempts=4 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_Sigma² UMa A h",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "architecture_sigma2_uma_b",
+      "passed": true,
+      "detail": "planets=0 attempts=20 rv_limit=5m/s"
+    },
+    {
+      "check": "ejection_sigma2_uma_b",
+      "passed": true,
+      "detail": "ejected planet from sigma2_uma_b: 504.233 M_earth (rogue population)"
+    },
+    {
+      "check": "ejection_sigma2_uma_b",
+      "passed": true,
+      "detail": "ejected planet from sigma2_uma_b: 828.851 M_earth (rogue population)"
+    },
+    {
+      "check": "architecture_sigma2_uma_c",
+      "passed": true,
+      "detail": "planets=3 attempts=7 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_Sigma² UMa C b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Sigma² UMa C c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Sigma² UMa C d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_system_barycenter",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

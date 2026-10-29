@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Элара",
+  "alternative_names": [
+    "Elara"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.07848373740255382,
+    "eccentricity": 0.217,
+    "inclination_deg": 26.6,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 1.4567496065101637e-07,
+    "radius_earth": 0.006741819664163308,
+    "water_mass_fraction": 0.1,
+    "mean_surface_temperature_k": 124.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

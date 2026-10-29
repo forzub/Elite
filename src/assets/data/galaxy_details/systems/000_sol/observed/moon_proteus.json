@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Протей",
+  "alternative_names": [
+    "Proteus"
+  ],
+  "kind": "moon",
+  "host": "Нептун",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0007864216211735158,
+    "eccentricity": 0.0005,
+    "inclination_deg": 0.075,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 7.367469274304277e-06,
+    "radius_earth": 0.03292516580172779,
+    "water_mass_fraction": 0.3,
+    "mean_surface_temperature_k": 51.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

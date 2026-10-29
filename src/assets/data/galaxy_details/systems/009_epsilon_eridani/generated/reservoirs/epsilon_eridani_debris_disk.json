@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_9.Epsilon_Eridani.debris_disk",
+  "name": "Epsilon Eridani debris disk",
+  "kind": "debris_disk",
+  "parent_id": "system_9.Epsilon_Eridani",
+  "seed": "0x8417d5dd76c02777",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 5.446439999999999,
+  "outer_au": 9.52052220894882,
+  "peak_au": 6.798597070738999,
+  "total_mass_earth": 0.04308116575926251,
+  "eccentricity_mean": 0.10159742266490784,
+  "inclination_mean_deg": 12.269908256717866,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2707.6964299130905,
+    "estimated_bodies_above_1km": 45369578.91436957
+  },
+  "clumpiness": 0.15166225457031896,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

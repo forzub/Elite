@@ -1,0 +1,326 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Уран",
+  "alternative_names": [
+    "Uranus",
+    "Ouranos"
+  ],
+  "kind": "planet",
+  "host": "sol",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 19.18916464,
+    "eccentricity": 0.04725744,
+    "inclination_deg": 0.77263783,
+    "longitude_ascending_node_deg": 74.01692503,
+    "argument_of_periapsis_deg": 96.93735127000001,
+    "mean_anomaly_at_epoch_deg": 142.28382821000002,
+    "epoch_universe_seconds": 32529600.0
+  },
+  "physical": {
+    "mass_earth": 14.54,
+    "radius_earth": 3.97641930982581,
+    "rotation_period_hours": 17.24,
+    "obliquity_deg": 97.77,
+    "bond_albedo": 0.3,
+    "surface_pressure_pa": 100000.0,
+    "mean_surface_temperature_k": 76.0,
+    "water_mass_fraction": 0.6,
+    "envelope_mass_fraction": 0.15
+  },
+  "atmosphere_composition": {
+    "H2": 0.825,
+    "He": 0.152,
+    "CH4": 0.023
+  },
+  "rings": [
+    {
+      "name": "Zeta ring",
+      "inner_radius_km": 38000,
+      "outer_radius_km": 39500,
+      "optical_depth": 0.015,
+      "ice_fraction": 0.3,
+      "composition": "Diffuse dark dust"
+    },
+    {
+      "name": "6-5-4 ring complex",
+      "inner_radius_km": 41800,
+      "outer_radius_km": 42350,
+      "optical_depth": 0.12,
+      "ice_fraction": 0.3,
+      "composition": "Dark carbonaceous particles"
+    },
+    {
+      "name": "Alpha-Beta complex",
+      "inner_radius_km": 44700,
+      "outer_radius_km": 45800,
+      "optical_depth": 0.2,
+      "ice_fraction": 0.3,
+      "composition": "Dark carbonaceous ice"
+    },
+    {
+      "name": "Eta-Gamma-Delta complex",
+      "inner_radius_km": 47100,
+      "outer_radius_km": 48350,
+      "optical_depth": 0.17,
+      "ice_fraction": 0.3,
+      "composition": "Dark ice and dust"
+    },
+    {
+      "name": "Epsilon ring",
+      "inner_radius_km": 51100,
+      "outer_radius_km": 51450,
+      "optical_depth": 0.48,
+      "ice_fraction": 0.3,
+      "composition": "Dense dark ice"
+    },
+    {
+      "name": "Mu-Nu outer rings",
+      "inner_radius_km": 66000,
+      "outer_radius_km": 98000,
+      "optical_depth": 0.01,
+      "ice_fraction": 0.3,
+      "composition": "Very diffuse blue-gray dust"
+    }
+  ],
+  "extra": {
+    "environment_preset_id": "ice_giant_methane",
+    "ring_system": {
+      "plane": {
+        "mode": "planet_equatorial",
+        "normal_source": "planet_rotation_axis",
+        "inclination_offset_deg": 0.0
+      },
+      "data_status": "measured_approximation",
+      "notes": "Narrow, dark carbon-rich rings.",
+      "bands": [
+        {
+          "name": "Zeta ring",
+          "distance_from_planet_km": {
+            "inner": 38000,
+            "outer": 39500
+          },
+          "composition": "Diffuse dark dust",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.12,
+              0.13,
+              0.14
+            ],
+            "opacity": 0.035,
+            "optical_depth": 0.015,
+            "radial_noise_strength": 0.62,
+            "radial_brightness_variation": 0.35,
+            "azimuthal_asymmetry": 0.08,
+            "edge_softness": 0.12,
+            "casts_shadow": false,
+            "visibility_class": "diffuse",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.27,
+            "particle_density_scale": 0.46,
+            "particle_clumpiness": 0.558,
+            "particle_radial_jitter": 0.41400000000000003,
+            "particle_size_px_range": [
+              0.72,
+              1.55
+            ]
+          }
+        },
+        {
+          "name": "6-5-4 ring complex",
+          "distance_from_planet_km": {
+            "inner": 41800,
+            "outer": 42350
+          },
+          "composition": "Dark carbonaceous particles",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.1,
+              0.11,
+              0.12
+            ],
+            "opacity": 0.18,
+            "optical_depth": 0.12,
+            "radial_noise_strength": 0.28,
+            "radial_brightness_variation": 0.2,
+            "azimuthal_asymmetry": 0.03,
+            "edge_softness": 0.12,
+            "casts_shadow": true,
+            "visibility_class": "secondary",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.68,
+            "particle_density_scale": 0.76,
+            "particle_clumpiness": 0.4161,
+            "particle_radial_jitter": 0.27,
+            "particle_size_px_range": [
+              0.95,
+              2.05
+            ]
+          }
+        },
+        {
+          "name": "Alpha-Beta complex",
+          "distance_from_planet_km": {
+            "inner": 44700,
+            "outer": 45800
+          },
+          "composition": "Dark carbonaceous ice",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.13,
+              0.14,
+              0.15
+            ],
+            "opacity": 0.26,
+            "optical_depth": 0.2,
+            "radial_noise_strength": 0.2,
+            "radial_brightness_variation": 0.18,
+            "azimuthal_asymmetry": 0.02,
+            "edge_softness": 0.035,
+            "casts_shadow": true,
+            "visibility_class": "main",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.95,
+            "particle_density_scale": 0.95,
+            "particle_clumpiness": 0.4161,
+            "particle_radial_jitter": 0.26,
+            "particle_size_px_range": [
+              1.05,
+              2.35
+            ]
+          }
+        },
+        {
+          "name": "Eta-Gamma-Delta complex",
+          "distance_from_planet_km": {
+            "inner": 47100,
+            "outer": 48350
+          },
+          "composition": "Dark ice and dust",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.14,
+              0.15,
+              0.16
+            ],
+            "opacity": 0.22,
+            "optical_depth": 0.17,
+            "radial_noise_strength": 0.22,
+            "radial_brightness_variation": 0.2,
+            "azimuthal_asymmetry": 0.02,
+            "edge_softness": 0.035,
+            "casts_shadow": true,
+            "visibility_class": "main",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.95,
+            "particle_density_scale": 0.95,
+            "particle_clumpiness": 0.4161,
+            "particle_radial_jitter": 0.26,
+            "particle_size_px_range": [
+              1.05,
+              2.35
+            ]
+          }
+        },
+        {
+          "name": "Epsilon ring",
+          "distance_from_planet_km": {
+            "inner": 51100,
+            "outer": 51450
+          },
+          "composition": "Dense dark ice",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.17,
+              0.18,
+              0.19
+            ],
+            "opacity": 0.52,
+            "optical_depth": 0.48,
+            "radial_noise_strength": 0.16,
+            "radial_brightness_variation": 0.16,
+            "azimuthal_asymmetry": 0.04,
+            "edge_softness": 0.035,
+            "casts_shadow": true,
+            "visibility_class": "secondary",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.68,
+            "particle_density_scale": 0.76,
+            "particle_clumpiness": 0.4161,
+            "particle_radial_jitter": 0.27,
+            "particle_size_px_range": [
+              0.95,
+              2.05
+            ]
+          }
+        },
+        {
+          "name": "Mu-Nu outer rings",
+          "distance_from_planet_km": {
+            "inner": 66000,
+            "outer": 98000
+          },
+          "composition": "Very diffuse blue-gray dust",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.2,
+              0.24,
+              0.27
+            ],
+            "opacity": 0.025,
+            "optical_depth": 0.01,
+            "radial_noise_strength": 0.72,
+            "radial_brightness_variation": 0.5,
+            "azimuthal_asymmetry": 0.16,
+            "edge_softness": 0.12,
+            "casts_shadow": false,
+            "visibility_class": "faint",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.44,
+            "particle_density_scale": 0.6,
+            "particle_clumpiness": 0.468,
+            "particle_radial_jitter": 0.342,
+            "particle_size_px_range": [
+              0.82,
+              1.75
+            ]
+          }
+        }
+      ],
+      "visual": {
+        "display_profile": "readable_particle_ring_cloud",
+        "render_mode": "particle_cloud",
+        "recognizability_priority": 0.68,
+        "artistic_width_scale": 1.012,
+        "continuous_fill": 0.008,
+        "particle_density": 0.6,
+        "particle_opacity_scale": 0.82,
+        "particle_size_px_range": [
+          0.85,
+          1.8
+        ],
+        "radial_jitter": 0.26,
+        "azimuthal_clumping": 0.4161,
+        "cluster_scale": 0.6901,
+        "softness": 0.56,
+        "faint_band_emphasis": 0.5,
+        "diffuse_band_emphasis": 0.26,
+        "minimum_visible_width_px": 0.95,
+        "use_lighting": false,
+        "use_planet_shadow": false,
+        "use_ring_shadow_on_planet": false,
+        "artistic_occlusion": {
+          "enabled": false,
+          "back_half_brightness": 0.98,
+          "inner_edge_darkening": 0.0
+        }
+      }
+    }
+  }
+}

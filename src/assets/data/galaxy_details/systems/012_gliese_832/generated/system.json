@@ -1,0 +1,165 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 12,
+  "name": "Gliese 832",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xd64aebf681b65d65",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0033584629496888666,
+      -0.0006422952332787171,
+      -0.0035843414058645833
+    ],
+    "galactocentric_radius_kpc": 8.176641562277242,
+    "height_above_plane_kpc": 0.017215658594135416,
+    "population_metallicity_mean_feh": -0.04979849373663452,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10682923152172691,
+    "formation_environment_density": 10.402410018737205,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gliese_832",
+      "id": "system_12.Gliese_832",
+      "name": "Gliese 832",
+      "alternative_names": [
+        "GJ 832",
+        "HD 204961"
+      ],
+      "spectral_type": "M2/3 V",
+      "stage": "main_sequence",
+      "seed": "0xc42728dccfef0abe",
+      "mass_solar": 0.45,
+      "initial_mass_solar": 0.45,
+      "radius_solar": 0.441557,
+      "teff_k": 3472.0,
+      "luminosity_solar": 0.026001595631652722,
+      "metallicity_feh": -0.3,
+      "age_gyr": 8.1,
+      "main_sequence_lifetime_gyr": 71.40694446665994,
+      "rotation_period_days": 57.73210793586533,
+      "mu_m3s2": 5.9720598e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+      },
+      "extra": {
+        "legacy_type_label": "M1.5 V / M2-3 V — красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gliese_832",
+      "gas_mass_solar": 0.0031717129120374223,
+      "solid_mass_earth": 8.912988319908564,
+      "dust_to_gas": 0.006715908930605448,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 20.623643531043918,
+      "outer_truncation_au": 77.51272852657016,
+      "lifetime_myr": 1.11794174253172,
+      "snow_line_au": 0.5467500000000001,
+      "turbulence_alpha": 0.0001983966101357176,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "gliese_832:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_gliese_832",
+      "passed": true,
+      "detail": "planets=6 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 832 c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 832 d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 832 e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_GJ 832 b",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

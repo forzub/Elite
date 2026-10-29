@@ -1,0 +1,152 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 54,
+  "name": "HD 85512",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x09926efa3c88c117",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.00032297793256819374,
+      -0.011040520186295142,
+      0.0015837138978508282
+    ],
+    "galactocentric_radius_kpc": 8.17968447303586,
+    "height_above_plane_kpc": 0.022383713897850828,
+    "population_metallicity_mean_feh": -0.04998106838215158,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10502787862282231,
+    "formation_environment_density": 0.2145854325692036,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_85512",
+      "id": "system_54.HD_85512",
+      "name": "HD 85512",
+      "alternative_names": [
+        "HD 85512 A"
+      ],
+      "spectral_type": "K5V",
+      "stage": "main_sequence",
+      "seed": "0x7f55bce9d7e325b9",
+      "mass_solar": 0.69,
+      "initial_mass_solar": 0.69,
+      "radius_solar": 0.6518466652031474,
+      "teff_k": 4720.0,
+      "luminosity_solar": 0.19,
+      "metallicity_feh": -0.1142042627233778,
+      "age_gyr": 5.6,
+      "main_sequence_lifetime_gyr": 24.997058459645185,
+      "rotation_period_days": 36.180269687106254,
+      "mu_m3s2": 9.157158359999999e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K5V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_85512",
+      "gas_mass_solar": 0.004445096075143504,
+      "solid_mass_earth": 18.423072633754096,
+      "dust_to_gas": 0.010301501631276275,
+      "inner_edge_au": 0.013735464371734942,
+      "characteristic_radius_au": 49.36892538486526,
+      "outer_truncation_au": 539.6844324022678,
+      "lifetime_myr": 1.8057726867440074,
+      "snow_line_au": 1.28547,
+      "turbulence_alpha": 0.003711870163327095,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "hd_85512:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_85512",
+      "passed": true,
+      "detail": "planets=7 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_HD 85512 b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_HD 85512 c",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

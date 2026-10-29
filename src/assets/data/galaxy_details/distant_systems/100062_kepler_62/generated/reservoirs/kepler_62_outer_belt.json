@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_100062.Kepler-62.kuiper_belt",
+  "name": "Kepler-62 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_100062.Kepler-62",
+  "seed": "0x2c4ab519a6a5b0dd",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.8564099999999994,
+  "outer_au": 7.412068665620414,
+  "peak_au": 4.478083225129034,
+  "total_mass_earth": 0.023356471404449405,
+  "eccentricity_mean": 0.0971619146621818,
+  "inclination_mean_deg": 13.783179086473671,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2207.8686564735176,
+    "estimated_bodies_above_1km": 30165574.815540127
+  },
+  "clumpiness": 0.12496037100382688,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

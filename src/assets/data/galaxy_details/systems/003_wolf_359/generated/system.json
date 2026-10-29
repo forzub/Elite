@@ -1,0 +1,151 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 3,
+  "name": "Wolf 359",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x8551953cb3240353",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.000583012011662616,
+      -0.0011983042169321655,
+      0.001984734769880381
+    ],
+    "galactocentric_radius_kpc": 8.180583099776372,
+    "height_above_plane_kpc": 0.02278473476988038,
+    "population_metallicity_mean_feh": -0.05003498598658237,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10486356249300038,
+    "formation_environment_density": 1.6571412649829704,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "wolf_359",
+      "id": "system_3.Wolf_359",
+      "name": "Wolf 359",
+      "alternative_names": [
+        "CN Leonis",
+        "GJ 406",
+        "Вольф 359"
+      ],
+      "spectral_type": "M6.5Ve",
+      "stage": "main_sequence",
+      "seed": "0xc07386ea451912f5",
+      "mass_solar": 0.11,
+      "initial_mass_solar": 0.11,
+      "radius_solar": 0.144,
+      "teff_k": 2749.0,
+      "luminosity_solar": 0.00106,
+      "metallicity_feh": 0.25,
+      "age_gyr": 0.5,
+      "main_sequence_lifetime_gyr": 2554.125026381882,
+      "rotation_period_days": 38.739738760265354,
+      "mu_m3s2": 1.45983684e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: young flare star, 0.1-1.5 Gyr",
+        "luminosity_solar": "literature compilation 2026-10-29: Pineda et al. 2021",
+        "mass_solar": "literature compilation 2026-10-29: Pineda et al. 2021",
+        "metallicity_feh": "literature compilation 2026-10-29: Mann et al. 2015",
+        "radius_solar": "literature compilation 2026-10-29: Pineda et al. 2021",
+        "teff_k": "literature compilation 2026-10-29: Pineda et al. 2021"
+      },
+      "extra": {
+        "legacy_type_label": "M6.5Ve — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "wolf_359",
+      "gas_mass_solar": 0.00043896622495805197,
+      "solid_mass_earth": 4.5768559463091725,
+      "dust_to_gas": 0.023828944094521565,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 11.74692170739705,
+      "outer_truncation_au": 194.20492650280605,
+      "lifetime_myr": 2.9602335060109146,
+      "snow_line_au": 0.09949874371066199,
+      "turbulence_alpha": 0.007240255107268857,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "wolf_359:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_wolf_359",
+      "passed": true,
+      "detail": "planets=6 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Wolf 359 b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

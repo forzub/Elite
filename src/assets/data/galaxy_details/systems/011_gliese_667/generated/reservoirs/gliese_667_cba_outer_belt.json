@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_11.barycenter.kuiper_belt",
+  "name": "Gliese 667 (CBA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_11.barycenter",
+  "seed": "0x0681bae6d7b7af32",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 5.855088963995337,
+  "outer_au": 10.174765490857078,
+  "peak_au": 6.802096718297899,
+  "total_mass_earth": 0.0002,
+  "eccentricity_mean": 0.09435753587717433,
+  "inclination_mean_deg": 5.955821721144436,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 451.6972938628937,
+    "estimated_bodies_above_1km": 1262599.8190397029
+  },
+  "clumpiness": 0.2147599270180618,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

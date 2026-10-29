@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_6.Luyten's_Star.kuiper_belt",
+  "name": "Luyten's Star outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_6.Luyten's_Star",
+  "seed": "0x8d5cfc9db951fc6a",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.5616333852367537,
+  "outer_au": 5.232485195270557,
+  "peak_au": 4.455517719930043,
+  "total_mass_earth": 0.03286008097835273,
+  "eccentricity_mean": 0.11845097866639695,
+  "inclination_mean_deg": 9.77357068467563,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2473.9658470277777,
+    "estimated_bodies_above_1km": 37874974.006901555
+  },
+  "clumpiness": 0.19360529132677973,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

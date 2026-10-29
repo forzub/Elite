@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_30.Epsilon_Indi_A.kuiper_belt",
+  "name": "Epsilon Indi A outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_30.Epsilon_Indi_A",
+  "seed": "0x82e5e056a6cb52da",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 27.58,
+  "outer_au": 43.52519087076126,
+  "peak_au": 32.31296002193202,
+  "total_mass_earth": 0.04242013841130422,
+  "eccentricity_mean": 0.1437650760833551,
+  "inclination_mean_deg": 3.8891577503237404,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2693.776235276849,
+    "estimated_bodies_above_1km": 44904291.23416321
+  },
+  "clumpiness": 0.3811539659786928,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

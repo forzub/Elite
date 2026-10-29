@@ -1,0 +1,364 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Юпитер",
+  "designation": "Юпитер",
+  "alternative_names": [
+    "Jupiter",
+    "Zeus"
+  ],
+  "kind": "planet",
+  "parent_id": "system_0.Sol",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x4c54f7602f2d2764",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 5.202887,
+    "eccentricity": 0.04838624,
+    "inclination_deg": 1.30439695,
+    "longitude_ascending_node_deg": 100.47390909,
+    "argument_of_periapsis_deg": 274.25457073999996,
+    "mean_anomaly_at_epoch_deg": 19.66796068,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 4332.692094105697,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.8981443259999999e+27,
+    "mass_earth": 317.83,
+    "radius_km": 69911.0,
+    "density_kg_m3": 1326.1849006657014,
+    "mu_m3s2": 1.2668784675021798e+17,
+    "surface_gravity_ms2": 25.92053291301489,
+    "escape_velocity_kms": 60.20183346845482,
+    "hill_radius_km": 50566691.67801242,
+    "sphere_of_influence_km": 48205782.17509248,
+    "body_class": "gas_giant"
+  },
+  "bulk_composition": {
+    "iron_core": 0.027813407650224595,
+    "silicate_mantle": 0.07217659234977539,
+    "water_ice": 0.0,
+    "other_volatiles": 9.999999999999997e-06,
+    "hydrogen_helium_envelope": 0.9,
+    "water_mass_fraction": 0.0,
+    "formation_distance_au": 5.202887
+  },
+  "thermal": {
+    "instellation_earth": 0.036984538166280306,
+    "bond_albedo": 0.343,
+    "equilibrium_temperature_k": 109.99615503481742,
+    "mean_surface_temperature_k": 165.0,
+    "min_surface_temperature_k": 148.9125,
+    "max_surface_temperature_k": 177.375,
+    "temperature_regime": "cold",
+    "habitable_zone_position": 5.4715361957161495,
+    "radiogenic_heat_flux_wm2": 5.715123608763578,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 100000.0,
+    "composition": {
+      "H2": 0.8953140578265204,
+      "He": 0.10169491525423727,
+      "CH4": 0.002991026919242273
+    },
+    "mean_molecular_weight": 2.2600139581256236,
+    "scale_height_km": 23.249541642256556,
+    "greenhouse_warming_k": 55.00384496518258,
+    "cloud_potential": 0.9,
+    "origin": "primordial",
+    "retention_index": 0.0,
+    "outer_radius_km": 70375.99083284513
+  },
+  "geophysics": {
+    "tectonic_regime": "fluid",
+    "volcanism": "none",
+    "magnetic_field_earth": 20151.28559049387,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 9.925,
+    "obliquity_deg": 3.13,
+    "rotation_direction": 1,
+    "axis_node_deg": 325.4198977146552,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "gas_giant_bands",
+    "relief_amplitude_km": 0.0,
+    "roughness": 0.0,
+    "crater_density": 0.0,
+    "resurfacing_rate": 0.0,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.0,
+    "lava_tube_propensity": 0.0,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {}
+  },
+  "rings": [
+    {
+      "id": "halo_ring",
+      "name": "Halo ring",
+      "inner_radius_km": 92000.0,
+      "outer_radius_km": 122500.0,
+      "mass_kg": 2.0553084537947824e+17,
+      "optical_depth": 0.02,
+      "ice_fraction": 0.3,
+      "rock_fraction": 0.7,
+      "dust_fraction": 0.0,
+      "age_myr": 0.0,
+      "plane_inclination_deg": 0.0,
+      "origin": "observed",
+      "visibility_class": "secondary",
+      "gaps_km": []
+    },
+    {
+      "id": "main_ring",
+      "name": "Main ring",
+      "inner_radius_km": 122500.0,
+      "outer_radius_km": 129000.0,
+      "mass_kg": 2.0542874361823654e+17,
+      "optical_depth": 0.08,
+      "ice_fraction": 0.3,
+      "rock_fraction": 0.7,
+      "dust_fraction": 0.0,
+      "age_myr": 0.0,
+      "plane_inclination_deg": 0.0,
+      "origin": "observed",
+      "visibility_class": "secondary",
+      "gaps_km": []
+    },
+    {
+      "id": "amalthea_gossamer_ring",
+      "name": "Amalthea gossamer ring",
+      "inner_radius_km": 129000.0,
+      "outer_radius_km": 182000.0,
+      "mass_kg": 3.106972302547233e+17,
+      "optical_depth": 0.012,
+      "ice_fraction": 0.3,
+      "rock_fraction": 0.7,
+      "dust_fraction": 0.0,
+      "age_myr": 0.0,
+      "plane_inclination_deg": 0.0,
+      "origin": "observed",
+      "visibility_class": "secondary",
+      "gaps_km": []
+    },
+    {
+      "id": "thebe_gossamer_ring",
+      "name": "Thebe gossamer ring",
+      "inner_radius_km": 182000.0,
+      "outer_radius_km": 226000.0,
+      "mass_kg": 2.2559148526897587e+17,
+      "optical_depth": 0.008,
+      "ice_fraction": 0.3,
+      "rock_fraction": 0.7,
+      "dust_fraction": 0.0,
+      "age_myr": 0.0,
+      "plane_inclination_deg": 0.0,
+      "origin": "observed",
+      "visibility_class": "faint",
+      "gaps_km": []
+    }
+  ],
+  "environment_preset_id": "gas_giant_ammonia",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "eccentricity": "observed",
+    "mass_earth": "observed",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "authored",
+    "semi_major_axis_au": "observed"
+  },
+  "extra": {
+    "environment_preset_id": "gas_giant_ammonia",
+    "ring_system": {
+      "bands": [
+        {
+          "composition": "Micron dust and charged particles",
+          "distance_from_planet_km": {
+            "inner": 92000,
+            "outer": 122500
+          },
+          "name": "Halo ring",
+          "render": {
+            "azimuthal_asymmetry": 0.1,
+            "casts_shadow": false,
+            "display_mode": "particle_cloud",
+            "edge_softness": 0.12,
+            "opacity": 0.045,
+            "optical_depth": 0.02,
+            "particle_clumpiness": 0.558,
+            "particle_density_scale": 0.55,
+            "particle_radial_jitter": 0.41400000000000003,
+            "particle_size_px_range": [
+              0.8,
+              1.8
+            ],
+            "radial_brightness_variation": 0.35,
+            "radial_noise_strength": 0.55,
+            "role": "ring",
+            "tint_rgb": [
+              0.28,
+              0.24,
+              0.22
+            ],
+            "visibility_class": "diffuse",
+            "visual_opacity_scale": 0.35
+          }
+        },
+        {
+          "composition": "Dark silicate dust",
+          "distance_from_planet_km": {
+            "inner": 122500,
+            "outer": 129000
+          },
+          "name": "Main ring",
+          "render": {
+            "azimuthal_asymmetry": 0.06,
+            "casts_shadow": true,
+            "display_mode": "particle_cloud",
+            "edge_softness": 0.12,
+            "opacity": 0.11,
+            "optical_depth": 0.08,
+            "particle_clumpiness": 0.32,
+            "particle_density_scale": 1.0,
+            "particle_radial_jitter": 0.22,
+            "particle_size_px_range": [
+              1.1,
+              2.4
+            ],
+            "radial_brightness_variation": 0.22,
+            "radial_noise_strength": 0.38,
+            "role": "ring",
+            "tint_rgb": [
+              0.42,
+              0.36,
+              0.31
+            ],
+            "visibility_class": "main",
+            "visual_opacity_scale": 1.0
+          }
+        },
+        {
+          "composition": "Very diffuse dust",
+          "distance_from_planet_km": {
+            "inner": 129000,
+            "outer": 182000
+          },
+          "name": "Amalthea gossamer ring",
+          "render": {
+            "azimuthal_asymmetry": 0.18,
+            "casts_shadow": false,
+            "display_mode": "particle_cloud",
+            "edge_softness": 0.12,
+            "opacity": 0.028,
+            "optical_depth": 0.012,
+            "particle_clumpiness": 0.58,
+            "particle_density_scale": 0.62,
+            "particle_radial_jitter": 0.42,
+            "particle_size_px_range": [
+              0.82,
+              1.75
+            ],
+            "radial_brightness_variation": 0.42,
+            "radial_noise_strength": 0.68,
+            "role": "ring",
+            "tint_rgb": [
+              0.34,
+              0.28,
+              0.24
+            ],
+            "visibility_class": "faint",
+            "visual_opacity_scale": 0.44
+          }
+        },
+        {
+          "composition": "Extremely diffuse dust",
+          "distance_from_planet_km": {
+            "inner": 182000,
+            "outer": 226000
+          },
+          "name": "Thebe gossamer ring",
+          "render": {
+            "azimuthal_asymmetry": 0.22,
+            "casts_shadow": false,
+            "display_mode": "particle_cloud",
+            "edge_softness": 0.12,
+            "opacity": 0.018,
+            "optical_depth": 0.008,
+            "particle_clumpiness": 0.66,
+            "particle_density_scale": 0.46,
+            "particle_radial_jitter": 0.48,
+            "particle_size_px_range": [
+              0.72,
+              1.55
+            ],
+            "radial_brightness_variation": 0.48,
+            "radial_noise_strength": 0.72,
+            "role": "ring",
+            "tint_rgb": [
+              0.3,
+              0.25,
+              0.22
+            ],
+            "visibility_class": "diffuse",
+            "visual_opacity_scale": 0.28
+          }
+        }
+      ],
+      "data_status": "measured_approximation",
+      "notes": "Faint dusty system; visually subordinate to the planet.",
+      "plane": {
+        "inclination_offset_deg": 0.0,
+        "mode": "planet_equatorial",
+        "normal_source": "planet_rotation_axis"
+      },
+      "visual": {
+        "artistic_occlusion": {
+          "back_half_brightness": 0.98,
+          "enabled": false,
+          "inner_edge_darkening": 0.0
+        },
+        "artistic_width_scale": 1.03,
+        "azimuthal_clumping": 0.42,
+        "cluster_scale": 0.7,
+        "continuous_fill": 0.018,
+        "diffuse_band_emphasis": 0.28,
+        "display_profile": "jupiter_dust_cloud",
+        "faint_band_emphasis": 0.55,
+        "minimum_visible_width_px": 1.0,
+        "particle_density": 0.72,
+        "particle_opacity_scale": 0.95,
+        "particle_size_px_range": [
+          0.9,
+          2.2
+        ],
+        "radial_jitter": 0.32,
+        "recognizability_priority": 0.72,
+        "render_mode": "particle_cloud",
+        "softness": 0.42,
+        "use_lighting": false,
+        "use_planet_shadow": false,
+        "use_ring_shadow_on_planet": false
+      }
+    }
+  }
+}

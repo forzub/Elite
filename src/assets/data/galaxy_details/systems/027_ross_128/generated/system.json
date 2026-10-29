@@ -1,0 +1,156 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 27,
+  "name": "Ross 128",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x8dc78a5b1338cb4f",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      4.353982013318749e-06,
+      -0.0016999494479948262,
+      0.002892785590689003
+    ],
+    "galactocentric_radius_kpc": 8.17999582265794,
+    "height_above_plane_kpc": 0.023692785590689002,
+    "population_metallicity_mean_feh": -0.04999974935947642,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10459458123538475,
+    "formation_environment_density": 0.47490711743962893,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "ross_128",
+      "id": "system_27.Ross_128",
+      "name": "Ross 128",
+      "alternative_names": [
+        "FI Virginis",
+        "GJ 447",
+        "Росс 128 A"
+      ],
+      "spectral_type": "M4",
+      "stage": "main_sequence",
+      "seed": "0xd855fadf870f8258",
+      "mass_solar": 0.168,
+      "initial_mass_solar": 0.168,
+      "radius_solar": 0.1967,
+      "teff_k": 3192.0,
+      "luminosity_solar": 0.0036200119151374747,
+      "metallicity_feh": -0.02,
+      "age_gyr": 5.0,
+      "main_sequence_lifetime_gyr": 862.6951112551693,
+      "rotation_period_days": 118.44070195072237,
+      "mu_m3s2": 2.229568992e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+      },
+      "extra": {
+        "legacy_type_label": "M4V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "ross_128",
+      "gas_mass_solar": 0.0013553031845428868,
+      "solid_mass_earth": 7.039950390619911,
+      "dust_to_gas": 0.012796900652687243,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 15.351780603476444,
+      "outer_truncation_au": 362.77359556844584,
+      "lifetime_myr": 2.166277963666601,
+      "snow_line_au": 0.12296340919151519,
+      "turbulence_alpha": 0.008773474246207166,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "ross_128:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_ross_128",
+      "passed": true,
+      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Ross 128 c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Ross 128 d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

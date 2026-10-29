@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_43.barycenter_ab.kuiper_belt",
+  "name": "Theta Draconis (BA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_43.barycenter_ab",
+  "seed": "0xfb6e091effc16956",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 21.182028492776233,
+  "outer_au": 38.429722869171634,
+  "peak_au": 26.05159664575855,
+  "total_mass_earth": 0.7099526965740575,
+  "eccentricity_mean": 0.07751152496733014,
+  "inclination_mean_deg": 14.605186460577348,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 674815869.5616341
+  },
+  "clumpiness": 0.05401479093122708,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

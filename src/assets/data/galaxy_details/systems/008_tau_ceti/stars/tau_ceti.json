@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "tau_ceti",
+  "name": "Tau Ceti",
+  "alternative_names": [
+    "η Ceti",
+    "Тау Кита",
+    "HD 10700"
+  ],
+  "spectral_type": "G8.5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.783,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "radius_solar": {
+    "value": 0.83,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "teff_k": {
+    "value": 5310.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "luminosity_solar": {
+    "value": 0.4950054721879247,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "metallicity_feh": {
+    "value": -0.52,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "age_gyr": {
+    "value": 12.12,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host tau Cet)"
+  },
+  "extra": {
+    "legacy_type_label": "G8.5V — Жёлтый карлик"
+  }
+}

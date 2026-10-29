@@ -1,0 +1,160 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 28,
+  "name": "YZ Ceti",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x3676a0fe97031adf",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0006210199944209399,
+      0.00036284491527568854,
+      -0.0036191118149596128
+    ],
+    "galactocentric_radius_kpc": 8.18062102804127,
+    "height_above_plane_kpc": 0.017180888185040388,
+    "population_metallicity_mean_feh": -0.05003726168247617,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10668233884615844,
+    "formation_environment_density": 0.0429519787804781,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "yz_ceti",
+      "id": "system_28.YZ_Ceti",
+      "name": "YZ Ceti",
+      "alternative_names": [
+        "GJ 54.1",
+        "ИП Цети A"
+      ],
+      "spectral_type": "M4.5 V",
+      "stage": "main_sequence",
+      "seed": "0x9266daf69a198c1d",
+      "mass_solar": 0.142,
+      "initial_mass_solar": 0.142,
+      "radius_solar": 0.157,
+      "teff_k": 3151.0,
+      "luminosity_solar": 0.002194977132112661,
+      "metallicity_feh": -0.18,
+      "age_gyr": 3.8,
+      "main_sequence_lifetime_gyr": 1292.381185207445,
+      "rotation_period_days": 90.96766996317186,
+      "mu_m3s2": 1.884516648e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+      },
+      "extra": {
+        "legacy_type_label": "M4.5V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "yz_ceti",
+      "gas_mass_solar": 0.000694485894872228,
+      "solid_mass_earth": 3.2776110808555865,
+      "dust_to_gas": 0.008853292203301787,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 10.049212230045597,
+      "outer_truncation_au": 1118.033988749895,
+      "lifetime_myr": 7.0173604953272815,
+      "snow_line_au": 0.11304866208850063,
+      "turbulence_alpha": 0.0074763967813724335,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "yz_ceti:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_yz_ceti",
+      "passed": true,
+      "detail": "planets=10 attempts=3 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_YZ Ceti e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_YZ Cet b",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_YZ Ceti h",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_35.barycenter_ab.kuiper_belt",
+  "name": "Tau Cygni (BA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_35.barycenter_ab",
+  "seed": "0x864fac6d3129c5ed",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 21.411461769925943,
+  "outer_au": 39.18524150631955,
+  "peak_au": 24.522019476615615,
+  "total_mass_earth": 0.07829672023634453,
+  "eccentricity_mean": 0.118791876258306,
+  "inclination_mean_deg": 10.418869791091897,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 74421675.70470147
+  },
+  "clumpiness": 0.10026970013020525,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

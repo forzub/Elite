@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "aldebaran",
+  "name": "Aldebaran",
+  "alternative_names": [
+    "α Tau",
+    "Альдебаран A"
+  ],
+  "spectral_type": "K5 III",
+  "stage_hint": "giant",
+  "mass_solar": {
+    "value": 1.13,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "radius_solar": {
+    "value": 45.1,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "teff_k": {
+    "value": 4055.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "luminosity_solar": {
+    "value": 469.8941086052156,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "metallicity_feh": {
+    "value": -0.27,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "age_gyr": {
+    "value": 6.6,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+  },
+  "extra": {
+    "legacy_type_label": "K5III — Красный гигант"
+  }
+}

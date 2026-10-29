@@ -1,0 +1,34 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_229_a",
+  "name": "Gliese 229 A",
+  "alternative_names": [
+    "GJ 229 A",
+    "Красный карлик"
+  ],
+  "spectral_type": "M1.5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.509,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)"
+  },
+  "radius_solar": {
+    "value": 0.46,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)"
+  },
+  "teff_k": {
+    "value": 3564.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)"
+  },
+  "luminosity_solar": {
+    "value": 0.028000126924345333,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)"
+  },
+  "age_gyr": {
+    "value": 3.0,
+    "source": "literature compilation 2026-10-29: Brandt et al. 2021 (2-6 Gyr)"
+  },
+  "extra": {
+    "legacy_type_label": "M1V — Красный карлик"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_2.Barnard's_Star.kuiper_belt",
+  "name": "Barnard's Star outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_2.Barnard's_Star",
+  "seed": "0x7c74b1dedbb346b2",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 0.5,
+  "outer_au": 0.9951228186704539,
+  "peak_au": 0.5763265666501125,
+  "total_mass_earth": 0.00017156277986147503,
+  "eccentricity_mean": 0.12369539592528354,
+  "inclination_mean_deg": 5.208421425051874,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 429.18563907200013,
+    "estimated_bodies_above_1km": 1139885.9058756526
+  },
+  "clumpiness": 0.38272163874557996,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sirius_a",
+  "name": "Sirius A",
+  "alternative_names": [
+    "Alpha CMa A",
+    "Сириус A",
+    "Песья звезда A"
+  ],
+  "spectral_type": "A1V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 2.063,
+    "source": "literature compilation 2026-10-29: Bond et al. 2017"
+  },
+  "radius_solar": {
+    "value": 1.711,
+    "source": "literature compilation 2026-10-29: Davis et al. 2011"
+  },
+  "teff_k": {
+    "value": 9940,
+    "source": "literature compilation 2026-10-29: Adelman 2004"
+  },
+  "luminosity_solar": {
+    "value": 25.4,
+    "source": "literature compilation 2026-10-29: Liebert et al. 2005"
+  },
+  "metallicity_feh": {
+    "value": 0.0,
+    "source": "literature compilation 2026-10-29: bulk (surface Am overabundance not bulk)"
+  },
+  "age_gyr": {
+    "value": 0.242,
+    "source": "literature compilation 2026-10-29: Bond et al. 2017"
+  },
+  "extra": {
+    "legacy_type_label": "A1V — Белый карлик (главная последовательность)"
+  }
+}

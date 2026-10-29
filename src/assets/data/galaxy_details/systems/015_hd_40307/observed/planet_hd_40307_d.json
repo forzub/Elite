@@ -1,0 +1,31 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 40307 d",
+  "kind": "planet",
+  "host": "hd_40307",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2009",
+  "orbit": {
+    "period_days": {
+      "value": 20.432,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.1321,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.07,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 9.5,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (pl_msinie, m sin i)"
+    }
+  },
+  "extra": {
+    "mass_limit_earth": 1775.3894815,
+    "mass_limit_flag": "1"
+  }
+}

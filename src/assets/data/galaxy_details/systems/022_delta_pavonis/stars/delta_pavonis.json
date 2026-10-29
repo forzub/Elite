@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "delta_pavonis",
+  "name": "Delta Pavonis",
+  "alternative_names": [
+    "δ Pav",
+    "HD 166593",
+    "Дельта Павлина A"
+  ],
+  "spectral_type": "G8IV",
+  "stage_hint": "subgiant",
+  "mass_solar": {
+    "value": 0.99,
+    "source": "literature compilation 2026-10-29: Bruntt et al. 2010"
+  },
+  "radius_solar": {
+    "value": 1.22,
+    "source": "literature compilation 2026-10-29: Bruntt et al. 2010"
+  },
+  "teff_k": {
+    "value": 5604,
+    "source": "literature compilation 2026-10-29: Bruntt et al. 2010"
+  },
+  "luminosity_solar": {
+    "value": 1.22,
+    "source": "literature compilation 2026-10-29: Bruntt et al. 2010"
+  },
+  "metallicity_feh": {
+    "value": 0.33,
+    "source": "literature compilation 2026-10-29: Bruntt et al. 2010"
+  },
+  "age_gyr": {
+    "value": 6.6,
+    "source": "literature compilation 2026-10-29: Mamajek & Hillenbrand 2008"
+  },
+  "extra": {
+    "legacy_type_label": "G8IV — Жёлтый субгигант"
+  }
+}

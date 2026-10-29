@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_45.83_Leonis_B.asteroid_belt",
+  "name": "83 Leonis B asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_45.83_Leonis_B",
+  "seed": "0xa1b159c77bff92d1",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.2045650745029985,
+  "outer_au": 3.968217134105397,
+  "peak_au": 3.086391104304198,
+  "total_mass_earth": 0.0006798360523818359,
+  "eccentricity_mean": 0.14361733245709324,
+  "inclination_mean_deg": 10.719316143116933,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1032.6973648417827,
+    "estimated_bodies_above_1km": 24153548.285149794
+  },
+  "clumpiness": 0.15490481161267372,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      2.5944967326513164,
+      2.704724986376466
+    ],
+    [
+      2.936941010717826,
+      3.0471692644429758
+    ],
+    [
+      3.0777753552723546,
+      3.188003608997504
+    ],
+    [
+      3.416858302174159,
+      3.5270865558993085
+    ]
+  ],
+  "resonance": "Kirkwood gaps of 83 Leonis B j",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

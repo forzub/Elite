@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Сатурн.Диона",
+  "designation": "Диона",
+  "alternative_names": [
+    "Dione"
+  ],
+  "kind": "moon",
+  "parent_id": "system_0.Sol.Сатурн",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x8a110ab9d0787262",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0025227364415956223,
+    "eccentricity": 0.0022,
+    "inclination_deg": 0.019,
+    "longitude_ascending_node_deg": 74.86711973636892,
+    "argument_of_periapsis_deg": 232.12794579769013,
+    "mean_anomaly_at_epoch_deg": 59.94452431094648,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 2.7375647268530447,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.095452e+21,
+    "mass_earth": 0.00018342520344261746,
+    "radius_km": 561.3999999999999,
+    "density_kg_m3": 1478.0445295887698,
+    "mu_m3s2": 73113752836.0,
+    "surface_gravity_ms2": 0.23198198469168835,
+    "escape_velocity_kms": 0.5103620013400563,
+    "hill_radius_km": 3249.3904482847443,
+    "sphere_of_influence_km": 1953.4357126705524,
+    "body_class": "dwarf_icy"
+  },
+  "bulk_composition": {
+    "iron_core": 0.14359434105658486,
+    "silicate_mantle": 0.35630565894341515,
+    "water_ice": 0.5,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.5,
+    "formation_distance_au": 9.53667594
+  },
+  "thermal": {
+    "instellation_earth": 0.010995297896186655,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 73.89005512948357,
+    "mean_surface_temperature_k": 87.0,
+    "min_surface_temperature_k": 13.049999999999999,
+    "max_surface_temperature_k": 156.6,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 10.029098766228314,
+    "radiogenic_heat_flux_wm2": 0.0003268006765648752,
+    "tidal_heat_flux_wm2": 0.00014182189075355846
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 13.10994487051643,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 0.017577288996219426,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "ice_shell"
+  },
+  "spin": {
+    "rotation_period_hours": 65.70155344447306,
+    "obliquity_deg": 0.21917530383440703,
+    "rotation_direction": 1,
+    "axis_node_deg": 75.03034647839475,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_ice",
+    "relief_amplitude_km": 30.0,
+    "roughness": 0.8600000000000001,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.654,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "generated"
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

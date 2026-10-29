@@ -1,0 +1,23 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 99492 c",
+  "kind": "planet",
+  "host": "83_leonis_b",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2023",
+  "orbit": {
+    "period_days": {
+      "value": 95.233,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.063,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 17.9,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (m sin i)"
+    }
+  }
+}

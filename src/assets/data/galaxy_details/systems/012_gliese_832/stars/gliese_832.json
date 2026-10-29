@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_832",
+  "name": "Gliese 832",
+  "alternative_names": [
+    "GJ 832",
+    "HD 204961"
+  ],
+  "spectral_type": "M2/3 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.45,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "radius_solar": {
+    "value": 0.441557,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "teff_k": {
+    "value": 3472.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "luminosity_solar": {
+    "value": 0.026001595631652722,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "metallicity_feh": {
+    "value": -0.3,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "age_gyr": {
+    "value": 8.1,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 832)"
+  },
+  "extra": {
+    "legacy_type_label": "M1.5 V / M2-3 V — красный карлик"
+  }
+}

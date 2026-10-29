@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_40.HD_24496.kuiper_belt",
+  "name": "HD 24496 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_40.HD_24496",
+  "seed": "0x3ecb3af5b8385424",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 7.31025,
+  "outer_au": 13.558329414438685,
+  "peak_au": 8.59482529518303,
+  "total_mass_earth": 0.05799965634958726,
+  "eccentricity_mean": 0.07291930704991051,
+  "inclination_mean_deg": 10.816774975382986,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 2989.826339577794,
+    "estimated_bodies_above_1km": 55316741.59440506
+  },
+  "clumpiness": 0.09745907783394743,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

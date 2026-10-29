@@ -1,0 +1,156 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 9,
+  "name": "Epsilon Eridani",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x7a8d113b64029fe9",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.002068162856543673,
+      -0.0005869639158215302,
+      -0.002391942135001483
+    ],
+    "galactocentric_radius_kpc": 8.182068183910307,
+    "height_above_plane_kpc": 0.018408057864998516,
+    "population_metallicity_mean_feh": -0.05012409103461842,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10622360196373262,
+    "formation_environment_density": 2.6057318750277654,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "epsilon_eridani",
+      "id": "system_9.Epsilon_Eridani",
+      "name": "Epsilon Eridani",
+      "alternative_names": [
+        "ε Eri",
+        "Эпсилон Эридана",
+        "HD 22049"
+      ],
+      "spectral_type": "K2 V",
+      "stage": "main_sequence",
+      "seed": "0xb92d92a1fb35ceba",
+      "mass_solar": 0.82,
+      "initial_mass_solar": 0.82,
+      "radius_solar": 0.759106,
+      "teff_k": 5020.38,
+      "luminosity_solar": 0.3808202203597135,
+      "metallicity_feh": -0.13,
+      "age_gyr": 0.6,
+      "main_sequence_lifetime_gyr": 16.209981593675423,
+      "rotation_period_days": 13.132374096206162,
+      "mu_m3s2": 1.088242008e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Eri)"
+      },
+      "extra": {
+        "legacy_type_label": "K2V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "epsilon_eridani",
+      "gas_mass_solar": 0.001372296475402848,
+      "solid_mass_earth": 14.971668037920205,
+      "dust_to_gas": 0.009933557233432295,
+      "inner_edge_au": 0.019398710866529247,
+      "characteristic_radius_au": 22.43113942279567,
+      "outer_truncation_au": 154.87279846543262,
+      "lifetime_myr": 1.6143159657734014,
+      "snow_line_au": 1.8154799999999998,
+      "turbulence_alpha": 0.0016944969937513546,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "epsilon_eridani:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_epsilon_eridani",
+      "passed": true,
+      "detail": "planets=9 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Epsilon Eridani c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_eps Eri b",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

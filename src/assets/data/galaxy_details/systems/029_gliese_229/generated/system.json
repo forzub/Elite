@@ -1,0 +1,300 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 29,
+  "name": "Gliese 229",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xbf8f681573373a8e",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0036085768006543506,
+      -0.0040948902947236954,
+      -0.001819798626803691
+    ],
+    "galactocentric_radius_kpc": 8.183609601295249,
+    "height_above_plane_kpc": 0.01898020137319631,
+    "population_metallicity_mean_feh": -0.05021657607771495,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10597620592083046,
+    "formation_environment_density": 1.3091286084068374,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gliese_229_a",
+      "id": "system_29.Gliese_229_A",
+      "name": "Gliese 229 A",
+      "alternative_names": [
+        "GJ 229 A",
+        "Красный карлик"
+      ],
+      "spectral_type": "M1.5V",
+      "stage": "main_sequence",
+      "seed": "0xca89617a0ea899e5",
+      "mass_solar": 0.509,
+      "initial_mass_solar": 0.509,
+      "radius_solar": 0.46,
+      "teff_k": 3564.0,
+      "luminosity_solar": 0.028000126924345333,
+      "metallicity_feh": -0.33002669958617137,
+      "age_gyr": 3.0,
+      "main_sequence_lifetime_gyr": 52.315552848660126,
+      "rotation_period_days": 55.82724188422883,
+      "mu_m3s2": 6.7550631959999996e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 3.9854029747492206,
+        "eccentricity": 0.851,
+        "inclination_deg": 29.690573358908402,
+        "longitude_ascending_node_deg": 332.15110033511297,
+        "argument_of_periapsis_deg": 63.480713826714066,
+        "mean_anomaly_at_epoch_deg": 39.745948704038476,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 92303.36442579818,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        1.0886541341572444
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Brandt et al. 2021 (2-6 Gyr)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 229)"
+      },
+      "extra": {
+        "legacy_type_label": "M1V — Красный карлик"
+      }
+    },
+    {
+      "key": "gliese_229_b",
+      "id": "system_29.Gliese_229_B",
+      "name": "Gliese 229 B",
+      "alternative_names": [
+        "GJ 229 B",
+        "Коричневый карлик",
+        "T7"
+      ],
+      "spectral_type": "T7",
+      "stage": "brown_dwarf",
+      "seed": "0xb11ab28273e1c751",
+      "mass_solar": 0.0692,
+      "initial_mass_solar": 0.0692,
+      "radius_solar": 0.31859815109756234,
+      "teff_k": 900.0,
+      "luminosity_solar": 6e-05,
+      "metallicity_feh": -0.33002669958617137,
+      "age_gyr": 3.0,
+      "main_sequence_lifetime_gyr": null,
+      "rotation_period_days": 0.2074965312560364,
+      "mu_m3s2": 9.183700847999999e+18,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 29.314597025250777,
+        "eccentricity": 0.851,
+        "inclination_deg": 29.690573358908402,
+        "longitude_ascending_node_deg": 332.15110033511297,
+        "argument_of_periapsis_deg": 243.48071382671407,
+        "mean_anomaly_at_epoch_deg": 39.745948704038476,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 92303.36442579818,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.46287618244275264
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Brandt et al. 2021",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "literature compilation 2026-10-29: Xuan et al. 2024 (Ba 38.1 + Bb 34.4 M_J, one component here)",
+        "teff_k": "literature compilation 2026-10-29: T7 spectral type"
+      },
+      "extra": {
+        "legacy_type_label": "T7 — Коричневый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_29.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "gliese_229_a",
+        "gliese_229_b"
+      ],
+      "mass_solar": 0.5782,
+      "relative_orbit": {
+        "semi_major_axis_au": 33.3,
+        "eccentricity": 0.851,
+        "inclination_deg": 29.690573358908402,
+        "longitude_ascending_node_deg": 332.15110033511297,
+        "argument_of_periapsis_deg": 243.48071382671407,
+        "mean_anomaly_at_epoch_deg": 39.745948704038476,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 92303.36442579818,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 145.37047051304071,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gliese_229_a",
+      "gas_mass_solar": 0.0025397196386840897,
+      "solid_mass_earth": 6.715876511056571,
+      "dust_to_gas": 0.0062672655820179175,
+      "inner_edge_au": 0.007474475624644952,
+      "characteristic_radius_au": 23.48814701143883,
+      "outer_truncation_au": 1.0886541341572444,
+      "lifetime_myr": 1.3150927594777522,
+      "snow_line_au": 0.6995187,
+      "turbulence_alpha": 0.0007739924677598841,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "gliese_229_b",
+      "gas_mass_solar": 9.879908120686735e-05,
+      "solid_mass_earth": 0.5373540489420949,
+      "dust_to_gas": 0.0062672655820179175,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 5.0,
+      "outer_truncation_au": 0.46287618244275264,
+      "lifetime_myr": 2.3903872417941643,
+      "snow_line_au": 0.07891767862779542,
+      "turbulence_alpha": 0.0012867061543564025,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.0018076843378128076,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.0062672655820179175,
+      "inner_edge_au": 145.37047051304071,
+      "characteristic_radius_au": 14.326686879019945,
+      "outer_truncation_au": 218.4986972190162,
+      "lifetime_myr": 3.866215728788828,
+      "snow_line_au": 0.6996381773261245,
+      "turbulence_alpha": 0.0002416512294431255,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "gliese_229_a:binary_truncated; gliese_229_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_gliese_229_a",
+      "passed": true,
+      "detail": "planets=12 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 229 A d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 229 A e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 229 A f",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_gliese_229_b",
+      "passed": true,
+      "detail": "planets=4 attempts=3 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 229 B d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,41 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Марс",
+  "alternative_names": [
+    "Mars",
+    "Ares"
+  ],
+  "kind": "planet",
+  "host": "sol",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 1.52371034,
+    "eccentricity": 0.0933941,
+    "inclination_deg": 1.84969142,
+    "longitude_ascending_node_deg": 49.55953891,
+    "argument_of_periapsis_deg": 286.4968315,
+    "mean_anomaly_at_epoch_deg": 19.390197539999974,
+    "epoch_universe_seconds": 32529600.0
+  },
+  "physical": {
+    "mass_earth": 0.107,
+    "radius_earth": 0.5314278546902682,
+    "rotation_period_hours": 24.6229,
+    "obliquity_deg": 25.19,
+    "bond_albedo": 0.25,
+    "surface_pressure_pa": 610.0,
+    "mean_surface_temperature_k": 210.0,
+    "water_mass_fraction": 1e-05,
+    "iron_core_fraction": 0.24
+  },
+  "atmosphere_composition": {
+    "CO2": 0.9532,
+    "N2": 0.027,
+    "Ar": 0.016,
+    "O2": 0.0013,
+    "CO": 0.0008
+  },
+  "extra": {
+    "environment_preset_id": "cold_co2_world"
+  }
+}

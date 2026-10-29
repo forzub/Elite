@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_93083",
+  "name": "HD 93083",
+  "alternative_names": [
+    "GJ 1137"
+  ],
+  "spectral_type": "K2 IV-V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.836,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "radius_solar": {
+    "value": 0.837,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "teff_k": {
+    "value": 5033.8,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "luminosity_solar": {
+    "value": 0.40699586790615666,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "metallicity_feh": {
+    "value": 0.13,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "age_gyr": {
+    "value": 10.71,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 93083)"
+  },
+  "extra": {
+    "legacy_type_label": "K2 IV-V"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "GJ 357 d",
+  "kind": "planet",
+  "host": "gliese_357",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2019",
+  "orbit": {
+    "period_days": {
+      "value": 55.661,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.204,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 6.1,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (m sin i)"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "yz_ceti",
+  "name": "YZ Ceti",
+  "alternative_names": [
+    "GJ 54.1",
+    "ИП Цети A"
+  ],
+  "spectral_type": "M4.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.142,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "radius_solar": {
+    "value": 0.157,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "teff_k": {
+    "value": 3151.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "luminosity_solar": {
+    "value": 0.002194977132112661,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "metallicity_feh": {
+    "value": -0.18,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "age_gyr": {
+    "value": 3.8,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host YZ Cet)"
+  },
+  "extra": {
+    "legacy_type_label": "M4.5V — Красный карлик"
+  }
+}

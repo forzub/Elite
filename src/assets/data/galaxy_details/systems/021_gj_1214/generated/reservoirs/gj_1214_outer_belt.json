@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_21.GJ_1214.kuiper_belt",
+  "name": "GJ 1214 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_21.GJ_1214",
+  "seed": "0x5442bc0ffbf5361c",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 7.2217197863106914,
+  "outer_au": 13.262736715671739,
+  "peak_au": 9.325961788838951,
+  "total_mass_earth": 0.06407890310664537,
+  "eccentricity_mean": 0.10871607312978591,
+  "inclination_mean_deg": 9.744009363951374,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 60907523.73944386
+  },
+  "clumpiness": 0.23914080698357748,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

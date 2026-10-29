@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_28.YZ_Ceti.kuiper_belt",
+  "name": "YZ Ceti outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_28.YZ_Ceti",
+  "seed": "0xa39c648795eb9ddc",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.8198836618266039,
+  "outer_au": 2.6371290338147797,
+  "peak_au": 2.032347155561101,
+  "total_mass_earth": 0.004681719861383002,
+  "eccentricity_mean": 0.03804363109401042,
+  "inclination_mean_deg": 4.617304964756187,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1292.1292704153668,
+    "estimated_bodies_above_1km": 10331854.684744839
+  },
+  "clumpiness": 0.21350233179643568,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "83_leonis_b",
+  "name": "83 Leonis B",
+  "alternative_names": [
+    "83 Leo B",
+    "HD 102194 B",
+    "Оранжевый карлик"
+  ],
+  "spectral_type": "K2 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.85,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "radius_solar": {
+    "value": 0.822539,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "teff_k": {
+    "value": 4929.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "luminosity_solar": {
+    "value": 0.3350425766809597,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "metallicity_feh": {
+    "value": 0.3,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "age_gyr": {
+    "value": 4.8,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+  },
+  "extra": {
+    "legacy_type_label": "K2V — Оранжевый карлик"
+  }
+}

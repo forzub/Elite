@@ -1,0 +1,138 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Земля",
+  "designation": "Земля",
+  "alternative_names": [
+    "Earth",
+    "Terra",
+    "Gaia"
+  ],
+  "kind": "planet",
+  "parent_id": "system_0.Sol",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x71cacba236c9474a",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 1.00000261,
+    "eccentricity": 0.01671123,
+    "inclination_deg": 0.0,
+    "longitude_ascending_node_deg": 0.0,
+    "argument_of_periapsis_deg": 102.93768193,
+    "mean_anomaly_at_epoch_deg": 357.52688973,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 365.25777983926696,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 5.9722e+24,
+    "mass_earth": 1.0,
+    "radius_km": 6371.0,
+    "density_kg_m3": 5513.443375519389,
+    "mu_m3s2": 398602544600000.0,
+    "surface_gravity_ms2": 9.820302293385645,
+    "escape_velocity_kms": 11.186165197346224,
+    "hill_radius_km": 1471555.628234303,
+    "sphere_of_influence_km": 924651.159659185,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.32489275,
+    "silicate_mantle": 0.6747772500000001,
+    "water_ice": 0.00023,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.00023,
+    "formation_distance_au": 1.00000261
+  },
+  "thermal": {
+    "instellation_earth": 1.0001344411481647,
+    "bond_albedo": 0.306,
+    "equilibrium_temperature_k": 254.29368512959766,
+    "mean_surface_temperature_k": 288.0,
+    "min_surface_temperature_k": 260.2266639192252,
+    "max_surface_temperature_k": 309.36410467751904,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 1.0516373844801203,
+    "radiogenic_heat_flux_wm2": 0.02619939459735947,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 101325.0,
+    "composition": {
+      "N2": 0.7808,
+      "O2": 0.2095,
+      "Ar": 0.0093,
+      "CO2": 0.0004
+    },
+    "mean_molecular_weight": 28.966051200000003,
+    "scale_height_km": 8.357258503216068,
+    "greenhouse_warming_k": 33.70631487040234,
+    "cloud_potential": 0.6,
+    "origin": "outgassed",
+    "retention_index": 7.930126990214358,
+    "outer_radius_km": 6471.287102038593
+  },
+  "geophysics": {
+    "tectonic_regime": "mobile_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 1.4891135140631993,
+    "hydrosphere": "surface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 23.9345,
+    "obliquity_deg": 23.44,
+    "rotation_direction": 1,
+    "axis_node_deg": 220.61513760140275,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "plate_tectonic_continents",
+    "relief_amplitude_km": 8.94712336312649,
+    "roughness": 0.31255569428343616,
+    "crater_density": 0.11349807525145905,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 0.8139778111409781,
+    "glaciation_potential": 0.5,
+    "cave_tectonic_propensity": 0.6226996150502918,
+    "lava_tube_propensity": 0.19979018378298632,
+    "karst_propensity": 0.52,
+    "weather_potential": 0.6586370815213043,
+    "ocean_coverage": 0.7,
+    "ice_coverage": 0.05,
+    "surface_materials": {
+      "basalt": 0.35,
+      "granite": 0.25,
+      "sediment": 0.25,
+      "carbonate": 0.15
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "terrestrial_temperate",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "eccentricity": "observed",
+    "mass_earth": "observed",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "authored",
+    "semi_major_axis_au": "observed"
+  },
+  "extra": {
+    "axis_node_deg": 0.0,
+    "environment_preset_id": "terrestrial_temperate",
+    "rotation_offset_deg": 0.0,
+    "texture_longitude_offset_deg": 0.0
+  }
+}

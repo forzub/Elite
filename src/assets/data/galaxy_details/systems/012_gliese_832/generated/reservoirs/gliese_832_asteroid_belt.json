@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_12.Gliese_832.asteroid_belt",
+  "name": "Gliese 832 asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_12.Gliese_832",
+  "seed": "0xa3d647abca3b6523",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.4800000000000002,
+  "outer_au": 2.664,
+  "peak_au": 2.072,
+  "total_mass_earth": 0.002546905869583915,
+  "eccentricity_mean": 0.17759442831361966,
+  "inclination_mean_deg": 7.974146270861646,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1500.0,
+    "estimated_bodies_above_1km": 75068497.82963634
+  },
+  "clumpiness": 0.18899313816269253,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      1.7417744700458038,
+      1.8157744700458036
+    ],
+    [
+      1.9716690362802312,
+      2.045669036280231
+    ],
+    [
+      2.0662159527452357,
+      2.1402159527452356
+    ],
+    [
+      2.2938539423055158,
+      2.3678539423055156
+    ]
+  ],
+  "resonance": "Kirkwood gaps of GJ 832 b",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

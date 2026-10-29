@@ -1,0 +1,39 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_36.9_Ceti.9_Ceti_l.trojans",
+  "name": "9 Ceti l trojans",
+  "kind": "trojans",
+  "parent_id": "system_36.9_Ceti.9_Ceti_l",
+  "seed": "0x5bb850914e33e081",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 6.3550369350605935,
+  "outer_au": 7.023988191382762,
+  "peak_au": 6.689512563221678,
+  "total_mass_earth": 0.00010608326388174829,
+  "eccentricity_mean": 0.07,
+  "inclination_mean_deg": 5.838453877195599,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 400.0,
+    "estimated_bodies_above_1km": 756429.5466192239
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "d_type_organics": 0.6,
+    "silicate": 0.25,
+    "water_ice": 0.15
+  },
+  "gaps_au": [],
+  "resonance": "1:1 L4/L5 with 9 Ceti l",
+  "formation_origin": "captured_at_lagrange_points",
+  "provenance": {
+    "population": "generated"
+  }
+}

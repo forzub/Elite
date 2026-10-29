@@ -1,0 +1,45 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 56,
+  "name": "Gliese 422",
+  "slug": "gliese_422",
+  "alternative_names": [
+    "Gliese 422",
+    "GJ 422",
+    "Система 422"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -21.7568,
+    "y": 4.2366,
+    "z": -34.8498
+  },
+  "position_source": "archive hostname=GJ 422 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -18.5,
+    "y": 35.2,
+    "z": -7.8
+  },
+  "stellar_hierarchy": {
+    "star": "gliese_422"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "GJ 422 b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

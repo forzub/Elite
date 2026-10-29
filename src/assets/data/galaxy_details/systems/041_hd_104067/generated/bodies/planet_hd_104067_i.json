@@ -1,0 +1,125 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_41.HD_104067.HD_104067_i",
+  "designation": "HD 104067 i",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_41.HD_104067",
+  "host_star": "hd_104067",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x53aa59e00599ea3c",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 2.278203466957902,
+    "eccentricity": 0.028809927304081478,
+    "inclination_deg": 1.3390708033383472,
+    "longitude_ascending_node_deg": 268.1838875094566,
+    "argument_of_periapsis_deg": 70.03648552753688,
+    "mean_anomaly_at_epoch_deg": 358.64102584935193,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 1386.9977678168375,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 3.379899151376687e+25,
+    "mass_earth": 5.659387079094282,
+    "radius_km": 11902.575554505958,
+    "density_kg_m3": 4785.114034589482,
+    "mu_m3s2": 2.255846090603342e+15,
+    "surface_gravity_ms2": 15.923098141142688,
+    "escape_velocity_kms": 19.469251587401313,
+    "hill_radius_km": 6304389.879293212,
+    "sphere_of_influence_km": 4561960.412019994,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.24017103700410605,
+    "silicate_mantle": 0.4466504441653866,
+    "water_ice": 0.3130534558012621,
+    "other_volatiles": 9.999749344642012e-05,
+    "hydrogen_helium_envelope": 2.5065535798962074e-05,
+    "water_mass_fraction": 0.3130534558012621,
+    "formation_distance_au": 3.5303151795524013
+  },
+  "thermal": {
+    "instellation_earth": 0.05921548528463955,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 112.56232726952194,
+    "mean_surface_temperature_k": 117.8911405022464,
+    "min_surface_temperature_k": 115.23858984094586,
+    "max_surface_temperature_k": 119.9315640878622,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 4.133552864367383,
+    "radiogenic_heat_flux_wm2": 0.030635611304399978,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 500000.0,
+    "composition": {
+      "N2": 0.95,
+      "CH4": 0.049,
+      "H2": 0.001
+    },
+    "mean_molecular_weight": 27.401276,
+    "scale_height_km": 2.2303258029987605,
+    "greenhouse_warming_k": 5.328813232724457,
+    "cloud_potential": 0.7,
+    "origin": "outgassed",
+    "retention_index": 208.6269997826184,
+    "outer_radius_km": 11929.339464141944
+  },
+  "geophysics": {
+    "tectonic_regime": "cryotectonic",
+    "volcanism": "cryovolcanic",
+    "magnetic_field_earth": 2.035594139442222,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 19.414399622134752,
+    "obliquity_deg": 8.750841918937317,
+    "rotation_direction": 1,
+    "axis_node_deg": 192.14322786931763,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "hydrocarbon_lakes",
+    "relief_amplitude_km": 1.9623685183716113,
+    "roughness": 0.29142285081785235,
+    "crater_density": 0.09020833333333333,
+    "resurfacing_rate": 0.5,
+    "erosion_potential": 0.5122710528293809,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.31804166666666667,
+    "lava_tube_propensity": 0.12321722711301465,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.9630280704391745,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "methane_haze_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 33,
+  "name": "Hamal",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x4df67008aa14388b",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.01326782615060093,
+      0.009436500842689127,
+      -0.011918572622105727
+    ],
+    "galactocentric_radius_kpc": 8.193273260338797,
+    "height_above_plane_kpc": 0.008881427377894272,
+    "population_metallicity_mean_feh": -0.05079639562032785,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10892475373942426,
+    "formation_environment_density": 0.42698806607481327,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hamal",
+      "id": "system_33.Hamal",
+      "name": "Hamal",
+      "alternative_names": [
+        "α Ari",
+        "Хамаль A"
+      ],
+      "spectral_type": "K2III",
+      "stage": "red_giant",
+      "seed": "0x4c6dc126cf5dc323",
+      "mass_solar": 1.5,
+      "initial_mass_solar": 1.5,
+      "radius_solar": 13.9,
+      "teff_k": 4553.0,
+      "luminosity_solar": 85.90135215053957,
+      "metallicity_feh": -0.09,
+      "age_gyr": 3.9,
+      "main_sequence_lifetime_gyr": 3.5962138297750066,
+      "rotation_period_days": 386.06990213947546,
+      "mu_m3s2": 1.9906866000000002e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: giant of 1.5 M_sun past its main sequence",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+      },
+      "extra": {
+        "legacy_type_label": "K1IIIb — Оранжевый гигант"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hamal",
+      "gas_mass_solar": 0.0022926599475975792,
+      "solid_mass_earth": 10.579837428538568,
+      "dust_to_gas": 0.01089192891659893,
+      "inner_edge_au": 0.06491240251292507,
+      "characteristic_radius_au": 67.29750014440033,
+      "outer_truncation_au": 382.58870125401734,
+      "lifetime_myr": 2.9468938530014404,
+      "snow_line_au": 6.075000000000001,
+      "turbulence_alpha": 0.00029264799472279485,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "hamal:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hamal",
+      "passed": true,
+      "detail": "planets=2 attempts=1 rv_limit=20m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_11.Gliese_667_C.kuiper_belt",
+  "name": "Gliese 667 C outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_11.Gliese_667_C",
+  "seed": "0x02b2921e464f40a8",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 0.8820900000000003,
+  "outer_au": 1.7526204637815765,
+  "peak_au": 0.9825623732684449,
+  "total_mass_earth": 0.003210284076226415,
+  "eccentricity_mean": 0.13971092328448292,
+  "inclination_mean_deg": 6.485623236853476,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1139.4238656286511,
+    "estimated_bodies_above_1km": 8034102.33835318
+  },
+  "clumpiness": 0.2510185985756153,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

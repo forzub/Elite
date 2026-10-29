@@ -1,0 +1,468 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 11,
+  "name": "Gliese 667 (A+B+C)",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x30ed7b260a87ad4c",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.006764432572257535,
+      -0.0009697366612725725,
+      0.00016982746207151655
+    ],
+    "galactocentric_radius_kpc": 8.173235624956316,
+    "height_above_plane_kpc": 0.020969827462071516,
+    "population_metallicity_mean_feh": -0.04959413749737898,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10573849929242247,
+    "formation_environment_density": 1.820528717368431,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gliese_667_a",
+      "id": "system_11.Gliese_667_A",
+      "name": "Gliese 667 A",
+      "alternative_names": [
+        "GJ 667 A",
+        "HR 6426 A"
+      ],
+      "spectral_type": "K3V",
+      "stage": "main_sequence",
+      "seed": "0x476f21451f70c889",
+      "mass_solar": 0.73,
+      "initial_mass_solar": 0.73,
+      "radius_solar": 0.723387577429172,
+      "teff_k": 4750.0,
+      "luminosity_solar": 0.24,
+      "metallicity_feh": -0.55,
+      "age_gyr": 2.0,
+      "main_sequence_lifetime_gyr": 20.755091780886357,
+      "rotation_period_days": 15.245272944268361,
+      "mu_m3s2": 9.688008119999999e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 6.122535211267605,
+        "eccentricity": 0.58,
+        "inclination_deg": 9.23501999916572,
+        "longitude_ascending_node_deg": 274.22101731035133,
+        "argument_of_periapsis_deg": 74.20975464510616,
+        "mean_anomaly_at_epoch_deg": 251.90382715664788,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 13708.876692547747,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        1.21740696
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K3V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "gliese_667_b",
+      "id": "system_11.Gliese_667_B",
+      "name": "Gliese 667 B",
+      "alternative_names": [
+        "GJ 667 B",
+        "HR 6426 B"
+      ],
+      "spectral_type": "K5V",
+      "stage": "main_sequence",
+      "seed": "0x0c1aec8b6ff712fd",
+      "mass_solar": 0.69,
+      "initial_mass_solar": 0.69,
+      "radius_solar": 0.6827569097926101,
+      "teff_k": 4550.0,
+      "luminosity_solar": 0.18,
+      "metallicity_feh": -0.55,
+      "age_gyr": 2.0,
+      "main_sequence_lifetime_gyr": 23.895112616267994,
+      "rotation_period_days": 16.692352323687825,
+      "mu_m3s2": 9.157158359999999e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 6.477464788732395,
+        "eccentricity": 0.58,
+        "inclination_deg": 9.23501999916572,
+        "longitude_ascending_node_deg": 274.22101731035133,
+        "argument_of_periapsis_deg": 254.2097546451062,
+        "mean_anomaly_at_epoch_deg": 251.90382715664788,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 13708.876692547747,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        1.1795263200000001
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K5V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "gliese_667_c",
+      "id": "system_11.Gliese_667_C",
+      "name": "Gliese 667 C",
+      "alternative_names": [
+        "GJ 667 C",
+        "HR 6426 C"
+      ],
+      "spectral_type": "M1.5 V",
+      "stage": "main_sequence",
+      "seed": "0x115d0627595a22bd",
+      "mass_solar": 0.33,
+      "initial_mass_solar": 0.33,
+      "radius_solar": 0.34758660431593247,
+      "teff_k": 3350.0,
+      "luminosity_solar": 0.013708817661648536,
+      "metallicity_feh": -0.55,
+      "age_gyr": 2.0,
+      "main_sequence_lifetime_gyr": 151.05912293676255,
+      "rotation_period_days": 45.92639650567371,
+      "mu_m3s2": 4.37951052e+19,
+      "parent_node": "system_barycenter",
+      "orbit": {
+        "semi_major_axis_au": 313.61656621027157,
+        "eccentricity": 0.42767896815758283,
+        "inclination_deg": 87.14094442383603,
+        "longitude_ascending_node_deg": 32.51180995734387,
+        "argument_of_periapsis_deg": 282.7829730306169,
+        "mean_anomaly_at_epoch_deg": 340.2627242432547,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 2097945.731144331,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        33.70331995755222
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+      },
+      "extra": {
+        "legacy_type_label": "M1.5V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "system_barycenter",
+      "body_id": "system_11.barycenter",
+      "parent_node": "",
+      "children": [
+        "ab",
+        "gliese_667_c"
+      ],
+      "mass_solar": 1.75,
+      "relative_orbit": {
+        "semi_major_axis_au": 386.49928934364453,
+        "eccentricity": 0.42767896815758283,
+        "inclination_deg": 87.14094442383603,
+        "longitude_ascending_node_deg": 32.51180995734387,
+        "argument_of_periapsis_deg": 282.7829730306169,
+        "mean_anomaly_at_epoch_deg": 340.2627242432547,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 2097945.731144331,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 1413.288356925429,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    },
+    {
+      "id": "ab",
+      "body_id": "system_11.barycenter_ab",
+      "parent_node": "system_barycenter",
+      "children": [
+        "gliese_667_a",
+        "gliese_667_b"
+      ],
+      "mass_solar": 1.42,
+      "orbit": {
+        "semi_major_axis_au": 72.88272313337298,
+        "eccentricity": 0.42767896815758283,
+        "inclination_deg": 87.14094442383603,
+        "longitude_ascending_node_deg": 32.51180995734387,
+        "argument_of_periapsis_deg": 102.78297303061692,
+        "mean_anomaly_at_epoch_deg": 340.2627242432547,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 2097945.731144331,
+        "direction": 1
+      },
+      "relative_orbit": {
+        "semi_major_axis_au": 12.6,
+        "eccentricity": 0.58,
+        "inclination_deg": 9.23501999916572,
+        "longitude_ascending_node_deg": 274.22101731035133,
+        "argument_of_periapsis_deg": 254.2097546451062,
+        "mean_anomaly_at_epoch_deg": 251.90382715664788,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 13708.876692547747,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 47.553562601825035,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gliese_667_a",
+      "gas_mass_solar": 0.006936321848554931,
+      "solid_mass_earth": 5.724816320378915,
+      "dust_to_gas": 0.003776633127894368,
+      "inner_edge_au": 0.015374141910727895,
+      "characteristic_radius_au": 36.658478912544005,
+      "outer_truncation_au": 1.21740696,
+      "lifetime_myr": 1.1829766086086497,
+      "snow_line_au": 1.43883,
+      "turbulence_alpha": 0.00031214073195243283,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "gliese_667_b",
+      "gas_mass_solar": 0.000941486986813528,
+      "solid_mass_earth": 2.4074093449726224,
+      "dust_to_gas": 0.003776633127894368,
+      "inner_edge_au": 0.013735464371734942,
+      "characteristic_radius_au": 30.524610002675644,
+      "outer_truncation_au": 1.1795263200000001,
+      "lifetime_myr": 1.8267631442551737,
+      "snow_line_au": 1.28547,
+      "turbulence_alpha": 0.0026735609544825453,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "gliese_667_c",
+      "gas_mass_solar": 0.00048556896504571426,
+      "solid_mass_earth": 1.413995346613183,
+      "dust_to_gas": 0.003776633127894368,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 18.88245532171338,
+      "outer_truncation_au": 33.70331995755222,
+      "lifetime_myr": 1.9366602139849791,
+      "snow_line_au": 0.29403000000000007,
+      "turbulence_alpha": 0.001649685652687069,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "system_barycenter",
+      "gas_mass_solar": 0.03668446220714,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.003776633127894368,
+      "inner_edge_au": 1413.288356925429,
+      "characteristic_radius_au": 54.72369651570516,
+      "outer_truncation_au": 185.2854180375391,
+      "lifetime_myr": 3.189083560633331,
+      "snow_line_au": 1.951696321331779,
+      "turbulence_alpha": 0.0033407465722559873,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.03190975577895653,
+      "solid_mass_earth": 33.48912290081646,
+      "dust_to_gas": 0.003776633127894368,
+      "inner_edge_au": 47.553562601825035,
+      "characteristic_radius_au": 64.19585942374766,
+      "outer_truncation_au": 73.56792140256717,
+      "lifetime_myr": 1.798939326471815,
+      "snow_line_au": 1.9294208690174364,
+      "turbulence_alpha": 0.006148090636074064,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "gliese_667_a:binary_truncated; gliese_667_b:binary_truncated; gliese_667_c:binary_truncated; system_barycenter:circumbinary; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "mardling_aarseth_system_barycenter",
+      "passed": true,
+      "detail": "a_out/a_in=30.6745 critical=5.96678"
+    },
+    {
+      "check": "architecture_gliese_667_a",
+      "passed": true,
+      "detail": "planets=16 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 667 A d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 A h",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 A i",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_gliese_667_b",
+      "passed": true,
+      "detail": "planets=10 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 667 B d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 B h",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 B i",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "moons_Gliese 667 B j",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "architecture_gliese_667_c",
+      "passed": true,
+      "detail": "planets=6 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Gliese 667 C d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 C h",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_Gliese 667 C i",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "architecture_system_barycenter",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

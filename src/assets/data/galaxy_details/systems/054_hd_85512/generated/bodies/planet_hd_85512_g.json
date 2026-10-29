@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_54.HD_85512.HD_85512_g",
+  "designation": "HD 85512 g",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_54.HD_85512",
+  "host_star": "hd_85512",
+  "origin": "generated",
+  "formation_origin": "photoevaporated_core",
+  "seed": "0xc53156b6e2ecd392",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.767951476761985,
+    "eccentricity": 0.025225427009042258,
+    "inclination_deg": 2.1699253802061045,
+    "longitude_ascending_node_deg": 239.820513930793,
+    "argument_of_periapsis_deg": 115.65143015038977,
+    "mean_anomaly_at_epoch_deg": 193.55856031616005,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 295.9176677599523,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 2.3099303384010287e+25,
+    "mass_earth": 3.867804725898377,
+    "radius_km": 9826.450859852843,
+    "density_kg_m3": 5811.92784044636,
+    "mu_m3s2": 1.5417168057589985e+15,
+    "surface_gravity_ms2": 15.966555435604922,
+    "escape_velocity_kms": 17.71409452323703,
+    "hill_radius_km": 1990081.7927127534,
+    "sphere_of_influence_km": 1415000.992995813,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.21600803766639048,
+    "silicate_mantle": 0.6973810223584229,
+    "water_ice": 0.08651093997518677,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.08651093997518677,
+    "formation_distance_au": 0.9032024100580927
+  },
+  "thermal": {
+    "instellation_earth": 0.32227325148388364,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 203.309580998856,
+    "mean_surface_temperature_k": 286.272740222814,
+    "min_surface_temperature_k": 285.6500814121911,
+    "max_surface_temperature_k": 286.7517085386777,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 1.7538714165311107,
+    "radiogenic_heat_flux_wm2": 0.030473967363353557,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 5359175.566882978,
+    "composition": {
+      "N2": 0.9457209676790158,
+      "CO2": 0.035448507048437196,
+      "H2O": 0.009910802775024779,
+      "Ar": 0.008919722497522299
+    },
+    "mean_molecular_weight": 28.588402009529755,
+    "scale_height_km": 5.176835680258341,
+    "greenhouse_warming_k": 82.96315922395797,
+    "cloud_potential": 0.6,
+    "origin": "outgassed",
+    "retention_index": 42.80950585352564,
+    "outer_radius_km": 9888.572888015942
+  },
+  "geophysics": {
+    "tectonic_regime": "mobile_lid",
+    "volcanism": "low",
+    "magnetic_field_earth": 2.2481186885275863,
+    "hydrosphere": "global_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 18.151245408505925,
+    "obliquity_deg": 4.149870355694965,
+    "rotation_direction": 1,
+    "axis_node_deg": 245.5346887442298,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "global_ocean_archipelago",
+    "relief_amplitude_km": 3.287068468979971,
+    "roughness": 0.20256448978943414,
+    "crater_density": 0.005128979578868377,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 1.0,
+    "glaciation_potential": 0.5,
+    "cave_tectonic_propensity": 0.6010257959157737,
+    "lava_tube_propensity": 0.12288185813859392,
+    "karst_propensity": 1.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 1.0,
+    "ice_coverage": 0.05,
+    "surface_materials": {
+      "basalt": 0.35,
+      "granite": 0.25,
+      "sediment": 0.25,
+      "carbonate": 0.15
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "ocean_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

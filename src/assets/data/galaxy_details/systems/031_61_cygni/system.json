@@ -1,0 +1,71 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 31,
+  "name": "61 Cygni",
+  "slug": "61_cygni",
+  "alternative_names": [
+    "61 Cygni",
+    "61 Лебедя",
+    "Лебедь 61",
+    "Bessel's Star",
+    "Двойная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 6.4566,
+    "y": -6.0797,
+    "z": 7.1176
+  },
+  "position_source": "hyg gl=Gl 820A (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": 3.85,
+    "y": -10.12,
+    "z": -2.85
+  },
+  "stellar_hierarchy": {
+    "id": "ab",
+    "children": [
+      {
+        "star": "61_cygni_a"
+      },
+      {
+        "star": "61_cygni_b"
+      }
+    ],
+    "orbit": {
+      "semi_major_axis_au": {
+        "value": 85.6,
+        "source": "Kervella et al. 2008"
+      },
+      "eccentricity": {
+        "value": 0.4,
+        "source": "Kervella et al. 2008"
+      },
+      "period_years": {
+        "value": 678.0,
+        "source": "Kervella et al. 2008"
+      },
+      "inclination_deg": {
+        "value": 51.0,
+        "source": "Kervella et al. 2008"
+      },
+      "source": "Kervella et al. 2008"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "lore": {
+    "stellar_description": "Стабильная двойная система"
+  }
+}

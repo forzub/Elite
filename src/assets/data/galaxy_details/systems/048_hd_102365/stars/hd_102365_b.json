@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_102365_b",
+  "name": "HD 102365 B",
+  "alternative_names": [
+    "HD 102365 B",
+    "Красный карлик"
+  ],
+  "spectral_type": "M4V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.17,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.0035,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 3100,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 5.0,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M4V — Красный карлик"
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Нептун",
+  "alternative_names": [
+    "Neptune",
+    "Poseidon"
+  ],
+  "kind": "planet",
+  "host": "sol",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets",
+  "orbit": {
+    "semi_major_axis_au": 30.06992276,
+    "eccentricity": 0.00859048,
+    "inclination_deg": 1.77004347,
+    "longitude_ascending_node_deg": 131.78422574,
+    "argument_of_periapsis_deg": 273.18053653,
+    "mean_anomaly_at_epoch_deg": 259.91520804,
+    "epoch_universe_seconds": 32529600.0
+  },
+  "physical": {
+    "mass_earth": 17.15,
+    "radius_earth": 3.860397297000674,
+    "rotation_period_hours": 16.11,
+    "obliquity_deg": 28.32,
+    "bond_albedo": 0.29,
+    "surface_pressure_pa": 100000.0,
+    "mean_surface_temperature_k": 72.0,
+    "water_mass_fraction": 0.6,
+    "envelope_mass_fraction": 0.1
+  },
+  "atmosphere_composition": {
+    "H2": 0.8,
+    "He": 0.19,
+    "CH4": 0.015
+  },
+  "rings": [
+    {
+      "name": "Galle ring",
+      "inner_radius_km": 41900,
+      "outer_radius_km": 42900,
+      "optical_depth": 0.06,
+      "ice_fraction": 0.3,
+      "composition": "Dark dust and ice"
+    },
+    {
+      "name": "Le Verrier ring",
+      "inner_radius_km": 53150,
+      "outer_radius_km": 53350,
+      "optical_depth": 0.15,
+      "ice_fraction": 0.3,
+      "composition": "Dark icy dust"
+    },
+    {
+      "name": "Lassell ring",
+      "inner_radius_km": 53200,
+      "outer_radius_km": 57200,
+      "optical_depth": 0.02,
+      "ice_fraction": 0.3,
+      "composition": "Diffuse dust sheet"
+    },
+    {
+      "name": "Arago ring",
+      "inner_radius_km": 57200,
+      "outer_radius_km": 57400,
+      "optical_depth": 0.08,
+      "ice_fraction": 0.3,
+      "composition": "Narrow dusty ring"
+    },
+    {
+      "name": "Adams ring",
+      "inner_radius_km": 62900,
+      "outer_radius_km": 63050,
+      "optical_depth": 0.18,
+      "ice_fraction": 0.3,
+      "composition": "Dark dust with persistent arcs"
+    }
+  ],
+  "extra": {
+    "environment_preset_id": "ice_giant_methane",
+    "ring_system": {
+      "plane": {
+        "mode": "planet_equatorial",
+        "normal_source": "planet_rotation_axis",
+        "inclination_offset_deg": 0.0
+      },
+      "data_status": "measured_approximation",
+      "notes": "Dark narrow rings; Adams ring carries strong azimuthal arcs.",
+      "bands": [
+        {
+          "name": "Galle ring",
+          "distance_from_planet_km": {
+            "inner": 41900,
+            "outer": 42900
+          },
+          "composition": "Dark dust and ice",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.16,
+              0.17,
+              0.2
+            ],
+            "opacity": 0.1,
+            "optical_depth": 0.06,
+            "radial_noise_strength": 0.38,
+            "radial_brightness_variation": 0.22,
+            "azimuthal_asymmetry": 0.04,
+            "edge_softness": 0.12,
+            "casts_shadow": true,
+            "visibility_class": "diffuse",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.27,
+            "particle_density_scale": 0.46,
+            "particle_clumpiness": 0.558,
+            "particle_radial_jitter": 0.41400000000000003,
+            "particle_size_px_range": [
+              0.72,
+              1.55
+            ]
+          }
+        },
+        {
+          "name": "Le Verrier ring",
+          "distance_from_planet_km": {
+            "inner": 53150,
+            "outer": 53350
+          },
+          "composition": "Dark icy dust",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.18,
+              0.19,
+              0.22
+            ],
+            "opacity": 0.2,
+            "optical_depth": 0.15,
+            "radial_noise_strength": 0.24,
+            "radial_brightness_variation": 0.18,
+            "azimuthal_asymmetry": 0.05,
+            "edge_softness": 0.035,
+            "casts_shadow": true,
+            "visibility_class": "secondary",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.68,
+            "particle_density_scale": 0.76,
+            "particle_clumpiness": 0.5412,
+            "particle_radial_jitter": 0.3337,
+            "particle_size_px_range": [
+              0.95,
+              2.05
+            ]
+          }
+        },
+        {
+          "name": "Lassell ring",
+          "distance_from_planet_km": {
+            "inner": 53200,
+            "outer": 57200
+          },
+          "composition": "Diffuse dust sheet",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.15,
+              0.17,
+              0.21
+            ],
+            "opacity": 0.045,
+            "optical_depth": 0.02,
+            "radial_noise_strength": 0.58,
+            "radial_brightness_variation": 0.36,
+            "azimuthal_asymmetry": 0.1,
+            "edge_softness": 0.12,
+            "casts_shadow": false,
+            "visibility_class": "faint",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.44,
+            "particle_density_scale": 0.6,
+            "particle_clumpiness": 0.5412,
+            "particle_radial_jitter": 0.342,
+            "particle_size_px_range": [
+              0.82,
+              1.75
+            ]
+          }
+        },
+        {
+          "name": "Arago ring",
+          "distance_from_planet_km": {
+            "inner": 57200,
+            "outer": 57400
+          },
+          "composition": "Narrow dusty ring",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.18,
+              0.2,
+              0.24
+            ],
+            "opacity": 0.12,
+            "optical_depth": 0.08,
+            "radial_noise_strength": 0.3,
+            "radial_brightness_variation": 0.22,
+            "azimuthal_asymmetry": 0.08,
+            "edge_softness": 0.12,
+            "casts_shadow": true,
+            "visibility_class": "secondary",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.68,
+            "particle_density_scale": 0.76,
+            "particle_clumpiness": 0.5412,
+            "particle_radial_jitter": 0.3337,
+            "particle_size_px_range": [
+              0.95,
+              2.05
+            ]
+          }
+        },
+        {
+          "name": "Adams ring",
+          "distance_from_planet_km": {
+            "inner": 62900,
+            "outer": 63050
+          },
+          "composition": "Dark dust with persistent arcs",
+          "render": {
+            "role": "ring",
+            "tint_rgb": [
+              0.2,
+              0.22,
+              0.26
+            ],
+            "opacity": 0.24,
+            "optical_depth": 0.18,
+            "radial_noise_strength": 0.34,
+            "radial_brightness_variation": 0.28,
+            "azimuthal_asymmetry": 0.72,
+            "edge_softness": 0.035,
+            "casts_shadow": true,
+            "visibility_class": "main",
+            "display_mode": "particle_cloud",
+            "visual_opacity_scale": 0.95,
+            "particle_density_scale": 0.95,
+            "particle_clumpiness": 0.5412,
+            "particle_radial_jitter": 0.3337,
+            "particle_size_px_range": [
+              1.05,
+              2.35
+            ]
+          }
+        }
+      ],
+      "visual": {
+        "display_profile": "readable_particle_ring_cloud",
+        "render_mode": "particle_cloud",
+        "recognizability_priority": 0.68,
+        "artistic_width_scale": 1.0415,
+        "continuous_fill": 0.008,
+        "particle_density": 0.6,
+        "particle_opacity_scale": 0.82,
+        "particle_size_px_range": [
+          0.85,
+          1.8
+        ],
+        "radial_jitter": 0.3337,
+        "azimuthal_clumping": 0.5412,
+        "cluster_scale": 0.8189,
+        "softness": 0.56,
+        "faint_band_emphasis": 0.5,
+        "diffuse_band_emphasis": 0.26,
+        "minimum_visible_width_px": 0.95,
+        "use_lighting": false,
+        "use_planet_shadow": false,
+        "use_ring_shadow_on_planet": false,
+        "artistic_occlusion": {
+          "enabled": false,
+          "back_half_brightness": 0.98,
+          "inner_edge_darkening": 0.0
+        }
+      }
+    }
+  }
+}

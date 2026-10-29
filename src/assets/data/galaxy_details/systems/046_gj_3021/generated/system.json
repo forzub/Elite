@@ -1,0 +1,285 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 46,
+  "name": "GJ 3021",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x218749f4d5f85067",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.00797469817375925,
+      -0.011443205278397808,
+      -0.010565504066927925
+    ],
+    "galactocentric_radius_kpc": 8.172033313725251,
+    "height_above_plane_kpc": 0.010234495933072074,
+    "population_metallicity_mean_feh": -0.04952199882351508,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10933457123254642,
+    "formation_environment_density": 0.47293195160324114,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gj_3021_a",
+      "id": "system_46.GJ_3021_A",
+      "name": "GJ 3021 A",
+      "alternative_names": [
+        "GJ 3021 A",
+        "Жёлтый карлик"
+      ],
+      "spectral_type": "G6 V",
+      "stage": "main_sequence",
+      "seed": "0x4f63ce8f25e047a9",
+      "mass_solar": 0.9,
+      "initial_mass_solar": 0.9,
+      "radius_solar": 0.9,
+      "teff_k": 5540.0,
+      "luminosity_solar": 0.660693448007596,
+      "metallicity_feh": 0.1,
+      "age_gyr": 0.37,
+      "main_sequence_lifetime_gyr": 13.143623196584619,
+      "rotation_period_days": 7.485907620717574,
+      "mu_m3s2": 1.19441196e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 11.38344514457645,
+        "eccentricity": 0.2899817829429758,
+        "inclination_deg": 103.27279332798106,
+        "longitude_ascending_node_deg": 336.1069181614658,
+        "argument_of_periapsis_deg": 65.31253221656004,
+        "mean_anomaly_at_epoch_deg": 313.38759233647403,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 198388.18356229755,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        17.47460230642572
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 3021)"
+      },
+      "extra": {
+        "legacy_type_label": "G6V — Жёлтый карлик"
+      }
+    },
+    {
+      "key": "gj_3021_b",
+      "id": "system_46.GJ_3021_B",
+      "name": "GJ 3021 B",
+      "alternative_names": [
+        "GJ 3021 B",
+        "Красный карлик"
+      ],
+      "spectral_type": "M4V",
+      "stage": "main_sequence",
+      "seed": "0xe5ed7168fb63d8f4",
+      "mass_solar": 0.18,
+      "initial_mass_solar": 0.18,
+      "radius_solar": 0.20697759465083435,
+      "teff_k": 3150.0,
+      "luminosity_solar": 0.0038,
+      "metallicity_feh": 0.1,
+      "age_gyr": 5.2,
+      "main_sequence_lifetime_gyr": 734.7508734551574,
+      "rotation_period_days": 86.52114898507645,
+      "mu_m3s2": 2.38882392e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 56.91722572288225,
+        "eccentricity": 0.2899817829429758,
+        "inclination_deg": 103.27279332798106,
+        "longitude_ascending_node_deg": 336.1069181614658,
+        "argument_of_periapsis_deg": 245.31253221656004,
+        "mean_anomaly_at_epoch_deg": 313.38759233647403,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 198388.18356229755,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        7.151166124516559
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "M4V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_46.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "gj_3021_a",
+        "gj_3021_b"
+      ],
+      "mass_solar": 1.08,
+      "relative_orbit": {
+        "semi_major_axis_au": 68.3006708674587,
+        "eccentricity": 0.2899817829429758,
+        "inclination_deg": 103.27279332798106,
+        "longitude_ascending_node_deg": 336.1069181614658,
+        "argument_of_periapsis_deg": 245.31253221656004,
+        "mean_anomaly_at_epoch_deg": 313.38759233647403,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 198388.18356229755,
+        "direction": -1
+      },
+      "circumbinary_inner_au": 221.42422332759568,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gj_3021_a",
+      "gas_mass_solar": 0.011965882219098483,
+      "solid_mass_earth": 60.16434681760184,
+      "dust_to_gas": 0.01686960051804184,
+      "inner_edge_au": 0.023368464904653028,
+      "characteristic_radius_au": 21.99940836242315,
+      "outer_truncation_au": 17.47460230642572,
+      "lifetime_myr": 0.762820952719173,
+      "snow_line_au": 2.1870000000000003,
+      "turbulence_alpha": 0.00034816390537188073,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "gj_3021_b",
+      "gas_mass_solar": 0.0021714069364672135,
+      "solid_mass_earth": 13.40547060385448,
+      "dust_to_gas": 0.01686960051804184,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 21.45229912209553,
+      "outer_truncation_au": 7.151166124516559,
+      "lifetime_myr": 5.886968433183187,
+      "snow_line_au": 0.12727922061357855,
+      "turbulence_alpha": 0.0017166280166481084,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.0017883335690410044,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.01686960051804184,
+      "inner_edge_au": 221.42422332759568,
+      "characteristic_radius_au": 38.401227762550725,
+      "outer_truncation_au": 363.5303549985274,
+      "lifetime_myr": 5.39533874320625,
+      "snow_line_au": 2.1887489007193133,
+      "turbulence_alpha": 0.0005291721681446443,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "gj_3021_a:binary_truncated; gj_3021_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_gj_3021_a",
+      "passed": true,
+      "detail": "planets=4 attempts=6 rv_limit=5m/s"
+    },
+    {
+      "check": "architecture_gj_3021_b",
+      "passed": true,
+      "detail": "planets=6 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_GJ 3021 B c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_49.GJ_176.kuiper_belt",
+  "name": "GJ 176 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_49.GJ_176",
+  "seed": "0x467b93c4259bb636",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 4.114072680645531,
+  "outer_au": 6.4339213229211,
+  "peak_au": 4.907965622779853,
+  "total_mass_earth": 0.157054280076865,
+  "eccentricity_mean": 0.06892098528145357,
+  "inclination_mean_deg": 11.623030955753531,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 149281383.23845452
+  },
+  "clumpiness": 0.2142397542357472,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Сатурн.Тетис",
+  "designation": "Тетис",
+  "alternative_names": [
+    "Tethys"
+  ],
+  "kind": "moon",
+  "parent_id": "system_0.Sol.Сатурн",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0xfc1686a2490a2be3",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0019694063733756073,
+    "eccentricity": 0.0001,
+    "inclination_deg": 1.12,
+    "longitude_ascending_node_deg": 59.26536054478544,
+    "argument_of_periapsis_deg": 276.694769753186,
+    "mean_anomaly_at_epoch_deg": 147.96007801115599,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 1.888251187538221,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 6.17449e+20,
+    "mass_earth": 0.00010338719399886139,
+    "radius_km": 531.1,
+    "density_kg_m3": 983.9738980794019,
+    "mu_m3s2": 41210398606.99999,
+    "surface_gravity_ms2": 0.14610134445262174,
+    "escape_velocity_kms": 0.39394015799049326,
+    "hill_radius_km": 2099.8148669407674,
+    "sphere_of_influence_km": 1212.4551348074367,
+    "body_class": "dwarf_icy"
+  },
+  "bulk_composition": {
+    "iron_core": 0.11237493588742127,
+    "silicate_mantle": 0.2875250641125788,
+    "water_ice": 0.6,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.6,
+    "formation_distance_au": 9.53667594
+  },
+  "thermal": {
+    "instellation_earth": 0.010995271342509908,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 73.89001051826807,
+    "mean_surface_temperature_k": 86.0,
+    "min_surface_temperature_k": 12.9,
+    "max_surface_temperature_k": 154.8,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 10.029098766228314,
+    "radiogenic_heat_flux_wm2": 0.00016608709488293933,
+    "tidal_heat_flux_wm2": 1.5890350212040249e-06
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 12.10998948173193,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 0.009822747208160471,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "ice_shell"
+  },
+  "spin": {
+    "rotation_period_hours": 45.31802850091729,
+    "obliquity_deg": 0.6867953838637731,
+    "rotation_direction": 1,
+    "axis_node_deg": 193.56086972985128,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_ice",
+    "relief_amplitude_km": 30.0,
+    "roughness": 0.8600000000000001,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.654,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "generated"
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

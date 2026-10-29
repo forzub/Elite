@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Мимас",
+  "alternative_names": [
+    "Mimas"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.001240251610078565,
+    "eccentricity": 0.0196,
+    "inclination_deg": 1.574,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 6.277921034124778e-06,
+    "radius_earth": 0.031075085056678317,
+    "water_mass_fraction": 0.7,
+    "mean_surface_temperature_k": 64.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

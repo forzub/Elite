@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_436",
+  "name": "Gliese 436",
+  "alternative_names": [
+    "GJ 436 A"
+  ],
+  "spectral_type": "M2.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.47,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "radius_solar": {
+    "value": 0.455,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "teff_k": {
+    "value": 3586.11,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "luminosity_solar": {
+    "value": 0.026001595631652722,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "metallicity_feh": {
+    "value": 0.0991,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "age_gyr": {
+    "value": 6.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 436)"
+  },
+  "extra": {
+    "legacy_type_label": "M2.5V — Красный карлик"
+  }
+}

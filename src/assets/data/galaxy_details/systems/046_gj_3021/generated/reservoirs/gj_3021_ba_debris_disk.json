@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_46.barycenter_ab.debris_disk",
+  "name": "GJ 3021 (BA) debris disk",
+  "kind": "debris_disk",
+  "parent_id": "system_46.barycenter_ab",
+  "seed": "0xe8a02e91eec4ea1a",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 6.56624670215794,
+  "outer_au": 12.093988112313307,
+  "peak_au": 8.121485369364102,
+  "total_mass_earth": 0.0005747126436781609,
+  "eccentricity_mean": 0.1467470176877751,
+  "inclination_mean_deg": 12.75164666287651,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 642.1764978694674,
+    "estimated_bodies_above_1km": 2551983.0390454363
+  },
+  "clumpiness": 0.1282701836820314,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

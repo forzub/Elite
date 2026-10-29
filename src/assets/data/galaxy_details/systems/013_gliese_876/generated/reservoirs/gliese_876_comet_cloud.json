@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_13.Gliese_876.comet_cloud",
+  "name": "Gliese 876 comet cloud",
+  "kind": "comet_cloud",
+  "parent_id": "system_13.Gliese_876",
+  "seed": "0x6ac7a75bb79afb5f",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1367.9807573413575,
+  "outer_au": 30000.0,
+  "peak_au": 6406.201895057689,
+  "total_mass_earth": 5.725566142410828,
+  "eccentricity_mean": 0.7,
+  "inclination_mean_deg": 90.0,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 100.0,
+    "estimated_bodies_above_1km": 163412489294.45734
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "water_ice": 0.5,
+    "co_co2_ices": 0.2,
+    "silicate_dust": 0.2,
+    "organics": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "giant_scattering",
+  "provenance": {
+    "population": "generated"
+  }
+}

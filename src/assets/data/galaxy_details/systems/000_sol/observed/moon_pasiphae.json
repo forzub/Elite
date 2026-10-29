@@ -1,0 +1,28 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Пасифе",
+  "alternative_names": [
+    "Pasiphae"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.15791668617646976,
+    "eccentricity": 0.409,
+    "inclination_deg": 151.4,
+    "retrograde": true
+  },
+  "physical": {
+    "mass_earth": 5.023274505207461e-08,
+    "radius_earth": 0.004703595114532541,
+    "water_mass_fraction": 0.1,
+    "mean_surface_temperature_k": 124.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky",
+    "orbit_direction": "retrograde"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Тритон",
+  "alternative_names": [
+    "Triton"
+  ],
+  "kind": "moon",
+  "host": "Нептун",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0023714174429088314,
+    "eccentricity": 1.6e-05,
+    "inclination_deg": 156.885,
+    "retrograde": true
+  },
+  "physical": {
+    "mass_earth": 0.0035815947222129197,
+    "radius_earth": 0.2121948542669447,
+    "water_mass_fraction": 0.25,
+    "mean_surface_temperature_k": 38.0,
+    "surface_pressure_pa": 1.4,
+    "tidally_locked": true
+  },
+  "atmosphere_composition": {
+    "N2": 0.9998,
+    "CH4": 0.0002
+  },
+  "extra": {
+    "environment_preset_id": "thin_nitrogen_ice_world",
+    "orbit_direction": "retrograde"
+  }
+}

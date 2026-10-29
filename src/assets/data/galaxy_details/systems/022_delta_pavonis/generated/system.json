@@ -1,0 +1,146 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 22,
+  "name": "Delta Pavonis",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xe6a606dfbc33406a",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.004455312489282721,
+      -0.0025964188636350433,
+      -0.0032743782205067458
+    ],
+    "galactocentric_radius_kpc": 8.175545099800724,
+    "height_above_plane_kpc": 0.017525621779493253,
+    "population_metallicity_mean_feh": -0.04973270598804345,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10677115180668394,
+    "formation_environment_density": 0.12141793452630066,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "delta_pavonis",
+      "id": "system_22.Delta_Pavonis",
+      "name": "Delta Pavonis",
+      "alternative_names": [
+        "δ Pav",
+        "HD 166593",
+        "Дельта Павлина A"
+      ],
+      "spectral_type": "G8IV",
+      "stage": "subgiant",
+      "seed": "0x9ae0be85a7030d02",
+      "mass_solar": 0.99,
+      "initial_mass_solar": 0.99,
+      "radius_solar": 1.22,
+      "teff_k": 5604.0,
+      "luminosity_solar": 1.22,
+      "metallicity_feh": 0.33,
+      "age_gyr": 6.6,
+      "main_sequence_lifetime_gyr": 10.592838110016999,
+      "rotation_period_days": 41.50709965366202,
+      "mu_m3s2": 1.3138531560000001e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Mamajek & Hillenbrand 2008",
+        "luminosity_solar": "literature compilation 2026-10-29: Bruntt et al. 2010",
+        "mass_solar": "literature compilation 2026-10-29: Bruntt et al. 2010",
+        "metallicity_feh": "literature compilation 2026-10-29: Bruntt et al. 2010",
+        "radius_solar": "literature compilation 2026-10-29: Bruntt et al. 2010",
+        "teff_k": "literature compilation 2026-10-29: Bruntt et al. 2010"
+      },
+      "extra": {
+        "legacy_type_label": "G8IV — Жёлтый субгигант"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "delta_pavonis",
+      "gas_mass_solar": 0.004585824994934224,
+      "solid_mass_earth": 42.65722188071144,
+      "dust_to_gas": 0.02864869199932991,
+      "inner_edge_au": 0.02827584253463016,
+      "characteristic_radius_au": 73.79314484003739,
+      "outer_truncation_au": 717.4614787696587,
+      "lifetime_myr": 2.9818860144895467,
+      "snow_line_au": 2.64627,
+      "turbulence_alpha": 0.0002006633343754583,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "delta_pavonis:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_delta_pavonis",
+      "passed": true,
+      "detail": "planets=10 attempts=11 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

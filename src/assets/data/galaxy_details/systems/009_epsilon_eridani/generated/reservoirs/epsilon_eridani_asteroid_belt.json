@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_9.Epsilon_Eridani.asteroid_belt",
+  "name": "Epsilon Eridani asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_9.Epsilon_Eridani",
+  "seed": "0xce77aeb03f793c39",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1.412,
+  "outer_au": 2.5416,
+  "peak_au": 1.9768,
+  "total_mass_earth": 0.0004974214022244568,
+  "eccentricity_mean": 0.08389380437064713,
+  "inclination_mean_deg": 11.218402055444145,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 930.5645285665499,
+    "estimated_bodies_above_1km": 18618185.976613842
+  },
+  "clumpiness": 0.23549148700004646,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      1.6617469943950502,
+      1.7323469943950505
+    ],
+    [
+      1.8810788373160041,
+      1.9516788373160043
+    ],
+    [
+      1.9712817062677517,
+      2.0418817062677515
+    ],
+    [
+      2.188460653064451,
+      2.259060653064451
+    ]
+  ],
+  "resonance": "Kirkwood gaps of eps Eri b",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

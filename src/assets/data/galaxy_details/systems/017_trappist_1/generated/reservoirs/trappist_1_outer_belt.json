@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_17.TRAPPIST-1.kuiper_belt",
+  "name": "TRAPPIST-1 outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_17.TRAPPIST-1",
+  "seed": "0x9e55d9acc26a54f2",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 0.5,
+  "outer_au": 0.7884957999886429,
+  "peak_au": 0.5903121354484123,
+  "total_mass_earth": 0.0003090201643171245,
+  "eccentricity_mean": 0.045306132377285244,
+  "inclination_mean_deg": 3.1385462282098455,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 522.1954657617986,
+    "estimated_bodies_above_1km": 1687470.4492878316
+  },
+  "clumpiness": 0.3419224420742009,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

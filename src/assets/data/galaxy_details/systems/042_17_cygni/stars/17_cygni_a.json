@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "17_cygni_a",
+  "name": "17 Cygni A",
+  "alternative_names": [
+    "17 Cyg A",
+    "HD 186808 A"
+  ],
+  "spectral_type": "F7V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.28,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 3.8,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 6350,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 3.2,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "F7V — Жёлто-белый карлик"
+  }
+}

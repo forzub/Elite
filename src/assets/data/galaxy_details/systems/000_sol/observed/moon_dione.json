@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Диона",
+  "alternative_names": [
+    "Dione"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0025227364415956223,
+    "eccentricity": 0.0022,
+    "inclination_deg": 0.019,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.00018342520344261746,
+    "radius_earth": 0.0880199432432856,
+    "water_mass_fraction": 0.5,
+    "mean_surface_temperature_k": 87.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

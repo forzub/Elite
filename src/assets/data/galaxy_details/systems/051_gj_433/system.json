@@ -1,0 +1,47 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 51,
+  "name": "GJ 433",
+  "slug": "gj_433",
+  "alternative_names": [
+    "GJ 433",
+    "GJ 433",
+    "Система 433"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -24.2832,
+    "y": 2.6113,
+    "z": -15.5832
+  },
+  "position_source": "hyg gl=Gl 433 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -11.5,
+    "y": 26.2,
+    "z": -5.2
+  },
+  "stellar_hierarchy": {
+    "star": "gj_433"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "GJ 433 b",
+    "GJ 433 c",
+    "GJ 433 d"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

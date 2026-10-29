@@ -1,0 +1,125 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_48.HD_102365_A.HD_102365_A_m",
+  "designation": "HD 102365 A m",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_48.HD_102365_A",
+  "host_star": "hd_102365_a",
+  "origin": "generated",
+  "formation_origin": "migrated",
+  "seed": "0xbbcdd915cdca5928",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 4.927103337704821,
+    "eccentricity": 0.017846083708838348,
+    "inclination_deg": 3.17336316439669,
+    "longitude_ascending_node_deg": 1.5064275855108322,
+    "argument_of_periapsis_deg": 36.06841976278045,
+    "mean_anomaly_at_epoch_deg": 90.63693260557162,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 3955.272288200224,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 8.836880853695944e+25,
+    "mass_earth": 14.796692765975592,
+    "radius_km": 16302.752270719502,
+    "density_kg_m3": 4868.863536915638,
+    "mu_m3s2": 5.897999388182283e+15,
+    "surface_gravity_ms2": 22.1913061340916,
+    "escape_velocity_kms": 26.899047063708167,
+    "hill_radius_km": 17662568.396221887,
+    "sphere_of_influence_km": 13279883.036392054,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.14753180396142657,
+    "silicate_mantle": 0.4701550179617678,
+    "water_ice": 0.38184792373769905,
+    "other_volatiles": 9.996347091318066e-05,
+    "hydrogen_helium_envelope": 0.000365290868193416,
+    "water_mass_fraction": 0.38184792373769905,
+    "formation_distance_au": 5.565892493250154
+  },
+  "thermal": {
+    "instellation_earth": 0.043258949817698664,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 104.0646513493655,
+    "mean_surface_temperature_k": 109.03541027363873,
+    "min_surface_temperature_k": 106.58211354248186,
+    "max_surface_temperature_k": 110.92256160529786,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 5.0590667403684035,
+    "radiogenic_heat_flux_wm2": 0.035378114538664206,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 500000.0,
+    "composition": {
+      "N2": 0.95,
+      "CH4": 0.049,
+      "H2": 0.001
+    },
+    "mean_molecular_weight": 27.401276,
+    "scale_height_km": 1.4801284586015393,
+    "greenhouse_warming_k": 4.970758924273227,
+    "cloud_potential": 0.7,
+    "origin": "outgassed",
+    "retention_index": 4089.334971031134,
+    "outer_radius_km": 16320.51381222272
+  },
+  "geophysics": {
+    "tectonic_regime": "cryotectonic",
+    "volcanism": "cryovolcanic",
+    "magnetic_field_earth": 2.860082365028111,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 39.56025525762173,
+    "obliquity_deg": 40.732762501461096,
+    "rotation_direction": 1,
+    "axis_node_deg": 298.60439171609306,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "hydrocarbon_lakes",
+    "relief_amplitude_km": 1.4432188165919877,
+    "roughness": 0.298402017484519,
+    "crater_density": 0.10416666666666667,
+    "resurfacing_rate": 0.5,
+    "erosion_potential": 0.5122710528293809,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.3208333333333333,
+    "lava_tube_propensity": 0.08841300228767784,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.9630280704391745,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "methane_haze_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

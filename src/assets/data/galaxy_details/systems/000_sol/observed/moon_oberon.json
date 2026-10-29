@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Оберон",
+  "alternative_names": [
+    "Oberon"
+  ],
+  "kind": "moon",
+  "host": "Уран",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0039005902775860832,
+    "eccentricity": 0.0014,
+    "inclination_deg": 0.058,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.0005150530792672717,
+    "radius_earth": 0.11937724400683589,
+    "water_mass_fraction": 0.45,
+    "mean_surface_temperature_k": 75.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

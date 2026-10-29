@@ -1,0 +1,145 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 32,
+  "name": "Aldebaran",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xa5a95a4f95fa41d7",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.01916770648986892,
+      -0.00032518379127312964,
+      -0.007071725008773503
+    ],
+    "galactocentric_radius_kpc": 8.199167712938358,
+    "height_above_plane_kpc": 0.013728274991226495,
+    "population_metallicity_mean_feh": -0.05115006277630151,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10707772935775213,
+    "formation_environment_density": 0.6378135643539475,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "aldebaran",
+      "id": "system_32.Aldebaran",
+      "name": "Aldebaran",
+      "alternative_names": [
+        "α Tau",
+        "Альдебаран A"
+      ],
+      "spectral_type": "K5 III",
+      "stage": "red_giant",
+      "seed": "0xe7ab093fb7af9f85",
+      "mass_solar": 1.13,
+      "initial_mass_solar": 1.13,
+      "radius_solar": 45.1,
+      "teff_k": 4055.0,
+      "luminosity_solar": 469.8941086052156,
+      "metallicity_feh": -0.27,
+      "age_gyr": 6.6,
+      "main_sequence_lifetime_gyr": 7.16830922497643,
+      "rotation_period_days": 794.9039847820333,
+      "mu_m3s2": 1.4996505719999998e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Tau)"
+      },
+      "extra": {
+        "legacy_type_label": "K5III — Красный гигант"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "aldebaran",
+      "gas_mass_solar": 0.009922617658430485,
+      "solid_mass_earth": 24.702244843850202,
+      "dust_to_gas": 0.0071962260713613856,
+      "inner_edge_au": 0.036838509675001775,
+      "characteristic_radius_au": 59.365977522842044,
+      "outer_truncation_au": 313.03516938285384,
+      "lifetime_myr": 1.2187235561301948,
+      "snow_line_au": 3.4476299999999993,
+      "turbulence_alpha": 0.0009579612316953707,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "aldebaran:sparse",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_aldebaran",
+      "passed": true,
+      "detail": "planets=1 attempts=1 rv_limit=20m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

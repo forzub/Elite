@@ -1,0 +1,125 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_43.barycenter_ab.Theta_Draconis__BA__o",
+  "designation": "Theta Draconis (BA) o",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_43.barycenter_ab",
+  "host_star": "theta_draconis_a",
+  "origin": "generated",
+  "formation_origin": "in_situ",
+  "seed": "0x4dba467f77206877",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 12.111211764137705,
+    "eccentricity": 0.007461143164444434,
+    "inclination_deg": 0.39895079764250585,
+    "longitude_ascending_node_deg": 45.881081384391166,
+    "argument_of_periapsis_deg": 9.783687177020308,
+    "mean_anomaly_at_epoch_deg": 320.83695581282274,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 11380.28906804488,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.650917313888164e+25,
+    "mass_earth": 2.7643369510199993,
+    "radius_km": 10158.341885659305,
+    "density_kg_m3": 3759.8302462651627,
+    "mu_m3s2": 1.1018717428083773e+15,
+    "surface_gravity_ms2": 10.677888840703233,
+    "escape_velocity_kms": 14.728859118134693,
+    "hill_radius_km": 20641577.45714643,
+    "sphere_of_influence_km": 13207491.464961922,
+    "body_class": "water_rich"
+  },
+  "bulk_composition": {
+    "iron_core": 0.18843893944201726,
+    "silicate_mantle": 0.44639152589604386,
+    "water_ice": 0.3650695346619389,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.3650695346619389,
+    "formation_distance_au": 12.111211764137705
+  },
+  "thermal": {
+    "instellation_earth": 0.016089735173672355,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 81.26835415548138,
+    "mean_surface_temperature_k": 85.25328408179648,
+    "min_surface_temperature_k": 83.33508518995606,
+    "max_surface_temperature_k": 86.7288216909045,
+    "temperature_regime": "frozen",
+    "habitable_zone_position": 8.483674587907123,
+    "radiogenic_heat_flux_wm2": 0.02761657639631173,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 500000.0,
+    "composition": {
+      "N2": 0.95,
+      "CH4": 0.049,
+      "H2": 0.001
+    },
+    "mean_molecular_weight": 27.401276,
+    "scale_height_km": 2.405140402001258,
+    "greenhouse_warming_k": 3.984929926315104,
+    "cloud_potential": 0.7,
+    "origin": "outgassed",
+    "retention_index": 508.7832058466589,
+    "outer_radius_km": 10187.20357048332
+  },
+  "geophysics": {
+    "tectonic_regime": "cryotectonic",
+    "volcanism": "cryovolcanic",
+    "magnetic_field_earth": 2.556755064118542,
+    "hydrosphere": "subsurface_ocean"
+  },
+  "spin": {
+    "rotation_period_hours": 24.96066312316593,
+    "obliquity_deg": 22.53180612555459,
+    "rotation_direction": 1,
+    "axis_node_deg": 286.85246347647006,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "hydrocarbon_lakes",
+    "relief_amplitude_km": 3.324983665062264,
+    "roughness": 0.282777017484519,
+    "crater_density": 0.07291666666666667,
+    "resurfacing_rate": 0.5,
+    "erosion_potential": 0.5122710528293809,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.3145833333333333,
+    "lava_tube_propensity": 0.18374418663369274,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.9630280704391745,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "methane_haze_world",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

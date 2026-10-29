@@ -1,0 +1,120 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_32.Aldebaran.Aldebaran_K3",
+  "designation": "Aldebaran K3",
+  "alternative_names": [],
+  "kind": "dwarf_planet",
+  "parent_id": "system_32.Aldebaran",
+  "host_star": "aldebaran",
+  "origin": "generated",
+  "formation_origin": "reservoir_largest_member",
+  "seed": "0x07d04b4617a5c91b",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 10.87849456315622,
+    "eccentricity": 0.16493985336907477,
+    "inclination_deg": 7.737240131200957,
+    "longitude_ascending_node_deg": 197.50873794181956,
+    "argument_of_periapsis_deg": 5.66003218783067,
+    "mean_anomaly_at_epoch_deg": 277.69882430254444,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 12328.56143708305,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.001333296856938e+22,
+    "mass_earth": 0.0016766573404389303,
+    "radius_km": 1144.4161887323314,
+    "density_kg_m3": 1594.9169391082773,
+    "mu_m3s2": 668319882321.2261,
+    "surface_gravity_ms2": 0.5102892227424576,
+    "escape_velocity_kms": 1.080724985777702,
+    "hill_radius_km": 1550611.4440553577,
+    "sphere_of_influence_km": 743176.4388784564,
+    "body_class": "dwarf_icy"
+  },
+  "bulk_composition": {
+    "iron_core": 0.2049325964763793,
+    "silicate_mantle": 0.31509360373803913,
+    "water_ice": 0.47987379978558165,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.47987379978558165,
+    "formation_distance_au": 10.87849456315622
+  },
+  "thermal": {
+    "instellation_earth": 4.025796071542672,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 382.22115723908104,
+    "mean_surface_temperature_k": 382.2211815489441,
+    "min_surface_temperature_k": 158.62179034281178,
+    "max_surface_temperature_k": 554.2207132459689,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 0.4890834719788492,
+    "radiogenic_heat_flux_wm2": 0.00030789203308447937,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 2.4309863078997296e-05,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 0.0005678570235395899,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 4.799937998283957,
+    "obliquity_deg": 9.706801421238174,
+    "rotation_direction": 1,
+    "axis_node_deg": 212.95463484149943,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_ice",
+    "relief_amplitude_km": 29.74209149640639,
+    "roughness": 0.8600000000000001,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.6408130633106405,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "co2_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_35.Tau_Cygni_B.Tau_Cygni_B_d",
+  "designation": "Tau Cygni B d",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_35.Tau_Cygni_B",
+  "host_star": "tau_cygni_b",
+  "origin": "generated",
+  "formation_origin": "photoevaporated_core",
+  "seed": "0x5c88b85e3d3d0cad",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.08810172141309175,
+    "eccentricity": 0.013124677353894729,
+    "inclination_deg": 1.5521077419379055,
+    "longitude_ascending_node_deg": 188.6049406872843,
+    "argument_of_periapsis_deg": 223.80129765171756,
+    "mean_anomaly_at_epoch_deg": 160.94023682123705,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 9.321364793585053,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 8.308219993677021e+24,
+    "mass_earth": 1.391148989263089,
+    "radius_km": 7057.739567995007,
+    "density_kg_m3": 5641.8624288638775,
+    "mu_m3s2": 554515527037985.4,
+    "surface_gravity_ms2": 11.132237260401451,
+    "escape_velocity_kms": 12.535424316156487,
+    "hill_radius_km": 142912.18855374696,
+    "sphere_of_influence_km": 91166.42348693906,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.2816763091794473,
+    "silicate_mantle": 0.7156618308361726,
+    "water_ice": 0.002561859984380099,
+    "other_volatiles": 0.00010000000000000002,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.002561859984380099,
+    "formation_distance_au": 0.23535500393573858
+  },
+  "thermal": {
+    "instellation_earth": 148.19300507645573,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 941.4748138038673,
+    "mean_surface_temperature_k": 941.4755096508541,
+    "min_surface_temperature_k": 141.22132644762812,
+    "max_surface_temperature_k": 1694.6559173715373,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 0.08706282870560755,
+    "radiogenic_heat_flux_wm2": 0.06597265809889702,
+    "tidal_heat_flux_wm2": 0.06573531896284328
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 0.0006958469867868189,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 0.07972751078931971,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "high",
+    "magnetic_field_earth": 0.2751451316314272,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 223.71275504604128,
+    "obliquity_deg": 0.8122110654502104,
+    "rotation_direction": 1,
+    "axis_node_deg": 265.08933610513924,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_highlands",
+    "relief_amplitude_km": 3.047306653949013,
+    "roughness": 0.4225,
+    "crater_density": 0.12499999999999997,
+    "resurfacing_rate": 0.8,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.205,
+    "lava_tube_propensity": 0.17624489616108363,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "anorthosite": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_volcanic",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mass_earth": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

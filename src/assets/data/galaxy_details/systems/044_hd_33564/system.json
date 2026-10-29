@@ -1,0 +1,60 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 44,
+  "name": "HD 33564",
+  "slug": "hd_33564",
+  "alternative_names": [
+    "HD 33564",
+    "Аш Ди 33564",
+    "Двойная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 2.0699,
+    "y": 12.5585,
+    "z": 66.9197
+  },
+  "position_source": "hyg hd=33564 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -36.5,
+    "y": 53.8,
+    "z": -7.2
+  },
+  "stellar_hierarchy": {
+    "id": "ab",
+    "children": [
+      {
+        "star": "hd_33564_a"
+      },
+      {
+        "star": "hd_33564_b"
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 85.0,
+        "source": "legacy component, unverified"
+      },
+      "source": "legacy component, unverified"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "reserved_designations": [
+    "HD 33564 b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильная двойная система"
+  }
+}

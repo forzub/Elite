@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_16.HD_69830.asteroid_belt",
+  "name": "HD 69830 asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_16.HD_69830",
+  "seed": "0x22ae420b7f4d7557",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.2863799470825854,
+  "outer_au": 5.915483904748653,
+  "peak_au": 4.600931925915619,
+  "total_mass_earth": 0.0017190898694353814,
+  "eccentricity_mean": 0.08793073117391889,
+  "inclination_mean_deg": 10.405984682759552,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1406.9258155117625,
+    "estimated_bodies_above_1km": 52319669.570924774
+  },
+  "clumpiness": 0.14576459222685495,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      3.8676572234452204,
+      4.03197622079935
+    ],
+    [
+      4.378144312915539,
+      4.542463310269668
+    ],
+    [
+      4.5880882928676225,
+      4.752407290221752
+    ],
+    [
+      5.093564592925121,
+      5.257883590279251
+    ]
+  ],
+  "resonance": "Kirkwood gaps of HD 69830 k",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

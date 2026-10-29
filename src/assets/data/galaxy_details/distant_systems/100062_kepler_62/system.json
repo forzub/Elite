@@ -1,0 +1,99 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 100062,
+  "name": "Kepler-62",
+  "slug": "kepler_62",
+  "alternative_names": [
+    "Kepler-62",
+    "Кеплер-62",
+    "KOI-701",
+    "Система Пяти"
+  ],
+  "catalog_scope": "distant",
+  "atlas_visible": false,
+  "route_target": true,
+  "quest_role": "pilgrim_destination",
+  "position_ly": {
+    "x": 157.6293,
+    "y": -671.394,
+    "z": 698.12
+  },
+  "position_source": "archive hostname=Kepler-62 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": 157.628916,
+    "y": -671.393227,
+    "z": 698.119231
+  },
+  "stellar_hierarchy": {
+    "star": "kepler_62"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "Kepler transit host, sparse RV follow-up; transits: Kepler prime mission"
+    },
+    "rv_baseline_days": {
+      "value": 1500.0,
+      "source": "Kepler transit host, sparse RV follow-up; transits: Kepler prime mission"
+    },
+    "source": "Kepler transit host, sparse RV follow-up; transits: Kepler prime mission",
+    "transit_radius_limit_earth": {
+      "value": 1.0,
+      "source": "Kepler transit host, sparse RV follow-up; transits: Kepler prime mission"
+    },
+    "transit_baseline_days": {
+      "value": 1400.0,
+      "source": "Kepler transit host, sparse RV follow-up; transits: Kepler prime mission"
+    }
+  },
+  "reserved_designations": [
+    "Kepler-62 b",
+    "Kepler-62 c",
+    "Kepler-62 d",
+    "Kepler-62 e",
+    "Kepler-62 f"
+  ],
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Kepler-62%20e",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "18h52m51.01s",
+    "dec_dms": "+45d20m58.92s",
+    "distance_pc": 300.874,
+    "distance_ly_derived": 981.318603,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "host_spectral_type": "K2 V",
+    "confirmed_planets": [
+      {
+        "name": "Kepler-62 b",
+        "orbital_period_days": 5.7149,
+        "radius_earth": 1.31
+      },
+      {
+        "name": "Kepler-62 c",
+        "orbital_period_days": 12.4417,
+        "radius_earth": 0.54
+      },
+      {
+        "name": "Kepler-62 d",
+        "orbital_period_days": 18.164,
+        "radius_earth": 1.95
+      },
+      {
+        "name": "Kepler-62 e",
+        "orbital_period_days": 122.39,
+        "radius_earth": 1.61
+      },
+      {
+        "name": "Kepler-62 f",
+        "orbital_period_days": 267.29,
+        "radius_earth": 1.41
+      }
+    ],
+    "gameplay_policy": "The 3026 gameplay model may use speculative masses, atmospheres, moons and surface conditions. This observational block preserves the NASA 2026 reference values."
+  },
+  "lore": {
+    "stellar_description": "Стабильный оранжевый карлик; удалённая квестовая система"
+  }
+}

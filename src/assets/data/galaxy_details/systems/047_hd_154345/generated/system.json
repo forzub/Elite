@@ -1,0 +1,149 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 47,
+  "name": "HD 154345",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xe33b9168cf15c4fa",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.004296491114762206,
+      0.014072738791379687,
+      0.011357347667911952
+    ],
+    "galactocentric_radius_kpc": 8.175715620493136,
+    "height_above_plane_kpc": 0.03215734766791195,
+    "population_metallicity_mean_feh": -0.0497429372295882,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10207684209958048,
+    "formation_environment_density": 1.744875961872476,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_154345",
+      "id": "system_47.HD_154345",
+      "name": "HD 154345",
+      "alternative_names": [
+        "HD 154345 A"
+      ],
+      "spectral_type": "G8",
+      "stage": "main_sequence",
+      "seed": "0xb7b42220870637ac",
+      "mass_solar": 0.89,
+      "initial_mass_solar": 0.89,
+      "radius_solar": 0.85,
+      "teff_k": 5468.0,
+      "luminosity_solar": 0.6034759957502553,
+      "metallicity_feh": -0.105,
+      "age_gyr": 9.527,
+      "main_sequence_lifetime_gyr": 13.241609673858013,
+      "rotation_period_days": 40.31468071852427,
+      "mu_m3s2": 1.1811407159999999e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 154345)"
+      },
+      "extra": {
+        "legacy_type_label": "G8V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_154345",
+      "gas_mass_solar": 0.021877181343508825,
+      "solid_mass_earth": 82.70328964467085,
+      "dust_to_gas": 0.010522157503774963,
+      "inner_edge_au": 0.022852050680216868,
+      "characteristic_radius_au": 17.688046099957468,
+      "outer_truncation_au": 189.25951762020387,
+      "lifetime_myr": 1.841033596350538,
+      "snow_line_au": 2.13867,
+      "turbulence_alpha": 0.00859992948155649,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "hd_154345:cold_giant_inner_small",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_154345",
+      "passed": true,
+      "detail": "planets=9 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_HD 154345 c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

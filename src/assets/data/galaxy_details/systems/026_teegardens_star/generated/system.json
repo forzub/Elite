@@ -1,0 +1,152 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 26,
+  "name": "Teegarden's Star",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0xbfae2741191a364a",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.002878960952997511,
+      0.0010313855798332165,
+      -0.0023070998478043497
+    ],
+    "galactocentric_radius_kpc": 8.182879025951895,
+    "height_above_plane_kpc": 0.018492900152195648,
+    "population_metallicity_mean_feh": -0.050172741557113695,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10616384440039826,
+    "formation_environment_density": 0.4576822817493252,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "teegardens_star",
+      "id": "system_26.Teegarden's_Star",
+      "name": "Teegarden's Star",
+      "alternative_names": [
+        "SO J025300.5+165253",
+        "Тигарден A"
+      ],
+      "spectral_type": "M7.0 V",
+      "stage": "main_sequence",
+      "seed": "0xa97723fc1054f3cd",
+      "mass_solar": 0.097,
+      "initial_mass_solar": 0.097,
+      "radius_solar": 0.12,
+      "teff_k": 3034.0,
+      "luminosity_solar": 0.0007220046589614493,
+      "metallicity_feh": -0.11,
+      "age_gyr": 8.0,
+      "main_sequence_lifetime_gyr": 3374.946991062749,
+      "rotation_period_days": 200.0,
+      "mu_m3s2": 1.2873106680000002e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Teegarden's Star)"
+      },
+      "extra": {
+        "legacy_type_label": "M7V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "teegardens_star",
+      "gas_mass_solar": 0.0004611085434712066,
+      "solid_mass_earth": 2.6767092777696,
+      "dust_to_gas": 0.01040171136282447,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 14.490283469531908,
+      "outer_truncation_au": 369.53702548030986,
+      "lifetime_myr": 2.887341172018827,
+      "snow_line_au": 0.09343446901438462,
+      "turbulence_alpha": 0.0034378048386076152,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "teegardens_star:m_dwarf_compact",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_teegardens_star",
+      "passed": true,
+      "detail": "planets=10 attempts=6 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Teegarden's Star e",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": [
+    "Teegarden's Star: observed L=0.000722005 disagrees with R^2 T^4 = 0.00109931 (kept the observed values)"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sigma2_uma_b",
+  "name": "Sigma² UMa B",
+  "alternative_names": [
+    "Сигма² UMa B",
+    "HD 102194 B"
+  ],
+  "spectral_type": "K2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.78,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.28,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 4950,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.8,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "K2V — Оранжевый карлик"
+  }
+}

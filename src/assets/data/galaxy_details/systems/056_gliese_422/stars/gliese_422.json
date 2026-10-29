@@ -1,0 +1,33 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_422",
+  "name": "Gliese 422",
+  "alternative_names": [
+    "GJ 422 A"
+  ],
+  "spectral_type": "M3.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.35,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 422)"
+  },
+  "radius_solar": {
+    "value": 0.370328,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 422)"
+  },
+  "teff_k": {
+    "value": 3323.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 422)"
+  },
+  "luminosity_solar": {
+    "value": 0.010999931989351935,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 422)"
+  },
+  "age_gyr": {
+    "value": 6.9,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M3.5V — Красный карлик"
+  }
+}

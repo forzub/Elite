@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "luytens_star",
+  "name": "Luyten's Star",
+  "alternative_names": [
+    "GJ 273",
+    "Звезда Лейтена"
+  ],
+  "spectral_type": "M3.5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.38,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.014,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 3350,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 8.0,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M3.5V — Красный карлик"
+  }
+}

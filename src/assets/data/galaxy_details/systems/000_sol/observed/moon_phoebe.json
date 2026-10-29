@@ -1,0 +1,28 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Феба",
+  "alternative_names": [
+    "Phoebe"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.08655056344996494,
+    "eccentricity": 0.1562,
+    "inclination_deg": 175.3,
+    "retrograde": true
+  },
+  "physical": {
+    "mass_earth": 1.3884330732393422e-06,
+    "radius_earth": 0.01669776265659052,
+    "water_mass_fraction": 0.3,
+    "mean_surface_temperature_k": 73.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky",
+    "orbit_direction": "retrograde"
+  }
+}

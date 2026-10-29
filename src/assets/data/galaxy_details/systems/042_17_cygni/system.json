@@ -1,0 +1,57 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 42,
+  "name": "17 Cygni",
+  "slug": "17_cygni",
+  "alternative_names": [
+    "17 Cygni",
+    "17 Лебедя",
+    "Двойная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 25.7934,
+    "y": -51.4934,
+    "z": 38.4494
+  },
+  "position_source": "hyg hd=187013 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -26.8,
+    "y": 60.5,
+    "z": 3.5
+  },
+  "stellar_hierarchy": {
+    "id": "ab",
+    "children": [
+      {
+        "star": "17_cygni_a"
+      },
+      {
+        "star": "17_cygni_b"
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 550.0,
+        "source": "26 arcsec x 21.2 pc, unverified"
+      },
+      "source": "26 arcsec x 21.2 pc, unverified"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "lore": {
+    "stellar_description": "Стабильная двойная система"
+  }
+}

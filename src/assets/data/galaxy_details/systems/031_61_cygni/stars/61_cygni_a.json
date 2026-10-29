@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "61_cygni_a",
+  "name": "61 Cygni A",
+  "alternative_names": [
+    "61 Cyg A",
+    "HD 201091",
+    "Оранжевый карлик A"
+  ],
+  "spectral_type": "K5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.7,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2008"
+  },
+  "radius_solar": {
+    "value": 0.665,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2008"
+  },
+  "teff_k": {
+    "value": 4526,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2008"
+  },
+  "luminosity_solar": {
+    "value": 0.153,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2008"
+  },
+  "metallicity_feh": {
+    "value": -0.2,
+    "source": "literature compilation 2026-10-29: Luck 2017"
+  },
+  "age_gyr": {
+    "value": 6.1,
+    "source": "literature compilation 2026-10-29: Kervella et al. 2008"
+  },
+  "extra": {
+    "legacy_type_label": "K5V — Оранжевый карлик"
+  }
+}

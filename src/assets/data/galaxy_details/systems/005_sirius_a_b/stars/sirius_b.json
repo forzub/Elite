@@ -1,0 +1,35 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sirius_b",
+  "name": "Sirius B",
+  "alternative_names": [
+    "Alpha CMa B",
+    "Сириус B",
+    "Щенок"
+  ],
+  "spectral_type": "DA2",
+  "stage_hint": "white_dwarf",
+  "mass_solar": {
+    "value": 1.018,
+    "source": "literature compilation 2026-10-29: Bond et al. 2017"
+  },
+  "radius_solar": {
+    "value": 0.0084,
+    "source": "literature compilation 2026-10-29: Barstow et al. 2005"
+  },
+  "teff_k": {
+    "value": 25000,
+    "source": "literature compilation 2026-10-29: Barstow et al. 2005"
+  },
+  "age_gyr": {
+    "value": 0.242,
+    "source": "literature compilation 2026-10-29: Bond et al. 2017"
+  },
+  "luminosity_solar": {
+    "value": 0.026,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "DA2 — Белый карлик (компактный)"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "elite.star.v2",
+  "key": "theta_draconis_b",
+  "name": "Theta Draconis B",
+  "alternative_names": [
+    "Theta Dra B",
+    "HD 175775 B",
+    "Оранжевый карлик"
+  ],
+  "spectral_type": "K5V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.68,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.16,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 4550,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 3.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "K5V — Оранжевый карлик"
+  }
+}

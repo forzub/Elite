@@ -1,0 +1,43 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 36,
+  "name": "9 Ceti",
+  "slug": "9_ceti",
+  "alternative_names": [
+    "9 Ceti",
+    "9 Кита",
+    "HD 11000",
+    "Солнечный Аналог"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 66.1788,
+    "y": 6.6239,
+    "z": -14.3913
+  },
+  "position_source": "hyg hd=1835 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -23.8,
+    "y": 58.5,
+    "z": -10.2
+  },
+  "stellar_hierarchy": {
+    "star": "9_ceti"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "lore": {
+    "stellar_description": "Стабильный жёлтый карлик"
+  }
+}

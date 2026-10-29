@@ -1,0 +1,165 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 13,
+  "name": "Gliese 876",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x99dbd7153fdb848f",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0014592975459077648,
+      0.0018681036571443874,
+      -0.004045305644102394
+    ],
+    "galactocentric_radius_kpc": 8.178540915805797,
+    "height_above_plane_kpc": 0.016754694355897604,
+    "population_metallicity_mean_feh": -0.04991245494834786,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10690496489270625,
+    "formation_environment_density": 0.11347247552499563,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "gliese_876",
+      "id": "system_13.Gliese_876",
+      "name": "Gliese 876",
+      "alternative_names": [
+        "GJ 876",
+        "HD 217107"
+      ],
+      "spectral_type": "M2.5V",
+      "stage": "main_sequence",
+      "seed": "0xd87e0e4b7b99d8e3",
+      "mass_solar": 0.32,
+      "initial_mass_solar": 0.32,
+      "radius_solar": 0.3,
+      "teff_k": 3293.74,
+      "luminosity_solar": 0.012399951885248272,
+      "metallicity_feh": 0.2129,
+      "age_gyr": 1.0,
+      "main_sequence_lifetime_gyr": 176.30885853467018,
+      "rotation_period_days": 19.693832898491156,
+      "mu_m3s2": 4.24679808e+19,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 876)"
+      },
+      "extra": {
+        "legacy_type_label": "M4V — Красный карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "gliese_876",
+      "gas_mass_solar": 0.00277278180024358,
+      "solid_mass_earth": 17.802747505436255,
+      "dust_to_gas": 0.021877857958808436,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 30.40718313447545,
+      "outer_truncation_au": 742.155215641006,
+      "lifetime_myr": 6.747564235725321,
+      "snow_line_au": 0.27648000000000006,
+      "turbulence_alpha": 0.00012347582694511368,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "gliese_876:hot_warm_giant_disturbed",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "observed_pair_spacing",
+      "passed": true,
+      "detail": "observed pair at 0.12959 / 0.208317 AU: delta=3.24064 (observed pair; below 2*sqrt(3) only resonance-protected)"
+    },
+    {
+      "check": "observed_pair_spacing",
+      "passed": true,
+      "detail": "observed pair at 0.208317 / 0.3343 AU: delta=3.51354 (observed pair; below 2*sqrt(3) only resonance-protected)"
+    },
+    {
+      "check": "architecture_gliese_876",
+      "passed": true,
+      "detail": "planets=6 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_GJ 876 d",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "moons_GJ 876 b",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

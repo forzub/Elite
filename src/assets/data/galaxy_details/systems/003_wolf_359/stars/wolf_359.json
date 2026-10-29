@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "wolf_359",
+  "name": "Wolf 359",
+  "alternative_names": [
+    "CN Leonis",
+    "GJ 406",
+    "Вольф 359"
+  ],
+  "spectral_type": "M6.5Ve",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.11,
+    "source": "literature compilation 2026-10-29: Pineda et al. 2021"
+  },
+  "radius_solar": {
+    "value": 0.144,
+    "source": "literature compilation 2026-10-29: Pineda et al. 2021"
+  },
+  "teff_k": {
+    "value": 2749,
+    "source": "literature compilation 2026-10-29: Pineda et al. 2021"
+  },
+  "luminosity_solar": {
+    "value": 0.00106,
+    "source": "literature compilation 2026-10-29: Pineda et al. 2021"
+  },
+  "metallicity_feh": {
+    "value": 0.25,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "age_gyr": {
+    "value": 0.5,
+    "source": "literature compilation 2026-10-29: young flare star, 0.1-1.5 Gyr"
+  },
+  "extra": {
+    "legacy_type_label": "M6.5Ve — Красный карлик"
+  }
+}

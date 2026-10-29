@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Каллисто",
+  "alternative_names": [
+    "Callisto"
+  ],
+  "kind": "moon",
+  "host": "Юпитер",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.012585132336378903,
+    "eccentricity": 0.0074,
+    "inclination_deg": 0.192,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.01801577308194635,
+    "radius_earth": 0.3779025101519261,
+    "water_mass_fraction": 0.5,
+    "mean_surface_temperature_k": 134.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

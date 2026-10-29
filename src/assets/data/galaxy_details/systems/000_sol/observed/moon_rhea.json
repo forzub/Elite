@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Рея",
+  "alternative_names": [
+    "Rhea"
+  ],
+  "kind": "moon",
+  "host": "Сатурн",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0035234993488446756,
+    "eccentricity": 0.001258,
+    "inclination_deg": 0.345,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 0.0003862091021734034,
+    "radius_earth": 0.11975353161599848,
+    "water_mass_fraction": 0.75,
+    "mean_surface_temperature_k": 76.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

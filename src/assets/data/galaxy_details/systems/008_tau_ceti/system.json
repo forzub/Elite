@@ -1,0 +1,48 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 8,
+  "name": "Tau Ceti",
+  "slug": "tau_ceti",
+  "alternative_names": [
+    "Tau Ceti",
+    "Тау Кита",
+    "η Ceti",
+    "HD 10700"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 10.2877,
+    "y": 5.0214,
+    "z": -3.2691
+  },
+  "position_source": "hyg gl=Gl 71 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": 10.291,
+    "y": 5.024,
+    "z": -3.271
+  },
+  "stellar_hierarchy": {
+    "star": "tau_ceti"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "tau Cet f",
+    "tau Cet g",
+    "tau Cet h"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный жёлтый карлик"
+  }
+}

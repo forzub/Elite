@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "tau_cygni_b",
+  "name": "Tau Cygni B",
+  "alternative_names": [
+    "τ Cyg B",
+    "Жёлтый карлик B"
+  ],
+  "spectral_type": "G0V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.05,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 1.15,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 5900,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 2.5,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "G0V — Жёлтый карлик"
+  }
+}

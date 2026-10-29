@@ -1,0 +1,42 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 6,
+  "name": "Luyten's Star",
+  "slug": "luytens_star",
+  "alternative_names": [
+    "Luyten's Star",
+    "Звезда Лейтена",
+    "GJ 273"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -4.5971,
+    "y": 11.4634,
+    "z": 1.1296
+  },
+  "position_source": "hyg gl=Gl 273 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -1.82,
+    "y": 11.95,
+    "z": -3.42
+  },
+  "stellar_hierarchy": {
+    "star": "luytens_star"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

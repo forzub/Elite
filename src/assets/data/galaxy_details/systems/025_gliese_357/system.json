@@ -1,0 +1,56 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 25,
+  "name": "Gliese 357",
+  "slug": "gliese_357",
+  "alternative_names": [
+    "Gliese 357",
+    "GJ 357",
+    "Глизе 357",
+    "Три Сестры"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -23.156,
+    "y": 16.8192,
+    "z": -11.3689
+  },
+  "position_source": "archive hostname=GJ 357 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -17.52,
+    "y": 23.45,
+    "z": -6.95
+  },
+  "stellar_hierarchy": {
+    "star": "gliese_357"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry",
+    "transit_radius_limit_earth": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    },
+    "transit_baseline_days": {
+      "value": 27.0,
+      "source": "nearby star in long-baseline precision RV surveys; transits: TESS sector photometry"
+    }
+  },
+  "reserved_designations": [
+    "GJ 357 b",
+    "GJ 357 c",
+    "GJ 357 d"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

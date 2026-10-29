@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_31.61_Cygni_B.kuiper_belt",
+  "name": "61 Cygni B outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_31.61_Cygni_B",
+  "seed": "0xdeebe19d7a1ef9e7",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.2148900000000005,
+  "outer_au": 5.789477814407468,
+  "peak_au": 3.5641887221730753,
+  "total_mass_earth": 0.002591162593474915,
+  "eccentricity_mean": 0.06252665276290359,
+  "inclination_mean_deg": 7.827000618358311,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1060.88679885636,
+    "estimated_bodies_above_1km": 6964742.390980958
+  },
+  "clumpiness": 0.1269175495777754,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

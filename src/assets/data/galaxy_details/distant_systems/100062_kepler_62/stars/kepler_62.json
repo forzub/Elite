@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "kepler_62",
+  "name": "Kepler-62",
+  "alternative_names": [
+    "Кеплер-62 A",
+    "KOI-701"
+  ],
+  "spectral_type": "K2 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.69,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "radius_solar": {
+    "value": 0.64,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "teff_k": {
+    "value": 4925.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "luminosity_solar": {
+    "value": 0.2098939883623524,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "metallicity_feh": {
+    "value": -0.37,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "age_gyr": {
+    "value": 7.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Kepler-62)"
+  },
+  "extra": {
+    "legacy_type_label": "K2V — Оранжевый карлик"
+  }
+}

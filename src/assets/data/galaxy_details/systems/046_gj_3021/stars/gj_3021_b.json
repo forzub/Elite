@@ -1,0 +1,30 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gj_3021_b",
+  "name": "GJ 3021 B",
+  "alternative_names": [
+    "GJ 3021 B",
+    "Красный карлик"
+  ],
+  "spectral_type": "M4V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.18,
+    "source": "legacy catalog, unverified"
+  },
+  "luminosity_solar": {
+    "value": 0.0038,
+    "source": "legacy catalog, unverified"
+  },
+  "teff_k": {
+    "value": 3150,
+    "source": "legacy catalog, unverified"
+  },
+  "age_gyr": {
+    "value": 5.2,
+    "source": "legacy catalog, unverified"
+  },
+  "extra": {
+    "legacy_type_label": "M4V — Красный карлик"
+  }
+}

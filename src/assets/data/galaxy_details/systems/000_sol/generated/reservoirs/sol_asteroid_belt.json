@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_0.Sol.asteroid_belt",
+  "name": "Sol asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_0.Sol",
+  "seed": "0xaa968c1ab34744d4",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2.06,
+  "outer_au": 3.27,
+  "peak_au": 2.665,
+  "total_mass_earth": 0.00045,
+  "eccentricity_mean": 0.16466975060155697,
+  "inclination_mean_deg": 9.83357302701077,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 931.5439525916016,
+    "estimated_bodies_above_1km": 18667203.81518315
+  },
+  "clumpiness": 0.1551129968281595,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      2.449258310036,
+      2.553316050036
+    ],
+    [
+      2.772532755990525,
+      2.876590495990525
+    ],
+    [
+      2.905483275602919,
+      3.009541015602919
+    ],
+    [
+      3.225584555762193,
+      3.329642295762193
+    ]
+  ],
+  "resonance": "Kirkwood gaps of Юпитер",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "authored"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_9.Epsilon_Eridani.eps_Eri_b.trojans",
+  "name": "eps Eri b trojans",
+  "kind": "trojans",
+  "parent_id": "system_9.Epsilon_Eridani.eps_Eri_b",
+  "seed": "0x605e93b8c925f3d5",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 3.3534999999999995,
+  "outer_au": 3.7065,
+  "peak_au": 3.53,
+  "total_mass_earth": 1.4875801477214612e-05,
+  "eccentricity_mean": 0.07,
+  "inclination_mean_deg": 6.0247613140572795,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 285.3865271801018,
+    "estimated_bodies_above_1km": 148685.80507972612
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "d_type_organics": 0.6,
+    "silicate": 0.25,
+    "water_ice": 0.15
+  },
+  "gaps_au": [],
+  "resonance": "1:1 L4/L5 with eps Eri b",
+  "formation_origin": "captured_at_lagrange_points",
+  "provenance": {
+    "population": "generated"
+  }
+}

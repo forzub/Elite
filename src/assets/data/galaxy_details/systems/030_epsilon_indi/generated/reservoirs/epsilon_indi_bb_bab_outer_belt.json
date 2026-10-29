@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_30.barycenter_bab.kuiper_belt",
+  "name": "Epsilon Indi Bb (BAB) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_30.barycenter_bab",
+  "seed": "0x610d34423208532d",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 0.5,
+  "outer_au": 0.8751597964636959,
+  "peak_au": 0.6018257484051168,
+  "total_mass_earth": 0.008457330144443165,
+  "eccentricity_mean": 0.03051602516438814,
+  "inclination_mean_deg": 12.322975897875997,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 1573.675746622938,
+    "estimated_bodies_above_1km": 15324854.032658756
+  },
+  "clumpiness": 0.3718314322374239,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

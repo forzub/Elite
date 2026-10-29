@@ -1,0 +1,142 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 40,
+  "name": "HD 24496",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x6d315c6cf3ddfa71",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.017982808670299697,
+      0.0019668435743110547,
+      -0.009491808634899639
+    ],
+    "galactocentric_radius_kpc": 8.197983044610876,
+    "height_above_plane_kpc": 0.01130819136510036,
+    "population_metallicity_mean_feh": -0.05107898267665256,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10792507350297323,
+    "formation_environment_density": 1.909312474310635,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "hd_24496",
+      "id": "system_40.HD_24496",
+      "name": "HD 24496",
+      "alternative_names": [
+        "HD 24496 A"
+      ],
+      "spectral_type": "G7V",
+      "stage": "main_sequence",
+      "seed": "0xb3a1c0fa0ab32f5b",
+      "mass_solar": 0.95,
+      "initial_mass_solar": 0.95,
+      "radius_solar": 0.9450671669700803,
+      "teff_k": 5650.0,
+      "luminosity_solar": 0.82,
+      "metallicity_feh": -0.11456457998219322,
+      "age_gyr": 5.5,
+      "main_sequence_lifetime_gyr": 11.237942096259372,
+      "rotation_period_days": 39.28595237240971,
+      "mu_m3s2": 1.2607681799999999e+20,
+      "parent_node": "",
+      "stable_zone_au": [
+        0.0,
+        100000.0
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "G7V — Жёлтый карлик"
+      }
+    }
+  ],
+  "barycenters": [],
+  "protoplanetary_disks": [
+    {
+      "host_node": "hd_24496",
+      "gas_mass_solar": 0.0075317661440037695,
+      "solid_mass_earth": 28.71287187259876,
+      "dust_to_gas": 0.01029295842007277,
+      "inner_edge_au": 0.026037085896851053,
+      "characteristic_radius_au": 113.83038179570725,
+      "outer_truncation_au": 180.92621745357982,
+      "lifetime_myr": 1.831068353598745,
+      "snow_line_au": 2.43675,
+      "turbulence_alpha": 0.006964943556540691,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "hd_24496:compact_rocky",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_hd_24496",
+      "passed": true,
+      "detail": "planets=5 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

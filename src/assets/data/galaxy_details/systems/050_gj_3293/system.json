@@ -1,0 +1,48 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 50,
+  "name": "GJ 3293",
+  "slug": "gj_3293",
+  "alternative_names": [
+    "GJ 3293",
+    "GJ 3293",
+    "Система 3293"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 23.1448,
+    "y": 54.921,
+    "z": -28.0086
+  },
+  "position_source": "archive hostname=GJ 3293 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -26.8,
+    "y": 42.8,
+    "z": -7.5
+  },
+  "stellar_hierarchy": {
+    "star": "gj_3293"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "reserved_designations": [
+    "GJ 3293 b",
+    "GJ 3293 c",
+    "GJ 3293 d",
+    "GJ 3293 e"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

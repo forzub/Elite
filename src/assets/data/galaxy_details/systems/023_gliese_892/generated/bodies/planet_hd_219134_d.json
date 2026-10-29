@@ -1,0 +1,127 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_23.Gliese_892.HD_219134_d",
+  "designation": "HD 219134 d",
+  "alternative_names": [],
+  "kind": "planet",
+  "parent_id": "system_23.Gliese_892",
+  "host_star": "gliese_892",
+  "origin": "observed_anchor",
+  "formation_origin": "observed",
+  "seed": "0x6cfb1d89f36bcdca",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2015",
+  "orbit": {
+    "semi_major_axis_au": 0.237,
+    "eccentricity": 0.138,
+    "inclination_deg": 0.8458530894552473,
+    "longitude_ascending_node_deg": 248.70148626432177,
+    "argument_of_periapsis_deg": 230.03901615852644,
+    "mean_anomaly_at_epoch_deg": 232.04552236396407,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 46.82361688137419,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 9.99777514927149e+25,
+    "mass_earth": 16.740523005377398,
+    "radius_km": 16853.201164729697,
+    "density_kg_m3": 4986.1752867591595,
+    "mu_m3s2": 6.67281506787827e+15,
+    "surface_gravity_ms2": 23.493313795231664,
+    "escape_velocity_kms": 28.140275173393686,
+    "hill_radius_km": 839031.1490061984,
+    "sphere_of_influence_km": 735933.7707926355,
+    "body_class": "sub_neptune"
+  },
+  "bulk_composition": {
+    "iron_core": 0.3206705490033191,
+    "silicate_mantle": 0.6642692045476407,
+    "water_ice": 0.002108978284749045,
+    "other_volatiles": 9.871474465803671e-05,
+    "hydrogen_helium_envelope": 0.012852553419633104,
+    "water_mass_fraction": 0.002108978284749045,
+    "formation_distance_au": 0.237
+  },
+  "thermal": {
+    "instellation_earth": 4.756292382312665,
+    "bond_albedo": 0.25,
+    "equilibrium_temperature_k": 382.88077818010277,
+    "mean_surface_temperature_k": 382.89037738581015,
+    "min_surface_temperature_k": 345.55856559069366,
+    "max_surface_temperature_k": 411.6071556897459,
+    "temperature_regime": "temperate",
+    "habitable_zone_position": 0.4582731096668417,
+    "radiogenic_heat_flux_wm2": 0.12221205605759433,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 100000.0,
+    "composition": {
+      "H2": 0.8490920658229294,
+      "He": 0.13640922768304917,
+      "CH4": 0.013495697466940173,
+      "H2O": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 2.4923559381068605,
+    "scale_height_km": 53.97661014044586,
+    "greenhouse_warming_k": 0.009599205707388592,
+    "cloud_potential": 0.9,
+    "origin": "primordial",
+    "retention_index": 0.0,
+    "outer_radius_km": 17932.733367538614
+  },
+  "geophysics": {
+    "tectonic_regime": "fluid",
+    "volcanism": "none",
+    "magnetic_field_earth": 71.50433115441358,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 11.017365034837988,
+    "obliquity_deg": 6.216703957849857,
+    "rotation_direction": 1,
+    "axis_node_deg": 224.12397945122066,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "ice_giant_bands",
+    "relief_amplitude_km": 0.0,
+    "roughness": 0.0,
+    "crater_density": 0.0,
+    "resurfacing_rate": 0.0,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.0,
+    "lava_tube_propensity": 0.0,
+    "karst_propensity": 0.0,
+    "weather_potential": 1.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {}
+  },
+  "rings": [],
+  "environment_preset_id": "ice_giant_methane",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "eccentricity": "observed",
+    "mass_earth": "derived",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated",
+    "semi_major_axis_au": "observed"
+  },
+  "extra": {
+    "mass_limit_earth": 16.17,
+    "mass_limit_flag": "-1"
+  }
+}

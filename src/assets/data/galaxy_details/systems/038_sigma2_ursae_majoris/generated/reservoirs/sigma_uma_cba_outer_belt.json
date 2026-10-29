@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_38.barycenter.kuiper_belt",
+  "name": "Sigma² UMa (CBA) outer belt",
+  "kind": "kuiper_belt",
+  "parent_id": "system_38.barycenter",
+  "seed": "0x3ea6387db655053b",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 17.08893796494387,
+  "outer_au": 30.274118064035928,
+  "peak_au": 18.896838975880854,
+  "total_mass_earth": 0.00015151515151515152,
+  "eccentricity_mean": 0.07139274323873099,
+  "inclination_mean_deg": 7.525143079229837,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.01,
+    "max_body_km": 411.7713993600715,
+    "estimated_bodies_above_1km": 1049261.1704831102
+  },
+  "clumpiness": 0.3329452052386363,
+  "composition": {
+    "water_ice": 0.45,
+    "silicate": 0.3,
+    "organics": 0.15,
+    "co_n2_ices": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "incomplete_growth",
+  "provenance": {
+    "population": "generated"
+  }
+}

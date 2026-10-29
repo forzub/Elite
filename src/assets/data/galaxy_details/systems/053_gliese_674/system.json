@@ -1,0 +1,45 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 53,
+  "name": "Gliese 674",
+  "slug": "gliese_674",
+  "alternative_names": [
+    "Gliese 674",
+    "GJ 674",
+    "Система 674"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -1.3794,
+    "y": -10.0251,
+    "z": -10.8122
+  },
+  "position_source": "hyg gl=Gl 674 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -6.28,
+    "y": 11.65,
+    "z": -6.15
+  },
+  "stellar_hierarchy": {
+    "star": "gliese_674"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "GJ 674 b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный красный карлик"
+  }
+}

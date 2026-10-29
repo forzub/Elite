@@ -1,0 +1,57 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 48,
+  "name": "HD 102365",
+  "slug": "hd_102365",
+  "alternative_names": [
+    "HD 102365",
+    "Аш Ди 102365",
+    "Двойная Система"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -22.829,
+    "y": 1.344,
+    "z": -19.5318
+  },
+  "position_source": "hyg hd=102365 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -23.8,
+    "y": 34.2,
+    "z": -7.5
+  },
+  "stellar_hierarchy": {
+    "id": "ab",
+    "children": [
+      {
+        "star": "hd_102365_a"
+      },
+      {
+        "star": "hd_102365_b"
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 211.0,
+        "source": "23 arcsec x 9.2 pc"
+      },
+      "source": "23 arcsec x 9.2 pc"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "lore": {
+    "stellar_description": "Стабильная двойная система"
+  }
+}

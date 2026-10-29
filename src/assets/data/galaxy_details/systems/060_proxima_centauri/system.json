@@ -1,0 +1,56 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 60,
+  "name": "Proxima Centauri",
+  "slug": "proxima_centauri",
+  "alternative_names": [
+    "Proxima Cen",
+    "Alpha Centauri C"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -1.5403,
+    "y": -1.1793,
+    "z": -3.7552
+  },
+  "position_source": "hyg gl=Gl 551 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -1.547684,
+    "y": -1.183014,
+    "z": -3.770406
+  },
+  "stellar_hierarchy": {
+    "star": "proxima_centauri"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "Proxima Cen b",
+    "Proxima Cen d"
+  ],
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "14h29m34.43s",
+    "dec_dms": "-62d40m34.26s",
+    "distance_pc": 1.30119,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "planet_radius_policy": "No physical radius is stored when NASA reports only radial-velocity minimum mass."
+  },
+  "lore": {
+    "stellar_description": "Одиночный красный карлик, высокая вспышечная активность (вспыхивающая звезда)"
+  }
+}

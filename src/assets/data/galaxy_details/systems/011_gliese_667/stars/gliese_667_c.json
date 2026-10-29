@@ -1,0 +1,34 @@
+{
+  "schema": "elite.star.v2",
+  "key": "gliese_667_c",
+  "name": "Gliese 667 C",
+  "alternative_names": [
+    "GJ 667 C",
+    "HR 6426 C"
+  ],
+  "spectral_type": "M1.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.33,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+  },
+  "teff_k": {
+    "value": 3350.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+  },
+  "luminosity_solar": {
+    "value": 0.013708817661648536,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+  },
+  "metallicity_feh": {
+    "value": -0.55,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+  },
+  "age_gyr": {
+    "value": 2.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host GJ 667 C)"
+  },
+  "extra": {
+    "legacy_type_label": "M1.5V — Красный карлик"
+  }
+}

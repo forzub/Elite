@@ -1,0 +1,258 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 43,
+  "name": "Theta Draconis",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x5b06b2cbd418403c",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -4.966630376355144e-05,
+      0.014981322946425084,
+      0.014765650807521619
+    ],
+    "galactocentric_radius_kpc": 8.180063385037645,
+    "height_above_plane_kpc": 0.035565650807521616,
+    "population_metallicity_mean_feh": -0.050003803102258715,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10085317548607087,
+    "formation_environment_density": 0.29956414425123856,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "theta_draconis_a",
+      "id": "system_43.Theta_Draconis_A",
+      "name": "Theta Draconis A",
+      "alternative_names": [
+        "Theta Dra A",
+        "HD 175775 A"
+      ],
+      "spectral_type": "F9V",
+      "stage": "main_sequence",
+      "seed": "0xc35e77465ca7bb74",
+      "mass_solar": 1.15,
+      "initial_mass_solar": 1.15,
+      "radius_solar": 1.306513055122762,
+      "teff_k": 6150.0,
+      "luminosity_solar": 2.2,
+      "metallicity_feh": 0.19753500680141334,
+      "age_gyr": 3.5,
+      "main_sequence_lifetime_gyr": 7.190359490390351,
+      "rotation_period_days": 18.047698108543205,
+      "mu_m3s2": 1.52619306e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 0.01879240619607303,
+        "eccentricity": 0.0,
+        "inclination_deg": 13.645047625635822,
+        "longitude_ascending_node_deg": 94.3759535931056,
+        "argument_of_periapsis_deg": 182.91252745074544,
+        "mean_anomaly_at_epoch_deg": 87.11331040607988,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 3.0708,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.016325073806094503
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "F9V — Жёлто-белый карлик"
+      }
+    },
+    {
+      "key": "theta_draconis_b",
+      "id": "system_43.Theta_Draconis_B",
+      "name": "Theta Draconis B",
+      "alternative_names": [
+        "Theta Dra B",
+        "HD 175775 B",
+        "Оранжевый карлик"
+      ],
+      "spectral_type": "K5V",
+      "stage": "main_sequence",
+      "seed": "0x48983ba94c7b59b1",
+      "mass_solar": 0.68,
+      "initial_mass_solar": 0.68,
+      "radius_solar": 0.643709387755102,
+      "teff_k": 4550.0,
+      "luminosity_solar": 0.16,
+      "metallicity_feh": 0.19753500680141334,
+      "age_gyr": 3.5,
+      "main_sequence_lifetime_gyr": 26.74378813478013,
+      "rotation_period_days": 26.23637132768439,
+      "mu_m3s2": 9.02444592e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 0.031781275184535274,
+        "eccentricity": 0.0,
+        "inclination_deg": 13.645047625635822,
+        "longitude_ascending_node_deg": 94.3759535931056,
+        "argument_of_periapsis_deg": 2.9125274507454524,
+        "mean_anomaly_at_epoch_deg": 87.11331040607988,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 3.0708,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.011389303590478852
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "generated",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K5V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_43.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "theta_draconis_a",
+        "theta_draconis_b"
+      ],
+      "mass_solar": 1.83,
+      "relative_orbit": {
+        "semi_major_axis_au": 0.050573681380608304,
+        "eccentricity": 0.0,
+        "inclination_deg": 13.645047625635822,
+        "longitude_ascending_node_deg": 94.3759535931056,
+        "argument_of_periapsis_deg": 2.9125274507454524,
+        "mean_anomaly_at_epoch_deg": 87.11331040607988,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 3.0708,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 0.12279928334015594,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "derived"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.05951216950308681,
+      "solid_mass_earth": 350.6978699863936,
+      "dust_to_gas": 0.021117368825735696,
+      "inner_edge_au": 0.12279928334015594,
+      "characteristic_radius_au": 34.90108777087132,
+      "outer_truncation_au": 456.7673930157086,
+      "lifetime_myr": 1.4808207419845945,
+      "snow_line_au": 3.782718317942799,
+      "turbulence_alpha": 0.0008241179614474478,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "host_theta_draconis_a",
+      "passed": true,
+      "detail": "no stable S-type zone around this star"
+    },
+    {
+      "check": "host_theta_draconis_b",
+      "passed": true,
+      "detail": "no stable S-type zone around this star"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=15 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_Theta Draconis (BA) h",
+      "passed": true,
+      "detail": "1 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

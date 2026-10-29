@@ -1,0 +1,45 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 7,
+  "name": "Kapteyn's Star",
+  "slug": "kapteyns_star",
+  "alternative_names": [
+    "Kapteyn's Star",
+    "Звезда Каптейна",
+    "CD-45 1841"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": 1.8884,
+    "y": 8.8179,
+    "z": -9.0237
+  },
+  "position_source": "hyg gl=Gl 191 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": 5.12,
+    "y": -11.24,
+    "z": -3.18
+  },
+  "stellar_hierarchy": {
+    "star": "kapteyns_star"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "Kapteyn c"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный (гало-звезда)"
+  }
+}

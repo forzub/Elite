@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "alpha_centauri_a",
+  "name": "Alpha Centauri A",
+  "alternative_names": [
+    "α Cen A",
+    "HD 128620"
+  ],
+  "spectral_type": "G2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.0788,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "radius_solar": {
+    "value": 1.2175,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "teff_k": {
+    "value": 5790,
+    "source": "literature compilation 2026-10-29: Morel 2018"
+  },
+  "luminosity_solar": {
+    "value": 1.5059,
+    "source": "literature compilation 2026-10-29: Akeson et al. 2021"
+  },
+  "metallicity_feh": {
+    "value": 0.2,
+    "source": "literature compilation 2026-10-29: Morel 2018"
+  },
+  "age_gyr": {
+    "value": 5.3,
+    "source": "literature compilation 2026-10-29: Joyce & Chaboyer 2018"
+  },
+  "extra": {
+    "legacy_type_label": "G2V — Жёлтый карлик"
+  }
+}

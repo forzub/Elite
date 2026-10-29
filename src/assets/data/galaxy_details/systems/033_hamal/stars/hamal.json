@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hamal",
+  "name": "Hamal",
+  "alternative_names": [
+    "α Ari",
+    "Хамаль A"
+  ],
+  "spectral_type": "K2III",
+  "stage_hint": "giant",
+  "mass_solar": {
+    "value": 1.5,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+  },
+  "radius_solar": {
+    "value": 13.9,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+  },
+  "teff_k": {
+    "value": 4553.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+  },
+  "luminosity_solar": {
+    "value": 85.90135215053957,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+  },
+  "metallicity_feh": {
+    "value": -0.09,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host alf Ari)"
+  },
+  "age_gyr": {
+    "value": 3.9,
+    "source": "literature compilation 2026-10-29: giant of 1.5 M_sun past its main sequence"
+  },
+  "extra": {
+    "legacy_type_label": "K1IIIb — Оранжевый гигант"
+  }
+}

@@ -1,0 +1,291 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 45,
+  "name": "83 Leonis",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x2b6d5ae7fdd905cf",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0017264945701391018,
+      -0.009107190155275101,
+      0.015132939496266542
+    ],
+    "galactocentric_radius_kpc": 8.18173156323669,
+    "height_above_plane_kpc": 0.03593293949626654,
+    "population_metallicity_mean_feh": -0.05010389379420144,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10067727257266137,
+    "formation_environment_density": 1.1854318791806282,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "83_leonis_a",
+      "id": "system_45.83_Leonis_A",
+      "name": "83 Leonis A",
+      "alternative_names": [
+        "83 Leo A",
+        "HD 102194 A"
+      ],
+      "spectral_type": "K0IV",
+      "stage": "subgiant",
+      "seed": "0x8dcdefe8f47b23eb",
+      "mass_solar": 1.08,
+      "initial_mass_solar": 1.08,
+      "radius_solar": 1.7085356729022598,
+      "teff_k": 5150.0,
+      "luminosity_solar": 1.85,
+      "metallicity_feh": 0.3,
+      "age_gyr": 4.8,
+      "main_sequence_lifetime_gyr": 8.497239044143154,
+      "rotation_period_days": 21.936376889788747,
+      "mu_m3s2": 1.4332943520000002e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 136.07211705348146,
+        "eccentricity": 0.8327121870777063,
+        "inclination_deg": 95.42610415031865,
+        "longitude_ascending_node_deg": 307.372184174716,
+        "argument_of_periapsis_deg": 36.61637334815816,
+        "mean_anomaly_at_epoch_deg": 174.7387786301929,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 1427818.0163922193,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        9.162183795416796
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "legacy catalog, unverified",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "legacy catalog, unverified",
+        "teff_k": "legacy catalog, unverified"
+      },
+      "extra": {
+        "legacy_type_label": "K0IV — Оранжевый субгигант"
+      }
+    },
+    {
+      "key": "83_leonis_b",
+      "id": "system_45.83_Leonis_B",
+      "name": "83 Leonis B",
+      "alternative_names": [
+        "83 Leo B",
+        "HD 102194 B",
+        "Оранжевый карлик"
+      ],
+      "spectral_type": "K2 V",
+      "stage": "main_sequence",
+      "seed": "0x3795490f97338374",
+      "mass_solar": 0.85,
+      "initial_mass_solar": 0.85,
+      "radius_solar": 0.822539,
+      "teff_k": 4929.0,
+      "luminosity_solar": 0.3350425766809597,
+      "metallicity_feh": 0.3,
+      "age_gyr": 4.8,
+      "main_sequence_lifetime_gyr": 15.462863083267534,
+      "rotation_period_days": 34.773240791442134,
+      "mu_m3s2": 1.1280557399999999e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 172.89163107971763,
+        "eccentricity": 0.8327121870777063,
+        "inclination_deg": 95.42610415031865,
+        "longitude_ascending_node_deg": 307.372184174716,
+        "argument_of_periapsis_deg": 216.61637334815813,
+        "mean_anomaly_at_epoch_deg": 174.7387786301929,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 1427818.0163922193,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        8.08242369259838
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 99492)"
+      },
+      "extra": {
+        "legacy_type_label": "K2V — Оранжевый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_45.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "83_leonis_a",
+        "83_leonis_b"
+      ],
+      "mass_solar": 1.9300000000000002,
+      "relative_orbit": {
+        "semi_major_axis_au": 308.96374813319915,
+        "eccentricity": 0.8327121870777063,
+        "inclination_deg": 95.42610415031865,
+        "longitude_ascending_node_deg": 307.372184174716,
+        "argument_of_periapsis_deg": 216.61637334815813,
+        "mean_anomaly_at_epoch_deg": 174.7387786301929,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 1427818.0163922193,
+        "direction": -1
+      },
+      "circumbinary_inner_au": 1294.171110179907,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "83_leonis_a",
+      "gas_mass_solar": 0.007444701341061532,
+      "solid_mass_earth": 49.275233372736935,
+      "dust_to_gas": 0.026736515020582986,
+      "inner_edge_au": 0.03365058946270036,
+      "characteristic_radius_au": 79.06107238355158,
+      "outer_truncation_au": 9.162183795416796,
+      "lifetime_myr": 2.8850742019352356,
+      "snow_line_au": 3.1492800000000005,
+      "turbulence_alpha": 0.00341887723322157,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "83_leonis_b",
+      "gas_mass_solar": 0.0065417006665766005,
+      "solid_mass_earth": 59.47232301997259,
+      "dust_to_gas": 0.026736515020582986,
+      "inner_edge_au": 0.020844093695817047,
+      "characteristic_radius_au": 18.262867793020305,
+      "outer_truncation_au": 8.08242369259838,
+      "lifetime_myr": 7.638146256136402,
+      "snow_line_au": 1.95075,
+      "turbulence_alpha": 0.0005577581455236002,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.042645346428479794,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.026736515020582986,
+      "inner_edge_au": 1294.171110179907,
+      "characteristic_radius_au": 87.06932752370902,
+      "outer_truncation_au": 229.61576759119373,
+      "lifetime_myr": 0.9279652787848293,
+      "snow_line_au": 3.704509425133104,
+      "turbulence_alpha": 0.005349634019555572,
+      "migration_regime": "weak"
+    }
+  ],
+  "architecture_mode": "83_leonis_a:binary_truncated; 83_leonis_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_83_leonis_a",
+      "passed": true,
+      "detail": "planets=11 attempts=3 rv_limit=5m/s"
+    },
+    {
+      "check": "architecture_83_leonis_b",
+      "passed": true,
+      "detail": "planets=9 attempts=2 rv_limit=5m/s"
+    },
+    {
+      "check": "moons_83 Leonis B j",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "ejection_83_leonis_b",
+      "passed": true,
+      "detail": "ejected planet from 83_leonis_b: 106.834 M_earth (rogue population)"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

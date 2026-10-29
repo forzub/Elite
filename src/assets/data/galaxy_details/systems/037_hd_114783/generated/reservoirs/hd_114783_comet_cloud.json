@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_37.HD_114783.comet_cloud",
+  "name": "HD 114783 comet cloud",
+  "kind": "comet_cloud",
+  "parent_id": "system_37.HD_114783",
+  "seed": "0x7f7aa7f928f51dd6",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 1930.9787692112595,
+  "outer_au": 30000.0,
+  "peak_au": 7611.134151776448,
+  "total_mass_earth": 12.482120973337675,
+  "eccentricity_mean": 0.7,
+  "inclination_mean_deg": 90.0,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 100.0,
+    "estimated_bodies_above_1km": 356250265771.7628
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "water_ice": 0.5,
+    "co_co2_ices": 0.2,
+    "silicate_dust": 0.2,
+    "organics": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "giant_scattering",
+  "provenance": {
+    "population": "generated"
+  }
+}

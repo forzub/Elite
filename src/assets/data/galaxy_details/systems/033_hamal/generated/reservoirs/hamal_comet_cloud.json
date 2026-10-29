@@ -1,0 +1,40 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_33.Hamal.comet_cloud",
+  "name": "Hamal comet cloud",
+  "kind": "comet_cloud",
+  "parent_id": "system_33.Hamal",
+  "seed": "0x262f150b1b5496d1",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 2289.4284851066636,
+  "outer_au": 30000.0,
+  "peak_au": 8287.511963985326,
+  "total_mass_earth": 11.125718962171192,
+  "eccentricity_mean": 0.7,
+  "inclination_mean_deg": 90.0,
+  "size_distribution": {
+    "slope": -3.0,
+    "min_body_km": 0.1,
+    "max_body_km": 100.0,
+    "estimated_bodies_above_1km": 317537407756.39923
+  },
+  "clumpiness": 0.0,
+  "composition": {
+    "water_ice": 0.5,
+    "co_co2_ices": 0.2,
+    "silicate_dust": 0.2,
+    "organics": 0.1
+  },
+  "gaps_au": [],
+  "resonance": "",
+  "formation_origin": "giant_scattering",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "elite.generated_reservoir.v1",
+  "id": "system_30.Epsilon_Indi_A.asteroid_belt",
+  "name": "Epsilon Indi A asteroid belt",
+  "kind": "asteroid_belt",
+  "parent_id": "system_30.Epsilon_Indi_A",
+  "seed": "0x52409ec244720711",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "inner_au": 6.304,
+  "outer_au": 11.347199999999999,
+  "peak_au": 8.8256,
+  "total_mass_earth": 0.001072647668669462,
+  "eccentricity_mean": 0.07529509471915648,
+  "inclination_mean_deg": 6.812645980649634,
+  "size_distribution": {
+    "slope": -3.5,
+    "min_body_km": 0.001,
+    "max_body_km": 1202.2386966848294,
+    "estimated_bodies_above_1km": 35317806.29870852
+  },
+  "clumpiness": 0.10218757028465851,
+  "composition": {
+    "carbonaceous_c_type": 0.55,
+    "silicate_s_type": 0.2,
+    "water_ice": 0.2,
+    "metallic_m_type": 0.05
+  },
+  "gaps_au": [
+    [
+      7.419017742681585,
+      7.734217742681586
+    ],
+    [
+      8.398244327507147,
+      8.713444327507148
+    ],
+    [
+      8.800963085206734,
+      9.116163085206734
+    ],
+    [
+      9.7705778731716,
+      10.085777873171601
+    ]
+  ],
+  "resonance": "Kirkwood gaps of eps Ind A b",
+  "formation_origin": "giant_suppressed_accretion",
+  "provenance": {
+    "population": "generated"
+  }
+}

@@ -1,0 +1,283 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 52,
+  "name": "Procyon A+B",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x447a54e9b6654b6f",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0028484284436826645,
+      -0.0018998213854452156,
+      0.0007916815814116457
+    ],
+    "galactocentric_radius_kpc": 8.182848648985544,
+    "height_above_plane_kpc": 0.021591681581411646,
+    "population_metallicity_mean_feh": -0.050170918939132676,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10515954695405379,
+    "formation_environment_density": 2.7316702076407733,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "procyon_a",
+      "id": "system_52.Procyon_A",
+      "name": "Procyon A",
+      "alternative_names": [
+        "Procyon A",
+        "α CMi A",
+        "Жёлто-белый субгигант"
+      ],
+      "spectral_type": "F5IV-V",
+      "stage": "main_sequence",
+      "seed": "0x4cda374bf729111d",
+      "mass_solar": 1.478,
+      "initial_mass_solar": 1.478,
+      "radius_solar": 2.048,
+      "teff_k": 6530.0,
+      "luminosity_solar": 6.93,
+      "metallicity_feh": -0.02,
+      "age_gyr": 1.87,
+      "main_sequence_lifetime_gyr": 3.7578933983901543,
+      "rotation_period_days": 0.6520753242472257,
+      "mu_m3s2": 1.9614898632000002e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 4.289855072463768,
+        "eccentricity": 0.407,
+        "inclination_deg": 31.1,
+        "longitude_ascending_node_deg": 61.72138459064908,
+        "argument_of_periapsis_deg": 177.30482731301936,
+        "mean_anomaly_at_epoch_deg": 136.57083813020236,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 14748.299229505872,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.732748516782609
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Liebert et al. 2013",
+        "luminosity_solar": "literature compilation 2026-10-29: Liebert et al. 2013",
+        "mass_solar": "literature compilation 2026-10-29: Bond et al. 2015",
+        "metallicity_feh": "literature compilation 2026-10-29: Allende Prieto 2002",
+        "radius_solar": "literature compilation 2026-10-29: Kervella et al. 2004",
+        "teff_k": "literature compilation 2026-10-29: Fuhrmann 1997"
+      },
+      "extra": {
+        "legacy_type_label": "F5IV-V — Жёлто-белый субгигант"
+      }
+    },
+    {
+      "key": "procyon_b",
+      "id": "system_52.Procyon_B",
+      "name": "Procyon B",
+      "alternative_names": [
+        "Procyon B",
+        "α CMi B",
+        "Белый карлик"
+      ],
+      "spectral_type": "DQZ",
+      "stage": "white_dwarf",
+      "seed": "0x6c7a7c74aafead88",
+      "mass_solar": 0.592,
+      "initial_mass_solar": 1.8165137614678895,
+      "radius_solar": 0.01234,
+      "teff_k": 7740.0,
+      "luminosity_solar": 0.00049,
+      "metallicity_feh": -0.02,
+      "age_gyr": 1.87,
+      "main_sequence_lifetime_gyr": 2.2440566201990566,
+      "rotation_period_days": 0.09248564513366811,
+      "mu_m3s2": 7.856576448e+19,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 10.710144927536232,
+        "eccentricity": 0.407,
+        "inclination_deg": 31.1,
+        "longitude_ascending_node_deg": 61.72138459064908,
+        "argument_of_periapsis_deg": 357.30482731301936,
+        "mean_anomaly_at_epoch_deg": 136.57083813020236,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 14748.299229505872,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        1.6137144532173915
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Liebert et al. 2013",
+        "luminosity_solar": "literature compilation 2026-10-29: Provencal 2002",
+        "mass_solar": "literature compilation 2026-10-29: Bond et al. 2015",
+        "radius_solar": "literature compilation 2026-10-29: Provencal 2002",
+        "teff_k": "literature compilation 2026-10-29: Provencal 2002"
+      },
+      "extra": {
+        "legacy_type_label": "DQZ — Белый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_52.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "procyon_a",
+        "procyon_b"
+      ],
+      "mass_solar": 2.07,
+      "relative_orbit": {
+        "semi_major_axis_au": 15.0,
+        "eccentricity": 0.407,
+        "inclination_deg": 31.1,
+        "longitude_ascending_node_deg": 61.72138459064908,
+        "argument_of_periapsis_deg": 357.30482731301936,
+        "mean_anomaly_at_epoch_deg": 136.57083813020236,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 14748.299229505872,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 54.53047178994245,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "literature",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "procyon_a",
+      "gas_mass_solar": 0.0027738872868509116,
+      "solid_mass_earth": 6.391146682920172,
+      "dust_to_gas": 0.012796900652687243,
+      "inner_edge_au": 0.06302226875157538,
+      "characteristic_radius_au": 42.47588602791834,
+      "outer_truncation_au": 2.732748516782609,
+      "lifetime_myr": 3.161421348836724,
+      "snow_line_au": 5.8981068,
+      "turbulence_alpha": 0.002926762511250852,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "procyon_b",
+      "gas_mass_solar": 0.026080101507940948,
+      "solid_mass_earth": 51.07427588091301,
+      "dust_to_gas": 0.012796900652687243,
+      "inner_edge_au": 0.09519684381661525,
+      "characteristic_radius_au": 59.16716990430683,
+      "outer_truncation_au": 1.6137144532173915,
+      "lifetime_myr": 2.7969739388424517,
+      "snow_line_au": 8.909250063125995,
+      "turbulence_alpha": 0.0032226673394999406,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.05441835981270053,
+      "solid_mass_earth": 227.05968171596842,
+      "dust_to_gas": 0.012796900652687243,
+      "inner_edge_au": 54.53047178994245,
+      "characteristic_radius_au": 51.249579997079685,
+      "outer_truncation_au": 151.26061979465163,
+      "lifetime_myr": 3.052269890451699,
+      "snow_line_au": 10.68468064621104,
+      "turbulence_alpha": 0.0005969737740080932,
+      "migration_regime": "strong"
+    }
+  ],
+  "architecture_mode": "procyon_a:binary_truncated; procyon_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_procyon_a",
+      "passed": true,
+      "detail": "planets=10 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_procyon_b",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

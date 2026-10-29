@@ -1,0 +1,42 @@
+{
+  "schema": "elite.star.v2",
+  "key": "sol",
+  "name": "Sol",
+  "alternative_names": [
+    "Солнце",
+    "Sun"
+  ],
+  "spectral_type": "G2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 1.0,
+    "source": "literature compilation 2026-10-29: IAU 2015 nominal"
+  },
+  "radius_solar": {
+    "value": 1.0,
+    "source": "literature compilation 2026-10-29: IAU 2015 nominal"
+  },
+  "teff_k": {
+    "value": 5772,
+    "source": "literature compilation 2026-10-29: IAU 2015 nominal"
+  },
+  "luminosity_solar": {
+    "value": 1.0,
+    "source": "literature compilation 2026-10-29: IAU 2015 nominal"
+  },
+  "metallicity_feh": {
+    "value": 0.0,
+    "source": "literature compilation 2026-10-29: definition"
+  },
+  "age_gyr": {
+    "value": 4.57,
+    "source": "literature compilation 2026-10-29: Bouvier & Wadhwa 2010"
+  },
+  "rotation_period_days": {
+    "value": 25.38,
+    "source": "literature compilation 2026-10-29: Carrington"
+  },
+  "extra": {
+    "legacy_type_label": "G2V — Жёлтый карлик"
+  }
+}

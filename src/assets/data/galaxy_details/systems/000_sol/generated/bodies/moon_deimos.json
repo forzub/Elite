@@ -1,0 +1,126 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_0.Sol.Марс.Деймос",
+  "designation": "Деймос",
+  "alternative_names": [
+    "Deimos"
+  ],
+  "kind": "moon",
+  "parent_id": "system_0.Sol.Марс",
+  "host_star": "sol",
+  "origin": "authored",
+  "formation_origin": "observed",
+  "seed": "0x5cc1c92c2f1b11f6",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.00015684046764978453,
+    "eccentricity": 0.00033,
+    "inclination_deg": 0.93,
+    "longitude_ascending_node_deg": 207.88299673905183,
+    "argument_of_periapsis_deg": 10.968087349410375,
+    "mean_anomaly_at_epoch_deg": 256.787139151974,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 1.2655505999180392,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 1.4761999999999997e+15,
+    "mass_earth": 2.4717859415290844e-10,
+    "radius_km": 6.2,
+    "density_kg_m3": 1478.7049381037218,
+    "mu_m3s2": 98526.01659999997,
+    "surface_gravity_ms2": 0.0025631117741935477,
+    "escape_velocity_kms": 0.005637604633175334,
+    "hill_radius_km": 21.4985321272008,
+    "sphere_of_influence_km": 8.238238725319587,
+    "body_class": "dwarf_rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.3252705234591163,
+    "silicate_mantle": 0.6746294765408837,
+    "water_ice": 0.0,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.0,
+    "formation_distance_au": 1.52371034
+  },
+  "thermal": {
+    "instellation_earth": 0.4307201547362029,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 218.60021194304363,
+    "mean_surface_temperature_k": 233.0,
+    "min_surface_temperature_k": 34.949999999999996,
+    "max_surface_temperature_k": 419.40000000000003,
+    "temperature_regime": "cold",
+    "habitable_zone_position": 1.602386574433956,
+    "radiogenic_heat_flux_wm2": 6.836578829765108e-06,
+    "tidal_heat_flux_wm2": 6.107042911133856e-10
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 14.399788056956368,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 1.9722192471444764e-09,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 30.373214398032943,
+    "obliquity_deg": 1.4323629261634894,
+    "rotation_direction": 1,
+    "axis_node_deg": 188.63390159045437,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_highlands",
+    "relief_amplitude_km": 30.0,
+    "roughness": 0.8600000000000001,
+    "crater_density": 1.0,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.4,
+    "cave_tectonic_propensity": 0.38,
+    "lava_tube_propensity": 0.654,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "anorthosite": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_rocky",
+  "provenance": {
+    "atmosphere": "authored",
+    "composition": "authored",
+    "mean_surface_temperature_k": "authored",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "authored",
+    "radius_km": "authored",
+    "rotation_period_hours": "generated"
+  },
+  "extra": {
+    "environment_preset_id": "airless_rocky"
+  }
+}

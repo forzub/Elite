@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "lalande_21185",
+  "name": "Lalande 21185",
+  "alternative_names": [
+    "GJ 411",
+    "HD 95735",
+    "Лаланд 21185"
+  ],
+  "spectral_type": "M2V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.389,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "radius_solar": {
+    "value": 0.392,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "teff_k": {
+    "value": 3547,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "luminosity_solar": {
+    "value": 0.0195,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "metallicity_feh": {
+    "value": -0.2,
+    "source": "literature compilation 2026-10-29: Mann et al. 2015"
+  },
+  "age_gyr": {
+    "value": 8.0,
+    "source": "literature compilation 2026-10-29: kinematic estimate"
+  },
+  "extra": {
+    "legacy_type_label": "M2V — Красный карлик"
+  }
+}

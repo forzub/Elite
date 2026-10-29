@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "Миранда",
+  "alternative_names": [
+    "Miranda"
+  ],
+  "kind": "moon",
+  "host": "Уран",
+  "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",
+  "orbit": {
+    "semi_major_axis_au": 0.0008649187277503141,
+    "eccentricity": 0.0013,
+    "inclination_deg": 4.232,
+    "retrograde": false
+  },
+  "physical": {
+    "mass_earth": 1.1034459663105723e-05,
+    "radius_earth": 0.03697025760022577,
+    "water_mass_fraction": 0.5,
+    "mean_surface_temperature_k": 59.0,
+    "surface_pressure_pa": 0.0,
+    "tidally_locked": true
+  },
+  "extra": {
+    "environment_preset_id": "airless_icy"
+  }
+}

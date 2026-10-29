@@ -1,0 +1,37 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_40307",
+  "name": "HD 40307",
+  "alternative_names": [
+    "Аш Ди 40307"
+  ],
+  "spectral_type": "K2.5 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.77,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "radius_solar": {
+    "value": 0.716684,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "teff_k": {
+    "value": 4956.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "luminosity_solar": {
+    "value": 0.2296148648112362,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "metallicity_feh": {
+    "value": -0.31,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "age_gyr": {
+    "value": 4.5,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 40307)"
+  },
+  "extra": {
+    "legacy_type_label": "K2.5V — Оранжевый карлик"
+  }
+}

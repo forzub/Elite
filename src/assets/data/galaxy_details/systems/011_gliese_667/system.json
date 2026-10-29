@@ -1,0 +1,87 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 11,
+  "name": "Gliese 667 (A+B+C)",
+  "slug": "gliese_667",
+  "alternative_names": [
+    "Gliese 667",
+    "GJ 667",
+    "HR 6426"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -3.2541,
+    "y": -17.9731,
+    "z": -12.7847
+  },
+  "position_source": "hyg gl=Gl 667A (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -10.85,
+    "y": 19.12,
+    "z": -8.45
+  },
+  "stellar_hierarchy": {
+    "id": "system_barycenter",
+    "children": [
+      {
+        "id": "ab",
+        "children": [
+          {
+            "star": "gliese_667_a"
+          },
+          {
+            "star": "gliese_667_b"
+          }
+        ],
+        "orbit": {
+          "semi_major_axis_au": {
+            "value": 12.6,
+            "source": "Soderhjelm 1999"
+          },
+          "eccentricity": {
+            "value": 0.58,
+            "source": "Soderhjelm 1999"
+          },
+          "period_years": {
+            "value": 42.15,
+            "source": "Soderhjelm 1999"
+          },
+          "source": "Soderhjelm 1999"
+        }
+      },
+      {
+        "star": "gliese_667_c"
+      }
+    ],
+    "orbit": {
+      "projected_separation_au": {
+        "value": 235.0,
+        "source": "32.4 arcsec x 7.24 pc"
+      },
+      "source": "32.4 arcsec x 7.24 pc"
+    }
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 1.5,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "rv_baseline_days": {
+      "value": 7300.0,
+      "source": "nearby star in long-baseline precision RV surveys"
+    },
+    "source": "nearby star in long-baseline precision RV surveys"
+  },
+  "reserved_designations": [
+    "GJ 667 C b",
+    "GJ 667 C c",
+    "GJ 667 C e",
+    "GJ 667 C f",
+    "GJ 667 C g"
+  ],
+  "lore": {
+    "stellar_description": "Тройная система, компонент C (M1.5V) стабилен"
+  }
+}

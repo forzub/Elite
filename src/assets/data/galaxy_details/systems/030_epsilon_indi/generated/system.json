@@ -1,0 +1,436 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 30,
+  "name": "Epsilon Indi",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x9b9f9163995b5acd",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      0.0022158903984949214,
+      -0.0009775209959880418,
+      -0.002693703916838006
+    ],
+    "galactocentric_radius_kpc": 8.177784168024868,
+    "height_above_plane_kpc": 0.018106296083161992,
+    "population_metallicity_mean_feh": -0.04986705008149209,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10649196087909794,
+    "formation_environment_density": 3.0512989609981953,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "epsilon_indi_a",
+      "id": "system_30.Epsilon_Indi_A",
+      "name": "Epsilon Indi A",
+      "alternative_names": [
+        "ε Ind A",
+        "Оранжевый карлик"
+      ],
+      "spectral_type": "K5 V",
+      "stage": "main_sequence",
+      "seed": "0x90fd2b9e6e409be2",
+      "mass_solar": 0.8,
+      "initial_mass_solar": 0.8,
+      "radius_solar": 0.713,
+      "teff_k": 4700.0,
+      "luminosity_solar": 0.23900115514847262,
+      "metallicity_feh": -0.17,
+      "age_gyr": 3.48,
+      "main_sequence_lifetime_gyr": 17.172303295955412,
+      "rotation_period_days": 33.623267452469406,
+      "mu_m3s2": 1.06169952e+20,
+      "parent_node": "system_barycenter",
+      "orbit": {
+        "semi_major_axis_au": 236.72717189402655,
+        "eccentricity": 0.1603610324199893,
+        "inclination_deg": 142.68962753882886,
+        "longitude_ascending_node_deg": 301.3116064143599,
+        "argument_of_periapsis_deg": 77.96383430591737,
+        "mean_anomaly_at_epoch_deg": 109.67977653673802,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 31325350.67623675,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        623.2944840636702
+      ],
+      "provenance": {
+        "age_gyr": "observed",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "observed",
+        "mass_solar": "observed",
+        "metallicity_feh": "observed",
+        "mu_m3s2": "derived",
+        "radius_solar": "observed",
+        "rotation_period_days": "generated",
+        "teff_k": "observed"
+      },
+      "sources": {
+        "age_gyr": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)",
+        "luminosity_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)",
+        "mass_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)",
+        "metallicity_feh": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)",
+        "radius_solar": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)",
+        "teff_k": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host eps Ind A)"
+      },
+      "extra": {
+        "legacy_type_label": "K5V — Оранжевый карлик"
+      }
+    },
+    {
+      "key": "epsilon_indi_ba",
+      "id": "system_30.Epsilon_Indi_Ba",
+      "name": "Epsilon Indi Ba",
+      "alternative_names": [
+        "ε Ind Ba",
+        "Коричневый карлик 1",
+        "T1"
+      ],
+      "spectral_type": "T1",
+      "stage": "brown_dwarf",
+      "seed": "0x95e3cac77407f15e",
+      "mass_solar": 0.0639,
+      "initial_mass_solar": 0.0639,
+      "radius_solar": 0.13939620241599124,
+      "teff_k": 1300.0,
+      "luminosity_solar": 5e-05,
+      "metallicity_feh": -0.17,
+      "age_gyr": 3.5,
+      "main_sequence_lifetime_gyr": null,
+      "rotation_period_days": 0.34232293148589216,
+      "mu_m3s2": 8.480324916000001e+18,
+      "parent_node": "bab",
+      "orbit": {
+        "semi_major_axis_au": 1.0651612903225807,
+        "eccentricity": 0.54,
+        "inclination_deg": 10.380198069636528,
+        "longitude_ascending_node_deg": 28.781436637501777,
+        "argument_of_periapsis_deg": 353.12291834412076,
+        "mean_anomaly_at_epoch_deg": 174.59829718116958,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 4022.3618476963156,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.27243434399999983
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Chen et al. 2022",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "literature compilation 2026-10-29: Chen et al. 2022 (66.9 M_J)",
+        "teff_k": "literature compilation 2026-10-29: T1"
+      },
+      "extra": {
+        "legacy_type_label": "T1 — Коричневый карлик"
+      }
+    },
+    {
+      "key": "epsilon_indi_bb",
+      "id": "system_30.Epsilon_Indi_Bb",
+      "name": "Epsilon Indi Bb",
+      "alternative_names": [
+        "ε Ind Bb",
+        "Коричневый карлик 2",
+        "T6"
+      ],
+      "spectral_type": "T6",
+      "stage": "brown_dwarf",
+      "seed": "0xf1a4a45e4800fae5",
+      "mass_solar": 0.0508,
+      "initial_mass_solar": 0.0508,
+      "radius_solar": 0.18394272829949468,
+      "teff_k": 900.0,
+      "luminosity_solar": 2e-05,
+      "metallicity_feh": -0.17,
+      "age_gyr": 3.5,
+      "main_sequence_lifetime_gyr": null,
+      "rotation_period_days": 0.10424141636245121,
+      "mu_m3s2": 6.741791952e+18,
+      "parent_node": "bab",
+      "orbit": {
+        "semi_major_axis_au": 1.3398387096774194,
+        "eccentricity": 0.54,
+        "inclination_deg": 10.380198069636528,
+        "longitude_ascending_node_deg": 28.781436637501777,
+        "argument_of_periapsis_deg": 173.12291834412073,
+        "mean_anomaly_at_epoch_deg": 174.59829718116958,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 4022.3618476963156,
+        "direction": 1
+      },
+      "stable_zone_au": [
+        0.0,
+        0.23911685199999996
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "derived",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Chen et al. 2022",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "literature compilation 2026-10-29: Chen et al. 2022 (53.2 M_J)",
+        "teff_k": "literature compilation 2026-10-29: T6"
+      },
+      "extra": {
+        "legacy_type_label": "T6 — Коричневый карлик"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "system_barycenter",
+      "body_id": "system_30.barycenter",
+      "parent_node": "",
+      "children": [
+        "epsilon_indi_a",
+        "bab"
+      ],
+      "mass_solar": 0.9147000000000001,
+      "relative_orbit": {
+        "semi_major_axis_au": 1887.8321197163566,
+        "eccentricity": 0.1603610324199893,
+        "inclination_deg": 142.68962753882886,
+        "longitude_ascending_node_deg": 301.3116064143599,
+        "argument_of_periapsis_deg": 257.9638343059174,
+        "mean_anomaly_at_epoch_deg": 109.67977653673802,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 31325350.67623675,
+        "direction": -1
+      },
+      "circumbinary_inner_au": 5122.347308887039,
+      "provenance": {
+        "eccentricity": "generated",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "generated"
+      }
+    },
+    {
+      "id": "bab",
+      "body_id": "system_30.barycenter_bab",
+      "parent_node": "system_barycenter",
+      "children": [
+        "epsilon_indi_ba",
+        "epsilon_indi_bb"
+      ],
+      "mass_solar": 0.1147,
+      "orbit": {
+        "semi_major_axis_au": 1651.10494782233,
+        "eccentricity": 0.1603610324199893,
+        "inclination_deg": 142.68962753882886,
+        "longitude_ascending_node_deg": 301.3116064143599,
+        "argument_of_periapsis_deg": 257.9638343059174,
+        "mean_anomaly_at_epoch_deg": 109.67977653673802,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 31325350.67623675,
+        "direction": -1
+      },
+      "relative_orbit": {
+        "semi_major_axis_au": 2.405,
+        "eccentricity": 0.54,
+        "inclination_deg": 10.380198069636528,
+        "longitude_ascending_node_deg": 28.781436637501777,
+        "argument_of_periapsis_deg": 173.12291834412073,
+        "mean_anomaly_at_epoch_deg": 174.59829718116958,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 4022.3618476963156,
+        "direction": 1
+      },
+      "circumbinary_inner_au": 9.079843454657029,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "generated",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "epsilon_indi_a",
+      "gas_mass_solar": 0.005636535962567568,
+      "solid_mass_earth": 19.95495092320861,
+      "dust_to_gas": 0.009059511870252555,
+      "inner_edge_au": 0.018463972270343132,
+      "characteristic_radius_au": 60.81641780572339,
+      "outer_truncation_au": 143.11911040586227,
+      "lifetime_myr": 2.424566393319876,
+      "snow_line_au": 1.7280000000000002,
+      "turbulence_alpha": 0.00023165435060256418,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "epsilon_indi_ba",
+      "gas_mass_solar": 0.0007340176937305762,
+      "solid_mass_earth": 2.6278015462323725,
+      "dust_to_gas": 0.009059511870252555,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 24.26555700891478,
+      "outer_truncation_au": 0.27243434399999983,
+      "lifetime_myr": 3.738191644919804,
+      "snow_line_au": 0.07583534795858723,
+      "turbulence_alpha": 0.0008089559950574593,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "epsilon_indi_bb",
+      "gas_mass_solar": 0.00022476146648482502,
+      "solid_mass_earth": 1.4082479691152376,
+      "dust_to_gas": 0.009059511870252555,
+      "inner_edge_au": 0.006,
+      "characteristic_radius_au": 12.217467770062578,
+      "outer_truncation_au": 0.23911685199999996,
+      "lifetime_myr": 6.7860696243789125,
+      "snow_line_au": 0.06761656601750786,
+      "turbulence_alpha": 0.0019059264472173919,
+      "migration_regime": "moderate"
+    },
+    {
+      "host_node": "system_barycenter",
+      "gas_mass_solar": 0.004636568544343689,
+      "solid_mass_earth": 0.0,
+      "dust_to_gas": 0.009059511870252555,
+      "inner_edge_au": 5122.347308887039,
+      "characteristic_radius_au": 34.88459592631588,
+      "outer_truncation_au": 143.11911040586227,
+      "lifetime_myr": 1.7700515252717186,
+      "snow_line_au": 1.7280492158836058,
+      "turbulence_alpha": 0.0006386447812522565,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "bab",
+      "gas_mass_solar": 0.0008687959422912081,
+      "solid_mass_earth": 2.221954705184844,
+      "dust_to_gas": 0.009059511870252555,
+      "inner_edge_au": 9.079843454657029,
+      "characteristic_radius_au": 12.131890986037082,
+      "outer_truncation_au": 143.11911040586227,
+      "lifetime_myr": 1.3547656509459285,
+      "snow_line_au": 0.01304195215229963,
+      "turbulence_alpha": 0.0016988684284565886,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "epsilon_indi_a:wide_giant; epsilon_indi_ba:binary_truncated; epsilon_indi_bb:binary_truncated; system_barycenter:circumbinary; bab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "mardling_aarseth_system_barycenter",
+      "passed": true,
+      "detail": "a_out/a_in=784.961 critical=6.55507"
+    },
+    {
+      "check": "architecture_epsilon_indi_a",
+      "passed": true,
+      "detail": "planets=1 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_eps Ind A b",
+      "passed": true,
+      "detail": "2 moon candidates removed by Roche / Hill / tidal / spacing gates"
+    },
+    {
+      "check": "architecture_epsilon_indi_ba",
+      "passed": true,
+      "detail": "planets=5 attempts=8 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Epsilon Indi Ba c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_epsilon_indi_bb",
+      "passed": true,
+      "detail": "planets=5 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "moons_Epsilon Indi Bb c",
+      "passed": true,
+      "detail": "Hill sphere too small for moons"
+    },
+    {
+      "check": "architecture_system_barycenter",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_bab",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

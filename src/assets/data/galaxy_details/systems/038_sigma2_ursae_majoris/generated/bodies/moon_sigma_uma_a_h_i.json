@@ -1,0 +1,125 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_38.Sigma²_UMa_A.Sigma²_UMa_A_h.Sigma²_UMa_A_h_I",
+  "designation": "Sigma² UMa A h I",
+  "alternative_names": [],
+  "kind": "moon",
+  "parent_id": "system_38.Sigma²_UMa_A.Sigma²_UMa_A_h",
+  "host_star": "sigma2_uma_a",
+  "origin": "generated",
+  "formation_origin": "regular",
+  "seed": "0x6697997d7c155e7f",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 0.0025935241450556505,
+    "eccentricity": 0.005374200181976263,
+    "inclination_deg": 0.16619524237919966,
+    "longitude_ascending_node_deg": 233.34658504504333,
+    "argument_of_periapsis_deg": 278.5024890727486,
+    "mean_anomaly_at_epoch_deg": 142.65050399065717,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 0.5406816235441205,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 5.0287049212893725e+23,
+    "mass_earth": 0.084201884084414,
+    "radius_km": 3388.356686721735,
+    "density_kg_m3": 3086.030248327962,
+    "mu_m3s2": 33563085256161.656,
+    "surface_gravity_ms2": 2.92336897143012,
+    "escape_velocity_kms": 4.450936261529721,
+    "hill_radius_km": 8474.124657872522,
+    "sphere_of_influence_km": 6160.380167602634,
+    "body_class": "rocky"
+  },
+  "bulk_composition": {
+    "iron_core": 0.2750997063191134,
+    "silicate_mantle": 0.6748002936808866,
+    "water_ice": 0.05,
+    "other_volatiles": 0.0001,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.05,
+    "formation_distance_au": 5.66149233059289
+  },
+  "thermal": {
+    "instellation_earth": 0.20286808630936665,
+    "bond_albedo": 0.12,
+    "equilibrium_temperature_k": 181.0944802472915,
+    "mean_surface_temperature_k": 428.8805942200819,
+    "min_surface_temperature_k": 64.33208913301227,
+    "max_surface_temperature_k": 767.6701709392541,
+    "temperature_regime": "hot",
+    "habitable_zone_position": 2.4325853327383333,
+    "radiogenic_heat_flux_wm2": 0.01467577409218506,
+    "tidal_heat_flux_wm2": 1857.3125803810779
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 254.72440437386817,
+    "composition": {
+      "CO2": 0.9528585757271815,
+      "N2": 0.03009027081243731,
+      "Ar": 0.0160481444332999,
+      "CO": 0.0010030090270812437
+    },
+    "mean_molecular_weight": 43.447472417251745,
+    "scale_height_km": 27.872360171263967,
+    "greenhouse_warming_k": 247.7861139727904,
+    "cloud_potential": 0.2,
+    "origin": "outgassed",
+    "retention_index": 1.1336093982876623,
+    "outer_radius_km": 3722.825008776903
+  },
+  "geophysics": {
+    "tectonic_regime": "stagnant_lid",
+    "volcanism": "extreme",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "none"
+  },
+  "spin": {
+    "rotation_period_hours": 12.976358965058893,
+    "obliquity_deg": 0.09492670924349342,
+    "rotation_direction": 1,
+    "axis_node_deg": 151.33432175063928,
+    "tidal_lock": "synchronous"
+  },
+  "surface_generation": {
+    "terrain_profile": "volcanic_plains",
+    "relief_amplitude_km": 8.90226843784992,
+    "roughness": 0.3764723771005658,
+    "crater_density": 0.034911072977298084,
+    "resurfacing_rate": 0.95,
+    "erosion_potential": 0.0032771979602775657,
+    "glaciation_potential": 0.0,
+    "cave_tectonic_propensity": 0.1869822145954596,
+    "lava_tube_propensity": 0.6711434715133424,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0843695972803701,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 0.0,
+    "surface_materials": {
+      "basalt": 0.45,
+      "regolith": 0.35,
+      "anorthosite": 0.15,
+      "sulfate": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_volcanic",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

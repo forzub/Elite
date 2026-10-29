@@ -1,0 +1,38 @@
+{
+  "schema": "elite.star.v2",
+  "key": "trappist_1",
+  "name": "TRAPPIST-1",
+  "alternative_names": [
+    "2MASS J23062928-0502285",
+    "ТРАППИСТ-1 A"
+  ],
+  "spectral_type": "M8.0 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.0898,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "radius_solar": {
+    "value": 0.1192,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "teff_k": {
+    "value": 2566.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "luminosity_solar": {
+    "value": 0.0005530061994883787,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "metallicity_feh": {
+    "value": 0.052,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "age_gyr": {
+    "value": 7.6,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host TRAPPIST-1)"
+  },
+  "extra": {
+    "legacy_type_label": "M8V — Ультра-холодный красный карлик"
+  }
+}

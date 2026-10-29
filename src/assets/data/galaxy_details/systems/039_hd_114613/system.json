@@ -1,0 +1,60 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 39,
+  "name": "HD 114613",
+  "slug": "hd_114613",
+  "alternative_names": [
+    "HD 114613",
+    "Аш Ди 114613",
+    "Система 114613"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -50.6556,
+    "y": -16.4722,
+    "z": -41.3223
+  },
+  "position_source": "hyg hd=114613 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -49.710191,
+    "y": -16.162532,
+    "z": -40.55021
+  },
+  "stellar_hierarchy": {
+    "star": "hd_114613"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "observational_reference": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%20114613",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "13h12m02.68s",
+    "dec_dms": "-37d48m10.16s",
+    "distance_pc": 20.2836,
+    "planet_status": {
+      "name": "HD 114613 b",
+      "status": "false_positive",
+      "reason": "Planet signal refuted by Laliotis et al. 2023",
+      "reported_orbital_period_days": 4000.0,
+      "reported_semi_major_axis_au": 5.34,
+      "reported_minimum_mass_earth": 113.0
+    },
+    "gameplay_note": "Bodies in details are procedural future-gameplay bodies for year 3026 and must not be interpreted as NASA-confirmed 2026 planets."
+  },
+  "lore": {
+    "stellar_description": "Стабильный жёлтый субгигант G4 IV"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "elite.generated_body.v1",
+  "id": "system_43.barycenter_ab.Theta_Draconis__BA__K1",
+  "designation": "Theta Draconis (BA) K1",
+  "alternative_names": [],
+  "kind": "dwarf_planet",
+  "parent_id": "system_43.barycenter_ab",
+  "host_star": "theta_draconis_a",
+  "origin": "generated",
+  "formation_origin": "reservoir_largest_member",
+  "seed": "0x55bf4c49edc47f67",
+  "generator_versions": {
+    "stellar_system": 1,
+    "celestial_body": 1,
+    "satellites": 1,
+    "interstellar": 1,
+    "planet_surface": 0
+  },
+  "orbit": {
+    "semi_major_axis_au": 32.36921131543188,
+    "eccentricity": 0.3982187447219391,
+    "inclination_deg": 5.565528454761665,
+    "longitude_ascending_node_deg": 212.02115648251177,
+    "argument_of_periapsis_deg": 105.94237218904755,
+    "mean_anomaly_at_epoch_deg": 290.08729247753354,
+    "epoch_universe_seconds": 0.0,
+    "period_days": 49724.572590475786,
+    "direction": 1
+  },
+  "physical": {
+    "mass_kg": 2.6941014704426944e+21,
+    "mass_earth": 0.0004511070410305573,
+    "radius_km": 742.6199486615209,
+    "density_kg_m3": 1570.455033033109,
+    "mu_m3s2": 179812414441.75674,
+    "surface_gravity_ms2": 0.32605168578740623,
+    "escape_velocity_kms": 0.695891494646178,
+    "hill_radius_km": 1827853.6366487432,
+    "sphere_of_influence_km": 1078550.0651877315,
+    "body_class": "dwarf_icy"
+  },
+  "bulk_composition": {
+    "iron_core": 0.1201369649436361,
+    "silicate_mantle": 0.4066370710071924,
+    "water_ice": 0.37858077123933725,
+    "other_volatiles": 0.09464519280983431,
+    "hydrogen_helium_envelope": 0.0,
+    "water_mass_fraction": 0.37858077123933725,
+    "formation_distance_au": 32.36921131543188
+  },
+  "thermal": {
+    "instellation_earth": 0.002455505319706513,
+    "bond_albedo": 0.55,
+    "equilibrium_temperature_k": 50.79482405847617,
+    "mean_surface_temperature_k": 50.820646699062536,
+    "min_surface_temperature_k": 21.09056838011095,
+    "max_surface_temperature_k": 73.68993771364067,
+    "temperature_regime": "cryogenic",
+    "habitable_zone_position": 22.67401981034363,
+    "radiogenic_heat_flux_wm2": 0.0007681780969140571,
+    "tidal_heat_flux_wm2": 0.0
+  },
+  "atmosphere": {
+    "surface_pressure_pa": 0.0,
+    "composition": {},
+    "mean_molecular_weight": 0.0,
+    "scale_height_km": 0.0,
+    "greenhouse_warming_k": 0.02582264058636241,
+    "cloud_potential": 0.0,
+    "origin": "none",
+    "retention_index": 2.76818627430248,
+    "outer_radius_km": 0.0
+  },
+  "geophysics": {
+    "tectonic_regime": "none",
+    "volcanism": "none",
+    "magnetic_field_earth": 0.0,
+    "hydrosphere": "ice_shell"
+  },
+  "spin": {
+    "rotation_period_hours": 23.95845338081342,
+    "obliquity_deg": 36.788204531066604,
+    "rotation_direction": 1,
+    "axis_node_deg": 54.108206392165634,
+    "tidal_lock": "none"
+  },
+  "surface_generation": {
+    "terrain_profile": "cratered_ice",
+    "relief_amplitude_km": 30.0,
+    "roughness": 0.7887500000000001,
+    "crater_density": 0.8574999999999999,
+    "resurfacing_rate": 0.02,
+    "erosion_potential": 0.0,
+    "glaciation_potential": 0.9,
+    "cave_tectonic_propensity": 0.3515,
+    "lava_tube_propensity": 0.654,
+    "karst_propensity": 0.0,
+    "weather_potential": 0.0,
+    "ocean_coverage": 0.0,
+    "ice_coverage": 1.0,
+    "surface_materials": {
+      "water_ice": 0.7,
+      "silicate_dust": 0.15,
+      "nitrogen_ice": 0.1,
+      "tholins": 0.05
+    }
+  },
+  "rings": [],
+  "environment_preset_id": "airless_icy",
+  "provenance": {
+    "atmosphere": "generated",
+    "composition": "generated",
+    "mean_surface_temperature_k": "derived",
+    "mu_m3s2": "derived",
+    "obliquity_deg": "generated",
+    "orbit": "generated",
+    "radius_km": "derived",
+    "rotation_period_hours": "generated"
+  }
+}

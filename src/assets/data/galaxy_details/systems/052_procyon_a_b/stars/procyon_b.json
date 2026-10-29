@@ -1,0 +1,35 @@
+{
+  "schema": "elite.star.v2",
+  "key": "procyon_b",
+  "name": "Procyon B",
+  "alternative_names": [
+    "Procyon B",
+    "α CMi B",
+    "Белый карлик"
+  ],
+  "spectral_type": "DQZ",
+  "stage_hint": "white_dwarf",
+  "mass_solar": {
+    "value": 0.592,
+    "source": "literature compilation 2026-10-29: Bond et al. 2015"
+  },
+  "radius_solar": {
+    "value": 0.01234,
+    "source": "literature compilation 2026-10-29: Provencal 2002"
+  },
+  "teff_k": {
+    "value": 7740,
+    "source": "literature compilation 2026-10-29: Provencal 2002"
+  },
+  "luminosity_solar": {
+    "value": 0.00049,
+    "source": "literature compilation 2026-10-29: Provencal 2002"
+  },
+  "age_gyr": {
+    "value": 1.87,
+    "source": "literature compilation 2026-10-29: Liebert et al. 2013"
+  },
+  "extra": {
+    "legacy_type_label": "DQZ — Белый карлик"
+  }
+}

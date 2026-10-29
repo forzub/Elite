@@ -1,0 +1,288 @@
+{
+  "schema": "elite.generated_system.v1",
+  "system_id": 5,
+  "name": "Sirius A+B",
+  "generation": {
+    "generator": "world::generation::generateStellarSystem",
+    "universe_seed": "0x454c495445303031",
+    "system_seed": "0x1e6fbc551ac83814",
+    "versions": {
+      "stellar_system": 1,
+      "celestial_body": 1,
+      "satellites": 1,
+      "interstellar": 1,
+      "planet_surface": 0
+    }
+  },
+  "galactic_context": {
+    "population": "thin_disk",
+    "heliocentric_galactic_kpc": [
+      -0.0017692284834583173,
+      -0.0019126037789880446,
+      -0.0004075469897351942
+    ],
+    "galactocentric_radius_kpc": 8.18176945203249,
+    "height_above_plane_kpc": 0.020392453010264804,
+    "population_metallicity_mean_feh": -0.05010616712194946,
+    "population_metallicity_sigma_dex": 0.22,
+    "alpha_enhancement": 0.05,
+    "local_stellar_density_per_pc3": 0.10558991910751908,
+    "formation_environment_density": 0.13626136375693204,
+    "interstellar_density_per_cm3": 0.05
+  },
+  "stars": [
+    {
+      "key": "sirius_a",
+      "id": "system_5.Sirius_A",
+      "name": "Sirius A",
+      "alternative_names": [
+        "Alpha CMa A",
+        "Сириус A",
+        "Песья звезда A"
+      ],
+      "spectral_type": "A1V",
+      "stage": "main_sequence",
+      "seed": "0x8af9cabe4d066dd3",
+      "mass_solar": 2.063,
+      "initial_mass_solar": 2.063,
+      "radius_solar": 1.711,
+      "teff_k": 9940.0,
+      "luminosity_solar": 25.4,
+      "metallicity_feh": 0.0,
+      "age_gyr": 0.242,
+      "main_sequence_lifetime_gyr": 1.6358818353179836,
+      "rotation_period_days": 1.331416770207854,
+      "mu_m3s2": 2.7378576372e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 6.542161635832522,
+        "eccentricity": 0.5914,
+        "inclination_deg": 136.3,
+        "longitude_ascending_node_deg": 273.3477561669939,
+        "argument_of_periapsis_deg": 271.35948094064287,
+        "mean_anomaly_at_epoch_deg": 161.19685219210376,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18333.363983534913,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        2.165315579022098
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "literature",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Bond et al. 2017",
+        "luminosity_solar": "literature compilation 2026-10-29: Liebert et al. 2005",
+        "mass_solar": "literature compilation 2026-10-29: Bond et al. 2017",
+        "metallicity_feh": "literature compilation 2026-10-29: bulk (surface Am overabundance not bulk)",
+        "radius_solar": "literature compilation 2026-10-29: Davis et al. 2011",
+        "teff_k": "literature compilation 2026-10-29: Adelman 2004"
+      },
+      "extra": {
+        "legacy_type_label": "A1V — Белый карлик (главная последовательность)"
+      }
+    },
+    {
+      "key": "sirius_b",
+      "id": "system_5.Sirius_B",
+      "name": "Sirius B",
+      "alternative_names": [
+        "Alpha CMa B",
+        "Сириус B",
+        "Щенок"
+      ],
+      "spectral_type": "DA2",
+      "stage": "white_dwarf",
+      "seed": "0xac8ada9fd0d40b48",
+      "mass_solar": 1.018,
+      "initial_mass_solar": 5.724770642201835,
+      "radius_solar": 0.0084,
+      "teff_k": 25000.0,
+      "luminosity_solar": 0.026,
+      "metallicity_feh": 0.0,
+      "age_gyr": 0.242,
+      "main_sequence_lifetime_gyr": 0.12752777150753813,
+      "rotation_period_days": 0.10913516937769514,
+      "mu_m3s2": 1.3510126391999999e+20,
+      "parent_node": "ab",
+      "orbit": {
+        "semi_major_axis_au": 13.257838364167478,
+        "eccentricity": 0.5914,
+        "inclination_deg": 136.3,
+        "longitude_ascending_node_deg": 273.3477561669939,
+        "argument_of_periapsis_deg": 91.35948094064287,
+        "mean_anomaly_at_epoch_deg": 161.19685219210376,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18333.363983534913,
+        "direction": -1
+      },
+      "stable_zone_au": [
+        0.0,
+        1.4756767985939003
+      ],
+      "provenance": {
+        "age_gyr": "literature",
+        "initial_mass_solar": "derived",
+        "luminosity_solar": "literature",
+        "mass_solar": "literature",
+        "metallicity_feh": "derived",
+        "mu_m3s2": "derived",
+        "radius_solar": "literature",
+        "rotation_period_days": "generated",
+        "teff_k": "literature"
+      },
+      "sources": {
+        "age_gyr": "literature compilation 2026-10-29: Bond et al. 2017",
+        "luminosity_solar": "legacy catalog, unverified",
+        "mass_solar": "literature compilation 2026-10-29: Bond et al. 2017",
+        "radius_solar": "literature compilation 2026-10-29: Barstow et al. 2005",
+        "teff_k": "literature compilation 2026-10-29: Barstow et al. 2005"
+      },
+      "extra": {
+        "legacy_type_label": "DA2 — Белый карлик (компактный)"
+      }
+    }
+  ],
+  "barycenters": [
+    {
+      "id": "ab",
+      "body_id": "system_5.barycenter_ab",
+      "parent_node": "",
+      "children": [
+        "sirius_a",
+        "sirius_b"
+      ],
+      "mass_solar": 3.0810000000000004,
+      "relative_orbit": {
+        "semi_major_axis_au": 19.8,
+        "eccentricity": 0.5914,
+        "inclination_deg": 136.3,
+        "longitude_ascending_node_deg": 273.3477561669939,
+        "argument_of_periapsis_deg": 91.35948094064287,
+        "mean_anomaly_at_epoch_deg": 161.19685219210376,
+        "epoch_universe_seconds": 0.0,
+        "period_days": 18333.363983534913,
+        "direction": -1
+      },
+      "circumbinary_inner_au": 78.94142691072808,
+      "provenance": {
+        "eccentricity": "literature",
+        "inclination_deg": "literature",
+        "orientation": "generated",
+        "period_days": "derived",
+        "semi_major_axis_au": "literature"
+      }
+    }
+  ],
+  "protoplanetary_disks": [
+    {
+      "host_node": "sirius_a",
+      "gas_mass_solar": 0.006395124943695082,
+      "solid_mass_earth": 19.347062292470536,
+      "dust_to_gas": 0.0134,
+      "inner_edge_au": 0.12122238715727174,
+      "characteristic_radius_au": 32.312560854862014,
+      "outer_truncation_au": 2.165315579022098,
+      "lifetime_myr": 3.164401965791397,
+      "snow_line_au": 11.491116300000003,
+      "turbulence_alpha": 0.0003954976887461661,
+      "migration_regime": "weak"
+    },
+    {
+      "host_node": "sirius_b",
+      "gas_mass_solar": 0.2749520789576225,
+      "solid_mass_earth": 550.7100832764194,
+      "dust_to_gas": 0.0134,
+      "inner_edge_au": 0.723245672323622,
+      "characteristic_radius_au": 117.85164645202966,
+      "outer_truncation_au": 1.4756767985939003,
+      "lifetime_myr": 3.512080870083377,
+      "snow_line_au": 88.48709704570324,
+      "turbulence_alpha": 0.0010449412749535206,
+      "migration_regime": "strong"
+    },
+    {
+      "host_node": "ab",
+      "gas_mass_solar": 0.22187149190960312,
+      "solid_mass_earth": 1054.2681675173128,
+      "dust_to_gas": 0.0134,
+      "inner_edge_au": 78.94142691072808,
+      "characteristic_radius_au": 144.0127951715934,
+      "outer_truncation_au": 677.2572191815201,
+      "lifetime_myr": 2.635411848524523,
+      "snow_line_au": 89.23010757247705,
+      "turbulence_alpha": 0.00012398109890474933,
+      "migration_regime": "moderate"
+    }
+  ],
+  "architecture_mode": "sirius_a:binary_truncated; sirius_b:binary_truncated; ab:circumbinary",
+  "stability_passed": true,
+  "stability": [
+    {
+      "check": "architecture_sirius_a",
+      "passed": true,
+      "detail": "planets=6 attempts=2 rv_limit=1.5m/s"
+    },
+    {
+      "check": "architecture_sirius_b",
+      "passed": true,
+      "detail": "planets=0 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "ejection_sirius_b",
+      "passed": true,
+      "detail": "ejected planet from sirius_b: 3506.98 M_earth (rogue population)"
+    },
+    {
+      "check": "architecture_ab",
+      "passed": true,
+      "detail": "planets=1 attempts=1 rv_limit=1.5m/s"
+    },
+    {
+      "check": "validate_hierarchy_acyclic_parents_valid",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_finite_values",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_sane_densities",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_normalised_compositions",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_moon_hill_roche",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_ring_bounds",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "validate_non_crossing_orbits",
+      "passed": true,
+      "detail": "ok"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "elite.star.v2",
+  "key": "p_eridani_a",
+  "name": "p Eridani A",
+  "alternative_names": [
+    "HD 10361",
+    "Gl 66 A"
+  ],
+  "spectral_type": "K2V",
+  "stage_hint": "main_sequence",
+  "extra": {
+    "legacy_type_label": "K2V"
+  },
+  "mass_solar": {
+    "value": 0.82,
+    "source": "literature compilation 2026-10-29: Mamajek 2013 K2V"
+  },
+  "teff_k": {
+    "value": 5040,
+    "source": "literature compilation 2026-10-29: K2V"
+  },
+  "luminosity_solar": {
+    "value": 0.3,
+    "source": "literature compilation 2026-10-29: K2V"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "ross_128",
+  "name": "Ross 128",
+  "alternative_names": [
+    "FI Virginis",
+    "GJ 447",
+    "Росс 128 A"
+  ],
+  "spectral_type": "M4",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.168,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "radius_solar": {
+    "value": 0.1967,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "teff_k": {
+    "value": 3192.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "luminosity_solar": {
+    "value": 0.0036200119151374747,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "metallicity_feh": {
+    "value": -0.02,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "age_gyr": {
+    "value": 5.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host Ross 128)"
+  },
+  "extra": {
+    "legacy_type_label": "M4V — Красный карлик"
+  }
+}

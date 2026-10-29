@@ -1590,6 +1590,8 @@ public:
                 const double phase = state.liveTunnelRollPhaseRad * weight;
                 request.terminalUpMap = phase == 0.0 ? up0
                     : RouteFrameField::rotateUpAroundForward(axis, up0, phase);
+                request.terminalRollRateRadPerSec =
+                    state.liveTunnelRollRateRadPerSec * weight;
             }
             request.terminalPositionToleranceMeters = tolerance.positionMeters;
             request.terminalSpeedToleranceMps = tolerance.linearVelocityMps;

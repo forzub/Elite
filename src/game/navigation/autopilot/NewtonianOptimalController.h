@@ -660,6 +660,18 @@ private:
                 finiteOrZero(request.yawRateRadPerSec) +
             finiteOrZero(request.rollRateRadPerSec) *
                 finiteOrZero(request.rollRateRadPerSec));
+        // A spinning dock: the hull follows the frame in roll, so the
+        // terminal "rest" is judged on pitch/yaw alone and the roll keeps
+        // tracking the live frame after DONE (hull bottom = dock bottom).
+        const bool rotatingFrame =
+            std::abs(finiteOrZero(request.terminalRollRateRadPerSec)) > 1.0e-4;
+        const double restRate = rotatingFrame
+            ? std::sqrt(
+                finiteOrZero(request.pitchRateRadPerSec) *
+                    finiteOrZero(request.pitchRateRadPerSec) +
+                finiteOrZero(request.yawRateRadPerSec) *
+                    finiteOrZero(request.yawRateRadPerSec))
+            : rate;
         const double attitudeError = angleBetween(forward, targetForward);
         HullPoseGuidance::Request poseRequest;
         poseRequest.currentForward = forward;
@@ -691,8 +703,8 @@ private:
         const bool lostAlign =
             attitudeError > h * tolAttitude || rollError > h * tolRoll;
         term.settledSeconds =
-            still && aligned && rate <= tolRate ? term.settledSeconds + dt
-                                                : 0.0;
+            still && aligned && restRate <= tolRate ? term.settledSeconds + dt
+                                                    : 0.0;
         switch (term.step)
         {
             case TerminalStep::PositionHold:
@@ -702,7 +714,7 @@ private:
             case TerminalStep::AttitudeAlign:
                 if (lostPlace)
                     term.step = TerminalStep::PositionHold;
-                else if (aligned && rate <= TerminalSettleEntryShare * tolRate)
+                else if (aligned && restRate <= TerminalSettleEntryShare * tolRate)
                     term.step = TerminalStep::RateSettle;
                 break;
             case TerminalStep::RateSettle:
@@ -712,7 +724,7 @@ private:
                 // of waiting forever.
                 if (lostPlace)
                     term.step = TerminalStep::PositionHold;
-                else if (lostAlign || (!aligned && rate <= tolRate))
+                else if (lostAlign || (!aligned && restRate <= tolRate))
                     term.step = TerminalStep::AttitudeAlign;
                 else if (term.settledSeconds >= TerminalDoneDwellSeconds)
                     term.step = TerminalStep::Done;
@@ -724,7 +736,7 @@ private:
                     term.step = TerminalStep::RateSettle;
                 else if (lostAlign)
                     term.step = TerminalStep::AttitudeAlign;
-                else if (rate > h * tolRate)
+                else if (restRate > h * tolRate)
                     term.step = TerminalStep::RateSettle;
                 break;
         }
@@ -739,14 +751,14 @@ private:
         // Attitude: calm preferred rate; nothing once DONE.
         // RATE_SETTLE is already inside the attitude tolerance: it only
         // damps the turn rate and corrects no angle.
-        if (term.step != TerminalStep::Done)
+        if (term.step != TerminalStep::Done || rotatingFrame)
         {
             const bool toTarget = term.step != TerminalStep::PositionHold;
             applyCalmPose(
                 out, request, params,
                 toTarget ? targetForward : term.holdForwardMap,
                 toTarget ? targetUp : term.holdUpMap,
-                term.step == TerminalStep::RateSettle
+                term.step == TerminalStep::RateSettle && !rotatingFrame
                     ? std::numeric_limits<double>::infinity()
                     : TerminalDeadbandShare * tolAttitude);
         }

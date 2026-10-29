@@ -79,6 +79,9 @@ struct AutopilotControlRequest
     glm::dvec3 terminalPositionMapMeters {0.0};
     glm::dvec3 terminalForwardMap {0.0, 0.0, -1.0};
     glm::dvec3 terminalUpMap {0.0, 1.0, 0.0};
+    // The terminal frame rotates about its forward axis (a spinning dock):
+    // the hull follows it in roll; 0 = a fixed terminal frame.
+    double terminalRollRateRadPerSec = 0.0;
     double terminalPositionToleranceMeters = 0.0;
     double terminalSpeedToleranceMps = 0.0;
     double terminalAttitudeToleranceRad = 0.0;

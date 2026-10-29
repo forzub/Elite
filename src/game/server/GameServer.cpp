@@ -569,7 +569,8 @@ void GameServer::applyCelestialOrbitParentParameters(int systemId)
             systemId,
             body.id,
             radiusMeters,
-            body.gravitationalParameterM3s2
+            body.gravitationalParameterM3s2,
+            body.atmosphereOuterRadiusKm * 1000.0
         );
 
         m_simulation.updateStaticObjectOrbitParentParameters(

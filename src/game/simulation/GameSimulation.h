@@ -247,7 +247,8 @@ public:
         int systemId,
         const std::string& bodyId,
         double radiusMeters,
-        double gravitationalParameterM3s2
+        double gravitationalParameterM3s2,
+        double atmosphereOuterRadiusMeters
     );
     void setOrbitalUniverseTimeSeconds(double t);
 
@@ -682,6 +683,8 @@ private:
     {
         double radiusMeters = 0.0;
         double gravitationalParameterM3s2 = 0.0;
+        // Catalog atmosphere outer radius; equals radiusMeters for airless bodies.
+        double atmosphereOuterRadiusMeters = 0.0;
     };
 
     std::unordered_map<std::string, CelestialBodyGravityParameters>

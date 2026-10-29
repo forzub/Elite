@@ -247,6 +247,7 @@ void testGravityFieldUsesGeneratedBodies()
         g.centerMeters = s->positionAu * MetersPerAu;
         g.radiusMeters = def.radiusKm * 1000.0;
         g.gravitationalParameterM3s2 = def.gravitationalParameterM3s2;
+        g.atmosphereRadiusMeters = std::max(g.radiusMeters, def.atmosphereOuterRadiusKm * 1000.0);
         bodies.push_back(g);
     }
     const auto* earth = findBody(runtime.snapshot(), "system_0.Sol.Земля");
@@ -254,6 +255,10 @@ void testGravityFieldUsesGeneratedBodies()
     const auto sample = game::navigation::GravityFieldSystem::sample(probe, bodies);
     REQUIRE(sample.primaryBodyId == "system_0.Sol.Земля");
     requireNear(sample.primaryAccelerationMps2, 3.986004e14 / (7.0e6 * 7.0e6), 0.05, "Earth gravity at 7000 km");
+    // The catalog atmosphere outer radius (~100 km above Earth) reaches the field.
+    REQUIRE(!sample.insideAtmosphere);
+    const glm::dvec3 low = earth->positionAu * MetersPerAu + glm::dvec3(6371.0e3 + 50.0e3, 0.0, 0.0);
+    REQUIRE(game::navigation::GravityFieldSystem::sample(low, bodies).insideAtmosphere);
 }
 
 void testNavigationDomainIsConnectedAndSparse()

@@ -9086,7 +9086,8 @@ void GameSimulation::setCelestialBodyGravityParameters(
     int systemId,
     const std::string& bodyId,
     double radiusMeters,
-    double gravitationalParameterM3s2
+    double gravitationalParameterM3s2,
+    double atmosphereOuterRadiusMeters
 )
 {
     if (systemId < 0 ||
@@ -9101,6 +9102,8 @@ void GameSimulation::setCelestialBodyGravityParameters(
         std::max(0.0, radiusMeters);
     parameters.gravitationalParameterM3s2 =
         std::max(0.0, gravitationalParameterM3s2);
+    parameters.atmosphereOuterRadiusMeters =
+        std::max(parameters.radiusMeters, atmosphereOuterRadiusMeters);
 
     m_celestialBodyGravityParameters[bodyId] =
         parameters;
@@ -11126,9 +11129,10 @@ void GameSimulation::rebuildNavigationGravityContext()
         body.gravitationalParameterM3s2 =
             parameters.gravitationalParameterM3s2;
 
-        // Atmosphere policy belongs to environment/gameplay data, not to a
-        // hard-coded Earth special case in the gravity resolver.
-        body.atmosphereRadiusMeters = body.radiusMeters;
+        // Catalog atmosphere outer radius (generated body physics / observed
+        // data); airless bodies carry their physical radius.
+        body.atmosphereRadiusMeters =
+            std::max(body.radiusMeters, parameters.atmosphereOuterRadiusMeters);
         body.influenceRadiusMeters = 0.0;
 
         m_gravityBodies.push_back(std::move(body));

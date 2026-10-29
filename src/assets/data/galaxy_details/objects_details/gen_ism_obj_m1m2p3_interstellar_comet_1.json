@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m2p3_interstellar_comet_1",
+  "name": "Wanderer C-110",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -1.7108414885839913,
+    "y": -35.827202097025435,
+    "z": 88.80693139878029
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 5.335640325147556,
+    "velocity_lsr_kms": [
+      -14.193977999456953,
+      4.93385008711675,
+      -29.662259438794504
+    ],
+    "radius_km": 1.1647683377174207,
+    "mass_kg": 3971536235901.4917,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x7dae9ed564e28ed3",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

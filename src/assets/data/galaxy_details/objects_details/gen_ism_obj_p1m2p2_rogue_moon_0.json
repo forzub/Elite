@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p1m2p2_rogue_moon_0",
+  "name": "Drifter M-167",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": 38.51181255112178,
+    "y": -43.86730442628368,
+    "z": 52.96904184320428
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 3.9958704538153342,
+    "velocity_lsr_kms": [
+      -22.602553329981475,
+      -15.992912115365629,
+      10.324388288519067
+    ],
+    "mass_kg": 3.057224930253485e+23,
+    "mu_m3s2": 20404836351990.832,
+    "radius_km": 3316.9296650753004,
+    "teff_k": 18.653551470806413,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x79f37a21d711de2a",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

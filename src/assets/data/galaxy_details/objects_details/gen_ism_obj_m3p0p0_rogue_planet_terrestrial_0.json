@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3p0p0_rogue_planet_terrestrial_0",
+  "name": "Nomad T-47",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -59.17579346073877,
+    "y": 12.210269123817746,
+    "z": 9.74688022587537
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 6.487937318009647,
+    "velocity_lsr_kms": [
+      33.188373075521184,
+      -8.624819002838445,
+      27.551351029826826
+    ],
+    "mass_kg": 1.279822112901283e+25,
+    "mu_m3s2": 854191672813703.2,
+    "radius_km": 7835.4771070855695,
+    "teff_k": 39.69883378999385,
+    "body_class": "super_earth",
+    "atmosphere": "primordial_h2_greenhouse",
+    "hydrosphere": "possible_subsurface_ocean",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xefbeb4b548a9c7f6",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

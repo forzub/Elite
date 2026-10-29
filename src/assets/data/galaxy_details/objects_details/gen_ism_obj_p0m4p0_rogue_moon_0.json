@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0m4p0_rogue_moon_0",
+  "name": "Drifter M-141",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": 21.52392885033191,
+    "y": -92.89645796450267,
+    "z": 4.246341496030926
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 9.266224808419757,
+    "velocity_lsr_kms": [
+      9.980512686277006,
+      -23.14738496003296,
+      3.362870838807718
+    ],
+    "mass_kg": 8.79302496320393e+22,
+    "mu_m3s2": 5868728651191.199,
+    "radius_km": 2189.474544826698,
+    "teff_k": 12.90675679782332,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x9f3da84d0fe26a9c",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

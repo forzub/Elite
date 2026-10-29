@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2p3p1_interstellar_comet_0",
+  "name": "Wanderer C-222",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": 56.85266263549122,
+    "y": 87.05782276380206,
+    "z": 47.403293423597646
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 2.327452369606173,
+    "velocity_lsr_kms": [
+      -51.912244603842446,
+      9.149090217335354,
+      -9.190010785749651
+    ],
+    "radius_km": 39.73059886572482,
+    "mass_kg": 1.576214047049408e+17,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xeb7da5bec2453c83",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

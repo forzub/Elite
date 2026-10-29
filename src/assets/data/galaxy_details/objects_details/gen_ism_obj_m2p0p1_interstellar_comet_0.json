@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p0p1_interstellar_comet_0",
+  "name": "Wanderer C-80",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -27.481123215252367,
+    "y": 5.553217862201287,
+    "z": 39.843599452945156
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 0.999021824495378,
+    "velocity_lsr_kms": [
+      -64.30209685055385,
+      -16.735656289606034,
+      0.32720908792072745
+    ],
+    "radius_km": 4.1148020416258335,
+    "mass_kg": 175100223176766.1,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xe2704e5f04088e01",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

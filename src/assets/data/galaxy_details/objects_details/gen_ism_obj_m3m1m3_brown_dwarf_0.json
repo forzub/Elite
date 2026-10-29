@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m1m3_brown_dwarf_0",
+  "name": "Ember L-37",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": -57.00222829352167,
+    "y": -11.226976733957578,
+    "z": -57.446164160569
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 9.46140411503011,
+    "velocity_lsr_kms": [
+      -43.743026553957826,
+      -1.58941304842047,
+      -17.261329941926803
+    ],
+    "mass_kg": 1.2540115081221737e+29,
+    "mu_m3s2": 8.369649008659823e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1797.9344562094316,
+    "spectral_type": "L",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.0
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xc62d681e97ccac2c",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

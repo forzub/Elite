@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p4m1m1_rogue_planet_terrestrial_0",
+  "name": "Nomad T-245",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 102.18590071947966,
+    "y": -13.927395947158955,
+    "z": -20.118540922464277
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 4.768026538779848,
+    "velocity_lsr_kms": [
+      -34.871316168257614,
+      16.035340641164563,
+      -16.22313723439271
+    ],
+    "mass_kg": 4.498872353482791e+24,
+    "mu_m3s2": 300268237488501.9,
+    "radius_km": 5908.44289796669,
+    "teff_k": 35.111208206775494,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x62670727fa2ac60f",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

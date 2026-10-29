@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p3p2p0_brown_dwarf_0",
+  "name": "Ember T-238",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": 87.3662091020245,
+    "y": 67.66706546752873,
+    "z": 8.493220060519127
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 4.186663512954949,
+    "velocity_lsr_kms": [
+      -33.76252461666717,
+      -5.679166971803809,
+      4.041916842331412
+    ],
+    "mass_kg": 3.98542370270311e+28,
+    "mu_m3s2": 2.659991341895137e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1242.444517886531,
+    "spectral_type": "T",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.004
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x1a8021405d5e26c2",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

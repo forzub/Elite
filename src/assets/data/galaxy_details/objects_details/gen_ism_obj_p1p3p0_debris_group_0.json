@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p1p3p0_debris_group_0",
+  "name": "Shoal D-188",
+  "object_type": "debris_group",
+  "position_ly": {
+    "x": 36.695627554194196,
+    "y": 99.59882866136363,
+    "z": 19.21022306990214
+  },
+  "description": "Generated interstellar object (debris_group).",
+  "tags": [
+    "debris",
+    "resource"
+  ],
+  "properties": {
+    "age_gyr": 7.42731124146895,
+    "velocity_lsr_kms": [
+      39.31628854813664,
+      30.82567905236486,
+      -13.58810137849818
+    ],
+    "members_materialised": 0,
+    "estimated_members_above_100m": 4032.0,
+    "extent_au": 56.906924441126925,
+    "total_mass_kg": 7.152276518062092e+15,
+    "composition": {
+      "silicate": 0.5,
+      "metal": 0.2,
+      "water_ice": 0.2,
+      "organics": 0.1
+    },
+    "origin": "disrupted_planetary_system_ejecta",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xb6d723550acbb842",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

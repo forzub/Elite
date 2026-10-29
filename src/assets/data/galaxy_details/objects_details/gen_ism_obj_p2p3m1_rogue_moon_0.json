@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2p3m1_rogue_moon_0",
+  "name": "Drifter M-220",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": 51.29193108153088,
+    "y": 91.69994752315212,
+    "z": -11.032371647321625
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 7.808997613615736,
+    "velocity_lsr_kms": [
+      22.998236282973174,
+      1.6526275404468382,
+      1.2298967133565135
+    ],
+    "mass_kg": 6.325947148506612e+21,
+    "mu_m3s2": 422212690532.77686,
+    "radius_km": 910.616785422179,
+    "teff_k": 15.948463716255414,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x9cb7e6fabee88ebd",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0m5p1_rogue_planet_terrestrial_0",
+  "name": "Nomad T-138",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 7.506646034827416,
+    "y": -112.02987813755125,
+    "z": 26.803798006477166
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 4.467468683760224,
+    "velocity_lsr_kms": [
+      11.11822407934515,
+      0.5194506545977188,
+      -21.19686058863761
+    ],
+    "mass_kg": 2.3991384633555627e+24,
+    "mu_m3s2": 160125698459740.3,
+    "radius_km": 4985.973731398095,
+    "teff_k": 34.66390702545705,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x6bc3a48b176ec18e",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

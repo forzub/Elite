@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0m2p0_brown_dwarf_0",
+  "name": "Ember L-146",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": 16.237706902241698,
+    "y": -27.11005456056712,
+    "z": 23.991572171454735
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 6.147806707960843,
+    "velocity_lsr_kms": [
+      -15.75843712173455,
+      31.971454073222578,
+      0.1396178334428942
+    ],
+    "mass_kg": 1.0941043819938669e+29,
+    "mu_m3s2": 7.302380876741665e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1914.7216990693732,
+    "spectral_type": "L",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.0
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xc1efcb0623d6995e",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m5p0m1_debris_group_0",
+  "name": "Shoal D-3",
+  "object_type": "debris_group",
+  "position_ly": {
+    "x": -102.12523553300231,
+    "y": 5.440243524985345,
+    "z": -4.321843466734041
+  },
+  "description": "Generated interstellar object (debris_group).",
+  "tags": [
+    "debris",
+    "resource"
+  ],
+  "properties": {
+    "age_gyr": 7.498516432445432,
+    "velocity_lsr_kms": [
+      22.099306853976824,
+      -31.49003057334681,
+      31.6827126414274
+    ],
+    "members_materialised": 0,
+    "estimated_members_above_100m": 2130.0,
+    "extent_au": 119.79629837302184,
+    "total_mass_kg": 8.449851515580152e+15,
+    "composition": {
+      "silicate": 0.5,
+      "metal": 0.2,
+      "water_ice": 0.2,
+      "organics": 0.1
+    },
+    "origin": "disrupted_planetary_system_ejecta",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x12817b0318685d20",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

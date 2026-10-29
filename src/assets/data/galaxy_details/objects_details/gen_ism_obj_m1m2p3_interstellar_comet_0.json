@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m2p3_interstellar_comet_0",
+  "name": "Wanderer C-109",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -0.7869354674565443,
+    "y": -44.849952469037376,
+    "z": 97.94725392318001
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 5.183021769622722,
+    "velocity_lsr_kms": [
+      -30.426543980851346,
+      -25.374858307214883,
+      0.9983103535865714
+    ],
+    "radius_km": 0.8896853005553433,
+    "mass_kg": 1769901532237.8235,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x17492772ae72cc07",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

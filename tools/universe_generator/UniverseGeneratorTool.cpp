@@ -9,7 +9,11 @@
 //       synthetic systems for population statistics (<prefix>_systems.tsv,
 //       <prefix>_planets.tsv); not catalog data, never committed
 //   EliteUniverseGenerator determinism <galaxy_details_root>
-//       generate every system twice, in forward and reverse order, compare bytes
+//       generate every system twice, in forward and reverse order, compare bytes;
+//       the interstellar objects on disk must equal a fresh generation
+//   EliteUniverseGenerator interstellar <galaxy_details_root>
+//       replace objects_details/gen_*.json (rogue bodies, remnants, comets,
+//       debris groups, interstellar medium regions)
 
 #include <algorithm>
 #include <chrono>
@@ -25,6 +29,7 @@
 #include "src/world/generation/AstroUnits.h"
 #include "src/world/generation/DescriptorJson.h"
 #include "src/world/generation/GenerationRandom.h"
+#include "src/world/generation/InterstellarGenerator.h"
 #include "src/world/generation/StellarSystemGenerator.h"
 
 namespace fs = std::filesystem;
@@ -55,6 +60,58 @@ std::string fullDump(const SystemDescriptor& sd)
     for (const auto& b : sd.bodies) s += dumpJson(bodyJson(b, sd));
     for (const auto& r : sd.reservoirs) s += dumpJson(reservoirJson(r, sd));
     return s;
+}
+
+std::vector<InterstellarObject> interstellarContent(const fs::path& root)
+{
+    std::vector<glm::dvec3> positions;
+    for (const auto& dir : systemDirectories(root))
+    {
+        SystemInput in;
+        std::string error;
+        if (readSystemInput(dir, in, error))
+            positions.push_back(in.positionLy);
+    }
+    auto objects = generateInterstellarObjects(DefaultUniverseSeed, positions);
+    const auto medium = generateInterstellarMedium(DefaultUniverseSeed);
+    objects.insert(objects.end(), medium.begin(), medium.end());
+    return objects;
+}
+
+std::string objectFileText(const InterstellarObject& o)
+{
+    nlohmann::ordered_json j;
+    j["schema_version"] = 1;
+    j["kind"] = "galaxy_object";
+    j["id"] = o.id;
+    j["name"] = o.name;
+    j["object_type"] = o.objectType;
+    j["position_ly"] = {{"x", o.positionLy.x}, {"y", o.positionLy.y}, {"z", o.positionLy.z}};
+    j["description"] = o.description;
+    j["tags"] = o.tags;
+    j["properties"] = o.properties;
+    return dumpJson(j);
+}
+
+int interstellar(const fs::path& root)
+{
+    const fs::path dir = root / "objects_details";
+    fs::create_directories(dir);
+    for (const auto& e : fs::directory_iterator(dir))
+        if (e.path().filename().string().rfind("gen_", 0) == 0)
+            fs::remove(e.path());
+    const auto objects = interstellarContent(root);
+    std::map<std::string, int> counts;
+    for (const auto& o : objects)
+    {
+        std::ofstream f(dir / ("gen_" + o.id + ".json"), std::ios::binary);
+        f << objectFileText(o);
+        ++counts[o.objectType];
+    }
+    std::cout << "[universe] interstellar objects: " << objects.size();
+    for (const auto& [type, n] : counts) std::cout << " " << type << "=" << n;
+    std::cout << "\n";
+    return 0;
 }
 
 int materialize(const fs::path& root)
@@ -280,6 +337,16 @@ int determinism(const fs::path& root)
             ++stale;
         }
     }
+    for (const auto& o : interstellarContent(root))
+    {
+        std::ifstream f(root / "objects_details" / ("gen_" + o.id + ".json"), std::ios::binary);
+        const std::string onDisk((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        if (onDisk != objectFileText(o))
+        {
+            std::cerr << "[universe] STALE interstellar object: " << o.id << "\n";
+            ++stale;
+        }
+    }
     std::cout << "[universe] determinism: " << inputs.size() << " systems, " << diff << " differ, " << stale
               << " stale\n";
     return diff == 0 && stale == 0 ? 0 : 1;
@@ -298,6 +365,7 @@ int main(int argc, char** argv)
     if (cmd == "materialize") return materialize(argv[2]);
     if (cmd == "dry-run" && argc >= 4) return dryRun(argv[2], argv[3]);
     if (cmd == "determinism") return determinism(argv[2]);
+    if (cmd == "interstellar") return interstellar(argv[2]);
     if (cmd == "bulk" && argc >= 4)
     {
         const std::uint64_t seed = argc >= 5 ? std::stoull(argv[4], nullptr, 16) : DefaultUniverseSeed;

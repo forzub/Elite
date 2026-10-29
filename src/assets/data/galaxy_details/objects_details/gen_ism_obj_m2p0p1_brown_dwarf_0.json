@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p0p1_brown_dwarf_0",
+  "name": "Ember T-79",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": -38.92617331843414,
+    "y": 16.122937493247587,
+    "z": 27.105401201849038
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 9.600199574610592,
+    "velocity_lsr_kms": [
+      22.137968862224376,
+      -30.79351493730729,
+      3.6905834442134777
+    ],
+    "mass_kg": 6.4220322416528915e+28,
+    "mu_m3s2": 4.2862569790463887e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1238.5227520215597,
+    "spectral_type": "T",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.004
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xd96f8dde91bae3b5",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

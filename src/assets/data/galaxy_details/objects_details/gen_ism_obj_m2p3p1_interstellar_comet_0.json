@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p3p1_interstellar_comet_0",
+  "name": "Wanderer C-95",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -46.656770814001376,
+    "y": 79.60869801637737,
+    "z": 35.26228926920915
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 2.5588012408860745,
+    "velocity_lsr_kms": [
+      -24.277493412010973,
+      4.409744043056458,
+      -6.22205332739782
+    ],
+    "radius_km": 9.716921593231469,
+    "mass_kg": 2.305822936181842e+15,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xca72ae90c05e9445",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

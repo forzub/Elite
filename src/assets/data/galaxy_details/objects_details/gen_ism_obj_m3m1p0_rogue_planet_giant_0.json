@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m1p0_rogue_planet_giant_0",
+  "name": "Nomad J-42",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -50.47432458222676,
+    "y": -5.611476371524994,
+    "z": 21.944304829558643
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 8.899712925088819,
+    "velocity_lsr_kms": [
+      20.0229958662035,
+      -8.970003517895824,
+      5.1611821294227
+    ],
+    "mass_kg": 1.4918659302281728e+28,
+    "mu_m3s2": 9.957160778121892e+17,
+    "radius_km": 65832.64327386662,
+    "teff_k": 258.42956441349855,
+    "body_class": "super_jupiter",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x3051bf07757f23e3",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

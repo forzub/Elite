@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m2m1_brown_dwarf_0",
+  "name": "Ember L-108",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": -24.718746822779764,
+    "y": -29.95186611376078,
+    "z": -2.0689426292451003
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 5.903721415196456,
+    "velocity_lsr_kms": [
+      13.349331864045512,
+      3.867948215338528,
+      -9.984490587520707
+    ],
+    "mass_kg": 8.371415166451101e+28,
+    "mu_m3s2": 5.587333624544458e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1674.144414990218,
+    "spectral_type": "L",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.0
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x982425f85a425ab9",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

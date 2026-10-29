@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0p1p2_interstellar_comet_0",
+  "name": "Wanderer C-155",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": 5.815321860199604,
+    "y": 41.618087709040296,
+    "z": 59.16645064713951
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 3.809740882648197,
+    "velocity_lsr_kms": [
+      -17.975670034544915,
+      -6.4799612060461245,
+      13.664191800423621
+    ],
+    "radius_km": 6.88333426156857,
+    "mass_kg": 819665091073444.5,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x592417ab15bbda59",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

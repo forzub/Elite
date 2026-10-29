@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m4p2_debris_group_0",
+  "name": "Shoal D-194",
+  "object_type": "debris_group",
+  "position_ly": {
+    "x": 54.85862821572713,
+    "y": -87.91021606812895,
+    "z": 52.83711462256135
+  },
+  "description": "Generated interstellar object (debris_group).",
+  "tags": [
+    "debris",
+    "resource"
+  ],
+  "properties": {
+    "age_gyr": 3.952582478012818,
+    "velocity_lsr_kms": [
+      -23.526673729855602,
+      42.8669468047076,
+      -8.600381446840396
+    ],
+    "members_materialised": 0,
+    "estimated_members_above_100m": 765.0,
+    "extent_au": 752.8501364993809,
+    "total_mass_kg": 8.021315030166062e+16,
+    "composition": {
+      "silicate": 0.5,
+      "metal": 0.2,
+      "water_ice": 0.2,
+      "organics": 0.1
+    },
+    "origin": "disrupted_planetary_system_ejecta",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xa67403c57620a54a",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

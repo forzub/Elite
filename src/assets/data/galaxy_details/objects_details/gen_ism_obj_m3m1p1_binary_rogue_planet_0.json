@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m1p1_binary_rogue_planet_0",
+  "name": "Nomad binary J-43",
+  "object_type": "binary_rogue_planet",
+  "position_ly": {
+    "x": -65.36068282971162,
+    "y": -12.206006794071412,
+    "z": 25.08022919699562
+  },
+  "description": "Generated interstellar object (binary_rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 9.074861344295986,
+    "velocity_lsr_kms": [
+      6.000415303096428,
+      4.012213358903886,
+      -3.6719305264037945
+    ],
+    "mass_kg": 2.3692636766357394e+27,
+    "mu_m3s2": 1.5813176556969914e+17,
+    "radius_km": 70860.78333711895,
+    "teff_k": 93.35115499029341,
+    "body_class": "gas_giant",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "ejected_by_planet_scattering",
+    "companion_mass_kg": 2.0166065389146268e+27,
+    "separation_au": 7.043029880221729,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x7d03bb3fe241569b",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

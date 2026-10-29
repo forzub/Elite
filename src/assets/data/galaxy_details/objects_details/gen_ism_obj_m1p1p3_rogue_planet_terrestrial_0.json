@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1p1p3_rogue_planet_terrestrial_0",
+  "name": "Nomad T-129",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -24.104039338205112,
+    "y": 27.3715356954817,
+    "z": 90.70129557858732
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 7.362804058978291,
+    "velocity_lsr_kms": [
+      34.667452807300016,
+      8.500688255073403,
+      -8.94391425072871
+    ],
+    "mass_kg": 4.546756910562252e+25,
+    "mu_m3s2": 3.0346419648165635e+15,
+    "radius_km": 11033.531012863534,
+    "teff_k": 41.38921235813915,
+    "body_class": "super_earth",
+    "atmosphere": "primordial_h2_greenhouse",
+    "hydrosphere": "possible_subsurface_ocean",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x72247d78aa934df9",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m4p0_white_dwarf_remnant_0",
+  "name": "Cinder W-28",
+  "object_type": "stellar_remnant",
+  "position_ly": {
+    "x": -60.39357135200671,
+    "y": -80.55084420935123,
+    "z": 21.057536389804618
+  },
+  "description": "Generated interstellar object (stellar_remnant).",
+  "tags": [
+    "remnant",
+    "faint"
+  ],
+  "properties": {
+    "age_gyr": 8.575735544875482,
+    "velocity_lsr_kms": [
+      -33.65314435447493,
+      0.6570670784121929,
+      -20.207140960547083
+    ],
+    "remnant": "white_dwarf",
+    "mass_kg": 1.446919634367603e+30,
+    "mu_m3s2": 9.657175715659694e+19,
+    "radius_km": 8285.07875918036,
+    "teff_k": 3999.2822857840606,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x449ccd4eef17555b",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

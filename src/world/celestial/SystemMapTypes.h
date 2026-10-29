@@ -35,6 +35,13 @@ namespace world::celestial
         glm::dvec3 positionLy {0.0};
         std::string description;
         std::vector<std::string> tags;
+
+        // Volumetric regions (interstellar medium): ellipsoid radii in ly and
+        // the false-colour of the map layer (a map convention, not the
+        // literal colour of the gas). Zero extent = a compact object.
+        glm::dvec3 extentLy {0.0};
+        glm::dvec3 displayColorRgb {0.0};
+        double displayAlpha = 0.0;
     };
 
     struct GalaxyMapSnapshot

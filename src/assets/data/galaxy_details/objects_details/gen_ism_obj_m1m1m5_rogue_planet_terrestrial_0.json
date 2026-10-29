@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m1m5_rogue_planet_terrestrial_0",
+  "name": "Nomad T-111",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -12.66399738722987,
+    "y": -16.735458036479073,
+    "z": -107.07561673585636
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 6.339935811345372,
+    "velocity_lsr_kms": [
+      -9.782962787781806,
+      10.860334417311455,
+      4.489229276396236
+    ],
+    "mass_kg": 1.4507933516327938e+25,
+    "mu_m3s2": 968303006680275.5,
+    "radius_km": 8105.289881374338,
+    "teff_k": 31.54523078396153,
+    "body_class": "super_earth",
+    "atmosphere": "primordial_h2_greenhouse",
+    "hydrosphere": "possible_subsurface_ocean",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x8cc7957f480f9302",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

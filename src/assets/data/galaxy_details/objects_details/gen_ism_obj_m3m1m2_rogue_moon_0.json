@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m1m2_rogue_moon_0",
+  "name": "Drifter M-39",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": -74.26195117356232,
+    "y": -14.560228262034002,
+    "z": -32.14317150167298
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 3.9547459069360444,
+    "velocity_lsr_kms": [
+      -47.78504071501259,
+      -9.515192116770168,
+      -6.0353258645958965
+    ],
+    "mass_kg": 2.4536602319468037e+22,
+    "mu_m3s2": 1637646448608.255,
+    "radius_km": 1430.7550024474017,
+    "teff_k": 11.78025384683198,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x610d9d8888db3593",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

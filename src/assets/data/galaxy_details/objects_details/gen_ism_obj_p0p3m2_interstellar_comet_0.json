@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0p3m2_interstellar_comet_0",
+  "name": "Wanderer C-158",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": 12.567767802115522,
+    "y": 96.00718733929848,
+    "z": -39.804811777389276
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 7.288097571014992,
+    "velocity_lsr_kms": [
+      34.06690755492506,
+      -10.77509955707481,
+      13.019995424590629
+    ],
+    "radius_km": 0.7637383481733803,
+    "mass_kg": 1119627746064.4382,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x383bcc8cf2b87466",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

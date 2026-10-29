@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p1p2m3_brown_dwarf_1",
+  "name": "Ember L-181",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": 36.02904930618462,
+    "y": 52.17395658671314,
+    "z": -63.432325355622474
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 9.145604185372854,
+    "velocity_lsr_kms": [
+      -10.863050423958477,
+      -11.221484045894046,
+      8.38635537599868
+    ],
+    "mass_kg": 9.883876963476707e+28,
+    "mu_m3s2": 6.596796001733258e+18,
+    "radius_km": 67917.4,
+    "teff_k": 1594.54166316624,
+    "spectral_type": "L",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.0
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x46e348b7d23b926c",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

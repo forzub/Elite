@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p3p1m2_rogue_moon_0",
+  "name": "Drifter M-236",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": 97.82608106821506,
+    "y": 41.70249202545084,
+    "z": -45.351941830219516
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 8.093046040704493,
+    "velocity_lsr_kms": [
+      -62.33535332184541,
+      9.924376616745283,
+      -18.455595365347705
+    ],
+    "mass_kg": 9.756226791905247e+21,
+    "mu_m3s2": 651159844772.1318,
+    "radius_km": 1052.0937179748219,
+    "teff_k": 23.97657146856573,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xe776be6163404bac",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

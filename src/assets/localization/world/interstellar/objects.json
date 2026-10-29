@@ -2,5 +2,41 @@
   "schema_version": 1,
   "kind": "catalog",
   "domain": "galaxy_objects",
-  "entries": {}
+  "entries": {
+    "ism_local_bubble": {
+      "en": "Local Bubble",
+      "ru": "Местный пузырь",
+      "zh-Hans": "本地泡",
+      "es": "Burbuja Local",
+      "ja": "局所泡"
+    },
+    "ism_local_interstellar_cloud": {
+      "en": "Local Interstellar Cloud",
+      "ru": "Местное межзвёздное облако",
+      "zh-Hans": "本星际云",
+      "es": "Nube Interestelar Local",
+      "ja": "局所星間雲"
+    },
+    "ism_g_cloud": {
+      "en": "G Cloud",
+      "ru": "Облако G",
+      "zh-Hans": "G云",
+      "es": "Nube G",
+      "ja": "G雲"
+    },
+    "ism_blue_cloud": {
+      "en": "Blue Cloud",
+      "ru": "Голубое облако",
+      "zh-Hans": "蓝云",
+      "es": "Nube Azul",
+      "ja": "青雲"
+    },
+    "ism_leo_cold_cloud": {
+      "en": "Leo Cold Cloud",
+      "ru": "Холодное облако Льва",
+      "zh-Hans": "狮子座冷云",
+      "es": "Nube fría de Leo",
+      "ja": "しし座冷たい雲"
+    }
+  }
 }

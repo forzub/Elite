@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0p4m1_rogue_planet_terrestrial_0",
+  "name": "Nomad T-159",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 14.275693140882428,
+    "y": 105.7318403450987,
+    "z": -20.610736205250717
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 7.519164556183662,
+    "velocity_lsr_kms": [
+      20.31601764054389,
+      23.079105219153057,
+      -0.9323257376073584
+    ],
+    "mass_kg": 3.419614026668323e+24,
+    "mu_m3s2": 228235298981923.84,
+    "radius_km": 5486.670324704017,
+    "teff_k": 29.97698258790652,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xbdf6175539cfa13f",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

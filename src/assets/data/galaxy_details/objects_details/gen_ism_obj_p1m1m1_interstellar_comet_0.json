@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p1m1m1_interstellar_comet_0",
+  "name": "Wanderer C-168",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": 48.55466380411717,
+    "y": -15.53686101831014,
+    "z": -5.969196775012485
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 7.211475103978269,
+    "velocity_lsr_kms": [
+      -25.618550019340386,
+      -14.709438353549148,
+      -24.926634812784826
+    ],
+    "radius_km": 3.216502651707043,
+    "mass_kg": 83635681678188.19,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xc8e036c84dfde843",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

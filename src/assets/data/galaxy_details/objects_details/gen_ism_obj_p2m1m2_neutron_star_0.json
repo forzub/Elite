@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m1m2_neutron_star_0",
+  "name": "Pulsar remnant R-201",
+  "object_type": "stellar_remnant",
+  "position_ly": {
+    "x": 60.51432340843084,
+    "y": -15.528671520236664,
+    "z": -30.236934399046376
+  },
+  "description": "Generated interstellar object (stellar_remnant).",
+  "tags": [
+    "remnant",
+    "radio"
+  ],
+  "properties": {
+    "age_gyr": 0.8163370819295412,
+    "velocity_lsr_kms": [
+      45.81660085682535,
+      7.219561908404663,
+      -1.025071996946919
+    ],
+    "remnant": "neutron_star",
+    "mass_kg": 3.055718560893502e+30,
+    "mu_m3s2": 2.0394782390971495e+20,
+    "radius_km": 12.0,
+    "teff_k": 500000.0,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xd6b033e1ac655272",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p0p2_rogue_planet_giant_0",
+  "name": "Nomad J-81",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -39.16968416633878,
+    "y": 7.455879222752185,
+    "z": 69.04598327630242
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 0.7357268599069136,
+    "velocity_lsr_kms": [
+      43.12952052642774,
+      3.1733795883710174,
+      6.174582387578516
+    ],
+    "mass_kg": 5.857787043130455e+27,
+    "mu_m3s2": 3.909662806196559e+17,
+    "radius_km": 68340.970468904,
+    "teff_k": 343.15891016576694,
+    "body_class": "super_jupiter",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "formed_in_isolation",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x51d1f7b63f43502d",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

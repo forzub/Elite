@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0p2m4_brown_dwarf_0",
+  "name": "Ember T-156",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": 5.597254806870916,
+    "y": 53.43333739977101,
+    "z": -96.79920082201737
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 7.66991895773153,
+    "velocity_lsr_kms": [
+      -0.6579150984861538,
+      -23.301706579524936,
+      22.000084164701864
+    ],
+    "mass_kg": 3.3051637752915018e+28,
+    "mu_m3s2": 2.2059654585428068e+18,
+    "radius_km": 67917.4,
+    "teff_k": 923.5000030306792,
+    "spectral_type": "T",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.004
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x5127152480c51590",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

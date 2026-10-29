@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p0m4m3_white_dwarf_remnant_0",
+  "name": "Cinder W-139",
+  "object_type": "stellar_remnant",
+  "position_ly": {
+    "x": 1.2115648809012751,
+    "y": -84.28024590453785,
+    "z": -73.1211684988559
+  },
+  "description": "Generated interstellar object (stellar_remnant).",
+  "tags": [
+    "remnant",
+    "faint"
+  ],
+  "properties": {
+    "age_gyr": 7.9708792178158685,
+    "velocity_lsr_kms": [
+      0.01433350556213656,
+      -12.16088193626471,
+      -7.598361431719498
+    ],
+    "remnant": "white_dwarf",
+    "mass_kg": 1.716164194611733e+30,
+    "mu_m3s2": 1.1454194684097089e+20,
+    "radius_km": 7826.9368947408975,
+    "teff_k": 5651.765883324984,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xc8983b61a7571077",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

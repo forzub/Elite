@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m1p3_brown_dwarf_0",
+  "name": "Ember L-204",
+  "object_type": "brown_dwarf",
+  "position_ly": {
+    "x": 62.7927723334442,
+    "y": -1.6223648539925115,
+    "z": 99.95111782197256
+  },
+  "description": "Generated interstellar object (brown_dwarf).",
+  "tags": [
+    "substellar",
+    "infrared"
+  ],
+  "properties": {
+    "age_gyr": 1.4640313628560877,
+    "velocity_lsr_kms": [
+      -2.008199793203997,
+      21.21029162947123,
+      -5.341243369954181
+    ],
+    "mass_kg": 8.11868944799254e+28,
+    "mu_m3s2": 5.418656898273661e+18,
+    "radius_km": 67917.4,
+    "teff_k": 2400.0,
+    "spectral_type": "L",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.0
+    },
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xa4a050b39221c114",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

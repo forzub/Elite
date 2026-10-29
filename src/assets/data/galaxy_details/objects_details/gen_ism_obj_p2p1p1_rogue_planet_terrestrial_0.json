@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2p1p1_rogue_planet_terrestrial_0",
+  "name": "Nomad T-212",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 63.4634109445364,
+    "y": 40.42144431896981,
+    "z": 46.66223382947342
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 3.676359079341953,
+    "velocity_lsr_kms": [
+      -4.936984015513895,
+      28.599658663565062,
+      6.05980391566499
+    ],
+    "mass_kg": 2.7712909616041525e+24,
+    "mu_m3s2": 184964272650345.94,
+    "radius_km": 5183.931155360586,
+    "teff_k": 28.10197955289173,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x00440bd3cd2e406b",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

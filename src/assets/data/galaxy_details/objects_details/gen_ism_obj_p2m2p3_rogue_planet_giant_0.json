@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m2p3_rogue_planet_giant_0",
+  "name": "Nomad J-199",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 51.41639542588532,
+    "y": -43.33618884036964,
+    "z": 88.66484469314486
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 6.698531323320753,
+    "velocity_lsr_kms": [
+      -9.108969954897171,
+      8.376786020007067,
+      -5.789836823016511
+    ],
+    "mass_kg": 1.6341472585455522e+27,
+    "mu_m3s2": 1.0906789047710578e+17,
+    "radius_km": 71921.5166828631,
+    "teff_k": 83.86636343840658,
+    "body_class": "gas_giant",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x616d0d6cd12c6664",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

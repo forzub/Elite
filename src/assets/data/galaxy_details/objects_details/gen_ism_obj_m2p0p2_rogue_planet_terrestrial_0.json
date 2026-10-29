@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p0p2_rogue_planet_terrestrial_0",
+  "name": "Nomad T-82",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -49.11776878252416,
+    "y": 7.693546815444294,
+    "z": 67.16183441224243
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 4.857903703526872,
+    "velocity_lsr_kms": [
+      -12.340870563351766,
+      -3.380552934166359,
+      2.5657467282617827
+    ],
+    "mass_kg": 8.625307443405307e+24,
+    "mu_m3s2": 575678894695200.3,
+    "radius_km": 7043.591962058577,
+    "teff_k": 24.792745397006243,
+    "body_class": "rocky",
+    "atmosphere": "primordial_h2_greenhouse",
+    "hydrosphere": "possible_subsurface_ocean",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x9d6db5005b5dc137",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

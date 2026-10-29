@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cloudlet_m4m3p2_0",
+  "name": "Cloudlet 2",
+  "object_type": "interstellar_medium_region",
+  "position_ly": {
+    "x": -80.59279721413844,
+    "y": -51.44190706131454,
+    "z": 53.531229412426505
+  },
+  "description": "Interstellar medium region (warm_partially_ionized).",
+  "tags": [
+    "ism",
+    "warm_partially_ionized"
+  ],
+  "properties": {
+    "geometry": {
+      "shape": "ellipsoid",
+      "radii_ly": [
+        2.7324868668727436,
+        2.370733430618257,
+        1.1714768212595428
+      ],
+      "orientation_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "phase": "warm_partially_ionized",
+    "density_profile": {
+      "mean_density_cm3": 0.1994470560720546,
+      "profile": "gaussian_core",
+      "core_fraction": 0.3204505762943581,
+      "clumping": 0.20677593643532424,
+      "turbulence_kms": 2.9200870582076224
+    },
+    "temperature_k": 6295.9980180121975,
+    "ionization_fraction": 0.4023530841009394,
+    "mass_fraction": {
+      "H": 0.71,
+      "He": 0.275,
+      "metals": 0.015
+    },
+    "molecular_fraction": 0.0,
+    "dust_to_gas": 0.006,
+    "ice_mantle_fraction": 0.0,
+    "metallicity_feh": 0.0,
+    "trace_species": {
+      "silicate_dust": 0.0036,
+      "carbonaceous_dust": 0.0024000000000000002,
+      "C+": 0.0001,
+      "Mg+": 2e-06,
+      "Fe+": 1e-06
+    },
+    "total_mass_kg": 1.2571600645901466e+28,
+    "gameplay_gravity": false,
+    "resource_profile": {
+      "hydrogen_scoop_relative": 0.7977882242882184,
+      "volatile_ice_relative": 0.0,
+      "dust_relative": 0.7977882242882184
+    },
+    "visualization": {
+      "false_color_rgb": [
+        0.25,
+        0.8,
+        0.8
+      ],
+      "alpha": 0.12
+    },
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xc3fb34e4412ab432",
+      "interstellar_version": 1,
+      "model": "procedural warm cloudlet"
+    }
+  }
+}

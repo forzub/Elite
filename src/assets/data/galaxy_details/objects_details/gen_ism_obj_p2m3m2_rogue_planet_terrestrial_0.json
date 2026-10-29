@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m3m2_rogue_planet_terrestrial_0",
+  "name": "Nomad T-196",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 56.36270097603188,
+    "y": -71.89179258759056,
+    "z": -31.71487087995845
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 2.2856265822025996,
+    "velocity_lsr_kms": [
+      15.416153387710333,
+      6.454960544923739,
+      18.356641936619198
+    ],
+    "mass_kg": 1.696845033100215e+25,
+    "mu_m3s2": 1.1325252804420763e+15,
+    "radius_km": 8455.483384667223,
+    "teff_k": 24.543098133424344,
+    "body_class": "super_earth",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x3229469c9f8915f1",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

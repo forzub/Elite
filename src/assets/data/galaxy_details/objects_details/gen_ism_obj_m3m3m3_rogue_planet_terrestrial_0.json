@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3m3m3_rogue_planet_terrestrial_0",
+  "name": "Nomad T-30",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -68.84039625443502,
+    "y": -53.56204344158489,
+    "z": -60.02695809081359
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 2.9389309456337283,
+    "velocity_lsr_kms": [
+      -24.17275746177799,
+      0.8449686933548781,
+      -9.567996747297387
+    ],
+    "mass_kg": 3.255264486575737e+24,
+    "mu_m3s2": 217266117627524.38,
+    "radius_km": 5414.188189181258,
+    "teff_k": 42.570285886263065,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x74561e587f43bb54",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

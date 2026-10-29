@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_blue_cloud",
+  "name": "Blue Cloud",
+  "object_type": "interstellar_medium_region",
+  "position_ly": {
+    "x": -0.6418345717228453,
+    "y": 5.53630940990772,
+    "z": -2.2220095637928474
+  },
+  "description": "Interstellar medium region (warm_neutral).",
+  "tags": [
+    "ism",
+    "warm_neutral"
+  ],
+  "properties": {
+    "geometry": {
+      "shape": "ellipsoid",
+      "radii_ly": [
+        3.0,
+        2.0,
+        2.0
+      ],
+      "orientation_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "phase": "warm_neutral",
+    "density_profile": {
+      "mean_density_cm3": 0.15,
+      "profile": "gaussian_core",
+      "core_fraction": 0.5782138006231159,
+      "clumping": 0.20210790918902075,
+      "turbulence_kms": 2.378724270354302
+    },
+    "temperature_k": 3000.0,
+    "ionization_fraction": 0.1,
+    "mass_fraction": {
+      "H": 0.71,
+      "He": 0.275,
+      "metals": 0.015
+    },
+    "molecular_fraction": 0.0,
+    "dust_to_gas": 0.006,
+    "ice_mantle_fraction": 0.0,
+    "metallicity_feh": 0.0,
+    "trace_species": {
+      "silicate_dust": 0.0036,
+      "carbonaceous_dust": 0.0024000000000000002,
+      "C+": 0.0001,
+      "Mg+": 2e-06,
+      "Fe+": 1e-06
+    },
+    "total_mass_kg": 1.495067993252632e+28,
+    "gameplay_gravity": false,
+    "resource_profile": {
+      "hydrogen_scoop_relative": 0.6,
+      "volatile_ice_relative": 0.0,
+      "dust_relative": 0.6
+    },
+    "visualization": {
+      "false_color_rgb": [
+        0.35,
+        0.55,
+        0.95
+      ],
+      "alpha": 0.12
+    },
+    "provenance": {
+      "source": "Redfield & Linsky 2008 (towards Sirius)",
+      "geometry": "approximate"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m1p1_rogue_moon_0",
+  "name": "Drifter M-114",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": -10.10652228982255,
+    "y": -1.4533716963189711,
+    "z": 46.279259016618965
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 6.024967959415569,
+    "velocity_lsr_kms": [
+      -65.64489867991644,
+      14.95720451042348,
+      7.804118087107759
+    ],
+    "mass_kg": 4.78316480364784e+23,
+    "mu_m3s2": 31924276848986.773,
+    "radius_km": 3850.634047691786,
+    "teff_k": 16.207830745540182,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x84b48e6d5791d854",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

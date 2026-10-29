@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p2m3m1_rogue_planet_terrestrial_0",
+  "name": "Nomad T-197",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 58.66263771193251,
+    "y": -59.807315469434606,
+    "z": -22.578747029595558
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 4.90754127560918,
+    "velocity_lsr_kms": [
+      10.618211283917553,
+      20.367549266558612,
+      27.396812890908407
+    ],
+    "mass_kg": 8.427087825819475e+24,
+    "mu_m3s2": 562449122758669.2,
+    "radius_km": 6999.515536925155,
+    "teff_k": 31.68055065385326,
+    "body_class": "rocky",
+    "atmosphere": "primordial_h2_greenhouse",
+    "hydrosphere": "possible_subsurface_ocean",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xbd950347df24b6a8",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p2p2_interstellar_comet_0",
+  "name": "Wanderer C-92",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -31.432648389764374,
+    "y": 67.14169245620045,
+    "z": 54.036985903028764
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 2.5585311267997297,
+    "velocity_lsr_kms": [
+      -14.079361822905533,
+      18.63655082050641,
+      -8.983157620810482
+    ],
+    "radius_km": 0.6270637651320499,
+    "mass_kg": 619690697947.8898,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xe4df65b1e7afa483",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

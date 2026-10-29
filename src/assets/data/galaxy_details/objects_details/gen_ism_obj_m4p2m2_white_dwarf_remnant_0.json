@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m4p2m2_white_dwarf_remnant_0",
+  "name": "Cinder W-23",
+  "object_type": "stellar_remnant",
+  "position_ly": {
+    "x": -81.85745620113967,
+    "y": 73.98014732719452,
+    "z": -36.41336272990105
+  },
+  "description": "Generated interstellar object (stellar_remnant).",
+  "tags": [
+    "remnant",
+    "faint"
+  ],
+  "properties": {
+    "age_gyr": 10.517907542367833,
+    "velocity_lsr_kms": [
+      32.05857636952301,
+      3.0892198676554505,
+      19.13138407244933
+    ],
+    "remnant": "white_dwarf",
+    "mass_kg": 1.3834895043650805e+30,
+    "mu_m3s2": 9.233823998983856e+19,
+    "radius_km": 8409.809437049189,
+    "teff_k": 4821.446659223724,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x902e41efc8026f13",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

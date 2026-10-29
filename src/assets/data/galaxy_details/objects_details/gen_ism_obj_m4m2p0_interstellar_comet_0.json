@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m4m2p0_interstellar_comet_0",
+  "name": "Wanderer C-10",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -80.09440198241836,
+    "y": -30.834370181346817,
+    "z": 20.174676156798586
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 5.092445288819704,
+    "velocity_lsr_kms": [
+      32.27563216518749,
+      12.384615231653804,
+      -3.9090139500998795
+    ],
+    "radius_km": 26.652486833475006,
+    "mass_kg": 4.7583137204315064e+16,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xf69d92e969b59030",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

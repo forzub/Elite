@@ -871,7 +871,10 @@ ELITE_WIRE_SCHEMA(
     v.objectType,
     v.positionLy,
     v.description,
-    v.tags
+    v.tags,
+    v.extentLy,
+    v.displayColorRgb,
+    v.displayAlpha
 );
 
 ELITE_WIRE_SCHEMA(

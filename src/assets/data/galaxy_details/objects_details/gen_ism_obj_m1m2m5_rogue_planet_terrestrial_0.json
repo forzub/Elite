@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m1m2m5_rogue_planet_terrestrial_0",
+  "name": "Nomad T-107",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": -13.448438094184315,
+    "y": -43.838535338515506,
+    "z": -101.29464418080677
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 6.259093336423124,
+    "velocity_lsr_kms": [
+      13.62006246227083,
+      -21.923998836680738,
+      -20.35303608405326
+    ],
+    "mass_kg": 4.266269565179016e+25,
+    "mu_m3s2": 2.8474362958874305e+15,
+    "radius_km": 10845.462837537625,
+    "teff_k": 25.369667605338293,
+    "body_class": "super_earth",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x3c813930503f465b",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

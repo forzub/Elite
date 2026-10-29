@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p4p0m2_rogue_planet_giant_0",
+  "name": "Nomad J-247",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 107.76053657342808,
+    "y": 2.1921767803425087,
+    "z": -44.435508568369116
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 6.375066620996828,
+    "velocity_lsr_kms": [
+      26.45616038998236,
+      62.40312903415282,
+      1.1781164240650135
+    ],
+    "mass_kg": 1.6142752965255754e+27,
+    "mu_m3s2": 1.0774157611600646e+17,
+    "radius_km": 71956.72366087904,
+    "teff_k": 84.6337715140881,
+    "body_class": "gas_giant",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x42640a60216552a7",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

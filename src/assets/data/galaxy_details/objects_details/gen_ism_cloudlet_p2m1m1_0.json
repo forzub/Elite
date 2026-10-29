@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cloudlet_p2m1m1_0",
+  "name": "Cloudlet 9",
+  "object_type": "interstellar_medium_region",
+  "position_ly": {
+    "x": 61.49307300565185,
+    "y": -16.96705080169015,
+    "z": -6.269401234178289
+  },
+  "description": "Interstellar medium region (warm_partially_ionized).",
+  "tags": [
+    "ism",
+    "warm_partially_ionized"
+  ],
+  "properties": {
+    "geometry": {
+      "shape": "ellipsoid",
+      "radii_ly": [
+        4.498459931589428,
+        2.6428386556577252,
+        1.0793811792725345
+      ],
+      "orientation_quat_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "phase": "warm_partially_ionized",
+    "density_profile": {
+      "mean_density_cm3": 0.07814061064916063,
+      "profile": "gaussian_core",
+      "core_fraction": 0.3127849395442916,
+      "clumping": 0.31742361233986616,
+      "turbulence_kms": 2.8025551771520325
+    },
+    "temperature_k": 6324.640781242468,
+    "ionization_fraction": 0.313703260734521,
+    "mass_fraction": {
+      "H": 0.71,
+      "He": 0.275,
+      "metals": 0.015
+    },
+    "molecular_fraction": 0.0,
+    "dust_to_gas": 0.006,
+    "ice_mantle_fraction": 0.0,
+    "metallicity_feh": 0.0,
+    "trace_species": {
+      "silicate_dust": 0.0036,
+      "carbonaceous_dust": 0.0024000000000000002,
+      "C+": 0.0001,
+      "Mg+": 2e-06,
+      "Fe+": 1e-06
+    },
+    "total_mass_kg": 8.328649541326405e+27,
+    "gameplay_gravity": false,
+    "resource_profile": {
+      "hydrogen_scoop_relative": 0.3125624425966425,
+      "volatile_ice_relative": 0.0,
+      "dust_relative": 0.3125624425966425
+    },
+    "visualization": {
+      "false_color_rgb": [
+        0.25,
+        0.8,
+        0.8
+      ],
+      "alpha": 0.12
+    },
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x1c0772aeb6186543",
+      "interstellar_version": 1,
+      "model": "procedural warm cloudlet"
+    }
+  }
+}

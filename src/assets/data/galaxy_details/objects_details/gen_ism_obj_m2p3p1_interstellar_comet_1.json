@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m2p3p1_interstellar_comet_1",
+  "name": "Wanderer C-96",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -32.22900966076881,
+    "y": 81.62989147506356,
+    "z": 47.333510822165834
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 9.385888309597059,
+    "velocity_lsr_kms": [
+      -16.921628066171618,
+      -0.5458782040448324,
+      12.551773143493993
+    ],
+    "radius_km": 0.7501737086145841,
+    "mass_kg": 1061024415538.5878,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xe6550405f8266c1d",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

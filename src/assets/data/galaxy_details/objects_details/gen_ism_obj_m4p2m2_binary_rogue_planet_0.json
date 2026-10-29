@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m4p2m2_binary_rogue_planet_0",
+  "name": "Nomad binary J-22",
+  "object_type": "binary_rogue_planet",
+  "position_ly": {
+    "x": -92.89375980266071,
+    "y": 54.38660467984351,
+    "z": -47.30754121231965
+  },
+  "description": "Generated interstellar object (binary_rogue_planet).",
+  "tags": [
+    "rogue",
+    "cold",
+    "infrared_only"
+  ],
+  "properties": {
+    "age_gyr": 9.252368194646667,
+    "velocity_lsr_kms": [
+      -4.866432778369619,
+      -20.359137897476376,
+      32.19680555475757
+    ],
+    "mass_kg": 1.0002609006261904e+27,
+    "mu_m3s2": 6.6760413290493816e+16,
+    "radius_km": 73347.60763450718,
+    "teff_k": 57.736773150480545,
+    "body_class": "gas_giant",
+    "composition": {
+      "H2": 0.86,
+      "He": 0.136,
+      "CH4": 0.003
+    },
+    "origin": "formed_in_isolation",
+    "companion_mass_kg": 3.631147092829094e+26,
+    "separation_au": 16.45600014240771,
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xbeb74756e3d43896",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p3p0p2_rogue_moon_0",
+  "name": "Drifter M-235",
+  "object_type": "rogue_moon",
+  "position_ly": {
+    "x": 85.18952124693251,
+    "y": 5.009289559981814,
+    "z": 60.43217440793565
+  },
+  "description": "Generated interstellar object (rogue_moon).",
+  "tags": [
+    "rogue",
+    "icy"
+  ],
+  "properties": {
+    "age_gyr": 8.0560685832787,
+    "velocity_lsr_kms": [
+      -8.321682428843369,
+      -31.848944858275612,
+      -25.473990018275785
+    ],
+    "mass_kg": 2.1363486783083292e+23,
+    "mu_m3s2": 14258631983633.281,
+    "radius_km": 2943.4128200730024,
+    "teff_k": 12.733947934731876,
+    "composition": {
+      "water_ice": 0.5,
+      "silicate": 0.45,
+      "organics": 0.05
+    },
+    "origin": "stripped_during_planet_ejection",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xe2806f49db4eb0dd",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_m3p2m3_interstellar_comet_0",
+  "name": "Wanderer C-55",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": -72.98038859071708,
+    "y": 56.03792741858893,
+    "z": -51.7495076671208
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 9.089889469994148,
+    "velocity_lsr_kms": [
+      -38.821070435770565,
+      2.822421492968737,
+      0.8204766428365687
+    ],
+    "radius_km": 7.812142211114147,
+    "mass_kg": 1.1982578456930182e+15,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x098de2363c2bccf6",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p3m1m2_interstellar_comet_0",
+  "name": "Wanderer C-231",
+  "object_type": "interstellar_comet",
+  "position_ly": {
+    "x": 76.1261856961761,
+    "y": -12.997217014924548,
+    "z": -27.85630556679233
+  },
+  "description": "Generated interstellar object (interstellar_comet).",
+  "tags": [
+    "comet",
+    "volatile_rich"
+  ],
+  "properties": {
+    "age_gyr": 4.835397028969469,
+    "velocity_lsr_kms": [
+      -8.311112447453977,
+      -18.74103072270806,
+      12.763138951983114
+    ],
+    "radius_km": 11.889410332136782,
+    "mass_kg": 4.2239698271382275e+15,
+    "composition": {
+      "water_ice": 0.45,
+      "co_co2_ices": 0.25,
+      "silicate_dust": 0.2,
+      "organics": 0.1
+    },
+    "origin": "ejected_planetesimal",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x64ddbbc41c12d5cd",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

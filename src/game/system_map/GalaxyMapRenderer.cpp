@@ -626,6 +626,62 @@ namespace game::system_map
             );
         }
 
+        // Interstellar layer: compact objects as small dim points, medium
+        // regions as false-colour ellipsoid outlines (three principal rings).
+        for (const auto& object : galaxy.objects)
+        {
+            const glm::vec3 position =
+                viewState.positionLyToRender(object.positionLy);
+
+            if (object.extentLy.x > 0.0)
+            {
+                const glm::vec4 color {
+                    static_cast<float>(object.displayColorRgb.x),
+                    static_cast<float>(object.displayColorRgb.y),
+                    static_cast<float>(object.displayColorRgb.z),
+                    static_cast<float>(std::min(0.6, 0.15 + 2.0 * object.displayAlpha))};
+                constexpr int segments = 48;
+                const glm::dvec3 r = object.extentLy;
+                for (int plane = 0; plane < 3; ++plane)
+                {
+                    glm::vec3 previous {0.0f};
+                    for (int k = 0; k <= segments; ++k)
+                    {
+                        const double a = 6.283185307179586 * k / segments;
+                        const double c = std::cos(a), s = std::sin(a);
+                        const glm::dvec3 offset = plane == 0 ? glm::dvec3(r.x * c, r.y * s, 0.0)
+                            : plane == 1 ? glm::dvec3(r.x * c, 0.0, r.z * s)
+                                         : glm::dvec3(0.0, r.y * c, r.z * s);
+                        const glm::vec3 point =
+                            viewState.positionLyToRender(object.positionLy + offset);
+                        if (k > 0)
+                            context.addLine(previous, point, color);
+                        previous = point;
+                    }
+                }
+                continue;
+            }
+
+            glm::vec4 color {0.6f, 0.6f, 0.55f, 0.8f};
+            if (object.objectType == "brown_dwarf") color = {0.78f, 0.32f, 0.25f, 0.85f};
+            else if (object.objectType == "rogue_planet" || object.objectType == "binary_rogue_planet" ||
+                     object.objectType == "rogue_moon") color = {0.55f, 0.42f, 0.36f, 0.8f};
+            else if (object.objectType == "stellar_remnant") color = {0.72f, 0.82f, 1.0f, 0.85f};
+            else if (object.objectType == "interstellar_comet") color = {0.55f, 0.9f, 0.9f, 0.8f};
+
+            const float viewDepth =
+                std::max(0.1f, glm::dot(position - cameraPosition, -cameraDirection));
+            const float worldUnitsPerPixel =
+                2.0f * viewDepth * tanHalfFov / safeViewportHeight;
+            context.addBillboardBall(
+                position,
+                viewState.visuals().starBaseRadiusPx * 0.35f * worldUnitsPerPixel,
+                color,
+                view,
+                12
+            );
+        }
+
         context.flushSolids(mvp);
         context.flushLines(mvp);
 

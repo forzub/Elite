@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_obj_p1m3m3_rogue_planet_terrestrial_0",
+  "name": "Nomad T-160",
+  "object_type": "rogue_planet",
+  "position_ly": {
+    "x": 27.68282675996285,
+    "y": -50.79135731026852,
+    "z": -52.86204064766171
+  },
+  "description": "Generated interstellar object (rogue_planet).",
+  "tags": [
+    "rogue",
+    "frozen",
+    "dark"
+  ],
+  "properties": {
+    "age_gyr": 9.845633704030654,
+    "velocity_lsr_kms": [
+      -23.56484252395633,
+      17.89335339387797,
+      5.809284362026378
+    ],
+    "mass_kg": 4.3613163167114534e+24,
+    "mu_m3s2": 291087334926272.5,
+    "radius_km": 5859.111998497043,
+    "teff_k": 36.537120645987045,
+    "body_class": "rocky",
+    "atmosphere": "frozen_out",
+    "hydrosphere": "ice",
+    "origin": "ejected_by_planet_scattering",
+    "gameplay_gravity": true,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x65b3bf1a963982c7",
+      "interstellar_version": 1,
+      "model": "cell population, notable member"
+    }
+  }
+}

@@ -66,6 +66,11 @@ inline bool rebuildSystemMapCelestialLayer(
 
     for (const auto& body : definition.bodies)
     {
+        // Barycenters are orbit centres (present in the runtime snapshot),
+        // not map objects.
+        if (body.type == world::celestial::BodyType::Barycenter)
+            continue;
+
         SystemMapBody item;
 
         item.id = body.id;

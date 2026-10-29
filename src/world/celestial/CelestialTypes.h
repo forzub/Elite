@@ -24,6 +24,9 @@ enum class BodyType
     Moon,
     AsteroidBelt,
     Station,
+    // Orbital node of a multiple-star hierarchy: has mass and an orbit, is
+    // never drawn; stars and circumbinary planets orbit it.
+    Barycenter,
     Unknown
 };
 
@@ -36,6 +39,7 @@ inline std::string toString(BodyType type)
         case BodyType::Moon:         return "moon";
         case BodyType::AsteroidBelt: return "asteroid_belt";
         case BodyType::Station:      return "station";
+        case BodyType::Barycenter:   return "barycenter";
         default:                     return "unknown";
     }
 }
@@ -226,7 +230,7 @@ struct CelestialBodyDefinition
     BodyType type = BodyType::Unknown;
 
     std::string parentId;
-    // Environment preset from galaxy_details/systems_details/*.json.
+    // Environment preset: render projection of the generated body descriptor
     // Example: terrestrial_temperate, gas_giant_ammonia.
     std::string environmentPresetId;
 
@@ -276,7 +280,27 @@ struct CelestialBodyDefinition
 
     std::vector<CelestialBodyDisplayName> alternativeNames;
 
+    /*
+        Full Keplerian orbit about parentId (generated physical catalog,
+        src/world/generation). false: the legacy circular orbit in the XZ
+        plane described by distanceAu / orbitalPeriodDays / phase offset.
 
+        Elements are in the parent's reference frame: the system frame
+        (XZ = invariable plane, +Y north) for stars, barycenters and planets,
+        the parent's equator for moons (orbitInParentEquator).
+    */
+    bool keplerOrbit = false;
+    double eccentricity = 0.0;
+    double inclinationDeg = 0.0;
+    double longitudeAscendingNodeDeg = 0.0;
+    double argumentOfPeriapsisDeg = 0.0;
+    double meanAnomalyAtEpochDeg = 0.0;
+    double orbitEpochSeconds = 0.0;
+    bool orbitInParentEquator = false;
+
+    // Top of the atmosphere (0 = airless), for navigation and approach.
+    double atmosphereOuterRadiusKm = 0.0;
+    std::string bodyClass;
 };
 
 struct CelestialSystemDefinition

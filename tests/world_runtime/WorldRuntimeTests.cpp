@@ -18,6 +18,9 @@
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/celestial/CelestialSystemRuntime.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
+#include "src/game/navigation/GravityFieldSystem.h"
+
+#include <unordered_map>
 
 namespace
 {
@@ -108,6 +111,134 @@ const world::celestial::CelestialBodyState* findBody(
     }
 
     return nullptr;
+}
+
+
+// ---- physical catalog (src/world/generation materialised) -------------
+
+void testPhysicalCatalogLoadsEverySystemWithKeplerOrbits()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    REQUIRE(atlas.systems().size() == 60);
+    REQUIRE(atlas.distantSystems().size() == 1);
+    const StarSystemSummary* kepler62 = atlas.findSystemSummary(100062);
+    REQUIRE(kepler62 && !kepler62->atlasVisible && kepler62->routeTarget);
+
+    std::vector<int> ids;
+    for (const auto& s : atlas.systems()) ids.push_back(s.id);
+    ids.push_back(100062);
+    for (const int id : ids)
+    {
+        const CelestialSystemDefinition* def = atlas.findSystem(id);
+        REQUIRE(def != nullptr);
+        for (const double t : {0.0, 1.0e8})
+        {
+            CelestialSystemRuntime runtime;
+            runtime.setSystem(def);
+            runtime.update(t);
+            const auto& snap = runtime.snapshot();
+            REQUIRE(snap.bodies.size() == def->bodies.size());
+            std::unordered_map<std::string, const CelestialBodyState*> byId;
+            for (const auto& b : snap.bodies) byId[b.id] = &b;
+            for (const auto& body : def->bodies)
+            {
+                const CelestialBodyState* s = byId[body.id];
+                REQUIRE(s != nullptr);
+                REQUIRE(std::isfinite(s->positionAu.x) && std::isfinite(s->positionAu.y) &&
+                        std::isfinite(s->positionAu.z));
+                if (!body.keplerOrbit || body.parentId.empty())
+                    continue;
+                const auto parent = byId.find(body.parentId);
+                REQUIRE(parent != byId.end());
+                const double r = glm::length(s->positionAu - parent->second->positionAu);
+                const double a = body.distanceAu;
+                REQUIRE(r >= a * (1.0 - body.eccentricity) * (1.0 - 1.0e-9));
+                REQUIRE(r <= a * (1.0 + body.eccentricity) * (1.0 + 1.0e-9));
+            }
+        }
+    }
+}
+
+void testSolKeepsHardDependenciesAndJ2000Ephemeris()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    const CelestialSystemDefinition* sol = atlas.findSystem(0);
+    REQUIRE(sol != nullptr);
+    CelestialSystemRuntime runtime;
+    runtime.setSystem(sol);
+    // J2000.0 = 2000-01-01 12:00 TT, 376.5 d after the UniverseClock epoch.
+    runtime.update(376.5 * 86400.0);
+    const auto* sun = findBody(runtime.snapshot(), "system_0.Sol");
+    const auto* earth = findBody(runtime.snapshot(), "system_0.Sol.Земля");
+    const auto* moon = findBody(runtime.snapshot(), "system_0.Sol.Земля.Луна");
+    REQUIRE(sun && earth && moon && findBody(runtime.snapshot(), "system_0.Sol.Марс"));
+    const glm::dvec3 e = earth->positionAu - sun->positionAu;
+    requireNear(glm::length(e), 0.98329, 2.0e-3, "Earth heliocentric distance at J2000 (AU)");
+    // Engine frame: X = ecliptic x, Z = -ecliptic y.
+    const double longitude = std::atan2(-e.z, e.x) * 180.0 / 3.14159265358979323846;
+    requireNear(longitude, 100.46, 0.6, "Earth heliocentric ecliptic longitude at J2000 (deg)");
+    requireNear(glm::length(moon->positionAu - earth->positionAu) * MetersPerAu / 1000.0, 384399.0, 25000.0,
+                "Moon distance (km)");
+}
+
+void testSystemMapBridgeHidesBarycentersAndCentresCircumbinaryOrbits()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    bool sawCircumbinary = false;
+    for (const auto& summary : atlas.systems())
+    {
+        const CelestialSystemDefinition* def = atlas.findSystem(summary.id);
+        CelestialSystemRuntime runtime;
+        runtime.setSystem(def);
+        runtime.update(0.0);
+        SystemMapSnapshot map;
+        map.systemId = summary.id;
+        map.universeTimeSeconds = 0.0;
+        REQUIRE(game::client::rebuildSystemMapCelestialLayer(map, *def, runtime.snapshot()));
+        for (const auto& item : map.bodies)
+        {
+            REQUIRE(item.type != BodyType::Barycenter);
+            if (item.parentId.find(".barycenter") != std::string::npos)
+            {
+                const auto* center = findBody(runtime.snapshot(), item.parentId);
+                REQUIRE(center != nullptr);
+                requireVectorNear(item.orbitCenterAu, center->positionAu, 1.0e-12, "circumbinary orbit centre");
+                sawCircumbinary = true;
+            }
+        }
+    }
+    REQUIRE(sawCircumbinary);
+}
+
+void testGravityFieldUsesGeneratedBodies()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    const CelestialSystemDefinition* sol = atlas.findSystem(0);
+    CelestialSystemRuntime runtime;
+    runtime.setSystem(sol);
+    runtime.update(0.0);
+    std::vector<game::navigation::GravityBody> bodies;
+    for (const auto& def : sol->bodies)
+    {
+        if (def.radiusKm <= 0.0 || def.gravitationalParameterM3s2 <= 0.0)
+            continue;
+        const auto* s = findBody(runtime.snapshot(), def.id);
+        game::navigation::GravityBody g;
+        g.id = def.id;
+        g.centerMeters = s->positionAu * MetersPerAu;
+        g.radiusMeters = def.radiusKm * 1000.0;
+        g.gravitationalParameterM3s2 = def.gravitationalParameterM3s2;
+        bodies.push_back(g);
+    }
+    const auto* earth = findBody(runtime.snapshot(), "system_0.Sol.Земля");
+    const glm::dvec3 probe = earth->positionAu * MetersPerAu + glm::dvec3(7.0e6, 0.0, 0.0);
+    const auto sample = game::navigation::GravityFieldSystem::sample(probe, bodies);
+    REQUIRE(sample.primaryBodyId == "system_0.Sol.Земля");
+    requireNear(sample.primaryAccelerationMps2, 3.986004e14 / (7.0e6 * 7.0e6), 0.05, "Earth gravity at 7000 km");
 }
 
 void testClientUniverseTimelineUsesServerAnchor()
@@ -507,6 +638,22 @@ int main()
         {
             "requested time changes computed state",
             testRequestedTimeChangesComputedState
+        },
+        {
+            "physical catalog loads every system with Kepler orbits",
+            testPhysicalCatalogLoadsEverySystemWithKeplerOrbits
+        },
+        {
+            "Sol keeps hard dependencies and J2000 ephemeris",
+            testSolKeepsHardDependenciesAndJ2000Ephemeris
+        },
+        {
+            "system map bridge hides barycenters, centres circumbinary orbits",
+            testSystemMapBridgeHidesBarycentersAndCentresCircumbinaryOrbits
+        },
+        {
+            "gravity field uses generated bodies",
+            testGravityFieldUsesGeneratedBodies
         }
     };
 

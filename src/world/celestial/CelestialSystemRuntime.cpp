@@ -1,6 +1,7 @@
 #include "src/world/celestial/CelestialSystemRuntime.h"
 #include "src/world/celestial/CelestialOrbitKinematics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <unordered_map>
 
@@ -32,9 +33,11 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
 
     std::unordered_map<std::string, glm::dvec3> worldAuById;
     std::unordered_map<std::string, glm::dvec3> worldVelocityAuById;
+    std::unordered_map<std::string, const CelestialBodyDefinition*> definitionById;
 
     for (const auto& body : m_definition->bodies)
     {
+        definitionById[body.id] = &body;
         CelestialBodyState state;
         state.id = body.id;
         state.name = body.name;
@@ -74,11 +77,28 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
                 parentVelocityAuPerSecond = velocityIt->second;
         }
 
-        const glm::dvec3 relativeAu =
-            computeRelativePositionAu(body, simTimeSeconds);
-
-        const glm::dvec3 relativeVelocityAuPerSecond =
-            computeRelativeVelocityAuPerSecond(body, simTimeSeconds);
+        glm::dvec3 relativeAu {0.0};
+        glm::dvec3 relativeVelocityAuPerSecond {0.0};
+        if (body.keplerOrbit)
+        {
+            keplerStateAu(body, simTimeSeconds, relativeAu, relativeVelocityAuPerSecond);
+            if (body.orbitInParentEquator)
+            {
+                const auto parentDef = definitionById.find(body.parentId);
+                if (parentDef != definitionById.end())
+                {
+                    const auto& p = *parentDef->second;
+                    relativeAu = rotateFromParentEquator(relativeAu, p.axialTiltDeg, p.axisNodeDeg);
+                    relativeVelocityAuPerSecond =
+                        rotateFromParentEquator(relativeVelocityAuPerSecond, p.axialTiltDeg, p.axisNodeDeg);
+                }
+            }
+        }
+        else
+        {
+            relativeAu = computeRelativePositionAu(body, simTimeSeconds);
+            relativeVelocityAuPerSecond = computeRelativeVelocityAuPerSecond(body, simTimeSeconds);
+        }
 
         state.positionAu = parentAu + relativeAu;
         state.velocityAuPerSecond =
@@ -87,7 +107,16 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         state.worldVelocityMetersPerSecond =
             state.velocityAuPerSecond * MetersPerAu;
 
-        if (body.orbitalPeriodDays > 0.0)
+        if (body.keplerOrbit && body.orbitalPeriodDays > 0.0)
+        {
+            // Mean longitude.
+            const double n = OrbitTwoPi / (body.orbitalPeriodDays * SecondsPerDay);
+            state.orbitalPhaseRad = std::fmod(
+                (body.longitudeAscendingNodeDeg + body.argumentOfPeriapsisDeg + body.meanAnomalyAtEpochDeg) *
+                    OrbitTwoPi / 360.0 + n * (simTimeSeconds - body.orbitEpochSeconds),
+                OrbitTwoPi);
+        }
+        else if (body.orbitalPeriodDays > 0.0)
         {
             state.orbitalPhaseRad =
                 circularOrbitPhaseRad(

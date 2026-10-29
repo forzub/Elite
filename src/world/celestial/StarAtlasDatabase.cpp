@@ -6,6 +6,7 @@
 #include <cctype>
 #include <filesystem>
 #include <sstream>
+#include <optional>
 #include <unordered_map>
 #include <stdexcept>
 
@@ -53,6 +54,8 @@ std::uint64_t computeCatalogFingerprint(const fs::path& root)
     std::vector<fs::path> files;
 
     for (const char* directory : {
+            "systems",
+            "distant_systems",
             "systems_details",
             "distant_systems_details",
             "objects_details"})
@@ -129,6 +132,9 @@ struct SystemCatalogDocument
     fs::path sourcePath;
     StarSystemSummary summary;
     json details;
+    // Set for a physical-catalog directory: the runtime definition is built
+    // from generated data instead of `details`.
+    std::optional<CelestialSystemDefinition> physical;
 };
 
 std::string normalizeCatalogName(std::string value)
@@ -269,6 +275,21 @@ bool collectJsonFiles(
     return true;
 }
 
+bool validateSystemCatalogRoot(
+    const json& root,
+    const fs::path& path,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error
+);
+
+bool parsePhysicalSystemDirectory(
+    const fs::path& directory,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error
+);
+
 bool parseSystemCatalogFile(
     const fs::path& path,
     StarSystemCatalogScope catalogScope,
@@ -288,6 +309,17 @@ bool parseSystemCatalogFile(
         return false;
     }
 
+    return validateSystemCatalogRoot(root, path, catalogScope, out, error);
+}
+
+bool validateSystemCatalogRoot(
+    const json& root,
+    const fs::path& path,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error
+)
+{
     const auto fail =
         [&](const std::string& message)
         {
@@ -548,9 +580,15 @@ bool loadSystemCatalogDocuments(
 {
     report = CatalogLoadReport {};
 
+    // The physical catalog (systems/, distant_systems/) replaces the legacy
+    // documents as a whole once it exists: never a mix of both.
+    const bool physicalCatalog =
+        fs::is_directory(fs::path(galaxyDetailsRoot) / "systems");
+    const std::string physicalName =
+        std::string(directoryName) == "distant_systems_details" ? "distant_systems" : "systems";
     const fs::path directory =
         fs::path(galaxyDetailsRoot) /
-        directoryName;
+        (physicalCatalog ? physicalName : std::string(directoryName));
 
     if (allowMissingOrEmpty)
     {
@@ -575,7 +613,21 @@ bool loadSystemCatalogDocuments(
 
     std::vector<fs::path> files;
 
-    if (!collectJsonFiles(
+    if (physicalCatalog)
+    {
+        std::error_code ec;
+        if (fs::is_directory(directory, ec))
+            for (const auto& entry : fs::directory_iterator(directory, ec))
+                if (entry.is_directory() && fs::exists(entry.path() / "system.json"))
+                    files.push_back(entry.path());
+        std::sort(files.begin(), files.end());
+        if (files.empty() && !allowMissingOrEmpty)
+        {
+            fatalError = "no system directories in: " + directory.generic_string();
+            return false;
+        }
+    }
+    else if (!collectJsonFiles(
             directory,
             allowMissingOrEmpty,
             files,
@@ -597,11 +649,9 @@ bool loadSystemCatalogDocuments(
         SystemCatalogDocument document;
         std::string fileError;
 
-        if (!parseSystemCatalogFile(
-                path,
-                catalogScope,
-                document,
-                fileError))
+        if (!(physicalCatalog
+                  ? parsePhysicalSystemDirectory(path, catalogScope, document, fileError)
+                  : parseSystemCatalogFile(path, catalogScope, document, fileError)))
         {
             addCatalogSkip(report, fileError);
             continue;
@@ -1924,6 +1974,9 @@ CelestialSystemDefinition buildSystemDefinition(
     const SystemCatalogDocument& document
 )
 {
+    if (document.physical)
+        return *document.physical;
+
     const json& srcSystem = document.details;
 
     CelestialSystemDefinition system;
@@ -2023,6 +2076,325 @@ CelestialSystemDefinition buildSystemDefinition(
     }
 
     return system;
+}
+
+/*
+    Physical catalog (src/world/generation): one directory per system,
+        <dir>/system.json                 identity, position, stellar hierarchy
+        <dir>/generated/system.json       present-day stars, barycenters
+        <dir>/generated/bodies/*.json     planets, dwarf planets, moons
+        <dir>/generated/reservoirs/*.json small-body populations
+    The directory is validated with the same rules as a legacy document and
+    becomes a runtime definition with Keplerian orbits.
+*/
+
+std::string joinSpectralTypes(const json& stars)
+{
+    std::string out;
+    for (const auto& s : stars)
+    {
+        if (!out.empty())
+            out += " + ";
+        out += s.value("spectral_type", std::string("?"));
+    }
+    return out;
+}
+
+void readKeplerOrbit(const json& orbit, CelestialBodyDefinition& body)
+{
+    body.keplerOrbit = true;
+    body.distanceAu = orbit.value("semi_major_axis_au", 0.0);
+    body.orbitalPeriodDays = orbit.value("period_days", 0.0);
+    body.eccentricity = orbit.value("eccentricity", 0.0);
+    body.inclinationDeg = orbit.value("inclination_deg", 0.0);
+    body.longitudeAscendingNodeDeg = orbit.value("longitude_ascending_node_deg", 0.0);
+    body.argumentOfPeriapsisDeg = orbit.value("argument_of_periapsis_deg", 0.0);
+    body.meanAnomalyAtEpochDeg = orbit.value("mean_anomaly_at_epoch_deg", 0.0);
+    body.orbitEpochSeconds = orbit.value("epoch_universe_seconds", 0.0);
+    body.orbitalDirection = orbit.value("direction", 1) < 0 ? -1 : 1;
+}
+
+// Render bands for a generated ring system, in the ring_system schema the
+// renderer already reads; gaps split a band.
+json ringSystemFromGenerated(const json& rings)
+{
+    json bands = json::array();
+    for (const auto& r : rings)
+    {
+        const double tau = r.value("optical_depth", 0.0);
+        const double ice = r.value("ice_fraction", 0.0);
+        const double dust = r.value("dust_fraction", 0.0);
+        const std::string vis = r.value("visibility_class", std::string("secondary"));
+        const double opacity = std::max(0.02, std::min(0.9, 1.0 - std::exp(-tau)));
+        json tint = ice > 0.6 ? json::array({0.90, 0.87, 0.80})
+                  : dust > 0.5 ? json::array({0.62, 0.57, 0.52}) : json::array({0.56, 0.50, 0.44});
+        std::vector<std::pair<double, double>> spans {{r.value("inner_radius_km", 0.0), r.value("outer_radius_km", 0.0)}};
+        if (r.contains("gaps_km"))
+            for (const auto& g : r["gaps_km"])
+            {
+                std::vector<std::pair<double, double>> next;
+                for (const auto& [lo, hi] : spans)
+                {
+                    const double g0 = g[0].get<double>(), g1 = g[1].get<double>();
+                    if (g1 <= lo || g0 >= hi) { next.push_back({lo, hi}); continue; }
+                    if (g0 > lo) next.push_back({lo, g0});
+                    if (g1 < hi) next.push_back({g1, hi});
+                }
+                spans = next;
+            }
+        int part = 0;
+        for (const auto& [lo, hi] : spans)
+        {
+            json band;
+            band["name"] = r.value("name", std::string("ring")) + (spans.size() > 1 ? " " + std::to_string(++part) : "");
+            band["distance_from_planet_km"] = {{"inner", lo}, {"outer", hi}};
+            band["composition"] = ice > 0.6 ? "water ice" : dust > 0.5 ? "dust" : "rock and dust";
+            band["render"] = {{"role", "ring"}, {"tint_rgb", tint}, {"opacity", opacity}, {"optical_depth", tau},
+                              {"visibility_class", vis}, {"display_mode", "layered_band"},
+                              {"casts_shadow", tau > 0.1}, {"edge_softness", vis == "faint" ? 0.3 : 0.05}};
+            bands.push_back(band);
+        }
+    }
+    return json {{"plane", {{"mode", "planet_equatorial"}, {"normal_source", "planet_rotation_axis"},
+                             {"inclination_offset_deg", 0.0}}},
+                 {"data_status", "generated"}, {"bands", bands}};
+}
+
+CelestialBodyDefinition bodyFromGenerated(const json& b)
+{
+    CelestialBodyDefinition body;
+    body.id = b.at("id").get<std::string>();
+    body.name = b.value("designation", body.id);
+    const std::string kind = b.value("kind", std::string("planet"));
+    body.type = kind == "moon" ? BodyType::Moon : BodyType::Planet;
+    body.parentId = b.value("parent_id", std::string());
+    const json& phys = b.at("physical");
+    body.massKg = phys.value("mass_kg", 0.0);
+    body.gravitationalParameterM3s2 = phys.value("mu_m3s2", GravitationalConstant * body.massKg);
+    body.radiusKm = phys.value("radius_km", 0.0);
+    body.diameterKm = 2.0 * body.radiusKm;
+    body.bodyClass = phys.value("body_class", std::string());
+    readKeplerOrbit(b.at("orbit"), body);
+    body.orbitInParentEquator = kind == "moon";
+    body.environmentPresetId = b.value("environment_preset_id", std::string());
+    if (b.contains("atmosphere"))
+        body.atmosphereOuterRadiusKm = b["atmosphere"].value("outer_radius_km", 0.0);
+
+    // Orientation through the legacy reader; authored visual keys win.
+    const json spin = b.value("spin", json::object());
+    json orientation = {
+        {"axial_tilt_deg", spin.value("obliquity_deg", 0.0)},
+        {"axis_node_deg", spin.value("axis_node_deg", 0.0)},
+        {"rotation_direction", spin.value("rotation_direction", 1)},
+        {"orbit_direction", body.orbitalDirection}};
+    const json extra = b.value("extra", json::object());
+    for (const char* key : {"axis_node_deg", "rotation_offset_deg", "texture_longitude_offset_deg",
+                            "orbit_phase_offset_deg", "rotation_direction"})
+        if (extra.contains(key))
+            orientation[key] = extra[key];
+    readOrientationFields(orientation, body);
+    body.dayLengthHours = spin.value("rotation_period_hours", 0.0);
+    if (extra.contains("environment_preset_id") && extra["environment_preset_id"].is_string())
+        body.environmentPresetId = extra["environment_preset_id"].get<std::string>();
+    readAlternativeNames(b, body);
+
+    if (extra.contains("ring_system") && extra["ring_system"].is_object())
+        readRings(json {{"ring_system", extra["ring_system"]}}, body);
+    else if (b.contains("rings") && b["rings"].is_array() && !b["rings"].empty())
+        readRings(json {{"ring_system", ringSystemFromGenerated(b["rings"])}}, body);
+    return body;
+}
+
+bool validateSystemCatalogRoot(
+    const json& root,
+    const fs::path& path,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error);
+
+bool parsePhysicalSystemDirectory(
+    const fs::path& directory,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error)
+{
+    json sys, gen;
+    try
+    {
+        sys = loadJson((directory / "system.json").string());
+        gen = loadJson((directory / "generated" / "system.json").string());
+    }
+    catch (const std::exception& e)
+    {
+        error = directory.generic_string() + ": " + e.what();
+        return false;
+    }
+    if (sys.value("schema", std::string()) != "elite.star_system.v2" ||
+        gen.value("schema", std::string()) != "elite.generated_system.v1")
+    {
+        error = directory.generic_string() + ": unsupported physical catalog schema";
+        return false;
+    }
+    if (!gen.contains("stars") || !gen["stars"].is_array() || gen["stars"].empty())
+    {
+        error = directory.generic_string() + ": generated/system.json has no stars";
+        return false;
+    }
+    if (gen.value("system_id", -1) != sys.value("id", -2))
+    {
+        error = directory.generic_string() + ": generated system_id does not match system.json id";
+        return false;
+    }
+
+    // Same validation as a legacy document.
+    json root = json::object();
+    root["schema_version"] = 1;
+    root["kind"] = "star_system";
+    for (const char* key : {"id", "name", "position_ly", "atlas_visible", "route_target", "quest_role"})
+        if (sys.contains(key))
+            root[key] = sys[key];
+    if (sys.value("catalog_scope", std::string("local")) == "distant" ||
+        catalogScope == StarSystemCatalogScope::Distant)
+        root["catalog_scope"] = sys.value("catalog_scope", std::string("local"));
+    root["stars_count"] = static_cast<int>(gen["stars"].size());
+    root["star_type"] = joinSpectralTypes(gen["stars"]);
+    root["details"] = {{"stars", gen["stars"]}};
+    if (!validateSystemCatalogRoot(root, directory / "system.json", catalogScope, out, error))
+        return false;
+
+    CelestialSystemDefinition def;
+    def.systemId = out.summary.id;
+    def.name = out.summary.name;
+    std::unordered_map<std::string, std::string> nodeBodyId;
+    for (const auto& n : gen.value("barycenters", json::array()))
+        nodeBodyId[n.value("id", std::string())] = n.value("body_id", std::string());
+    for (const auto& s : gen["stars"])
+        nodeBodyId[s.value("key", std::string())] = s.value("id", std::string());
+    auto parentBody = [&](const json& j) {
+        const std::string node = j.value("parent_node", std::string());
+        const auto it = nodeBodyId.find(node);
+        return node.empty() || it == nodeBodyId.end() ? std::string() : it->second;
+    };
+    std::unordered_map<std::string, double> massKgById;
+
+    // Barycenters (generator lists parents first), then stars.
+    for (const auto& n : gen.value("barycenters", json::array()))
+    {
+        CelestialBodyDefinition body;
+        body.id = n.value("body_id", std::string());
+        body.name = n.value("id", std::string());
+        body.type = BodyType::Barycenter;
+        body.parentId = parentBody(n);
+        body.massKg = n.value("mass_solar", 0.0) * 1.98847e30;
+        body.gravitationalParameterM3s2 = GravitationalConstant * body.massKg;
+        if (n.contains("orbit"))
+            readKeplerOrbit(n["orbit"], body);
+        massKgById[body.id] = body.massKg;
+        def.bodies.push_back(std::move(body));
+    }
+    for (const auto& s : gen["stars"])
+    {
+        CelestialBodyDefinition body;
+        body.id = s.value("id", std::string());
+        body.name = s.value("name", std::string("Star"));
+        body.type = BodyType::Star;
+        body.parentId = parentBody(s);
+        body.massKg = s.value("mass_solar", 1.0) * 1.98847e30;
+        body.gravitationalParameterM3s2 = s.value("mu_m3s2", GravitationalConstant * body.massKg);
+        body.radiusKm = s.value("radius_solar", 1.0) * 695700.0;
+        body.diameterKm = 2.0 * body.radiusKm;
+        body.dayLengthHours = s.value("rotation_period_days", 0.0) * 24.0;
+        if (s.contains("orbit"))
+            readKeplerOrbit(s["orbit"], body);
+        readAlternativeNames(s, body);
+        massKgById[body.id] = body.massKg;
+        def.bodies.push_back(std::move(body));
+    }
+
+    // Bodies, one file each; an invalid body file drops only that body.
+    std::vector<fs::path> files;
+    std::string listError;
+    collectJsonFiles(directory / "generated" / "bodies", true, files, listError);
+    std::vector<CelestialBodyDefinition> planets, moons;
+    for (const auto& f : files)
+    {
+        try
+        {
+            const json b = loadJson(f.string());
+            if (b.value("schema", std::string()) != "elite.generated_body.v1")
+                throw std::runtime_error("unsupported body schema");
+            CelestialBodyDefinition body = bodyFromGenerated(b);
+            (body.type == BodyType::Moon ? moons : planets).push_back(std::move(body));
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[StarAtlasDatabase] skipped invalid body file " << f.generic_string() << ": "
+                      << e.what() << "\n";
+        }
+    }
+    const auto byOrbit = [](const CelestialBodyDefinition& a, const CelestialBodyDefinition& b) {
+        return a.parentId != b.parentId ? a.parentId < b.parentId
+             : a.distanceAu != b.distanceAu ? a.distanceAu < b.distanceAu : a.id < b.id;
+    };
+    std::sort(planets.begin(), planets.end(), byOrbit);
+    std::sort(moons.begin(), moons.end(), byOrbit);
+    std::unordered_map<std::string, bool> known;
+    for (const auto& b : def.bodies) known[b.id] = true;
+    for (auto& b : planets)
+    {
+        if (!known.count(b.parentId))
+        {
+            std::cerr << "[StarAtlasDatabase] skipped body " << b.id << ": unknown parent " << b.parentId << "\n";
+            continue;
+        }
+        known[b.id] = true;
+        def.bodies.push_back(std::move(b));
+    }
+    for (auto& b : moons)
+    {
+        if (!known.count(b.parentId))
+        {
+            std::cerr << "[StarAtlasDatabase] skipped moon " << b.id << ": unknown parent " << b.parentId << "\n";
+            continue;
+        }
+        def.bodies.push_back(std::move(b));
+    }
+
+    // Belts shown on maps: asteroid / outer belts and debris disks.
+    files.clear();
+    collectJsonFiles(directory / "generated" / "reservoirs", true, files, listError);
+    for (const auto& f : files)
+    {
+        try
+        {
+            const json r = loadJson(f.string());
+            const std::string kind = r.value("kind", std::string());
+            if (kind != "asteroid_belt" && kind != "kuiper_belt" && kind != "debris_disk")
+                continue;
+            CelestialBodyDefinition body;
+            body.id = r.at("id").get<std::string>();
+            body.name = r.value("name", body.id);
+            body.type = BodyType::AsteroidBelt;
+            body.parentId = r.value("parent_id", std::string());
+            body.distanceAu = r.value("peak_au", 0.0);
+            const auto parentMass = massKgById.find(body.parentId);
+            if (parentMass != massKgById.end() && body.distanceAu > 0.0)
+            {
+                const double a = body.distanceAu * MetersPerAu;
+                body.orbitalPeriodDays = 6.283185307179586 *
+                    std::sqrt(a * a * a / (GravitationalConstant * parentMass->second)) / SecondsPerDay;
+            }
+            if (known.count(body.parentId))
+                def.bodies.push_back(std::move(body));
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[StarAtlasDatabase] skipped invalid reservoir file " << f.generic_string() << ": "
+                      << e.what() << "\n";
+        }
+    }
+    out.physical = std::move(def);
+    return true;
 }
 
 } // namespace

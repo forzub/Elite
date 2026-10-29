@@ -16,13 +16,18 @@ public:
     // Bump only when the parser/semantic contract for the static physical
     // catalog changes incompatibly. Content changes are detected separately
     // through contentFingerprint().
-    static constexpr std::uint32_t CatalogSchemaVersion = 1;
+    // 2: per-system physical catalog (systems/, distant_systems/) produced by
+    //    src/world/generation, Keplerian orbits, barycenter nodes.
+    static constexpr std::uint32_t CatalogSchemaVersion = 2;
 
     /*
-        Loads every JSON document from:
-            <galaxyDetailsRoot>/systems_details
-            <galaxyDetailsRoot>/distant_systems_details
+        Loads the physical catalog (one directory per system, see
+        galaxy_details/README.md):
+            <galaxyDetailsRoot>/systems/<NNN>_<slug>/
+            <galaxyDetailsRoot>/distant_systems/<id>_<slug>/
             <galaxyDetailsRoot>/objects_details
+        The legacy flat documents (systems_details/, distant_systems_details/)
+        are read only when systems/ does not exist; never mixed.
 
         Local systems are published through systems(); distant quest and
         route targets are published through distantSystems(). Both are

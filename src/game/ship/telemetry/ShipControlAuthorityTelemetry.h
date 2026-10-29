@@ -130,6 +130,17 @@ inline void applyNewtonianRcsScalarBounds(
     {
         applyNewtonianRcsScalarBounds(
             p,telemetry.positive,telemetry.negative);
+        // The published forward main authority is LIVE (ER-5 power,
+        // reactor state); the installed capability is cached per equipment
+        // revision. Never plan or fly on more main than the server can power.
+        const double rating =
+            std::max(0.0,static_cast<double>(p.forwardMainEngineAccelerationMps2));
+        const double live =
+            std::max(0.0,telemetry.workingForwardAccelerationMps2);
+        const double forward = rating>0.0 ? std::min(rating,live) : live;
+        p.forwardMainEngineAccelerationMps2 = static_cast<float>(forward);
+        p.forwardMainEngineAvailable =
+            p.forwardMainEngineAvailable && forward>1.0e-6;
         return p;
     }
     if(game::ship::plant::familyOf(telemetry.model)!=

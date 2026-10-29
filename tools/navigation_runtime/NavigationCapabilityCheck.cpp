@@ -184,6 +184,15 @@ int main()
         core.newtonianPropulsionPowerShares(mainShare, rcsShare);
         std::printf("     ER-5 70%% damaged: available %.0f MW, main share %.4f, rcs share %.4f\n",
                     core.engineReactorAvailableMW(0), mainShare, rcsShare);
+        bool valid = false;
+        const ShipParams damaged = clientParams(core, valid);
+        std::printf("     ER-5 70%%: telemetry working forward %.2f, client capability main %.2f (valid %d)%s",
+                    core.controlAuthorityTelemetry().workingForwardAccelerationMps2,
+                    makeNavigationControlCapability(damaged, LocalFlightControlLaw::Newtonian).mainForwardMps2,
+                    valid ? 1 : 0, "\n");
+        check(valid && std::abs(makeNavigationControlCapability(damaged, LocalFlightControlLaw::Newtonian).mainForwardMps2 -
+                                core.controlAuthorityTelemetry().workingForwardAccelerationMps2) < 1.0e-4,
+              "ER-5 70 %: client main capability == published live main (was the cached installed value)");
     }
 
     // Combined two-axis RCS demand (measurement; per-axis limits are single-axis).

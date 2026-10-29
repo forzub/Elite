@@ -204,8 +204,15 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
     HD 102194 now = the real K2 III giant at 630 ly.
   - System Map still draws orbits as circles of radius a (positions are
     Keplerian); ellipse / inclination drawing pending.
-  - Interstellar objects (rogue bodies from ejections, brown dwarfs, comets)
-    and volumetric ISM regions (+ Galaxy Map layer) NOT done yet.
+  - Interstellar layer DONE (`9d5ed180`): InterstellarGenerator per 25-ly
+    GalacticCell (rogue giants / terrestrials / binaries / moons, brown dwarfs
+    beyond the WISE-complete 20 ly, remnants, interstellar comets, debris
+    groups) + ISM regions (real Local Bubble, LIC, G, Blue, Leo cold cloud,
+    approximate geometry; rare warm cloudlets), 265 objects in
+    `objects_details/gen_*.json` (tool `interstellar`), loaded by StarAtlas,
+    covered by `determinism`. Galaxy Map: dim points + false-colour ellipsoid
+    outlines (GalaxyMapObject extent/colour on the wire) - VISUALLY UNVERIFIED.
+    Real flight after the change: session starts, 0 violations.
   - Navigation ephemeris API (position/velocity(t), influence, prediction)
     exists only as runtime snapshot + GravityFieldSystem; no prediction
     service yet. Atmosphere radius stored per body (not yet used by gravity).

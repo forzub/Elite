@@ -70,13 +70,30 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
 - Offline healthy matrix (126 runs): 0 violations, bit-identical since step G.
   Damaged matrices: main (I 50 %, X 3/4 mains) 2 violations (known limit
   below), RCS nozzle 60 %: 126/126 DONE, 0 violations.
+- Step J/K (2026-10-29, user order 01:56: dock roll, balanced nozzle heating,
+  structural J, planner never gives up; docking NOT in scope):
+  `93d969b6` terminal roll follows the live dock roll phase (hull bottom =
+  dock bottom) + balanced RCS nozzle heating (bursts free, sustained full burn
+  derates toward 60 %); `3cd14164` J straight ramps without the stacked
+  execution share (curves keep it), Newtonian obstacles cleared by hull + 20 m,
+  failed attempts coast and replan (5 attempts >= 5 s apart) before a final
+  failure. Offline matrix J4: 126/126 DONE, 0 violations, route time -1.35 %.
+  FAILED gate on `3cd14164` flights: Newtonian-I, -X and narrow-X never
+  reached DONE - terminal looped ATTITUDE_ALIGN <-> RATE_SETTLE because the
+  spinning dock's roll rate counted as hull rotation. Fix `af7897ee`: with a
+  rotating terminal frame the rest is judged on pitch/yaw and the hull keeps
+  following the roll after DONE. Real flights on `af7897ee`: Newtonian I/Y/X,
+  narrow I/X - all DONE and held to the end (final 1.4-4.1 m, 0.02-0.03 m/s,
+  att 2.4-2.5 deg, roll lag 7-8 deg), 0 corridor violations; Assisted-I
+  failed=0. (Session was cut by a Windows Update reboot 03:02; recovered from
+  the transcript, nothing lost.)
 - Status: WIP commits on main; steps A-I flight-verified on ONE scenario
   (nav-stress:simple) + the DEV narrow fixture; NOT accepted for docking,
   other stations or real combat damage geometry.
 
 ### Open debt (criticality assessed 2026-10-29)
-- Medium: speed (step J) - two cheap hypotheses rejected (they spend real
-  margin for 1-2 %); a structural speed design is needed (proposal).
+- Medium: speed - structural J gives only -1.35 % (straight ramps); a
+  larger speed-up is not pursued now (user: plausible and simplified wins).
 - Low: two-narrow-zones offline, delay 6 ticks, main lost inside zone 1: R16
   curve entered too fast (runtime profile above the lowered nominal; root
   cause not isolated). Cause visible to the player (damage), monitor logs it.
@@ -87,13 +104,20 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
   main pulses ("micro-brakes") after a reprofile; game ~15 % slower than the
   replay of the same start; one unexplained pilot-dt x1.64 flight (not
   reproduced in 9 later flights).
-- Not done: RCS nozzle heating as a second limit; HUD docking status text for
+- Not done: HUD docking status text for
   "awaiting RCS gas pressure" (log only); docking architecture
   (DockFrameKinematics etc.) - future stage.
 
 ### Next step
-- User decision on a structural speed-up design (J) and on nozzle heating;
-  then the docking architecture stage.
+- Autopilot/planner piece closed (J/K). NEXT STAGE (user task 2026-10-29):
+  full regeneration of the planetary content of all existing star systems
+  (61: IDs 0-17, 19-60 local + distant 100062 Kepler-62) with one
+  deterministic production generator; stars, coordinates and system IDs are
+  preserved, planets/moons/rings/belts/reservoirs are regenerated. Catalog
+  audit done (79 stars, 208 planets, 138 moons; body IDs from names; runtime
+  orbits circular XZ; hard deps only in Sol: Earth hub/spawn, Mars in
+  InterplanetaryTransferLab, 545 localization keys). Generator code: none yet.
+  Docking architecture: later.
 
 ## HISTORICAL CHRONOLOGY (verbatim, dated; superseded where the block above says so)
 

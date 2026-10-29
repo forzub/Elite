@@ -44,6 +44,43 @@ namespace world::celestial
         bool background = false;
     };
 
+    /*
+        Galaxy Map presentation proxy of the distinct interstellar-medium
+        structures (built once per catalog snapshot, client-local): per
+        structure an outer voxel shell of its density lattice (boundary faces
+        only, coplanar faces merged) at two levels of detail, one faint inner
+        shell for dense molecular structures, and a far-zoom blob. Vertices
+        are in ICRS light-years with premultiplied colour (phase convention x
+        visual weight x face shade), all shells in ONE vertex array so the GPU
+        copy is made once. The physical lattices stay in the StarAtlas.
+    */
+    struct GalaxyMapMediumAtlas
+    {
+        struct Vertex
+        {
+            glm::vec3 positionLy {0.0f};
+            glm::vec4 rgba {0.0f};
+        };
+        struct Range
+        {
+            std::uint32_t first = 0;
+            std::uint32_t count = 0;
+        };
+        struct Proxy
+        {
+            char phase = 'p';
+            glm::dvec3 centreLy {0.0};
+            float radiusLy = 0.0f;
+            Range coarse;
+            Range detailed;
+            Range inner;
+            glm::vec4 blobRgba {0.0f};   // straight (not premultiplied)
+        };
+        std::uint64_t uid = 0;           // identity of this vertex set (GPU cache key)
+        std::vector<Vertex> vertices;
+        std::vector<Proxy> proxies;
+    };
+
     struct GalaxyMapObject
     {
         std::string id;
@@ -57,6 +94,9 @@ namespace world::celestial
         // presentation of its density lattice. Client-local data rebuilt from
         // the StarAtlas, never on the wire. Null for compact objects.
         std::shared_ptr<const GalaxyMapMediumVolume> mediumVolume;
+        // Index into GalaxyMapSnapshot::mediumAtlas proxies (-1: none; the
+        // background medium has no map proxy).
+        int mediumProxy = -1;
     };
 
     struct GalaxyMapSnapshot
@@ -66,6 +106,7 @@ namespace world::celestial
 
         std::vector<GalaxyMapSystem> systems;
         std::vector<GalaxyMapObject> objects;
+        std::shared_ptr<const GalaxyMapMediumAtlas> mediumAtlas;
     };
 
 

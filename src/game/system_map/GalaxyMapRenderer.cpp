@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <cctype>
 #include <cstdint>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <optional>
 #include <sstream>
@@ -17,6 +19,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "src/core/RuntimeTrace.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
@@ -349,6 +352,30 @@ namespace
 
 namespace game::system_map
 {
+namespace
+{
+    // [GalaxyMapPerf] interstellar-medium draw cost (ELITE_TRACE_RUNTIME=1).
+    void traceMediumCost(double ms)
+    {
+        if (!core::runtimeTraceEnabled())
+            return;
+        static int frames = 0;
+        static double sum = 0.0, peak = 0.0;
+        static auto begin = std::chrono::steady_clock::now();
+        ++frames;
+        sum += ms;
+        peak = std::max(peak, ms);
+        const auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration<double>(now - begin).count() >= 2.0)
+        {
+            std::cerr << "[GalaxyMapPerf] medium_avg_ms=" << sum / frames << " medium_max_ms=" << peak
+                      << " frames=" << frames << std::endl;
+            frames = 0;
+            sum = peak = 0.0;
+            begin = now;
+        }
+    }
+}
     void GalaxyMapRenderer::render(
         GalaxyMapView& viewState,
         GalaxyMapRenderContext& context,
@@ -451,13 +478,12 @@ namespace game::system_map
                 glm::radians(48.0f) * 0.5f
             );
 
-        drawMediumVolumes(
-            viewState,
-            context,
-            galaxy,
-            view,
-            mvp
-        );
+        {
+            const auto mediumBegin = std::chrono::steady_clock::now();
+            drawMediumVolumes(viewState, context, galaxy, view, mvp, viewport);
+            traceMediumCost(std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - mediumBegin).count());
+        }
 
         for (const auto& system : galaxy.systems)
         {
@@ -688,84 +714,74 @@ namespace game::system_map
     }
 
 /*
-    Interstellar medium as a translucent false-colour volume: every visible
-    voxel of the structures and of the background cells becomes one soft
-    sprite. Very low opacity, no outline; visual priority stars / route /
-    selection > compact objects > medium. Colour = phase (map convention):
-    hot ionised, warm partly ionised, warm neutral, cold neutral, molecular /
-    dust-rich, supernova-enriched shell. A sprite budget keeps the frame
-    cost bounded; sparser sampling enlarges the sprites.
+    Interstellar medium on the map: only the distinct structures, as their
+    presentation proxies (GalaxyMapMediumAtlas, built once per snapshot). The
+    background medium exists physically but is not drawn. Per structure:
+    frustum culling of its bounding sphere, then by projected radius a soft
+    blob (far), the coarse shell or the detailed shell (+ the faint inner
+    shell of a dense molecular structure). All shells are one static GPU
+    buffer drawn with one multi-draw; nothing is rebuilt per frame. Visual
+    priority stays stars / route / selection > compact objects > medium.
 */
 void GalaxyMapRenderer::drawMediumVolumes(
     GalaxyMapView& viewState,
     GalaxyMapRenderContext& context,
     const world::celestial::GalaxyMapSnapshot& galaxy,
     const glm::mat4& view,
-    const glm::mat4& mvp
+    const glm::mat4& mvp,
+    const Viewport& viewport
 ) const
 {
-    struct PhaseStyle
-    {
-        glm::vec3 rgb;
-        float alpha;
-    };
-    const auto style = [](char phase) -> PhaseStyle {
-        switch (phase)
-        {
-        case 'p': return {{0.25f, 0.80f, 0.80f}, 0.10f};
-        case 'w': return {{0.35f, 0.55f, 0.95f}, 0.05f};
-        case 'c': return {{0.85f, 0.92f, 1.00f}, 0.12f};
-        case 'm': return {{0.95f, 0.55f, 0.25f}, 0.16f};
-        case 's': return {{0.95f, 0.35f, 0.55f}, 0.09f};
-        default: return {{0.62f, 0.40f, 0.95f}, 0.0f}; // hot cavity: transparent
-        }
-    };
-    constexpr std::uint8_t MinOpacity = 10;
-    constexpr std::size_t SpriteBudget = 7000;
-
-    std::size_t candidates = 0;
-    for (const auto& object : galaxy.objects)
-        if (object.mediumVolume)
-            for (std::size_t k = 0; k < object.mediumVolume->opacity.size(); ++k)
-                candidates += object.mediumVolume->opacity[k] >= MinOpacity &&
-                              style(object.mediumVolume->phases[k]).alpha > 0.0f;
-    if (candidates == 0)
+    const auto& atlas = galaxy.mediumAtlas;
+    if (!atlas || atlas->proxies.empty())
         return;
-    const std::size_t stride = std::max<std::size_t>(1, (candidates + SpriteBudget - 1) / SpriteBudget);
-    const float strideScale = std::cbrt(static_cast<float>(stride));
+    using Range = world::celestial::GalaxyMapMediumAtlas::Range;
+    constexpr float BlobBelowPx = 6.0f;      // far zoom: one soft blob
+    constexpr float DetailFromPx = 70.0f;    // near zoom: the detailed shell
 
+    const float renderPerLy = viewState.vectorLyToRender(glm::dvec3(1.0, 0.0, 0.0)).x;
+    const glm::mat4 mvpLy = mvp * glm::scale(glm::mat4(1.0f), glm::vec3(renderPerLy));
+    // Frustum planes (Gribb-Hartmann) in light-years.
+    const auto row = [&](int r) { return glm::vec4(mvpLy[0][r], mvpLy[1][r], mvpLy[2][r], mvpLy[3][r]); };
+    const glm::vec4 planes[6] = {row(3) + row(0), row(3) - row(0), row(3) + row(1),
+                                 row(3) - row(1), row(3) + row(2), row(3) - row(2)};
+    const float clipYPerLy = glm::length(glm::vec3(row(1)));
+    const float halfHeightPx = 0.5f * static_cast<float>(std::max(viewport.height, 1));
+
+    static thread_local std::vector<Range> ranges;
+    ranges.clear();
+    bool anyBlob = false;
     context.beginVolumes();
-    std::size_t counter = 0;
-    for (const auto& object : galaxy.objects)
+    for (const auto& proxy : atlas->proxies)
     {
-        const auto& v = object.mediumVolume;
-        if (!v)
+        const glm::vec3 c(proxy.centreLy);
+        const float r = proxy.radiusLy;
+        bool inside = true;
+        for (const auto& plane : planes)
+            if (glm::dot(glm::vec3(plane), c) + plane.w < -r * glm::length(glm::vec3(plane)))
+            {
+                inside = false;
+                break;
+            }
+        if (!inside)
             continue;
-        const float radius =
-            glm::length(viewState.vectorLyToRender(glm::dvec3(v->voxelLy * 0.85, 0.0, 0.0))) * strideScale;
-        for (int k = 0; k < v->dims.z; ++k)
-            for (int j = 0; j < v->dims.y; ++j)
-                for (int i = 0; i < v->dims.x; ++i)
-                {
-                    const std::size_t index =
-                        static_cast<std::size_t>(i + v->dims.x * (j + v->dims.y * k));
-                    const std::uint8_t opacity = v->opacity[index];
-                    const PhaseStyle ps = style(v->phases[index]);
-                    if (opacity < MinOpacity || ps.alpha <= 0.0f)
-                        continue;
-                    if (counter++ % stride != 0)
-                        continue;
-                    const glm::dvec3 centre =
-                        v->originLy + (glm::dvec3(i, j, k) + 0.5) * v->voxelLy;
-                    context.addVolumeSprite(
-                        viewState.positionLyToRender(centre),
-                        radius,
-                        glm::vec4(ps.rgb, ps.alpha * static_cast<float>(opacity) / 255.0f),
-                        view
-                    );
-                }
+        const float w = std::max((mvpLy * glm::vec4(c, 1.0f)).w, 1.0e-4f);
+        const float radiusPx = r * clipYPerLy / w * halfHeightPx;
+        if (radiusPx < BlobBelowPx)
+        {
+            context.addVolumeSprite(viewState.positionLyToRender(proxy.centreLy),
+                                    0.8f * r * renderPerLy, proxy.blobRgba, view);
+            anyBlob = true;
+            continue;
+        }
+        const bool detailed = radiusPx >= DetailFromPx;
+        ranges.push_back(detailed ? proxy.detailed : proxy.coarse);
+        if (detailed && proxy.inner.count > 0)
+            ranges.push_back(proxy.inner);
     }
-    context.flushVolumes(mvp);
+    if (anyBlob)
+        context.flushVolumes(mvp);
+    context.drawMediumShells(*atlas, ranges, mvpLy);
 }
 
 void GalaxyMapRenderer::drawNavigationGrid(

@@ -3,8 +3,10 @@
 #include <glm/glm.hpp>
 
 #include <string>
+#include <vector>
 
 #include "src/render/types/Viewport.h"
+#include "src/world/celestial/SystemMapTypes.h"
 
 namespace world::celestial
 {
@@ -81,6 +83,15 @@ namespace game::system_map
         ) = 0;
 
         virtual void flushVolumes(const glm::mat4& mvp) = 0;
+
+        // Static translucent medium shells: the atlas vertex set (ICRS ly,
+        // premultiplied colour) is uploaded once per atlas uid; a frame draws
+        // only the given visible ranges (back faces culled, no depth writes).
+        virtual void drawMediumShells(
+            const world::celestial::GalaxyMapMediumAtlas& atlas,
+            const std::vector<world::celestial::GalaxyMapMediumAtlas::Range>& ranges,
+            const glm::mat4& mvpLy
+        ) = 0;
 
         virtual double currentTimeSeconds() const = 0;
 

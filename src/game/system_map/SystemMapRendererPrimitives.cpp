@@ -596,6 +596,85 @@ void SystemMapRenderer::flushVolumes(const glm::mat4& mvp)
     m_volumeVertices.clear();
 }
 
+void SystemMapRenderer::drawMediumShells(
+    const world::celestial::GalaxyMapMediumAtlas& atlas,
+    const std::vector<world::celestial::GalaxyMapMediumAtlas::Range>& ranges,
+    const glm::mat4& mvpLy
+)
+{
+    if (!m_shader || ranges.empty() || atlas.vertices.empty())
+        return;
+
+    using AtlasVertex = world::celestial::GalaxyMapMediumAtlas::Vertex;
+    if (!m_mediumVao)
+    {
+        glGenVertexArrays(1, &m_mediumVao);
+        glGenBuffers(1, &m_mediumVbo);
+        glBindVertexArray(m_mediumVao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_mediumVbo);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(AtlasVertex),
+                              reinterpret_cast<void*>(offsetof(AtlasVertex, positionLy)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(AtlasVertex),
+                              reinterpret_cast<void*>(offsetof(AtlasVertex, rgba)));
+        glBindVertexArray(0);
+        m_mediumAtlasUid = 0;
+    }
+    if (m_mediumAtlasUid != atlas.uid)
+    {
+        // Once per catalog snapshot, never per frame.
+        glBindBuffer(GL_ARRAY_BUFFER, m_mediumVbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(atlas.vertices.size() * sizeof(AtlasVertex)),
+                     atlas.vertices.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        m_mediumAtlasUid = atlas.uid;
+    }
+
+    m_mediumFirst.clear();
+    m_mediumCount.clear();
+    for (const auto& range : ranges)
+        if (range.count > 0)
+        {
+            m_mediumFirst.push_back(static_cast<int>(range.first));
+            m_mediumCount.push_back(static_cast<int>(range.count));
+        }
+    if (m_mediumFirst.empty())
+        return;
+
+    const GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
+    const GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+    GLboolean depthMaskWasEnabled = GL_TRUE;
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMaskWasEnabled);
+
+    glUseProgram(m_shader);
+    glUniformMatrix4fv(m_mvpLoc, 1, GL_FALSE, glm::value_ptr(mvpLy));
+    glBindVertexArray(m_mediumVao);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // premultiplied
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
+    glMultiDrawArrays(GL_TRIANGLES, m_mediumFirst.data(), m_mediumCount.data(),
+                      static_cast<GLsizei>(m_mediumFirst.size()));
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (!cullWasEnabled)
+        glDisable(GL_CULL_FACE);
+    glDepthMask(depthMaskWasEnabled);
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    if (!blendWasEnabled)
+        glDisable(GL_BLEND);
+}
+
 void SystemMapRenderer::addBillboardBall(
     const glm::vec3& center,
     float radius,

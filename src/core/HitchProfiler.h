@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -27,6 +28,12 @@ struct FrameState
     std::chrono::steady_clock::time_point last;
     std::vector<Mark> marks;
     long long frame = 0;
+    // Rolling window for [FrameStats] (every ~2 s).
+    std::chrono::steady_clock::time_point windowBegin;
+    int windowFrames = 0;
+    int windowSlowFrames = 0;
+    double windowSumMs = 0.0;
+    double windowMaxMs = 0.0;
 };
 
 inline FrameState& state()
@@ -60,8 +67,21 @@ inline void endFrame(double thresholdMs = 80.0)
     if (!core::runtimeTraceEnabled())
         return;
     auto& s = state();
-    const double total =
-        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - s.frameBegin).count();
+    const auto now = std::chrono::steady_clock::now();
+    const double total = std::chrono::duration<double, std::milli>(now - s.frameBegin).count();
+    if (s.windowFrames == 0)
+        s.windowBegin = s.frameBegin;
+    ++s.windowFrames;
+    s.windowSumMs += total;
+    s.windowMaxMs = std::max(s.windowMaxMs, total);
+    s.windowSlowFrames += total >= 50.0;
+    if (std::chrono::duration<double>(now - s.windowBegin).count() >= 2.0)
+    {
+        std::cerr << "[FrameStats] frames=" << s.windowFrames << " avg_ms=" << s.windowSumMs / s.windowFrames
+                  << " max_ms=" << s.windowMaxMs << " over50ms=" << s.windowSlowFrames << '\n';
+        s.windowFrames = s.windowSlowFrames = 0;
+        s.windowSumMs = s.windowMaxMs = 0.0;
+    }
     if (total < thresholdMs)
         return;
     std::cerr << "[HITCH] frame=" << s.frame << " total_ms=" << total;

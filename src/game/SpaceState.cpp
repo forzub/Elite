@@ -1140,6 +1140,22 @@ void SpaceState::update(float dt)
     processHtmlCommands();
     m_perfProcessHtmlMs = nowMs() - htmlStartMs;
 
+    // DEV (map performance measurements): ELITE_DEV_GALAXY_MAP_AT=<s> opens
+    // the Galaxy Map once, <s> seconds after the client started.
+    {
+        static const double openAtSeconds = [] {
+            const char* v = std::getenv("ELITE_DEV_GALAXY_MAP_AT");
+            return v && *v ? std::atof(v) : -1.0;
+        }();
+        static bool opened = false;
+        if (openAtSeconds >= 0.0 && !opened && context().app && m_client &&
+            startupElapsedMs(m_startupTotalBegin) >= openAtSeconds * 1000.0)
+        {
+            opened = true;
+            context().app->requestNavigationView(NavigationPresentationView::Galaxy);
+        }
+    }
+
 
 
     game::session::GameSessionAdvanceResult serverAdvance;

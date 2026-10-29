@@ -18,8 +18,15 @@ ELITE_AUTOPILOT_CASE_DUMP="$O/elite_${T}_case.txt" \
  ./build/EliteGame.exe --dev-direct-flight --diagnostic-scenario nav-stress:simple \
    > "$O/elite_$T.stdout" 2> "$O/elite_$T.stderr" &
 # Stop exactly the instance started here (never other EliteGame windows).
-WINPID=$(cat /proc/$!/winpid)
-sleep "$S"
+# No EliteGame ran before the launch (checked above), so the one running
+# now is ours.
+WINPID=; WAITED=0
+while [ -z "$WINPID" ] && [ $WAITED -lt 30 ]; do
+  sleep 1; WAITED=$((WAITED + 1))
+  WINPID=$(tasklist //FI "IMAGENAME eq EliteGame.exe" //NH //FO CSV | grep -i elitegame | head -1 | cut -d, -f2 | tr -d '"')
+done
+[ -n "$WINPID" ] || echo "WARNING: game did not start"
+sleep "$((S - WAITED))"
 taskkill //PID "$WINPID" //F > /dev/null 2>&1; sleep 3
 cp "$O/elite_navigation_stress.log" "$O/elite_$T.log"
 [ -f "$O/elite_newtonian_runtime.csv" ] && \

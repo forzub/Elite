@@ -17,6 +17,15 @@ namespace game::client
 std::shared_ptr<const world::celestial::GalaxyMapMediumVolume> galaxyMapMediumVolume(
     const world::celestial::GalaxyObjectDefinition& source);
 
+/*
+    Galaxy Map presentation proxies of the distinct medium structures (outer
+    voxel shells, LODs, far blobs) in one vertex set; proxyOfObject[i] = proxy
+    index of objects[i] or -1. ClientGalaxyMapBridge.cpp.
+*/
+std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> buildGalaxyMapMediumAtlas(
+    const std::vector<world::celestial::GalaxyObjectDefinition>& objects,
+    std::vector<int>& proxyOfObject);
+
 inline void rebuildGalaxyMapCatalogLayer(
     world::celestial::GalaxyMapSnapshot& snapshot,
     const std::vector<world::celestial::StarSystemSummary>& systems,
@@ -66,8 +75,12 @@ inline void rebuildGalaxyMapCatalogLayer(
     snapshot.objects.clear();
     snapshot.objects.reserve(objects.size());
 
-    for (const auto& source : objects)
+    std::vector<int> proxyOfObject;
+    snapshot.mediumAtlas = buildGalaxyMapMediumAtlas(objects, proxyOfObject);
+
+    for (std::size_t index = 0; index < objects.size(); ++index)
     {
+        const auto& source = objects[index];
         world::celestial::GalaxyMapObject item;
         item.id = source.id;
         item.name = source.name;
@@ -76,6 +89,7 @@ inline void rebuildGalaxyMapCatalogLayer(
         item.description = source.description;
         item.tags = source.tags;
         item.mediumVolume = galaxyMapMediumVolume(source);
+        item.mediumProxy = proxyOfObject[index];
         snapshot.objects.push_back(std::move(item));
     }
 }

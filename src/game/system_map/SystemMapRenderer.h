@@ -489,6 +489,12 @@ private:
 
     void flushVolumes(const glm::mat4& mvp) override;
 
+    void drawMediumShells(
+        const world::celestial::GalaxyMapMediumAtlas& atlas,
+        const std::vector<world::celestial::GalaxyMapMediumAtlas::Range>& ranges,
+        const glm::mat4& mvpLy
+    ) override;
+
     void addBillboardBall(
         const glm::vec3& center,
         float radius,
@@ -725,6 +731,12 @@ private:
     std::vector<Vertex> m_vertices;
     std::vector<Vertex> m_solidVertices;
     std::vector<Vertex> m_volumeVertices;
+    // GPU copy of the current GalaxyMapMediumAtlas (one static buffer).
+    std::uint64_t m_mediumAtlasUid = 0;
+    unsigned int m_mediumVao = 0;
+    unsigned int m_mediumVbo = 0;
+    std::vector<int> m_mediumFirst;
+    std::vector<int> m_mediumCount;
     std::vector<TexturedBatch> m_texturedBatches;
     game::system_map::SystemMapGpuCircleBatch m_gpuCircleBatch;
 

@@ -48,7 +48,8 @@ namespace game::system_map
             GalaxyMapRenderContext& context,
             const world::celestial::GalaxyMapSnapshot& galaxy,
             const glm::mat4& cameraView,
-            const glm::mat4& mvp
+            const glm::mat4& mvp,
+            const Viewport& viewport
         ) const;
 
         void drawNavigationGrid(

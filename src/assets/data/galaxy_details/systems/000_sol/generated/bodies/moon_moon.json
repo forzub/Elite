@@ -16,7 +16,6 @@
     "stellar_system": 1,
     "celestial_body": 1,
     "satellites": 1,
-    "interstellar": 1,
     "planet_surface": 0
   },
   "source": "authored observed Solar System: JPL J2000 mean elements (Standish), NASA planetary fact sheets; JPL satellite mean elements",

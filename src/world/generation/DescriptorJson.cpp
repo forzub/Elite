@@ -152,13 +152,15 @@ ojson extraJson(const json& extra)
     return ojson::parse(extra.dump());
 }
 
+// Versions of the layers that produce star-system content. The interstellar
+// layer records its own version in its files (interstellar_version), so a
+// change there never touches the system catalog.
 ojson versionsJson(const UniverseGenerationVersions& v)
 {
     ojson j;
     j["stellar_system"] = v.stellarSystem;
     j["celestial_body"] = v.celestialBody;
     j["satellites"] = v.satellites;
-    j["interstellar"] = v.interstellar;
     j["planet_surface"] = v.planetSurface;
     return j;
 }

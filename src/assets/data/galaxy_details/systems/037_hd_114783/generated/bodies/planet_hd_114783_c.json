@@ -13,7 +13,6 @@
     "stellar_system": 1,
     "celestial_body": 1,
     "satellites": 1,
-    "interstellar": 1,
     "planet_surface": 0
   },
   "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2016",

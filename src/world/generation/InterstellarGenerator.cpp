@@ -154,6 +154,36 @@ ojson traceSpecies(double temperatureK, double dust)
     return {{"O VI", 2.0e-8}, {"C IV", 1.0e-8}};
 }
 
+/*
+    Extraction profile of a medium, derived only from its physical state.
+    Mass densities per km^3 and what a reference collector (1 km^2 effective
+    area at 100 km/s) gathers per day. Indices are log-scaled against a dense
+    molecular clump (n ~ 1e3 cm^-3): the diffuse hot Local Bubble is
+    effectively worthless as a fuel source; dense cold / molecular gas has a
+    real volatile potential; supernova-enriched dust carries heavy elements.
+*/
+ojson extractionProfile(double densityCm3, double dustToGas, double iceMantle, double enrichment)
+{
+    const double rhoKgM3 = densityCm3 * 1.0e6 * MeanParticleMassKg;
+    const double perKm3 = rhoKgM3 * 1.0e9;
+    const double collectorKgDay = rhoKgM3 * 1.0e6 * 1.0e5 * 86400.0;
+    const auto index = [](double kgKm3, double referenceKgKm3) {
+        return std::clamp((std::log10(std::max(kgKm3, 1.0e-30)) - std::log10(referenceKgKm3) + 6.0) / 6.0, 0.0, 1.0);
+    };
+    const double reference = 1.0e3 * 1.0e6 * MeanParticleMassKg * 1.0e9; // molecular clump, kg/km^3
+    const double dust = perKm3 * dustToGas;
+    const double ices = dust * iceMantle;
+    return {{"gas_kg_per_km3", perKm3},
+            {"hydrogen_kg_per_km3", perKm3 * 0.71},
+            {"dust_kg_per_km3", dust},
+            {"ice_kg_per_km3", ices},
+            {"heavy_elements_kg_per_km3", dust * (1.0 + 2.0 * enrichment)},
+            {"collector_kg_per_day_1km2_100kms", collectorKgDay},
+            {"hydrogen_fuel_index", index(perKm3 * 0.71, reference * 0.71)},
+            {"volatile_index", index(ices, reference * 0.012 * 0.5)},
+            {"heavy_element_index", index(dust * (1.0 + 2.0 * enrichment), reference * 0.012 * 3.0)}};
+}
+
 // Uniform random rotation (Shoemake), as a matrix and a wxyz quaternion.
 glm::dmat3 randomRotation(RandomStream& rs, glm::dvec4& quatWxyz)
 {
@@ -269,6 +299,7 @@ InterstellarObject regionObject(const RegionSpec& r, const UniverseGenerationVer
     p["metallicity_feh"] = std::log10(1.0 + r.enrichment);
     p["trace_species"] = traceSpecies(r.temperatureK, r.dustToGas);
     p["total_mass_kg"] = massKg;
+    p["extraction_profile"] = extractionProfile(meanDensity, r.dustToGas, r.ice, r.enrichment);
     p["gameplay_gravity"] = false; // diffuse: negligible on ship scales
     p["provenance"] = r.authored ? ojson {{"source", r.source}, {"geometry", "approximate"}}
                                  : provenance(r.seed, v, "procedural medium structure");
@@ -443,6 +474,9 @@ InterstellarCell generateInterstellarCell(
         p["mass_fraction"] = {{"H", 0.71}, {"He", 0.275}, {"metals", 0.015}};
         p["total_mass_kg"] = meanN * cellVolumeLy3 * CubicCmPerCubicLy * MeanParticleMassKg;
         p["lattice"] = latticeJson(L);
+        p["extraction_profile"] = extractionProfile(
+            meanN, sumN > 0.0 ? sumDust / sumN : 0.0, sumN > 0.0 ? sumIce / sumN : 0.0,
+            sumN > 0.0 ? sumEnr / sumN : 0.0);
         p["gameplay_gravity"] = false;
         p["provenance"] = provenance(cellSeed, v, "background medium field (Local Bubble cavity / wall / warm neutral)");
         bg.properties = p;

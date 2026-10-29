@@ -74,6 +74,17 @@
       "Fe+": 1e-06
     },
     "total_mass_kg": 4.754638913187279e+28,
+    "extraction_profile": {
+      "gas_kg_per_km3": 2.4381925486231995e-13,
+      "hydrogen_kg_per_km3": 1.7311167095224715e-13,
+      "dust_kg_per_km3": 1.4629155291739198e-15,
+      "ice_kg_per_km3": 0.0,
+      "heavy_elements_kg_per_km3": 1.4629155291739198e-15,
+      "collector_kg_per_day_1km2_100kms": 2.106598362010444e-06,
+      "hydrogen_fuel_index": 0.3362570300025025,
+      "volatile_index": 0.0,
+      "heavy_element_index": 0.20656515493856187
+    },
     "gameplay_gravity": false,
     "provenance": {
       "source": "Redfield & Linsky 2008 (towards alpha Centauri)",

@@ -76,6 +76,17 @@
       "carbonaceous_dust": 0.004
     },
     "total_mass_kg": 1.2001712999418735e+32,
+    "extraction_profile": {
+      "gas_kg_per_km3": 3.8755467019740795e-09,
+      "hydrogen_kg_per_km3": 2.751638158401596e-09,
+      "dust_kg_per_km3": 3.875546701974079e-11,
+      "ice_kg_per_km3": 1.1626640105922237e-11,
+      "heavy_elements_kg_per_km3": 3.875546701974079e-11,
+      "collector_kg_per_day_1km2_100kms": 0.03348472350505605,
+      "hydrogen_fuel_index": 1.0,
+      "volatile_index": 0.9862961932259425,
+      "heavy_element_index": 0.943750775708725
+    },
     "gameplay_gravity": false,
     "provenance": {
       "source": "Peek et al. 2011; Meyer et al. 2006 (11-24 pc)",

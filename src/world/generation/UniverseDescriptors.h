@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
 
+#include "src/world/generation/NaturalResources.h"
 #include "src/world/generation/GenerationVersions.h"
 
 namespace world::generation
@@ -401,6 +402,10 @@ struct BodyDescriptor
     std::vector<RingDescriptor> rings;
     std::string environmentPresetId; // render projection of the descriptor
 
+    // Natural endowment / industrial accessibility / habitability / fuel,
+    // derived from everything above (NaturalResources.h).
+    ResourceProfiles resources;
+
     ProvenanceMap provenance;
     std::string source;
     nlohmann::json extra = nlohmann::json::object();
@@ -429,6 +434,7 @@ struct ReservoirDescriptor
     double estimatedBodiesAbove1Km = 0.0;
     std::string formationOrigin;
     ProvenanceMap provenance;
+    ResourceProfiles resources;
 };
 
 struct StabilityCheck

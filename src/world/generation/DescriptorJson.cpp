@@ -162,7 +162,87 @@ ojson versionsJson(const UniverseGenerationVersions& v)
     j["celestial_body"] = v.celestialBody;
     j["satellites"] = v.satellites;
     j["planet_surface"] = v.planetSurface;
+    j["resources"] = v.resources;
     return j;
+}
+
+ojson resourcesJson(const ResourceProfiles& r)
+{
+    ojson out;
+    if (!r.natural.valid)
+        return out;
+    ojson natural;
+    natural["field_seed"] = hexSeed(r.natural.fieldSeed);
+    natural["differentiation"] = r.natural.differentiation;
+    natural["solid_surface"] = r.natural.solidSurface;
+    ojson deposits = ojson::object();
+    for (const auto& d : r.natural.deposits)
+    {
+        ojson e;
+        e["bulk_mass_fraction"] = d.bulkMassFraction;
+        e["accessible_mass_fraction"] = d.accessibleMassFraction;
+        e["concentration_factor"] = d.concentrationFactor;
+        e["ore_grade"] = d.oreGrade;
+        e["depth_class"] = d.depthClass;
+        e["mechanisms"] = d.mechanisms;
+        deposits[resourceFamilyName(d.family)] = e;
+    }
+    natural["deposits"] = deposits;
+    out["natural_resources"] = natural;
+
+    const auto& s = r.industrial;
+    ojson ind;
+    ind["surface_gravity_g"] = s.surfaceGravityG;
+    ind["delta_v_to_low_orbit_kms"] = s.deltaVToLowOrbitKms;
+    ind["escape_velocity_kms"] = s.escapeVelocityKms;
+    ind["surface_pressure_bar"] = s.surfacePressureBar;
+    ind["min_temperature_k"] = s.minTemperatureK;
+    ind["max_temperature_k"] = s.maxTemperatureK;
+    ind["surface_radiation_index"] = s.surfaceRadiationIndex;
+    ind["terrain_roughness"] = s.terrainRoughness;
+    ind["solar_power_wm2"] = s.solarPowerWm2;
+    ind["geothermal_power_wm2"] = s.geothermalPowerWm2;
+    ind["tidal_volcanic_hazard"] = s.tidalVolcanicHazard;
+    ind["orbital_access_index"] = s.orbitalAccessIndex;
+    ind["operating_cost_index"] = s.operatingCostIndex;
+    ind["heliocentric_distance_au"] = s.heliocentricDistanceAu;
+    ind["delta_v_to_habitable_zone_kms"] = s.deltaVToHabitableZoneKms;
+    ojson cost = ojson::object();
+    for (const auto& [family, c] : s.extractionCost)
+        cost[resourceFamilyName(family)] = c;
+    ind["relative_extraction_cost"] = cost;
+    out["industrial_suitability"] = ind;
+
+    const auto& h = r.habitability;
+    ojson hab;
+    hab["settlement_class"] = h.settlementClass;
+    hab["exterior_survivability"] = h.exteriorSurvivability;
+    hab["pressure_suitability"] = h.pressureSuitability;
+    hab["oxygen_partial_pressure_bar"] = h.oxygenPartialPressureBar;
+    hab["oxygen_requirement"] = h.oxygenRequirement;
+    hab["temperature_burden"] = h.temperatureBurden;
+    hab["water_accessibility"] = h.waterAccessibility;
+    hab["agriculture_potential"] = h.agriculturePotential;
+    hab["radiation_protection_requirement"] = h.radiationProtectionRequirement;
+    hab["gravity_comfort"] = h.gravityComfort;
+    hab["atmospheric_toxicity"] = h.atmosphericToxicity;
+    hab["climate_stability"] = h.climateStability;
+    hab["construction_difficulty"] = h.constructionDifficulty;
+    hab["life_support_cost"] = h.lifeSupportCost;
+    hab["industrial_operating_cost"] = h.industrialOperatingCost;
+    out["habitability"] = hab;
+
+    ojson fuel;
+    ojson sources = ojson::array();
+    for (const auto& f : r.fuel.sources)
+        sources.push_back({{"kind", f.kind}, {"mode", f.mode}, {"abundance_index", f.abundanceIndex},
+                           {"throughput_index", f.throughputIndex}, {"access_cost_index", f.accessCostIndex},
+                           {"net_index", f.netIndex}});
+    fuel["sources"] = sources;
+    fuel["best_source"] = r.fuel.bestSource;
+    fuel["best_net_index"] = r.fuel.bestNetIndex;
+    out["fuel_potential"] = fuel;
+    return out;
 }
 
 } // namespace
@@ -553,6 +633,8 @@ ojson bodyJson(const BodyDescriptor& b, const SystemDescriptor& sd)
     }
     j["rings"] = rings;
     j["environment_preset_id"] = b.environmentPresetId;
+    if (b.resources.natural.valid)
+        j["resources"] = resourcesJson(b.resources);
     j["provenance"] = provenanceJson(b.provenance);
     if (!b.extra.empty()) j["extra"] = extraJson(b.extra);
     return j;
@@ -581,6 +663,8 @@ ojson reservoirJson(const ReservoirDescriptor& r, const SystemDescriptor& sd)
     j["gaps_au"] = gapsJson(r.gapsAu);
     j["resonance"] = r.resonance;
     j["formation_origin"] = r.formationOrigin;
+    if (r.resources.natural.valid)
+        j["resources"] = resourcesJson(r.resources);
     j["provenance"] = provenanceJson(r.provenance);
     return j;
 }
@@ -611,7 +695,20 @@ std::vector<fs::path> writeGeneratedSystem(const SystemDescriptor& sd, const fs:
     used.clear();
     for (const auto& r : sd.reservoirs)
     {
+        // Authored names can be non-ASCII (Sol: "Пояс астероидов"): the file
+        // is then named after the parent's ASCII name and the kind.
         std::string base = fileSlug(r.name, {});
+        if (base.rfind("body_", 0) == 0) // no ASCII in the name: hash fallback
+        {
+            std::string prefix;
+            for (const auto& s : sd.stars)
+                if (s.id == r.parentId)
+                    prefix = fileSlug(s.name, s.alternativeNames);
+            for (const auto& b : sd.bodies)
+                if (b.id == r.parentId)
+                    prefix = fileSlug(b.designation, b.alternativeNames);
+            base = (prefix.empty() ? std::string("system") : prefix) + "_" + r.kind;
+        }
         std::string name = base;
         for (int k = 2; used.count(name); ++k) name = base + "_" + std::to_string(k);
         used.insert(name);

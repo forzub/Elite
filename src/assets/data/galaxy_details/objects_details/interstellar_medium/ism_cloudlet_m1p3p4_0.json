@@ -74,11 +74,22 @@
       "Fe+": 1e-06
     },
     "total_mass_kg": 3.1788309774299056e+27,
+    "extraction_profile": {
+      "gas_kg_per_km3": 2.0795140436003118e-13,
+      "hydrogen_kg_per_km3": 1.4764549709562214e-13,
+      "dust_kg_per_km3": 1.2477084261601872e-15,
+      "ice_kg_per_km3": 0.0,
+      "heavy_elements_kg_per_km3": 1.2477084261601872e-15,
+      "collector_kg_per_day_1km2_100kms": 1.7967001336706695e-06,
+      "hydrogen_fuel_index": 0.3247393396611411,
+      "volatile_index": 0.0,
+      "heavy_element_index": 0.19504746459720046
+    },
     "gameplay_gravity": false,
     "provenance": {
       "generator": "world::generation::Interstellar",
       "seed": "0xa7fce35dc02dcbfd",
-      "interstellar_version": 2,
+      "interstellar_version": 3,
       "model": "procedural medium structure"
     }
   }

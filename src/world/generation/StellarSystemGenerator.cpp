@@ -652,6 +652,7 @@ SystemDescriptor generateStellarSystem(
     for (std::size_t k = 0; k < architectureModes.size(); ++k)
         modes << (k ? "; " : "") << architectureModes[k];
     sd.architectureMode = modes.str();
+    deriveResourceProfiles(sd);
     validateSystem(sd);
     return sd;
 }

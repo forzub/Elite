@@ -74,6 +74,17 @@
       "Fe+": 1e-06
     },
     "total_mass_kg": 7.161805333975424e+27,
+    "extraction_profile": {
+      "gas_kg_per_km3": 1.819294464129882e-13,
+      "hydrogen_kg_per_km3": 1.2916990695322163e-13,
+      "dust_kg_per_km3": 1.0915766784779293e-15,
+      "ice_kg_per_km3": 0.0,
+      "heavy_elements_kg_per_km3": 1.0915766784779293e-15,
+      "collector_kg_per_day_1km2_100kms": 1.5718704170082182e-06,
+      "hydrogen_fuel_index": 0.31506286305807407,
+      "volatile_index": 0.0,
+      "heavy_element_index": 0.18537098799413373
+    },
     "gameplay_gravity": false,
     "provenance": {
       "source": "Redfield & Linsky 2008 (towards Sirius)",

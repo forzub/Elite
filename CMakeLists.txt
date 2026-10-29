@@ -135,6 +135,7 @@ add_library(EliteUniverseGeneration STATIC
     src/world/generation/SystemValidation.cpp
     src/world/generation/DescriptorJson.cpp
     src/world/generation/InterstellarGenerator.cpp
+    src/world/generation/NaturalResources.cpp
 )
 target_include_directories(EliteUniverseGeneration PUBLIC
     "${CMAKE_SOURCE_DIR}"

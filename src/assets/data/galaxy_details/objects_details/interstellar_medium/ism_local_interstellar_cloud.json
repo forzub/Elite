@@ -74,6 +74,17 @@
       "Fe+": 1e-06
     },
     "total_mass_kg": 2.826416967514836e+29,
+    "extraction_profile": {
+      "gas_kg_per_km3": 3.098111006002507e-13,
+      "hydrogen_kg_per_km3": 2.1996588142617798e-13,
+      "dust_kg_per_km3": 1.8588666036015042e-15,
+      "ice_kg_per_km3": 0.0,
+      "heavy_elements_kg_per_km3": 1.8588666036015042e-15,
+      "collector_kg_per_day_1km2_100kms": 2.6767679091861663e-06,
+      "hydrogen_fuel_index": 0.3535951924834304,
+      "volatile_index": 0.0,
+      "heavy_element_index": 0.22390331741948977
+    },
     "gameplay_gravity": false,
     "provenance": {
       "source": "Redfield & Linsky 2008 (LIC; Sol at its edge)",

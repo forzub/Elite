@@ -13,7 +13,8 @@
     "stellar_system": 1,
     "celestial_body": 1,
     "satellites": 1,
-    "planet_surface": 0
+    "planet_surface": 0,
+    "resources": 1
   },
   "orbit": {
     "semi_major_axis_au": 0.04964048895804403,
@@ -108,6 +109,278 @@
   },
   "rings": [],
   "environment_preset_id": "lava_world",
+  "resources": {
+    "natural_resources": {
+      "field_seed": "0xe23542fc973032d0",
+      "differentiation": 1.0,
+      "solid_surface": true,
+      "deposits": {
+        "water_ice": {
+          "bulk_mass_fraction": 0.0024411793241444174,
+          "accessible_mass_fraction": 0.0005240665259363636,
+          "concentration_factor": 10.91611088095353,
+          "ore_grade": 0.3460226461295446,
+          "depth_class": "shallow_crust",
+          "mechanisms": [
+            "polar_cold_trap",
+            "cold_trap"
+          ]
+        },
+        "hydrogen": {
+          "bulk_mass_fraction": 0.00027330008430417473,
+          "accessible_mass_fraction": 5.466001686083495e-06,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": []
+        },
+        "carbon_organics": {
+          "bulk_mass_fraction": 0.0006637681363447508,
+          "accessible_mass_fraction": 0.00013275362726895018,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": [
+            "carbonaceous_regolith"
+          ]
+        },
+        "oxygen_minerals": {
+          "bulk_mass_fraction": 0.29771171229700194,
+          "accessible_mass_fraction": 0.29771171229700194,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": [
+            "regolith"
+          ]
+        },
+        "silicates": {
+          "bulk_mass_fraction": 0.310771441350967,
+          "accessible_mass_fraction": 0.310771441350967,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": [
+            "regolith"
+          ]
+        },
+        "iron": {
+          "bulk_mass_fraction": 0.23771772419840112,
+          "accessible_mass_fraction": 0.032390831263136056,
+          "concentration_factor": 31.0,
+          "ore_grade": 0.49712056461142423,
+          "depth_class": "shallow_crust",
+          "mechanisms": [
+            "differentiation_depleted",
+            "impact_excavated"
+          ]
+        },
+        "nickel": {
+          "bulk_mass_fraction": 0.014050138682207648,
+          "accessible_mass_fraction": 0.0009187676223941848,
+          "concentration_factor": 31.0,
+          "ore_grade": 0.49712056461142423,
+          "depth_class": "shallow_crust",
+          "mechanisms": [
+            "differentiation_depleted",
+            "impact_excavated"
+          ]
+        },
+        "aluminium": {
+          "bulk_mass_fraction": 0.0222362477291729,
+          "accessible_mass_fraction": 0.023348060115631546,
+          "concentration_factor": 2.0,
+          "ore_grade": 0.10034333188799373,
+          "depth_class": "surface",
+          "mechanisms": [
+            "anorthositic_regolith"
+          ]
+        },
+        "magnesium": {
+          "bulk_mass_fraction": 0.1556220314279783,
+          "accessible_mass_fraction": 0.1556220314279783,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": [
+            "regolith"
+          ]
+        },
+        "titanium": {
+          "bulk_mass_fraction": 0.0012555096901742551,
+          "accessible_mass_fraction": 0.0012555096901742551,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": []
+        },
+        "copper_group": {
+          "bulk_mass_fraction": 8.860614088074506e-05,
+          "accessible_mass_fraction": 3.544245635229802e-05,
+          "concentration_factor": 36.0,
+          "ore_grade": 0.5187675002557625,
+          "depth_class": "deep_crust",
+          "mechanisms": []
+        },
+        "refractory_metals": {
+          "bulk_mass_fraction": 7.651989491286743e-06,
+          "accessible_mass_fraction": 4.894234586612182e-07,
+          "concentration_factor": 31.0,
+          "ore_grade": 0.49712056461142423,
+          "depth_class": "shallow_crust",
+          "mechanisms": [
+            "differentiation_depleted",
+            "impact_excavated"
+          ]
+        },
+        "platinum_group": {
+          "bulk_mass_fraction": 1.463917438116604e-06,
+          "accessible_mass_fraction": 3.1404231591498974e-08,
+          "concentration_factor": 40.300000000000004,
+          "ore_grade": 0.5351016820470366,
+          "depth_class": "shallow_crust",
+          "mechanisms": [
+            "differentiation_depleted",
+            "impact_excavated"
+          ]
+        },
+        "actinides": {
+          "bulk_mass_fraction": 3.20056527127091e-08,
+          "accessible_mass_fraction": 1.280226108508364e-07,
+          "concentration_factor": 21.0,
+          "ore_grade": 0.44073976491130645,
+          "depth_class": "shallow_crust",
+          "mechanisms": []
+        },
+        "nitrogen_ammonia": {
+          "bulk_mass_fraction": 1.5e-05,
+          "accessible_mass_fraction": 3.0000000000000004e-07,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": []
+        },
+        "carbon_gases": {
+          "bulk_mass_fraction": 4.5e-05,
+          "accessible_mass_fraction": 9.000000000000001e-07,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": []
+        },
+        "noble_gases": {
+          "bulk_mass_fraction": 1.0000000000000002e-06,
+          "accessible_mass_fraction": 2.0000000000000004e-08,
+          "concentration_factor": 1.0,
+          "ore_grade": 0.0,
+          "depth_class": "surface",
+          "mechanisms": []
+        },
+        "helium3": {
+          "bulk_mass_fraction": 1e-08,
+          "accessible_mass_fraction": 1e-08,
+          "concentration_factor": 5.0,
+          "ore_grade": 0.23299000144533963,
+          "depth_class": "surface",
+          "mechanisms": [
+            "solar_wind_regolith"
+          ]
+        }
+      }
+    },
+    "industrial_suitability": {
+      "surface_gravity_g": 0.2767050679116169,
+      "delta_v_to_low_orbit_kms": 3.1226309960634646,
+      "escape_velocity_kms": 4.01460645901778,
+      "surface_pressure_bar": 4.887814137330794e-06,
+      "min_temperature_k": 165.3855741555569,
+      "max_temperature_k": 1984.605333754895,
+      "surface_radiation_index": 0.9999767831665477,
+      "terrain_roughness": 0.8599980895710513,
+      "solar_power_wm2": 379381.7507099056,
+      "geothermal_power_wm2": 0.0064393866481983995,
+      "tidal_volcanic_hazard": 0.0,
+      "orbital_access_index": 0.48998543304812026,
+      "operating_cost_index": 0.5789964962538299,
+      "heliocentric_distance_au": 0.04964048895804403,
+      "delta_v_to_habitable_zone_kms": 63.7030752482404,
+      "relative_extraction_cost": {
+        "water_ice": 12.0875872413468,
+        "hydrogen": 16.500240927104752,
+        "carbon_organics": 16.500240927104752,
+        "oxygen_minerals": 16.500240927104752,
+        "silicates": 16.500240927104752,
+        "iron": 9.467654098715052,
+        "nickel": 9.467654098715052,
+        "aluminium": 10.987585989262545,
+        "magnesium": 16.500240927104752,
+        "titanium": 16.500240927104752,
+        "copper_group": 22.956297997938684,
+        "refractory_metals": 9.467654098715052,
+        "platinum_group": 8.978480844259016,
+        "actinides": 10.30074412777473,
+        "nitrogen_ammonia": 16.500240927104752,
+        "carbon_gases": 16.500240927104752,
+        "noble_gases": 16.500240927104752,
+        "helium3": 7.62153438741136
+      }
+    },
+    "habitability": {
+      "settlement_class": "orbital_only",
+      "exterior_survivability": 0.0,
+      "pressure_suitability": 0.0,
+      "oxygen_partial_pressure_bar": 0.0,
+      "oxygen_requirement": "full_supply",
+      "temperature_burden": 1.0,
+      "water_accessibility": 0.8789928572900633,
+      "agriculture_potential": 0.0,
+      "radiation_protection_requirement": 0.9999767831665477,
+      "gravity_comfort": 0.0,
+      "atmospheric_toxicity": 0.0,
+      "climate_stability": 0.6213185948591237,
+      "construction_difficulty": 0.7219998832574004,
+      "life_support_cost": 0.8681475888814727,
+      "industrial_operating_cost": 0.5789964962538299
+    },
+    "fuel_potential": {
+      "sources": [
+        {
+          "kind": "water_ice",
+          "mode": "ice_mining",
+          "abundance_index": 0.19880772206285988,
+          "throughput_index": 0.5422158522906811,
+          "access_cost_index": 1.0,
+          "net_index": 0.0
+        },
+        {
+          "kind": "methane",
+          "mode": "surface_mining",
+          "abundance_index": 0.0009727915592276194,
+          "throughput_index": 0.2,
+          "access_cost_index": 1.0,
+          "net_index": 0.0
+        },
+        {
+          "kind": "ammonia",
+          "mode": "atmospheric_extraction",
+          "abundance_index": 0.000162616627552259,
+          "throughput_index": 0.3,
+          "access_cost_index": 1.0,
+          "net_index": 0.0
+        },
+        {
+          "kind": "helium3",
+          "mode": "surface_mining",
+          "abundance_index": 0.5,
+          "throughput_index": 0.05,
+          "access_cost_index": 1.0,
+          "net_index": 0.0
+        }
+      ],
+      "best_source": "",
+      "best_net_index": 0.0
+    }
+  },
   "provenance": {
     "atmosphere": "generated",
     "composition": "generated",

@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -389,6 +391,58 @@ void testInterstellarMediumCoversTheDomainWithoutVacuum()
     };
     REQUIRE(phaseAt(sol->positionLy + glm::dvec3(1.0)) == "hot_ionized");
     REQUIRE(phaseAt(kepler->positionLy) == "warm_neutral");
+}
+
+nlohmann::json loadCatalogJson(const std::string& relative)
+{
+    std::ifstream f("src/assets/data/galaxy_details/" + relative);
+    REQUIRE(f.is_open());
+    return nlohmann::json::parse(f);
+}
+
+void testResourceLayerIsDerivedForEveryBodyAndPopulation()
+{
+    namespace fs = std::filesystem;
+    std::size_t documents = 0;
+    for (const char* sub : {"systems", "distant_systems"})
+        for (const auto& system : fs::directory_iterator(fs::path("src/assets/data/galaxy_details") / sub))
+            for (const char* kind : {"bodies", "reservoirs"})
+            {
+                const fs::path dir = system.path() / "generated" / kind;
+                if (!fs::is_directory(dir))
+                    continue;
+                for (const auto& file : fs::directory_iterator(dir))
+                {
+                    std::ifstream f(file.path());
+                    const auto j = nlohmann::json::parse(f);
+                    REQUIRE(j.contains("resources"));
+                    const auto& r = j["resources"];
+                    for (const char* layer : {"natural_resources", "industrial_suitability", "habitability", "fuel_potential"})
+                        REQUIRE(r.contains(layer));
+                    REQUIRE(!r["natural_resources"]["deposits"].empty());
+                    // A physical endowment carries no prices.
+                    REQUIRE(r.dump().find("price") == std::string::npos);
+                    ++documents;
+                }
+            }
+    REQUIRE(documents > 1000);
+
+    const auto earth = loadCatalogJson("systems/000_sol/generated/bodies/planet_earth.json")["resources"];
+    REQUIRE(earth["habitability"]["settlement_class"] == "open_air");
+    REQUIRE(earth["habitability"]["water_accessibility"].get<double>() > 0.9);
+    const auto jupiter = loadCatalogJson("systems/000_sol/generated/bodies/planet_jupiter.json")["resources"];
+    REQUIRE(!jupiter["natural_resources"]["solid_surface"].get<bool>());
+    REQUIRE(jupiter["fuel_potential"]["best_source"] == "hydrogen");
+    REQUIRE(jupiter["habitability"]["settlement_class"] == "orbital_only");
+    const auto moon = loadCatalogJson("systems/000_sol/generated/bodies/moon_moon.json")["resources"];
+    const auto lunarWater = moon["natural_resources"]["deposits"]["water_ice"]["mechanisms"].dump();
+    REQUIRE(lunarWater.find("polar_cold_trap") != std::string::npos);
+    // Differentiated Earth keeps its iron deep; an undifferentiated belt does not.
+    const auto belt = loadCatalogJson("systems/000_sol/generated/reservoirs/sol_asteroid_belt.json")["resources"];
+    REQUIRE(earth["natural_resources"]["deposits"]["iron"]["accessible_mass_fraction"].get<double>() <
+            0.2 * earth["natural_resources"]["deposits"]["iron"]["bulk_mass_fraction"].get<double>());
+    REQUIRE(belt["natural_resources"]["deposits"]["iron"]["accessible_mass_fraction"].get<double>() ==
+            belt["natural_resources"]["deposits"]["iron"]["bulk_mass_fraction"].get<double>());
 }
 
 void testClientUniverseTimelineUsesServerAnchor()
@@ -816,6 +870,10 @@ int main()
         {
             "interstellar medium covers the domain without vacuum",
             testInterstellarMediumCoversTheDomainWithoutVacuum
+        },
+        {
+            "resource layer is derived for every body and population",
+            testResourceLayerIsDerivedForEveryBodyAndPopulation
         }
     };
 

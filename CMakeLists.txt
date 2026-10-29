@@ -419,6 +419,10 @@ add_executable(EliteGame
 
     src/game/SpaceState.cpp
     src/game/SpaceState-Init.cpp
+    src/game/SpaceStateDocking.cpp
+    src/game/SpaceStateMaps.cpp
+    src/game/SpaceStateHud.cpp
+    src/game/SpaceStateDevPanel.cpp
 
     src/game/equipment/signalNode/processing/SignalReceiver.cpp
     src/world/WorldSignalTxSystem.cpp
@@ -452,6 +456,11 @@ add_executable(EliteGame
     
     src/game/ship/core/ShipSignalController.cpp
     src/game/ship/core/ShipCore.cpp
+    src/game/ship/core/ShipCoreCapability.cpp
+    src/game/ship/core/ShipCorePropulsion.cpp
+    src/game/ship/core/ShipCorePowerThermal.cpp
+    src/game/ship/core/ShipCoreStatus.cpp
+    src/game/ship/core/ShipCoreDamage.cpp
     
     src/game/ship/view/PlayerShipView.cpp
     src/game/ship/view/ShipCameraController.cpp
@@ -489,6 +498,11 @@ add_executable(EliteGame
     src/ui/components/UIText.cpp
 
     src/game/simulation/GameSimulation.cpp
+    src/game/simulation/GameSimulationNavigationLab.cpp
+    src/game/simulation/GameSimulationDevScenarios.cpp
+    src/game/simulation/GameSimulationReplication.cpp
+    src/game/simulation/GameSimulationActivation.cpp
+    src/game/simulation/GameSimulationReferenceFrames.cpp
     src/game/simulation/NpcAiSystem.cpp
 
     src/game/diagnostics/ClientAcceptanceHarness.cpp
@@ -623,6 +637,10 @@ add_executable(EliteGame
     src/world/celestial/CelestialEphemerisService.cpp
 
     src/game/system_map/SystemMapRenderer.cpp
+    src/game/system_map/SystemMapRendererPrimitives.cpp
+    src/game/system_map/SystemMapRendererNavigation.cpp
+    src/game/system_map/SystemMapRendererInput.cpp
+    src/game/system_map/SystemMapRendererBackground.cpp
     src/game/system_map/SystemMapInteraction.cpp
     src/game/system_map/SystemMapFrameInteractionContext.cpp
     src/game/system_map/SystemMapSceneRenderer.cpp
@@ -750,6 +768,11 @@ if(ELITE_BUILD_SERVER)
         src/game/ship/ShipDescriptorRegistry.cpp
         src/game/ship/core/ShipSignalController.cpp
         src/game/ship/core/ShipCore.cpp
+        src/game/ship/core/ShipCoreCapability.cpp
+        src/game/ship/core/ShipCorePropulsion.cpp
+        src/game/ship/core/ShipCorePowerThermal.cpp
+        src/game/ship/core/ShipCoreStatus.cpp
+        src/game/ship/core/ShipCoreDamage.cpp
         src/game/ship/core/PowerBus.cpp
         src/game/ship/core/ThermalSystem.cpp
         src/game/ship/core/ReactorSystem.cpp
@@ -760,6 +783,11 @@ if(ELITE_BUILD_SERVER)
         src/game/ship/view/ShipAttachmentResolver.cpp
 
         src/game/simulation/GameSimulation.cpp
+        src/game/simulation/GameSimulationNavigationLab.cpp
+        src/game/simulation/GameSimulationDevScenarios.cpp
+        src/game/simulation/GameSimulationReplication.cpp
+        src/game/simulation/GameSimulationActivation.cpp
+        src/game/simulation/GameSimulationReferenceFrames.cpp
         src/game/simulation/NpcAiSystem.cpp
         src/game/server/GameServer.cpp
         src/game/server/ServerRunner.cpp

@@ -2,6 +2,7 @@
 from pathlib import Path
 import re
 import sys
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1])); import source_units  # noqa: E402,F401  (split classes read as one unit)
 
 ROOT = Path(__file__).resolve().parents[2]
 MAP_DIR = ROOT / "src" / "game" / "system_map"

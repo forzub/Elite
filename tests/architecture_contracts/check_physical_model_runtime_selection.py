@@ -2,9 +2,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# ShipCore is split into ShipCore*.cpp units (one class): read them as one.
+def _ship_core_sources(root):
+    d = root / "src/game/ship/core"
+    return chr(10).join(p.read_text(encoding="utf-8") for p in sorted(d.glob("ShipCore*.cpp")))
+
+
 model = (ROOT / "src/game/ship/plant/ShipPhysicalControlModel.h").read_text(encoding="utf-8")
 state = (ROOT / "src/game/ship/state/ShipState.h").read_text(encoding="utf-8")
-core = (ROOT / "src/game/ship/core/ShipCore.cpp").read_text(encoding="utf-8")
+core = _ship_core_sources(ROOT)
 snapshot = (ROOT / "src/game/simulation/ShipSnapshot.h").read_text(encoding="utf-8")
 simulation = (ROOT / "src/game/simulation/GameSimulation.cpp").read_text(encoding="utf-8")
 client_h = (ROOT / "src/game/client/ClientWorldState.h").read_text(encoding="utf-8")

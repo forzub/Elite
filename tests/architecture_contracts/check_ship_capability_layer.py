@@ -4,6 +4,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# ShipCore is split into ShipCore*.cpp units (one class): read them as one.
+def _ship_core_sources(root):
+    d = root / "src/game/ship/core"
+    return chr(10).join(p.read_text(encoding="utf-8") for p in sorted(d.glob("ShipCore*.cpp")))
+
+
 
 def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
@@ -17,7 +23,7 @@ def require(condition: bool, message: str) -> None:
 SNAPSHOT = read("src/game/ship/capability/ShipCapabilitySnapshot.h")
 BUILDER = read("src/game/ship/capability/ShipCapabilityBuilder.h")
 CORE_H = read("src/game/ship/core/ShipCore.h")
-CORE_CPP = read("src/game/ship/core/ShipCore.cpp")
+CORE_CPP = _ship_core_sources(ROOT)
 PROPULSION = read("src/game/ship/ShipPropulsionState.h")
 CLIENT = read("src/game/client/ClientWorldState.cpp")
 GATEWAY_H = read("src/game/ship/control/ShipControlExecutionGateway.h")

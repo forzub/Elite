@@ -4,6 +4,12 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# ShipCore is split into ShipCore*.cpp units (one class): read them as one.
+def _ship_core_sources(root):
+    d = root / "src/game/ship/core"
+    return chr(10).join(p.read_text(encoding="utf-8") for p in sorted(d.glob("ShipCore*.cpp")))
+
+
 def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8")
 
@@ -14,7 +20,7 @@ def fail(msg: str) -> None:
 sensor_types = read("src/game/equipment/radar/RadarSensorTypes.h")
 session = read("src/game/simulation/ClientSessionSnapshot.h")
 ship_snapshot = read("src/game/simulation/ShipSnapshot.h")
-ship_core = read("src/game/ship/core/ShipCore.cpp")
+ship_core = _ship_core_sources(ROOT)
 server = read("src/game/server/GameServer.cpp")
 client_h = read("src/game/client/GameClient.h")
 client_cpp = read("src/game/client/GameClient.cpp")

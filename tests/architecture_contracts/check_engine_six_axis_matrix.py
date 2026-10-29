@@ -4,7 +4,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# ShipCore is split into ShipCore*.cpp units (one class): read them as one.
+def _ship_core_sources(root):
+    d = root / "src/game/ship/core"
+    return chr(10).join(p.read_text(encoding="utf-8") for p in sorted(d.glob("ShipCore*.cpp")))
+
+
 def read(path: str) -> str:
+    if path == "src/game/ship/core/ShipCore.cpp":
+        return _ship_core_sources(ROOT)
     return (ROOT / path).read_text(encoding="utf-8")
 
 def contains(path: str, *tokens: str) -> str:

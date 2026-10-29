@@ -1,0 +1,904 @@
+// SystemMapRenderer: map input handling (mouse / keyboard, picking, panel interaction).
+
+#include "src/game/system_map/SystemMapRendererInternal.h"
+
+
+
+std::optional<game::system_map::MapIntent>
+SystemMapRenderer::handleInput(
+    const Viewport& vp,
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::DetailMapSnapshot& detail,
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    if (m_modeState.current() != Mode::Galaxy &&
+        m_modeState.current() != Mode::System &&
+        m_modeState.current() != Mode::Detail &&
+        m_modeState.current() != Mode::Hub)
+    {
+        return std::nullopt;
+    }
+
+    const double inputNowSeconds =
+        glfwGetTime();
+
+    if (m_modeState.current() == Mode::System)
+    {
+        m_systemView.updateCameraFlight(
+            inputNowSeconds
+        );
+    }
+
+    /*
+        Scroll input belongs to the application-wide Input service.
+        SystemMapRenderer must not replace GLFW callbacks or keep raw
+        pointers in a global table. The renderer only consumes the
+        frame-local wheel delta while the map owns input focus.
+    */
+    m_pendingScrollY +=
+        Input::instance().consumeScrollY();
+
+
+    /*
+        Во время crossfade нельзя вращать или перемещать
+        старую либо новую сцену.
+
+        AwaitingCapture тоже считается активной фазой.
+    */
+    if (m_mapTransition.blocksInput())
+    {
+        if (m_modeState.current() == Mode::System)
+        {
+            m_systemView.constrainCameraToNavigationBoundary(
+                vp
+            );
+        }
+
+        m_pendingScrollY = 0.0;
+        m_navigationLevelZeroButtonHovered = false;
+        m_navigationTrackButtonHovered = false;
+        m_navigationOverlayLeftWasDown = false;
+        return std::nullopt;
+    }
+
+    // Cross-map route recall is a small intent-driven state machine.  A prior
+    // frame may have asked SpaceState to switch map/system; once that canonical
+    // transition commits, continue toward the authored layer here.
+    if (m_pendingRouteFocusNodeId != 0)
+    {
+        if (const auto intent = advancePendingRouteFocus(
+                vp, galaxy, system, inputNowSeconds);
+            intent.has_value())
+        {
+            return intent;
+        }
+    }
+
+
+    GLFWwindow* window =
+        glfwGetCurrentContext();
+
+    if (!window)
+        return std::nullopt;
+
+    double mx = 0.0;
+    double my = 0.0;
+
+    glfwGetCursorPos(
+        window,
+        &mx,
+        &my
+    );
+
+    const double localMx =
+        mx - static_cast<double>(vp.x);
+
+    const double localMy =
+        my - static_cast<double>(vp.y);
+
+    const bool inside =
+        mx >= static_cast<double>(vp.x) &&
+        my >= static_cast<double>(vp.y) &&
+        mx <= static_cast<double>(vp.x + vp.width) &&
+        my <= static_cast<double>(vp.y + vp.height);
+
+    const bool leftDown =
+        glfwGetMouseButton(
+            window,
+            GLFW_MOUSE_BUTTON_LEFT
+        ) == GLFW_PRESS;
+
+    const bool rightDown =
+        glfwGetMouseButton(
+            window,
+            GLFW_MOUSE_BUTTON_RIGHT
+        ) == GLFW_PRESS;
+
+    const auto routePointer =
+        m_routeOverlayState.handlePointer(
+            m_navigationWorkspace.routePlan(),
+            glm::dvec2(vp.width, vp.height),
+            glm::dvec2(localMx, localMy),
+            inside,
+            leftDown
+        );
+    if (routePointer.selectedRouteNodeId != 0)
+    {
+        const auto* selectedNode =
+            m_navigationWorkspace.routePlan().findById(
+                routePointer.selectedRouteNodeId
+            );
+        if (selectedNode && !selectedNode->sourceObjectId.empty())
+            m_objectOverlayState.activate(selectedNode->sourceObjectId);
+    }
+    if (routePointer.consumed)
+    {
+        std::optional<game::system_map::MapIntent> routeFocusIntent;
+        if (routePointer.focusRouteNodeId != 0)
+        {
+            routeFocusIntent = focusRouteWaypoint(
+                routePointer.focusRouteNodeId,
+                vp,
+                galaxy,
+                system,
+                inputNowSeconds
+            );
+        }
+
+
+        m_pendingScrollY = 0.0;
+        m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+        m_systemView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+        if (routeFocusIntent.has_value())
+            return routeFocusIntent;
+        return std::nullopt;
+    }
+
+    const bool showLevelZeroButton =
+        m_modeState.current() == Mode::Galaxy ||
+        m_modeState.current() == Mode::System;
+
+    m_navigationLevelZeroButtonHovered =
+        showLevelZeroButton &&
+        inside &&
+        render::navigation::
+            NavigationCoordinateOverlay::
+                levelZeroButtonBounds(
+                    vp
+                )
+                .contains(
+                    localMx,
+                    localMy
+                );
+
+    const bool showTrackButton =
+        m_modeState.current() == Mode::System;
+
+    m_navigationTrackButtonHovered =
+        showTrackButton &&
+        inside &&
+        render::navigation::
+            NavigationCoordinateOverlay::
+                trackButtonBounds(
+                    vp
+                )
+                .contains(
+                    localMx,
+                    localMy
+                );
+
+    const bool levelZeroPressed =
+        m_navigationLevelZeroButtonHovered &&
+        leftDown &&
+        !m_navigationOverlayLeftWasDown;
+
+    const bool trackPressed =
+        m_navigationTrackButtonHovered &&
+        leftDown &&
+        !m_navigationOverlayLeftWasDown;
+
+    m_navigationOverlayLeftWasDown =
+        leftDown;
+
+    if (m_navigationLevelZeroButtonHovered ||
+        m_navigationTrackButtonHovered)
+    {
+        m_pendingScrollY = 0.0;
+
+        if (levelZeroPressed)
+        {
+            resetNavigationViewToLevelZero(
+                vp
+            );
+        }
+
+        if (trackPressed)
+            toggleSelectedBodyTracking();
+
+        /*
+            The button is part of the map viewport, so explicitly prevent
+            the scene behind it from receiving the same mouse gesture.
+        */
+        m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+
+        m_systemView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+
+        return std::nullopt;
+    }
+
+    if (m_modeState.current() == Mode::System)
+    {
+        m_systemPresentation =
+            m_systemPresentationBuilder.build(
+                m_systemView,
+                vp,
+                system,
+                inputNowSeconds,
+                false
+            );
+
+        updateSelectedBodyTracking(
+            m_systemPresentation
+        );
+
+        m_systemSceneFrame =
+            m_systemSceneFrameBuilder.build(
+                m_systemView,
+                *this,
+                vp,
+                system,
+                m_systemPresentation
+            );
+
+        m_systemFramePrepared = true;
+        m_systemSceneFrameDirty = false;
+
+        const auto cameraBefore =
+            m_systemView.state().camera;
+
+        game::system_map::SystemMapInputFrame frame;
+        frame.viewport = vp;
+        frame.mouseX = mx;
+        frame.mouseY = my;
+        frame.localMouseX = localMx;
+        frame.localMouseY = localMy;
+        frame.inside = inside;
+        frame.leftDown = leftDown;
+        frame.rightDown = rightDown;
+        frame.zoomInKeyDown =
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
+        frame.zoomOutKeyDown =
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+        frame.nowSeconds = inputNowSeconds;
+
+        refreshSystemWaypointCandidate(vp, system);
+        synchronizeNavigationTracking(
+            m_systemSceneFrame.interaction.objectOverlay
+        );
+        revealPendingRouteFocus(
+            m_systemSceneFrame.interaction.objectOverlay,
+            vp
+        );
+
+        const game::system_map::SystemMapFrameInteractionContext
+            interactionContext(
+                m_systemSceneFrame.interaction,
+                m_systemView.controls()
+            );
+
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                m_systemSceneFrame.interaction.objectOverlay,
+                glm::dvec2(
+                    static_cast<double>(vp.width),
+                    static_cast<double>(vp.height)
+                ),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown,
+                interactionContext
+                    .largestDirectBodyPhysicalSizeMetersAt(
+                        localMx,
+                        localMy
+                    )
+            );
+
+        if (leftDown && overlayPointer.consumed)
+        {
+            std::cerr
+                << "[DockUi] pointer-consumed"
+                << " action_object=" << overlayPointer.actionObjectId
+                << " action_key=" << overlayPointer.actionKey
+                << " activated_object=" << overlayPointer.activatedObjectId
+                << " closed_object=" << overlayPointer.closedObjectId
+                << " mouse_x=" << localMx
+                << " mouse_y=" << localMy
+                << std::endl;
+        }
+
+        if (overlayPointer.consumed)
+        {
+            if (!overlayPointer.actionObjectId.empty())
+                applyWaypointAction(overlayPointer.actionObjectId, overlayPointer.actionKey);
+
+            if (!overlayPointer.activatedObjectId.empty())
+            {
+                if (overlayPointer.activatedInfoKind ==
+                        game::system_map::MapObjectInfoKind::Celestial &&
+                    !overlayPointer.activatedSemanticTargetId.empty())
+                {
+                    m_systemInteraction.focusBodySelection(
+                        m_systemView,
+                        interactionContext,
+                        overlayPointer.activatedSemanticTargetId,
+                        inputNowSeconds
+                    );
+                }
+                else if (overlayPointer.activatedInfoKind ==
+                         game::system_map::MapObjectInfoKind::Tactical)
+                {
+                    const auto overlayItem = std::find_if(
+                        m_systemSceneFrame.interaction.objectOverlay.items.begin(),
+                        m_systemSceneFrame.interaction.objectOverlay.items.end(),
+                        [&](const auto& item)
+                        {
+                            return item.objectId ==
+                                overlayPointer.activatedObjectId;
+                        }
+                    );
+
+                    const auto hubPoint = std::find_if(
+                        m_systemSceneFrame.interaction.hubScreenPoints.begin(),
+                        m_systemSceneFrame.interaction.hubScreenPoints.end(),
+                        [&](const auto& point)
+                        {
+                            return point.hubId == overlayPointer.activatedObjectId;
+                        }
+                    );
+
+                    if (hubPoint !=
+                        m_systemSceneFrame.interaction.hubScreenPoints.end())
+                    {
+                        game::system_map::SystemMapHubSelection hubSelection;
+                        hubSelection.hubId = hubPoint->hubId;
+                        hubSelection.parentBodyId = hubPoint->parentBodyId;
+                        m_systemInteraction.focusHubSelection(
+                            m_systemView,
+                            interactionContext,
+                            hubSelection,
+                            inputNowSeconds
+                        );
+                        if (overlayItem !=
+                            m_systemSceneFrame.interaction.objectOverlay.items.end())
+                        {
+                            updateActiveTacticalLocalContext(*overlayItem);
+                        }
+                    }
+                    else if (overlayItem !=
+                             m_systemSceneFrame.interaction.objectOverlay.items.end())
+                    {
+                        m_systemInteraction.focusTacticalObjectSelection(
+                            m_systemView,
+                            overlayItem->navigationHubId,
+                            overlayItem->navigationHubParentBodyId
+                        );
+                        updateActiveTacticalLocalContext(*overlayItem);
+                    }
+                    else
+                    {
+                        m_systemInteraction.focusTacticalObjectSelection(
+                            m_systemView
+                        );
+                        m_activeTacticalLocalTargetObjectId.clear();
+                        m_activeTacticalDetailCell.reset();
+                    }
+                }
+            }
+
+            synchronizeNavigationTracking(
+                m_systemSceneFrame.interaction.objectOverlay
+            );
+
+            m_systemView.suppressCameraGesture(
+                leftDown,
+                rightDown,
+                mx,
+                my
+            );
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
+
+        const auto result =
+            m_systemInteraction.handleInput(
+                m_systemView,
+                interactionContext,
+                frame,
+                m_pendingScrollY
+            );
+
+        if (result.clickedBodyId.has_value())
+        {
+            const std::string cardId =
+                "body:" + std::to_string(system.systemId) + ":" +
+                *result.clickedBodyId;
+            const auto bodyInfo = std::find_if(
+                m_systemSceneFrame.interaction.objectOverlay.items.begin(),
+                m_systemSceneFrame.interaction.objectOverlay.items.end(),
+                [&](const game::system_map::MapObjectOverlayItem& item)
+                {
+                    return item.objectId == cardId;
+                }
+            );
+            if (bodyInfo !=
+                m_systemSceneFrame.interaction.objectOverlay.items.end())
+            {
+                m_objectOverlayState.activate(bodyInfo->objectId);
+                m_objectOverlayState.ensureOpen(
+                    *bodyInfo,
+                    glm::dvec2(vp.width, vp.height)
+                );
+            }
+        }
+
+        if (result.clickedNavigationCell.has_value())
+        {
+            const auto& cell = *result.clickedNavigationCell;
+
+            game::system_map::MapObjectOverlayItem candidate;
+            candidate.objectId = waypointCandidateId('S', cell);
+            candidate.infoKind =
+                game::system_map::MapObjectInfoKind::WaypointCandidate;
+            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
+            candidate.name = m_navigationMapTextProfile.spaceTarget;
+            candidate.drawGlyph = true;
+            candidate.pointerInteractive = true;
+            candidate.screenAffordance = true;
+            candidate.glyphScale = 0.78;
+            candidate.hitRadiusPx = 12.0;
+            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
+            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+            candidate.extraFields.push_back({
+                "address",
+                navigationCellAddress('S', cell),
+                ""
+            });
+            candidate.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(
+                    system.systemPositionLy *
+                        world::coordinates::MetersPerLightYear +
+                    cell.center * world::celestial::MetersPerAu
+                );
+            candidate.hasTrackingWorldPosition = true;
+            candidate.screenPx = glm::dvec2(localMx, localMy);
+            candidate.visible = true;
+            m_systemWaypointCandidate = candidate;
+            refreshSystemWaypointCandidate(vp, system);
+        }
+
+        synchronizeNavigationTracking(
+            m_systemSceneFrame.interaction.objectOverlay
+        );
+
+        const auto& semanticSelection = m_systemView.state();
+        if (!semanticSelection.selectedHubId.empty())
+        {
+            // A tactical ship may intentionally retain its parent Hub only as
+            // the local-neighborhood drill target. Do not replace the active
+            // ship with that Hub on the following frame.
+            const bool tacticalObjectOwnsHubContext =
+                !m_activeTacticalLocalTargetObjectId.empty() &&
+                m_objectOverlayState.activeObjectId() ==
+                    m_activeTacticalLocalTargetObjectId;
+            if (!tacticalObjectOwnsHubContext)
+            {
+                m_objectOverlayState.activate(
+                    semanticSelection.selectedHubId
+                );
+            }
+        }
+        else if (!semanticSelection.selectedBodyId.empty() ||
+                 semanticSelection.navigationCellExplicitlySelected)
+        {
+            m_objectOverlayState.clearActive();
+        }
+
+        if (m_systemView.state().navigationGrid.enabled() &&
+            m_systemPresentation.systemScale > 0.0f)
+        {
+            m_systemView.updateNavigationHoverPresentation(
+                vp,
+                inputNowSeconds
+            );
+        }
+
+        const auto& cameraAfter =
+            m_systemView.state().camera;
+
+        m_systemSceneFrameDirty =
+            glm::length(
+                cameraBefore.target - cameraAfter.target
+            ) > 0.0 ||
+            cameraBefore.yaw != cameraAfter.yaw ||
+            cameraBefore.pitch != cameraAfter.pitch ||
+            cameraBefore.distance != cameraAfter.distance;
+
+        if (result.systemLevelChanged.has_value())
+        {
+            announceNavigationLevel(
+                'S',
+                result.systemLevelChanged.value()
+            );
+        }
+
+        return std::nullopt;
+    }
+
+    if (m_modeState.current() == Mode::Detail ||
+        m_modeState.current() == Mode::Hub)
+    {
+        if (m_modeState.current() == Mode::Detail)
+        {
+            m_detailPresentation =
+                m_localMapPresentationBuilder.buildDetail(
+                    m_detailView,
+                    vp,
+                    detail
+                );
+            m_detailFramePrepared = true;
+            m_detailFrameDirty = false;
+        }
+        else
+        {
+            m_hubPresentation =
+                m_localMapPresentationBuilder.buildHub(
+                    m_hubView,
+                    vp,
+                    hub
+                );
+            decorateHubDockingOverlay(hub);
+            m_hubFramePrepared = true;
+            m_hubFrameDirty = false;
+        }
+
+        const auto cameraBefore =
+            m_modeState.current() == Mode::Hub
+                ? m_hubView.camera()
+                : m_detailView.camera();
+
+        auto& objectOverlay =
+            m_modeState.current() == Mode::Hub
+                ? m_hubPresentation.frame.objectOverlay
+                : m_detailPresentation.frame.objectOverlay;
+        synchronizeNavigationTracking(objectOverlay);
+        revealPendingRouteFocus(objectOverlay, vp);
+
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                objectOverlay,
+                glm::dvec2(
+                    static_cast<double>(vp.width),
+                    static_cast<double>(vp.height)
+                ),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown
+            );
+
+        // Hub infrastructure is not selected through a screen-space radius or
+        // convex proxy.  Dock markers/cards get first refusal above; only an
+        // otherwise-unconsumed press is tested against actual assembly
+        // triangles.  Empty space remains available to the orbit gesture.
+        if (m_modeState.current() == Mode::Hub &&
+            overlayPointer.primaryPressStarted &&
+            !overlayPointer.consumed)
+        {
+            const glm::dvec2 mousePx(localMx, localMy);
+            const auto* body = pickHubInfrastructureBody(
+                m_hubPresentation.camera,
+                hub,
+                mousePx
+            );
+
+            if (body && !body->stableId.empty())
+            {
+                const std::string objectId =
+                    std::string(HubModuleOverlayPrefix) + body->stableId;
+                const auto item = std::find_if(
+                    objectOverlay.items.begin(),
+                    objectOverlay.items.end(),
+                    [&](const auto& candidate)
+                    {
+                        return candidate.objectId == objectId;
+                    }
+                );
+
+                if (item != objectOverlay.items.end())
+                {
+                    m_objectOverlayState.activate(objectId);
+                    m_objectOverlayState.ensureOpen(
+                        *item,
+                        glm::dvec2(
+                            static_cast<double>(vp.width),
+                            static_cast<double>(vp.height)
+                        )
+                    );
+
+                    m_hubFrameDirty = true;
+                    auto& camera = m_hubView.camera();
+                    camera.rotating = false;
+                    camera.panning = false;
+                    camera.lastMouseX = mx;
+                    camera.lastMouseY = my;
+                    m_pendingScrollY = 0.0;
+                    return std::nullopt;
+                }
+            }
+            else if (!m_objectOverlayState.activeObjectId().empty())
+            {
+                // Empty Hub-map press only deselects. Information-card
+                // lifetime is independent from selection and is controlled
+                // exclusively by the card X button. The same press remains
+                // available to start orbit/pan.
+                m_objectOverlayState.clearActive();
+                m_hubFrameDirty = true;
+            }
+        }
+
+        if (overlayPointer.consumed)
+        {
+            if (!overlayPointer.closedObjectId.empty())
+                cancelDockingTaskForClosedCard(overlayPointer.closedObjectId);
+
+            if (!overlayPointer.actionObjectId.empty())
+            {
+                if (overlayPointer.actionKey == "show_docking_route" ||
+                    overlayPointer.actionKey == "start_docking")
+                {
+                    applyDockingAction(
+                        overlayPointer.actionObjectId,
+                        overlayPointer.actionKey
+                    );
+                }
+                else
+                {
+                    applyWaypointAction(
+                        overlayPointer.actionObjectId,
+                        overlayPointer.actionKey
+                    );
+                }
+            }
+
+            if (m_modeState.current() == Mode::Detail &&
+                !overlayPointer.activatedObjectId.empty())
+            {
+                const auto item = std::find_if(
+                    objectOverlay.items.begin(),
+                    objectOverlay.items.end(),
+                    [&](const auto& candidate)
+                    {
+                        return candidate.objectId ==
+                            overlayPointer.activatedObjectId;
+                    }
+                );
+
+                if (item != objectOverlay.items.end() &&
+                    !item->navigationHubId.empty())
+                {
+                    m_detailView.selectHub(
+                        item->navigationHubId,
+                        item->navigationHubParentBodyId
+                    );
+                }
+                else
+                {
+                    m_detailView.clearHubSelection();
+                }
+            }
+
+            if (m_modeState.current() == Mode::Hub &&
+                !overlayPointer.closedObjectId.empty())
+            {
+                m_hubFrameDirty = true;
+            }
+
+            auto& camera =
+                m_modeState.current() == Mode::Hub
+                    ? m_hubView.camera()
+                    : m_detailView.camera();
+            camera.rotating = false;
+            camera.panning = false;
+            camera.lastMouseX = mx;
+            camera.lastMouseY = my;
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
+
+        handleDetailAndHubInput(
+            vp,
+            window,
+            mx,
+            my,
+            localMx,
+            localMy,
+            inside,
+            leftDown,
+            rightDown
+        );
+
+        const auto& cameraAfter =
+            m_modeState.current() == Mode::Hub
+                ? m_hubView.camera()
+                : m_detailView.camera();
+
+        const bool projectionChanged =
+            cameraBefore.yaw != cameraAfter.yaw ||
+            cameraBefore.pitch != cameraAfter.pitch ||
+            cameraBefore.zoom != cameraAfter.zoom ||
+            glm::length(
+                cameraBefore.pan - cameraAfter.pan
+            ) > 0.0;
+
+        if (m_modeState.current() == Mode::Detail)
+            m_detailFrameDirty = projectionChanged;
+        else
+            m_hubFrameDirty = projectionChanged;
+
+        return std::nullopt;
+    }
+
+    if (m_modeState.current() == Mode::Galaxy)
+    {
+        refreshGalaxyWaypointCandidate(vp, galaxy);
+        synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+        revealPendingRouteFocus(m_galaxyInfoOverlayFrame, vp);
+
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                m_galaxyInfoOverlayFrame,
+                glm::dvec2(vp.width, vp.height),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown
+            );
+
+        if (overlayPointer.consumed)
+        {
+            if (!overlayPointer.actionObjectId.empty())
+                applyWaypointAction(overlayPointer.actionObjectId, overlayPointer.actionKey);
+
+            synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+            m_galaxyView.suppressCameraGesture(
+                leftDown,
+                rightDown,
+                mx,
+                my
+            );
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
+
+        game::system_map::GalaxyMapInputFrame frame;
+        frame.viewport = vp;
+        frame.mouseX = mx;
+        frame.mouseY = my;
+        frame.localMouseX = localMx;
+        frame.localMouseY = localMy;
+        frame.inside = inside;
+        frame.leftDown = leftDown;
+        frame.rightDown = rightDown;
+        frame.zoomInKeyDown =
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
+        frame.zoomOutKeyDown =
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+        frame.transitionActive = m_mapTransition.active();
+        frame.nowSeconds = glfwGetTime();
+
+        const auto result =
+            m_galaxyInteraction.handleInput(
+                m_galaxyView,
+                galaxy,
+                frame,
+                m_pendingScrollY
+            );
+
+        if (result.clickedNavigationCell.has_value() &&
+            m_galaxyView.state().selectedSystemId < 0)
+        {
+            const auto& cell = *result.clickedNavigationCell;
+
+            game::system_map::MapObjectOverlayItem candidate;
+            candidate.objectId = waypointCandidateId('G', cell);
+            candidate.infoKind =
+                game::system_map::MapObjectInfoKind::WaypointCandidate;
+            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
+            candidate.name = m_navigationMapTextProfile.spaceTarget;
+            candidate.drawGlyph = true;
+            candidate.pointerInteractive = true;
+            candidate.screenAffordance = true;
+            candidate.glyphScale = 0.78;
+            candidate.hitRadiusPx = 12.0;
+            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
+            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+            candidate.extraFields.push_back({
+                "address",
+                navigationCellAddress('G', cell),
+                ""
+            });
+            candidate.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(
+                    cell.center * world::coordinates::MetersPerLightYear
+                );
+            candidate.hasTrackingWorldPosition = true;
+            candidate.screenPx = glm::dvec2(localMx, localMy);
+            candidate.visible = true;
+            m_galaxyWaypointCandidate = candidate;
+            refreshGalaxyWaypointCandidate(vp, galaxy);
+        }
+
+        synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+
+        if (result.requestWindowFocus)
+            glfwFocusWindow(window);
+
+        if (result.galaxyLevelChanged.has_value())
+        {
+            announceNavigationLevel(
+                'G',
+                result.galaxyLevelChanged.value()
+            );
+        }
+
+        if (result.mapIntent.has_value())
+        {
+            const auto type =
+                result.mapIntent->type;
+
+            if (type ==
+                    game::system_map::MapIntentType::
+                        EnterKnownSystem ||
+                type ==
+                    game::system_map::MapIntentType::
+                        EnterEmptySector)
+            {
+                announceNavigationLevel(
+                    'S',
+                    m_systemView.state().navigationGrid
+                        .definition()
+                        .minimumLevel
+                );
+            }
+        }
+
+        return result.mapIntent;
+    }
+
+    return std::nullopt;
+
+}

@@ -5,6 +5,12 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# ShipCore is split into ShipCore*.cpp units (one class): read them as one.
+def _ship_core_sources(root):
+    d = root / "src/game/ship/core"
+    return chr(10).join(p.read_text(encoding="utf-8") for p in sorted(d.glob("ShipCore*.cpp")))
+
+
 
 def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
@@ -21,7 +27,7 @@ def fail(message: str) -> None:
 gateway_h = read("src/game/ship/control/ShipControlExecutionGateway.h")
 gateway_cpp = read("src/game/ship/control/ShipControlExecutionGateway.cpp")
 simulation = read("src/game/simulation/GameSimulation.cpp")
-ship_core = read("src/game/ship/core/ShipCore.cpp")
+ship_core = _ship_core_sources(ROOT)
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
 client_world = read("src/game/client/ClientWorldState.cpp")
 presentation = read(

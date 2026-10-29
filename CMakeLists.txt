@@ -618,6 +618,7 @@ add_executable(EliteGame
 
     src/world/celestial/StarAtlasDatabase.cpp
     src/world/celestial/CelestialSystemRuntime.cpp
+    src/world/celestial/CelestialEphemerisService.cpp
 
     src/game/system_map/SystemMapRenderer.cpp
     src/game/system_map/SystemMapInteraction.cpp
@@ -799,6 +800,7 @@ if(ELITE_BUILD_SERVER)
 
         src/world/celestial/StarAtlasDatabase.cpp
         src/world/celestial/CelestialSystemRuntime.cpp
+        src/world/celestial/CelestialEphemerisService.cpp
         src/world/celestial/CelestialRuntimeRegistry.cpp
 
         src/game/navigation/DynamicMotionSystem.cpp

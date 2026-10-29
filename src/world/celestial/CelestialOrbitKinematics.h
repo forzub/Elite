@@ -197,6 +197,43 @@ inline void relativeKeplerStateAu(
     }
 }
 
+// State of a body relative to its parent: Kepler elements when present,
+// otherwise the static position / legacy circular orbit of bodies without
+// elements. The single relative-state function of the runtime and of
+// CelestialEphemerisService.
+inline void relativeBodyStateAu(
+    const CelestialBodyDefinition& body,
+    const CelestialBodyDefinition* parent,
+    double simTimeSeconds,
+    glm::dvec3& positionAu,
+    glm::dvec3& velocityAuPerSecond
+)
+{
+    if (body.keplerOrbit)
+    {
+        relativeKeplerStateAu(body, parent, simTimeSeconds, positionAu, velocityAuPerSecond);
+        return;
+    }
+    velocityAuPerSecond = glm::dvec3(0.0);
+    if (body.type == BodyType::Star || body.distanceAu <= 0.0)
+    {
+        positionAu = body.staticPositionAu;
+        return;
+    }
+    const double phase = body.orbitalPeriodDays > 0.0
+        ? circularOrbitPhaseRad(simTimeSeconds, body.orbitalPeriodDays, body.orbitalDirection,
+                                body.orbitalPhaseOffsetDeg * OrbitTwoPi / 360.0)
+        : 0.0;
+    positionAu = circularOrbitPositionAu(body.distanceAu, phase);
+    if (body.orbitalPeriodDays > 0.0)
+    {
+        const double omega = (body.orbitalDirection < 0 ? -1.0 : 1.0) * OrbitTwoPi /
+            (body.orbitalPeriodDays * SecondsPerDay);
+        velocityAuPerSecond = glm::dvec3(-std::sin(phase) * body.distanceAu * omega, 0.0,
+                                         -std::cos(phase) * body.distanceAu * omega);
+    }
+}
+
 // The orbit ellipse relative to the parent (closed polyline, first point =
 // periapsis), in the same frame as relativeKeplerStateAu.
 inline std::vector<glm::dvec3> keplerOrbitPathAu(

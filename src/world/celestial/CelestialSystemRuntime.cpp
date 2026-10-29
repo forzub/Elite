@@ -79,21 +79,13 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
 
         glm::dvec3 relativeAu {0.0};
         glm::dvec3 relativeVelocityAuPerSecond {0.0};
-        if (body.keplerOrbit)
-        {
-            const auto parentDef = definitionById.find(body.parentId);
-            relativeKeplerStateAu(
-                body,
-                parentDef != definitionById.end() ? parentDef->second : nullptr,
-                simTimeSeconds,
-                relativeAu,
-                relativeVelocityAuPerSecond);
-        }
-        else
-        {
-            relativeAu = computeRelativePositionAu(body, simTimeSeconds);
-            relativeVelocityAuPerSecond = computeRelativeVelocityAuPerSecond(body, simTimeSeconds);
-        }
+        const auto parentDef = definitionById.find(body.parentId);
+        relativeBodyStateAu(
+            body,
+            parentDef != definitionById.end() ? parentDef->second : nullptr,
+            simTimeSeconds,
+            relativeAu,
+            relativeVelocityAuPerSecond);
 
         state.positionAu = parentAu + relativeAu;
         state.velocityAuPerSecond =
@@ -141,76 +133,6 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         worldVelocityAuById[state.id] = state.velocityAuPerSecond;
         m_snapshot.bodies.push_back(std::move(state));
     }
-}
-
-glm::dvec3 CelestialSystemRuntime::computeRelativePositionAu(
-    const CelestialBodyDefinition& body,
-    double simTimeSeconds
-) const
-{
-    if (body.type == BodyType::Star)
-        return body.staticPositionAu;
-
-    if (body.distanceAu <= 0.0)
-        return body.staticPositionAu;
-
-    double phase = 0.0;
-
-    if (body.orbitalPeriodDays > 0.0)
-    {
-        phase =
-            circularOrbitPhaseRad(
-                simTimeSeconds,
-                body.orbitalPeriodDays,
-                body.orbitalDirection,
-                body.orbitalPhaseOffsetDeg *
-                    OrbitTwoPi /
-                    360.0
-            );
-    }
-
-    // Пока все орбиты круговые в XZ.
-    // Это не финальная астрономия, но это уже нормальный runtime-слой:
-    // definition не меняется, меняется только snapshot.
-    return circularOrbitPositionAu(
-        body.distanceAu,
-        phase
-    );
-}
-
-
-glm::dvec3 CelestialSystemRuntime::computeRelativeVelocityAuPerSecond(
-    const CelestialBodyDefinition& body,
-    double simTimeSeconds
-) const
-{
-    if (body.type == BodyType::Star ||
-        body.distanceAu <= 0.0 ||
-        body.orbitalPeriodDays <= 0.0)
-    {
-        return glm::dvec3(0.0);
-    }
-
-    const double phase =
-        circularOrbitPhaseRad(
-            simTimeSeconds,
-            body.orbitalPeriodDays,
-            body.orbitalDirection,
-            body.orbitalPhaseOffsetDeg * OrbitTwoPi / 360.0
-        );
-
-    const double direction =
-        body.orbitalDirection < 0 ? -1.0 : 1.0;
-
-    const double angularVelocityRadPerSecond =
-        direction * OrbitTwoPi /
-        (body.orbitalPeriodDays * SecondsPerDay);
-
-    return glm::dvec3(
-        -std::sin(phase) * body.distanceAu * angularVelocityRadPerSecond,
-        0.0,
-        -std::cos(phase) * body.distanceAu * angularVelocityRadPerSecond
-    );
 }
 
 } // namespace world::celestial

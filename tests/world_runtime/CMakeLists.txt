@@ -19,6 +19,7 @@ add_executable(
     WorldRuntimeTests.cpp
     "${ELITE_SOURCE_ROOT}/src/world/celestial/StarAtlasDatabase.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/celestial/CelestialSystemRuntime.cpp"
+    "${ELITE_SOURCE_ROOT}/src/world/celestial/CelestialEphemerisService.cpp"
     "${ELITE_SOURCE_ROOT}/src/world/celestial/CelestialRuntimeRegistry.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
 )

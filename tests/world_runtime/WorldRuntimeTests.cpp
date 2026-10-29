@@ -18,6 +18,7 @@
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/celestial/CelestialSystemRuntime.h"
+#include "src/world/celestial/CelestialEphemerisService.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/world/coordinates/GalacticGrids.h"
@@ -284,6 +285,51 @@ void testNavigationDomainIsConnectedAndSparse()
     // Interstellar generation cells (25 ly, floored) cover every root cell.
     const auto gen = generationCellsCovering(domain, interstellarGenerationGrid());
     REQUIRE(std::binary_search(gen.begin(), gen.end(), interstellarGenerationGrid().cellOf({0.0, 0.0, 1500.0})));
+}
+
+void testEphemerisServiceMatchesRuntimeWithoutTouchingIt()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    std::vector<int> ids;
+    for (const auto& s : atlas.systems()) ids.push_back(s.id);
+    ids.push_back(100062);
+    for (const int id : ids)
+    {
+        const CelestialSystemDefinition* def = atlas.findSystem(id);
+        const CelestialEphemerisService ephemeris(*def);
+        CelestialSystemRuntime runtime;
+        runtime.setSystem(def);
+        runtime.update(5.0e6);
+        const auto before = runtime.snapshot().bodies;
+        for (const double t : {-3.0e7, 0.0, 1.0e8, 4.0e9})
+        {
+            CelestialSystemRuntime future;
+            future.setSystem(def);
+            future.update(t);
+            for (const auto& b : future.snapshot().bodies)
+            {
+                const auto s = ephemeris.state(b.id, t);
+                REQUIRE(s.has_value());
+                requireVectorNear(s->positionAu, b.positionAu, 1.0e-9 * (1.0 + glm::length(b.positionAu)), "ephemeris position");
+                requireVectorNear(s->velocityAuPerSecond, b.velocityAuPerSecond, 1.0e-15 + 1.0e-9 * glm::length(b.velocityAuPerSecond), "ephemeris velocity");
+            }
+        }
+        // Queries never move the runtime.
+        for (std::size_t k = 0; k < before.size(); ++k)
+            REQUIRE(runtime.snapshot().bodies[k].positionAu == before[k].positionAu);
+    }
+
+    const CelestialEphemerisService sol(*atlas.findSystem(0));
+    const auto* earth = sol.body("system_0.Sol.Земля");
+    REQUIRE(earth != nullptr);
+    // Earth: Laplace SOI ~0.93e9 m, Hill ~1.47e9 m, outer atmosphere ~100 km.
+    requireNear(earth->sphereOfInfluenceMeters, 0.925e9, 0.03e9, "Earth sphere of influence");
+    requireNear(earth->hillRadiusMeters, 1.47e9, 0.07e9, "Earth Hill radius");
+    REQUIRE(earth->atmosphereOuterRadiusMeters > earth->radiusMeters + 50.0e3);
+    REQUIRE(!sol.ancestors(earth->id).empty());
+    const auto moon = sol.stateRelativeTo(earth->childIds.empty() ? earth->id : earth->childIds.front(), earth->id, 1.0e7);
+    REQUIRE(moon && glm::length(moon->positionMeters()) > 3.5e8 && glm::length(moon->positionMeters()) < 4.1e8);
 }
 
 void testClientUniverseTimelineUsesServerAnchor()
@@ -703,6 +749,10 @@ int main()
         {
             "navigation domain is connected and sparse",
             testNavigationDomainIsConnectedAndSparse
+        },
+        {
+            "ephemeris service matches runtime without touching it",
+            testEphemerisServiceMatchesRuntimeWithoutTouchingIt
         }
     };
 

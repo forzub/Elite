@@ -2650,25 +2650,6 @@ private:
         }
 
         const std::vector<double> braking = speeds;
-        const auto brakingSpeedAt =
-            [&](double s) noexcept
-            {
-                if (s >= progress.back())
-                    return braking.back();
-                const auto upper = std::upper_bound(
-                    progress.begin(), progress.end(), s);
-                const std::size_t i = static_cast<std::size_t>(
-                    std::max<std::ptrdiff_t>(
-                        1, upper - progress.begin()));
-                const double span = progress[i] - progress[i - 1];
-                const double u = span > 1.0e-9
-                    ? std::clamp((s - progress[i - 1]) / span, 0.0, 1.0)
-                    : 1.0;
-                // v^2 is linear in s under constant acceleration.
-                return std::sqrt(std::max(0.0,
-                    braking[i - 1] * braking[i - 1] * (1.0 - u) +
-                    braking[i] * braking[i] * u));
-            };
 
         // The coast must stay under the braking profile over its WHOLE
         // length, not only at its end (a coast must never jump over a low
@@ -2682,32 +2663,113 @@ private:
                 level[i] = std::min(previous[i], previous[i + width]);
             minimumTable.push_back(std::move(level));
         }
-        const auto sampleMinimum =
-            [&](std::size_t first, std::size_t last) noexcept
-            {
-                std::size_t level = 0;
-                while ((std::size_t(2) << level) <= last - first + 1)
-                    ++level;
-                return std::min(
-                    minimumTable[level][first],
-                    minimumTable[level][last + 1 - (std::size_t(1) << level)]
-                );
-            };
+        std::vector<unsigned char> floorLog2(count + 1, 0);
+        for (std::size_t n = 2; n <= count; ++n)
+            floorLog2[n] = static_cast<unsigned char>(floorLog2[n / 2] + 1);
+
+        /*
+            Minimum of the braking profile over a coast window starting at
+            sample i and ending at progress s (s >= progress[i]): the
+            interpolated speed at s and every sample in between.
+
+            This runs 24 x per remaining sample at every checkpoint, so it
+            was the frame hitch of route flights (~75 ms per checkpoint in
+            the Debug build). It reproduces the former
+            upper_bound-over-the-whole-route computation exactly: every
+            sample up to i is <= s, so the first sample above s lies after i
+            and is found by galloping from i (the window is short against
+            the route); the same index serves the interpolation and the
+            range minimum; the arithmetic is unchanged (bit-identical).
+        */
+        const double lastProgress = progress.back();
+        const double lastBraking = braking.back();
         const auto brakingMinimumOver =
             [&](std::size_t from, double toProgress) noexcept
             {
-                double minimum = brakingSpeedAt(toProgress);
-                const auto end = std::upper_bound(
-                    progress.begin(), progress.end(), toProgress);
-                const std::size_t last = static_cast<std::size_t>(
-                    end - progress.begin());
-                if (last > from)
-                    minimum = std::min(minimum, sampleMinimum(from, last - 1));
+                // upper = first index with progress[upper] > toProgress.
+                std::size_t low = from;          // progress[low] <= toProgress
+                std::size_t high = from + 1;
+                std::size_t step = 1;
+                while (high < count && progress[high] <= toProgress)
+                {
+                    low = high;
+                    high = from + 1 + step;
+                    step *= 2;
+                }
+                if (high > count)
+                    high = count;
+                while (low + 1 < high)
+                {
+                    const std::size_t mid = low + (high - low) / 2;
+                    if (progress[mid] <= toProgress)
+                        low = mid;
+                    else
+                        high = mid;
+                }
+                const std::size_t upper = high;
+
+                double minimum;
+                if (toProgress >= lastProgress)
+                {
+                    minimum = lastBraking;
+                }
+                else
+                {
+                    const std::size_t i = std::max<std::size_t>(1, upper);
+                    const double span = progress[i] - progress[i - 1];
+                    const double u = span > 1.0e-9
+                        ? std::clamp((toProgress - progress[i - 1]) / span, 0.0, 1.0)
+                        : 1.0;
+                    // v^2 is linear in s under constant acceleration.
+                    minimum = std::sqrt(std::max(0.0,
+                        braking[i - 1] * braking[i - 1] * (1.0 - u) +
+                        braking[i] * braking[i] * u));
+                }
+                if (upper > from)
+                {
+                    const std::size_t first = from;
+                    const std::size_t last = upper - 1;
+                    const std::size_t level = floorLog2[last - first + 1];
+                    minimum = std::min(minimum, std::min(
+                        minimumTable[level][first],
+                        minimumTable[level][last + 1 - (std::size_t(1) << level)]
+                    ));
+                }
                 return minimum;
             };
 
+        /*
+            coastReady[i] is a pure function of progress, coastSeconds and
+            the braking profile from sample i to the end of the route. A
+            checkpoint usually re-levels only the profile near the craft, so
+            the samples whose whole braking suffix is unchanged since the last
+            call reuse their previous value exactly (bit-identical); only the
+            changed head is bisected again. Per thread: the client autopilot
+            and offline workers never share a cache.
+        */
+        struct CoastCache
+        {
+            std::vector<double> progress;
+            std::vector<double> braking;
+            std::vector<double> coastReady;
+            double coastSeconds = -1.0;
+            std::size_t firstValid = 0;
+        };
+        thread_local CoastCache cache;
+        std::size_t reuseFrom = count;
+        if (cache.coastSeconds == coastSeconds &&
+            cache.progress.size() == count &&
+            cache.progress == progress)
+        {
+            reuseFrom = count;
+            while (reuseFrom > 0 && cache.braking[reuseFrom - 1] == braking[reuseFrom - 1])
+                --reuseFrom;
+            reuseFrom = std::max(reuseFrom, cache.firstValid);
+        }
         std::vector<double> coastReady(count, 0.0);
-        for (std::size_t i = anchorIndex; i < count; ++i)
+        for (std::size_t i = std::max(reuseFrom, anchorIndex); i < count; ++i)
+            coastReady[i] = cache.coastReady[i];
+        for (std::size_t i = anchorIndex; i < std::min(reuseFrom, count); ++i)
         {
             double low = 0.0;
             double high = braking[i];
@@ -2728,6 +2790,11 @@ private:
             }
             coastReady[i] = low;
         }
+        cache.progress = progress;
+        cache.braking = braking;
+        cache.coastReady = coastReady;
+        cache.coastSeconds = coastSeconds;
+        cache.firstValid = anchorIndex;
 
         // Start from the measured speed: the anchor sample still holds the
         // nominal value until the physical-floor pass below replaces it.

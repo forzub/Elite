@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include <iostream>
 #include "src/core/RuntimeTrace.h"
 #include <GLFW/glfw3.h>
@@ -883,6 +884,7 @@ void Application::mainLoop()
     while (m_running && !m_window->shouldClose() && !m_states.empty())
     {
         static int frame        = 0;
+        core::hitch::beginFrame();
         double currentTime      = glfwGetTime();
         float dt                = static_cast<float>(currentTime - lastTime);
 
@@ -1156,8 +1158,10 @@ void Application::mainLoop()
             // SpaceState::update owns LocalGameSession::advance(). Multiplayer
             // never takes this branch: its transport/world keeps advancing
             // behind the menu. F1-F12 do not set the pause flag.
+            core::hitch::mark("input_and_events");
             if (!localPaused)
                 state->update(dt);
+            core::hitch::mark("update_return");
 
             if (auto* activeSpace = dynamic_cast<SpaceState*>(state))
                 prepareRequestedPresentation(*activeSpace);
@@ -1290,7 +1294,10 @@ if ((systemMapMode || serviceMode))
         traceSlowMainPhase("render", xprocPhaseBegin);
         xprocPhaseBegin = XprocTraceClock::now();
 #endif
+        core::hitch::mark("render_tail");
         m_window->swapBuffers();
+        core::hitch::mark("swap_buffers");
+        core::hitch::endFrame();
 #ifdef _WIN32
         traceSlowMainPhase("swap-buffers", xprocPhaseBegin);
 #endif

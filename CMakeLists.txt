@@ -941,6 +941,16 @@ set(ELITE_RUNTIME_ASSETS_DIR
     "${CMAKE_BINARY_DIR}/assets"
 )
 
+# SpaceState.cpp alone exceeds the 32k/65k section limit of a regular COFF
+# object in unoptimised MinGW builds (template-heavy inline headers): the link
+# broke with relocation overflow / missing .refptr symbols. big-obj lifts it.
+if(MINGW)
+    set_source_files_properties(
+        src/game/SpaceState.cpp
+        PROPERTIES COMPILE_OPTIONS "-Wa,-mbig-obj"
+    )
+endif()
+
 function(elite_copy_asset_tree TARGET_NAME SOURCE_DIR DEST_DIR)
     if(NOT EXISTS "${SOURCE_DIR}")
         add_custom_target(${TARGET_NAME})

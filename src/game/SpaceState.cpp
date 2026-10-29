@@ -1,3 +1,4 @@
+#include "src/core/HitchProfiler.h"
 #include "src/game/navigation/NavigationGeometryTolerance.h"
 #include "src/game/navigation/AssistedConcurrentManeuverBudget.h"
 #include "src/game/navigation/planner/BallisticEntryHandoffPolicy.h"
@@ -5548,6 +5549,7 @@ void SpaceState::updateDockingAdvisory()
                 tunnelRollPhase,
                 fixedDt
             );
+            core::hitch::mark("dock_pre_autopilot");
             const auto output =
                 NewtonianClientAutopilot::update(
                     m_clientNewtonianRouteAutopilot,
@@ -5556,11 +5558,13 @@ void SpaceState::updateDockingAdvisory()
                     universeTimeSeconds,
                     fixedDt
                 );
+            core::hitch::mark("dock_newtonian_autopilot_update");
             if (!handleOutput(output))
                 return;
         }
     }
 
+    core::hitch::mark("dock_output_handling");
     auto& active = m_dockAdvice;
     if (!active.serial || !active.plan.valid())
         return;
@@ -5746,6 +5750,7 @@ void SpaceState::updateDockingAdvisory()
             return route;
         };
 
+    core::hitch::mark("dock_presentation_build");
     guidance.publish(
         makeRoute(
             active.plan.executionGates,
@@ -5957,6 +5962,7 @@ void SpaceState::update(float dt)
     // duration of session.advance() would now report pipeline back-pressure,
     // not authoritative CPU work. Keep the existing "Fixed simulation" metric
     // attached to the server batch that actually completed.
+    core::hitch::mark("session_advance");
     m_perfFixedSimMs =
         serverAdvance.serverExecutionWallSeconds * 1000.0;
     m_perfServerFixedSteps = serverAdvance.stepsExecuted;
@@ -5982,6 +5988,7 @@ void SpaceState::update(float dt)
         std::clamp(dt, 0.0f, 0.05f);
 
     const double clientStartMs = nowMs();
+    core::hitch::mark("pre_client");
 
     try
     {
@@ -6893,6 +6900,7 @@ void SpaceState::update(float dt)
         }
     }
 
+    core::hitch::mark("client_update_and_navigation");
     const double dockingGuidanceStartMs = nowMs();
 
     const bool directControlScenario =
@@ -6914,6 +6922,7 @@ void SpaceState::update(float dt)
     }
 
     m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;
+    core::hitch::mark("docking_guidance");
     m_perfDockingRequestActive =
         m_navigationWorkspace.dockingRouteRequests().pending().valid();
 
@@ -6957,6 +6966,7 @@ void SpaceState::update(float dt)
     }
 
     m_perfClientUpdateMs = nowMs() - clientStartMs;
+    core::hitch::mark("client_tail");
 
 
 // Promo ships are presentation-only visual entities.
@@ -7002,6 +7012,7 @@ m_playerView->updateCockpitStateFromSnapshot(
 );
 
     m_perfPlayerViewMs = nowMs() - playerViewStartMs;
+    core::hitch::mark("player_view");
 
 
     // --------------------------------------------------
@@ -7082,6 +7093,7 @@ m_playerView->updateCockpitStateFromSnapshot(
     const double uiRootStartMs = nowMs();
     uiRoot->update(dt);
     m_perfUiRootUpdateMs = nowMs() - uiRootStartMs;
+    core::hitch::mark("ui_root");
 
 
     // Browser diagnostics request their own live snapshots. They must not
@@ -7107,6 +7119,7 @@ m_playerView->updateCockpitStateFromSnapshot(
 
 
     m_perfUpdateMs = nowMs() - updateStartMs;
+    core::hitch::mark("update_tail");
 
 }
 
@@ -7332,6 +7345,7 @@ void SpaceState::renderUI()
         observerGalacticPositionPtr
     );
     m_perfScenePrepareMs = nowMs() - scenePrepareStartMs;
+    core::hitch::mark("scene_prepare");
 
 
 
@@ -7361,6 +7375,7 @@ void SpaceState::renderUI()
     );
 
     m_perfMainRenderMs = nowMs() - mainRenderStartMs;
+    core::hitch::mark("scene_main_render");
 
 
 
@@ -7429,6 +7444,7 @@ if (debug::get().render.shouldRenderRearCamera())
         );
 
         m_perfRearCameraMs = nowMs() - rearStartMs;
+        core::hitch::mark("scene_rear_camera");
     }
 }
 else
@@ -7531,6 +7547,7 @@ m_systemMapRenderer.render(
 
 
         m_perfHudMs = nowMs() - hudStartMs;
+    core::hitch::mark("hud");
         return;
     }
 
@@ -8542,6 +8559,7 @@ m_systemMapRenderer.render(
     }
 
     m_perfHudMs = nowMs() - hudStartMs;
+    core::hitch::mark("hud");
 }
 
 game::presentation::SystemMapPanelPresentation

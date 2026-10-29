@@ -90,6 +90,9 @@ inline void rebuildGalaxyMapCatalogLayer(
         item.tags = source.tags;
         item.mediumVolume = galaxyMapMediumVolume(source);
         item.mediumProxy = proxyOfObject[index];
+        if (source.objectType == "icy_debris_field" && source.properties.contains("geometry") &&
+            source.properties["geometry"].contains("radii_ly"))
+            item.markerRadiusLy = source.properties["geometry"]["radii_ly"][0].get<float>();
         snapshot.objects.push_back(std::move(item));
     }
 }

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cavity_0_-2_0_0",
+  "name": "Superbubble B40C",
+  "object_type": "interstellar_cavity",
+  "position_ly": {
+    "x": 461.9646176423143,
+    "y": -600.3955740115704,
+    "z": 498.77998559203047
+  },
+  "description": "Hot supernova-blown cavity bounded by a swept-up shell.",
+  "tags": [
+    "ism",
+    "cavity",
+    "hot_ionized"
+  ],
+  "properties": {
+    "radius_ly": 232.79507714045735,
+    "wall_thickness_ly": 44.694093189823526,
+    "age_myr": 2.8175616992264816,
+    "supernovae": 5,
+    "wall_compression": 8.5,
+    "shape": "near-spherical, elongated along the disc normal, seeded roughness",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0xfce785b72ab0d7d7",
+      "interstellar_version": 4,
+      "model": "superbubble cell population",
+      "class": "procedural_generated"
+    }
+  }
+}

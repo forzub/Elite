@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cavity_-1_0_-1_0",
+  "name": "Superbubble DDGQ",
+  "object_type": "interstellar_cavity",
+  "position_ly": {
+    "x": -316.5039425481702,
+    "y": 488.687775249839,
+    "z": -33.79817823295783
+  },
+  "description": "Hot supernova-blown cavity bounded by a swept-up shell.",
+  "tags": [
+    "ism",
+    "cavity",
+    "hot_ionized"
+  ],
+  "properties": {
+    "radius_ly": 69.06546787304669,
+    "wall_thickness_ly": 14.572443696680391,
+    "age_myr": 10.998182928442768,
+    "supernovae": 5,
+    "wall_compression": 8.5,
+    "shape": "near-spherical, elongated along the disc normal, seeded roughness",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x80788a7906884303",
+      "interstellar_version": 4,
+      "model": "superbubble cell population",
+      "class": "procedural_generated"
+    }
+  }
+}

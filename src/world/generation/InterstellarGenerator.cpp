@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <sstream>
 
 #include "src/world/generation/AstroUnits.h"
 #include "src/world/generation/DescriptorJson.h"
 #include "src/world/generation/GenerationRandom.h"
+#include "src/world/generation/InterstellarNoise.h"
 #include "src/world/generation/StellarSystemGenerator.h"
+#include "src/world/interstellar/ExtractionIndices.h"
 
 namespace world::generation
 {
@@ -16,6 +19,7 @@ namespace
 {
 
 using namespace astro;
+using namespace interstellar_noise;
 using ojson = nlohmann::ordered_json;
 using world::coordinates::GridCell3;
 
@@ -62,6 +66,7 @@ struct ClassRate
     double perCell;
 };
 
+
 // Materialised notable members per 25-ly cell (the physical populations are
 // far denser: ~1 Jupiter-mass rogue per few stars, Sumi et al. 2023).
 constexpr ClassRate Rates[] = {
@@ -69,79 +74,6 @@ constexpr ClassRate Rates[] = {
     {"rogue_moon", 0.05}, {"brown_dwarf", 0.08}, {"white_dwarf_remnant", 0.02}, {"neutron_star", 0.002},
     {"interstellar_comet", 0.06}, {"debris_group", 0.02},
 };
-
-// --- deterministic value noise -------------------------------------------
-
-double latticeHash01(std::uint64_t seed, long long x, long long y, long long z)
-{
-    const std::uint64_t h = splitMix64(
-        seed ^ splitMix64(static_cast<std::uint64_t>(x) * 0x9E3779B97F4A7C15ull ^
-                          splitMix64(static_cast<std::uint64_t>(y) * 0xC2B2AE3D27D4EB4Full ^
-                                     splitMix64(static_cast<std::uint64_t>(z)))));
-    return static_cast<double>(h >> 11) * 0x1.0p-53;
-}
-
-double valueNoise(std::uint64_t seed, const glm::dvec3& p)
-{
-    const glm::dvec3 f = glm::floor(p);
-    const glm::dvec3 t = p - f;
-    const glm::dvec3 w = t * t * (3.0 - 2.0 * t);
-    const long long x0 = static_cast<long long>(f.x), y0 = static_cast<long long>(f.y),
-                    z0 = static_cast<long long>(f.z);
-    double c[2][2][2];
-    for (int i = 0; i < 2; ++i)
-        for (int j = 0; j < 2; ++j)
-            for (int k = 0; k < 2; ++k)
-                c[i][j][k] = latticeHash01(seed, x0 + i, y0 + j, z0 + k);
-    const auto lerp = [](double a, double b, double s) { return a + (b - a) * s; };
-    const double x00 = lerp(c[0][0][0], c[1][0][0], w.x), x10 = lerp(c[0][1][0], c[1][1][0], w.x);
-    const double x01 = lerp(c[0][0][1], c[1][0][1], w.x), x11 = lerp(c[0][1][1], c[1][1][1], w.x);
-    return lerp(lerp(x00, x10, w.y), lerp(x01, x11, w.y), w.z);
-}
-
-// Fractal value noise in [0, 1].
-double fbm(std::uint64_t seed, const glm::dvec3& p, int octaves)
-{
-    double sum = 0.0, norm = 0.0, amp = 1.0, freq = 1.0;
-    for (int o = 0; o < octaves; ++o)
-    {
-        sum += amp * valueNoise(seed + static_cast<std::uint64_t>(o) * 0x51ED27ull, p * freq);
-        norm += amp;
-        amp *= 0.5;
-        freq *= 2.03;
-    }
-    return sum / norm;
-}
-
-double smoothstep(double e0, double e1, double x)
-{
-    const double t = std::clamp((x - e0) / (e1 - e0), 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
-
-// --- Local Bubble cavity --------------------------------------------------
-
-// Cavity radius in the galactic plane by longitude (pc), after the 3D dust
-// maps of Lallement et al. 2014 and Pelgrims et al. 2020 (approximate):
-// closest toward the Galactic centre / Sco-Cen side, the beta CMa tunnel at
-// l ~ 240.
-double bubbleRadiusPc(double lDeg)
-{
-    static const double table[][2] = {{0.0, 60.0},    {30.0, 70.0},   {60.0, 85.0},   {90.0, 90.0},
-                                      {120.0, 95.0},  {150.0, 95.0},  {180.0, 100.0}, {210.0, 130.0},
-                                      {240.0, 180.0}, {270.0, 120.0}, {300.0, 80.0},  {330.0, 65.0},
-                                      {360.0, 60.0}};
-    double l = std::fmod(lDeg, 360.0);
-    if (l < 0.0)
-        l += 360.0;
-    for (int i = 0; i < 12; ++i)
-        if (l <= table[i + 1][0])
-        {
-            const double s = (l - table[i][0]) / (table[i + 1][0] - table[i][0]);
-            return table[i][1] + (table[i + 1][1] - table[i][1]) * s;
-        }
-    return table[0][1];
-}
 
 ojson traceSpecies(double temperatureK, double dust)
 {
@@ -164,24 +96,17 @@ ojson traceSpecies(double temperatureK, double dust)
 */
 ojson extractionProfile(double densityCm3, double dustToGas, double iceMantle, double enrichment)
 {
-    const double rhoKgM3 = densityCm3 * 1.0e6 * MeanParticleMassKg;
-    const double perKm3 = rhoKgM3 * 1.0e9;
-    const double collectorKgDay = rhoKgM3 * 1.0e6 * 1.0e5 * 86400.0;
-    const auto index = [](double kgKm3, double referenceKgKm3) {
-        return std::clamp((std::log10(std::max(kgKm3, 1.0e-30)) - std::log10(referenceKgKm3) + 6.0) / 6.0, 0.0, 1.0);
-    };
-    const double reference = 1.0e3 * 1.0e6 * MeanParticleMassKg * 1.0e9; // molecular clump, kg/km^3
-    const double dust = perKm3 * dustToGas;
-    const double ices = dust * iceMantle;
-    return {{"gas_kg_per_km3", perKm3},
-            {"hydrogen_kg_per_km3", perKm3 * 0.71},
-            {"dust_kg_per_km3", dust},
-            {"ice_kg_per_km3", ices},
-            {"heavy_elements_kg_per_km3", dust * (1.0 + 2.0 * enrichment)},
-            {"collector_kg_per_day_1km2_100kms", collectorKgDay},
-            {"hydrogen_fuel_index", index(perKm3 * 0.71, reference * 0.71)},
-            {"volatile_index", index(ices, reference * 0.012 * 0.5)},
-            {"heavy_element_index", index(dust * (1.0 + 2.0 * enrichment), reference * 0.012 * 3.0)}};
+    const auto e = world::interstellar::extractionIndices(densityCm3, dustToGas, iceMantle, enrichment);
+    const double rhoKgM3 = e.gasKgPerKm3 * 1.0e-9;
+    return {{"gas_kg_per_km3", e.gasKgPerKm3},
+            {"hydrogen_kg_per_km3", e.gasKgPerKm3 * 0.71},
+            {"dust_kg_per_km3", e.dustKgPerKm3},
+            {"ice_kg_per_km3", e.iceKgPerKm3},
+            {"heavy_elements_kg_per_km3", e.heavyElementsKgPerKm3},
+            {"collector_kg_per_day_1km2_100kms", rhoKgM3 * 1.0e6 * 1.0e5 * 86400.0},
+            {"hydrogen_fuel_index", e.hydrogenFuel},
+            {"volatile_index", e.volatiles},
+            {"heavy_element_index", e.heavyElements}};
 }
 
 // Uniform random rotation (Shoemake), as a matrix and a wxyz quaternion.
@@ -202,13 +127,13 @@ glm::dmat3 randomRotation(RandomStream& rs, glm::dvec4& quatWxyz)
     noise warps the boundary, carves holes and adds clumps.
 */
 DensityLattice irregularVolume(std::uint64_t seed, const glm::dvec3& centre, const glm::dvec3& radii,
-                               const glm::dmat3& rotation, double peakDensityCm3)
+                               const glm::dmat3& rotation, double peakDensityCm3, int maxResolution = 20)
 {
     DensityLattice L;
     const double rmax = std::max({radii.x, radii.y, radii.z});
     const double rmin = std::min({radii.x, radii.y, radii.z});
     const double extent = rmax * 1.35;
-    const int n = std::clamp(static_cast<int>(std::ceil(2.0 * extent / (rmax / 7.0))), 8, 20);
+    const int n = std::clamp(static_cast<int>(std::ceil(2.0 * extent / (rmax / 7.0))), 8, maxResolution);
     L.voxelLy = 2.0 * extent / n;
     L.dims = {n, n, n};
     L.originLy = centre - glm::dvec3(extent);
@@ -254,6 +179,9 @@ struct RegionSpec
     std::string source;
     std::uint64_t seed = 0;
     bool authored = false;
+    // observed | procedural_inferred | procedural_generated
+    std::string provenanceClass = "procedural_generated";
+    ojson formation;             // local physical state that formed it (procedural)
 };
 
 InterstellarObject regionObject(const RegionSpec& r, const UniverseGenerationVersions& v)
@@ -261,7 +189,10 @@ InterstellarObject regionObject(const RegionSpec& r, const UniverseGenerationVer
     RandomStream rs(r.seed, "ism_shape");
     glm::dvec4 quat;
     const glm::dmat3 rotation = randomRotation(rs, quat);
-    const DensityLattice L = irregularVolume(r.seed, r.centre, r.radiiLy, rotation, r.peakDensityCm3);
+    // Lattice detail by phase: faint warm cloudlets are numerous and smooth,
+    // dense molecular structures keep the finest lattice.
+    const int resolution = r.authored ? 20 : r.phase == 'p' ? 10 : r.phase == 'c' ? 14 : 20;
+    const DensityLattice L = irregularVolume(r.seed, r.centre, r.radiiLy, rotation, r.peakDensityCm3, resolution);
     double sum = 0.0;
     int filled = 0;
     for (const std::uint8_t b : L.values)
@@ -301,13 +232,113 @@ InterstellarObject regionObject(const RegionSpec& r, const UniverseGenerationVer
     p["total_mass_kg"] = massKg;
     p["extraction_profile"] = extractionProfile(meanDensity, r.dustToGas, r.ice, r.enrichment);
     p["gameplay_gravity"] = false; // diffuse: negligible on ship scales
-    p["provenance"] = r.authored ? ojson {{"source", r.source}, {"geometry", "approximate"}}
-                                 : provenance(r.seed, v, "procedural medium structure");
+    if (r.authored)
+        p["provenance"] = {{"class", "observed"}, {"source", r.source}, {"geometry", "approximate"}};
+    else
+    {
+        p["provenance"] = provenance(r.seed, v, "structure formed by the local medium state (CloudFormationPotential)");
+        p["provenance"]["class"] = r.provenanceClass;
+        if (r.provenanceClass == "procedural_inferred")
+            p["provenance"]["inference"] =
+                "uncatalogued member of the observed local cloud population (Redfield & Linsky 2008: "
+                "~15 clouds within 15 pc); placed by the medium model";
+        p["formation"] = r.formation;
+    }
+    o.properties = p;
+    return o;
+}
+
+
+/*
+    Icy debris field: a rare interstellar reservoir of SOLID bodies (not gas)
+    - comets, icy fragments, dust and occasional larger frozen bodies - left
+    by a stripped Oort cloud, a disrupted planetary system, a strong stellar
+    encounter, ejected young-system debris or around a rogue system. On light-
+    year scales it is very sparse; it is stored as a statistical population
+    (number densities per size class, cumulative power law N(>D) ~ D^-q), and
+    individual bodies are materialised deterministically only where a local
+    simulation needs them (world::interstellar::materializeIcyBodies). At high
+    interstellar speed even this sparse population is a hazard; that judgement
+    belongs to the planner and the ship (InterstellarNavigationEnvironment).
+*/
+InterstellarObject icyDebrisField(std::uint64_t seed, const std::string& id, const glm::dvec3& centre,
+                                  const std::string& origin, const UniverseGenerationVersions& v)
+{
+    RandomStream rs(seed, "icy_field");
+    glm::dvec4 quat;
+    (void)randomRotation(rs, quat);
+    const bool oort = origin == "stripped_oort_cloud";
+    const bool young = origin == "ejected_young_system_debris";
+    const double a = rs.logUniform(0.1, oort ? 2.0 : 1.2);
+    const glm::dvec3 radii(a, a * rs.uniform(0.4, 1.0), a * rs.uniform(0.15, 0.5));
+    // Bodies above 1 km: a stripped Oort cloud keeps a few % of ~1e11-1e12
+    // comets; system break-ups and encounters release fewer.
+    const double bodiesAbove1Km = oort ? rs.logUniform(1.0e9, 3.0e10) : young ? rs.logUniform(1.0e8, 3.0e9)
+                                                                             : rs.logUniform(1.0e7, 1.0e9);
+    const double q = young ? rs.uniform(2.6, 3.0) : rs.uniform(2.3, 2.7); // collisional cascade ~2.5
+    constexpr double AuPerLy = 63241.077;
+    const double volumeAu3 = 4.0 / 3.0 * Pi * radii.x * radii.y * radii.z * AuPerLy * AuPerLy * AuPerLy;
+    const double n1km = bodiesAbove1Km / volumeAu3;
+    const auto above = [&](double diameterM) { return n1km * std::pow(diameterM / 1000.0, -q); };
+    // Mass: a 1-km icy body ~ 5e11 kg (600 kg/m^3); for q < 3 the largest
+    // bodies dominate (cut at 50 km).
+    const double massKg = bodiesAbove1Km * 5.2e11 * (q / (3.0 - q)) * (std::pow(50.0, 3.0 - q) - 1.0);
+    const double dustMassDensityKgM3 = // grains 1 um - 1 mm carry ~1 % of the solid mass, spread over the field
+        0.01 * massKg / (volumeAu3 * std::pow(AuMeters, 3.0));
+    const double water = oort ? rs.uniform(0.45, 0.6) : rs.uniform(0.3, 0.5);
+
+    InterstellarObject o;
+    o.id = id;
+    o.name = (oort ? "Frost stream I-" : "Ice shoal I-") + shortCode(seed);
+    o.objectType = "icy_debris_field";
+    o.positionLy = centre;
+    o.description = "Sparse field of interstellar comets, icy fragments and dust.";
+    o.tags = {"debris", "icy", "solid_bodies", "hazard", "volatile_rich"};
+    ojson p;
+    p["origin"] = origin;
+    p["geometry"] = {{"shape", "ellipsoid"},
+                     {"radii_ly", {radii.x, radii.y, radii.z}},
+                     {"orientation_quat_wxyz", {quat.x, quat.y, quat.z, quat.w}},
+                     {"edge", "soft (number density ~ 1 - r^2)"}};
+    p["solid_population"] = {
+        {"cumulative_size_slope", q},
+        {"bodies_above_1km", bodiesAbove1Km},
+        {"number_density_per_au3",
+         {{"above_1km", n1km}, {"above_10m", above(10.0)}, {"above_1cm", above(0.01)}, {"above_100um", above(1.0e-4)}}},
+        {"largest_body_km", rs.uniform(10.0, 50.0)},
+        {"dust_mass_density_kg_m3", dustMassDensityKgM3},
+        {"materialisation", "deterministic per 1000-AU cube on demand (world::interstellar::materializeIcyBodies)"}};
+    p["total_mass_kg"] = massKg;
+    p["composition"] = {{"water_ice", water}, {"co_co2_ices", oort ? 0.2 : 0.12}, {"silicate_dust", 0.25},
+                        {"organics", 0.08}};
+    p["resource_profile"] = {{"water_ice_fraction", water},
+                             {"volatile_index", oort ? rs.uniform(0.8, 1.0) : rs.uniform(0.6, 0.85)},
+                             {"heavy_element_index", rs.uniform(0.1, 0.3)},
+                             {"access", "dispersed: bodies must be found and reached individually"}};
+    p["gameplay_gravity"] = false;
+    p["provenance"] = provenance(seed, v, "icy debris field population");
+    p["provenance"]["class"] = "procedural_generated";
     o.properties = p;
     return o;
 }
 
 } // namespace
+
+std::vector<GridCell3> mediumStructureCells(const std::vector<GridCell3>& domainCells, double cell)
+{
+    std::set<GridCell3> all(domainCells.begin(), domainCells.end());
+    const long long reach = static_cast<long long>(std::ceil(LocalMediumContextLy / cell));
+    for (long long z = -reach; z < reach; ++z)
+        for (long long y = -reach; y < reach; ++y)
+            for (long long x = -reach; x < reach; ++x)
+            {
+                const glm::dvec3 nearest = glm::clamp(glm::dvec3(0.0), glm::dvec3(x, y, z) * cell,
+                                                      glm::dvec3(x + 1, y + 1, z + 1) * cell);
+                if (glm::length(nearest) <= LocalMediumContextLy)
+                    all.insert({x, y, z});
+            }
+    return {all.begin(), all.end()};
+}
 
 std::string interstellarCellTag(const GridCell3& c)
 {
@@ -315,87 +346,6 @@ std::string interstellarCellTag(const GridCell3& c)
     s << (c[0] < 0 ? "m" : "p") << std::llabs(c[0]) << (c[1] < 0 ? "m" : "p") << std::llabs(c[1])
       << (c[2] < 0 ? "m" : "p") << std::llabs(c[2]);
     return s.str();
-}
-
-glm::dvec3 galacticToIcrsLy(double lDeg, double bDeg, double d)
-{
-    const double l = lDeg * DegToRad, b = bDeg * DegToRad;
-    const glm::dvec3 g(d * std::cos(b) * std::cos(l), d * std::cos(b) * std::sin(l), d * std::sin(b));
-    // Transpose of the ICRS -> Galactic rotation.
-    const double r[3][3] = {
-        {-0.0548755604, -0.8734370902, -0.4838350155},
-        {0.4941094279, -0.4448296300, 0.7469822445},
-        {-0.8676661490, -0.1980763734, 0.4559837762}};
-    return {r[0][0] * g.x + r[1][0] * g.y + r[2][0] * g.z,
-            r[0][1] * g.x + r[1][1] * g.y + r[2][1] * g.z,
-            r[0][2] * g.x + r[1][2] * g.y + r[2][2] * g.z};
-}
-
-void icrsToGalactic(const glm::dvec3& p, double& lDeg, double& bDeg, double& d)
-{
-    const double r[3][3] = {
-        {-0.0548755604, -0.8734370902, -0.4838350155},
-        {0.4941094279, -0.4448296300, 0.7469822445},
-        {-0.8676661490, -0.1980763734, 0.4559837762}};
-    const glm::dvec3 g(r[0][0] * p.x + r[0][1] * p.y + r[0][2] * p.z,
-                       r[1][0] * p.x + r[1][1] * p.y + r[1][2] * p.z,
-                       r[2][0] * p.x + r[2][1] * p.y + r[2][2] * p.z);
-    d = glm::length(g);
-    lDeg = std::atan2(g.y, g.x) / DegToRad;
-    if (lDeg < 0.0)
-        lDeg += 360.0;
-    bDeg = d > 0.0 ? std::asin(std::clamp(g.z / d, -1.0, 1.0)) / DegToRad : 0.0;
-}
-
-MediumSample backgroundMediumAt(std::uint64_t universeSeed, const glm::dvec3& p)
-{
-    const double d = glm::length(p);
-    double l = 0.0, b = 0.0, dist = 0.0;
-    if (d > 1.0e-9)
-        icrsToGalactic(p, l, b, dist);
-    const glm::dvec3 dir = d > 1.0e-9 ? p / d : glm::dvec3(1.0, 0.0, 0.0);
-    const double sb = std::sin(b * DegToRad), cb = std::cos(b * DegToRad);
-    const double chimney = 1.0 / std::sqrt(cb * cb + (sb / 2.2) * (sb / 2.2)); // open toward the poles
-    const double rough = 1.0 + 0.15 * (2.0 * fbm(deriveSeed(universeSeed, "ism_bubble_wall"), dir * 2.5, 3) - 1.0);
-    const double R = bubbleRadiusPc(l) * LyPerPc * chimney * rough;
-    const double W = 40.0 * (0.7 + 0.6 * fbm(deriveSeed(universeSeed, "ism_wall_thickness"), dir * 4.0, 2));
-    const double local = fbm(deriveSeed(universeSeed, "ism_fine_structure"), p / 12.0, 3);
-
-    MediumSample m;
-    if (d < R)
-    {
-        // Hot, tenuous cavity gas (soft X-ray bubble), dust largely destroyed.
-        m.phase = 'h';
-        m.densityCm3 = 0.004 * (0.6 + 0.8 * local);
-        m.temperatureK = 1.0e6;
-        m.ionizationFraction = 1.0;
-        m.dustToGas = 0.0005;
-        m.supernovaEnrichment = 0.2;
-    }
-    else if (d < R + W)
-    {
-        // Swept-up wall: neutral, dusty, carrying the ejecta of the
-        // supernovae that blew the bubble (60Fe, Wallner et al. 2016).
-        const double x = (d - R) / W;
-        const double profile = std::pow(std::sin(Pi * x), 0.7);
-        m.densityCm3 = 0.5 + 15.0 * profile * (0.4 + 1.2 * local);
-        m.temperatureK = 8000.0 * (1.0 - profile) + 80.0 * profile;
-        m.phase = profile > 0.6 && local > 0.5 ? 'c' : 's';
-        m.ionizationFraction = 0.05;
-        m.molecularFraction = 0.1 * profile;
-        m.dustToGas = 0.01;
-        m.iceMantleFraction = 0.2 * profile;
-        m.supernovaEnrichment = 1.0;
-    }
-    else
-    {
-        m.phase = 'w';
-        m.densityCm3 = 0.3 * (0.5 + local);
-        m.temperatureK = 8000.0;
-        m.ionizationFraction = 0.1;
-        m.dustToGas = 0.006;
-    }
-    return m;
 }
 
 InterstellarCell generateInterstellarCell(
@@ -624,6 +574,53 @@ InterstellarCell generateInterstellarCell(
             out.push_back(std::move(o));
         }
     }
+
+    // Icy debris fields (rare). Causes in this cell: debris around its rogue
+    // systems, stripped Oort clouds trailing its catalog stars (never Sol's:
+    // ours is observed intact), and free fields from break-ups, encounters or
+    // young-system ejecta.
+    {
+        std::vector<std::pair<glm::dvec3, std::string>> causes;
+        const std::size_t compact = result.objects.size();
+        for (std::size_t i = 1; i < compact; ++i)
+        {
+            const auto& o = result.objects[i];
+            if (o.objectType != "rogue_planet" && o.objectType != "binary_rogue_planet" &&
+                o.objectType != "brown_dwarf")
+                continue;
+            RandomStream as(deriveSeed(cellSeed, "icy_rogue_" + o.id), "cause");
+            if (as.chance(0.04))
+                causes.push_back({o.positionLy + glm::dvec3(as.normal(0.0, 0.3), as.normal(0.0, 0.3), as.normal(0.0, 0.3)),
+                                  "rogue_system_debris"});
+        }
+        for (std::size_t i = 0; i < systems.size(); ++i)
+        {
+            const glm::dvec3& sp = systems[i];
+            if (glm::length(sp) < 1.0e-6 || glm::any(glm::lessThan(sp, origin)) ||
+                glm::any(glm::greaterThanEqual(sp, origin + glm::dvec3(s.cellSizeLy))))
+                continue;
+            RandomStream ss(deriveSeed(cellSeed, "icy_oort", static_cast<std::uint64_t>(i)), "cause");
+            if (!ss.chance(0.06))
+                continue;
+            const glm::dvec3 dir = glm::normalize(glm::dvec3(ss.normal(0.0, 1.0), ss.normal(0.0, 1.0), ss.normal(0.0, 1.0)));
+            causes.push_back({sp + dir * ss.uniform(0.8, 3.0), "stripped_oort_cloud"});
+        }
+        RandomStream fs(cellSeed, "interstellar_icy_debris_field");
+        const int free = fs.poisson(0.006);
+        static const char* freeOrigins[] = {"disrupted_planetary_system", "stellar_encounter_debris",
+                                            "ejected_young_system_debris"};
+        for (int k = 0; k < free; ++k)
+            causes.push_back({origin + glm::dvec3(fs.uniform(), fs.uniform(), fs.uniform()) * s.cellSizeLy,
+                              freeOrigins[std::min(2, static_cast<int>(fs.uniform() * 3.0))]});
+        for (std::size_t k = 0; k < causes.size(); ++k)
+        {
+            if (glm::length(causes[k].first) < 2.0)
+                continue;
+            const std::uint64_t seed = deriveSeed(cellSeed, "icy_debris_field", static_cast<std::uint64_t>(k));
+            result.objects.push_back(icyDebrisField(
+                seed, "ism_icy_" + tag + "_" + std::to_string(k), causes[k].first, causes[k].second, v));
+        }
+    }
     return result;
 }
 
@@ -676,79 +673,176 @@ std::vector<InterstellarObject> generateInterstellarMedium(
         out.push_back(regionObject(r, v));
     }
 
-    // Procedural structures, seeded per generation cell and by the
-    // background phase at the cell centre.
+    /*
+        Procedural structures per generation cell, CAUSED by the medium: the
+        cell's 5-ly lattice of physical states gives a CloudFormationPotential
+        per voxel; the expected number of structures of a kind is its rate x
+        the potential integrated over the cell volume; each structure sits in
+        a voxel drawn by potential and takes its density / temperature from
+        the local pressure and state. The observed clouds are members of this
+        population, not exceptions: near Sol the same model produces the
+        uncatalogued rest of the local cloud complex (procedural_inferred,
+        never overlapping an observed cloud); elsewhere procedural_generated.
+    */
+    struct Kind
+    {
+        const char* role;
+        const char* idPrefix;
+        const char* namePrefix;
+        char phase;
+        double perLy3; // structures per ly^3 at potential 1
+    };
+    static constexpr Kind Kinds[] = {
+        {"ism_warm_cloudlets", "ism_cloudlet_", "Cloudlet ", 'p', WarmCloudletsPerLy3},
+        {"ism_cold_clouds", "ism_cold_cloud_", "Cold cloud ", 'c', ColdCloudsPerLy3},
+        {"ism_molecular_clumps", "ism_molecular_clump_", "Molecular clump ", 'm', MolecularClumpsPerLy3},
+    };
+    std::vector<std::pair<glm::dvec3, double>> observedExtents;
+    for (const auto& o : out)
+    {
+        const auto& r = o.properties["geometry"]["bounding_ellipsoid"]["radii_ly"];
+        observedExtents.push_back({o.positionLy, std::max({r[0].get<double>(), r[1].get<double>(), r[2].get<double>()})});
+    }
+    const int n = std::max(1, s.backgroundLatticeResolution);
+    const double voxel = s.cellSizeLy / n;
     for (const auto& cell : cells)
     {
         const std::uint64_t cellSeed = galacticCellSeed(universeSeed, cell[0], cell[1], cell[2]);
         const glm::dvec3 origin = glm::dvec3(cell[0], cell[1], cell[2]) * s.cellSizeLy;
-        const char phase = backgroundMediumAt(universeSeed, origin + 0.5 * s.cellSizeLy).phase;
         const std::string tag = interstellarCellTag(cell);
-        struct Kind
+        std::vector<CloudFormationPotential> potential(static_cast<std::size_t>(n) * n * n);
+        for (int k = 0; k < n; ++k)
+            for (int j = 0; j < n; ++j)
+                for (int i = 0; i < n; ++i)
+                    potential[static_cast<std::size_t>(i + n * (j + n * k))] = cloudFormationPotential(
+                        backgroundMediumAt(universeSeed, origin + (glm::dvec3(i, j, k) + 0.5) * voxel));
+        for (const auto& kind : Kinds)
         {
-            const char* role;
-            const char* idPrefix;
-            const char* namePrefix;
-            char phase;
-            double rate;
-        };
-        std::vector<Kind> kinds;
-        if (phase == 'h')
-            kinds.push_back({"ism_cloudlets", "ism_cloudlet_", "Cloudlet ", 'p', 0.03});
-        else if (phase == 's' || phase == 'c')
-        {
-            kinds.push_back({"ism_cold_clouds", "ism_cold_cloud_", "Cold cloud ", 'c', 0.25});
-            kinds.push_back({"ism_molecular_clumps", "ism_molecular_clump_", "Molecular clump ", 'm', 0.05});
-        }
-        else
-            kinds.push_back({"ism_cold_clouds", "ism_cold_cloud_", "Cold cloud ", 'c', 0.08});
-        for (const auto& kind : kinds)
-        {
+            const auto weight = [&](const CloudFormationPotential& p) {
+                return kind.phase == 'p' ? p.warm : kind.phase == 'c' ? p.cold : p.molecular;
+            };
+            double total = 0.0;
+            for (const auto& p : potential)
+                total += weight(p);
+            if (total <= 0.0)
+                continue;
             RandomStream rs(cellSeed, kind.role);
-            const int count = rs.poisson(kind.rate);
+            const int count = rs.poisson(kind.perLy3 * total * voxel * voxel * voxel);
             for (int k = 0; k < count; ++k)
             {
                 const std::uint64_t seed = deriveSeed(cellSeed, kind.role, static_cast<std::uint64_t>(k));
                 RandomStream cs(seed, "structure");
+                double pick = cs.uniform() * total;
+                std::size_t chosen = 0;
+                for (; chosen + 1 < potential.size(); ++chosen)
+                {
+                    pick -= weight(potential[chosen]);
+                    if (pick <= 0.0)
+                        break;
+                }
+                const int ci = static_cast<int>(chosen % n), cj = static_cast<int>((chosen / n) % n),
+                          ck = static_cast<int>(chosen / (static_cast<std::size_t>(n) * n));
                 RegionSpec r;
-                r.centre = origin + glm::dvec3(cs.uniform(), cs.uniform(), cs.uniform()) * s.cellSizeLy;
-                if (kind.phase == 'p' && glm::length(r.centre) < 15.0)
-                    continue; // the authored clouds own the immediate solar neighbourhood
+                r.centre = origin + (glm::dvec3(ci, cj, ck) + glm::dvec3(cs.uniform(), cs.uniform(), cs.uniform())) * voxel;
+                const MediumSample here = backgroundMediumAt(universeSeed, r.centre);
+                const CloudFormationPotential hereP = cloudFormationPotential(here);
                 r.id = std::string(kind.idPrefix) + tag + "_" + std::to_string(k);
                 r.name = std::string(kind.namePrefix) + shortCode(seed);
                 r.phase = kind.phase;
                 r.seed = seed;
+                r.enrichment = here.supernovaEnrichment;
                 if (kind.phase == 'p')
                 {
                     r.radiiLy = {cs.uniform(1.0, 5.0), cs.uniform(0.7, 3.0), cs.uniform(0.5, 2.0)};
-                    r.peakDensityCm3 = cs.uniform(0.05, 0.3);
-                    r.temperatureK = cs.uniform(4000.0, 9000.0);
-                    r.ionization = cs.uniform(0.2, 0.5);
+                    r.peakDensityCm3 = std::clamp(here.densityCm3 * cs.uniform(1.5, 3.0), 0.05, 0.5);
+                    r.temperatureK = here.phase == 'p' ? here.temperatureK : cs.uniform(5000.0, 9000.0);
+                    r.ionization = std::clamp(here.ionizationFraction, 0.2, 0.5);
                 }
                 else if (kind.phase == 'c')
                 {
                     r.radiiLy = {cs.uniform(2.0, 8.0), cs.uniform(1.5, 5.0), cs.uniform(1.0, 3.0)};
-                    r.peakDensityCm3 = cs.logUniform(10.0, 300.0);
                     r.temperatureK = cs.uniform(30.0, 120.0);
+                    // Pressure equilibrium with the surrounding medium.
+                    r.peakDensityCm3 =
+                        std::clamp(here.pressureKcm3 / r.temperatureK * cs.uniform(0.6, 1.4), 10.0, 1000.0);
                     r.ionization = 1.0e-3;
-                    r.molecular = cs.uniform(0.01, 0.2);
+                    r.molecular = std::clamp(here.molecularFraction + cs.uniform(0.0, 0.1), 0.01, 0.3);
                     r.dustToGas = 0.01;
                     r.ice = cs.uniform(0.05, 0.3);
-                    r.enrichment = phase == 'w' ? 0.0 : 1.0;
                 }
                 else
                 {
                     r.radiiLy = {cs.uniform(1.0, 4.0), cs.uniform(0.8, 3.0), cs.uniform(0.6, 2.0)};
-                    r.peakDensityCm3 = cs.logUniform(300.0, 3000.0);
                     r.temperatureK = cs.uniform(10.0, 20.0);
+                    r.peakDensityCm3 =
+                        std::clamp(here.pressureKcm3 / r.temperatureK * cs.uniform(1.0, 3.0), 300.0, 5000.0);
                     r.ionization = 1.0e-5;
                     r.molecular = cs.uniform(0.5, 0.9);
                     r.dustToGas = 0.012;
                     r.ice = cs.uniform(0.3, 0.6);
-                    r.enrichment = 1.0;
                 }
+                bool overlapsObserved = false;
+                const double reach = std::max({r.radiiLy.x, r.radiiLy.y, r.radiiLy.z});
+                for (const auto& [centre, radius] : observedExtents)
+                    overlapsObserved = overlapsObserved || glm::length(r.centre - centre) < 1.2 * (radius + reach);
+                if (overlapsObserved)
+                    continue; // the observed cloud is this member of the population
+                r.provenanceClass = glm::length(r.centre) < ObservedCloudCompletenessLy ? "procedural_inferred"
+                                                                                           : "procedural_generated";
+                const char* environment = here.wallCount >= 2   ? "wall_intersection"
+                                          : here.wallCount == 1 ? "compressed_wall"
+                                          : here.immersedWallCount >= 2 ? "immersed_wall_interaction"
+                                          : here.immersedWall   ? "wall_immersed_in_cavity"
+                                          : here.cavityCount > 0 ? "cavity_interior"
+                                                                 : "warm_neutral_medium";
+                r.formation = {{"environment", environment},
+                               {"potential", {{"warm", hereP.warm}, {"cold", hereP.cold}, {"molecular", hereP.molecular}}},
+                               {"local_density_cm3", here.densityCm3},
+                               {"local_temperature_k", here.temperatureK},
+                               {"local_pressure_k_cm3", here.pressureKcm3},
+                               {"local_turbulence_kms", here.turbulenceKms},
+                               {"local_shielding_av", here.shieldingAv}};
                 out.push_back(regionObject(r, v));
             }
+        }
+    }
+
+    // The cavities / shells of the substrate (observed + procedural) that
+    // reach the domain, as descriptive objects (not drawn as bodies).
+    if (!cells.empty())
+    {
+        glm::dvec3 lo(1.0e30), hi(-1.0e30);
+        for (const auto& cell : cells)
+        {
+            const glm::dvec3 o = glm::dvec3(cell[0], cell[1], cell[2]) * s.cellSizeLy;
+            lo = glm::min(lo, o);
+            hi = glm::max(hi, o + glm::dvec3(s.cellSizeLy));
+        }
+        for (const auto& c : cavitiesInBox(universeSeed, lo, hi))
+        {
+            InterstellarObject o;
+            o.id = c.id;
+            o.name = c.name;
+            o.objectType = "interstellar_cavity";
+            o.positionLy = c.centreLy;
+            o.description = "Hot supernova-blown cavity bounded by a swept-up shell.";
+            o.tags = {"ism", "cavity", "hot_ionized"};
+            ojson p;
+            p["radius_ly"] = c.radiusLy;
+            p["wall_thickness_ly"] = c.wallLy;
+            p["age_myr"] = c.ageMyr;
+            p["supernovae"] = c.supernovae;
+            p["wall_compression"] = c.wallCompression;
+            p["shape"] = c.localBubble ? "radius per galactic direction (observed table), polar chimneys"
+                                       : "near-spherical, elongated along the disc normal, seeded roughness";
+            p["gameplay_gravity"] = false;
+            p["provenance"] = c.provenance == "observed"
+                ? ojson {{"class", "observed"}, {"source", c.source}, {"geometry", "approximate"}}
+                : provenance(c.seed, v, "superbubble cell population");
+            if (c.provenance != "observed")
+                p["provenance"]["class"] = c.provenance;
+            o.properties = p;
+            out.push_back(std::move(o));
         }
     }
     return out;

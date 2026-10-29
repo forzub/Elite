@@ -665,11 +665,31 @@ namespace
         // volumes were drawn before the systems, see drawMediumVolumes).
         for (const auto& object : galaxy.objects)
         {
-            if (object.mediumVolume)
+            // Cavities describe the medium (no body); the medium has its proxies.
+            if (object.mediumVolume || object.objectType == "interstellar_cavity")
                 continue;
 
             const glm::vec3 position =
                 viewState.positionLyToRender(object.positionLy);
+
+            // Icy debris field: solid bodies, not gas - a sparse cluster of
+            // tiny pale grey-cyan points over its extent, never a shell.
+            if (object.objectType == "icy_debris_field")
+            {
+                static const glm::vec3 offsets[] = {
+                    {0.0f, 0.0f, 0.0f},     {0.62f, 0.18f, -0.3f}, {-0.48f, 0.35f, 0.22f}, {0.15f, -0.6f, 0.4f},
+                    {-0.3f, -0.25f, -0.62f}, {0.4f, 0.5f, 0.45f},  {-0.65f, -0.1f, 0.1f},  {0.1f, 0.3f, -0.7f}};
+                const float extentRender = glm::length(viewState.vectorLyToRender(
+                    glm::dvec3(std::max(object.markerRadiusLy, 0.05f), 0.0, 0.0)));
+                const float viewDepthField =
+                    std::max(0.1f, glm::dot(position - cameraPosition, -cameraDirection));
+                const float pixel = 2.0f * viewDepthField * tanHalfFov / safeViewportHeight;
+                for (const auto& offset : offsets)
+                    context.addBillboardBall(position + offset * extentRender,
+                                             viewState.visuals().starBaseRadiusPx * 0.18f * pixel,
+                                             glm::vec4(0.70f, 0.86f, 0.88f, 0.45f), view, 8);
+                continue;
+            }
 
             glm::vec4 color {0.6f, 0.6f, 0.55f, 0.8f};
             if (object.objectType == "brown_dwarf") color = {0.78f, 0.32f, 0.25f, 0.85f};

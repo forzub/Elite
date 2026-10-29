@@ -134,7 +134,9 @@ add_library(EliteUniverseGeneration STATIC
     src/world/generation/StellarSystemGenerator.cpp
     src/world/generation/SystemValidation.cpp
     src/world/generation/DescriptorJson.cpp
+    src/world/generation/InterstellarMediumField.cpp
     src/world/generation/InterstellarGenerator.cpp
+    src/world/interstellar/InterstellarNavigationEnvironment.cpp
     src/world/generation/NaturalResources.cpp
 )
 target_include_directories(EliteUniverseGeneration PUBLIC

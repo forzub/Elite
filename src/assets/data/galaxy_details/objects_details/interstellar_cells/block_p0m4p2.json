@@ -8,7 +8,7 @@
   ],
   "block_size_cells": 4,
   "cell_size_ly": 25.0,
-  "interstellar_version": 3,
+  "interstellar_version": 4,
   "cells": [
     {
       "cell": [
@@ -75,13 +75,13 @@
               "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 6.716189203035758e-13,
-              "hydrogen_kg_per_km3": 4.768494334155388e-13,
-              "dust_kg_per_km3": 4.029713521821456e-15,
+              "gas_kg_per_km3": 6.716189217852459e-13,
+              "hydrogen_kg_per_km3": 4.768494344675246e-13,
+              "dust_kg_per_km3": 4.029713530711477e-15,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 4.029713521821456e-15,
-              "collector_kg_per_day_1km2_100kms": 5.8027874714228945e-06,
-              "hydrogen_fuel_index": 0.40959951709359704,
+              "heavy_elements_kg_per_km3": 4.029713530711477e-15,
+              "collector_kg_per_day_1km2_100kms": 5.802787484224525e-06,
+              "hydrogen_fuel_index": 0.4095995170935967,
               "volatile_index": 0.0,
               "heavy_element_index": 0.2799076420296564
             },
@@ -89,7 +89,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x53f4096ddd3b4cc8",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -161,12 +161,12 @@
               "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 7.108724050028837e-13,
-              "hydrogen_kg_per_km3": 5.047194075520474e-13,
-              "dust_kg_per_km3": 4.2652344300173045e-15,
+              "gas_kg_per_km3": 7.108724065711516e-13,
+              "hydrogen_kg_per_km3": 5.047194086655176e-13,
+              "dust_kg_per_km3": 4.2652344394269116e-15,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 4.2652344300173045e-15,
-              "collector_kg_per_day_1km2_100kms": 6.141937579224915e-06,
+              "heavy_elements_kg_per_km3": 4.2652344394269116e-15,
+              "collector_kg_per_day_1km2_100kms": 6.141937592774749e-06,
               "hydrogen_fuel_index": 0.41371097270473606,
               "volatile_index": 0.0,
               "heavy_element_index": 0.2840190976407957
@@ -175,7 +175,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0xd461fe5f341cbc0d",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -247,12 +247,12 @@
               "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 6.894961981484163e-13,
-              "hydrogen_kg_per_km3": 4.895423006853755e-13,
-              "dust_kg_per_km3": 4.1369771888905004e-15,
+              "gas_kg_per_km3": 6.894961996695259e-13,
+              "hydrogen_kg_per_km3": 4.895423017653633e-13,
+              "dust_kg_per_km3": 4.136977198017158e-15,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 4.1369771888905004e-15,
-              "collector_kg_per_day_1km2_100kms": 5.957247152002317e-06,
+              "heavy_elements_kg_per_km3": 4.136977198017158e-15,
+              "collector_kg_per_day_1km2_100kms": 5.957247165144704e-06,
               "hydrogen_fuel_index": 0.4115010093615267,
               "volatile_index": 0.0,
               "heavy_element_index": 0.2818091342975861
@@ -261,7 +261,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0xede6d2d839423ba6",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -333,12 +333,12 @@
               "phases": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 6.865459189337521e-13,
-              "hydrogen_kg_per_km3": 4.87447602442964e-13,
-              "dust_kg_per_km3": 4.1192755136025165e-15,
+              "gas_kg_per_km3": 6.86545920448353e-13,
+              "hydrogen_kg_per_km3": 4.874476035183306e-13,
+              "dust_kg_per_km3": 4.1192755226901216e-15,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 4.1192755136025165e-15,
-              "collector_kg_per_day_1km2_100kms": 5.931756739587618e-06,
+              "heavy_elements_kg_per_km3": 4.1192755226901216e-15,
+              "collector_kg_per_day_1km2_100kms": 5.93175675267377e-06,
               "hydrogen_fuel_index": 0.41119062837090326,
               "volatile_index": 0.0,
               "heavy_element_index": 0.2814987533069629
@@ -347,7 +347,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x9974048fc8719fb1",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -391,7 +391,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x2ddecfa03cda283b",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "cell population, notable member"
             }
           }

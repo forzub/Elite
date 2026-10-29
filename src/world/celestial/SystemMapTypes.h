@@ -97,6 +97,8 @@ namespace world::celestial
         // Index into GalaxyMapSnapshot::mediumAtlas proxies (-1: none; the
         // background medium has no map proxy).
         int mediumProxy = -1;
+        // Extent of an extended non-gas object (icy debris field), ly.
+        float markerRadiusLy = 0.0f;
     };
 
     struct GalaxyMapSnapshot

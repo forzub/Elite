@@ -9,6 +9,7 @@
 
 #include "src/world/coordinates/GalacticGrids.h"
 #include "src/world/generation/GenerationVersions.h"
+#include "src/world/generation/InterstellarMediumField.h"
 #include "src/world/interstellar/DensityLattice.h"
 
 namespace world::generation
@@ -52,21 +53,27 @@ using world::interstellar::DensityLattice;
 using world::interstellar::latticeJson;
 using world::interstellar::mediumPhaseName;
 
-struct MediumSample
-{
-    char phase = 'h';
-    double densityCm3 = 0.0;
-    double temperatureK = 0.0;
-    double ionizationFraction = 0.0;
-    double molecularFraction = 0.0;
-    double dustToGas = 0.0;
-    double iceMantleFraction = 0.0;
-    // 0..1: share of recent supernova ejecta (60Fe-bearing dust of the wall).
-    double supernovaEnrichment = 0.0;
-};
+// Distinct medium structures per ly^3 at formation potential 1. Calibrated
+// on the observed sample: the warm-cloudlet rate reproduces the ~15 clouds
+// known within 15 pc of the Sun (Redfield & Linsky 2008) from the potential
+// of the local environment (EliteUniverseGenerator ism-check).
+inline constexpr double WarmCloudletsPerLy3 = 0.55e-4;
+inline constexpr double ColdCloudsPerLy3 = 2.0e-5;
+inline constexpr double MolecularClumpsPerLy3 = 3.0e-5;
+// Radius of the observed cloud census around the Sun (15 pc): procedural
+// structures inside it are inferred members of an observed population.
+inline constexpr double ObservedCloudCompletenessLy = 50.0;
+// Distinct structures (not the background lattice) are materialised over the
+// navigation domain AND the local medium context around Sol out to the
+// Local Bubble wall and the Loop I interface (~120 pc), so the map shows why
+// the neighbourhood is a cavity.
+inline constexpr double LocalMediumContextLy = 400.0;
 
-// The continuous background interstellar medium at an ICRS position (ly).
-MediumSample backgroundMediumAt(std::uint64_t universeSeed, const glm::dvec3& positionLy);
+// Generation cells of the distinct structures: the domain cells plus the
+// cells of the local medium context.
+std::vector<world::coordinates::GridCell3> mediumStructureCells(
+    const std::vector<world::coordinates::GridCell3>& domainCells,
+    double cellSizeLy = world::coordinates::InterstellarGenerationCellLy);
 
 struct InterstellarObject
 {
@@ -114,9 +121,5 @@ std::vector<InterstellarObject> generateInterstellarMedium(
     const UniverseGenerationVersions& versions = CurrentGenerationVersions);
 
 std::string interstellarCellTag(const world::coordinates::GridCell3& cell);
-
-// Galactic (l, b in degrees, distance in ly) <-> ICRS Cartesian light-years.
-glm::dvec3 galacticToIcrsLy(double lDeg, double bDeg, double distanceLy);
-void icrsToGalactic(const glm::dvec3& icrsLy, double& lDeg, double& bDeg, double& distanceLy);
 
 } // namespace world::generation

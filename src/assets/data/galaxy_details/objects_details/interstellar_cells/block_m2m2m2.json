@@ -8,7 +8,7 @@
   ],
   "block_size_cells": 4,
   "cell_size_ly": 25.0,
-  "interstellar_version": 3,
+  "interstellar_version": 4,
   "cells": [
     {
       "cell": [
@@ -75,12 +75,12 @@
               "phases": "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 9.401270137030871e-15,
-              "hydrogen_kg_per_km3": 6.674901797291918e-15,
-              "dust_kg_per_km3": 4.700635068515436e-18,
+              "gas_kg_per_km3": 9.401270157771176e-15,
+              "hydrogen_kg_per_km3": 6.674901812017535e-15,
+              "dust_kg_per_km3": 4.700635078885589e-18,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 6.5808890959216105e-18,
-              "collector_kg_per_day_1km2_100kms": 8.122697398394673e-08,
+              "heavy_elements_kg_per_km3": 6.580889110439824e-18,
+              "collector_kg_per_day_1km2_100kms": 8.122697416314295e-08,
               "hydrogen_fuel_index": 0.10061011870906118,
               "volatile_index": 0.0,
               "heavy_element_index": 0.0
@@ -89,7 +89,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0xa5c730abc79b7671",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -133,7 +133,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x5b5473d6b93fabca",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "cell population, notable member"
             }
           }
@@ -173,19 +173,19 @@
             ],
             "cell_size_ly": 25.0,
             "dominant_phase": "hot_ionized",
-            "mean_density_cm3": 0.5313869688627272,
-            "temperature_k": 11434.910204234138,
-            "ionization_fraction": 0.0563503786299264,
-            "molecular_fraction": 0.04035633847507382,
-            "dust_to_gas": 0.009936496213700735,
-            "ice_mantle_fraction": 0.08071267695014764,
-            "supernova_enrichment": 0.9946523127326948,
+            "mean_density_cm3": 0.021427001557064573,
+            "temperature_k": 171570.54517428402,
+            "ionization_fraction": 0.41604423068028346,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.005088223901797768,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.5336890110398372,
             "mass_fraction": {
               "H": 0.71,
               "He": 0.275,
               "metals": 0.015
             },
-            "total_mass_kg": 1.6463825553875387e+31,
+            "total_mass_kg": 6.638672689567938e+29,
             "lattice": {
               "origin_ly": [
                 -125.0,
@@ -201,25 +201,25 @@
               "encoding": "log10",
               "log10_min": -3.5,
               "log10_max": 2.5,
-              "values_hex": "c2bfbcb6b0b9b5aba12d30302f2c2e2d2d2e2f2e2e2c2e2e2db0a72e2c2c30302d292c3030302d2d2c2e2e2f2f2d2e2d2d2f3232312c2c3031312f3031312f2d2e302f2f2b2f2f2e2f2d2e30302f2d2f2f312e2d2d30312d2c2e30302c2b2d30302d2c2f2f302e2e302d2f2b2a2e2f302e2c2d30302d2b2d302f2d2c2e",
-              "phases": "ssssssssshhhhhhhhhhhhhhhhsshhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
+              "values_hex": "807e7b78747977726d2d30302f2c2e2d2d2e2f2e2e2c2e2e2d736f2e2c2c30302d292c3030302d2d2c2e2e2f2f2d2e2d2d2f3232312c2c3031312f3031312f2d2e302f2f2b2f2f2e2f2d2e30302f2d2f2f312e2d2d30312d2c2e30302c2b2d30302d2c2f2f302e2e302d2f2b2a2e2f302e2c2d30302d2b2d302f2d2c2e",
+              "phases": "ppppppppphhhhhhhhhhhhhhhhpphhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 1.2443332889710168e-12,
-              "hydrogen_kg_per_km3": 8.834766351694219e-13,
-              "dust_kg_per_km3": 1.2364313014442292e-14,
-              "ice_kg_per_km3": 9.97956802045187e-16,
-              "heavy_elements_kg_per_km3": 3.696069808477426e-14,
-              "collector_kg_per_day_1km2_100kms": 1.0751039616709586e-05,
-              "hydrogen_fuel_index": 0.4542351500091142,
-              "volatile_index": 0.3085724454330491,
-              "heavy_element_index": 0.4403186408007042
+              "gas_kg_per_km3": 5.017498158860036e-14,
+              "hydrogen_kg_per_km3": 3.562423692790625e-14,
+              "dust_kg_per_km3": 2.553015405913793e-16,
+              "ice_kg_per_km3": 0.0,
+              "heavy_elements_kg_per_km3": 5.278047940216995e-16,
+              "collector_kg_per_day_1km2_100kms": 4.335118409255072e-07,
+              "hydrogen_fuel_index": 0.22182690019517506,
+              "volatile_index": 0.0,
+              "heavy_element_index": 0.13277416819675855
             },
             "gameplay_gravity": false,
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x531104b52ea6d9dd",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -259,19 +259,19 @@
             ],
             "cell_size_ly": 25.0,
             "dominant_phase": "hot_ionized",
-            "mean_density_cm3": 2.0611979110126737,
-            "temperature_k": 4598.723615353684,
-            "ionization_fraction": 0.05134311955174064,
-            "molecular_fraction": 0.06065373685194947,
-            "dust_to_gas": 0.009986568804482607,
-            "ice_mantle_fraction": 0.12130747370389894,
-            "supernova_enrichment": 0.9988689519564286,
+            "mean_density_cm3": 0.07067098464977721,
+            "temperature_k": 47592.159053920535,
+            "ionization_fraction": 0.32886474048281245,
+            "molecular_fraction": 0.0,
+            "dust_to_gas": 0.005773205610492187,
+            "ice_mantle_fraction": 0.0,
+            "supernova_enrichment": 0.5835058625812504,
             "mass_fraction": {
               "H": 0.71,
               "He": 0.275,
               "metals": 0.015
             },
-            "total_mass_kg": 6.386156384593519e+31,
+            "total_mass_kg": 2.1895809102821777e+30,
             "lattice": {
               "origin_ly": [
                 -125.0,
@@ -287,25 +287,25 @@
               "encoding": "log10",
               "log10_min": -3.5,
               "log10_max": 2.5,
-              "values_hex": "c1c0c0bfc2c1bdbdbdbdbcb9b4b6aeb6ae2d302f972c2f2d2ebebdbfbfbcb9b3b8b5b5aca22f312f2d2c2d30302e2b2e2d2eb8b6b9b9b42e2d2e31302f2d31312f2f2d2e2e302e2d2e2f302f2e313130302f32332f2f2e312f2f302f2f2f2e2f2f303131302e312e2e303031302f2f2d302e302f2f2d2e2f2e30303130",
-              "phases": "ssssssssssssssssshhhshhhhsssssssssssshhhhhhhhhhhhhssssshhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
+              "values_hex": "8180807f81807e7d7d7d7d7a77777278732d302f692c2f2d2e7e7d7f7f7c7a77797777726d2f312f2d2c2d30302e2b2e2d2e79787a79762e2d2e31302f2d31312f2f2d2e2e302e2d2e2f302f2e313130302f32332f2f2e312f2f302f2f2f2e2f2f303131302e312e2e303031302f2f2d302e302f2f2d2e2f2e30303130",
+              "phases": "ppppppppppppppppphhhphhhhpppppppppppphhhhhhhhhhhhhppppphhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 4.82664673038521e-12,
-              "hydrogen_kg_per_km3": 3.426919178573499e-12,
-              "dust_kg_per_km3": 4.8201639667922906e-14,
-              "ice_kg_per_km3": 5.84721913650137e-15,
-              "heavy_elements_kg_per_km3": 1.4449588226328205e-13,
-              "collector_kg_per_day_1km2_100kms": 4.1702227750528216e-05,
-              "hydrogen_fuel_index": 0.5523532822732579,
-              "volatile_index": 0.43654538336070914,
-              "heavy_element_index": 0.5390045251050264
+              "gas_kg_per_km3": 1.6548817361156754e-13,
+              "hydrogen_kg_per_km3": 1.1749660326421293e-13,
+              "dust_kg_per_km3": 9.553972523644068e-16,
+              "ice_kg_per_km3": 0.0,
+              "heavy_elements_kg_per_km3": 2.0703570480617066e-15,
+              "collector_kg_per_day_1km2_100kms": 1.4298178200039437e-06,
+              "hydrogen_fuel_index": 0.3082068570543776,
+              "volatile_index": 0.0,
+              "heavy_element_index": 0.2317028212915669
             },
             "gameplay_gravity": false,
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0x57228bbb1db59e03",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }
@@ -377,12 +377,12 @@
               "phases": "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
             },
             "extraction_profile": {
-              "gas_kg_per_km3": 9.271204083982789e-15,
-              "hydrogen_kg_per_km3": 6.5825548996277795e-15,
-              "dust_kg_per_km3": 4.635602041991399e-18,
+              "gas_kg_per_km3": 9.271204104436152e-15,
+              "hydrogen_kg_per_km3": 6.5825549141496674e-15,
+              "dust_kg_per_km3": 4.63560205221808e-18,
               "ice_kg_per_km3": 0.0,
-              "heavy_elements_kg_per_km3": 6.48984285878796e-18,
-              "collector_kg_per_day_1km2_100kms": 8.010320328561129e-08,
+              "heavy_elements_kg_per_km3": 6.489842873105314e-18,
+              "collector_kg_per_day_1km2_100kms": 8.010320346232836e-08,
               "hydrogen_fuel_index": 0.09960172024921388,
               "volatile_index": 0.0,
               "heavy_element_index": 0.0
@@ -391,7 +391,7 @@
             "provenance": {
               "generator": "world::generation::Interstellar",
               "seed": "0xdbef6ff724a72aad",
-              "interstellar_version": 3,
+              "interstellar_version": 4,
               "model": "background medium field (Local Bubble cavity / wall / warm neutral)"
             }
           }

@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
@@ -35,6 +36,7 @@
 #include "src/world/generation/DescriptorJson.h"
 #include "src/world/generation/GenerationRandom.h"
 #include "src/world/generation/InterstellarGenerator.h"
+#include "src/world/interstellar/InterstellarNavigationEnvironment.h"
 #include "src/world/generation/StellarSystemGenerator.h"
 
 namespace fs = std::filesystem;
@@ -180,8 +182,46 @@ std::map<std::string, std::string> interstellarFiles(const fs::path& root)
     }
     for (const auto& [block, j] : blocks)
         files["interstellar_cells/block_" + interstellarCellTag(block) + ".json"] = dumpJson(j);
-    for (const auto& o : generateInterstellarMedium(DefaultUniverseSeed, cells))
-        files["interstellar_medium/" + o.id + ".json"] = dumpJson(objectJson(o));
+    // Distinct structures: blocks of the same layout (by the generation cell
+    // holding the structure centre); cavities: one document each.
+    std::map<world::coordinates::GridCell3, std::map<world::coordinates::GridCell3, nlohmann::ordered_json>> mediumBlocks;
+    for (const auto& o : generateInterstellarMedium(DefaultUniverseSeed, mediumStructureCells(cells)))
+    {
+        if (o.objectType != "interstellar_medium_region")
+        {
+            files["interstellar_medium/" + o.id + ".json"] = dumpJson(objectJson(o));
+            continue;
+        }
+        const double edge = world::coordinates::InterstellarGenerationCellLy;
+        const world::coordinates::GridCell3 cell {
+            static_cast<long long>(std::floor(o.positionLy.x / edge)),
+            static_cast<long long>(std::floor(o.positionLy.y / edge)),
+            static_cast<long long>(std::floor(o.positionLy.z / edge))};
+        const world::coordinates::GridCell3 block {
+            floorDiv(cell[0], BlockCells), floorDiv(cell[1], BlockCells), floorDiv(cell[2], BlockCells)};
+        auto& c = mediumBlocks[block][cell];
+        if (c.is_null())
+        {
+            c["cell"] = {cell[0], cell[1], cell[2]};
+            c["objects"] = nlohmann::ordered_json::array();
+        }
+        c["objects"].push_back(objectJson(o));
+    }
+    for (const auto& [block, blockCells] : mediumBlocks)
+    {
+        nlohmann::ordered_json b;
+        b["schema"] = "elite.interstellar_cell_block.v1";
+        b["kind"] = "interstellar_cell_block";
+        b["content"] = "medium_structures";
+        b["block"] = {block[0], block[1], block[2]};
+        b["block_size_cells"] = BlockCells;
+        b["cell_size_ly"] = world::coordinates::InterstellarGenerationCellLy;
+        b["interstellar_version"] = CurrentGenerationVersions.interstellar;
+        b["cells"] = nlohmann::ordered_json::array();
+        for (const auto& [cell, j] : blockCells)
+            b["cells"].push_back(j);
+        files["interstellar_medium/block_" + interstellarCellTag(block) + ".json"] = dumpJson(b);
+    }
     return files;
 }
 
@@ -484,6 +524,159 @@ int determinism(const fs::path& root)
 
 } // namespace
 
+/*
+    ism-check: the interstellar medium model against its own claims.
+    1. Calibration on the observed sample: expected warm cloudlets within the
+       15-pc census sphere (observed ~15, Redfield & Linsky 2008).
+    2. No observational privilege: expected structure density per environment
+       (immersed wall / compressed wall / wall intersection / cavity interior /
+       warm neutral), split inside and outside the census sphere; the Sun's
+       surroundings must look like any other place of the same environment.
+    3. Materialised population: counts per kind x provenance x environment,
+       icy debris fields per origin, cavities.
+*/
+int ismCheck(const fs::path& root)
+{
+    using namespace world::generation;
+    const auto domain = navigationDomain(root);
+    const auto cells = world::coordinates::generationCellsCovering(
+        domain, world::coordinates::interstellarGenerationGrid());
+    const std::uint64_t seed = DefaultUniverseSeed;
+    const double voxel = world::coordinates::InterstellarGenerationCellLy / 5.0;
+    const auto structureCells = mediumStructureCells(cells);
+    std::cout << "[ism-check] domain cells " << cells.size() << ", structure cells " << structureCells.size() << "\n";
+
+    struct Acc
+    {
+        double volume = 0.0, warm = 0.0, cold = 0.0, mol = 0.0;
+    };
+    std::map<std::string, Acc> inside, outside;
+    double expectedWarmCensus = 0.0;
+    const auto environmentOf = [](const MediumSample& m) -> std::string {
+        return m.wallCount >= 2 ? "wall_intersection" : m.wallCount == 1 ? "compressed_wall"
+             : m.immersedWallCount >= 2 ? "immersed_wall_interaction"
+             : m.immersedWall ? "wall_immersed_in_cavity" : m.cavityCount > 0 ? "cavity_interior"
+             : "warm_neutral_medium";
+    };
+    for (const auto& cell : structureCells)
+    {
+        const glm::dvec3 origin = glm::dvec3(cell[0], cell[1], cell[2]) * world::coordinates::InterstellarGenerationCellLy;
+        for (int k = 0; k < 5; ++k)
+            for (int j = 0; j < 5; ++j)
+                for (int i = 0; i < 5; ++i)
+                {
+                    const glm::dvec3 x = origin + (glm::dvec3(i, j, k) + 0.5) * voxel;
+                    const MediumSample m = backgroundMediumAt(seed, x);
+                    const CloudFormationPotential p = cloudFormationPotential(m);
+                    const double v = voxel * voxel * voxel;
+                    auto& acc = (glm::length(x) < ObservedCloudCompletenessLy ? inside : outside)[environmentOf(m)];
+                    acc.volume += v;
+                    acc.warm += p.warm * v * WarmCloudletsPerLy3;
+                    acc.cold += p.cold * v * ColdCloudsPerLy3;
+                    acc.mol += p.molecular * v * MolecularClumpsPerLy3;
+                    if (glm::length(x) < ObservedCloudCompletenessLy)
+                        expectedWarmCensus += p.warm * v * WarmCloudletsPerLy3;
+                }
+    }
+    const MediumSample sol = backgroundMediumAt(seed, glm::dvec3(0.0));
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout << "[ism-check] Sun's environment: " << environmentOf(sol) << " phase=" << sol.phase
+              << " n=" << sol.densityCm3 << " T=" << sol.temperatureK << "\n";
+    std::cout << "[ism-check] calibration: expected warm cloudlets within 15 pc (incl. the 4 observed) = "
+              << expectedWarmCensus << "  (observed census ~15)\n";
+    std::cout << "[ism-check] expected structures per 1e5 ly^3 by environment (inside 15 pc | outside):\n";
+    for (const auto* table : {&inside, &outside})
+        for (const auto& [env, a] : *table)
+            if (a.volume > 0.0)
+                std::cout << "  " << (table == &inside ? "in  " : "out ") << std::left << std::setw(26) << env
+                          << std::right << " volume=" << std::setw(12) << a.volume
+                          << " warm=" << std::setw(8) << 1.0e5 * a.warm / a.volume
+                          << " cold=" << std::setw(8) << 1.0e5 * a.cold / a.volume
+                          << " molecular=" << std::setw(8) << 1.0e5 * a.mol / a.volume << "\n";
+
+    std::map<std::string, int> counts;
+    int inCensus = 0;
+    for (const auto& o : generateInterstellarMedium(seed, structureCells))
+    {
+        const auto& p = o.properties;
+        const std::string cls = p.contains("provenance") ? p["provenance"].value("class", std::string("?")) : "?";
+        const std::string env = p.contains("formation") ? p["formation"].value("environment", std::string("-")) : "-";
+        ++counts[o.objectType + " " + p.value("phase", std::string("")) + " " + cls + " " + env];
+        if (o.objectType == "interstellar_medium_region" && p.value("phase", std::string()) == "warm_partially_ionized" &&
+            glm::length(o.positionLy) < ObservedCloudCompletenessLy)
+            ++inCensus;
+    }
+    std::cout << "[ism-check] materialised warm cloudlets within 15 pc (incl. observed): " << inCensus << "\n";
+    for (const auto& [key, n] : counts)
+        std::cout << "  " << std::setw(5) << n << "  " << key << "\n";
+    std::map<std::string, int> icy;
+    const auto systems = catalogPositions(root);
+    for (const auto& cell : cells)
+        for (const auto& o : generateInterstellarCell(seed, cell, systems).objects)
+            if (o.objectType == "icy_debris_field")
+                ++icy[o.properties.value("origin", std::string())];
+    std::cout << "[ism-check] icy debris fields:";
+    for (const auto& [origin, n] : icy)
+        std::cout << " " << origin << "=" << n;
+    std::cout << "\n";
+
+    // 4. Navigation environment (planner-ready physical hazards).
+    std::vector<InterstellarObject> objects = generateInterstellarMedium(seed, structureCells);
+    for (const auto& cell : cells)
+        for (auto& o : generateInterstellarCell(seed, cell, systems).objects)
+            if (o.objectType == "icy_debris_field")
+                objects.push_back(std::move(o));
+    std::vector<nlohmann::json> plainProperties;
+    plainProperties.reserve(objects.size());
+    for (const auto& o : objects)
+        plainProperties.push_back(nlohmann::json::parse(o.properties.dump()));
+    std::vector<world::interstellar::InterstellarNavigationEnvironment::ObjectView> views;
+    for (std::size_t i = 0; i < objects.size(); ++i)
+        views.push_back({objects[i].id, objects[i].objectType, objects[i].positionLy, &plainProperties[i]});
+    const world::interstellar::InterstellarNavigationEnvironment env(seed, views);
+    std::cout << "[ism-check] environment: structures=" << env.structureCount()
+              << " debris_fields=" << env.debrisFieldCount() << "\n";
+    const auto report = [&](const char* label, const glm::dvec3& a, const glm::dvec3& b) {
+        const auto s = env.segment(a, b, 0.1);
+        std::cout << std::scientific << std::setprecision(2) << "  " << label << ": L=" << s.lengthLy
+                  << " ly N_H=" << s.gasColumnCm2 << " cm^-2 dust=" << s.dustColumnKgM2
+                  << " kg/m^2 Av=" << s.extinctionAv << " hits/m^2 [100um,1cm,10m,1km]=" << s.solidColumnM2[0]
+                  << "," << s.solidColumnM2[1] << "," << s.solidColumnM2[2] << "," << s.solidColumnM2[3]
+                  << " n_e,max=" << s.maxElectronDensityCm3 << " rad,max=" << s.maxIonizingRadiationIndex
+                  << " H-fuel,max=" << s.maxHydrogenFuelIndex << " volatile,max=" << s.maxVolatileIndex
+                  << " structures=" << s.structuresCrossed.size() << " debris=" << s.debrisFieldsCrossed.size()
+                  << std::fixed << std::setprecision(3) << "\n";
+    };
+    report("Sol -> alpha Cen", glm::dvec3(0.0), galacticToIcrsLy(315.7, -0.7, 4.37));
+    for (const auto& o : objects)
+        if (o.objectType == "interstellar_medium_region" && o.properties.value("phase", std::string()) == "molecular")
+        {
+            report("through a molecular clump", o.positionLy - glm::dvec3(15.0, 0.0, 0.0),
+                   o.positionLy + glm::dvec3(15.0, 0.0, 0.0));
+            break;
+        }
+    for (const auto& o : objects)
+        if (o.objectType == "icy_debris_field")
+        {
+            report("through an icy debris field", o.positionLy - glm::dvec3(3.0, 0.0, 0.0),
+                   o.positionLy + glm::dvec3(3.0, 0.0, 0.0));
+            const std::uint64_t fieldSeed = std::stoull(o.properties["provenance"]["seed"].get<std::string>(), nullptr, 16);
+            const nlohmann::json plain = nlohmann::json::parse(o.properties.dump());
+            const auto a = world::interstellar::materializeIcyBodies(plain, o.positionLy, fieldSeed,
+                                                                     o.positionLy, 0.02, 10.0, 2000);
+            const auto b = world::interstellar::materializeIcyBodies(plain, o.positionLy, fieldSeed,
+                                                                     o.positionLy, 0.02, 10.0, 2000);
+            bool same = a.size() == b.size();
+            for (std::size_t i = 0; same && i < a.size(); ++i)
+                same = a[i].seed == b[i].seed && a[i].diameterM == b[i].diameterM;
+            std::cout << "  materialised bodies > 10 m (largest 2000) within 0.02 ly of the field centre: " << a.size()
+                      << " (largest " << (a.empty() ? 0.0 : a.front().diameterM) << " m), deterministic="
+                      << (same ? "yes" : "NO") << "\n";
+            break;
+        }
+    return 0;
+}
+
 int main(int argc, char** argv)
 {
     if (argc < 3)
@@ -497,6 +690,7 @@ int main(int argc, char** argv)
     if (cmd == "determinism") return determinism(argv[2]);
     if (cmd == "interstellar") return interstellar(argv[2]);
     if (cmd == "domain") return domainReport(argv[2]);
+    if (cmd == "ism-check") return ismCheck(argv[2]);
     if (cmd == "bulk" && argc >= 4)
     {
         const std::uint64_t seed = argc >= 5 ? std::stoull(argv[4], nullptr, 16) : DefaultUniverseSeed;

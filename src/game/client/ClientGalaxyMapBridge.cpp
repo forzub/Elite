@@ -241,10 +241,14 @@ std::shared_ptr<const world::celestial::GalaxyMapMediumAtlas> buildGalaxyMapMedi
 
         Atlas::Proxy proxy;
         proxy.phase = phase;
-        proxy.detailed = appendShell(occupancy(lattice, 1, ShellThreshold), style, atlas->vertices);
+        // Faint warm cloudlets are numerous: one coarse shell serves both
+        // zoom levels; cold / molecular structures get the detailed shell.
+        const bool singleLod = phase == 'p' || phase == 'w' || phase == 's';
+        proxy.detailed = appendShell(occupancy(lattice, singleLod ? 2 : 1, ShellThreshold), style, atlas->vertices);
         if (proxy.detailed.count == 0)
             continue;
-        proxy.coarse = appendShell(occupancy(lattice, 2, ShellThreshold), style, atlas->vertices);
+        proxy.coarse = singleLod ? proxy.detailed
+                                 : appendShell(occupancy(lattice, 2, ShellThreshold), style, atlas->vertices);
         if (proxy.coarse.count == 0)
             proxy.coarse = proxy.detailed;
         if (phase == 'm')

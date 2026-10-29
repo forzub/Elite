@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cavity_loop1_s2",
+  "name": "Loop I shell S2",
+  "object_type": "interstellar_cavity",
+  "position_ly": {
+    "x": -231.1872882035884,
+    "y": -176.09606057319795,
+    "z": -107.46508554805949
+  },
+  "description": "Hot supernova-blown cavity bounded by a swept-up shell.",
+  "tags": [
+    "ism",
+    "cavity",
+    "hot_ionized"
+  ],
+  "properties": {
+    "radius_ly": 264.186665937,
+    "wall_thickness_ly": 39.627999890549994,
+    "age_myr": 10.0,
+    "supernovae": 20,
+    "wall_compression": 10.0,
+    "shape": "near-spherical, elongated along the disc normal, seeded roughness",
+    "gameplay_gravity": false,
+    "provenance": {
+      "class": "observed",
+      "source": "Wolleben 2007 (Loop I, Sco-Cen superbubble); geometry approximate",
+      "geometry": "approximate"
+    }
+  }
+}

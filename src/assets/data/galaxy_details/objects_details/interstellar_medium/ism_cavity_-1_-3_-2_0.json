@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cavity_-1_-3_-2_0",
+  "name": "Superbubble PMPS",
+  "object_type": "interstellar_cavity",
+  "position_ly": {
+    "x": -292.1616275588917,
+    "y": -1062.8365311708421,
+    "z": -551.2162861715366
+  },
+  "description": "Hot supernova-blown cavity bounded by a swept-up shell.",
+  "tags": [
+    "ism",
+    "cavity",
+    "hot_ionized"
+  ],
+  "properties": {
+    "radius_ly": 206.27939541166708,
+    "wall_thickness_ly": 50.65085210461162,
+    "age_myr": 13.194022410070689,
+    "supernovae": 11,
+    "wall_compression": 11.5,
+    "shape": "near-spherical, elongated along the disc normal, seeded roughness",
+    "gameplay_gravity": false,
+    "provenance": {
+      "generator": "world::generation::Interstellar",
+      "seed": "0x88249634f1c00183",
+      "interstellar_version": 4,
+      "model": "superbubble cell population",
+      "class": "procedural_generated"
+    }
+  }
+}

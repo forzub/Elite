@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "kind": "galaxy_object",
+  "id": "ism_cavity_local_bubble",
+  "name": "Local Bubble",
+  "object_type": "interstellar_cavity",
+  "position_ly": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+  },
+  "description": "Hot supernova-blown cavity bounded by a swept-up shell.",
+  "tags": [
+    "ism",
+    "cavity",
+    "hot_ionized"
+  ],
+  "properties": {
+    "radius_ly": 260.92510216,
+    "wall_thickness_ly": 40.0,
+    "age_myr": 14.0,
+    "supernovae": 15,
+    "wall_compression": 15.0,
+    "shape": "radius per galactic direction (observed table), polar chimneys",
+    "gameplay_gravity": false,
+    "provenance": {
+      "class": "observed",
+      "source": "Lallement et al. 2014; Pelgrims et al. 2020; Zucker et al. 2022 (age, ~15 SNe)",
+      "geometry": "approximate"
+    }
+  }
+}

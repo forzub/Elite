@@ -243,25 +243,52 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
     runtime for all bodies of 61 systems at past/future times. Not yet used
     by gameplay (next navigation stage: interplanetary planning).
   - StarAtlas one schema (`ea4a8978`): legacy flat parser removed (-600 lines).
-  - world_runtime 14/14 PASS; system_map behaviour PASS; map / membership /
-    active-system / static-atlas / localization contracts PASS.
+  - Interstellar medium (`60219927`, generator interstellar v2): content per
+    25-ly generation cell covering the navigation domain (2003 cells; the
+    120-ly sphere is gone; the 248 old compact objects keep id + position).
+    Continuous background field (`backgroundMediumAt`): Local Bubble cavity
+    (radius by galactic direction after Lallement 2014 / Pelgrims 2020,
+    polar chimneys, seeded roughness), supernova-enriched wall, warm neutral
+    beyond; 5-ly log-density + phase lattice per cell, no vacuum voxel.
+    Structures = IrregularDensityVolume lattices (LIC, G, Blue, Leo + per-cell
+    cloudlets / cold clouds / molecular clumps by background phase, 79);
+    ellipsoid only as bounding metadata. Contract
+    `world/interstellar/DensityLattice.h`. Files: `objects_details/
+    interstellar_cells/block_*.json` (4x4x4 cells, 89 files) +
+    `interstellar_medium/*.json`. Galaxy Map: phase false-colour soft volume
+    sprites, no outline, no depth writes, under stars / route / objects,
+    budget 7000 sprites; client-local (not on the wire). Atlas load in the
+    Debug build: objects ~0.8 s, fingerprint 0.17 s (was ~2 + 2 s before the
+    buffered JSON / inline FNV / precomputed sort keys; same fingerprints).
+    VISUALLY UNVERIFIED (colours / opacity need the user's eyes).
+  - Build hazard found + fixed (`2b53d690`): asset staging never deleted, so
+    build/assets and build/headless_server/assets held stale HD 102194, old
+    Sol belts, the flat gen_*.json and even legacy systems_details/ - loaded
+    as duplicates. Copy targets now prune catalog / star-system localization.
+    Also: SpaceState.cpp is near the COFF section limit (~43.4k sections;
+    one link broke with relocation overflow while a header-only decoder was
+    included) - heavy code goes to .cpp files, not headers included there.
+  - Planet counts (`9e126ea8`, `detectability_report.py` ->
+    `D:/tmp/elite_planet_detectability_report.md`): per host N above
+    0.05..10 Me, giants, mass, max K vs survey limit. Per-star literature RV
+    limits added (alpha Cen B 0.5, Proxima / Barnard 0.4, tau Ceti 0.6,
+    HD 20794 0.5, ...; brown / white dwarfs not surveyed); 11 systems
+    regenerated deterministically. Result: 0 procedural planets a survey
+    should have found, 6 marginal (only the most favourable inclination);
+    the extra bodies are below detection limits -> counts KEPT.
+  - Real flight on the new catalog (`60219927` build, Newtonian-I 150 s):
+    session started (client/server catalog fence), status COMPLETE,
+    failures 0, no corridor violations.
+  - world_runtime 15/15 PASS; system_map behaviour PASS; map / membership /
+    active-system / static-atlas / localization / galaxy-map-catalog
+    contracts PASS; determinism 61 systems 0 differ 0 stale.
 - Known limits / open:
-  - Interstellar content is still the 120-ly sphere (`InterstellarSettings::
-    radiusLy`) with ellipsoid ISM regions - being replaced (next).
-  - Generator calibration point: median 10 bodies >= 0.05 Me per FGK system -
-    detectability analysis pending (do NOT tune by visual impression).
-  - NOT verified visually: Galaxy Map (domain cubes, interstellar layer),
+  - NOT verified visually: Galaxy Map (domain cubes, ISM volumes, colours),
     System Map ellipses.
+  - ISM legend / filter UI not done (user: later).
 
 ### Next step
-- Stage 2 remaining, in the user's order: (3) ISM - materialisation per
-  25-ly generation cell over the navigation domain (no 120-ly sphere), a
-  background ISM field everywhere (no binary cloud / vacuum), irregular
-  density volumes (coarse lattice) instead of ellipsoids, translucent
-  false-colour volume rendering on the Galaxy Map below stars / route /
-  objects; (4) planet-count detectability report per host (N above mass
-  thresholds, max RV K vs survey limit, which planets should already be
-  detected); (5) NaturalResourceProfile + IndustrialSuitabilityProfile +
+- Stage 2 remaining, in the user's order: (5) NaturalResourceProfile + IndustrialSuitabilityProfile +
   graded habitability + fuel potential, derived only from physical
   descriptors, no prices; ISM extraction profile; 61-system resource audit;
   (6) physical (StarAtlas) vs political (GalaxyDatabase) system-id audit;

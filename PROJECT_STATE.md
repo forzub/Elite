@@ -149,10 +149,69 @@ and A3 (Assisted) ship passports; Y/X stay validation configurations.
   giants 33 %, 0 stability failures, ~1500 systems/s. Known calibration point:
   median 10 bodies >= 0.05 Me per FGK system (7 M dwarfs) - more than surveys
   see (sub-Earths below RV limits). Generated populations not committed.
-- Next: stellar input migration (per-system directories, normalised stars,
-  archive anchors, Sol authored) -> dry-run report
-  `D:/tmp/elite_universe_regeneration_report.md` -> materialise -> loader /
-  Kepler runtime / map integration -> references migration -> game check.
+- Inputs + catalog (`9f01a33d`, `aa56bcd2`, `17731e20`): per-system
+  directories `galaxy_details/systems/<NNN>_<slug>/` (+ `distant_systems/`):
+  `system.json`, `stars/`, `observed/` (INPUT) and `generated/` (OUTPUT).
+  Stellar values: archive host > literature table > legacy-unverified (legacy
+  radii never used). Literature binary orbits (alpha Cen, Sirius, Procyon,
+  61 Cyg, GJ 667 AB, eps Ind Bab, GJ 229 AB); real companion p Eri A added to
+  HD 10360. Anchors only from the archive snapshot (limit flags honoured,
+  m sin i used, controversial excluded, all catalogued letters reserved).
+  RV / transit survey completeness per system conditions procedural planets.
+  Sol: authored observed system (JPL J2000 elements, epoch 376.5 d on the
+  UniverseClock, 8 planets, 28 moons, rings from the legacy render profiles,
+  authored belts), legacy names -> ids unchanged.
+  Result: 61 systems, 634 planets (91 anchors), 138 moons, 126 dwarf planets,
+  109 reservoirs, every system passes the gates, determinism 0 differ.
+  Report: `D:/tmp/elite_universe_regeneration_report.md`
+  (`tools/universe_generator/regeneration_report.py`).
+- Runtime (`a8fb2d13`): catalog schema 2; StarAtlasDatabase reads the
+  per-system directories via the same validation (never mixed with legacy);
+  full Keplerian orbits on the UniverseClock (moons in the parent equator via
+  the PlanetBodyOrientation axis); BodyType::Barycenter nodes (orbit centres,
+  hidden from the System Map); generated rings through the existing
+  ring_system renderer. Gravity: the server pushes catalog mu/radius per body
+  (barycenters have no radius -> no double counting).
+  Localization (`afd882a8`): kept translations by id (all Sol bodies, stars),
+  derived names by localized prefix, Sol belts moved by kind. Legacy flat
+  catalog + Tau Ceti legacy visuals removed (`542f6b5a`, in git history).
+- Verification (offline / headless, production code):
+  - `tests/world_runtime` 12/12 PASS: all 61 systems Kepler-consistent at two
+    times; Earth at J2000 r = 0.983 AU, longitude 100.46 deg; Moon 384400 km;
+    circumbinary orbit centres = barycenter; gravity primary = Earth.
+  - architecture contracts related to the catalog PASS (transfer lab, system
+    / galaxy map migration, map sampling, localization, sky cultures);
+    python checks: static atlas ownership, active system, localization PASS.
+  - Real game flight on the new catalog (`fly.sh Newtonian-I 200`): session
+    starts (client/server catalog fence accepted), Earth hub, route flown,
+    0 corridor violations.
+  - Starfield: 16 systems (eps Eri, Procyon, Aldebaran, Hamal, 61 Cyg, eps
+    Ind...) now merge with their real HYG star (were drawn twice).
+  - BASELINE REDS, unrelated to this stage (not touched): client acceptance
+    stops at "first debounced Ctrl+F10 release emitted no flight-law
+    command"; feature contract "Ctrl+F11 coordinate-format route
+    disappeared"; architecture contracts universe_thermal_radiation (2.5
+    multiplier), engine_unit_damage_model, universe_material_engine_thermal,
+    installed_engine_actuator (CR-1 identity), local_flight_control
+    (promotion); LocalPredictedPresentationContractTests does not compile
+    (`require`); tools/check_map_architecture.py misses a deleted .inl.
+  - NOT verified: visual Galaxy / System Map in a windowed game session
+    (needs the user's eyes).
+- Known limits / open:
+  - DECISION PENDING (user): real ICRS positions are active (53 systems moved,
+    distances kept within catalogue accuracy). Revert = rerun
+    `build_stellar_inputs.py --positions legacy` from git history + materialize.
+    HD 102194 now = the real K2 III giant at 630 ly.
+  - System Map still draws orbits as circles of radius a (positions are
+    Keplerian); ellipse / inclination drawing pending.
+  - Interstellar objects (rogue bodies from ejections, brown dwarfs, comets)
+    and volumetric ISM regions (+ Galaxy Map layer) NOT done yet.
+  - Navigation ephemeris API (position/velocity(t), influence, prediction)
+    exists only as runtime snapshot + GravityFieldSystem; no prediction
+    service yet. Atmosphere radius stored per body (not yet used by gravity).
+  - Legacy-format parser code in StarAtlasDatabase.cpp is dead (data
+    removed) - delete in a later cleanup.
+  - Generator calibration point: median 10 bodies >= 0.05 Me per FGK system.
 
 ### Next step
 - Autopilot/planner piece closed (J/K). NEXT STAGE (user task 2026-10-29):

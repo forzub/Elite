@@ -178,6 +178,7 @@ add_library(EliteNavigationWorldRuntime STATIC
     src/game/navigation/OrdinaryPhysicalManeuverCompiler.cpp
     src/game/navigation/PhysicalManeuverSearchCoordinator.cpp
     src/game/navigation/NavigationHitVolumeAdapter.cpp
+    src/game/navigation/autopilot/RouteExecutionCore.cpp
 )
 target_include_directories(EliteNavigationWorldRuntime PUBLIC
     "${CMAKE_SOURCE_DIR}"

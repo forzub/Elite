@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -445,6 +446,26 @@ void testResourceLayerIsDerivedForEveryBodyAndPopulation()
             belt["natural_resources"]["deposits"]["iron"]["bulk_mass_fraction"].get<double>());
 }
 
+void testPresentationLevelsFollowOrbitClearing()
+{
+    using namespace world::celestial;
+    const StarAtlasDatabase atlas = loadAtlas();
+    std::map<std::string, int> sol;
+    for (const auto& b : atlas.findSystem(0)->bodies)
+        ++sol[b.presentationLevel];
+    REQUIRE(sol["major_planet"] == 8);       // Mercury..Neptune
+    REQUIRE(sol["star"] == 1);
+    REQUIRE(sol["major_reservoir"] >= 2);    // asteroid + Kuiper belt
+    std::map<std::string, int> all;
+    for (const auto& s : atlas.systems())
+        for (const auto& b : atlas.findSystem(s.id)->bodies)
+        {
+            REQUIRE(!b.presentationLevel.empty() || b.type == BodyType::Barycenter);
+            ++all[b.presentationLevel];
+        }
+    REQUIRE(all["minor_planet"] > 0 && all["dwarf_planet"] > 0 && all["moon"] > 0);
+}
+
 void testClientUniverseTimelineUsesServerAnchor()
 {
     game::client::ClientUniverseTimeline timeline;
@@ -874,6 +895,10 @@ int main()
         {
             "resource layer is derived for every body and population",
             testResourceLayerIsDerivedForEveryBodyAndPopulation
+        },
+        {
+            "presentation levels follow orbit clearing",
+            testPresentationLevelsFollowOrbitClearing
         }
     };
 

@@ -1,6 +1,7 @@
 #include "src/game/system_map/SystemMapPresentationBuilder.h"
 
 #include <algorithm>
+#include <unordered_set>
 #include <string>
 
 #include "src/game/system_map/SystemMapView.h"
@@ -155,6 +156,71 @@ namespace
     }
 }
 
+namespace
+{
+    /*
+        Presentation levels: the physical system keeps every body; the map
+        shows major planets, stars and significant belts at every zoom and
+        brings minor planets, dwarf planets and minor belts in as their
+        orbits grow on screen. Moons of a hidden body are hidden with it; the
+        selected body always stays.
+    */
+    constexpr double MinorPlanetOrbitPx = 150.0;
+    constexpr double DwarfPlanetOrbitPx = 300.0;
+    constexpr double MinorReservoirOrbitPx = 150.0;
+
+    void filterBodiesByPresentationLevel(
+        SystemMapView& view,
+        const Viewport& viewport,
+        SystemMapPresentation& presentation
+    )
+    {
+        const double worldUnitsPerPixel =
+            view.cameraSnapshot(viewport).worldUnitsPerPixel;
+        if (worldUnitsPerPixel <= 0.0 || presentation.systemScale <= 0.0f)
+            return;
+        const double pixelsPerAu =
+            static_cast<double>(presentation.systemScale) / worldUnitsPerPixel;
+        const std::string& selected = view.state().selectedBodyId;
+
+        std::unordered_set<std::string> hidden;
+        for (const auto& body : presentation.bodies)
+        {
+            const double orbitPx = body.orbitRadiusAu * pixelsPerAu;
+            const std::string& level = body.presentationLevel;
+            const bool show =
+                body.id == selected ||
+                (level == "minor_planet" ? orbitPx >= MinorPlanetOrbitPx
+                 : level == "dwarf_planet" ? orbitPx >= DwarfPlanetOrbitPx
+                 : level == "minor_reservoir" ? orbitPx >= MinorReservoirOrbitPx
+                 : true);
+            if (!show)
+                hidden.insert(body.id);
+        }
+        // Children (moons, rings' parents' satellites) follow their parent.
+        for (bool changed = true; changed;)
+        {
+            changed = false;
+            for (const auto& body : presentation.bodies)
+                if (!hidden.count(body.id) && body.id != selected && hidden.count(body.parentId))
+                {
+                    hidden.insert(body.id);
+                    changed = true;
+                }
+        }
+        if (hidden.empty())
+            return;
+        presentation.bodies.erase(
+            std::remove_if(
+                presentation.bodies.begin(),
+                presentation.bodies.end(),
+                [&](const auto& body) { return hidden.count(body.id) != 0; }
+            ),
+            presentation.bodies.end()
+        );
+    }
+}
+
 std::string systemMapObjectStableKey(
     const world::celestial::SystemMapObject& object
 )
@@ -188,6 +254,8 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
     view.state().lastScale = presentation.systemScale;
 
     fitCameraOnce(view, system.systemId);
+
+    filterBodiesByPresentationLevel(view, viewport, presentation);
 
     if (updateHoverPresentation &&
         view.state().navigationGrid.enabled() &&

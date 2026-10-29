@@ -202,6 +202,10 @@ namespace world::celestial
         double orbitRadiusAu = 0.0;
         bool drawOrbit = false;
 
+        // Presentation level (CelestialBodyDefinition::presentationLevel):
+        // what the map shows at which zoom; never a physical filter.
+        std::string presentationLevel;
+
         // Kepler orbit ellipse relative to orbitCenterAu (closed polyline from
         // the shared celestial orbit contract, keplerOrbitPathAu). Empty for
         // bodies without a Kepler orbit: the renderer then draws radius a.

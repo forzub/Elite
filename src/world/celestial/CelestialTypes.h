@@ -301,6 +301,16 @@ struct CelestialBodyDefinition
     // Top of the atmosphere (0 = airless), for navigation and approach.
     double atmosphereOuterRadiusKm = 0.0;
     std::string bodyClass;
+
+    // Map presentation level derived from physics at catalog load (the
+    // physical body always exists): star | major_planet | minor_planet |
+    // dwarf_planet | moon | major_reservoir | minor_reservoir. Planets use the
+    // orbit-clearing parameter of Margot (2015), Pi = 807 m / (M*^(5/2) a^(9/8))
+    // (m in Earth masses, M* in solar masses, a in AU): Pi >= 1 clears its
+    // orbit; a clearing body is major from 0.3 Earth masses or when it is a
+    // real observed planet.
+    std::string presentationLevel;
+    bool observed = false;      // observed / authored, not procedural
 };
 
 struct CelestialSystemDefinition

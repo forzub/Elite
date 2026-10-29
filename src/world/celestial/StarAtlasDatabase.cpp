@@ -1705,6 +1705,8 @@ CelestialBodyDefinition bodyFromGenerated(const json& b)
     body.radiusKm = phys.value("radius_km", 0.0);
     body.diameterKm = 2.0 * body.radiusKm;
     body.bodyClass = phys.value("body_class", std::string());
+    body.observed = b.value("origin", std::string("generated")) != "generated";
+    body.presentationLevel = kind == "moon" ? "moon" : kind == "dwarf_planet" ? "dwarf_planet" : "";
     readKeplerOrbit(b.at("orbit"), body);
     body.orbitInParentEquator = kind == "moon";
     body.environmentPresetId = b.value("environment_preset_id", std::string());
@@ -1850,6 +1852,7 @@ bool parsePhysicalSystemDirectory(
         body.id = s.value("id", std::string());
         body.name = s.value("name", std::string("Star"));
         body.type = BodyType::Star;
+        body.presentationLevel = "star";
         body.parentId = parentBody(s);
         body.massKg = s.value("mass_solar", 1.0) * 1.98847e30;
         body.gravitationalParameterM3s2 = s.value("mu_m3s2", GravitationalConstant * body.massKg);
@@ -1894,6 +1897,17 @@ bool parsePhysicalSystemDirectory(
     for (const auto& b : def.bodies) known[b.id] = true;
     for (auto& b : planets)
     {
+        if (b.presentationLevel.empty())
+        {
+            const auto central = massKgById.find(b.parentId);
+            const double mStar = central != massKgById.end() ? central->second / 1.98847e30 : 1.0;
+            const double mEarth = b.massKg / 5.9722e24;
+            const double pi = b.distanceAu > 0.0 && mStar > 0.0
+                ? 807.0 * mEarth / (std::pow(mStar, 2.5) * std::pow(b.distanceAu, 1.125))
+                : 0.0;
+            b.presentationLevel = pi < 1.0 ? "dwarf_planet"
+                                : mEarth >= 0.3 || b.observed ? "major_planet" : "minor_planet";
+        }
         if (!known.count(b.parentId))
         {
             std::cerr << "[StarAtlasDatabase] skipped body " << b.id << ": unknown parent " << b.parentId << "\n";
@@ -1929,6 +1943,10 @@ bool parsePhysicalSystemDirectory(
             body.type = BodyType::AsteroidBelt;
             body.parentId = r.value("parent_id", std::string());
             body.distanceAu = r.value("peak_au", 0.0);
+            // Significant belts (main asteroid belt class and above) stay on
+            // the far-zoom map; trojan swarms and thin belts appear closer in.
+            body.presentationLevel =
+                r.value("total_mass_earth", 0.0) >= 1.0e-4 ? "major_reservoir" : "minor_reservoir";
             const auto parentMass = massKgById.find(body.parentId);
             if (parentMass != massKgById.end() && body.distanceAu > 0.0)
             {

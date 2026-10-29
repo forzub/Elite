@@ -85,6 +85,7 @@ inline bool rebuildSystemMapCelestialLayer(
         item.parentId = body.parentId;
         item.environmentPresetId = body.environmentPresetId;
         item.type = body.type;
+        item.presentationLevel = body.presentationLevel;
         item.radiusKm = body.radiusKm;
         item.orbitalPeriodDays = body.orbitalPeriodDays;
         item.orbitalDirection = body.orbitalDirection;

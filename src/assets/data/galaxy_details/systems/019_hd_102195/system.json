@@ -1,0 +1,50 @@
+{
+  "schema": "elite.star_system.v2",
+  "id": 19,
+  "name": "HD 102195",
+  "slug": "hd_102195",
+  "alternative_names": [
+    "HD 102195 System",
+    "Flegetonte",
+    "Аш Ди 102195",
+    "Система 102195"
+  ],
+  "catalog_scope": "local",
+  "atlas_visible": true,
+  "route_target": true,
+  "position_ly": {
+    "x": -96.3626,
+    "y": 6.0183,
+    "z": 4.7584
+  },
+  "position_source": "hyg hd=102195 (ICRS J2000)",
+  "legacy_position_ly": {
+    "x": -42.7,
+    "y": 85.8,
+    "z": -25.1
+  },
+  "stellar_hierarchy": {
+    "star": "hd_102195"
+  },
+  "survey_completeness": {
+    "rv_detection_limit_ms": {
+      "value": 5.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "rv_baseline_days": {
+      "value": 3650.0,
+      "source": "RV surveys of moderate precision"
+    },
+    "source": "RV surveys of moderate precision"
+  },
+  "reserved_designations": [
+    "HD 102195 b"
+  ],
+  "lore": {
+    "stellar_description": "Стабильный оранжевый карлик K0V, горячий юпитер на 4-суточной орбите"
+  },
+  "identity_correction": {
+    "legacy_name": "HD 102194",
+    "reason": "legacy HD 102194 (G8V, ~99 ly, hot giant at 4.2 d) is a typo of HD 102195 (K0V, 95.7 ly, HD 102195 b P = 4.114 d); the real HD 102194 is a K2III giant at 630 ly"
+  }
+}

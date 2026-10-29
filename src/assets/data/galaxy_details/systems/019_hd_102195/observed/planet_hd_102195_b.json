@@ -1,0 +1,27 @@
+{
+  "schema": "elite.observed_body.v2",
+  "designation": "HD 102195 b",
+  "kind": "planet",
+  "host": "hd_102195",
+  "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29; discovery Radial Velocity 2006",
+  "orbit": {
+    "period_days": {
+      "value": 4.11377,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "semi_major_axis_au": {
+      "value": 0.05,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    },
+    "eccentricity": {
+      "value": 0.0,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29"
+    }
+  },
+  "physical": {
+    "minimum_mass_earth": {
+      "value": 130.3103,
+      "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (m sin i)"
+    }
+  }
+}

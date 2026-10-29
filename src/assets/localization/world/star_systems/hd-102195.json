@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "19",
+  "names": {
+    "en": "HD 102195"
+  },
+  "bodies": {
+    "19:system_19.HD_102195": {
+      "en": "HD 102195"
+    },
+    "19:system_19.HD_102195.HD_102195_K1": {
+      "en": "HD 102195 K1"
+    },
+    "19:system_19.HD_102195.HD_102195_K2": {
+      "en": "HD 102195 K2"
+    },
+    "19:system_19.HD_102195.HD_102195_K3": {
+      "en": "HD 102195 K3"
+    },
+    "19:system_19.HD_102195.HD_102195_b": {
+      "en": "HD 102195 b"
+    },
+    "19:system_19.HD_102195.HD_102195_c": {
+      "en": "HD 102195 c"
+    },
+    "19:system_19.HD_102195.HD_102195_d": {
+      "en": "HD 102195 d"
+    },
+    "19:system_19.HD_102195.HD_102195_e": {
+      "en": "HD 102195 e"
+    },
+    "19:system_19.HD_102195.HD_102195_f": {
+      "en": "HD 102195 f"
+    },
+    "19:system_19.HD_102195.HD_102195_g": {
+      "en": "HD 102195 g"
+    },
+    "19:system_19.HD_102195.HD_102195_h": {
+      "en": "HD 102195 h"
+    },
+    "19:system_19.HD_102195.HD_102195_i": {
+      "en": "HD 102195 i"
+    },
+    "19:system_19.HD_102195.kuiper_belt": {
+      "en": "HD 102195 outer belt"
+    }
+  }
+}

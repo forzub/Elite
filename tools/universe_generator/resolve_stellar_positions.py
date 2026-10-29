@@ -42,7 +42,7 @@ IDENTIFIERS = {
     15: ("hyg", "hd", "40307"),
     16: ("hyg", "hd", "69830"),
     17: ("archive", "hostname", "TRAPPIST-1"),
-    19: ("hyg", "hd", "102194"),
+    19: ("hyg", "hd", "102195"),        # legacy "HD 102194": typo, see CORRECTIONS
     20: ("hyg", "hd", "93083"),
     21: ("archive", "hostname", "GJ 1214"),
     22: ("hyg", "hip", "99240"),        # delta Pavonis
@@ -88,6 +88,59 @@ IDENTIFIERS = {
 }
 
 
+# Identity corrections found by identity_audit.py. The legacy authored system
+# is kept (id, role); only a wrong designation is replaced. Each correction is
+# justified by designation + distance + spectral class + planet lore together.
+CORRECTIONS = {
+    19: dict(
+        legacy_name="HD 102194",
+        name="HD 102195",
+        alternative_names=["HD 102195 System", "Flegetonte", "Аш Ди 102195", "Система 102195"],
+        star_alternative_names=["HD 102195 A", "Flegetonte", "HIP 57370"],
+        lore="Стабильный оранжевый карлик K0V, горячий юпитер на 4-суточной орбите",
+        reason=("legacy HD 102194 (G8V, ~99 ly, hot giant at 4.2 d) is a typo of HD 102195 "
+                "(K0V, 95.7 ly, HD 102195 b P = 4.114 d); the real HD 102194 is a K2III "
+                "giant at 630 ly"),
+    ),
+}
+
+
+# Legacy aliases that are catalogue numbers of other, unrelated stars
+# (identity_audit.py: the number resolves to a star far from this system).
+WRONG_ALIASES = {
+    13: {"HD 217107"},                       # a G8IV hot-Jupiter host at 65 ly
+    38: {"HD 102194 A", "HD 102194 B"},      # a K2III giant at 630 ly
+    42: {"HD 186808 A", "HD 186808 B"},      # 17 Cygni is HD 187013
+    43: {"HD 175775 A", "HD 175775 B"},      # theta Draconis is HD 144284
+    45: {"HD 102194 A", "HD 102194 B"},      # 83 Leonis is HD 99491 / HD 99492
+}
+
+
+def apply_corrections(doc):
+    """Patch a legacy system document in memory with its identity correction."""
+    wrong = WRONG_ALIASES.get(doc["id"], set())
+    if wrong:
+        doc["details"]["alternative_names"] = [n for n in doc["details"].get("alternative_names", [])
+                                               if n not in wrong]
+        for s in doc["details"]["stars"]:
+            s["alternative_names"] = [n for n in s.get("alternative_names", []) if n not in wrong]
+    c = CORRECTIONS.get(doc["id"])
+    if c is None:
+        return doc
+    old = c["legacy_name"]
+    doc["name"] = c["name"]
+    doc["details"]["alternative_names"] = list(c["alternative_names"])
+    for s in doc["details"]["stars"]:
+        if s["name"] == old:
+            s["name"] = c["name"]
+            s["alternative_names"] = list(c["star_alternative_names"])
+        for p in s.get("planets", []):
+            p["name"] = p["name"].replace(old, c["name"])
+    doc["stability"] = c["lore"]
+    doc["identity_correction"] = {"legacy_name": old, "reason": c["reason"]}
+    return doc
+
+
 def icrs_ly(ra_deg, dec_deg, dist_ly):
     ra, dec = math.radians(ra_deg), math.radians(dec_deg)
     return (dist_ly * math.cos(dec) * math.cos(ra),
@@ -121,7 +174,7 @@ def resolve(root, hyg_path, archive_path):
     out = []
     for sub in ("systems_details", "distant_systems_details"):
         for path in sorted(glob.glob(os.path.join(root, sub, "*.json"))):
-            doc = json.load(open(path, encoding="utf-8"))
+            doc = apply_corrections(json.load(open(path, encoding="utf-8")))
             sid = doc["id"]
             p = doc["position_ly"]
             old = (p["x"], p["y"], p["z"])

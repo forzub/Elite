@@ -1,10 +1,10 @@
 {
   "schema": "elite.generated_reservoir.v1",
-  "id": "system_19.HD_102194.kuiper_belt",
-  "name": "HD 102194 outer belt",
+  "id": "system_19.HD_102195.kuiper_belt",
+  "name": "HD 102195 outer belt",
   "kind": "kuiper_belt",
-  "parent_id": "system_19.HD_102194",
-  "seed": "0xff0ffd27bbcc6678",
+  "parent_id": "system_19.HD_102195",
+  "seed": "0xb541cca0f0f100ec",
   "generator_versions": {
     "stellar_system": 1,
     "celestial_body": 1,
@@ -12,19 +12,19 @@
     "interstellar": 1,
     "planet_surface": 0
   },
-  "inner_au": 13.689000000000002,
-  "outer_au": 20.99747297377149,
-  "peak_au": 15.12499881670226,
-  "total_mass_earth": 0.025494200496312812,
-  "eccentricity_mean": 0.0771425991958668,
-  "inclination_mean_deg": 12.89146500829452,
+  "inner_au": 7.259561705380098,
+  "outer_au": 13.605558449439073,
+  "peak_au": 9.068668384319341,
+  "total_mass_earth": 0.2742486953001005,
+  "eccentricity_mean": 0.032552003325106105,
+  "inclination_mean_deg": 10.316070435824045,
   "size_distribution": {
     "slope": -3.0,
     "min_body_km": 0.01,
-    "max_body_km": 2273.2714052566603,
-    "estimated_bodies_above_1km": 31979205.05393418
+    "max_body_km": 3000.0,
+    "estimated_bodies_above_1km": 260675637.5292899
   },
-  "clumpiness": 0.07089774928930179,
+  "clumpiness": 0.06835378865028535,
   "composition": {
     "water_ice": 0.45,
     "silicate": 0.3,

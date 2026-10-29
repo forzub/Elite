@@ -36,8 +36,7 @@
       "id": "system_42.17_Cygni_A",
       "name": "17 Cygni A",
       "alternative_names": [
-        "17 Cyg A",
-        "HD 186808 A"
+        "17 Cyg A"
       ],
       "spectral_type": "F7V",
       "stage": "main_sequence",
@@ -95,7 +94,6 @@
       "name": "17 Cygni B",
       "alternative_names": [
         "17 Cyg B",
-        "HD 186808 B",
         "Красный карлик"
       ],
       "spectral_type": "M0.4",

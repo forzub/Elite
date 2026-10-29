@@ -1,0 +1,39 @@
+{
+  "schema": "elite.star.v2",
+  "key": "hd_102195",
+  "name": "HD 102195",
+  "alternative_names": [
+    "HD 102195 A",
+    "Flegetonte",
+    "HIP 57370"
+  ],
+  "spectral_type": "K0 V",
+  "stage_hint": "main_sequence",
+  "mass_solar": {
+    "value": 0.76,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "radius_solar": {
+    "value": 0.82,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "teff_k": {
+    "value": 5301.0,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "luminosity_solar": {
+    "value": 0.46299894348003967,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "metallicity_feh": {
+    "value": 0.04,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "age_gyr": {
+    "value": 2.4,
+    "source": "NASA Exoplanet Archive pscomppars, retrieved 2026-10-29 (host HD 102195)"
+  },
+  "extra": {
+    "legacy_type_label": "G8V — Жёлтый карлик"
+  }
+}

@@ -36,8 +36,7 @@
       "id": "system_43.Theta_Draconis_A",
       "name": "Theta Draconis A",
       "alternative_names": [
-        "Theta Dra A",
-        "HD 175775 A"
+        "Theta Dra A"
       ],
       "spectral_type": "F9V",
       "stage": "main_sequence",
@@ -95,7 +94,6 @@
       "name": "Theta Draconis B",
       "alternative_names": [
         "Theta Dra B",
-        "HD 175775 B",
         "Оранжевый карлик"
       ],
       "spectral_type": "K5V",

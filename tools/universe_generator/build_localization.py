@@ -93,6 +93,9 @@ def main(root, loc_dir):
                     continue
                 key = f"{sid}:{rd['id']}"
                 legacy_key = SOL_BELT_LEGACY.get(rd["id"])
+                if key in old_bodies and legacy_key:
+                    bodies[key] = dict(old_bodies[key])  # authored name, already migrated
+                    continue
                 if legacy_key and legacy_key in old_bodies:
                     tr = dict(old_bodies[legacy_key])
                     tr.setdefault("ru", rd["name"])

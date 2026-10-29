@@ -482,7 +482,7 @@ def main():
         target_root = os.path.join(args.out_root, outsub)
         os.makedirs(target_root, exist_ok=True)
         for path in sorted(glob.glob(os.path.join(args.legacy_root, sub, "*.json"))):
-            legacy = json.load(open(path, encoding="utf-8"))
+            legacy = rsp.apply_corrections(json.load(open(path, encoding="utf-8")))
             sid = legacy["id"]
             name = legacy["name"]
             dname = f"{sid:03d}_{slug(name.split(' (')[0])}" if sid < 100000 else f"{sid}_{slug(name)}"
@@ -601,6 +601,8 @@ def main():
                 sysdoc["observational_reference"] = legacy["observational_reference_2026"]
             if legacy.get("stability"):
                 sysdoc["lore"] = {"stellar_description": legacy["stability"]}
+            if legacy.get("identity_correction"):
+                sysdoc["identity_correction"] = legacy["identity_correction"]
             json.dump(sysdoc, open(os.path.join(ddir, "system.json"), "w", encoding="utf-8", newline="\n"),
                       ensure_ascii=False, indent=2)
 
